@@ -27,8 +27,8 @@ library and command-line tool, with Python, C and WebAssembly bindings,
 and it [runs in the browser](https://tractables.github.io/tddlog/).
 
 <p align="center">
-  <img src="docs/images/speedups.svg"
-       alt="tddlog's average speedup over each exact inference system, by kind of problem">
+  <img src="docs/images/overview.svg"
+       alt="Total time of tddlog and of each other exact inference system over the instances that system is given, by kind of problem">
 </p>
 
 ## Getting started
@@ -75,11 +75,10 @@ language and the options with worked examples, and the
 tddlog was run against every exact inference system that accepts each
 benchmark suite, and every system tries every instance it can be given.
 Each run is single-threaded on a core of its own, with a limit of 300 or
-600 seconds, and every answer is checked against an exact reference. An
-average is the geometric mean of the speedups over the instances both
-systems answer, a time under 0.2 s counting as 0.2 s; instances both
-answer in under 0.2 s are left out. The total times are the two systems'
-sums over the same instances.
+600 seconds, and every answer is checked against an exact reference.
+Systems are compared by total time: each system's times summed over the
+instances it is given and either system answers, a run that does not
+finish counting as the time limit (its real time would be longer).
 
 The cactus plots count the instances each system answers within a time
 limit (higher is better). The scatter plots put tddlog's time against
@@ -97,11 +96,12 @@ so that the translations can be checked for fairness.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest of ProbLog, PITA and aspmc">
 </p>
 
-- **31× faster than ProbLog** on average, and faster on 210 of the 211
-  programs both answer: 3 minutes in total against ProbLog's 4.2 hours.
-  ProbLog's time is the fastest of its three compilers (d-DNNF, SDD and
-  forward SDD) on each program.
-- **16× faster than PITA** and **26× faster than aspmc**.
+- **68× faster than ProbLog** in total: 12 minutes for the 302 programs,
+  against ProbLog's 13 hours. On the 236 that ProbLog answers, tddlog
+  takes 3 minutes and ProbLog 4.2 hours. ProbLog's time is the fastest
+  of its three compilers (d-DNNF, SDD and forward SDD) on each program.
+- **110× faster than PITA** and **211× faster than aspmc** in total;
+  they answer 173 and 30 of the programs.
 - tddlog answers 302 of the 307 programs and ProbLog 236. No system
   answers the other five.
 
@@ -116,14 +116,14 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
        alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
 </p>
 
-- tddlog answers **all 334 networks, each in under 9 seconds**. The next
-  best, libDAI, answers 313.
-- **5.9× faster than Merlin** (bucket-tree elimination) and **13× faster
-  than Ace** (compilation to arithmetic circuits) on average, and 5.9×,
-  12×, 11× and 59× faster than pyAgrum, libDAI, pgmpy and
-  TensorInference.jl.
-- Against the fastest of the six on each network, tddlog is 5.1× faster
-  on average and slower on 34 of 254.
+- tddlog answers **all 334 networks in 11 minutes in total**, none
+  taking more than 9 seconds. The next best, libDAI, answers 313.
+- **33× faster than Merlin** (bucket-tree elimination) and **35× faster
+  than Ace** (compilation to arithmetic circuits, on the 94 Bayesian
+  networks it reads) in total, and 39× to 86× faster than pyAgrum,
+  libDAI, TensorInference.jl and pgmpy.
+- Against the fastest of the six on each network, tddlog is 7.1× faster
+  in total: 11 minutes against 1.3 hours.
 
 The networks: the bnlearn repository's, Ace's benchmarks, the large
 networks (barley, diabetes, mildew, munin) and the UAI 2022 competition's
@@ -139,15 +139,19 @@ Bayesian networks only and ran on the 94 among them.
 
 - tddlog answers 417 of the 450 programs, Alea.jl 309, Dice 136 and
   Roulette 113.
-- **3.3× faster than Alea.jl**, **9.9× faster than Dice** and **11× faster
-  than Roulette** on average. Alea.jl's and Roulette's times leave out
+- **8.3× faster than Alea.jl**, **29× faster than Dice** and **46× faster
+  than Roulette** in total. Alea.jl's and Roulette's times leave out
   their language's start-up and compilation.
-- 39× faster than noDice, 7.4× than PRISM, 3.9× than Geni and 1.7× than
-  Storm, each on the programs it accepts.
-- Specialized solvers win where their method fits: Genfer's generating
-  functions answer the population model in milliseconds, where tddlog
-  takes up to 34 s on its bit-blasted circuit, and Psi solves the linear
-  regression symbolically, which tddlog and Alea.jl do not finish.
+- In total 58× faster than noDice, 24× than Psi, 5.8× than PRISM, 5.1×
+  than Geni and 3.7× than Storm, each on the programs it is given. Storm
+  is faster on the 27 programs both answer (4 minutes to tddlog's 6) and
+  does not finish the other two.
+- Specialized solvers win on their own programs: Genfer's generating
+  functions answer its 15 (the population model and the Dice programs it
+  ships) in 0.2 s in total, where tddlog takes 2 minutes; Pluck answers
+  three of its four sequence models in 16 s, where tddlog takes 100 s;
+  and Psi solves the linear regression symbolically, which tddlog does
+  not finish.
 
 The programs come from the papers on Dice, Alea.jl's bit blasting,
 Roulette and Geni, and from the evaluations of the other systems, each
@@ -167,14 +171,14 @@ The TPC-H queries over a tuple-independent database, at scale factors
 
 - **ProvSQL is fast on the easy queries.** It computes the probability
   inside PostgreSQL and answers 176 queries within 2 seconds, where
-  tddlog answers 155; on the queries both answer it is 1.9× faster on
-  average.
-- **tddlog answers more of the hard ones.** From 5 seconds on it has
-  answered more, it is faster on every query that takes ProvSQL 5
-  seconds or more, and it answers 205 of the 208, 9 of them queries
-  ProvSQL does not finish. ProvSQL answers 196, none that tddlog misses.
-- Over the 149 queries both answer, tddlog takes 4 minutes in total and
-  ProvSQL 6.
+  tddlog answers 155.
+- **tddlog answers more of the hard ones.** It answers 205 of the 208,
+  9 of them queries ProvSQL does not finish, and it is faster on every
+  query that takes ProvSQL 5 seconds or more. ProvSQL answers 196, none
+  that tddlog misses.
+- On the 196 queries both answer, tddlog takes 4.5 minutes in total and
+  ProvSQL 6.1. With ProvSQL's 9 unfinished queries counted at the time
+  limit, it is 6 minutes against 1.6 hours.
 
 ### Setup
 
