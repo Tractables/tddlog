@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """A Dice program (Holtzen, Van den Broeck, Millstein, OOPSLA 2020) as
-code over finite variables, for the translators into imperative and
-sum-product languages (dice2genfer.py, dice2sppl.py).
+code over finite variables, for the translators into imperative,
+sum-product and lazy functional languages (dice2genfer.py, dice2sppl.py,
+dice2pluck.py).
 
 The program is read by dice2problog.py's parser and lowered to a list of
 statements over variables (`Var`), each a Boolean (0 or 1) or an int(w)

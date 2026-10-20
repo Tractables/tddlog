@@ -1,9 +1,10 @@
 // The assembled site in headless Chromium: every example's answers on the
 // page against the ProbLog column beside them, P(evidence), an edited program
 // through the address, an error, Cancel, the theme, the guide's links, the
-// results page (every family's plot, a suite's, the hover layer, the table),
-// the API, Python and C pages, and no sideways scrolling at a desktop's width
-// or a phone's.
+// results page (every family's plots and every suite's, each over the
+// instances all of its systems were given, the hover layer, the table), the
+// API, Python and C pages, and no sideways scrolling at a desktop's width or
+// a phone's.
 //
 //   node tests/browser.cjs <site> [<directory for screenshots>]
 //
@@ -185,19 +186,18 @@ async function noSidewaysScroll(page, what) {
     const families = await page.$$eval("section.family", (sections) => sections.filter((s) => s.id !== "overall").map((s) => [s.id, s.querySelectorAll("svg.cactus path.line").length]));
     assert.ok(families.length >= 2, `the results' families: ${JSON.stringify(families)}`);
     for (const [id, lines] of families) assert.ok(lines >= 2, `${id}: ${lines} lines`);
-    // Every problem: one plot above the families over every instance of the
+    // Every problem: plots above the families over every instance of the
     // run, the instances of each family in the tab "All problems" first.
-    // Both count what a system does not answer as unanswered, the legend
-    // gives "N of M" per system, the plot's axis goes to all M, and the time
-    // axis starts at 0.2 s.
+    // The large plot's legend gives "N of M" per system, its axis goes to all
+    // M, and the time axis starts at 0.2 s.
     const legendTotal = async (selector) => {
-      const items = await page.$$eval(`${selector} .legend .n`, (spans) => spans.map((s) => s.textContent.replace(/\s/g, "")));
-      assert.ok(items.length >= 2, `${selector}: ${items.length} legend entries`);
+      const items = await page.$$eval(`${selector} figure.plot:not(.part) .legend .n`, (spans) => spans.map((s) => s.textContent.replace(/\s/g, "")));
+      assert.ok(items.length >= 1, `${selector}: ${items.length} legend entries`);
       const totals = new Set(items.map((t) => t.match(/^(\d+)of(\d+)$/)?.[2]));
       assert.equal(totals.size, 1, `${selector}: one total in ${JSON.stringify(items)}`);
       return Number([...totals][0]);
     };
-    const allText = async (selector) => (await page.textContent(`${selector} svg.cactus`)).replace(/\s+/g, " ");
+    const allText = async (selector) => (await page.textContent(`${selector} figure.plot:not(.part) svg.cactus`)).replace(/\s+/g, " ");
     const overall = await legendTotal("#overall");
     assert.ok((await allText("#overall")).replace(/\s/g, "").includes(`all${overall}instances`), "the overall plot's axis");
     assert.match(await allText("#overall"), /≤0\.2/, "the time axis starts at 0.2 s");
@@ -216,6 +216,60 @@ async function noSidewaysScroll(page, what) {
     }
     assert.equal(overall, sum, "the overall plot has the instances of every family");
     console.log(`ok every problem: ${overall} instances in ${families.length} families, an All problems tab each`);
+
+    // Each plot draws the systems given every one of its instances and no
+    // other: the large plot of every problem, of a family's All problems and
+    // of each suite over all of them, a small plot over the instances that
+    // its systems were given alone, where those are 20 or a quarter of all
+    // of them. Which system was given which instance (null: not given) is
+    // read from the page's data, not from the page.
+    const data = ["suites.json", "ppl.json"].map((file) => path.join(site, "results", file))
+      .filter((file) => fs.existsSync(file)).map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
+    const given = (suites) => suites.flatMap((s) => s.instances.map((row) => new Set(s.systems.filter((key, i) => row[i + 1] !== null))));
+    let small = 0;
+    let left = 0;
+    const denominators = async (selector, records, what) => {
+      const figures = await page.$$eval(`${selector} figure.plot`, (figs) => figs.map((f) => ({
+        small: f.classList.contains("part"),
+        systems: f.dataset.systems.split(" ").filter(Boolean),
+        owners: (f.dataset.owners ?? "").split(" ").filter(Boolean),
+        instances: Number(f.dataset.instances),
+        lines: [...f.querySelectorAll("svg.cactus path.line")].map((p) => p.dataset.key),
+      })));
+      assert.equal(figures.filter((f) => !f.small).length, 1, `${what}: one large plot`);
+      const keys = [...new Set(records.flatMap((r) => [...r]))];
+      const least = Math.min(20, records.length / 4);
+      for (const key of keys) {
+        const k = records.filter((r) => r.has(key)).length;
+        if (k < records.length && k >= least) assert.ok(figures.some((f) => f.owners.includes(key)), `${what}: ${key}, given ${k} of ${records.length}, has no small plot`);
+      }
+      for (const f of figures) {
+        const rows = f.small ? records.filter((r) => f.owners.every((o) => r.has(o))) : records;
+        const name = `${what}, the plot of ${f.small ? f.owners.join(" and ") : "all instances"}`;
+        assert.equal(f.instances, rows.length, `${name}: its instances`);
+        assert.deepEqual([...f.lines].sort(), [...f.systems].sort(), `${name}: its lines`);
+        for (const o of f.owners) assert.equal(records.filter((r) => r.has(o)).length, rows.length, `${name}: ${o} was given other instances too`);
+        if (f.small) assert.ok(rows.length < records.length && rows.length >= least, `${name}: a part of ${rows.length} of ${records.length}`);
+        for (const key of keys) {
+          const all = rows.every((r) => r.has(key));
+          assert.equal(f.systems.includes(key), all, `${name}: ${key} ${all ? "was given every instance and is not drawn" : "was not given every instance and is drawn"}`);
+          if (!all && rows.some((r) => r.has(key))) left++;
+        }
+        small += f.small;
+      }
+    };
+    const scopes = data.flatMap((d) => d.families);
+    await denominators("#overall", given(scopes.flatMap((f) => f.suites)), "every problem");
+    for (const f of scopes) {
+      await page.click(`#${f.key} .tabs button[data-suite="all"]`);
+      await denominators(`#${f.key}`, given(f.suites), `${f.key}, all problems`);
+      for (const s of f.suites) {
+        await page.click(`#${f.key} .tabs button[data-suite="${s.key}"]`);
+        await denominators(`#${f.key}`, given([s]), `${f.key}, ${s.key}`);
+      }
+    }
+    assert.ok(small > 0 && left > 0, `${small} small plots, ${left} systems given part of a plot's instances and left out of it`);
+    console.log(`ok each plot over the instances its systems were given: ${small} small plots, ${left} times a system given part of a plot's instances left out of it`);
 
     const second = await page.$("section.family .tabs button:nth-child(2)");
     const key = await second.getAttribute("data-suite");

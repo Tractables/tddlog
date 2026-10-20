@@ -25,23 +25,23 @@ builds:
 | Scallop | no (top-k proofs) | ground programs, through `ground2scallop.py` | `--scallop`, `--scallop-k` |
 | Dice | yes | Dice programs and networks | `--dice` |
 | Alea.jl (Julia 1.11.9) | yes | Dice programs and networks, through `dice2alea.py` | `--alea` |
-| aspmc 1.1.1 | yes | programs without evidence | `--aspmc` |
+| aspmc 1.1.1 | yes | programs, the evidence asked as queries | `--aspmc` |
 | Ace 3.0 | yes | networks | `--ace`, `--ace-variants`, `--ace-heap`, `--ace-java` |
 | Merlin 1.7.0 | yes (`bte`, `cte`) | UAI files | `--merlin` |
 | pyAgrum (aGrUM) | yes (junction tree, Shafer-Shenoy on Markov networks) | UAI files | `--agrum` |
 | pgmpy | yes (variable elimination) | UAI files | `--pgmpy` |
 | libDAI 0.3.2 | yes (junction tree, min-fill) | UAI files | `--libdai` |
 | TensorInference.jl | yes (tensor network contraction, `treesa`, `greedy`) | UAI files | `--tensorinference` |
-| ProvSQL 1.13.0 (PostgreSQL 16.4) | yes (its own method choice, tree decomposition) | the TPC-H programs, as SQL | `--provsql` |
+| ProvSQL 1.13.0 (PostgreSQL 16.4) | yes (its own method choice, tree decomposition) | the TPC-H programs and the literature suite's pdb and noisy-or, as SQL | `--provsql` |
 | Storm 1.14 (stormpy) | yes (`sparse`, `exact`, `dd`) | the weather factory, as a PRISM model | `--storm`, `--storm-variants`, `--weather-models` |
 | PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the weather factory | `--prism`, `--prism-variants`, `--prism-heap` |
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
 | sharpSAT-TD | yes, 53-bit MPFR floats | weighted CNFs | `--sharpsat-td`, `--sharpsat-td-decot` |
 | Roulette (Racket 8.16) | yes | its own programs (`--suite roulette`) | `--roulette`, `--roulette-variants` |
 | Geni (gennifer) | yes, f32 | its own `.gir` programs (`--suite geni`) and the other Dice programs, through `dice2geni.py` | `--geni`, `--geni-benchmarks` |
-| noDice | yes | Dice programs without `nflip` | `--nodice` |
-| Psi (ef8a9e5) | yes, symbolic | Dice programs, through `dice2psi.py`, and its linear regression | `--psi` |
-| Pluck | yes | its four sequence models (`--suite ppl`, family `pluck`) | `--pluck` |
+| noDice | yes | Dice programs without `nflip`, the circuits' included | `--nodice` |
+| Psi (ef8a9e5) | yes, symbolic | Dice programs, the circuits' included, through `dice2psi.py`, and its linear regression | `--psi` |
+| Pluck | yes | its four sequence models (`--suite ppl`, family `pluck`) and the other Dice programs, through `dice2pluck.py` | `--pluck` |
 | Genfer | yes | its population model, the Dice programs it ships, and the other Dice programs, through `dice2genfer.py` | `--genfer`, `--genfer-benchmarks` |
 | SPPL 2.0.4 | yes, symbolic | its Markov switching model and the Dice programs, through `dice2sppl.py` | `--sppl` |
 | Prodigy, PLIA, Slice, Hakaru | | left out, section 12 | |
@@ -288,9 +288,10 @@ adds the BDD size). `bench.py run --dice` takes a command template with
     --dice "docker run --rm -v {dir}:/b sholtzen/dice dice /b/{base}"
     --dice "/path/to/dice {file}"
 
-For a `dice` instance it runs the source program; for a `bn` instance one
+For a `dice` instance it runs the source program; for a network one
 program per queried variable, written by `gen_bn.py --format dice --query
-VAR` (a returned tuple of all variables would print the joint).
+VAR` with the instance's observations (a returned tuple of all variables
+would print the joint).
 
 ### Programs
 
@@ -301,7 +302,17 @@ VAR` (a returned tuple of all variables would print the joint).
   generators), which use integers, `iterate` and recursion. `bench.py
   gen --suite indicators --families dice` adds the loop programs.
 - `gen_bn.py --format dice` writes a network as nested conditionals over
-  `discrete`s, the encoding of Dice's `bngen`.
+  `discrete`s, the encoding of Dice's `bngen`, with the program's
+  observations: each observed variable followed by `observe (X ==
+  int(w, k))`, and a Markov network's factor, which the ProbLog program
+  writes as a variable of one value observed true, as a `flip` of the
+  factor's entry over its largest under the conditionals on its scope,
+  observed. The program defines only the variables it returns or
+  observes and their ancestors; the others sum out. So every network of
+  the standard, large, Ace and UAI suites, with its evidence, is a Dice
+  program, and the systems that read Dice programs (Dice, Alea.jl,
+  Roulette, noDice, Psi, Genfer, SPPL and Geni) are given them; the UAI
+  PR task, which asks for Z and not a marginal, is not.
 - Dice 1.0 prints an all-zero distribution whenever the evidence has
   probability below 1e-6: a program that observes a flip of probability
   9e-7 prints 0 for every value, one of 2e-6 the posterior (checked on
@@ -595,7 +606,17 @@ from stderr.
 
 Its ProbLog frontend does not condition on `evidence/1,2`: it reads them
 as facts and returns unconditional probabilities with exit code zero.
-bench.py therefore refuses a program with evidence before running aspmc.
+bench.py therefore gives it a program with evidence with the evidence
+asked as queries (`aspmc_conditioned`): the observations and queries
+leave the program, `bench_e :- e1, ..., en.` is asked (a negative
+observation `\+ a` in the conjunction), and every `query(Q) :- B.` (B
+optional) becomes `bench_qe_Q :- B, Q, e1, ..., en.`, asked for the same
+solutions of B. The answer to Q is P(bench_qe_Q) / P(bench_e), which is
+P(Q | e) exactly, as for Scallop (section 3); the evidence is
+inconsistent where P(bench_e) is 0. aspmc compiles the program once with
+the extra queries, so its time includes what conditioning costs it. It
+computes in doubles, and on the UAI networks, where P(e) is as low as
+1e-618, its answers are checked against the reference.
 It rejects some programs with a parser error (bn_insurance); check the
 coverage on the installation a run uses.
 
@@ -672,8 +693,9 @@ from `Pr(X,e) = [...]` through `gen_bn.py`'s names.
 without the dash, joined by `+`, with `=` before an argument
 (`forceC2d+dtHypergraph=3`). `AceCompile` accepts `-forceC2d |
 -forceTabular`, `-d02 | -sbk05 | -cd05 | -cd06`, `-dtBnOrder |
--dtClauseMinfill | -dtHypergraph <count>`, `-noEclause`, `-e <file>`; the
-readme's `-noTabular` and `-dtBnMinfill` are `-forceC2d` and `-dtBnOrder`.
+-dtClauseMinfill | -dtHypergraph <count>`, `-noEclause`, `-Xlog` (log
+space, UAI networks below), `-e <file>`; the readme's `-noTabular` and
+`-dtBnMinfill` are `-forceC2d` and `-dtBnOrder`.
 The readme's settings for its published results:
 
 | readme | networks | variant |
@@ -706,9 +728,49 @@ Ace's UAI reader takes every file as a Bayesian network and prints `NaN`
 marginals on a Markov network. On `--suite uai` bench.py gives Ace the
 network `gen_bn.py` makes of the file, written as a Hugin file
 (`write_hugin`): each factor a variable of two values, `ok` and `not_ok`,
-observed `ok`, so Ace compiles the network tddlog compiles. `--pr` with
-`--ace` is refused: Ace prints P(e) to six digits in a double, which the
-PR set's networks underflow.
+observed `ok`, so Ace compiles the network tddlog compiles. Ace runs in
+the narrow lanes of the uai tables, with half a lane's memory as heap.
+
+**The PR task.** Under `run --pr` Ace compiles and evaluates as for the
+marginals, with the `.inst` files of a plain `gen` (`gen --pr` writes
+none, and `--ace` on such a directory is refused). Its record holds log10
+Z from the P(e) it prints, as tddlog's from its own, beside its marginals.
+AceEvaluate prints P(e) in full on its standard output and to six digits
+in the `.marginals` file; bench.py takes the former. On these networks
+P(e) goes down to 1e-618 (Grids_18), below a double's range, where Ace in
+normal space prints `Pr(e) = 0.0`: bench.py reads that as inconsistent
+evidence, and the check against the reference (section 8, the PR task)
+makes the record a failed run.
+
+**Log space.** `AceCompile -Xlog`, an option of its code the readme leaves
+out, writes the circuit's space into the `.lmap` file (`LOG_E`), and
+AceEvaluate then computes in natural logarithms
+(`CalculatorLogE`, "to prevent underflow") and writes `log_e(Pr(e))` and
+`log_e(Pr(X,e))`, which bench.py reads (variant `Xlog`). Checked on seven
+networks of the MAR set (2026-10-20): on the tabular route
+the log-space answers are the normal-space ones, at about the same cost
+(Promedus_31, Segmentation_11, Alchemy_11, Grids_14). Its c2d route
+answers wrongly: `log_e(Pr(e)) = -∞` on Promedus_31 and Segmentation_11,
+whose P(e) is 1.6e-2 and 2.0e-52, and a NullPointerException in the
+evaluator on Alchemy_11 and Grids_14 to Grids_18. The uai_pr table
+therefore runs Ace as `Xlog` (its default route, in log space) and
+`forceC2d` (in normal space). The uai table runs `auto` and `forceC2d`,
+as every other network suite does, since log space changes the times
+(Grids_14's evaluation took 19 s against 12 s); the uai_pr table's `Xlog`
+records show the networks it would answer besides. Of the networks whose
+P(e) underflows a double, Grids_17 and Grids_18, `-Xlog` helps only where
+Ace's tabular route compiles them: with a 10 GB heap its default route chose
+c2d in log space (and failed), and in normal space did not compile any of
+Grids_16 to Grids_18 in 300 s.
+
+**uai08_pe.** The package's `uai08_pe` script (`mark.reason.apps.BnUai08
+-z NET EVID SEED`, Pr(e) for the UAI 2008 evaluation) reads a UAI file
+and its evidence file (under the `.uai.evid` name; another extension is
+refused, and a leading sample count is not read). It prints `P(e)`,
+`log_e(P(e))` and `log_10(P(e))`, right on Promedus_31, a Bayesian
+network. It reads a Markov network as a Bayesian one too: `P(e) =
+Infinity` on Grids_14, and no answer in 300 s on Grids_16 to Grids_18.
+bench.py does not use it.
 
 ---
 
@@ -767,6 +829,25 @@ final PR set's queen5_5_3, queen5_5_4, myciel5g_3 and myciel5g_4) the
 colour symmetry broken, which divides Z by k and adds log10 k to c
 (`gen_bn.colour_symmetry`). Programs written so answer `run --pr` alone;
 their marginals are not the network's.
+
+ProbLog, PITA and aspmc print no P(e). Under `--pr` bench.py writes
+`NAME.pe.pl` beside each program (`pe_program`): its queries and
+observations dropped, and `bench_pe :- e1, ..., en.` with
+`query(bench_pe).` added, the conjunction of the program's observations.
+P(bench_pe) is P(e), and `log10_z` is its logarithm plus the program's
+constant. aspmc is given this program as it stands, since it has no
+evidence. Ace prints P(e) beside its marginals; under `--pr` its record
+holds both (section 7).
+
+On the uai suite, MAR and PR alike, `bench.py run` checks every baseline's
+record against the instance's reference once its systems have run
+(`check_against_reference`): the marginals against the clique tree's
+(else Merlin's, else tddlog's) to 1e-6, and log10 Z against the clique
+tree's (else Merlin's PR task, Ganak's or tddlog's) to 1e-6 times
+max(1, |log10 Z|), the tolerance of the release's tables. A record off by
+more is an error with the difference in its message, a failed run as a
+crash is: a system that computes in doubles can underflow on these
+networks, whose P(e) goes down to 1e-618 (Grids_18 of the MAR set).
 
 ### Known failures
 
@@ -1050,7 +1131,7 @@ systems for probabilistic programs, 2026-10-19:
 | noDice, OOPSLA 2026 | yes | Zenodo 10.5281/zenodo.18739789, code Apache-2.0 | run: `--nodice` |
 | Psi | yes (symbolic, imperative) | eth-sri/psi, Boost | run on Dice programs and on its own linear regression: `--psi` |
 | SPPL, PLDI 2021 | yes (symbolic, sum-product) | PyPI `sppl` 2.0.4, Apache-2.0 | run on its own Markov switching model and, translated, on every Dice program: `--sppl` |
-| Pluck, PLDI 2025 | yes | Zenodo 10.5281/zenodo.15051140, Julia and Rust | run on the sequence models: `--pluck` |
+| Pluck, PLDI 2025 | yes | Zenodo 10.5281/zenodo.15051140, Julia and Rust | run on its sequence models and, translated, on every Dice program: `--pluck` |
 | Prodigy | yes (generating functions) | github.com/LKlinke/Prodigy, Apache-2.0 | not run, see below |
 | PLIA, NeurIPS 2024 | convolution by FFT in the log domain; exactness not stated | the paper (arXiv 2410.12389) links no code | left out: no implementation found |
 | Slice, OOPSLA 2026 | yes (discretization of continuous programs into Dice, Roulette or Storm programs) | the paper (arXiv 2608.16093) links no artifact | left out: no implementation found |
@@ -1083,7 +1164,11 @@ Alea.jl programs (the ppl suite's arith, hybit and pluck families and the
 bitblast suite, whose Dice programs `alea_bench.jl export` writes and Dice
 runs, NAME.dicemap) reach Genfer, SPPL and Geni through a translator each: `scripts/dice2genfer.py` (SGCL),
 `scripts/dice2sppl.py` (SPPL) and `scripts/dice2geni.py` (Geni's IR), over
-one lowering, `scripts/dice_ir.py`. It inlines the functions (recursion is
+one lowering, `scripts/dice_ir.py`. Psi reaches the same programs through
+`scripts/dice2psi.py` (its own translator, one run a component, `--joint`
+for a circuit's joint lines), Pluck through `scripts/dice2pluck.py` (over
+the same lowering, one Julia run for all the components, by
+`scripts/pluck_dice.jl`), and noDice reads them as they are, as Dice does. It inlines the functions (recursion is
 refused), resolves tuples, folds constants, and gives each variable the
 values it can take; `iterate` stays a loop. A system's own program is run
 where its paper has one (Genfer's seven Dice programs, Geni's suite);
@@ -1124,20 +1209,35 @@ probability of each assignment of the N instead).
   It prints seven decimals: where the observations are less probable
   than that, every mass prints as 0, which bench.py records as an
   error with that reason.
+- Pluck: a lazy functional language over algebraic data, whose natural
+  numbers are unary, so an int(w) is w Booleans, as for Geni (the
+  artifact's own Bayesian networks write a value as a constructor of its
+  own type, or as Pluck's IntDist, which has no arithmetic). `discrete`
+  draws the bits one after the other, a flip given the bits drawn before
+  it, as Pluck's own `discrete` expands into a tree of flips. The program
+  is one function, `dice_model`, which returns the conjunction of the
+  observations and the components; a query `cK` per component
+  (`Posterior` given the observations, `Marginal` without), all in one
+  file and one run. An operation read more than once is a `let` binding,
+  which Pluck evaluates once; `iterate` is a recursion over Pluck's
+  natural numbers through its Y combinator, as the artifact's diamond and
+  ladder networks iterate, its state the loop's bits in nested `Pair`s
+  (Pluck's `let` copies its environment at each binding, so an unrolled
+  loop would be quadratic). Pluck's evaluator recurses as deep as the
+  program nests, so `pluck_dice.jl` runs it in a task with a 1 GB stack.
 
 A program the target language cannot express is refused by its
 translator with exit code 3 and the reason, which `bench.py` records as
 `unsupported` (`n/a` in a table, unanswered in a cactus plot): lists, `/`,
-`%`, `::` and recursion, for all three.
+`%`, `::` and recursion, for all of them.
 
 Left out, with the reason:
 
-- Pluck runs its own programs. Its artifact also has its own versions of
-  the dice paper's small networks (two coins, evidence1, evidence2, grass,
-  murder mystery, noisy-or, burglary), diamond and ladder
-  (`src/table1/bayesian_networks`, `network_verification`), which are not
-  run yet; a translator to its language (Booleans, `let`, `if`, `given`;
-  integers would be bits, as for Geni) is not written.
+- Pluck's artifact has its own versions of the dice paper's small
+  networks (two coins, evidence1, evidence2, grass, murder mystery,
+  noisy-or, burglary), diamond and ladder (`src/table1/bayesian_networks`,
+  `network_verification`); Pluck runs the suites' Dice programs of these
+  through `dice2pluck.py` instead, as the other systems are given them.
 - Storm and PRISM run the weather factory, a Markov chain. A Dice program
   is not one: it has no transitions, only a computation, and as a DTMC it
   would be a program counter stepping through the statements with every
@@ -1408,27 +1508,48 @@ is a PostgreSQL extension that tracks provenance and evaluates the
 probability of a query's result tuples; `probability_evaluate` picks
 its method by cost (independent tuples, a tree decomposition built in,
 external knowledge compilers where installed; none is, so it uses what is
-built in). It is the TPC-H suite's database baseline.
+built in). It is the TPC-H suite's database baseline, and runs on every
+other family whose programs are queries over tuple-independent tables:
+the literature suite's `pdb` and `noisyor`.
 
 The installation (in a prefix,
 `$HOME/local/code/provsql` in the release run) builds libuuid (util-linux 2.39.3, for
 `uuid-ossp`), PostgreSQL 16.4 and static Boost 1.74 (serialization) from
 source and ProvSQL v1.13.0 as an extension, and ends with a smoke test.
 
-`scripts/tpch2provsql.py` translates a `tpch` program (facts, probabilistic
-facts, rules) to SQL: a table per fact predicate (`c1`.. and `prob`), the
+`scripts/tpch2provsql.py` translates a program of `gen_tpch.py`,
+`gen_pdb.py` or `gen_noisyor.py` (facts, probabilistic facts,
+non-recursive conjunctive rules with comparisons, queries and evidence on
+ground atoms) to SQL: a table per fact predicate (`c1`.. and `prob`), the
 data loaded by `COPY`, `add_provenance` and `set_prob`, a view per rule
 predicate (a `UNION` of `SELECT DISTINCT` per clause, in dependency order),
-and per query `SELECT probability_evaluate(provenance()) FROM q`. `bench.py
-run --provsql PREFIX` starts a private cluster per instance on a unix
-socket (`fsync` off, one connection), loads the data untimed (a database
-holds its data) and times the query through `psql`; the record's seconds
-are the queries'. Tests: `tests/test_tpch2provsql.py` (the translation, and
-with `PROVSQL_PREFIX` set the answers against `tpch_exact.py`).
+and per query `SELECT probability_evaluate(provenance()) FROM q`. A ground
+atom `p(a, b)` is a Boolean view of the rows of `p` with those columns.
+Evidence is the view `pq_ev`, the product of its true atoms' views
+`EXCEPT` the union of its false atoms' (ProvSQL's monus, a negation in
+the Boolean semiring), and a query under evidence is its atom's view times
+the evidence's: its answer is P(q and e) / P(e), two evaluations within
+the instance's time limit. `bench.py run --provsql PREFIX` starts a
+private cluster per instance on a unix socket (`fsync` off, one
+connection), loads the data untimed (a database holds its data) and times
+the queries through `psql`; the record's seconds are the queries'. Tests:
+`tests/test_tpch2provsql.py` (the translation, and with `PROVSQL_PREFIX`
+set the answers against `tpch_exact.py` and `lit_exact.py`).
+
+The other families of the program suites are not given to ProvSQL: its
+queries are non-recursive SQL over tuple-independent tables, and the
+translation has no counterpart for a recursive rule (`graph`, `grid`,
+`sickness`, `smokers`, `biomine`, `pedigree`), a probabilistic rule or an
+annotated disjunction, which would need a fresh tuple per grounding
+(`uwcse`, `cora`, `cplint`, `bn`, `mnist_sum`, `mastermind`), or a Dice or
+Alea.jl program (the standard suite's `dice`, the ppl, dice, roulette,
+bitblast and geni suites).
 
 Dry run: seven TPC-H instances (q4, q7v, q10, q12, q15v, q18, q21) agree
 with `tpch_exact.py` to 5e-14; ProvSQL takes 0.02 to 2.6 s against 0.2 to
-7.9 s for the exact reference.
+7.9 s for the exact reference. In the run of the literature suite's
+`pdb` and `noisyor` programs, all 11 instances agree with `lit_exact.py`
+to 1.2e-15.
 
 ## 22. Storm and PRISM
 

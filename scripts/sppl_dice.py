@@ -54,10 +54,9 @@ def joint(model, comps, Id):
         yield '0', str(u), float(possible) if event is None or not possible else float(model.prob(event))
 
 
-def run(path):
-    from sppl.compilers.sppl_to_python import SPPL_Compiler
-    from sppl.transforms import Id
-    text = open(path).read()
+def plan(text):
+    """The program's components, from its `# component` lines, and how they
+    are asked: `marginals`, or `joint` with a `# joint` line."""
     comps, asked = [], marginals
     for line in text.splitlines():
         f = line.split()
@@ -65,6 +64,14 @@ def run(path):
             comps.append(f[2:])
         elif f == ['#', 'joint']:
             asked = joint
+    return comps, asked
+
+
+def run(path):
+    from sppl.compilers.sppl_to_python import SPPL_Compiler
+    from sppl.transforms import Id
+    text = open(path).read()
+    comps, asked = plan(text)
     start = time.time()
     model = SPPL_Compiler(text).execute_module().model
     for k, value, p in asked(model, comps, Id):

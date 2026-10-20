@@ -38,48 +38,56 @@ the limit is 300 s a run on the standard, literature and UAI suites and
 
 | suite | instances | tddlog finishes (total s) | faster than ProbLog, PITA, aspmc and Ace | Merlin faster | faster than pyAgrum, pgmpy, libDAI and TensorInference.jl (ProvSQL on TPC-H) | finished where no exact system did |
 |---|---:|---:|---:|---:|---:|---:|
-| standard | 84 | 82 (136.5) | 60 of 60 (15 under 0.1 s) | 2 of 10 (24 under 0.1 s) | 8 of 10 (24 under 0.1 s) | 7 |
-| literature | 39 | 39 (10.7) | 23 of 23 (1 under 0.1 s) |  |  | 15 |
-| Ace's networks | 46 | 46 (9.9) | 46 of 46 | 4 of 17 (8 under 0.1 s) | 14 of 17 (8 under 0.1 s) | 0 |
+| standard | 84 | 82 (136.5) | 49 of 49 (26 under 0.2 s) | 2 of 8 (26 under 0.2 s) | 6 of 8 (26 under 0.2 s) | 7 |
+| literature | 39 | 39 (10.7) | 19 of 19 (5 under 0.2 s) |  |  | 15 |
+| Ace's networks | 46 | 46 (9.9) | 46 of 46 | 2 of 11 (14 under 0.2 s) | 12 of 13 (12 under 0.2 s) | 0 |
 | large networks | 14 | 14 (13.4) | 14 of 14 | 8 of 14 | 5 of 14 | 0 |
-| TPC-H | 208 | 205 (366.0) | 171 of 172 |  | 34 of 167 (29 under 0.1 s) | 7 |
+| TPC-H | 208 | 205 (366.0) | 171 of 172 |  | 32 of 149 (47 under 0.2 s) | 7 |
 
 An instance that tddlog and the fastest baseline both finish in under
-0.1 s counts neither as faster nor as slower: differences of a few
+0.2 s counts neither as faster nor as slower: differences of a few
 milliseconds of start-up are not compared.
 
 **Standard suite** (random graphs, grids, smokers, UW-CSE, Cora, blood
 types, Bayesian networks with and without evidence, the Dice programs).
 No exact system finishes grid25 and grid30, which tddlog does not finish
 either, nor g20_60 to g30_100 and grid10 to grid20, which it does
-(g30_100 in 122.4 s, most of the suite's total). On each of the 60
-instances where ProbLog, PITA, aspmc or Ace finished, tddlog is faster
-than the fastest of them, from 2.1 times (uwcse2) to 469 (uwcse10), a
-median of 33; 4.9 s against 219.7 over the 60, and both finish 15 more
-instances in under 0.1 s. Merlin answers all 34 networks; the two both
-take under 0.1 s on 24, and of the other 10 Merlin is faster on 2: 3.9
-to 4.4 times on pathfinder (bn_pathfinder_ev 0.068 s against 0.301).
-tddlog is faster on 8, among them bn_link_ev (0.30 s against 29.1) and
+(g30_100 in 122.4 s, most of the suite's total). Against the fastest of
+ProbLog, PITA, aspmc and Ace on each instance, in total time: Of the 84
+instances both are given, tddlog answers 82 and ProbLog, PITA, aspmc or
+Ace 75. Over the 82 that either answers, a run that does not answer
+counted at the 300 s limit, tddlog takes 136.5 s in all and the fastest
+of them 2 321 s; over the 75 both answer, 4.98 s against 221.0. tddlog
+alone answers grid10, grid12, g20_60, grid15, g25_80 and 2 more. Neither
+answers grid25 and grid30. Merlin answers all 34 networks; the two both
+take under 0.2 s on 26, and of the other 8 Merlin is faster on 2: 3.9 to
+4.4 times on pathfinder (bn_pathfinder_ev 0.068 s against 0.301). tddlog
+is faster on 6, among them bn_link_ev (0.30 s against 29.1) and
 bn_munin_ev (0.78 s against 2.20), and takes 3.9 s over the 34 against
 Merlin's 64.5.
 
 **Literature suite.** tddlog finishes all 39, 15 of them where no exact
 baseline finishes (mnist_sum16 to mnist_sum96, every pedigree and
-sickness22_40). On the other 23 it is faster than the fastest baseline,
-from 14 times (mastermind6_4_8) to 8 518 (sickness18_20), a median of
-36, and both finish one more instance in under 0.1 s.
+sickness22_40). Against the fastest of ProbLog, PITA and aspmc on each
+instance, in total time: Of the 39 instances both are given, tddlog
+answers 39 and ProbLog, PITA or aspmc 24. Over the 39 that either
+answers, a run that does not answer counted at the 300 s limit, tddlog
+takes 10.7 s in all and the fastest of them 4 823 s; over the 24 both
+answer, 0.45 s against 323.2. tddlog alone answers pedigree4_4,
+mnist_sum16, pedigree4_6, mnist_sum32, mnist_sum64 and 10 more.
 
-**Ace's networks and the large networks.** tddlog is faster than Ace on
-every network Ace finishes, a median of 63 times on Ace's suite and 10
-on the large networks (from 2.7, bn_mildew). Merlin runs out of memory
-or time on 21 of Ace's networks (ace_blockmap_10_01 to
-ace_blockmap_22_03 and ace_fs_07 to ace_fs_29); of the other 25 it is
-faster on 4 (ace_pathfinder 0.06 s against 0.18, ace_munin3 0.20 against
-0.31, the rest by at most 0.06 s); the two both take under 0.1 s on 8
-more. On the large networks Merlin is faster on barley, mildew, munin2
-and munin3 with and without evidence (bn_barley 1.57 s against 1.82);
-tddlog on diabetes, munin1 and munin4 with and without evidence
-(bn_munin1 0.94 s against 26.4).
+**Ace's networks and the large networks.** Against Ace in total time, on
+Ace's networks: Both are given 46 instances and answer all of them. Over
+the 46 both answer, tddlog takes 9.92 s in all and Ace 725.3 s. On the
+large networks: Both are given 14 instances and answer all of them. Over
+the 14 both answer, tddlog takes 13.4 s in all and Ace 134.7 s. Merlin
+runs out of memory or time on 21 of Ace's networks (ace_blockmap_10_01
+to ace_blockmap_22_03 and ace_fs_07 to ace_fs_29); of the other 25 it is
+faster on 2 (ace_munin3 0.20 s against 0.31, ace_diabetes 0.17 against
+0.24); the two both take under 0.2 s on 14 more. On the large networks
+Merlin is faster on barley, mildew, munin2 and munin3 with and without
+evidence (bn_barley 1.57 s against 1.82); tddlog on diabetes, munin1 and
+munin4 with and without evidence (bn_munin1 0.94 s against 26.4).
 
 **The other network tools.** pyAgrum, pgmpy, libDAI and
 TensorInference.jl read the same UAI files as Merlin and run in the same
@@ -88,37 +96,38 @@ lanes, single-threaded; TensorInference.jl with two contraction orders,
 through the same checks as Merlin's (below), and each has columns in the
 tables. On the standard suite's networks (34 instances) pyAgrum answers
 34, pgmpy answers 30, libDAI answers 34, TensorInference.jl answers 34,
-Merlin 34, tddlog 34. Of the 10 that tddlog and a tool both answer in
-0.1 s or more, tddlog is faster than the fastest tool on 8, a median of
-1.8 times; a tool is faster on 2 (bn_pathfinder libDAI 0.08 s against
-0.31 and bn_pathfinder_ev libDAI 0.07 s against 0.30). Both take under
-0.1 s on 24 more. On Ace's networks (46 instances) pyAgrum answers 25,
-pgmpy answers 12, libDAI answers 25, TensorInference.jl answers 22,
-Merlin 25, tddlog 46. Of the 17 that tddlog and a tool both answer in
-0.1 s or more, tddlog is faster than the fastest tool on 14, a median of
-8.9 times; a tool is faster on 3 (ace_pathfinder libDAI 0.06 s against
-0.18, ace_diabetes libDAI 0.16 s against 0.24 and ace_munin2 libDAI
-0.09 s against 0.12). Both take under 0.1 s on 8 more. tddlog alone
-answers 21. On the large networks (14 instances) pyAgrum answers 14,
-pgmpy answers 6, libDAI answers 14, TensorInference.jl answers 14,
-Merlin 14, tddlog 14. Of the 14 that tddlog and a tool both answer in
-0.1 s or more, tddlog is faster than the fastest tool on 5, a median of
-0.8 times; a tool is faster on 9 (bn_mildew pyAgrum 0.31 s against 1.64,
-bn_mildew_ev libDAI 0.45 s against 1.56 and bn_barley pyAgrum 0.77 s
-against 1.82). On the UAI MAR tuning set (120 instances) pyAgrum answers
-107, pgmpy answers 54, libDAI answers 120, TensorInference.jl answers
-115, Merlin 114, tddlog 120. Of the 107 that tddlog and a tool both
-answer in 0.1 s or more, tddlog is faster than the fastest tool on 107,
-a median of 5.0 times. Both take under 0.1 s on 13 more. On the
-partition function of the MAR tuning set's networks (120 instances)
-pyAgrum answers 108, pgmpy answers 103, libDAI answers 120,
-TensorInference.jl answers 116, Merlin 114, tddlog 120. Of the 108 that
-tddlog and a tool both answer in 0.1 s or more, tddlog is faster than
-the fastest tool on 88, a median of 4.3 times; a tool is faster on 20
-(uai_objectdetection_69 pgmpy 3.21 s against 7.31,
+Merlin 34, tddlog 34. Of the 8 that tddlog and a tool both answer in
+0.2 s or more, tddlog is faster than the fastest tool on 6, and takes
+3.4 s over them against the fastest tool's 10.2; a tool is faster on 2
+(bn_pathfinder libDAI 0.08 s against 0.31 and bn_pathfinder_ev libDAI
+0.07 s against 0.30). Both take under 0.2 s on 26 more. On Ace's
+networks (46 instances) pyAgrum answers 25, pgmpy answers 12, libDAI
+answers 25, TensorInference.jl answers 22, Merlin 25, tddlog 46. Of the
+13 that tddlog and a tool both answer in 0.2 s or more, tddlog is faster
+than the fastest tool on 12, and takes 1.8 s over them against the
+fastest tool's 11.2; a tool is faster on 1 (ace_diabetes libDAI 0.16 s
+against 0.24). Both take under 0.2 s on 12 more. tddlog alone answers
+21. On the large networks (14 instances) pyAgrum answers 14, pgmpy
+answers 6, libDAI answers 14, TensorInference.jl answers 14, Merlin 14,
+tddlog 14. Of the 14 that tddlog and a tool both answer in 0.2 s or
+more, tddlog is faster than the fastest tool on 5, and takes 13.4 s over
+them against the fastest tool's 29.4; a tool is faster on 9 (bn_mildew
+pyAgrum 0.31 s against 1.64, bn_mildew_ev libDAI 0.45 s against 1.56 and
+bn_barley pyAgrum 0.77 s against 1.82). On the UAI MAR tuning set (120
+instances) pyAgrum answers 107, pgmpy answers 54, libDAI answers 120,
+TensorInference.jl answers 115, Merlin 114, tddlog 120. Of the 102 that
+tddlog and a tool both answer in 0.2 s or more, tddlog is faster than
+the fastest tool on 102, and takes 341.1 s over them against the fastest
+tool's 2 886. Both take under 0.2 s on 18 more. On the partition
+function of the MAR tuning set's networks (120 instances) pyAgrum
+answers 108, pgmpy answers 103, libDAI answers 120, TensorInference.jl
+answers 116, Merlin 114, tddlog 120. Of the 102 that tddlog and a tool
+both answer in 0.2 s or more, tddlog is faster than the fastest tool on
+82, and takes 295.8 s over them against the fastest tool's 1 307; a tool
+is faster on 20 (uai_objectdetection_69 pgmpy 3.21 s against 7.31,
 uai_objectdetection_65 pgmpy 3.27 s against 7.33 and
-uai_objectdetection_57 pgmpy 3.24 s against 7.22). Both take under 0.1 s
-on 12 more. They were not run on the final PR set and the PR tuning set
+uai_objectdetection_57 pgmpy 3.24 s against 7.22). Both take under 0.2 s
+on 18 more. They were not run on the final PR set and the PR tuning set
 in this release.
 
 **Validation.** Every answer is compared with a reference (Setup). The
@@ -151,48 +160,48 @@ smaller instance of the family. Scallop's top-k proofs
 
 | instance | tddlog 0.1.0 | fastest exact baseline | ratio | scallop:topk10 | merlin:bte | agrum:jtree | pgmpy:ve | libdai:jtree | tensorinference:treesa | tensorinference:greedy |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| uwcse2 | 0.07 | 0.15 (problog:sdd) | 2.1 | 0.05 | - | - | - | - | - | - |
-| dice_twocoins | 0.00 | 0.07 (problog:sdd) | 18.0 | 0.01 | - | - | - | - | - | - |
-| s6 | 0.00 | 0.09 (problog:sdd) | 22.0 | 0.01 | - | - | - | - | - | - |
-| dice_evidence1 | 0.00 | 0.07 (problog:fsdd) | 18.2 | 0.01 | - | - | - | - | - | - |
-| bloodtype | 0.01 | 0.27 (problog:ddnnf) | 38.6 | >300 | - | - | - | - | - | - |
-| grid4 | 0.01 | 0.09 (problog:sdd) | 17.2 | 0.94 | - | - | - | - | - | - |
-| dice_evidence2 | 0.00 | 0.07 (problog:sdd) | 17.7 | 0.01 | - | - | - | - | - | - |
-| dice_grass | 0.01 | 0.08 (problog:sdd) | 15.6 | 0.01 | - | - | - | - | - | - |
-| dice_alarm | 0.00 | 0.07 (problog:fsdd) | 18.5 | 0.01 | - | - | - | - | - | - |
-| dice_noisyOr | 0.01 | 0.08 (problog:fsdd) | 16.6 | 0.02 | - | - | - | - | - | - |
-| s10 | 0.01 | 0.11 (problog:sdd) | 21.6 | 0.04 | - | - | - | - | - | - |
-| dice_murderMystery | 0.00 | 0.07 (problog:sdd) | 17.7 | 0.01 | - | - | - | - | - | - |
-| g10_25 | 0.01 | 0.14 (problog:sdd) | 22.8 | 0.09 | - | - | - | - | - | - |
-| uwcse3 | 0.01 | 0.20 (problog:sdd) | 22.4 | 0.07 | - | - | - | - | - | - |
-| uwcse4 | 0.01 | 0.28 (problog:sdd) | 27.5 | 0.24 | - | - | - | - | - | - |
+| uwcse2 | 0.07 | 0.15 (problog:sdd) | 0.8 | 0.05 | - | - | - | - | - | - |
+| dice_twocoins | 0.00 | 0.07 (problog:sdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| s6 | 0.00 | 0.09 (problog:sdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| dice_evidence1 | 0.00 | 0.07 (problog:fsdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| bloodtype | 0.01 | 0.27 (problog:ddnnf) | 1.4 | >300 | - | - | - | - | - | - |
+| grid4 | 0.01 | 0.09 (problog:sdd) | 0.4 | 0.94 | - | - | - | - | - | - |
+| dice_evidence2 | 0.00 | 0.07 (problog:sdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| dice_grass | 0.01 | 0.08 (problog:sdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| dice_alarm | 0.00 | 0.07 (problog:fsdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| dice_noisyOr | 0.01 | 0.08 (problog:fsdd) | 0.4 | 0.02 | - | - | - | - | - | - |
+| s10 | 0.01 | 0.11 (problog:sdd) | 0.5 | 0.04 | - | - | - | - | - | - |
+| dice_murderMystery | 0.00 | 0.07 (problog:sdd) | 0.4 | 0.01 | - | - | - | - | - | - |
+| g10_25 | 0.01 | 0.14 (problog:sdd) | 0.7 | 0.09 | - | - | - | - | - | - |
+| uwcse3 | 0.01 | 0.20 (problog:sdd) | 1.0 | 0.07 | - | - | - | - | - | - |
+| uwcse4 | 0.01 | 0.28 (problog:sdd) | 1.4 | 0.24 | - | - | - | - | - | - |
 | dice_digitRecognition | 0.26 | 7.36 (problog:sdd) | 28.8 | err | - | - | - | - | - | - |
-| g11_29 | 0.01 | 0.17 (problog:sdd) | 21.9 | 0.09 | - | - | - | - | - | - |
-| cora10 | 0.02 | 0.68 (pita:bdd) | 40.0 | 0.06 | - | - | - | - | - | - |
-| grid5 | 0.01 | 0.11 (problog:sdd) | 18.0 | 0.24 | - | - | - | - | - | - |
-| s15 | 0.01 | 0.12 (problog:sdd) | 23.2 | 0.01 | - | - | - | - | - | - |
-| grid6 | 0.01 | 0.18 (problog:sdd) | 26.4 | 0.10 | - | - | - | - | - | - |
-| s20 | 0.01 | 0.13 (problog:fsdd) | 26.6 | 0.02 | - | - | - | - | - | - |
-| cora50 | 0.03 | 0.81 (pita:bdd) | 25.5 | 0.24 | - | - | - | - | - | - |
-| s50 | 0.01 | 0.21 (problog:sdd) | 29.7 | 0.03 | - | - | - | - | - | - |
-| s100 | 0.01 | 0.33 (problog:sdd) | 41.6 | 0.04 | - | - | - | - | - | - |
-| s200 | 0.02 | 0.53 (pita:bdd) | 31.4 | 0.07 | - | - | - | - | - | - |
-| grid7 | 0.01 | 0.51 (pita:bdd) | 56.3 | 1.44 | - | - | - | - | - | - |
-| cora200 | 0.06 | 1.44 (pita:bdd) | 23.2 | 2.10 | - | - | - | - | - | - |
-| cora500 | 0.10 | 2.65 (pita:bdd) | 26.5 | 10.38 | - | - | - | - | - | - |
-| uwcse5 | 0.01 | 0.35 (problog:sdd) | 35.3 | 0.78 | - | - | - | - | - | - |
-| uwcse6 | 0.01 | 0.64 (problog:sdd) | 58.1 | 0.26 | - | - | - | - | - | - |
-| uwcse8 | 0.01 | 2.81 (problog:sdd) | 216.4 | 0.33 | - | - | - | - | - | - |
-| g12_32 | 0.01 | 0.19 (problog:sdd) | 19.3 | 0.35 | - | - | - | - | - | - |
-| uwcse10 | 0.01 | 7.04 (pita:bdd) | 469.1 | 0.24 | - | - | - | - | - | - |
-| grid8 | 0.01 | 0.67 (pita:bdd) | 67.0 | 2.17 | - | - | - | - | - | - |
-| g13_35 | 0.01 | 0.24 (problog:sdd) | 23.7 | 0.32 | - | - | - | - | - | - |
-| g14_37 | 0.01 | 0.22 (problog:sdd) | 27.5 | 0.15 | - | - | - | - | - | - |
-| g15_40 | 0.03 | 0.71 (problog:sdd) | 22.3 | 0.16 | - | - | - | - | - | - |
+| g11_29 | 0.01 | 0.17 (problog:sdd) | 0.9 | 0.09 | - | - | - | - | - | - |
+| cora10 | 0.02 | 0.68 (pita:bdd) | 3.4 | 0.06 | - | - | - | - | - | - |
+| grid5 | 0.01 | 0.11 (problog:sdd) | 0.5 | 0.24 | - | - | - | - | - | - |
+| s15 | 0.01 | 0.12 (problog:sdd) | 0.6 | 0.01 | - | - | - | - | - | - |
+| grid6 | 0.01 | 0.18 (problog:sdd) | 0.9 | 0.10 | - | - | - | - | - | - |
+| s20 | 0.01 | 0.13 (problog:fsdd) | 0.7 | 0.02 | - | - | - | - | - | - |
+| cora50 | 0.03 | 0.81 (pita:bdd) | 4.1 | 0.24 | - | - | - | - | - | - |
+| s50 | 0.01 | 0.21 (problog:sdd) | 1.0 | 0.03 | - | - | - | - | - | - |
+| s100 | 0.01 | 0.33 (problog:sdd) | 1.7 | 0.04 | - | - | - | - | - | - |
+| s200 | 0.02 | 0.53 (pita:bdd) | 2.7 | 0.07 | - | - | - | - | - | - |
+| grid7 | 0.01 | 0.51 (pita:bdd) | 2.5 | 1.44 | - | - | - | - | - | - |
+| cora200 | 0.06 | 1.44 (pita:bdd) | 7.2 | 2.10 | - | - | - | - | - | - |
+| cora500 | 0.10 | 2.65 (pita:bdd) | 13.2 | 10.38 | - | - | - | - | - | - |
+| uwcse5 | 0.01 | 0.35 (problog:sdd) | 1.8 | 0.78 | - | - | - | - | - | - |
+| uwcse6 | 0.01 | 0.64 (problog:sdd) | 3.2 | 0.26 | - | - | - | - | - | - |
+| uwcse8 | 0.01 | 2.81 (problog:sdd) | 14.1 | 0.33 | - | - | - | - | - | - |
+| g12_32 | 0.01 | 0.19 (problog:sdd) | 1.0 | 0.35 | - | - | - | - | - | - |
+| uwcse10 | 0.01 | 7.04 (pita:bdd) | 35.2 | 0.24 | - | - | - | - | - | - |
+| grid8 | 0.01 | 0.67 (pita:bdd) | 3.4 | 2.17 | - | - | - | - | - | - |
+| g13_35 | 0.01 | 0.24 (problog:sdd) | 1.2 | 0.32 | - | - | - | - | - | - |
+| g14_37 | 0.01 | 0.22 (problog:sdd) | 1.1 | 0.15 | - | - | - | - | - | - |
+| g15_40 | 0.03 | 0.71 (problog:sdd) | 3.6 | 0.16 | - | - | - | - | - | - |
 | grid10 | 0.02 | - |  | 22.71 | - | - | - | - | - | - |
-| g16_44 | 0.01 | 0.30 (problog:sdd) | 37.4 | 0.36 | - | - | - | - | - | - |
-| g18_50 | 0.03 | 0.73 (problog:sdd) | 29.3 | 0.47 | - | - | - | - | - | - |
-| g20_56 | 0.20 | 89.42 (problog:sdd) | 453.9 | 0.61 | - | - | - | - | - | - |
+| g16_44 | 0.01 | 0.30 (problog:sdd) | 1.5 | 0.36 | - | - | - | - | - | - |
+| g18_50 | 0.03 | 0.73 (problog:sdd) | 3.7 | 0.47 | - | - | - | - | - | - |
+| g20_56 | 0.20 | 89.42 (problog:sdd) | 447.1 | 0.61 | - | - | - | - | - | - |
 | grid12 | 0.03 | - |  | 123.10 | - | - | - | - | - | - |
 | g20_60 | 1.37 | - |  | 2.15 | - | - | - | - | - | - |
 | grid15 | 0.14 | - |  | 5.39 | - | - | - | - | - | - |
@@ -201,37 +210,37 @@ smaller instance of the family. Scallop's top-k proofs
 | grid20 | 2.80 | - |  | >300 | - | - | - | - | - | - |
 | grid25 | >300 | - |  | skip | - | - | - | - | - | - |
 | grid30 | skip | - |  | skip | - | - | - | - | - | - |
-| bn_cancer_ev | 0.00 | 0.00 (libdai:jtree) | 1.0 | 0.03 | 0.00 | 0.10 | 1.34 | 0.00 | 15.32 | 13.78 |
-| bn_cancer | 0.00 | 0.00 (libdai:jtree) | 0.8 | 0.02 | 0.00 | 0.10 | 1.30 | 0.00 | 15.32 | 13.59 |
-| bn_earthquake_ev | 0.00 | 0.00 (merlin:bte) | 1.0 | 0.01 | 0.00 | 0.10 | 1.29 | 0.00 | 15.57 | 13.78 |
-| bn_earthquake | 0.00 | 0.00 (merlin:bte) | 1.0 | 0.02 | 0.00 | 0.11 | 1.31 | 0.00 | 15.18 | 13.60 |
-| bn_asia_ev | 0.00 | 0.00 (merlin:bte) | 1.0 | 0.08 | 0.00 | 0.10 | 1.31 | 0.00 | 18.26 | 16.29 |
-| bn_asia | 0.01 | 0.00 (merlin:bte) | 0.8 | 0.06 | 0.00 | 0.10 | 1.31 | 0.00 | 17.78 | 16.03 |
-| bn_survey_ev | 0.00 | 0.00 (merlin:bte) | 1.0 | 0.09 | 0.00 | 0.10 | 1.32 | 0.00 | 17.74 | 16.03 |
-| bn_survey | 0.00 | 0.00 (merlin:bte) | 1.0 | 0.13 | 0.00 | 0.10 | 1.30 | 0.00 | 17.24 | 15.83 |
-| bn_sachs_ev | 0.01 | 0.00 (libdai:jtree) | 0.4 | >300 | 0.00 | 0.11 | 1.32 | 0.00 | 19.66 | 17.65 |
-| bn_sachs | 0.01 | 0.00 (merlin:bte) | 0.5 | 189.03 | 0.00 | 0.11 | 1.27 | 0.00 | 19.17 | 17.03 |
-| bn_child | 0.01 | 0.01 (libdai:jtree) | 0.6 | >300 | 0.01 | 0.10 | 1.28 | 0.01 | 20.00 | 17.68 |
-| bn_child_ev | 0.01 | 0.00 (libdai:jtree) | 0.4 | skip | 0.01 | 0.11 | 1.29 | 0.00 | 19.77 | 17.06 |
-| bn_insurance_ev | 0.02 | 0.01 (libdai:jtree) | 0.4 | skip | 0.01 | 0.12 | 1.28 | 0.01 | 26.68 | 23.52 |
-| bn_insurance | 0.02 | 0.01 (merlin:bte) | 0.4 | skip | 0.01 | 0.11 | 1.29 | 0.01 | 26.27 | 23.15 |
-| bn_water_ev | 0.04 | 0.24 (agrum:jtree) | 6.7 | skip | 0.36 | 0.24 | 1.38 | 0.32 | 34.88 | 29.66 |
-| bn_alarm_ev | 0.01 | 0.01 (libdai:jtree) | 0.4 | skip | 0.01 | 0.12 | 1.36 | 0.01 | 25.49 | 21.17 |
-| bn_hailfinder_ev | 0.04 | 0.01 (libdai:jtree) | 0.2 | skip | 0.01 | 0.12 | 1.37 | 0.01 | 27.93 | 22.55 |
-| bn_hepar2_ev | 0.04 | 0.01 (libdai:jtree) | 0.2 | skip | 0.02 | 0.13 | 1.47 | 0.01 | 35.04 | 27.35 |
-| bn_win95pts_ev | 0.01 | 0.01 (libdai:jtree) | 0.6 | skip | 0.01 | 0.12 | 1.38 | 0.01 | 37.74 | 29.35 |
+| bn_cancer_ev | 0.00 | 0.00 (libdai:jtree) | 0.0 | 0.03 | 0.00 | 0.10 | 1.34 | 0.00 | 15.32 | 13.78 |
+| bn_cancer | 0.00 | 0.00 (libdai:jtree) | 0.0 | 0.02 | 0.00 | 0.10 | 1.30 | 0.00 | 15.32 | 13.59 |
+| bn_earthquake_ev | 0.00 | 0.00 (merlin:bte) | 0.0 | 0.01 | 0.00 | 0.10 | 1.29 | 0.00 | 15.57 | 13.78 |
+| bn_earthquake | 0.00 | 0.00 (merlin:bte) | 0.0 | 0.02 | 0.00 | 0.11 | 1.31 | 0.00 | 15.18 | 13.60 |
+| bn_asia_ev | 0.00 | 0.00 (merlin:bte) | 0.0 | 0.08 | 0.00 | 0.10 | 1.31 | 0.00 | 18.26 | 16.29 |
+| bn_asia | 0.01 | 0.00 (merlin:bte) | 0.0 | 0.06 | 0.00 | 0.10 | 1.31 | 0.00 | 17.78 | 16.03 |
+| bn_survey_ev | 0.00 | 0.00 (merlin:bte) | 0.0 | 0.09 | 0.00 | 0.10 | 1.32 | 0.00 | 17.74 | 16.03 |
+| bn_survey | 0.00 | 0.00 (merlin:bte) | 0.0 | 0.13 | 0.00 | 0.10 | 1.30 | 0.00 | 17.24 | 15.83 |
+| bn_sachs_ev | 0.01 | 0.00 (libdai:jtree) | 0.0 | >300 | 0.00 | 0.11 | 1.32 | 0.00 | 19.66 | 17.65 |
+| bn_sachs | 0.01 | 0.00 (merlin:bte) | 0.0 | 189.03 | 0.00 | 0.11 | 1.27 | 0.00 | 19.17 | 17.03 |
+| bn_child | 0.01 | 0.01 (libdai:jtree) | 0.0 | >300 | 0.01 | 0.10 | 1.28 | 0.01 | 20.00 | 17.68 |
+| bn_child_ev | 0.01 | 0.00 (libdai:jtree) | 0.0 | skip | 0.01 | 0.11 | 1.29 | 0.00 | 19.77 | 17.06 |
+| bn_insurance_ev | 0.02 | 0.01 (libdai:jtree) | 0.0 | skip | 0.01 | 0.12 | 1.28 | 0.01 | 26.68 | 23.52 |
+| bn_insurance | 0.02 | 0.01 (merlin:bte) | 0.0 | skip | 0.01 | 0.11 | 1.29 | 0.01 | 26.27 | 23.15 |
+| bn_water_ev | 0.04 | 0.24 (agrum:jtree) | 1.2 | skip | 0.36 | 0.24 | 1.38 | 0.32 | 34.88 | 29.66 |
+| bn_alarm_ev | 0.01 | 0.01 (libdai:jtree) | 0.0 | skip | 0.01 | 0.12 | 1.36 | 0.01 | 25.49 | 21.17 |
+| bn_hailfinder_ev | 0.04 | 0.01 (libdai:jtree) | 0.0 | skip | 0.01 | 0.12 | 1.37 | 0.01 | 27.93 | 22.55 |
+| bn_hepar2_ev | 0.04 | 0.01 (libdai:jtree) | 0.0 | skip | 0.02 | 0.13 | 1.47 | 0.01 | 35.04 | 27.35 |
+| bn_win95pts_ev | 0.01 | 0.01 (libdai:jtree) | 0.0 | skip | 0.01 | 0.12 | 1.38 | 0.01 | 37.74 | 29.35 |
 | bn_pathfinder_ev | 0.30 | 0.07 (merlin:bte) | 0.2 | skip | 0.07 | 0.17 | 1.99 | 0.07 | 35.51 | 26.26 |
-| bn_andes_ev | 0.04 | 0.07 (libdai:jtree) | 1.9 | skip | 0.09 | 0.14 | 1.88 | 0.07 | 74.70 | 48.91 |
-| bn_pigs_ev | 0.07 | 0.14 (merlin:bte) | 1.8 | skip | 0.14 | 0.19 | 37.13 | 0.14 | 86.57 | 49.17 |
-| bn_water | 0.03 | 0.31 (agrum:jtree) | 11.4 | skip | 0.34 | 0.31 | 1.48 | 0.32 | 33.41 | 28.02 |
-| bn_alarm | 0.01 | 0.01 (merlin:bte) | 0.5 | skip | 0.01 | 0.11 | 1.33 | 0.01 | 24.41 | 19.99 |
-| bn_hailfinder | 0.05 | 0.01 (libdai:jtree) | 0.2 | skip | 0.01 | 0.12 | 1.32 | 0.01 | 26.30 | 21.13 |
-| bn_hepar2 | 0.04 | 0.01 (libdai:jtree) | 0.4 | skip | 0.02 | 0.12 | 1.56 | 0.01 | 33.62 | 26.26 |
+| bn_andes_ev | 0.04 | 0.07 (libdai:jtree) | 0.3 | skip | 0.09 | 0.14 | 1.88 | 0.07 | 74.70 | 48.91 |
+| bn_pigs_ev | 0.07 | 0.14 (merlin:bte) | 0.7 | skip | 0.14 | 0.19 | 37.13 | 0.14 | 86.57 | 49.17 |
+| bn_water | 0.03 | 0.31 (agrum:jtree) | 1.5 | skip | 0.34 | 0.31 | 1.48 | 0.32 | 33.41 | 28.02 |
+| bn_alarm | 0.01 | 0.01 (merlin:bte) | 0.0 | skip | 0.01 | 0.11 | 1.33 | 0.01 | 24.41 | 19.99 |
+| bn_hailfinder | 0.05 | 0.01 (libdai:jtree) | 0.1 | skip | 0.01 | 0.12 | 1.32 | 0.01 | 26.30 | 21.13 |
+| bn_hepar2 | 0.04 | 0.01 (libdai:jtree) | 0.1 | skip | 0.02 | 0.12 | 1.56 | 0.01 | 33.62 | 26.26 |
 | bn_link_ev | 0.30 | 3.62 (libdai:jtree) | 12.2 | skip | 29.06 | 45.61 | >300 | 3.62 | 150.24 | >300 |
-| bn_win95pts | 0.01 | 0.01 (libdai:jtree) | 0.7 | skip | 0.01 | 0.12 | 1.41 | 0.01 | 37.58 | 29.23 |
+| bn_win95pts | 0.01 | 0.01 (libdai:jtree) | 0.0 | skip | 0.01 | 0.12 | 1.41 | 0.01 | 37.58 | 29.23 |
 | bn_pathfinder | 0.31 | 0.08 (libdai:jtree) | 0.2 | skip | 0.08 | 0.20 | 3.45 | 0.08 | 34.41 | 25.70 |
-| bn_andes | 0.04 | 0.08 (libdai:jtree) | 2.2 | skip | 0.08 | 0.14 | 2.86 | 0.08 | 72.82 | 46.95 |
-| bn_pigs | 0.08 | 0.14 (merlin:bte) | 1.8 | skip | 0.14 | 0.19 | 28.61 | 0.15 | 84.40 | 48.40 |
+| bn_andes | 0.04 | 0.08 (libdai:jtree) | 0.4 | skip | 0.08 | 0.14 | 2.86 | 0.08 | 72.82 | 46.95 |
+| bn_pigs | 0.08 | 0.14 (merlin:bte) | 0.7 | skip | 0.14 | 0.19 | 28.61 | 0.15 | 84.40 | 48.40 |
 | bn_link | 0.85 | 4.07 (libdai:jtree) | 4.8 | skip | 29.55 | 47.89 | >300 | 4.07 | 147.01 | >300 |
 | bn_munin_ev | 0.78 | 0.89 (agrum:jtree) | 1.1 | skip | 2.20 | 0.89 | skip | 3.33 | 172.04 | skip |
 | bn_munin | 0.80 | 0.90 (agrum:jtree) | 1.1 | skip | 2.19 | 0.90 | skip | 3.35 | 163.82 | skip |
@@ -240,31 +249,31 @@ smaller instance of the family. Scallop's top-k proofs
 
 | instance | tddlog 0.1.0 | fastest exact baseline | ratio | scallop:topk10 |
 |---|---:|---|---:|---:|
-| noisyor6_9 | 0.00 | 0.10 (problog:sdd) | 26.2 | 0.06 |
-| pdb10 | 0.01 | 0.10 (problog:sdd) | 19.8 | 0.15 |
-| mnist_sum4 | 0.01 | 1.85 (pita:bdd) | 167.8 | >300 |
-| mastermind4_4_8 | 0.02 | 0.43 (problog:sdd) | 25.1 | 109.03 |
-| pdb15 | 0.01 | 0.16 (problog:sdd) | 32.4 | 0.23 |
-| mastermind6_4_8 | 0.04 | 0.61 (problog:sdd) | 14.5 | 161.58 |
-| sickness6_10 | 0.01 | 0.59 (pita:bdd) | 66.0 | 19.63 |
+| noisyor6_9 | 0.00 | 0.10 (problog:sdd) | 0.5 | 0.06 |
+| pdb10 | 0.01 | 0.10 (problog:sdd) | 0.5 | 0.15 |
+| mnist_sum4 | 0.01 | 1.85 (pita:bdd) | 9.2 | >300 |
+| mastermind4_4_8 | 0.02 | 0.43 (problog:sdd) | 2.1 | 109.03 |
+| pdb15 | 0.01 | 0.16 (problog:sdd) | 0.8 | 0.23 |
+| mastermind6_4_8 | 0.04 | 0.61 (problog:sdd) | 3.0 | 161.58 |
+| sickness6_10 | 0.01 | 0.59 (pita:bdd) | 3.0 | 19.63 |
 | pedigree4_4 | 0.03 | - |  | 143.64 |
-| noisyor8_12 | 0.01 | 0.15 (problog:sdd) | 29.4 | 0.42 |
-| noisyor10_15 | 0.01 | 0.21 (problog:ddnnf) | 35.8 | 8.94 |
-| pdb20 | 0.01 | 0.13 (problog:sdd) | 26.4 | 0.16 |
-| mastermind8_4_8 | 0.04 | 0.75 (problog:sdd) | 18.6 | 215.68 |
-| noisyor15_22 | 0.01 | 0.88 (problog:ddnnf) | 98.0 | 225.58 |
-| pdb30 | 0.01 | 0.35 (problog:sdd) | 58.2 | 0.51 |
-| pdb40 | 0.01 | 2.99 (aspmc:sharpsat-td) | 498.5 | 0.40 |
-| mnist_sum8 | 0.03 | 33.26 (pita:bdd) | 1187.8 | skip |
-| mastermind10_4_8 | 0.05 | 0.92 (problog:sdd) | 18.0 | 267.93 |
-| noisyor20_30 | 0.01 | 7.88 (problog:ddnnf) | 1126.1 | >300 |
-| sickness10_10 | 0.01 | 2.30 (pita:bdd) | 229.8 | 273.82 |
-| noisyor30_45 | 0.01 | 55.65 (pita:bdd) | 6955.8 | skip |
+| noisyor8_12 | 0.01 | 0.15 (problog:sdd) | 0.7 | 0.42 |
+| noisyor10_15 | 0.01 | 0.21 (problog:ddnnf) | 1.1 | 8.94 |
+| pdb20 | 0.01 | 0.13 (problog:sdd) | 0.7 | 0.16 |
+| mastermind8_4_8 | 0.04 | 0.75 (problog:sdd) | 3.7 | 215.68 |
+| noisyor15_22 | 0.01 | 0.88 (problog:ddnnf) | 4.4 | 225.58 |
+| pdb30 | 0.01 | 0.35 (problog:sdd) | 1.7 | 0.51 |
+| pdb40 | 0.01 | 2.99 (aspmc:sharpsat-td) | 15.0 | 0.40 |
+| mnist_sum8 | 0.03 | 33.26 (pita:bdd) | 166.3 | skip |
+| mastermind10_4_8 | 0.05 | 0.92 (problog:sdd) | 4.6 | 267.93 |
+| noisyor20_30 | 0.01 | 7.88 (problog:ddnnf) | 39.4 | >300 |
+| sickness10_10 | 0.01 | 2.30 (pita:bdd) | 11.5 | 273.82 |
+| noisyor30_45 | 0.01 | 55.65 (pita:bdd) | 278.2 | skip |
 | mnist_sum16 | 0.08 | - |  | skip |
 | pedigree4_6 | 0.04 | - |  | >300 |
-| sickness14_10 | 0.01 | 5.87 (pita:bdd) | 489.5 | >300 |
-| sickness18_20 | 0.02 | 204.43 (pita:bdd) | 8517.8 | skip |
-| mastermind4_5_8 | 0.04 | 0.60 (problog:sdd) | 15.4 | 128.15 |
+| sickness14_10 | 0.01 | 5.87 (pita:bdd) | 29.4 | >300 |
+| sickness18_20 | 0.02 | 204.43 (pita:bdd) | 1022.1 | skip |
+| mastermind4_5_8 | 0.04 | 0.60 (problog:sdd) | 3.0 | 128.15 |
 | mnist_sum32 | 0.25 | - |  | skip |
 | mnist_sum64 | 0.83 | - |  | skip |
 | mnist_sum96 | 1.82 | - |  | skip |
@@ -277,59 +286,59 @@ smaller instance of the family. Scallop's top-k proofs
 | pedigree6_10 | 2.91 | - |  | skip |
 | sickness22_40 | 0.04 | - |  | skip |
 | pedigree7_10 | 2.12 | - |  | skip |
-| mastermind6_5_8 | 0.04 | 1.11 (problog:sdd) | 27.1 | 187.30 |
-| mastermind8_5_8 | 0.06 | 1.84 (problog:sdd) | 32.8 | 250.94 |
+| mastermind6_5_8 | 0.04 | 1.11 (problog:sdd) | 5.6 | 187.30 |
+| mastermind8_5_8 | 0.06 | 1.84 (problog:sdd) | 9.2 | 250.94 |
 
 ### Ace's suite (46 instances, 600 s)
 
 | instance | tddlog 0.1.0 | fastest exact baseline | ratio | merlin:bte | agrum:jtree | pgmpy:ve | libdai:jtree | tensorinference:treesa | tensorinference:greedy |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| ace_water | 0.01 | 0.02 (libdai:jtree) | 1.4 | 0.17 | 0.13 | 1.48 | 0.02 | 37.07 | 32.33 |
-| ace_fs_01 | 0.00 | 0.00 (libdai:jtree) | 1.0 | 0.09 | 0.14 | 1.46 | 0.00 | 18.81 | 16.68 |
-| ace_mastermind_03_08_03 | 0.02 | 0.34 (merlin:bte) | 16.4 | 0.34 | 0.50 | >600 | 0.97 | 283.35 | >600 |
-| ace_blockmap_05_01 | 0.01 | 0.80 (merlin:bte) | 61.8 | 0.80 | 1.95 | err | 1.20 | 205.85 | err |
-| ace_fs_04 | 0.01 | 0.01 (libdai:jtree) | 1.1 | 0.02 | 0.17 | 1.85 | 0.01 | 69.61 | 47.52 |
-| ace_mildew | 0.12 | 0.22 (agrum:jtree) | 1.8 | 1.58 | 0.22 | 1.54 | 0.44 | 25.76 | 20.37 |
-| ace_munin1 | 0.09 | 0.16 (merlin:bte) | 1.8 | 0.16 | 0.18 | 12.62 | 0.17 | 65.83 | err |
-| ace_fs_07 | 0.03 | 2.40 (ace:auto) | 96.2 | err | err | >600 | err | err | >600 |
-| ace_alarm | 0.01 | 0.01 (libdai:jtree) | 0.4 | 0.01 | 0.12 | 1.40 | 0.01 | 26.47 | 22.20 |
-| ace_hailfinder | 0.03 | 0.01 (libdai:jtree) | 0.3 | 0.01 | 0.12 | 1.43 | 0.01 | 29.02 | 23.80 |
-| ace_munin2 | 0.12 | 0.08 (merlin:bte) | 0.7 | 0.08 | 0.29 | 7.41 | 0.09 | 183.28 | skip |
+| ace_water | 0.01 | 0.02 (libdai:jtree) | 0.1 | 0.17 | 0.13 | 1.48 | 0.02 | 37.07 | 32.33 |
+| ace_fs_01 | 0.00 | 0.00 (libdai:jtree) | 0.0 | 0.09 | 0.14 | 1.46 | 0.00 | 18.81 | 16.68 |
+| ace_mastermind_03_08_03 | 0.02 | 0.34 (merlin:bte) | 1.7 | 0.34 | 0.50 | >600 | 0.97 | 283.35 | >600 |
+| ace_blockmap_05_01 | 0.01 | 0.80 (merlin:bte) | 4.0 | 0.80 | 1.95 | err | 1.20 | 205.85 | err |
+| ace_fs_04 | 0.01 | 0.01 (libdai:jtree) | 0.1 | 0.02 | 0.17 | 1.85 | 0.01 | 69.61 | 47.52 |
+| ace_mildew | 0.12 | 0.22 (agrum:jtree) | 1.1 | 1.58 | 0.22 | 1.54 | 0.44 | 25.76 | 20.37 |
+| ace_munin1 | 0.09 | 0.16 (merlin:bte) | 0.8 | 0.16 | 0.18 | 12.62 | 0.17 | 65.83 | err |
+| ace_fs_07 | 0.03 | 2.40 (ace:auto) | 12.0 | err | err | >600 | err | err | >600 |
+| ace_alarm | 0.01 | 0.01 (libdai:jtree) | 0.0 | 0.01 | 0.12 | 1.40 | 0.01 | 26.47 | 22.20 |
+| ace_hailfinder | 0.03 | 0.01 (libdai:jtree) | 0.0 | 0.01 | 0.12 | 1.43 | 0.01 | 29.02 | 23.80 |
+| ace_munin2 | 0.12 | 0.08 (merlin:bte) | 0.4 | 0.08 | 0.29 | 7.41 | 0.09 | 183.28 | skip |
 | ace_pathfinder | 0.18 | 0.06 (libdai:jtree) | 0.3 | 0.06 | 0.23 | 1.81 | 0.06 | 38.19 | 28.78 |
-| ace_students_03_02 | 0.03 | 0.04 (merlin:bte) | 1.7 | 0.04 | 0.17 | 1.55 | 0.06 | 126.84 | 64.16 |
+| ace_students_03_02 | 0.03 | 0.04 (merlin:bte) | 0.2 | 0.04 | 0.17 | 1.55 | 0.06 | 126.84 | 64.16 |
 | ace_munin3 | 0.31 | 0.20 (merlin:bte) | 0.6 | 0.20 | 0.38 | err | 0.38 | 175.74 | skip |
 | ace_diabetes | 0.24 | 0.16 (libdai:jtree) | 0.7 | 0.17 | 0.24 | 1.52 | 0.16 | 79.17 | 45.88 |
-| ace_pigs | 0.06 | 0.04 (merlin:bte) | 0.6 | 0.04 | 0.18 | 3.94 | 0.04 | 91.27 | 51.91 |
-| ace_blockmap_05_02 | 0.01 | 0.05 (merlin:bte) | 6.9 | 0.05 | 0.24 | skip | 0.06 | 243.69 | skip |
+| ace_pigs | 0.06 | 0.04 (merlin:bte) | 0.2 | 0.04 | 0.18 | 3.94 | 0.04 | 91.27 | 51.91 |
+| ace_blockmap_05_02 | 0.01 | 0.05 (merlin:bte) | 0.2 | 0.05 | 0.24 | skip | 0.06 | 243.69 | skip |
 | ace_munin4 | 0.77 | 0.94 (agrum:jtree) | 1.2 | 2.33 | 0.94 | skip | 3.49 | 180.72 | skip |
-| ace_blockmap_05_03 | 0.03 | 0.07 (merlin:bte) | 2.3 | 0.07 | 0.29 | skip | 0.15 | 300.90 | skip |
-| ace_blockmap_10_01 | 0.16 | 4.04 (ace:auto) | 25.6 | err | err | skip | err | >600 | skip |
-| ace_mastermind_04_08_03 | 0.03 | 1.27 (agrum:jtree) | 39.6 | 1.33 | 1.27 | skip | 2.31 | 346.60 | skip |
-| ace_fs_10 | 0.08 | 4.06 (ace:forceC2d) | 49.5 | skip | skip | skip | skip | skip | skip |
-| ace_fs_13 | 0.14 | 7.70 (ace:forceC2d) | 54.3 | skip | skip | skip | skip | skip | skip |
-| ace_mastermind_05_08_03 | 0.03 | 0.10 (merlin:bte) | 3.6 | 0.10 | 0.49 | skip | 0.25 | 409.88 | skip |
+| ace_blockmap_05_03 | 0.03 | 0.07 (merlin:bte) | 0.4 | 0.07 | 0.29 | skip | 0.15 | 300.90 | skip |
+| ace_blockmap_10_01 | 0.16 | 4.04 (ace:auto) | 20.2 | err | err | skip | err | >600 | skip |
+| ace_mastermind_04_08_03 | 0.03 | 1.27 (agrum:jtree) | 6.3 | 1.33 | 1.27 | skip | 2.31 | 346.60 | skip |
+| ace_fs_10 | 0.08 | 4.06 (ace:forceC2d) | 20.3 | skip | skip | skip | skip | skip | skip |
+| ace_fs_13 | 0.14 | 7.70 (ace:forceC2d) | 38.5 | skip | skip | skip | skip | skip | skip |
+| ace_mastermind_05_08_03 | 0.03 | 0.10 (merlin:bte) | 0.5 | 0.10 | 0.49 | skip | 0.25 | 409.88 | skip |
 | ace_fs_16 | 0.25 | 12.86 (ace:forceC2d) | 52.0 | skip | skip | skip | skip | skip | skip |
 | ace_fs_19 | 0.41 | 19.70 (ace:auto) | 48.1 | skip | skip | skip | skip | skip | skip |
 | ace_fs_22 | 0.62 | 35.40 (ace:auto) | 57.1 | skip | skip | skip | skip | skip | skip |
 | ace_fs_25 | 0.92 | 58.63 (ace:auto) | 63.7 | skip | skip | skip | skip | skip | skip |
 | ace_fs_28 | 1.28 | 105.74 (ace:auto) | 82.6 | skip | skip | skip | skip | skip | skip |
-| ace_mastermind_06_08_03 | 0.04 | 1.53 (agrum:jtree) | 38.3 | 2.45 | 1.53 | skip | 3.15 | 477.61 | skip |
-| ace_blockmap_10_02 | 0.06 | 4.42 (ace:auto) | 78.9 | skip | skip | skip | skip | skip | skip |
-| ace_blockmap_10_03 | 0.18 | 7.87 (ace:forceC2d) | 43.3 | skip | skip | skip | skip | skip | skip |
+| ace_mastermind_06_08_03 | 0.04 | 1.53 (agrum:jtree) | 7.7 | 2.45 | 1.53 | skip | 3.15 | 477.61 | skip |
+| ace_blockmap_10_02 | 0.06 | 4.42 (ace:auto) | 22.1 | skip | skip | skip | skip | skip | skip |
+| ace_blockmap_10_03 | 0.18 | 7.87 (ace:forceC2d) | 39.4 | skip | skip | skip | skip | skip | skip |
 | ace_fs_29 | 1.47 | 125.26 (ace:auto) | 85.4 | skip | skip | skip | skip | skip | skip |
-| ace_blockmap_15_01 | 0.10 | 11.48 (ace:forceC2d) | 115.9 | skip | skip | skip | skip | skip | skip |
-| ace_blockmap_15_02 | 0.08 | 12.07 (ace:forceC2d) | 149.0 | skip | skip | skip | skip | skip | skip |
+| ace_blockmap_15_01 | 0.10 | 11.48 (ace:forceC2d) | 57.4 | skip | skip | skip | skip | skip | skip |
+| ace_blockmap_15_02 | 0.08 | 12.07 (ace:forceC2d) | 60.4 | skip | skip | skip | skip | skip | skip |
 | ace_blockmap_15_03 | 0.38 | 19.42 (ace:forceC2d) | 51.7 | skip | skip | skip | skip | skip | skip |
-| ace_blockmap_20_01 | 0.18 | 28.32 (ace:forceC2d) | 153.9 | skip | skip | skip | skip | skip | skip |
+| ace_blockmap_20_01 | 0.18 | 28.32 (ace:forceC2d) | 141.6 | skip | skip | skip | skip | skip | skip |
 | ace_blockmap_20_02 | 0.20 | 31.18 (ace:forceC2d) | 154.3 | skip | skip | skip | skip | skip | skip |
 | ace_blockmap_20_03 | 0.21 | 32.61 (ace:forceC2d) | 155.3 | skip | skip | skip | skip | skip | skip |
 | ace_blockmap_22_01 | 0.26 | 44.21 (ace:forceC2d) | 170.0 | skip | skip | skip | skip | skip | skip |
 | ace_blockmap_22_02 | 0.27 | 47.82 (ace:forceC2d) | 179.1 | skip | skip | skip | skip | skip | skip |
 | ace_blockmap_22_03 | 0.28 | 49.45 (ace:forceC2d) | 175.4 | skip | skip | skip | skip | skip | skip |
-| ace_mastermind_03_08_04 | 0.02 | 0.14 (merlin:bte) | 6.6 | 0.14 | 0.76 | skip | 0.35 | 529.57 | skip |
-| ace_mastermind_04_08_04 | 0.05 | 0.39 (merlin:bte) | 8.3 | 0.39 | 1.18 | skip | 1.72 | >600 | skip |
-| ace_mastermind_10_08_03 | 0.06 | 0.55 (merlin:bte) | 9.6 | 0.55 | 1.14 | skip | 1.01 | skip | skip |
-| ace_mastermind_03_08_05 | 0.08 | 0.62 (merlin:bte) | 7.4 | 0.62 | 2.18 | skip | 3.00 | skip | skip |
+| ace_mastermind_03_08_04 | 0.02 | 0.14 (merlin:bte) | 0.7 | 0.14 | 0.76 | skip | 0.35 | 529.57 | skip |
+| ace_mastermind_04_08_04 | 0.05 | 0.39 (merlin:bte) | 2.0 | 0.39 | 1.18 | skip | 1.72 | >600 | skip |
+| ace_mastermind_10_08_03 | 0.06 | 0.55 (merlin:bte) | 2.7 | 0.55 | 1.14 | skip | 1.01 | skip | skip |
+| ace_mastermind_03_08_05 | 0.08 | 0.62 (merlin:bte) | 3.1 | 0.62 | 2.18 | skip | 3.00 | skip | skip |
 
 ### Large networks (14 instances, 600 s)
 
@@ -352,55 +361,55 @@ smaller instance of the family. Scallop's top-k proofs
 
 ### Against each baseline
 
-For each baseline the number of instances it ran and answered, how many
-of those tddlog also answers (both answer), on how many of them tddlog
-is faster and the baseline is faster, how many both finish in under
-0.1 s (counted in neither), the median of the baseline's time over
-tddlog's, and both totals over the instances both answer.
-TensorInference.jl's row is its faster contraction order on each
-instance; its two orders follow.
+For each baseline, in total time as the README compares two systems: the
+instances given to both, how many each answers, each one's total time
+over those either answers (a run that does not answer counted at the
+suite's time limit), the two totals over those both answer, and the
+instances on which tddlog is slower (both under 0.2 s counted for
+neither). TensorInference.jl's row is its faster contraction order on
+each instance; its two orders follow.
 
 **Standard suite: networks**
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Ace | 34 | 34 | 34 | 34 | 0 | 0 | 70 | 107.9 | 3.9 |
-| Merlin | 34 | 34 | 34 | 8 | 2 | 24 | 2.8 | 64.1 | 3.6 |
-| pyAgrum | 34 | 34 | 34 | 32 | 2 | 0 | 8.5 | 99.3 | 3.9 |
-| pgmpy | 32 | 30 | 30 | 30 | 0 | 0 | 108 | 108.2 | 1.2 |
-| libDAI | 34 | 34 | 34 | 8 | 2 | 24 | 4.2 | 15.4 | 3.6 |
-| TensorInference.jl | 34 | 34 | 34 | 34 | 0 | 0 | 1 314 | 1 368 | 3.9 |
-| TensorInference.jl treesa | 34 | 34 | 34 | 34 | 0 | 0 | 1 923 | 1 602 | 3.9 |
-| TensorInference.jl greedy | 32 | 30 | 30 | 30 | 0 | 0 | 1 651 | 735.1 | 1.2 |
-| ProbLog | 14 | 12 | 12 | 6 | 0 | 6 | 39 | 3.1 | 0.0 |
-| PITA | 14 | 12 | 12 | 12 | 0 | 0 | 104 | 7.4 | 0.1 |
-| aspmc | 8 | 6 | 6 | 6 | 0 | 0 | 633 | 83.1 | 0.0 |
+| Ace | 34 | 34 | 34 | 107.9 | 3.9 | 34 | 107.9 | 3.9 | 0 |
+| Merlin | 34 | 34 | 34 | 64.5 | 3.9 | 34 | 64.5 | 3.9 | 2 |
+| pyAgrum | 34 | 34 | 34 | 99.3 | 3.9 | 34 | 99.3 | 3.9 | 2 |
+| pgmpy | 34 | 30 | 34 | 1 308 | 3.9 | 30 | 108.2 | 1.2 | 0 |
+| libDAI | 34 | 34 | 34 | 15.7 | 3.9 | 34 | 15.7 | 3.9 | 2 |
+| TensorInference.jl | 34 | 34 | 34 | 1 368 | 3.9 | 34 | 1 368 | 3.9 | 0 |
+| TensorInference.jl treesa | 34 | 34 | 34 | 1 602 | 3.9 | 34 | 1 602 | 3.9 | 0 |
+| TensorInference.jl greedy | 34 | 30 | 34 | 1 935 | 3.9 | 30 | 735.1 | 1.2 | 0 |
+| ProbLog | 34 | 12 | 34 | 6 604 | 3.9 | 12 | 3.6 | 0.1 | 0 |
+| PITA | 34 | 12 | 34 | 6 607 | 3.9 | 12 | 7.4 | 0.1 | 0 |
+| aspmc | 34 | 6 | 34 | 8 483 | 3.9 | 6 | 83.1 | 0.0 | 0 |
 
 **Ace's networks**
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Ace | 46 | 46 | 46 | 46 | 0 | 0 | 63 | 725.3 | 9.9 |
-| Merlin | 27 | 25 | 25 | 13 | 4 | 8 | 7.4 | 11.5 | 2.2 |
-| pyAgrum | 27 | 25 | 25 | 24 | 1 | 0 | 9.3 | 15.0 | 2.4 |
-| pgmpy | 16 | 12 | 12 | 12 | 0 | 0 | 63 | 38.0 | 0.9 |
-| libDAI | 27 | 25 | 25 | 14 | 3 | 8 | 8.9 | 18.9 | 2.2 |
-| TensorInference.jl | 25 | 22 | 22 | 22 | 0 | 0 | 2 312 | 3 757 | 2.2 |
-| TensorInference.jl treesa | 25 | 22 | 22 | 22 | 0 | 0 | 3 587 | 3 945 | 2.2 |
-| TensorInference.jl greedy | 14 | 10 | 10 | 10 | 0 | 0 | 1 330 | 353.6 | 0.7 |
+| Ace | 46 | 46 | 46 | 725.3 | 9.9 | 46 | 725.3 | 9.9 | 0 |
+| Merlin | 46 | 25 | 46 | 12 612 | 9.9 | 25 | 11.8 | 2.4 | 2 |
+| pyAgrum | 46 | 25 | 46 | 12 615 | 9.9 | 25 | 15.0 | 2.4 | 0 |
+| pgmpy | 46 | 12 | 46 | 20 438 | 9.9 | 12 | 38.0 | 0.9 | 0 |
+| libDAI | 46 | 25 | 46 | 12 619 | 9.9 | 25 | 19.1 | 2.4 | 1 |
+| TensorInference.jl | 46 | 22 | 46 | 18 157 | 9.9 | 22 | 3 757 | 2.2 | 0 |
+| TensorInference.jl treesa | 46 | 22 | 46 | 18 345 | 9.9 | 22 | 3 945 | 2.2 | 0 |
+| TensorInference.jl greedy | 46 | 10 | 46 | 21 954 | 9.9 | 10 | 353.6 | 0.7 | 0 |
 
 **Large networks**
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Ace | 14 | 14 | 14 | 14 | 0 | 0 | 10 | 134.7 | 13.4 |
-| Merlin | 14 | 14 | 14 | 6 | 8 | 0 | 0.9 | 65.1 | 13.4 |
-| pyAgrum | 14 | 14 | 14 | 5 | 9 | 0 | 0.8 | 29.4 | 13.4 |
-| pgmpy | 8 | 6 | 6 | 5 | 1 | 0 | 1.6 | 14.5 | 8.1 |
-| libDAI | 14 | 14 | 14 | 11 | 3 | 0 | 1.4 | 109.8 | 13.4 |
-| TensorInference.jl | 14 | 14 | 14 | 14 | 0 | 0 | 96 | 1 346 | 13.4 |
-| TensorInference.jl treesa | 14 | 14 | 14 | 14 | 0 | 0 | 96 | 1 360 | 13.4 |
-| TensorInference.jl greedy | 4 | 2 | 2 | 2 | 0 | 0 | 15 | 50.1 | 3.3 |
+| Ace | 14 | 14 | 14 | 134.7 | 13.4 | 14 | 134.7 | 13.4 | 0 |
+| Merlin | 14 | 14 | 14 | 65.1 | 13.4 | 14 | 65.1 | 13.4 | 8 |
+| pyAgrum | 14 | 14 | 14 | 29.4 | 13.4 | 14 | 29.4 | 13.4 | 9 |
+| pgmpy | 14 | 6 | 14 | 4 814 | 13.4 | 6 | 14.5 | 8.1 | 1 |
+| libDAI | 14 | 14 | 14 | 109.8 | 13.4 | 14 | 109.8 | 13.4 | 3 |
+| TensorInference.jl | 14 | 14 | 14 | 1 346 | 13.4 | 14 | 1 346 | 13.4 | 0 |
+| TensorInference.jl treesa | 14 | 14 | 14 | 1 360 | 13.4 | 14 | 1 360 | 13.4 | 0 |
+| TensorInference.jl greedy | 14 | 2 | 14 | 7 250 | 13.4 | 2 | 50.1 | 3.3 | 0 |
 
 ## The literature suite
 
@@ -498,42 +507,41 @@ same files.
 The MAR task, in the same run as the current results above (300 s a
 run). tddlog faster than Merlin counts the instances where tddlog is
 faster than Merlin or answers alone, not those both finish in under
-0.1 s; median ratio is Merlin's time over
-tddlog's where both answer; seconds are summed over the instances a
-system answered.
+0.2 s; seconds are each one's total over the instances either answers,
+a run that does not answer counted at the limit.
 
-| family | instances | tddlog | Merlin | tddlog faster than Merlin | median ratio | tddlog s | Merlin s |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Alchemy | 1 | 1 | 0 | 1 | - | 0.2 | 0.0 |
-| CSP | 3 | 3 | 3 | 3 | 2.27 | 9.3 | 39.8 |
-| DBN | 6 | 6 | 6 | 6 | 8.90 | 12.1 | 106.4 |
-| Grids | 8 | 8 | 3 | 7 | 34.32 | 12.5 | 234.8 |
-| ObjectDetection | 65 | 65 | 65 | 65 | 6.49 | 304.6 | 3040.7 |
-| Pedigree | 3 | 3 | 3 | 3 | 28.37 | 0.2 | 4.6 |
-| Promedus | 28 | 28 | 28 | 16 | 11.20 | 2.1 | 464.9 |
-| Segmentation | 6 | 6 | 6 | 6 | 4.09 | 1.0 | 4.1 |
-| all | 120 | 120 | 114 | 107 | 6.48 | | |
+| family | instances | tddlog | Merlin | tddlog faster than Merlin | tddlog s | Merlin s |
+|---|---:|---:|---:|---:|---:|---:|
+| Alchemy | 1 | 1 | 0 | 1 | 0.2 | 300.0 |
+| CSP | 3 | 3 | 3 | 2 | 9.3 | 39.8 |
+| DBN | 6 | 6 | 6 | 6 | 12.1 | 106.4 |
+| Grids | 8 | 8 | 3 | 7 | 12.5 | 1 735 |
+| ObjectDetection | 65 | 65 | 65 | 65 | 304.6 | 3 041 |
+| Pedigree | 3 | 3 | 3 | 3 | 0.2 | 4.6 |
+| Promedus | 28 | 28 | 28 | 15 | 2.1 | 464.9 |
+| Segmentation | 6 | 6 | 6 | 6 | 1.0 | 4.1 |
+| all | 120 | 120 | 114 | 105 | 341.9 | 5 695 |
 
 Merlin prints `-nan` where the partition function overflows a double
-(Alchemy_11, Grids_13, 14, 16, 17, 18). The two both take under 0.1 s on
-13 of Merlin's 114 answers; tddlog is faster on 101 of the other 101
-(332.4 s against 3 895 over all 114): every CSP, DBN, ObjectDetection,
-Pedigree and Segmentation network, Grids_11 and 15 and 16 of the 16
-Promedus. tddlog's marginals agree with the reference's (Setup) to
-9.1e-14 on 111 networks and with Merlin's six printed digits on the
-other 6.
+(Alchemy_11, Grids_13, 14, 16, 17, 18). The two both take under 0.2 s on
+15 of Merlin's 114 answers; tddlog is faster on 99 of the other 99
+(332.4 s against 3 895 over all 114): every DBN, ObjectDetection,
+Pedigree and Segmentation network, CSP_11 and 13, Grids_11 and 15 and 15
+of the 15 Promedus. tddlog's marginals agree with the reference's
+(Setup) to 9.1e-14 on 111 networks and with Merlin's six printed digits
+on the other 6.
 
 Against each network tool (columns as in "Against each baseline"):
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Merlin | 120 | 114 | 114 | 101 | 0 | 13 | 8.9 | 3 895 | 331.8 |
-| pyAgrum | 120 | 107 | 107 | 107 | 0 | 0 | 9.0 | 2 863 | 328.5 |
-| pgmpy | 120 | 54 | 54 | 54 | 0 | 0 | 76 | 4 186 | 138.6 |
-| libDAI | 120 | 120 | 120 | 107 | 0 | 13 | 21 | 6 402 | 341.4 |
-| TensorInference.jl | 120 | 115 | 115 | 115 | 0 | 0 | 33 | 7 937 | 330.6 |
-| TensorInference.jl treesa | 120 | 115 | 115 | 115 | 0 | 0 | 33 | 11 605 | 330.6 |
-| TensorInference.jl greedy | 120 | 60 | 60 | 60 | 0 | 0 | 626 | 4 867 | 76.2 |
+| Merlin | 120 | 114 | 120 | 5 695 | 341.9 | 114 | 3 895 | 332.4 | 0 |
+| pyAgrum | 120 | 107 | 120 | 6 763 | 341.9 | 107 | 2 863 | 328.5 | 0 |
+| pgmpy | 120 | 54 | 120 | 23 986 | 341.9 | 54 | 4 186 | 138.6 | 0 |
+| libDAI | 120 | 120 | 120 | 6 403 | 341.9 | 120 | 6 403 | 341.9 | 0 |
+| TensorInference.jl | 120 | 115 | 120 | 9 437 | 341.9 | 115 | 7 937 | 330.6 | 0 |
+| TensorInference.jl treesa | 120 | 115 | 120 | 13 105 | 341.9 | 115 | 11 605 | 330.6 | 0 |
+| TensorInference.jl greedy | 120 | 60 | 120 | 22 867 | 341.9 | 60 | 4 867 | 76.2 | 0 |
 
 The PR task on the same 120 networks (`--pr`, the same run): tddlog's
 log10 Z agrees with the reference's to 5.7e-14 on 112 instances and with
@@ -544,15 +552,15 @@ against 273.7, Promedus 139.6 against 0.6).
 
 Against each network tool (columns as in "Against each baseline"):
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Merlin | 120 | 114 | 114 | 92 | 9 | 13 | 7.5 | 1 538 | 289.1 |
-| pyAgrum | 120 | 108 | 108 | 108 | 0 | 0 | 14 | 3 070 | 289.3 |
-| pgmpy | 120 | 103 | 103 | 83 | 20 | 0 | 17 | 1 309 | 256.3 |
-| libDAI | 120 | 120 | 120 | 108 | 0 | 12 | 30 | 6 492 | 296.0 |
-| TensorInference.jl | 120 | 116 | 116 | 116 | 0 | 0 | 29 | 5 268 | 291.3 |
-| TensorInference.jl treesa | 120 | 116 | 116 | 116 | 0 | 0 | 32 | 9 182 | 291.3 |
-| TensorInference.jl greedy | 120 | 60 | 60 | 60 | 0 | 0 | 677 | 2 302 | 66.7 |
+| Merlin | 120 | 114 | 120 | 3 339 | 296.2 | 114 | 1 539 | 289.4 | 7 |
+| pyAgrum | 120 | 108 | 120 | 6 670 | 296.2 | 108 | 3 070 | 289.3 | 0 |
+| pgmpy | 120 | 103 | 120 | 6 409 | 296.2 | 103 | 1 309 | 256.3 | 20 |
+| libDAI | 120 | 120 | 120 | 6 492 | 296.2 | 120 | 6 492 | 296.2 | 0 |
+| TensorInference.jl | 120 | 116 | 120 | 6 468 | 296.2 | 116 | 5 268 | 291.3 | 0 |
+| TensorInference.jl treesa | 120 | 116 | 120 | 10 382 | 296.2 | 116 | 9 182 | 291.3 | 0 |
+| TensorInference.jl greedy | 120 | 60 | 120 | 20 302 | 296.2 | 60 | 2 302 | 66.7 | 0 |
 
 ### Results: the partition function
 
@@ -560,31 +568,30 @@ The UAI 2022 PR sets, final (197) and tuning (121): tddlog's
 `--pr` run against Merlin's `-t PR`, 300 s a run, in the same job as
 the current results above. tddlog fastest counts the instances where
 tddlog is faster than Merlin or the only one to answer, not those both
-finish in under 0.1 s; median ratio
-is Merlin's time over tddlog's where both answer; seconds are summed
-over the instances a system answered.
+finish in under 0.2 s; seconds are each one's total over the instances
+either answers, a run that does not answer counted at the 300 s limit.
 
 The final set:
 
-| family | instances | tddlog | Merlin | tddlog fastest | tddlog alone | none | median ratio | tddlog s | Merlin s |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| blockmap | 14 | 14 | 4 | 14 | 10 | 0 | 199.31 | 3.6 | 100.9 |
-| BN | 5 | 5 | 1 | 5 | 4 | 0 | 730.75 | 0.9 | 50.4 |
-| fs | 1 | 1 | 0 | 1 | 1 | 0 |  | 0.0 | - |
-| mastermind | 67 | 67 | 19 | 67 | 48 | 0 | 330.81 | 83.0 | 359.8 |
-| or_chain | 25 | 25 | 2 | 25 | 23 | 0 | 3709.04 | 1.0 | 186.5 |
-| pedigree | 1 | 1 | 0 | 1 | 1 | 0 |  | 73.1 | - |
-| protein | 19 | 1 | 0 | 1 | 1 | 18 |  | 10.3 | - |
-| rus | 60 | 30 | 0 | 30 | 30 | 30 |  | 2503.9 | - |
-| wcsp | 5 | 1 | 2 | 1 | 0 | 3 | 9.26 | 11.7 | 177.8 |
-| all | 197 | 145 | 28 | 145 | 118 | 51 | 233.62 |  |  |
+| family | instances | tddlog | Merlin | tddlog fastest | tddlog alone | none | tddlog s | Merlin s |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| blockmap | 14 | 14 | 4 | 14 | 10 | 0 | 3.6 | 3 101 |
+| BN | 5 | 5 | 1 | 5 | 4 | 0 | 0.9 | 1 250 |
+| fs | 1 | 1 | 0 | 1 | 1 | 0 | 0.0 | 300.0 |
+| mastermind | 67 | 67 | 19 | 67 | 48 | 0 | 83.0 | 14 760 |
+| or_chain | 25 | 25 | 2 | 25 | 23 | 0 | 1.0 | 7 087 |
+| pedigree | 1 | 1 | 0 | 1 | 1 | 0 | 73.1 | 300.0 |
+| protein | 19 | 1 | 0 | 1 | 1 | 18 | 10.3 | 300.0 |
+| rus | 60 | 30 | 0 | 30 | 30 | 30 | 2 504 | 9 000 |
+| wcsp | 5 | 1 | 2 | 1 | 0 | 3 | 311.7 | 177.8 |
+| all | 197 | 145 | 28 | 145 | 118 | 51 | 2 988 | 36 275 |
 
 Against each network tool (the partition function; columns as in
 "Against each baseline"):
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Merlin | 197 | 28 | 27 | 27 | 0 | 0 | 234 | 806.0 | 15.0 |
+| Merlin | 197 | 28 | 145 | 36 275 | 2 988 | 27 | 806.0 | 15.0 | 0 |
 
 Of tddlog's 52 misses, 19 are timeouts (17 of protein, 2 of rus) and 33
 memory refusals (28 of rus, 4 of wcsp, 1 of protein); Merlin answers
@@ -597,29 +604,29 @@ of protein) tddlog alone answers.
 
 The tuning set:
 
-| family | instances | tddlog | Merlin | tddlog fastest | tddlog alone | none | median ratio | tddlog s | Merlin s |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Alchemy | 1 | 1 | 0 | 1 | 1 | 0 |  | 0.2 | - |
-| CSP | 3 | 3 | 3 | 2 | 0 | 0 | 1.89 | 5.6 | 18.7 |
-| DBN | 6 | 6 | 6 | 6 | 0 | 0 | 7.78 | 7.7 | 73.5 |
-| grid10x10.f | 1 | 1 | 1 | 0 | 0 | 0 | 0.18 | 0.1 | 0.0 |
-| Grids | 8 | 8 | 3 | 7 | 5 | 0 | 14.22 | 12.2 | 85.7 |
-| ObjectDetection | 65 | 65 | 65 | 58 | 0 | 0 | 3.46 | 346.7 | 1549.4 |
-| Pedigree | 3 | 3 | 3 | 3 | 0 | 0 | 15.59 | 0.1 | 1.6 |
-| Promedus | 28 | 28 | 28 | 15 | 0 | 0 | 12.64 | 0.5 | 175.6 |
-| Segmentation | 6 | 6 | 6 | 5 | 0 | 0 | 1.40 | 1.1 | 1.5 |
-| all | 121 | 121 | 115 | 97 | 6 | 0 | 3.86 |  |  |
+| family | instances | tddlog | Merlin | tddlog fastest | tddlog alone | none | tddlog s | Merlin s |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Alchemy | 1 | 1 | 0 | 1 | 1 | 0 | 0.2 | 300.0 |
+| CSP | 3 | 3 | 3 | 2 | 0 | 0 | 5.6 | 18.7 |
+| DBN | 6 | 6 | 6 | 6 | 0 | 0 | 7.7 | 73.5 |
+| grid10x10.f | 1 | 1 | 1 | 0 | 0 | 0 | 0.1 | 0.0 |
+| Grids | 8 | 8 | 3 | 7 | 5 | 0 | 12.2 | 1 586 |
+| ObjectDetection | 65 | 65 | 65 | 58 | 0 | 0 | 346.7 | 1 549 |
+| Pedigree | 3 | 3 | 3 | 2 | 0 | 0 | 0.1 | 1.6 |
+| Promedus | 28 | 28 | 28 | 14 | 0 | 0 | 0.5 | 175.6 |
+| Segmentation | 6 | 6 | 6 | 3 | 0 | 0 | 1.1 | 1.5 |
+| all | 121 | 121 | 115 | 93 | 6 | 0 | 374.2 | 3 706 |
 
-| baseline | ran | answers | both answer | tddlog faster | baseline faster | both under 0.1 s | median ratio, baseline over tddlog | baseline s | tddlog s |
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Merlin | 121 | 115 | 115 | 91 | 9 | 15 | 7.4 | 1 906 | 364.0 |
+| Merlin | 121 | 115 | 121 | 3 706 | 374.2 | 115 | 1 906 | 364.4 | 7 |
 
 tddlog answers all 121 in 374.2 s, Merlin 115 in 1 906 s. Merlin is
-faster on 9 of the 100 that both answer in 0.1 s or more (7
-ObjectDetection, 1 CSP, 1 Segmentation); the two both take under 0.1 s
-on 15. log10 Z agrees with the reference's to 5.7e-14 on 116 instances
-and with Merlin's to 2.2e-7 on 115, and with a weighted model count by
-Ganak or sharpSAT-TD to 7.1e-15 on 40. uai_grids_16 only tddlog answers.
+faster on 7 of the 94 that both answer in 0.2 s or more (7
+ObjectDetection); the two both take under 0.2 s on 21. log10 Z agrees
+with the reference's to 5.7e-14 on 116 instances and with Merlin's to
+2.2e-7 on 115, and with a weighted model count by Ganak or sharpSAT-TD
+to 7.1e-15 on 40. uai_grids_16 only tddlog answers.
 
 ## The TPC-H suite
 
@@ -670,38 +677,52 @@ physical cores and 503 GB of memory, on 2026-10-19, in 18 lanes of 55 GB
 of address space, 600 s a run.
 
 tddlog answers 205 of the 208 (366.0 s in all), each within 1.0e-14 of
-`exact:tpch`; it misses q7v, q21v and q21 at SF 0.1. ProbLog, PITA or
-aspmc answer 172; tddlog is faster than the fastest of the three on 171,
-a median of 59 times, and slower on tpch_q11v_5 (1.92 s against 1.74).
-By query, flat and views together (median ratio: the fastest of ProbLog,
-PITA and aspmc over tddlog; largest scale factor answered, times 1 000):
+`exact:tpch`; it misses q7v, q21v and q21 at SF 0.1. Against the fastest
+of ProbLog, PITA and aspmc on each instance, in total time: Of the 208
+instances both are given, tddlog answers 205 and ProbLog, PITA or aspmc
+172. Over the 205 that either answers, a run that does not answer
+counted at the 600 s limit, tddlog takes 366.0 s in all and the fastest
+of them 33 811 s; over the 172 both answer, 181.2 s against 14 011.
+tddlog is slower on tpch_q11v_5 (1.92 s against ProbLog's 1.74). tddlog
+alone answers tpch_q10v_5, tpch_q7v_50, tpch_q7_50, tpch_q10_5,
+tpch_q11_50 and 28 more. Neither answers tpch_q7v_100, tpch_q21v_100 and
+tpch_q21_100. By query, flat and views together (seconds in total time,
+as in "Against each baseline": over the instances either answers, a run
+that does not answer counted at 600 s; largest scale factor answered,
+times 1 000):
 
-| query | instances | tddlog | ProbLog, PITA or aspmc | median ratio | tddlog s | largest SF, tddlog / others | ProvSQL | median ratio, ProvSQL |
-|---|---:|---:|---:|---:|---:|---|---:|---:|
-| q1 | 14 | 14 | 12 | 73 | 34.0 | 100 / 50 | 14 | 1.1 |
-| q2 | 12 | 12 | 12 | 39 | 1.8 | 100 / 100 | 12 | 0.8 |
-| q3 | 14 | 14 | 14 | 69 | 18.9 | 100 / 100 | 14 | 0.3 |
-| q4 | 14 | 14 | 14 | 68 | 23.3 | 100 / 100 | 14 | 0.4 |
-| q6 | 14 | 14 | 13 | 69 | 17.5 | 100 / 100 | 14 | 0.1 |
-| q7 | 12 | 11 | 8 | 40 | 62.0 | 100 / 20 | 8 | 0.8 |
-| q10 | 14 | 14 | 4 | 103 | 21.8 | 100 / 2 | 14 | 0.6 |
-| q11 | 10 | 10 | 6 | 63 | 7.7 | 100 / 20 | 7 | 0.8 |
-| q12 | 14 | 14 | 10 | 87 | 28.2 | 100 / 50 | 14 | 0.1 |
-| q14 | 14 | 14 | 10 | 123 | 17.6 | 100 / 100 | 14 | 0.2 |
-| q15 | 14 | 14 | 14 | 105 | 18.7 | 100 / 100 | 14 | 0.4 |
-| q16 | 14 | 14 | 14 | 19 | 6.1 | 100 / 100 | 14 | 0.3 |
-| q17 | 10 | 10 | 9 | 51 | 17.7 | 100 / 100 | 10 | 0.1 |
-| q18 | 14 | 14 | 13 | 51 | 50.6 | 100 / 100 | 14 | 5.4 |
-| q20 | 12 | 12 | 12 | 40 | 2.7 | 100 / 100 | 12 | 0.2 |
-| q21 | 12 | 10 | 7 | 55 | 37.3 | 50 / 20 | 7 | 0.6 |
+| query | instances | tddlog | ProbLog, PITA or aspmc | tddlog s | ProbLog, PITA or aspmc s | largest SF, tddlog / others | ProvSQL | tddlog s | ProvSQL s |
+|---|---:|---:|---:|---:|---:|---|---:|---:|---:|
+| q1 | 14 | 14 | 12 | 34.0 | 2 305 | 100 / 50 | 14 | 34.0 | 37.3 |
+| q2 | 12 | 12 | 12 | 1.8 | 68.5 | 100 / 100 | 12 | 1.8 | 2.2 |
+| q3 | 14 | 14 | 14 | 18.9 | 1 349 | 100 / 100 | 14 | 18.9 | 6.4 |
+| q4 | 14 | 14 | 14 | 23.3 | 1 466 | 100 / 100 | 14 | 23.3 | 7.6 |
+| q6 | 14 | 14 | 13 | 17.5 | 2 139 | 100 / 100 | 14 | 17.5 | 1.5 |
+| q7 | 12 | 11 | 8 | 62.0 | 2 009 | 100 / 20 | 8 | 62.0 | 1 806 |
+| q10 | 14 | 14 | 4 | 21.8 | 6 043 | 100 / 2 | 14 | 21.8 | 11.4 |
+| q11 | 10 | 10 | 6 | 7.7 | 2 451 | 100 / 20 | 7 | 7.7 | 1 801 |
+| q12 | 14 | 14 | 10 | 28.2 | 3 123 | 100 / 50 | 14 | 28.2 | 2.4 |
+| q14 | 14 | 14 | 10 | 17.6 | 3 522 | 100 / 100 | 14 | 17.6 | 2.6 |
+| q15 | 14 | 14 | 14 | 18.7 | 1 959 | 100 / 100 | 14 | 18.7 | 6.0 |
+| q16 | 14 | 14 | 14 | 6.1 | 700.5 | 100 / 100 | 14 | 6.1 | 2.1 |
+| q17 | 10 | 10 | 9 | 17.7 | 1 847 | 100 / 100 | 10 | 17.7 | 1.4 |
+| q18 | 14 | 14 | 13 | 50.6 | 2 278 | 100 / 100 | 14 | 50.6 | 273.5 |
+| q20 | 12 | 12 | 12 | 2.7 | 95.4 | 100 / 100 | 12 | 2.7 | 0.3 |
+| q21 | 12 | 10 | 7 | 37.3 | 2 457 | 50 / 20 | 7 | 37.3 | 1 804 |
 
 ProvSQL runs 201 of the 208 instances and answers 196 (5 timeout
-otherwise), each within 1.0e-12 of `exact:tpch` (196 compared). Of the
-196 that tddlog and ProvSQL both answer, both take under 0.1 s on 29; on
-the other 167 tddlog is faster on 34, a median of 3.3 times, and ProvSQL
-is faster on 133 (tpch_q12v_100 0.56 s against 6.87, tpch_q12_100 0.54 s
-against 6.45, tpch_q17_100 0.14 s against 4.68 and tpch_q4_100 1.80 s
-against 6.30). tddlog alone answers 9.
+otherwise), each within 1.0e-12 of `exact:tpch` (196 compared). Against
+ProvSQL in total time: Of the 208 instances both are given, tddlog
+answers 205 and ProvSQL 196. Over the 205 that either answers, a run
+that does not answer counted at the 600 s limit, tddlog takes 366.0 s in
+all and ProvSQL 5 766 s; over the 196 both answer, 269.9 s against
+366.4. tddlog is slower on tpch_q12v_100 (6.87 s against ProvSQL's
+0.56), tpch_q12_100 (6.45 s against ProvSQL's 0.54), tpch_q17_100
+(4.68 s against ProvSQL's 0.14), tpch_q4_100 (6.30 s against ProvSQL's
+1.80), tpch_q14v_100 (4.84 s against ProvSQL's 0.35) and 112 more.
+tddlog alone answers tpch_q11v_20, tpch_q7v_50, tpch_q7_50,
+tpch_q11v_50, tpch_q11v_100 and 4 more. Neither answers tpch_q7v_100,
+tpch_q21v_100 and tpch_q21_100.
 
 Scallop's top-10 answers 167 instances, off by up to 0.92 (q1v at SF
 0.002).
@@ -902,17 +923,17 @@ at 6 400). On pmc1 and pmc2 Dice fails on 6 of the 7 sizes; Alea answers
 
 Roulette against the others on the Dice programs: the programs each
 system answers right (an answer of the reference's, no zeros, none off
-by more than 1e-6), and the geometric mean of the system's time over
-tddlog's on the programs both answer right, over all of them and over
-those where either takes 0.1 s or more (tddlog's and Dice's time is the
-process's, Alea's and Roulette's their own clock, without Julia's and
-Racket's start):
+by more than 1e-6), and in total time, over the programs given to both
+that either answers right, the system's seconds in all / tddlog's, a run
+that does not answer right counted at the time limit (300 s, 600 s on
+the loops; tddlog's and Dice's time is the process's, Alea's and
+Roulette's their own clock, without Julia's and Racket's start):
 
 | programs | n | tddlog | Dice | Alea | Roulette |
 |---|---:|---:|---:|---:|---:|
-| the paper's programs and the networks | 25 | 25 | 20; 20, 201 | 22; 50, 80 | 21; 4.2, 43 |
-| the loops | 6 | 6 | 2; 1, - | 5; 30, 42 | 4; 4.4, 14 |
-| the loops scaled | 21 | 21 | 9; 1.3, 1.8 | 18; 48, 54 | 16; 4.9, 10 |
+| the paper's programs and the networks | 25 | 25 | 20; 1902 / 1.92 | 22; 930 / 1.92 | 21; 1295 / 1.92 |
+| the loops | 6 | 6 | 2; 2400 / 6.76 | 5; 643 / 6.76 | 4; 1206 / 6.76 |
+| the loops scaled | 21 | 21 | 9; 7299 / 11.8 | 18; 1893 / 11.8 | 16; 3031 / 11.8 |
 
 Roulette answers 41 of the 52 instances it ran and fails on 5 where it
 runs out of memory (andes, simpleCaesar, diamond_k6400, ladder_k6400 and
@@ -924,9 +945,9 @@ tddlog holds a Dice program's integers in bits, as Dice and Alea do
 (`dice2problog.py`); an integer of n values takes about log2 n atoms.
 The same binary ran on the translation that held them one-hot, an atom
 per value, in the same lanes: on the 46 programs of noDice and data/dice
-that both answer, one-hot takes 0.77 of the time in bits in geometric
-mean, and their answers agree to a relative 1.1e-13. Where either takes
-0.1 s or more and the two differ by a quarter or more:
+that both answer, one-hot takes 15.1 s in all against 21.8 s in bits,
+and their answers agree to a relative 1.1e-13. Where either takes 0.1 s
+or more and the two differ by a quarter or more:
 
 | program | bits | one-hot | bits pairs | one-hot pairs |
 |---|---:|---:|---:|---:|
@@ -1087,16 +1108,16 @@ noDice's programs:
 | 3sat-0 | 19.5 | 0.45 | 8.44 | 9.36 | 1.28 | 0.35 | 3.22 | 2.80 | >300 | 1e-22 / 1e-15 | 1e-19 / 1e-12 | 1e-22 / 1e-15 |
 
 Roulette runs the Dice program of each noDice instance, translated; the
-table of the answers right and of the geometric mean of the system's
-time over tddlog's, as for the Dice programs:
+table of the answers right and of the total times, as for the Dice
+programs (600 s a run):
 
 | programs | n | tddlog | Dice | Alea | Roulette |
 |---|---:|---:|---:|---:|---:|
-| noDice's programs | 11 | 11 | 10; 10, 16 | 11; 14, 14 | 10; 18, 25 |
+| noDice's programs | 11 | 11 | 10; 854 / 3.06 | 11; 41.6 / 3.06 | 10; 1229 / 3.06 |
 
 Roulette answers 10 of the 11 instances it ran and fails on 1 where it
 runs out of time (coupon2-14-obs). Of the instances where tddlog or
-Roulette takes 0.1 s or more, Roulette is faster than tddlog (in its own
+Roulette takes 0.2 s or more, Roulette is faster than tddlog (in its own
 clock, tddlog's process) on 1: water (0.17 s against 0.78).
 
 Answers. Of the 62 instances tddlog answers 56, Dice 31, Alea 47 and
@@ -1130,27 +1151,39 @@ below 1e-4.
 Failures. Of the 558 timed runs 63 ended on a failed allocation: 6 of
 tddlog's, 12 of Dice's and 45 of Alea's.
 
-Times. Against Dice, on the 31 instances both answer (Dice's zero
-answers included), tddlog is faster on 30, by a geometric mean of 27
-(times floored at 0.005 s): arith ranking_medium 0.021 s against 203,
-arith tugofwar 0.2 s against 306 and arith triangle_medium 0.57 s
-against 459. Dice is faster on nodice hepar2 (0.055 s against 0.06).
-Against Alea's wall time tddlog is faster on 45 of the 46 both answer,
-by a geometric mean of 130, and against its first time in the process on
-42, by 59. Without Julia's compilation (the warm time, or the first time
-in the process less its JIT where there was no warm run) tddlog is
-faster on 21 of 46, and the geometric mean of Alea's time over tddlog's
-is 1.3. Alea's largest leads are on arith book (1.01 s against 12.8),
-pluck pcfg (9.37 s against 101), nodice water (0.13 s against 0.78),
-arith triangle_small (0.045 s against 0.24) and arith tugofwar (0.04 s
-against 0.2).
+Times. Against Dice (its zero answers counted as answers), over the 56
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, tddlog takes 935 s in all and Dice 17283 s;
+over the 31 both answer, 59.4 s against 2283 s. tddlog is faster on 26
+of the 31 both answer and Dice on 0, both under 0.2 s or level on the
+other 5. tddlog alone answers 25, Dice alone 0. Against Alea's wall
+time, over the 57 instances given to both that either answers, a run
+that does not answer counted at the 600 s limit, tddlog takes 1535 s in
+all and Alea 9785 s; over the 46 both answer, 566 s against 3501 s;
+against its first time in the process, over the 57 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, tddlog takes 1535 s in all and Alea 8479 s; over the 46 both
+answer, 566 s against 2331 s. Without Julia's compilation (the warm
+time, or the first time in the process less its JIT where there was no
+warm run), over the 57 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, tddlog takes 1535 s
+in all and Alea 6532 s; over the 46 both answer, 566 s against 407 s.
+tddlog is faster on 16 of the 46 both answer and Alea on 15, both under
+0.2 s or level on the other 15. tddlog alone answers 10, Alea alone 1.
+Alea's largest leads are on hybit trueskill (73.7 s against 181), pluck
+pcfg (9.37 s against 101), arith gcd_medium (80.2 s against 159), arith
+triangle_large (10.7 s against 25.9) and hybit GPA (11.1 s against
+23.6).
 
 Of the 18 instances where tddlog takes 1 s or more, `auto`'s attempts
 before the one that answers (vtrees it tries and drops, and attempts
 stopped at a smaller work limit) take half the time or more on 2: on
-Alea's largest leads they take 0.9 of 12.8 s on arith book and 5.72 of
-101 s on pluck pcfg, and without them tddlog would take 11.9 s on arith
-book and 95.1 s on pluck pcfg against Alea's 1.01 and 9.37.
+Alea's largest leads they take 33 of 181 s on hybit trueskill, 5.72 of
+101 s on pluck pcfg, 22 of 159 s on arith gcd_medium, 9.69 of 25.9 s on
+arith triangle_large and 0 of 23.6 s on hybit GPA, and without them
+tddlog would take 148 s on hybit trueskill, 95.1 s on pluck pcfg, 137 s
+on arith gcd_medium, 16.2 s on arith triangle_large and 23.6 s on hybit
+GPA against Alea's 73.7, 9.37, 80.2, 10.7 and 11.1.
 
 Alea's first run is mostly Julia compiling Alea's methods for the
 program's types: 486 of 498 s on hybit GPA, 28.3 to 75.5 s on the
@@ -1220,12 +1253,22 @@ under a second. tddlog answers 116 with `auto`, 55 with `program` and 52
 with `decision` (118 by some arm); Alea 80; Dice (earlier run) 17, and
 prints 0 for every answer of 8 more.
 
-- tddlog (`auto`) and Alea both answer 76 instances: tddlog is faster on
-  47, by a geometric mean of 3.5 over Alea's warm time, and on 75 by a
-  geometric mean of 61 over the Julia process. tddlog alone answers 40,
-  Alea alone 4. `program` and Alea both answer 48, `program` faster on
-  31 (geometric mean 3.4); `decision` and Alea 39, `decision` faster on
-  10 (geometric mean 0.56).
+- Against Alea's warm time, over the 93 instances given to both that
+  either answers, a run that does not answer counted at the 600 s limit,
+  tddlog (`auto`) takes 3384 s in all and Alea 11852 s; over the 76 both
+  answer, 1076 s against 3205 s. tddlog (`auto`) is faster on 44 of the
+  76 both answer and Alea on 27, both under 0.2 s or level on the other
+  5. tddlog (`auto`) alone answers 14, Alea alone 3. Against the Julia
+  process, over the 93 instances given to both that either answers, a
+  run that does not answer counted at the 600 s limit, tddlog takes 3384
+  s in all and the process 21448 s; over the 76 both answer, 1076 s
+  against 12337 s. For `program` against Alea, over the 63 instances
+  given to both that either answers, a run that does not answer counted
+  at the 600 s limit, `program` takes 7404 s in all and Alea 5933 s;
+  over the 48 both answer, 1126 s against 2095 s; for `decision`, over
+  the 57 instances given to both that either answers, a run that does
+  not answer counted at the 600 s limit, `decision` takes 10421 s in all
+  and Alea 2605 s; over the 39 both answer, 1269 s against 565 s.
 - tddlog reaches further than Alea on 15 programs: addFun_max, to 29
   bits in 50.7 s, where Alea answers to 21 bits (152 s) and runs out of
   memory at 23; addFun_sum, to 29 bits in 1.04 s, where Alea answers to
@@ -1251,19 +1294,25 @@ prints 0 for every answer of 8 more.
 - Alea reaches further on conjugate_ex3 and multimodal. Of these, tddlog
   answers no size of multimodal: circuits of 4617 to 4617 flips at their
   smallest size.
-- `program` against `auto`: both answer 54; `auto` is faster on 28, and
-  `program`'s time is 2.5 of `auto`'s in geometric mean. `program`
-  answers 1 that `auto` does not (spacex), `auto` 62 that `program` does
-  not (GPA, addFun_max, addFun_sum, altermu2, clickGraph, coinBias,
-  conjugate_ex3, conjugate_gaussians, genes, genes5, normal_mixture_mu1,
+- `program` against `auto`: over the 71 instances given to both that
+  either answers, a run that does not answer counted at the 600 s limit,
+  `auto` takes 1790 s in all and `program` 11005 s; over the 54 both
+  answer, 499 s against 1292 s; `auto` is faster on 26 of the 54 both
+  answer and `program` on 14. `program` answers 1 that `auto` does not
+  (spacex), `auto` 16 that `program` does not (GPA, addFun_max,
+  addFun_sum, altermu2, clickGraph, coinBias, conjugate_ex3,
+  conjugate_gaussians, genes, genes5, normal_mixture_mu1,
   normal_mixture_mu2, normal_mixture_theta, pi, tug_of_war and weekend).
-- `decision` against `auto`: both answer 51; `auto` is faster on 11, and
-  `decision`'s time is 1.8 of `auto`'s in geometric mean. `decision`
-  answers 1 that `auto` does not (coinBias), `auto` 65 that `decision`
-  does not (addFun_max, addFun_sum, clickGraph, clinicalTrial1,
-  clinicalTrial2, conjugate_gaussians, normal_mixture_mu1,
-  normal_mixture_mu2, normal_mixture_theta, pi, spacex, trueskill,
-  tug_of_war, zeroone_w1 and zeroone_w2).
+- `decision` against `auto`: over the 67 instances given to both that
+  either answers, a run that does not answer counted at the 600 s limit,
+  `auto` takes 1628 s in all and `decision` 10527 s; over the 51 both
+  answer, 800 s against 1396 s; `auto` is faster on 10 of the 51 both
+  answer and `decision` on 40. `decision` answers 1 that `auto` does not
+  (coinBias), `auto` 15 that `decision` does not (addFun_max,
+  addFun_sum, clickGraph, clinicalTrial1, clinicalTrial2,
+  conjugate_gaussians, normal_mixture_mu1, normal_mixture_mu2,
+  normal_mixture_theta, pi, spacex, trueskill, tug_of_war, zeroone_w1
+  and zeroone_w2).
 - At the paper's precision (19 programs of Table 2), tddlog answers 18
   by some arm (GPA, addFun_max, addFun_sum, clickGraph, clinicalTrial1,
   clinicalTrial2, coinBias, conjugate_gaussians, normal_mixture_mu1,
@@ -1610,9 +1659,9 @@ seasons, `pP` pieces):
 | wmi_star | WMI | n1024 (7.5 s) | n1024 (4 s) | n/a at n16 | n512 (185 s), oom at n1024 |
 
 - `auto` answers a larger size than Alea on eight families (addFun_max (pieces), altermu2 (pieces), fair_dt14, fair_dt4, pedestrian, population, wmi_path and wmi_star), the same size on five (fair_dt16, fair_dt44, linreg, markov and weekend (pieces)) and a smaller one on two (laplace and spacex (pieces)).
-- `auto` and Alea both answer 59 instances, 57 of them where either takes 0.1 s or more. On those Alea's warm time is 0.738 of `auto`'s in geometric mean and `auto` is faster on 21; on all 59 it is faster on 21.
-- `program` and Alea both answer 55 instances, 49 of them where either takes 0.1 s or more. On those Alea's warm time is 0.737 of `program`'s in geometric mean and `program` is faster on 19; on all 55 it is faster on 21.
-- `decision` and Alea both answer 25 instances, 17 of them where either takes 0.1 s or more. On those Alea's warm time is 0.143 of `decision`'s in geometric mean and `decision` is faster on 2; on all 25 it is faster on 2.
+- `auto` and Alea both answer 59 instances: `auto` takes 668 s in all and Alea's warm time 1.16e+03 s; of the 52 where either takes 0.2 s or more, `auto` is faster on 20.
+- `program` and Alea both answer 55 instances: `program` takes 1.28e+03 s in all and Alea's warm time 1.12e+03 s; of the 37 where either takes 0.2 s or more, `program` is faster on 18.
+- `decision` and Alea both answer 25 instances: `decision` takes 418 s in all and Alea's warm time 31.3 s; of the 10 where either takes 0.2 s or more, `decision` is faster on 2.
 - 417 answers of the arms were checked against Alea's where it answers; the largest difference is 4.1e-13 absolute.
 - The population model's answers are the bits of a number; its expectation at 1, 2, 3, 4, 6, 8, 12 and 16 seasons agrees with a forward filter of the model to 7.5e-07 (24 answers).
 
@@ -1644,18 +1693,22 @@ and Psi ran in the same job, in the same lanes, between the repetitions.
 Dice, Alea.jl and the circuits have not changed since; the tddlog of
 that run is not reported.
 
-- Dice answers 17 of the 152 instances, every one slower than Alea in
-  the same run (Alea's time is 0.043 of Dice's in geometric mean). It
-  prints 0 for every answer on clinicalTrial1 at 4 and 6 bits, genes5 at
-  17 bits and weekend from 22 to 30 bits, where the evidence's
-  probability is within the doubles (from 3.5e-62 on clinicalTrial1 at 6
-  bits to 4.2e-7 on weekend at 22 bits, by tddlog's
-  `--evidence-probability`): the zeros are Dice's, not an underflow.
+- Dice answers 17 of the 152 instances. Against Alea in the same run,
+  over the 44 instances given to both that either answers, a run that
+  does not answer counted at the 600 s limit, Dice takes 17701 s in all
+  and Alea 464 s; over the 17 both answer, 1501 s against 101 s. Dice is
+  faster on 0 of the 17 both answer and Alea on 16, both under 0.2 s or
+  level on the other 1. Dice alone answers 0, Alea alone 27. It prints 0
+  for every answer on clinicalTrial1 at 4 and 6 bits, genes5 at 17 bits
+  and weekend from 22 to 30 bits, where the evidence's probability is
+  within the doubles (from 3.5e-62 on clinicalTrial1 at 6 bits to 4.2e-7
+  on weekend at 22 bits, by tddlog's `--evidence-probability`): the
+  zeros are Dice's, not an underflow.
 - The two runs' times are not compared, but Alea's, the same system in
   both, show how far two runs differ: on the 80 instances it answers in
-  both, its warm time in the release run is 1.08 of the earlier run's in
-  geometric mean, and from 0.75 to 1.60 times the earlier run's where
-  both take a second or more.
+  both, its warm time totals 3733 s in the release run against 3297 s in
+  the earlier run, and is from 0.75 to 1.60 times the earlier run's
+  where both take a second or more.
 - earlyoom, the machine's out-of-memory guard, ended one repetition with
   a SIGTERM when the machine's free memory ran low, after 389 s (dice on
   addFun_max_w17), on a circuit where the other repetitions ran out of
@@ -1819,22 +1872,38 @@ The table above gives, a family a row, the largest size each system
 answers and its time there (on the networks, how many it answers and
 their total time), or its failures where it answers no size.
 
-- `auto` and `program` both answer 14: `auto` is faster on 10, and
-  `program`'s time is 6.3 of `auto`'s in geometric mean. `auto` alone
-  answers 74, `program` alone 0.
+- Against `program`, over the 25 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, `auto`
+  takes 4.81 s in all and `program` 6680 s; over the 14 both answer,
+  1.44 s against 79.7 s. `auto` is faster on 5 of the 14 both answer and
+  `program` on 0, both under 0.2 s or level on the other 9. `auto` alone
+  answers 11, `program` alone 0.
 - `decision` answers none of these programs: tddlog refuses it on 12
   (unsupported), and the larger sizes of their families are skipped.
-- `auto` and Dice both answer 40: `auto` is faster on 37, and Dice's
-  time is 15 of `auto`'s in geometric mean. `auto` alone answers 48,
+- Against Dice, over the 75 instances given to both that either answers,
+  a run that does not answer counted at the 600 s limit, `auto` takes
+  224 s in all and Dice 22431 s; over the 40 both answer, 43.6 s against
+  1431 s. `auto` is faster on 25 of the 40 both answer and Dice on 3,
+  both under 0.2 s or level on the other 12. `auto` alone answers 35,
   Dice alone 0.
-- `auto` and Alea both answer 61: `auto` is faster on 57, and Alea's
-  time is 5.4 of `auto`'s in geometric mean. `auto` alone answers 27,
-  Alea alone 0. Against Alea's process, `auto` is faster on 61
-  (geometric mean 213).
-- `auto` and Roulette both answer 40: `auto` is faster on 36, and
-  Roulette's time is 7.3 of `auto`'s in geometric mean. `auto` alone
-  answers 48, Roulette alone 0. Against Roulette's process, `auto` is
-  faster on 40 (geometric mean 29).
+- Against Alea, over the 71 instances given to both that either answers,
+  a run that does not answer counted at the 600 s limit, `auto` takes
+  112 s in all and Alea 6560 s; over the 61 both answer, 36.3 s against
+  560 s. `auto` is faster on 34 of the 61 both answer and Alea on 0,
+  both under 0.2 s or level on the other 27. `auto` alone answers 10,
+  Alea alone 0. Against Alea's process, over the 71 instances given to
+  both that either answers, a run that does not answer counted at the
+  600 s limit, `auto` takes 112 s in all and the process 9244 s; over
+  the 61 both answer, 36.3 s against 3244 s.
+- Against Roulette, over the 65 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, `auto`
+  takes 88.8 s in all and Roulette 15118 s; over the 40 both answer,
+  3.83 s against 118 s. `auto` is faster on 21 of the 40 both answer and
+  Roulette on 0, both under 0.2 s or level on the other 19. `auto` alone
+  answers 25, Roulette alone 0. Against Roulette's process, over the 65
+  instances given to both that either answers, a run that does not
+  answer counted at the 600 s limit, `auto` takes 88.8 s in all and the
+  process 15137 s; over the 40 both answer, 3.83 s against 137 s.
 - Dice prints a wrong answer (wrong) on 1 instance: bn_insurance.
 - Dice prints 0 for every answer (zero) on 11 instances: caesar_25,
   caesar_50, caesar_100, hmm_filtering_joint_100,
@@ -2014,42 +2083,76 @@ hybrid 3.
 The table above gives, a program a row, the largest size each system
 answers and its time there, or its failure at the smallest size it ran.
 
-- tddlog and ProbLog both answer 10: tddlog is faster on 10, and
-  ProbLog's time is 125 of tddlog's in geometric mean. tddlog alone
-  answers 34, ProbLog alone 0.
-- tddlog and Dice both answer 42: tddlog is faster on 41, and Dice's
-  time is 3.5 of tddlog's in geometric mean. tddlog alone answers 2,
+- Against ProbLog, over the 18 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 59.6 s in all and ProbLog 4892 s; over the 10 both answer, 0.32
+  s against 91.6 s. tddlog is faster on 7 of the 10 both answer and
+  ProbLog on 0, both under 0.2 s or level on the other 3. tddlog alone
+  answers 8, ProbLog alone 0.
+- Against Dice, over the 44 instances given to both that either answers,
+  a run that does not answer counted at the 600 s limit, tddlog takes
+  1024 s in all and Dice 3269 s; over the 42 both answer, 420 s against
+  2338 s. tddlog is faster on 28 of the 42 both answer and Dice on 0,
+  both under 0.2 s or level on the other 14. tddlog alone answers 1,
   Dice alone 1.
-- tddlog and Alea both answer 27: tddlog is faster on 27, and Alea's
-  time is 19 of tddlog's in geometric mean. tddlog alone answers 17,
-  Alea alone 0. Against the Julia process, tddlog is faster on 27
-  (geometric mean 309).
-- tddlog and Roulette both answer 22: tddlog is faster on 19, and
-  Roulette's time is 19 of tddlog's in geometric mean. tddlog alone
-  answers 22, Roulette alone 0.
-- tddlog and Geni both answer 38: tddlog is faster on 37, and Geni's
-  time is 4.5 of tddlog's in geometric mean. tddlog alone answers 6,
-  Geni alone 1.
-- tddlog and noDice both answer 12: tddlog is faster on 12, and noDice's
-  time is 26 of tddlog's in geometric mean. tddlog alone answers 32,
-  noDice alone 0.
-- tddlog and Psi answer no instance in common: tddlog answers 44 more,
-  Psi 0.
-- tddlog and Storm sparse both answer 27: tddlog is faster on 17, and
-  Storm sparse's time is 2.9 of tddlog's in geometric mean. tddlog alone
-  answers 2, Storm sparse alone 0.
-- tddlog and Storm exact both answer 14: tddlog is faster on 14, and
-  Storm exact's time is 290 of tddlog's in geometric mean. tddlog alone
-  answers 15, Storm exact alone 0.
-- tddlog and Storm dd both answer 17: tddlog is faster on 17, and Storm
-  dd's time is 126 of tddlog's in geometric mean. tddlog alone answers
-  12, Storm dd alone 0.
-- tddlog and PRISM sparse both answer 24: tddlog is faster on 16, and
-  PRISM sparse's time is 14 of tddlog's in geometric mean. tddlog alone
-  answers 5, PRISM sparse alone 0.
-- tddlog and PRISM hybrid both answer 3: tddlog is faster on 3, and
-  PRISM hybrid's time is 575 of tddlog's in geometric mean. tddlog alone
-  answers 26, PRISM hybrid alone 0.
+- Against Alea, over the 33 instances given to both that either answers,
+  a run that does not answer counted at the 600 s limit, tddlog takes 88
+  s in all and Alea 4363 s; over the 27 both answer, 27.3 s against 763
+  s. tddlog is faster on 17 of the 27 both answer and Alea on 0, both
+  under 0.2 s or level on the other 10. tddlog alone answers 6, Alea
+  alone 0. Against the Julia process, over the 33 instances given to
+  both that either answers, a run that does not answer counted at the
+  600 s limit, tddlog takes 88 s in all and the process 4679 s; over the
+  27 both answer, 27.3 s against 1079 s.
+- Against Roulette, over the 30 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 85.7 s in all and Roulette 5119 s; over the 22 both answer, 3.31
+  s against 319 s. tddlog is faster on 14 of the 22 both answer and
+  Roulette on 0, both under 0.2 s or level on the other 8. tddlog alone
+  answers 8, Roulette alone 0.
+- Against Geni, over the 44 instances given to both that either answers,
+  a run that does not answer counted at the 600 s limit, tddlog takes
+  1024 s in all and Geni 4627 s; over the 38 both answer, 376 s against
+  1133 s. tddlog is faster on 29 of the 38 both answer and Geni on 0,
+  both under 0.2 s or level on the other 9. tddlog alone answers 5, Geni
+  alone 1.
+- Against noDice, over the 19 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 84.6 s in all and noDice 4853 s; over the 12 both answer, 24.6 s
+  against 653 s. tddlog is faster on 8 of the 12 both answer and noDice
+  on 0, both under 0.2 s or level on the other 4. tddlog alone answers
+  7, noDice alone 0.
+- Against Psi, over the 8 instances given to both that either answers, a
+  run that does not answer counted at the 600 s limit, tddlog takes 59.1
+  s in all and Psi 4800 s. tddlog alone answers 8, Psi alone 0.
+- Against Storm sparse, over the 29 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 395 s in all and Storm sparse 1442 s; over the 27 both answer,
+  355 s against 242 s. tddlog is faster on 15 of the 27 both answer and
+  Storm sparse on 10, both under 0.2 s or level on the other 2. tddlog
+  alone answers 2, Storm sparse alone 0.
+- Against Storm exact, over the 19 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 61.7 s in all and Storm exact 3727 s; over the 14 both answer,
+  1.96 s against 727 s. tddlog is faster on 13 of the 14 both answer and
+  Storm exact on 0, both under 0.2 s or level on the other 1. tddlog
+  alone answers 5, Storm exact alone 0.
+- Against Storm dd, over the 22 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 98.4 s in all and Storm dd 4283 s; over the 17 both answer, 23.6
+  s against 1283 s. tddlog is faster on 16 of the 17 both answer and
+  Storm dd on 0, both under 0.2 s or level on the other 1. tddlog alone
+  answers 5, Storm dd alone 0.
+- Against PRISM sparse, over the 27 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 390 s in all and PRISM sparse 2269 s; over the 24 both answer,
+  350 s against 469 s. tddlog is faster on 16 of the 24 both answer and
+  PRISM sparse on 8. tddlog alone answers 3, PRISM sparse alone 0.
+- Against PRISM hybrid, over the 9 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, tddlog
+  takes 59.6 s in all and PRISM hybrid 4009 s; over the 3 both answer,
+  0.18 s against 409 s. tddlog is faster on 3 of the 3 both answer and
+  PRISM hybrid on 0. tddlog alone answers 6, PRISM hybrid alone 0.
 - Roulette answers 22 of the 35 instances it ran; it runs out of memory
   on 13.
 - Geni prints 0 for every answer (zero) on 5 instances: weather_n12,
@@ -2134,11 +2237,11 @@ than 1e-6 absolute and relative is `wrong`.
 
 | system | answers | runs |
 |---|---|---|
-| Geni (gennifer; Li and Zhang, ICFP 2025) | generating functions, f32 | the programs of its own evaluation in the `geni` suite, as `.gir` files |
+| Geni (gennifer; Li and Zhang, ICFP 2025) | generating functions, f32 | the programs of its own evaluation in the `geni` suite, as `.gir` files, and every other program with a Dice program (the circuits' too), translated by `dice2geni.py` |
 | noDice (Gürtler and Kaminski, OOPSLA 2026) | exact | the Dice programs without `nflip`, as Dice runs them |
 | Psi (Gehr et al., CAV 2016; revision ef8a9e5) | symbolic | the Dice programs, translated by `dice2psi.py`, and its own linear regression of the bit-blasted suite |
-| Genfer (Zaiser, Murawski and Ong, NeurIPS 2023) | generating functions | its population model of the bit-blasted suite and the Dice programs of its own comparison |
-| SPPL 2.0.4 (Saad, Rinard and Mansinghka, PLDI 2021) | symbolic sum-product | its hierarchical Markov switching model of the bit-blasted suite |
+| Genfer (Zaiser, Murawski and Ong, NeurIPS 2023) | generating functions | its population model of the bit-blasted suite, the Dice programs of its own comparison, and every other program with a Dice program (the circuits' too), translated by `dice2genfer.py` |
+| SPPL 2.0.4 (Saad, Rinard and Mansinghka, PLDI 2021) | symbolic sum-product | its hierarchical Markov switching model of the bit-blasted suite, and every other program with a Dice program (the circuits' too), translated by `dice2sppl.py` |
 | Pluck (Bowers et al., PLDI 2025) | exact | its four sequence models of the `ppl` suite |
 | Storm 1.14 (stormpy), one Sylvan thread | exact | the weather factory's PRISM model, `P=? [F<=H "allStrike"]`: the sparse engine in floating point (`sparse`), the sparse engine on rationals (`exact`) and the symbolic BDD engine (`dd`) |
 | PRISM 4.8.1 | exact | the weather factory's PRISM model, with the sparse and the hybrid engine |
@@ -2152,23 +2255,26 @@ than 1e-6 absolute and relative is `wrong`.
 
 **noDice.** noDice ran 25 instances and answered 19 (4 run out of
 memory, 2 time out). Its answers differ from the reference's by at most
-1.0e+00 relative (7.5e-07 absolute, bn_water) over 19 instances. Of the
-19 that tddlog and noDice both answer, both take under 0.1 s on 11; on
-the other 8 tddlog is faster on 8 (a median of 248 times). tddlog alone
-answers bn_alarm, bn_andes, bn_hailfinder, bn_link, bn_munin and 1 more.
+1.0e+00 relative (7.5e-07 absolute, bn_water) over 19 instances. Over
+the 25 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, noDice takes 3788 s in all and tddlog
+1.92 s; over the 19 both answer, 188 s against tddlog's 0.33. tddlog
+alone answers bn_alarm, bn_andes, bn_hailfinder, bn_link, bn_munin and 1
+more.
 
 **Psi.** Psi ran 25 instances and answered 10 (1 fail, 5 run out of
 memory, 9 time out). Its answers differ from the reference's by at most
-1.4e-08 relative (4.1e-11 absolute, alarm) over 10 instances. Of the 10
-that tddlog and Psi both answer, both take under 0.1 s on 5; on the
-other 5 tddlog is faster on 5 (a median of 370 times). tddlog alone
-answers bn_alarm, bn_andes, bn_child, bn_hailfinder, bn_hepar2 and 10
-more.
+1.4e-08 relative (4.1e-11 absolute, alarm) over 10 instances. Over the
+25 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Psi takes 9009 s in all and tddlog
+1.92 s; over the 10 both answer, 9.1 s against tddlog's 0.026. tddlog
+alone answers bn_alarm, bn_andes, bn_child, bn_hailfinder, bn_hepar2 and
+10 more.
 
 **Genfer.** Genfer ran 7 instances and answered 7. Its answers differ
 from the reference's by at most 1.4e-08 relative (4.1e-11 absolute,
-alarm) over 7 instances. Both take under 0.1 s on all 7 that tddlog and
-Genfer both answer.
+alarm) over 7 instances. Over the 7 instances given to both that either
+answers, Genfer takes 0.038 s in all and tddlog 0.017 s.
 
 | instance | tddlog | noDice | Psi | Genfer | ProbLog | ref | tddlog diff | noDice diff | Psi diff | Genfer diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -2213,23 +2319,27 @@ largest absolute and relative difference from the reference named in
 **noDice.** noDice ran 11 instances and answered 10 (1 print zeros). Its
 answers differ from the reference's by at most 7.5e-05 relative (7.4e-07
 absolute, water) over 10 instances. noDice's answer is wrong, zero or
-underflowed on 3sat-0. Of the 10 that tddlog and noDice both answer,
-both take under 0.1 s on 1; on the other 9 tddlog is faster on 9 (a
-median of 94 times). tddlog alone answers 3sat-0.
+underflowed on 3sat-0. Over the 11 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, noDice
+takes 1406 s in all and tddlog 3.06 s; over the 10 both answer, 806 s
+against tddlog's 2.61. tddlog alone answers 3sat-0.
 
 **Psi.** Psi ran 11 instances and answered 1 (5 fail, 5 run out of
 memory). Its answers differ from the reference's by at most 1.3e-08
-relative (4.0e-09 absolute, survey) over 1 instance. Of the 1 that
-tddlog and Psi both answer, tddlog is faster on 1 (a median of 409
-times). tddlog alone answers 3sat-0, alarm, coupon2-10-obs,
-coupon2-11-obs, coupon2-12-obs and 5 more.
+relative (4.0e-09 absolute, survey) over 1 instance. Over the 11
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Psi takes 6002 s in all and tddlog 3.06 s;
+over the 1 both answer, 1.64 s against tddlog's 0.004. tddlog alone
+answers 3sat-0, alarm, coupon2-10-obs, coupon2-11-obs, coupon2-12-obs
+and 5 more.
 
 **Pluck.** Pluck ran 4 instances and answered 3 (1 fail). Its answers
 differ from the reference's by at most 1.3e+04 relative (3.0e-08
-absolute, string_editing) over 3 instances. Of the 3 that tddlog and
-Pluck both answer, tddlog is faster on 2 (a median of 199 times) and
-Pluck is faster on 1 (pcfg 5.18 s against 101). tddlog alone answers
-sorted_list.
+absolute, string_editing) over 3 instances. Over the 4 instances given
+to both that either answers, a run that does not answer counted at the
+600 s limit, Pluck takes 616 s in all and tddlog 109 s; over the 3 both
+answer, 16.2 s against tddlog's 101. Pluck is faster on 1 (pcfg 5.18 s
+against 101). tddlog alone answers sorted_list.
 
 | instance | flips | gates | tddlog | noDice | Psi | Pluck | ProbLog | ref | tddlog diff | noDice diff | Psi diff | Pluck diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -2262,21 +2372,27 @@ largest absolute and relative difference from the reference named in
 | bb_markov | 5 | 5 |  |  | 0 of 5 |
 | bb_population | 8 | 8 |  | 8 of 8 |  |
 
-**Psi.** Psi ran 8 instances and answered 2 (6 fail). Only Psi answers
-linreg_w14. tddlog alone answers linreg_w10, linreg_w11, linreg_w12,
-linreg_w13, linreg_w8 and 1 more.
+**Psi.** Psi ran 8 instances and answered 2 (6 fail). Over the 7
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Psi takes 3600 s in all and tddlog 845 s.
+Only Psi answers linreg_w14. tddlog alone answers linreg_w10,
+linreg_w11, linreg_w12, linreg_w13, linreg_w8 and 1 more.
 
 **Genfer.** Genfer ran 8 instances and answered 8. Its answers differ
 from the reference's by at most 9.7e-11 relative (8.0e-12 absolute,
-population_s3) over 8 instances. Of the 8 that tddlog and Genfer both
-answer, tddlog is faster on 0 and Genfer is faster on 8 (population_s1
-0.007 s against 0.35, population_s2 0.009 s against 8.29, population_s3
-0.011 s against 9.33 and population_s4 0.013 s against 10.2).
+population_s3) over 8 instances. Over the 8 instances given to both that
+either answers, Genfer takes 0.2 s in all and tddlog 123 s. Genfer is
+faster on 8 (population_s1 0.007 s against 0.35, population_s2 0.009 s
+against 8.29, population_s3 0.011 s against 9.33 and population_s4 0.013
+s against 10.2, the largest differences).
 
 **SPPL.** SPPL ran 5 instances and answered 0 (1 run out of memory, 4
 answer wrongly). SPPL's answer is wrong, zero or underflowed on
-markov_n10, markov_n100, markov_n20 and markov_n50. tddlog alone answers
-markov_n10, markov_n100, markov_n20, markov_n200 and markov_n50.
+markov_n10, markov_n100, markov_n20 and markov_n50. Over the 5 instances
+given to both that either answers, a run that does not answer counted at
+the 600 s limit, SPPL takes 3000 s in all and tddlog 15.6 s. tddlog
+alone answers markov_n10, markov_n100, markov_n20, markov_n200 and
+markov_n50.
 
 | instance | flips | gates | tddlog | Psi | Genfer | SPPL | ref | tddlog diff | Psi diff | Genfer diff | SPPL diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -2320,63 +2436,76 @@ largest absolute and relative difference from the reference named in
 zeros). Its answers differ from the reference's by at most 5.7e-01
 relative (3.6e-08 absolute, weather_n11) over 39 instances. Geni's
 answer is wrong, zero or underflowed on weather_n12, weather_n13,
-weather_n15, weather_n16 and weather_n17. Of the 38 that tddlog and Geni
-both answer, both take under 0.1 s on 7; on the other 31 tddlog is
-faster on 31 (a median of 4.5 times). Only Geni answers link_16. tddlog
+weather_n15, weather_n16 and weather_n17. Over the 44 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, Geni takes 4627 s in all and tddlog 1024 s; over the 38 both
+answer, 1133 s against tddlog's 376. Only Geni answers link_16. tddlog
 alone answers router_18, weather_n12, weather_n13, weather_n15 and
 weather_n16.
 
 **noDice.** noDice ran 25 instances and answered 12 (2 fail, 4 run out
 of memory, 7 time out). Its answers differ from the reference's by at
-most 1.1e-06 relative (5.3e-07 absolute, link_8) over 12 instances. Of
-the 12 that tddlog and noDice both answer, both take under 0.1 s on 4;
-on the other 8 tddlog is faster on 8 (a median of 39 times). tddlog
+most 1.1e-06 relative (5.3e-07 absolute, link_8) over 12 instances. Over
+the 19 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, noDice takes 4853 s in all and tddlog
+84.6 s; over the 12 both answer, 653 s against tddlog's 24.6. tddlog
 alone answers router_16, weather_h1, weather_h100, weather_h600,
 weather_n15 and 2 more.
 
-**Psi.** Psi ran 13 instances and answered 0 (9 fail, 4 time out).
-tddlog alone answers link_4, router_4, weather_h1, weather_h100,
+**Psi.** Psi ran 13 instances and answered 0 (9 fail, 4 time out). Over
+the 8 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Psi takes 4800 s in all and tddlog
+59.1 s. tddlog alone answers link_4, router_4, weather_h1, weather_h100,
 weather_h600 and 3 more.
 
 **Storm sparse.** Storm sparse ran 32 instances and answered 27 (1 run
 out of memory, 4 time out). Its answers differ from the reference's by
 at most 4.1e-13 relative (1.4e-17 absolute, weather_h1000) over 27
-instances. Of the 27 that tddlog and Storm sparse both answer, tddlog is
-faster on 17 (a median of 13 times) and Storm sparse is faster on 10
-(weather_h100 2.57 s against 5.68, weather_h600 4.6 s against 13.6,
-weather_h200 2.83 s against 15.2 and weather_h400 3.28 s against 19).
-tddlog alone answers weather_n15 and weather_n16.
+instances. Over the 29 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Storm sparse takes
+1442 s in all and tddlog 395 s; over the 27 both answer, 242 s against
+tddlog's 355. Storm sparse is faster on 10 (weather_h100 2.57 s against
+5.68, weather_h600 4.6 s against 13.6, weather_h200 2.83 s against 15.2
+and weather_h400 3.28 s against 19, the largest differences). tddlog
+alone answers weather_n15 and weather_n16.
 
 **Storm exact.** Storm exact ran 22 instances and answered 14 (5 fail, 3
 time out). Its answers differ from the reference's by at most 3.4e-16
-relative (8.5e-22 absolute, weather_n9) over 14 instances. Of the 14
-that tddlog and Storm exact both answer, tddlog is faster on 14 (a
-median of 400 times). tddlog alone answers weather_h100, weather_h600,
-weather_n11, weather_n15 and weather_n16.
+relative (8.5e-22 absolute, weather_n9) over 14 instances. Over the 19
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Storm exact takes 3727 s in all and tddlog
+61.7 s; over the 14 both answer, 727 s against tddlog's 1.96. tddlog
+alone answers weather_h100, weather_h600, weather_n11, weather_n15 and
+weather_n16.
 
 **Storm dd.** Storm dd ran 25 instances and answered 17 (6 fail, 2 time
 out). Its answers differ from the reference's by at most 9.9e-15
-relative (6.9e-20 absolute, weather_h200) over 17 instances. Of the 17
-that tddlog and Storm dd both answer, tddlog is faster on 17 (a median
-of 125 times). tddlog alone answers weather_h300, weather_h600,
-weather_n12, weather_n15 and weather_n16.
+relative (6.9e-20 absolute, weather_h200) over 17 instances. Over the 22
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Storm dd takes 4283 s in all and tddlog 98.4
+s; over the 17 both answer, 1283 s against tddlog's 23.6. tddlog alone
+answers weather_h300, weather_h600, weather_n12, weather_n15 and
+weather_n16.
 
 **PRISM sparse.** PRISM sparse ran 30 instances and answered 24 (3 fail,
 3 run out of memory). Its answers differ from the reference's by at most
-8.7e-11 relative (3.0e-15 absolute, weather_h1000) over 24 instances. Of
-the 24 that tddlog and PRISM sparse both answer, tddlog is faster on 16
-(a median of 83 times) and PRISM sparse is faster on 8 (weather_h200 14
-s against 15.2, weather_h400 13.6 s against 19, weather_h300 13.9 s
-against 20.7 and weather_h700 15 s against 40.2). tddlog alone answers
-weather_n11, weather_n15 and weather_n16.
+8.7e-11 relative (3.0e-15 absolute, weather_h1000) over 24 instances.
+Over the 27 instances given to both that either answers, a run that does
+not answer counted at the 600 s limit, PRISM sparse takes 2269 s in all
+and tddlog 390 s; over the 24 both answer, 469 s against tddlog's 350.
+PRISM sparse is faster on 8 (weather_h200 14 s against 15.2,
+weather_h400 13.6 s against 19, weather_h300 13.9 s against 20.7 and
+weather_h700 15 s against 40.2, the largest differences). tddlog alone
+answers weather_n11, weather_n15 and weather_n16.
 
 **PRISM hybrid.** PRISM hybrid ran 12 instances and answered 3 (2 fail,
 3 run out of memory, 4 time out). Its answers differ from the
 reference's by at most 2.0e-16 relative (1.4e-20 absolute, weather_n7)
-over 3 instances. Of the 3 that tddlog and PRISM hybrid both answer,
-tddlog is faster on 3 (a median of 567 times). tddlog alone answers
-weather_h1, weather_h100, weather_h600, weather_n15, weather_n16 and 1
-more.
+over 3 instances. Over the 9 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, PRISM
+hybrid takes 4009 s in all and tddlog 59.6 s; over the 3 both answer,
+409 s against tddlog's 0.18. tddlog alone answers weather_h1,
+weather_h100, weather_h600, weather_n15, weather_n16 and 1 more.
 
 | instance | tddlog | Geni | noDice | Psi | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|

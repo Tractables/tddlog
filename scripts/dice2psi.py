@@ -18,13 +18,17 @@ come out as the joint. The program's value is therefore asked one
 component at a time, as run_dice does for the networks: `dice2psi.py
 program.dice K` writes the program whose value is the K-th component
 (counted from 0, left to right through nested tuples; `--components` prints
-how many there are and each one's type: `bool` or `int W`).
+how many there are and each one's type: `bool` or `int W`). With
+`--joint` the value, a tuple of Booleans, is one int(N) whose bits they
+are, the first the most significant: the Dice programs of an Alea.jl
+circuit's `joint` lines (bench.py's dicemap). A program Psi cannot express
+is refused (exit 3).
 
 Supported: what dice2problog.py supports except `/`, `%`, `::`, lists, and
 recursive functions (Psi has no recursion).
 
-Usage: dice2psi.py program.dice K > program.psi
-       dice2psi.py program.dice --components
+Usage: dice2psi.py program.dice K [--joint] > program.psi
+       dice2psi.py program.dice --components [--joint]
 """
 import argparse
 from fractions import Fraction
@@ -35,6 +39,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dice2problog import (Parser, bits_for, calls, deep,  # noqa: E402
                           discrete_probs, tokenize)
+from dice_ir import refuse  # noqa: E402
 
 BOOL = ('bool',)
 ATOM = re.compile(r'[A-Za-z_][A-Za-z0-9_]*|[0-9]+(\.[0-9]+)?')
@@ -279,8 +284,10 @@ class Translator:
             return self.components(t[1], a) + self.components(t[2], b)
         return [(code, t)]
 
-    def translate(self, text, k):
-        """(the Psi program asking component k, the components' types)."""
+    def translate(self, text, k, joint=False):
+        """(the Psi program asking component k, the components' types). With
+        joint, the value, a tuple of Booleans, is one int(N) whose bits they
+        are, the first the most significant: their joint distribution."""
         parser = Parser(tokenize(text))
         funs, body = parser.program()
         names = [f[0] for f in funs]
@@ -293,6 +300,11 @@ class Translator:
         out = []
         value, t = self.value(body, {}, out, 'result')
         comps = self.components(t, value)
+        if joint:
+            if any(ct != BOOL for _, ct in comps):
+                raise TypeError('joint: a value of Booleans')
+            n = len(comps)
+            comps = [(' + '.join(f'({c})*{2 ** (n - 1 - i)}' for i, (c, _) in enumerate(comps)), ('int', n))]
         types = [ct for _, ct in comps]
         if k is None:
             return None, types
@@ -302,10 +314,11 @@ class Translator:
         return '\n\n'.join(self.defs + [f'def main() {{\n  {main}\n}}']) + '\n', types
 
 
-def translate(text, k, source='a Dice program'):
+def translate(text, k, source='a Dice program', joint=False):
     """The Psi program that returns component k of a Dice program's value,
-    with the types of all the components (`bool` or ('int', w))."""
-    program, types = deep(lambda: Translator().translate(text, k))
+    with the types of all the components (`bool` or ('int', w)); with
+    joint, of the int whose bits are the value's Booleans."""
+    program, types = deep(lambda: Translator().translate(text, k, joint))
     if program is not None:
         program = f'// {source}, translated by tddlog\'s scripts/dice2psi.py, component {k}.\n' + program
     return program, types
@@ -316,11 +329,17 @@ def main():
     ap.add_argument('program')
     ap.add_argument('component', nargs='?', type=int)
     ap.add_argument('--components', action='store_true', help="print each component's type instead")
+    ap.add_argument('--joint', action='store_true', help='the value, a tuple of Booleans, as one int whose bits '
+                    'they are (the most significant first): their joint distribution')
     a = ap.parse_args()
     if a.components == (a.component is not None):
         raise SystemExit('give a component K, or --components')
     with open(a.program) as f:
-        program, types = translate(f.read(), a.component, os.path.basename(a.program))
+        text = f.read()
+    try:
+        program, types = translate(text, a.component, os.path.basename(a.program), a.joint)
+    except NotImplementedError as err:
+        refuse(err)
     if a.components:
         for t in types:
             print('bool' if t == BOOL else f'int {t[1]}')

@@ -3,9 +3,10 @@
 // The results page: the release run's suites from suites.json (the networks
 // and the logic programs) and ppl.json (the programs of Dice, Alea.jl and
 // Roulette), both written by the generator of README.md's results and
-// the baselines branch's docs/benchmarks.md. A family of suites is its findings in prose, a plot
-// of the instances each system answers within a time limit, the table of
-// every instance's times, and how the runs were made.
+// the baselines branch's docs/benchmarks.md. A family of suites is its
+// findings in prose, plots of the instances each system answers within a
+// time limit (see split), the table of every instance's times, and how the
+// runs were made.
 
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
 // data, as the playground's does to its files.
@@ -19,7 +20,7 @@ const FAILURES = {
   timeout: [(limit) => `>${limit}`, "the time limit ran out"],
   memout: [() => "memory", "out of memory (the address space a run gets, or the Java heap)"],
   error: [() => "error", "the system stopped with an error"],
-  unsupported: [() => "n/a", "the system does not take the program (aspmc's front end does not condition on evidence; tddlog's decision vtree needs a guard)"],
+  unsupported: [() => "n/a", "the system cannot express the program (aspmc's front end does not condition on evidence; a translator refuses what its target language lacks)"],
   skipped: [() => "skipped", "not run: the system had failed on a smaller size of the same program"],
   wrong: [() => "wrong", "an answer off the reference by more than 1e-6"],
   zero: [() => "zero", "every answer printed as 0 where the reference's are positive"],
@@ -81,15 +82,22 @@ const dashed = (key) => key.endsWith("-process");
 
 // The instances each system answers within a time limit, the limit on a log
 // scale from 0.2 s to the suite's; a line further up and to the left is
-// better. Drawn at the width of its box, again when the box changes width.
-function cactus(box, suite, names) {
-  const width = Math.max(280, Math.floor(box.clientWidth));
-  const narrow = width < 560;
-  const height = narrow ? 300 : Math.max(380, suite.systems.length * 14 + 22 + 46);
-  const left = 46, right = narrow ? 12 : 128, top = 22, bottom = 46;
-  const x0 = left, x1 = width - right, y0 = top, y1 = height - bottom;
+// better. Drawn at the width of its box, again when the box changes width;
+// a small plot is shorter and names its lines in its legend only.
+function cactus(box, suite, names, small = false) {
+  const width = Math.max(small ? 240 : 280, Math.floor(box.clientWidth));
+  const narrow = small || width < 560;
+  const height = small ? 240 : narrow ? 300 : Math.max(380, suite.systems.length * 14 + 22 + 46);
   const n = suite.instances.length;
   const hi = suite.limit;
+  const series = suite.systems.map((key, column) => {
+    const times = suite.instances.map((row) => row[column + 1]).filter(answered).filter((t) => t <= hi * 1.001).sort((a, b) => a - b);
+    return { key, times };
+  });
+  // The end labels' room: the longest at 7 px a character.
+  const label = ({ key, times }) => `${names[key]} ${times.length}`;
+  const left = 46, right = narrow ? 12 : Math.max(128, 16 + 7 * Math.max(0, ...series.map((s) => label(s).length))), top = 22, bottom = 46;
+  const x0 = left, x1 = width - right, y0 = top, y1 = height - bottom;
   const lx = (t) => x0 + (Math.log10(Math.min(Math.max(t, FLOOR), hi)) - Math.log10(FLOOR)) / (Math.log10(hi) - Math.log10(FLOOR)) * (x1 - x0);
   const ly = (k) => y1 - (k / n) * (y1 - y0);
 
@@ -114,14 +122,10 @@ function cactus(box, suite, names) {
   plot.append(svg("line", { class: "axis", x1: x0, y1: y1, x2: x1, y2: y1 }));
   plot.append(svg("line", { class: "axis", x1: x0, y1: y0, x2: x0, y2: y1 }));
   plot.append(svg("text", { class: "label", x: (x0 + x1) / 2, y: height - 8, "text-anchor": "middle" },
-    "time limit per instance, seconds (log scale)"));
+    small ? "time limit, seconds" : "time limit per instance, seconds (log scale)"));
   plot.append(svg("text", { class: "label", transform: `translate(13 ${(y0 + y1) / 2}) rotate(-90)`, "text-anchor": "middle" },
     "instances answered"));
 
-  const series = suite.systems.map((key, column) => {
-    const times = suite.instances.map((row) => row[column + 1]).filter(answered).filter((t) => t <= hi * 1.001).sort((a, b) => a - b);
-    return { key, times };
-  });
   // tddlog last, so that it is drawn on top.
   const order = [...series].sort((a, b) => (a.key === "tddlog") - (b.key === "tddlog"));
   for (const { key, times } of order) {
@@ -136,7 +140,7 @@ function cactus(box, suite, names) {
   // The end labels, where there is room: each line's name at its last
   // height, moved apart where two would overlap.
   if (!narrow) {
-    const labels = series.map(({ key, times }) => ({ key, y: ly(times.length), text: `${names[key]} ${times.length}` }))
+    const labels = series.map((s) => ({ key: s.key, y: ly(s.times.length), text: label(s) }))
       .sort((a, b) => a.y - b.y);
     for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 13);
     const over = labels.length ? labels[labels.length - 1].y - (y1 + 4) : 0;
@@ -199,43 +203,121 @@ function legend(series, names, n, figure) {
   return list;
 }
 
+// A plot of a suite with its legend, drawn again when its box changes width;
+// a small one under its title. The figure names the systems it draws and
+// the number of its instances, and a small one the systems it is for.
+function plotted(suite, names, small = false) {
+  const figure = element("figure", { class: small ? "plot part" : "plot", "data-systems": suite.systems.join(" "),
+    "data-instances": String(suite.instances.length) });
+  if (small) {
+    figure.dataset.owners = suite.owners.join(" ");
+    figure.append(element("figcaption", {}, suite.title));
+  }
+  const box = element("div", { class: "box" });
+  figure.append(box);
+  const redraw = () => {
+    const series = cactus(box, suite, names, small);
+    const old = figure.querySelector(".legend");
+    const fresh = legend(series, names, suite.instances.length, figure);
+    if (old) old.replaceWith(fresh);
+    else box.before(fresh);
+  };
+  return { figure, redraw };
+}
+
+// A plot draws only the systems given every one of its instances, so that
+// its lines count the same instances; a system given an instance has a
+// record of it (an answer, a failure, "skipped" or "unsupported"), and null
+// in the data means it was not given the instance. Each part of the
+// instances that a system was given alone, from PART instances or a quarter
+// of the suite's (whichever is fewer), has a small plot of its own, with
+// every system given all of that part; systems given the same part share
+// its plot. Returns the suite cut to the systems given all of it, then each
+// part's cut, largest first.
+const PART = 20;
+
+function split(suite, names) {
+  const n = suite.instances.length;
+  const every = (rows) => suite.systems.filter((key, i) => rows.every((j) => suite.instances[j][i + 1] !== null));
+  const parts = new Map();
+  suite.systems.forEach((key, i) => {
+    const rows = suite.instances.flatMap((row, j) => (row[i + 1] === null ? [] : [j]));
+    if (rows.length === n || rows.length < Math.min(PART, n / 4)) return;
+    const id = rows.join(" ");
+    if (!parts.has(id)) parts.set(id, { rows, owners: [] });
+    parts.get(id).owners.push(key);
+  });
+  const small = [...parts.values()].sort((a, b) => b.rows.length - a.rows.length).map(({ rows, owners }) => {
+    const who = [...new Set(owners.map((key) => named(key, names)))];
+    const title = `${who.length === 1 ? `${who[0]}'s` : `${joined(who)}:`} ${count(rows.length)} instances`;
+    return cut(suite, title, every(rows), rows, owners);
+  });
+  const all = suite.instances.map((row, j) => j);
+  return [cut(suite, suite.title, every(all), all, []), ...small];
+}
+
+// The suite cut to some of its systems and instances, its limit the longest
+// of theirs.
+function cut(suite, title, systems, rows, owners) {
+  const columns = systems.map((key) => suite.systems.indexOf(key) + 1);
+  return {
+    key: suite.key, title, systems, owners,
+    instances: rows.map((j) => [suite.instances[j][0], ...columns.map((c) => suite.instances[j][c])]),
+    limit: Math.max(...rows.map((j) => suite.limits?.[j] ?? suite.limit)),
+  };
+}
+
+// A suite's plots (split): the plot of the systems given every instance, the
+// small plots under a heading, and a function that draws them all.
+function plots(suite, names) {
+  const [whole, ...parts] = split(suite, names).map((s, k) => plotted(s, names, k > 0));
+  const grid = parts.length === 0 ? [] : [element("h4", { class: "more" }, "Systems given part of the instances"),
+    element("div", { class: "parts" }, ...parts.map((p) => p.figure))];
+  const redraw = () => {
+    for (const p of [whole, ...parts]) p.redraw();
+  };
+  return { whole: whole.figure, parts: grid, redraw };
+}
+
 // ------------------------------------------------------------- every problem
 
 // Why a system is not given some of the problems: the reasons the coverage
-// of the run states, by system (a system's variants, as storm-sparse and
-// storm-exact, share their stem's).
+// of the run states, by system (a system's variants, as alea-process or
+// storm-sparse, share their stem's). A system without one was not run on
+// them.
 const CANNOT = {
-  ace: "it reads Bayesian and Markov networks, not logic programs",
-  merlin: "it reads Bayesian and Markov networks, not logic programs",
-  agrum: "it reads Bayesian networks, not logic programs",
-  pgmpy: "it reads Bayesian networks, not logic programs",
-  libdai: "it reads graphical models, not logic programs",
-  tensorinference: "it reads graphical models, not logic programs",
+  ace: "it reads networks, not programs",
+  merlin: "it reads networks, not programs",
+  agrum: "it reads networks, not programs",
+  pgmpy: "it reads networks, not programs",
+  libdai: "it reads networks, not programs",
+  tensorinference: "it reads networks, not programs",
   aspmc: "its ProbLog front end ignores evidence, so it is not given programs with evidence",
   dice: "its language has no relations and no recursion, and it is given the programs written in it",
   nodice: "its language has no relations and no recursion, and it is given the programs written in it",
-  psi: "its language has no relations and no recursion, and it is given the programs written in it",
-  alea: "it takes programs written in its own language, not relational logic programs",
-  roulette: "it takes programs written in its own language, not relational logic programs",
-  geni: "it runs only its own programs",
-  genfer: "it runs only its own programs",
-  sppl: "it runs only its own programs",
-  pluck: "it runs only its own programs",
-  provsql: "it reads SQL, and only the TPC-H queries are translated for it",
+  psi: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
+  geni: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
+  genfer: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
+  sppl: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
+  alea: "it takes programs written in its own language or translated into it, not relational logic programs",
+  roulette: "it takes programs written in its own language or translated into it, not relational logic programs",
+  pluck: "it runs its own sequence models",
+  provsql: "it reads SQL, and only the queries over a probabilistic database are written in it",
   storm: "it reads Markov chains, and only the weather factory is written for it",
   prism: "it reads Markov chains, and only the weather factory is written for it",
-  ganak: "it reads weighted CNFs, which only the partition-function sets of the networks are written as",
-  sharpsat: "it reads weighted CNFs, which only the partition-function sets of the networks are written as",
 };
 // The network readers' reason holds for the program suites only: a network
 // suite they missed is one they were not run on in this release.
 const READS_NETWORKS = new Set(["ace", "merlin", "agrum", "pgmpy", "libdai", "tensorinference"]);
 const NETWORK_SUITES = new Set(["std_bn", "uai", "uai_pr", "large", "ace", "uaipr", "uaitpr"]);
 const stem = (key) => key.split("-")[0];
+// A system's name without its variant's: Alea.jl for alea-process.
+const named = (key, names) => names[stem(key)] ?? (names[key] ?? key).split(",")[0];
+const joined = (xs) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
 // The instances of several suites as one suite: its systems the union of
-// theirs (tddlog first), a system that did not run an instance an empty
-// cell, a time past its own suite's limit a timeout.
+// theirs (tddlog first), a system not given an instance null, a time past
+// its own suite's limit a timeout, each instance's limit its suite's.
 function merged(title, about, suites) {
   const systems = [];
   for (const suite of suites) for (const key of suite.systems) if (!systems.includes(key)) systems.push(key);
@@ -249,7 +331,8 @@ function merged(title, about, suites) {
     return out;
   }));
   const sources = suites.flatMap((suite) => suite.instances.map(() => suite.key));
-  return { key: "all", title, about, systems, instances, sources, limit: Math.max(...suites.map((suite) => suite.limit)) };
+  const limits = suites.flatMap((suite) => suite.instances.map(() => suite.limit));
+  return { key: "all", title, about, systems, instances, sources, limits, limit: Math.max(...suites.map((suite) => suite.limit)) };
 }
 
 // One sentence for each system that was not given some of the instances.
@@ -260,8 +343,7 @@ function cannot(suite, names) {
     const columns = suite.systems.flatMap((key, i) => (stem(key) === r ? [i + 1] : []));
     const missed = suite.instances.flatMap((row, j) => (columns.every((c) => row[c] === null) ? [suite.sources[j]] : []));
     if (missed.length === 0) continue;
-    const first = suite.systems.find((key) => stem(key) === r);
-    const name = names[r] ?? names[first].split(",")[0];
+    const name = named(r, names);
     const all = count(suite.instances.length);
     const own = READS_NETWORKS.has(r) ? missed.filter((s) => NETWORK_SUITES.has(s)).length : 0;
     if (missed.length > own) list.append(element("li", {}, `${name} was not given ${count(missed.length - own)} of the ${all} problems: ${CANNOT[r] ?? "it was not run on them"}.`));
@@ -270,22 +352,8 @@ function cannot(suite, names) {
   return list;
 }
 
-// A plot of a suite with its legend, drawn again when its box changes width.
-function plotted(suite, names) {
-  const figure = element("figure", { class: "plot" });
-  const box = element("div", { class: "box" });
-  figure.append(box);
-  const redraw = () => {
-    const series = cactus(box, suite, names);
-    const old = figure.querySelector(".legend");
-    const fresh = legend(series, names, suite.instances.length, figure);
-    if (old) old.replaceWith(fresh);
-    else figure.prepend(fresh);
-  };
-  return { figure, redraw };
-}
-
-const EVERYTHING = "Every system on every instance: an instance a system did not answer counts as unanswered, whether it timed out, failed, or the system cannot express it or was not given it. Each line is one system, and the legend says how many of the instances it answers. The time axis starts at 0.1 s.";
+// What the plots of several suites draw (split).
+const DRAWN = `The large plot draws the systems given every one of these instances, so that its lines count the same instances; an instance a system was given and did not answer counts as unanswered, whether it ran out of time or memory, failed, or the system cannot express the program. A system given only part of them has a small plot of that part, with every system given all of it, where the part has ${PART} instances or a quarter of these, whichever is fewer. The list under the plots says why a system was not given the rest.`;
 
 // ------------------------------------------------------------- the table
 
@@ -313,7 +381,7 @@ function table(suite, names, pages) {
       const v = row[i + 1];
       let td;
       if (answered(v)) td = element("td", { class: `num${v === best && !dashed(key) ? " best" : ""}` }, seconds(v));
-      else if (v === null) td = element("td", { class: "num none", title: "not run" }, "");
+      else if (v === null) td = element("td", { class: "num none", title: "not given" }, "");
       else {
         seen.add(v);
         const [text, meaning] = FAILURES[v] ?? [() => v, v];
@@ -359,7 +427,7 @@ function table(suite, names, pages) {
     if (!seen.has(status)) continue;
     notes.push(`${FAILURES[status][0](suite.limit)}: ${FAILURES[status][1]}.`);
   }
-  if (suite.instances.some((row) => row.slice(1).includes(null))) notes.push("An empty cell: the system did not run on the instance.");
+  if (suite.instances.some((row) => row.slice(1).includes(null))) notes.push("An empty cell: the system was not given the instance.");
   parts.push(element("p", { class: "note" }, notes.join(" ")));
   return element("details", { class: "instances" },
     element("summary", {}, `Every instance's times (${count(suite.instances.length)})`), ...parts);
@@ -388,7 +456,7 @@ function family(f, names, pages) {
   const panel = element("div", { class: "suite" });
   const tabs = element("div", { class: "tabs", role: "group", "aria-label": `${f.title}: suites` });
   const everything = merged("All problems",
-    `The instances of all ${f.suites.length} suites of this family. ${EVERYTHING}`, f.suites);
+    `The instances of all ${f.suites.length} suites of this family. ${DRAWN}`, f.suites);
   const byKey = new Map([everything, ...f.suites].map((s) => [s.key, s]));
   let current = null;
   let redraw = () => {};
@@ -397,7 +465,7 @@ function family(f, names, pages) {
     if (suite === undefined) return;
     current = key;
     for (const b of tabs.children) b.setAttribute("aria-pressed", String(b.dataset.suite === key));
-    const { figure, redraw: draw } = plotted(suite, names);
+    const { whole, parts, redraw: draw } = plots(suite, names);
     // The suite's findings beside its plot.
     const aside = element("aside", { class: "finding" });
     for (const card of f.cards.filter((c) => c.suite === key)) {
@@ -407,7 +475,7 @@ function family(f, names, pages) {
     // says which systems were not given some of the problems.
     const rest = key === "all" ? [cannot(suite, names)] : [table(suite, names, pages)];
     panel.replaceChildren(element("h3", {}, suite.title), prose("p", suite.about, { class: "about" }),
-      element("div", { class: "view" }, ...(key === "all" ? [figure] : [figure, aside])), ...rest);
+      element("div", { class: "view" }, ...(key === "all" ? [whole] : [whole, aside])), ...parts, ...rest);
     redraw = draw;
     redraw();
     if (scroll) tabs.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -440,16 +508,16 @@ function family(f, names, pages) {
   return section;
 }
 
-// One plot over every instance of the run, every system, above the families.
+// The plots over every instance of the run (split), above the families.
 function overall(families, names) {
   const suites = families.flatMap((f) => f.suites);
   const total = suites.reduce((n, s) => n + s.instances.length, 0);
   const suite = merged("Every problem of the release run",
-    `The ${count(total)} instances of all ${families.length} families. ${EVERYTHING}`, suites);
-  const { figure, redraw } = plotted(suite, names);
+    `The ${count(total)} instances of all ${families.length} families. ${DRAWN}`, suites);
+  const { whole, parts, redraw } = plots(suite, names);
   const section = element("section", { class: "card family", id: "overall" },
     element("h2", {}, suite.title), prose("p", suite.about, { class: "about" }),
-    element("div", { class: "view" }, figure), cannot(suite, names));
+    element("div", { class: "view" }, whole), ...parts, cannot(suite, names));
   redraw();
   let last = 0;
   new ResizeObserver(() => {

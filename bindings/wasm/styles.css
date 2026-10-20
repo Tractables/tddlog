@@ -429,7 +429,9 @@ footer {
 /* The results page. Each system has a colour of its own, the same in every
    plot; the light and the dark steps are each checked for contrast against
    the card they are drawn on and for telling neighbours apart under colour
-   blindness. Roulette never shares a plot with aspmc and takes its green. */
+   blindness. Roulette never shares a plot with aspmc and takes its green.
+   Psi (grey), Storm (teal) and PRISM (brown) share plots with tddlog,
+   Dice and noDice, and keep apart from their blue, purple and yellow. */
 :root {
   --s-tddlog: #2070a8;
   --s-ace: #eb6834;
@@ -447,17 +449,17 @@ footer {
   --s-provsql: #5a6b78;
   --s-geni: #b02a6b;
   --s-nodice: #9a7b0a;
-  --s-psi: #2a6fb0;
+  --s-psi: #4d4d4d;
   --s-genfer: #c0392b;
   --s-sppl: #7a5230;
   --s-pluck: #2f8f6e;
-  --s-storm-sparse: #3f5aa8;
-  --s-storm: #3f5aa8;
-  --s-storm-exact: #6f86d0;
-  --s-storm-dd: #1b3a80;
-  --s-prism-sparse: #8a8a2a;
-  --s-prism: #8a8a2a;
-  --s-prism-hybrid: #b4b45e;
+  --s-storm-sparse: #00838f;
+  --s-storm: #00838f;
+  --s-storm-exact: #4fb3bb;
+  --s-storm-dd: #005a62;
+  --s-prism-sparse: #8c564b;
+  --s-prism: #8c564b;
+  --s-prism-hybrid: #b88a80;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -476,17 +478,17 @@ footer {
     --s-provsql: #9fb0bd;
     --s-geni: #ee7fb0;
     --s-nodice: #e6c453;
-    --s-psi: #7ab4ec;
+    --s-psi: #bdbdbd;
     --s-genfer: #f08a7c;
     --s-sppl: #c9a07a;
     --s-pluck: #6fd2ad;
-    --s-storm-sparse: #8ea4ea;
-    --s-storm: #8ea4ea;
-    --s-storm-exact: #b7c4f2;
-    --s-storm-dd: #5e7fd0;
-    --s-prism-sparse: #c8c85e;
-    --s-prism: #c8c85e;
-    --s-prism-hybrid: #e3e39a;
+    --s-storm-sparse: #4fc3cf;
+    --s-storm: #4fc3cf;
+    --s-storm-exact: #9ee0e6;
+    --s-storm-dd: #2a95a0;
+    --s-prism-sparse: #d2a679;
+    --s-prism: #d2a679;
+    --s-prism-hybrid: #e8cba8;
   }
 }
 
@@ -505,17 +507,17 @@ footer {
   --s-provsql: #9fb0bd;
   --s-geni: #ee7fb0;
   --s-nodice: #e6c453;
-  --s-psi: #7ab4ec;
+  --s-psi: #bdbdbd;
   --s-genfer: #f08a7c;
   --s-sppl: #c9a07a;
   --s-pluck: #6fd2ad;
-  --s-storm-sparse: #8ea4ea;
-  --s-storm: #8ea4ea;
-  --s-storm-exact: #b7c4f2;
-  --s-storm-dd: #5e7fd0;
-  --s-prism-sparse: #c8c85e;
-  --s-prism: #c8c85e;
-  --s-prism-hybrid: #e3e39a;
+  --s-storm-sparse: #4fc3cf;
+  --s-storm: #4fc3cf;
+  --s-storm-exact: #9ee0e6;
+  --s-storm-dd: #2a95a0;
+  --s-prism-sparse: #d2a679;
+  --s-prism: #d2a679;
+  --s-prism-hybrid: #e8cba8;
 }
 
 .s-tddlog { --s: var(--s-tddlog); }
@@ -554,7 +556,7 @@ footer {
 
 .family h2 { font-size: 1.15rem; }
 .family h3 { margin: 0 0 0.4rem; font-size: 14px; font-weight: 600; }
-.family h3.more {
+.family h3.more, .family h4.more {
   margin: 1.4rem 0 0.6rem;
   font-size: 12px;
   font-weight: 500;
@@ -613,16 +615,34 @@ button.plain:hover:not(:disabled) { border-color: var(--accent); }
   color: var(--card);
 }
 
-/* A suite: its plot, and its findings beside it once there is room. */
+/* A suite: its plot, and its findings beside it once there is room; a plot
+   without findings takes the width. */
 .view { display: grid; gap: 0.5rem 1.5rem; }
 
 @media (min-width: 64rem) {
   .view { grid-template-columns: minmax(0, 2.2fr) minmax(17rem, 1fr); }
 }
 
+.view > :only-child { grid-column: 1 / -1; }
 .view aside.finding { align-self: start; }
 figure.plot { margin: 0 0 0.5rem; min-width: 0; }
 .plot .box { position: relative; }
+
+/* The small plots under a suite's, one for each part of its instances that
+   some systems were given alone, as many to a row as there is room for. */
+.parts {
+  display: grid;
+  gap: 1.2rem 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  margin-bottom: 0.6rem;
+}
+
+/* A row's plots line up at the bottom over legends of different heights. */
+figure.plot.part { display: flex; flex-direction: column; margin: 0; }
+.part .box { margin-top: auto; }
+.part figcaption { margin: 0 0 0.35rem; font-size: 13px; font-weight: 600; }
+.part .legend { gap: 0.2rem 0.9rem; margin-bottom: 0.4rem; font-size: 12px; }
+.part i.sw { width: 1.1rem; }
 
 .legend {
   display: flex;

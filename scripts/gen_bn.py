@@ -82,6 +82,11 @@ values are numbered in declaration order, and the program returns the
 queried variable, or a tuple of the queried variables in the order the
 ProbLog format queries them: Dice prints a tuple's joint distribution, so
 Dice runs one program per variable (`--query VAR`) for the marginals.
+An observed variable is followed by `observe`, and a Markov network's
+factor, a variable of one value, is a `flip` of its row's weight, observed
+true, as the ProbLog format observes `f(ok)`. The program defines the
+variables it returns or observes and their ancestors only, the part of
+the network the answers depend on.
 """
 import argparse
 from decimal import Decimal
@@ -791,14 +796,19 @@ def to_problog(network, query='all', evidence=()):
     return '\n'.join(out) + '\n'
 
 
-def to_dice(network, query):
+def to_dice(network, query, evidence=()):
     order, variables, tables = network
-    queried = queried_variables(order, variables, tables, query)
+    observed = dict(evidence)
+    queried = [v for v in queried_variables(order, variables, tables, query) if v not in observed]
+    if not queried:
+        sys.exit(f'--query {query}: every queried variable is observed, nothing is left to query')
     names = {v: ident(v).upper() for v in order}
     out = []
 
     def table(v, parents, rows, key):
         if not parents:
+            if len(variables[v]) == 1:   # a Markov network's factor: its row's weight
+                return f'flip {min(1.0, float(rows[key][0]))!r}'
             probs = normalized(rows[key], f'{v} {key}')
             return 'discrete(' + ', '.join(repr(float(p)) for p in probs) + ')'
         p, rest = parents[0], parents[1:]
@@ -810,9 +820,24 @@ def to_dice(network, query):
             e = f'if ({names[p]} == int({bits}, {k})) then ({branches[k]}) else ({e})'
         return e
 
+    # The returned and observed variables and their ancestors: the others
+    # sum out.
+    relevant, stack = set(), queried + list(observed)
+    while stack:
+        v = stack.pop()
+        if v not in relevant:
+            relevant.add(v)
+            stack += tables[v][0]
     for v in topological(order, tables):   # a let must follow its parents
+        if v not in relevant:
+            continue
         parents, rows = tables[v]
         out.append(f'let {names[v]} = {table(v, parents, rows, ())} in')
+        if v in observed:   # names in lower case, which no variable's is
+            vals = variables[v]
+            seen = names[v] if len(vals) == 1 else \
+                f'{names[v]} == int({max(1, (len(vals) - 1).bit_length())}, {vals.index(observed[v])})'
+            out.append(f'let obs_{len(out)} = observe ({seen}) in')
     result = names[queried[-1]]
     for v in reversed(queried[:-1]):   # Dice's tuples are pairs
         result = f'({names[v]}, {result})'
@@ -820,7 +845,7 @@ def to_dice(network, query):
     return '\n'.join(out) + '\n'
 
 
-if __name__ == '__main__':
+def arguments():
     ap = argparse.ArgumentParser()
     ap.add_argument('network')
     ap.add_argument('--query', default='all')
@@ -839,15 +864,21 @@ if __name__ == '__main__':
                     'distinct entry of a table (enc5)')
     ap.add_argument('--rescale', action='store_true', help='divide every row by its sum')
     ap.add_argument('--format', default='problog', choices=['problog', 'dice'])
-    a = ap.parse_args()
+    return ap
+
+
+def model(a):
+    """The network, its offset (`offset_line`) and its observations, a
+    Markov network's factors first, of the arguments `a`; the observations
+    without the factors' too, which the CNF holds as functions."""
     if a.evidence_from != 'leaves' and not a.evidence:
         sys.exit('--evidence-from chooses the evidence pool and needs --evidence')
     if a.seed is not None and not a.evidence:
         sys.exit('--seed chooses the evidence, and there is none (--evidence K)')
     if a.evidence and a.evidence_file:
         sys.exit('--evidence samples the observations and --evidence-file reads them: one of the two')
-    if (a.evidence or a.evidence_file or a.inst or a.uai or a.cnf) and a.format == 'dice':
-        sys.exit('the Dice format observes nothing')
+    if (a.inst or a.uai or a.cnf) and a.format == 'dice':
+        sys.exit("--inst, --uai and --cnf write the ProbLog format's companions, not the Dice format's")
     if a.query == 'none' and a.format == 'dice':
         sys.exit('--query none asks nothing, and a Dice program returns the queried variables')
     uai = a.network.removesuffix('.gz').endswith('.uai')
@@ -868,8 +899,8 @@ if __name__ == '__main__':
         sys.exit('--encoding chooses how --cnf writes the tables, and there is no --cnf')
     if a.cnf and a.rescale:
         sys.exit("--cnf encodes the UAI file's own entries, which --rescale does not change")
-    if forced and (a.evidence or a.format == 'dice'):
-        sys.exit('a Markov network cannot be sampled forward (--evidence) or written for Dice')
+    if forced and a.evidence:
+        sys.exit('a Markov network cannot be sampled forward (--evidence)')
     if a.evid and (a.evidence or a.evidence_file):
         sys.exit('--evid, --evidence and --evidence-file each choose the observations: one of them')
     if a.rescale:
@@ -882,20 +913,39 @@ if __name__ == '__main__':
         evidence = read_evid(a.evid, network)
     else:
         evidence = []
+    return network, offset, forced + evidence, evidence
+
+
+def dice_programs(argv):
+    """The Dice program of the network and observations of gen_bn.py's
+    arguments `argv` for each variable its `--query` asks, one returned
+    each, as (the variable's name in the ProbLog format, the program):
+    Dice prints a tuple's joint distribution, the program of one
+    variable its marginal."""
+    a = arguments().parse_args([*argv, '--format', 'dice'])
+    network, _, evidence, _ = model(a)
+    order, variables, tables = network
+    observed = {v for v, _ in evidence}
+    return [(ident(v), to_dice(network, v, evidence))
+            for v in queried_variables(order, variables, tables, a.query) if v not in observed]
+
+
+if __name__ == '__main__':
+    a = arguments().parse_args()
+    network, offset, evidence, observations = model(a)
     if a.cnf:
         with open(a.cnf, 'w') as f:
-            f.write(uai_cnf(a.network, evidence, a.encoding or 'enc1')[0])
-    evidence = forced + evidence
+            f.write(uai_cnf(a.network, observations, a.encoding or 'enc1')[0])
     if a.inst:
         with open(a.inst, 'w') as f:
             f.write(write_inst(evidence))
     if a.uai:
-        model, evid = write_uai(network, evidence)
+        text, evid = write_uai(network, evidence)
         with open(a.uai, 'w') as f:
-            f.write(model)
+            f.write(text)
         with open(a.uai + '.evid', 'w') as f:
             f.write(evid)
     if a.format == 'dice':
-        sys.stdout.write(to_dice(network, a.query))
+        sys.stdout.write(to_dice(network, a.query, evidence))
     else:
         sys.stdout.write(offset_line(offset) + to_problog(network, a.query, evidence))

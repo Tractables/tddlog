@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
     <h1>noisyor6_9</h1>
-    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_noisyor.py 6 9 --seed 1</code>.</p>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. ProvSQL ran on the two tuple-independent families, pdb and noisy-or (the others are recursive or have annotated disjunctions), in a later run on another machine, each instance beside tddlog: its times compare with that run&#x27;s tddlog, which its comparison uses. Made by <code>gen_noisyor.py 6 9 --seed 1</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.004</td><td class="num">0.10</td><td class="num">0.51</td><td class="num fail" title="the system does not take the program">n/a</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; n/a: the system does not take the program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><td class="num">0.004</td><td class="num">0.10</td><td class="num">0.51</td><td class="num fail" title="the system does not take the program">n/a</td><td class="num">0.31</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; n/a: the system does not take the program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -187,7 +187,7 @@ main :-
   <h2>The answers</h2>
   <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>disease(d0)</th><td class="num">0.0004949312235</td><td class="num">0.0004949312235</td><td class="num">0.00049493122</td><td class="num">0.00049493122</td><td class="num">0.00049493122</td><td class="num">0.0004949312235</td></tr><tr><th>disease(d1)</th><td class="num">0.0007961269723</td><td class="num">0.0007961269723</td><td class="num">0.00079612697</td><td class="num">0.00079612697</td><td class="num">0.00079612697</td><td class="num">0.0007961269723</td></tr><tr><th>disease(d2)</th><td class="num">0.6552860837</td><td class="num">0.6552860837</td><td class="num">0.65528608</td><td class="num">0.65528608</td><td class="num">0.65528608</td><td class="num">0.6552860837</td></tr><tr><th>disease(d3)</th><td class="num">0.0002800150072</td><td class="num">0.0002800150072</td><td class="num">0.00028001501</td><td class="num">0.00028001501</td><td class="num">0.00028001501</td><td class="num">0.0002800150071</td></tr><tr><th>disease(d4)</th><td class="num">0.03839943918</td><td class="num">0.03839943918</td><td class="num">0.038399439</td><td class="num">0.038399439</td><td class="num">0.038399439</td><td class="num">0.03839943918</td></tr><tr><th>disease(d5)</th><td class="num">0.03582735422</td><td class="num">0.03582735422</td><td class="num">0.035827354</td><td class="num">0.035827354</td><td class="num">0.035827354</td><td class="num">0.03582735422</td></tr></tbody></table></div>
 </section>
-<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
 </main>
 <script src="../bench.js"></script>

@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
     <h1>pedigree4_4</h1>
-    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_pedigree.py 4 4 --seed 1</code>.</p>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. ProvSQL ran on the two tuple-independent families, pdb and noisy-or (the others are recursive or have annotated disjunctions), in a later run on another machine, each instance beside tddlog: its times compare with that run&#x27;s tddlog, which its comparison uses. Made by <code>gen_pedigree.py 4 4 --seed 1</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.03</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system does not take the program">n/a</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. n/a: the system does not take the program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><td class="num">0.03</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system does not take the program">n/a</td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. n/a: the system does not take the program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -233,7 +233,7 @@ main :-
   <h2>The answers</h2>
   <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th></tr></thead><tbody><tr><th>bloodtype(i3_0,a)</th><td class="num">0.5032147931</td><td class="num">0.5032147931</td></tr><tr><th>bloodtype(i3_0,b)</th><td class="num">0.1303396118</td><td class="num">0.1303396118</td></tr><tr><th>bloodtype(i3_0,ab)</th><td class="num">0.1647808617</td><td class="num">0.1647808617</td></tr><tr><th>bloodtype(i3_0,null)</th><td class="num">0.167007067</td><td class="num">0.167007067</td></tr><tr><th>bloodtype(i3_1,a)</th><td class="num">0.4577045849</td><td class="num">0.4577045849</td></tr><tr><th>bloodtype(i3_1,b)</th><td class="num">0.1344749343</td><td class="num">0.1344749343</td></tr><tr><th>bloodtype(i3_1,ab)</th><td class="num">0.1735742741</td><td class="num">0.1735742741</td></tr><tr><th>bloodtype(i3_1,null)</th><td class="num">0.1709816615</td><td class="num">0.1709816615</td></tr><tr><th>bloodtype(i3_2,a)</th><td class="num">0.5291709483</td><td class="num">0.5291709483</td></tr><tr><th>bloodtype(i3_2,b)</th><td class="num">0.110276319</td><td class="num">0.110276319</td></tr><tr><th>bloodtype(i3_2,ab)</th><td class="num">0.162826943</td><td class="num">0.162826943</td></tr><tr><th>bloodtype(i3_2,null)</th><td class="num">0.1572562822</td><td class="num">0.1572562822</td></tr><tr><th>bloodtype(i3_3,a)</th><td class="num">0.5291709483</td><td class="num">0.5291709483</td></tr><tr><th>bloodtype(i3_3,b)</th><td class="num">0.110276319</td><td class="num">0.110276319</td></tr><tr><th>bloodtype(i3_3,ab)</th><td class="num">0.162826943</td><td class="num">0.162826943</td></tr><tr><th>bloodtype(i3_3,null)</th><td class="num">0.1572562822</td><td class="num">0.1572562822</td></tr></tbody></table></div>
 </section>
-<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
 </main>
 <script src="../bench.js"></script>

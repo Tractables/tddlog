@@ -60,7 +60,7 @@ and the Dice paper's programs (`data/dice`) are on main.
 | Scallop | scallop-core 0.2.5, top-k proofs (approximate) | the program suites | `ground2scallop.py` | `--scallop`, `--scallop-k 10,1000` | 3 |
 | Dice | 1.0, the binary of the sholtzen/dice image | `data/dice`, the networks, `data/nodice`, the circuits of `data/alea`, Geni's and Roulette's programs | the program, or `gen_bn.py --format dice`, `alea_bench.jl export`, `gen_geni.py`, `gen_roulette.py` | `--dice` | 4 |
 | Alea.jl | cf5e5b8 on Julia 1.11.9, CUDD 3.0.0 | the Dice programs above; the programs of `data/alea` | `dice2alea.py`; `alea_bench.jl run` | `--alea` | 5 |
-| aspmc | 1.1.1, sharpSAT-TD | the program suites, programs without evidence | the program itself | `--aspmc` | 6 |
+| aspmc | 1.1.1, sharpSAT-TD | the program suites; with evidence, the evidence asked as queries | the program itself | `--aspmc` | 6 |
 | Ace | 3.0 | the networks | the network file, with the evidence of `gen_bn.py --inst` | `--ace`, `--ace-variants auto,forceC2d`, `--ace-heap` | 7 |
 | Merlin | 1.7.0, built at ad37783 | the networks, the UAI sets | `gen_bn.py --uai` | `--merlin` | 8 |
 | Ganak, sharpSAT-TD | a static Ganak; sharpSAT-TD at 0c234c1 | the UAI PR sets, a second reference for log10 Z, not timed | `gen --cnf` (`uai_wcnf.py`) | `--ganak`, `--sharpsat-td`, `--sharpsat-td-decot 1,10` | 9 |
@@ -152,9 +152,14 @@ bench.py run --suite lit --dir L --exact --timeout 300 "${PROGRAMS[@]}"
 # the large networks and Ace's suite
 bench.py run --suite large --dir G --exact --timeout 600 --kbs '' "${NETWORKS[@]}"
 bench.py run --suite ace --ace-benchmarks ACE_BENCH --dir A --exact --timeout 600 --kbs '' "${NETWORKS[@]}"
-# the UAI MAR tuning set: the marginals
-bench.py run --suite uai --uai-benchmarks MAR_TUNE --dir U --kbs '' --merlin "$MERLIN" --exact \
-  --timeout 300 --no-skip
+# the UAI MAR tuning set: the marginals, then the partition function of the
+# same networks (--pr), aspmc asked P(e) there; Ace in a lane's process with
+# half its memory as heap, in log space (Xlog) on the partition function
+UAI=(--suite uai --uai-benchmarks MAR_TUNE --dir U --kbs ddnnf,sdd,fsdd --problog "$PROBLOG"
+     --pita "$SWIPL" --pita-packs "$PITA_PACKS" --ace "$ACE_DIR" --ace-heap "$ACE_HEAP"
+     --merlin "$MERLIN" --exact --timeout 300 --no-skip)
+bench.py run "${UAI[@]}" --ace-variants auto,forceC2d
+bench.py run "${UAI[@]}" --ace-variants Xlog,forceC2d --aspmc "$ASPMC_PYTHON" --pr
 # the UAI PR sets: the partition function
 bench.py run --suite uai --uai-benchmarks PR_FINAL --dir UF --pr --kbs '' --merlin "$MERLIN" --exact \
   "${COUNTERS[@]}" --timeout 300 --no-skip

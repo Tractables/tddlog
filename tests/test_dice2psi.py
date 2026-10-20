@@ -27,6 +27,7 @@ import bench  # noqa: E402
 import dice2problog  # noqa: E402
 import dice2psi  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
+from test_dice2genfer import JOINT, JOINT_MASSES  # noqa: E402
 
 PSI = os.environ.get('PSI', '')
 # Psi 's build (ef8a9e5) dumps core on murderMystery (a function that returns a
@@ -92,6 +93,37 @@ class Dice2PsiTests(unittest.TestCase):
         self.assertEqual(bench.parse_psi('p(r) = δ(2)[r]\n'), {2: 1.0})
         self.assertEqual(bench.parse_psi('p(r) = (1/2)·(1/4)·δ(0)[r]+7/8·δ(1)[r]\n'), {0: 0.125, 1: 0.875})
         self.assertIsNone(bench.parse_psi('Pr[error] = 1\n'))
+
+    def test_a_joint_is_one_integer(self):
+        # the Booleans are the integer's bits, the first the most significant
+        code, types = dice2psi.translate(JOINT, 0, joint=True)
+        self.assertEqual(types, [('int', 3)])
+        self.assertRegex(code.splitlines()[-2], r'return \(.+\)\*4 \+ \(.+\)\*2 \+ \(.+\)\*1;')
+
+    def test_psis_masses_cover_every_value(self):
+        # a value Psi does not print has mass 0; no distribution, no masses
+        self.assertEqual(bench.psi_masses('p(r) = 1/4·δ(3)[r]+3/4·δ(0)[r]\n', 4), {0: 0.75, 1: 0.0, 2: 0.0, 3: 0.25})
+        self.assertEqual(bench.psi_masses('Pr[error] = 1\n', 2), {})
+
+    def test_an_inexpressible_program_is_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'g.dice'
+            path.write_text(program_text('geometric'))
+            r = subprocess.run([sys.executable, str(scripts / 'dice2psi.py'), str(path), '0'], capture_output=True,
+                               text=True)
+        self.assertEqual(r.returncode, bench.REFUSED, r.stderr)
+
+    @unittest.skipUnless(PSI, 'PSI is not set')
+    def test_psi_gives_the_joint(self):
+        code, _ = dice2psi.translate(JOINT, 0, joint=True)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'p.psi'
+            path.write_text(code)
+            out = subprocess.run(shlex.split(PSI) + [str(path)], capture_output=True, text=True, check=True,
+                                 timeout=300).stdout
+        masses = bench.psi_masses(out, 8)
+        for u, p in JOINT_MASSES.items():
+            self.assertAlmostEqual(masses[u], p, delta=1e-12, msg=u)
 
     @unittest.skipUnless(PSI, 'PSI is not set')
     def test_psi_gives_the_exact_answers(self):

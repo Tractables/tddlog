@@ -167,6 +167,31 @@ class PplTests(unittest.TestCase):
         self.assertEqual(r['seconds'], 3.0)
         self.assertEqual(r['answers'], {'q1': 0.25, 'q2(0)': 0.125, 'q2(1)': 0.375, 'q2(2)': 0.5, 'q2(3)': 0.0})
 
+    def test_a_network_with_observations_runs_a_program_per_queried_variable(self):
+        # asia with half its leaves observed: one program for each other
+        # leaf, which observes the evidence, its rows the queries' answers.
+        asia = str(Path(__file__).resolve().parents[1] / 'examples' / 'asia.net')
+        spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
+        with tempfile.TemporaryDirectory() as d:
+            program = Path(d, 'asia_ev.pl')
+            network = bench.gen_bn.parse(asia)
+            evidence = bench.gen_bn.sampled_evidence(network, 'half', 1)
+            program.write_text(bench.gen_bn.to_problog(network, 'leaves', evidence))
+            seen = []
+
+            def timed(cmd, timeout):
+                seen.append(Path(cmd[-1]).read_text())
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': 'Value\tProbability\t\n0\t0.25\t\n1\t0.75\t\n',
+                        'stderr': ''}
+            with patch.object(bench, 'instances', return_value=spec), patch.object(bench, 'timed', side_effect=timed):
+                r = bench.run_dice(self.args(dir=d, dice='dice {file}'), 'asia_ev', str(program))
+            qs = [q.replace(' ', '') for q in bench.queries(str(program))]
+        self.assertEqual(r['status'], 'ok', r)
+        self.assertEqual(len(seen), len({q.split('(')[0] for q in qs}))
+        self.assertTrue(all(text.count('observe') == len(evidence) for text in seen))
+        self.assertEqual(sorted(r['answers']), sorted(qs))
+        self.assertEqual(sorted(set(r['answers'].values())), [0.25, 0.75])
+
     def test_a_row_of_the_wrong_width_is_an_error(self):
         with tempfile.TemporaryDirectory() as d:
             Path(d, 'p.dicemap').write_text('p__d1.dice joint q1 3\n')
@@ -562,17 +587,116 @@ class SuiteTests(unittest.TestCase):
             self.run_exact(['grid6'])
 
 
+# A small ProbLog program with positive and negative evidence; the
+# probabilities of its ground atoms are found by enumerating the worlds of
+# its facts (`world_probabilities`).
+ALARM = """0.3::b. 0.2::e. 0.9::ab. 0.4::ae. 0.7::c. 0.6::d.
+alarm :- b, ab.
+alarm :- e, ae.
+calls :- alarm, c.
+calls :- d.
+query(b). query(alarm).
+evidence(calls). evidence(e, false).
+"""
+
+
+def world_probabilities(text):
+    """{query: probability} of a ground program of facts `p::a.` and rules
+    whose bodies are literals: the rules without negation are applied up to
+    their least model, then the others once each in program order (the
+    programs below negate only atoms that nothing after them defines)."""
+    from lpad2problog import split_clauses, split_top
+    facts, rules, queries = {}, [], []
+    for clause in split_clauses(text):
+        m = re.fullmatch(r'([0-9.]+)::(\w+)', clause)
+        if m:
+            facts[m.group(2)] = float(m.group(1))
+        elif clause.startswith('query('):
+            queries.append(clause[6:-1])
+        else:
+            head, body = clause.split(':-')
+            rules.append((head.strip(), [lit.strip() for lit in split_top(body, ',')]))
+    holds = lambda lit, model: lit[2:] not in model if lit.startswith('\\+') else lit in model
+    names, out = list(facts), dict.fromkeys(queries, 0.0)
+    for bits in range(1 << len(names)):
+        world = [n for i, n in enumerate(names) if bits >> i & 1]
+        weight = 1.0
+        for i, n in enumerate(names):
+            weight *= facts[n] if bits >> i & 1 else 1 - facts[n]
+        model, grew = set(world), True
+        while grew:
+            grew = False
+            for head, body in rules:
+                if head not in model and all(not l.startswith('\\+') for l in body) \
+                        and all(holds(l, model) for l in body):
+                    model.add(head)
+                    grew = True
+        for head, body in rules:
+            if any(l.startswith('\\+') for l in body) and all(holds(l, model) for l in body):
+                model.add(head)
+        for q in queries:
+            out[q] += weight * (q in model)
+    return out
+
+
 class AspmcTests(unittest.TestCase):
-    def test_evidence_is_rejected_before_launch(self):
-        for directive in ('evidence(obs).', 'evidence(obs, true).',
-                          'evidence (\n obs, false\n).'):
-            with self.subTest(directive=directive), \
-                    patch('builtins.open', mock_open(read_data='0.5::obs. ' + directive)), \
-                    patch.object(bench, 'timed') as run:
-                result = bench.run_aspmc(SimpleNamespace(), 'coin', 'coin.pl')
-                self.assertEqual(result['status'], 'error')
-                self.assertIn('does not condition on evidence', result['error'])
-                run.assert_not_called()
+    def test_evidence_is_asked_as_queries(self):
+        conditioned = bench.aspmc_conditioned(ALARM)
+        self.assertNotIn('evidence', conditioned)
+        p = world_probabilities(conditioned)
+        out = ''.join(f'[RESULT] aspmc: {q}: {v!r}\n' for q, v in p.items())
+        # P(q | calls, not e), from the worlds of the program without its evidence.
+        joint = world_probabilities(ALARM.replace('query(b). query(alarm).', '')
+                                    .replace('evidence(calls). evidence(e, false).',
+                                             'qb :- b, calls, \\+e. qa :- alarm, calls, \\+e. '
+                                             'ev :- calls, \\+e. query(qb). query(qa). query(ev).'))
+        answers = bench.parse_aspmc(out)
+        self.assertEqual(set(answers), {'b', 'alarm'})
+        self.assertAlmostEqual(answers['b'], joint['qb'] / joint['ev'], places=12)
+        self.assertAlmostEqual(answers['alarm'], joint['qa'] / joint['ev'], places=12)
+        self.assertNotAlmostEqual(answers['b'], 0.3, places=3)
+
+    def test_a_query_with_a_body_keeps_its_solutions(self):
+        program = ('person(a). person(b). 0.3::smokes(X) :- person(X).\n'
+                   'query(smokes(X)) :- person(X).\n'
+                   'evidence (\n smokes(a), false\n).\n')
+        conditioned = bench.aspmc_conditioned(program)
+        self.assertIn('bench_e :- \\+smokes(a).', conditioned)
+        self.assertIn('bench_qe_smokes(X) :- person(X), smokes(X), \\+smokes(a).', conditioned)
+        self.assertIn('query(bench_qe_smokes(X)) :- person(X).', conditioned)
+        self.assertEqual(bench.parse_aspmc('[RESULT] aspmc: bench_e: 0.7\n'
+                                           '[RESULT] aspmc: bench_qe_smokes(a): 0.0\n'
+                                           '[RESULT] aspmc: bench_qe_smokes(b): 0.21\n'),
+                         {'smokes(a)': 0.0, 'smokes(b)': 0.21 / 0.7})
+
+    def test_impossible_evidence_is_inconsistent(self):
+        self.assertEqual(bench.parse_aspmc('[RESULT] aspmc: bench_e: 0.0\n'
+                                           '[RESULT] aspmc: bench_qe_q: 0.0\n'), 'inconsistent')
+
+    def test_an_observation_with_a_body_is_refused_before_launch(self):
+        with patch('builtins.open', mock_open(read_data='0.5::obs. evidence(obs) :- true.')), \
+                patch.object(bench.os, 'makedirs'), patch.object(bench, 'timed') as run:
+            result = bench.run_aspmc(SimpleNamespace(dir='bench', aspmc='python3', timeout=1),
+                                     'coin', 'coin.pl')
+            self.assertEqual(result['status'], 'error')
+            run.assert_not_called()
+
+    def test_a_program_with_evidence_is_run_conditioned(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'alarm.pl')
+            with open(path, 'w') as f:
+                f.write(ALARM)
+            args = SimpleNamespace(dir=d, aspmc='python3', timeout=1)
+            with patch.object(bench, 'timed', return_value={
+                        'status': 'ok', 'seconds': 0.1,
+                        'stderr': '[RESULT] aspmc: bench_e: 0.5\n[RESULT] aspmc: bench_qe_b: 0.25\n'
+                                  '[RESULT] aspmc: bench_qe_alarm: 0.4\n'}) as run:
+                result = bench.run_aspmc(args, 'alarm', path)
+            ran = run.call_args[0][0][-1]
+            self.assertEqual(ran, os.path.abspath(os.path.join(d, 'aspmc-alarm', 'alarm.pl')))
+            with open(ran) as f:
+                self.assertEqual(f.read(), bench.aspmc_conditioned(ALARM))
+            self.assertEqual(result['answers'], {'b': 0.5, 'alarm': 0.8})
 
     def test_comments_and_atom_named_evidence_are_allowed(self):
         program = ('% evidence(obs, true).\n'
@@ -700,8 +824,8 @@ class AceTests(unittest.TestCase):
                     bench.gen_bn.read_inst(str(path), network)
 
     def test_the_marginals_file_is_read(self):
-        pe, rows, head = bench.parse_ace_marginals(ASIA_MARGINALS)
-        self.assertEqual(pe, 0.0758524)
+        log10_pe, rows, head = bench.parse_ace_marginals(ASIA_MARGINALS)
+        self.assertEqual(log10_pe, bench.math.log10(0.0758524))
         self.assertEqual(rows['dysp'], [0.7319368668624855, 0.26806313313751445])
         self.assertEqual(rows['xray'], [1.0, 0.0])
         self.assertEqual(len(rows), 8)
@@ -709,6 +833,25 @@ class AceTests(unittest.TestCase):
         self.assertIn('ace_inference_ms', head)
         with self.assertRaisesRegex(ValueError, 'one evidence set'):
             bench.parse_ace_marginals(ASIA_MARGINALS + ASIA_MARGINALS[ASIA_MARGINALS.index('====='):])
+        zero = ASIA_MARGINALS.replace('Pr(e) = 7.58524E-2', 'Pr(e) = 0.0')
+        self.assertEqual(bench.parse_ace_marginals(zero)[0], -bench.math.inf)
+
+    def test_the_log_space_marginals_file_is_read(self):
+        """-Xlog: the natural logarithms of P(e) and of the posteriors, as
+        AceEvaluate writes them (promedus_31 of the UAI MAR set, and Ace's
+        sign for minus infinity)."""
+        text = ('=============================================\ne = {x195=1, x29=1}\n\n'
+                'log_e(Pr(e)) = -4.14417E0\n\n'
+                'log_e(Pr(x324,e)) = [-0.2555787453704079, -1.4892938811363532]\n'
+                'log_e(Pr(x29,e)) = [-Infinity, 0.0]\n')
+        log10_pe, rows, _ = bench.parse_ace_marginals(text)
+        self.assertAlmostEqual(log10_pe, -1.7997903522477732, delta=3e-7)
+        self.assertAlmostEqual(rows['x324'][0], 0.7744681483780709, places=14)
+        self.assertEqual(rows['x29'], [0.0, 1.0])
+        # P(e) far below a double's range, and zero
+        self.assertAlmostEqual(bench.parse_ace_marginals(text.replace('-4.14417E0', '-1.054235E3'))[0],
+                               -1054.235 / bench.math.log(10), places=9)
+        self.assertEqual(bench.parse_ace_marginals(text.replace('-4.14417E0', '-∞'))[0], -bench.math.inf)
 
     def test_the_marginals_agree_with_the_clique_tree(self):
         """Ace's posteriors keyed as the program's queries, against
@@ -830,8 +973,8 @@ class AceTests(unittest.TestCase):
             self.assertIn('-Xmx1g', evaluate)
             r = records[0]
             self.assertEqual((r['status'], r['seconds'], r['compile_s'], r['evaluate_s']), ('ok', 0.75, 0.5, 0.25))
-            self.assertEqual((r['ace_method'], r['ace_compile_total_s'], r['ac_nodes'], r['ace_pr_e']),
-                             ('tabularCompilation', 0.25, 69, 0.0758524))
+            self.assertEqual((r['ace_method'], r['ace_compile_total_s'], r['ac_nodes'], r['ace_log10_pe']),
+                             ('tabularCompilation', 0.25, 69, bench.math.log10(0.0758524)))
             self.assertEqual(r['answers'], {'xray(yes)': 1.0, 'xray(no)': 0.0})
             self.assertEqual([p.name for p in Path(d).iterdir() if p.name.startswith('ace-')], [])
 
@@ -1188,6 +1331,148 @@ class MerlinTests(unittest.TestCase):
                                dir='bench')
         with self.assertRaisesRegex(SystemExit, '--merlin answers the networks gen_bn.py writes'):
             bench.run(args)
+
+
+class ReferenceCheckTests(unittest.TestCase):
+    """On the uai suite a baseline's answer that the reference contradicts
+    is a failed run (`check_against_reference`), and under --pr the systems
+    that print no P(e) are asked it as a query (`pe_program`)."""
+
+    @staticmethod
+    def rec(system, variant, **kw):
+        return {'instance': 'n', 'system': system, 'variant': variant, 'status': 'ok', 'seconds': 1.0, **kw}
+
+    def check(self, rec, *others):
+        done = {(r['system'], r['variant']): r for r in (*others, rec)}
+        bench.check_against_reference(rec, done)
+        return rec
+
+    def test_an_answer_off_the_reference_is_a_failed_run(self):
+        exact = self.rec('exact', 'cliquetree', answers={'a': 0.25, 'b': 0.75}, log10_z=-2.5)
+        merlin = self.rec('merlin', 'bte', answers={'a': 0.2, 'b': 0.8})
+        r = self.check(self.rec('ace', 'auto', answers={'a': 0.25 + 5e-7, 'b': 0.75}, log10_z=-2.5 + 2e-6), exact, merlin)
+        self.assertEqual((r['status'], r['ref'], r['pr_ref']), ('ok', 'exact:cliquetree', 'exact:cliquetree'))
+        self.assertAlmostEqual(r['pr_ref_diff'], 2e-6, delta=1e-12)
+        # log10 Z to 1e-6 times max(1, |log10 Z|): 2.5e-6 here
+        r = self.check(self.rec('ace', 'auto', answers={'a': 0.25, 'b': 0.75}, log10_z=-2.5 + 3e-6), exact)
+        self.assertEqual(r['status'], 'error')
+        self.assertRegex(r['error'], "log10 Z differs from exact:cliquetree's by 3.00e-06")
+        self.assertEqual(r['log10_z'], -2.5 + 3e-6)   # kept beside the error
+        # P(e) printed as zero reads as inconsistent evidence
+        r = self.check(self.rec('ace', 'auto', answers='inconsistent', log10_z=-bench.math.inf), exact)
+        self.assertEqual(r['status'], 'error')
+        self.assertRegex(r['error'], "the marginals differ from exact:cliquetree's by inf")
+        r = self.check(self.rec('libdai', 'jtree', answers={'a': float('nan'), 'b': 0.75}), exact)
+        self.assertEqual(r['status'], 'error')
+
+    def test_the_reference_is_the_first_that_answered(self):
+        failed = self.rec('exact', 'cliquetree', status='timeout')
+        merlin = self.rec('merlin', 'bte', answers={'a': 0.25})
+        merlin_pr = self.rec('merlin', 'bte-pr', log10_z=10.0)
+        tddlog = self.rec('tddlog', 'auto+evidence-probability+no-queries', log10_z=10.0 + 5e-6)
+        r = self.check(self.rec('ace', 'auto', answers={'a': 0.25}, log10_z=10.0 + 5e-6), failed, merlin, merlin_pr, tddlog)
+        self.assertEqual((r['status'], r['ref'], r['pr_ref']), ('ok', 'merlin:bte', 'merlin:bte-pr'))
+        r = self.check(self.rec('pgmpy', 've-pr', log10_z=10.0 + 2e-5), failed, tddlog)
+        self.assertEqual((r['status'], r['pr_ref']), ('error', 'tddlog:auto+evidence-probability+no-queries'))
+        # a reference of -inf (inconsistent evidence) against a number
+        r = self.check(self.rec('ace', 'auto', log10_z=-3.0), self.rec('exact', 'cliquetree', log10_z=-bench.math.inf))
+        self.assertEqual(r['status'], 'error')
+        # nothing to check against, and the reference itself, stay as they are
+        for r, others in [(self.rec('ace', 'auto', answers={'a': 0.3}, log10_z=1.0), ()),
+                          (self.rec('merlin', 'bte', answers={'a': 0.3}), (failed,)),
+                          (self.rec('ace', 'auto', answers={'c': 0.3}), (merlin,))]:
+            before = dict(r)
+            self.assertEqual(self.check(r, *others), before)
+
+    def test_a_pr_run_asks_p_e_and_checks_each_baseline(self):
+        """tests/regress/markov.uai with its evidence, Z = 165, under --pr:
+        the clique tree run for real; ProbLog (a stub) is asked P(e) of
+        the program's P(e) program; Ace (a stub) prints P(e) to six
+        digits, twice too large, or as zero, and its marginals as the clique
+        tree's."""
+        import bn_exact
+        regress = Path(__file__).resolve().parent / 'regress'
+        real = bench.timed
+        with scratch_dir('uai-check-') as d:
+            selection = dict(suite='uai', only=['uai_markov'], families=[], uai_benchmarks=str(regress), dir=d,
+                             cnf=False)
+            with redirect_stdout(io.StringIO()):
+                bench.gen(SimpleNamespace(**selection))
+            path = Path(d) / 'uai_markov.pl'
+            program = path.read_text()
+            pe = 10 ** (bench.math.log10(165) - bench.program_offset(str(path)))
+            rows, values, evidence, _ = bn_exact.parse(program)
+            states, tables = bn_exact.factors(rows, values)
+            exact, _, _ = bn_exact.marginals(states, tables, evidence)
+            network = bench.gen_bn.parse(str(regress / 'markov.uai'))[0]
+            ace_rows = ''.join(
+                f'Pr({v},e) = [{", ".join(repr(float(exact[v][states[v].index(bench.gen_bn.ident(u))])) if v in exact else repr(float(i == 0)) for i, u in enumerate(network[1][v]))}]\n'
+                for v in network[0])   # an observed variable's row is not read
+            ace = Path(d) / 'ace'
+            ace.mkdir()
+            for f in ['ace.jar', 'inflib.jar', 'jdom.jar', 'c2d_linux']:
+                (ace / f).touch()
+            args = SimpleNamespace(**selection, strategies=[], kbs=['ddnnf'], pita='', aspmc='', scallop='', dice='',
+                                   exact=True, ace=str(ace), ace_variants=['auto'], ace_heap='1g', ace_java='java',
+                                   merlin='', ganak='', pr=True, problog='problog', tddlog='tddlog',
+                                   out=str(Path(d) / 'results.jsonl'), timeout=60, no_skip=True)
+            # -Xlog: the same numbers' natural logarithms, as AceEvaluate writes them
+            log_rows = re.sub(r'\[(.*)\]', lambda m: '[' + ', '.join(
+                repr(bench.math.log(float(x))) if float(x) > 0 else '-Infinity' for x in m.group(1).split(',')) + ']',
+                ace_rows.replace('Pr(', 'log_e(Pr(').replace(',e) =', ',e)) ='))
+            problog = []
+            for variant, printed, error in [('auto', f'Pr(e) = {pe:.5E}', None),
+                                            ('auto', f'Pr(e) = {2 * pe:.5E}', 'log10 Z differs'),
+                                            ('auto', 'Pr(e) = 0.0', 'the marginals differ'),
+                                            ('Xlog', f'log_e(Pr(e)) = {bench.math.log(pe):.5E}', None)]:
+                args.ace_variants = [variant]
+                fake_ace = AceTests.fake_ace(None, [], f'e = {{}}\n\n{printed}\n\n'
+                                             + (log_rows if variant == 'Xlog' else ace_rows))
+
+                def timed(cmd, timeout, cwd=None, env=None):
+                    if cmd[0] == sys.executable:   # bn_exact.py
+                        return real(cmd, timeout, cwd, env)
+                    if cmd[0] == 'problog':
+                        problog.append(cmd)
+                        return {'status': 'ok', 'seconds': 0.5, 'stdout': f'{bench.PE_QUERY}:\t{pe!r}\n', 'stderr': ''}
+                    r = fake_ace(cmd, timeout, cwd, env)
+                    # AceEvaluate prints P(e) in full; the auto cases leave it out, for the file's six digits
+                    full = f'log_e(Pr(e)) = {bench.math.log(pe)!r}\n' if variant == 'Xlog' else ''
+                    return {**r, 'stdout': full} if 'edu.ucla.belief.ace.AceEvaluate' in cmd else r
+                Path(args.out).unlink(missing_ok=True)
+                with self.subTest(printed=printed), patch.object(bench, 'timed', timed), \
+                        redirect_stdout(io.StringIO()):
+                    bench.run(args)
+                    records = {(r['system'], r['variant']): r
+                               for r in map(bench.json.loads, Path(args.out).read_text().splitlines())}
+                    r = records[('ace', variant)]
+                    self.assertEqual(r['status'], 'error' if error else 'ok')
+                    # the marginals are checked first, and a failed run's log10 Z is not checked
+                    self.assertEqual(r['ref' if error == 'the marginals differ' else 'pr_ref'], 'exact:cliquetree')
+                    if error:
+                        self.assertIn(error, r['error'])
+                    else:
+                        self.assertAlmostEqual(r['log10_z'], bench.math.log10(165), delta=3e-6)
+                        self.assertLess(r['ref_diff'], 1e-12)
+                    p = records[('problog', 'ddnnf')]
+                    self.assertEqual((p['status'], p['pr_ref']), ('ok', 'exact:cliquetree'))
+                    self.assertAlmostEqual(p['log10_z'], bench.math.log10(165), places=12)
+                    self.assertNotIn('answers', p)
+            self.assertEqual(problog[0][-1], str(Path(d) / 'uai_markov.pe.pl'))
+            asked = Path(problog[0][-1]).read_text()
+            self.assertEqual(asked.splitlines()[0], program.splitlines()[0])   # the offset line
+            self.assertNotIn('evidence(', asked)
+            self.assertEqual(bench.queries(problog[0][-1]), [bench.PE_QUERY])
+            observed = re.findall(r'^evidence\((.*)\)\.$', program, re.M)
+            self.assertIn(f'{bench.PE_QUERY} :- {", ".join(observed)}.', asked)
+            # Ace reads the .inst files, which gen --pr does not write; Scallop approximates
+            pr_dir = Path(d) / 'pr'
+            with redirect_stdout(io.StringIO()):
+                bench.gen(SimpleNamespace(**{**selection, 'dir': str(pr_dir)}, pr=True))
+            with self.assertRaisesRegex(SystemExit, r'has none \(gen --pr writes none\)'):
+                bench.run(SimpleNamespace(**{**vars(args), 'dir': str(pr_dir), 'kbs': []}))
+            with self.assertRaisesRegex(SystemExit, "--scallop's top-k proofs"):
+                bench.run(SimpleNamespace(**{**vars(args), 'scallop': 'scli'}))
 
 
 class ProcessTests(unittest.TestCase):

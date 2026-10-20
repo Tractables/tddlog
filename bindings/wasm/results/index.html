@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tddlog results</title>
-<meta name="description" content="tddlog's release run against ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, ProvSQL, Dice, Alea.jl, Roulette and further program systems: every suite as a plot and a table of times.">
+<meta name="description" content="tddlog's release run against ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, ProvSQL, Dice, Alea.jl, Roulette and further program systems: every suite as plots and a table of times.">
 <script src="../theme.js"></script>
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -17,12 +17,12 @@
     <h1>tddlog results</h1>
     <p class="lede">The release run of tddlog <span id="version"></span>
     against the systems people use for each kind of problem: ProbLog, PITA
-    and aspmc on logic programs, Ace and Merlin on Bayesian and Markov
-    networks (with pyAgrum, pgmpy, libDAI and TensorInference.jl, and ProvSQL
-    on TPC-H), and Dice, Alea.jl, Roulette, Geni, noDice, Psi, Genfer, SPPL,
-    Pluck, Storm and PRISM on programs.
-    Each system ran single-threaded, in the same job and the same lanes of a
-    lab machine as the systems it is compared with, and every answer of
+    and aspmc on logic programs, Ace, Merlin, pyAgrum, pgmpy, libDAI and
+    TensorInference.jl on Bayesian and Markov networks, ProvSQL on
+    probabilistic databases, and Dice, Alea.jl, Roulette, Geni, noDice, Psi,
+    Genfer, SPPL, Pluck, Storm and PRISM on probabilistic programs.
+    Each system ran single-threaded, in the same job and the same lanes of
+    one machine as the systems it is compared with, and every answer of
     tddlog's is checked against a reference. Where another system is faster,
     the findings say so.</p>
   </div>
@@ -44,9 +44,17 @@
   time limit, on a log scale from 0.2 s to the suite's limit: a line further
   up and to the left is better, and a run that takes less than 0.2 s counts
   at 0.2 s, since differences of a few milliseconds of start-up are not
-  compared. In the findings an instance that both systems finish in under
-  0.1 s counts neither as a win nor as a loss. The numbers come from the
-  same records as the README's and
+  compared. A plot draws only the systems given all of its instances, so
+  that its lines count the same instances. A system given part of them has
+  a small plot of that part, with every system given all of it, where the
+  part has 20 instances or a quarter of the plot's, whichever is fewer; a
+  smaller part is in the tables only. The findings compare tddlog with
+  another system on the instances both answer: where each is faster, by
+  how much, and their total times over those instances. An instance that
+  both finish in under 0.1 s counts neither as a win nor as a loss. The
+  README compares by total time instead, a run that does not finish
+  counting as the time limit. The numbers come from the same records as
+  the README's and
   <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>'s.</p>
   <noscript><p class="note">The plots and tables of this page need
   JavaScript; the same results are in docs/benchmarks.md on the baselines branch.</p></noscript>

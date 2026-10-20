@@ -39,7 +39,7 @@ if [ ! -x "$LDC/bin/ldmd2" ]; then
   tar xJf "$tarball.part" || exit 1
   rm -f "$tarball.part"
 fi
-"$LDC/bin/ldc2" --version | head -1 | sed 's/^/### /' || exit 1
+"$LDC/bin/ldc2" --version | sed -n '1s/^/### /p' || exit 1   # sed reads it all: no SIGPIPE under pipefail
 if [ ! -d psi-src/.git ]; then
   git clone -q https://github.com/eth-sri/psi.git psi-src || exit 1
 fi
