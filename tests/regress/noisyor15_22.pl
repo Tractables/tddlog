@@ -1,5 +1,5 @@
 % noisy-or diagnosis: 15 diseases, 22 findings, 3 causes each, seed 1
-% scripts/lit_exact.py noisyor: the answers are in src/auto/tests.rs, no_trial_goes_past_the_ceiling_while_a_compiled_one_waits_within_it.
+% scripts/lit_exact.py (baselines branch) noisyor: the answers are in src/auto/tests.rs, no_trial_goes_past_the_ceiling_while_a_compiled_one_waits_within_it.
 0.084::disease(d0).
 0.262::disease(d1).
 0.241::disease(d2).

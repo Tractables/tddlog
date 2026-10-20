@@ -1,4 +1,4 @@
-# A made-up graph in the format of Biomine's downloads, for gen_biomine.py:
+# A made-up graph in the format of Biomine's downloads, for gen_biomine.py (baselines branch):
 # node1 node2 type goodness. The source and the four genes carry the ids the
 # generator looks for; the rest is invented. P1 and P2 are joined by two
 # links of different types, one link holds for certain, one never and one

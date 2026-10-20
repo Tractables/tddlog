@@ -40,7 +40,7 @@ scale), the findings in prose beside it, and a table of every instance's
 times. `results.js` draws it from two files: `suites.json`, the networks
 and the logic programs, and `ppl.json`, the programs of Dice, Alea.jl,
 Roulette and Geni. Both are generated from the release run's records, as
-the README's results and docs/benchmarks.md are, so the three change
+the README's results and the baselines branch's docs/benchmarks.md are, so the three change
 together; they are data, not to be edited by hand.
 
 ## Memory

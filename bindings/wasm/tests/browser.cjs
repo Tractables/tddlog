@@ -189,7 +189,7 @@ async function noSidewaysScroll(page, what) {
     // run, the instances of each family in the tab "All problems" first.
     // Both count what a system does not answer as unanswered, the legend
     // gives "N of M" per system, the plot's axis goes to all M, and the time
-    // axis starts at 0.1 s.
+    // axis starts at 0.2 s.
     const legendTotal = async (selector) => {
       const items = await page.$$eval(`${selector} .legend .n`, (spans) => spans.map((s) => s.textContent.replace(/\s/g, "")));
       assert.ok(items.length >= 2, `${selector}: ${items.length} legend entries`);
@@ -200,7 +200,7 @@ async function noSidewaysScroll(page, what) {
     const allText = async (selector) => (await page.textContent(`${selector} svg.cactus`)).replace(/\s+/g, " ");
     const overall = await legendTotal("#overall");
     assert.ok((await allText("#overall")).replace(/\s/g, "").includes(`all${overall}instances`), "the overall plot's axis");
-    assert.match(await allText("#overall"), /≤0\.1/, "the time axis starts at 0.1 s");
+    assert.match(await allText("#overall"), /≤0\.2/, "the time axis starts at 0.2 s");
     assert.ok((await page.$$("#overall ul.cannot li")).length >= 1, "the overall plot says who was not given what");
     let sum = 0;
     for (const [id] of families) {

@@ -197,7 +197,7 @@
     {
      "key":"bitblast",
      "title":"Bit-blasted programs",
-     "about":"The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice's times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper's or the Dice programs); a system's time is its process's, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size.",
+     "about":"The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice's times on these circuits come from an earlier run, so they are in [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper's or the Dice programs); a system's time is its process's, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size.",
      "limit":600,
      "systems":["tddlog","alea","alea-process","psi","genfer","sppl"],
      "instances":[
@@ -593,7 +593,7 @@
     ["Further systems","Geni (gennifer; Li and Zhang, ICFP 2025), noDice (Gürtler and Kaminski, OOPSLA 2026), Psi (Gehr et al., CAV 2016; revision ef8a9e5), Genfer (Zaiser, Murawski and Ong, NeurIPS 2023), SPPL 2.0.4 (Saad, Rinard and Mansinghka, PLDI 2021), Pluck (Bowers et al., PLDI 2025), Storm 1.14 (stormpy), one Sylvan thread (sparse, exact, dd) and PRISM 4.8.1 (sparse, hybrid). Their versions are those of [docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md)."],
     ["Samplers","CmdStan 2.32.2 (the paper's 2.28.2 does not build both of the artifact's array syntaxes), WebPPL 0.9.15 on node 18, and Psi at revision ef8a9e5, each on the artifact's own program of the model, in the earlier run, three seeds. AQUA and GuBPI were installed but not timed ([docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md), section 10): the artifact's AQUA inputs crash it or answer other quantities on all but four programs, and GuBPI's repository has programs for three of the models and prints bounds rather than an answer. Mathematica, with which the paper simplified Psi's integrals, is not available. Some of the artifact's sampler programs encode another model than the HyBit program: Stan's and WebPPL's weekend, and WebPPL's clinicalTrial2 and zeroone. The table marks them \"another model\" and gives, in a note, the answer of the model each encodes, worked out by hand; it is the value their estimates settle on."]
    ],
-   "docs":"https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl"
+   "docs":"https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl"
   }
  ]
 }

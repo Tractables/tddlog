@@ -185,7 +185,7 @@ the further systems, on lab and cloud machines. A suite's systems ran in
 the same job, side by side in parallel lanes, so times compare within a
 suite. The references are ProbLog, Ace, Merlin and Alea.jl where they
 answer, Ganak's exact model count, and exact solvers written for this
-repository. [docs/benchmarks.md](docs/benchmarks.md) has the machines,
+repository. [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) on the `baselines` branch has the machines,
 versions and every table; the
 [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
 has the code that runs each system and the copies of their programs.

@@ -4,8 +4,8 @@ tddlog answers ProbLog queries by Tp-compilation (Vlasselaer et al.) into
 structural tree decision diagrams (TDDs, the tididi library). This page
 describes the default path, one section per stage: what the stage does,
 why, and where the code is. The constants named here are documented with
-their reasons in the source. Results are in [benchmarks.md](benchmarks.md);
-the papers behind the stages are in [papers/](papers/). Sizes in pairs,
+their reasons in the source. Results are in [benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md),
+on the baselines branch; the papers behind the stages are in [papers/](papers/). Sizes in pairs,
 nodes and engine work units are machine independent.
 
 ## Pipeline
@@ -1696,10 +1696,10 @@ error. They run under the host's allocator: the binary's jemalloc set-up
 - `scripts/compare.py` diffs one program's probabilities against
   ProbLog's; `scripts/fuzz_problog.py` diffs random programs in the
   supported fragment against ProbLog.
-- `scripts/bn_exact.py` answers a generated network by clique-tree
-  calibration with ProbLog's semantics, the reference for the networks
-  ProbLog does not finish.
+- `scripts/bn_exact.py` (on the baselines branch) answers a generated
+  network by clique-tree calibration with ProbLog's semantics, the
+  reference for the networks ProbLog does not finish.
 - The benchmark driver, on the repository's `baselines` branch, runs the
   benchmark families against the baselines and checks every answer
   against ProbLog or the exact references
-  ([benchmarks.md](benchmarks.md)).
+  ([benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md)).

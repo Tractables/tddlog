@@ -6,12 +6,10 @@ data, under their own terms:
 
 - tests/problog: programs from ProbLog's system test suite
   (https://github.com/ML-KULeuven/problog, test/*.pl), Apache License 2.0.
-- data/cplint: example and dataset files from cplint
-  (https://github.com/friguzzi/cplint) and cplint_datasets
-  (https://github.com/friguzzi/cplint_datasets), Artistic License 2.0.
-- data/dice: the baseline programs of Dice
-  (https://github.com/SHoltzen/dice, benchmarks/baselines/), Apache
-  License 2.0.
+- tests/dice/caesar-recur.dice and tests/dice/recursion.dice: programs
+  from Dice (https://github.com/SHoltzen/dice, commit 0ea228e,
+  resources/), Apache License 2.0. The other programs there were written
+  for tddlog.
 - examples/asia.net and examples/cancer.net: two Bayesian networks
   written out from their publications (Lauritzen and Spiegelhalter, 1988;
   Korb and Nicholson, 2004), under the Apache License 2.0 with the rest.

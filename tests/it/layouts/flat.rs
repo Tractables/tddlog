@@ -1,5 +1,5 @@
 //! The Boolean queries of a tuple-independent database (as
-//! `scripts/gen_pdb.py` writes them), whose rules read facts alone, under
+//! [`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py) writes them), whose rules read facts alone, under
 //! `dynamic`: against the answers of enumerating every world, and the
 //! size the bushy start keeps the compile to.
 use crate::common;
@@ -25,7 +25,7 @@ fn tuples(n: usize) -> Vec<(usize, usize)> {
 }
 
 /// The program over a domain of `n` constants: R and T over the domain,
-/// S over [`tuples`], and the queries `h0`, `h1` and `safe` of gen_pdb.py.
+/// S over [`tuples`], and the queries `h0`, `h1` and `safe` of [`gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py).
 fn program(n: usize) -> String {
     let mut source = String::new();
     for x in 0..n {

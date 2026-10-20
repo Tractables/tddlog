@@ -1,5 +1,5 @@
 # The files of data/ that the repository does not ship, since no license
-# for them is established, and where `python3 scripts/bench.py fetch`
+# for them is established, and where `python3 scripts/bench.py fetch` (baselines branch)
 # downloads them from: the SHA-256 of the file at the URL, the path it is
 # written to, the URL. A path ending in .gz whose URL's file is not
 # gzipped is written gzipped. A copy downloaded by hand is checked with
