@@ -294,7 +294,7 @@ def overview(entries, out):
         lines.append(('head', title, None))
         lines += [('row', name, st) for name, st in sorted(items, key=lambda x: -x[1]['speedup'])]
     ts = [t for kind, _, st in lines if kind == 'row' for t in (st['total_tddlog'], st['total_other'])]
-    names_w, ratio_w, row, top, bottom = 1.7, 1.0, 0.34, 0.62, 0.55
+    names_w, ratio_w, row, top, bottom = 2.3, 1.0, 0.34, 0.8, 0.55
     n = len(lines)
     h = n * row + top + bottom
     axes_w = WIDTH - names_w - ratio_w
@@ -319,6 +319,8 @@ def overview(entries, out):
         label = (f'{r:.0f}×' if r >= 10 else f'{r:.1f}×') if r >= 1 else f'{1 / r:.1f}× slower'
         ax.text(1 + 0.25 / axes_w, y, label, transform=at, ha='left', va='center', fontsize=12.5,
                 fontweight='bold', color=TDDLOG if r >= 1 else other)
+        ax.text(-0.12 / axes_w, y, f'{st["instances"]}', transform=at, ha='right', va='center', fontsize=11,
+                color=c['muted'])
         ys.append(y)
         labels.append(name)
     ticks = times([min(ts) / 3, max(ts) * 3])
@@ -327,15 +329,17 @@ def overview(entries, out):
     ax.set_ylim(-n + 0.5, 0.5)
     ax.set_yticks(ys)
     ax.set_yticklabels(labels, fontsize=12)
-    ax.tick_params(axis='y', length=0)
+    ax.tick_params(axis='y', length=0, pad=44)
     ax.tick_params(axis='x', length=0, pad=6)
     ax.grid(True, axis='x', color=c['grid'], lw=0.7)
     ax.set_axisbelow(True)
     for side in ('left', 'bottom'):
         ax.spines[side].set_visible(False)
-    head = (bottom + n * row + 0.3) / h
+    head = (bottom + n * row + 0.5) / h
     fig.text(0.006, head, 'Total time over each system’s benchmarks', fontweight='bold', fontsize=13.5,
              va='center', ha='left')
+    ax.text(-0.12 / axes_w, 1 + 0.12 / (n * row), 'instances', transform=ax.transAxes, ha='right', va='bottom',
+            fontsize=11, color=c['muted'])
     ax.text(1 + 0.25 / axes_w, 1 + 0.12 / (n * row), 'tddlog\nfaster', transform=ax.transAxes, ha='left',
             va='bottom', fontsize=11, color=c['muted'], linespacing=1.1)
     marks = [plt.Line2D([], [], marker='o', ls='', ms=8, color=col) for col in (TDDLOG, other)]
