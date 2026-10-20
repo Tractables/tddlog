@@ -296,3 +296,8 @@ Apache-2.0 ([LICENSE](LICENSE)). The copies of third-party programs and
 data in `tests/problog` and `data/` keep their own licenses
 ([NOTICE](NOTICE)); the components compiled into the binaries are listed
 in [THIRD-PARTY.md](THIRD-PARTY.md).
+
+## Acknowledgements
+
+This material is based upon work supported by the Defense Advanced Research
+Projects Agency (DARPA) under Agreement No. HR0011269E224.
