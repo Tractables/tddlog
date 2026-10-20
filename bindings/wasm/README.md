@@ -33,11 +33,13 @@ test checks that each key it links to is one of `examples.js`.
 ## Results
 
 `results/` is the page at <https://tractables.github.io/tddlog/results/>:
-the release run against ProbLog, PITA, aspmc, Ace, Merlin, Dice, Alea.jl
-and Roulette, a family of suites at a time, each suite as a plot of the
-instances each system answers within a time limit (from 0.1 s, on a log
-scale), the findings in prose beside it, and a table of every instance's
-times. `results.js` draws it from two files: `suites.json`, the networks
+the release run against every exact system that accepts a suite's
+programs, a family of suites at a time. Each suite has a plot of the
+instances each system answers within a time limit (from 0.2 s, on a log
+scale) that draws the systems given all of its instances, a small plot
+for each part of the instances that some systems were given alone, the
+findings in prose beside it, and a table of every instance's times.
+`results.js` draws it from two files: `suites.json`, the networks
 and the logic programs, and `ppl.json`, the programs of Dice, Alea.jl,
 Roulette and Geni. Both are generated from the release run's records, as
 the README's results and the baselines branch's docs/benchmarks.md are, so the three change
