@@ -1,0 +1,6 @@
+// Recursion past Dice's limit of ten nested calls: the deepest call is
+// unreachable, an observation of false.
+fun geom(n: int(4)): int(4) {
+  if flip 0.5 then n else geom(n + int(4, 1))
+}
+geom(int(4, 0))

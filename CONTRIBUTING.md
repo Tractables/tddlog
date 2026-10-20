@@ -55,7 +55,7 @@ Each binding is a crate of its own, which CI formats with `cargo fmt
 ## Documentation
 
 `docs/design.md` describes the code as it is, and changes with it. The
-README's results, `docs/benchmarks.md` and the results page's data
+README's results, `docs/benchmarks.md` (on the baselines branch) and the results page's data
 (`bindings/wasm/results/*.json`) are generated from the records of a
 release run, and are not edited by hand. Documentation and commit messages
 are plain prose: technical facts, without flourish.

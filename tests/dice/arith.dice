@@ -1,0 +1,10 @@
+// Integer arithmetic modulo 4, comparisons, shifts and uniform.
+let x = discrete(0.1, 0.2, 0.3, 0.4) in
+let y = uniform(2, 1, 4) in
+let s = x + y in
+let d = x - y in
+let m = x * y in
+let z = if s < d then m else s << 1 in
+let w = if flip 0.3 then z >> 1 else z * int(2, 3) in
+let tmp = observe w != int(2, 0) || x >= y in
+w

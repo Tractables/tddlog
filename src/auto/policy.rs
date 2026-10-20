@@ -221,7 +221,7 @@ pub(super) fn families_weighted(lead: Kind, laid: Option<&Trial>) -> bool {
 /// finishes neither, and `closed` both.
 ///
 /// `td` follows `closed` there: on the tuple-independent databases from
-/// the literature (`scripts/gen_pdb.py`) both of the others stall, and
+/// the literature ([`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py)) both of the others stall, and
 /// `td` alone finishes pdb40.
 ///
 /// Where every rule reads facts alone, or copies of facts

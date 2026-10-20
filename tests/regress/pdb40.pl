@@ -1,5 +1,5 @@
 % tuple-independent database: domain 40, 2 S-tuples per constant, seed 1
-% scripts/lit_exact.py: h0 0.389617084615, h1 0.795336660308, safe 0.656349231681.
+% scripts/lit_exact.py (baselines branch): h0 0.389617084615, h1 0.795336660308, safe 0.656349231681.
 0.17::r(c0).
 0.81::t(c0).
 0.74::r(c1).

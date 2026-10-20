@@ -1,4 +1,4 @@
-% tiny_pr.jl: the circuit Alea.jl builds, written by tddlog's scripts/alea_bench.jl.
+% tiny_pr.jl: the circuit Alea.jl builds, written by tddlog's scripts/alea_bench.jl (baselines branch).
 % 4 flips, 9 gates, 1 observations, 9 queries.
 0.3::f1.
 0.6::f2.

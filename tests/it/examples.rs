@@ -820,7 +820,9 @@ fn dice_translations() {
 }
 
 /// Dice programs with loops, integer arithmetic and recursion
-/// (data/dice), translated by scripts/dice2problog.py into tests/dice/;
+/// (tests/dice/, after the Dice paper's programs in
+/// [`data/dice`](https://github.com/Tractables/tddlog/tree/baselines/data/dice) on the baselines branch),
+/// translated by scripts/dice2problog.py beside them;
 /// Dice's answers, which tests/test_dice2problog.py also checks against
 /// an exact evaluation of the Dice program.
 mod dice {
@@ -977,7 +979,7 @@ mod dice {
     }
 
     /// A network written as nested `discrete`s, its rows of thirds
-    /// summing to 0.999999 (data/dice/nested.dice); the answers by hand,
+    /// summing to 0.999999 (tests/dice/nested.dice); the answers by hand,
     /// which ProbLog and tests/test_dice2problog.py's exact evaluation
     /// give too.
     #[test]
@@ -993,7 +995,7 @@ mod dice {
     }
 }
 
-/// The circuits that the baselines branch's scripts/alea_bench.jl writes
+/// The circuits that the baselines branch's [`scripts/alea_bench.jl`](https://github.com/Tractables/tddlog/blob/baselines/scripts/alea_bench.jl) writes
 /// for its two Alea.jl test programs (tests/alea/*.jl there), with the
 /// answers computed by hand in those programs' comments, which Alea gives
 /// too.
@@ -1038,7 +1040,7 @@ mod alea {
 }
 
 /// The scaling programs of Roulette's evaluation, small, in
-/// tests/roulette/, as the baselines branch's scripts/gen_roulette.py
+/// tests/roulette/, as the baselines branch's [`scripts/gen_roulette.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_roulette.py)
 /// writes them; that script's reference answers (a dynamic program over
 /// each model's states), which its tests there check against an exact
 /// enumeration of the Dice programs it writes and against Roulette's
@@ -1230,10 +1232,10 @@ mod roulette {
     }
 }
 
-/// The literature families (scripts/gen_*.py, docs/benchmarks.md), each on
-/// a small program in tests/lit/; ProbLog's answers (ProbLog 2.3.0, `-k
-/// ddnnf`, one query at a time), which scripts/lit_exact.py also gives
-/// (tests/test_lit.py).
+/// The literature families (generators and notes on the baselines branch),
+/// each on a small program in tests/lit/; ProbLog's answers (ProbLog 2.3.0, `-k
+/// ddnnf`, one query at a time), which [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py) also gives
+/// (its tests/test_lit.py, on the same branch).
 mod lit {
     use super::*;
 
@@ -1371,7 +1373,7 @@ mod lit {
     }
 
     /// Boolean TPC-H queries over a tuple-independent database at SF
-    /// 0.0004, as gen_tpch.py writes them: joins, selections and
+    /// 0.0004, as [`gen_tpch.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_tpch.py) writes them: joins, selections and
     /// comparisons. q2 and q7 are the unsafe chain queries, on data small
     /// enough that their lineage still decomposes.
     #[test]
@@ -1394,7 +1396,7 @@ mod lit {
         );
     }
 
-    /// The same queries written through views (`gen_tpch.py --views`): a
+    /// The same queries written through views ([`gen_tpch.py --views`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_tpch.py)): a
     /// selection, a join or a subquery as an intermediate predicate. The
     /// answers are the flat program's, and the grounder inlines the views
     /// (src/ground/inline.rs).
@@ -1419,7 +1421,7 @@ mod lit {
     }
 
     /// Connection to a disease in a made-up graph in Biomine's format, as
-    /// gen_biomine.py writes it: the union of the three best paths to each
+    /// [`gen_biomine.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_biomine.py) writes it: the union of the three best paths to each
     /// gene, and the whole component. Undirected and cyclic.
     #[test]
     fn biomine() {

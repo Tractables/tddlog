@@ -4,10 +4,11 @@
 a distribution over values, an observation drops the mass where it fails,
 a loop's state is a distribution after every step, and probabilities are
 exact fractions. It is checked against Dice's own answers, or answers
-computed by hand on a program written for these tests, and the committed
-translations in tests/dice/ against what the translator writes now;
-tests/it/examples.rs checks tddlog's answers on those translations
-against the same answers.
+computed by hand on a program written for these tests, on the programs of
+tests/dice/, and their committed translations there against what the
+translator writes now; tests/it/examples.rs checks tddlog's answers on
+those translations against the same answers. Where data/dice is there
+(the baselines branch), every Dice program of the benchmarks translates.
 """
 from fractions import Fraction
 from pathlib import Path
@@ -232,7 +233,7 @@ class DiceTests(unittest.TestCase):
             with self.subTest(name=name):
                 text = (translations / f'{name}.pl').read_text()
                 self.assertEqual(queries(text), [q for q, _ in expected])
-                got = answers(exact((data / f'{name}.dice').read_text()), queries(text))
+                got = answers(exact((translations / f'{name}.dice').read_text()), queries(text))
                 for (q, x), g in zip(expected, got):
                     self.assertAlmostEqual(g, x, delta=1e-9, msg=q)
 
@@ -241,19 +242,22 @@ class DiceTests(unittest.TestCase):
             with self.subTest(name=name):
                 text = (translations / f'{name}.pl').read_text()
                 self.assertEqual(queries(text), [q for q, _ in expected])
-                got = answers(exact((data / f'{name}.dice').read_text()), queries(text))
+                got = answers(exact((translations / f'{name}.dice').read_text()), queries(text))
                 for (q, x), g in zip(expected, got):
                     self.assertAlmostEqual(g, x, delta=1e-15, msg=q)
 
     def test_translations_are_current(self):
         names = [*DICE, *BY_HAND]
-        self.assertEqual(sorted(p.stem for p in translations.glob('*.pl')), sorted(names))
+        for suffix in ('*.dice', '*.pl'):
+            self.assertEqual(sorted(p.stem for p in translations.glob(suffix)), sorted(names))
         for name in names:
             with self.subTest(name=name):
-                out = subprocess.run([sys.executable, str(scripts / 'dice2problog.py'), str(data / f'{name}.dice')],
+                source = translations / f'{name}.dice'
+                out = subprocess.run([sys.executable, str(scripts / 'dice2problog.py'), str(source)],
                                      capture_output=True, text=True, check=True).stdout
                 self.assertEqual(out, (translations / f'{name}.pl').read_text())
 
+    @unittest.skipUnless(data.is_dir(), 'data/dice is on the baselines branch')
     def test_the_baseline_programs_translate(self):
         for path in sorted(data.glob('*.dice')):
             if path.stem in ('pmc1', 'digitRecognition'):

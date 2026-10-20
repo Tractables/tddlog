@@ -38,12 +38,12 @@ builds:
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
 | sharpSAT-TD | yes, 53-bit MPFR floats | weighted CNFs | `--sharpsat-td`, `--sharpsat-td-decot` |
 | Roulette (Racket 8.16) | yes | its own programs (`--suite roulette`) | `--roulette`, `--roulette-variants` |
-| Geni (gennifer) | yes, f32 | its own `.gir` programs (`--suite geni`) | `--geni`, `--geni-benchmarks` |
+| Geni (gennifer) | yes, f32 | its own `.gir` programs (`--suite geni`) and the other Dice programs, through `dice2geni.py` | `--geni`, `--geni-benchmarks` |
 | noDice | yes | Dice programs without `nflip` | `--nodice` |
 | Psi (ef8a9e5) | yes, symbolic | Dice programs, through `dice2psi.py`, and its linear regression | `--psi` |
 | Pluck | yes | its four sequence models (`--suite ppl`, family `pluck`) | `--pluck` |
-| Genfer | yes | its population model and the Dice programs it ships | `--genfer`, `--genfer-benchmarks` |
-| SPPL 2.0.4 | yes, symbolic | its Markov switching model | `--sppl` |
+| Genfer | yes | its population model, the Dice programs it ships, and the other Dice programs, through `dice2genfer.py` | `--genfer`, `--genfer-benchmarks` |
+| SPPL 2.0.4 | yes, symbolic | its Markov switching model and the Dice programs, through `dice2sppl.py` | `--sppl` |
 | Prodigy, PLIA, Slice, Hakaru | | left out, section 12 | |
 
 `--exact` adds the exact references written for the suites:
@@ -1045,11 +1045,11 @@ systems for probabilistic programs, 2026-10-19:
 
 | system | exact | available | decision |
 |---|---|---|---|
-| Geni (gennifer), ICFP 2025 | yes (generating functions, f32) | github.com/geni-icfp25-ae/geni-icfp25-ae, MIT | run on `--suite geni`: `--geni` |
-| Genfer, NeurIPS 2023 | yes (generating functions; rational arithmetic where the program allows) | github.com/fzaiser/genfer, MIT | run on its own programs: `--genfer` |
+| Geni (gennifer), ICFP 2025 | yes (generating functions, f32) | github.com/geni-icfp25-ae/geni-icfp25-ae, MIT | run on `--suite geni` and, translated, on every Dice program: `--geni` |
+| Genfer, NeurIPS 2023 | yes (generating functions; rational arithmetic where the program allows) | github.com/fzaiser/genfer, MIT | run on its own programs and, translated, on every other Dice program: `--genfer` |
 | noDice, OOPSLA 2026 | yes | Zenodo 10.5281/zenodo.18739789, code Apache-2.0 | run: `--nodice` |
 | Psi | yes (symbolic, imperative) | eth-sri/psi, Boost | run on Dice programs and on its own linear regression: `--psi` |
-| SPPL, PLDI 2021 | yes (symbolic, sum-product) | PyPI `sppl` 2.0.4, Apache-2.0 | run on its own Markov switching model: `--sppl` |
+| SPPL, PLDI 2021 | yes (symbolic, sum-product) | PyPI `sppl` 2.0.4, Apache-2.0 | run on its own Markov switching model and, translated, on every Dice program: `--sppl` |
 | Pluck, PLDI 2025 | yes | Zenodo 10.5281/zenodo.15051140, Julia and Rust | run on the sequence models: `--pluck` |
 | Prodigy | yes (generating functions) | github.com/LKlinke/Prodigy, Apache-2.0 | not run, see below |
 | PLIA, NeurIPS 2024 | convolution by FFT in the log domain; exactness not stated | the paper (arXiv 2410.12389) links no code | left out: no implementation found |
@@ -1072,6 +1072,77 @@ time is the process's:
 | SPPL | the hierarchical Markov switching model | `bb_markov_nN` of `--suite bitblast` |
 | Psi | the R2 linear regression | `bb_linreg_wW` of `--suite bitblast` |
 | Pluck | the four sequence models | `pluck_*` of `--suite ppl` |
+
+### Dice programs in the other systems' languages
+
+Every system runs on every suite whose programs it can be given. The
+instances that have a Dice program behind them (`dice_source`: the dice
+paper's programs, the networks as Dice programs, the loops, noDice's
+programs, Geni's and Roulette's generators') and the circuits of the
+Alea.jl programs (the ppl suite's arith, hybit and pluck families and the
+bitblast suite, whose Dice programs `alea_bench.jl export` writes and Dice
+runs, NAME.dicemap) reach Genfer, SPPL and Geni through a translator each: `scripts/dice2genfer.py` (SGCL),
+`scripts/dice2sppl.py` (SPPL) and `scripts/dice2geni.py` (Geni's IR), over
+one lowering, `scripts/dice_ir.py`. It inlines the functions (recursion is
+refused), resolves tuples, folds constants, and gives each variable the
+values it can take; `iterate` stays a loop. A system's own program is run
+where its paper has one (Genfer's seven Dice programs, Geni's suite);
+everything else goes through the translation. As for Psi, a program is
+asked one component of its value at a time (Genfer, Geni) or compiled
+once and asked each value of each component (SPPL): the table's single
+marginals, no joint, as the other systems are asked. A circuit's program is asked
+what Dice is asked of it: a `bool` program its probability of true, a
+`joint` one, whose value is N Booleans, the joint of the N
+(`--joint`: the int(N) whose bits they are, the first the most
+significant; SPPL, which has no sum of two variables, is asked the
+probability of each assignment of the N instead).
+
+- Genfer: a Boolean is 0 or 1, an int(w) a number below 2^w; + and a
+  product with a constant are affine assignments reduced modulo 2^w, and
+  -, a product of two variables and >> are switches on one operand's
+  values. Genfer's time grows exponentially with the number of variables,
+  so values live in registers, reused once dead (set to 0, which
+  marginalizes them). Run with `--limit 2^w`; floating point (not
+  `--rational`).
+  Genfer runs on a thread with a fixed 32 MB stack, which long programs
+  (caesar-iter, Roulette's ladder) overflow.
+- SPPL: a variable is defined once, by a sample or a transform of one
+  variable; an operation of two variables is a switch on the values of
+  one, an observation inside a branch a variable conditioned on after the
+  outermost `if` (a `condition` inside a branch would renormalize it).
+  `scripts/sppl_dice.py` compiles the program and asks `prob` for each
+  value.
+  SPPL's compiler writes the program as Python, nesting a call for each
+  `elif`, and Python refuses more than 200 nested parentheses: a switch
+  on more values does not compile (bb_laplace_w13's joint, written as a
+  sum, did not, which is why a joint is asked by assignments).
+- Geni: its interpreter answers Booleans and tuples of them, so an int(w)
+  is w bits, as in Dice and Geni's own surface language: `discrete` a
+  chain of Bernoullis, + and - ripple-carry adders, * shifted partial
+  products, < the carry of a - b. Geni does not normalize by the
+  observations, so the masses it prints are divided by their sum.
+  It prints seven decimals: where the observations are less probable
+  than that, every mass prints as 0, which bench.py records as an
+  error with that reason.
+
+A program the target language cannot express is refused by its
+translator with exit code 3 and the reason, which `bench.py` records as
+`unsupported` (`n/a` in a table, unanswered in a cactus plot): lists, `/`,
+`%`, `::` and recursion, for all three.
+
+Left out, with the reason:
+
+- Pluck runs its own programs. Its artifact also has its own versions of
+  the dice paper's small networks (two coins, evidence1, evidence2, grass,
+  murder mystery, noisy-or, burglary), diamond and ladder
+  (`src/table1/bayesian_networks`, `network_verification`), which are not
+  run yet; a translator to its language (Booleans, `let`, `if`, `given`;
+  integers would be bits, as for Geni) is not written.
+- Storm and PRISM run the weather factory, a Markov chain. A Dice program
+  is not one: it has no transitions, only a computation, and as a DTMC it
+  would be a program counter stepping through the statements with every
+  live variable in the state, the program's valuations enumerated rather
+  than a model of the problem.
 
 ### Geni
 

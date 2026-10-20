@@ -36,7 +36,7 @@
 //! choice, as a whole. A loop that Dice's `iterate` unrolls names each
 //! step's intermediate values, each read once by the next value of the
 //! state, two of them exclusive where a branch sets them
-//! (data/dice/diamond.dice: four atoms a step, one once they are
+//! (tests/dice/diamond.dice: four atoms a step, one once they are
 //! inlined; ladder.dice: eleven atoms, seven).
 //!
 //! Members of exclusive sets stay, but for the branches of a choice

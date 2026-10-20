@@ -3,7 +3,7 @@
 // The results page: the release run's suites from suites.json (the networks
 // and the logic programs) and ppl.json (the programs of Dice, Alea.jl and
 // Roulette), both written by the generator of README.md's results and
-// docs/benchmarks.md. A family of suites is its findings in prose, a plot
+// the baselines branch's docs/benchmarks.md. A family of suites is its findings in prose, a plot
 // of the instances each system answers within a time limit, the table of
 // every instance's times, and how the runs were made.
 
@@ -11,8 +11,8 @@
 // data, as the playground's does to its files.
 const stamp = document.currentScript === null ? "" : new URL(document.currentScript.src).search;
 
-// The time axis starts at 0.1 s: runs under 0.1 s are not told apart.
-const FLOOR = 0.1;
+// The time axis starts at 0.2 s: runs under 0.2 s are not told apart.
+const FLOOR = 0.2;
 
 // How a failure reads in a table cell, and what it means under the table.
 const FAILURES = {
@@ -80,7 +80,7 @@ const dashed = (key) => key.endsWith("-process");
 // ------------------------------------------------------------- the plot
 
 // The instances each system answers within a time limit, the limit on a log
-// scale from 0.1 s to the suite's; a line further up and to the left is
+// scale from 0.2 s to the suite's; a line further up and to the left is
 // better. Drawn at the width of its box, again when the box changes width.
 function cactus(box, suite, names) {
   const width = Math.max(280, Math.floor(box.clientWidth));
@@ -95,11 +95,11 @@ function cactus(box, suite, names) {
 
   const plot = svg("svg", { class: "cactus", width, height, viewBox: `0 0 ${width} ${height}`, role: "img",
     "aria-label": `${suite.title}: instances each system answers within a time limit` });
-  const ticks = [0.1, 1, 10, 100, 1000].filter((t) => t < hi * 0.75).concat([hi]);
+  const ticks = [FLOOR, 1, 10, 100, 1000].filter((t) => t < hi * 0.75).concat([hi]);
   for (const t of ticks) {
     const x = lx(t);
     plot.append(svg("line", { class: "grid", x1: x, y1: y0, x2: x, y2: y1 }));
-    plot.append(svg("text", { class: "tick", x, y: y1 + 16, "text-anchor": "middle" }, t === FLOOR ? "≤0.1" : String(t)));
+    plot.append(svg("text", { class: "tick", x, y: y1 + 16, "text-anchor": "middle" }, t === FLOOR ? `≤${FLOOR}` : String(t)));
   }
   const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500];
   const step = steps.find((s) => n / s <= (narrow ? 5 : 8)) ?? 1000;
@@ -350,7 +350,7 @@ function table(suite, names, pages) {
   const parts = [];
   if (nquick) {
     parts.push(element("label", { class: "check" }, hide,
-      ` Hide the ${count(nquick)} instances every system that ran finishes in under 0.1 s`));
+      ` Hide the ${count(nquick)} instances every system that ran finishes in under ${FLOOR} s`));
   }
   parts.push(element("div", { class: "tscroll" }, grid));
   const notes = [`Seconds; the fastest answer of an instance in bold. A header sorts by its column.`];

@@ -39,7 +39,8 @@ observation in the step), `geometric.dice` (recursion past Dice's limit
 of ten nested calls), `nested.dice` (a network as nested `discrete`s,
 rows of thirds that sum to 0.999999).
 
-tests/dice/ holds the translations of all but caesar-iter, simpleCaesar
-and the pmc programs, checked against Dice's answers, or answers
+tests/dice/ holds copies of the programs and their translations, all but
+caesar-iter, simpleCaesar and the pmc programs, so that main tests the
+translator without this directory; they are checked against Dice's answers, or answers
 computed by hand for nested.dice (tests/it/examples.rs), and against an
 exact evaluation of the Dice program (tests/test_dice2problog.py).

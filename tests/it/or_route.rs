@@ -9,7 +9,7 @@ use crate::common;
 use tddlog::Projection;
 use tddlog::Strategy;
 
-/// The edges of `scripts/gen_graph.py 9 18 --seed 2`, as (from, to,
+/// The edges of [`scripts/gen_graph.py 9 18 --seed 2`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_graph.py), as (from, to,
 /// probability).
 const EDGES: [(usize, usize, f64); 18] = [
     (1, 2, 0.69),

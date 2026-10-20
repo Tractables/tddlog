@@ -176,6 +176,32 @@ class PplTests(unittest.TestCase):
                 r = bench.run_dice_circuit(self.args(dir=d, dice='dice {file}'), 'p')
         self.assertEqual(r['status'], 'error')
 
+    def test_a_translated_system_answers_a_circuit_as_dice_does(self):
+        name = next(n for n, (_, gargs) in bench.instances(self.args()).items() if gargs[0] == 'alea_bench.jl')
+        got = {'a.dice': ([{'true': 0.25, 'false': 0.75}], {'seconds': 1.0}),
+               'b.dice': ([{'0': 0.125, '1': 0.375, '2': 0.5, '3': 0.0}], {'seconds': 2.0,
+                                                                         'stats': {'inproc_seconds': 0.5}})}
+        calls = []
+
+        def masses(args, label, source, joint, budget):
+            calls.append((label, joint))
+            return got[label]
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, f'{name}.dicemap').write_text('a.dice bool q1\nb.dice joint q2 2\n')
+            r = bench.run_translated(self.args(dir=d), name, None, 'sys', masses)
+        self.assertEqual(calls, [('a.dice', False), ('b.dice', True)])
+        self.assertEqual(r, {'status': 'ok', 'seconds': 3.0, 'stats': {'inproc_seconds': 0.5},
+                             'answers': {'q1': 0.25, 'q2(0)': 0.125, 'q2(1)': 0.375, 'q2(2)': 0.5, 'q2(3)': 0.0}})
+
+    def test_a_program_the_language_cannot_express_is_unsupported(self):
+        refused = SimpleNamespace(returncode=bench.REFUSED, stdout='', stderr='cannot express the program: recursion')
+        with patch.object(bench.subprocess, 'run', return_value=refused):
+            out, r = bench.translation(self.args(), 'dice2genfer.py', ['p.dice', '--components'])
+        self.assertIsNone(out)
+        self.assertEqual(r['status'], 'unsupported')
+        self.assertIn('recursion', r['error'])
+        self.assertEqual(bench.fmt(r), 'n/a')
+
     def test_alea_runs_the_program_and_reports_three_times(self):
         out = ('alea_q q1(0) 0.25\nalea_value q1(0) 3\nalea_q q1(1) 0.75\nalea_seconds 12.5\n'
                'alea_compile_seconds 12.25\nalea_warm_seconds 0.0625\nalea_bdd_evidence 7\n'

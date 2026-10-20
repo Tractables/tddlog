@@ -1,5 +1,5 @@
 % noisy-or diagnosis: 20 diseases, 30 findings, 3 causes each, seed 1
-% scripts/lit_exact.py noisyor: the answers are in src/auto/tests.rs, dynamic_answers_a_noisy_or_network.
+% scripts/lit_exact.py (baselines branch) noisyor: the answers are in src/auto/tests.rs, dynamic_answers_a_noisy_or_network.
 0.084::disease(d0).
 0.262::disease(d1).
 0.241::disease(d2).

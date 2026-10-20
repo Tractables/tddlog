@@ -1330,20 +1330,136 @@ def program_command(args, name, file):
     return getattr(args, name).format(file=file, dir=os.path.dirname(file), base=os.path.basename(file)).split()
 
 
-def translated(args, script, argv, out, what):
-    """Writes the translation of an instance (`script ARGV`, its output or the
-    file OUT it writes) bounded by the timeout; the error record on failure, else None."""
+# The exit status of a translator (dice2genfer.py, dice2sppl.py) whose
+# target language cannot express the program: the instance is recorded as
+# `unsupported`, with the translator's reason, and counts as unanswered.
+REFUSED = 3
+
+
+def translation(args, script, argv):
+    """(the output of `script ARGV`, None) bounded by the timeout, or (None,
+    the record of its failure)."""
     try:
         t = subprocess.run([sys.executable, os.path.join(HERE, script), *argv], capture_output=True, text=True,
                            timeout=args.timeout)
     except subprocess.TimeoutExpired:
-        return {'status': 'error', 'seconds': 0, 'error': f'{script}: no translation within {args.timeout:g} s'}
+        return None, {'status': 'error', 'seconds': 0, 'error': f'{script}: no translation within {args.timeout:g} s'}
     if t.returncode != 0:
-        return {'status': 'error', 'seconds': 0, 'error': f'{script}: ' + t.stderr.strip()[-2000:]}
-    if out is not None and t.stdout:
+        status = 'unsupported' if t.returncode == REFUSED else 'error'
+        return None, {'status': status, 'seconds': 0, 'error': f'{script}: ' + t.stderr.strip()[-2000:]}
+    return t.stdout, None
+
+
+def translated(args, script, argv, out, what):
+    """Writes the translation of an instance (`script ARGV`, its output or the
+    file OUT it writes) bounded by the timeout; the error record on failure, else None."""
+    stdout, err = translation(args, script, argv)
+    if err:
+        return err
+    if out is not None and stdout:
         with open(out, 'w') as f:
-            f.write(t.stdout)
+            f.write(stdout)
     return None
+
+
+# --- Dice programs through a translation --------------------------------------
+# Genfer, SPPL and Geni run, besides their own programs, on every instance
+# that has Dice programs: the program behind the instance (`dice_source`) or
+# the Dice programs of an Alea.jl program's circuit (NAME.dicemap), each
+# translated into the system's language (dice2genfer.py, dice2sppl.py,
+# dice2geni.py). A program the language cannot express is refused by the
+# translator (REFUSED) and recorded as `unsupported`.
+
+def accepts_translated(args, name):
+    return instances(args)[name][1][0] == 'alea_bench.jl' or dice_source(args, name) is not None
+
+
+def run_translated(args, name, path, system, masses):
+    """SYSTEM on the Dice programs of an instance, through masses(args,
+    label, source, joint, budget), which runs the translation of the Dice
+    program `source` (its files named after `label`) within `budget`
+    seconds and returns (the distributions of the components of its value,
+    each {value: probability} with a Boolean's values `true` and `false`,
+    {'seconds': S, ...}) or (None, the record of its failure). The program
+    behind the instance answers the ProbLog program's queries
+    (alea_answers). Of a circuit's, as `run_dice_circuit` reads them, a
+    `bool` program answers its atom with the probability of true and a
+    `joint` one, its value N Booleans, is asked as the int whose bits they
+    are (the translators' --joint), PRED(U) the mass of U. The seconds add
+    up; `inproc_seconds` too, where the system gives them."""
+    total, inproc, answers = 0.0, None, {}
+
+    def ask(label, source, joint):
+        nonlocal total, inproc
+        comps, r = masses(args, label, source, joint, max(0.0, args.timeout - total))
+        total += r['seconds']
+        if 'inproc_seconds' in r.get('stats', {}):
+            inproc = (inproc or 0.0) + r['stats']['inproc_seconds']
+        return comps, r
+    if instances(args)[name][1][0] == 'alea_bench.jl':
+        for line in open(os.path.join(args.dir, name + '.dicemap')):
+            file, kind, atom, *rest = line.split()
+            comps, r = ask(file, os.path.abspath(os.path.join(args.dir, file)), kind == 'joint')
+            if comps is None:
+                return {**r, 'seconds': total}
+            want = ['true'] if kind == 'bool' else [str(u) for u in range(2 ** int(rest[0]))]
+            if len(comps) != 1 or any(v not in comps[0] for v in want):
+                return {'status': 'error', 'seconds': total, 'error': f'{system}: {file} gives '
+                        f'{[sorted(c) for c in comps]}, not the {kind} value of its dicemap line'}
+            if kind == 'bool':
+                answers[atom] = comps[0]['true']
+            else:
+                for u, v in enumerate(want):
+                    answers[f'{atom}({u})'] = comps[0][v]
+    else:
+        comps, r = ask(name, dice_source(args, name), False)
+        if comps is None:
+            return {**r, 'seconds': total}
+        try:
+            answers = alea_answers(queries(path), comps)
+        except ValueError as x:
+            return {'status': 'error', 'seconds': total, 'error': f'{system}: {x}'}
+    rec = {'status': 'ok', 'seconds': total, 'answers': answers}
+    if inproc is not None:
+        rec['stats'] = {'inproc_seconds': round(inproc, 3)}
+    return rec
+
+
+def by_component(system, script, ext, flags, masses_of):
+    """The `masses` of run_translated for a system that answers one variable
+    a run (Genfer, Geni): SCRIPT lists the components of the program's
+    value (`--components`: `bool` or `int W`) and writes a program for each,
+    run with the arguments flags(n) for its n values (2 for a Boolean), as
+    Psi's runs are; masses_of(stdout) reads a run's {value: probability},
+    which must cover the n values."""
+    def masses(args, label, source, joint, budget):
+        j = ['--joint'] if joint else []
+        listing, err = translation(args, script, [source, '--components'] + j)
+        if err:
+            return None, err
+        comps, total = [], 0.0
+        for k, line in enumerate(listing.splitlines()):
+            ty = line.split()
+            n = 2 if ty[0] == 'bool' else 2 ** int(ty[1])
+            file = os.path.abspath(os.path.join(args.dir, f'{label}.{system}{k}.{ext}'))
+            err = translated(args, script, [source, str(k)] + j, file, system)
+            if err:
+                return None, {**err, 'seconds': total}
+            r = timed(program_command(args, system, file) + flags(n), max(0.0, budget - total))
+            total += r['seconds']
+            if r['status'] != 'ok':
+                return None, {**r, 'seconds': total}
+            got = masses_of(r['stdout'])
+            why = (f'masses of {sorted(got)} for {n} values' if sorted(got) != list(range(n)) else
+                   'every value has mass 0 as printed: the observations\' probability is below its precision'
+                   if sum(got.values()) == 0 else None)
+            if why:
+                return None, {'status': 'error', 'seconds': total,
+                              'error': f'{system}: {why}: ' + r['stdout'].strip()[-300:]}
+            comps.append({'true': got[1], 'false': got[0]} if ty[0] == 'bool' else
+                         {str(v): got[v] for v in range(n)})
+        return comps, {'seconds': total}
+    return masses
 
 
 GENI_ROW = re.compile(r'Pr\((.*)\) = ([-+0-9.eE]+)\s*$')
@@ -1360,7 +1476,22 @@ def parse_geni(out):
 
 
 def accepts_geni(args, name):
-    return instances(args)[name][1][0] == 'gen_geni.py'
+    return instances(args)[name][1][0] == 'gen_geni.py' or accepts_translated(args, name)
+
+
+def geni_masses(out):
+    """The masses Geni prints for a program of dice2geni.py, {value:
+    probability}: a value is a Boolean, 0 or 1, or a tuple of bits, the
+    most significant first. Geni does not normalize by the observations'
+    probability, so the masses are divided by their sum (left as printed
+    where they all print as 0)."""
+    masses = {int(''.join(re.findall(r'[01]', v)), 2): p for v, p in parse_geni(out).items()}
+    z = sum(masses.values())
+    return {v: p / z for v, p in masses.items()} if z > 0 else masses
+
+
+# a translated Dice program's masses: a run for each component of its value
+GENI_MASSES = by_component('geni', 'dice2geni.py', 'gir', lambda n: [], geni_masses)
 
 
 def run_geni(args, name, path):
@@ -1370,8 +1501,11 @@ def run_geni(args, name, path):
     1 or 0, answering their one query with Pr(1); the weather factory returns 1 when the strikes
     have not all happened by the horizon and 0 when they have, so the first
     query (all strike within H days) is Pr(0) and the second, the constant
-    false of the Dice program's value, 0."""
+    false of the Dice program's value, 0. The other instances' Dice programs
+    are translated (`run_translated`)."""
     family, gargs = instances(args)[name]
+    if gargs[0] != 'gen_geni.py':
+        return run_translated(args, name, path, 'geni', GENI_MASSES)
     gir = os.path.abspath(os.path.join(args.dir, f'{name}.geni'))
     err = translated(args, 'gen_geni.py', [*gargs[1:], '--gir', gir, '--geni-benchmarks', args.geni_benchmarks], None,
                      'geni')
@@ -1392,7 +1526,8 @@ def run_geni(args, name, path):
 
 
 program_system('geni', "Geni (gennifer; Li and Zhang, ICFP 2025) on the instances of --suite geni, in its own "
-               "language (gen_geni.py --gir); e.g. 'GENI/bin/gennifer -l -i {file}', the artifact's flags",
+               "language (gen_geni.py --gir), and on the other Dice programs, translated by dice2geni.py; "
+               "e.g. 'GENI/bin/gennifer -l -i {file}', the artifact's flags",
                accepts_geni, run_geni)
 
 
@@ -1538,7 +1673,8 @@ program_system('pluck', "Pluck (Bowers et al., PLDI 2025) on the sequence models
 
 
 GENFER_STAT = re.compile(r'^(Expected value:\s+E|Total measure:\s+Z) = (\S+)\s*$')
-GENFER_MASS = re.compile(r'^Normalized:\s+p\((\d+)\) / Z = (\S+)\s*$')
+# p(n)/Z after an observation, p(n) for a program without one
+GENFER_MASS = re.compile(r'^(?:Normalized:\s+)?p\((\d+)\)(?: / Z)? = (\S+)\s*$')
 # The Dice programs of the standard suite that Genfer's repository has as
 # programs of its own (benchmarks/neurips2023/exact/NAME/NAME.sgcl, the
 # paper's comparison with Dice, Prodigy and PSI), each returning the one
@@ -1548,8 +1684,18 @@ GENFER_DICE = {'dice_twocoins': 'twoCoins', 'dice_grass': 'grass', 'dice_evidenc
                'dice_murderMystery': 'murderMystery'}
 
 
-def accepts_genfer(args, name):
+def own_genfer(args, name):
     return name in GENFER_DICE or (name.startswith('bb_population_s') and name in instances(args))
+
+
+def accepts_genfer(args, name):
+    return own_genfer(args, name) or accepts_translated(args, name)
+
+
+# a translated Dice program's masses: a run for each component of its value,
+# with `--limit 2^w` (2 for a Boolean) for the masses of all its values
+GENFER_MASSES = by_component('genfer', 'dice2genfer.py', 'sgcl', lambda n: ['--limit', str(n)],
+                             lambda out: parse_genfer(out)[1])
 
 
 def parse_genfer(out):
@@ -1574,7 +1720,10 @@ def run_genfer(args, name, path):
     gen_genfer.py writes, and its masses p(n)/Z for n up to 1023, the
     program's range, answer the instance's bit queries `eK(J)` (bit J,
     counted from the most significant of the program's 10, is set), as
-    Alea.jl's `pr` of the bits does."""
+    Alea.jl's `pr` of the bits does. The other instances' Dice programs are
+    translated (`run_translated`)."""
+    if not own_genfer(args, name):
+        return run_translated(args, name, path, 'genfer', GENFER_MASSES)
     qs = [re.sub(r'\s+', '', q) for q in queries(path)]
     if name in GENFER_DICE:
         program = os.path.join(args.genfer_benchmarks, 'exact', GENFER_DICE[name], GENFER_DICE[name] + '.sgcl')
@@ -1610,11 +1759,40 @@ def run_genfer(args, name, path):
 
 
 program_system('genfer', "Genfer (Zaiser, Murawski and Ong, NeurIPS 2023) on the programs of its own that the "
-               "suites contain (--genfer-benchmarks); e.g. 'GENFER/bin/genfer {file}'", accepts_genfer, run_genfer)
+               "suites contain (--genfer-benchmarks) and on the other Dice programs, translated by "
+               "dice2genfer.py; e.g. 'GENFER/bin/genfer {file}'", accepts_genfer, run_genfer)
+
+
+def own_sppl(args, name):
+    return name.startswith('bb_markov_n') and name in instances(args)
 
 
 def accepts_sppl(args, name):
-    return name.startswith('bb_markov_n') and name in instances(args)
+    return own_sppl(args, name) or accepts_translated(args, name)
+
+
+def sppl_masses(args, label, source, joint, budget):
+    """A translated Dice program's masses (`run_translated`): dice2sppl.py's
+    program, run by sppl_dice.py, which compiles it once and asks `prob` for
+    each value of each component of the program's value, or with `joint`
+    each assignment of its Booleans (`sppl_c K VALUE P`). The seconds are
+    the process's, its `sppl_seconds` (the compile and the queries)
+    `inproc_seconds`."""
+    file = os.path.abspath(os.path.join(args.dir, f'{label}.sppl'))
+    err = translated(args, 'dice2sppl.py', [source] + (['--joint'] if joint else []), file, 'sppl')
+    if err:
+        return None, err
+    r = timed(program_command(args, 'sppl', os.path.join(HERE, 'sppl_dice.py')) + [file], budget)
+    if r['status'] != 'ok':
+        return None, r
+    comps, stats = {}, {}
+    for line in r['stdout'].splitlines():
+        f = line.split()
+        if len(f) == 4 and f[0] == 'sppl_c':
+            comps.setdefault(int(f[1]), {})[f[2]] = float(f[3])
+        elif len(f) == 2 and f[0] == 'sppl_seconds':
+            stats['inproc_seconds'] = float(f[1])
+    return [comps[k] for k in sorted(comps)], {'seconds': r['seconds'], 'stats': stats}
 
 
 def run_sppl(args, name, path):
@@ -1623,7 +1801,10 @@ def run_sppl(args, name, path):
     notebook runs it: exact on the continuous model, so its answers differ
     from the circuit's, which rounds the normal emissions to a grid, by that
     discretization. The seconds are the process's; it prints the answers as
-    `sppl_q QUERY P`."""
+    `sppl_q QUERY P`. The other instances' Dice programs are translated
+    (`run_translated`)."""
+    if not own_sppl(args, name):
+        return run_translated(args, name, path, 'sppl', sppl_masses)
     steps = instances(args)[name][1][-1].split('=')[1]
     r = timed(program_command(args, 'sppl', os.path.join(HERE, 'sppl_markov.py')) + [steps], args.timeout)
     if r['status'] != 'ok':
@@ -1642,7 +1823,8 @@ def run_sppl(args, name, path):
 
 
 program_system('sppl', "SPPL (Saad, Rinard and Mansinghka, PLDI 2021) on its own Markov switching model of the "
-               "bitblast suite, run by sppl_markov.py; e.g. 'SPPL/venv/bin/python -I {file}'", accepts_sppl, run_sppl)
+               "bitblast suite, run by sppl_markov.py, and on the Dice programs, translated by dice2sppl.py "
+               "and run by sppl_dice.py; e.g. 'SPPL/venv/bin/python -I {file}'", accepts_sppl, run_sppl)
 
 
 def accepts_dice_programs_only(args, name):
@@ -2122,20 +2304,32 @@ class ProvSQLServer:
         shutil.rmtree(self.sock, ignore_errors=True)
 
 
+# The programs ProvSQL is given: tuple-independent tables (every fact
+# independent) and non-recursive conjunctive rules, which tpch2provsql.py
+# writes as tables and views: TPC-H, the probabilistic databases of the lit
+# suite (pdb) and its noisy-or networks (noisyor, whose findings are
+# evidence). The lit suite's other families are recursive (mnist_sum,
+# sickness, mastermind) or read annotated disjunctions (mnist_sum,
+# pedigree, mastermind), which a tuple-independent table cannot hold.
+PROVSQL_WRITERS = ('gen_tpch.py', 'gen_pdb.py', 'gen_noisyor.py')
+
+
 def run_provsql(args, name, path):
-    """ProvSQL (Senellart, MIT; v1.13.0 on PostgreSQL 16) on a tuple-
-    independent TPC-H program: `tpch2provsql.py` writes it as tables with a
-    probability per tuple and one view per rule predicate, loaded into a
-    cluster of its own before the clock (a database holds its data), and
-    each query is the SQL `SELECT probability_evaluate(provenance()) FROM q`
-    with ProvSQL's own choice of evaluation method, timed through psql as
-    the other systems' commands are. The record's seconds are the queries'."""
+    """ProvSQL (Senellart, MIT; v1.13.0 on PostgreSQL 16) on a program of
+    tuple-independent tables (PROVSQL_WRITERS): `tpch2provsql.py` writes it
+    as tables with a probability per tuple and one view per rule predicate,
+    loaded into a cluster of its own before the clock (a database holds its
+    data), and each query is the SQL `SELECT probability_evaluate(provenance())
+    FROM q` with ProvSQL's own choice of evaluation method, timed through psql
+    as the other systems' commands are. Under evidence e the answer of q is
+    P(q and e) / P(e), two such queries. The record's seconds are the
+    queries', within the timeout together."""
     d = os.path.abspath(os.path.join(args.dir, f'provsql-{name}'))
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
     server = ProvSQLServer(args.provsql, d)
     try:
-        sql, qs = tpch2provsql.translate(open(path).read())
+        sql, qs, ev = tpch2provsql.translate(open(path).read())
         with open(os.path.join(d, 'load.sql'), 'w') as f:
             f.write(sql)
         try:
@@ -2144,16 +2338,21 @@ def run_provsql(args, name, path):
         except (RuntimeError, subprocess.TimeoutExpired) as x:
             return {'status': 'error', 'seconds': 0.0, 'error': f'ProvSQL load: {x}'}
         answers, seconds = {}, 0.0
-        for q, query in qs:
-            r = timed(server.psql_cmd + ['-At', '-c', query], args.timeout, cwd=d)
-            if r['status'] != 'ok':
-                return r
+        for q, query in qs + ([('', ev)] if ev else []):
+            r = timed(server.psql_cmd + ['-At', '-c', query], max(0.0, args.timeout - seconds), cwd=d)
             seconds += r['seconds']
+            if r['status'] != 'ok':
+                return {**r, 'seconds': seconds}
             try:
                 # a row of the probability and the provenance token ProvSQL adds; no row: the lineage is empty
                 answers[q] = float(r['stdout'].split('|')[0].strip() or 0.0)
             except ValueError as x:
-                return {'status': 'error', 'seconds': r['seconds'], 'error': f'ProvSQL answer: {x}'}
+                return {'status': 'error', 'seconds': seconds, 'error': f'ProvSQL answer: {x}'}
+        if ev:
+            pe = answers.pop('')
+            if pe <= 0:
+                return {'status': 'error', 'seconds': seconds, 'error': f'ProvSQL: the evidence has probability {pe}'}
+            answers = {q: p / pe for q, p in answers.items()}
         return {'status': 'ok', 'seconds': seconds, 'answers': answers}
     finally:
         server.stop()
@@ -2491,8 +2690,8 @@ def run(args):
                 if args.pr:
                     systems.append((system, variant + '-pr'))
     if getattr(args, 'provsql', ''):
-        if not any(spec[n][1][0] == 'gen_tpch.py' for n in names):
-            raise SystemExit('--provsql answers the TPC-H programs gen_tpch.py writes, and none is selected')
+        if not any(spec[n][1][0] in PROVSQL_WRITERS for n in names):
+            raise SystemExit('--provsql answers the programs of tuple-independent tables (PROVSQL_WRITERS: TPC-H, pdb, noisyor), and none is selected')
         systems.append(('provsql', 'default'))
     for system, variants in MODEL_CHECKERS.items():
         if getattr(args, system, ''):
@@ -2565,7 +2764,7 @@ def run_job(args, spec, systems, out, lock, names):
                 continue
             if system in ('ace', 'merlin', *UAI_SYSTEMS) and spec[name][1][0] != 'gen_bn.py':
                 continue
-            if system == 'provsql' and spec[name][1][0] != 'gen_tpch.py':
+            if system == 'provsql' and spec[name][1][0] not in PROVSQL_WRITERS:
                 continue
             if system in MODEL_CHECKERS and not weather_size(spec[name]):
                 continue
@@ -2656,7 +2855,7 @@ def run_job(args, spec, systems, out, lock, names):
                     r = {'status': 'error', 'error': 'no answers: ' + (tail[-1] if tail else 'empty output')}
                     rec['status'] = 'error'
                     del rec['answers']
-            if r['status'] == 'error':
+            if r['status'] in ('error', 'unsupported'):
                 rec['error'] = r['error']
                 # A failed run prints its stats before the error, which
                 # ends what it prints.
@@ -2665,7 +2864,9 @@ def run_job(args, spec, systems, out, lock, names):
                     m = re.search(r'^(?:parse|grounding|vtree|indicator|compilation) error: .*', r['error'], re.M | re.S)
                     if m:
                         rec['error'] = m.group(0)
-            if r['status'] != 'ok' and not args.no_skip:
+            # a program the system's language cannot express says nothing of
+            # the family's larger ones
+            if r['status'] not in ('ok', 'unsupported') and not args.no_skip:
                 dead.add((system, variant, spec[name][0]))
             extra = f" pairs={rec['pairs']}" if 'pairs' in rec else ''
             if rec.get('query_pairs'):
@@ -2688,6 +2889,8 @@ def fmt(rec):
         return f">{rec['seconds']:.0f}"
     if rec['status'] == 'skipped':
         return '-'
+    if rec['status'] == 'unsupported':
+        return 'n/a'
     return 'err'
 
 
@@ -2953,7 +3156,7 @@ def main():
     r.add_argument('--prism-heap', default='4g', help="the Java heap of PRISM's process (-javamaxmem), by default 4g")
     r.add_argument('--weather-models', default='', help="the directory with Rubicon's weatherfactoryN.prism, for --storm and --prism")
     r.add_argument('--provsql', default='', help="the directory install_provsql.sh installs ProvSQL in (pg/bin/initdb, ...), "
-                   'for the tpch programs; empty = not run')
+                   'for the programs of tuple-independent tables (TPC-H, pdb and noisyor of --suite lit); empty = not run')
     r.add_argument('--roulette', default='', help='command template for Racket with Roulette installed, {file} the '
                    "program: the artifact's on --suite roulette, the Dice program dice2roulette.py translates on "
                    "the others; e.g. \"env PLTUSERHOME=... racket {file}\"; empty = not run")

@@ -1,5 +1,5 @@
 % mastermind: 3 colours, 4 pegs, 3 guesses, seed 1
-% scripts/lit_exact.py mastermind: the answers are in src/auto/tests.rs, a_trial_that_waits_past_the_ceiling_resumes_at_its_retry_reach.
+% scripts/lit_exact.py (baselines branch) mastermind: the answers are in src/auto/tests.rs, a_trial_that_waits_past_the_ceiling_resumes_at_its_retry_reach.
 0.333333333333::code(1,c0); 0.333333333333::code(1,c1); 0.333333333333::code(1,c2).
 0.333333333333::code(2,c0); 0.333333333333::code(2,c1); 0.333333333333::code(2,c2).
 0.333333333333::code(3,c0); 0.333333333333::code(3,c1); 0.333333333333::code(3,c2).

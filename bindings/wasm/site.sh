@@ -11,7 +11,8 @@
 #   /guide/     the guide (guide/index.html)
 #   /results/   the release run's results (results/): the page, its script
 #               and the data it reads, suites.json and ppl.json, which the
-#               generator of README.md's results and docs/benchmarks.md
+#               generator of README.md's results and the baselines branch's
+#               docs/benchmarks.md
 #               writes
 #   /results/benchmarks/
 #               a page per benchmark of the results' tables, with its

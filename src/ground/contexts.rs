@@ -25,7 +25,7 @@
 //! one choice.
 //!
 //! Dice's `iterate` draws a value each step and observes a function of it
-//! and the state: data/dice/simpleCaesar.dice draws one of 32 characters a
+//! and the state: [`data/dice/simpleCaesar.dice`](https://github.com/Tractables/tddlog/tree/baselines/data/dice/simpleCaesar.dice) draws one of 32 characters a
 //! step and observes it added to a key of 32 values, a rule per value of the
 //! key reading the character it takes. Under each value of the key a
 //! step's formula is then one fact, not the chain of the switches before

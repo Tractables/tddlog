@@ -6,6 +6,10 @@ from pathlib import Path
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import gen_bn
+try:
+    import bn_exact   # on the baselines branch only; its tests skip without it
+except ImportError:
+    bn_exact = None
 
 
 def brute_force_z(model, evid=''):
@@ -251,7 +255,8 @@ class FormatTests(unittest.TestCase):
     def test_inst_evidence_conditions_the_program(self):
         """An xdsl network and .inst evidence, against the posterior by hand:
         P(a=x | b=u) = 0.3 * 0.9 / (0.3 * 0.9 + 0.7 * 0.2)."""
-        import bn_exact
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
         network = gen_bn.parse(self.scratch('two.xdsl', XDSL))
         inst = self.scratch('two.inst', gen_bn.write_inst([('b', 'u')]).encode())
         evidence = gen_bn.read_inst(inst, network)
@@ -293,7 +298,8 @@ class FormatTests(unittest.TestCase):
         programs for markov.uai, without and with markov.uai.evid; the
         marginals by enumeration in their comments hold for bn_exact here
         and for tddlog in tests/it/examples.rs."""
-        import bn_exact
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
         from fractions import Fraction
         regress = Path(__file__).resolve().parent / 'regress'
         program = lambda name: ''.join(
@@ -354,10 +360,11 @@ class FormatTests(unittest.TestCase):
     def test_the_offset_line_turns_the_probability_of_the_evidence_into_log10_z(self):
         """For markov.uai, markov_pr.uai and random small Markov networks,
         with and without evidence: Z by enumeration of the UAI file's worlds
-        in exact fractions, against the program's P(e) by bn_exact.py and by
+        in exact fractions, against the program's P(e) by bn_exact.py (baselines branch) and by
         enumeration of gen_bn.py's tables, plus the offset. markov_pr.uai
         has zeros, a constant factor and a factor of empty scope."""
-        import bn_exact
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
         import random
         regress = Path(__file__).resolve().parent / 'regress'
         cases = [((regress / 'markov.uai').read_text(), ''),
@@ -402,7 +409,8 @@ class FormatTests(unittest.TestCase):
         their scopes shuffled, read back with P(e) equal to Z by enumeration.
         A cycle of tables, or a function that is no table, keeps the factor
         encoding."""
-        import bn_exact
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
         import random
         text = ('MARKOV\n3\n2 2 2\n3\n2 2 1\n1 0\n2 2 0\n'
                 '4\n 1 0 0 1\n2\n 0.25 0.75\n4\n 0.5 0.125 0.5 0.875\n')
@@ -442,7 +450,8 @@ class FormatTests(unittest.TestCase):
         in exact fractions. A network with a unary table, a table that is not
         Potts or variables of different sizes keeps its symmetry; so does a
         program with queries or evidence (gen_bn.py's main)."""
-        import bn_exact
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
         import random
         rng = random.Random(5)
         broke = 0
@@ -527,7 +536,8 @@ class FormatTests(unittest.TestCase):
         """Ace's diabetes and munins write tables in percent, its water and
         mildew a root as weights. Against the posterior by hand:
         P(a=x | b=u) = 0.25 * 0.1 / (0.25 * 0.1 + 0.75 * 0.5)."""
-        import bn_exact
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
         text = ('net\n{\n}\nnode a\n{\n  states = ("x" "y");\n}\nnode b\n{\n  states = ("u" "v");\n}\n'
                 'potential (a)\n{\n  data = (1 3);\n}\npotential (b | a)\n{\n  data = ((10 90)(50 50));\n}\n')
         path = self.scratch('weights.net', text.encode())

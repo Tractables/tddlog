@@ -1,0 +1,11 @@
+// A loop over a tuple state: a counter of heads and a flag set once a
+// count of three is seen, with an observation inside the step.
+fun step(s: (int(3), bool)) {
+  let n = fst s in
+  let seen = snd s in
+  let h = flip 0.3 in
+  let n2 = if h then n + int(3, 1) else n in
+  let tmp = observe !(n2 == int(3, 5)) in
+  (n2, seen || n2 == int(3, 3))
+}
+iterate(step, (int(3, 0), false), 6)

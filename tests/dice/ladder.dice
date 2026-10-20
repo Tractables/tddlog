@@ -1,0 +1,13 @@
+// The ladder network of the Dice paper's network verification benchmark
+// (bench/dicebench.ml, gen_ladder), its repeated calls written as iterate.
+fun ladder(s: (bool, bool)) {
+  let s1 = fst s in
+  let s2 = snd s in
+  if s1 then
+    if flip 0.001 then (false, false)
+    else let f = flip 0.5 in (f, !f)
+  else if s2 then
+    let f = flip 0.5 in (f, !f)
+  else (false, false)
+}
+iterate(ladder, (true, false), 100)

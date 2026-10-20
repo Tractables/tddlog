@@ -24,4 +24,4 @@ munin.net is a different version of the full MUNIN network.
 
 asia and cancer are `examples/asia.net` and `examples/cancer.net`,
 written out from their publications (the same networks, the same
-programs), which the README, the tests and `bench.py` read.
+programs), which the README, the tests and the baselines branch's `bench.py` read.

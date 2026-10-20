@@ -842,7 +842,7 @@ fn an_operation_lost_in_flight_is_built_again_in_a_later_turn() {
     }
 }
 
-/// A Boolean query of TPC-H q18's shape (`scripts/gen_tpch.py`): one
+/// A Boolean query of TPC-H q18's shape ([`scripts/gen_tpch.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_tpch.py)): one
 /// rule per lineitem of an order of a customer, every body over facts
 /// alone, one component; and its probability by hand, the query being
 /// hierarchical, read once.
@@ -1119,7 +1119,7 @@ fn the_shared_noisy_or_network_answers_round_after_round() {
 #[test]
 fn a_noisy_or_network_from_the_literature_answers_round_after_round() {
     // noisyor15_22 of the programs from the literature under a first
-    // round of 256 pairs. scripts/lit_exact.py; ProbLog 2.3.0 agrees to
+    // round of 256 pairs. [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py); ProbLog 2.3.0 agrees to
     // the eight digits it prints, one query at a time.
     let gp = regress(include_str!("../../tests/regress/noisyor15_22.pl"));
     let run = run_with_watch(
@@ -1160,7 +1160,7 @@ fn a_noisy_or_network_from_the_literature_answers_round_after_round() {
 #[test]
 fn mastermind_answers_round_after_round() {
     // mastermind3_4_3 under a first round of 256 pairs.
-    // scripts/lit_exact.py; ProbLog 2.3.0 gives the same, one query at a
+    // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py); ProbLog 2.3.0 gives the same, one query at a
     // time.
     let gp = regress(include_str!("../../tests/regress/mastermind3_4_3.pl"));
     let run = run_with_watch(
@@ -1487,12 +1487,12 @@ fn td_comes_first_where_the_rules_read_copies_of_facts() {
 
 #[test]
 fn dynamic_answers_a_database_query_from_its_elimination_tree() {
-    // A tuple-independent database (`scripts/gen_pdb.py`, domain 40):
+    // A tuple-independent database ([`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py), domain 40):
     // three acyclic components over the facts r, s and t, nothing to
     // order. Every rule reads facts alone, so `dynamic` starts from the
     // min-fill elimination tree folded bushy and finishes in the first
     // round. `td`, first there, keeps its decomposition's fold too, and
-    // finishes in the first round as well. scripts/lit_exact.py.
+    // finishes in the first round as well. [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py).
     let gp = regress(include_str!("../../tests/regress/pdb40.pl"));
     assert_eq!(candidates(&gp), vec![Kind::Td, Kind::Dynamic, Kind::Closed]);
     let expected = [
@@ -1525,12 +1525,12 @@ fn dynamic_answers_a_database_query_from_its_elimination_tree() {
 
 #[test]
 fn dynamic_answers_a_noisy_or_network() {
-    // A noisy-or diagnosis network (`scripts/gen_noisyor.py`, 20
+    // A noisy-or diagnosis network ([`scripts/gen_noisyor.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_noisyor.py), 20
     // diseases, 30 findings, every finding observed). The findings
     // observed absent tie no causes together in the interaction graph,
     // and `dynamic` reads the facts in a pre-order of the elimination
     // tree, each disease's links beside it, and answers.
-    // scripts/lit_exact.py. Every rule reads facts alone, and `td` comes
+    // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py). Every rule reads facts alone, and `td` comes
     // first there; `dynamic` alone is the run below.
     let gp = regress(include_str!("../../tests/regress/noisyor20_30.pl"));
     assert_eq!(candidates(&gp)[0], Kind::Td);
