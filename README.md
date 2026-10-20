@@ -119,16 +119,16 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
 - tddlog answers **all 334 networks in 11 minutes in total**, none
   taking more than 9 seconds. The next best, libDAI, answers 313.
 - **33× faster than Merlin** (bucket-tree elimination) and **35× faster
-  than Ace** (compilation to arithmetic circuits, on the 94 Bayesian
-  networks it reads) in total, and 39× to 86× faster than pyAgrum,
+  than Ace** (compilation to arithmetic circuits) in total, Ace on the
+  94 Bayesian networks it was run on, and 39× to 86× faster than pyAgrum,
   libDAI, TensorInference.jl and pgmpy.
 - Against the fastest of the six on each network, tddlog is 7.1× faster
   in total: 11 minutes against 1.3 hours.
 
 The networks: the bnlearn repository's, Ace's benchmarks, the large
 networks (barley, diabetes, mildew, munin) and the UAI 2022 competition's
-tuning sets, for marginals and for the partition function. Ace reads
-Bayesian networks only and ran on the 94 among them.
+tuning sets, for marginals and for the partition function. Ace ran on
+the 94 Bayesian networks of the first three; the others ran on all 334.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
