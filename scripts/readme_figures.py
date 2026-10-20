@@ -7,7 +7,7 @@ its text quotes, printed as JSON.
 --png also writes each figure as a PNG at the SVG's own size, to look at.
 
 Writes, as SVG:
-  speedups         tddlog's average speedup over each baseline;
+  overview         each system's total time against tddlog's;
   results-GROUP    a cactus plot (the instances each system answers within
                    a time limit) beside a scatter plot (tddlog's time
                    against the fastest other system's on each instance).
@@ -15,18 +15,16 @@ Writes, as SVG:
 Each figure is drawn at the width it is shown at (900 pixels) on a white
 background, which a dark page shows as a light card.
 
-Times under 0.2 s count as 0.2 s: an instance both systems answer in under
-0.2 s is left out of a comparison, and no ratio is larger for a run that
-takes milliseconds. A speedup's average is the geometric mean of the ratios
-over the instances both systems answer, and its total times the sums of
-the two systems' times over the same instances. Alea.jl's and Roulette's times
-are their in-process times, without their language's start-up. Needs
-matplotlib."""
+A comparison of tddlog with another system is over the instances the other
+system is given and one of the two answers: each system's total time, a
+run that does not answer counted at its suite's time limit (a lower bound
+on the time it would take). The plots' time axes start at 0.2 s, shorter
+runs drawn at 0.2 s. Alea.jl's and Roulette's times are their in-process
+times, without their language's start-up. Needs matplotlib."""
 import json
 import math
 import os
 import re
-import statistics
 import sys
 
 import matplotlib
@@ -36,7 +34,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import FixedLocator, NullLocator  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FLOOR = 0.2  # seconds: shorter runs count as this long
+FLOOR = 0.2  # seconds: a plot's time axis starts here, shorter runs drawn at it
+MIN_INSTANCES = 20  # the overview leaves out a system compared with tddlog on fewer instances
 PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
 
@@ -90,34 +89,29 @@ def clamp(t):
     return max(t, FLOOR)
 
 
-def compare(rs, a, b):
-    """a against b over the rows: b's time over a's on the rows both answer,
-    leaving out those both answer under FLOOR, and the two systems' total
-    times over those rows."""
-    ratios, both_fast, only_a, only_b, given, total_a, total_b = [], 0, 0, 0, 0, 0, 0
-    for _, _, v in rs:
-        if b not in v or a not in v:
+def compare(rs, a, b, limits):
+    """a against b over the rows that give both systems the program and that
+    one of them answers at least: each system's total time, a run that does
+    not answer counted at its suite's time limit, and the two totals over the
+    rows both answer."""
+    st = dict(instances=0, answered_tddlog=0, answered_other=0, total_tddlog=0.0, total_other=0.0, both=0,
+              both_tddlog=0.0, both_other=0.0)
+    for k, _, v in rs:
+        if a not in v or b not in v or (v[a] is None and v[b] is None):
             continue
-        given += 1
         ta, tb = v[a], v[b]
+        st['instances'] += 1
+        st['answered_tddlog'] += ta is not None
+        st['answered_other'] += tb is not None
+        st['total_tddlog'] += limits[k] if ta is None else ta
+        st['total_other'] += limits[k] if tb is None else tb
         if ta is not None and tb is not None:
-            if max(ta, tb) < FLOOR:
-                both_fast += 1
-            else:
-                ratios.append(clamp(tb) / clamp(ta))
-                total_a += ta
-                total_b += tb
-        elif ta is not None:
-            only_a += 1
-        elif tb is not None:
-            only_b += 1
-    out = dict(given=given, both=len(ratios), both_fast=both_fast, only_tddlog=only_a, only_other=only_b,
-               total_tddlog=total_a, total_other=total_b)
-    if ratios:
-        out.update(geomean=math.exp(statistics.fmean(math.log(r) for r in ratios)),
-                   median=statistics.median(ratios), faster=sum(r > 1 for r in ratios),
-                   slower=sum(r < 1 for r in ratios), max=max(ratios), min=min(ratios))
-    return out
+            st['both'] += 1
+            st['both_tddlog'] += ta
+            st['both_other'] += tb
+    if st['instances']:
+        st['speedup'] = st['total_other'] / st['total_tddlog']
+    return st
 
 
 def best_other(v, systems):
@@ -272,75 +266,84 @@ def results(group, rs, names, hi, out):
 
 
 def seconds(t):
+    if t >= 36000:
+        return f'{t / 3600:.0f} h'
     if t >= 3600:
         return f'{t / 3600:.1f} h'
     if t >= 60:
         return f'{t / 60:.0f} min'
-    return f'{t:.0f} s' if t >= 10 else f'{t:.1f} s' if t >= 1 else f'{t:.2f} s'
+    return f'{t:.0f} s' if t >= 10 else f'{t:.1f} s'
 
 
-def speedups(entries, out):
-    """entries: [(group title, [(name, stats)])], each name's bar its geometric
-    mean, beside the instances it is over and the two systems' total times
-    over them; the first two groups in a left column, the others in a right one."""
+def times(ts):
+    """A log axis's ticks, durations with their names, within the range of ts."""
+    lo, hi = min(ts), max(ts)
+    named = [(1, '1 s'), (10, '10 s'), (60, '1 min'), (600, '10 min'), (3600, '1 h'), (36000, '10 h'),
+            ]
+    return [(t, s) for t, s in named if lo <= t <= hi]
+
+
+def overview(entries, out):
+    """entries: [(group title, [(name, stats)])]. Each system's total time
+    and tddlog's over the same instances, two points on one time axis, and
+    how many times less time tddlog takes."""
     c = style()
-
-    def lines(groups):
-        out = []
-        for title, items in groups:
-            out.append(('head', title, None))
-            out += [('bar', name, st) for name, st in sorted(items, key=lambda x: -x[1]['geomean'])]
-        return out
-
-    cols = [lines(entries[:2]), lines(entries[2:])]
-    gs = [st['geomean'] for col in cols for kind, _, st in col if kind == 'bar']
-    xlim = (min(min(gs), 1) / 2.5, max(gs) * 14)
-    nrow = max(len(col) for col in cols)
-    row, top, bottom = 0.36, 0.1, 0.85
-    names_w, bars_w, count_w, total_w = 1.55, 1.5, 0.6, 1.3
-    h = (nrow + 1) * row + top + bottom
+    other = '#6e7781'
+    lines = []
+    for title, items in entries:
+        lines.append(('head', title, None))
+        lines += [('row', name, st) for name, st in sorted(items, key=lambda x: -x[1]['speedup'])]
+    ts = [t for kind, _, st in lines if kind == 'row' for t in (st['total_tddlog'], st['total_other'])]
+    names_w, ratio_w, row, top, bottom = 1.7, 1.0, 0.34, 0.62, 0.55
+    n = len(lines)
+    h = n * row + top + bottom
+    axes_w = WIDTH - names_w - ratio_w
     fig = plt.figure(figsize=(WIDTH, h))
-    for k, col in enumerate(cols):
-        ax = fig.add_axes([(k * WIDTH / 2 + names_w) / WIDTH, bottom / h, bars_w / WIDTH, (nrow + 1) * row / h])
-        at = dict(transform=ax.get_yaxis_transform(), va='center', ha='right', fontsize=10.5, color=c['muted'])
-        count_x, total_x = 1 + count_w / bars_w, 1 + (count_w + total_w) / bars_w
-        ax.text(count_x, 1, 'instances', **at)
-        ax.text(total_x, 1, 'total time', **at)
-        ys, labels = [], []
-        for y, (kind, name, st) in enumerate(col):
-            if kind == 'head':
-                ax.text(-names_w / bars_w, -y, name, transform=ax.get_yaxis_transform(), ha='left', va='center',
-                        fontweight='bold', fontsize=12.5, zorder=4,
-                        bbox=dict(boxstyle='square,pad=0.15', fc=c['bg'], ec='none'))
-                continue
-            g = st['geomean']
-            colour = TDDLOG if g >= 1 else PALETTE[0]
-            ax.barh(-y, max(g, 1) - min(g, 1), left=min(g, 1), height=0.64, color=colour, lw=0, zorder=3)
-            if g >= 1:
-                label = f'{g:.0f}×' if g >= 10 else f'{g:.1f}×'
-            else:
-                label = f'{1 / g:.0f}× slower' if g <= 0.1 else f'{1 / g:.1f}× slower'
-            ax.text(max(g, 1) * 1.1, -y, label, va='center', ha='left', fontsize=12, fontweight='bold',
-                    color=colour, zorder=4)
-            ax.text(count_x, -y, f'{st["both"]}', **at)
-            ax.text(total_x, -y, f'{seconds(st["total_tddlog"])} vs {seconds(st["total_other"])}', **at)
-            ys.append(-y)
-            labels.append(name)
-        # The bars carry their values: no axis but the line at 1×, where tddlog is as fast.
-        ax.plot([1, 1], [-nrow + 0.4, 0.5], color=c['muted'], lw=1.1, zorder=2)
-        ax.text(1, -nrow + 0.4, '1×', ha='center', va='top', fontsize=11, color=c['muted'])
-        log_axis(ax, 'x', [], [])
-        ax.set_xlim(*xlim)
-        ax.set_yticks(ys)
-        ax.set_yticklabels(labels, fontsize=12)
-        ax.tick_params(axis='y', length=0)
-        ax.set_ylim(-nrow + 0.4, 1.6)
-        for side in ('left', 'bottom'):
-            ax.spines[side].set_visible(False)
-    fig.text(0.5, 0.1 / h, "tddlog's speedup, the geometric mean over the instances both systems answer, and the\n"
-             "total time of tddlog and of the other system over them (instances both answer in under "
-             f"{FLOOR:g} s left out)", ha='center', va='bottom', fontsize=11.5, color=c['text'], linespacing=1.4)
-    save(fig, out, 'speedups')
+    ax = fig.add_axes([names_w / WIDTH, bottom / h, axes_w / WIDTH, n * row / h])
+    at = ax.get_yaxis_transform()
+    ys, labels = [], []
+    for y, (kind, name, st) in enumerate(lines):
+        y = -y
+        if kind == 'head':
+            ax.text(-names_w / axes_w + 0.005, y, name, transform=at, ha='left', va='center', fontweight='bold',
+                    fontsize=12.5)
+            continue
+        t, o = st['total_tddlog'], st['total_other']
+        ax.plot([t, o], [y, y], color=c['grid'], lw=3, solid_capstyle='round', zorder=2)
+        ax.scatter([o], [y], s=64, color=other, lw=0, zorder=3)
+        ax.scatter([t], [y], s=64, color=TDDLOG, lw=0, zorder=4)
+        (lo, lo_c), (hi, hi_c) = sorted([(t, TDDLOG), (o, other)])
+        ax.text(lo / 1.3, y, seconds(lo), ha='right', va='center', color=lo_c, fontsize=11.5)
+        ax.text(hi * 1.3, y, seconds(hi), ha='left', va='center', color=hi_c, fontsize=11.5)
+        r = st['speedup']
+        label = (f'{r:.0f}×' if r >= 10 else f'{r:.1f}×') if r >= 1 else f'{1 / r:.1f}× slower'
+        ax.text(1 + 0.25 / axes_w, y, label, transform=at, ha='left', va='center', fontsize=12.5,
+                fontweight='bold', color=TDDLOG if r >= 1 else other)
+        ys.append(y)
+        labels.append(name)
+    ticks = times([min(ts) / 3, max(ts) * 3])
+    log_axis(ax, 'x', [t for t, _ in ticks], [s for _, s in ticks])
+    ax.set_xlim(min(ts) / 3, max(ts) * 3)
+    ax.set_ylim(-n + 0.5, 0.5)
+    ax.set_yticks(ys)
+    ax.set_yticklabels(labels, fontsize=12)
+    ax.tick_params(axis='y', length=0)
+    ax.tick_params(axis='x', length=0, pad=6)
+    ax.grid(True, axis='x', color=c['grid'], lw=0.7)
+    ax.set_axisbelow(True)
+    for side in ('left', 'bottom'):
+        ax.spines[side].set_visible(False)
+    head = (bottom + n * row + 0.3) / h
+    fig.text(0.006, head, 'Total time over each system’s benchmarks', fontweight='bold', fontsize=13.5,
+             va='center', ha='left')
+    ax.text(1 + 0.25 / axes_w, 1 + 0.12 / (n * row), 'tddlog\nfaster', transform=ax.transAxes, ha='left',
+            va='bottom', fontsize=11, color=c['muted'], linespacing=1.1)
+    marks = [plt.Line2D([], [], marker='o', ls='', ms=8, color=col) for col in (TDDLOG, other)]
+    fig.legend(marks, ['tddlog', 'the other system'], loc='center right', bbox_to_anchor=(1 - ratio_w / WIDTH, head),
+               ncol=2, fontsize=12, handletextpad=0.2, columnspacing=1.2, labelcolor=c['text'])
+    fig.text(0.006, 0.08 / h, 'Over the instances each system is given and either answers; a run that does not '
+             'finish counts as its time limit (300 or 600 s).', ha='left', va='bottom', fontsize=11, color=c['muted'])
+    save(fig, out, 'overview')
 
 
 def main():
@@ -348,23 +351,23 @@ def main():
     out = args[0] if args else os.path.join(ROOT, 'docs', 'images')
     os.makedirs(out, exist_ok=True)
     names, suites = load()
+    limits = {k: s['limit'] for k, s in suites.items()}
     numbers = {}
     for g in GROUPS:
         rs = rows(suites, g['suites'])
-        hi = max(suites[k]['limit'] for k in g['suites'])
+        hi = max(limits[k] for k in g['suites'])
         res = dict(instances=len(rs), limit=hi)
         res['solved'], res['scatter'] = results(g, rs, names, hi, out)
-        res['against'] = {s: compare(rs, 'tddlog', s) for s in g['systems'][1:]}
+        res['against'] = {s: compare(rs, 'tddlog', s, limits) for s in g['systems'][1:]}
         best = [(k, i, dict(v, best=best_other(v, g['systems']))) for k, i, v in rs
                 if any(s in v for s in g['systems'][1:])]
-        res['against']['best'] = compare(best, 'tddlog', 'best')
+        res['against']['best'] = compare(best, 'tddlog', 'best', limits)
         numbers[g['key']] = res
-    # The overview: each comparison's baselines that share an instance with tddlog, the
-    # total times showing what an average over a few instances is worth.
-    overview = [(g['title'], [(names[s], numbers[g['key']]['against'][s]) for s in g['systems'][1:]
-                                 if numbers[g['key']]['against'][s]['both']]) for g in GROUPS]
-    numbers['overview'] = {t: {n: st for n, st in items} for t, items in overview}
-    speedups(overview, out)
+    # The overview: the systems compared with tddlog on enough instances for a total to mean something.
+    entries = [(g['title'], [(names[s], numbers[g['key']]['against'][s]) for s in g['systems'][1:]
+                             if numbers[g['key']]['against'][s]['instances'] >= MIN_INSTANCES]) for g in GROUPS]
+    numbers['overview'] = {t: {n: st for n, st in items} for t, items in entries}
+    overview(entries, out)
     json.dump(numbers, sys.stdout, indent=1)
     print()
 
