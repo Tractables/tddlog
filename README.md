@@ -81,7 +81,10 @@ instances it is given and either system answers, a run that does not
 finish counting as the time limit (its real time would be longer).
 
 The cactus plots count the instances each system answers within a time
-limit (higher is better). The scatter plots put tddlog's time against
+limit (higher is better). The large one draws the systems tried on every
+instance of the kind; a system tried on part of them has a small one of
+its own, over that part, with every system tried on all of it, so that
+each plot's systems had the same instances. The scatter plots put tddlog's time against
 the fastest other system's on each instance (below the diagonal, tddlog
 is faster). Every instance and time is on the
 [results page](https://tractables.github.io/tddlog/results/), and every
@@ -128,7 +131,8 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
 The networks: the bnlearn repository's, Ace's benchmarks, the large
 networks (barley, diabetes, mildew, munin) and the UAI 2022 competition's
 tuning sets, for marginals and for the partition function. Ace ran on
-the 94 Bayesian networks of the first three; the others ran on all 334.
+the 94 Bayesian networks of the first three, and ProbLog, PITA and aspmc
+on the 34 of the first; the other tools ran on all 334.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
@@ -137,8 +141,9 @@ the 94 Bayesian networks of the first three; the others ran on all 334.
        alt="Probabilistic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-- tddlog answers 417 of the 450 programs, Alea.jl 309, Dice 136 and
-  Roulette 113.
+- tddlog answers 417 of the 450 programs and Alea.jl 309. Dice answers
+  136 of the 228 it was given, where tddlog answers 218, and Roulette
+  113 of its 196, where tddlog answers 189.
 - **8.3× faster than Alea.jl**, **29× faster than Dice** and **46× faster
   than Roulette** in total. Alea.jl's and Roulette's times leave out
   their language's start-up and compilation.
