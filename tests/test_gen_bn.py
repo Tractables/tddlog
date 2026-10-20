@@ -215,6 +215,72 @@ XDSL = b'''<?xml version="1.0" encoding="ISO-8859-1"?>
 '''
 
 
+class DiceFormatTests(unittest.TestCase):
+    """The Dice format with observations (`dice_programs`): one program per
+    queried variable, each defining the variables it returns or observes
+    and their ancestors, a Markov network's factors as observed flips. The
+    marginals of the programs, by test_dice2problog.py's enumeration of a
+    Dice program, are the network's, by enumeration of its tables."""
+
+    @staticmethod
+    def marginal(network, evidence, v):
+        order, variables, tables = network
+        given = dict(evidence)
+        mass = [Fraction(0)] * len(variables[v])
+        for world in itertools.product(*(variables[u] for u in order)):
+            value = dict(zip(order, world))
+            if any(value[u] != x for u, x in given.items()):
+                continue
+            mass[variables[v].index(value[v])] += math.prod(
+                Fraction(tables[u][1][tuple(value[p] for p in tables[u][0])][variables[u].index(value[u])])
+                for u in order)
+        return [m / sum(mass) for m in mass]
+
+    @staticmethod
+    def dice_marginal(text, n):
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import test_dice2problog
+        dist = test_dice2problog.exact(text)
+        return [sum(p for value, p in dist.items() if value[0] == k) for k in range(n)]
+
+    def test_a_bayesian_network_observes_its_evidence(self):
+        root = Path(__file__).resolve().parents[1]
+        net = str(root / 'examples' / 'asia.net')
+        network = gen_bn.parse(net)
+        order, variables, _ = network
+        evidence = gen_bn.sampled_evidence(network, 'half', 1)
+        self.assertTrue(evidence)
+        programs = gen_bn.dice_programs([net, '--query', 'all', '--evidence', 'half'])
+        by_ident = {gen_bn.ident(v): v for v in order}
+        self.assertEqual([by_ident[i] for i, _ in programs], [v for v in order if v not in dict(evidence)])
+        for i, text in programs:
+            v = by_ident[i]
+            with self.subTest(variable=v):
+                self.assertEqual(text.count('observe'), len(evidence))
+                for got, want in zip(self.dice_marginal(text, len(variables[v])),
+                                     self.marginal(network, evidence, v)):
+                    self.assertAlmostEqual(float(got), float(want), places=12)
+
+    def test_a_markov_network_observes_its_factors(self):
+        """markov.uai given markov.uai.evid: the marginals of markov_ev.pl."""
+        regress = Path(__file__).resolve().parent / 'regress'
+        programs = dict(gen_bn.dice_programs([str(regress / 'markov.uai'), '--evid', str(regress / 'markov.uai.evid')]))
+        self.assertEqual(sorted(programs), ['x0', 'x1'])
+        self.assertIn('flip', programs['x0'])
+        for v, probs in {'x0': ['2/11', '9/11'], 'x1': ['5/33', '28/33']}.items():
+            for got, want in zip(self.dice_marginal(programs[v], 2), probs):
+                self.assertAlmostEqual(float(got), float(Fraction(want)), places=12)
+
+    def test_a_program_defines_the_ancestors_it_needs(self):
+        root = Path(__file__).resolve().parents[1]
+        network = gen_bn.parse(str(root / 'examples' / 'asia.net'))
+        order, _, tables = network
+        top = next(v for v in order if not tables[v][0])
+        text = gen_bn.to_dice(network, top)
+        self.assertEqual(text.count('let '), 1)
+        self.assertEqual(text.strip().splitlines()[-1], gen_bn.ident(top).upper())
+
+
 class FormatTests(unittest.TestCase):
     """The formats of Ace's benchmarks: GeNIe .xdsl, Hugin .hugin, .inst."""
 
@@ -553,3 +619,7 @@ class FormatTests(unittest.TestCase):
         zero = self.scratch('zero.net', text.replace('(50 50)', '(0 0)').encode())
         with self.assertRaisesRegex(SystemExit, r"b \('y',\): a row of zeros"):
             gen_bn.rescaled(gen_bn.parse(zero))
+
+
+if __name__ == '__main__':
+    unittest.main()
