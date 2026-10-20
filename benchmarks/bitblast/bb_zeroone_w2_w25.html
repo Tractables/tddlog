@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_zeroone_w2_w25 · tddlog results</title>
+<meta name="description" content="bb_zeroone_w2_w25, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_zeroone_w2_w25</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/zeroone_w2.jl</code> with <code>bits=17</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">6.8</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set bits=17 data/alea/hybit/zeroone_w2.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/hybit/zeroone_w2.jl</code><span>1 102 bytes, 34 lines</span><span class="sha" title="SHA-256">sha256 7f28e1719c85610e95d27a4352cf5a04267b9d6d124e471e5d703319243c9623</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/hybit/zeroone_w2.jl</code>.</p><pre># zeroone (w2) (Bissiri et al. 2016): a linear classifier&#x27;s weights
+# w1 and w2, uniform, under a zero-one loss on 20 observed points; the
+# expectation of w2. Bit-blasting paper (Garg, Holtzen, Van den Broeck,
+# Millstein, PLDI 2024), Table 2: 19 bits. From Tractables/Alea.jl
+# hybrid/benchmarks/zeroone/zeroone.jl at cf5e5b8 (Apache License 2.0),
+# its body unchanged, run with flag 2.
+using Alea, Distributions
+
+const QUERY = :expectation
+const IGNORE_ERRORS = true
+const bits = 11
+const flag = 2
+const DFiP = DistFix{8+bits, bits}
+const ys = [1, -1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, 1]
+const xs = DFiP.([6, 8, -1, 0, 5, 1.2, -2, 9.8, 4, 12, 1, 10, 1, 2.2, -6, 9.8, 1, 1, 1, 1])
+
+model() = @alea begin
+    w1 = uniform(DFiP, -8.0, 8.0)
+    w2 = uniform(DFiP, -8.0, 8.0)
+    for (x, y) in zip(xs, ys)
+        temp = x*w1 + w2
+        isneg = temp &lt; DFiP(0.0)
+        if y == 1
+            observe(!isneg | (isneg &amp; flip(1/ℯ)))
+        else
+            observe(isneg | (!isneg &amp; flip(1/ℯ)))
+        end
+    end
+    if flag == 1
+        w1
+    else
+        w2
+    end
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_zeroone_w2_w25.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_zeroone_w2_w25.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_zeroone_w2_w25.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_zeroone_w2_w25.pl</code><span>728 306 bytes, 36 368 lines</span><span class="sha" title="SHA-256">sha256 02509a845c231893c01139a69390c7ff80588858b7208c8fcbb0866869a8febb</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/hybit/zeroone_w2.jl bits=17</code>.</p><p class="note"><a href="../files/02509a845c231893c011.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/02509a845c231893c011.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>6.9</td><td></td><td>largest formula, pairs 663 223; final formula, pairs 21 888; variables 62; ground atoms 10 034; ground rules 14 485; vtree closed (from auto: 32 attempts, 3.493s discarded)</td></tr><tr><td>2</td><td>answered</td><td>6.7</td><td></td><td>largest formula, pairs 663 223; final formula, pairs 21 888; variables 62; ground atoms 10 034; ground rules 14 485; vtree closed (from auto: 32 attempts, 3.417s discarded)</td></tr><tr><td>3</td><td>answered</td><td>6.8</td><td></td><td>largest formula, pairs 663 223; final formula, pairs 21 888; variables 62; ground atoms 10 034; ground rules 14 485; vtree closed (from auto: 32 attempts, 3.436s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>51.4</td><td></td><td>largest formula, pairs 49 052 830; final formula, pairs 10 485 773; variables 62; ground atoms 10 034; ground rules 14 485; vtree program</td></tr><tr><td>2</td><td>answered</td><td>49.8</td><td></td><td>largest formula, pairs 49 052 830; final formula, pairs 10 485 773; variables 62; ground atoms 10 034; ground rules 14 485; vtree program</td></tr><tr><td>3</td><td>answered</td><td>49.7</td><td></td><td>largest formula, pairs 49 052 830; final formula, pairs 10 485 773; variables 62; ground atoms 10 034; ground rules 14 485; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>530</td><td></td><td></td><td></td><td></td><td>circuit flips 62; circuit gates 26 050</td></tr><tr class="err"><td></td><td colspan="7"><details><summary>the error</summary><pre>ERROR: LoadError: TaskFailedException
+Stacktrace:
+ [1] wait(t::Task)
+   @ Base ./task.jl:370
+ [2] top-level scope
+   @ ~alea_bench.jl:538
+
+    nested task error: OutOfMemoryError()
+    Stacktrace:
+      [1] GenericMemory
+        @ ./boot.jl:516 [inlined]
+      [2] rehash!(h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, newsz::Int64)
+        @ Base ./dict.jl:159
+      [3] _setindex!
+        @ ./dict.jl:337 [inlined]
+      [4] get!(default::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}}, h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, key::Ptr{Nothing})
+        @ Base ./dict.jl:470
+      [5] logprob(w::WMC, x::Ptr{Nothing})
+        @ Alea ~wmc.jl:39
+      [6] (::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}})()
+        @ Alea ~wmc.jl:41
+      [7] get!(default::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}}, h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, key::Ptr{Nothing})
+        @ Base ./dict.jl:458
+    --- the above 3 lines are repeated 20 more times ---
+     [68] logprob
+        @ ~wmc.jl:39 [inlined]
+     [69] (::Alea.var&quot;#rec#219&quot;{WMC, Vector{Pair{DataStructures.LinkedList, Float64}}, Float64})(context::Ptr{Nothing}, state::DataStructures.Cons{Any}, rembits::SubArray{Dist{Bool}, 1, Vector{Dist{Bool}}, Tuple{UnitRange{Int64}}, true})
+        @ Alea ~pr.jl:34
+     [70] (::Alea.var&quot;#rec#219&quot;{WMC, Vector{Pair{DataStructures.LinkedList, Float64}}, Float64})(context::Ptr{Nothing}, state::DataStructures.Nil{Any}, rembits::Vector{Dist{Bool}})
+        @ Alea ~pr.jl:41
+     [71] get_world_probs(w::WMC, query::JointQuery, evidence::DistAnd)
+        @ Alea ~pr.jl:48
+     [72] #225
+        @ ./none:0 [inlined]
+     [73] iterate
+        @ ./generator.jl:48 [inlined]
+     [74] collect_to!(dest::Vector{Vector{Tuple{Dict{DistNot, Bool}, Float64}}}, itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}}, offs::Int64, st::Int64)
+        @ Base ./array.jl:849
+     [75] collect_to_with_first!(dest::Vector{Vector{Tuple{Dict{DistNot, Bool}, Float64}}}, v1::Vector{Tuple{Dict{DistNot, Bool}, Float64}}, itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}}, st::Int64)
+        @ Base ./array.jl:827
+     [76] collect(itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}})
+        @ Base ./array.jl:801
+     [77] pr_impl(cudd::Cudd, evidence::DistAnd, queries::Vector{JointQuery}, errors::Vector{Tuple{AnyBool, ErrorException}}, dots::Vector{Tuple{Vector{AnyBool}, String}})
+        @ Alea ~pr.jl:81
+     [78] #pr#169
+        @ ~inference.jl:31 [inlined]
+     [79] answer(model::Model, query::Symbol)
+        @ Main ~alea_bench.jl:158
+     [80] macro expansion
+        @ ~alea_bench.jl:253 [inlined]
+     [81] macro expansion
+        @ ./timing.jl:581 [inlined]
+     [82] run_program(query::Symbol, ignore_errors::Bool)
+        @ Main ~alea_bench.jl:251
+in expression starting at alea_bench.jl:538</pre></details></td></tr><tr><td>2</td><td>error</td><td>531</td><td></td><td></td><td></td><td></td><td>circuit flips 62; circuit gates 26 050</td></tr><tr class="err"><td></td><td colspan="7"><details><summary>the error</summary><pre>ERROR: LoadError: TaskFailedException
+Stacktrace:
+ [1] wait(t::Task)
+   @ Base ./task.jl:370
+ [2] top-level scope
+   @ ~alea_bench.jl:538
+
+    nested task error: OutOfMemoryError()
+    Stacktrace:
+      [1] GenericMemory
+        @ ./boot.jl:516 [inlined]
+      [2] rehash!(h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, newsz::Int64)
+        @ Base ./dict.jl:159
+      [3] _setindex!
+        @ ./dict.jl:337 [inlined]
+      [4] get!(default::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}}, h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, key::Ptr{Nothing})
+        @ Base ./dict.jl:470
+      [5] logprob(w::WMC, x::Ptr{Nothing})
+        @ Alea ~wmc.jl:39
+      [6] (::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}})()
+        @ Alea ~wmc.jl:41
+      [7] get!(default::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}}, h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, key::Ptr{Nothing})
+        @ Base ./dict.jl:458
+    --- the above 3 lines are repeated 20 more times ---
+     [68] logprob
+        @ ~wmc.jl:39 [inlined]
+     [69] (::Alea.var&quot;#rec#219&quot;{WMC, Vector{Pair{DataStructures.LinkedList, Float64}}, Float64})(context::Ptr{Nothing}, state::DataStructures.Cons{Any}, rembits::SubArray{Dist{Bool}, 1, Vector{Dist{Bool}}, Tuple{UnitRange{Int64}}, true})
+        @ Alea ~pr.jl:34
+     [70] (::Alea.var&quot;#rec#219&quot;{WMC, Vector{Pair{DataStructures.LinkedList, Float64}}, Float64})(context::Ptr{Nothing}, state::DataStructures.Nil{Any}, rembits::Vector{Dist{Bool}})
+        @ Alea ~pr.jl:41
+     [71] get_world_probs(w::WMC, query::JointQuery, evidence::DistAnd)
+        @ Alea ~pr.jl:48
+     [72] #225
+        @ ./none:0 [inlined]
+     [73] iterate
+        @ ./generator.jl:48 [inlined]
+     [74] collect_to!(dest::Vector{Vector{Tuple{Dict{DistNot, Bool}, Float64}}}, itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}}, offs::Int64, st::Int64)
+        @ Base ./array.jl:849
+     [75] collect_to_with_first!(dest::Vector{Vector{Tuple{Dict{DistNot, Bool}, Float64}}}, v1::Vector{Tuple{Dict{DistNot, Bool}, Float64}}, itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}}, st::Int64)
+        @ Base ./array.jl:827
+     [76] collect(itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}})
+        @ Base ./array.jl:801
+     [77] pr_impl(cudd::Cudd, evidence::DistAnd, queries::Vector{JointQuery}, errors::Vector{Tuple{AnyBool, ErrorException}}, dots::Vector{Tuple{Vector{AnyBool}, String}})
+        @ Alea ~pr.jl:81
+     [78] #pr#169
+        @ ~inference.jl:31 [inlined]
+     [79] answer(model::Model, query::Symbol)
+        @ Main ~alea_bench.jl:158
+     [80] macro expansion
+        @ ~alea_bench.jl:253 [inlined]
+     [81] macro expansion
+        @ ./timing.jl:581 [inlined]
+     [82] run_program(query::Symbol, ignore_errors::Bool)
+        @ Main ~alea_bench.jl:251
+in expression starting at alea_bench.jl:538</pre></details></td></tr><tr><td>3</td><td>error</td><td>522</td><td></td><td></td><td></td><td></td><td>circuit flips 62; circuit gates 26 050</td></tr><tr class="err"><td></td><td colspan="7"><details><summary>the error</summary><pre>ERROR: LoadError: TaskFailedException
+Stacktrace:
+ [1] wait(t::Task)
+   @ Base ./task.jl:370
+ [2] top-level scope
+   @ ~alea_bench.jl:538
+
+    nested task error: OutOfMemoryError()
+    Stacktrace:
+      [1] GenericMemory
+        @ ./boot.jl:516 [inlined]
+      [2] rehash!(h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, newsz::Int64)
+        @ Base ./dict.jl:158
+      [3] _setindex!
+        @ ./dict.jl:337 [inlined]
+      [4] get!(default::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}}, h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, key::Ptr{Nothing})
+        @ Base ./dict.jl:470
+      [5] logprob(w::WMC, x::Ptr{Nothing})
+        @ Alea ~wmc.jl:39
+      [6] (::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}})()
+        @ Alea ~wmc.jl:41
+      [7] get!(default::Alea.var&quot;#215#216&quot;{WMC, Ptr{Nothing}}, h::Dict{Ptr{Nothing}, Union{ADNode, AbstractFloat}}, key::Ptr{Nothing})
+        @ Base ./dict.jl:458
+    --- the above 3 lines are repeated 20 more times ---
+     [68] logprob
+        @ ~wmc.jl:39 [inlined]
+     [69] (::Alea.var&quot;#rec#219&quot;{WMC, Vector{Pair{DataStructures.LinkedList, Float64}}, Float64})(context::Ptr{Nothing}, state::DataStructures.Cons{Any}, rembits::SubArray{Dist{Bool}, 1, Vector{Dist{Bool}}, Tuple{UnitRange{Int64}}, true})
+        @ Alea ~pr.jl:34
+     [70] (::Alea.var&quot;#rec#219&quot;{WMC, Vector{Pair{DataStructures.LinkedList, Float64}}, Float64})(context::Ptr{Nothing}, state::DataStructures.Nil{Any}, rembits::Vector{Dist{Bool}})
+        @ Alea ~pr.jl:41
+     [71] get_world_probs(w::WMC, query::JointQuery, evidence::DistAnd)
+        @ Alea ~pr.jl:48
+     [72] #225
+        @ ./none:0 [inlined]
+     [73] iterate
+        @ ./generator.jl:48 [inlined]
+     [74] collect_to!(dest::Vector{Vector{Tuple{Dict{DistNot, Bool}, Float64}}}, itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}}, offs::Int64, st::Int64)
+        @ Base ./array.jl:849
+     [75] collect_to_with_first!(dest::Vector{Vector{Tuple{Dict{DistNot, Bool}, Float64}}}, v1::Vector{Tuple{Dict{DistNot, Bool}, Float64}}, itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}}, st::Int64)
+        @ Base ./array.jl:827
+     [76] collect(itr::Base.Generator{Vector{JointQuery}, Alea.var&quot;#225#231&quot;{DistAnd, WMC}})
+        @ Base ./array.jl:801
+     [77] pr_impl(cudd::Cudd, evidence::DistAnd, queries::Vector{JointQuery}, errors::Vector{Tuple{AnyBool, ErrorException}}, dots::Vector{Tuple{Vector{AnyBool}, String}})
+        @ Alea ~pr.jl:81
+     [78] #pr#169
+        @ ~inference.jl:31 [inlined]
+     [79] answer(model::Model, query::Symbol)
+        @ Main ~alea_bench.jl:158
+     [80] macro expansion
+        @ ~alea_bench.jl:253 [inlined]
+     [81] macro expansion
+        @ ./timing.jl:581 [inlined]
+     [82] run_program(query::Symbol, ignore_errors::Bool)
+        @ Main ~alea_bench.jl:251
+in expression starting at alea_bench.jl:538</pre></details></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th></tr></thead><tbody><tr><th>e1(1)</th><td class="num">0.1823070467</td><td class="num">0.1823070467</td></tr><tr><th>e1(6)</th><td class="num">0.7151150518</td><td class="num">0.7151150519</td></tr><tr><th>e1(7)</th><td class="num">0.6075575243</td><td class="num">0.6075575243</td></tr><tr><th>e1(8)</th><td class="num">0.5537787637</td><td class="num">0.5537787637</td></tr><tr><th>e1(9)</th><td class="num">0.5268893822</td><td class="num">0.5268893822</td></tr><tr><th>e1(10)</th><td class="num">0.5134446901</td><td class="num">0.5134446901</td></tr><tr><th>e1(11)</th><td class="num">0.5067223459</td><td class="num">0.5067223459</td></tr><tr><th>e1(12)</th><td class="num">0.5033611725</td><td class="num">0.5033611725</td></tr><tr><th>e1(13)</th><td class="num">0.5016805865</td><td class="num">0.5016805865</td></tr><tr><th>e1(14)</th><td class="num">0.5008402931</td><td class="num">0.5008402931</td></tr><tr><th>e1(15)</th><td class="num">0.5004201466</td><td class="num">0.5004201466</td></tr><tr><th>e1(16)</th><td class="num">0.5002100733</td><td class="num">0.5002100733</td></tr><tr><th>e1(17)</th><td class="num">0.5001050366</td><td class="num">0.5001050366</td></tr><tr><th>e1(18)</th><td class="num">0.5000525183</td><td class="num">0.5000525183</td></tr><tr><th>e1(19)</th><td class="num">0.5000262592</td><td class="num">0.5000262592</td></tr><tr><th>e1(20)</th><td class="num">0.5000131296</td><td class="num">0.5000131296</td></tr><tr><th>e1(21)</th><td class="num">0.5000065648</td><td class="num">0.5000065648</td></tr><tr><th>e1(22)</th><td class="num">0.5000032824</td><td class="num">0.5000032824</td></tr><tr><th>e1(23)</th><td class="num">0.5000017111</td><td class="num">0.5000017111</td></tr><tr><th>e1(24)</th><td class="num">0.5000007767</td><td class="num">0.5000007767</td></tr><tr><th>e1(25)</th><td class="num">0.5000003269</td><td class="num">0.5000003269</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

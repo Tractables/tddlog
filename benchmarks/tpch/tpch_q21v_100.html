@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tpch_q21v_100 · tddlog results</title>
+<meta name="description" content="tpch_q21v_100, an instance of TPC-H: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#tpch">TPC-H</a></p>
+    <h1>tpch_q21v_100</h1>
+    <p class="lede">The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Made by <code>gen_tpch.py 0.1 --queries q21 --seed 1 --views</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">SQL</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto tpch_q21v_100.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf tpch_q21v_100.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd tpch_q21v_100.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd tpch_q21v_100.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result tpch_q21v_100.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">tpch_q21v_100.pl</code><span>65 135 334 bytes, 750 275 lines</span><span class="sha" title="SHA-256">sha256 b29323d06f0bc331f81ba98dbe10cba1c6c698fa8ee233bb275e0c3f090fc761</span></div><p class="made">Written by <code>gen_tpch.py 0.1 --queries q21 --seed 1 --views</code> (bench.py gen).</p><p class="note"><a href="../files/b29323d06f0bc331f81b.txt">the first 65 488 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/b29323d06f0bc331f81b.txt"></pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;tpch_q21v_100.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">tpch_q21v_100.lpad.pl</code><span>64 385 124 bytes, 750 279 lines</span><span class="sha" title="SHA-256">sha256 08501d989c4643f53037cfee090ba14b3f79a55d774e5c1ef1be06d54b8685b4</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>tpch_q21v_100.pl</code> when PITA runs.</p><p class="note"><a href="../files/08501d989c4643f53037.txt">the first 65 501 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/08501d989c4643f53037.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>Not a translation: this system&#x27;s own program of the benchmark, as its artifact has it.</b></p>
+<p class="readers">Read by ProvSQL.</p>
+<dl class="cmds">
+<dt>ProvSQL</dt><dd><code>psql -h SOCKET -d postgres -X -q -v ON_ERROR_STOP=1 -f provsql-tpch_q21v_100/load.sql</code></dd>
+<dt>ProvSQL</dt><dd><code>psql -h SOCKET -d postgres -X -At -c &#x27;SELECT probability_evaluate(provenance()) FROM q21&#x27;</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">provsql-tpch_q21v_100/load.sql</code><span>56 433 185 bytes, 750 293 lines</span><span class="sha" title="SHA-256">sha256 c938a8f787157ea5611a60f89c2cbf8d0a61032de579b27e5a7872dec8e35502</span></div><p class="made">Written by <code>tpch2provsql.py</code> from the ProbLog program when ProvSQL runs: a table per fact predicate, its data, and a view per rule predicate. It is loaded before the clock, as a database holds its data; each query is a command below.</p><p class="note"><a href="../files/c938a8f787157ea5611a.txt">the first 65 517 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/c938a8f787157ea5611a.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>PITA</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProvSQL</h3><p class="note">The data is loaded before the clock, as a database holds its data; the time is the queries&#x27;.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is tpch_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th></tr></thead><tbody><tr><th>q21</th><td class="num">0.03650816006</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

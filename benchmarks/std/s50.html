@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s50 · tddlog results</title>
+<meta name="description" content="s50, an instance of Standard suite: programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#std">Standard suite: programs</a></p>
+    <h1>s50</h1>
+    <p class="lede">50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper&#x27;s programs translated to ProbLog; 300 s a run. Made by <code>gen_smokers.py 50 --friends-per 3 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.007</td><td class="num">0.21</td><td class="num">0.46</td><td class="num">2.7</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto s50.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf s50.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd s50.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd s50.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result s50.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">s50.pl</code><span>3 391 bytes, 207 lines</span><span class="sha" title="SHA-256">sha256 f8cbfdf694302b7f43ddd1bf60697986e1ed0e4faf9bac751dc4c7efbec59c5a</span></div><p class="made">Written by <code>gen_smokers.py 50 --friends-per 3 --seed 1</code> (bench.py gen).</p><pre>% smokers: 50 people, 3 friends each, seed 1
+0.3::stress(X) :- person(X).
+0.2::influences(X,Y) :- friend(X,Y).
+smokes(X) :- stress(X).
+smokes(X) :- friend(X,Y), influences(Y,X), smokes(Y).
+0.4::asthma(X) :- smokes(X).
+person(p1).
+person(p2).
+person(p3).
+person(p4).
+person(p5).
+person(p6).
+person(p7).
+person(p8).
+person(p9).
+person(p10).
+person(p11).
+person(p12).
+person(p13).
+person(p14).
+person(p15).
+person(p16).
+person(p17).
+person(p18).
+person(p19).
+person(p20).
+person(p21).
+person(p22).
+person(p23).
+person(p24).
+person(p25).
+person(p26).
+person(p27).
+person(p28).
+person(p29).
+person(p30).
+person(p31).
+person(p32).
+person(p33).
+person(p34).
+person(p35).
+person(p36).
+person(p37).
+person(p38).
+person(p39).
+person(p40).
+person(p41).
+person(p42).
+person(p43).
+person(p44).
+person(p45).
+person(p46).
+person(p47).
+person(p48).
+person(p49).
+person(p50).
+friend(p1,p10).
+friend(p1,p38).
+friend(p1,p50).
+friend(p2,p6).
+friend(p2,p18).
+friend(p2,p9).
+friend(p3,p33).
+friend(p3,p50).
+friend(p3,p30).
+friend(p4,p32).
+friend(p4,p43).
+friend(p4,p26).
+friend(p5,p15).
+friend(p5,p8).
+friend(p5,p33).
+friend(p6,p2).
+friend(p6,p26).
+friend(p6,p29).
+friend(p7,p40).
+friend(p7,p50).
+friend(p7,p1).
+friend(p8,p46).
+friend(p8,p30).
+friend(p8,p19).
+friend(p9,p48).
+friend(p9,p16).
+friend(p9,p39).
+friend(p10,p7).
+friend(p10,p22).
+friend(p10,p2).
+friend(p11,p2).
+friend(p11,p43).
+friend(p11,p36).
+friend(p12,p1).
+friend(p12,p26).
+friend(p12,p45).
+friend(p13,p15).
+friend(p13,p29).
+friend(p13,p48).
+friend(p14,p2).
+friend(p14,p35).
+friend(p14,p16).
+friend(p15,p50).
+friend(p15,p30).
+friend(p15,p33).
+friend(p16,p37).
+friend(p16,p15).
+friend(p16,p24).
+friend(p17,p15).
+friend(p17,p45).
+friend(p17,p50).
+friend(p18,p31).
+friend(p18,p20).
+friend(p18,p2).
+friend(p19,p28).
+friend(p19,p37).
+friend(p19,p43).
+friend(p20,p7).
+friend(p20,p12).
+friend(p20,p42).
+friend(p21,p48).
+friend(p21,p19).
+friend(p21,p8).
+friend(p22,p49).
+friend(p22,p23).
+friend(p22,p48).
+friend(p23,p47).
+friend(p23,p34).
+friend(p23,p29).
+friend(p24,p34).
+friend(p24,p44).
+friend(p24,p13).
+friend(p25,p20).
+friend(p25,p19).
+friend(p25,p39).
+friend(p26,p33).
+friend(p26,p34).
+friend(p26,p27).
+friend(p27,p39).
+friend(p27,p3).
+friend(p27,p32).
+friend(p28,p16).
+friend(p28,p49).
+friend(p28,p26).
+friend(p29,p27).
+friend(p29,p44).
+friend(p29,p12).
+friend(p30,p24).
+friend(p30,p37).
+friend(p30,p46).
+friend(p31,p45).
+friend(p31,p49).
+friend(p31,p24).
+friend(p32,p6).
+friend(p32,p29).
+friend(p32,p44).
+friend(p33,p34).
+friend(p33,p7).
+friend(p33,p11).
+friend(p34,p35).
+friend(p34,p26).
+friend(p34,p24).
+friend(p35,p32).
+friend(p35,p48).
+friend(p35,p2).
+friend(p36,p31).
+friend(p36,p3).
+friend(p36,p20).
+friend(p37,p47).
+friend(p37,p41).
+friend(p37,p39).
+friend(p38,p39).
+friend(p38,p26).
+friend(p38,p43).
+friend(p39,p11).
+friend(p39,p33).
+friend(p39,p15).
+friend(p40,p1).
+friend(p40,p13).
+friend(p40,p35).
+friend(p41,p36).
+friend(p41,p15).
+friend(p41,p26).
+friend(p42,p33).
+friend(p42,p23).
+friend(p42,p37).
+friend(p43,p23).
+friend(p43,p30).
+friend(p43,p18).
+friend(p44,p43).
+friend(p44,p36).
+friend(p44,p39).
+friend(p45,p48).
+friend(p45,p1).
+friend(p45,p25).
+friend(p46,p49).
+friend(p46,p33).
+friend(p46,p9).
+friend(p47,p34).
+friend(p47,p36).
+friend(p47,p14).
+friend(p48,p28).
+friend(p48,p4).
+friend(p48,p31).
+friend(p49,p24).
+friend(p49,p37).
+friend(p49,p36).
+friend(p50,p13).
+friend(p50,p33).
+friend(p50,p27).
+query(smokes(X)) :- person(X).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;s50.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">s50.lpad.pl</code><span>4 640 bytes, 262 lines</span><span class="sha" title="SHA-256">sha256 75f1cdcaea7fddad341daacb4cf61b926dd85f2d3e7d51d197d957531e2cca74</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>s50.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table smokes/1.
+stress(X):0.3 :- person(X).
+influences(X,Y):0.2 :- friend(X,Y).
+smokes(X) :- stress(X).
+smokes(X) :- friend(X,Y), influences(Y,X), smokes(Y).
+asthma(X):0.4 :- smokes(X).
+person(p1).
+person(p2).
+person(p3).
+person(p4).
+person(p5).
+person(p6).
+person(p7).
+person(p8).
+person(p9).
+person(p10).
+person(p11).
+person(p12).
+person(p13).
+person(p14).
+person(p15).
+person(p16).
+person(p17).
+person(p18).
+person(p19).
+person(p20).
+person(p21).
+person(p22).
+person(p23).
+person(p24).
+person(p25).
+person(p26).
+person(p27).
+person(p28).
+person(p29).
+person(p30).
+person(p31).
+person(p32).
+person(p33).
+person(p34).
+person(p35).
+person(p36).
+person(p37).
+person(p38).
+person(p39).
+person(p40).
+person(p41).
+person(p42).
+person(p43).
+person(p44).
+person(p45).
+person(p46).
+person(p47).
+person(p48).
+person(p49).
+person(p50).
+friend(p1,p10).
+friend(p1,p38).
+friend(p1,p50).
+friend(p2,p6).
+friend(p2,p18).
+friend(p2,p9).
+friend(p3,p33).
+friend(p3,p50).
+friend(p3,p30).
+friend(p4,p32).
+friend(p4,p43).
+friend(p4,p26).
+friend(p5,p15).
+friend(p5,p8).
+friend(p5,p33).
+friend(p6,p2).
+friend(p6,p26).
+friend(p6,p29).
+friend(p7,p40).
+friend(p7,p50).
+friend(p7,p1).
+friend(p8,p46).
+friend(p8,p30).
+friend(p8,p19).
+friend(p9,p48).
+friend(p9,p16).
+friend(p9,p39).
+friend(p10,p7).
+friend(p10,p22).
+friend(p10,p2).
+friend(p11,p2).
+friend(p11,p43).
+friend(p11,p36).
+friend(p12,p1).
+friend(p12,p26).
+friend(p12,p45).
+friend(p13,p15).
+friend(p13,p29).
+friend(p13,p48).
+friend(p14,p2).
+friend(p14,p35).
+friend(p14,p16).
+friend(p15,p50).
+friend(p15,p30).
+friend(p15,p33).
+friend(p16,p37).
+friend(p16,p15).
+friend(p16,p24).
+friend(p17,p15).
+friend(p17,p45).
+friend(p17,p50).
+friend(p18,p31).
+friend(p18,p20).
+friend(p18,p2).
+friend(p19,p28).
+friend(p19,p37).
+friend(p19,p43).
+friend(p20,p7).
+friend(p20,p12).
+friend(p20,p42).
+friend(p21,p48).
+friend(p21,p19).
+friend(p21,p8).
+friend(p22,p49).
+friend(p22,p23).
+friend(p22,p48).
+friend(p23,p47).
+friend(p23,p34).
+friend(p23,p29).
+friend(p24,p34).
+friend(p24,p44).
+friend(p24,p13).
+friend(p25,p20).
+friend(p25,p19).
+friend(p25,p39).
+friend(p26,p33).
+friend(p26,p34).
+friend(p26,p27).
+friend(p27,p39).
+friend(p27,p3).
+friend(p27,p32).
+friend(p28,p16).
+friend(p28,p49).
+friend(p28,p26).
+friend(p29,p27).
+friend(p29,p44).
+friend(p29,p12).
+friend(p30,p24).
+friend(p30,p37).
+friend(p30,p46).
+friend(p31,p45).
+friend(p31,p49).
+friend(p31,p24).
+friend(p32,p6).
+friend(p32,p29).
+friend(p32,p44).
+friend(p33,p34).
+friend(p33,p7).
+friend(p33,p11).
+friend(p34,p35).
+friend(p34,p26).
+friend(p34,p24).
+friend(p35,p32).
+friend(p35,p48).
+friend(p35,p2).
+friend(p36,p31).
+friend(p36,p3).
+friend(p36,p20).
+friend(p37,p47).
+friend(p37,p41).
+friend(p37,p39).
+friend(p38,p39).
+friend(p38,p26).
+friend(p38,p43).
+friend(p39,p11).
+friend(p39,p33).
+friend(p39,p15).
+friend(p40,p1).
+friend(p40,p13).
+friend(p40,p35).
+friend(p41,p36).
+friend(p41,p15).
+friend(p41,p26).
+friend(p42,p33).
+friend(p42,p23).
+friend(p42,p37).
+friend(p43,p23).
+friend(p43,p30).
+friend(p43,p18).
+friend(p44,p43).
+friend(p44,p36).
+friend(p44,p39).
+friend(p45,p48).
+friend(p45,p1).
+friend(p45,p25).
+friend(p46,p49).
+friend(p46,p33).
+friend(p46,p9).
+friend(p47,p34).
+friend(p47,p36).
+friend(p47,p14).
+friend(p48,p28).
+friend(p48,p4).
+friend(p48,p31).
+friend(p49,p24).
+friend(p49,p37).
+friend(p49,p36).
+friend(p50,p13).
+friend(p50,p33).
+friend(p50,p27).
+:- end_lpad.
+query_gen_person(p1).
+query_gen_person(p2).
+query_gen_person(p3).
+query_gen_person(p4).
+query_gen_person(p5).
+query_gen_person(p6).
+query_gen_person(p7).
+query_gen_person(p8).
+query_gen_person(p9).
+query_gen_person(p10).
+query_gen_person(p11).
+query_gen_person(p12).
+query_gen_person(p13).
+query_gen_person(p14).
+query_gen_person(p15).
+query_gen_person(p16).
+query_gen_person(p17).
+query_gen_person(p18).
+query_gen_person(p19).
+query_gen_person(p20).
+query_gen_person(p21).
+query_gen_person(p22).
+query_gen_person(p23).
+query_gen_person(p24).
+query_gen_person(p25).
+query_gen_person(p26).
+query_gen_person(p27).
+query_gen_person(p28).
+query_gen_person(p29).
+query_gen_person(p30).
+query_gen_person(p31).
+query_gen_person(p32).
+query_gen_person(p33).
+query_gen_person(p34).
+query_gen_person(p35).
+query_gen_person(p36).
+query_gen_person(p37).
+query_gen_person(p38).
+query_gen_person(p39).
+query_gen_person(p40).
+query_gen_person(p41).
+query_gen_person(p42).
+query_gen_person(p43).
+query_gen_person(p44).
+query_gen_person(p45).
+query_gen_person(p46).
+query_gen_person(p47).
+query_gen_person(p48).
+query_gen_person(p49).
+query_gen_person(p50).
+main :-
+    forall((query_gen_person(X), Q = smokes(X)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.007</td><td>5.6e-17 at most</td><td>largest formula, pairs 73; final formula, pairs 0; variables 58; ground atoms 65; ground rules 15; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.24</td><td>the reference</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.21</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.21</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.46</td><td>5.6e-17 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.7</td><td>1.1e-16 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><th>smokes(p1)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p10)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p11)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p12)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p13)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p14)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p15)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p16)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p17)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p18)</th><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td></tr><tr><th>smokes(p19)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p2)</th><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td></tr><tr><th>smokes(p20)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p21)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p22)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p23)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p24)</th><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td></tr><tr><th>smokes(p25)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p26)</th><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td><td class="num">0.34788</td></tr><tr><th>smokes(p27)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p28)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p29)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p3)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p30)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p31)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p32)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p33)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p34)</th><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td><td class="num">0.38148</td></tr><tr><th>smokes(p35)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p36)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p37)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p38)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p39)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p4)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p40)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p41)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p42)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p43)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p44)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr><tr><th>smokes(p45)</th><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0.3</td></tr></tbody></table></div><p class="note">The first 40 of 50 queries; the largest difference over all of them is in the table of runs above.</p>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

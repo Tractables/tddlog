@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rl_motivating_30000 · tddlog results</title>
+<meta name="description" content="rl_motivating_30000, an instance of Roulette&#x27;s programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#roulette">Roulette&#x27;s programs</a></p>
+    <h1>rl_motivating_30000</h1>
+    <p class="lede">The scaling programs of the Roulette paper (Moy et al., PLDI 2025) on ladders of size, and its nine Bayesian networks. Roulette runs the artifact&#x27;s programs; tddlog, Dice and Alea.jl run programs of the same models. On caesar Roulette&#x27;s time is that of its query with <code>#f</code>, which keeps the answer. 600 s a run. Made by <code>gen_roulette.py motivating 30000</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th></tr></thead><tbody><tr><td class="num">1.2</td><td class="num">1.7</td><td class="num">36.8</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Roulette (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Dice</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Alea.jl</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to Roulette as it is.</b></p>
+<p class="readers">Read by Roulette.</p>
+<dl class="cmds">
+<dt>Roulette</dt><dd><code>racket data/roulette/motivating.rkt 30000</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/roulette/motivating.rkt</code><span>557 bytes, 18 lines</span><span class="sha" title="SHA-256">sha256 e53a0f456f2185702c8f034b81b0476d72cc497d5e146a6b7ef7e50b58f45591</span></div><p class="made">Roulette's own program of this benchmark, from its artifact (<code>data/roulette/README.md</code>): not a translation, the system's own program.</p><pre>#lang roulette/example/disrupt
+;; benchmark/modular/motivating.rkt of the Roulette artifact (Zenodo
+;; 10.5281/zenodo.15253254), its last line changed to print P(x(N)) in
+;; full (print.rkt).
+(require &quot;print.rkt&quot;)
+
+(define (main n)
+  (let go ([n n])
+    (cond
+      [(zero? n) (flip 0.1)]
+      [else
+       (define x (flip 0.2))
+       (define y (flip 0.3))
+       (if (go (sub1 n)) x y)])))
+
+(define SIZE (string-&gt;number (vector-ref (current-command-line-arguments) 0)))
+(define result (time (query (main SIZE))))
+(emit (format &quot;x(~a)&quot; SIZE) (result #t))
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision), reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto rl_motivating_30000.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program rl_motivating_30000.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision rl_motivating_30000.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_motivating_30000.pl</code><span>2 791 295 bytes, 120 004 lines</span><span class="sha" title="SHA-256">sha256 e2e9ce4cbbe82c34365307b266b0a306f95483ad83d3030e9c1fc8264d02fce4</span></div><p class="made">Written by <code>gen_roulette.py motivating 30000</code> (bench.py gen).</p><p class="note"><a href="../files/e2e9ce4cbbe82c343653.txt">the first 65 523 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/e2e9ce4cbbe82c343653.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Dice; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Dice.</p>
+<dl class="cmds">
+<dt>Dice</dt><dd><code>dice rl_motivating_30000.dice</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_motivating_30000.dice</code><span>2 993 388 bytes, 90 002 lines</span><span class="sha" title="SHA-256">sha256 e6f087f7a52ad508e337f49e42276c975b6c0bdd31b4db13294b3a5b8fc1f8f7</span></div><p class="made">Written by <code>gen_roulette.py motivating 30000 --dice</code> (bench.py gen).</p><p class="note"><a href="../files/e6f087f7a52ad508e337.txt">the first 65 525 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/e6f087f7a52ad508e337.txt"></pre></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Alea.jl; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia rl_motivating_30000.alea.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_motivating_30000.alea.jl</code><span>9 791 019 bytes, 91 198 lines</span><span class="sha" title="SHA-256">sha256 63f174dcd6d26bc9a1dcca0e4793c5933414dc0a13146890f9401af63ab95172</span></div><p class="made">Written by <code>dice2alea.py</code> from the Dice program when Alea.jl runs.</p><p class="note"><a href="../files/63f174dcd6d26bc9a1dc.txt">the first 62 170 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/63f174dcd6d26bc9a1dc.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.2</td><td>5.6e-16 at most</td><td>largest formula, pairs 419 984; final formula, pairs 12; variables 90 000; ground atoms 149 999; ground rules 119 998; vtree families:0 (from auto: 1 attempts, 0.017s discarded)</td></tr><tr><td>2</td><td>answered</td><td>1.2</td><td>5.6e-16 at most</td><td>largest formula, pairs 419 984; final formula, pairs 12; variables 90 000; ground atoms 149 999; ground rules 119 998; vtree families:0 (from auto: 1 attempts, 0.017s discarded)</td></tr><tr><td>3</td><td>answered</td><td>1.2</td><td>5.6e-16 at most</td><td>largest formula, pairs 419 984; final formula, pairs 12; variables 90 000; ground atoms 149 999; ground rules 119 998; vtree families:0 (from auto: 1 attempts, 0.017s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>36.8</td><td>1.8</td><td>0.06</td><td></td><td>5.6e-17 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>36.7</td><td>1.8</td><td>0.06</td><td></td><td>5.6e-17 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>37.4</td><td>1.8</td><td>0.06</td><td></td><td>5.6e-17 at most</td><td></td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>4.6</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr><tr><td>2</td><td>error</td><td>4.7</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr><tr><td>3</td><td>error</td><td>4.6</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>x(30000)</th><td class="num">0.2727272727</td><td class="num">0.2727272727</td><td class="num">0.2727272727</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

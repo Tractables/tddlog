@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_wmi_star_n1024 · tddlog results</title>
+<meta name="description" content="bb_wmi_star_n1024, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_wmi_star_n1024</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/wmi/star.jl</code> with <code>n=1024</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">7.5</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set n=1024 data/alea/wmi/star.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/wmi/star.jl</code><span>930 bytes, 24 lines</span><span class="sha" title="SHA-256">sha256 f48585976eeb1ef330637cd9143691ec2f19ecdbad3d55c6341b0667b9f7277e</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/wmi/star.jl</code>.</p><pre># Weighted model integration on a star (Zeng, Morettin, Yan, Passerini and
+# Van den Broeck, ICML 2020, Section 6; the star-shaped primal graphs of
+# Zeng and Van den Broeck, UAI 2019): a centre x_0 and n leaves, real
+# variables uniform on [0, 1], each leaf constrained by x_0 + x_i &lt;= 1,
+# and the query x_1 &lt;= 1/2. The constraints have volume 1/(n+1), and the
+# continuous answer is (n+1)/(2n) (1 - 2^-n) + 2^-(n+1); the answer of the
+# discretized program converges to it as the bits after the binary point
+# grow. Each variable is a uniform fixed-point number with `bits` bits
+# after the binary point; `n` is the number of leaves.
+using Alea
+
+const QUERY = :pr
+const n = 16
+const bits = 8
+const DFiP = DistFix{2 + bits, bits}
+
+model() = @alea begin
+    x0 = uniform(DFiP, 0.0, 1.0)
+    x = [uniform(DFiP, 0.0, 1.0) for i in 1:n]
+    for i in 1:n
+        observe(!(DFiP(1.0) &lt; x0 + x[i]))
+    end
+    !(DFiP(0.5) &lt; x[1])
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_wmi_star_n1024.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_wmi_star_n1024.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_wmi_star_n1024.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_wmi_star_n1024.pl</code><span>2 713 552 bytes, 137 247 lines</span><span class="sha" title="SHA-256">sha256 46de814fb24f7c9715ae6857e625fc020d207f6c34b33f099c9a0df6fda6ece4</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/wmi/star.jl n=1024</code>.</p><p class="note"><a href="../files/46de814fb24f7c9715ae.txt">the first 65 531 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/46de814fb24f7c9715ae.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>7.5</td><td></td><td>largest formula, pairs 8 963 638; final formula, pairs 1 266; variables 8 201; ground atoms 67 596; ground rules 96 266; vtree program (from auto: 27 attempts, 2.451s discarded)</td></tr><tr><td>2</td><td>answered</td><td>7.5</td><td></td><td>largest formula, pairs 8 963 638; final formula, pairs 1 266; variables 8 201; ground atoms 67 596; ground rules 96 266; vtree program (from auto: 27 attempts, 2.450s discarded)</td></tr><tr><td>3</td><td>answered</td><td>7.5</td><td></td><td>largest formula, pairs 8 963 638; final formula, pairs 1 266; variables 8 201; ground atoms 67 596; ground rules 96 266; vtree program (from auto: 27 attempts, 2.441s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.0</td><td></td><td>largest formula, pairs 8 963 638; final formula, pairs 1 266; variables 8 201; ground atoms 67 596; ground rules 96 266; vtree program</td></tr><tr><td>2</td><td>answered</td><td>4.0</td><td></td><td>largest formula, pairs 8 963 638; final formula, pairs 1 266; variables 8 201; ground atoms 67 596; ground rules 96 266; vtree program</td></tr><tr><td>3</td><td>answered</td><td>4.0</td><td></td><td>largest formula, pairs 8 963 638; final formula, pairs 1 266; variables 8 201; ground atoms 67 596; ground rules 96 266; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>358</td><td></td><td></td><td></td><td></td><td>circuit flips 8 200; circuit gates 91 149</td></tr><tr class="err"><td></td><td colspan="7"><details><summary>the error</summary><pre>CUDD: unable to allocate 32736 bytes
+
+CUDD: unable to allocate 32736 bytes
+
+CUDD: out of memory allocating 32736 bytes</pre></details></td></tr><tr><td>2</td><td>error</td><td>535</td><td></td><td></td><td></td><td></td><td>circuit flips 8 200; circuit gates 91 149</td></tr><tr class="err"><td></td><td colspan="7"><details><summary>the error</summary><pre>CUDD: unable to allocate 32736 bytes
+
+CUDD: unable to allocate 32736 bytes
+
+CUDD: out of memory allocating 32736 bytes</pre></details></td></tr><tr><td>3</td><td>error</td><td>528</td><td></td><td></td><td></td><td></td><td>circuit flips 8 200; circuit gates 91 149</td></tr><tr class="err"><td></td><td colspan="7"><details><summary>the error</summary><pre>CUDD: unable to allocate 32736 bytes
+
+CUDD: unable to allocate 32736 bytes
+
+CUDD: out of memory allocating 32736 bytes</pre></details></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.5039246974</td><td class="num">0.5039246974</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

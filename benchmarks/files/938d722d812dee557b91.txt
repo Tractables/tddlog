@@ -1,0 +1,365 @@
+% gen_geni.py weather 10 2
+0.3::v__sel_update_0_f0.
+0.86::v__sel_update_1_f0.
+0.79::v__sel_update_2_f0.
+0.685::v__sel_update_3_f0.
+0.8299::v__sel_update_4_f0.
+0.7949::v__sel_update_5_f0.
+0.79462::v__sel_update_6_f0.
+0.79427::v__sel_update_7_f0.
+0.79532::v__sel_update_8_f0.
+0.79469::v__sel_update_9_f0.
+0.8369::v__sel_update_10_f0.
+allstrike :- \+v__sel_update_1_f0, \+v__sel_update_2_f0.
+allstrike_1 :- allstrike, \+v__sel_update_3_f0.
+allstrike_2 :- allstrike_1, \+v__sel_update_4_f0.
+allstrike_3 :- allstrike_2, \+v__sel_update_5_f0.
+allstrike_4 :- allstrike_3, \+v__sel_update_6_f0.
+allstrike_5 :- allstrike_4, \+v__sel_update_7_f0.
+allstrike_6 :- allstrike_5, \+v__sel_update_8_f0.
+allstrike_7 :- allstrike_6, \+v__sel_update_9_f0.
+allstrike_8 :- allstrike_7, \+v__sel_update_10_f0.
+v__cmd_act_1 :- \+v__sel_update_0_f0.
+v__cmd_act_1 :- v__sel_update_0_f0.
+v__cmd_act_1_1 :- \+v__sel_update_1_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_2 :- v__sel_update_1_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_3 :- v__cmd_act_1_1.
+v__cmd_act_1_3 :- v__cmd_act_1_2.
+v__cmd_act_1_4 :- \+v__sel_update_1_f0, v__sel_update_0_f0.
+v__cmd_act_1_5 :- v__cmd_act_1_3.
+v__cmd_act_1_5 :- v__cmd_act_1_4.
+v__cmd_act_1_6 :- v__sel_update_1_f0, v__sel_update_0_f0.
+v__cmd_act_1_7 :- v__cmd_act_1_5.
+v__cmd_act_1_7 :- v__cmd_act_1_6.
+v__cmd_act_1_8 :- v__cmd_act_1, v__cmd_act_1_7.
+v__cmd_act_1_9 :- \+v__sel_update_2_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_10 :- v__sel_update_2_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_11 :- v__cmd_act_1_9.
+v__cmd_act_1_11 :- v__cmd_act_1_10.
+v__cmd_act_1_12 :- \+v__sel_update_2_f0, v__sel_update_0_f0.
+v__cmd_act_1_13 :- v__cmd_act_1_11.
+v__cmd_act_1_13 :- v__cmd_act_1_12.
+v__cmd_act_1_14 :- v__sel_update_2_f0, v__sel_update_0_f0.
+v__cmd_act_1_15 :- v__cmd_act_1_13.
+v__cmd_act_1_15 :- v__cmd_act_1_14.
+v__cmd_act_1_16 :- v__cmd_act_1_8, v__cmd_act_1_15.
+v__cmd_act_1_17 :- \+v__sel_update_3_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_18 :- v__sel_update_3_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_19 :- v__cmd_act_1_17.
+v__cmd_act_1_19 :- v__cmd_act_1_18.
+v__cmd_act_1_20 :- \+v__sel_update_3_f0, v__sel_update_0_f0.
+v__cmd_act_1_21 :- v__cmd_act_1_19.
+v__cmd_act_1_21 :- v__cmd_act_1_20.
+v__cmd_act_1_22 :- v__sel_update_3_f0, v__sel_update_0_f0.
+v__cmd_act_1_23 :- v__cmd_act_1_21.
+v__cmd_act_1_23 :- v__cmd_act_1_22.
+v__cmd_act_1_24 :- v__cmd_act_1_16, v__cmd_act_1_23.
+v__cmd_act_1_25 :- \+v__sel_update_4_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_26 :- v__sel_update_4_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_27 :- v__cmd_act_1_25.
+v__cmd_act_1_27 :- v__cmd_act_1_26.
+v__cmd_act_1_28 :- \+v__sel_update_4_f0, v__sel_update_0_f0.
+v__cmd_act_1_29 :- v__cmd_act_1_27.
+v__cmd_act_1_29 :- v__cmd_act_1_28.
+v__cmd_act_1_30 :- v__sel_update_4_f0, v__sel_update_0_f0.
+v__cmd_act_1_31 :- v__cmd_act_1_29.
+v__cmd_act_1_31 :- v__cmd_act_1_30.
+v__cmd_act_1_32 :- v__cmd_act_1_24, v__cmd_act_1_31.
+v__cmd_act_1_33 :- \+v__sel_update_5_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_34 :- v__sel_update_5_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_35 :- v__cmd_act_1_33.
+v__cmd_act_1_35 :- v__cmd_act_1_34.
+v__cmd_act_1_36 :- \+v__sel_update_5_f0, v__sel_update_0_f0.
+v__cmd_act_1_37 :- v__cmd_act_1_35.
+v__cmd_act_1_37 :- v__cmd_act_1_36.
+v__cmd_act_1_38 :- v__sel_update_5_f0, v__sel_update_0_f0.
+v__cmd_act_1_39 :- v__cmd_act_1_37.
+v__cmd_act_1_39 :- v__cmd_act_1_38.
+v__cmd_act_1_40 :- v__cmd_act_1_32, v__cmd_act_1_39.
+v__cmd_act_1_41 :- \+v__sel_update_6_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_42 :- v__sel_update_6_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_43 :- v__cmd_act_1_41.
+v__cmd_act_1_43 :- v__cmd_act_1_42.
+v__cmd_act_1_44 :- \+v__sel_update_6_f0, v__sel_update_0_f0.
+v__cmd_act_1_45 :- v__cmd_act_1_43.
+v__cmd_act_1_45 :- v__cmd_act_1_44.
+v__cmd_act_1_46 :- v__sel_update_6_f0, v__sel_update_0_f0.
+v__cmd_act_1_47 :- v__cmd_act_1_45.
+v__cmd_act_1_47 :- v__cmd_act_1_46.
+v__cmd_act_1_48 :- v__cmd_act_1_40, v__cmd_act_1_47.
+v__cmd_act_1_49 :- \+v__sel_update_7_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_50 :- v__sel_update_7_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_51 :- v__cmd_act_1_49.
+v__cmd_act_1_51 :- v__cmd_act_1_50.
+v__cmd_act_1_52 :- \+v__sel_update_7_f0, v__sel_update_0_f0.
+v__cmd_act_1_53 :- v__cmd_act_1_51.
+v__cmd_act_1_53 :- v__cmd_act_1_52.
+v__cmd_act_1_54 :- v__sel_update_7_f0, v__sel_update_0_f0.
+v__cmd_act_1_55 :- v__cmd_act_1_53.
+v__cmd_act_1_55 :- v__cmd_act_1_54.
+v__cmd_act_1_56 :- v__cmd_act_1_48, v__cmd_act_1_55.
+v__cmd_act_1_57 :- \+v__sel_update_8_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_58 :- v__sel_update_8_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_59 :- v__cmd_act_1_57.
+v__cmd_act_1_59 :- v__cmd_act_1_58.
+v__cmd_act_1_60 :- \+v__sel_update_8_f0, v__sel_update_0_f0.
+v__cmd_act_1_61 :- v__cmd_act_1_59.
+v__cmd_act_1_61 :- v__cmd_act_1_60.
+v__cmd_act_1_62 :- v__sel_update_8_f0, v__sel_update_0_f0.
+v__cmd_act_1_63 :- v__cmd_act_1_61.
+v__cmd_act_1_63 :- v__cmd_act_1_62.
+v__cmd_act_1_64 :- v__cmd_act_1_56, v__cmd_act_1_63.
+v__cmd_act_1_65 :- \+v__sel_update_9_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_66 :- v__sel_update_9_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_67 :- v__cmd_act_1_65.
+v__cmd_act_1_67 :- v__cmd_act_1_66.
+v__cmd_act_1_68 :- \+v__sel_update_9_f0, v__sel_update_0_f0.
+v__cmd_act_1_69 :- v__cmd_act_1_67.
+v__cmd_act_1_69 :- v__cmd_act_1_68.
+v__cmd_act_1_70 :- v__sel_update_9_f0, v__sel_update_0_f0.
+v__cmd_act_1_71 :- v__cmd_act_1_69.
+v__cmd_act_1_71 :- v__cmd_act_1_70.
+v__cmd_act_1_72 :- v__cmd_act_1_64, v__cmd_act_1_71.
+v__cmd_act_1_73 :- \+v__sel_update_10_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_74 :- v__sel_update_10_f0, \+v__sel_update_0_f0.
+v__cmd_act_1_75 :- v__cmd_act_1_73.
+v__cmd_act_1_75 :- v__cmd_act_1_74.
+v__cmd_act_1_76 :- \+v__sel_update_10_f0, v__sel_update_0_f0.
+v__cmd_act_1_77 :- v__cmd_act_1_75.
+v__cmd_act_1_77 :- v__cmd_act_1_76.
+v__cmd_act_1_78 :- v__sel_update_10_f0, v__sel_update_0_f0.
+v__cmd_act_1_79 :- v__cmd_act_1_77.
+v__cmd_act_1_79 :- v__cmd_act_1_78.
+v__cmd_act_1_80 :- v__cmd_act_1_72, v__cmd_act_1_79.
+0.3::v__sel_update_0_1_f0.
+0.6::v__sel_update_0_2_f0.
+v__result_0 :- \+v__sel_update_0_f0, \+v__sel_update_0_1_f0.
+v__result_0 :- v__sel_update_0_f0, v__sel_update_0_2_f0.
+0.97::v__sel_update_1_1_f0.
+v__result_1_g :- \+v__cmd_act_1_1, v__cmd_act_1_2.
+0.86::v__sel_update_1_2_f0.
+v__result_1_g_1 :- \+v__cmd_act_1_1, \+v__cmd_act_1_2.
+v__result_1_g_2 :- v__result_1_g_1, v__cmd_act_1_4.
+0.94::v__sel_update_1_3_f0.
+v__result_1_g_3 :- v__result_1_g_1, \+v__cmd_act_1_4.
+v__result_1_g_4 :- v__result_1_g_3, v__cmd_act_1_6.
+0.92::v__sel_update_1_4_f0.
+v__result_1_g_5 :- v__result_1_g_3, \+v__cmd_act_1_6.
+v__result_1 :- v__cmd_act_1_1, \+v__sel_update_1_1_f0.
+v__result_1 :- v__result_1_g, \+v__sel_update_1_2_f0.
+v__result_1 :- v__result_1_g_2, \+v__sel_update_1_3_f0.
+v__result_1 :- v__result_1_g_4, \+v__sel_update_1_4_f0.
+v__result_1 :- v__result_1_g_5, \+v__sel_update_1_f0.
+0.94::v__sel_update_2_1_f0.
+v__result_2_g :- \+v__cmd_act_1_9, v__cmd_act_1_10.
+0.79::v__sel_update_2_2_f0.
+v__result_2_g_1 :- \+v__cmd_act_1_9, \+v__cmd_act_1_10.
+v__result_2_g_2 :- v__result_2_g_1, v__cmd_act_1_12.
+0.88::v__sel_update_2_3_f0.
+v__result_2_g_3 :- v__result_2_g_1, \+v__cmd_act_1_12.
+v__result_2_g_4 :- v__result_2_g_3, v__cmd_act_1_14.
+0.88::v__sel_update_2_4_f0.
+v__result_2_g_5 :- v__result_2_g_3, \+v__cmd_act_1_14.
+v__result_2 :- v__cmd_act_1_9, \+v__sel_update_2_1_f0.
+v__result_2 :- v__result_2_g, \+v__sel_update_2_2_f0.
+v__result_2 :- v__result_2_g_2, \+v__sel_update_2_3_f0.
+v__result_2 :- v__result_2_g_4, \+v__sel_update_2_4_f0.
+v__result_2 :- v__result_2_g_5, \+v__sel_update_2_f0.
+0.877::v__sel_update_3_1_f0.
+v__result_3_g :- \+v__cmd_act_1_17, v__cmd_act_1_18.
+0.685::v__sel_update_3_2_f0.
+v__result_3_g_1 :- \+v__cmd_act_1_17, \+v__cmd_act_1_18.
+v__result_3_g_2 :- v__result_3_g_1, v__cmd_act_1_20.
+0.754::v__sel_update_3_3_f0.
+v__result_3_g_3 :- v__result_3_g_1, \+v__cmd_act_1_20.
+v__result_3_g_4 :- v__result_3_g_3, v__cmd_act_1_22.
+0.82::v__sel_update_3_4_f0.
+v__result_3_g_5 :- v__result_3_g_3, \+v__cmd_act_1_22.
+v__result_3 :- v__cmd_act_1_17, \+v__sel_update_3_1_f0.
+v__result_3 :- v__result_3_g, \+v__sel_update_3_2_f0.
+v__result_3 :- v__result_3_g_2, \+v__sel_update_3_3_f0.
+v__result_3 :- v__result_3_g_4, \+v__sel_update_3_4_f0.
+v__result_3 :- v__result_3_g_5, \+v__sel_update_3_f0.
+0.718::v__sel_update_4_1_f0.
+v__result_4_g :- \+v__cmd_act_1_25, v__cmd_act_1_26.
+0.8299::v__sel_update_4_2_f0.
+v__result_4_g_1 :- \+v__cmd_act_1_25, \+v__cmd_act_1_26.
+v__result_4_g_2 :- v__result_4_g_1, v__cmd_act_1_28.
+0.436::v__sel_update_4_3_f0.
+v__result_4_g_3 :- v__result_4_g_1, \+v__cmd_act_1_28.
+v__result_4_g_4 :- v__result_4_g_3, v__cmd_act_1_30.
+0.9028::v__sel_update_4_4_f0.
+v__result_4_g_5 :- v__result_4_g_3, \+v__cmd_act_1_30.
+v__result_4 :- v__cmd_act_1_25, \+v__sel_update_4_1_f0.
+v__result_4 :- v__result_4_g, \+v__sel_update_4_2_f0.
+v__result_4 :- v__result_4_g_2, \+v__sel_update_4_3_f0.
+v__result_4 :- v__result_4_g_4, \+v__sel_update_4_4_f0.
+v__result_4 :- v__result_4_g_5, \+v__sel_update_4_f0.
+0.8698::v__sel_update_5_1_f0.
+v__result_5_g :- \+v__cmd_act_1_33, v__cmd_act_1_34.
+0.7949::v__sel_update_5_2_f0.
+v__result_5_g_1 :- \+v__cmd_act_1_33, \+v__cmd_act_1_34.
+v__result_5_g_2 :- v__result_5_g_1, v__cmd_act_1_36.
+0.7396::v__sel_update_5_3_f0.
+v__result_5_g_3 :- v__result_5_g_1, \+v__cmd_act_1_36.
+v__result_5_g_4 :- v__result_5_g_3, v__cmd_act_1_38.
+0.8828::v__sel_update_5_4_f0.
+v__result_5_g_5 :- v__result_5_g_3, \+v__cmd_act_1_38.
+v__result_5 :- v__cmd_act_1_33, \+v__sel_update_5_1_f0.
+v__result_5 :- v__result_5_g, \+v__sel_update_5_2_f0.
+v__result_5 :- v__result_5_g_2, \+v__sel_update_5_3_f0.
+v__result_5 :- v__result_5_g_4, \+v__sel_update_5_4_f0.
+v__result_5 :- v__result_5_g_5, \+v__sel_update_5_f0.
+0.86977::v__sel_update_6_1_f0.
+v__result_6_g :- \+v__cmd_act_1_41, v__cmd_act_1_42.
+0.79462::v__sel_update_6_2_f0.
+v__result_6_g_1 :- \+v__cmd_act_1_41, \+v__cmd_act_1_42.
+v__result_6_g_2 :- v__result_6_g_1, v__cmd_act_1_44.
+0.73954::v__sel_update_6_3_f0.
+v__result_6_g_3 :- v__result_6_g_1, \+v__cmd_act_1_44.
+v__result_6_g_4 :- v__result_6_g_3, v__cmd_act_1_46.
+0.88264::v__sel_update_6_4_f0.
+v__result_6_g_5 :- v__result_6_g_3, \+v__cmd_act_1_46.
+v__result_6 :- v__cmd_act_1_41, \+v__sel_update_6_1_f0.
+v__result_6 :- v__result_6_g, \+v__sel_update_6_2_f0.
+v__result_6 :- v__result_6_g_2, \+v__sel_update_6_3_f0.
+v__result_6 :- v__result_6_g_4, \+v__sel_update_6_4_f0.
+v__result_6 :- v__result_6_g_5, \+v__sel_update_6_f0.
+0.86965::v__sel_update_7_1_f0.
+v__result_7_g :- \+v__cmd_act_1_49, v__cmd_act_1_50.
+0.79427::v__sel_update_7_2_f0.
+v__result_7_g_1 :- \+v__cmd_act_1_49, \+v__cmd_act_1_50.
+v__result_7_g_2 :- v__result_7_g_1, v__cmd_act_1_52.
+0.7393::v__sel_update_7_3_f0.
+v__result_7_g_3 :- v__result_7_g_1, \+v__cmd_act_1_52.
+v__result_7_g_4 :- v__result_7_g_3, v__cmd_act_1_54.
+0.88244::v__sel_update_7_4_f0.
+v__result_7_g_5 :- v__result_7_g_3, \+v__cmd_act_1_54.
+v__result_7 :- v__cmd_act_1_49, \+v__sel_update_7_1_f0.
+v__result_7 :- v__result_7_g, \+v__sel_update_7_2_f0.
+v__result_7 :- v__result_7_g_2, \+v__sel_update_7_3_f0.
+v__result_7 :- v__result_7_g_4, \+v__sel_update_7_4_f0.
+v__result_7 :- v__result_7_g_5, \+v__sel_update_7_f0.
+0.86968::v__sel_update_8_1_f0.
+v__result_8_g :- \+v__cmd_act_1_57, v__cmd_act_1_58.
+0.79532::v__sel_update_8_2_f0.
+v__result_8_g_1 :- \+v__cmd_act_1_57, \+v__cmd_act_1_58.
+v__result_8_g_2 :- v__result_8_g_1, v__cmd_act_1_60.
+0.73936::v__sel_update_8_3_f0.
+v__result_8_g_3 :- v__result_8_g_1, \+v__cmd_act_1_60.
+v__result_8_g_4 :- v__result_8_g_3, v__cmd_act_1_62.
+0.88304::v__sel_update_8_4_f0.
+v__result_8_g_5 :- v__result_8_g_3, \+v__cmd_act_1_62.
+v__result_8 :- v__cmd_act_1_57, \+v__sel_update_8_1_f0.
+v__result_8 :- v__result_8_g, \+v__sel_update_8_2_f0.
+v__result_8 :- v__result_8_g_2, \+v__sel_update_8_3_f0.
+v__result_8 :- v__result_8_g_4, \+v__sel_update_8_4_f0.
+v__result_8 :- v__result_8_g_5, \+v__sel_update_8_f0.
+0.86503::v__sel_update_9_1_f0.
+v__result_9_g :- \+v__cmd_act_1_65, v__cmd_act_1_66.
+0.79469::v__sel_update_9_2_f0.
+v__result_9_g_1 :- \+v__cmd_act_1_65, \+v__cmd_act_1_66.
+v__result_9_g_2 :- v__result_9_g_1, v__cmd_act_1_68.
+0.73006::v__sel_update_9_3_f0.
+v__result_9_g_3 :- v__result_9_g_1, \+v__cmd_act_1_68.
+v__result_9_g_4 :- v__result_9_g_3, v__cmd_act_1_70.
+0.88268::v__sel_update_9_4_f0.
+v__result_9_g_5 :- v__result_9_g_3, \+v__cmd_act_1_70.
+v__result_9 :- v__cmd_act_1_65, \+v__sel_update_9_1_f0.
+v__result_9 :- v__result_9_g, \+v__sel_update_9_2_f0.
+v__result_9 :- v__result_9_g_2, \+v__sel_update_9_3_f0.
+v__result_9 :- v__result_9_g_4, \+v__sel_update_9_4_f0.
+v__result_9 :- v__result_9_g_5, \+v__sel_update_9_f0.
+0.8686::v__sel_update_10_1_f0.
+v__result_10_g :- \+v__cmd_act_1_73, v__cmd_act_1_74.
+0.8369::v__sel_update_10_2_f0.
+v__result_10_g_1 :- \+v__cmd_act_1_73, \+v__cmd_act_1_74.
+v__result_10_g_2 :- v__result_10_g_1, v__cmd_act_1_76.
+0.7372::v__sel_update_10_3_f0.
+v__result_10_g_3 :- v__result_10_g_1, \+v__cmd_act_1_76.
+v__result_10_g_4 :- v__result_10_g_3, v__cmd_act_1_78.
+0.9068::v__sel_update_10_4_f0.
+v__result_10_g_5 :- v__result_10_g_3, \+v__cmd_act_1_78.
+v__result_10 :- v__cmd_act_1_73, \+v__sel_update_10_1_f0.
+v__result_10 :- v__result_10_g, \+v__sel_update_10_2_f0.
+v__result_10 :- v__result_10_g_2, \+v__sel_update_10_3_f0.
+v__result_10 :- v__result_10_g_4, \+v__sel_update_10_4_f0.
+v__result_10 :- v__result_10_g_5, \+v__sel_update_10_f0.
+res_then_else_1 :- v__cmd_act_1_80, v__result_0.
+res_then_else_1 :- \+v__cmd_act_1_80, \+v__sel_update_0_f0.
+res_then_else_2_1 :- v__cmd_act_1_80, v__result_1.
+res_then_else_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_1_f0.
+res_then_else_2_2_1 :- v__cmd_act_1_80, v__result_2.
+res_then_else_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_2_f0.
+res_then_else_2_2_2_1 :- v__cmd_act_1_80, v__result_3.
+res_then_else_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_3_f0.
+res_then_else_2_2_2_2_1 :- v__cmd_act_1_80, v__result_4.
+res_then_else_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_4_f0.
+res_then_else_2_2_2_2_2_1 :- v__cmd_act_1_80, v__result_5.
+res_then_else_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_5_f0.
+res_then_else_2_2_2_2_2_2_1 :- v__cmd_act_1_80, v__result_6.
+res_then_else_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_6_f0.
+res_then_else_2_2_2_2_2_2_2_1 :- v__cmd_act_1_80, v__result_7.
+res_then_else_2_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_7_f0.
+res_then_else_2_2_2_2_2_2_2_2_1 :- v__cmd_act_1_80, v__result_8.
+res_then_else_2_2_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_8_f0.
+res_then_else_2_2_2_2_2_2_2_2_2_1 :- v__cmd_act_1_80, v__result_9.
+res_then_else_2_2_2_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_9_f0.
+res_then_else_2_2_2_2_2_2_2_2_2_2 :- v__cmd_act_1_80, v__result_10.
+res_then_else_2_2_2_2_2_2_2_2_2_2 :- \+v__cmd_act_1_80, \+v__sel_update_10_f0.
+res_then_1 :- \+v__cmd_act_1_80, \+v__sel_update_0_f0.
+res_then_1 :- v__cmd_act_1_80, res_then_else_1.
+res_then_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_1_f0.
+res_then_2_1 :- v__cmd_act_1_80, res_then_else_2_1.
+res_then_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_2_f0.
+res_then_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_1.
+res_then_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_3_f0.
+res_then_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_1.
+res_then_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_4_f0.
+res_then_2_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_2_1.
+res_then_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_5_f0.
+res_then_2_2_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_2_2_1.
+res_then_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_6_f0.
+res_then_2_2_2_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_2_2_2_1.
+res_then_2_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_7_f0.
+res_then_2_2_2_2_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_2_2_2_2_1.
+res_then_2_2_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_8_f0.
+res_then_2_2_2_2_2_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_2_2_2_2_2_1.
+res_then_2_2_2_2_2_2_2_2_2_1 :- \+v__cmd_act_1_80, \+v__sel_update_9_f0.
+res_then_2_2_2_2_2_2_2_2_2_1 :- v__cmd_act_1_80, res_then_else_2_2_2_2_2_2_2_2_2_1.
+res_then_2_2_2_2_2_2_2_2_2_2 :- \+v__cmd_act_1_80, \+v__sel_update_10_f0.
+res_then_2_2_2_2_2_2_2_2_2_2 :- v__cmd_act_1_80, res_then_else_2_2_2_2_2_2_2_2_2_2.
+res_1 :- \+allstrike_8, res_then_1.
+res_1 :- allstrike_8, \+v__sel_update_0_f0.
+res_2_1 :- \+allstrike_8, res_then_2_1.
+res_2_1 :- allstrike_8, \+v__sel_update_1_f0.
+res_2_2_1 :- \+allstrike_8, res_then_2_2_1.
+res_2_2_1 :- allstrike_8, \+v__sel_update_2_f0.
+res_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_1.
+res_2_2_2_1 :- allstrike_8, \+v__sel_update_3_f0.
+res_2_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_2_1.
+res_2_2_2_2_1 :- allstrike_8, \+v__sel_update_4_f0.
+res_2_2_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_2_2_1.
+res_2_2_2_2_2_1 :- allstrike_8, \+v__sel_update_5_f0.
+res_2_2_2_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_2_2_2_1.
+res_2_2_2_2_2_2_1 :- allstrike_8, \+v__sel_update_6_f0.
+res_2_2_2_2_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_2_2_2_2_1.
+res_2_2_2_2_2_2_2_1 :- allstrike_8, \+v__sel_update_7_f0.
+res_2_2_2_2_2_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_2_2_2_2_2_1.
+res_2_2_2_2_2_2_2_2_1 :- allstrike_8, \+v__sel_update_8_f0.
+res_2_2_2_2_2_2_2_2_2_1 :- \+allstrike_8, res_then_2_2_2_2_2_2_2_2_2_1.
+res_2_2_2_2_2_2_2_2_2_1 :- allstrike_8, \+v__sel_update_9_f0.
+res_2_2_2_2_2_2_2_2_2_2 :- \+allstrike_8, res_then_2_2_2_2_2_2_2_2_2_2.
+res_2_2_2_2_2_2_2_2_2_2 :- allstrike_8, \+v__sel_update_10_f0.
+allstrike_9 :- res_2_1, res_2_2_1.
+allstrike_10 :- allstrike_9, res_2_2_2_1.
+allstrike_11 :- allstrike_10, res_2_2_2_2_1.
+allstrike_12 :- allstrike_11, res_2_2_2_2_2_1.
+allstrike_13 :- allstrike_12, res_2_2_2_2_2_2_1.
+allstrike_14 :- allstrike_13, res_2_2_2_2_2_2_2_1.
+allstrike_15 :- allstrike_14, res_2_2_2_2_2_2_2_2_1.
+allstrike_16 :- allstrike_15, res_2_2_2_2_2_2_2_2_2_1.
+allstrike_17 :- allstrike_16, res_2_2_2_2_2_2_2_2_2_2.
+query(allstrike_17).
+result_2 :- fail.
+query(result_2).

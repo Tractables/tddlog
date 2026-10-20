@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>biomine64 · tddlog results</title>
+<meta name="description" content="biomine64, an instance of Biomine: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#biomine">Biomine</a></p>
+    <h1>biomine64</h1>
+    <p class="lede">The probability that each of four genes is connected to Alzheimer disease in the human Biomine network, over the union of the K most probable paths, for ten values of K up to 64; 600 s a run. Made by <code>gen_biomine.py biomine/human_3_oct_2018.zip 64</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">175</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Source</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto biomine64.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf biomine64.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd biomine64.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd biomine64.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result biomine64.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">biomine64.pl</code><span>31 554 bytes, 539 lines</span><span class="sha" title="SHA-256">sha256 9b40a1f97fe8b1608386c8869e1c291ad1e46e2a90f27d90120daa1a3bbbecee</span></div><p class="made">Written by <code>gen_biomine.py biomine/human_3_oct_2018.zip 64</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from Biomine&#x27;s graph human_3_oct_2018.zip, licensed for academic and non-commercial use, downloaded from <a href="https://biomine.ijs.si/downloads/">https://biomine.ijs.si/downloads/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;biomine64.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">biomine64.lpad.pl</code><span>30 815 bytes, 540 lines</span><span class="sha" title="SHA-256">sha256 01bec4650edbb3fc42b6dadb8441b8c506019d55a95a6fb99f0990b2727e9e52</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>biomine64.pl</code> when PITA runs.</p><p class="note">Not shown: the programs of this benchmark are written from Biomine&#x27;s graph human_3_oct_2018.zip, licensed for academic and non-commercial use, downloaded from <a href="https://biomine.ijs.si/downloads/">https://biomine.ijs.si/downloads/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>The file the programs of the other tabs were written from.</b></p>
+<div class="file"><div class="fhead"><code class="fname">biomine/human_3_oct_2018.zip</code><span>64 417 958 bytes</span><span class="sha" title="SHA-256">sha256 b596a4e1c6c1d1b76762001c68aa530a29e403a01c7fd7b2e9fb49d77b558ea5</span></div><p class="made">From the Biomine graph, as distributed: <code>human_3_oct_2018.zip</code>.</p><p class="note">Not shown: the programs of this benchmark are written from Biomine&#x27;s graph human_3_oct_2018.zip, licensed for academic and non-commercial use, downloaded from <a href="https://biomine.ijs.si/downloads/">https://biomine.ijs.si/downloads/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>175</td><td>3.4e-12 at most</td><td>largest formula, pairs 27 904 944; final formula, pairs 0; variables 348; ground atoms 672; ground rules 1 204; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>PITA</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is reliability_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th></tr></thead><tbody><tr><th>path(phenotype_mim_104300,gene_entrezgene_351)</th><td class="num">0.9799167075</td><td class="num">0.9799167075</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_323)</th><td class="num">0.9799140001</td><td class="num">0.9799140001</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_590)</th><td class="num">0.9798382361</td><td class="num">0.9798382361</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_5126)</th><td class="num">0.9756700941</td><td class="num">0.9756700941</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

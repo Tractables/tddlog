@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mastermind6_4_8 · tddlog results</title>
+<meta name="description" content="mastermind6_4_8, an instance of Literature suite: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
+    <h1>mastermind6_4_8</h1>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_mastermind.py 6 4 8 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.61</td><td class="num">1.5</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto mastermind6_4_8.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf mastermind6_4_8.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd mastermind6_4_8.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd mastermind6_4_8.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">mastermind6_4_8.pl</code><span>3 753 bytes, 154 lines</span><span class="sha" title="SHA-256">sha256 8bad667cd5f760ffc31b68c1900a5c3d5b05773c50d650e53f8f2a25b907478f</span></div><p class="made">Written by <code>gen_mastermind.py 6 4 8 --seed 1</code> (bench.py gen).</p><pre>% mastermind: 6 colours, 4 pegs, 8 guesses, seed 1
+0.166666666666::code(1,c0); 0.166666666666::code(1,c1); 0.166666666666::code(1,c2); 0.166666666666::code(1,c3); 0.166666666666::code(1,c4); 0.166666666666::code(1,c5).
+0.166666666666::code(2,c0); 0.166666666666::code(2,c1); 0.166666666666::code(2,c2); 0.166666666666::code(2,c3); 0.166666666666::code(2,c4); 0.166666666666::code(2,c5).
+0.166666666666::code(3,c0); 0.166666666666::code(3,c1); 0.166666666666::code(3,c2); 0.166666666666::code(3,c3); 0.166666666666::code(3,c4); 0.166666666666::code(3,c5).
+0.166666666666::code(4,c0); 0.166666666666::code(4,c1); 0.166666666666::code(4,c2); 0.166666666666::code(4,c3); 0.166666666666::code(4,c4); 0.166666666666::code(4,c5).
+peg(0,1).
+peg(1,2).
+peg(2,3).
+peg(3,4).
+colour(0,c0).
+colour(1,c1).
+colour(2,c2).
+colour(3,c3).
+colour(4,c4).
+colour(5,c5).
+round(g0).
+guess(g0,1,c0).
+guess(g0,2,c3).
+guess(g0,3,c3).
+guess(g0,4,c3).
+guessed(g0,c0,1).
+guessed(g0,c1,0).
+guessed(g0,c2,0).
+guessed(g0,c3,3).
+guessed(g0,c4,0).
+guessed(g0,c5,0).
+round(g1).
+guess(g1,1,c5).
+guess(g1,2,c3).
+guess(g1,3,c1).
+guess(g1,4,c0).
+guessed(g1,c0,1).
+guessed(g1,c1,1).
+guessed(g1,c2,0).
+guessed(g1,c3,1).
+guessed(g1,c4,0).
+guessed(g1,c5,1).
+round(g2).
+guess(g2,1,c3).
+guess(g2,2,c0).
+guess(g2,3,c3).
+guess(g2,4,c3).
+guessed(g2,c0,1).
+guessed(g2,c1,0).
+guessed(g2,c2,0).
+guessed(g2,c3,3).
+guessed(g2,c4,0).
+guessed(g2,c5,0).
+round(g3).
+guess(g3,1,c4).
+guess(g3,2,c0).
+guess(g3,3,c5).
+guess(g3,4,c3).
+guessed(g3,c0,1).
+guessed(g3,c1,0).
+guessed(g3,c2,0).
+guessed(g3,c3,1).
+guessed(g3,c4,1).
+guessed(g3,c5,1).
+round(g4).
+guess(g4,1,c2).
+guess(g4,2,c5).
+guess(g4,3,c1).
+guess(g4,4,c4).
+guessed(g4,c0,0).
+guessed(g4,c1,1).
+guessed(g4,c2,1).
+guessed(g4,c3,0).
+guessed(g4,c4,1).
+guessed(g4,c5,1).
+round(g5).
+guess(g5,1,c0).
+guess(g5,2,c2).
+guess(g5,3,c0).
+guess(g5,4,c0).
+guessed(g5,c0,3).
+guessed(g5,c1,0).
+guessed(g5,c2,1).
+guessed(g5,c3,0).
+guessed(g5,c4,0).
+guessed(g5,c5,0).
+round(g6).
+guess(g6,1,c0).
+guess(g6,2,c5).
+guess(g6,3,c4).
+guess(g6,4,c0).
+guessed(g6,c0,2).
+guessed(g6,c1,0).
+guessed(g6,c2,0).
+guessed(g6,c3,0).
+guessed(g6,c4,1).
+guessed(g6,c5,1).
+round(g7).
+guess(g7,1,c3).
+guess(g7,2,c5).
+guess(g7,3,c1).
+guess(g7,4,c3).
+guessed(g7,c0,0).
+guessed(g7,c1,1).
+guessed(g7,c2,0).
+guessed(g7,c3,2).
+guessed(g7,c4,0).
+guessed(g7,c5,1).
+black(G,0,0) :- round(G).
+black(G,K,B) :- peg(J,K), black(G,J,B0), guess(G,K,X), code(K,X), B is B0+1.
+black(G,K,B) :- peg(J,K), black(G,J,B), guess(G,K,X), code(K,Y), X \= Y.
+count(X,0,0) :- colour(_,X).
+count(X,K,N) :- peg(J,K), count(X,J,N0), code(K,X), N is N0+1.
+count(X,K,N) :- peg(J,K), count(X,J,N), code(K,Y), X \= Y.
+common(G,X,N) :- guessed(G,X,M), count(X,4,N), N =&lt; M.
+common(G,X,M) :- guessed(G,X,M), count(X,4,N), N &gt; M.
+matched(G,0,0) :- round(G).
+matched(G,I,T) :- colour(J,X), I is J+1, matched(G,J,T0), common(G,X,M), T is T0+M.
+white(G,W) :- matched(G,6,T), black(G,4,B), W is T-B.
+evidence(black(g0,4,0)).
+evidence(white(g0,1)).
+evidence(black(g1,4,0)).
+evidence(white(g1,2)).
+evidence(black(g2,4,0)).
+evidence(white(g2,1)).
+evidence(black(g3,4,0)).
+evidence(white(g3,2)).
+evidence(black(g4,4,0)).
+evidence(white(g4,3)).
+evidence(black(g5,4,1)).
+evidence(white(g5,1)).
+evidence(black(g6,4,0)).
+evidence(white(g6,2)).
+evidence(black(g7,4,0)).
+evidence(white(g7,1)).
+query(code(1,c0)).
+query(code(1,c1)).
+query(code(1,c2)).
+query(code(1,c3)).
+query(code(1,c4)).
+query(code(1,c5)).
+query(code(2,c0)).
+query(code(2,c1)).
+query(code(2,c2)).
+query(code(2,c3)).
+query(code(2,c4)).
+query(code(2,c5)).
+query(code(3,c0)).
+query(code(3,c1)).
+query(code(3,c2)).
+query(code(3,c3)).
+query(code(3,c4)).
+query(code(3,c5)).
+query(code(4,c0)).
+query(code(4,c1)).
+query(code(4,c2)).
+query(code(4,c3)).
+query(code(4,c4)).
+query(code(4,c5)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;mastermind6_4_8.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">mastermind6_4_8.lpad.pl</code><span>10 165 bytes, 145 lines</span><span class="sha" title="SHA-256">sha256 ab740b8fe101196413e2b7c107fe305ce650c87db022827cb401755c4c7f9505</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>mastermind6_4_8.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table black/3.
+:- table count/3.
+:- table matched/3.
+code(1,c0):0.166666666666 ; code(1,c1):0.166666666666 ; code(1,c2):0.166666666666 ; code(1,c3):0.166666666666 ; code(1,c4):0.166666666666 ; code(1,c5):0.166666666666.
+code(2,c0):0.166666666666 ; code(2,c1):0.166666666666 ; code(2,c2):0.166666666666 ; code(2,c3):0.166666666666 ; code(2,c4):0.166666666666 ; code(2,c5):0.166666666666.
+code(3,c0):0.166666666666 ; code(3,c1):0.166666666666 ; code(3,c2):0.166666666666 ; code(3,c3):0.166666666666 ; code(3,c4):0.166666666666 ; code(3,c5):0.166666666666.
+code(4,c0):0.166666666666 ; code(4,c1):0.166666666666 ; code(4,c2):0.166666666666 ; code(4,c3):0.166666666666 ; code(4,c4):0.166666666666 ; code(4,c5):0.166666666666.
+peg(0,1).
+peg(1,2).
+peg(2,3).
+peg(3,4).
+colour(0,c0).
+colour(1,c1).
+colour(2,c2).
+colour(3,c3).
+colour(4,c4).
+colour(5,c5).
+round(g0).
+guess(g0,1,c0).
+guess(g0,2,c3).
+guess(g0,3,c3).
+guess(g0,4,c3).
+guessed(g0,c0,1).
+guessed(g0,c1,0).
+guessed(g0,c2,0).
+guessed(g0,c3,3).
+guessed(g0,c4,0).
+guessed(g0,c5,0).
+round(g1).
+guess(g1,1,c5).
+guess(g1,2,c3).
+guess(g1,3,c1).
+guess(g1,4,c0).
+guessed(g1,c0,1).
+guessed(g1,c1,1).
+guessed(g1,c2,0).
+guessed(g1,c3,1).
+guessed(g1,c4,0).
+guessed(g1,c5,1).
+round(g2).
+guess(g2,1,c3).
+guess(g2,2,c0).
+guess(g2,3,c3).
+guess(g2,4,c3).
+guessed(g2,c0,1).
+guessed(g2,c1,0).
+guessed(g2,c2,0).
+guessed(g2,c3,3).
+guessed(g2,c4,0).
+guessed(g2,c5,0).
+round(g3).
+guess(g3,1,c4).
+guess(g3,2,c0).
+guess(g3,3,c5).
+guess(g3,4,c3).
+guessed(g3,c0,1).
+guessed(g3,c1,0).
+guessed(g3,c2,0).
+guessed(g3,c3,1).
+guessed(g3,c4,1).
+guessed(g3,c5,1).
+round(g4).
+guess(g4,1,c2).
+guess(g4,2,c5).
+guess(g4,3,c1).
+guess(g4,4,c4).
+guessed(g4,c0,0).
+guessed(g4,c1,1).
+guessed(g4,c2,1).
+guessed(g4,c3,0).
+guessed(g4,c4,1).
+guessed(g4,c5,1).
+round(g5).
+guess(g5,1,c0).
+guess(g5,2,c2).
+guess(g5,3,c0).
+guess(g5,4,c0).
+guessed(g5,c0,3).
+guessed(g5,c1,0).
+guessed(g5,c2,1).
+guessed(g5,c3,0).
+guessed(g5,c4,0).
+guessed(g5,c5,0).
+round(g6).
+guess(g6,1,c0).
+guess(g6,2,c5).
+guess(g6,3,c4).
+guess(g6,4,c0).
+guessed(g6,c0,2).
+guessed(g6,c1,0).
+guessed(g6,c2,0).
+guessed(g6,c3,0).
+guessed(g6,c4,1).
+guessed(g6,c5,1).
+round(g7).
+guess(g7,1,c3).
+guess(g7,2,c5).
+guess(g7,3,c1).
+guess(g7,4,c3).
+guessed(g7,c0,0).
+guessed(g7,c1,1).
+guessed(g7,c2,0).
+guessed(g7,c3,2).
+guessed(g7,c4,0).
+guessed(g7,c5,1).
+black(G,0,0) :- round(G).
+black(G,K,B) :- peg(J,K), black(G,J,B0), guess(G,K,X), code(K,X), B is B0+1.
+black(G,K,B) :- peg(J,K), black(G,J,B), guess(G,K,X), code(K,Y), X \= Y.
+count(X,0,0) :- colour(_,X).
+count(X,K,N) :- peg(J,K), count(X,J,N0), code(K,X), N is N0+1.
+count(X,K,N) :- peg(J,K), count(X,J,N), code(K,Y), X \= Y.
+common(G,X,N) :- guessed(G,X,M), count(X,4,N), N =&lt; M.
+common(G,X,M) :- guessed(G,X,M), count(X,4,N), N &gt; M.
+matched(G,0,0) :- round(G).
+matched(G,I,T) :- colour(J,X), I is J+1, matched(G,J,T0), common(G,X,M), T is T0+M.
+white(G,W) :- matched(G,6,T), black(G,4,B), W is T-B.
+:- end_lpad.
+main :-
+    forall((Q = code(1,c0)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(1,c1)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(1,c2)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(1,c3)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(1,c4)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(1,c5)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(2,c0)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(2,c1)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(2,c2)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(2,c3)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(2,c4)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(2,c5)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(3,c0)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(3,c1)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(3,c2)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(3,c3)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(3,c4)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(3,c5)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(4,c0)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(4,c1)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(4,c2)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(4,c3)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(4,c4)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = code(4,c5)), (prob(Q, (black(g0,4,0), white(g0,1), black(g1,4,0), white(g1,2), black(g2,4,0), white(g2,1), black(g3,4,0), white(g3,2), black(g4,4,0), white(g4,3), black(g5,4,1), white(g5,1), black(g6,4,0), white(g6,2), black(g7,4,0), white(g7,1)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.04</td><td>0.0e+00 at most</td><td>largest formula, pairs 274; final formula, pairs 274; variables 20; ground atoms 418; ground rules 1 114; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>16.4</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.61</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.5</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>code(1,c0)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(1,c1)</th><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><th>code(1,c2)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(1,c3)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(1,c4)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(1,c5)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(2,c0)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(2,c1)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(2,c2)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(2,c3)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(2,c4)</th><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><th>code(2,c5)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(3,c0)</th><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><th>code(3,c1)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(3,c2)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(3,c3)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(3,c4)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(3,c5)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(4,c0)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(4,c1)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(4,c2)</th><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><th>code(4,c3)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(4,c4)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>code(4,c5)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

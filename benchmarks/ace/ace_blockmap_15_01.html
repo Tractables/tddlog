@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ace_blockmap_15_01 · tddlog results</title>
+<meta name="description" content="ace_blockmap_15_01, an instance of Ace&#x27;s networks: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#networks">Bayesian and Markov networks</a> › <a href="../index.html#ace">Ace&#x27;s networks</a></p>
+    <h1>ace_blockmap_15_01</h1>
+    <p class="lede">The 46 networks of Ace&#x27;s benchmarks (Chavira and Darwiche), each with one of the archive&#x27;s evidence sets; 600 s a run. Made by <code>gen_bn.py ace-benchmarks/2004-pgm/blockmap_15_01.net --query leaves --evidence-file ace-benchmarks/2004-pgm/blockmap_15_01-0006.inst</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.10</td><td class="num">11.5</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Network (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Ace</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">UAI network</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Ace auto, Ace forceC2d as it is.</b></p>
+<p class="readers">Read by Ace auto, Ace forceC2d.</p>
+<dl class="cmds">
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -e ace_blockmap_15_01.inst ace-ace_blockmap_15_01-auto/blockmap_15_01.net</code></dd>
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-ace_blockmap_15_01-auto/blockmap_15_01.net ace_blockmap_15_01.inst</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -forceC2d -e ace_blockmap_15_01.inst ace-ace_blockmap_15_01-forceC2d/blockmap_15_01.net</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-ace_blockmap_15_01-forceC2d/blockmap_15_01.net ace_blockmap_15_01.inst</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">ace-benchmarks/2004-pgm/blockmap_15_01-0006.inst</code><span>370 371 bytes, 5 586 lines</span><span class="sha" title="SHA-256">sha256 60efc6cb9b08ce8cb1f9ba19337399a7b75ce3b2da307ff6ef7394cc60547ebe</span></div><p class="made">From Ace&#x27;s benchmarks_v1.0.zip, as distributed: <code>2004-pgm/blockmap_15_01-0006.inst</code>.</p><p class="note">Not shown: the programs of this benchmark are written from Ace&#x27;s benchmarks_v1.0.zip, distributed with Ace 3.0, licensed for non-commercial research use, downloaded from <a href="http://reasoning.cs.ucla.edu/ace/">http://reasoning.cs.ucla.edu/ace/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">ace-benchmarks/2004-pgm/blockmap_15_01.net</code><span>5 543 153 bytes, 206 500 lines</span><span class="sha" title="SHA-256">sha256 f48a2a843dbdf6f74b5238146ca71d76aa118f66d3907566d223955c4b94fb7b</span></div><p class="made">From Ace&#x27;s benchmarks_v1.0.zip, as distributed: <code>2004-pgm/blockmap_15_01.net</code>.</p><p class="note">Not shown: the programs of this benchmark are written from Ace&#x27;s benchmarks_v1.0.zip, distributed with Ace 3.0, licensed for non-commercial research use, downloaded from <a href="http://reasoning.cs.ucla.edu/ace/">http://reasoning.cs.ucla.edu/ace/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto ace_blockmap_15_01.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">ace_blockmap_15_01.pl</code><span>7 679 948 bytes, 63 905 lines</span><span class="sha" title="SHA-256">sha256 a02894aee025f55feec212313a00ef162da523c727819fcca4013d5b6d6e2456</span></div><p class="made">Written by <code>gen_bn.py ace-benchmarks/2004-pgm/blockmap_15_01.net --query leaves --evidence-file ace-benchmarks/2004-pgm/blockmap_15_01-0006.inst</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from Ace&#x27;s benchmarks_v1.0.zip, distributed with Ace 3.0, licensed for non-commercial research use, downloaded from <a href="http://reasoning.cs.ucla.edu/ace/">http://reasoning.cs.ucla.edu/ace/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Ace; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Ace auto, Ace forceC2d.</p>
+<dl class="cmds">
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -e ace_blockmap_15_01.inst ace-ace_blockmap_15_01-auto/blockmap_15_01.net</code></dd>
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-ace_blockmap_15_01-auto/blockmap_15_01.net ace_blockmap_15_01.inst</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -forceC2d -e ace_blockmap_15_01.inst ace-ace_blockmap_15_01-forceC2d/blockmap_15_01.net</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-ace_blockmap_15_01-forceC2d/blockmap_15_01.net ace_blockmap_15_01.inst</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">ace_blockmap_15_01.inst</code><span>370 340 bytes, 5 586 lines</span><span class="sha" title="SHA-256">sha256 1bab09a2727fe56cf639d001152b99437d55aa65b5ad66a9de6c1ca4a0412be4</span></div><p class="made">The observations, as Ace reads them, written by <code>gen_bn.py --inst</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from Ace&#x27;s benchmarks_v1.0.zip, distributed with Ace 3.0, licensed for non-commercial research use, downloaded from <a href="http://reasoning.cs.ucla.edu/ace/">http://reasoning.cs.ucla.edu/ace/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into UAI network; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl treesa, TensorInference.jl greedy.</p>
+<dl class="cmds">
+<dt>Merlin</dt><dd><code>merlin -f ace_blockmap_15_01.uai -e ace_blockmap_15_01.uai.evid -a bte -t MAR -O uai -o out</code></dd>
+<dt>pyAgrum</dt><dd><code>python scripts/bn_uai_run.py agrum ace_blockmap_15_01.uai ace_blockmap_15_01.uai.evid out MAR 2332,2436,2505,2539,2547,2559,2578,3278,3370,3482,3491,3504,3531,3549,3559,3577,3581,5104,5176,5236,5297,5336,5380,5403,5408,5416,5421,6180,6271,6321,6329,6338,6362,6367,6373,6381,6397,6994,7056,7066,7119,7124,7225,7230,7249,7273,8014,8026,8034,8077,8100,8115,8126,8137,8146,8151,8882,8948,9010,9084,9133,9149,9158,9170,9181,9196,10129,10189,10247,10253,10318,10342,10351,10368,10381,10392,10397,10402,10411,10414,10979,11047,11098,11103,11167,11187,11212,11230,11234,11239,11244,11908,12039,12055,12060,12095,12114,12130,12159,12178,12188,12195,12200,12964,12975,12994,12999,13096,13107,13117,13120,13129,13792,13879,13896,13902,13937,13980,14020,14034,14040,14737,14765,14776,14784,14799,14805,14810,14847,14854,14879,14892,14895,14900,15570,15617,15683,15693,15713,15736,15741,16296,16305,16348,16354,16398,16442,16478,16484</code></dd>
+<dt>pgmpy</dt><dd><code>python scripts/bn_uai_run.py pgmpy ace_blockmap_15_01.uai ace_blockmap_15_01.uai.evid out MAR 2332,2436,2505,2539,2547,2559,2578,3278,3370,3482,3491,3504,3531,3549,3559,3577,3581,5104,5176,5236,5297,5336,5380,5403,5408,5416,5421,6180,6271,6321,6329,6338,6362,6367,6373,6381,6397,6994,7056,7066,7119,7124,7225,7230,7249,7273,8014,8026,8034,8077,8100,8115,8126,8137,8146,8151,8882,8948,9010,9084,9133,9149,9158,9170,9181,9196,10129,10189,10247,10253,10318,10342,10351,10368,10381,10392,10397,10402,10411,10414,10979,11047,11098,11103,11167,11187,11212,11230,11234,11239,11244,11908,12039,12055,12060,12095,12114,12130,12159,12178,12188,12195,12200,12964,12975,12994,12999,13096,13107,13117,13120,13129,13792,13879,13896,13902,13937,13980,14020,14034,14040,14737,14765,14776,14784,14799,14805,14810,14847,14854,14879,14892,14895,14900,15570,15617,15683,15693,15713,15736,15741,16296,16305,16348,16354,16398,16442,16478,16484</code></dd>
+<dt>libDAI</dt><dd><code>libdai_uai ace_blockmap_15_01.uai ace_blockmap_15_01.uai.evid out MAR 2332,2436,2505,2539,2547,2559,2578,3278,3370,3482,3491,3504,3531,3549,3559,3577,3581,5104,5176,5236,5297,5336,5380,5403,5408,5416,5421,6180,6271,6321,6329,6338,6362,6367,6373,6381,6397,6994,7056,7066,7119,7124,7225,7230,7249,7273,8014,8026,8034,8077,8100,8115,8126,8137,8146,8151,8882,8948,9010,9084,9133,9149,9158,9170,9181,9196,10129,10189,10247,10253,10318,10342,10351,10368,10381,10392,10397,10402,10411,10414,10979,11047,11098,11103,11167,11187,11212,11230,11234,11239,11244,11908,12039,12055,12060,12095,12114,12130,12159,12178,12188,12195,12200,12964,12975,12994,12999,13096,13107,13117,13120,13129,13792,13879,13896,13902,13937,13980,14020,14034,14040,14737,14765,14776,14784,14799,14805,14810,14847,14854,14879,14892,14895,14900,15570,15617,15683,15693,15713,15736,15741,16296,16305,16348,16354,16398,16442,16478,16484</code></dd>
+<dt>TensorInference.jl treesa</dt><dd><code>julia scripts/tensorinference_uai.jl ace_blockmap_15_01.uai ace_blockmap_15_01.uai.evid out MAR 2332,2436,2505,2539,2547,2559,2578,3278,3370,3482,3491,3504,3531,3549,3559,3577,3581,5104,5176,5236,5297,5336,5380,5403,5408,5416,5421,6180,6271,6321,6329,6338,6362,6367,6373,6381,6397,6994,7056,7066,7119,7124,7225,7230,7249,7273,8014,8026,8034,8077,8100,8115,8126,8137,8146,8151,8882,8948,9010,9084,9133,9149,9158,9170,9181,9196,10129,10189,10247,10253,10318,10342,10351,10368,10381,10392,10397,10402,10411,10414,10979,11047,11098,11103,11167,11187,11212,11230,11234,11239,11244,11908,12039,12055,12060,12095,12114,12130,12159,12178,12188,12195,12200,12964,12975,12994,12999,13096,13107,13117,13120,13129,13792,13879,13896,13902,13937,13980,14020,14034,14040,14737,14765,14776,14784,14799,14805,14810,14847,14854,14879,14892,14895,14900,15570,15617,15683,15693,15713,15736,15741,16296,16305,16348,16354,16398,16442,16478,16484</code></dd>
+<dt>TensorInference.jl greedy</dt><dd><code>julia scripts/tensorinference_uai.jl ace_blockmap_15_01.uai ace_blockmap_15_01.uai.evid out MAR 2332,2436,2505,2539,2547,2559,2578,3278,3370,3482,3491,3504,3531,3549,3559,3577,3581,5104,5176,5236,5297,5336,5380,5403,5408,5416,5421,6180,6271,6321,6329,6338,6362,6367,6373,6381,6397,6994,7056,7066,7119,7124,7225,7230,7249,7273,8014,8026,8034,8077,8100,8115,8126,8137,8146,8151,8882,8948,9010,9084,9133,9149,9158,9170,9181,9196,10129,10189,10247,10253,10318,10342,10351,10368,10381,10392,10397,10402,10411,10414,10979,11047,11098,11103,11167,11187,11212,11230,11234,11239,11244,11908,12039,12055,12060,12095,12114,12130,12159,12178,12188,12195,12200,12964,12975,12994,12999,13096,13107,13117,13120,13129,13792,13879,13896,13902,13937,13980,14020,14034,14040,14737,14765,14776,14784,14799,14805,14810,14847,14854,14879,14892,14895,14900,15570,15617,15683,15693,15713,15736,15741,16296,16305,16348,16354,16398,16442,16478,16484</code></dd>
+</dl>
+<p class="readers">One file and its observations, which every network system reads: each command below names them, and none has a copy of its own.</p>
+<div class="file"><div class="fhead"><code class="fname">ace_blockmap_15_01.uai</code><span>806 869 bytes, 65 992 lines</span><span class="sha" title="SHA-256">sha256 6f5f17918e67242173bebfca0cc1f64a177e769311055ab21cf9f70764ac2cba</span></div><p class="made">The network as a UAI file and its observations, for Merlin and the other network systems, written by <code>gen_bn.py --uai</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from Ace&#x27;s benchmarks_v1.0.zip, distributed with Ace 3.0, licensed for non-commercial research use, downloaded from <a href="http://reasoning.cs.ucla.edu/ace/">http://reasoning.cs.ucla.edu/ace/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">ace_blockmap_15_01.uai.evid</code><span>40 898 bytes, 1 lines</span><span class="sha" title="SHA-256">sha256 57121e5e441bf02d8601c78d3ca2846a29466104cc91d49548a3cdab85dba405</span></div><p class="made">The network as a UAI file and its observations, for Merlin and the other network systems, written by <code>gen_bn.py --uai</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from Ace&#x27;s benchmarks_v1.0.zip, distributed with Ace 3.0, licensed for non-commercial research use, downloaded from <a href="http://reasoning.cs.ucla.edu/ace/">http://reasoning.cs.ucla.edu/ace/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.10</td><td></td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 292; ground rules 149; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>4.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.StackOverflowError
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcB</pre></details></td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>11.5</td><td></td><td>route c2dCompilation; circuit nodes 32 995; circuit edges 32 994</td></tr></tbody></table></div>
+<h3>Merlin</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl treesa</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">Ace forceC2d</th></tr></thead><tbody><tr><th>connectedidpdi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidpdi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedidpii(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidpii(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedidpri(false)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedidpri(true)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidpji(false)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedidpji(true)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidppi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidppi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedidpsi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidpsi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedidpni(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedidpni(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpci(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpci(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpdi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpdi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpri(false)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpri(true)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpji(false)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpji(true)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpii(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpii(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpoi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpoi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpsi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpsi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpni(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpni(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpmi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpmi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedilpqi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedilpqi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedippci(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedippci(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedippdi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedippdi(true)</th><td class="num">1</td><td class="num">1</td></tr><tr><th>connectedippfi(false)</th><td class="num">0</td><td class="num">0</td></tr><tr><th>connectedippfi(true)</th><td class="num">1</td><td class="num">1</td></tr></tbody></table></div><p class="note">The first 40 of 298 queries; the largest difference over all of them is in the table of runs above.</p>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

@@ -1,0 +1,2802 @@
+# insurance.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function chunk_1()
+    x1_Age = discrete(DistUInt{2}, [0.2, 0.6, 0.2])
+    x2_Mileage = discrete(DistUInt{2}, [0.1, 0.4, 0.4, 0.1])
+    x3_SocioEcon = prob_equals(x1_Age, DistUInt{2}(0))
+    if x3_SocioEcon !== false
+     x4_SocioEcon = discrete(DistUInt{2}, [0.4, 0.4, 0.19, 0.01])
+    end
+    if x3_SocioEcon !== true
+     x5_SocioEcon = prob_equals(x1_Age, DistUInt{2}(1))
+     if x5_SocioEcon !== false
+      x6_SocioEcon = discrete(DistUInt{2}, [0.4, 0.4, 0.19, 0.01])
+     end
+     if x5_SocioEcon !== true
+      x7_SocioEcon = discrete(DistUInt{2}, [0.5, 0.2, 0.29, 0.01])
+     end
+     x8_SocioEcon = x5_SocioEcon === true ? x6_SocioEcon : x5_SocioEcon === false ? x7_SocioEcon : ifelse(x5_SocioEcon, x6_SocioEcon, x7_SocioEcon)
+    end
+    x9_SocioEcon = x3_SocioEcon === true ? x4_SocioEcon : x3_SocioEcon === false ? x8_SocioEcon : ifelse(x3_SocioEcon, x4_SocioEcon, x8_SocioEcon)
+    x10_OtherCar = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+    if x10_OtherCar !== false
+     x11_OtherCar = discrete(DistUInt{1}, [0.5, 0.5])
+    end
+    if x10_OtherCar !== true
+     x12_OtherCar = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+     if x12_OtherCar !== false
+      x13_OtherCar = discrete(DistUInt{1}, [0.8, 0.2])
+     end
+     if x12_OtherCar !== true
+      x14_OtherCar = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+      if x14_OtherCar !== false
+       x15_OtherCar = discrete(DistUInt{1}, [0.9, 0.1])
+      end
+      if x14_OtherCar !== true
+       x16_OtherCar = discrete(DistUInt{1}, [0.95, 0.05])
+      end
+      x17_OtherCar = x14_OtherCar === true ? x15_OtherCar : x14_OtherCar === false ? x16_OtherCar : ifelse(x14_OtherCar, x15_OtherCar, x16_OtherCar)
+     end
+     x18_OtherCar = x12_OtherCar === true ? x13_OtherCar : x12_OtherCar === false ? x17_OtherCar : ifelse(x12_OtherCar, x13_OtherCar, x17_OtherCar)
+    end
+    x19_OtherCar = x10_OtherCar === true ? x11_OtherCar : x10_OtherCar === false ? x18_OtherCar : ifelse(x10_OtherCar, x11_OtherCar, x18_OtherCar)
+    x20_RiskAversion = prob_equals(x1_Age, DistUInt{2}(0))
+    if x20_RiskAversion !== false
+     x21_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+     if x21_RiskAversion !== false
+      x22_RiskAversion = discrete(DistUInt{2}, [0.02, 0.58, 0.3, 0.1])
+     end
+     if x21_RiskAversion !== true
+      x23_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+      if x23_RiskAversion !== false
+       x24_RiskAversion = discrete(DistUInt{2}, [0.02, 0.38, 0.5, 0.1])
+      end
+      if x23_RiskAversion !== true
+       x25_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+       if x25_RiskAversion !== false
+        x26_RiskAversion = discrete(DistUInt{2}, [0.02, 0.48, 0.4, 0.1])
+       end
+       if x25_RiskAversion !== true
+        x27_RiskAversion = discrete(DistUInt{2}, [0.02, 0.58, 0.3, 0.1])
+       end
+       x28_RiskAversion = x25_RiskAversion === true ? x26_RiskAversion : x25_RiskAversion === false ? x27_RiskAversion : ifelse(x25_RiskAversion, x26_RiskAversion, x27_RiskAversion)
+      end
+      x29_RiskAversion = x23_RiskAversion === true ? x24_RiskAversion : x23_RiskAversion === false ? x28_RiskAversion : ifelse(x23_RiskAversion, x24_RiskAversion, x28_RiskAversion)
+     end
+     x30_RiskAversion = x21_RiskAversion === true ? x22_RiskAversion : x21_RiskAversion === false ? x29_RiskAversion : ifelse(x21_RiskAversion, x22_RiskAversion, x29_RiskAversion)
+    end
+    if x20_RiskAversion !== true
+     x31_RiskAversion = prob_equals(x1_Age, DistUInt{2}(1))
+     if x31_RiskAversion !== false
+      x32_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+      if x32_RiskAversion !== false
+       x33_RiskAversion = discrete(DistUInt{2}, [0.015, 0.285, 0.5, 0.2])
+      end
+      if x32_RiskAversion !== true
+       x34_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+       if x34_RiskAversion !== false
+        x35_RiskAversion = discrete(DistUInt{2}, [0.015, 0.185, 0.6, 0.2])
+       end
+       if x34_RiskAversion !== true
+        x36_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+        if x36_RiskAversion !== false
+         x37_RiskAversion = discrete(DistUInt{2}, [0.015, 0.285, 0.5, 0.2])
+        end
+        if x36_RiskAversion !== true
+         x38_RiskAversion = discrete(DistUInt{2}, [0.015, 0.285, 0.4, 0.3])
+        end
+        x39_RiskAversion = x36_RiskAversion === true ? x37_RiskAversion : x36_RiskAversion === false ? x38_RiskAversion : ifelse(x36_RiskAversion, x37_RiskAversion, x38_RiskAversion)
+       end
+       x40_RiskAversion = x34_RiskAversion === true ? x35_RiskAversion : x34_RiskAversion === false ? x39_RiskAversion : ifelse(x34_RiskAversion, x35_RiskAversion, x39_RiskAversion)
+      end
+      x41_RiskAversion = x32_RiskAversion === true ? x33_RiskAversion : x32_RiskAversion === false ? x40_RiskAversion : ifelse(x32_RiskAversion, x33_RiskAversion, x40_RiskAversion)
+     end
+     if x31_RiskAversion !== true
+      x42_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+      if x42_RiskAversion !== false
+       x43_RiskAversion = discrete(DistUInt{2}, [0.01, 0.09, 0.4, 0.5])
+      end
+      if x42_RiskAversion !== true
+       x44_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+       if x44_RiskAversion !== false
+        x45_RiskAversion = discrete(DistUInt{2}, [0.01, 0.04, 0.35, 0.6])
+       end
+       if x44_RiskAversion !== true
+        x46_RiskAversion = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+        if x46_RiskAversion !== false
+         x47_RiskAversion = discrete(DistUInt{2}, [0.01, 0.09, 0.4, 0.5])
+        end
+        if x46_RiskAversion !== true
+         x48_RiskAversion = discrete(DistUInt{2}, [0.01, 0.09, 0.4, 0.5])
+        end
+        x49_RiskAversion = x46_RiskAversion === true ? x47_RiskAversion : x46_RiskAversion === false ? x48_RiskAversion : ifelse(x46_RiskAversion, x47_RiskAversion, x48_RiskAversion)
+       end
+       x50_RiskAversion = x44_RiskAversion === true ? x45_RiskAversion : x44_RiskAversion === false ? x49_RiskAversion : ifelse(x44_RiskAversion, x45_RiskAversion, x49_RiskAversion)
+      end
+      x51_RiskAversion = x42_RiskAversion === true ? x43_RiskAversion : x42_RiskAversion === false ? x50_RiskAversion : ifelse(x42_RiskAversion, x43_RiskAversion, x50_RiskAversion)
+     end
+     x52_RiskAversion = x31_RiskAversion === true ? x41_RiskAversion : x31_RiskAversion === false ? x51_RiskAversion : ifelse(x31_RiskAversion, x41_RiskAversion, x51_RiskAversion)
+    end
+    x53_RiskAversion = x20_RiskAversion === true ? x30_RiskAversion : x20_RiskAversion === false ? x52_RiskAversion : ifelse(x20_RiskAversion, x30_RiskAversion, x52_RiskAversion)
+    x54_AntiTheft = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+    if x54_AntiTheft !== false
+     x55_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+     if x55_AntiTheft !== false
+      x56_AntiTheft = discrete(DistUInt{1}, [1e-06, 0.999999])
+     end
+     if x55_AntiTheft !== true
+      x57_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+      if x57_AntiTheft !== false
+       x58_AntiTheft = discrete(DistUInt{1}, [1e-06, 0.999999])
+      end
+      if x57_AntiTheft !== true
+       x59_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+       if x59_AntiTheft !== false
+        x60_AntiTheft = discrete(DistUInt{1}, [0.05, 0.95])
+       end
+       if x59_AntiTheft !== true
+        x61_AntiTheft = discrete(DistUInt{1}, [0.5, 0.5])
+       end
+       x62_AntiTheft = x59_AntiTheft === true ? x60_AntiTheft : x59_AntiTheft === false ? x61_AntiTheft : ifelse(x59_AntiTheft, x60_AntiTheft, x61_AntiTheft)
+      end
+      x63_AntiTheft = x57_AntiTheft === true ? x58_AntiTheft : x57_AntiTheft === false ? x62_AntiTheft : ifelse(x57_AntiTheft, x58_AntiTheft, x62_AntiTheft)
+     end
+     x64_AntiTheft = x55_AntiTheft === true ? x56_AntiTheft : x55_AntiTheft === false ? x63_AntiTheft : ifelse(x55_AntiTheft, x56_AntiTheft, x63_AntiTheft)
+    end
+    if x54_AntiTheft !== true
+     x65_AntiTheft = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+     if x65_AntiTheft !== false
+      x66_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+      if x66_AntiTheft !== false
+       x67_AntiTheft = discrete(DistUInt{1}, [1e-06, 0.999999])
+      end
+      if x66_AntiTheft !== true
+       x68_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+       if x68_AntiTheft !== false
+        x69_AntiTheft = discrete(DistUInt{1}, [1e-06, 0.999999])
+       end
+       if x68_AntiTheft !== true
+        x70_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+        if x70_AntiTheft !== false
+         x71_AntiTheft = discrete(DistUInt{1}, [0.2, 0.8])
+        end
+        if x70_AntiTheft !== true
+         x72_AntiTheft = discrete(DistUInt{1}, [0.5, 0.5])
+        end
+        x73_AntiTheft = x70_AntiTheft === true ? x71_AntiTheft : x70_AntiTheft === false ? x72_AntiTheft : ifelse(x70_AntiTheft, x71_AntiTheft, x72_AntiTheft)
+       end
+       x74_AntiTheft = x68_AntiTheft === true ? x69_AntiTheft : x68_AntiTheft === false ? x73_AntiTheft : ifelse(x68_AntiTheft, x69_AntiTheft, x73_AntiTheft)
+      end
+      x75_AntiTheft = x66_AntiTheft === true ? x67_AntiTheft : x66_AntiTheft === false ? x74_AntiTheft : ifelse(x66_AntiTheft, x67_AntiTheft, x74_AntiTheft)
+     end
+     if x65_AntiTheft !== true
+      x76_AntiTheft = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+      if x76_AntiTheft !== false
+       x77_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+       if x77_AntiTheft !== false
+        x78_AntiTheft = discrete(DistUInt{1}, [0.1, 0.9])
+       end
+       if x77_AntiTheft !== true
+        x79_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+        if x79_AntiTheft !== false
+         x80_AntiTheft = discrete(DistUInt{1}, [0.3, 0.7])
+        end
+        if x79_AntiTheft !== true
+         x81_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+         if x81_AntiTheft !== false
+          x82_AntiTheft = discrete(DistUInt{1}, [0.9, 0.1])
+         end
+         if x81_AntiTheft !== true
+          x83_AntiTheft = discrete(DistUInt{1}, [0.8, 0.2])
+         end
+         x84_AntiTheft = x81_AntiTheft === true ? x82_AntiTheft : x81_AntiTheft === false ? x83_AntiTheft : ifelse(x81_AntiTheft, x82_AntiTheft, x83_AntiTheft)
+        end
+        x85_AntiTheft = x79_AntiTheft === true ? x80_AntiTheft : x79_AntiTheft === false ? x84_AntiTheft : ifelse(x79_AntiTheft, x80_AntiTheft, x84_AntiTheft)
+       end
+       x86_AntiTheft = x77_AntiTheft === true ? x78_AntiTheft : x77_AntiTheft === false ? x85_AntiTheft : ifelse(x77_AntiTheft, x78_AntiTheft, x85_AntiTheft)
+      end
+      if x76_AntiTheft !== true
+       x87_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+       if x87_AntiTheft !== false
+        x88_AntiTheft = discrete(DistUInt{1}, [0.95, 0.05])
+       end
+       if x87_AntiTheft !== true
+        x89_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+        if x89_AntiTheft !== false
+         x90_AntiTheft = discrete(DistUInt{1}, [0.999999, 1e-06])
+        end
+        if x89_AntiTheft !== true
+         x91_AntiTheft = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+         if x91_AntiTheft !== false
+          x92_AntiTheft = discrete(DistUInt{1}, [0.999999, 1e-06])
+         end
+         if x91_AntiTheft !== true
+          x93_AntiTheft = discrete(DistUInt{1}, [0.999999, 1e-06])
+         end
+         x94_AntiTheft = x91_AntiTheft === true ? x92_AntiTheft : x91_AntiTheft === false ? x93_AntiTheft : ifelse(x91_AntiTheft, x92_AntiTheft, x93_AntiTheft)
+        end
+        x95_AntiTheft = x89_AntiTheft === true ? x90_AntiTheft : x89_AntiTheft === false ? x94_AntiTheft : ifelse(x89_AntiTheft, x90_AntiTheft, x94_AntiTheft)
+       end
+       x96_AntiTheft = x87_AntiTheft === true ? x88_AntiTheft : x87_AntiTheft === false ? x95_AntiTheft : ifelse(x87_AntiTheft, x88_AntiTheft, x95_AntiTheft)
+      end
+      x97_AntiTheft = x76_AntiTheft === true ? x86_AntiTheft : x76_AntiTheft === false ? x96_AntiTheft : ifelse(x76_AntiTheft, x86_AntiTheft, x96_AntiTheft)
+     end
+     x98_AntiTheft = x65_AntiTheft === true ? x75_AntiTheft : x65_AntiTheft === false ? x97_AntiTheft : ifelse(x65_AntiTheft, x75_AntiTheft, x97_AntiTheft)
+    end
+    x99_AntiTheft = x54_AntiTheft === true ? x64_AntiTheft : x54_AntiTheft === false ? x98_AntiTheft : ifelse(x54_AntiTheft, x64_AntiTheft, x98_AntiTheft)
+    x100_HomeBase = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+    if x100_HomeBase !== false
+     x101_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+     if x101_HomeBase !== false
+      x102_HomeBase = discrete(DistUInt{2}, [1e-06, 0.8, 0.049999, 0.15])
+     end
+     if x101_HomeBase !== true
+      x103_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+      if x103_HomeBase !== false
+       x104_HomeBase = discrete(DistUInt{2}, [0.15, 0.8, 0.04, 0.01])
+      end
+      if x103_HomeBase !== true
+       x105_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+       if x105_HomeBase !== false
+        x106_HomeBase = discrete(DistUInt{2}, [0.35, 0.6, 0.04, 0.01])
+       end
+       if x105_HomeBase !== true
+        x107_HomeBase = discrete(DistUInt{2}, [0.489999, 0.5, 1e-06, 0.01])
+       end
+       x108_HomeBase = x105_HomeBase === true ? x106_HomeBase : x105_HomeBase === false ? x107_HomeBase : ifelse(x105_HomeBase, x106_HomeBase, x107_HomeBase)
+      end
+      x109_HomeBase = x103_HomeBase === true ? x104_HomeBase : x103_HomeBase === false ? x108_HomeBase : ifelse(x103_HomeBase, x104_HomeBase, x108_HomeBase)
+     end
+     x110_HomeBase = x101_HomeBase === true ? x102_HomeBase : x101_HomeBase === false ? x109_HomeBase : ifelse(x101_HomeBase, x102_HomeBase, x109_HomeBase)
+    end
+    if x100_HomeBase !== true
+     x111_HomeBase = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+     if x111_HomeBase !== false
+      x112_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+      if x112_HomeBase !== false
+       x113_HomeBase = discrete(DistUInt{2}, [1e-06, 0.8, 0.05, 0.149999])
+      end
+      if x112_HomeBase !== true
+       x114_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+       if x114_HomeBase !== false
+        x115_HomeBase = discrete(DistUInt{2}, [0.01, 0.25, 0.6, 0.14])
+       end
+       if x114_HomeBase !== true
+        x116_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+        if x116_HomeBase !== false
+         x117_HomeBase = discrete(DistUInt{2}, [0.2, 0.4, 0.3, 0.1])
+        end
+        if x116_HomeBase !== true
+         x118_HomeBase = discrete(DistUInt{2}, [0.95, 1e-06, 1e-06, 0.049998])
+        end
+        x119_HomeBase = x116_HomeBase === true ? x117_HomeBase : x116_HomeBase === false ? x118_HomeBase : ifelse(x116_HomeBase, x117_HomeBase, x118_HomeBase)
+       end
+       x120_HomeBase = x114_HomeBase === true ? x115_HomeBase : x114_HomeBase === false ? x119_HomeBase : ifelse(x114_HomeBase, x115_HomeBase, x119_HomeBase)
+      end
+      x121_HomeBase = x112_HomeBase === true ? x113_HomeBase : x112_HomeBase === false ? x120_HomeBase : ifelse(x112_HomeBase, x113_HomeBase, x120_HomeBase)
+     end
+     if x111_HomeBase !== true
+      x122_HomeBase = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+      if x122_HomeBase !== false
+       x123_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+       if x123_HomeBase !== false
+        x124_HomeBase = discrete(DistUInt{2}, [1e-06, 0.8, 0.05, 0.149999])
+       end
+       if x123_HomeBase !== true
+        x125_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+        if x125_HomeBase !== false
+         x126_HomeBase = discrete(DistUInt{2}, [0.299999, 1e-06, 0.6, 0.1])
+        end
+        if x125_HomeBase !== true
+         x127_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+         if x127_HomeBase !== false
+          x128_HomeBase = discrete(DistUInt{2}, [0.5, 1e-06, 0.4, 0.099999])
+         end
+         if x127_HomeBase !== true
+          x129_HomeBase = discrete(DistUInt{2}, [0.85, 1e-06, 0.001, 0.148999])
+         end
+         x130_HomeBase = x127_HomeBase === true ? x128_HomeBase : x127_HomeBase === false ? x129_HomeBase : ifelse(x127_HomeBase, x128_HomeBase, x129_HomeBase)
+        end
+        x131_HomeBase = x125_HomeBase === true ? x126_HomeBase : x125_HomeBase === false ? x130_HomeBase : ifelse(x125_HomeBase, x126_HomeBase, x130_HomeBase)
+       end
+       x132_HomeBase = x123_HomeBase === true ? x124_HomeBase : x123_HomeBase === false ? x131_HomeBase : ifelse(x123_HomeBase, x124_HomeBase, x131_HomeBase)
+      end
+      if x122_HomeBase !== true
+       x133_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+       if x133_HomeBase !== false
+        x134_HomeBase = discrete(DistUInt{2}, [1e-06, 0.8, 0.05, 0.149999])
+       end
+       if x133_HomeBase !== true
+        x135_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+        if x135_HomeBase !== false
+         x136_HomeBase = discrete(DistUInt{2}, [0.95, 1e-06, 0.024445, 0.025554])
+        end
+        if x135_HomeBase !== true
+         x137_HomeBase = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+         if x137_HomeBase !== false
+          x138_HomeBase = discrete(DistUInt{2}, [0.999997, 1e-06, 1e-06, 1e-06])
+         end
+         if x137_HomeBase !== true
+          x139_HomeBase = discrete(DistUInt{2}, [0.999997, 1e-06, 1e-06, 1e-06])
+         end
+         x140_HomeBase = x137_HomeBase === true ? x138_HomeBase : x137_HomeBase === false ? x139_HomeBase : ifelse(x137_HomeBase, x138_HomeBase, x139_HomeBase)
+        end
+        x141_HomeBase = x135_HomeBase === true ? x136_HomeBase : x135_HomeBase === false ? x140_HomeBase : ifelse(x135_HomeBase, x136_HomeBase, x140_HomeBase)
+       end
+       x142_HomeBase = x133_HomeBase === true ? x134_HomeBase : x133_HomeBase === false ? x141_HomeBase : ifelse(x133_HomeBase, x134_HomeBase, x141_HomeBase)
+      end
+      x143_HomeBase = x122_HomeBase === true ? x132_HomeBase : x122_HomeBase === false ? x142_HomeBase : ifelse(x122_HomeBase, x132_HomeBase, x142_HomeBase)
+     end
+     x144_HomeBase = x111_HomeBase === true ? x121_HomeBase : x111_HomeBase === false ? x143_HomeBase : ifelse(x111_HomeBase, x121_HomeBase, x143_HomeBase)
+    end
+    x145_HomeBase = x100_HomeBase === true ? x110_HomeBase : x100_HomeBase === false ? x144_HomeBase : ifelse(x100_HomeBase, x110_HomeBase, x144_HomeBase)
+    x146_SeniorTrain = prob_equals(x1_Age, DistUInt{2}(0))
+    if x146_SeniorTrain !== false
+     x147_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+     if x147_SeniorTrain !== false
+      x148_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+     end
+     if x147_SeniorTrain !== true
+      x149_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+      if x149_SeniorTrain !== false
+       x150_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+      end
+      if x149_SeniorTrain !== true
+       x151_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+       if x151_SeniorTrain !== false
+        x152_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+       end
+       if x151_SeniorTrain !== true
+        x153_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+       end
+       x154_SeniorTrain = x151_SeniorTrain === true ? x152_SeniorTrain : x151_SeniorTrain === false ? x153_SeniorTrain : ifelse(x151_SeniorTrain, x152_SeniorTrain, x153_SeniorTrain)
+      end
+      x155_SeniorTrain = x149_SeniorTrain === true ? x150_SeniorTrain : x149_SeniorTrain === false ? x154_SeniorTrain : ifelse(x149_SeniorTrain, x150_SeniorTrain, x154_SeniorTrain)
+     end
+     x156_SeniorTrain = x147_SeniorTrain === true ? x148_SeniorTrain : x147_SeniorTrain === false ? x155_SeniorTrain : ifelse(x147_SeniorTrain, x148_SeniorTrain, x155_SeniorTrain)
+    end
+    if x146_SeniorTrain !== true
+     x157_SeniorTrain = prob_equals(x1_Age, DistUInt{2}(1))
+     if x157_SeniorTrain !== false
+      x158_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x158_SeniorTrain !== false
+       x159_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+      end
+      if x158_SeniorTrain !== true
+       x160_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x160_SeniorTrain !== false
+        x161_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+       end
+       if x160_SeniorTrain !== true
+        x162_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x162_SeniorTrain !== false
+         x163_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+        end
+        if x162_SeniorTrain !== true
+         x164_SeniorTrain = discrete(DistUInt{1}, [0.0, 1.0])
+        end
+        x165_SeniorTrain = x162_SeniorTrain === true ? x163_SeniorTrain : x162_SeniorTrain === false ? x164_SeniorTrain : ifelse(x162_SeniorTrain, x163_SeniorTrain, x164_SeniorTrain)
+       end
+       x166_SeniorTrain = x160_SeniorTrain === true ? x161_SeniorTrain : x160_SeniorTrain === false ? x165_SeniorTrain : ifelse(x160_SeniorTrain, x161_SeniorTrain, x165_SeniorTrain)
+      end
+      x167_SeniorTrain = x158_SeniorTrain === true ? x159_SeniorTrain : x158_SeniorTrain === false ? x166_SeniorTrain : ifelse(x158_SeniorTrain, x159_SeniorTrain, x166_SeniorTrain)
+     end
+     if x157_SeniorTrain !== true
+      x168_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x168_SeniorTrain !== false
+       x169_SeniorTrain = discrete(DistUInt{1}, [1e-06, 0.999999])
+      end
+      if x168_SeniorTrain !== true
+       x170_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x170_SeniorTrain !== false
+        x171_SeniorTrain = discrete(DistUInt{1}, [1e-06, 0.999999])
+       end
+       if x170_SeniorTrain !== true
+        x172_SeniorTrain = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x172_SeniorTrain !== false
+         x173_SeniorTrain = discrete(DistUInt{1}, [0.3, 0.7])
+        end
+        if x172_SeniorTrain !== true
+         x174_SeniorTrain = discrete(DistUInt{1}, [0.9, 0.1])
+        end
+        x175_SeniorTrain = x172_SeniorTrain === true ? x173_SeniorTrain : x172_SeniorTrain === false ? x174_SeniorTrain : ifelse(x172_SeniorTrain, x173_SeniorTrain, x174_SeniorTrain)
+       end
+       x176_SeniorTrain = x170_SeniorTrain === true ? x171_SeniorTrain : x170_SeniorTrain === false ? x175_SeniorTrain : ifelse(x170_SeniorTrain, x171_SeniorTrain, x175_SeniorTrain)
+      end
+      x177_SeniorTrain = x168_SeniorTrain === true ? x169_SeniorTrain : x168_SeniorTrain === false ? x176_SeniorTrain : ifelse(x168_SeniorTrain, x169_SeniorTrain, x176_SeniorTrain)
+     end
+     x178_SeniorTrain = x157_SeniorTrain === true ? x167_SeniorTrain : x157_SeniorTrain === false ? x177_SeniorTrain : ifelse(x157_SeniorTrain, x167_SeniorTrain, x177_SeniorTrain)
+    end
+    x179_SeniorTrain = x146_SeniorTrain === true ? x156_SeniorTrain : x146_SeniorTrain === false ? x178_SeniorTrain : ifelse(x146_SeniorTrain, x156_SeniorTrain, x178_SeniorTrain)
+    x180_DrivingSkill = prob_equals(x1_Age, DistUInt{2}(0))
+    if x180_DrivingSkill !== false
+     x181_DrivingSkill = prob_equals(x179_SeniorTrain, DistUInt{1}(0))
+     if x181_DrivingSkill !== false
+      x182_DrivingSkill = discrete(DistUInt{2}, [0.5, 0.45, 0.05])
+     end
+     if x181_DrivingSkill !== true
+      x183_DrivingSkill = discrete(DistUInt{2}, [0.5, 0.45, 0.05])
+     end
+     x184_DrivingSkill = x181_DrivingSkill === true ? x182_DrivingSkill : x181_DrivingSkill === false ? x183_DrivingSkill : ifelse(x181_DrivingSkill, x182_DrivingSkill, x183_DrivingSkill)
+    end
+    if x180_DrivingSkill !== true
+     x185_DrivingSkill = prob_equals(x1_Age, DistUInt{2}(1))
+     if x185_DrivingSkill !== false
+      x186_DrivingSkill = prob_equals(x179_SeniorTrain, DistUInt{1}(0))
+      if x186_DrivingSkill !== false
+       x187_DrivingSkill = discrete(DistUInt{2}, [0.3, 0.6, 0.1])
+      end
+      if x186_DrivingSkill !== true
+       x188_DrivingSkill = discrete(DistUInt{2}, [0.3, 0.6, 0.1])
+      end
+      x189_DrivingSkill = x186_DrivingSkill === true ? x187_DrivingSkill : x186_DrivingSkill === false ? x188_DrivingSkill : ifelse(x186_DrivingSkill, x187_DrivingSkill, x188_DrivingSkill)
+     end
+     if x185_DrivingSkill !== true
+      x190_DrivingSkill = prob_equals(x179_SeniorTrain, DistUInt{1}(0))
+      if x190_DrivingSkill !== false
+       x191_DrivingSkill = discrete(DistUInt{2}, [0.1, 0.6, 0.3])
+      end
+      if x190_DrivingSkill !== true
+       x192_DrivingSkill = discrete(DistUInt{2}, [0.4, 0.5, 0.1])
+      end
+      x193_DrivingSkill = x190_DrivingSkill === true ? x191_DrivingSkill : x190_DrivingSkill === false ? x192_DrivingSkill : ifelse(x190_DrivingSkill, x191_DrivingSkill, x192_DrivingSkill)
+     end
+     x194_DrivingSkill = x185_DrivingSkill === true ? x189_DrivingSkill : x185_DrivingSkill === false ? x193_DrivingSkill : ifelse(x185_DrivingSkill, x189_DrivingSkill, x193_DrivingSkill)
+    end
+    x195_DrivingSkill = x180_DrivingSkill === true ? x184_DrivingSkill : x180_DrivingSkill === false ? x194_DrivingSkill : ifelse(x180_DrivingSkill, x184_DrivingSkill, x194_DrivingSkill)
+    x196_DrivHist = prob_equals(x195_DrivingSkill, DistUInt{2}(0))
+    if x196_DrivHist !== false
+     x197_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+     if x197_DrivHist !== false
+      x198_DrivHist = discrete(DistUInt{2}, [0.001, 0.004, 0.995])
+     end
+     if x197_DrivHist !== true
+      x199_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+      if x199_DrivHist !== false
+       x200_DrivHist = discrete(DistUInt{2}, [0.002, 0.008, 0.99])
+      end
+      if x199_DrivHist !== true
+       x201_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+       if x201_DrivHist !== false
+        x202_DrivHist = discrete(DistUInt{2}, [0.03, 0.15, 0.82])
+       end
+       if x201_DrivHist !== true
+        x203_DrivHist = discrete(DistUInt{2}, [0.3, 0.3, 0.4])
+       end
+       x204_DrivHist = x201_DrivHist === true ? x202_DrivHist : x201_DrivHist === false ? x203_DrivHist : ifelse(x201_DrivHist, x202_DrivHist, x203_DrivHist)
+      end
+      x205_DrivHist = x199_DrivHist === true ? x200_DrivHist : x199_DrivHist === false ? x204_DrivHist : ifelse(x199_DrivHist, x200_DrivHist, x204_DrivHist)
+     end
+     x206_DrivHist = x197_DrivHist === true ? x198_DrivHist : x197_DrivHist === false ? x205_DrivHist : ifelse(x197_DrivHist, x198_DrivHist, x205_DrivHist)
+    end
+    if x196_DrivHist !== true
+     x207_DrivHist = prob_equals(x195_DrivingSkill, DistUInt{2}(1))
+     if x207_DrivHist !== false
+      x208_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x208_DrivHist !== false
+       x209_DrivHist = discrete(DistUInt{2}, [0.1, 0.3, 0.6])
+      end
+      if x208_DrivHist !== true
+       x210_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x210_DrivHist !== false
+        x211_DrivHist = discrete(DistUInt{2}, [0.5, 0.3, 0.2])
+       end
+       if x210_DrivHist !== true
+        x212_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x212_DrivHist !== false
+         x213_DrivHist = discrete(DistUInt{2}, [0.9, 0.07, 0.03])
+        end
+        if x212_DrivHist !== true
+         x214_DrivHist = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+        end
+        x215_DrivHist = x212_DrivHist === true ? x213_DrivHist : x212_DrivHist === false ? x214_DrivHist : ifelse(x212_DrivHist, x213_DrivHist, x214_DrivHist)
+       end
+       x216_DrivHist = x210_DrivHist === true ? x211_DrivHist : x210_DrivHist === false ? x215_DrivHist : ifelse(x210_DrivHist, x211_DrivHist, x215_DrivHist)
+      end
+      x217_DrivHist = x208_DrivHist === true ? x209_DrivHist : x208_DrivHist === false ? x216_DrivHist : ifelse(x208_DrivHist, x209_DrivHist, x216_DrivHist)
+     end
+     if x207_DrivHist !== true
+      x218_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x218_DrivHist !== false
+       x219_DrivHist = discrete(DistUInt{2}, [0.3, 0.3, 0.4])
+      end
+      if x218_DrivHist !== true
+       x220_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x220_DrivHist !== false
+        x221_DrivHist = discrete(DistUInt{2}, [0.6, 0.3, 0.1])
+       end
+       if x220_DrivHist !== true
+        x222_DrivHist = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x222_DrivHist !== false
+         x223_DrivHist = discrete(DistUInt{2}, [0.99, 0.009999, 1e-06])
+        end
+        if x222_DrivHist !== true
+         x224_DrivHist = discrete(DistUInt{2}, [0.999998, 1e-06, 1e-06])
+        end
+        x225_DrivHist = x222_DrivHist === true ? x223_DrivHist : x222_DrivHist === false ? x224_DrivHist : ifelse(x222_DrivHist, x223_DrivHist, x224_DrivHist)
+       end
+       x226_DrivHist = x220_DrivHist === true ? x221_DrivHist : x220_DrivHist === false ? x225_DrivHist : ifelse(x220_DrivHist, x221_DrivHist, x225_DrivHist)
+      end
+      x227_DrivHist = x218_DrivHist === true ? x219_DrivHist : x218_DrivHist === false ? x226_DrivHist : ifelse(x218_DrivHist, x219_DrivHist, x226_DrivHist)
+     end
+     x228_DrivHist = x207_DrivHist === true ? x217_DrivHist : x207_DrivHist === false ? x227_DrivHist : ifelse(x207_DrivHist, x217_DrivHist, x227_DrivHist)
+    end
+    x229_DrivHist = x196_DrivHist === true ? x206_DrivHist : x196_DrivHist === false ? x228_DrivHist : ifelse(x196_DrivHist, x206_DrivHist, x228_DrivHist)
+    x230_DrivQuality = prob_equals(x195_DrivingSkill, DistUInt{2}(0))
+    if x230_DrivQuality !== false
+     x231_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+     if x231_DrivQuality !== false
+      x232_DrivQuality = discrete(DistUInt{2}, [1.0, 0.0, 0.0])
+     end
+     if x231_DrivQuality !== true
+      x233_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+      if x233_DrivQuality !== false
+       x234_DrivQuality = discrete(DistUInt{2}, [1.0, 0.0, 0.0])
+      end
+      if x233_DrivQuality !== true
+       x235_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+       if x235_DrivQuality !== false
+        x236_DrivQuality = discrete(DistUInt{2}, [1.0, 0.0, 0.0])
+       end
+       if x235_DrivQuality !== true
+        x237_DrivQuality = discrete(DistUInt{2}, [1.0, 0.0, 0.0])
+       end
+       x238_DrivQuality = x235_DrivQuality === true ? x236_DrivQuality : x235_DrivQuality === false ? x237_DrivQuality : ifelse(x235_DrivQuality, x236_DrivQuality, x237_DrivQuality)
+      end
+      x239_DrivQuality = x233_DrivQuality === true ? x234_DrivQuality : x233_DrivQuality === false ? x238_DrivQuality : ifelse(x233_DrivQuality, x234_DrivQuality, x238_DrivQuality)
+     end
+     x240_DrivQuality = x231_DrivQuality === true ? x232_DrivQuality : x231_DrivQuality === false ? x239_DrivQuality : ifelse(x231_DrivQuality, x232_DrivQuality, x239_DrivQuality)
+    end
+    if x230_DrivQuality !== true
+     x241_DrivQuality = prob_equals(x195_DrivingSkill, DistUInt{2}(1))
+     if x241_DrivQuality !== false
+      x242_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x242_DrivQuality !== false
+       x243_DrivQuality = discrete(DistUInt{2}, [0.5, 0.2, 0.3])
+      end
+      if x242_DrivQuality !== true
+       x244_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x244_DrivQuality !== false
+        x245_DrivQuality = discrete(DistUInt{2}, [0.3, 0.4, 0.3])
+       end
+       if x244_DrivQuality !== true
+        x246_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x246_DrivQuality !== false
+         x247_DrivQuality = discrete(DistUInt{2}, [0.0, 1.0, 0.0])
+        end
+        if x246_DrivQuality !== true
+         x248_DrivQuality = discrete(DistUInt{2}, [0.0, 0.8, 0.2])
+        end
+        x249_DrivQuality = x246_DrivQuality === true ? x247_DrivQuality : x246_DrivQuality === false ? x248_DrivQuality : ifelse(x246_DrivQuality, x247_DrivQuality, x248_DrivQuality)
+       end
+       x250_DrivQuality = x244_DrivQuality === true ? x245_DrivQuality : x244_DrivQuality === false ? x249_DrivQuality : ifelse(x244_DrivQuality, x245_DrivQuality, x249_DrivQuality)
+      end
+      x251_DrivQuality = x242_DrivQuality === true ? x243_DrivQuality : x242_DrivQuality === false ? x250_DrivQuality : ifelse(x242_DrivQuality, x243_DrivQuality, x250_DrivQuality)
+     end
+     if x241_DrivQuality !== true
+      x252_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x252_DrivQuality !== false
+       x253_DrivQuality = discrete(DistUInt{2}, [0.3, 0.2, 0.5])
+      end
+      if x252_DrivQuality !== true
+       x254_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x254_DrivQuality !== false
+        x255_DrivQuality = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+       end
+       if x254_DrivQuality !== true
+        x256_DrivQuality = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x256_DrivQuality !== false
+         x257_DrivQuality = discrete(DistUInt{2}, [0.0, 0.0, 1.0])
+        end
+        if x256_DrivQuality !== true
+         x258_DrivQuality = discrete(DistUInt{2}, [0.0, 0.0, 1.0])
+        end
+        x259_DrivQuality = x256_DrivQuality === true ? x257_DrivQuality : x256_DrivQuality === false ? x258_DrivQuality : ifelse(x256_DrivQuality, x257_DrivQuality, x258_DrivQuality)
+       end
+       x260_DrivQuality = x254_DrivQuality === true ? x255_DrivQuality : x254_DrivQuality === false ? x259_DrivQuality : ifelse(x254_DrivQuality, x255_DrivQuality, x259_DrivQuality)
+      end
+      x261_DrivQuality = x252_DrivQuality === true ? x253_DrivQuality : x252_DrivQuality === false ? x260_DrivQuality : ifelse(x252_DrivQuality, x253_DrivQuality, x260_DrivQuality)
+     end
+     x262_DrivQuality = x241_DrivQuality === true ? x251_DrivQuality : x241_DrivQuality === false ? x261_DrivQuality : ifelse(x241_DrivQuality, x251_DrivQuality, x261_DrivQuality)
+    end
+    x263_DrivQuality = x230_DrivQuality === true ? x240_DrivQuality : x230_DrivQuality === false ? x262_DrivQuality : ifelse(x230_DrivQuality, x240_DrivQuality, x262_DrivQuality)
+    x264_MakeModel = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+    if x264_MakeModel !== false
+     x265_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+     if x265_MakeModel !== false
+      x266_MakeModel = discrete(DistUInt{3}, [0.1, 0.7, 0.2, 0.0, 0.0])
+     end
+     if x265_MakeModel !== true
+      x267_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+      if x267_MakeModel !== false
+       x268_MakeModel = discrete(DistUInt{3}, [0.1, 0.7, 0.2, 0.0, 0.0])
+      end
+      if x267_MakeModel !== true
+       x269_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+       if x269_MakeModel !== false
+        x270_MakeModel = discrete(DistUInt{3}, [0.1, 0.7, 0.2, 0.0, 0.0])
+       end
+       if x269_MakeModel !== true
+        x271_MakeModel = discrete(DistUInt{3}, [0.1, 0.7, 0.2, 0.0, 0.0])
+       end
+       x272_MakeModel = x269_MakeModel === true ? x270_MakeModel : x269_MakeModel === false ? x271_MakeModel : ifelse(x269_MakeModel, x270_MakeModel, x271_MakeModel)
+      end
+      x273_MakeModel = x267_MakeModel === true ? x268_MakeModel : x267_MakeModel === false ? x272_MakeModel : ifelse(x267_MakeModel, x268_MakeModel, x272_MakeModel)
+     end
+     x274_MakeModel = x265_MakeModel === true ? x266_MakeModel : x265_MakeModel === false ? x273_MakeModel : ifelse(x265_MakeModel, x266_MakeModel, x273_MakeModel)
+    end
+    if x264_MakeModel !== true
+     x275_MakeModel = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+     if x275_MakeModel !== false
+      x276_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x276_MakeModel !== false
+       x277_MakeModel = discrete(DistUInt{3}, [0.15, 0.2, 0.65, 0.0, 0.0])
+      end
+      if x276_MakeModel !== true
+       x278_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x278_MakeModel !== false
+        x279_MakeModel = discrete(DistUInt{3}, [0.15, 0.2, 0.65, 0.0, 0.0])
+       end
+       if x278_MakeModel !== true
+        x280_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x280_MakeModel !== false
+         x281_MakeModel = discrete(DistUInt{3}, [0.15, 0.2, 0.65, 0.0, 0.0])
+        end
+        if x280_MakeModel !== true
+         x282_MakeModel = discrete(DistUInt{3}, [0.15, 0.2, 0.65, 0.0, 0.0])
+        end
+        x283_MakeModel = x280_MakeModel === true ? x281_MakeModel : x280_MakeModel === false ? x282_MakeModel : ifelse(x280_MakeModel, x281_MakeModel, x282_MakeModel)
+       end
+       x284_MakeModel = x278_MakeModel === true ? x279_MakeModel : x278_MakeModel === false ? x283_MakeModel : ifelse(x278_MakeModel, x279_MakeModel, x283_MakeModel)
+      end
+      x285_MakeModel = x276_MakeModel === true ? x277_MakeModel : x276_MakeModel === false ? x284_MakeModel : ifelse(x276_MakeModel, x277_MakeModel, x284_MakeModel)
+     end
+     if x275_MakeModel !== true
+      x286_MakeModel = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+      if x286_MakeModel !== false
+       x287_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+       if x287_MakeModel !== false
+        x288_MakeModel = discrete(DistUInt{3}, [0.2, 0.05, 0.3, 0.45, 0.0])
+       end
+       if x287_MakeModel !== true
+        x289_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+        if x289_MakeModel !== false
+         x290_MakeModel = discrete(DistUInt{3}, [0.2, 0.05, 0.3, 0.45, 0.0])
+        end
+        if x289_MakeModel !== true
+         x291_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+         if x291_MakeModel !== false
+          x292_MakeModel = discrete(DistUInt{3}, [0.2, 0.05, 0.3, 0.45, 0.0])
+         end
+         if x291_MakeModel !== true
+          x293_MakeModel = discrete(DistUInt{3}, [0.2, 0.05, 0.3, 0.45, 0.0])
+         end
+         x294_MakeModel = x291_MakeModel === true ? x292_MakeModel : x291_MakeModel === false ? x293_MakeModel : ifelse(x291_MakeModel, x292_MakeModel, x293_MakeModel)
+        end
+        x295_MakeModel = x289_MakeModel === true ? x290_MakeModel : x289_MakeModel === false ? x294_MakeModel : ifelse(x289_MakeModel, x290_MakeModel, x294_MakeModel)
+       end
+       x296_MakeModel = x287_MakeModel === true ? x288_MakeModel : x287_MakeModel === false ? x295_MakeModel : ifelse(x287_MakeModel, x288_MakeModel, x295_MakeModel)
+      end
+      if x286_MakeModel !== true
+       x297_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+       if x297_MakeModel !== false
+        x298_MakeModel = discrete(DistUInt{3}, [0.3, 0.01, 0.09, 0.4, 0.2])
+       end
+       if x297_MakeModel !== true
+        x299_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+        if x299_MakeModel !== false
+         x300_MakeModel = discrete(DistUInt{3}, [0.3, 0.01, 0.09, 0.4, 0.2])
+        end
+        if x299_MakeModel !== true
+         x301_MakeModel = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+         if x301_MakeModel !== false
+          x302_MakeModel = discrete(DistUInt{3}, [0.3, 0.01, 0.09, 0.4, 0.2])
+         end
+         if x301_MakeModel !== true
+          x303_MakeModel = discrete(DistUInt{3}, [0.3, 0.01, 0.09, 0.4, 0.2])
+         end
+         x304_MakeModel = x301_MakeModel === true ? x302_MakeModel : x301_MakeModel === false ? x303_MakeModel : ifelse(x301_MakeModel, x302_MakeModel, x303_MakeModel)
+        end
+        x305_MakeModel = x299_MakeModel === true ? x300_MakeModel : x299_MakeModel === false ? x304_MakeModel : ifelse(x299_MakeModel, x300_MakeModel, x304_MakeModel)
+       end
+       x306_MakeModel = x297_MakeModel === true ? x298_MakeModel : x297_MakeModel === false ? x305_MakeModel : ifelse(x297_MakeModel, x298_MakeModel, x305_MakeModel)
+      end
+      x307_MakeModel = x286_MakeModel === true ? x296_MakeModel : x286_MakeModel === false ? x306_MakeModel : ifelse(x286_MakeModel, x296_MakeModel, x306_MakeModel)
+     end
+     x308_MakeModel = x275_MakeModel === true ? x285_MakeModel : x275_MakeModel === false ? x307_MakeModel : ifelse(x275_MakeModel, x285_MakeModel, x307_MakeModel)
+    end
+    x309_MakeModel = x264_MakeModel === true ? x274_MakeModel : x264_MakeModel === false ? x308_MakeModel : ifelse(x264_MakeModel, x274_MakeModel, x308_MakeModel)
+    x310_VehicleYear = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+    if x310_VehicleYear !== false
+     x311_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+     if x311_VehicleYear !== false
+      x312_VehicleYear = discrete(DistUInt{1}, [0.15, 0.85])
+     end
+     if x311_VehicleYear !== true
+      x313_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+      if x313_VehicleYear !== false
+       x314_VehicleYear = discrete(DistUInt{1}, [0.15, 0.85])
+      end
+      if x313_VehicleYear !== true
+       x315_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+       if x315_VehicleYear !== false
+        x316_VehicleYear = discrete(DistUInt{1}, [0.15, 0.85])
+       end
+       if x315_VehicleYear !== true
+        x317_VehicleYear = discrete(DistUInt{1}, [0.15, 0.85])
+       end
+       x318_VehicleYear = x315_VehicleYear === true ? x316_VehicleYear : x315_VehicleYear === false ? x317_VehicleYear : ifelse(x315_VehicleYear, x316_VehicleYear, x317_VehicleYear)
+      end
+      x319_VehicleYear = x313_VehicleYear === true ? x314_VehicleYear : x313_VehicleYear === false ? x318_VehicleYear : ifelse(x313_VehicleYear, x314_VehicleYear, x318_VehicleYear)
+     end
+     x320_VehicleYear = x311_VehicleYear === true ? x312_VehicleYear : x311_VehicleYear === false ? x319_VehicleYear : ifelse(x311_VehicleYear, x312_VehicleYear, x319_VehicleYear)
+    end
+    if x310_VehicleYear !== true
+     x321_VehicleYear = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+     if x321_VehicleYear !== false
+      x322_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+      if x322_VehicleYear !== false
+       x323_VehicleYear = discrete(DistUInt{1}, [0.3, 0.7])
+      end
+      if x322_VehicleYear !== true
+       x324_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+       if x324_VehicleYear !== false
+        x325_VehicleYear = discrete(DistUInt{1}, [0.3, 0.7])
+       end
+       if x324_VehicleYear !== true
+        x326_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+        if x326_VehicleYear !== false
+         x327_VehicleYear = discrete(DistUInt{1}, [0.3, 0.7])
+        end
+        if x326_VehicleYear !== true
+         x328_VehicleYear = discrete(DistUInt{1}, [0.3, 0.7])
+        end
+        x329_VehicleYear = x326_VehicleYear === true ? x327_VehicleYear : x326_VehicleYear === false ? x328_VehicleYear : ifelse(x326_VehicleYear, x327_VehicleYear, x328_VehicleYear)
+       end
+       x330_VehicleYear = x324_VehicleYear === true ? x325_VehicleYear : x324_VehicleYear === false ? x329_VehicleYear : ifelse(x324_VehicleYear, x325_VehicleYear, x329_VehicleYear)
+      end
+      x331_VehicleYear = x322_VehicleYear === true ? x323_VehicleYear : x322_VehicleYear === false ? x330_VehicleYear : ifelse(x322_VehicleYear, x323_VehicleYear, x330_VehicleYear)
+     end
+     if x321_VehicleYear !== true
+      x332_VehicleYear = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+      if x332_VehicleYear !== false
+       x333_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+       if x333_VehicleYear !== false
+        x334_VehicleYear = discrete(DistUInt{1}, [0.8, 0.2])
+       end
+       if x333_VehicleYear !== true
+        x335_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+        if x335_VehicleYear !== false
+         x336_VehicleYear = discrete(DistUInt{1}, [0.8, 0.2])
+        end
+        if x335_VehicleYear !== true
+         x337_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+         if x337_VehicleYear !== false
+          x338_VehicleYear = discrete(DistUInt{1}, [0.8, 0.2])
+         end
+         if x337_VehicleYear !== true
+          x339_VehicleYear = discrete(DistUInt{1}, [0.8, 0.2])
+         end
+         x340_VehicleYear = x337_VehicleYear === true ? x338_VehicleYear : x337_VehicleYear === false ? x339_VehicleYear : ifelse(x337_VehicleYear, x338_VehicleYear, x339_VehicleYear)
+        end
+        x341_VehicleYear = x335_VehicleYear === true ? x336_VehicleYear : x335_VehicleYear === false ? x340_VehicleYear : ifelse(x335_VehicleYear, x336_VehicleYear, x340_VehicleYear)
+       end
+       x342_VehicleYear = x333_VehicleYear === true ? x334_VehicleYear : x333_VehicleYear === false ? x341_VehicleYear : ifelse(x333_VehicleYear, x334_VehicleYear, x341_VehicleYear)
+      end
+      if x332_VehicleYear !== true
+       x343_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(0))
+       if x343_VehicleYear !== false
+        x344_VehicleYear = discrete(DistUInt{1}, [0.9, 0.1])
+       end
+       if x343_VehicleYear !== true
+        x345_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(1))
+        if x345_VehicleYear !== false
+         x346_VehicleYear = discrete(DistUInt{1}, [0.9, 0.1])
+        end
+        if x345_VehicleYear !== true
+         x347_VehicleYear = prob_equals(x53_RiskAversion, DistUInt{2}(2))
+         if x347_VehicleYear !== false
+          x348_VehicleYear = discrete(DistUInt{1}, [0.9, 0.1])
+         end
+         if x347_VehicleYear !== true
+          x349_VehicleYear = discrete(DistUInt{1}, [0.9, 0.1])
+         end
+         x350_VehicleYear = x347_VehicleYear === true ? x348_VehicleYear : x347_VehicleYear === false ? x349_VehicleYear : ifelse(x347_VehicleYear, x348_VehicleYear, x349_VehicleYear)
+        end
+        x351_VehicleYear = x345_VehicleYear === true ? x346_VehicleYear : x345_VehicleYear === false ? x350_VehicleYear : ifelse(x345_VehicleYear, x346_VehicleYear, x350_VehicleYear)
+       end
+       x352_VehicleYear = x343_VehicleYear === true ? x344_VehicleYear : x343_VehicleYear === false ? x351_VehicleYear : ifelse(x343_VehicleYear, x344_VehicleYear, x351_VehicleYear)
+      end
+      x353_VehicleYear = x332_VehicleYear === true ? x342_VehicleYear : x332_VehicleYear === false ? x352_VehicleYear : ifelse(x332_VehicleYear, x342_VehicleYear, x352_VehicleYear)
+     end
+     x354_VehicleYear = x321_VehicleYear === true ? x331_VehicleYear : x321_VehicleYear === false ? x353_VehicleYear : ifelse(x321_VehicleYear, x331_VehicleYear, x353_VehicleYear)
+    end
+    x355_VehicleYear = x310_VehicleYear === true ? x320_VehicleYear : x310_VehicleYear === false ? x354_VehicleYear : ifelse(x310_VehicleYear, x320_VehicleYear, x354_VehicleYear)
+    x356_Airbag = prob_equals(x309_MakeModel, DistUInt{3}(0))
+    if x356_Airbag !== false
+     x357_Airbag = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+     if x357_Airbag !== false
+      x358_Airbag = discrete(DistUInt{1}, [1.0, 0.0])
+     end
+     if x357_Airbag !== true
+      x359_Airbag = discrete(DistUInt{1}, [0.1, 0.9])
+     end
+     x360_Airbag = x357_Airbag === true ? x358_Airbag : x357_Airbag === false ? x359_Airbag : ifelse(x357_Airbag, x358_Airbag, x359_Airbag)
+    end
+    if x356_Airbag !== true
+     x361_Airbag = prob_equals(x309_MakeModel, DistUInt{3}(1))
+     if x361_Airbag !== false
+      x362_Airbag = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+      if x362_Airbag !== false
+       x363_Airbag = discrete(DistUInt{1}, [1.0, 0.0])
+      end
+      if x362_Airbag !== true
+       x364_Airbag = discrete(DistUInt{1}, [0.05, 0.95])
+      end
+      x365_Airbag = x362_Airbag === true ? x363_Airbag : x362_Airbag === false ? x364_Airbag : ifelse(x362_Airbag, x363_Airbag, x364_Airbag)
+     end
+     if x361_Airbag !== true
+      x366_Airbag = prob_equals(x309_MakeModel, DistUInt{3}(2))
+      if x366_Airbag !== false
+       x367_Airbag = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+       if x367_Airbag !== false
+        x368_Airbag = discrete(DistUInt{1}, [1.0, 0.0])
+       end
+       if x367_Airbag !== true
+        x369_Airbag = discrete(DistUInt{1}, [0.2, 0.8])
+       end
+       x370_Airbag = x367_Airbag === true ? x368_Airbag : x367_Airbag === false ? x369_Airbag : ifelse(x367_Airbag, x368_Airbag, x369_Airbag)
+      end
+      if x366_Airbag !== true
+       x371_Airbag = prob_equals(x309_MakeModel, DistUInt{3}(3))
+       if x371_Airbag !== false
+        x372_Airbag = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x372_Airbag !== false
+         x373_Airbag = discrete(DistUInt{1}, [1.0, 0.0])
+        end
+        if x372_Airbag !== true
+         x374_Airbag = discrete(DistUInt{1}, [0.6, 0.4])
+        end
+        x375_Airbag = x372_Airbag === true ? x373_Airbag : x372_Airbag === false ? x374_Airbag : ifelse(x372_Airbag, x373_Airbag, x374_Airbag)
+       end
+       if x371_Airbag !== true
+        x376_Airbag = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x376_Airbag !== false
+         x377_Airbag = discrete(DistUInt{1}, [1.0, 0.0])
+        end
+        if x376_Airbag !== true
+         x378_Airbag = discrete(DistUInt{1}, [0.1, 0.9])
+        end
+        x379_Airbag = x376_Airbag === true ? x377_Airbag : x376_Airbag === false ? x378_Airbag : ifelse(x376_Airbag, x377_Airbag, x378_Airbag)
+       end
+       x380_Airbag = x371_Airbag === true ? x375_Airbag : x371_Airbag === false ? x379_Airbag : ifelse(x371_Airbag, x375_Airbag, x379_Airbag)
+      end
+      x381_Airbag = x366_Airbag === true ? x370_Airbag : x366_Airbag === false ? x380_Airbag : ifelse(x366_Airbag, x370_Airbag, x380_Airbag)
+     end
+     x382_Airbag = x361_Airbag === true ? x365_Airbag : x361_Airbag === false ? x381_Airbag : ifelse(x361_Airbag, x365_Airbag, x381_Airbag)
+    end
+    x383_Airbag = x356_Airbag === true ? x360_Airbag : x356_Airbag === false ? x382_Airbag : ifelse(x356_Airbag, x360_Airbag, x382_Airbag)
+    x384_Antilock = prob_equals(x309_MakeModel, DistUInt{3}(0))
+    return (x1_Age, x2_Mileage, x9_SocioEcon, x99_AntiTheft, x145_HomeBase, x263_DrivQuality, x309_MakeModel, x355_VehicleYear, x383_Airbag, x384_Antilock,)
+end
+
+function chunk_2(x1_Age, x2_Mileage, x9_SocioEcon, x99_AntiTheft, x145_HomeBase, x309_MakeModel, x355_VehicleYear, x383_Airbag, x384_Antilock)
+    if x384_Antilock !== false
+     x385_Antilock = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+     if x385_Antilock !== false
+      x386_Antilock = discrete(DistUInt{1}, [0.9, 0.1])
+     end
+     if x385_Antilock !== true
+      x387_Antilock = discrete(DistUInt{1}, [0.1, 0.9])
+     end
+     x388_Antilock = x385_Antilock === true ? x386_Antilock : x385_Antilock === false ? x387_Antilock : ifelse(x385_Antilock, x386_Antilock, x387_Antilock)
+    end
+    if x384_Antilock !== true
+     x389_Antilock = prob_equals(x309_MakeModel, DistUInt{3}(1))
+     if x389_Antilock !== false
+      x390_Antilock = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+      if x390_Antilock !== false
+       x391_Antilock = discrete(DistUInt{1}, [0.001, 0.999])
+      end
+      if x390_Antilock !== true
+       x392_Antilock = discrete(DistUInt{1}, [0.0, 1.0])
+      end
+      x393_Antilock = x390_Antilock === true ? x391_Antilock : x390_Antilock === false ? x392_Antilock : ifelse(x390_Antilock, x391_Antilock, x392_Antilock)
+     end
+     if x389_Antilock !== true
+      x394_Antilock = prob_equals(x309_MakeModel, DistUInt{3}(2))
+      if x394_Antilock !== false
+       x395_Antilock = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+       if x395_Antilock !== false
+        x396_Antilock = discrete(DistUInt{1}, [0.4, 0.6])
+       end
+       if x395_Antilock !== true
+        x397_Antilock = discrete(DistUInt{1}, [0.0, 1.0])
+       end
+       x398_Antilock = x395_Antilock === true ? x396_Antilock : x395_Antilock === false ? x397_Antilock : ifelse(x395_Antilock, x396_Antilock, x397_Antilock)
+      end
+      if x394_Antilock !== true
+       x399_Antilock = prob_equals(x309_MakeModel, DistUInt{3}(3))
+       if x399_Antilock !== false
+        x400_Antilock = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x400_Antilock !== false
+         x401_Antilock = discrete(DistUInt{1}, [0.99, 0.01])
+        end
+        if x400_Antilock !== true
+         x402_Antilock = discrete(DistUInt{1}, [0.3, 0.7])
+        end
+        x403_Antilock = x400_Antilock === true ? x401_Antilock : x400_Antilock === false ? x402_Antilock : ifelse(x400_Antilock, x401_Antilock, x402_Antilock)
+       end
+       if x399_Antilock !== true
+        x404_Antilock = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x404_Antilock !== false
+         x405_Antilock = discrete(DistUInt{1}, [0.99, 0.01])
+        end
+        if x404_Antilock !== true
+         x406_Antilock = discrete(DistUInt{1}, [0.15, 0.85])
+        end
+        x407_Antilock = x404_Antilock === true ? x405_Antilock : x404_Antilock === false ? x406_Antilock : ifelse(x404_Antilock, x405_Antilock, x406_Antilock)
+       end
+       x408_Antilock = x399_Antilock === true ? x403_Antilock : x399_Antilock === false ? x407_Antilock : ifelse(x399_Antilock, x403_Antilock, x407_Antilock)
+      end
+      x409_Antilock = x394_Antilock === true ? x398_Antilock : x394_Antilock === false ? x408_Antilock : ifelse(x394_Antilock, x398_Antilock, x408_Antilock)
+     end
+     x410_Antilock = x389_Antilock === true ? x393_Antilock : x389_Antilock === false ? x409_Antilock : ifelse(x389_Antilock, x393_Antilock, x409_Antilock)
+    end
+    x411_Antilock = x384_Antilock === true ? x388_Antilock : x384_Antilock === false ? x410_Antilock : ifelse(x384_Antilock, x388_Antilock, x410_Antilock)
+    x412_RuggedAuto = prob_equals(x309_MakeModel, DistUInt{3}(0))
+    if x412_RuggedAuto !== false
+     x413_RuggedAuto = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+     if x413_RuggedAuto !== false
+      x414_RuggedAuto = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+     end
+     if x413_RuggedAuto !== true
+      x415_RuggedAuto = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+     end
+     x416_RuggedAuto = x413_RuggedAuto === true ? x414_RuggedAuto : x413_RuggedAuto === false ? x415_RuggedAuto : ifelse(x413_RuggedAuto, x414_RuggedAuto, x415_RuggedAuto)
+    end
+    if x412_RuggedAuto !== true
+     x417_RuggedAuto = prob_equals(x309_MakeModel, DistUInt{3}(1))
+     if x417_RuggedAuto !== false
+      x418_RuggedAuto = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+      if x418_RuggedAuto !== false
+       x419_RuggedAuto = discrete(DistUInt{2}, [0.5, 0.5, 0.0])
+      end
+      if x418_RuggedAuto !== true
+       x420_RuggedAuto = discrete(DistUInt{2}, [0.9, 0.1, 0.0])
+      end
+      x421_RuggedAuto = x418_RuggedAuto === true ? x419_RuggedAuto : x418_RuggedAuto === false ? x420_RuggedAuto : ifelse(x418_RuggedAuto, x419_RuggedAuto, x420_RuggedAuto)
+     end
+     if x417_RuggedAuto !== true
+      x422_RuggedAuto = prob_equals(x309_MakeModel, DistUInt{3}(2))
+      if x422_RuggedAuto !== false
+       x423_RuggedAuto = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+       if x423_RuggedAuto !== false
+        x424_RuggedAuto = discrete(DistUInt{2}, [0.2, 0.6, 0.2])
+       end
+       if x423_RuggedAuto !== true
+        x425_RuggedAuto = discrete(DistUInt{2}, [0.05, 0.55, 0.4])
+       end
+       x426_RuggedAuto = x423_RuggedAuto === true ? x424_RuggedAuto : x423_RuggedAuto === false ? x425_RuggedAuto : ifelse(x423_RuggedAuto, x424_RuggedAuto, x425_RuggedAuto)
+      end
+      if x422_RuggedAuto !== true
+       x427_RuggedAuto = prob_equals(x309_MakeModel, DistUInt{3}(3))
+       if x427_RuggedAuto !== false
+        x428_RuggedAuto = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x428_RuggedAuto !== false
+         x429_RuggedAuto = discrete(DistUInt{2}, [0.1, 0.6, 0.3])
+        end
+        if x428_RuggedAuto !== true
+         x430_RuggedAuto = discrete(DistUInt{2}, [0.1, 0.6, 0.3])
+        end
+        x431_RuggedAuto = x428_RuggedAuto === true ? x429_RuggedAuto : x428_RuggedAuto === false ? x430_RuggedAuto : ifelse(x428_RuggedAuto, x429_RuggedAuto, x430_RuggedAuto)
+       end
+       if x427_RuggedAuto !== true
+        x432_RuggedAuto = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x432_RuggedAuto !== false
+         x433_RuggedAuto = discrete(DistUInt{2}, [0.05, 0.55, 0.4])
+        end
+        if x432_RuggedAuto !== true
+         x434_RuggedAuto = discrete(DistUInt{2}, [0.05, 0.55, 0.4])
+        end
+        x435_RuggedAuto = x432_RuggedAuto === true ? x433_RuggedAuto : x432_RuggedAuto === false ? x434_RuggedAuto : ifelse(x432_RuggedAuto, x433_RuggedAuto, x434_RuggedAuto)
+       end
+       x436_RuggedAuto = x427_RuggedAuto === true ? x431_RuggedAuto : x427_RuggedAuto === false ? x435_RuggedAuto : ifelse(x427_RuggedAuto, x431_RuggedAuto, x435_RuggedAuto)
+      end
+      x437_RuggedAuto = x422_RuggedAuto === true ? x426_RuggedAuto : x422_RuggedAuto === false ? x436_RuggedAuto : ifelse(x422_RuggedAuto, x426_RuggedAuto, x436_RuggedAuto)
+     end
+     x438_RuggedAuto = x417_RuggedAuto === true ? x421_RuggedAuto : x417_RuggedAuto === false ? x437_RuggedAuto : ifelse(x417_RuggedAuto, x421_RuggedAuto, x437_RuggedAuto)
+    end
+    x439_RuggedAuto = x412_RuggedAuto === true ? x416_RuggedAuto : x412_RuggedAuto === false ? x438_RuggedAuto : ifelse(x412_RuggedAuto, x416_RuggedAuto, x438_RuggedAuto)
+    x440_Cushioning = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+    if x440_Cushioning !== false
+     x441_Cushioning = prob_equals(x383_Airbag, DistUInt{1}(0))
+     if x441_Cushioning !== false
+      x442_Cushioning = discrete(DistUInt{2}, [0.5, 0.3, 0.2, 0.0])
+     end
+     if x441_Cushioning !== true
+      x443_Cushioning = discrete(DistUInt{2}, [0.7, 0.3, 0.0, 0.0])
+     end
+     x444_Cushioning = x441_Cushioning === true ? x442_Cushioning : x441_Cushioning === false ? x443_Cushioning : ifelse(x441_Cushioning, x442_Cushioning, x443_Cushioning)
+    end
+    if x440_Cushioning !== true
+     x445_Cushioning = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+     if x445_Cushioning !== false
+      x446_Cushioning = prob_equals(x383_Airbag, DistUInt{1}(0))
+      if x446_Cushioning !== false
+       x447_Cushioning = discrete(DistUInt{2}, [0.0, 0.1, 0.6, 0.3])
+      end
+      if x446_Cushioning !== true
+       x448_Cushioning = discrete(DistUInt{2}, [0.1, 0.6, 0.3, 0.0])
+      end
+      x449_Cushioning = x446_Cushioning === true ? x447_Cushioning : x446_Cushioning === false ? x448_Cushioning : ifelse(x446_Cushioning, x447_Cushioning, x448_Cushioning)
+     end
+     if x445_Cushioning !== true
+      x450_Cushioning = prob_equals(x383_Airbag, DistUInt{1}(0))
+      if x450_Cushioning !== false
+       x451_Cushioning = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+      end
+      if x450_Cushioning !== true
+       x452_Cushioning = discrete(DistUInt{2}, [0.0, 0.0, 0.7, 0.3])
+      end
+      x453_Cushioning = x450_Cushioning === true ? x451_Cushioning : x450_Cushioning === false ? x452_Cushioning : ifelse(x450_Cushioning, x451_Cushioning, x452_Cushioning)
+     end
+     x454_Cushioning = x445_Cushioning === true ? x449_Cushioning : x445_Cushioning === false ? x453_Cushioning : ifelse(x445_Cushioning, x449_Cushioning, x453_Cushioning)
+    end
+    x455_Cushioning = x440_Cushioning === true ? x444_Cushioning : x440_Cushioning === false ? x454_Cushioning : ifelse(x440_Cushioning, x444_Cushioning, x454_Cushioning)
+    x456_GoodStudent = prob_equals(x9_SocioEcon, DistUInt{2}(0))
+    if x456_GoodStudent !== false
+     x457_GoodStudent = prob_equals(x1_Age, DistUInt{2}(0))
+     if x457_GoodStudent !== false
+      x458_GoodStudent = discrete(DistUInt{1}, [0.1, 0.9])
+     end
+     if x457_GoodStudent !== true
+      x459_GoodStudent = prob_equals(x1_Age, DistUInt{2}(1))
+      if x459_GoodStudent !== false
+       x460_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+      end
+      if x459_GoodStudent !== true
+       x461_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+      end
+      x462_GoodStudent = x459_GoodStudent === true ? x460_GoodStudent : x459_GoodStudent === false ? x461_GoodStudent : ifelse(x459_GoodStudent, x460_GoodStudent, x461_GoodStudent)
+     end
+     x463_GoodStudent = x457_GoodStudent === true ? x458_GoodStudent : x457_GoodStudent === false ? x462_GoodStudent : ifelse(x457_GoodStudent, x458_GoodStudent, x462_GoodStudent)
+    end
+    if x456_GoodStudent !== true
+     x464_GoodStudent = prob_equals(x9_SocioEcon, DistUInt{2}(1))
+     if x464_GoodStudent !== false
+      x465_GoodStudent = prob_equals(x1_Age, DistUInt{2}(0))
+      if x465_GoodStudent !== false
+       x466_GoodStudent = discrete(DistUInt{1}, [0.2, 0.8])
+      end
+      if x465_GoodStudent !== true
+       x467_GoodStudent = prob_equals(x1_Age, DistUInt{2}(1))
+       if x467_GoodStudent !== false
+        x468_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+       end
+       if x467_GoodStudent !== true
+        x469_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+       end
+       x470_GoodStudent = x467_GoodStudent === true ? x468_GoodStudent : x467_GoodStudent === false ? x469_GoodStudent : ifelse(x467_GoodStudent, x468_GoodStudent, x469_GoodStudent)
+      end
+      x471_GoodStudent = x465_GoodStudent === true ? x466_GoodStudent : x465_GoodStudent === false ? x470_GoodStudent : ifelse(x465_GoodStudent, x466_GoodStudent, x470_GoodStudent)
+     end
+     if x464_GoodStudent !== true
+      x472_GoodStudent = prob_equals(x9_SocioEcon, DistUInt{2}(2))
+      if x472_GoodStudent !== false
+       x473_GoodStudent = prob_equals(x1_Age, DistUInt{2}(0))
+       if x473_GoodStudent !== false
+        x474_GoodStudent = discrete(DistUInt{1}, [0.5, 0.5])
+       end
+       if x473_GoodStudent !== true
+        x475_GoodStudent = prob_equals(x1_Age, DistUInt{2}(1))
+        if x475_GoodStudent !== false
+         x476_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+        end
+        if x475_GoodStudent !== true
+         x477_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+        end
+        x478_GoodStudent = x475_GoodStudent === true ? x476_GoodStudent : x475_GoodStudent === false ? x477_GoodStudent : ifelse(x475_GoodStudent, x476_GoodStudent, x477_GoodStudent)
+       end
+       x479_GoodStudent = x473_GoodStudent === true ? x474_GoodStudent : x473_GoodStudent === false ? x478_GoodStudent : ifelse(x473_GoodStudent, x474_GoodStudent, x478_GoodStudent)
+      end
+      if x472_GoodStudent !== true
+       x480_GoodStudent = prob_equals(x1_Age, DistUInt{2}(0))
+       if x480_GoodStudent !== false
+        x481_GoodStudent = discrete(DistUInt{1}, [0.4, 0.6])
+       end
+       if x480_GoodStudent !== true
+        x482_GoodStudent = prob_equals(x1_Age, DistUInt{2}(1))
+        if x482_GoodStudent !== false
+         x483_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+        end
+        if x482_GoodStudent !== true
+         x484_GoodStudent = discrete(DistUInt{1}, [0.0, 1.0])
+        end
+        x485_GoodStudent = x482_GoodStudent === true ? x483_GoodStudent : x482_GoodStudent === false ? x484_GoodStudent : ifelse(x482_GoodStudent, x483_GoodStudent, x484_GoodStudent)
+       end
+       x486_GoodStudent = x480_GoodStudent === true ? x481_GoodStudent : x480_GoodStudent === false ? x485_GoodStudent : ifelse(x480_GoodStudent, x481_GoodStudent, x485_GoodStudent)
+      end
+      x487_GoodStudent = x472_GoodStudent === true ? x479_GoodStudent : x472_GoodStudent === false ? x486_GoodStudent : ifelse(x472_GoodStudent, x479_GoodStudent, x486_GoodStudent)
+     end
+     x488_GoodStudent = x464_GoodStudent === true ? x471_GoodStudent : x464_GoodStudent === false ? x487_GoodStudent : ifelse(x464_GoodStudent, x471_GoodStudent, x487_GoodStudent)
+    end
+    x489_GoodStudent = x456_GoodStudent === true ? x463_GoodStudent : x456_GoodStudent === false ? x488_GoodStudent : ifelse(x456_GoodStudent, x463_GoodStudent, x488_GoodStudent)
+    x490_CarValue = prob_equals(x309_MakeModel, DistUInt{3}(0))
+    if x490_CarValue !== false
+     x491_CarValue = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+     if x491_CarValue !== false
+      x492_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+      if x492_CarValue !== false
+       x493_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.8, 0.09, 0.01])
+      end
+      if x492_CarValue !== true
+       x494_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+       if x494_CarValue !== false
+        x495_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.8, 0.09, 0.01])
+       end
+       if x494_CarValue !== true
+        x496_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+        if x496_CarValue !== false
+         x497_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.8, 0.09, 0.01])
+        end
+        if x496_CarValue !== true
+         x498_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.8, 0.09, 0.01])
+        end
+        x499_CarValue = x496_CarValue === true ? x497_CarValue : x496_CarValue === false ? x498_CarValue : ifelse(x496_CarValue, x497_CarValue, x498_CarValue)
+       end
+       x500_CarValue = x494_CarValue === true ? x495_CarValue : x494_CarValue === false ? x499_CarValue : ifelse(x494_CarValue, x495_CarValue, x499_CarValue)
+      end
+      x501_CarValue = x492_CarValue === true ? x493_CarValue : x492_CarValue === false ? x500_CarValue : ifelse(x492_CarValue, x493_CarValue, x500_CarValue)
+     end
+     if x491_CarValue !== true
+      x502_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+      if x502_CarValue !== false
+       x503_CarValue = discrete(DistUInt{3}, [0.03, 0.3, 0.6, 0.06, 0.01])
+      end
+      if x502_CarValue !== true
+       x504_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+       if x504_CarValue !== false
+        x505_CarValue = discrete(DistUInt{3}, [0.16, 0.5, 0.3, 0.03, 0.01])
+       end
+       if x504_CarValue !== true
+        x506_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+        if x506_CarValue !== false
+         x507_CarValue = discrete(DistUInt{3}, [0.4, 0.47, 0.1, 0.02, 0.01])
+        end
+        if x506_CarValue !== true
+         x508_CarValue = discrete(DistUInt{3}, [0.9, 0.06, 0.02, 0.01, 0.01])
+        end
+        x509_CarValue = x506_CarValue === true ? x507_CarValue : x506_CarValue === false ? x508_CarValue : ifelse(x506_CarValue, x507_CarValue, x508_CarValue)
+       end
+       x510_CarValue = x504_CarValue === true ? x505_CarValue : x504_CarValue === false ? x509_CarValue : ifelse(x504_CarValue, x505_CarValue, x509_CarValue)
+      end
+      x511_CarValue = x502_CarValue === true ? x503_CarValue : x502_CarValue === false ? x510_CarValue : ifelse(x502_CarValue, x503_CarValue, x510_CarValue)
+     end
+     x512_CarValue = x491_CarValue === true ? x501_CarValue : x491_CarValue === false ? x511_CarValue : ifelse(x491_CarValue, x501_CarValue, x511_CarValue)
+    end
+    if x490_CarValue !== true
+     x513_CarValue = prob_equals(x309_MakeModel, DistUInt{3}(1))
+     if x513_CarValue !== false
+      x514_CarValue = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+      if x514_CarValue !== false
+       x515_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+       if x515_CarValue !== false
+        x516_CarValue = discrete(DistUInt{3}, [0.1, 0.8, 0.1, 0.0, 0.0])
+       end
+       if x515_CarValue !== true
+        x517_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+        if x517_CarValue !== false
+         x518_CarValue = discrete(DistUInt{3}, [0.1, 0.8, 0.1, 0.0, 0.0])
+        end
+        if x517_CarValue !== true
+         x519_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+         if x519_CarValue !== false
+          x520_CarValue = discrete(DistUInt{3}, [0.1, 0.8, 0.1, 0.0, 0.0])
+         end
+         if x519_CarValue !== true
+          x521_CarValue = discrete(DistUInt{3}, [0.1, 0.8, 0.1, 0.0, 0.0])
+         end
+         x522_CarValue = x519_CarValue === true ? x520_CarValue : x519_CarValue === false ? x521_CarValue : ifelse(x519_CarValue, x520_CarValue, x521_CarValue)
+        end
+        x523_CarValue = x517_CarValue === true ? x518_CarValue : x517_CarValue === false ? x522_CarValue : ifelse(x517_CarValue, x518_CarValue, x522_CarValue)
+       end
+       x524_CarValue = x515_CarValue === true ? x516_CarValue : x515_CarValue === false ? x523_CarValue : ifelse(x515_CarValue, x516_CarValue, x523_CarValue)
+      end
+      if x514_CarValue !== true
+       x525_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+       if x525_CarValue !== false
+        x526_CarValue = discrete(DistUInt{3}, [0.25, 0.7, 0.05, 0.0, 0.0])
+       end
+       if x525_CarValue !== true
+        x527_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+        if x527_CarValue !== false
+         x528_CarValue = discrete(DistUInt{3}, [0.7, 0.2999, 0.0001, 0.0, 0.0])
+        end
+        if x527_CarValue !== true
+         x529_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+         if x529_CarValue !== false
+          x530_CarValue = discrete(DistUInt{3}, [0.99, 0.009999, 1e-06, 0.0, 0.0])
+         end
+         if x529_CarValue !== true
+          x531_CarValue = discrete(DistUInt{3}, [0.999998, 1e-06, 1e-06, 0.0, 0.0])
+         end
+         x532_CarValue = x529_CarValue === true ? x530_CarValue : x529_CarValue === false ? x531_CarValue : ifelse(x529_CarValue, x530_CarValue, x531_CarValue)
+        end
+        x533_CarValue = x527_CarValue === true ? x528_CarValue : x527_CarValue === false ? x532_CarValue : ifelse(x527_CarValue, x528_CarValue, x532_CarValue)
+       end
+       x534_CarValue = x525_CarValue === true ? x526_CarValue : x525_CarValue === false ? x533_CarValue : ifelse(x525_CarValue, x526_CarValue, x533_CarValue)
+      end
+      x535_CarValue = x514_CarValue === true ? x524_CarValue : x514_CarValue === false ? x534_CarValue : ifelse(x514_CarValue, x524_CarValue, x534_CarValue)
+     end
+     if x513_CarValue !== true
+      x536_CarValue = prob_equals(x309_MakeModel, DistUInt{3}(2))
+      if x536_CarValue !== false
+       x537_CarValue = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+       if x537_CarValue !== false
+        x538_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+        if x538_CarValue !== false
+         x539_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.9, 0.0, 0.0])
+        end
+        if x538_CarValue !== true
+         x540_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+         if x540_CarValue !== false
+          x541_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.9, 0.0, 0.0])
+         end
+         if x540_CarValue !== true
+          x542_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+          if x542_CarValue !== false
+           x543_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.9, 0.0, 0.0])
+          end
+          if x542_CarValue !== true
+           x544_CarValue = discrete(DistUInt{3}, [0.0, 0.1, 0.9, 0.0, 0.0])
+          end
+          x545_CarValue = x542_CarValue === true ? x543_CarValue : x542_CarValue === false ? x544_CarValue : ifelse(x542_CarValue, x543_CarValue, x544_CarValue)
+         end
+         x546_CarValue = x540_CarValue === true ? x541_CarValue : x540_CarValue === false ? x545_CarValue : ifelse(x540_CarValue, x541_CarValue, x545_CarValue)
+        end
+        x547_CarValue = x538_CarValue === true ? x539_CarValue : x538_CarValue === false ? x546_CarValue : ifelse(x538_CarValue, x539_CarValue, x546_CarValue)
+       end
+       if x537_CarValue !== true
+        x548_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+        if x548_CarValue !== false
+         x549_CarValue = discrete(DistUInt{3}, [0.2, 0.3, 0.5, 0.0, 0.0])
+        end
+        if x548_CarValue !== true
+         x550_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+         if x550_CarValue !== false
+          x551_CarValue = discrete(DistUInt{3}, [0.5, 0.3, 0.2, 0.0, 0.0])
+         end
+         if x550_CarValue !== true
+          x552_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+          if x552_CarValue !== false
+           x553_CarValue = discrete(DistUInt{3}, [0.7, 0.2, 0.1, 0.0, 0.0])
+          end
+          if x552_CarValue !== true
+           x554_CarValue = discrete(DistUInt{3}, [0.99, 0.009999, 1e-06, 0.0, 0.0])
+          end
+          x555_CarValue = x552_CarValue === true ? x553_CarValue : x552_CarValue === false ? x554_CarValue : ifelse(x552_CarValue, x553_CarValue, x554_CarValue)
+         end
+         x556_CarValue = x550_CarValue === true ? x551_CarValue : x550_CarValue === false ? x555_CarValue : ifelse(x550_CarValue, x551_CarValue, x555_CarValue)
+        end
+        x557_CarValue = x548_CarValue === true ? x549_CarValue : x548_CarValue === false ? x556_CarValue : ifelse(x548_CarValue, x549_CarValue, x556_CarValue)
+       end
+       x558_CarValue = x537_CarValue === true ? x547_CarValue : x537_CarValue === false ? x557_CarValue : ifelse(x537_CarValue, x547_CarValue, x557_CarValue)
+      end
+      if x536_CarValue !== true
+       x559_CarValue = prob_equals(x309_MakeModel, DistUInt{3}(3))
+       if x559_CarValue !== false
+        x560_CarValue = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x560_CarValue !== false
+         x561_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+         if x561_CarValue !== false
+          x562_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 1.0, 0.0])
+         end
+         if x561_CarValue !== true
+          x563_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+          if x563_CarValue !== false
+           x564_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 1.0, 0.0])
+          end
+          if x563_CarValue !== true
+           x565_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+           if x565_CarValue !== false
+            x566_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 1.0, 0.0])
+           end
+           if x565_CarValue !== true
+            x567_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 1.0, 0.0])
+           end
+           x568_CarValue = x565_CarValue === true ? x566_CarValue : x565_CarValue === false ? x567_CarValue : ifelse(x565_CarValue, x566_CarValue, x567_CarValue)
+          end
+          x569_CarValue = x563_CarValue === true ? x564_CarValue : x563_CarValue === false ? x568_CarValue : ifelse(x563_CarValue, x564_CarValue, x568_CarValue)
+         end
+         x570_CarValue = x561_CarValue === true ? x562_CarValue : x561_CarValue === false ? x569_CarValue : ifelse(x561_CarValue, x562_CarValue, x569_CarValue)
+        end
+        if x560_CarValue !== true
+         x571_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+         if x571_CarValue !== false
+          x572_CarValue = discrete(DistUInt{3}, [0.01, 0.09, 0.2, 0.7, 0.0])
+         end
+         if x571_CarValue !== true
+          x573_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+          if x573_CarValue !== false
+           x574_CarValue = discrete(DistUInt{3}, [0.05, 0.15, 0.3, 0.5, 0.0])
+          end
+          if x573_CarValue !== true
+           x575_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+           if x575_CarValue !== false
+            x576_CarValue = discrete(DistUInt{3}, [0.1, 0.3, 0.3, 0.3, 0.0])
+           end
+           if x575_CarValue !== true
+            x577_CarValue = discrete(DistUInt{3}, [0.2, 0.2, 0.3, 0.3, 0.0])
+           end
+           x578_CarValue = x575_CarValue === true ? x576_CarValue : x575_CarValue === false ? x577_CarValue : ifelse(x575_CarValue, x576_CarValue, x577_CarValue)
+          end
+          x579_CarValue = x573_CarValue === true ? x574_CarValue : x573_CarValue === false ? x578_CarValue : ifelse(x573_CarValue, x574_CarValue, x578_CarValue)
+         end
+         x580_CarValue = x571_CarValue === true ? x572_CarValue : x571_CarValue === false ? x579_CarValue : ifelse(x571_CarValue, x572_CarValue, x579_CarValue)
+        end
+        x581_CarValue = x560_CarValue === true ? x570_CarValue : x560_CarValue === false ? x580_CarValue : ifelse(x560_CarValue, x570_CarValue, x580_CarValue)
+       end
+       if x559_CarValue !== true
+        x582_CarValue = prob_equals(x355_VehicleYear, DistUInt{1}(0))
+        if x582_CarValue !== false
+         x583_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+         if x583_CarValue !== false
+          x584_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 0.0, 1.0])
+         end
+         if x583_CarValue !== true
+          x585_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+          if x585_CarValue !== false
+           x586_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 0.0, 1.0])
+          end
+          if x585_CarValue !== true
+           x587_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+           if x587_CarValue !== false
+            x588_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 0.0, 1.0])
+           end
+           if x587_CarValue !== true
+            x589_CarValue = discrete(DistUInt{3}, [0.0, 0.0, 0.0, 0.0, 1.0])
+           end
+           x590_CarValue = x587_CarValue === true ? x588_CarValue : x587_CarValue === false ? x589_CarValue : ifelse(x587_CarValue, x588_CarValue, x589_CarValue)
+          end
+          x591_CarValue = x585_CarValue === true ? x586_CarValue : x585_CarValue === false ? x590_CarValue : ifelse(x585_CarValue, x586_CarValue, x590_CarValue)
+         end
+         x592_CarValue = x583_CarValue === true ? x584_CarValue : x583_CarValue === false ? x591_CarValue : ifelse(x583_CarValue, x584_CarValue, x591_CarValue)
+        end
+        if x582_CarValue !== true
+         x593_CarValue = prob_equals(x2_Mileage, DistUInt{2}(0))
+         if x593_CarValue !== false
+          x594_CarValue = discrete(DistUInt{3}, [1e-06, 1e-06, 1e-06, 1e-06, 0.999996])
+         end
+         if x593_CarValue !== true
+          x595_CarValue = prob_equals(x2_Mileage, DistUInt{2}(1))
+          if x595_CarValue !== false
+           x596_CarValue = discrete(DistUInt{3}, [1e-06, 1e-06, 1e-06, 1e-06, 0.999996])
+          end
+          if x595_CarValue !== true
+           x597_CarValue = prob_equals(x2_Mileage, DistUInt{2}(2))
+           if x597_CarValue !== false
+            x598_CarValue = discrete(DistUInt{3}, [1e-06, 1e-06, 1e-06, 1e-06, 0.999996])
+           end
+           if x597_CarValue !== true
+            x599_CarValue = discrete(DistUInt{3}, [1e-06, 1e-06, 1e-06, 1e-06, 0.999996])
+           end
+           x600_CarValue = x597_CarValue === true ? x598_CarValue : x597_CarValue === false ? x599_CarValue : ifelse(x597_CarValue, x598_CarValue, x599_CarValue)
+          end
+          x601_CarValue = x595_CarValue === true ? x596_CarValue : x595_CarValue === false ? x600_CarValue : ifelse(x595_CarValue, x596_CarValue, x600_CarValue)
+         end
+         x602_CarValue = x593_CarValue === true ? x594_CarValue : x593_CarValue === false ? x601_CarValue : ifelse(x593_CarValue, x594_CarValue, x601_CarValue)
+        end
+        x603_CarValue = x582_CarValue === true ? x592_CarValue : x582_CarValue === false ? x602_CarValue : ifelse(x582_CarValue, x592_CarValue, x602_CarValue)
+       end
+       x604_CarValue = x559_CarValue === true ? x581_CarValue : x559_CarValue === false ? x603_CarValue : ifelse(x559_CarValue, x581_CarValue, x603_CarValue)
+      end
+      x605_CarValue = x536_CarValue === true ? x558_CarValue : x536_CarValue === false ? x604_CarValue : ifelse(x536_CarValue, x558_CarValue, x604_CarValue)
+     end
+     x606_CarValue = x513_CarValue === true ? x535_CarValue : x513_CarValue === false ? x605_CarValue : ifelse(x513_CarValue, x535_CarValue, x605_CarValue)
+    end
+    x607_CarValue = x490_CarValue === true ? x512_CarValue : x490_CarValue === false ? x606_CarValue : ifelse(x490_CarValue, x512_CarValue, x606_CarValue)
+    x608_Theft = prob_equals(x99_AntiTheft, DistUInt{1}(0))
+    if x608_Theft !== false
+     x609_Theft = prob_equals(x145_HomeBase, DistUInt{2}(0))
+     if x609_Theft !== false
+      x610_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+      if x610_Theft !== false
+       x611_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+      end
+      if x610_Theft !== true
+       x612_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+       if x612_Theft !== false
+        x613_Theft = discrete(DistUInt{1}, [2e-06, 0.999998])
+       end
+       if x612_Theft !== true
+        x614_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+        if x614_Theft !== false
+         x615_Theft = discrete(DistUInt{1}, [3e-06, 0.999997])
+        end
+        if x614_Theft !== true
+         x616_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+         if x616_Theft !== false
+          x617_Theft = discrete(DistUInt{1}, [2e-06, 0.999998])
+         end
+         if x616_Theft !== true
+          x618_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+         end
+         x619_Theft = x616_Theft === true ? x617_Theft : x616_Theft === false ? x618_Theft : ifelse(x616_Theft, x617_Theft, x618_Theft)
+        end
+        x620_Theft = x614_Theft === true ? x615_Theft : x614_Theft === false ? x619_Theft : ifelse(x614_Theft, x615_Theft, x619_Theft)
+       end
+       x621_Theft = x612_Theft === true ? x613_Theft : x612_Theft === false ? x620_Theft : ifelse(x612_Theft, x613_Theft, x620_Theft)
+      end
+      x622_Theft = x610_Theft === true ? x611_Theft : x610_Theft === false ? x621_Theft : ifelse(x610_Theft, x611_Theft, x621_Theft)
+     end
+     if x609_Theft !== true
+      x623_Theft = prob_equals(x145_HomeBase, DistUInt{2}(1))
+      if x623_Theft !== false
+       x624_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+       if x624_Theft !== false
+        x625_Theft = discrete(DistUInt{1}, [0.0005, 0.9995])
+       end
+       if x624_Theft !== true
+        x626_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+        if x626_Theft !== false
+         x627_Theft = discrete(DistUInt{1}, [0.002, 0.998])
+        end
+        if x626_Theft !== true
+         x628_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+         if x628_Theft !== false
+          x629_Theft = discrete(DistUInt{1}, [0.005, 0.995])
+         end
+         if x628_Theft !== true
+          x630_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+          if x630_Theft !== false
+           x631_Theft = discrete(DistUInt{1}, [0.005, 0.995])
+          end
+          if x630_Theft !== true
+           x632_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+          end
+          x633_Theft = x630_Theft === true ? x631_Theft : x630_Theft === false ? x632_Theft : ifelse(x630_Theft, x631_Theft, x632_Theft)
+         end
+         x634_Theft = x628_Theft === true ? x629_Theft : x628_Theft === false ? x633_Theft : ifelse(x628_Theft, x629_Theft, x633_Theft)
+        end
+        x635_Theft = x626_Theft === true ? x627_Theft : x626_Theft === false ? x634_Theft : ifelse(x626_Theft, x627_Theft, x634_Theft)
+       end
+       x636_Theft = x624_Theft === true ? x625_Theft : x624_Theft === false ? x635_Theft : ifelse(x624_Theft, x625_Theft, x635_Theft)
+      end
+      if x623_Theft !== true
+       x637_Theft = prob_equals(x145_HomeBase, DistUInt{2}(2))
+       if x637_Theft !== false
+        x638_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+        if x638_Theft !== false
+         x639_Theft = discrete(DistUInt{1}, [1e-05, 0.99999])
+        end
+        if x638_Theft !== true
+         x640_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+         if x640_Theft !== false
+          x641_Theft = discrete(DistUInt{1}, [0.0001, 0.9999])
+         end
+         if x640_Theft !== true
+          x642_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+          if x642_Theft !== false
+           x643_Theft = discrete(DistUInt{1}, [0.0003, 0.9997])
+          end
+          if x642_Theft !== true
+           x644_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+           if x644_Theft !== false
+            x645_Theft = discrete(DistUInt{1}, [0.0003, 0.9997])
+           end
+           if x644_Theft !== true
+            x646_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+           end
+           x647_Theft = x644_Theft === true ? x645_Theft : x644_Theft === false ? x646_Theft : ifelse(x644_Theft, x645_Theft, x646_Theft)
+          end
+          x648_Theft = x642_Theft === true ? x643_Theft : x642_Theft === false ? x647_Theft : ifelse(x642_Theft, x643_Theft, x647_Theft)
+         end
+         x649_Theft = x640_Theft === true ? x641_Theft : x640_Theft === false ? x648_Theft : ifelse(x640_Theft, x641_Theft, x648_Theft)
+        end
+        x650_Theft = x638_Theft === true ? x639_Theft : x638_Theft === false ? x649_Theft : ifelse(x638_Theft, x639_Theft, x649_Theft)
+       end
+       if x637_Theft !== true
+        x651_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+        if x651_Theft !== false
+         x652_Theft = discrete(DistUInt{1}, [1e-05, 0.99999])
+        end
+        if x651_Theft !== true
+         x653_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+         if x653_Theft !== false
+          x654_Theft = discrete(DistUInt{1}, [2e-05, 0.99998])
+         end
+         if x653_Theft !== true
+          x655_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+          if x655_Theft !== false
+           x656_Theft = discrete(DistUInt{1}, [5e-05, 0.99995])
+          end
+          if x655_Theft !== true
+           x657_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+           if x657_Theft !== false
+            x658_Theft = discrete(DistUInt{1}, [5e-05, 0.99995])
+           end
+           if x657_Theft !== true
+            x659_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+           end
+           x660_Theft = x657_Theft === true ? x658_Theft : x657_Theft === false ? x659_Theft : ifelse(x657_Theft, x658_Theft, x659_Theft)
+          end
+          x661_Theft = x655_Theft === true ? x656_Theft : x655_Theft === false ? x660_Theft : ifelse(x655_Theft, x656_Theft, x660_Theft)
+         end
+         x662_Theft = x653_Theft === true ? x654_Theft : x653_Theft === false ? x661_Theft : ifelse(x653_Theft, x654_Theft, x661_Theft)
+        end
+        x663_Theft = x651_Theft === true ? x652_Theft : x651_Theft === false ? x662_Theft : ifelse(x651_Theft, x652_Theft, x662_Theft)
+       end
+       x664_Theft = x637_Theft === true ? x650_Theft : x637_Theft === false ? x663_Theft : ifelse(x637_Theft, x650_Theft, x663_Theft)
+      end
+      x665_Theft = x623_Theft === true ? x636_Theft : x623_Theft === false ? x664_Theft : ifelse(x623_Theft, x636_Theft, x664_Theft)
+     end
+     x666_Theft = x609_Theft === true ? x622_Theft : x609_Theft === false ? x665_Theft : ifelse(x609_Theft, x622_Theft, x665_Theft)
+    end
+    if x608_Theft !== true
+     x667_Theft = prob_equals(x145_HomeBase, DistUInt{2}(0))
+     if x667_Theft !== false
+      x668_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+      if x668_Theft !== false
+       x669_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+      end
+      if x668_Theft !== true
+       x670_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+       if x670_Theft !== false
+        x671_Theft = discrete(DistUInt{1}, [2e-06, 0.999998])
+       end
+       if x670_Theft !== true
+        x672_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+        if x672_Theft !== false
+         x673_Theft = discrete(DistUInt{1}, [3e-06, 0.999997])
+        end
+        if x672_Theft !== true
+         x674_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+         if x674_Theft !== false
+          x675_Theft = discrete(DistUInt{1}, [2e-06, 0.999998])
+         end
+         if x674_Theft !== true
+          x676_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+         end
+         x677_Theft = x674_Theft === true ? x675_Theft : x674_Theft === false ? x676_Theft : ifelse(x674_Theft, x675_Theft, x676_Theft)
+        end
+        x678_Theft = x672_Theft === true ? x673_Theft : x672_Theft === false ? x677_Theft : ifelse(x672_Theft, x673_Theft, x677_Theft)
+       end
+       x679_Theft = x670_Theft === true ? x671_Theft : x670_Theft === false ? x678_Theft : ifelse(x670_Theft, x671_Theft, x678_Theft)
+      end
+      x680_Theft = x668_Theft === true ? x669_Theft : x668_Theft === false ? x679_Theft : ifelse(x668_Theft, x669_Theft, x679_Theft)
+     end
+     if x667_Theft !== true
+      x681_Theft = prob_equals(x145_HomeBase, DistUInt{2}(1))
+      if x681_Theft !== false
+       x682_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+       if x682_Theft !== false
+        x683_Theft = discrete(DistUInt{1}, [0.001, 0.999])
+       end
+       if x682_Theft !== true
+        x684_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+        if x684_Theft !== false
+         x685_Theft = discrete(DistUInt{1}, [0.005, 0.995])
+        end
+        if x684_Theft !== true
+         x686_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+         if x686_Theft !== false
+          x687_Theft = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x686_Theft !== true
+          x688_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+          if x688_Theft !== false
+           x689_Theft = discrete(DistUInt{1}, [0.01, 0.99])
+          end
+          if x688_Theft !== true
+           x690_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+          end
+          x691_Theft = x688_Theft === true ? x689_Theft : x688_Theft === false ? x690_Theft : ifelse(x688_Theft, x689_Theft, x690_Theft)
+         end
+         x692_Theft = x686_Theft === true ? x687_Theft : x686_Theft === false ? x691_Theft : ifelse(x686_Theft, x687_Theft, x691_Theft)
+        end
+        x693_Theft = x684_Theft === true ? x685_Theft : x684_Theft === false ? x692_Theft : ifelse(x684_Theft, x685_Theft, x692_Theft)
+       end
+       x694_Theft = x682_Theft === true ? x683_Theft : x682_Theft === false ? x693_Theft : ifelse(x682_Theft, x683_Theft, x693_Theft)
+      end
+      if x681_Theft !== true
+       x695_Theft = prob_equals(x145_HomeBase, DistUInt{2}(2))
+       if x695_Theft !== false
+        x696_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+        if x696_Theft !== false
+         x697_Theft = discrete(DistUInt{1}, [1e-05, 0.99999])
+        end
+        if x696_Theft !== true
+         x698_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+         if x698_Theft !== false
+          x699_Theft = discrete(DistUInt{1}, [0.0002, 0.9998])
+         end
+         if x698_Theft !== true
+          x700_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+          if x700_Theft !== false
+           x701_Theft = discrete(DistUInt{1}, [0.0005, 0.9995])
+          end
+          if x700_Theft !== true
+           x702_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+           if x702_Theft !== false
+            x703_Theft = discrete(DistUInt{1}, [0.0005, 0.9995])
+           end
+           if x702_Theft !== true
+            x704_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+           end
+           x705_Theft = x702_Theft === true ? x703_Theft : x702_Theft === false ? x704_Theft : ifelse(x702_Theft, x703_Theft, x704_Theft)
+          end
+          x706_Theft = x700_Theft === true ? x701_Theft : x700_Theft === false ? x705_Theft : ifelse(x700_Theft, x701_Theft, x705_Theft)
+         end
+         x707_Theft = x698_Theft === true ? x699_Theft : x698_Theft === false ? x706_Theft : ifelse(x698_Theft, x699_Theft, x706_Theft)
+        end
+        x708_Theft = x696_Theft === true ? x697_Theft : x696_Theft === false ? x707_Theft : ifelse(x696_Theft, x697_Theft, x707_Theft)
+       end
+       if x695_Theft !== true
+        x709_Theft = prob_equals(x607_CarValue, DistUInt{3}(0))
+        if x709_Theft !== false
+         x710_Theft = discrete(DistUInt{1}, [1e-05, 0.99999])
+        end
+        if x709_Theft !== true
+         x711_Theft = prob_equals(x607_CarValue, DistUInt{3}(1))
+         if x711_Theft !== false
+          x712_Theft = discrete(DistUInt{1}, [0.0001, 0.9999])
+         end
+         if x711_Theft !== true
+          x713_Theft = prob_equals(x607_CarValue, DistUInt{3}(2))
+          if x713_Theft !== false
+           x714_Theft = discrete(DistUInt{1}, [0.0002, 0.9998])
+          end
+          if x713_Theft !== true
+           x715_Theft = prob_equals(x607_CarValue, DistUInt{3}(3))
+           if x715_Theft !== false
+            x716_Theft = discrete(DistUInt{1}, [0.0002, 0.9998])
+           end
+           if x715_Theft !== true
+            x717_Theft = discrete(DistUInt{1}, [1e-06, 0.999999])
+           end
+           x718_Theft = x715_Theft === true ? x716_Theft : x715_Theft === false ? x717_Theft : ifelse(x715_Theft, x716_Theft, x717_Theft)
+          end
+          x719_Theft = x713_Theft === true ? x714_Theft : x713_Theft === false ? x718_Theft : ifelse(x713_Theft, x714_Theft, x718_Theft)
+         end
+         x720_Theft = x711_Theft === true ? x712_Theft : x711_Theft === false ? x719_Theft : ifelse(x711_Theft, x712_Theft, x719_Theft)
+        end
+        x721_Theft = x709_Theft === true ? x710_Theft : x709_Theft === false ? x720_Theft : ifelse(x709_Theft, x710_Theft, x720_Theft)
+       end
+       x722_Theft = x695_Theft === true ? x708_Theft : x695_Theft === false ? x721_Theft : ifelse(x695_Theft, x708_Theft, x721_Theft)
+      end
+      x723_Theft = x681_Theft === true ? x694_Theft : x681_Theft === false ? x722_Theft : ifelse(x681_Theft, x694_Theft, x722_Theft)
+     end
+     x724_Theft = x667_Theft === true ? x680_Theft : x667_Theft === false ? x723_Theft : ifelse(x667_Theft, x680_Theft, x723_Theft)
+    end
+    x725_Theft = x608_Theft === true ? x666_Theft : x608_Theft === false ? x724_Theft : ifelse(x608_Theft, x666_Theft, x724_Theft)
+    x726_Accident = prob_equals(x411_Antilock, DistUInt{1}(0))
+    return (x439_RuggedAuto, x455_Cushioning, x607_CarValue, x725_Theft, x726_Accident,)
+end
+
+function chunk_3(x1_Age, x2_Mileage, x263_DrivQuality, x439_RuggedAuto, x455_Cushioning, x726_Accident)
+    if x726_Accident !== false
+     x727_Accident = prob_equals(x2_Mileage, DistUInt{2}(0))
+     if x727_Accident !== false
+      x728_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+      if x728_Accident !== false
+       x729_Accident = discrete(DistUInt{2}, [0.7, 0.2, 0.07, 0.03])
+      end
+      if x728_Accident !== true
+       x730_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+       if x730_Accident !== false
+        x731_Accident = discrete(DistUInt{2}, [0.99, 0.007, 0.002, 0.001])
+       end
+       if x730_Accident !== true
+        x732_Accident = discrete(DistUInt{2}, [0.999, 0.0007, 0.0002, 0.0001])
+       end
+       x733_Accident = x730_Accident === true ? x731_Accident : x730_Accident === false ? x732_Accident : ifelse(x730_Accident, x731_Accident, x732_Accident)
+      end
+      x734_Accident = x728_Accident === true ? x729_Accident : x728_Accident === false ? x733_Accident : ifelse(x728_Accident, x729_Accident, x733_Accident)
+     end
+     if x727_Accident !== true
+      x735_Accident = prob_equals(x2_Mileage, DistUInt{2}(1))
+      if x735_Accident !== false
+       x736_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+       if x736_Accident !== false
+        x737_Accident = discrete(DistUInt{2}, [0.4, 0.3, 0.2, 0.1])
+       end
+       if x736_Accident !== true
+        x738_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+        if x738_Accident !== false
+         x739_Accident = discrete(DistUInt{2}, [0.98, 0.01, 0.005, 0.005])
+        end
+        if x738_Accident !== true
+         x740_Accident = discrete(DistUInt{2}, [0.995, 0.003, 0.001, 0.001])
+        end
+        x741_Accident = x738_Accident === true ? x739_Accident : x738_Accident === false ? x740_Accident : ifelse(x738_Accident, x739_Accident, x740_Accident)
+       end
+       x742_Accident = x736_Accident === true ? x737_Accident : x736_Accident === false ? x741_Accident : ifelse(x736_Accident, x737_Accident, x741_Accident)
+      end
+      if x735_Accident !== true
+       x743_Accident = prob_equals(x2_Mileage, DistUInt{2}(2))
+       if x743_Accident !== false
+        x744_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+        if x744_Accident !== false
+         x745_Accident = discrete(DistUInt{2}, [0.3, 0.3, 0.2, 0.2])
+        end
+        if x744_Accident !== true
+         x746_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+         if x746_Accident !== false
+          x747_Accident = discrete(DistUInt{2}, [0.97, 0.02, 0.007, 0.003])
+         end
+         if x746_Accident !== true
+          x748_Accident = discrete(DistUInt{2}, [0.99, 0.007, 0.002, 0.001])
+         end
+         x749_Accident = x746_Accident === true ? x747_Accident : x746_Accident === false ? x748_Accident : ifelse(x746_Accident, x747_Accident, x748_Accident)
+        end
+        x750_Accident = x744_Accident === true ? x745_Accident : x744_Accident === false ? x749_Accident : ifelse(x744_Accident, x745_Accident, x749_Accident)
+       end
+       if x743_Accident !== true
+        x751_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+        if x751_Accident !== false
+         x752_Accident = discrete(DistUInt{2}, [0.2, 0.2, 0.3, 0.3])
+        end
+        if x751_Accident !== true
+         x753_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+         if x753_Accident !== false
+          x754_Accident = discrete(DistUInt{2}, [0.95, 0.03, 0.01, 0.01])
+         end
+         if x753_Accident !== true
+          x755_Accident = discrete(DistUInt{2}, [0.985, 0.01, 0.003, 0.002])
+         end
+         x756_Accident = x753_Accident === true ? x754_Accident : x753_Accident === false ? x755_Accident : ifelse(x753_Accident, x754_Accident, x755_Accident)
+        end
+        x757_Accident = x751_Accident === true ? x752_Accident : x751_Accident === false ? x756_Accident : ifelse(x751_Accident, x752_Accident, x756_Accident)
+       end
+       x758_Accident = x743_Accident === true ? x750_Accident : x743_Accident === false ? x757_Accident : ifelse(x743_Accident, x750_Accident, x757_Accident)
+      end
+      x759_Accident = x735_Accident === true ? x742_Accident : x735_Accident === false ? x758_Accident : ifelse(x735_Accident, x742_Accident, x758_Accident)
+     end
+     x760_Accident = x727_Accident === true ? x734_Accident : x727_Accident === false ? x759_Accident : ifelse(x727_Accident, x734_Accident, x759_Accident)
+    end
+    if x726_Accident !== true
+     x761_Accident = prob_equals(x2_Mileage, DistUInt{2}(0))
+     if x761_Accident !== false
+      x762_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+      if x762_Accident !== false
+       x763_Accident = discrete(DistUInt{2}, [0.6, 0.2, 0.1, 0.1])
+      end
+      if x762_Accident !== true
+       x764_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+       if x764_Accident !== false
+        x765_Accident = discrete(DistUInt{2}, [0.98, 0.01, 0.005, 0.005])
+       end
+       if x764_Accident !== true
+        x766_Accident = discrete(DistUInt{2}, [0.995, 0.003, 0.001, 0.001])
+       end
+       x767_Accident = x764_Accident === true ? x765_Accident : x764_Accident === false ? x766_Accident : ifelse(x764_Accident, x765_Accident, x766_Accident)
+      end
+      x768_Accident = x762_Accident === true ? x763_Accident : x762_Accident === false ? x767_Accident : ifelse(x762_Accident, x763_Accident, x767_Accident)
+     end
+     if x761_Accident !== true
+      x769_Accident = prob_equals(x2_Mileage, DistUInt{2}(1))
+      if x769_Accident !== false
+       x770_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+       if x770_Accident !== false
+        x771_Accident = discrete(DistUInt{2}, [0.3, 0.2, 0.2, 0.3])
+       end
+       if x770_Accident !== true
+        x772_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+        if x772_Accident !== false
+         x773_Accident = discrete(DistUInt{2}, [0.96, 0.02, 0.015, 0.005])
+        end
+        if x772_Accident !== true
+         x774_Accident = discrete(DistUInt{2}, [0.99, 0.007, 0.002, 0.001])
+        end
+        x775_Accident = x772_Accident === true ? x773_Accident : x772_Accident === false ? x774_Accident : ifelse(x772_Accident, x773_Accident, x774_Accident)
+       end
+       x776_Accident = x770_Accident === true ? x771_Accident : x770_Accident === false ? x775_Accident : ifelse(x770_Accident, x771_Accident, x775_Accident)
+      end
+      if x769_Accident !== true
+       x777_Accident = prob_equals(x2_Mileage, DistUInt{2}(2))
+       if x777_Accident !== false
+        x778_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+        if x778_Accident !== false
+         x779_Accident = discrete(DistUInt{2}, [0.2, 0.2, 0.2, 0.4])
+        end
+        if x778_Accident !== true
+         x780_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+         if x780_Accident !== false
+          x781_Accident = discrete(DistUInt{2}, [0.95, 0.03, 0.015, 0.005])
+         end
+         if x780_Accident !== true
+          x782_Accident = discrete(DistUInt{2}, [0.98, 0.01, 0.005, 0.005])
+         end
+         x783_Accident = x780_Accident === true ? x781_Accident : x780_Accident === false ? x782_Accident : ifelse(x780_Accident, x781_Accident, x782_Accident)
+        end
+        x784_Accident = x778_Accident === true ? x779_Accident : x778_Accident === false ? x783_Accident : ifelse(x778_Accident, x779_Accident, x783_Accident)
+       end
+       if x777_Accident !== true
+        x785_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(0))
+        if x785_Accident !== false
+         x786_Accident = discrete(DistUInt{2}, [0.1, 0.1, 0.3, 0.5])
+        end
+        if x785_Accident !== true
+         x787_Accident = prob_equals(x263_DrivQuality, DistUInt{2}(1))
+         if x787_Accident !== false
+          x788_Accident = discrete(DistUInt{2}, [0.94, 0.03, 0.02, 0.01])
+         end
+         if x787_Accident !== true
+          x789_Accident = discrete(DistUInt{2}, [0.98, 0.01, 0.007, 0.003])
+         end
+         x790_Accident = x787_Accident === true ? x788_Accident : x787_Accident === false ? x789_Accident : ifelse(x787_Accident, x788_Accident, x789_Accident)
+        end
+        x791_Accident = x785_Accident === true ? x786_Accident : x785_Accident === false ? x790_Accident : ifelse(x785_Accident, x786_Accident, x790_Accident)
+       end
+       x792_Accident = x777_Accident === true ? x784_Accident : x777_Accident === false ? x791_Accident : ifelse(x777_Accident, x784_Accident, x791_Accident)
+      end
+      x793_Accident = x769_Accident === true ? x776_Accident : x769_Accident === false ? x792_Accident : ifelse(x769_Accident, x776_Accident, x792_Accident)
+     end
+     x794_Accident = x761_Accident === true ? x768_Accident : x761_Accident === false ? x793_Accident : ifelse(x761_Accident, x768_Accident, x793_Accident)
+    end
+    x795_Accident = x726_Accident === true ? x760_Accident : x726_Accident === false ? x794_Accident : ifelse(x726_Accident, x760_Accident, x794_Accident)
+    x796_ILiCost = prob_equals(x795_Accident, DistUInt{2}(0))
+    if x796_ILiCost !== false
+     x797_ILiCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+    end
+    if x796_ILiCost !== true
+     x798_ILiCost = prob_equals(x795_Accident, DistUInt{2}(1))
+     if x798_ILiCost !== false
+      x799_ILiCost = discrete(DistUInt{2}, [0.999, 0.000998, 1e-06, 1e-06])
+     end
+     if x798_ILiCost !== true
+      x800_ILiCost = prob_equals(x795_Accident, DistUInt{2}(2))
+      if x800_ILiCost !== false
+       x801_ILiCost = discrete(DistUInt{2}, [0.9, 0.05, 0.03, 0.02])
+      end
+      if x800_ILiCost !== true
+       x802_ILiCost = discrete(DistUInt{2}, [0.8, 0.1, 0.06, 0.04])
+      end
+      x803_ILiCost = x800_ILiCost === true ? x801_ILiCost : x800_ILiCost === false ? x802_ILiCost : ifelse(x800_ILiCost, x801_ILiCost, x802_ILiCost)
+     end
+     x804_ILiCost = x798_ILiCost === true ? x799_ILiCost : x798_ILiCost === false ? x803_ILiCost : ifelse(x798_ILiCost, x799_ILiCost, x803_ILiCost)
+    end
+    x805_ILiCost = x796_ILiCost === true ? x797_ILiCost : x796_ILiCost === false ? x804_ILiCost : ifelse(x796_ILiCost, x797_ILiCost, x804_ILiCost)
+    x806_MedCost = prob_equals(x795_Accident, DistUInt{2}(0))
+    if x806_MedCost !== false
+     x807_MedCost = prob_equals(x1_Age, DistUInt{2}(0))
+     if x807_MedCost !== false
+      x808_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+      if x808_MedCost !== false
+       x809_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+      end
+      if x808_MedCost !== true
+       x810_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+       if x810_MedCost !== false
+        x811_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+       end
+       if x810_MedCost !== true
+        x812_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+        if x812_MedCost !== false
+         x813_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        if x812_MedCost !== true
+         x814_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        x815_MedCost = x812_MedCost === true ? x813_MedCost : x812_MedCost === false ? x814_MedCost : ifelse(x812_MedCost, x813_MedCost, x814_MedCost)
+       end
+       x816_MedCost = x810_MedCost === true ? x811_MedCost : x810_MedCost === false ? x815_MedCost : ifelse(x810_MedCost, x811_MedCost, x815_MedCost)
+      end
+      x817_MedCost = x808_MedCost === true ? x809_MedCost : x808_MedCost === false ? x816_MedCost : ifelse(x808_MedCost, x809_MedCost, x816_MedCost)
+     end
+     if x807_MedCost !== true
+      x818_MedCost = prob_equals(x1_Age, DistUInt{2}(1))
+      if x818_MedCost !== false
+       x819_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+       if x819_MedCost !== false
+        x820_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+       end
+       if x819_MedCost !== true
+        x821_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+        if x821_MedCost !== false
+         x822_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        if x821_MedCost !== true
+         x823_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+         if x823_MedCost !== false
+          x824_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         if x823_MedCost !== true
+          x825_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         x826_MedCost = x823_MedCost === true ? x824_MedCost : x823_MedCost === false ? x825_MedCost : ifelse(x823_MedCost, x824_MedCost, x825_MedCost)
+        end
+        x827_MedCost = x821_MedCost === true ? x822_MedCost : x821_MedCost === false ? x826_MedCost : ifelse(x821_MedCost, x822_MedCost, x826_MedCost)
+       end
+       x828_MedCost = x819_MedCost === true ? x820_MedCost : x819_MedCost === false ? x827_MedCost : ifelse(x819_MedCost, x820_MedCost, x827_MedCost)
+      end
+      if x818_MedCost !== true
+       x829_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+       if x829_MedCost !== false
+        x830_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+       end
+       if x829_MedCost !== true
+        x831_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+        if x831_MedCost !== false
+         x832_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        if x831_MedCost !== true
+         x833_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+         if x833_MedCost !== false
+          x834_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         if x833_MedCost !== true
+          x835_MedCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         x836_MedCost = x833_MedCost === true ? x834_MedCost : x833_MedCost === false ? x835_MedCost : ifelse(x833_MedCost, x834_MedCost, x835_MedCost)
+        end
+        x837_MedCost = x831_MedCost === true ? x832_MedCost : x831_MedCost === false ? x836_MedCost : ifelse(x831_MedCost, x832_MedCost, x836_MedCost)
+       end
+       x838_MedCost = x829_MedCost === true ? x830_MedCost : x829_MedCost === false ? x837_MedCost : ifelse(x829_MedCost, x830_MedCost, x837_MedCost)
+      end
+      x839_MedCost = x818_MedCost === true ? x828_MedCost : x818_MedCost === false ? x838_MedCost : ifelse(x818_MedCost, x828_MedCost, x838_MedCost)
+     end
+     x840_MedCost = x807_MedCost === true ? x817_MedCost : x807_MedCost === false ? x839_MedCost : ifelse(x807_MedCost, x817_MedCost, x839_MedCost)
+    end
+    if x806_MedCost !== true
+     x841_MedCost = prob_equals(x795_Accident, DistUInt{2}(1))
+     if x841_MedCost !== false
+      x842_MedCost = prob_equals(x1_Age, DistUInt{2}(0))
+      if x842_MedCost !== false
+       x843_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+       if x843_MedCost !== false
+        x844_MedCost = discrete(DistUInt{2}, [0.96, 0.03, 0.009, 0.001])
+       end
+       if x843_MedCost !== true
+        x845_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+        if x845_MedCost !== false
+         x846_MedCost = discrete(DistUInt{2}, [0.98, 0.019, 0.0009, 0.0001])
+        end
+        if x845_MedCost !== true
+         x847_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+         if x847_MedCost !== false
+          x848_MedCost = discrete(DistUInt{2}, [0.99, 0.0099, 9e-05, 1e-05])
+         end
+         if x847_MedCost !== true
+          x849_MedCost = discrete(DistUInt{2}, [0.999, 0.00099, 9e-06, 1e-06])
+         end
+         x850_MedCost = x847_MedCost === true ? x848_MedCost : x847_MedCost === false ? x849_MedCost : ifelse(x847_MedCost, x848_MedCost, x849_MedCost)
+        end
+        x851_MedCost = x845_MedCost === true ? x846_MedCost : x845_MedCost === false ? x850_MedCost : ifelse(x845_MedCost, x846_MedCost, x850_MedCost)
+       end
+       x852_MedCost = x843_MedCost === true ? x844_MedCost : x843_MedCost === false ? x851_MedCost : ifelse(x843_MedCost, x844_MedCost, x851_MedCost)
+      end
+      if x842_MedCost !== true
+       x853_MedCost = prob_equals(x1_Age, DistUInt{2}(1))
+       if x853_MedCost !== false
+        x854_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+        if x854_MedCost !== false
+         x855_MedCost = discrete(DistUInt{2}, [0.96, 0.03, 0.009, 0.001])
+        end
+        if x854_MedCost !== true
+         x856_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+         if x856_MedCost !== false
+          x857_MedCost = discrete(DistUInt{2}, [0.98, 0.019, 0.0009, 0.0001])
+         end
+         if x856_MedCost !== true
+          x858_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+          if x858_MedCost !== false
+           x859_MedCost = discrete(DistUInt{2}, [0.99, 0.0099, 9e-05, 1e-05])
+          end
+          if x858_MedCost !== true
+           x860_MedCost = discrete(DistUInt{2}, [0.999, 0.00099, 9e-06, 1e-06])
+          end
+          x861_MedCost = x858_MedCost === true ? x859_MedCost : x858_MedCost === false ? x860_MedCost : ifelse(x858_MedCost, x859_MedCost, x860_MedCost)
+         end
+         x862_MedCost = x856_MedCost === true ? x857_MedCost : x856_MedCost === false ? x861_MedCost : ifelse(x856_MedCost, x857_MedCost, x861_MedCost)
+        end
+        x863_MedCost = x854_MedCost === true ? x855_MedCost : x854_MedCost === false ? x862_MedCost : ifelse(x854_MedCost, x855_MedCost, x862_MedCost)
+       end
+       if x853_MedCost !== true
+        x864_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+        if x864_MedCost !== false
+         x865_MedCost = discrete(DistUInt{2}, [0.9, 0.07, 0.02, 0.01])
+        end
+        if x864_MedCost !== true
+         x866_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+         if x866_MedCost !== false
+          x867_MedCost = discrete(DistUInt{2}, [0.95, 0.04, 0.007, 0.003])
+         end
+         if x866_MedCost !== true
+          x868_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+          if x868_MedCost !== false
+           x869_MedCost = discrete(DistUInt{2}, [0.97, 0.025, 0.003, 0.002])
+          end
+          if x868_MedCost !== true
+           x870_MedCost = discrete(DistUInt{2}, [0.99, 0.007, 0.002, 0.001])
+          end
+          x871_MedCost = x868_MedCost === true ? x869_MedCost : x868_MedCost === false ? x870_MedCost : ifelse(x868_MedCost, x869_MedCost, x870_MedCost)
+         end
+         x872_MedCost = x866_MedCost === true ? x867_MedCost : x866_MedCost === false ? x871_MedCost : ifelse(x866_MedCost, x867_MedCost, x871_MedCost)
+        end
+        x873_MedCost = x864_MedCost === true ? x865_MedCost : x864_MedCost === false ? x872_MedCost : ifelse(x864_MedCost, x865_MedCost, x872_MedCost)
+       end
+       x874_MedCost = x853_MedCost === true ? x863_MedCost : x853_MedCost === false ? x873_MedCost : ifelse(x853_MedCost, x863_MedCost, x873_MedCost)
+      end
+      x875_MedCost = x842_MedCost === true ? x852_MedCost : x842_MedCost === false ? x874_MedCost : ifelse(x842_MedCost, x852_MedCost, x874_MedCost)
+     end
+     if x841_MedCost !== true
+      x876_MedCost = prob_equals(x795_Accident, DistUInt{2}(2))
+      if x876_MedCost !== false
+       x877_MedCost = prob_equals(x1_Age, DistUInt{2}(0))
+       if x877_MedCost !== false
+        x878_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+        if x878_MedCost !== false
+         x879_MedCost = discrete(DistUInt{2}, [0.5, 0.2, 0.2, 0.1])
+        end
+        if x878_MedCost !== true
+         x880_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+         if x880_MedCost !== false
+          x881_MedCost = discrete(DistUInt{2}, [0.8, 0.15, 0.03, 0.02])
+         end
+         if x880_MedCost !== true
+          x882_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+          if x882_MedCost !== false
+           x883_MedCost = discrete(DistUInt{2}, [0.95, 0.02, 0.02, 0.01])
+          end
+          if x882_MedCost !== true
+           x884_MedCost = discrete(DistUInt{2}, [0.99, 0.007, 0.002, 0.001])
+          end
+          x885_MedCost = x882_MedCost === true ? x883_MedCost : x882_MedCost === false ? x884_MedCost : ifelse(x882_MedCost, x883_MedCost, x884_MedCost)
+         end
+         x886_MedCost = x880_MedCost === true ? x881_MedCost : x880_MedCost === false ? x885_MedCost : ifelse(x880_MedCost, x881_MedCost, x885_MedCost)
+        end
+        x887_MedCost = x878_MedCost === true ? x879_MedCost : x878_MedCost === false ? x886_MedCost : ifelse(x878_MedCost, x879_MedCost, x886_MedCost)
+       end
+       if x877_MedCost !== true
+        x888_MedCost = prob_equals(x1_Age, DistUInt{2}(1))
+        if x888_MedCost !== false
+         x889_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+         if x889_MedCost !== false
+          x890_MedCost = discrete(DistUInt{2}, [0.5, 0.2, 0.2, 0.1])
+         end
+         if x889_MedCost !== true
+          x891_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+          if x891_MedCost !== false
+           x892_MedCost = discrete(DistUInt{2}, [0.8, 0.15, 0.03, 0.02])
+          end
+          if x891_MedCost !== true
+           x893_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+           if x893_MedCost !== false
+            x894_MedCost = discrete(DistUInt{2}, [0.95, 0.02, 0.02, 0.01])
+           end
+           if x893_MedCost !== true
+            x895_MedCost = discrete(DistUInt{2}, [0.99, 0.007, 0.002, 0.001])
+           end
+           x896_MedCost = x893_MedCost === true ? x894_MedCost : x893_MedCost === false ? x895_MedCost : ifelse(x893_MedCost, x894_MedCost, x895_MedCost)
+          end
+          x897_MedCost = x891_MedCost === true ? x892_MedCost : x891_MedCost === false ? x896_MedCost : ifelse(x891_MedCost, x892_MedCost, x896_MedCost)
+         end
+         x898_MedCost = x889_MedCost === true ? x890_MedCost : x889_MedCost === false ? x897_MedCost : ifelse(x889_MedCost, x890_MedCost, x897_MedCost)
+        end
+        if x888_MedCost !== true
+         x899_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+         if x899_MedCost !== false
+          x900_MedCost = discrete(DistUInt{2}, [0.3, 0.3, 0.2, 0.2])
+         end
+         if x899_MedCost !== true
+          x901_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+          if x901_MedCost !== false
+           x902_MedCost = discrete(DistUInt{2}, [0.5, 0.2, 0.2, 0.1])
+          end
+          if x901_MedCost !== true
+           x903_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+           if x903_MedCost !== false
+            x904_MedCost = discrete(DistUInt{2}, [0.9, 0.07, 0.02, 0.01])
+           end
+           if x903_MedCost !== true
+            x905_MedCost = discrete(DistUInt{2}, [0.95, 0.03, 0.01, 0.01])
+           end
+           x906_MedCost = x903_MedCost === true ? x904_MedCost : x903_MedCost === false ? x905_MedCost : ifelse(x903_MedCost, x904_MedCost, x905_MedCost)
+          end
+          x907_MedCost = x901_MedCost === true ? x902_MedCost : x901_MedCost === false ? x906_MedCost : ifelse(x901_MedCost, x902_MedCost, x906_MedCost)
+         end
+         x908_MedCost = x899_MedCost === true ? x900_MedCost : x899_MedCost === false ? x907_MedCost : ifelse(x899_MedCost, x900_MedCost, x907_MedCost)
+        end
+        x909_MedCost = x888_MedCost === true ? x898_MedCost : x888_MedCost === false ? x908_MedCost : ifelse(x888_MedCost, x898_MedCost, x908_MedCost)
+       end
+       x910_MedCost = x877_MedCost === true ? x887_MedCost : x877_MedCost === false ? x909_MedCost : ifelse(x877_MedCost, x887_MedCost, x909_MedCost)
+      end
+      if x876_MedCost !== true
+       x911_MedCost = prob_equals(x1_Age, DistUInt{2}(0))
+       if x911_MedCost !== false
+        x912_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+        if x912_MedCost !== false
+         x913_MedCost = discrete(DistUInt{2}, [0.3, 0.3, 0.2, 0.2])
+        end
+        if x912_MedCost !== true
+         x914_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+         if x914_MedCost !== false
+          x915_MedCost = discrete(DistUInt{2}, [0.5, 0.2, 0.2, 0.1])
+         end
+         if x914_MedCost !== true
+          x916_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+          if x916_MedCost !== false
+           x917_MedCost = discrete(DistUInt{2}, [0.9, 0.07, 0.02, 0.01])
+          end
+          if x916_MedCost !== true
+           x918_MedCost = discrete(DistUInt{2}, [0.95, 0.03, 0.01, 0.01])
+          end
+          x919_MedCost = x916_MedCost === true ? x917_MedCost : x916_MedCost === false ? x918_MedCost : ifelse(x916_MedCost, x917_MedCost, x918_MedCost)
+         end
+         x920_MedCost = x914_MedCost === true ? x915_MedCost : x914_MedCost === false ? x919_MedCost : ifelse(x914_MedCost, x915_MedCost, x919_MedCost)
+        end
+        x921_MedCost = x912_MedCost === true ? x913_MedCost : x912_MedCost === false ? x920_MedCost : ifelse(x912_MedCost, x913_MedCost, x920_MedCost)
+       end
+       if x911_MedCost !== true
+        x922_MedCost = prob_equals(x1_Age, DistUInt{2}(1))
+        if x922_MedCost !== false
+         x923_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+         if x923_MedCost !== false
+          x924_MedCost = discrete(DistUInt{2}, [0.3, 0.3, 0.2, 0.2])
+         end
+         if x923_MedCost !== true
+          x925_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+          if x925_MedCost !== false
+           x926_MedCost = discrete(DistUInt{2}, [0.5, 0.2, 0.2, 0.1])
+          end
+          if x925_MedCost !== true
+           x927_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+           if x927_MedCost !== false
+            x928_MedCost = discrete(DistUInt{2}, [0.9, 0.07, 0.02, 0.01])
+           end
+           if x927_MedCost !== true
+            x929_MedCost = discrete(DistUInt{2}, [0.95, 0.03, 0.01, 0.01])
+           end
+           x930_MedCost = x927_MedCost === true ? x928_MedCost : x927_MedCost === false ? x929_MedCost : ifelse(x927_MedCost, x928_MedCost, x929_MedCost)
+          end
+          x931_MedCost = x925_MedCost === true ? x926_MedCost : x925_MedCost === false ? x930_MedCost : ifelse(x925_MedCost, x926_MedCost, x930_MedCost)
+         end
+         x932_MedCost = x923_MedCost === true ? x924_MedCost : x923_MedCost === false ? x931_MedCost : ifelse(x923_MedCost, x924_MedCost, x931_MedCost)
+        end
+        if x922_MedCost !== true
+         x933_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(0))
+         if x933_MedCost !== false
+          x934_MedCost = discrete(DistUInt{2}, [0.2, 0.2, 0.3, 0.3])
+         end
+         if x933_MedCost !== true
+          x935_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(1))
+          if x935_MedCost !== false
+           x936_MedCost = discrete(DistUInt{2}, [0.3, 0.3, 0.2, 0.2])
+          end
+          if x935_MedCost !== true
+           x937_MedCost = prob_equals(x455_Cushioning, DistUInt{2}(2))
+           if x937_MedCost !== false
+            x938_MedCost = discrete(DistUInt{2}, [0.6, 0.3, 0.07, 0.03])
+           end
+           if x937_MedCost !== true
+            x939_MedCost = discrete(DistUInt{2}, [0.9, 0.05, 0.03, 0.02])
+           end
+           x940_MedCost = x937_MedCost === true ? x938_MedCost : x937_MedCost === false ? x939_MedCost : ifelse(x937_MedCost, x938_MedCost, x939_MedCost)
+          end
+          x941_MedCost = x935_MedCost === true ? x936_MedCost : x935_MedCost === false ? x940_MedCost : ifelse(x935_MedCost, x936_MedCost, x940_MedCost)
+         end
+         x942_MedCost = x933_MedCost === true ? x934_MedCost : x933_MedCost === false ? x941_MedCost : ifelse(x933_MedCost, x934_MedCost, x941_MedCost)
+        end
+        x943_MedCost = x922_MedCost === true ? x932_MedCost : x922_MedCost === false ? x942_MedCost : ifelse(x922_MedCost, x932_MedCost, x942_MedCost)
+       end
+       x944_MedCost = x911_MedCost === true ? x921_MedCost : x911_MedCost === false ? x943_MedCost : ifelse(x911_MedCost, x921_MedCost, x943_MedCost)
+      end
+      x945_MedCost = x876_MedCost === true ? x910_MedCost : x876_MedCost === false ? x944_MedCost : ifelse(x876_MedCost, x910_MedCost, x944_MedCost)
+     end
+     x946_MedCost = x841_MedCost === true ? x875_MedCost : x841_MedCost === false ? x945_MedCost : ifelse(x841_MedCost, x875_MedCost, x945_MedCost)
+    end
+    x947_MedCost = x806_MedCost === true ? x840_MedCost : x806_MedCost === false ? x946_MedCost : ifelse(x806_MedCost, x840_MedCost, x946_MedCost)
+    x948_OtherCarCost = prob_equals(x795_Accident, DistUInt{2}(0))
+    if x948_OtherCarCost !== false
+     x949_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+     if x949_OtherCarCost !== false
+      x950_OtherCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+     end
+     if x949_OtherCarCost !== true
+      x951_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+      if x951_OtherCarCost !== false
+       x952_OtherCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+      end
+      if x951_OtherCarCost !== true
+       x953_OtherCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+      end
+      x954_OtherCarCost = x951_OtherCarCost === true ? x952_OtherCarCost : x951_OtherCarCost === false ? x953_OtherCarCost : ifelse(x951_OtherCarCost, x952_OtherCarCost, x953_OtherCarCost)
+     end
+     x955_OtherCarCost = x949_OtherCarCost === true ? x950_OtherCarCost : x949_OtherCarCost === false ? x954_OtherCarCost : ifelse(x949_OtherCarCost, x950_OtherCarCost, x954_OtherCarCost)
+    end
+    if x948_OtherCarCost !== true
+     x956_OtherCarCost = prob_equals(x795_Accident, DistUInt{2}(1))
+     if x956_OtherCarCost !== false
+      x957_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+      if x957_OtherCarCost !== false
+       x958_OtherCarCost = discrete(DistUInt{2}, [0.99, 0.005, 0.00499, 1e-05])
+      end
+      if x957_OtherCarCost !== true
+       x959_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+       if x959_OtherCarCost !== false
+        x960_OtherCarCost = discrete(DistUInt{2}, [0.9799650200349801, 0.009999990000010001, 0.009984990015009987, 4.999995000005001e-05])
+       end
+       if x959_OtherCarCost !== true
+        x961_OtherCarCost = discrete(DistUInt{2}, [0.95, 0.03, 0.01998, 2e-05])
+       end
+       x962_OtherCarCost = x959_OtherCarCost === true ? x960_OtherCarCost : x959_OtherCarCost === false ? x961_OtherCarCost : ifelse(x959_OtherCarCost, x960_OtherCarCost, x961_OtherCarCost)
+      end
+      x963_OtherCarCost = x957_OtherCarCost === true ? x958_OtherCarCost : x957_OtherCarCost === false ? x962_OtherCarCost : ifelse(x957_OtherCarCost, x958_OtherCarCost, x962_OtherCarCost)
+     end
+     if x956_OtherCarCost !== true
+      x964_OtherCarCost = prob_equals(x795_Accident, DistUInt{2}(2))
+      if x964_OtherCarCost !== false
+       x965_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+       if x965_OtherCarCost !== false
+        x966_OtherCarCost = discrete(DistUInt{2}, [0.6, 0.2, 0.19998, 2e-05])
+       end
+       if x965_OtherCarCost !== true
+        x967_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+        if x967_OtherCarCost !== false
+         x968_OtherCarCost = discrete(DistUInt{2}, [0.5, 0.2, 0.29997, 3e-05])
+        end
+        if x967_OtherCarCost !== true
+         x969_OtherCarCost = discrete(DistUInt{2}, [0.4, 0.3, 0.29996, 4e-05])
+        end
+        x970_OtherCarCost = x967_OtherCarCost === true ? x968_OtherCarCost : x967_OtherCarCost === false ? x969_OtherCarCost : ifelse(x967_OtherCarCost, x968_OtherCarCost, x969_OtherCarCost)
+       end
+       x971_OtherCarCost = x965_OtherCarCost === true ? x966_OtherCarCost : x965_OtherCarCost === false ? x970_OtherCarCost : ifelse(x965_OtherCarCost, x966_OtherCarCost, x970_OtherCarCost)
+      end
+      if x964_OtherCarCost !== true
+       x972_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+       if x972_OtherCarCost !== false
+        x973_OtherCarCost = discrete(DistUInt{2}, [0.2, 0.4, 0.39996, 4e-05])
+       end
+       if x972_OtherCarCost !== true
+        x974_OtherCarCost = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+        if x974_OtherCarCost !== false
+         x975_OtherCarCost = discrete(DistUInt{2}, [0.1, 0.5, 0.39994, 6e-05])
+        end
+        if x974_OtherCarCost !== true
+         x976_OtherCarCost = discrete(DistUInt{2}, [0.005, 0.55, 0.4449, 0.0001])
+        end
+        x977_OtherCarCost = x974_OtherCarCost === true ? x975_OtherCarCost : x974_OtherCarCost === false ? x976_OtherCarCost : ifelse(x974_OtherCarCost, x975_OtherCarCost, x976_OtherCarCost)
+       end
+       x978_OtherCarCost = x972_OtherCarCost === true ? x973_OtherCarCost : x972_OtherCarCost === false ? x977_OtherCarCost : ifelse(x972_OtherCarCost, x973_OtherCarCost, x977_OtherCarCost)
+      end
+      x979_OtherCarCost = x964_OtherCarCost === true ? x971_OtherCarCost : x964_OtherCarCost === false ? x978_OtherCarCost : ifelse(x964_OtherCarCost, x971_OtherCarCost, x978_OtherCarCost)
+     end
+     x980_OtherCarCost = x956_OtherCarCost === true ? x963_OtherCarCost : x956_OtherCarCost === false ? x979_OtherCarCost : ifelse(x956_OtherCarCost, x963_OtherCarCost, x979_OtherCarCost)
+    end
+    x981_OtherCarCost = x948_OtherCarCost === true ? x955_OtherCarCost : x948_OtherCarCost === false ? x980_OtherCarCost : ifelse(x948_OtherCarCost, x955_OtherCarCost, x980_OtherCarCost)
+    x982_ThisCarDam = prob_equals(x795_Accident, DistUInt{2}(0))
+    if x982_ThisCarDam !== false
+     x983_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+     if x983_ThisCarDam !== false
+      x984_ThisCarDam = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+     end
+     if x983_ThisCarDam !== true
+      x985_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+      if x985_ThisCarDam !== false
+       x986_ThisCarDam = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+      end
+      if x985_ThisCarDam !== true
+       x987_ThisCarDam = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+      end
+      x988_ThisCarDam = x985_ThisCarDam === true ? x986_ThisCarDam : x985_ThisCarDam === false ? x987_ThisCarDam : ifelse(x985_ThisCarDam, x986_ThisCarDam, x987_ThisCarDam)
+     end
+     x989_ThisCarDam = x983_ThisCarDam === true ? x984_ThisCarDam : x983_ThisCarDam === false ? x988_ThisCarDam : ifelse(x983_ThisCarDam, x984_ThisCarDam, x988_ThisCarDam)
+    end
+    if x982_ThisCarDam !== true
+     x990_ThisCarDam = prob_equals(x795_Accident, DistUInt{2}(1))
+     if x990_ThisCarDam !== false
+      x991_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+      if x991_ThisCarDam !== false
+       x992_ThisCarDam = discrete(DistUInt{2}, [0.001, 0.9, 0.098, 0.001])
+      end
+      if x991_ThisCarDam !== true
+       x993_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+       if x993_ThisCarDam !== false
+        x994_ThisCarDam = discrete(DistUInt{2}, [0.2, 0.75, 0.049999, 1e-06])
+       end
+       if x993_ThisCarDam !== true
+        x995_ThisCarDam = discrete(DistUInt{2}, [0.7000000000000001, 0.29000000000000004, 0.009999000000000001, 1.0000000000000002e-06])
+       end
+       x996_ThisCarDam = x993_ThisCarDam === true ? x994_ThisCarDam : x993_ThisCarDam === false ? x995_ThisCarDam : ifelse(x993_ThisCarDam, x994_ThisCarDam, x995_ThisCarDam)
+      end
+      x997_ThisCarDam = x991_ThisCarDam === true ? x992_ThisCarDam : x991_ThisCarDam === false ? x996_ThisCarDam : ifelse(x991_ThisCarDam, x992_ThisCarDam, x996_ThisCarDam)
+     end
+     if x990_ThisCarDam !== true
+      x998_ThisCarDam = prob_equals(x795_Accident, DistUInt{2}(2))
+      if x998_ThisCarDam !== false
+       x999_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+       if x999_ThisCarDam !== false
+        x1000_ThisCarDam = discrete(DistUInt{2}, [1.0000000000000002e-06, 0.0009990000000000003, 0.7000000000000001, 0.29900000000000004])
+       end
+       if x999_ThisCarDam !== true
+        x1001_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+        if x1001_ThisCarDam !== false
+         x1002_ThisCarDam = discrete(DistUInt{2}, [0.001, 0.099, 0.8, 0.1])
+        end
+        if x1001_ThisCarDam !== true
+         x1003_ThisCarDam = discrete(DistUInt{2}, [0.05, 0.6, 0.3, 0.05])
+        end
+        x1004_ThisCarDam = x1001_ThisCarDam === true ? x1002_ThisCarDam : x1001_ThisCarDam === false ? x1003_ThisCarDam : ifelse(x1001_ThisCarDam, x1002_ThisCarDam, x1003_ThisCarDam)
+       end
+       x1005_ThisCarDam = x999_ThisCarDam === true ? x1000_ThisCarDam : x999_ThisCarDam === false ? x1004_ThisCarDam : ifelse(x999_ThisCarDam, x1000_ThisCarDam, x1004_ThisCarDam)
+      end
+      if x998_ThisCarDam !== true
+       x1006_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(0))
+       if x1006_ThisCarDam !== false
+        x1007_ThisCarDam = discrete(DistUInt{2}, [1e-06, 9e-06, 9e-05, 0.9999])
+       end
+       if x1006_ThisCarDam !== true
+        x1008_ThisCarDam = prob_equals(x439_RuggedAuto, DistUInt{2}(1))
+        if x1008_ThisCarDam !== false
+         x1009_ThisCarDam = discrete(DistUInt{2}, [1e-06, 0.000999, 0.009, 0.99])
+        end
+        if x1008_ThisCarDam !== true
+         x1010_ThisCarDam = discrete(DistUInt{2}, [0.05, 0.2, 0.2, 0.55])
+        end
+        x1011_ThisCarDam = x1008_ThisCarDam === true ? x1009_ThisCarDam : x1008_ThisCarDam === false ? x1010_ThisCarDam : ifelse(x1008_ThisCarDam, x1009_ThisCarDam, x1010_ThisCarDam)
+       end
+       x1012_ThisCarDam = x1006_ThisCarDam === true ? x1007_ThisCarDam : x1006_ThisCarDam === false ? x1011_ThisCarDam : ifelse(x1006_ThisCarDam, x1007_ThisCarDam, x1011_ThisCarDam)
+      end
+      x1013_ThisCarDam = x998_ThisCarDam === true ? x1005_ThisCarDam : x998_ThisCarDam === false ? x1012_ThisCarDam : ifelse(x998_ThisCarDam, x1005_ThisCarDam, x1012_ThisCarDam)
+     end
+     x1014_ThisCarDam = x990_ThisCarDam === true ? x997_ThisCarDam : x990_ThisCarDam === false ? x1013_ThisCarDam : ifelse(x990_ThisCarDam, x997_ThisCarDam, x1013_ThisCarDam)
+    end
+    x1015_ThisCarDam = x982_ThisCarDam === true ? x989_ThisCarDam : x982_ThisCarDam === false ? x1014_ThisCarDam : ifelse(x982_ThisCarDam, x989_ThisCarDam, x1014_ThisCarDam)
+    x1016_ThisCarCost = prob_equals(x1015_ThisCarDam, DistUInt{2}(0))
+    return (x981_OtherCarCost, x1015_ThisCarDam, x1016_ThisCarCost,)
+end
+
+function chunk_4(x607_CarValue, x725_Theft, x981_OtherCarCost, x1015_ThisCarDam, x1016_ThisCarCost)
+    if x1016_ThisCarCost !== false
+     x1017_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(0))
+     if x1017_ThisCarCost !== false
+      x1018_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+      if x1018_ThisCarCost !== false
+       x1019_ThisCarCost = discrete(DistUInt{2}, [0.2, 0.8, 0.0, 0.0])
+      end
+      if x1018_ThisCarCost !== true
+       x1020_ThisCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+      end
+      x1021_ThisCarCost = x1018_ThisCarCost === true ? x1019_ThisCarCost : x1018_ThisCarCost === false ? x1020_ThisCarCost : ifelse(x1018_ThisCarCost, x1019_ThisCarCost, x1020_ThisCarCost)
+     end
+     if x1017_ThisCarCost !== true
+      x1022_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(1))
+      if x1022_ThisCarCost !== false
+       x1023_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+       if x1023_ThisCarCost !== false
+        x1024_ThisCarCost = discrete(DistUInt{2}, [0.05, 0.95, 0.0, 0.0])
+       end
+       if x1023_ThisCarCost !== true
+        x1025_ThisCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+       end
+       x1026_ThisCarCost = x1023_ThisCarCost === true ? x1024_ThisCarCost : x1023_ThisCarCost === false ? x1025_ThisCarCost : ifelse(x1023_ThisCarCost, x1024_ThisCarCost, x1025_ThisCarCost)
+      end
+      if x1022_ThisCarCost !== true
+       x1027_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(2))
+       if x1027_ThisCarCost !== false
+        x1028_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+        if x1028_ThisCarCost !== false
+         x1029_ThisCarCost = discrete(DistUInt{2}, [0.04, 0.01, 0.95, 0.0])
+        end
+        if x1028_ThisCarCost !== true
+         x1030_ThisCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        x1031_ThisCarCost = x1028_ThisCarCost === true ? x1029_ThisCarCost : x1028_ThisCarCost === false ? x1030_ThisCarCost : ifelse(x1028_ThisCarCost, x1029_ThisCarCost, x1030_ThisCarCost)
+       end
+       if x1027_ThisCarCost !== true
+        x1032_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(3))
+        if x1032_ThisCarCost !== false
+         x1033_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+         if x1033_ThisCarCost !== false
+          x1034_ThisCarCost = discrete(DistUInt{2}, [0.04, 0.01, 0.95, 0.0])
+         end
+         if x1033_ThisCarCost !== true
+          x1035_ThisCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         x1036_ThisCarCost = x1033_ThisCarCost === true ? x1034_ThisCarCost : x1033_ThisCarCost === false ? x1035_ThisCarCost : ifelse(x1033_ThisCarCost, x1034_ThisCarCost, x1035_ThisCarCost)
+        end
+        if x1032_ThisCarCost !== true
+         x1037_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+         if x1037_ThisCarCost !== false
+          x1038_ThisCarCost = discrete(DistUInt{2}, [0.04, 0.01, 0.2, 0.75])
+         end
+         if x1037_ThisCarCost !== true
+          x1039_ThisCarCost = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         x1040_ThisCarCost = x1037_ThisCarCost === true ? x1038_ThisCarCost : x1037_ThisCarCost === false ? x1039_ThisCarCost : ifelse(x1037_ThisCarCost, x1038_ThisCarCost, x1039_ThisCarCost)
+        end
+        x1041_ThisCarCost = x1032_ThisCarCost === true ? x1036_ThisCarCost : x1032_ThisCarCost === false ? x1040_ThisCarCost : ifelse(x1032_ThisCarCost, x1036_ThisCarCost, x1040_ThisCarCost)
+       end
+       x1042_ThisCarCost = x1027_ThisCarCost === true ? x1031_ThisCarCost : x1027_ThisCarCost === false ? x1041_ThisCarCost : ifelse(x1027_ThisCarCost, x1031_ThisCarCost, x1041_ThisCarCost)
+      end
+      x1043_ThisCarCost = x1022_ThisCarCost === true ? x1026_ThisCarCost : x1022_ThisCarCost === false ? x1042_ThisCarCost : ifelse(x1022_ThisCarCost, x1026_ThisCarCost, x1042_ThisCarCost)
+     end
+     x1044_ThisCarCost = x1017_ThisCarCost === true ? x1021_ThisCarCost : x1017_ThisCarCost === false ? x1043_ThisCarCost : ifelse(x1017_ThisCarCost, x1021_ThisCarCost, x1043_ThisCarCost)
+    end
+    if x1016_ThisCarCost !== true
+     x1045_ThisCarCost = prob_equals(x1015_ThisCarDam, DistUInt{2}(1))
+     if x1045_ThisCarCost !== false
+      x1046_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(0))
+      if x1046_ThisCarCost !== false
+       x1047_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+       if x1047_ThisCarCost !== false
+        x1048_ThisCarCost = discrete(DistUInt{2}, [0.15, 0.85, 0.0, 0.0])
+       end
+       if x1047_ThisCarCost !== true
+        x1049_ThisCarCost = discrete(DistUInt{2}, [0.95, 0.05, 0.0, 0.0])
+       end
+       x1050_ThisCarCost = x1047_ThisCarCost === true ? x1048_ThisCarCost : x1047_ThisCarCost === false ? x1049_ThisCarCost : ifelse(x1047_ThisCarCost, x1048_ThisCarCost, x1049_ThisCarCost)
+      end
+      if x1046_ThisCarCost !== true
+       x1051_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(1))
+       if x1051_ThisCarCost !== false
+        x1052_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+        if x1052_ThisCarCost !== false
+         x1053_ThisCarCost = discrete(DistUInt{2}, [0.03, 0.97, 0.0, 0.0])
+        end
+        if x1052_ThisCarCost !== true
+         x1054_ThisCarCost = discrete(DistUInt{2}, [0.95, 0.05, 0.0, 0.0])
+        end
+        x1055_ThisCarCost = x1052_ThisCarCost === true ? x1053_ThisCarCost : x1052_ThisCarCost === false ? x1054_ThisCarCost : ifelse(x1052_ThisCarCost, x1053_ThisCarCost, x1054_ThisCarCost)
+       end
+       if x1051_ThisCarCost !== true
+        x1056_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(2))
+        if x1056_ThisCarCost !== false
+         x1057_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+         if x1057_ThisCarCost !== false
+          x1058_ThisCarCost = discrete(DistUInt{2}, [0.03, 0.02, 0.95, 0.0])
+         end
+         if x1057_ThisCarCost !== true
+          x1059_ThisCarCost = discrete(DistUInt{2}, [0.99, 0.01, 0.0, 0.0])
+         end
+         x1060_ThisCarCost = x1057_ThisCarCost === true ? x1058_ThisCarCost : x1057_ThisCarCost === false ? x1059_ThisCarCost : ifelse(x1057_ThisCarCost, x1058_ThisCarCost, x1059_ThisCarCost)
+        end
+        if x1056_ThisCarCost !== true
+         x1061_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(3))
+         if x1061_ThisCarCost !== false
+          x1062_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+          if x1062_ThisCarCost !== false
+           x1063_ThisCarCost = discrete(DistUInt{2}, [0.03, 0.02, 0.95, 0.0])
+          end
+          if x1062_ThisCarCost !== true
+           x1064_ThisCarCost = discrete(DistUInt{2}, [0.99, 0.01, 0.0, 0.0])
+          end
+          x1065_ThisCarCost = x1062_ThisCarCost === true ? x1063_ThisCarCost : x1062_ThisCarCost === false ? x1064_ThisCarCost : ifelse(x1062_ThisCarCost, x1063_ThisCarCost, x1064_ThisCarCost)
+         end
+         if x1061_ThisCarCost !== true
+          x1066_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+          if x1066_ThisCarCost !== false
+           x1067_ThisCarCost = discrete(DistUInt{2}, [0.02, 0.03, 0.25, 0.7])
+          end
+          if x1066_ThisCarCost !== true
+           x1068_ThisCarCost = discrete(DistUInt{2}, [0.98, 0.01, 0.01, 0.0])
+          end
+          x1069_ThisCarCost = x1066_ThisCarCost === true ? x1067_ThisCarCost : x1066_ThisCarCost === false ? x1068_ThisCarCost : ifelse(x1066_ThisCarCost, x1067_ThisCarCost, x1068_ThisCarCost)
+         end
+         x1070_ThisCarCost = x1061_ThisCarCost === true ? x1065_ThisCarCost : x1061_ThisCarCost === false ? x1069_ThisCarCost : ifelse(x1061_ThisCarCost, x1065_ThisCarCost, x1069_ThisCarCost)
+        end
+        x1071_ThisCarCost = x1056_ThisCarCost === true ? x1060_ThisCarCost : x1056_ThisCarCost === false ? x1070_ThisCarCost : ifelse(x1056_ThisCarCost, x1060_ThisCarCost, x1070_ThisCarCost)
+       end
+       x1072_ThisCarCost = x1051_ThisCarCost === true ? x1055_ThisCarCost : x1051_ThisCarCost === false ? x1071_ThisCarCost : ifelse(x1051_ThisCarCost, x1055_ThisCarCost, x1071_ThisCarCost)
+      end
+      x1073_ThisCarCost = x1046_ThisCarCost === true ? x1050_ThisCarCost : x1046_ThisCarCost === false ? x1072_ThisCarCost : ifelse(x1046_ThisCarCost, x1050_ThisCarCost, x1072_ThisCarCost)
+     end
+     if x1045_ThisCarCost !== true
+      x1074_ThisCarCost = prob_equals(x1015_ThisCarDam, DistUInt{2}(2))
+      if x1074_ThisCarCost !== false
+       x1075_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(0))
+       if x1075_ThisCarCost !== false
+        x1076_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+        if x1076_ThisCarCost !== false
+         x1077_ThisCarCost = discrete(DistUInt{2}, [0.05, 0.95, 0.0, 0.0])
+        end
+        if x1076_ThisCarCost !== true
+         x1078_ThisCarCost = discrete(DistUInt{2}, [0.25, 0.75, 0.0, 0.0])
+        end
+        x1079_ThisCarCost = x1076_ThisCarCost === true ? x1077_ThisCarCost : x1076_ThisCarCost === false ? x1078_ThisCarCost : ifelse(x1076_ThisCarCost, x1077_ThisCarCost, x1078_ThisCarCost)
+       end
+       if x1075_ThisCarCost !== true
+        x1080_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(1))
+        if x1080_ThisCarCost !== false
+         x1081_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+         if x1081_ThisCarCost !== false
+          x1082_ThisCarCost = discrete(DistUInt{2}, [0.01, 0.99, 0.0, 0.0])
+         end
+         if x1081_ThisCarCost !== true
+          x1083_ThisCarCost = discrete(DistUInt{2}, [0.15, 0.85, 0.0, 0.0])
+         end
+         x1084_ThisCarCost = x1081_ThisCarCost === true ? x1082_ThisCarCost : x1081_ThisCarCost === false ? x1083_ThisCarCost : ifelse(x1081_ThisCarCost, x1082_ThisCarCost, x1083_ThisCarCost)
+        end
+        if x1080_ThisCarCost !== true
+         x1085_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(2))
+         if x1085_ThisCarCost !== false
+          x1086_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+          if x1086_ThisCarCost !== false
+           x1087_ThisCarCost = discrete(DistUInt{2}, [0.001, 0.001, 0.998, 0.0])
+          end
+          if x1086_ThisCarCost !== true
+           x1088_ThisCarCost = discrete(DistUInt{2}, [0.01, 0.01, 0.98, 0.0])
+          end
+          x1089_ThisCarCost = x1086_ThisCarCost === true ? x1087_ThisCarCost : x1086_ThisCarCost === false ? x1088_ThisCarCost : ifelse(x1086_ThisCarCost, x1087_ThisCarCost, x1088_ThisCarCost)
+         end
+         if x1085_ThisCarCost !== true
+          x1090_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(3))
+          if x1090_ThisCarCost !== false
+           x1091_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+           if x1091_ThisCarCost !== false
+            x1092_ThisCarCost = discrete(DistUInt{2}, [0.001, 0.001, 0.998, 0.0])
+           end
+           if x1091_ThisCarCost !== true
+            x1093_ThisCarCost = discrete(DistUInt{2}, [0.005, 0.005, 0.99, 0.0])
+           end
+           x1094_ThisCarCost = x1091_ThisCarCost === true ? x1092_ThisCarCost : x1091_ThisCarCost === false ? x1093_ThisCarCost : ifelse(x1091_ThisCarCost, x1092_ThisCarCost, x1093_ThisCarCost)
+          end
+          if x1090_ThisCarCost !== true
+           x1095_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+           if x1095_ThisCarCost !== false
+            x1096_ThisCarCost = discrete(DistUInt{2}, [0.001, 0.001, 0.018, 0.98])
+           end
+           if x1095_ThisCarCost !== true
+            x1097_ThisCarCost = discrete(DistUInt{2}, [0.003, 0.003, 0.044, 0.95])
+           end
+           x1098_ThisCarCost = x1095_ThisCarCost === true ? x1096_ThisCarCost : x1095_ThisCarCost === false ? x1097_ThisCarCost : ifelse(x1095_ThisCarCost, x1096_ThisCarCost, x1097_ThisCarCost)
+          end
+          x1099_ThisCarCost = x1090_ThisCarCost === true ? x1094_ThisCarCost : x1090_ThisCarCost === false ? x1098_ThisCarCost : ifelse(x1090_ThisCarCost, x1094_ThisCarCost, x1098_ThisCarCost)
+         end
+         x1100_ThisCarCost = x1085_ThisCarCost === true ? x1089_ThisCarCost : x1085_ThisCarCost === false ? x1099_ThisCarCost : ifelse(x1085_ThisCarCost, x1089_ThisCarCost, x1099_ThisCarCost)
+        end
+        x1101_ThisCarCost = x1080_ThisCarCost === true ? x1084_ThisCarCost : x1080_ThisCarCost === false ? x1100_ThisCarCost : ifelse(x1080_ThisCarCost, x1084_ThisCarCost, x1100_ThisCarCost)
+       end
+       x1102_ThisCarCost = x1075_ThisCarCost === true ? x1079_ThisCarCost : x1075_ThisCarCost === false ? x1101_ThisCarCost : ifelse(x1075_ThisCarCost, x1079_ThisCarCost, x1101_ThisCarCost)
+      end
+      if x1074_ThisCarCost !== true
+       x1103_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(0))
+       if x1103_ThisCarCost !== false
+        x1104_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+        if x1104_ThisCarCost !== false
+         x1105_ThisCarCost = discrete(DistUInt{2}, [0.03, 0.97, 0.0, 0.0])
+        end
+        if x1104_ThisCarCost !== true
+         x1106_ThisCarCost = discrete(DistUInt{2}, [0.05, 0.95, 0.0, 0.0])
+        end
+        x1107_ThisCarCost = x1104_ThisCarCost === true ? x1105_ThisCarCost : x1104_ThisCarCost === false ? x1106_ThisCarCost : ifelse(x1104_ThisCarCost, x1105_ThisCarCost, x1106_ThisCarCost)
+       end
+       if x1103_ThisCarCost !== true
+        x1108_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(1))
+        if x1108_ThisCarCost !== false
+         x1109_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+         if x1109_ThisCarCost !== false
+          x1110_ThisCarCost = discrete(DistUInt{2}, [1e-06, 0.999999, 0.0, 0.0])
+         end
+         if x1109_ThisCarCost !== true
+          x1111_ThisCarCost = discrete(DistUInt{2}, [0.01, 0.99, 0.0, 0.0])
+         end
+         x1112_ThisCarCost = x1109_ThisCarCost === true ? x1110_ThisCarCost : x1109_ThisCarCost === false ? x1111_ThisCarCost : ifelse(x1109_ThisCarCost, x1110_ThisCarCost, x1111_ThisCarCost)
+        end
+        if x1108_ThisCarCost !== true
+         x1113_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(2))
+         if x1113_ThisCarCost !== false
+          x1114_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+          if x1114_ThisCarCost !== false
+           x1115_ThisCarCost = discrete(DistUInt{2}, [1e-06, 1e-06, 0.999998, 0.0])
+          end
+          if x1114_ThisCarCost !== true
+           x1116_ThisCarCost = discrete(DistUInt{2}, [0.005, 0.005, 0.99, 0.0])
+          end
+          x1117_ThisCarCost = x1114_ThisCarCost === true ? x1115_ThisCarCost : x1114_ThisCarCost === false ? x1116_ThisCarCost : ifelse(x1114_ThisCarCost, x1115_ThisCarCost, x1116_ThisCarCost)
+         end
+         if x1113_ThisCarCost !== true
+          x1118_ThisCarCost = prob_equals(x607_CarValue, DistUInt{3}(3))
+          if x1118_ThisCarCost !== false
+           x1119_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+           if x1119_ThisCarCost !== false
+            x1120_ThisCarCost = discrete(DistUInt{2}, [1e-06, 1e-06, 0.999998, 0.0])
+           end
+           if x1119_ThisCarCost !== true
+            x1121_ThisCarCost = discrete(DistUInt{2}, [0.001, 0.001, 0.998, 0.0])
+           end
+           x1122_ThisCarCost = x1119_ThisCarCost === true ? x1120_ThisCarCost : x1119_ThisCarCost === false ? x1121_ThisCarCost : ifelse(x1119_ThisCarCost, x1120_ThisCarCost, x1121_ThisCarCost)
+          end
+          if x1118_ThisCarCost !== true
+           x1123_ThisCarCost = prob_equals(x725_Theft, DistUInt{1}(0))
+           if x1123_ThisCarCost !== false
+            x1124_ThisCarCost = discrete(DistUInt{2}, [1e-06, 1e-06, 0.009998, 0.99])
+           end
+           if x1123_ThisCarCost !== true
+            x1125_ThisCarCost = discrete(DistUInt{2}, [1e-06, 1e-06, 0.029998, 0.97])
+           end
+           x1126_ThisCarCost = x1123_ThisCarCost === true ? x1124_ThisCarCost : x1123_ThisCarCost === false ? x1125_ThisCarCost : ifelse(x1123_ThisCarCost, x1124_ThisCarCost, x1125_ThisCarCost)
+          end
+          x1127_ThisCarCost = x1118_ThisCarCost === true ? x1122_ThisCarCost : x1118_ThisCarCost === false ? x1126_ThisCarCost : ifelse(x1118_ThisCarCost, x1122_ThisCarCost, x1126_ThisCarCost)
+         end
+         x1128_ThisCarCost = x1113_ThisCarCost === true ? x1117_ThisCarCost : x1113_ThisCarCost === false ? x1127_ThisCarCost : ifelse(x1113_ThisCarCost, x1117_ThisCarCost, x1127_ThisCarCost)
+        end
+        x1129_ThisCarCost = x1108_ThisCarCost === true ? x1112_ThisCarCost : x1108_ThisCarCost === false ? x1128_ThisCarCost : ifelse(x1108_ThisCarCost, x1112_ThisCarCost, x1128_ThisCarCost)
+       end
+       x1130_ThisCarCost = x1103_ThisCarCost === true ? x1107_ThisCarCost : x1103_ThisCarCost === false ? x1129_ThisCarCost : ifelse(x1103_ThisCarCost, x1107_ThisCarCost, x1129_ThisCarCost)
+      end
+      x1131_ThisCarCost = x1074_ThisCarCost === true ? x1102_ThisCarCost : x1074_ThisCarCost === false ? x1130_ThisCarCost : ifelse(x1074_ThisCarCost, x1102_ThisCarCost, x1130_ThisCarCost)
+     end
+     x1132_ThisCarCost = x1045_ThisCarCost === true ? x1073_ThisCarCost : x1045_ThisCarCost === false ? x1131_ThisCarCost : ifelse(x1045_ThisCarCost, x1073_ThisCarCost, x1131_ThisCarCost)
+    end
+    x1133_ThisCarCost = x1016_ThisCarCost === true ? x1044_ThisCarCost : x1016_ThisCarCost === false ? x1132_ThisCarCost : ifelse(x1016_ThisCarCost, x1044_ThisCarCost, x1132_ThisCarCost)
+    x1134_PropCost = prob_equals(x981_OtherCarCost, DistUInt{2}(0))
+    if x1134_PropCost !== false
+     x1135_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(0))
+     if x1135_PropCost !== false
+      x1136_PropCost = discrete(DistUInt{2}, [0.7, 0.3, 0.0, 0.0])
+     end
+     if x1135_PropCost !== true
+      x1137_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(1))
+      if x1137_PropCost !== false
+       x1138_PropCost = discrete(DistUInt{2}, [0.0, 0.95, 0.05, 0.0])
+      end
+      if x1137_PropCost !== true
+       x1139_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(2))
+       if x1139_PropCost !== false
+        x1140_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.98, 0.02])
+       end
+       if x1139_PropCost !== true
+        x1141_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+       end
+       x1142_PropCost = x1139_PropCost === true ? x1140_PropCost : x1139_PropCost === false ? x1141_PropCost : ifelse(x1139_PropCost, x1140_PropCost, x1141_PropCost)
+      end
+      x1143_PropCost = x1137_PropCost === true ? x1138_PropCost : x1137_PropCost === false ? x1142_PropCost : ifelse(x1137_PropCost, x1138_PropCost, x1142_PropCost)
+     end
+     x1144_PropCost = x1135_PropCost === true ? x1136_PropCost : x1135_PropCost === false ? x1143_PropCost : ifelse(x1135_PropCost, x1136_PropCost, x1143_PropCost)
+    end
+    if x1134_PropCost !== true
+     x1145_PropCost = prob_equals(x981_OtherCarCost, DistUInt{2}(1))
+     if x1145_PropCost !== false
+      x1146_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(0))
+      if x1146_PropCost !== false
+       x1147_PropCost = discrete(DistUInt{2}, [0.0, 0.95, 0.05, 0.0])
+      end
+      if x1146_PropCost !== true
+       x1148_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(1))
+       if x1148_PropCost !== false
+        x1149_PropCost = discrete(DistUInt{2}, [0.0, 0.6, 0.4, 0.0])
+       end
+       if x1148_PropCost !== true
+        x1150_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(2))
+        if x1150_PropCost !== false
+         x1151_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.95, 0.05])
+        end
+        if x1150_PropCost !== true
+         x1152_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+        end
+        x1153_PropCost = x1150_PropCost === true ? x1151_PropCost : x1150_PropCost === false ? x1152_PropCost : ifelse(x1150_PropCost, x1151_PropCost, x1152_PropCost)
+       end
+       x1154_PropCost = x1148_PropCost === true ? x1149_PropCost : x1148_PropCost === false ? x1153_PropCost : ifelse(x1148_PropCost, x1149_PropCost, x1153_PropCost)
+      end
+      x1155_PropCost = x1146_PropCost === true ? x1147_PropCost : x1146_PropCost === false ? x1154_PropCost : ifelse(x1146_PropCost, x1147_PropCost, x1154_PropCost)
+     end
+     if x1145_PropCost !== true
+      x1156_PropCost = prob_equals(x981_OtherCarCost, DistUInt{2}(2))
+      if x1156_PropCost !== false
+       x1157_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(0))
+       if x1157_PropCost !== false
+        x1158_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.98, 0.02])
+       end
+       if x1157_PropCost !== true
+        x1159_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(1))
+        if x1159_PropCost !== false
+         x1160_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.8, 0.2])
+        end
+        if x1159_PropCost !== true
+         x1161_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(2))
+         if x1161_PropCost !== false
+          x1162_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.6, 0.4])
+         end
+         if x1161_PropCost !== true
+          x1163_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+         end
+         x1164_PropCost = x1161_PropCost === true ? x1162_PropCost : x1161_PropCost === false ? x1163_PropCost : ifelse(x1161_PropCost, x1162_PropCost, x1163_PropCost)
+        end
+        x1165_PropCost = x1159_PropCost === true ? x1160_PropCost : x1159_PropCost === false ? x1164_PropCost : ifelse(x1159_PropCost, x1160_PropCost, x1164_PropCost)
+       end
+       x1166_PropCost = x1157_PropCost === true ? x1158_PropCost : x1157_PropCost === false ? x1165_PropCost : ifelse(x1157_PropCost, x1158_PropCost, x1165_PropCost)
+      end
+      if x1156_PropCost !== true
+       x1167_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(0))
+       if x1167_PropCost !== false
+        x1168_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+       end
+       if x1167_PropCost !== true
+        x1169_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(1))
+        if x1169_PropCost !== false
+         x1170_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+        end
+        if x1169_PropCost !== true
+         x1171_PropCost = prob_equals(x1133_ThisCarCost, DistUInt{2}(2))
+         if x1171_PropCost !== false
+          x1172_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+         end
+         if x1171_PropCost !== true
+          x1173_PropCost = discrete(DistUInt{2}, [0.0, 0.0, 0.0, 1.0])
+         end
+         x1174_PropCost = x1171_PropCost === true ? x1172_PropCost : x1171_PropCost === false ? x1173_PropCost : ifelse(x1171_PropCost, x1172_PropCost, x1173_PropCost)
+        end
+        x1175_PropCost = x1169_PropCost === true ? x1170_PropCost : x1169_PropCost === false ? x1174_PropCost : ifelse(x1169_PropCost, x1170_PropCost, x1174_PropCost)
+       end
+       x1176_PropCost = x1167_PropCost === true ? x1168_PropCost : x1167_PropCost === false ? x1175_PropCost : ifelse(x1167_PropCost, x1168_PropCost, x1175_PropCost)
+      end
+      x1177_PropCost = x1156_PropCost === true ? x1166_PropCost : x1156_PropCost === false ? x1176_PropCost : ifelse(x1156_PropCost, x1166_PropCost, x1176_PropCost)
+     end
+     x1178_PropCost = x1145_PropCost === true ? x1155_PropCost : x1145_PropCost === false ? x1177_PropCost : ifelse(x1145_PropCost, x1155_PropCost, x1177_PropCost)
+    end
+    x1179_PropCost = x1134_PropCost === true ? x1144_PropCost : x1134_PropCost === false ? x1178_PropCost : ifelse(x1134_PropCost, x1144_PropCost, x1178_PropCost)
+    return x1179_PropCost
+end
+
+function dice_main()
+    (x1_Age, x2_Mileage, x9_SocioEcon, x99_AntiTheft, x145_HomeBase, x263_DrivQuality, x309_MakeModel, x355_VehicleYear, x383_Airbag, x384_Antilock,) = chunk_1()
+    (x439_RuggedAuto, x455_Cushioning, x607_CarValue, x725_Theft, x726_Accident,) = chunk_2(x1_Age, x2_Mileage, x9_SocioEcon, x99_AntiTheft, x145_HomeBase, x309_MakeModel, x355_VehicleYear, x383_Airbag, x384_Antilock)
+    (x981_OtherCarCost, x1015_ThisCarDam, x1016_ThisCarCost,) = chunk_3(x1_Age, x2_Mileage, x263_DrivQuality, x439_RuggedAuto, x455_Cushioning, x726_Accident)
+    x1179_PropCost = chunk_4(x607_CarValue, x725_Theft, x981_OtherCarCost, x1015_ThisCarDam, x1016_ThisCarCost)
+    return x1179_PropCost
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println("alea ", k, " true ", d[true])
+        println("alea ", k, " false ", d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println("alea ", k, " ", v, " ", d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println("alea_seconds ", stats.time)
+    println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 << 30)
+schedule(task)
+wait(task)
+end

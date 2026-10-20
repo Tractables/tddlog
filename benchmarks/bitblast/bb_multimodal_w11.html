@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_multimodal_w11 · tddlog results</title>
+<meta name="description" content="bb_multimodal_w11, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_multimodal_w11</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/bitblast/multimodal.jl</code> with <code>bits=4</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num fail" title="out of memory">memory</td><td class="num">31.2</td><td class="num">159</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set bits=4 data/alea/bitblast/multimodal.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/bitblast/multimodal.jl</code><span>1 364 bytes, 31 lines</span><span class="sha" title="SHA-256">sha256 f1c647748aca4e2f20f1d223f787ef98f3acb8cee49af894db3102e5761166ad</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/bitblast/multimodal.jl</code>.</p><pre># The Yao-Vehtari-Gelman model (bit-blasting paper, Garg, Holtzen, Van den
+# Broeck, Millstein, PLDI 2024, Section 2.2, Figures 3 and 4): two means
+# uniform on [-16, 16], nine observations, each normal around the first
+# mean with probability 2/3 and around the second otherwise; the posterior
+# of the first mean is bimodal. The paper plots that posterior at 6 bits
+# after the binary point and 256 pieces; here the program is queried for
+# its expectation. From Tractables/Alea.jl
+# hybrid/benchmarks/multimodal/multimodal.jl at cf5e5b8 (Apache License
+# 2.0): the distributions are built inside the block, the plotting and
+# results file are dropped, and the program is run with `ignore_errors`,
+# as the source&#x27;s `pr` is; the body is otherwise unchanged.
+using Alea, Distributions
+
+const QUERY = :expectation
+const IGNORE_ERRORS = true
+const bits = 6
+const pieces = 256
+const DFiP = DistFix{7 + bits, bits}
+const datapt = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, -5.0, -5.0, -5.0]
+
+model() = @alea begin
+    mu1 = uniform(DFiP, -16.0, 16.0)
+    mu2 = uniform(DFiP, -16.0, 16.0)
+    for data in datapt
+        y = ifelse(flip(2/3),
+                   bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu1,
+                   bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu2)
+        observe(prob_equals(y, DFiP(data)))
+    end
+    (mu1)
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_multimodal_w11.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_multimodal_w11.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_multimodal_w11.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_multimodal_w11.pl</code><span>3 669 205 bytes, 161 210 lines</span><span class="sha" title="SHA-256">sha256 de33d57f9f1216a24b7e7867664ed82f50b332c6332d0c7f06b20187e97f5a29</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/bitblast/multimodal.jl bits=4</code>.</p><p class="note"><a href="../files/de33d57f9f1216a24b7e.txt">the first 65 525 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/de33d57f9f1216a24b7e.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>182</td><td></td><td>ground atoms 36 825; ground rules 59 179</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>179</td><td></td><td>ground atoms 36 825; ground rules 59 179</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>180</td><td></td><td>ground atoms 36 825; ground rules 59 179</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>11.7</td><td></td><td>ground atoms 58 902; ground rules 78 615</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>11.9</td><td></td><td>ground atoms 58 902; ground rules 78 615</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>11.8</td><td></td><td>ground atoms 58 902; ground rules 78 615</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr></tbody></table></div>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>64.5</td><td></td><td>ground atoms 36 833; ground rules 59 187</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>64.9</td><td></td><td>ground atoms 36 833; ground rules 59 187</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>64.0</td><td></td><td>ground atoms 36 833; ground rules 59 187</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>171</td><td>91.0</td><td>54.6</td><td>36.2</td><td></td><td>circuit flips 4 617; circuit gates 116 721; BDD peak, nodes 59 035 830; evidence BDD, nodes 9 798 705; largest query BDD, nodes 2</td></tr><tr><td>2</td><td>answered</td><td>159</td><td>83.6</td><td>52.9</td><td>30.9</td><td></td><td>circuit flips 4 617; circuit gates 116 721; BDD peak, nodes 59 035 830; evidence BDD, nodes 9 798 705; largest query BDD, nodes 2</td></tr><tr><td>3</td><td>answered</td><td>154</td><td>83.0</td><td>52.9</td><td>31.2</td><td></td><td>circuit flips 4 617; circuit gates 116 721; BDD peak, nodes 59 035 830; evidence BDD, nodes 9 798 705; largest query BDD, nodes 2</td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>e1(1)</th><td class="num">0.1111111111</td></tr><tr><th>e1(4)</th><td class="num">0.1111111049</td></tr><tr><th>e1(5)</th><td class="num">0.8905968219</td></tr><tr><th>e1(6)</th><td class="num">0.1153330546</td></tr><tr><th>e1(7)</th><td class="num">0.551299467</td></tr><tr><th>e1(8)</th><td class="num">0.4918503216</td></tr><tr><th>e1(9)</th><td class="num">0.4999992121</td></tr><tr><th>e1(10)</th><td class="num">0.5</td></tr><tr><th>e1(11)</th><td class="num">0.5</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

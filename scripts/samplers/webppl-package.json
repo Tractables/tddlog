@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "webppl": "^0.9.15",
+    "webppl-timeit": "^0.3.0"
+  }
+}

@@ -1,0 +1,316 @@
+diff --git a/src/bin/bench-taylor.rs b/src/bin/bench-taylor.rs
+deleted file mode 100644
+index 38b4e4b..0000000
+--- a/src/bin/bench-taylor.rs
++++ /dev/null
+@@ -1,162 +0,0 @@
+-use genfer::{number::F32, ppl::Var};
+-use gennifer::{
+-    ir::{Distribution, SimpleDistribution},
+-    numbers::{Fraction, PositiveProperFraction, Precision},
+-    transformers::Transform,
+-};
+-use num_traits::{One, Zero};
+-use std::collections::HashMap;
+-
+-fn test_exponential() -> Result<(), String> {
+-    println!("-----------------");
+-    println!("Exponential Test");
+-    let ret = "X";
+-    let gf = gennifer::generating_function::GenFun::<f32>::one().extend(
+-        &mut HashMap::new(),
+-        ret,
+-        &Distribution::Simple(SimpleDistribution::Exponential(Fraction(1.0))),
+-    )?;
+-    let (genfer_gf, mapping): (genfer::generating_function::GenFun<F32>, _) =
+-        gennifer::genfun_conversion::to_genfer_genfun(&gf);
+-    println!("Genifer {}", gf);
+-    println!("Genfer {}", genfer_gf);
+-    println!("mapping: {:?}", mapping);
+-    assert!(mapping.len() == 1);
+-    assert!(*mapping.get(ret).unwrap() == 0);
+-
+-    let simplified_genfer_gf = genfer_gf.simplify();
+-    println!("Simplified Genfer GF: {}", simplified_genfer_gf);
+-
+-    let substs = vec![F32::zero()];
+-    let expansion = simplified_genfer_gf.eval(&substs, 10);
+-    println!("Expansion: {}", expansion);
+-    Ok(())
+-}
+-
+-fn test_geometric_0() -> Result<(), String> {
+-    println!("-----------------");
+-    println!("Geometric Test");
+-    let ret = "X";
+-    let gf = gennifer::generating_function::GenFun::<Precision>::one().extend(
+-        &mut HashMap::new(),
+-        ret,
+-        &Distribution::Simple(SimpleDistribution::Geometric(PositiveProperFraction::new(
+-            0.0,
+-        )?)),
+-    )?;
+-    let (genfer_gf, mapping): (genfer::generating_function::GenFun<F32>, _) =
+-        gennifer::genfun_conversion::to_genfer_genfun(&gf);
+-    println!("Genifer {}", gf);
+-    println!("Genfer {}", genfer_gf);
+-    println!("mapping: {:?}", mapping);
+-    assert!(mapping.len() <= 1);
+-    if mapping.len() == 1 {
+-        assert!(*mapping.get(ret).unwrap() == 0);
+-    }
+-
+-    let simplified_genfer_gf = genfer_gf.simplify();
+-    println!("Simplified Genfer GF: {}", simplified_genfer_gf);
+-
+-    let substs = vec![F32::zero()];
+-    let expansion = simplified_genfer_gf.eval(&substs, 10);
+-    println!("Expansion: {}", expansion);
+-    Ok(())
+-}
+-
+-fn test_geometric() -> Result<(), String> {
+-    println!("-----------------");
+-    println!("Geometric Test");
+-    let ret = "X";
+-    let gf = gennifer::generating_function::GenFun::<Precision>::one().extend(
+-        &mut HashMap::new(),
+-        ret,
+-        &Distribution::Simple(SimpleDistribution::Geometric(PositiveProperFraction::new(
+-            0.5,
+-        )?)),
+-    )?;
+-    let (genfer_gf, mapping): (genfer::generating_function::GenFun<F32>, _) =
+-        gennifer::genfun_conversion::to_genfer_genfun(&gf);
+-    println!("Genifer {}", gf);
+-    println!("Genfer {}", genfer_gf);
+-    println!("mapping: {:?}", mapping);
+-    assert!(mapping.len() == 1);
+-    assert!(*mapping.get(ret).unwrap() == 0);
+-
+-    let simplified_genfer_gf = genfer_gf.simplify();
+-    println!("Simplified Genfer GF: {}", simplified_genfer_gf);
+-
+-    let substs = vec![F32::zero()];
+-    let expansion = simplified_genfer_gf.eval(&substs, 10);
+-    println!("Expansion: {}", expansion);
+-    Ok(())
+-}
+-
+-fn test_poisson() -> Result<(), String> {
+-    println!("-----------------");
+-    println!("Posssion Test");
+-    let ret = "X";
+-    let gf = gennifer::generating_function::GenFun::<Precision>::one().extend(
+-        &mut HashMap::new(),
+-        ret,
+-        // &Distribution::Simple(SimpleDistribution::Poisson(Fraction(3.14))),
+-        &Distribution::Simple(SimpleDistribution::Poisson(Fraction(6.170807))),
+-    )?;
+-    let (genfer_gf, mapping): (genfer::generating_function::GenFun<F32>, _) =
+-        gennifer::genfun_conversion::to_genfer_genfun(&gf);
+-    println!("Genifer {}", gf);
+-    println!("Genfer {}", genfer_gf);
+-    println!("mapping: {:?}", mapping);
+-    assert!(mapping.len() == 1);
+-    assert!(*mapping.get(ret).unwrap() == 0);
+-
+-    let simplified_genfer_gf = genfer_gf.simplify();
+-    println!("Simplified Genfer GF: {}", simplified_genfer_gf);
+-
+-    let substs = vec![F32::one()];
+-    let expansion = simplified_genfer_gf.eval(&substs, 10);
+-    println!("Expected {}", expansion.array()[1]);
+-    Ok(())
+-}
+-
+-fn test(gf: &genfer::generating_function::GenFun<F32>, v: f32) {
+-    println!("-----------------");
+-    println!("Testing GF: {}, v: {}", gf, v);
+-    let substs = vec![v.into()];
+-    let taylor = gf.eval(&substs, 10);
+-    println!("Taylor expansion: {}", taylor);
+-    //-----------------
+-    // Test
+-    // Taylor expansion: 3.0 + 1.0a
+-}
+-fn main() -> Result<(), String> {
+-    test_exponential()?;
+-    test_geometric()?;
+-    test_poisson()?;
+-
+-    let x = genfer::generating_function::GenFun::<F32>::var(Var(0));
+-    test(&x, 0.0);
+-    test(&x, 1.0);
+-    test(&x, 2.0);
+-    test(&x, 3.0);
+-
+-    let x_time_x = x.clone() * x.clone();
+-    test(&x_time_x, 0.0);
+-    test(&x_time_x, 1.0);
+-    test(&x_time_x, 2.0);
+-    test(&x_time_x, 3.0);
+-
+-    let one_div_x = genfer::generating_function::GenFun::one() / x.clone();
+-    test(&one_div_x, 0.0);
+-    test(&one_div_x, 1.0);
+-    test(&one_div_x, 2.0);
+-    test(&one_div_x, 3.0);
+-
+-    let one = genfer::generating_function::GenFun::one();
+-    test(&one, 0.0);
+-    test(&one, 1.0);
+-    test(&one, 2.0);
+-    test(&one, 3.0);
+-
+-    test_geometric_0()?;
+-    Ok(())
+-}
+diff --git a/src/genfun_conversion.rs b/src/genfun_conversion.rs
+deleted file mode 100644
+index 8cfaa5c..0000000
+--- a/src/genfun_conversion.rs
++++ /dev/null
+@@ -1,71 +0,0 @@
+-use crate::generating_function::GenFunKind;
+-use crate::id_manager::IDManager;
+-use genfer::ppl::Var;
+-use std::collections::HashMap;
+-
+-// Helper function to convert string variable names to Var using a HashMap and IDManager
+-fn to_var(name: &str, var_map: &mut HashMap<String, usize>, id_manager: &IDManager) -> Var {
+-    let idx = var_map
+-        .entry(name.to_string())
+-        .or_insert_with(|| id_manager.next_counter());
+-    Var(*idx)
+-}
+-
+-pub fn to_genfer_genfun<S: crate::numbers::Number, T: genfer::number::Number + From<S>>(
+-    gf: &crate::generating_function::GenFun<S>,
+-) -> (
+-    genfer::generating_function::GenFun<T>,
+-    HashMap<String, usize>,
+-) {
+-    let mut var_map = HashMap::new();
+-    let id_manager = IDManager::new("");
+-    (
+-        to_genfer_genfun_with_vars(gf, &mut var_map, &id_manager),
+-        var_map,
+-    )
+-}
+-
+-fn to_genfer_genfun_with_vars<S: crate::numbers::Number, T: genfer::number::Number + From<S>>(
+-    gf: &crate::generating_function::GenFun<S>,
+-    var_map: &mut HashMap<String, usize>,
+-    id_manager: &IDManager,
+-) -> genfer::generating_function::GenFun<T> {
+-    match gf.as_ref() {
+-        GenFunKind::Constant(x) => genfer::generating_function::GenFun::constant(x.clone().into()),
+-        GenFunKind::Var(name) => {
+-            genfer::generating_function::GenFun::var(to_var(name, var_map, id_manager))
+-        }
+-        GenFunKind::Neg(inner) => -to_genfer_genfun_with_vars(inner, var_map, id_manager),
+-        GenFunKind::Add(lhs, rhs) => {
+-            let lhs = to_genfer_genfun_with_vars(lhs, var_map, id_manager);
+-            let rhs = to_genfer_genfun_with_vars(rhs, var_map, id_manager);
+-            lhs + rhs
+-        }
+-        GenFunKind::Mul(lhs, rhs) => {
+-            let lhs = to_genfer_genfun_with_vars(lhs, var_map, id_manager);
+-            let rhs = to_genfer_genfun_with_vars(rhs, var_map, id_manager);
+-            lhs * rhs
+-        }
+-        GenFunKind::Div(lhs, rhs) => {
+-            let lhs = to_genfer_genfun_with_vars(lhs, var_map, id_manager);
+-            let rhs = to_genfer_genfun_with_vars(rhs, var_map, id_manager);
+-            lhs / rhs
+-        }
+-        GenFunKind::Exp(inner) => to_genfer_genfun_with_vars(inner, var_map, id_manager).exp(),
+-        GenFunKind::Ln(inner) => to_genfer_genfun_with_vars(inner, var_map, id_manager).log(),
+-        GenFunKind::Derivative(inner, var, n) => {
+-            to_genfer_genfun_with_vars(inner, var_map, id_manager)
+-                .derive(to_var(var, var_map, id_manager), *n)
+-        }
+-        GenFunKind::UniformMgf(inner) => genfer::generating_function::GenFun::uniform_mgf(
+-            to_genfer_genfun_with_vars(inner, var_map, id_manager),
+-        ),
+-        GenFunKind::Let(x, e1, e2) => {
+-            let var = to_var(x, var_map, id_manager);
+-            let g2 = to_genfer_genfun_with_vars(e2, var_map, id_manager);
+-            let g1 = to_genfer_genfun_with_vars(e1, var_map, id_manager);
+-            g2.substitute_var(var, g1)
+-        }
+-        gf => todo!("Implement conversion for {:?}", gf),
+-    }
+-}
+diff --git a/src/lib.rs b/src/lib.rs
+index 4830a60..8a241c6 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -12,5 +12,3 @@ pub mod transformers;
+ 
+ pub mod free_variable_analysis;
+ pub mod live_variable_analysis;
+-
+-pub mod genfun_conversion;
+diff --git a/src/main.rs b/src/main.rs
+index f9ec941..87d561c 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -18,8 +18,6 @@ use im::ordset;
+ use itertools::Either;
+ use nom::error::convert_error;
+ 
+-use genfer::number::F64;
+-use num_traits::identities::One;
+ 
+ /// Command-line argument parser
+ #[derive(Parser)]
+@@ -50,12 +48,6 @@ struct Args {
+     #[arg(long, short)]
+     interpret: bool,
+ 
+-    /// Use the taylor expansion engine from Genfer to interpret the program
+-    /// WARRING: This is experimental and may not work as expected.
+-    /// WARNING: Only tested for the Possion Packet Arrival Benchmark
+-    #[arg(long)]
+-    taylor: bool,
+-
+     /// Skip the table printing
+     #[arg(long, alias = "skip")]
+     skip_table: bool,
+@@ -193,26 +185,6 @@ fn run() -> io::Result<()> {
+         if args.interpret {
+             let mut interpreter: Interpreter<Precision> = Interpreter::default();
+             let interpret_start = std::time::Instant::now();
+-            if args.taylor {
+-                let (genfer_gf, mapping): (genfer::generating_function::GenFun<F64>, _) =
+-                    gennifer::genfun_conversion::to_genfer_genfun(&gf);
+-                println!("Genifer-Genfer Variable Mapping: {:?}", mapping);
+-
+-                let num_vars = mapping.len();
+-                let ret_idx = *mapping.get("_RET").unwrap();
+-
+-                let simplified_genfer_gf = genfer_gf.simplify();
+-                println!("Simplified Genfer GF: {}", simplified_genfer_gf);
+-
+-                let mut substs = vec![F64::one(); num_vars];
+-                substs[ret_idx] = F64::one();
+-                println!("Substitutions: {:?}", substs);
+-                let expansion = simplified_genfer_gf.eval(&substs, 10);
+-                println!("Expansion: {}", expansion);
+-                // TODO: make this more general
+-                println!("Expected {}", expansion.array()[[0, 1]]);
+-                interpret_time = interpret_start.elapsed();
+-            } else {
+                 let table = interpreter.populate_table("_RET", &ty, &gf);
+                 interpret_time = interpret_start.elapsed();
+                 if !args.skip_table {
+@@ -220,7 +192,6 @@ fn run() -> io::Result<()> {
+                         println!("Pr({}) = {:.7}", v, p);
+                     }
+                 }
+-            }
+             transpilation_preparation_time = Duration::from_secs(0);
+             transpilation_io_time = Duration::from_secs(0);
+         } else {

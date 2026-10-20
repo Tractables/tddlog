@@ -1,0 +1,5381 @@
+% gen_geni.py link 24
+0.5::conn_1_2.
+0.5::conn_1_3.
+conn_1_3_1 :- conn_1_2, conn_1_3.
+0.5::conn_1_4.
+conn_1_4_1 :- conn_1_3_1, conn_1_4.
+0.5::conn_1_5.
+conn_1_5_1 :- conn_1_4_1, conn_1_5.
+0.5::conn_1_6.
+conn_1_6_1 :- conn_1_5_1, conn_1_6.
+0.5::conn_1_7.
+conn_1_7_1 :- conn_1_6_1, conn_1_7.
+0.5::conn_1_8.
+conn_1_8_1 :- conn_1_7_1, conn_1_8.
+0.5::conn_1_9.
+conn_1_9_1 :- conn_1_8_1, conn_1_9.
+0.5::conn_1_10.
+conn_1_10_1 :- conn_1_9_1, conn_1_10.
+0.5::conn_1_11.
+conn_1_11_1 :- conn_1_10_1, conn_1_11.
+0.5::conn_1_12.
+conn_1_12_1 :- conn_1_11_1, conn_1_12.
+0.5::conn_1_13.
+conn_1_13_1 :- conn_1_12_1, conn_1_13.
+0.5::conn_1_14.
+conn_1_14_1 :- conn_1_13_1, conn_1_14.
+0.5::conn_1_15.
+conn_1_15_1 :- conn_1_14_1, conn_1_15.
+0.5::conn_1_16.
+conn_1_16_1 :- conn_1_15_1, conn_1_16.
+0.5::conn_1_17.
+conn_1_17_1 :- conn_1_16_1, conn_1_17.
+0.5::conn_1_18.
+conn_1_18_1 :- conn_1_17_1, conn_1_18.
+0.5::conn_1_19.
+conn_1_19_1 :- conn_1_18_1, conn_1_19.
+0.5::conn_1_20.
+conn_1_20_1 :- conn_1_19_1, conn_1_20.
+0.5::conn_1_21.
+conn_1_21_1 :- conn_1_20_1, conn_1_21.
+0.5::conn_1_22.
+conn_1_22_1 :- conn_1_21_1, conn_1_22.
+0.5::conn_1_23.
+conn_1_23_1 :- conn_1_22_1, conn_1_23.
+0.5::conn_1_24.
+conn_1_24_1 :- conn_1_23_1, conn_1_24.
+0.5::conn_2_1.
+0.5::conn_2_2.
+conn_2_2_1 :- conn_2_1, conn_2_2.
+0.5::conn_2_2_2.
+conn_2_2_3 :- conn_1_2, conn_2_2_2.
+conn_2_2_4 :- conn_2_2_1.
+conn_2_2_4 :- conn_2_2_3.
+0.5::conn_2_2_5.
+conn_2_2_6 :- conn_2_2_4.
+conn_2_2_6 :- conn_2_2_5.
+0.5::conn_2_3.
+conn_2_3_1 :- conn_2_2_6, conn_2_3.
+0.5::conn_2_3_2.
+conn_2_3_3 :- conn_1_3_1, conn_2_3_2.
+conn_2_3_4 :- conn_2_3_1.
+conn_2_3_4 :- conn_2_3_3.
+0.5::conn_2_3_5.
+conn_2_3_6 :- conn_1_2, conn_2_3_5.
+conn_2_3_7 :- conn_2_3_4.
+conn_2_3_7 :- conn_2_3_6.
+0.5::conn_2_4.
+conn_2_4_1 :- conn_2_3_7, conn_2_4.
+0.5::conn_2_4_2.
+conn_2_4_3 :- conn_1_4_1, conn_2_4_2.
+conn_2_4_4 :- conn_2_4_1.
+conn_2_4_4 :- conn_2_4_3.
+0.5::conn_2_4_5.
+conn_2_4_6 :- conn_1_3_1, conn_2_4_5.
+conn_2_4_7 :- conn_2_4_4.
+conn_2_4_7 :- conn_2_4_6.
+0.5::conn_2_5.
+conn_2_5_1 :- conn_2_4_7, conn_2_5.
+0.5::conn_2_5_2.
+conn_2_5_3 :- conn_1_5_1, conn_2_5_2.
+conn_2_5_4 :- conn_2_5_1.
+conn_2_5_4 :- conn_2_5_3.
+0.5::conn_2_5_5.
+conn_2_5_6 :- conn_1_4_1, conn_2_5_5.
+conn_2_5_7 :- conn_2_5_4.
+conn_2_5_7 :- conn_2_5_6.
+0.5::conn_2_6.
+conn_2_6_1 :- conn_2_5_7, conn_2_6.
+0.5::conn_2_6_2.
+conn_2_6_3 :- conn_1_6_1, conn_2_6_2.
+conn_2_6_4 :- conn_2_6_1.
+conn_2_6_4 :- conn_2_6_3.
+0.5::conn_2_6_5.
+conn_2_6_6 :- conn_1_5_1, conn_2_6_5.
+conn_2_6_7 :- conn_2_6_4.
+conn_2_6_7 :- conn_2_6_6.
+0.5::conn_2_7.
+conn_2_7_1 :- conn_2_6_7, conn_2_7.
+0.5::conn_2_7_2.
+conn_2_7_3 :- conn_1_7_1, conn_2_7_2.
+conn_2_7_4 :- conn_2_7_1.
+conn_2_7_4 :- conn_2_7_3.
+0.5::conn_2_7_5.
+conn_2_7_6 :- conn_1_6_1, conn_2_7_5.
+conn_2_7_7 :- conn_2_7_4.
+conn_2_7_7 :- conn_2_7_6.
+0.5::conn_2_8.
+conn_2_8_1 :- conn_2_7_7, conn_2_8.
+0.5::conn_2_8_2.
+conn_2_8_3 :- conn_1_8_1, conn_2_8_2.
+conn_2_8_4 :- conn_2_8_1.
+conn_2_8_4 :- conn_2_8_3.
+0.5::conn_2_8_5.
+conn_2_8_6 :- conn_1_7_1, conn_2_8_5.
+conn_2_8_7 :- conn_2_8_4.
+conn_2_8_7 :- conn_2_8_6.
+0.5::conn_2_9.
+conn_2_9_1 :- conn_2_8_7, conn_2_9.
+0.5::conn_2_9_2.
+conn_2_9_3 :- conn_1_9_1, conn_2_9_2.
+conn_2_9_4 :- conn_2_9_1.
+conn_2_9_4 :- conn_2_9_3.
+0.5::conn_2_9_5.
+conn_2_9_6 :- conn_1_8_1, conn_2_9_5.
+conn_2_9_7 :- conn_2_9_4.
+conn_2_9_7 :- conn_2_9_6.
+0.5::conn_2_10.
+conn_2_10_1 :- conn_2_9_7, conn_2_10.
+0.5::conn_2_10_2.
+conn_2_10_3 :- conn_1_10_1, conn_2_10_2.
+conn_2_10_4 :- conn_2_10_1.
+conn_2_10_4 :- conn_2_10_3.
+0.5::conn_2_10_5.
+conn_2_10_6 :- conn_1_9_1, conn_2_10_5.
+conn_2_10_7 :- conn_2_10_4.
+conn_2_10_7 :- conn_2_10_6.
+0.5::conn_2_11.
+conn_2_11_1 :- conn_2_10_7, conn_2_11.
+0.5::conn_2_11_2.
+conn_2_11_3 :- conn_1_11_1, conn_2_11_2.
+conn_2_11_4 :- conn_2_11_1.
+conn_2_11_4 :- conn_2_11_3.
+0.5::conn_2_11_5.
+conn_2_11_6 :- conn_1_10_1, conn_2_11_5.
+conn_2_11_7 :- conn_2_11_4.
+conn_2_11_7 :- conn_2_11_6.
+0.5::conn_2_12.
+conn_2_12_1 :- conn_2_11_7, conn_2_12.
+0.5::conn_2_12_2.
+conn_2_12_3 :- conn_1_12_1, conn_2_12_2.
+conn_2_12_4 :- conn_2_12_1.
+conn_2_12_4 :- conn_2_12_3.
+0.5::conn_2_12_5.
+conn_2_12_6 :- conn_1_11_1, conn_2_12_5.
+conn_2_12_7 :- conn_2_12_4.
+conn_2_12_7 :- conn_2_12_6.
+0.5::conn_2_13.
+conn_2_13_1 :- conn_2_12_7, conn_2_13.
+0.5::conn_2_13_2.
+conn_2_13_3 :- conn_1_13_1, conn_2_13_2.
+conn_2_13_4 :- conn_2_13_1.
+conn_2_13_4 :- conn_2_13_3.
+0.5::conn_2_13_5.
+conn_2_13_6 :- conn_1_12_1, conn_2_13_5.
+conn_2_13_7 :- conn_2_13_4.
+conn_2_13_7 :- conn_2_13_6.
+0.5::conn_2_14.
+conn_2_14_1 :- conn_2_13_7, conn_2_14.
+0.5::conn_2_14_2.
+conn_2_14_3 :- conn_1_14_1, conn_2_14_2.
+conn_2_14_4 :- conn_2_14_1.
+conn_2_14_4 :- conn_2_14_3.
+0.5::conn_2_14_5.
+conn_2_14_6 :- conn_1_13_1, conn_2_14_5.
+conn_2_14_7 :- conn_2_14_4.
+conn_2_14_7 :- conn_2_14_6.
+0.5::conn_2_15.
+conn_2_15_1 :- conn_2_14_7, conn_2_15.
+0.5::conn_2_15_2.
+conn_2_15_3 :- conn_1_15_1, conn_2_15_2.
+conn_2_15_4 :- conn_2_15_1.
+conn_2_15_4 :- conn_2_15_3.
+0.5::conn_2_15_5.
+conn_2_15_6 :- conn_1_14_1, conn_2_15_5.
+conn_2_15_7 :- conn_2_15_4.
+conn_2_15_7 :- conn_2_15_6.
+0.5::conn_2_16.
+conn_2_16_1 :- conn_2_15_7, conn_2_16.
+0.5::conn_2_16_2.
+conn_2_16_3 :- conn_1_16_1, conn_2_16_2.
+conn_2_16_4 :- conn_2_16_1.
+conn_2_16_4 :- conn_2_16_3.
+0.5::conn_2_16_5.
+conn_2_16_6 :- conn_1_15_1, conn_2_16_5.
+conn_2_16_7 :- conn_2_16_4.
+conn_2_16_7 :- conn_2_16_6.
+0.5::conn_2_17.
+conn_2_17_1 :- conn_2_16_7, conn_2_17.
+0.5::conn_2_17_2.
+conn_2_17_3 :- conn_1_17_1, conn_2_17_2.
+conn_2_17_4 :- conn_2_17_1.
+conn_2_17_4 :- conn_2_17_3.
+0.5::conn_2_17_5.
+conn_2_17_6 :- conn_1_16_1, conn_2_17_5.
+conn_2_17_7 :- conn_2_17_4.
+conn_2_17_7 :- conn_2_17_6.
+0.5::conn_2_18.
+conn_2_18_1 :- conn_2_17_7, conn_2_18.
+0.5::conn_2_18_2.
+conn_2_18_3 :- conn_1_18_1, conn_2_18_2.
+conn_2_18_4 :- conn_2_18_1.
+conn_2_18_4 :- conn_2_18_3.
+0.5::conn_2_18_5.
+conn_2_18_6 :- conn_1_17_1, conn_2_18_5.
+conn_2_18_7 :- conn_2_18_4.
+conn_2_18_7 :- conn_2_18_6.
+0.5::conn_2_19.
+conn_2_19_1 :- conn_2_18_7, conn_2_19.
+0.5::conn_2_19_2.
+conn_2_19_3 :- conn_1_19_1, conn_2_19_2.
+conn_2_19_4 :- conn_2_19_1.
+conn_2_19_4 :- conn_2_19_3.
+0.5::conn_2_19_5.
+conn_2_19_6 :- conn_1_18_1, conn_2_19_5.
+conn_2_19_7 :- conn_2_19_4.
+conn_2_19_7 :- conn_2_19_6.
+0.5::conn_2_20.
+conn_2_20_1 :- conn_2_19_7, conn_2_20.
+0.5::conn_2_20_2.
+conn_2_20_3 :- conn_1_20_1, conn_2_20_2.
+conn_2_20_4 :- conn_2_20_1.
+conn_2_20_4 :- conn_2_20_3.
+0.5::conn_2_20_5.
+conn_2_20_6 :- conn_1_19_1, conn_2_20_5.
+conn_2_20_7 :- conn_2_20_4.
+conn_2_20_7 :- conn_2_20_6.
+0.5::conn_2_21.
+conn_2_21_1 :- conn_2_20_7, conn_2_21.
+0.5::conn_2_21_2.
+conn_2_21_3 :- conn_1_21_1, conn_2_21_2.
+conn_2_21_4 :- conn_2_21_1.
+conn_2_21_4 :- conn_2_21_3.
+0.5::conn_2_21_5.
+conn_2_21_6 :- conn_1_20_1, conn_2_21_5.
+conn_2_21_7 :- conn_2_21_4.
+conn_2_21_7 :- conn_2_21_6.
+0.5::conn_2_22.
+conn_2_22_1 :- conn_2_21_7, conn_2_22.
+0.5::conn_2_22_2.
+conn_2_22_3 :- conn_1_22_1, conn_2_22_2.
+conn_2_22_4 :- conn_2_22_1.
+conn_2_22_4 :- conn_2_22_3.
+0.5::conn_2_22_5.
+conn_2_22_6 :- conn_1_21_1, conn_2_22_5.
+conn_2_22_7 :- conn_2_22_4.
+conn_2_22_7 :- conn_2_22_6.
+0.5::conn_2_23.
+conn_2_23_1 :- conn_2_22_7, conn_2_23.
+0.5::conn_2_23_2.
+conn_2_23_3 :- conn_1_23_1, conn_2_23_2.
+conn_2_23_4 :- conn_2_23_1.
+conn_2_23_4 :- conn_2_23_3.
+0.5::conn_2_23_5.
+conn_2_23_6 :- conn_1_22_1, conn_2_23_5.
+conn_2_23_7 :- conn_2_23_4.
+conn_2_23_7 :- conn_2_23_6.
+0.5::conn_2_24.
+conn_2_24_1 :- conn_2_23_7, conn_2_24.
+0.5::conn_2_24_2.
+conn_2_24_3 :- conn_1_24_1, conn_2_24_2.
+conn_2_24_4 :- conn_2_24_1.
+conn_2_24_4 :- conn_2_24_3.
+0.5::conn_2_24_5.
+conn_2_24_6 :- conn_1_23_1, conn_2_24_5.
+conn_2_24_7 :- conn_2_24_4.
+conn_2_24_7 :- conn_2_24_6.
+0.5::conn_3_1.
+conn_3_1_1 :- conn_2_1, conn_3_1.
+0.5::conn_3_2.
+conn_3_2_1 :- conn_3_1_1, conn_3_2.
+0.5::conn_3_2_2.
+conn_3_2_3 :- conn_2_2_6, conn_3_2_2.
+conn_3_2_4 :- conn_3_2_1.
+conn_3_2_4 :- conn_3_2_3.
+0.5::conn_3_2_5.
+conn_3_2_6 :- conn_2_1, conn_3_2_5.
+conn_3_2_7 :- conn_3_2_4.
+conn_3_2_7 :- conn_3_2_6.
+0.5::conn_3_3.
+conn_3_3_1 :- conn_3_2_7, conn_3_3.
+0.5::conn_3_3_2.
+conn_3_3_3 :- conn_2_3_7, conn_3_3_2.
+conn_3_3_4 :- conn_3_3_1.
+conn_3_3_4 :- conn_3_3_3.
+0.5::conn_3_3_5.
+conn_3_3_6 :- conn_2_2_6, conn_3_3_5.
+conn_3_3_7 :- conn_3_3_4.
+conn_3_3_7 :- conn_3_3_6.
+0.5::conn_3_4.
+conn_3_4_1 :- conn_3_3_7, conn_3_4.
+0.5::conn_3_4_2.
+conn_3_4_3 :- conn_2_4_7, conn_3_4_2.
+conn_3_4_4 :- conn_3_4_1.
+conn_3_4_4 :- conn_3_4_3.
+0.5::conn_3_4_5.
+conn_3_4_6 :- conn_2_3_7, conn_3_4_5.
+conn_3_4_7 :- conn_3_4_4.
+conn_3_4_7 :- conn_3_4_6.
+0.5::conn_3_5.
+conn_3_5_1 :- conn_3_4_7, conn_3_5.
+0.5::conn_3_5_2.
+conn_3_5_3 :- conn_2_5_7, conn_3_5_2.
+conn_3_5_4 :- conn_3_5_1.
+conn_3_5_4 :- conn_3_5_3.
+0.5::conn_3_5_5.
+conn_3_5_6 :- conn_2_4_7, conn_3_5_5.
+conn_3_5_7 :- conn_3_5_4.
+conn_3_5_7 :- conn_3_5_6.
+0.5::conn_3_6.
+conn_3_6_1 :- conn_3_5_7, conn_3_6.
+0.5::conn_3_6_2.
+conn_3_6_3 :- conn_2_6_7, conn_3_6_2.
+conn_3_6_4 :- conn_3_6_1.
+conn_3_6_4 :- conn_3_6_3.
+0.5::conn_3_6_5.
+conn_3_6_6 :- conn_2_5_7, conn_3_6_5.
+conn_3_6_7 :- conn_3_6_4.
+conn_3_6_7 :- conn_3_6_6.
+0.5::conn_3_7.
+conn_3_7_1 :- conn_3_6_7, conn_3_7.
+0.5::conn_3_7_2.
+conn_3_7_3 :- conn_2_7_7, conn_3_7_2.
+conn_3_7_4 :- conn_3_7_1.
+conn_3_7_4 :- conn_3_7_3.
+0.5::conn_3_7_5.
+conn_3_7_6 :- conn_2_6_7, conn_3_7_5.
+conn_3_7_7 :- conn_3_7_4.
+conn_3_7_7 :- conn_3_7_6.
+0.5::conn_3_8.
+conn_3_8_1 :- conn_3_7_7, conn_3_8.
+0.5::conn_3_8_2.
+conn_3_8_3 :- conn_2_8_7, conn_3_8_2.
+conn_3_8_4 :- conn_3_8_1.
+conn_3_8_4 :- conn_3_8_3.
+0.5::conn_3_8_5.
+conn_3_8_6 :- conn_2_7_7, conn_3_8_5.
+conn_3_8_7 :- conn_3_8_4.
+conn_3_8_7 :- conn_3_8_6.
+0.5::conn_3_9.
+conn_3_9_1 :- conn_3_8_7, conn_3_9.
+0.5::conn_3_9_2.
+conn_3_9_3 :- conn_2_9_7, conn_3_9_2.
+conn_3_9_4 :- conn_3_9_1.
+conn_3_9_4 :- conn_3_9_3.
+0.5::conn_3_9_5.
+conn_3_9_6 :- conn_2_8_7, conn_3_9_5.
+conn_3_9_7 :- conn_3_9_4.
+conn_3_9_7 :- conn_3_9_6.
+0.5::conn_3_10.
+conn_3_10_1 :- conn_3_9_7, conn_3_10.
+0.5::conn_3_10_2.
+conn_3_10_3 :- conn_2_10_7, conn_3_10_2.
+conn_3_10_4 :- conn_3_10_1.
+conn_3_10_4 :- conn_3_10_3.
+0.5::conn_3_10_5.
+conn_3_10_6 :- conn_2_9_7, conn_3_10_5.
+conn_3_10_7 :- conn_3_10_4.
+conn_3_10_7 :- conn_3_10_6.
+0.5::conn_3_11.
+conn_3_11_1 :- conn_3_10_7, conn_3_11.
+0.5::conn_3_11_2.
+conn_3_11_3 :- conn_2_11_7, conn_3_11_2.
+conn_3_11_4 :- conn_3_11_1.
+conn_3_11_4 :- conn_3_11_3.
+0.5::conn_3_11_5.
+conn_3_11_6 :- conn_2_10_7, conn_3_11_5.
+conn_3_11_7 :- conn_3_11_4.
+conn_3_11_7 :- conn_3_11_6.
+0.5::conn_3_12.
+conn_3_12_1 :- conn_3_11_7, conn_3_12.
+0.5::conn_3_12_2.
+conn_3_12_3 :- conn_2_12_7, conn_3_12_2.
+conn_3_12_4 :- conn_3_12_1.
+conn_3_12_4 :- conn_3_12_3.
+0.5::conn_3_12_5.
+conn_3_12_6 :- conn_2_11_7, conn_3_12_5.
+conn_3_12_7 :- conn_3_12_4.
+conn_3_12_7 :- conn_3_12_6.
+0.5::conn_3_13.
+conn_3_13_1 :- conn_3_12_7, conn_3_13.
+0.5::conn_3_13_2.
+conn_3_13_3 :- conn_2_13_7, conn_3_13_2.
+conn_3_13_4 :- conn_3_13_1.
+conn_3_13_4 :- conn_3_13_3.
+0.5::conn_3_13_5.
+conn_3_13_6 :- conn_2_12_7, conn_3_13_5.
+conn_3_13_7 :- conn_3_13_4.
+conn_3_13_7 :- conn_3_13_6.
+0.5::conn_3_14.
+conn_3_14_1 :- conn_3_13_7, conn_3_14.
+0.5::conn_3_14_2.
+conn_3_14_3 :- conn_2_14_7, conn_3_14_2.
+conn_3_14_4 :- conn_3_14_1.
+conn_3_14_4 :- conn_3_14_3.
+0.5::conn_3_14_5.
+conn_3_14_6 :- conn_2_13_7, conn_3_14_5.
+conn_3_14_7 :- conn_3_14_4.
+conn_3_14_7 :- conn_3_14_6.
+0.5::conn_3_15.
+conn_3_15_1 :- conn_3_14_7, conn_3_15.
+0.5::conn_3_15_2.
+conn_3_15_3 :- conn_2_15_7, conn_3_15_2.
+conn_3_15_4 :- conn_3_15_1.
+conn_3_15_4 :- conn_3_15_3.
+0.5::conn_3_15_5.
+conn_3_15_6 :- conn_2_14_7, conn_3_15_5.
+conn_3_15_7 :- conn_3_15_4.
+conn_3_15_7 :- conn_3_15_6.
+0.5::conn_3_16.
+conn_3_16_1 :- conn_3_15_7, conn_3_16.
+0.5::conn_3_16_2.
+conn_3_16_3 :- conn_2_16_7, conn_3_16_2.
+conn_3_16_4 :- conn_3_16_1.
+conn_3_16_4 :- conn_3_16_3.
+0.5::conn_3_16_5.
+conn_3_16_6 :- conn_2_15_7, conn_3_16_5.
+conn_3_16_7 :- conn_3_16_4.
+conn_3_16_7 :- conn_3_16_6.
+0.5::conn_3_17.
+conn_3_17_1 :- conn_3_16_7, conn_3_17.
+0.5::conn_3_17_2.
+conn_3_17_3 :- conn_2_17_7, conn_3_17_2.
+conn_3_17_4 :- conn_3_17_1.
+conn_3_17_4 :- conn_3_17_3.
+0.5::conn_3_17_5.
+conn_3_17_6 :- conn_2_16_7, conn_3_17_5.
+conn_3_17_7 :- conn_3_17_4.
+conn_3_17_7 :- conn_3_17_6.
+0.5::conn_3_18.
+conn_3_18_1 :- conn_3_17_7, conn_3_18.
+0.5::conn_3_18_2.
+conn_3_18_3 :- conn_2_18_7, conn_3_18_2.
+conn_3_18_4 :- conn_3_18_1.
+conn_3_18_4 :- conn_3_18_3.
+0.5::conn_3_18_5.
+conn_3_18_6 :- conn_2_17_7, conn_3_18_5.
+conn_3_18_7 :- conn_3_18_4.
+conn_3_18_7 :- conn_3_18_6.
+0.5::conn_3_19.
+conn_3_19_1 :- conn_3_18_7, conn_3_19.
+0.5::conn_3_19_2.
+conn_3_19_3 :- conn_2_19_7, conn_3_19_2.
+conn_3_19_4 :- conn_3_19_1.
+conn_3_19_4 :- conn_3_19_3.
+0.5::conn_3_19_5.
+conn_3_19_6 :- conn_2_18_7, conn_3_19_5.
+conn_3_19_7 :- conn_3_19_4.
+conn_3_19_7 :- conn_3_19_6.
+0.5::conn_3_20.
+conn_3_20_1 :- conn_3_19_7, conn_3_20.
+0.5::conn_3_20_2.
+conn_3_20_3 :- conn_2_20_7, conn_3_20_2.
+conn_3_20_4 :- conn_3_20_1.
+conn_3_20_4 :- conn_3_20_3.
+0.5::conn_3_20_5.
+conn_3_20_6 :- conn_2_19_7, conn_3_20_5.
+conn_3_20_7 :- conn_3_20_4.
+conn_3_20_7 :- conn_3_20_6.
+0.5::conn_3_21.
+conn_3_21_1 :- conn_3_20_7, conn_3_21.
+0.5::conn_3_21_2.
+conn_3_21_3 :- conn_2_21_7, conn_3_21_2.
+conn_3_21_4 :- conn_3_21_1.
+conn_3_21_4 :- conn_3_21_3.
+0.5::conn_3_21_5.
+conn_3_21_6 :- conn_2_20_7, conn_3_21_5.
+conn_3_21_7 :- conn_3_21_4.
+conn_3_21_7 :- conn_3_21_6.
+0.5::conn_3_22.
+conn_3_22_1 :- conn_3_21_7, conn_3_22.
+0.5::conn_3_22_2.
+conn_3_22_3 :- conn_2_22_7, conn_3_22_2.
+conn_3_22_4 :- conn_3_22_1.
+conn_3_22_4 :- conn_3_22_3.
+0.5::conn_3_22_5.
+conn_3_22_6 :- conn_2_21_7, conn_3_22_5.
+conn_3_22_7 :- conn_3_22_4.
+conn_3_22_7 :- conn_3_22_6.
+0.5::conn_3_23.
+conn_3_23_1 :- conn_3_22_7, conn_3_23.
+0.5::conn_3_23_2.
+conn_3_23_3 :- conn_2_23_7, conn_3_23_2.
+conn_3_23_4 :- conn_3_23_1.
+conn_3_23_4 :- conn_3_23_3.
+0.5::conn_3_23_5.
+conn_3_23_6 :- conn_2_22_7, conn_3_23_5.
+conn_3_23_7 :- conn_3_23_4.
+conn_3_23_7 :- conn_3_23_6.
+0.5::conn_3_24.
+conn_3_24_1 :- conn_3_23_7, conn_3_24.
+0.5::conn_3_24_2.
+conn_3_24_3 :- conn_2_24_7, conn_3_24_2.
+conn_3_24_4 :- conn_3_24_1.
+conn_3_24_4 :- conn_3_24_3.
+0.5::conn_3_24_5.
+conn_3_24_6 :- conn_2_23_7, conn_3_24_5.
+conn_3_24_7 :- conn_3_24_4.
+conn_3_24_7 :- conn_3_24_6.
+0.5::conn_4_1.
+conn_4_1_1 :- conn_3_1_1, conn_4_1.
+0.5::conn_4_2.
+conn_4_2_1 :- conn_4_1_1, conn_4_2.
+0.5::conn_4_2_2.
+conn_4_2_3 :- conn_3_2_7, conn_4_2_2.
+conn_4_2_4 :- conn_4_2_1.
+conn_4_2_4 :- conn_4_2_3.
+0.5::conn_4_2_5.
+conn_4_2_6 :- conn_3_1_1, conn_4_2_5.
+conn_4_2_7 :- conn_4_2_4.
+conn_4_2_7 :- conn_4_2_6.
+0.5::conn_4_3.
+conn_4_3_1 :- conn_4_2_7, conn_4_3.
+0.5::conn_4_3_2.
+conn_4_3_3 :- conn_3_3_7, conn_4_3_2.
+conn_4_3_4 :- conn_4_3_1.
+conn_4_3_4 :- conn_4_3_3.
+0.5::conn_4_3_5.
+conn_4_3_6 :- conn_3_2_7, conn_4_3_5.
+conn_4_3_7 :- conn_4_3_4.
+conn_4_3_7 :- conn_4_3_6.
+0.5::conn_4_4.
+conn_4_4_1 :- conn_4_3_7, conn_4_4.
+0.5::conn_4_4_2.
+conn_4_4_3 :- conn_3_4_7, conn_4_4_2.
+conn_4_4_4 :- conn_4_4_1.
+conn_4_4_4 :- conn_4_4_3.
+0.5::conn_4_4_5.
+conn_4_4_6 :- conn_3_3_7, conn_4_4_5.
+conn_4_4_7 :- conn_4_4_4.
+conn_4_4_7 :- conn_4_4_6.
+0.5::conn_4_5.
+conn_4_5_1 :- conn_4_4_7, conn_4_5.
+0.5::conn_4_5_2.
+conn_4_5_3 :- conn_3_5_7, conn_4_5_2.
+conn_4_5_4 :- conn_4_5_1.
+conn_4_5_4 :- conn_4_5_3.
+0.5::conn_4_5_5.
+conn_4_5_6 :- conn_3_4_7, conn_4_5_5.
+conn_4_5_7 :- conn_4_5_4.
+conn_4_5_7 :- conn_4_5_6.
+0.5::conn_4_6.
+conn_4_6_1 :- conn_4_5_7, conn_4_6.
+0.5::conn_4_6_2.
+conn_4_6_3 :- conn_3_6_7, conn_4_6_2.
+conn_4_6_4 :- conn_4_6_1.
+conn_4_6_4 :- conn_4_6_3.
+0.5::conn_4_6_5.
+conn_4_6_6 :- conn_3_5_7, conn_4_6_5.
+conn_4_6_7 :- conn_4_6_4.
+conn_4_6_7 :- conn_4_6_6.
+0.5::conn_4_7.
+conn_4_7_1 :- conn_4_6_7, conn_4_7.
+0.5::conn_4_7_2.
+conn_4_7_3 :- conn_3_7_7, conn_4_7_2.
+conn_4_7_4 :- conn_4_7_1.
+conn_4_7_4 :- conn_4_7_3.
+0.5::conn_4_7_5.
+conn_4_7_6 :- conn_3_6_7, conn_4_7_5.
+conn_4_7_7 :- conn_4_7_4.
+conn_4_7_7 :- conn_4_7_6.
+0.5::conn_4_8.
+conn_4_8_1 :- conn_4_7_7, conn_4_8.
+0.5::conn_4_8_2.
+conn_4_8_3 :- conn_3_8_7, conn_4_8_2.
+conn_4_8_4 :- conn_4_8_1.
+conn_4_8_4 :- conn_4_8_3.
+0.5::conn_4_8_5.
+conn_4_8_6 :- conn_3_7_7, conn_4_8_5.
+conn_4_8_7 :- conn_4_8_4.
+conn_4_8_7 :- conn_4_8_6.
+0.5::conn_4_9.
+conn_4_9_1 :- conn_4_8_7, conn_4_9.
+0.5::conn_4_9_2.
+conn_4_9_3 :- conn_3_9_7, conn_4_9_2.
+conn_4_9_4 :- conn_4_9_1.
+conn_4_9_4 :- conn_4_9_3.
+0.5::conn_4_9_5.
+conn_4_9_6 :- conn_3_8_7, conn_4_9_5.
+conn_4_9_7 :- conn_4_9_4.
+conn_4_9_7 :- conn_4_9_6.
+0.5::conn_4_10.
+conn_4_10_1 :- conn_4_9_7, conn_4_10.
+0.5::conn_4_10_2.
+conn_4_10_3 :- conn_3_10_7, conn_4_10_2.
+conn_4_10_4 :- conn_4_10_1.
+conn_4_10_4 :- conn_4_10_3.
+0.5::conn_4_10_5.
+conn_4_10_6 :- conn_3_9_7, conn_4_10_5.
+conn_4_10_7 :- conn_4_10_4.
+conn_4_10_7 :- conn_4_10_6.
+0.5::conn_4_11.
+conn_4_11_1 :- conn_4_10_7, conn_4_11.
+0.5::conn_4_11_2.
+conn_4_11_3 :- conn_3_11_7, conn_4_11_2.
+conn_4_11_4 :- conn_4_11_1.
+conn_4_11_4 :- conn_4_11_3.
+0.5::conn_4_11_5.
+conn_4_11_6 :- conn_3_10_7, conn_4_11_5.
+conn_4_11_7 :- conn_4_11_4.
+conn_4_11_7 :- conn_4_11_6.
+0.5::conn_4_12.
+conn_4_12_1 :- conn_4_11_7, conn_4_12.
+0.5::conn_4_12_2.
+conn_4_12_3 :- conn_3_12_7, conn_4_12_2.
+conn_4_12_4 :- conn_4_12_1.
+conn_4_12_4 :- conn_4_12_3.
+0.5::conn_4_12_5.
+conn_4_12_6 :- conn_3_11_7, conn_4_12_5.
+conn_4_12_7 :- conn_4_12_4.
+conn_4_12_7 :- conn_4_12_6.
+0.5::conn_4_13.
+conn_4_13_1 :- conn_4_12_7, conn_4_13.
+0.5::conn_4_13_2.
+conn_4_13_3 :- conn_3_13_7, conn_4_13_2.
+conn_4_13_4 :- conn_4_13_1.
+conn_4_13_4 :- conn_4_13_3.
+0.5::conn_4_13_5.
+conn_4_13_6 :- conn_3_12_7, conn_4_13_5.
+conn_4_13_7 :- conn_4_13_4.
+conn_4_13_7 :- conn_4_13_6.
+0.5::conn_4_14.
+conn_4_14_1 :- conn_4_13_7, conn_4_14.
+0.5::conn_4_14_2.
+conn_4_14_3 :- conn_3_14_7, conn_4_14_2.
+conn_4_14_4 :- conn_4_14_1.
+conn_4_14_4 :- conn_4_14_3.
+0.5::conn_4_14_5.
+conn_4_14_6 :- conn_3_13_7, conn_4_14_5.
+conn_4_14_7 :- conn_4_14_4.
+conn_4_14_7 :- conn_4_14_6.
+0.5::conn_4_15.
+conn_4_15_1 :- conn_4_14_7, conn_4_15.
+0.5::conn_4_15_2.
+conn_4_15_3 :- conn_3_15_7, conn_4_15_2.
+conn_4_15_4 :- conn_4_15_1.
+conn_4_15_4 :- conn_4_15_3.
+0.5::conn_4_15_5.
+conn_4_15_6 :- conn_3_14_7, conn_4_15_5.
+conn_4_15_7 :- conn_4_15_4.
+conn_4_15_7 :- conn_4_15_6.
+0.5::conn_4_16.
+conn_4_16_1 :- conn_4_15_7, conn_4_16.
+0.5::conn_4_16_2.
+conn_4_16_3 :- conn_3_16_7, conn_4_16_2.
+conn_4_16_4 :- conn_4_16_1.
+conn_4_16_4 :- conn_4_16_3.
+0.5::conn_4_16_5.
+conn_4_16_6 :- conn_3_15_7, conn_4_16_5.
+conn_4_16_7 :- conn_4_16_4.
+conn_4_16_7 :- conn_4_16_6.
+0.5::conn_4_17.
+conn_4_17_1 :- conn_4_16_7, conn_4_17.
+0.5::conn_4_17_2.
+conn_4_17_3 :- conn_3_17_7, conn_4_17_2.
+conn_4_17_4 :- conn_4_17_1.
+conn_4_17_4 :- conn_4_17_3.
+0.5::conn_4_17_5.
+conn_4_17_6 :- conn_3_16_7, conn_4_17_5.
+conn_4_17_7 :- conn_4_17_4.
+conn_4_17_7 :- conn_4_17_6.
+0.5::conn_4_18.
+conn_4_18_1 :- conn_4_17_7, conn_4_18.
+0.5::conn_4_18_2.
+conn_4_18_3 :- conn_3_18_7, conn_4_18_2.
+conn_4_18_4 :- conn_4_18_1.
+conn_4_18_4 :- conn_4_18_3.
+0.5::conn_4_18_5.
+conn_4_18_6 :- conn_3_17_7, conn_4_18_5.
+conn_4_18_7 :- conn_4_18_4.
+conn_4_18_7 :- conn_4_18_6.
+0.5::conn_4_19.
+conn_4_19_1 :- conn_4_18_7, conn_4_19.
+0.5::conn_4_19_2.
+conn_4_19_3 :- conn_3_19_7, conn_4_19_2.
+conn_4_19_4 :- conn_4_19_1.
+conn_4_19_4 :- conn_4_19_3.
+0.5::conn_4_19_5.
+conn_4_19_6 :- conn_3_18_7, conn_4_19_5.
+conn_4_19_7 :- conn_4_19_4.
+conn_4_19_7 :- conn_4_19_6.
+0.5::conn_4_20.
+conn_4_20_1 :- conn_4_19_7, conn_4_20.
+0.5::conn_4_20_2.
+conn_4_20_3 :- conn_3_20_7, conn_4_20_2.
+conn_4_20_4 :- conn_4_20_1.
+conn_4_20_4 :- conn_4_20_3.
+0.5::conn_4_20_5.
+conn_4_20_6 :- conn_3_19_7, conn_4_20_5.
+conn_4_20_7 :- conn_4_20_4.
+conn_4_20_7 :- conn_4_20_6.
+0.5::conn_4_21.
+conn_4_21_1 :- conn_4_20_7, conn_4_21.
+0.5::conn_4_21_2.
+conn_4_21_3 :- conn_3_21_7, conn_4_21_2.
+conn_4_21_4 :- conn_4_21_1.
+conn_4_21_4 :- conn_4_21_3.
+0.5::conn_4_21_5.
+conn_4_21_6 :- conn_3_20_7, conn_4_21_5.
+conn_4_21_7 :- conn_4_21_4.
+conn_4_21_7 :- conn_4_21_6.
+0.5::conn_4_22.
+conn_4_22_1 :- conn_4_21_7, conn_4_22.
+0.5::conn_4_22_2.
+conn_4_22_3 :- conn_3_22_7, conn_4_22_2.
+conn_4_22_4 :- conn_4_22_1.
+conn_4_22_4 :- conn_4_22_3.
+0.5::conn_4_22_5.
+conn_4_22_6 :- conn_3_21_7, conn_4_22_5.
+conn_4_22_7 :- conn_4_22_4.
+conn_4_22_7 :- conn_4_22_6.
+0.5::conn_4_23.
+conn_4_23_1 :- conn_4_22_7, conn_4_23.
+0.5::conn_4_23_2.
+conn_4_23_3 :- conn_3_23_7, conn_4_23_2.
+conn_4_23_4 :- conn_4_23_1.
+conn_4_23_4 :- conn_4_23_3.
+0.5::conn_4_23_5.
+conn_4_23_6 :- conn_3_22_7, conn_4_23_5.
+conn_4_23_7 :- conn_4_23_4.
+conn_4_23_7 :- conn_4_23_6.
+0.5::conn_4_24.
+conn_4_24_1 :- conn_4_23_7, conn_4_24.
+0.5::conn_4_24_2.
+conn_4_24_3 :- conn_3_24_7, conn_4_24_2.
+conn_4_24_4 :- conn_4_24_1.
+conn_4_24_4 :- conn_4_24_3.
+0.5::conn_4_24_5.
+conn_4_24_6 :- conn_3_23_7, conn_4_24_5.
+conn_4_24_7 :- conn_4_24_4.
+conn_4_24_7 :- conn_4_24_6.
+0.5::conn_5_1.
+conn_5_1_1 :- conn_4_1_1, conn_5_1.
+0.5::conn_5_2.
+conn_5_2_1 :- conn_5_1_1, conn_5_2.
+0.5::conn_5_2_2.
+conn_5_2_3 :- conn_4_2_7, conn_5_2_2.
+conn_5_2_4 :- conn_5_2_1.
+conn_5_2_4 :- conn_5_2_3.
+0.5::conn_5_2_5.
+conn_5_2_6 :- conn_4_1_1, conn_5_2_5.
+conn_5_2_7 :- conn_5_2_4.
+conn_5_2_7 :- conn_5_2_6.
+0.5::conn_5_3.
+conn_5_3_1 :- conn_5_2_7, conn_5_3.
+0.5::conn_5_3_2.
+conn_5_3_3 :- conn_4_3_7, conn_5_3_2.
+conn_5_3_4 :- conn_5_3_1.
+conn_5_3_4 :- conn_5_3_3.
+0.5::conn_5_3_5.
+conn_5_3_6 :- conn_4_2_7, conn_5_3_5.
+conn_5_3_7 :- conn_5_3_4.
+conn_5_3_7 :- conn_5_3_6.
+0.5::conn_5_4.
+conn_5_4_1 :- conn_5_3_7, conn_5_4.
+0.5::conn_5_4_2.
+conn_5_4_3 :- conn_4_4_7, conn_5_4_2.
+conn_5_4_4 :- conn_5_4_1.
+conn_5_4_4 :- conn_5_4_3.
+0.5::conn_5_4_5.
+conn_5_4_6 :- conn_4_3_7, conn_5_4_5.
+conn_5_4_7 :- conn_5_4_4.
+conn_5_4_7 :- conn_5_4_6.
+0.5::conn_5_5.
+conn_5_5_1 :- conn_5_4_7, conn_5_5.
+0.5::conn_5_5_2.
+conn_5_5_3 :- conn_4_5_7, conn_5_5_2.
+conn_5_5_4 :- conn_5_5_1.
+conn_5_5_4 :- conn_5_5_3.
+0.5::conn_5_5_5.
+conn_5_5_6 :- conn_4_4_7, conn_5_5_5.
+conn_5_5_7 :- conn_5_5_4.
+conn_5_5_7 :- conn_5_5_6.
+0.5::conn_5_6.
+conn_5_6_1 :- conn_5_5_7, conn_5_6.
+0.5::conn_5_6_2.
+conn_5_6_3 :- conn_4_6_7, conn_5_6_2.
+conn_5_6_4 :- conn_5_6_1.
+conn_5_6_4 :- conn_5_6_3.
+0.5::conn_5_6_5.
+conn_5_6_6 :- conn_4_5_7, conn_5_6_5.
+conn_5_6_7 :- conn_5_6_4.
+conn_5_6_7 :- conn_5_6_6.
+0.5::conn_5_7.
+conn_5_7_1 :- conn_5_6_7, conn_5_7.
+0.5::conn_5_7_2.
+conn_5_7_3 :- conn_4_7_7, conn_5_7_2.
+conn_5_7_4 :- conn_5_7_1.
+conn_5_7_4 :- conn_5_7_3.
+0.5::conn_5_7_5.
+conn_5_7_6 :- conn_4_6_7, conn_5_7_5.
+conn_5_7_7 :- conn_5_7_4.
+conn_5_7_7 :- conn_5_7_6.
+0.5::conn_5_8.
+conn_5_8_1 :- conn_5_7_7, conn_5_8.
+0.5::conn_5_8_2.
+conn_5_8_3 :- conn_4_8_7, conn_5_8_2.
+conn_5_8_4 :- conn_5_8_1.
+conn_5_8_4 :- conn_5_8_3.
+0.5::conn_5_8_5.
+conn_5_8_6 :- conn_4_7_7, conn_5_8_5.
+conn_5_8_7 :- conn_5_8_4.
+conn_5_8_7 :- conn_5_8_6.
+0.5::conn_5_9.
+conn_5_9_1 :- conn_5_8_7, conn_5_9.
+0.5::conn_5_9_2.
+conn_5_9_3 :- conn_4_9_7, conn_5_9_2.
+conn_5_9_4 :- conn_5_9_1.
+conn_5_9_4 :- conn_5_9_3.
+0.5::conn_5_9_5.
+conn_5_9_6 :- conn_4_8_7, conn_5_9_5.
+conn_5_9_7 :- conn_5_9_4.
+conn_5_9_7 :- conn_5_9_6.
+0.5::conn_5_10.
+conn_5_10_1 :- conn_5_9_7, conn_5_10.
+0.5::conn_5_10_2.
+conn_5_10_3 :- conn_4_10_7, conn_5_10_2.
+conn_5_10_4 :- conn_5_10_1.
+conn_5_10_4 :- conn_5_10_3.
+0.5::conn_5_10_5.
+conn_5_10_6 :- conn_4_9_7, conn_5_10_5.
+conn_5_10_7 :- conn_5_10_4.
+conn_5_10_7 :- conn_5_10_6.
+0.5::conn_5_11.
+conn_5_11_1 :- conn_5_10_7, conn_5_11.
+0.5::conn_5_11_2.
+conn_5_11_3 :- conn_4_11_7, conn_5_11_2.
+conn_5_11_4 :- conn_5_11_1.
+conn_5_11_4 :- conn_5_11_3.
+0.5::conn_5_11_5.
+conn_5_11_6 :- conn_4_10_7, conn_5_11_5.
+conn_5_11_7 :- conn_5_11_4.
+conn_5_11_7 :- conn_5_11_6.
+0.5::conn_5_12.
+conn_5_12_1 :- conn_5_11_7, conn_5_12.
+0.5::conn_5_12_2.
+conn_5_12_3 :- conn_4_12_7, conn_5_12_2.
+conn_5_12_4 :- conn_5_12_1.
+conn_5_12_4 :- conn_5_12_3.
+0.5::conn_5_12_5.
+conn_5_12_6 :- conn_4_11_7, conn_5_12_5.
+conn_5_12_7 :- conn_5_12_4.
+conn_5_12_7 :- conn_5_12_6.
+0.5::conn_5_13.
+conn_5_13_1 :- conn_5_12_7, conn_5_13.
+0.5::conn_5_13_2.
+conn_5_13_3 :- conn_4_13_7, conn_5_13_2.
+conn_5_13_4 :- conn_5_13_1.
+conn_5_13_4 :- conn_5_13_3.
+0.5::conn_5_13_5.
+conn_5_13_6 :- conn_4_12_7, conn_5_13_5.
+conn_5_13_7 :- conn_5_13_4.
+conn_5_13_7 :- conn_5_13_6.
+0.5::conn_5_14.
+conn_5_14_1 :- conn_5_13_7, conn_5_14.
+0.5::conn_5_14_2.
+conn_5_14_3 :- conn_4_14_7, conn_5_14_2.
+conn_5_14_4 :- conn_5_14_1.
+conn_5_14_4 :- conn_5_14_3.
+0.5::conn_5_14_5.
+conn_5_14_6 :- conn_4_13_7, conn_5_14_5.
+conn_5_14_7 :- conn_5_14_4.
+conn_5_14_7 :- conn_5_14_6.
+0.5::conn_5_15.
+conn_5_15_1 :- conn_5_14_7, conn_5_15.
+0.5::conn_5_15_2.
+conn_5_15_3 :- conn_4_15_7, conn_5_15_2.
+conn_5_15_4 :- conn_5_15_1.
+conn_5_15_4 :- conn_5_15_3.
+0.5::conn_5_15_5.
+conn_5_15_6 :- conn_4_14_7, conn_5_15_5.
+conn_5_15_7 :- conn_5_15_4.
+conn_5_15_7 :- conn_5_15_6.
+0.5::conn_5_16.
+conn_5_16_1 :- conn_5_15_7, conn_5_16.
+0.5::conn_5_16_2.
+conn_5_16_3 :- conn_4_16_7, conn_5_16_2.
+conn_5_16_4 :- conn_5_16_1.
+conn_5_16_4 :- conn_5_16_3.
+0.5::conn_5_16_5.
+conn_5_16_6 :- conn_4_15_7, conn_5_16_5.
+conn_5_16_7 :- conn_5_16_4.
+conn_5_16_7 :- conn_5_16_6.
+0.5::conn_5_17.
+conn_5_17_1 :- conn_5_16_7, conn_5_17.
+0.5::conn_5_17_2.
+conn_5_17_3 :- conn_4_17_7, conn_5_17_2.
+conn_5_17_4 :- conn_5_17_1.
+conn_5_17_4 :- conn_5_17_3.
+0.5::conn_5_17_5.
+conn_5_17_6 :- conn_4_16_7, conn_5_17_5.
+conn_5_17_7 :- conn_5_17_4.
+conn_5_17_7 :- conn_5_17_6.
+0.5::conn_5_18.
+conn_5_18_1 :- conn_5_17_7, conn_5_18.
+0.5::conn_5_18_2.
+conn_5_18_3 :- conn_4_18_7, conn_5_18_2.
+conn_5_18_4 :- conn_5_18_1.
+conn_5_18_4 :- conn_5_18_3.
+0.5::conn_5_18_5.
+conn_5_18_6 :- conn_4_17_7, conn_5_18_5.
+conn_5_18_7 :- conn_5_18_4.
+conn_5_18_7 :- conn_5_18_6.
+0.5::conn_5_19.
+conn_5_19_1 :- conn_5_18_7, conn_5_19.
+0.5::conn_5_19_2.
+conn_5_19_3 :- conn_4_19_7, conn_5_19_2.
+conn_5_19_4 :- conn_5_19_1.
+conn_5_19_4 :- conn_5_19_3.
+0.5::conn_5_19_5.
+conn_5_19_6 :- conn_4_18_7, conn_5_19_5.
+conn_5_19_7 :- conn_5_19_4.
+conn_5_19_7 :- conn_5_19_6.
+0.5::conn_5_20.
+conn_5_20_1 :- conn_5_19_7, conn_5_20.
+0.5::conn_5_20_2.
+conn_5_20_3 :- conn_4_20_7, conn_5_20_2.
+conn_5_20_4 :- conn_5_20_1.
+conn_5_20_4 :- conn_5_20_3.
+0.5::conn_5_20_5.
+conn_5_20_6 :- conn_4_19_7, conn_5_20_5.
+conn_5_20_7 :- conn_5_20_4.
+conn_5_20_7 :- conn_5_20_6.
+0.5::conn_5_21.
+conn_5_21_1 :- conn_5_20_7, conn_5_21.
+0.5::conn_5_21_2.
+conn_5_21_3 :- conn_4_21_7, conn_5_21_2.
+conn_5_21_4 :- conn_5_21_1.
+conn_5_21_4 :- conn_5_21_3.
+0.5::conn_5_21_5.
+conn_5_21_6 :- conn_4_20_7, conn_5_21_5.
+conn_5_21_7 :- conn_5_21_4.
+conn_5_21_7 :- conn_5_21_6.
+0.5::conn_5_22.
+conn_5_22_1 :- conn_5_21_7, conn_5_22.
+0.5::conn_5_22_2.
+conn_5_22_3 :- conn_4_22_7, conn_5_22_2.
+conn_5_22_4 :- conn_5_22_1.
+conn_5_22_4 :- conn_5_22_3.
+0.5::conn_5_22_5.
+conn_5_22_6 :- conn_4_21_7, conn_5_22_5.
+conn_5_22_7 :- conn_5_22_4.
+conn_5_22_7 :- conn_5_22_6.
+0.5::conn_5_23.
+conn_5_23_1 :- conn_5_22_7, conn_5_23.
+0.5::conn_5_23_2.
+conn_5_23_3 :- conn_4_23_7, conn_5_23_2.
+conn_5_23_4 :- conn_5_23_1.
+conn_5_23_4 :- conn_5_23_3.
+0.5::conn_5_23_5.
+conn_5_23_6 :- conn_4_22_7, conn_5_23_5.
+conn_5_23_7 :- conn_5_23_4.
+conn_5_23_7 :- conn_5_23_6.
+0.5::conn_5_24.
+conn_5_24_1 :- conn_5_23_7, conn_5_24.
+0.5::conn_5_24_2.
+conn_5_24_3 :- conn_4_24_7, conn_5_24_2.
+conn_5_24_4 :- conn_5_24_1.
+conn_5_24_4 :- conn_5_24_3.
+0.5::conn_5_24_5.
+conn_5_24_6 :- conn_4_23_7, conn_5_24_5.
+conn_5_24_7 :- conn_5_24_4.
+conn_5_24_7 :- conn_5_24_6.
+0.5::conn_6_1.
+conn_6_1_1 :- conn_5_1_1, conn_6_1.
+0.5::conn_6_2.
+conn_6_2_1 :- conn_6_1_1, conn_6_2.
+0.5::conn_6_2_2.
+conn_6_2_3 :- conn_5_2_7, conn_6_2_2.
+conn_6_2_4 :- conn_6_2_1.
+conn_6_2_4 :- conn_6_2_3.
+0.5::conn_6_2_5.
+conn_6_2_6 :- conn_5_1_1, conn_6_2_5.
+conn_6_2_7 :- conn_6_2_4.
+conn_6_2_7 :- conn_6_2_6.
+0.5::conn_6_3.
+conn_6_3_1 :- conn_6_2_7, conn_6_3.
+0.5::conn_6_3_2.
+conn_6_3_3 :- conn_5_3_7, conn_6_3_2.
+conn_6_3_4 :- conn_6_3_1.
+conn_6_3_4 :- conn_6_3_3.
+0.5::conn_6_3_5.
+conn_6_3_6 :- conn_5_2_7, conn_6_3_5.
+conn_6_3_7 :- conn_6_3_4.
+conn_6_3_7 :- conn_6_3_6.
+0.5::conn_6_4.
+conn_6_4_1 :- conn_6_3_7, conn_6_4.
+0.5::conn_6_4_2.
+conn_6_4_3 :- conn_5_4_7, conn_6_4_2.
+conn_6_4_4 :- conn_6_4_1.
+conn_6_4_4 :- conn_6_4_3.
+0.5::conn_6_4_5.
+conn_6_4_6 :- conn_5_3_7, conn_6_4_5.
+conn_6_4_7 :- conn_6_4_4.
+conn_6_4_7 :- conn_6_4_6.
+0.5::conn_6_5.
+conn_6_5_1 :- conn_6_4_7, conn_6_5.
+0.5::conn_6_5_2.
+conn_6_5_3 :- conn_5_5_7, conn_6_5_2.
+conn_6_5_4 :- conn_6_5_1.
+conn_6_5_4 :- conn_6_5_3.
+0.5::conn_6_5_5.
+conn_6_5_6 :- conn_5_4_7, conn_6_5_5.
+conn_6_5_7 :- conn_6_5_4.
+conn_6_5_7 :- conn_6_5_6.
+0.5::conn_6_6.
+conn_6_6_1 :- conn_6_5_7, conn_6_6.
+0.5::conn_6_6_2.
+conn_6_6_3 :- conn_5_6_7, conn_6_6_2.
+conn_6_6_4 :- conn_6_6_1.
+conn_6_6_4 :- conn_6_6_3.
+0.5::conn_6_6_5.
+conn_6_6_6 :- conn_5_5_7, conn_6_6_5.
+conn_6_6_7 :- conn_6_6_4.
+conn_6_6_7 :- conn_6_6_6.
+0.5::conn_6_7.
+conn_6_7_1 :- conn_6_6_7, conn_6_7.
+0.5::conn_6_7_2.
+conn_6_7_3 :- conn_5_7_7, conn_6_7_2.
+conn_6_7_4 :- conn_6_7_1.
+conn_6_7_4 :- conn_6_7_3.
+0.5::conn_6_7_5.
+conn_6_7_6 :- conn_5_6_7, conn_6_7_5.
+conn_6_7_7 :- conn_6_7_4.
+conn_6_7_7 :- conn_6_7_6.
+0.5::conn_6_8.
+conn_6_8_1 :- conn_6_7_7, conn_6_8.
+0.5::conn_6_8_2.
+conn_6_8_3 :- conn_5_8_7, conn_6_8_2.
+conn_6_8_4 :- conn_6_8_1.
+conn_6_8_4 :- conn_6_8_3.
+0.5::conn_6_8_5.
+conn_6_8_6 :- conn_5_7_7, conn_6_8_5.
+conn_6_8_7 :- conn_6_8_4.
+conn_6_8_7 :- conn_6_8_6.
+0.5::conn_6_9.
+conn_6_9_1 :- conn_6_8_7, conn_6_9.
+0.5::conn_6_9_2.
+conn_6_9_3 :- conn_5_9_7, conn_6_9_2.
+conn_6_9_4 :- conn_6_9_1.
+conn_6_9_4 :- conn_6_9_3.
+0.5::conn_6_9_5.
+conn_6_9_6 :- conn_5_8_7, conn_6_9_5.
+conn_6_9_7 :- conn_6_9_4.
+conn_6_9_7 :- conn_6_9_6.
+0.5::conn_6_10.
+conn_6_10_1 :- conn_6_9_7, conn_6_10.
+0.5::conn_6_10_2.
+conn_6_10_3 :- conn_5_10_7, conn_6_10_2.
+conn_6_10_4 :- conn_6_10_1.
+conn_6_10_4 :- conn_6_10_3.
+0.5::conn_6_10_5.
+conn_6_10_6 :- conn_5_9_7, conn_6_10_5.
+conn_6_10_7 :- conn_6_10_4.
+conn_6_10_7 :- conn_6_10_6.
+0.5::conn_6_11.
+conn_6_11_1 :- conn_6_10_7, conn_6_11.
+0.5::conn_6_11_2.
+conn_6_11_3 :- conn_5_11_7, conn_6_11_2.
+conn_6_11_4 :- conn_6_11_1.
+conn_6_11_4 :- conn_6_11_3.
+0.5::conn_6_11_5.
+conn_6_11_6 :- conn_5_10_7, conn_6_11_5.
+conn_6_11_7 :- conn_6_11_4.
+conn_6_11_7 :- conn_6_11_6.
+0.5::conn_6_12.
+conn_6_12_1 :- conn_6_11_7, conn_6_12.
+0.5::conn_6_12_2.
+conn_6_12_3 :- conn_5_12_7, conn_6_12_2.
+conn_6_12_4 :- conn_6_12_1.
+conn_6_12_4 :- conn_6_12_3.
+0.5::conn_6_12_5.
+conn_6_12_6 :- conn_5_11_7, conn_6_12_5.
+conn_6_12_7 :- conn_6_12_4.
+conn_6_12_7 :- conn_6_12_6.
+0.5::conn_6_13.
+conn_6_13_1 :- conn_6_12_7, conn_6_13.
+0.5::conn_6_13_2.
+conn_6_13_3 :- conn_5_13_7, conn_6_13_2.
+conn_6_13_4 :- conn_6_13_1.
+conn_6_13_4 :- conn_6_13_3.
+0.5::conn_6_13_5.
+conn_6_13_6 :- conn_5_12_7, conn_6_13_5.
+conn_6_13_7 :- conn_6_13_4.
+conn_6_13_7 :- conn_6_13_6.
+0.5::conn_6_14.
+conn_6_14_1 :- conn_6_13_7, conn_6_14.
+0.5::conn_6_14_2.
+conn_6_14_3 :- conn_5_14_7, conn_6_14_2.
+conn_6_14_4 :- conn_6_14_1.
+conn_6_14_4 :- conn_6_14_3.
+0.5::conn_6_14_5.
+conn_6_14_6 :- conn_5_13_7, conn_6_14_5.
+conn_6_14_7 :- conn_6_14_4.
+conn_6_14_7 :- conn_6_14_6.
+0.5::conn_6_15.
+conn_6_15_1 :- conn_6_14_7, conn_6_15.
+0.5::conn_6_15_2.
+conn_6_15_3 :- conn_5_15_7, conn_6_15_2.
+conn_6_15_4 :- conn_6_15_1.
+conn_6_15_4 :- conn_6_15_3.
+0.5::conn_6_15_5.
+conn_6_15_6 :- conn_5_14_7, conn_6_15_5.
+conn_6_15_7 :- conn_6_15_4.
+conn_6_15_7 :- conn_6_15_6.
+0.5::conn_6_16.
+conn_6_16_1 :- conn_6_15_7, conn_6_16.
+0.5::conn_6_16_2.
+conn_6_16_3 :- conn_5_16_7, conn_6_16_2.
+conn_6_16_4 :- conn_6_16_1.
+conn_6_16_4 :- conn_6_16_3.
+0.5::conn_6_16_5.
+conn_6_16_6 :- conn_5_15_7, conn_6_16_5.
+conn_6_16_7 :- conn_6_16_4.
+conn_6_16_7 :- conn_6_16_6.
+0.5::conn_6_17.
+conn_6_17_1 :- conn_6_16_7, conn_6_17.
+0.5::conn_6_17_2.
+conn_6_17_3 :- conn_5_17_7, conn_6_17_2.
+conn_6_17_4 :- conn_6_17_1.
+conn_6_17_4 :- conn_6_17_3.
+0.5::conn_6_17_5.
+conn_6_17_6 :- conn_5_16_7, conn_6_17_5.
+conn_6_17_7 :- conn_6_17_4.
+conn_6_17_7 :- conn_6_17_6.
+0.5::conn_6_18.
+conn_6_18_1 :- conn_6_17_7, conn_6_18.
+0.5::conn_6_18_2.
+conn_6_18_3 :- conn_5_18_7, conn_6_18_2.
+conn_6_18_4 :- conn_6_18_1.
+conn_6_18_4 :- conn_6_18_3.
+0.5::conn_6_18_5.
+conn_6_18_6 :- conn_5_17_7, conn_6_18_5.
+conn_6_18_7 :- conn_6_18_4.
+conn_6_18_7 :- conn_6_18_6.
+0.5::conn_6_19.
+conn_6_19_1 :- conn_6_18_7, conn_6_19.
+0.5::conn_6_19_2.
+conn_6_19_3 :- conn_5_19_7, conn_6_19_2.
+conn_6_19_4 :- conn_6_19_1.
+conn_6_19_4 :- conn_6_19_3.
+0.5::conn_6_19_5.
+conn_6_19_6 :- conn_5_18_7, conn_6_19_5.
+conn_6_19_7 :- conn_6_19_4.
+conn_6_19_7 :- conn_6_19_6.
+0.5::conn_6_20.
+conn_6_20_1 :- conn_6_19_7, conn_6_20.
+0.5::conn_6_20_2.
+conn_6_20_3 :- conn_5_20_7, conn_6_20_2.
+conn_6_20_4 :- conn_6_20_1.
+conn_6_20_4 :- conn_6_20_3.
+0.5::conn_6_20_5.
+conn_6_20_6 :- conn_5_19_7, conn_6_20_5.
+conn_6_20_7 :- conn_6_20_4.
+conn_6_20_7 :- conn_6_20_6.
+0.5::conn_6_21.
+conn_6_21_1 :- conn_6_20_7, conn_6_21.
+0.5::conn_6_21_2.
+conn_6_21_3 :- conn_5_21_7, conn_6_21_2.
+conn_6_21_4 :- conn_6_21_1.
+conn_6_21_4 :- conn_6_21_3.
+0.5::conn_6_21_5.
+conn_6_21_6 :- conn_5_20_7, conn_6_21_5.
+conn_6_21_7 :- conn_6_21_4.
+conn_6_21_7 :- conn_6_21_6.
+0.5::conn_6_22.
+conn_6_22_1 :- conn_6_21_7, conn_6_22.
+0.5::conn_6_22_2.
+conn_6_22_3 :- conn_5_22_7, conn_6_22_2.
+conn_6_22_4 :- conn_6_22_1.
+conn_6_22_4 :- conn_6_22_3.
+0.5::conn_6_22_5.
+conn_6_22_6 :- conn_5_21_7, conn_6_22_5.
+conn_6_22_7 :- conn_6_22_4.
+conn_6_22_7 :- conn_6_22_6.
+0.5::conn_6_23.
+conn_6_23_1 :- conn_6_22_7, conn_6_23.
+0.5::conn_6_23_2.
+conn_6_23_3 :- conn_5_23_7, conn_6_23_2.
+conn_6_23_4 :- conn_6_23_1.
+conn_6_23_4 :- conn_6_23_3.
+0.5::conn_6_23_5.
+conn_6_23_6 :- conn_5_22_7, conn_6_23_5.
+conn_6_23_7 :- conn_6_23_4.
+conn_6_23_7 :- conn_6_23_6.
+0.5::conn_6_24.
+conn_6_24_1 :- conn_6_23_7, conn_6_24.
+0.5::conn_6_24_2.
+conn_6_24_3 :- conn_5_24_7, conn_6_24_2.
+conn_6_24_4 :- conn_6_24_1.
+conn_6_24_4 :- conn_6_24_3.
+0.5::conn_6_24_5.
+conn_6_24_6 :- conn_5_23_7, conn_6_24_5.
+conn_6_24_7 :- conn_6_24_4.
+conn_6_24_7 :- conn_6_24_6.
+0.5::conn_7_1.
+conn_7_1_1 :- conn_6_1_1, conn_7_1.
+0.5::conn_7_2.
+conn_7_2_1 :- conn_7_1_1, conn_7_2.
+0.5::conn_7_2_2.
+conn_7_2_3 :- conn_6_2_7, conn_7_2_2.
+conn_7_2_4 :- conn_7_2_1.
+conn_7_2_4 :- conn_7_2_3.
+0.5::conn_7_2_5.
+conn_7_2_6 :- conn_6_1_1, conn_7_2_5.
+conn_7_2_7 :- conn_7_2_4.
+conn_7_2_7 :- conn_7_2_6.
+0.5::conn_7_3.
+conn_7_3_1 :- conn_7_2_7, conn_7_3.
+0.5::conn_7_3_2.
+conn_7_3_3 :- conn_6_3_7, conn_7_3_2.
+conn_7_3_4 :- conn_7_3_1.
+conn_7_3_4 :- conn_7_3_3.
+0.5::conn_7_3_5.
+conn_7_3_6 :- conn_6_2_7, conn_7_3_5.
+conn_7_3_7 :- conn_7_3_4.
+conn_7_3_7 :- conn_7_3_6.
+0.5::conn_7_4.
+conn_7_4_1 :- conn_7_3_7, conn_7_4.
+0.5::conn_7_4_2.
+conn_7_4_3 :- conn_6_4_7, conn_7_4_2.
+conn_7_4_4 :- conn_7_4_1.
+conn_7_4_4 :- conn_7_4_3.
+0.5::conn_7_4_5.
+conn_7_4_6 :- conn_6_3_7, conn_7_4_5.
+conn_7_4_7 :- conn_7_4_4.
+conn_7_4_7 :- conn_7_4_6.
+0.5::conn_7_5.
+conn_7_5_1 :- conn_7_4_7, conn_7_5.
+0.5::conn_7_5_2.
+conn_7_5_3 :- conn_6_5_7, conn_7_5_2.
+conn_7_5_4 :- conn_7_5_1.
+conn_7_5_4 :- conn_7_5_3.
+0.5::conn_7_5_5.
+conn_7_5_6 :- conn_6_4_7, conn_7_5_5.
+conn_7_5_7 :- conn_7_5_4.
+conn_7_5_7 :- conn_7_5_6.
+0.5::conn_7_6.
+conn_7_6_1 :- conn_7_5_7, conn_7_6.
+0.5::conn_7_6_2.
+conn_7_6_3 :- conn_6_6_7, conn_7_6_2.
+conn_7_6_4 :- conn_7_6_1.
+conn_7_6_4 :- conn_7_6_3.
+0.5::conn_7_6_5.
+conn_7_6_6 :- conn_6_5_7, conn_7_6_5.
+conn_7_6_7 :- conn_7_6_4.
+conn_7_6_7 :- conn_7_6_6.
+0.5::conn_7_7.
+conn_7_7_1 :- conn_7_6_7, conn_7_7.
+0.5::conn_7_7_2.
+conn_7_7_3 :- conn_6_7_7, conn_7_7_2.
+conn_7_7_4 :- conn_7_7_1.
+conn_7_7_4 :- conn_7_7_3.
+0.5::conn_7_7_5.
+conn_7_7_6 :- conn_6_6_7, conn_7_7_5.
+conn_7_7_7 :- conn_7_7_4.
+conn_7_7_7 :- conn_7_7_6.
+0.5::conn_7_8.
+conn_7_8_1 :- conn_7_7_7, conn_7_8.
+0.5::conn_7_8_2.
+conn_7_8_3 :- conn_6_8_7, conn_7_8_2.
+conn_7_8_4 :- conn_7_8_1.
+conn_7_8_4 :- conn_7_8_3.
+0.5::conn_7_8_5.
+conn_7_8_6 :- conn_6_7_7, conn_7_8_5.
+conn_7_8_7 :- conn_7_8_4.
+conn_7_8_7 :- conn_7_8_6.
+0.5::conn_7_9.
+conn_7_9_1 :- conn_7_8_7, conn_7_9.
+0.5::conn_7_9_2.
+conn_7_9_3 :- conn_6_9_7, conn_7_9_2.
+conn_7_9_4 :- conn_7_9_1.
+conn_7_9_4 :- conn_7_9_3.
+0.5::conn_7_9_5.
+conn_7_9_6 :- conn_6_8_7, conn_7_9_5.
+conn_7_9_7 :- conn_7_9_4.
+conn_7_9_7 :- conn_7_9_6.
+0.5::conn_7_10.
+conn_7_10_1 :- conn_7_9_7, conn_7_10.
+0.5::conn_7_10_2.
+conn_7_10_3 :- conn_6_10_7, conn_7_10_2.
+conn_7_10_4 :- conn_7_10_1.
+conn_7_10_4 :- conn_7_10_3.
+0.5::conn_7_10_5.
+conn_7_10_6 :- conn_6_9_7, conn_7_10_5.
+conn_7_10_7 :- conn_7_10_4.
+conn_7_10_7 :- conn_7_10_6.
+0.5::conn_7_11.
+conn_7_11_1 :- conn_7_10_7, conn_7_11.
+0.5::conn_7_11_2.
+conn_7_11_3 :- conn_6_11_7, conn_7_11_2.
+conn_7_11_4 :- conn_7_11_1.
+conn_7_11_4 :- conn_7_11_3.
+0.5::conn_7_11_5.
+conn_7_11_6 :- conn_6_10_7, conn_7_11_5.
+conn_7_11_7 :- conn_7_11_4.
+conn_7_11_7 :- conn_7_11_6.
+0.5::conn_7_12.
+conn_7_12_1 :- conn_7_11_7, conn_7_12.
+0.5::conn_7_12_2.
+conn_7_12_3 :- conn_6_12_7, conn_7_12_2.
+conn_7_12_4 :- conn_7_12_1.
+conn_7_12_4 :- conn_7_12_3.
+0.5::conn_7_12_5.
+conn_7_12_6 :- conn_6_11_7, conn_7_12_5.
+conn_7_12_7 :- conn_7_12_4.
+conn_7_12_7 :- conn_7_12_6.
+0.5::conn_7_13.
+conn_7_13_1 :- conn_7_12_7, conn_7_13.
+0.5::conn_7_13_2.
+conn_7_13_3 :- conn_6_13_7, conn_7_13_2.
+conn_7_13_4 :- conn_7_13_1.
+conn_7_13_4 :- conn_7_13_3.
+0.5::conn_7_13_5.
+conn_7_13_6 :- conn_6_12_7, conn_7_13_5.
+conn_7_13_7 :- conn_7_13_4.
+conn_7_13_7 :- conn_7_13_6.
+0.5::conn_7_14.
+conn_7_14_1 :- conn_7_13_7, conn_7_14.
+0.5::conn_7_14_2.
+conn_7_14_3 :- conn_6_14_7, conn_7_14_2.
+conn_7_14_4 :- conn_7_14_1.
+conn_7_14_4 :- conn_7_14_3.
+0.5::conn_7_14_5.
+conn_7_14_6 :- conn_6_13_7, conn_7_14_5.
+conn_7_14_7 :- conn_7_14_4.
+conn_7_14_7 :- conn_7_14_6.
+0.5::conn_7_15.
+conn_7_15_1 :- conn_7_14_7, conn_7_15.
+0.5::conn_7_15_2.
+conn_7_15_3 :- conn_6_15_7, conn_7_15_2.
+conn_7_15_4 :- conn_7_15_1.
+conn_7_15_4 :- conn_7_15_3.
+0.5::conn_7_15_5.
+conn_7_15_6 :- conn_6_14_7, conn_7_15_5.
+conn_7_15_7 :- conn_7_15_4.
+conn_7_15_7 :- conn_7_15_6.
+0.5::conn_7_16.
+conn_7_16_1 :- conn_7_15_7, conn_7_16.
+0.5::conn_7_16_2.
+conn_7_16_3 :- conn_6_16_7, conn_7_16_2.
+conn_7_16_4 :- conn_7_16_1.
+conn_7_16_4 :- conn_7_16_3.
+0.5::conn_7_16_5.
+conn_7_16_6 :- conn_6_15_7, conn_7_16_5.
+conn_7_16_7 :- conn_7_16_4.
+conn_7_16_7 :- conn_7_16_6.
+0.5::conn_7_17.
+conn_7_17_1 :- conn_7_16_7, conn_7_17.
+0.5::conn_7_17_2.
+conn_7_17_3 :- conn_6_17_7, conn_7_17_2.
+conn_7_17_4 :- conn_7_17_1.
+conn_7_17_4 :- conn_7_17_3.
+0.5::conn_7_17_5.
+conn_7_17_6 :- conn_6_16_7, conn_7_17_5.
+conn_7_17_7 :- conn_7_17_4.
+conn_7_17_7 :- conn_7_17_6.
+0.5::conn_7_18.
+conn_7_18_1 :- conn_7_17_7, conn_7_18.
+0.5::conn_7_18_2.
+conn_7_18_3 :- conn_6_18_7, conn_7_18_2.
+conn_7_18_4 :- conn_7_18_1.
+conn_7_18_4 :- conn_7_18_3.
+0.5::conn_7_18_5.
+conn_7_18_6 :- conn_6_17_7, conn_7_18_5.
+conn_7_18_7 :- conn_7_18_4.
+conn_7_18_7 :- conn_7_18_6.
+0.5::conn_7_19.
+conn_7_19_1 :- conn_7_18_7, conn_7_19.
+0.5::conn_7_19_2.
+conn_7_19_3 :- conn_6_19_7, conn_7_19_2.
+conn_7_19_4 :- conn_7_19_1.
+conn_7_19_4 :- conn_7_19_3.
+0.5::conn_7_19_5.
+conn_7_19_6 :- conn_6_18_7, conn_7_19_5.
+conn_7_19_7 :- conn_7_19_4.
+conn_7_19_7 :- conn_7_19_6.
+0.5::conn_7_20.
+conn_7_20_1 :- conn_7_19_7, conn_7_20.
+0.5::conn_7_20_2.
+conn_7_20_3 :- conn_6_20_7, conn_7_20_2.
+conn_7_20_4 :- conn_7_20_1.
+conn_7_20_4 :- conn_7_20_3.
+0.5::conn_7_20_5.
+conn_7_20_6 :- conn_6_19_7, conn_7_20_5.
+conn_7_20_7 :- conn_7_20_4.
+conn_7_20_7 :- conn_7_20_6.
+0.5::conn_7_21.
+conn_7_21_1 :- conn_7_20_7, conn_7_21.
+0.5::conn_7_21_2.
+conn_7_21_3 :- conn_6_21_7, conn_7_21_2.
+conn_7_21_4 :- conn_7_21_1.
+conn_7_21_4 :- conn_7_21_3.
+0.5::conn_7_21_5.
+conn_7_21_6 :- conn_6_20_7, conn_7_21_5.
+conn_7_21_7 :- conn_7_21_4.
+conn_7_21_7 :- conn_7_21_6.
+0.5::conn_7_22.
+conn_7_22_1 :- conn_7_21_7, conn_7_22.
+0.5::conn_7_22_2.
+conn_7_22_3 :- conn_6_22_7, conn_7_22_2.
+conn_7_22_4 :- conn_7_22_1.
+conn_7_22_4 :- conn_7_22_3.
+0.5::conn_7_22_5.
+conn_7_22_6 :- conn_6_21_7, conn_7_22_5.
+conn_7_22_7 :- conn_7_22_4.
+conn_7_22_7 :- conn_7_22_6.
+0.5::conn_7_23.
+conn_7_23_1 :- conn_7_22_7, conn_7_23.
+0.5::conn_7_23_2.
+conn_7_23_3 :- conn_6_23_7, conn_7_23_2.
+conn_7_23_4 :- conn_7_23_1.
+conn_7_23_4 :- conn_7_23_3.
+0.5::conn_7_23_5.
+conn_7_23_6 :- conn_6_22_7, conn_7_23_5.
+conn_7_23_7 :- conn_7_23_4.
+conn_7_23_7 :- conn_7_23_6.
+0.5::conn_7_24.
+conn_7_24_1 :- conn_7_23_7, conn_7_24.
+0.5::conn_7_24_2.
+conn_7_24_3 :- conn_6_24_7, conn_7_24_2.
+conn_7_24_4 :- conn_7_24_1.
+conn_7_24_4 :- conn_7_24_3.
+0.5::conn_7_24_5.
+conn_7_24_6 :- conn_6_23_7, conn_7_24_5.
+conn_7_24_7 :- conn_7_24_4.
+conn_7_24_7 :- conn_7_24_6.
+0.5::conn_8_1.
+conn_8_1_1 :- conn_7_1_1, conn_8_1.
+0.5::conn_8_2.
+conn_8_2_1 :- conn_8_1_1, conn_8_2.
+0.5::conn_8_2_2.
+conn_8_2_3 :- conn_7_2_7, conn_8_2_2.
+conn_8_2_4 :- conn_8_2_1.
+conn_8_2_4 :- conn_8_2_3.
+0.5::conn_8_2_5.
+conn_8_2_6 :- conn_7_1_1, conn_8_2_5.
+conn_8_2_7 :- conn_8_2_4.
+conn_8_2_7 :- conn_8_2_6.
+0.5::conn_8_3.
+conn_8_3_1 :- conn_8_2_7, conn_8_3.
+0.5::conn_8_3_2.
+conn_8_3_3 :- conn_7_3_7, conn_8_3_2.
+conn_8_3_4 :- conn_8_3_1.
+conn_8_3_4 :- conn_8_3_3.
+0.5::conn_8_3_5.
+conn_8_3_6 :- conn_7_2_7, conn_8_3_5.
+conn_8_3_7 :- conn_8_3_4.
+conn_8_3_7 :- conn_8_3_6.
+0.5::conn_8_4.
+conn_8_4_1 :- conn_8_3_7, conn_8_4.
+0.5::conn_8_4_2.
+conn_8_4_3 :- conn_7_4_7, conn_8_4_2.
+conn_8_4_4 :- conn_8_4_1.
+conn_8_4_4 :- conn_8_4_3.
+0.5::conn_8_4_5.
+conn_8_4_6 :- conn_7_3_7, conn_8_4_5.
+conn_8_4_7 :- conn_8_4_4.
+conn_8_4_7 :- conn_8_4_6.
+0.5::conn_8_5.
+conn_8_5_1 :- conn_8_4_7, conn_8_5.
+0.5::conn_8_5_2.
+conn_8_5_3 :- conn_7_5_7, conn_8_5_2.
+conn_8_5_4 :- conn_8_5_1.
+conn_8_5_4 :- conn_8_5_3.
+0.5::conn_8_5_5.
+conn_8_5_6 :- conn_7_4_7, conn_8_5_5.
+conn_8_5_7 :- conn_8_5_4.
+conn_8_5_7 :- conn_8_5_6.
+0.5::conn_8_6.
+conn_8_6_1 :- conn_8_5_7, conn_8_6.
+0.5::conn_8_6_2.
+conn_8_6_3 :- conn_7_6_7, conn_8_6_2.
+conn_8_6_4 :- conn_8_6_1.
+conn_8_6_4 :- conn_8_6_3.
+0.5::conn_8_6_5.
+conn_8_6_6 :- conn_7_5_7, conn_8_6_5.
+conn_8_6_7 :- conn_8_6_4.
+conn_8_6_7 :- conn_8_6_6.
+0.5::conn_8_7.
+conn_8_7_1 :- conn_8_6_7, conn_8_7.
+0.5::conn_8_7_2.
+conn_8_7_3 :- conn_7_7_7, conn_8_7_2.
+conn_8_7_4 :- conn_8_7_1.
+conn_8_7_4 :- conn_8_7_3.
+0.5::conn_8_7_5.
+conn_8_7_6 :- conn_7_6_7, conn_8_7_5.
+conn_8_7_7 :- conn_8_7_4.
+conn_8_7_7 :- conn_8_7_6.
+0.5::conn_8_8.
+conn_8_8_1 :- conn_8_7_7, conn_8_8.
+0.5::conn_8_8_2.
+conn_8_8_3 :- conn_7_8_7, conn_8_8_2.
+conn_8_8_4 :- conn_8_8_1.
+conn_8_8_4 :- conn_8_8_3.
+0.5::conn_8_8_5.
+conn_8_8_6 :- conn_7_7_7, conn_8_8_5.
+conn_8_8_7 :- conn_8_8_4.
+conn_8_8_7 :- conn_8_8_6.
+0.5::conn_8_9.
+conn_8_9_1 :- conn_8_8_7, conn_8_9.
+0.5::conn_8_9_2.
+conn_8_9_3 :- conn_7_9_7, conn_8_9_2.
+conn_8_9_4 :- conn_8_9_1.
+conn_8_9_4 :- conn_8_9_3.
+0.5::conn_8_9_5.
+conn_8_9_6 :- conn_7_8_7, conn_8_9_5.
+conn_8_9_7 :- conn_8_9_4.
+conn_8_9_7 :- conn_8_9_6.
+0.5::conn_8_10.
+conn_8_10_1 :- conn_8_9_7, conn_8_10.
+0.5::conn_8_10_2.
+conn_8_10_3 :- conn_7_10_7, conn_8_10_2.
+conn_8_10_4 :- conn_8_10_1.
+conn_8_10_4 :- conn_8_10_3.
+0.5::conn_8_10_5.
+conn_8_10_6 :- conn_7_9_7, conn_8_10_5.
+conn_8_10_7 :- conn_8_10_4.
+conn_8_10_7 :- conn_8_10_6.
+0.5::conn_8_11.
+conn_8_11_1 :- conn_8_10_7, conn_8_11.
+0.5::conn_8_11_2.
+conn_8_11_3 :- conn_7_11_7, conn_8_11_2.
+conn_8_11_4 :- conn_8_11_1.
+conn_8_11_4 :- conn_8_11_3.
+0.5::conn_8_11_5.
+conn_8_11_6 :- conn_7_10_7, conn_8_11_5.
+conn_8_11_7 :- conn_8_11_4.
+conn_8_11_7 :- conn_8_11_6.
+0.5::conn_8_12.
+conn_8_12_1 :- conn_8_11_7, conn_8_12.
+0.5::conn_8_12_2.
+conn_8_12_3 :- conn_7_12_7, conn_8_12_2.
+conn_8_12_4 :- conn_8_12_1.
+conn_8_12_4 :- conn_8_12_3.
+0.5::conn_8_12_5.
+conn_8_12_6 :- conn_7_11_7, conn_8_12_5.
+conn_8_12_7 :- conn_8_12_4.
+conn_8_12_7 :- conn_8_12_6.
+0.5::conn_8_13.
+conn_8_13_1 :- conn_8_12_7, conn_8_13.
+0.5::conn_8_13_2.
+conn_8_13_3 :- conn_7_13_7, conn_8_13_2.
+conn_8_13_4 :- conn_8_13_1.
+conn_8_13_4 :- conn_8_13_3.
+0.5::conn_8_13_5.
+conn_8_13_6 :- conn_7_12_7, conn_8_13_5.
+conn_8_13_7 :- conn_8_13_4.
+conn_8_13_7 :- conn_8_13_6.
+0.5::conn_8_14.
+conn_8_14_1 :- conn_8_13_7, conn_8_14.
+0.5::conn_8_14_2.
+conn_8_14_3 :- conn_7_14_7, conn_8_14_2.
+conn_8_14_4 :- conn_8_14_1.
+conn_8_14_4 :- conn_8_14_3.
+0.5::conn_8_14_5.
+conn_8_14_6 :- conn_7_13_7, conn_8_14_5.
+conn_8_14_7 :- conn_8_14_4.
+conn_8_14_7 :- conn_8_14_6.
+0.5::conn_8_15.
+conn_8_15_1 :- conn_8_14_7, conn_8_15.
+0.5::conn_8_15_2.
+conn_8_15_3 :- conn_7_15_7, conn_8_15_2.
+conn_8_15_4 :- conn_8_15_1.
+conn_8_15_4 :- conn_8_15_3.
+0.5::conn_8_15_5.
+conn_8_15_6 :- conn_7_14_7, conn_8_15_5.
+conn_8_15_7 :- conn_8_15_4.
+conn_8_15_7 :- conn_8_15_6.
+0.5::conn_8_16.
+conn_8_16_1 :- conn_8_15_7, conn_8_16.
+0.5::conn_8_16_2.
+conn_8_16_3 :- conn_7_16_7, conn_8_16_2.
+conn_8_16_4 :- conn_8_16_1.
+conn_8_16_4 :- conn_8_16_3.
+0.5::conn_8_16_5.
+conn_8_16_6 :- conn_7_15_7, conn_8_16_5.
+conn_8_16_7 :- conn_8_16_4.
+conn_8_16_7 :- conn_8_16_6.
+0.5::conn_8_17.
+conn_8_17_1 :- conn_8_16_7, conn_8_17.
+0.5::conn_8_17_2.
+conn_8_17_3 :- conn_7_17_7, conn_8_17_2.
+conn_8_17_4 :- conn_8_17_1.
+conn_8_17_4 :- conn_8_17_3.
+0.5::conn_8_17_5.
+conn_8_17_6 :- conn_7_16_7, conn_8_17_5.
+conn_8_17_7 :- conn_8_17_4.
+conn_8_17_7 :- conn_8_17_6.
+0.5::conn_8_18.
+conn_8_18_1 :- conn_8_17_7, conn_8_18.
+0.5::conn_8_18_2.
+conn_8_18_3 :- conn_7_18_7, conn_8_18_2.
+conn_8_18_4 :- conn_8_18_1.
+conn_8_18_4 :- conn_8_18_3.
+0.5::conn_8_18_5.
+conn_8_18_6 :- conn_7_17_7, conn_8_18_5.
+conn_8_18_7 :- conn_8_18_4.
+conn_8_18_7 :- conn_8_18_6.
+0.5::conn_8_19.
+conn_8_19_1 :- conn_8_18_7, conn_8_19.
+0.5::conn_8_19_2.
+conn_8_19_3 :- conn_7_19_7, conn_8_19_2.
+conn_8_19_4 :- conn_8_19_1.
+conn_8_19_4 :- conn_8_19_3.
+0.5::conn_8_19_5.
+conn_8_19_6 :- conn_7_18_7, conn_8_19_5.
+conn_8_19_7 :- conn_8_19_4.
+conn_8_19_7 :- conn_8_19_6.
+0.5::conn_8_20.
+conn_8_20_1 :- conn_8_19_7, conn_8_20.
+0.5::conn_8_20_2.
+conn_8_20_3 :- conn_7_20_7, conn_8_20_2.
+conn_8_20_4 :- conn_8_20_1.
+conn_8_20_4 :- conn_8_20_3.
+0.5::conn_8_20_5.
+conn_8_20_6 :- conn_7_19_7, conn_8_20_5.
+conn_8_20_7 :- conn_8_20_4.
+conn_8_20_7 :- conn_8_20_6.
+0.5::conn_8_21.
+conn_8_21_1 :- conn_8_20_7, conn_8_21.
+0.5::conn_8_21_2.
+conn_8_21_3 :- conn_7_21_7, conn_8_21_2.
+conn_8_21_4 :- conn_8_21_1.
+conn_8_21_4 :- conn_8_21_3.
+0.5::conn_8_21_5.
+conn_8_21_6 :- conn_7_20_7, conn_8_21_5.
+conn_8_21_7 :- conn_8_21_4.
+conn_8_21_7 :- conn_8_21_6.
+0.5::conn_8_22.
+conn_8_22_1 :- conn_8_21_7, conn_8_22.
+0.5::conn_8_22_2.
+conn_8_22_3 :- conn_7_22_7, conn_8_22_2.
+conn_8_22_4 :- conn_8_22_1.
+conn_8_22_4 :- conn_8_22_3.
+0.5::conn_8_22_5.
+conn_8_22_6 :- conn_7_21_7, conn_8_22_5.
+conn_8_22_7 :- conn_8_22_4.
+conn_8_22_7 :- conn_8_22_6.
+0.5::conn_8_23.
+conn_8_23_1 :- conn_8_22_7, conn_8_23.
+0.5::conn_8_23_2.
+conn_8_23_3 :- conn_7_23_7, conn_8_23_2.
+conn_8_23_4 :- conn_8_23_1.
+conn_8_23_4 :- conn_8_23_3.
+0.5::conn_8_23_5.
+conn_8_23_6 :- conn_7_22_7, conn_8_23_5.
+conn_8_23_7 :- conn_8_23_4.
+conn_8_23_7 :- conn_8_23_6.
+0.5::conn_8_24.
+conn_8_24_1 :- conn_8_23_7, conn_8_24.
+0.5::conn_8_24_2.
+conn_8_24_3 :- conn_7_24_7, conn_8_24_2.
+conn_8_24_4 :- conn_8_24_1.
+conn_8_24_4 :- conn_8_24_3.
+0.5::conn_8_24_5.
+conn_8_24_6 :- conn_7_23_7, conn_8_24_5.
+conn_8_24_7 :- conn_8_24_4.
+conn_8_24_7 :- conn_8_24_6.
+0.5::conn_9_1.
+conn_9_1_1 :- conn_8_1_1, conn_9_1.
+0.5::conn_9_2.
+conn_9_2_1 :- conn_9_1_1, conn_9_2.
+0.5::conn_9_2_2.
+conn_9_2_3 :- conn_8_2_7, conn_9_2_2.
+conn_9_2_4 :- conn_9_2_1.
+conn_9_2_4 :- conn_9_2_3.
+0.5::conn_9_2_5.
+conn_9_2_6 :- conn_8_1_1, conn_9_2_5.
+conn_9_2_7 :- conn_9_2_4.
+conn_9_2_7 :- conn_9_2_6.
+0.5::conn_9_3.
+conn_9_3_1 :- conn_9_2_7, conn_9_3.
+0.5::conn_9_3_2.
+conn_9_3_3 :- conn_8_3_7, conn_9_3_2.
+conn_9_3_4 :- conn_9_3_1.
+conn_9_3_4 :- conn_9_3_3.
+0.5::conn_9_3_5.
+conn_9_3_6 :- conn_8_2_7, conn_9_3_5.
+conn_9_3_7 :- conn_9_3_4.
+conn_9_3_7 :- conn_9_3_6.
+0.5::conn_9_4.
+conn_9_4_1 :- conn_9_3_7, conn_9_4.
+0.5::conn_9_4_2.
+conn_9_4_3 :- conn_8_4_7, conn_9_4_2.
+conn_9_4_4 :- conn_9_4_1.
+conn_9_4_4 :- conn_9_4_3.
+0.5::conn_9_4_5.
+conn_9_4_6 :- conn_8_3_7, conn_9_4_5.
+conn_9_4_7 :- conn_9_4_4.
+conn_9_4_7 :- conn_9_4_6.
+0.5::conn_9_5.
+conn_9_5_1 :- conn_9_4_7, conn_9_5.
+0.5::conn_9_5_2.
+conn_9_5_3 :- conn_8_5_7, conn_9_5_2.
+conn_9_5_4 :- conn_9_5_1.
+conn_9_5_4 :- conn_9_5_3.
+0.5::conn_9_5_5.
+conn_9_5_6 :- conn_8_4_7, conn_9_5_5.
+conn_9_5_7 :- conn_9_5_4.
+conn_9_5_7 :- conn_9_5_6.
+0.5::conn_9_6.
+conn_9_6_1 :- conn_9_5_7, conn_9_6.
+0.5::conn_9_6_2.
+conn_9_6_3 :- conn_8_6_7, conn_9_6_2.
+conn_9_6_4 :- conn_9_6_1.
+conn_9_6_4 :- conn_9_6_3.
+0.5::conn_9_6_5.
+conn_9_6_6 :- conn_8_5_7, conn_9_6_5.
+conn_9_6_7 :- conn_9_6_4.
+conn_9_6_7 :- conn_9_6_6.
+0.5::conn_9_7.
+conn_9_7_1 :- conn_9_6_7, conn_9_7.
+0.5::conn_9_7_2.
+conn_9_7_3 :- conn_8_7_7, conn_9_7_2.
+conn_9_7_4 :- conn_9_7_1.
+conn_9_7_4 :- conn_9_7_3.
+0.5::conn_9_7_5.
+conn_9_7_6 :- conn_8_6_7, conn_9_7_5.
+conn_9_7_7 :- conn_9_7_4.
+conn_9_7_7 :- conn_9_7_6.
+0.5::conn_9_8.
+conn_9_8_1 :- conn_9_7_7, conn_9_8.
+0.5::conn_9_8_2.
+conn_9_8_3 :- conn_8_8_7, conn_9_8_2.
+conn_9_8_4 :- conn_9_8_1.
+conn_9_8_4 :- conn_9_8_3.
+0.5::conn_9_8_5.
+conn_9_8_6 :- conn_8_7_7, conn_9_8_5.
+conn_9_8_7 :- conn_9_8_4.
+conn_9_8_7 :- conn_9_8_6.
+0.5::conn_9_9.
+conn_9_9_1 :- conn_9_8_7, conn_9_9.
+0.5::conn_9_9_2.
+conn_9_9_3 :- conn_8_9_7, conn_9_9_2.
+conn_9_9_4 :- conn_9_9_1.
+conn_9_9_4 :- conn_9_9_3.
+0.5::conn_9_9_5.
+conn_9_9_6 :- conn_8_8_7, conn_9_9_5.
+conn_9_9_7 :- conn_9_9_4.
+conn_9_9_7 :- conn_9_9_6.
+0.5::conn_9_10.
+conn_9_10_1 :- conn_9_9_7, conn_9_10.
+0.5::conn_9_10_2.
+conn_9_10_3 :- conn_8_10_7, conn_9_10_2.
+conn_9_10_4 :- conn_9_10_1.
+conn_9_10_4 :- conn_9_10_3.
+0.5::conn_9_10_5.
+conn_9_10_6 :- conn_8_9_7, conn_9_10_5.
+conn_9_10_7 :- conn_9_10_4.
+conn_9_10_7 :- conn_9_10_6.
+0.5::conn_9_11.
+conn_9_11_1 :- conn_9_10_7, conn_9_11.
+0.5::conn_9_11_2.
+conn_9_11_3 :- conn_8_11_7, conn_9_11_2.
+conn_9_11_4 :- conn_9_11_1.
+conn_9_11_4 :- conn_9_11_3.
+0.5::conn_9_11_5.
+conn_9_11_6 :- conn_8_10_7, conn_9_11_5.
+conn_9_11_7 :- conn_9_11_4.
+conn_9_11_7 :- conn_9_11_6.
+0.5::conn_9_12.
+conn_9_12_1 :- conn_9_11_7, conn_9_12.
+0.5::conn_9_12_2.
+conn_9_12_3 :- conn_8_12_7, conn_9_12_2.
+conn_9_12_4 :- conn_9_12_1.
+conn_9_12_4 :- conn_9_12_3.
+0.5::conn_9_12_5.
+conn_9_12_6 :- conn_8_11_7, conn_9_12_5.
+conn_9_12_7 :- conn_9_12_4.
+conn_9_12_7 :- conn_9_12_6.
+0.5::conn_9_13.
+conn_9_13_1 :- conn_9_12_7, conn_9_13.
+0.5::conn_9_13_2.
+conn_9_13_3 :- conn_8_13_7, conn_9_13_2.
+conn_9_13_4 :- conn_9_13_1.
+conn_9_13_4 :- conn_9_13_3.
+0.5::conn_9_13_5.
+conn_9_13_6 :- conn_8_12_7, conn_9_13_5.
+conn_9_13_7 :- conn_9_13_4.
+conn_9_13_7 :- conn_9_13_6.
+0.5::conn_9_14.
+conn_9_14_1 :- conn_9_13_7, conn_9_14.
+0.5::conn_9_14_2.
+conn_9_14_3 :- conn_8_14_7, conn_9_14_2.
+conn_9_14_4 :- conn_9_14_1.
+conn_9_14_4 :- conn_9_14_3.
+0.5::conn_9_14_5.
+conn_9_14_6 :- conn_8_13_7, conn_9_14_5.
+conn_9_14_7 :- conn_9_14_4.
+conn_9_14_7 :- conn_9_14_6.
+0.5::conn_9_15.
+conn_9_15_1 :- conn_9_14_7, conn_9_15.
+0.5::conn_9_15_2.
+conn_9_15_3 :- conn_8_15_7, conn_9_15_2.
+conn_9_15_4 :- conn_9_15_1.
+conn_9_15_4 :- conn_9_15_3.
+0.5::conn_9_15_5.
+conn_9_15_6 :- conn_8_14_7, conn_9_15_5.
+conn_9_15_7 :- conn_9_15_4.
+conn_9_15_7 :- conn_9_15_6.
+0.5::conn_9_16.
+conn_9_16_1 :- conn_9_15_7, conn_9_16.
+0.5::conn_9_16_2.
+conn_9_16_3 :- conn_8_16_7, conn_9_16_2.
+conn_9_16_4 :- conn_9_16_1.
+conn_9_16_4 :- conn_9_16_3.
+0.5::conn_9_16_5.
+conn_9_16_6 :- conn_8_15_7, conn_9_16_5.
+conn_9_16_7 :- conn_9_16_4.
+conn_9_16_7 :- conn_9_16_6.
+0.5::conn_9_17.
+conn_9_17_1 :- conn_9_16_7, conn_9_17.
+0.5::conn_9_17_2.
+conn_9_17_3 :- conn_8_17_7, conn_9_17_2.
+conn_9_17_4 :- conn_9_17_1.
+conn_9_17_4 :- conn_9_17_3.
+0.5::conn_9_17_5.
+conn_9_17_6 :- conn_8_16_7, conn_9_17_5.
+conn_9_17_7 :- conn_9_17_4.
+conn_9_17_7 :- conn_9_17_6.
+0.5::conn_9_18.
+conn_9_18_1 :- conn_9_17_7, conn_9_18.
+0.5::conn_9_18_2.
+conn_9_18_3 :- conn_8_18_7, conn_9_18_2.
+conn_9_18_4 :- conn_9_18_1.
+conn_9_18_4 :- conn_9_18_3.
+0.5::conn_9_18_5.
+conn_9_18_6 :- conn_8_17_7, conn_9_18_5.
+conn_9_18_7 :- conn_9_18_4.
+conn_9_18_7 :- conn_9_18_6.
+0.5::conn_9_19.
+conn_9_19_1 :- conn_9_18_7, conn_9_19.
+0.5::conn_9_19_2.
+conn_9_19_3 :- conn_8_19_7, conn_9_19_2.
+conn_9_19_4 :- conn_9_19_1.
+conn_9_19_4 :- conn_9_19_3.
+0.5::conn_9_19_5.
+conn_9_19_6 :- conn_8_18_7, conn_9_19_5.
+conn_9_19_7 :- conn_9_19_4.
+conn_9_19_7 :- conn_9_19_6.
+0.5::conn_9_20.
+conn_9_20_1 :- conn_9_19_7, conn_9_20.
+0.5::conn_9_20_2.
+conn_9_20_3 :- conn_8_20_7, conn_9_20_2.
+conn_9_20_4 :- conn_9_20_1.
+conn_9_20_4 :- conn_9_20_3.
+0.5::conn_9_20_5.
+conn_9_20_6 :- conn_8_19_7, conn_9_20_5.
+conn_9_20_7 :- conn_9_20_4.
+conn_9_20_7 :- conn_9_20_6.
+0.5::conn_9_21.
+conn_9_21_1 :- conn_9_20_7, conn_9_21.
+0.5::conn_9_21_2.
+conn_9_21_3 :- conn_8_21_7, conn_9_21_2.
+conn_9_21_4 :- conn_9_21_1.
+conn_9_21_4 :- conn_9_21_3.
+0.5::conn_9_21_5.
+conn_9_21_6 :- conn_8_20_7, conn_9_21_5.
+conn_9_21_7 :- conn_9_21_4.
+conn_9_21_7 :- conn_9_21_6.
+0.5::conn_9_22.
+conn_9_22_1 :- conn_9_21_7, conn_9_22.
+0.5::conn_9_22_2.
+conn_9_22_3 :- conn_8_22_7, conn_9_22_2.
+conn_9_22_4 :- conn_9_22_1.
+conn_9_22_4 :- conn_9_22_3.
+0.5::conn_9_22_5.
+conn_9_22_6 :- conn_8_21_7, conn_9_22_5.
+conn_9_22_7 :- conn_9_22_4.
+conn_9_22_7 :- conn_9_22_6.
+0.5::conn_9_23.
+conn_9_23_1 :- conn_9_22_7, conn_9_23.
+0.5::conn_9_23_2.
+conn_9_23_3 :- conn_8_23_7, conn_9_23_2.
+conn_9_23_4 :- conn_9_23_1.
+conn_9_23_4 :- conn_9_23_3.
+0.5::conn_9_23_5.
+conn_9_23_6 :- conn_8_22_7, conn_9_23_5.
+conn_9_23_7 :- conn_9_23_4.
+conn_9_23_7 :- conn_9_23_6.
+0.5::conn_9_24.
+conn_9_24_1 :- conn_9_23_7, conn_9_24.
+0.5::conn_9_24_2.
+conn_9_24_3 :- conn_8_24_7, conn_9_24_2.
+conn_9_24_4 :- conn_9_24_1.
+conn_9_24_4 :- conn_9_24_3.
+0.5::conn_9_24_5.
+conn_9_24_6 :- conn_8_23_7, conn_9_24_5.
+conn_9_24_7 :- conn_9_24_4.
+conn_9_24_7 :- conn_9_24_6.
+0.5::conn_10_1.
+conn_10_1_1 :- conn_9_1_1, conn_10_1.
+0.5::conn_10_2.
+conn_10_2_1 :- conn_10_1_1, conn_10_2.
+0.5::conn_10_2_2.
+conn_10_2_3 :- conn_9_2_7, conn_10_2_2.
+conn_10_2_4 :- conn_10_2_1.
+conn_10_2_4 :- conn_10_2_3.
+0.5::conn_10_2_5.
+conn_10_2_6 :- conn_9_1_1, conn_10_2_5.
+conn_10_2_7 :- conn_10_2_4.
+conn_10_2_7 :- conn_10_2_6.
+0.5::conn_10_3.
+conn_10_3_1 :- conn_10_2_7, conn_10_3.
+0.5::conn_10_3_2.
+conn_10_3_3 :- conn_9_3_7, conn_10_3_2.
+conn_10_3_4 :- conn_10_3_1.
+conn_10_3_4 :- conn_10_3_3.
+0.5::conn_10_3_5.
+conn_10_3_6 :- conn_9_2_7, conn_10_3_5.
+conn_10_3_7 :- conn_10_3_4.
+conn_10_3_7 :- conn_10_3_6.
+0.5::conn_10_4.
+conn_10_4_1 :- conn_10_3_7, conn_10_4.
+0.5::conn_10_4_2.
+conn_10_4_3 :- conn_9_4_7, conn_10_4_2.
+conn_10_4_4 :- conn_10_4_1.
+conn_10_4_4 :- conn_10_4_3.
+0.5::conn_10_4_5.
+conn_10_4_6 :- conn_9_3_7, conn_10_4_5.
+conn_10_4_7 :- conn_10_4_4.
+conn_10_4_7 :- conn_10_4_6.
+0.5::conn_10_5.
+conn_10_5_1 :- conn_10_4_7, conn_10_5.
+0.5::conn_10_5_2.
+conn_10_5_3 :- conn_9_5_7, conn_10_5_2.
+conn_10_5_4 :- conn_10_5_1.
+conn_10_5_4 :- conn_10_5_3.
+0.5::conn_10_5_5.
+conn_10_5_6 :- conn_9_4_7, conn_10_5_5.
+conn_10_5_7 :- conn_10_5_4.
+conn_10_5_7 :- conn_10_5_6.
+0.5::conn_10_6.
+conn_10_6_1 :- conn_10_5_7, conn_10_6.
+0.5::conn_10_6_2.
+conn_10_6_3 :- conn_9_6_7, conn_10_6_2.
+conn_10_6_4 :- conn_10_6_1.
+conn_10_6_4 :- conn_10_6_3.
+0.5::conn_10_6_5.
+conn_10_6_6 :- conn_9_5_7, conn_10_6_5.
+conn_10_6_7 :- conn_10_6_4.
+conn_10_6_7 :- conn_10_6_6.
+0.5::conn_10_7.
+conn_10_7_1 :- conn_10_6_7, conn_10_7.
+0.5::conn_10_7_2.
+conn_10_7_3 :- conn_9_7_7, conn_10_7_2.
+conn_10_7_4 :- conn_10_7_1.
+conn_10_7_4 :- conn_10_7_3.
+0.5::conn_10_7_5.
+conn_10_7_6 :- conn_9_6_7, conn_10_7_5.
+conn_10_7_7 :- conn_10_7_4.
+conn_10_7_7 :- conn_10_7_6.
+0.5::conn_10_8.
+conn_10_8_1 :- conn_10_7_7, conn_10_8.
+0.5::conn_10_8_2.
+conn_10_8_3 :- conn_9_8_7, conn_10_8_2.
+conn_10_8_4 :- conn_10_8_1.
+conn_10_8_4 :- conn_10_8_3.
+0.5::conn_10_8_5.
+conn_10_8_6 :- conn_9_7_7, conn_10_8_5.
+conn_10_8_7 :- conn_10_8_4.
+conn_10_8_7 :- conn_10_8_6.
+0.5::conn_10_9.
+conn_10_9_1 :- conn_10_8_7, conn_10_9.
+0.5::conn_10_9_2.
+conn_10_9_3 :- conn_9_9_7, conn_10_9_2.
+conn_10_9_4 :- conn_10_9_1.
+conn_10_9_4 :- conn_10_9_3.
+0.5::conn_10_9_5.
+conn_10_9_6 :- conn_9_8_7, conn_10_9_5.
+conn_10_9_7 :- conn_10_9_4.
+conn_10_9_7 :- conn_10_9_6.
+0.5::conn_10_10.
+conn_10_10_1 :- conn_10_9_7, conn_10_10.
+0.5::conn_10_10_2.
+conn_10_10_3 :- conn_9_10_7, conn_10_10_2.
+conn_10_10_4 :- conn_10_10_1.
+conn_10_10_4 :- conn_10_10_3.
+0.5::conn_10_10_5.
+conn_10_10_6 :- conn_9_9_7, conn_10_10_5.
+conn_10_10_7 :- conn_10_10_4.
+conn_10_10_7 :- conn_10_10_6.
+0.5::conn_10_11.
+conn_10_11_1 :- conn_10_10_7, conn_10_11.
+0.5::conn_10_11_2.
+conn_10_11_3 :- conn_9_11_7, conn_10_11_2.
+conn_10_11_4 :- conn_10_11_1.
+conn_10_11_4 :- conn_10_11_3.
+0.5::conn_10_11_5.
+conn_10_11_6 :- conn_9_10_7, conn_10_11_5.
+conn_10_11_7 :- conn_10_11_4.
+conn_10_11_7 :- conn_10_11_6.
+0.5::conn_10_12.
+conn_10_12_1 :- conn_10_11_7, conn_10_12.
+0.5::conn_10_12_2.
+conn_10_12_3 :- conn_9_12_7, conn_10_12_2.
+conn_10_12_4 :- conn_10_12_1.
+conn_10_12_4 :- conn_10_12_3.
+0.5::conn_10_12_5.
+conn_10_12_6 :- conn_9_11_7, conn_10_12_5.
+conn_10_12_7 :- conn_10_12_4.
+conn_10_12_7 :- conn_10_12_6.
+0.5::conn_10_13.
+conn_10_13_1 :- conn_10_12_7, conn_10_13.
+0.5::conn_10_13_2.
+conn_10_13_3 :- conn_9_13_7, conn_10_13_2.
+conn_10_13_4 :- conn_10_13_1.
+conn_10_13_4 :- conn_10_13_3.
+0.5::conn_10_13_5.
+conn_10_13_6 :- conn_9_12_7, conn_10_13_5.
+conn_10_13_7 :- conn_10_13_4.
+conn_10_13_7 :- conn_10_13_6.
+0.5::conn_10_14.
+conn_10_14_1 :- conn_10_13_7, conn_10_14.
+0.5::conn_10_14_2.
+conn_10_14_3 :- conn_9_14_7, conn_10_14_2.
+conn_10_14_4 :- conn_10_14_1.
+conn_10_14_4 :- conn_10_14_3.
+0.5::conn_10_14_5.
+conn_10_14_6 :- conn_9_13_7, conn_10_14_5.
+conn_10_14_7 :- conn_10_14_4.
+conn_10_14_7 :- conn_10_14_6.
+0.5::conn_10_15.
+conn_10_15_1 :- conn_10_14_7, conn_10_15.
+0.5::conn_10_15_2.
+conn_10_15_3 :- conn_9_15_7, conn_10_15_2.
+conn_10_15_4 :- conn_10_15_1.
+conn_10_15_4 :- conn_10_15_3.
+0.5::conn_10_15_5.
+conn_10_15_6 :- conn_9_14_7, conn_10_15_5.
+conn_10_15_7 :- conn_10_15_4.
+conn_10_15_7 :- conn_10_15_6.
+0.5::conn_10_16.
+conn_10_16_1 :- conn_10_15_7, conn_10_16.
+0.5::conn_10_16_2.
+conn_10_16_3 :- conn_9_16_7, conn_10_16_2.
+conn_10_16_4 :- conn_10_16_1.
+conn_10_16_4 :- conn_10_16_3.
+0.5::conn_10_16_5.
+conn_10_16_6 :- conn_9_15_7, conn_10_16_5.
+conn_10_16_7 :- conn_10_16_4.
+conn_10_16_7 :- conn_10_16_6.
+0.5::conn_10_17.
+conn_10_17_1 :- conn_10_16_7, conn_10_17.
+0.5::conn_10_17_2.
+conn_10_17_3 :- conn_9_17_7, conn_10_17_2.
+conn_10_17_4 :- conn_10_17_1.
+conn_10_17_4 :- conn_10_17_3.
+0.5::conn_10_17_5.
+conn_10_17_6 :- conn_9_16_7, conn_10_17_5.
+conn_10_17_7 :- conn_10_17_4.
+conn_10_17_7 :- conn_10_17_6.
+0.5::conn_10_18.
+conn_10_18_1 :- conn_10_17_7, conn_10_18.
+0.5::conn_10_18_2.
+conn_10_18_3 :- conn_9_18_7, conn_10_18_2.
+conn_10_18_4 :- conn_10_18_1.
+conn_10_18_4 :- conn_10_18_3.
+0.5::conn_10_18_5.
+conn_10_18_6 :- conn_9_17_7, conn_10_18_5.
+conn_10_18_7 :- conn_10_18_4.
+conn_10_18_7 :- conn_10_18_6.
+0.5::conn_10_19.
+conn_10_19_1 :- conn_10_18_7, conn_10_19.
+0.5::conn_10_19_2.
+conn_10_19_3 :- conn_9_19_7, conn_10_19_2.
+conn_10_19_4 :- conn_10_19_1.
+conn_10_19_4 :- conn_10_19_3.
+0.5::conn_10_19_5.
+conn_10_19_6 :- conn_9_18_7, conn_10_19_5.
+conn_10_19_7 :- conn_10_19_4.
+conn_10_19_7 :- conn_10_19_6.
+0.5::conn_10_20.
+conn_10_20_1 :- conn_10_19_7, conn_10_20.
+0.5::conn_10_20_2.
+conn_10_20_3 :- conn_9_20_7, conn_10_20_2.
+conn_10_20_4 :- conn_10_20_1.
+conn_10_20_4 :- conn_10_20_3.
+0.5::conn_10_20_5.
+conn_10_20_6 :- conn_9_19_7, conn_10_20_5.
+conn_10_20_7 :- conn_10_20_4.
+conn_10_20_7 :- conn_10_20_6.
+0.5::conn_10_21.
+conn_10_21_1 :- conn_10_20_7, conn_10_21.
+0.5::conn_10_21_2.
+conn_10_21_3 :- conn_9_21_7, conn_10_21_2.
+conn_10_21_4 :- conn_10_21_1.
+conn_10_21_4 :- conn_10_21_3.
+0.5::conn_10_21_5.
+conn_10_21_6 :- conn_9_20_7, conn_10_21_5.
+conn_10_21_7 :- conn_10_21_4.
+conn_10_21_7 :- conn_10_21_6.
+0.5::conn_10_22.
+conn_10_22_1 :- conn_10_21_7, conn_10_22.
+0.5::conn_10_22_2.
+conn_10_22_3 :- conn_9_22_7, conn_10_22_2.
+conn_10_22_4 :- conn_10_22_1.
+conn_10_22_4 :- conn_10_22_3.
+0.5::conn_10_22_5.
+conn_10_22_6 :- conn_9_21_7, conn_10_22_5.
+conn_10_22_7 :- conn_10_22_4.
+conn_10_22_7 :- conn_10_22_6.
+0.5::conn_10_23.
+conn_10_23_1 :- conn_10_22_7, conn_10_23.
+0.5::conn_10_23_2.
+conn_10_23_3 :- conn_9_23_7, conn_10_23_2.
+conn_10_23_4 :- conn_10_23_1.
+conn_10_23_4 :- conn_10_23_3.
+0.5::conn_10_23_5.
+conn_10_23_6 :- conn_9_22_7, conn_10_23_5.
+conn_10_23_7 :- conn_10_23_4.
+conn_10_23_7 :- conn_10_23_6.
+0.5::conn_10_24.
+conn_10_24_1 :- conn_10_23_7, conn_10_24.
+0.5::conn_10_24_2.
+conn_10_24_3 :- conn_9_24_7, conn_10_24_2.
+conn_10_24_4 :- conn_10_24_1.
+conn_10_24_4 :- conn_10_24_3.
+0.5::conn_10_24_5.
+conn_10_24_6 :- conn_9_23_7, conn_10_24_5.
+conn_10_24_7 :- conn_10_24_4.
+conn_10_24_7 :- conn_10_24_6.
+0.5::conn_11_1.
+conn_11_1_1 :- conn_10_1_1, conn_11_1.
+0.5::conn_11_2.
+conn_11_2_1 :- conn_11_1_1, conn_11_2.
+0.5::conn_11_2_2.
+conn_11_2_3 :- conn_10_2_7, conn_11_2_2.
+conn_11_2_4 :- conn_11_2_1.
+conn_11_2_4 :- conn_11_2_3.
+0.5::conn_11_2_5.
+conn_11_2_6 :- conn_10_1_1, conn_11_2_5.
+conn_11_2_7 :- conn_11_2_4.
+conn_11_2_7 :- conn_11_2_6.
+0.5::conn_11_3.
+conn_11_3_1 :- conn_11_2_7, conn_11_3.
+0.5::conn_11_3_2.
+conn_11_3_3 :- conn_10_3_7, conn_11_3_2.
+conn_11_3_4 :- conn_11_3_1.
+conn_11_3_4 :- conn_11_3_3.
+0.5::conn_11_3_5.
+conn_11_3_6 :- conn_10_2_7, conn_11_3_5.
+conn_11_3_7 :- conn_11_3_4.
+conn_11_3_7 :- conn_11_3_6.
+0.5::conn_11_4.
+conn_11_4_1 :- conn_11_3_7, conn_11_4.
+0.5::conn_11_4_2.
+conn_11_4_3 :- conn_10_4_7, conn_11_4_2.
+conn_11_4_4 :- conn_11_4_1.
+conn_11_4_4 :- conn_11_4_3.
+0.5::conn_11_4_5.
+conn_11_4_6 :- conn_10_3_7, conn_11_4_5.
+conn_11_4_7 :- conn_11_4_4.
+conn_11_4_7 :- conn_11_4_6.
+0.5::conn_11_5.
+conn_11_5_1 :- conn_11_4_7, conn_11_5.
+0.5::conn_11_5_2.
+conn_11_5_3 :- conn_10_5_7, conn_11_5_2.
+conn_11_5_4 :- conn_11_5_1.
+conn_11_5_4 :- conn_11_5_3.
+0.5::conn_11_5_5.
+conn_11_5_6 :- conn_10_4_7, conn_11_5_5.
+conn_11_5_7 :- conn_11_5_4.
+conn_11_5_7 :- conn_11_5_6.
+0.5::conn_11_6.
+conn_11_6_1 :- conn_11_5_7, conn_11_6.
+0.5::conn_11_6_2.
+conn_11_6_3 :- conn_10_6_7, conn_11_6_2.
+conn_11_6_4 :- conn_11_6_1.
+conn_11_6_4 :- conn_11_6_3.
+0.5::conn_11_6_5.
+conn_11_6_6 :- conn_10_5_7, conn_11_6_5.
+conn_11_6_7 :- conn_11_6_4.
+conn_11_6_7 :- conn_11_6_6.
+0.5::conn_11_7.
+conn_11_7_1 :- conn_11_6_7, conn_11_7.
+0.5::conn_11_7_2.
+conn_11_7_3 :- conn_10_7_7, conn_11_7_2.
+conn_11_7_4 :- conn_11_7_1.
+conn_11_7_4 :- conn_11_7_3.
+0.5::conn_11_7_5.
+conn_11_7_6 :- conn_10_6_7, conn_11_7_5.
+conn_11_7_7 :- conn_11_7_4.
+conn_11_7_7 :- conn_11_7_6.
+0.5::conn_11_8.
+conn_11_8_1 :- conn_11_7_7, conn_11_8.
+0.5::conn_11_8_2.
+conn_11_8_3 :- conn_10_8_7, conn_11_8_2.
+conn_11_8_4 :- conn_11_8_1.
+conn_11_8_4 :- conn_11_8_3.
+0.5::conn_11_8_5.
+conn_11_8_6 :- conn_10_7_7, conn_11_8_5.
+conn_11_8_7 :- conn_11_8_4.
+conn_11_8_7 :- conn_11_8_6.
+0.5::conn_11_9.
+conn_11_9_1 :- conn_11_8_7, conn_11_9.
+0.5::conn_11_9_2.
+conn_11_9_3 :- conn_10_9_7, conn_11_9_2.
+conn_11_9_4 :- conn_11_9_1.
+conn_11_9_4 :- conn_11_9_3.
+0.5::conn_11_9_5.
+conn_11_9_6 :- conn_10_8_7, conn_11_9_5.
+conn_11_9_7 :- conn_11_9_4.
+conn_11_9_7 :- conn_11_9_6.
+0.5::conn_11_10.
+conn_11_10_1 :- conn_11_9_7, conn_11_10.
+0.5::conn_11_10_2.
+conn_11_10_3 :- conn_10_10_7, conn_11_10_2.
+conn_11_10_4 :- conn_11_10_1.
+conn_11_10_4 :- conn_11_10_3.
+0.5::conn_11_10_5.
+conn_11_10_6 :- conn_10_9_7, conn_11_10_5.
+conn_11_10_7 :- conn_11_10_4.
+conn_11_10_7 :- conn_11_10_6.
+0.5::conn_11_11.
+conn_11_11_1 :- conn_11_10_7, conn_11_11.
+0.5::conn_11_11_2.
+conn_11_11_3 :- conn_10_11_7, conn_11_11_2.
+conn_11_11_4 :- conn_11_11_1.
+conn_11_11_4 :- conn_11_11_3.
+0.5::conn_11_11_5.
+conn_11_11_6 :- conn_10_10_7, conn_11_11_5.
+conn_11_11_7 :- conn_11_11_4.
+conn_11_11_7 :- conn_11_11_6.
+0.5::conn_11_12.
+conn_11_12_1 :- conn_11_11_7, conn_11_12.
+0.5::conn_11_12_2.
+conn_11_12_3 :- conn_10_12_7, conn_11_12_2.
+conn_11_12_4 :- conn_11_12_1.
+conn_11_12_4 :- conn_11_12_3.
+0.5::conn_11_12_5.
+conn_11_12_6 :- conn_10_11_7, conn_11_12_5.
+conn_11_12_7 :- conn_11_12_4.
+conn_11_12_7 :- conn_11_12_6.
+0.5::conn_11_13.
+conn_11_13_1 :- conn_11_12_7, conn_11_13.
+0.5::conn_11_13_2.
+conn_11_13_3 :- conn_10_13_7, conn_11_13_2.
+conn_11_13_4 :- conn_11_13_1.
+conn_11_13_4 :- conn_11_13_3.
+0.5::conn_11_13_5.
+conn_11_13_6 :- conn_10_12_7, conn_11_13_5.
+conn_11_13_7 :- conn_11_13_4.
+conn_11_13_7 :- conn_11_13_6.
+0.5::conn_11_14.
+conn_11_14_1 :- conn_11_13_7, conn_11_14.
+0.5::conn_11_14_2.
+conn_11_14_3 :- conn_10_14_7, conn_11_14_2.
+conn_11_14_4 :- conn_11_14_1.
+conn_11_14_4 :- conn_11_14_3.
+0.5::conn_11_14_5.
+conn_11_14_6 :- conn_10_13_7, conn_11_14_5.
+conn_11_14_7 :- conn_11_14_4.
+conn_11_14_7 :- conn_11_14_6.
+0.5::conn_11_15.
+conn_11_15_1 :- conn_11_14_7, conn_11_15.
+0.5::conn_11_15_2.
+conn_11_15_3 :- conn_10_15_7, conn_11_15_2.
+conn_11_15_4 :- conn_11_15_1.
+conn_11_15_4 :- conn_11_15_3.
+0.5::conn_11_15_5.
+conn_11_15_6 :- conn_10_14_7, conn_11_15_5.
+conn_11_15_7 :- conn_11_15_4.
+conn_11_15_7 :- conn_11_15_6.
+0.5::conn_11_16.
+conn_11_16_1 :- conn_11_15_7, conn_11_16.
+0.5::conn_11_16_2.
+conn_11_16_3 :- conn_10_16_7, conn_11_16_2.
+conn_11_16_4 :- conn_11_16_1.
+conn_11_16_4 :- conn_11_16_3.
+0.5::conn_11_16_5.
+conn_11_16_6 :- conn_10_15_7, conn_11_16_5.
+conn_11_16_7 :- conn_11_16_4.
+conn_11_16_7 :- conn_11_16_6.
+0.5::conn_11_17.
+conn_11_17_1 :- conn_11_16_7, conn_11_17.
+0.5::conn_11_17_2.
+conn_11_17_3 :- conn_10_17_7, conn_11_17_2.
+conn_11_17_4 :- conn_11_17_1.
+conn_11_17_4 :- conn_11_17_3.
+0.5::conn_11_17_5.
+conn_11_17_6 :- conn_10_16_7, conn_11_17_5.
+conn_11_17_7 :- conn_11_17_4.
+conn_11_17_7 :- conn_11_17_6.
+0.5::conn_11_18.
+conn_11_18_1 :- conn_11_17_7, conn_11_18.
+0.5::conn_11_18_2.
+conn_11_18_3 :- conn_10_18_7, conn_11_18_2.
+conn_11_18_4 :- conn_11_18_1.
+conn_11_18_4 :- conn_11_18_3.
+0.5::conn_11_18_5.
+conn_11_18_6 :- conn_10_17_7, conn_11_18_5.
+conn_11_18_7 :- conn_11_18_4.
+conn_11_18_7 :- conn_11_18_6.
+0.5::conn_11_19.
+conn_11_19_1 :- conn_11_18_7, conn_11_19.
+0.5::conn_11_19_2.
+conn_11_19_3 :- conn_10_19_7, conn_11_19_2.
+conn_11_19_4 :- conn_11_19_1.
+conn_11_19_4 :- conn_11_19_3.
+0.5::conn_11_19_5.
+conn_11_19_6 :- conn_10_18_7, conn_11_19_5.
+conn_11_19_7 :- conn_11_19_4.
+conn_11_19_7 :- conn_11_19_6.
+0.5::conn_11_20.
+conn_11_20_1 :- conn_11_19_7, conn_11_20.
+0.5::conn_11_20_2.
+conn_11_20_3 :- conn_10_20_7, conn_11_20_2.
+conn_11_20_4 :- conn_11_20_1.
+conn_11_20_4 :- conn_11_20_3.
+0.5::conn_11_20_5.
+conn_11_20_6 :- conn_10_19_7, conn_11_20_5.
+conn_11_20_7 :- conn_11_20_4.
+conn_11_20_7 :- conn_11_20_6.
+0.5::conn_11_21.
+conn_11_21_1 :- conn_11_20_7, conn_11_21.
+0.5::conn_11_21_2.
+conn_11_21_3 :- conn_10_21_7, conn_11_21_2.
+conn_11_21_4 :- conn_11_21_1.
+conn_11_21_4 :- conn_11_21_3.
+0.5::conn_11_21_5.
+conn_11_21_6 :- conn_10_20_7, conn_11_21_5.
+conn_11_21_7 :- conn_11_21_4.
+conn_11_21_7 :- conn_11_21_6.
+0.5::conn_11_22.
+conn_11_22_1 :- conn_11_21_7, conn_11_22.
+0.5::conn_11_22_2.
+conn_11_22_3 :- conn_10_22_7, conn_11_22_2.
+conn_11_22_4 :- conn_11_22_1.
+conn_11_22_4 :- conn_11_22_3.
+0.5::conn_11_22_5.
+conn_11_22_6 :- conn_10_21_7, conn_11_22_5.
+conn_11_22_7 :- conn_11_22_4.
+conn_11_22_7 :- conn_11_22_6.
+0.5::conn_11_23.
+conn_11_23_1 :- conn_11_22_7, conn_11_23.
+0.5::conn_11_23_2.
+conn_11_23_3 :- conn_10_23_7, conn_11_23_2.
+conn_11_23_4 :- conn_11_23_1.
+conn_11_23_4 :- conn_11_23_3.
+0.5::conn_11_23_5.
+conn_11_23_6 :- conn_10_22_7, conn_11_23_5.
+conn_11_23_7 :- conn_11_23_4.
+conn_11_23_7 :- conn_11_23_6.
+0.5::conn_11_24.
+conn_11_24_1 :- conn_11_23_7, conn_11_24.
+0.5::conn_11_24_2.
+conn_11_24_3 :- conn_10_24_7, conn_11_24_2.
+conn_11_24_4 :- conn_11_24_1.
+conn_11_24_4 :- conn_11_24_3.
+0.5::conn_11_24_5.
+conn_11_24_6 :- conn_10_23_7, conn_11_24_5.
+conn_11_24_7 :- conn_11_24_4.
+conn_11_24_7 :- conn_11_24_6.
+0.5::conn_12_1.
+conn_12_1_1 :- conn_11_1_1, conn_12_1.
+0.5::conn_12_2.
+conn_12_2_1 :- conn_12_1_1, conn_12_2.
+0.5::conn_12_2_2.
+conn_12_2_3 :- conn_11_2_7, conn_12_2_2.
+conn_12_2_4 :- conn_12_2_1.
+conn_12_2_4 :- conn_12_2_3.
+0.5::conn_12_2_5.
+conn_12_2_6 :- conn_11_1_1, conn_12_2_5.
+conn_12_2_7 :- conn_12_2_4.
+conn_12_2_7 :- conn_12_2_6.
+0.5::conn_12_3.
+conn_12_3_1 :- conn_12_2_7, conn_12_3.
+0.5::conn_12_3_2.
+conn_12_3_3 :- conn_11_3_7, conn_12_3_2.
+conn_12_3_4 :- conn_12_3_1.
+conn_12_3_4 :- conn_12_3_3.
+0.5::conn_12_3_5.
+conn_12_3_6 :- conn_11_2_7, conn_12_3_5.
+conn_12_3_7 :- conn_12_3_4.
+conn_12_3_7 :- conn_12_3_6.
+0.5::conn_12_4.
+conn_12_4_1 :- conn_12_3_7, conn_12_4.
+0.5::conn_12_4_2.
+conn_12_4_3 :- conn_11_4_7, conn_12_4_2.
+conn_12_4_4 :- conn_12_4_1.
+conn_12_4_4 :- conn_12_4_3.
+0.5::conn_12_4_5.
+conn_12_4_6 :- conn_11_3_7, conn_12_4_5.
+conn_12_4_7 :- conn_12_4_4.
+conn_12_4_7 :- conn_12_4_6.
+0.5::conn_12_5.
+conn_12_5_1 :- conn_12_4_7, conn_12_5.
+0.5::conn_12_5_2.
+conn_12_5_3 :- conn_11_5_7, conn_12_5_2.
+conn_12_5_4 :- conn_12_5_1.
+conn_12_5_4 :- conn_12_5_3.
+0.5::conn_12_5_5.
+conn_12_5_6 :- conn_11_4_7, conn_12_5_5.
+conn_12_5_7 :- conn_12_5_4.
+conn_12_5_7 :- conn_12_5_6.
+0.5::conn_12_6.
+conn_12_6_1 :- conn_12_5_7, conn_12_6.
+0.5::conn_12_6_2.
+conn_12_6_3 :- conn_11_6_7, conn_12_6_2.
+conn_12_6_4 :- conn_12_6_1.
+conn_12_6_4 :- conn_12_6_3.
+0.5::conn_12_6_5.
+conn_12_6_6 :- conn_11_5_7, conn_12_6_5.
+conn_12_6_7 :- conn_12_6_4.
+conn_12_6_7 :- conn_12_6_6.
+0.5::conn_12_7.
+conn_12_7_1 :- conn_12_6_7, conn_12_7.
+0.5::conn_12_7_2.
+conn_12_7_3 :- conn_11_7_7, conn_12_7_2.
+conn_12_7_4 :- conn_12_7_1.
+conn_12_7_4 :- conn_12_7_3.
+0.5::conn_12_7_5.
+conn_12_7_6 :- conn_11_6_7, conn_12_7_5.
+conn_12_7_7 :- conn_12_7_4.
+conn_12_7_7 :- conn_12_7_6.
+0.5::conn_12_8.
+conn_12_8_1 :- conn_12_7_7, conn_12_8.
+0.5::conn_12_8_2.
+conn_12_8_3 :- conn_11_8_7, conn_12_8_2.
+conn_12_8_4 :- conn_12_8_1.
+conn_12_8_4 :- conn_12_8_3.
+0.5::conn_12_8_5.
+conn_12_8_6 :- conn_11_7_7, conn_12_8_5.
+conn_12_8_7 :- conn_12_8_4.
+conn_12_8_7 :- conn_12_8_6.
+0.5::conn_12_9.
+conn_12_9_1 :- conn_12_8_7, conn_12_9.
+0.5::conn_12_9_2.
+conn_12_9_3 :- conn_11_9_7, conn_12_9_2.
+conn_12_9_4 :- conn_12_9_1.
+conn_12_9_4 :- conn_12_9_3.
+0.5::conn_12_9_5.
+conn_12_9_6 :- conn_11_8_7, conn_12_9_5.
+conn_12_9_7 :- conn_12_9_4.
+conn_12_9_7 :- conn_12_9_6.
+0.5::conn_12_10.
+conn_12_10_1 :- conn_12_9_7, conn_12_10.
+0.5::conn_12_10_2.
+conn_12_10_3 :- conn_11_10_7, conn_12_10_2.
+conn_12_10_4 :- conn_12_10_1.
+conn_12_10_4 :- conn_12_10_3.
+0.5::conn_12_10_5.
+conn_12_10_6 :- conn_11_9_7, conn_12_10_5.
+conn_12_10_7 :- conn_12_10_4.
+conn_12_10_7 :- conn_12_10_6.
+0.5::conn_12_11.
+conn_12_11_1 :- conn_12_10_7, conn_12_11.
+0.5::conn_12_11_2.
+conn_12_11_3 :- conn_11_11_7, conn_12_11_2.
+conn_12_11_4 :- conn_12_11_1.
+conn_12_11_4 :- conn_12_11_3.
+0.5::conn_12_11_5.
+conn_12_11_6 :- conn_11_10_7, conn_12_11_5.
+conn_12_11_7 :- conn_12_11_4.
+conn_12_11_7 :- conn_12_11_6.
+0.5::conn_12_12.
+conn_12_12_1 :- conn_12_11_7, conn_12_12.
+0.5::conn_12_12_2.
+conn_12_12_3 :- conn_11_12_7, conn_12_12_2.
+conn_12_12_4 :- conn_12_12_1.
+conn_12_12_4 :- conn_12_12_3.
+0.5::conn_12_12_5.
+conn_12_12_6 :- conn_11_11_7, conn_12_12_5.
+conn_12_12_7 :- conn_12_12_4.
+conn_12_12_7 :- conn_12_12_6.
+0.5::conn_12_13.
+conn_12_13_1 :- conn_12_12_7, conn_12_13.
+0.5::conn_12_13_2.
+conn_12_13_3 :- conn_11_13_7, conn_12_13_2.
+conn_12_13_4 :- conn_12_13_1.
+conn_12_13_4 :- conn_12_13_3.
+0.5::conn_12_13_5.
+conn_12_13_6 :- conn_11_12_7, conn_12_13_5.
+conn_12_13_7 :- conn_12_13_4.
+conn_12_13_7 :- conn_12_13_6.
+0.5::conn_12_14.
+conn_12_14_1 :- conn_12_13_7, conn_12_14.
+0.5::conn_12_14_2.
+conn_12_14_3 :- conn_11_14_7, conn_12_14_2.
+conn_12_14_4 :- conn_12_14_1.
+conn_12_14_4 :- conn_12_14_3.
+0.5::conn_12_14_5.
+conn_12_14_6 :- conn_11_13_7, conn_12_14_5.
+conn_12_14_7 :- conn_12_14_4.
+conn_12_14_7 :- conn_12_14_6.
+0.5::conn_12_15.
+conn_12_15_1 :- conn_12_14_7, conn_12_15.
+0.5::conn_12_15_2.
+conn_12_15_3 :- conn_11_15_7, conn_12_15_2.
+conn_12_15_4 :- conn_12_15_1.
+conn_12_15_4 :- conn_12_15_3.
+0.5::conn_12_15_5.
+conn_12_15_6 :- conn_11_14_7, conn_12_15_5.
+conn_12_15_7 :- conn_12_15_4.
+conn_12_15_7 :- conn_12_15_6.
+0.5::conn_12_16.
+conn_12_16_1 :- conn_12_15_7, conn_12_16.
+0.5::conn_12_16_2.
+conn_12_16_3 :- conn_11_16_7, conn_12_16_2.
+conn_12_16_4 :- conn_12_16_1.
+conn_12_16_4 :- conn_12_16_3.
+0.5::conn_12_16_5.
+conn_12_16_6 :- conn_11_15_7, conn_12_16_5.
+conn_12_16_7 :- conn_12_16_4.
+conn_12_16_7 :- conn_12_16_6.
+0.5::conn_12_17.
+conn_12_17_1 :- conn_12_16_7, conn_12_17.
+0.5::conn_12_17_2.
+conn_12_17_3 :- conn_11_17_7, conn_12_17_2.
+conn_12_17_4 :- conn_12_17_1.
+conn_12_17_4 :- conn_12_17_3.
+0.5::conn_12_17_5.
+conn_12_17_6 :- conn_11_16_7, conn_12_17_5.
+conn_12_17_7 :- conn_12_17_4.
+conn_12_17_7 :- conn_12_17_6.
+0.5::conn_12_18.
+conn_12_18_1 :- conn_12_17_7, conn_12_18.
+0.5::conn_12_18_2.
+conn_12_18_3 :- conn_11_18_7, conn_12_18_2.
+conn_12_18_4 :- conn_12_18_1.
+conn_12_18_4 :- conn_12_18_3.
+0.5::conn_12_18_5.
+conn_12_18_6 :- conn_11_17_7, conn_12_18_5.
+conn_12_18_7 :- conn_12_18_4.
+conn_12_18_7 :- conn_12_18_6.
+0.5::conn_12_19.
+conn_12_19_1 :- conn_12_18_7, conn_12_19.
+0.5::conn_12_19_2.
+conn_12_19_3 :- conn_11_19_7, conn_12_19_2.
+conn_12_19_4 :- conn_12_19_1.
+conn_12_19_4 :- conn_12_19_3.
+0.5::conn_12_19_5.
+conn_12_19_6 :- conn_11_18_7, conn_12_19_5.
+conn_12_19_7 :- conn_12_19_4.
+conn_12_19_7 :- conn_12_19_6.
+0.5::conn_12_20.
+conn_12_20_1 :- conn_12_19_7, conn_12_20.
+0.5::conn_12_20_2.
+conn_12_20_3 :- conn_11_20_7, conn_12_20_2.
+conn_12_20_4 :- conn_12_20_1.
+conn_12_20_4 :- conn_12_20_3.
+0.5::conn_12_20_5.
+conn_12_20_6 :- conn_11_19_7, conn_12_20_5.
+conn_12_20_7 :- conn_12_20_4.
+conn_12_20_7 :- conn_12_20_6.
+0.5::conn_12_21.
+conn_12_21_1 :- conn_12_20_7, conn_12_21.
+0.5::conn_12_21_2.
+conn_12_21_3 :- conn_11_21_7, conn_12_21_2.
+conn_12_21_4 :- conn_12_21_1.
+conn_12_21_4 :- conn_12_21_3.
+0.5::conn_12_21_5.
+conn_12_21_6 :- conn_11_20_7, conn_12_21_5.
+conn_12_21_7 :- conn_12_21_4.
+conn_12_21_7 :- conn_12_21_6.
+0.5::conn_12_22.
+conn_12_22_1 :- conn_12_21_7, conn_12_22.
+0.5::conn_12_22_2.
+conn_12_22_3 :- conn_11_22_7, conn_12_22_2.
+conn_12_22_4 :- conn_12_22_1.
+conn_12_22_4 :- conn_12_22_3.
+0.5::conn_12_22_5.
+conn_12_22_6 :- conn_11_21_7, conn_12_22_5.
+conn_12_22_7 :- conn_12_22_4.
+conn_12_22_7 :- conn_12_22_6.
+0.5::conn_12_23.
+conn_12_23_1 :- conn_12_22_7, conn_12_23.
+0.5::conn_12_23_2.
+conn_12_23_3 :- conn_11_23_7, conn_12_23_2.
+conn_12_23_4 :- conn_12_23_1.
+conn_12_23_4 :- conn_12_23_3.
+0.5::conn_12_23_5.
+conn_12_23_6 :- conn_11_22_7, conn_12_23_5.
+conn_12_23_7 :- conn_12_23_4.
+conn_12_23_7 :- conn_12_23_6.
+0.5::conn_12_24.
+conn_12_24_1 :- conn_12_23_7, conn_12_24.
+0.5::conn_12_24_2.
+conn_12_24_3 :- conn_11_24_7, conn_12_24_2.
+conn_12_24_4 :- conn_12_24_1.
+conn_12_24_4 :- conn_12_24_3.
+0.5::conn_12_24_5.
+conn_12_24_6 :- conn_11_23_7, conn_12_24_5.
+conn_12_24_7 :- conn_12_24_4.
+conn_12_24_7 :- conn_12_24_6.
+0.5::conn_13_1.
+conn_13_1_1 :- conn_12_1_1, conn_13_1.
+0.5::conn_13_2.
+conn_13_2_1 :- conn_13_1_1, conn_13_2.
+0.5::conn_13_2_2.
+conn_13_2_3 :- conn_12_2_7, conn_13_2_2.
+conn_13_2_4 :- conn_13_2_1.
+conn_13_2_4 :- conn_13_2_3.
+0.5::conn_13_2_5.
+conn_13_2_6 :- conn_12_1_1, conn_13_2_5.
+conn_13_2_7 :- conn_13_2_4.
+conn_13_2_7 :- conn_13_2_6.
+0.5::conn_13_3.
+conn_13_3_1 :- conn_13_2_7, conn_13_3.
+0.5::conn_13_3_2.
+conn_13_3_3 :- conn_12_3_7, conn_13_3_2.
+conn_13_3_4 :- conn_13_3_1.
+conn_13_3_4 :- conn_13_3_3.
+0.5::conn_13_3_5.
+conn_13_3_6 :- conn_12_2_7, conn_13_3_5.
+conn_13_3_7 :- conn_13_3_4.
+conn_13_3_7 :- conn_13_3_6.
+0.5::conn_13_4.
+conn_13_4_1 :- conn_13_3_7, conn_13_4.
+0.5::conn_13_4_2.
+conn_13_4_3 :- conn_12_4_7, conn_13_4_2.
+conn_13_4_4 :- conn_13_4_1.
+conn_13_4_4 :- conn_13_4_3.
+0.5::conn_13_4_5.
+conn_13_4_6 :- conn_12_3_7, conn_13_4_5.
+conn_13_4_7 :- conn_13_4_4.
+conn_13_4_7 :- conn_13_4_6.
+0.5::conn_13_5.
+conn_13_5_1 :- conn_13_4_7, conn_13_5.
+0.5::conn_13_5_2.
+conn_13_5_3 :- conn_12_5_7, conn_13_5_2.
+conn_13_5_4 :- conn_13_5_1.
+conn_13_5_4 :- conn_13_5_3.
+0.5::conn_13_5_5.
+conn_13_5_6 :- conn_12_4_7, conn_13_5_5.
+conn_13_5_7 :- conn_13_5_4.
+conn_13_5_7 :- conn_13_5_6.
+0.5::conn_13_6.
+conn_13_6_1 :- conn_13_5_7, conn_13_6.
+0.5::conn_13_6_2.
+conn_13_6_3 :- conn_12_6_7, conn_13_6_2.
+conn_13_6_4 :- conn_13_6_1.
+conn_13_6_4 :- conn_13_6_3.
+0.5::conn_13_6_5.
+conn_13_6_6 :- conn_12_5_7, conn_13_6_5.
+conn_13_6_7 :- conn_13_6_4.
+conn_13_6_7 :- conn_13_6_6.
+0.5::conn_13_7.
+conn_13_7_1 :- conn_13_6_7, conn_13_7.
+0.5::conn_13_7_2.
+conn_13_7_3 :- conn_12_7_7, conn_13_7_2.
+conn_13_7_4 :- conn_13_7_1.
+conn_13_7_4 :- conn_13_7_3.
+0.5::conn_13_7_5.
+conn_13_7_6 :- conn_12_6_7, conn_13_7_5.
+conn_13_7_7 :- conn_13_7_4.
+conn_13_7_7 :- conn_13_7_6.
+0.5::conn_13_8.
+conn_13_8_1 :- conn_13_7_7, conn_13_8.
+0.5::conn_13_8_2.
+conn_13_8_3 :- conn_12_8_7, conn_13_8_2.
+conn_13_8_4 :- conn_13_8_1.
+conn_13_8_4 :- conn_13_8_3.
+0.5::conn_13_8_5.
+conn_13_8_6 :- conn_12_7_7, conn_13_8_5.
+conn_13_8_7 :- conn_13_8_4.
+conn_13_8_7 :- conn_13_8_6.
+0.5::conn_13_9.
+conn_13_9_1 :- conn_13_8_7, conn_13_9.
+0.5::conn_13_9_2.
+conn_13_9_3 :- conn_12_9_7, conn_13_9_2.
+conn_13_9_4 :- conn_13_9_1.
+conn_13_9_4 :- conn_13_9_3.
+0.5::conn_13_9_5.
+conn_13_9_6 :- conn_12_8_7, conn_13_9_5.
+conn_13_9_7 :- conn_13_9_4.
+conn_13_9_7 :- conn_13_9_6.
+0.5::conn_13_10.
+conn_13_10_1 :- conn_13_9_7, conn_13_10.
+0.5::conn_13_10_2.
+conn_13_10_3 :- conn_12_10_7, conn_13_10_2.
+conn_13_10_4 :- conn_13_10_1.
+conn_13_10_4 :- conn_13_10_3.
+0.5::conn_13_10_5.
+conn_13_10_6 :- conn_12_9_7, conn_13_10_5.
+conn_13_10_7 :- conn_13_10_4.
+conn_13_10_7 :- conn_13_10_6.
+0.5::conn_13_11.
+conn_13_11_1 :- conn_13_10_7, conn_13_11.
+0.5::conn_13_11_2.
+conn_13_11_3 :- conn_12_11_7, conn_13_11_2.
+conn_13_11_4 :- conn_13_11_1.
+conn_13_11_4 :- conn_13_11_3.
+0.5::conn_13_11_5.
+conn_13_11_6 :- conn_12_10_7, conn_13_11_5.
+conn_13_11_7 :- conn_13_11_4.
+conn_13_11_7 :- conn_13_11_6.
+0.5::conn_13_12.
+conn_13_12_1 :- conn_13_11_7, conn_13_12.
+0.5::conn_13_12_2.
+conn_13_12_3 :- conn_12_12_7, conn_13_12_2.
+conn_13_12_4 :- conn_13_12_1.
+conn_13_12_4 :- conn_13_12_3.
+0.5::conn_13_12_5.
+conn_13_12_6 :- conn_12_11_7, conn_13_12_5.
+conn_13_12_7 :- conn_13_12_4.
+conn_13_12_7 :- conn_13_12_6.
+0.5::conn_13_13.
+conn_13_13_1 :- conn_13_12_7, conn_13_13.
+0.5::conn_13_13_2.
+conn_13_13_3 :- conn_12_13_7, conn_13_13_2.
+conn_13_13_4 :- conn_13_13_1.
+conn_13_13_4 :- conn_13_13_3.
+0.5::conn_13_13_5.
+conn_13_13_6 :- conn_12_12_7, conn_13_13_5.
+conn_13_13_7 :- conn_13_13_4.
+conn_13_13_7 :- conn_13_13_6.
+0.5::conn_13_14.
+conn_13_14_1 :- conn_13_13_7, conn_13_14.
+0.5::conn_13_14_2.
+conn_13_14_3 :- conn_12_14_7, conn_13_14_2.
+conn_13_14_4 :- conn_13_14_1.
+conn_13_14_4 :- conn_13_14_3.
+0.5::conn_13_14_5.
+conn_13_14_6 :- conn_12_13_7, conn_13_14_5.
+conn_13_14_7 :- conn_13_14_4.
+conn_13_14_7 :- conn_13_14_6.
+0.5::conn_13_15.
+conn_13_15_1 :- conn_13_14_7, conn_13_15.
+0.5::conn_13_15_2.
+conn_13_15_3 :- conn_12_15_7, conn_13_15_2.
+conn_13_15_4 :- conn_13_15_1.
+conn_13_15_4 :- conn_13_15_3.
+0.5::conn_13_15_5.
+conn_13_15_6 :- conn_12_14_7, conn_13_15_5.
+conn_13_15_7 :- conn_13_15_4.
+conn_13_15_7 :- conn_13_15_6.
+0.5::conn_13_16.
+conn_13_16_1 :- conn_13_15_7, conn_13_16.
+0.5::conn_13_16_2.
+conn_13_16_3 :- conn_12_16_7, conn_13_16_2.
+conn_13_16_4 :- conn_13_16_1.
+conn_13_16_4 :- conn_13_16_3.
+0.5::conn_13_16_5.
+conn_13_16_6 :- conn_12_15_7, conn_13_16_5.
+conn_13_16_7 :- conn_13_16_4.
+conn_13_16_7 :- conn_13_16_6.
+0.5::conn_13_17.
+conn_13_17_1 :- conn_13_16_7, conn_13_17.
+0.5::conn_13_17_2.
+conn_13_17_3 :- conn_12_17_7, conn_13_17_2.
+conn_13_17_4 :- conn_13_17_1.
+conn_13_17_4 :- conn_13_17_3.
+0.5::conn_13_17_5.
+conn_13_17_6 :- conn_12_16_7, conn_13_17_5.
+conn_13_17_7 :- conn_13_17_4.
+conn_13_17_7 :- conn_13_17_6.
+0.5::conn_13_18.
+conn_13_18_1 :- conn_13_17_7, conn_13_18.
+0.5::conn_13_18_2.
+conn_13_18_3 :- conn_12_18_7, conn_13_18_2.
+conn_13_18_4 :- conn_13_18_1.
+conn_13_18_4 :- conn_13_18_3.
+0.5::conn_13_18_5.
+conn_13_18_6 :- conn_12_17_7, conn_13_18_5.
+conn_13_18_7 :- conn_13_18_4.
+conn_13_18_7 :- conn_13_18_6.
+0.5::conn_13_19.
+conn_13_19_1 :- conn_13_18_7, conn_13_19.
+0.5::conn_13_19_2.
+conn_13_19_3 :- conn_12_19_7, conn_13_19_2.
+conn_13_19_4 :- conn_13_19_1.
+conn_13_19_4 :- conn_13_19_3.
+0.5::conn_13_19_5.
+conn_13_19_6 :- conn_12_18_7, conn_13_19_5.
+conn_13_19_7 :- conn_13_19_4.
+conn_13_19_7 :- conn_13_19_6.
+0.5::conn_13_20.
+conn_13_20_1 :- conn_13_19_7, conn_13_20.
+0.5::conn_13_20_2.
+conn_13_20_3 :- conn_12_20_7, conn_13_20_2.
+conn_13_20_4 :- conn_13_20_1.
+conn_13_20_4 :- conn_13_20_3.
+0.5::conn_13_20_5.
+conn_13_20_6 :- conn_12_19_7, conn_13_20_5.
+conn_13_20_7 :- conn_13_20_4.
+conn_13_20_7 :- conn_13_20_6.
+0.5::conn_13_21.
+conn_13_21_1 :- conn_13_20_7, conn_13_21.
+0.5::conn_13_21_2.
+conn_13_21_3 :- conn_12_21_7, conn_13_21_2.
+conn_13_21_4 :- conn_13_21_1.
+conn_13_21_4 :- conn_13_21_3.
+0.5::conn_13_21_5.
+conn_13_21_6 :- conn_12_20_7, conn_13_21_5.
+conn_13_21_7 :- conn_13_21_4.
+conn_13_21_7 :- conn_13_21_6.
+0.5::conn_13_22.
+conn_13_22_1 :- conn_13_21_7, conn_13_22.
+0.5::conn_13_22_2.
+conn_13_22_3 :- conn_12_22_7, conn_13_22_2.
+conn_13_22_4 :- conn_13_22_1.
+conn_13_22_4 :- conn_13_22_3.
+0.5::conn_13_22_5.
+conn_13_22_6 :- conn_12_21_7, conn_13_22_5.
+conn_13_22_7 :- conn_13_22_4.
+conn_13_22_7 :- conn_13_22_6.
+0.5::conn_13_23.
+conn_13_23_1 :- conn_13_22_7, conn_13_23.
+0.5::conn_13_23_2.
+conn_13_23_3 :- conn_12_23_7, conn_13_23_2.
+conn_13_23_4 :- conn_13_23_1.
+conn_13_23_4 :- conn_13_23_3.
+0.5::conn_13_23_5.
+conn_13_23_6 :- conn_12_22_7, conn_13_23_5.
+conn_13_23_7 :- conn_13_23_4.
+conn_13_23_7 :- conn_13_23_6.
+0.5::conn_13_24.
+conn_13_24_1 :- conn_13_23_7, conn_13_24.
+0.5::conn_13_24_2.
+conn_13_24_3 :- conn_12_24_7, conn_13_24_2.
+conn_13_24_4 :- conn_13_24_1.
+conn_13_24_4 :- conn_13_24_3.
+0.5::conn_13_24_5.
+conn_13_24_6 :- conn_12_23_7, conn_13_24_5.
+conn_13_24_7 :- conn_13_24_4.
+conn_13_24_7 :- conn_13_24_6.
+0.5::conn_14_1.
+conn_14_1_1 :- conn_13_1_1, conn_14_1.
+0.5::conn_14_2.
+conn_14_2_1 :- conn_14_1_1, conn_14_2.
+0.5::conn_14_2_2.
+conn_14_2_3 :- conn_13_2_7, conn_14_2_2.
+conn_14_2_4 :- conn_14_2_1.
+conn_14_2_4 :- conn_14_2_3.
+0.5::conn_14_2_5.
+conn_14_2_6 :- conn_13_1_1, conn_14_2_5.
+conn_14_2_7 :- conn_14_2_4.
+conn_14_2_7 :- conn_14_2_6.
+0.5::conn_14_3.
+conn_14_3_1 :- conn_14_2_7, conn_14_3.
+0.5::conn_14_3_2.
+conn_14_3_3 :- conn_13_3_7, conn_14_3_2.
+conn_14_3_4 :- conn_14_3_1.
+conn_14_3_4 :- conn_14_3_3.
+0.5::conn_14_3_5.
+conn_14_3_6 :- conn_13_2_7, conn_14_3_5.
+conn_14_3_7 :- conn_14_3_4.
+conn_14_3_7 :- conn_14_3_6.
+0.5::conn_14_4.
+conn_14_4_1 :- conn_14_3_7, conn_14_4.
+0.5::conn_14_4_2.
+conn_14_4_3 :- conn_13_4_7, conn_14_4_2.
+conn_14_4_4 :- conn_14_4_1.
+conn_14_4_4 :- conn_14_4_3.
+0.5::conn_14_4_5.
+conn_14_4_6 :- conn_13_3_7, conn_14_4_5.
+conn_14_4_7 :- conn_14_4_4.
+conn_14_4_7 :- conn_14_4_6.
+0.5::conn_14_5.
+conn_14_5_1 :- conn_14_4_7, conn_14_5.
+0.5::conn_14_5_2.
+conn_14_5_3 :- conn_13_5_7, conn_14_5_2.
+conn_14_5_4 :- conn_14_5_1.
+conn_14_5_4 :- conn_14_5_3.
+0.5::conn_14_5_5.
+conn_14_5_6 :- conn_13_4_7, conn_14_5_5.
+conn_14_5_7 :- conn_14_5_4.
+conn_14_5_7 :- conn_14_5_6.
+0.5::conn_14_6.
+conn_14_6_1 :- conn_14_5_7, conn_14_6.
+0.5::conn_14_6_2.
+conn_14_6_3 :- conn_13_6_7, conn_14_6_2.
+conn_14_6_4 :- conn_14_6_1.
+conn_14_6_4 :- conn_14_6_3.
+0.5::conn_14_6_5.
+conn_14_6_6 :- conn_13_5_7, conn_14_6_5.
+conn_14_6_7 :- conn_14_6_4.
+conn_14_6_7 :- conn_14_6_6.
+0.5::conn_14_7.
+conn_14_7_1 :- conn_14_6_7, conn_14_7.
+0.5::conn_14_7_2.
+conn_14_7_3 :- conn_13_7_7, conn_14_7_2.
+conn_14_7_4 :- conn_14_7_1.
+conn_14_7_4 :- conn_14_7_3.
+0.5::conn_14_7_5.
+conn_14_7_6 :- conn_13_6_7, conn_14_7_5.
+conn_14_7_7 :- conn_14_7_4.
+conn_14_7_7 :- conn_14_7_6.
+0.5::conn_14_8.
+conn_14_8_1 :- conn_14_7_7, conn_14_8.
+0.5::conn_14_8_2.
+conn_14_8_3 :- conn_13_8_7, conn_14_8_2.
+conn_14_8_4 :- conn_14_8_1.
+conn_14_8_4 :- conn_14_8_3.
+0.5::conn_14_8_5.
+conn_14_8_6 :- conn_13_7_7, conn_14_8_5.
+conn_14_8_7 :- conn_14_8_4.
+conn_14_8_7 :- conn_14_8_6.
+0.5::conn_14_9.
+conn_14_9_1 :- conn_14_8_7, conn_14_9.
+0.5::conn_14_9_2.
+conn_14_9_3 :- conn_13_9_7, conn_14_9_2.
+conn_14_9_4 :- conn_14_9_1.
+conn_14_9_4 :- conn_14_9_3.
+0.5::conn_14_9_5.
+conn_14_9_6 :- conn_13_8_7, conn_14_9_5.
+conn_14_9_7 :- conn_14_9_4.
+conn_14_9_7 :- conn_14_9_6.
+0.5::conn_14_10.
+conn_14_10_1 :- conn_14_9_7, conn_14_10.
+0.5::conn_14_10_2.
+conn_14_10_3 :- conn_13_10_7, conn_14_10_2.
+conn_14_10_4 :- conn_14_10_1.
+conn_14_10_4 :- conn_14_10_3.
+0.5::conn_14_10_5.
+conn_14_10_6 :- conn_13_9_7, conn_14_10_5.
+conn_14_10_7 :- conn_14_10_4.
+conn_14_10_7 :- conn_14_10_6.
+0.5::conn_14_11.
+conn_14_11_1 :- conn_14_10_7, conn_14_11.
+0.5::conn_14_11_2.
+conn_14_11_3 :- conn_13_11_7, conn_14_11_2.
+conn_14_11_4 :- conn_14_11_1.
+conn_14_11_4 :- conn_14_11_3.
+0.5::conn_14_11_5.
+conn_14_11_6 :- conn_13_10_7, conn_14_11_5.
+conn_14_11_7 :- conn_14_11_4.
+conn_14_11_7 :- conn_14_11_6.
+0.5::conn_14_12.
+conn_14_12_1 :- conn_14_11_7, conn_14_12.
+0.5::conn_14_12_2.
+conn_14_12_3 :- conn_13_12_7, conn_14_12_2.
+conn_14_12_4 :- conn_14_12_1.
+conn_14_12_4 :- conn_14_12_3.
+0.5::conn_14_12_5.
+conn_14_12_6 :- conn_13_11_7, conn_14_12_5.
+conn_14_12_7 :- conn_14_12_4.
+conn_14_12_7 :- conn_14_12_6.
+0.5::conn_14_13.
+conn_14_13_1 :- conn_14_12_7, conn_14_13.
+0.5::conn_14_13_2.
+conn_14_13_3 :- conn_13_13_7, conn_14_13_2.
+conn_14_13_4 :- conn_14_13_1.
+conn_14_13_4 :- conn_14_13_3.
+0.5::conn_14_13_5.
+conn_14_13_6 :- conn_13_12_7, conn_14_13_5.
+conn_14_13_7 :- conn_14_13_4.
+conn_14_13_7 :- conn_14_13_6.
+0.5::conn_14_14.
+conn_14_14_1 :- conn_14_13_7, conn_14_14.
+0.5::conn_14_14_2.
+conn_14_14_3 :- conn_13_14_7, conn_14_14_2.
+conn_14_14_4 :- conn_14_14_1.
+conn_14_14_4 :- conn_14_14_3.
+0.5::conn_14_14_5.
+conn_14_14_6 :- conn_13_13_7, conn_14_14_5.
+conn_14_14_7 :- conn_14_14_4.
+conn_14_14_7 :- conn_14_14_6.
+0.5::conn_14_15.
+conn_14_15_1 :- conn_14_14_7, conn_14_15.
+0.5::conn_14_15_2.
+conn_14_15_3 :- conn_13_15_7, conn_14_15_2.
+conn_14_15_4 :- conn_14_15_1.
+conn_14_15_4 :- conn_14_15_3.
+0.5::conn_14_15_5.
+conn_14_15_6 :- conn_13_14_7, conn_14_15_5.
+conn_14_15_7 :- conn_14_15_4.
+conn_14_15_7 :- conn_14_15_6.
+0.5::conn_14_16.
+conn_14_16_1 :- conn_14_15_7, conn_14_16.
+0.5::conn_14_16_2.
+conn_14_16_3 :- conn_13_16_7, conn_14_16_2.
+conn_14_16_4 :- conn_14_16_1.
+conn_14_16_4 :- conn_14_16_3.
+0.5::conn_14_16_5.
+conn_14_16_6 :- conn_13_15_7, conn_14_16_5.
+conn_14_16_7 :- conn_14_16_4.
+conn_14_16_7 :- conn_14_16_6.
+0.5::conn_14_17.
+conn_14_17_1 :- conn_14_16_7, conn_14_17.
+0.5::conn_14_17_2.
+conn_14_17_3 :- conn_13_17_7, conn_14_17_2.
+conn_14_17_4 :- conn_14_17_1.
+conn_14_17_4 :- conn_14_17_3.
+0.5::conn_14_17_5.
+conn_14_17_6 :- conn_13_16_7, conn_14_17_5.
+conn_14_17_7 :- conn_14_17_4.
+conn_14_17_7 :- conn_14_17_6.
+0.5::conn_14_18.
+conn_14_18_1 :- conn_14_17_7, conn_14_18.
+0.5::conn_14_18_2.
+conn_14_18_3 :- conn_13_18_7, conn_14_18_2.
+conn_14_18_4 :- conn_14_18_1.
+conn_14_18_4 :- conn_14_18_3.
+0.5::conn_14_18_5.
+conn_14_18_6 :- conn_13_17_7, conn_14_18_5.
+conn_14_18_7 :- conn_14_18_4.
+conn_14_18_7 :- conn_14_18_6.
+0.5::conn_14_19.
+conn_14_19_1 :- conn_14_18_7, conn_14_19.
+0.5::conn_14_19_2.
+conn_14_19_3 :- conn_13_19_7, conn_14_19_2.
+conn_14_19_4 :- conn_14_19_1.
+conn_14_19_4 :- conn_14_19_3.
+0.5::conn_14_19_5.
+conn_14_19_6 :- conn_13_18_7, conn_14_19_5.
+conn_14_19_7 :- conn_14_19_4.
+conn_14_19_7 :- conn_14_19_6.
+0.5::conn_14_20.
+conn_14_20_1 :- conn_14_19_7, conn_14_20.
+0.5::conn_14_20_2.
+conn_14_20_3 :- conn_13_20_7, conn_14_20_2.
+conn_14_20_4 :- conn_14_20_1.
+conn_14_20_4 :- conn_14_20_3.
+0.5::conn_14_20_5.
+conn_14_20_6 :- conn_13_19_7, conn_14_20_5.
+conn_14_20_7 :- conn_14_20_4.
+conn_14_20_7 :- conn_14_20_6.
+0.5::conn_14_21.
+conn_14_21_1 :- conn_14_20_7, conn_14_21.
+0.5::conn_14_21_2.
+conn_14_21_3 :- conn_13_21_7, conn_14_21_2.
+conn_14_21_4 :- conn_14_21_1.
+conn_14_21_4 :- conn_14_21_3.
+0.5::conn_14_21_5.
+conn_14_21_6 :- conn_13_20_7, conn_14_21_5.
+conn_14_21_7 :- conn_14_21_4.
+conn_14_21_7 :- conn_14_21_6.
+0.5::conn_14_22.
+conn_14_22_1 :- conn_14_21_7, conn_14_22.
+0.5::conn_14_22_2.
+conn_14_22_3 :- conn_13_22_7, conn_14_22_2.
+conn_14_22_4 :- conn_14_22_1.
+conn_14_22_4 :- conn_14_22_3.
+0.5::conn_14_22_5.
+conn_14_22_6 :- conn_13_21_7, conn_14_22_5.
+conn_14_22_7 :- conn_14_22_4.
+conn_14_22_7 :- conn_14_22_6.
+0.5::conn_14_23.
+conn_14_23_1 :- conn_14_22_7, conn_14_23.
+0.5::conn_14_23_2.
+conn_14_23_3 :- conn_13_23_7, conn_14_23_2.
+conn_14_23_4 :- conn_14_23_1.
+conn_14_23_4 :- conn_14_23_3.
+0.5::conn_14_23_5.
+conn_14_23_6 :- conn_13_22_7, conn_14_23_5.
+conn_14_23_7 :- conn_14_23_4.
+conn_14_23_7 :- conn_14_23_6.
+0.5::conn_14_24.
+conn_14_24_1 :- conn_14_23_7, conn_14_24.
+0.5::conn_14_24_2.
+conn_14_24_3 :- conn_13_24_7, conn_14_24_2.
+conn_14_24_4 :- conn_14_24_1.
+conn_14_24_4 :- conn_14_24_3.
+0.5::conn_14_24_5.
+conn_14_24_6 :- conn_13_23_7, conn_14_24_5.
+conn_14_24_7 :- conn_14_24_4.
+conn_14_24_7 :- conn_14_24_6.
+0.5::conn_15_1.
+conn_15_1_1 :- conn_14_1_1, conn_15_1.
+0.5::conn_15_2.
+conn_15_2_1 :- conn_15_1_1, conn_15_2.
+0.5::conn_15_2_2.
+conn_15_2_3 :- conn_14_2_7, conn_15_2_2.
+conn_15_2_4 :- conn_15_2_1.
+conn_15_2_4 :- conn_15_2_3.
+0.5::conn_15_2_5.
+conn_15_2_6 :- conn_14_1_1, conn_15_2_5.
+conn_15_2_7 :- conn_15_2_4.
+conn_15_2_7 :- conn_15_2_6.
+0.5::conn_15_3.
+conn_15_3_1 :- conn_15_2_7, conn_15_3.
+0.5::conn_15_3_2.
+conn_15_3_3 :- conn_14_3_7, conn_15_3_2.
+conn_15_3_4 :- conn_15_3_1.
+conn_15_3_4 :- conn_15_3_3.
+0.5::conn_15_3_5.
+conn_15_3_6 :- conn_14_2_7, conn_15_3_5.
+conn_15_3_7 :- conn_15_3_4.
+conn_15_3_7 :- conn_15_3_6.
+0.5::conn_15_4.
+conn_15_4_1 :- conn_15_3_7, conn_15_4.
+0.5::conn_15_4_2.
+conn_15_4_3 :- conn_14_4_7, conn_15_4_2.
+conn_15_4_4 :- conn_15_4_1.
+conn_15_4_4 :- conn_15_4_3.
+0.5::conn_15_4_5.
+conn_15_4_6 :- conn_14_3_7, conn_15_4_5.
+conn_15_4_7 :- conn_15_4_4.
+conn_15_4_7 :- conn_15_4_6.
+0.5::conn_15_5.
+conn_15_5_1 :- conn_15_4_7, conn_15_5.
+0.5::conn_15_5_2.
+conn_15_5_3 :- conn_14_5_7, conn_15_5_2.
+conn_15_5_4 :- conn_15_5_1.
+conn_15_5_4 :- conn_15_5_3.
+0.5::conn_15_5_5.
+conn_15_5_6 :- conn_14_4_7, conn_15_5_5.
+conn_15_5_7 :- conn_15_5_4.
+conn_15_5_7 :- conn_15_5_6.
+0.5::conn_15_6.
+conn_15_6_1 :- conn_15_5_7, conn_15_6.
+0.5::conn_15_6_2.
+conn_15_6_3 :- conn_14_6_7, conn_15_6_2.
+conn_15_6_4 :- conn_15_6_1.
+conn_15_6_4 :- conn_15_6_3.
+0.5::conn_15_6_5.
+conn_15_6_6 :- conn_14_5_7, conn_15_6_5.
+conn_15_6_7 :- conn_15_6_4.
+conn_15_6_7 :- conn_15_6_6.
+0.5::conn_15_7.
+conn_15_7_1 :- conn_15_6_7, conn_15_7.
+0.5::conn_15_7_2.
+conn_15_7_3 :- conn_14_7_7, conn_15_7_2.
+conn_15_7_4 :- conn_15_7_1.
+conn_15_7_4 :- conn_15_7_3.
+0.5::conn_15_7_5.
+conn_15_7_6 :- conn_14_6_7, conn_15_7_5.
+conn_15_7_7 :- conn_15_7_4.
+conn_15_7_7 :- conn_15_7_6.
+0.5::conn_15_8.
+conn_15_8_1 :- conn_15_7_7, conn_15_8.
+0.5::conn_15_8_2.
+conn_15_8_3 :- conn_14_8_7, conn_15_8_2.
+conn_15_8_4 :- conn_15_8_1.
+conn_15_8_4 :- conn_15_8_3.
+0.5::conn_15_8_5.
+conn_15_8_6 :- conn_14_7_7, conn_15_8_5.
+conn_15_8_7 :- conn_15_8_4.
+conn_15_8_7 :- conn_15_8_6.
+0.5::conn_15_9.
+conn_15_9_1 :- conn_15_8_7, conn_15_9.
+0.5::conn_15_9_2.
+conn_15_9_3 :- conn_14_9_7, conn_15_9_2.
+conn_15_9_4 :- conn_15_9_1.
+conn_15_9_4 :- conn_15_9_3.
+0.5::conn_15_9_5.
+conn_15_9_6 :- conn_14_8_7, conn_15_9_5.
+conn_15_9_7 :- conn_15_9_4.
+conn_15_9_7 :- conn_15_9_6.
+0.5::conn_15_10.
+conn_15_10_1 :- conn_15_9_7, conn_15_10.
+0.5::conn_15_10_2.
+conn_15_10_3 :- conn_14_10_7, conn_15_10_2.
+conn_15_10_4 :- conn_15_10_1.
+conn_15_10_4 :- conn_15_10_3.
+0.5::conn_15_10_5.
+conn_15_10_6 :- conn_14_9_7, conn_15_10_5.
+conn_15_10_7 :- conn_15_10_4.
+conn_15_10_7 :- conn_15_10_6.
+0.5::conn_15_11.
+conn_15_11_1 :- conn_15_10_7, conn_15_11.
+0.5::conn_15_11_2.
+conn_15_11_3 :- conn_14_11_7, conn_15_11_2.
+conn_15_11_4 :- conn_15_11_1.
+conn_15_11_4 :- conn_15_11_3.
+0.5::conn_15_11_5.
+conn_15_11_6 :- conn_14_10_7, conn_15_11_5.
+conn_15_11_7 :- conn_15_11_4.
+conn_15_11_7 :- conn_15_11_6.
+0.5::conn_15_12.
+conn_15_12_1 :- conn_15_11_7, conn_15_12.
+0.5::conn_15_12_2.
+conn_15_12_3 :- conn_14_12_7, conn_15_12_2.
+conn_15_12_4 :- conn_15_12_1.
+conn_15_12_4 :- conn_15_12_3.
+0.5::conn_15_12_5.
+conn_15_12_6 :- conn_14_11_7, conn_15_12_5.
+conn_15_12_7 :- conn_15_12_4.
+conn_15_12_7 :- conn_15_12_6.
+0.5::conn_15_13.
+conn_15_13_1 :- conn_15_12_7, conn_15_13.
+0.5::conn_15_13_2.
+conn_15_13_3 :- conn_14_13_7, conn_15_13_2.
+conn_15_13_4 :- conn_15_13_1.
+conn_15_13_4 :- conn_15_13_3.
+0.5::conn_15_13_5.
+conn_15_13_6 :- conn_14_12_7, conn_15_13_5.
+conn_15_13_7 :- conn_15_13_4.
+conn_15_13_7 :- conn_15_13_6.
+0.5::conn_15_14.
+conn_15_14_1 :- conn_15_13_7, conn_15_14.
+0.5::conn_15_14_2.
+conn_15_14_3 :- conn_14_14_7, conn_15_14_2.
+conn_15_14_4 :- conn_15_14_1.
+conn_15_14_4 :- conn_15_14_3.
+0.5::conn_15_14_5.
+conn_15_14_6 :- conn_14_13_7, conn_15_14_5.
+conn_15_14_7 :- conn_15_14_4.
+conn_15_14_7 :- conn_15_14_6.
+0.5::conn_15_15.
+conn_15_15_1 :- conn_15_14_7, conn_15_15.
+0.5::conn_15_15_2.
+conn_15_15_3 :- conn_14_15_7, conn_15_15_2.
+conn_15_15_4 :- conn_15_15_1.
+conn_15_15_4 :- conn_15_15_3.
+0.5::conn_15_15_5.
+conn_15_15_6 :- conn_14_14_7, conn_15_15_5.
+conn_15_15_7 :- conn_15_15_4.
+conn_15_15_7 :- conn_15_15_6.
+0.5::conn_15_16.
+conn_15_16_1 :- conn_15_15_7, conn_15_16.
+0.5::conn_15_16_2.
+conn_15_16_3 :- conn_14_16_7, conn_15_16_2.
+conn_15_16_4 :- conn_15_16_1.
+conn_15_16_4 :- conn_15_16_3.
+0.5::conn_15_16_5.
+conn_15_16_6 :- conn_14_15_7, conn_15_16_5.
+conn_15_16_7 :- conn_15_16_4.
+conn_15_16_7 :- conn_15_16_6.
+0.5::conn_15_17.
+conn_15_17_1 :- conn_15_16_7, conn_15_17.
+0.5::conn_15_17_2.
+conn_15_17_3 :- conn_14_17_7, conn_15_17_2.
+conn_15_17_4 :- conn_15_17_1.
+conn_15_17_4 :- conn_15_17_3.
+0.5::conn_15_17_5.
+conn_15_17_6 :- conn_14_16_7, conn_15_17_5.
+conn_15_17_7 :- conn_15_17_4.
+conn_15_17_7 :- conn_15_17_6.
+0.5::conn_15_18.
+conn_15_18_1 :- conn_15_17_7, conn_15_18.
+0.5::conn_15_18_2.
+conn_15_18_3 :- conn_14_18_7, conn_15_18_2.
+conn_15_18_4 :- conn_15_18_1.
+conn_15_18_4 :- conn_15_18_3.
+0.5::conn_15_18_5.
+conn_15_18_6 :- conn_14_17_7, conn_15_18_5.
+conn_15_18_7 :- conn_15_18_4.
+conn_15_18_7 :- conn_15_18_6.
+0.5::conn_15_19.
+conn_15_19_1 :- conn_15_18_7, conn_15_19.
+0.5::conn_15_19_2.
+conn_15_19_3 :- conn_14_19_7, conn_15_19_2.
+conn_15_19_4 :- conn_15_19_1.
+conn_15_19_4 :- conn_15_19_3.
+0.5::conn_15_19_5.
+conn_15_19_6 :- conn_14_18_7, conn_15_19_5.
+conn_15_19_7 :- conn_15_19_4.
+conn_15_19_7 :- conn_15_19_6.
+0.5::conn_15_20.
+conn_15_20_1 :- conn_15_19_7, conn_15_20.
+0.5::conn_15_20_2.
+conn_15_20_3 :- conn_14_20_7, conn_15_20_2.
+conn_15_20_4 :- conn_15_20_1.
+conn_15_20_4 :- conn_15_20_3.
+0.5::conn_15_20_5.
+conn_15_20_6 :- conn_14_19_7, conn_15_20_5.
+conn_15_20_7 :- conn_15_20_4.
+conn_15_20_7 :- conn_15_20_6.
+0.5::conn_15_21.
+conn_15_21_1 :- conn_15_20_7, conn_15_21.
+0.5::conn_15_21_2.
+conn_15_21_3 :- conn_14_21_7, conn_15_21_2.
+conn_15_21_4 :- conn_15_21_1.
+conn_15_21_4 :- conn_15_21_3.
+0.5::conn_15_21_5.
+conn_15_21_6 :- conn_14_20_7, conn_15_21_5.
+conn_15_21_7 :- conn_15_21_4.
+conn_15_21_7 :- conn_15_21_6.
+0.5::conn_15_22.
+conn_15_22_1 :- conn_15_21_7, conn_15_22.
+0.5::conn_15_22_2.
+conn_15_22_3 :- conn_14_22_7, conn_15_22_2.
+conn_15_22_4 :- conn_15_22_1.
+conn_15_22_4 :- conn_15_22_3.
+0.5::conn_15_22_5.
+conn_15_22_6 :- conn_14_21_7, conn_15_22_5.
+conn_15_22_7 :- conn_15_22_4.
+conn_15_22_7 :- conn_15_22_6.
+0.5::conn_15_23.
+conn_15_23_1 :- conn_15_22_7, conn_15_23.
+0.5::conn_15_23_2.
+conn_15_23_3 :- conn_14_23_7, conn_15_23_2.
+conn_15_23_4 :- conn_15_23_1.
+conn_15_23_4 :- conn_15_23_3.
+0.5::conn_15_23_5.
+conn_15_23_6 :- conn_14_22_7, conn_15_23_5.
+conn_15_23_7 :- conn_15_23_4.
+conn_15_23_7 :- conn_15_23_6.
+0.5::conn_15_24.
+conn_15_24_1 :- conn_15_23_7, conn_15_24.
+0.5::conn_15_24_2.
+conn_15_24_3 :- conn_14_24_7, conn_15_24_2.
+conn_15_24_4 :- conn_15_24_1.
+conn_15_24_4 :- conn_15_24_3.
+0.5::conn_15_24_5.
+conn_15_24_6 :- conn_14_23_7, conn_15_24_5.
+conn_15_24_7 :- conn_15_24_4.
+conn_15_24_7 :- conn_15_24_6.
+0.5::conn_16_1.
+conn_16_1_1 :- conn_15_1_1, conn_16_1.
+0.5::conn_16_2.
+conn_16_2_1 :- conn_16_1_1, conn_16_2.
+0.5::conn_16_2_2.
+conn_16_2_3 :- conn_15_2_7, conn_16_2_2.
+conn_16_2_4 :- conn_16_2_1.
+conn_16_2_4 :- conn_16_2_3.
+0.5::conn_16_2_5.
+conn_16_2_6 :- conn_15_1_1, conn_16_2_5.
+conn_16_2_7 :- conn_16_2_4.
+conn_16_2_7 :- conn_16_2_6.
+0.5::conn_16_3.
+conn_16_3_1 :- conn_16_2_7, conn_16_3.
+0.5::conn_16_3_2.
+conn_16_3_3 :- conn_15_3_7, conn_16_3_2.
+conn_16_3_4 :- conn_16_3_1.
+conn_16_3_4 :- conn_16_3_3.
+0.5::conn_16_3_5.
+conn_16_3_6 :- conn_15_2_7, conn_16_3_5.
+conn_16_3_7 :- conn_16_3_4.
+conn_16_3_7 :- conn_16_3_6.
+0.5::conn_16_4.
+conn_16_4_1 :- conn_16_3_7, conn_16_4.
+0.5::conn_16_4_2.
+conn_16_4_3 :- conn_15_4_7, conn_16_4_2.
+conn_16_4_4 :- conn_16_4_1.
+conn_16_4_4 :- conn_16_4_3.
+0.5::conn_16_4_5.
+conn_16_4_6 :- conn_15_3_7, conn_16_4_5.
+conn_16_4_7 :- conn_16_4_4.
+conn_16_4_7 :- conn_16_4_6.
+0.5::conn_16_5.
+conn_16_5_1 :- conn_16_4_7, conn_16_5.
+0.5::conn_16_5_2.
+conn_16_5_3 :- conn_15_5_7, conn_16_5_2.
+conn_16_5_4 :- conn_16_5_1.
+conn_16_5_4 :- conn_16_5_3.
+0.5::conn_16_5_5.
+conn_16_5_6 :- conn_15_4_7, conn_16_5_5.
+conn_16_5_7 :- conn_16_5_4.
+conn_16_5_7 :- conn_16_5_6.
+0.5::conn_16_6.
+conn_16_6_1 :- conn_16_5_7, conn_16_6.
+0.5::conn_16_6_2.
+conn_16_6_3 :- conn_15_6_7, conn_16_6_2.
+conn_16_6_4 :- conn_16_6_1.
+conn_16_6_4 :- conn_16_6_3.
+0.5::conn_16_6_5.
+conn_16_6_6 :- conn_15_5_7, conn_16_6_5.
+conn_16_6_7 :- conn_16_6_4.
+conn_16_6_7 :- conn_16_6_6.
+0.5::conn_16_7.
+conn_16_7_1 :- conn_16_6_7, conn_16_7.
+0.5::conn_16_7_2.
+conn_16_7_3 :- conn_15_7_7, conn_16_7_2.
+conn_16_7_4 :- conn_16_7_1.
+conn_16_7_4 :- conn_16_7_3.
+0.5::conn_16_7_5.
+conn_16_7_6 :- conn_15_6_7, conn_16_7_5.
+conn_16_7_7 :- conn_16_7_4.
+conn_16_7_7 :- conn_16_7_6.
+0.5::conn_16_8.
+conn_16_8_1 :- conn_16_7_7, conn_16_8.
+0.5::conn_16_8_2.
+conn_16_8_3 :- conn_15_8_7, conn_16_8_2.
+conn_16_8_4 :- conn_16_8_1.
+conn_16_8_4 :- conn_16_8_3.
+0.5::conn_16_8_5.
+conn_16_8_6 :- conn_15_7_7, conn_16_8_5.
+conn_16_8_7 :- conn_16_8_4.
+conn_16_8_7 :- conn_16_8_6.
+0.5::conn_16_9.
+conn_16_9_1 :- conn_16_8_7, conn_16_9.
+0.5::conn_16_9_2.
+conn_16_9_3 :- conn_15_9_7, conn_16_9_2.
+conn_16_9_4 :- conn_16_9_1.
+conn_16_9_4 :- conn_16_9_3.
+0.5::conn_16_9_5.
+conn_16_9_6 :- conn_15_8_7, conn_16_9_5.
+conn_16_9_7 :- conn_16_9_4.
+conn_16_9_7 :- conn_16_9_6.
+0.5::conn_16_10.
+conn_16_10_1 :- conn_16_9_7, conn_16_10.
+0.5::conn_16_10_2.
+conn_16_10_3 :- conn_15_10_7, conn_16_10_2.
+conn_16_10_4 :- conn_16_10_1.
+conn_16_10_4 :- conn_16_10_3.
+0.5::conn_16_10_5.
+conn_16_10_6 :- conn_15_9_7, conn_16_10_5.
+conn_16_10_7 :- conn_16_10_4.
+conn_16_10_7 :- conn_16_10_6.
+0.5::conn_16_11.
+conn_16_11_1 :- conn_16_10_7, conn_16_11.
+0.5::conn_16_11_2.
+conn_16_11_3 :- conn_15_11_7, conn_16_11_2.
+conn_16_11_4 :- conn_16_11_1.
+conn_16_11_4 :- conn_16_11_3.
+0.5::conn_16_11_5.
+conn_16_11_6 :- conn_15_10_7, conn_16_11_5.
+conn_16_11_7 :- conn_16_11_4.
+conn_16_11_7 :- conn_16_11_6.
+0.5::conn_16_12.
+conn_16_12_1 :- conn_16_11_7, conn_16_12.
+0.5::conn_16_12_2.
+conn_16_12_3 :- conn_15_12_7, conn_16_12_2.
+conn_16_12_4 :- conn_16_12_1.
+conn_16_12_4 :- conn_16_12_3.
+0.5::conn_16_12_5.
+conn_16_12_6 :- conn_15_11_7, conn_16_12_5.
+conn_16_12_7 :- conn_16_12_4.
+conn_16_12_7 :- conn_16_12_6.
+0.5::conn_16_13.
+conn_16_13_1 :- conn_16_12_7, conn_16_13.
+0.5::conn_16_13_2.
+conn_16_13_3 :- conn_15_13_7, conn_16_13_2.
+conn_16_13_4 :- conn_16_13_1.
+conn_16_13_4 :- conn_16_13_3.
+0.5::conn_16_13_5.
+conn_16_13_6 :- conn_15_12_7, conn_16_13_5.
+conn_16_13_7 :- conn_16_13_4.
+conn_16_13_7 :- conn_16_13_6.
+0.5::conn_16_14.
+conn_16_14_1 :- conn_16_13_7, conn_16_14.
+0.5::conn_16_14_2.
+conn_16_14_3 :- conn_15_14_7, conn_16_14_2.
+conn_16_14_4 :- conn_16_14_1.
+conn_16_14_4 :- conn_16_14_3.
+0.5::conn_16_14_5.
+conn_16_14_6 :- conn_15_13_7, conn_16_14_5.
+conn_16_14_7 :- conn_16_14_4.
+conn_16_14_7 :- conn_16_14_6.
+0.5::conn_16_15.
+conn_16_15_1 :- conn_16_14_7, conn_16_15.
+0.5::conn_16_15_2.
+conn_16_15_3 :- conn_15_15_7, conn_16_15_2.
+conn_16_15_4 :- conn_16_15_1.
+conn_16_15_4 :- conn_16_15_3.
+0.5::conn_16_15_5.
+conn_16_15_6 :- conn_15_14_7, conn_16_15_5.
+conn_16_15_7 :- conn_16_15_4.
+conn_16_15_7 :- conn_16_15_6.
+0.5::conn_16_16.
+conn_16_16_1 :- conn_16_15_7, conn_16_16.
+0.5::conn_16_16_2.
+conn_16_16_3 :- conn_15_16_7, conn_16_16_2.
+conn_16_16_4 :- conn_16_16_1.
+conn_16_16_4 :- conn_16_16_3.
+0.5::conn_16_16_5.
+conn_16_16_6 :- conn_15_15_7, conn_16_16_5.
+conn_16_16_7 :- conn_16_16_4.
+conn_16_16_7 :- conn_16_16_6.
+0.5::conn_16_17.
+conn_16_17_1 :- conn_16_16_7, conn_16_17.
+0.5::conn_16_17_2.
+conn_16_17_3 :- conn_15_17_7, conn_16_17_2.
+conn_16_17_4 :- conn_16_17_1.
+conn_16_17_4 :- conn_16_17_3.
+0.5::conn_16_17_5.
+conn_16_17_6 :- conn_15_16_7, conn_16_17_5.
+conn_16_17_7 :- conn_16_17_4.
+conn_16_17_7 :- conn_16_17_6.
+0.5::conn_16_18.
+conn_16_18_1 :- conn_16_17_7, conn_16_18.
+0.5::conn_16_18_2.
+conn_16_18_3 :- conn_15_18_7, conn_16_18_2.
+conn_16_18_4 :- conn_16_18_1.
+conn_16_18_4 :- conn_16_18_3.
+0.5::conn_16_18_5.
+conn_16_18_6 :- conn_15_17_7, conn_16_18_5.
+conn_16_18_7 :- conn_16_18_4.
+conn_16_18_7 :- conn_16_18_6.
+0.5::conn_16_19.
+conn_16_19_1 :- conn_16_18_7, conn_16_19.
+0.5::conn_16_19_2.
+conn_16_19_3 :- conn_15_19_7, conn_16_19_2.
+conn_16_19_4 :- conn_16_19_1.
+conn_16_19_4 :- conn_16_19_3.
+0.5::conn_16_19_5.
+conn_16_19_6 :- conn_15_18_7, conn_16_19_5.
+conn_16_19_7 :- conn_16_19_4.
+conn_16_19_7 :- conn_16_19_6.
+0.5::conn_16_20.
+conn_16_20_1 :- conn_16_19_7, conn_16_20.
+0.5::conn_16_20_2.
+conn_16_20_3 :- conn_15_20_7, conn_16_20_2.
+conn_16_20_4 :- conn_16_20_1.
+conn_16_20_4 :- conn_16_20_3.
+0.5::conn_16_20_5.
+conn_16_20_6 :- conn_15_19_7, conn_16_20_5.
+conn_16_20_7 :- conn_16_20_4.
+conn_16_20_7 :- conn_16_20_6.
+0.5::conn_16_21.
+conn_16_21_1 :- conn_16_20_7, conn_16_21.
+0.5::conn_16_21_2.
+conn_16_21_3 :- conn_15_21_7, conn_16_21_2.
+conn_16_21_4 :- conn_16_21_1.
+conn_16_21_4 :- conn_16_21_3.
+0.5::conn_16_21_5.
+conn_16_21_6 :- conn_15_20_7, conn_16_21_5.
+conn_16_21_7 :- conn_16_21_4.
+conn_16_21_7 :- conn_16_21_6.
+0.5::conn_16_22.
+conn_16_22_1 :- conn_16_21_7, conn_16_22.
+0.5::conn_16_22_2.
+conn_16_22_3 :- conn_15_22_7, conn_16_22_2.
+conn_16_22_4 :- conn_16_22_1.
+conn_16_22_4 :- conn_16_22_3.
+0.5::conn_16_22_5.
+conn_16_22_6 :- conn_15_21_7, conn_16_22_5.
+conn_16_22_7 :- conn_16_22_4.
+conn_16_22_7 :- conn_16_22_6.
+0.5::conn_16_23.
+conn_16_23_1 :- conn_16_22_7, conn_16_23.
+0.5::conn_16_23_2.
+conn_16_23_3 :- conn_15_23_7, conn_16_23_2.
+conn_16_23_4 :- conn_16_23_1.
+conn_16_23_4 :- conn_16_23_3.
+0.5::conn_16_23_5.
+conn_16_23_6 :- conn_15_22_7, conn_16_23_5.
+conn_16_23_7 :- conn_16_23_4.
+conn_16_23_7 :- conn_16_23_6.
+0.5::conn_16_24.
+conn_16_24_1 :- conn_16_23_7, conn_16_24.
+0.5::conn_16_24_2.
+conn_16_24_3 :- conn_15_24_7, conn_16_24_2.
+conn_16_24_4 :- conn_16_24_1.
+conn_16_24_4 :- conn_16_24_3.
+0.5::conn_16_24_5.
+conn_16_24_6 :- conn_15_23_7, conn_16_24_5.
+conn_16_24_7 :- conn_16_24_4.
+conn_16_24_7 :- conn_16_24_6.
+0.5::conn_17_1.
+conn_17_1_1 :- conn_16_1_1, conn_17_1.
+0.5::conn_17_2.
+conn_17_2_1 :- conn_17_1_1, conn_17_2.
+0.5::conn_17_2_2.
+conn_17_2_3 :- conn_16_2_7, conn_17_2_2.
+conn_17_2_4 :- conn_17_2_1.
+conn_17_2_4 :- conn_17_2_3.
+0.5::conn_17_2_5.
+conn_17_2_6 :- conn_16_1_1, conn_17_2_5.
+conn_17_2_7 :- conn_17_2_4.
+conn_17_2_7 :- conn_17_2_6.
+0.5::conn_17_3.
+conn_17_3_1 :- conn_17_2_7, conn_17_3.
+0.5::conn_17_3_2.
+conn_17_3_3 :- conn_16_3_7, conn_17_3_2.
+conn_17_3_4 :- conn_17_3_1.
+conn_17_3_4 :- conn_17_3_3.
+0.5::conn_17_3_5.
+conn_17_3_6 :- conn_16_2_7, conn_17_3_5.
+conn_17_3_7 :- conn_17_3_4.
+conn_17_3_7 :- conn_17_3_6.
+0.5::conn_17_4.
+conn_17_4_1 :- conn_17_3_7, conn_17_4.
+0.5::conn_17_4_2.
+conn_17_4_3 :- conn_16_4_7, conn_17_4_2.
+conn_17_4_4 :- conn_17_4_1.
+conn_17_4_4 :- conn_17_4_3.
+0.5::conn_17_4_5.
+conn_17_4_6 :- conn_16_3_7, conn_17_4_5.
+conn_17_4_7 :- conn_17_4_4.
+conn_17_4_7 :- conn_17_4_6.
+0.5::conn_17_5.
+conn_17_5_1 :- conn_17_4_7, conn_17_5.
+0.5::conn_17_5_2.
+conn_17_5_3 :- conn_16_5_7, conn_17_5_2.
+conn_17_5_4 :- conn_17_5_1.
+conn_17_5_4 :- conn_17_5_3.
+0.5::conn_17_5_5.
+conn_17_5_6 :- conn_16_4_7, conn_17_5_5.
+conn_17_5_7 :- conn_17_5_4.
+conn_17_5_7 :- conn_17_5_6.
+0.5::conn_17_6.
+conn_17_6_1 :- conn_17_5_7, conn_17_6.
+0.5::conn_17_6_2.
+conn_17_6_3 :- conn_16_6_7, conn_17_6_2.
+conn_17_6_4 :- conn_17_6_1.
+conn_17_6_4 :- conn_17_6_3.
+0.5::conn_17_6_5.
+conn_17_6_6 :- conn_16_5_7, conn_17_6_5.
+conn_17_6_7 :- conn_17_6_4.
+conn_17_6_7 :- conn_17_6_6.
+0.5::conn_17_7.
+conn_17_7_1 :- conn_17_6_7, conn_17_7.
+0.5::conn_17_7_2.
+conn_17_7_3 :- conn_16_7_7, conn_17_7_2.
+conn_17_7_4 :- conn_17_7_1.
+conn_17_7_4 :- conn_17_7_3.
+0.5::conn_17_7_5.
+conn_17_7_6 :- conn_16_6_7, conn_17_7_5.
+conn_17_7_7 :- conn_17_7_4.
+conn_17_7_7 :- conn_17_7_6.
+0.5::conn_17_8.
+conn_17_8_1 :- conn_17_7_7, conn_17_8.
+0.5::conn_17_8_2.
+conn_17_8_3 :- conn_16_8_7, conn_17_8_2.
+conn_17_8_4 :- conn_17_8_1.
+conn_17_8_4 :- conn_17_8_3.
+0.5::conn_17_8_5.
+conn_17_8_6 :- conn_16_7_7, conn_17_8_5.
+conn_17_8_7 :- conn_17_8_4.
+conn_17_8_7 :- conn_17_8_6.
+0.5::conn_17_9.
+conn_17_9_1 :- conn_17_8_7, conn_17_9.
+0.5::conn_17_9_2.
+conn_17_9_3 :- conn_16_9_7, conn_17_9_2.
+conn_17_9_4 :- conn_17_9_1.
+conn_17_9_4 :- conn_17_9_3.
+0.5::conn_17_9_5.
+conn_17_9_6 :- conn_16_8_7, conn_17_9_5.
+conn_17_9_7 :- conn_17_9_4.
+conn_17_9_7 :- conn_17_9_6.
+0.5::conn_17_10.
+conn_17_10_1 :- conn_17_9_7, conn_17_10.
+0.5::conn_17_10_2.
+conn_17_10_3 :- conn_16_10_7, conn_17_10_2.
+conn_17_10_4 :- conn_17_10_1.
+conn_17_10_4 :- conn_17_10_3.
+0.5::conn_17_10_5.
+conn_17_10_6 :- conn_16_9_7, conn_17_10_5.
+conn_17_10_7 :- conn_17_10_4.
+conn_17_10_7 :- conn_17_10_6.
+0.5::conn_17_11.
+conn_17_11_1 :- conn_17_10_7, conn_17_11.
+0.5::conn_17_11_2.
+conn_17_11_3 :- conn_16_11_7, conn_17_11_2.
+conn_17_11_4 :- conn_17_11_1.
+conn_17_11_4 :- conn_17_11_3.
+0.5::conn_17_11_5.
+conn_17_11_6 :- conn_16_10_7, conn_17_11_5.
+conn_17_11_7 :- conn_17_11_4.
+conn_17_11_7 :- conn_17_11_6.
+0.5::conn_17_12.
+conn_17_12_1 :- conn_17_11_7, conn_17_12.
+0.5::conn_17_12_2.
+conn_17_12_3 :- conn_16_12_7, conn_17_12_2.
+conn_17_12_4 :- conn_17_12_1.
+conn_17_12_4 :- conn_17_12_3.
+0.5::conn_17_12_5.
+conn_17_12_6 :- conn_16_11_7, conn_17_12_5.
+conn_17_12_7 :- conn_17_12_4.
+conn_17_12_7 :- conn_17_12_6.
+0.5::conn_17_13.
+conn_17_13_1 :- conn_17_12_7, conn_17_13.
+0.5::conn_17_13_2.
+conn_17_13_3 :- conn_16_13_7, conn_17_13_2.
+conn_17_13_4 :- conn_17_13_1.
+conn_17_13_4 :- conn_17_13_3.
+0.5::conn_17_13_5.
+conn_17_13_6 :- conn_16_12_7, conn_17_13_5.
+conn_17_13_7 :- conn_17_13_4.
+conn_17_13_7 :- conn_17_13_6.
+0.5::conn_17_14.
+conn_17_14_1 :- conn_17_13_7, conn_17_14.
+0.5::conn_17_14_2.
+conn_17_14_3 :- conn_16_14_7, conn_17_14_2.
+conn_17_14_4 :- conn_17_14_1.
+conn_17_14_4 :- conn_17_14_3.
+0.5::conn_17_14_5.
+conn_17_14_6 :- conn_16_13_7, conn_17_14_5.
+conn_17_14_7 :- conn_17_14_4.
+conn_17_14_7 :- conn_17_14_6.
+0.5::conn_17_15.
+conn_17_15_1 :- conn_17_14_7, conn_17_15.
+0.5::conn_17_15_2.
+conn_17_15_3 :- conn_16_15_7, conn_17_15_2.
+conn_17_15_4 :- conn_17_15_1.
+conn_17_15_4 :- conn_17_15_3.
+0.5::conn_17_15_5.
+conn_17_15_6 :- conn_16_14_7, conn_17_15_5.
+conn_17_15_7 :- conn_17_15_4.
+conn_17_15_7 :- conn_17_15_6.
+0.5::conn_17_16.
+conn_17_16_1 :- conn_17_15_7, conn_17_16.
+0.5::conn_17_16_2.
+conn_17_16_3 :- conn_16_16_7, conn_17_16_2.
+conn_17_16_4 :- conn_17_16_1.
+conn_17_16_4 :- conn_17_16_3.
+0.5::conn_17_16_5.
+conn_17_16_6 :- conn_16_15_7, conn_17_16_5.
+conn_17_16_7 :- conn_17_16_4.
+conn_17_16_7 :- conn_17_16_6.
+0.5::conn_17_17.
+conn_17_17_1 :- conn_17_16_7, conn_17_17.
+0.5::conn_17_17_2.
+conn_17_17_3 :- conn_16_17_7, conn_17_17_2.
+conn_17_17_4 :- conn_17_17_1.
+conn_17_17_4 :- conn_17_17_3.
+0.5::conn_17_17_5.
+conn_17_17_6 :- conn_16_16_7, conn_17_17_5.
+conn_17_17_7 :- conn_17_17_4.
+conn_17_17_7 :- conn_17_17_6.
+0.5::conn_17_18.
+conn_17_18_1 :- conn_17_17_7, conn_17_18.
+0.5::conn_17_18_2.
+conn_17_18_3 :- conn_16_18_7, conn_17_18_2.
+conn_17_18_4 :- conn_17_18_1.
+conn_17_18_4 :- conn_17_18_3.
+0.5::conn_17_18_5.
+conn_17_18_6 :- conn_16_17_7, conn_17_18_5.
+conn_17_18_7 :- conn_17_18_4.
+conn_17_18_7 :- conn_17_18_6.
+0.5::conn_17_19.
+conn_17_19_1 :- conn_17_18_7, conn_17_19.
+0.5::conn_17_19_2.
+conn_17_19_3 :- conn_16_19_7, conn_17_19_2.
+conn_17_19_4 :- conn_17_19_1.
+conn_17_19_4 :- conn_17_19_3.
+0.5::conn_17_19_5.
+conn_17_19_6 :- conn_16_18_7, conn_17_19_5.
+conn_17_19_7 :- conn_17_19_4.
+conn_17_19_7 :- conn_17_19_6.
+0.5::conn_17_20.
+conn_17_20_1 :- conn_17_19_7, conn_17_20.
+0.5::conn_17_20_2.
+conn_17_20_3 :- conn_16_20_7, conn_17_20_2.
+conn_17_20_4 :- conn_17_20_1.
+conn_17_20_4 :- conn_17_20_3.
+0.5::conn_17_20_5.
+conn_17_20_6 :- conn_16_19_7, conn_17_20_5.
+conn_17_20_7 :- conn_17_20_4.
+conn_17_20_7 :- conn_17_20_6.
+0.5::conn_17_21.
+conn_17_21_1 :- conn_17_20_7, conn_17_21.
+0.5::conn_17_21_2.
+conn_17_21_3 :- conn_16_21_7, conn_17_21_2.
+conn_17_21_4 :- conn_17_21_1.
+conn_17_21_4 :- conn_17_21_3.
+0.5::conn_17_21_5.
+conn_17_21_6 :- conn_16_20_7, conn_17_21_5.
+conn_17_21_7 :- conn_17_21_4.
+conn_17_21_7 :- conn_17_21_6.
+0.5::conn_17_22.
+conn_17_22_1 :- conn_17_21_7, conn_17_22.
+0.5::conn_17_22_2.
+conn_17_22_3 :- conn_16_22_7, conn_17_22_2.
+conn_17_22_4 :- conn_17_22_1.
+conn_17_22_4 :- conn_17_22_3.
+0.5::conn_17_22_5.
+conn_17_22_6 :- conn_16_21_7, conn_17_22_5.
+conn_17_22_7 :- conn_17_22_4.
+conn_17_22_7 :- conn_17_22_6.
+0.5::conn_17_23.
+conn_17_23_1 :- conn_17_22_7, conn_17_23.
+0.5::conn_17_23_2.
+conn_17_23_3 :- conn_16_23_7, conn_17_23_2.
+conn_17_23_4 :- conn_17_23_1.
+conn_17_23_4 :- conn_17_23_3.
+0.5::conn_17_23_5.
+conn_17_23_6 :- conn_16_22_7, conn_17_23_5.
+conn_17_23_7 :- conn_17_23_4.
+conn_17_23_7 :- conn_17_23_6.
+0.5::conn_17_24.
+conn_17_24_1 :- conn_17_23_7, conn_17_24.
+0.5::conn_17_24_2.
+conn_17_24_3 :- conn_16_24_7, conn_17_24_2.
+conn_17_24_4 :- conn_17_24_1.
+conn_17_24_4 :- conn_17_24_3.
+0.5::conn_17_24_5.
+conn_17_24_6 :- conn_16_23_7, conn_17_24_5.
+conn_17_24_7 :- conn_17_24_4.
+conn_17_24_7 :- conn_17_24_6.
+0.5::conn_18_1.
+conn_18_1_1 :- conn_17_1_1, conn_18_1.
+0.5::conn_18_2.
+conn_18_2_1 :- conn_18_1_1, conn_18_2.
+0.5::conn_18_2_2.
+conn_18_2_3 :- conn_17_2_7, conn_18_2_2.
+conn_18_2_4 :- conn_18_2_1.
+conn_18_2_4 :- conn_18_2_3.
+0.5::conn_18_2_5.
+conn_18_2_6 :- conn_17_1_1, conn_18_2_5.
+conn_18_2_7 :- conn_18_2_4.
+conn_18_2_7 :- conn_18_2_6.
+0.5::conn_18_3.
+conn_18_3_1 :- conn_18_2_7, conn_18_3.
+0.5::conn_18_3_2.
+conn_18_3_3 :- conn_17_3_7, conn_18_3_2.
+conn_18_3_4 :- conn_18_3_1.
+conn_18_3_4 :- conn_18_3_3.
+0.5::conn_18_3_5.
+conn_18_3_6 :- conn_17_2_7, conn_18_3_5.
+conn_18_3_7 :- conn_18_3_4.
+conn_18_3_7 :- conn_18_3_6.
+0.5::conn_18_4.
+conn_18_4_1 :- conn_18_3_7, conn_18_4.
+0.5::conn_18_4_2.
+conn_18_4_3 :- conn_17_4_7, conn_18_4_2.
+conn_18_4_4 :- conn_18_4_1.
+conn_18_4_4 :- conn_18_4_3.
+0.5::conn_18_4_5.
+conn_18_4_6 :- conn_17_3_7, conn_18_4_5.
+conn_18_4_7 :- conn_18_4_4.
+conn_18_4_7 :- conn_18_4_6.
+0.5::conn_18_5.
+conn_18_5_1 :- conn_18_4_7, conn_18_5.
+0.5::conn_18_5_2.
+conn_18_5_3 :- conn_17_5_7, conn_18_5_2.
+conn_18_5_4 :- conn_18_5_1.
+conn_18_5_4 :- conn_18_5_3.
+0.5::conn_18_5_5.
+conn_18_5_6 :- conn_17_4_7, conn_18_5_5.
+conn_18_5_7 :- conn_18_5_4.
+conn_18_5_7 :- conn_18_5_6.
+0.5::conn_18_6.
+conn_18_6_1 :- conn_18_5_7, conn_18_6.
+0.5::conn_18_6_2.
+conn_18_6_3 :- conn_17_6_7, conn_18_6_2.
+conn_18_6_4 :- conn_18_6_1.
+conn_18_6_4 :- conn_18_6_3.
+0.5::conn_18_6_5.
+conn_18_6_6 :- conn_17_5_7, conn_18_6_5.
+conn_18_6_7 :- conn_18_6_4.
+conn_18_6_7 :- conn_18_6_6.
+0.5::conn_18_7.
+conn_18_7_1 :- conn_18_6_7, conn_18_7.
+0.5::conn_18_7_2.
+conn_18_7_3 :- conn_17_7_7, conn_18_7_2.
+conn_18_7_4 :- conn_18_7_1.
+conn_18_7_4 :- conn_18_7_3.
+0.5::conn_18_7_5.
+conn_18_7_6 :- conn_17_6_7, conn_18_7_5.
+conn_18_7_7 :- conn_18_7_4.
+conn_18_7_7 :- conn_18_7_6.
+0.5::conn_18_8.
+conn_18_8_1 :- conn_18_7_7, conn_18_8.
+0.5::conn_18_8_2.
+conn_18_8_3 :- conn_17_8_7, conn_18_8_2.
+conn_18_8_4 :- conn_18_8_1.
+conn_18_8_4 :- conn_18_8_3.
+0.5::conn_18_8_5.
+conn_18_8_6 :- conn_17_7_7, conn_18_8_5.
+conn_18_8_7 :- conn_18_8_4.
+conn_18_8_7 :- conn_18_8_6.
+0.5::conn_18_9.
+conn_18_9_1 :- conn_18_8_7, conn_18_9.
+0.5::conn_18_9_2.
+conn_18_9_3 :- conn_17_9_7, conn_18_9_2.
+conn_18_9_4 :- conn_18_9_1.
+conn_18_9_4 :- conn_18_9_3.
+0.5::conn_18_9_5.
+conn_18_9_6 :- conn_17_8_7, conn_18_9_5.
+conn_18_9_7 :- conn_18_9_4.
+conn_18_9_7 :- conn_18_9_6.
+0.5::conn_18_10.
+conn_18_10_1 :- conn_18_9_7, conn_18_10.
+0.5::conn_18_10_2.
+conn_18_10_3 :- conn_17_10_7, conn_18_10_2.
+conn_18_10_4 :- conn_18_10_1.
+conn_18_10_4 :- conn_18_10_3.
+0.5::conn_18_10_5.
+conn_18_10_6 :- conn_17_9_7, conn_18_10_5.
+conn_18_10_7 :- conn_18_10_4.
+conn_18_10_7 :- conn_18_10_6.
+0.5::conn_18_11.
+conn_18_11_1 :- conn_18_10_7, conn_18_11.
+0.5::conn_18_11_2.
+conn_18_11_3 :- conn_17_11_7, conn_18_11_2.
+conn_18_11_4 :- conn_18_11_1.
+conn_18_11_4 :- conn_18_11_3.
+0.5::conn_18_11_5.
+conn_18_11_6 :- conn_17_10_7, conn_18_11_5.
+conn_18_11_7 :- conn_18_11_4.
+conn_18_11_7 :- conn_18_11_6.
+0.5::conn_18_12.
+conn_18_12_1 :- conn_18_11_7, conn_18_12.
+0.5::conn_18_12_2.
+conn_18_12_3 :- conn_17_12_7, conn_18_12_2.
+conn_18_12_4 :- conn_18_12_1.
+conn_18_12_4 :- conn_18_12_3.
+0.5::conn_18_12_5.
+conn_18_12_6 :- conn_17_11_7, conn_18_12_5.
+conn_18_12_7 :- conn_18_12_4.
+conn_18_12_7 :- conn_18_12_6.
+0.5::conn_18_13.
+conn_18_13_1 :- conn_18_12_7, conn_18_13.
+0.5::conn_18_13_2.
+conn_18_13_3 :- conn_17_13_7, conn_18_13_2.
+conn_18_13_4 :- conn_18_13_1.
+conn_18_13_4 :- conn_18_13_3.
+0.5::conn_18_13_5.
+conn_18_13_6 :- conn_17_12_7, conn_18_13_5.
+conn_18_13_7 :- conn_18_13_4.
+conn_18_13_7 :- conn_18_13_6.
+0.5::conn_18_14.
+conn_18_14_1 :- conn_18_13_7, conn_18_14.
+0.5::conn_18_14_2.
+conn_18_14_3 :- conn_17_14_7, conn_18_14_2.
+conn_18_14_4 :- conn_18_14_1.
+conn_18_14_4 :- conn_18_14_3.
+0.5::conn_18_14_5.
+conn_18_14_6 :- conn_17_13_7, conn_18_14_5.
+conn_18_14_7 :- conn_18_14_4.
+conn_18_14_7 :- conn_18_14_6.
+0.5::conn_18_15.
+conn_18_15_1 :- conn_18_14_7, conn_18_15.
+0.5::conn_18_15_2.
+conn_18_15_3 :- conn_17_15_7, conn_18_15_2.
+conn_18_15_4 :- conn_18_15_1.
+conn_18_15_4 :- conn_18_15_3.
+0.5::conn_18_15_5.
+conn_18_15_6 :- conn_17_14_7, conn_18_15_5.
+conn_18_15_7 :- conn_18_15_4.
+conn_18_15_7 :- conn_18_15_6.
+0.5::conn_18_16.
+conn_18_16_1 :- conn_18_15_7, conn_18_16.
+0.5::conn_18_16_2.
+conn_18_16_3 :- conn_17_16_7, conn_18_16_2.
+conn_18_16_4 :- conn_18_16_1.
+conn_18_16_4 :- conn_18_16_3.
+0.5::conn_18_16_5.
+conn_18_16_6 :- conn_17_15_7, conn_18_16_5.
+conn_18_16_7 :- conn_18_16_4.
+conn_18_16_7 :- conn_18_16_6.
+0.5::conn_18_17.
+conn_18_17_1 :- conn_18_16_7, conn_18_17.
+0.5::conn_18_17_2.
+conn_18_17_3 :- conn_17_17_7, conn_18_17_2.
+conn_18_17_4 :- conn_18_17_1.
+conn_18_17_4 :- conn_18_17_3.
+0.5::conn_18_17_5.
+conn_18_17_6 :- conn_17_16_7, conn_18_17_5.
+conn_18_17_7 :- conn_18_17_4.
+conn_18_17_7 :- conn_18_17_6.
+0.5::conn_18_18.
+conn_18_18_1 :- conn_18_17_7, conn_18_18.
+0.5::conn_18_18_2.
+conn_18_18_3 :- conn_17_18_7, conn_18_18_2.
+conn_18_18_4 :- conn_18_18_1.
+conn_18_18_4 :- conn_18_18_3.
+0.5::conn_18_18_5.
+conn_18_18_6 :- conn_17_17_7, conn_18_18_5.
+conn_18_18_7 :- conn_18_18_4.
+conn_18_18_7 :- conn_18_18_6.
+0.5::conn_18_19.
+conn_18_19_1 :- conn_18_18_7, conn_18_19.
+0.5::conn_18_19_2.
+conn_18_19_3 :- conn_17_19_7, conn_18_19_2.
+conn_18_19_4 :- conn_18_19_1.
+conn_18_19_4 :- conn_18_19_3.
+0.5::conn_18_19_5.
+conn_18_19_6 :- conn_17_18_7, conn_18_19_5.
+conn_18_19_7 :- conn_18_19_4.
+conn_18_19_7 :- conn_18_19_6.
+0.5::conn_18_20.
+conn_18_20_1 :- conn_18_19_7, conn_18_20.
+0.5::conn_18_20_2.
+conn_18_20_3 :- conn_17_20_7, conn_18_20_2.
+conn_18_20_4 :- conn_18_20_1.
+conn_18_20_4 :- conn_18_20_3.
+0.5::conn_18_20_5.
+conn_18_20_6 :- conn_17_19_7, conn_18_20_5.
+conn_18_20_7 :- conn_18_20_4.
+conn_18_20_7 :- conn_18_20_6.
+0.5::conn_18_21.
+conn_18_21_1 :- conn_18_20_7, conn_18_21.
+0.5::conn_18_21_2.
+conn_18_21_3 :- conn_17_21_7, conn_18_21_2.
+conn_18_21_4 :- conn_18_21_1.
+conn_18_21_4 :- conn_18_21_3.
+0.5::conn_18_21_5.
+conn_18_21_6 :- conn_17_20_7, conn_18_21_5.
+conn_18_21_7 :- conn_18_21_4.
+conn_18_21_7 :- conn_18_21_6.
+0.5::conn_18_22.
+conn_18_22_1 :- conn_18_21_7, conn_18_22.
+0.5::conn_18_22_2.
+conn_18_22_3 :- conn_17_22_7, conn_18_22_2.
+conn_18_22_4 :- conn_18_22_1.
+conn_18_22_4 :- conn_18_22_3.
+0.5::conn_18_22_5.
+conn_18_22_6 :- conn_17_21_7, conn_18_22_5.
+conn_18_22_7 :- conn_18_22_4.
+conn_18_22_7 :- conn_18_22_6.
+0.5::conn_18_23.
+conn_18_23_1 :- conn_18_22_7, conn_18_23.
+0.5::conn_18_23_2.
+conn_18_23_3 :- conn_17_23_7, conn_18_23_2.
+conn_18_23_4 :- conn_18_23_1.
+conn_18_23_4 :- conn_18_23_3.
+0.5::conn_18_23_5.
+conn_18_23_6 :- conn_17_22_7, conn_18_23_5.
+conn_18_23_7 :- conn_18_23_4.
+conn_18_23_7 :- conn_18_23_6.
+0.5::conn_18_24.
+conn_18_24_1 :- conn_18_23_7, conn_18_24.
+0.5::conn_18_24_2.
+conn_18_24_3 :- conn_17_24_7, conn_18_24_2.
+conn_18_24_4 :- conn_18_24_1.
+conn_18_24_4 :- conn_18_24_3.
+0.5::conn_18_24_5.
+conn_18_24_6 :- conn_17_23_7, conn_18_24_5.
+conn_18_24_7 :- conn_18_24_4.
+conn_18_24_7 :- conn_18_24_6.
+0.5::conn_19_1.
+conn_19_1_1 :- conn_18_1_1, conn_19_1.
+0.5::conn_19_2.
+conn_19_2_1 :- conn_19_1_1, conn_19_2.
+0.5::conn_19_2_2.
+conn_19_2_3 :- conn_18_2_7, conn_19_2_2.
+conn_19_2_4 :- conn_19_2_1.
+conn_19_2_4 :- conn_19_2_3.
+0.5::conn_19_2_5.
+conn_19_2_6 :- conn_18_1_1, conn_19_2_5.
+conn_19_2_7 :- conn_19_2_4.
+conn_19_2_7 :- conn_19_2_6.
+0.5::conn_19_3.
+conn_19_3_1 :- conn_19_2_7, conn_19_3.
+0.5::conn_19_3_2.
+conn_19_3_3 :- conn_18_3_7, conn_19_3_2.
+conn_19_3_4 :- conn_19_3_1.
+conn_19_3_4 :- conn_19_3_3.
+0.5::conn_19_3_5.
+conn_19_3_6 :- conn_18_2_7, conn_19_3_5.
+conn_19_3_7 :- conn_19_3_4.
+conn_19_3_7 :- conn_19_3_6.
+0.5::conn_19_4.
+conn_19_4_1 :- conn_19_3_7, conn_19_4.
+0.5::conn_19_4_2.
+conn_19_4_3 :- conn_18_4_7, conn_19_4_2.
+conn_19_4_4 :- conn_19_4_1.
+conn_19_4_4 :- conn_19_4_3.
+0.5::conn_19_4_5.
+conn_19_4_6 :- conn_18_3_7, conn_19_4_5.
+conn_19_4_7 :- conn_19_4_4.
+conn_19_4_7 :- conn_19_4_6.
+0.5::conn_19_5.
+conn_19_5_1 :- conn_19_4_7, conn_19_5.
+0.5::conn_19_5_2.
+conn_19_5_3 :- conn_18_5_7, conn_19_5_2.
+conn_19_5_4 :- conn_19_5_1.
+conn_19_5_4 :- conn_19_5_3.
+0.5::conn_19_5_5.
+conn_19_5_6 :- conn_18_4_7, conn_19_5_5.
+conn_19_5_7 :- conn_19_5_4.
+conn_19_5_7 :- conn_19_5_6.
+0.5::conn_19_6.
+conn_19_6_1 :- conn_19_5_7, conn_19_6.
+0.5::conn_19_6_2.
+conn_19_6_3 :- conn_18_6_7, conn_19_6_2.
+conn_19_6_4 :- conn_19_6_1.
+conn_19_6_4 :- conn_19_6_3.
+0.5::conn_19_6_5.
+conn_19_6_6 :- conn_18_5_7, conn_19_6_5.
+conn_19_6_7 :- conn_19_6_4.
+conn_19_6_7 :- conn_19_6_6.
+0.5::conn_19_7.
+conn_19_7_1 :- conn_19_6_7, conn_19_7.
+0.5::conn_19_7_2.
+conn_19_7_3 :- conn_18_7_7, conn_19_7_2.
+conn_19_7_4 :- conn_19_7_1.
+conn_19_7_4 :- conn_19_7_3.
+0.5::conn_19_7_5.
+conn_19_7_6 :- conn_18_6_7, conn_19_7_5.
+conn_19_7_7 :- conn_19_7_4.
+conn_19_7_7 :- conn_19_7_6.
+0.5::conn_19_8.
+conn_19_8_1 :- conn_19_7_7, conn_19_8.
+0.5::conn_19_8_2.
+conn_19_8_3 :- conn_18_8_7, conn_19_8_2.
+conn_19_8_4 :- conn_19_8_1.
+conn_19_8_4 :- conn_19_8_3.
+0.5::conn_19_8_5.
+conn_19_8_6 :- conn_18_7_7, conn_19_8_5.
+conn_19_8_7 :- conn_19_8_4.
+conn_19_8_7 :- conn_19_8_6.
+0.5::conn_19_9.
+conn_19_9_1 :- conn_19_8_7, conn_19_9.
+0.5::conn_19_9_2.
+conn_19_9_3 :- conn_18_9_7, conn_19_9_2.
+conn_19_9_4 :- conn_19_9_1.
+conn_19_9_4 :- conn_19_9_3.
+0.5::conn_19_9_5.
+conn_19_9_6 :- conn_18_8_7, conn_19_9_5.
+conn_19_9_7 :- conn_19_9_4.
+conn_19_9_7 :- conn_19_9_6.
+0.5::conn_19_10.
+conn_19_10_1 :- conn_19_9_7, conn_19_10.
+0.5::conn_19_10_2.
+conn_19_10_3 :- conn_18_10_7, conn_19_10_2.
+conn_19_10_4 :- conn_19_10_1.
+conn_19_10_4 :- conn_19_10_3.
+0.5::conn_19_10_5.
+conn_19_10_6 :- conn_18_9_7, conn_19_10_5.
+conn_19_10_7 :- conn_19_10_4.
+conn_19_10_7 :- conn_19_10_6.
+0.5::conn_19_11.
+conn_19_11_1 :- conn_19_10_7, conn_19_11.
+0.5::conn_19_11_2.
+conn_19_11_3 :- conn_18_11_7, conn_19_11_2.
+conn_19_11_4 :- conn_19_11_1.
+conn_19_11_4 :- conn_19_11_3.
+0.5::conn_19_11_5.
+conn_19_11_6 :- conn_18_10_7, conn_19_11_5.
+conn_19_11_7 :- conn_19_11_4.
+conn_19_11_7 :- conn_19_11_6.
+0.5::conn_19_12.
+conn_19_12_1 :- conn_19_11_7, conn_19_12.
+0.5::conn_19_12_2.
+conn_19_12_3 :- conn_18_12_7, conn_19_12_2.
+conn_19_12_4 :- conn_19_12_1.
+conn_19_12_4 :- conn_19_12_3.
+0.5::conn_19_12_5.
+conn_19_12_6 :- conn_18_11_7, conn_19_12_5.
+conn_19_12_7 :- conn_19_12_4.
+conn_19_12_7 :- conn_19_12_6.
+0.5::conn_19_13.
+conn_19_13_1 :- conn_19_12_7, conn_19_13.
+0.5::conn_19_13_2.
+conn_19_13_3 :- conn_18_13_7, conn_19_13_2.
+conn_19_13_4 :- conn_19_13_1.
+conn_19_13_4 :- conn_19_13_3.
+0.5::conn_19_13_5.
+conn_19_13_6 :- conn_18_12_7, conn_19_13_5.
+conn_19_13_7 :- conn_19_13_4.
+conn_19_13_7 :- conn_19_13_6.
+0.5::conn_19_14.
+conn_19_14_1 :- conn_19_13_7, conn_19_14.
+0.5::conn_19_14_2.
+conn_19_14_3 :- conn_18_14_7, conn_19_14_2.
+conn_19_14_4 :- conn_19_14_1.
+conn_19_14_4 :- conn_19_14_3.
+0.5::conn_19_14_5.
+conn_19_14_6 :- conn_18_13_7, conn_19_14_5.
+conn_19_14_7 :- conn_19_14_4.
+conn_19_14_7 :- conn_19_14_6.
+0.5::conn_19_15.
+conn_19_15_1 :- conn_19_14_7, conn_19_15.
+0.5::conn_19_15_2.
+conn_19_15_3 :- conn_18_15_7, conn_19_15_2.
+conn_19_15_4 :- conn_19_15_1.
+conn_19_15_4 :- conn_19_15_3.
+0.5::conn_19_15_5.
+conn_19_15_6 :- conn_18_14_7, conn_19_15_5.
+conn_19_15_7 :- conn_19_15_4.
+conn_19_15_7 :- conn_19_15_6.
+0.5::conn_19_16.
+conn_19_16_1 :- conn_19_15_7, conn_19_16.
+0.5::conn_19_16_2.
+conn_19_16_3 :- conn_18_16_7, conn_19_16_2.
+conn_19_16_4 :- conn_19_16_1.
+conn_19_16_4 :- conn_19_16_3.
+0.5::conn_19_16_5.
+conn_19_16_6 :- conn_18_15_7, conn_19_16_5.
+conn_19_16_7 :- conn_19_16_4.
+conn_19_16_7 :- conn_19_16_6.
+0.5::conn_19_17.
+conn_19_17_1 :- conn_19_16_7, conn_19_17.
+0.5::conn_19_17_2.
+conn_19_17_3 :- conn_18_17_7, conn_19_17_2.
+conn_19_17_4 :- conn_19_17_1.
+conn_19_17_4 :- conn_19_17_3.
+0.5::conn_19_17_5.
+conn_19_17_6 :- conn_18_16_7, conn_19_17_5.
+conn_19_17_7 :- conn_19_17_4.
+conn_19_17_7 :- conn_19_17_6.
+0.5::conn_19_18.
+conn_19_18_1 :- conn_19_17_7, conn_19_18.
+0.5::conn_19_18_2.
+conn_19_18_3 :- conn_18_18_7, conn_19_18_2.
+conn_19_18_4 :- conn_19_18_1.
+conn_19_18_4 :- conn_19_18_3.
+0.5::conn_19_18_5.
+conn_19_18_6 :- conn_18_17_7, conn_19_18_5.
+conn_19_18_7 :- conn_19_18_4.
+conn_19_18_7 :- conn_19_18_6.
+0.5::conn_19_19.
+conn_19_19_1 :- conn_19_18_7, conn_19_19.
+0.5::conn_19_19_2.
+conn_19_19_3 :- conn_18_19_7, conn_19_19_2.
+conn_19_19_4 :- conn_19_19_1.
+conn_19_19_4 :- conn_19_19_3.
+0.5::conn_19_19_5.
+conn_19_19_6 :- conn_18_18_7, conn_19_19_5.
+conn_19_19_7 :- conn_19_19_4.
+conn_19_19_7 :- conn_19_19_6.
+0.5::conn_19_20.
+conn_19_20_1 :- conn_19_19_7, conn_19_20.
+0.5::conn_19_20_2.
+conn_19_20_3 :- conn_18_20_7, conn_19_20_2.
+conn_19_20_4 :- conn_19_20_1.
+conn_19_20_4 :- conn_19_20_3.
+0.5::conn_19_20_5.
+conn_19_20_6 :- conn_18_19_7, conn_19_20_5.
+conn_19_20_7 :- conn_19_20_4.
+conn_19_20_7 :- conn_19_20_6.
+0.5::conn_19_21.
+conn_19_21_1 :- conn_19_20_7, conn_19_21.
+0.5::conn_19_21_2.
+conn_19_21_3 :- conn_18_21_7, conn_19_21_2.
+conn_19_21_4 :- conn_19_21_1.
+conn_19_21_4 :- conn_19_21_3.
+0.5::conn_19_21_5.
+conn_19_21_6 :- conn_18_20_7, conn_19_21_5.
+conn_19_21_7 :- conn_19_21_4.
+conn_19_21_7 :- conn_19_21_6.
+0.5::conn_19_22.
+conn_19_22_1 :- conn_19_21_7, conn_19_22.
+0.5::conn_19_22_2.
+conn_19_22_3 :- conn_18_22_7, conn_19_22_2.
+conn_19_22_4 :- conn_19_22_1.
+conn_19_22_4 :- conn_19_22_3.
+0.5::conn_19_22_5.
+conn_19_22_6 :- conn_18_21_7, conn_19_22_5.
+conn_19_22_7 :- conn_19_22_4.
+conn_19_22_7 :- conn_19_22_6.
+0.5::conn_19_23.
+conn_19_23_1 :- conn_19_22_7, conn_19_23.
+0.5::conn_19_23_2.
+conn_19_23_3 :- conn_18_23_7, conn_19_23_2.
+conn_19_23_4 :- conn_19_23_1.
+conn_19_23_4 :- conn_19_23_3.
+0.5::conn_19_23_5.
+conn_19_23_6 :- conn_18_22_7, conn_19_23_5.
+conn_19_23_7 :- conn_19_23_4.
+conn_19_23_7 :- conn_19_23_6.
+0.5::conn_19_24.
+conn_19_24_1 :- conn_19_23_7, conn_19_24.
+0.5::conn_19_24_2.
+conn_19_24_3 :- conn_18_24_7, conn_19_24_2.
+conn_19_24_4 :- conn_19_24_1.
+conn_19_24_4 :- conn_19_24_3.
+0.5::conn_19_24_5.
+conn_19_24_6 :- conn_18_23_7, conn_19_24_5.
+conn_19_24_7 :- conn_19_24_4.
+conn_19_24_7 :- conn_19_24_6.
+0.5::conn_20_1.
+conn_20_1_1 :- conn_19_1_1, conn_20_1.
+0.5::conn_20_2.
+conn_20_2_1 :- conn_20_1_1, conn_20_2.
+0.5::conn_20_2_2.
+conn_20_2_3 :- conn_19_2_7, conn_20_2_2.
+conn_20_2_4 :- conn_20_2_1.
+conn_20_2_4 :- conn_20_2_3.
+0.5::conn_20_2_5.
+conn_20_2_6 :- conn_19_1_1, conn_20_2_5.
+conn_20_2_7 :- conn_20_2_4.
+conn_20_2_7 :- conn_20_2_6.
+0.5::conn_20_3.
+conn_20_3_1 :- conn_20_2_7, conn_20_3.
+0.5::conn_20_3_2.
+conn_20_3_3 :- conn_19_3_7, conn_20_3_2.
+conn_20_3_4 :- conn_20_3_1.
+conn_20_3_4 :- conn_20_3_3.
+0.5::conn_20_3_5.
+conn_20_3_6 :- conn_19_2_7, conn_20_3_5.
+conn_20_3_7 :- conn_20_3_4.
+conn_20_3_7 :- conn_20_3_6.
+0.5::conn_20_4.
+conn_20_4_1 :- conn_20_3_7, conn_20_4.
+0.5::conn_20_4_2.
+conn_20_4_3 :- conn_19_4_7, conn_20_4_2.
+conn_20_4_4 :- conn_20_4_1.
+conn_20_4_4 :- conn_20_4_3.
+0.5::conn_20_4_5.
+conn_20_4_6 :- conn_19_3_7, conn_20_4_5.
+conn_20_4_7 :- conn_20_4_4.
+conn_20_4_7 :- conn_20_4_6.
+0.5::conn_20_5.
+conn_20_5_1 :- conn_20_4_7, conn_20_5.
+0.5::conn_20_5_2.
+conn_20_5_3 :- conn_19_5_7, conn_20_5_2.
+conn_20_5_4 :- conn_20_5_1.
+conn_20_5_4 :- conn_20_5_3.
+0.5::conn_20_5_5.
+conn_20_5_6 :- conn_19_4_7, conn_20_5_5.
+conn_20_5_7 :- conn_20_5_4.
+conn_20_5_7 :- conn_20_5_6.
+0.5::conn_20_6.
+conn_20_6_1 :- conn_20_5_7, conn_20_6.
+0.5::conn_20_6_2.
+conn_20_6_3 :- conn_19_6_7, conn_20_6_2.
+conn_20_6_4 :- conn_20_6_1.
+conn_20_6_4 :- conn_20_6_3.
+0.5::conn_20_6_5.
+conn_20_6_6 :- conn_19_5_7, conn_20_6_5.
+conn_20_6_7 :- conn_20_6_4.
+conn_20_6_7 :- conn_20_6_6.
+0.5::conn_20_7.
+conn_20_7_1 :- conn_20_6_7, conn_20_7.
+0.5::conn_20_7_2.
+conn_20_7_3 :- conn_19_7_7, conn_20_7_2.
+conn_20_7_4 :- conn_20_7_1.
+conn_20_7_4 :- conn_20_7_3.
+0.5::conn_20_7_5.
+conn_20_7_6 :- conn_19_6_7, conn_20_7_5.
+conn_20_7_7 :- conn_20_7_4.
+conn_20_7_7 :- conn_20_7_6.
+0.5::conn_20_8.
+conn_20_8_1 :- conn_20_7_7, conn_20_8.
+0.5::conn_20_8_2.
+conn_20_8_3 :- conn_19_8_7, conn_20_8_2.
+conn_20_8_4 :- conn_20_8_1.
+conn_20_8_4 :- conn_20_8_3.
+0.5::conn_20_8_5.
+conn_20_8_6 :- conn_19_7_7, conn_20_8_5.
+conn_20_8_7 :- conn_20_8_4.
+conn_20_8_7 :- conn_20_8_6.
+0.5::conn_20_9.
+conn_20_9_1 :- conn_20_8_7, conn_20_9.
+0.5::conn_20_9_2.
+conn_20_9_3 :- conn_19_9_7, conn_20_9_2.
+conn_20_9_4 :- conn_20_9_1.
+conn_20_9_4 :- conn_20_9_3.
+0.5::conn_20_9_5.
+conn_20_9_6 :- conn_19_8_7, conn_20_9_5.
+conn_20_9_7 :- conn_20_9_4.
+conn_20_9_7 :- conn_20_9_6.
+0.5::conn_20_10.
+conn_20_10_1 :- conn_20_9_7, conn_20_10.
+0.5::conn_20_10_2.
+conn_20_10_3 :- conn_19_10_7, conn_20_10_2.
+conn_20_10_4 :- conn_20_10_1.
+conn_20_10_4 :- conn_20_10_3.
+0.5::conn_20_10_5.
+conn_20_10_6 :- conn_19_9_7, conn_20_10_5.
+conn_20_10_7 :- conn_20_10_4.
+conn_20_10_7 :- conn_20_10_6.
+0.5::conn_20_11.
+conn_20_11_1 :- conn_20_10_7, conn_20_11.
+0.5::conn_20_11_2.
+conn_20_11_3 :- conn_19_11_7, conn_20_11_2.
+conn_20_11_4 :- conn_20_11_1.
+conn_20_11_4 :- conn_20_11_3.
+0.5::conn_20_11_5.
+conn_20_11_6 :- conn_19_10_7, conn_20_11_5.
+conn_20_11_7 :- conn_20_11_4.
+conn_20_11_7 :- conn_20_11_6.
+0.5::conn_20_12.
+conn_20_12_1 :- conn_20_11_7, conn_20_12.
+0.5::conn_20_12_2.
+conn_20_12_3 :- conn_19_12_7, conn_20_12_2.
+conn_20_12_4 :- conn_20_12_1.
+conn_20_12_4 :- conn_20_12_3.
+0.5::conn_20_12_5.
+conn_20_12_6 :- conn_19_11_7, conn_20_12_5.
+conn_20_12_7 :- conn_20_12_4.
+conn_20_12_7 :- conn_20_12_6.
+0.5::conn_20_13.
+conn_20_13_1 :- conn_20_12_7, conn_20_13.
+0.5::conn_20_13_2.
+conn_20_13_3 :- conn_19_13_7, conn_20_13_2.
+conn_20_13_4 :- conn_20_13_1.
+conn_20_13_4 :- conn_20_13_3.
+0.5::conn_20_13_5.
+conn_20_13_6 :- conn_19_12_7, conn_20_13_5.
+conn_20_13_7 :- conn_20_13_4.
+conn_20_13_7 :- conn_20_13_6.
+0.5::conn_20_14.
+conn_20_14_1 :- conn_20_13_7, conn_20_14.
+0.5::conn_20_14_2.
+conn_20_14_3 :- conn_19_14_7, conn_20_14_2.
+conn_20_14_4 :- conn_20_14_1.
+conn_20_14_4 :- conn_20_14_3.
+0.5::conn_20_14_5.
+conn_20_14_6 :- conn_19_13_7, conn_20_14_5.
+conn_20_14_7 :- conn_20_14_4.
+conn_20_14_7 :- conn_20_14_6.
+0.5::conn_20_15.
+conn_20_15_1 :- conn_20_14_7, conn_20_15.
+0.5::conn_20_15_2.
+conn_20_15_3 :- conn_19_15_7, conn_20_15_2.
+conn_20_15_4 :- conn_20_15_1.
+conn_20_15_4 :- conn_20_15_3.
+0.5::conn_20_15_5.
+conn_20_15_6 :- conn_19_14_7, conn_20_15_5.
+conn_20_15_7 :- conn_20_15_4.
+conn_20_15_7 :- conn_20_15_6.
+0.5::conn_20_16.
+conn_20_16_1 :- conn_20_15_7, conn_20_16.
+0.5::conn_20_16_2.
+conn_20_16_3 :- conn_19_16_7, conn_20_16_2.
+conn_20_16_4 :- conn_20_16_1.
+conn_20_16_4 :- conn_20_16_3.
+0.5::conn_20_16_5.
+conn_20_16_6 :- conn_19_15_7, conn_20_16_5.
+conn_20_16_7 :- conn_20_16_4.
+conn_20_16_7 :- conn_20_16_6.
+0.5::conn_20_17.
+conn_20_17_1 :- conn_20_16_7, conn_20_17.
+0.5::conn_20_17_2.
+conn_20_17_3 :- conn_19_17_7, conn_20_17_2.
+conn_20_17_4 :- conn_20_17_1.
+conn_20_17_4 :- conn_20_17_3.
+0.5::conn_20_17_5.
+conn_20_17_6 :- conn_19_16_7, conn_20_17_5.
+conn_20_17_7 :- conn_20_17_4.
+conn_20_17_7 :- conn_20_17_6.
+0.5::conn_20_18.
+conn_20_18_1 :- conn_20_17_7, conn_20_18.
+0.5::conn_20_18_2.
+conn_20_18_3 :- conn_19_18_7, conn_20_18_2.
+conn_20_18_4 :- conn_20_18_1.
+conn_20_18_4 :- conn_20_18_3.
+0.5::conn_20_18_5.
+conn_20_18_6 :- conn_19_17_7, conn_20_18_5.
+conn_20_18_7 :- conn_20_18_4.
+conn_20_18_7 :- conn_20_18_6.
+0.5::conn_20_19.
+conn_20_19_1 :- conn_20_18_7, conn_20_19.
+0.5::conn_20_19_2.
+conn_20_19_3 :- conn_19_19_7, conn_20_19_2.
+conn_20_19_4 :- conn_20_19_1.
+conn_20_19_4 :- conn_20_19_3.
+0.5::conn_20_19_5.
+conn_20_19_6 :- conn_19_18_7, conn_20_19_5.
+conn_20_19_7 :- conn_20_19_4.
+conn_20_19_7 :- conn_20_19_6.
+0.5::conn_20_20.
+conn_20_20_1 :- conn_20_19_7, conn_20_20.
+0.5::conn_20_20_2.
+conn_20_20_3 :- conn_19_20_7, conn_20_20_2.
+conn_20_20_4 :- conn_20_20_1.
+conn_20_20_4 :- conn_20_20_3.
+0.5::conn_20_20_5.
+conn_20_20_6 :- conn_19_19_7, conn_20_20_5.
+conn_20_20_7 :- conn_20_20_4.
+conn_20_20_7 :- conn_20_20_6.
+0.5::conn_20_21.
+conn_20_21_1 :- conn_20_20_7, conn_20_21.
+0.5::conn_20_21_2.
+conn_20_21_3 :- conn_19_21_7, conn_20_21_2.
+conn_20_21_4 :- conn_20_21_1.
+conn_20_21_4 :- conn_20_21_3.
+0.5::conn_20_21_5.
+conn_20_21_6 :- conn_19_20_7, conn_20_21_5.
+conn_20_21_7 :- conn_20_21_4.
+conn_20_21_7 :- conn_20_21_6.
+0.5::conn_20_22.
+conn_20_22_1 :- conn_20_21_7, conn_20_22.
+0.5::conn_20_22_2.
+conn_20_22_3 :- conn_19_22_7, conn_20_22_2.
+conn_20_22_4 :- conn_20_22_1.
+conn_20_22_4 :- conn_20_22_3.
+0.5::conn_20_22_5.
+conn_20_22_6 :- conn_19_21_7, conn_20_22_5.
+conn_20_22_7 :- conn_20_22_4.
+conn_20_22_7 :- conn_20_22_6.
+0.5::conn_20_23.
+conn_20_23_1 :- conn_20_22_7, conn_20_23.
+0.5::conn_20_23_2.
+conn_20_23_3 :- conn_19_23_7, conn_20_23_2.
+conn_20_23_4 :- conn_20_23_1.
+conn_20_23_4 :- conn_20_23_3.
+0.5::conn_20_23_5.
+conn_20_23_6 :- conn_19_22_7, conn_20_23_5.
+conn_20_23_7 :- conn_20_23_4.
+conn_20_23_7 :- conn_20_23_6.
+0.5::conn_20_24.
+conn_20_24_1 :- conn_20_23_7, conn_20_24.
+0.5::conn_20_24_2.
+conn_20_24_3 :- conn_19_24_7, conn_20_24_2.
+conn_20_24_4 :- conn_20_24_1.
+conn_20_24_4 :- conn_20_24_3.
+0.5::conn_20_24_5.
+conn_20_24_6 :- conn_19_23_7, conn_20_24_5.
+conn_20_24_7 :- conn_20_24_4.
+conn_20_24_7 :- conn_20_24_6.
+0.5::conn_21_1.
+conn_21_1_1 :- conn_20_1_1, conn_21_1.
+0.5::conn_21_2.
+conn_21_2_1 :- conn_21_1_1, conn_21_2.
+0.5::conn_21_2_2.
+conn_21_2_3 :- conn_20_2_7, conn_21_2_2.
+conn_21_2_4 :- conn_21_2_1.
+conn_21_2_4 :- conn_21_2_3.
+0.5::conn_21_2_5.
+conn_21_2_6 :- conn_20_1_1, conn_21_2_5.
+conn_21_2_7 :- conn_21_2_4.
+conn_21_2_7 :- conn_21_2_6.
+0.5::conn_21_3.
+conn_21_3_1 :- conn_21_2_7, conn_21_3.
+0.5::conn_21_3_2.
+conn_21_3_3 :- conn_20_3_7, conn_21_3_2.
+conn_21_3_4 :- conn_21_3_1.
+conn_21_3_4 :- conn_21_3_3.
+0.5::conn_21_3_5.
+conn_21_3_6 :- conn_20_2_7, conn_21_3_5.
+conn_21_3_7 :- conn_21_3_4.
+conn_21_3_7 :- conn_21_3_6.
+0.5::conn_21_4.
+conn_21_4_1 :- conn_21_3_7, conn_21_4.
+0.5::conn_21_4_2.
+conn_21_4_3 :- conn_20_4_7, conn_21_4_2.
+conn_21_4_4 :- conn_21_4_1.
+conn_21_4_4 :- conn_21_4_3.
+0.5::conn_21_4_5.
+conn_21_4_6 :- conn_20_3_7, conn_21_4_5.
+conn_21_4_7 :- conn_21_4_4.
+conn_21_4_7 :- conn_21_4_6.
+0.5::conn_21_5.
+conn_21_5_1 :- conn_21_4_7, conn_21_5.
+0.5::conn_21_5_2.
+conn_21_5_3 :- conn_20_5_7, conn_21_5_2.
+conn_21_5_4 :- conn_21_5_1.
+conn_21_5_4 :- conn_21_5_3.
+0.5::conn_21_5_5.
+conn_21_5_6 :- conn_20_4_7, conn_21_5_5.
+conn_21_5_7 :- conn_21_5_4.
+conn_21_5_7 :- conn_21_5_6.
+0.5::conn_21_6.
+conn_21_6_1 :- conn_21_5_7, conn_21_6.
+0.5::conn_21_6_2.
+conn_21_6_3 :- conn_20_6_7, conn_21_6_2.
+conn_21_6_4 :- conn_21_6_1.
+conn_21_6_4 :- conn_21_6_3.
+0.5::conn_21_6_5.
+conn_21_6_6 :- conn_20_5_7, conn_21_6_5.
+conn_21_6_7 :- conn_21_6_4.
+conn_21_6_7 :- conn_21_6_6.
+0.5::conn_21_7.
+conn_21_7_1 :- conn_21_6_7, conn_21_7.
+0.5::conn_21_7_2.
+conn_21_7_3 :- conn_20_7_7, conn_21_7_2.
+conn_21_7_4 :- conn_21_7_1.
+conn_21_7_4 :- conn_21_7_3.
+0.5::conn_21_7_5.
+conn_21_7_6 :- conn_20_6_7, conn_21_7_5.
+conn_21_7_7 :- conn_21_7_4.
+conn_21_7_7 :- conn_21_7_6.
+0.5::conn_21_8.
+conn_21_8_1 :- conn_21_7_7, conn_21_8.
+0.5::conn_21_8_2.
+conn_21_8_3 :- conn_20_8_7, conn_21_8_2.
+conn_21_8_4 :- conn_21_8_1.
+conn_21_8_4 :- conn_21_8_3.
+0.5::conn_21_8_5.
+conn_21_8_6 :- conn_20_7_7, conn_21_8_5.
+conn_21_8_7 :- conn_21_8_4.
+conn_21_8_7 :- conn_21_8_6.
+0.5::conn_21_9.
+conn_21_9_1 :- conn_21_8_7, conn_21_9.
+0.5::conn_21_9_2.
+conn_21_9_3 :- conn_20_9_7, conn_21_9_2.
+conn_21_9_4 :- conn_21_9_1.
+conn_21_9_4 :- conn_21_9_3.
+0.5::conn_21_9_5.
+conn_21_9_6 :- conn_20_8_7, conn_21_9_5.
+conn_21_9_7 :- conn_21_9_4.
+conn_21_9_7 :- conn_21_9_6.
+0.5::conn_21_10.
+conn_21_10_1 :- conn_21_9_7, conn_21_10.
+0.5::conn_21_10_2.
+conn_21_10_3 :- conn_20_10_7, conn_21_10_2.
+conn_21_10_4 :- conn_21_10_1.
+conn_21_10_4 :- conn_21_10_3.
+0.5::conn_21_10_5.
+conn_21_10_6 :- conn_20_9_7, conn_21_10_5.
+conn_21_10_7 :- conn_21_10_4.
+conn_21_10_7 :- conn_21_10_6.
+0.5::conn_21_11.
+conn_21_11_1 :- conn_21_10_7, conn_21_11.
+0.5::conn_21_11_2.
+conn_21_11_3 :- conn_20_11_7, conn_21_11_2.
+conn_21_11_4 :- conn_21_11_1.
+conn_21_11_4 :- conn_21_11_3.
+0.5::conn_21_11_5.
+conn_21_11_6 :- conn_20_10_7, conn_21_11_5.
+conn_21_11_7 :- conn_21_11_4.
+conn_21_11_7 :- conn_21_11_6.
+0.5::conn_21_12.
+conn_21_12_1 :- conn_21_11_7, conn_21_12.
+0.5::conn_21_12_2.
+conn_21_12_3 :- conn_20_12_7, conn_21_12_2.
+conn_21_12_4 :- conn_21_12_1.
+conn_21_12_4 :- conn_21_12_3.
+0.5::conn_21_12_5.
+conn_21_12_6 :- conn_20_11_7, conn_21_12_5.
+conn_21_12_7 :- conn_21_12_4.
+conn_21_12_7 :- conn_21_12_6.
+0.5::conn_21_13.
+conn_21_13_1 :- conn_21_12_7, conn_21_13.
+0.5::conn_21_13_2.
+conn_21_13_3 :- conn_20_13_7, conn_21_13_2.
+conn_21_13_4 :- conn_21_13_1.
+conn_21_13_4 :- conn_21_13_3.
+0.5::conn_21_13_5.
+conn_21_13_6 :- conn_20_12_7, conn_21_13_5.
+conn_21_13_7 :- conn_21_13_4.
+conn_21_13_7 :- conn_21_13_6.
+0.5::conn_21_14.
+conn_21_14_1 :- conn_21_13_7, conn_21_14.
+0.5::conn_21_14_2.
+conn_21_14_3 :- conn_20_14_7, conn_21_14_2.
+conn_21_14_4 :- conn_21_14_1.
+conn_21_14_4 :- conn_21_14_3.
+0.5::conn_21_14_5.
+conn_21_14_6 :- conn_20_13_7, conn_21_14_5.
+conn_21_14_7 :- conn_21_14_4.
+conn_21_14_7 :- conn_21_14_6.
+0.5::conn_21_15.
+conn_21_15_1 :- conn_21_14_7, conn_21_15.
+0.5::conn_21_15_2.
+conn_21_15_3 :- conn_20_15_7, conn_21_15_2.
+conn_21_15_4 :- conn_21_15_1.
+conn_21_15_4 :- conn_21_15_3.
+0.5::conn_21_15_5.
+conn_21_15_6 :- conn_20_14_7, conn_21_15_5.
+conn_21_15_7 :- conn_21_15_4.
+conn_21_15_7 :- conn_21_15_6.
+0.5::conn_21_16.
+conn_21_16_1 :- conn_21_15_7, conn_21_16.
+0.5::conn_21_16_2.
+conn_21_16_3 :- conn_20_16_7, conn_21_16_2.
+conn_21_16_4 :- conn_21_16_1.
+conn_21_16_4 :- conn_21_16_3.
+0.5::conn_21_16_5.
+conn_21_16_6 :- conn_20_15_7, conn_21_16_5.
+conn_21_16_7 :- conn_21_16_4.
+conn_21_16_7 :- conn_21_16_6.
+0.5::conn_21_17.
+conn_21_17_1 :- conn_21_16_7, conn_21_17.
+0.5::conn_21_17_2.
+conn_21_17_3 :- conn_20_17_7, conn_21_17_2.
+conn_21_17_4 :- conn_21_17_1.
+conn_21_17_4 :- conn_21_17_3.
+0.5::conn_21_17_5.
+conn_21_17_6 :- conn_20_16_7, conn_21_17_5.
+conn_21_17_7 :- conn_21_17_4.
+conn_21_17_7 :- conn_21_17_6.
+0.5::conn_21_18.
+conn_21_18_1 :- conn_21_17_7, conn_21_18.
+0.5::conn_21_18_2.
+conn_21_18_3 :- conn_20_18_7, conn_21_18_2.
+conn_21_18_4 :- conn_21_18_1.
+conn_21_18_4 :- conn_21_18_3.
+0.5::conn_21_18_5.
+conn_21_18_6 :- conn_20_17_7, conn_21_18_5.
+conn_21_18_7 :- conn_21_18_4.
+conn_21_18_7 :- conn_21_18_6.
+0.5::conn_21_19.
+conn_21_19_1 :- conn_21_18_7, conn_21_19.
+0.5::conn_21_19_2.
+conn_21_19_3 :- conn_20_19_7, conn_21_19_2.
+conn_21_19_4 :- conn_21_19_1.
+conn_21_19_4 :- conn_21_19_3.
+0.5::conn_21_19_5.
+conn_21_19_6 :- conn_20_18_7, conn_21_19_5.
+conn_21_19_7 :- conn_21_19_4.
+conn_21_19_7 :- conn_21_19_6.
+0.5::conn_21_20.
+conn_21_20_1 :- conn_21_19_7, conn_21_20.
+0.5::conn_21_20_2.
+conn_21_20_3 :- conn_20_20_7, conn_21_20_2.
+conn_21_20_4 :- conn_21_20_1.
+conn_21_20_4 :- conn_21_20_3.
+0.5::conn_21_20_5.
+conn_21_20_6 :- conn_20_19_7, conn_21_20_5.
+conn_21_20_7 :- conn_21_20_4.
+conn_21_20_7 :- conn_21_20_6.
+0.5::conn_21_21.
+conn_21_21_1 :- conn_21_20_7, conn_21_21.
+0.5::conn_21_21_2.
+conn_21_21_3 :- conn_20_21_7, conn_21_21_2.
+conn_21_21_4 :- conn_21_21_1.
+conn_21_21_4 :- conn_21_21_3.
+0.5::conn_21_21_5.
+conn_21_21_6 :- conn_20_20_7, conn_21_21_5.
+conn_21_21_7 :- conn_21_21_4.
+conn_21_21_7 :- conn_21_21_6.
+0.5::conn_21_22.
+conn_21_22_1 :- conn_21_21_7, conn_21_22.
+0.5::conn_21_22_2.
+conn_21_22_3 :- conn_20_22_7, conn_21_22_2.
+conn_21_22_4 :- conn_21_22_1.
+conn_21_22_4 :- conn_21_22_3.
+0.5::conn_21_22_5.
+conn_21_22_6 :- conn_20_21_7, conn_21_22_5.
+conn_21_22_7 :- conn_21_22_4.
+conn_21_22_7 :- conn_21_22_6.
+0.5::conn_21_23.
+conn_21_23_1 :- conn_21_22_7, conn_21_23.
+0.5::conn_21_23_2.
+conn_21_23_3 :- conn_20_23_7, conn_21_23_2.
+conn_21_23_4 :- conn_21_23_1.
+conn_21_23_4 :- conn_21_23_3.
+0.5::conn_21_23_5.
+conn_21_23_6 :- conn_20_22_7, conn_21_23_5.
+conn_21_23_7 :- conn_21_23_4.
+conn_21_23_7 :- conn_21_23_6.
+0.5::conn_21_24.
+conn_21_24_1 :- conn_21_23_7, conn_21_24.
+0.5::conn_21_24_2.
+conn_21_24_3 :- conn_20_24_7, conn_21_24_2.
+conn_21_24_4 :- conn_21_24_1.
+conn_21_24_4 :- conn_21_24_3.
+0.5::conn_21_24_5.
+conn_21_24_6 :- conn_20_23_7, conn_21_24_5.
+conn_21_24_7 :- conn_21_24_4.
+conn_21_24_7 :- conn_21_24_6.
+0.5::conn_22_1.
+conn_22_1_1 :- conn_21_1_1, conn_22_1.
+0.5::conn_22_2.
+conn_22_2_1 :- conn_22_1_1, conn_22_2.
+0.5::conn_22_2_2.
+conn_22_2_3 :- conn_21_2_7, conn_22_2_2.
+conn_22_2_4 :- conn_22_2_1.
+conn_22_2_4 :- conn_22_2_3.
+0.5::conn_22_2_5.
+conn_22_2_6 :- conn_21_1_1, conn_22_2_5.
+conn_22_2_7 :- conn_22_2_4.
+conn_22_2_7 :- conn_22_2_6.
+0.5::conn_22_3.
+conn_22_3_1 :- conn_22_2_7, conn_22_3.
+0.5::conn_22_3_2.
+conn_22_3_3 :- conn_21_3_7, conn_22_3_2.
+conn_22_3_4 :- conn_22_3_1.
+conn_22_3_4 :- conn_22_3_3.
+0.5::conn_22_3_5.
+conn_22_3_6 :- conn_21_2_7, conn_22_3_5.
+conn_22_3_7 :- conn_22_3_4.
+conn_22_3_7 :- conn_22_3_6.
+0.5::conn_22_4.
+conn_22_4_1 :- conn_22_3_7, conn_22_4.
+0.5::conn_22_4_2.
+conn_22_4_3 :- conn_21_4_7, conn_22_4_2.
+conn_22_4_4 :- conn_22_4_1.
+conn_22_4_4 :- conn_22_4_3.
+0.5::conn_22_4_5.
+conn_22_4_6 :- conn_21_3_7, conn_22_4_5.
+conn_22_4_7 :- conn_22_4_4.
+conn_22_4_7 :- conn_22_4_6.
+0.5::conn_22_5.
+conn_22_5_1 :- conn_22_4_7, conn_22_5.
+0.5::conn_22_5_2.
+conn_22_5_3 :- conn_21_5_7, conn_22_5_2.
+conn_22_5_4 :- conn_22_5_1.
+conn_22_5_4 :- conn_22_5_3.
+0.5::conn_22_5_5.
+conn_22_5_6 :- conn_21_4_7, conn_22_5_5.
+conn_22_5_7 :- conn_22_5_4.
+conn_22_5_7 :- conn_22_5_6.
+0.5::conn_22_6.
+conn_22_6_1 :- conn_22_5_7, conn_22_6.
+0.5::conn_22_6_2.
+conn_22_6_3 :- conn_21_6_7, conn_22_6_2.
+conn_22_6_4 :- conn_22_6_1.
+conn_22_6_4 :- conn_22_6_3.
+0.5::conn_22_6_5.
+conn_22_6_6 :- conn_21_5_7, conn_22_6_5.
+conn_22_6_7 :- conn_22_6_4.
+conn_22_6_7 :- conn_22_6_6.
+0.5::conn_22_7.
+conn_22_7_1 :- conn_22_6_7, conn_22_7.
+0.5::conn_22_7_2.
+conn_22_7_3 :- conn_21_7_7, conn_22_7_2.
+conn_22_7_4 :- conn_22_7_1.
+conn_22_7_4 :- conn_22_7_3.
+0.5::conn_22_7_5.
+conn_22_7_6 :- conn_21_6_7, conn_22_7_5.
+conn_22_7_7 :- conn_22_7_4.
+conn_22_7_7 :- conn_22_7_6.
+0.5::conn_22_8.
+conn_22_8_1 :- conn_22_7_7, conn_22_8.
+0.5::conn_22_8_2.
+conn_22_8_3 :- conn_21_8_7, conn_22_8_2.
+conn_22_8_4 :- conn_22_8_1.
+conn_22_8_4 :- conn_22_8_3.
+0.5::conn_22_8_5.
+conn_22_8_6 :- conn_21_7_7, conn_22_8_5.
+conn_22_8_7 :- conn_22_8_4.
+conn_22_8_7 :- conn_22_8_6.
+0.5::conn_22_9.
+conn_22_9_1 :- conn_22_8_7, conn_22_9.
+0.5::conn_22_9_2.
+conn_22_9_3 :- conn_21_9_7, conn_22_9_2.
+conn_22_9_4 :- conn_22_9_1.
+conn_22_9_4 :- conn_22_9_3.
+0.5::conn_22_9_5.
+conn_22_9_6 :- conn_21_8_7, conn_22_9_5.
+conn_22_9_7 :- conn_22_9_4.
+conn_22_9_7 :- conn_22_9_6.
+0.5::conn_22_10.
+conn_22_10_1 :- conn_22_9_7, conn_22_10.
+0.5::conn_22_10_2.
+conn_22_10_3 :- conn_21_10_7, conn_22_10_2.
+conn_22_10_4 :- conn_22_10_1.
+conn_22_10_4 :- conn_22_10_3.
+0.5::conn_22_10_5.
+conn_22_10_6 :- conn_21_9_7, conn_22_10_5.
+conn_22_10_7 :- conn_22_10_4.
+conn_22_10_7 :- conn_22_10_6.
+0.5::conn_22_11.
+conn_22_11_1 :- conn_22_10_7, conn_22_11.
+0.5::conn_22_11_2.
+conn_22_11_3 :- conn_21_11_7, conn_22_11_2.
+conn_22_11_4 :- conn_22_11_1.
+conn_22_11_4 :- conn_22_11_3.
+0.5::conn_22_11_5.
+conn_22_11_6 :- conn_21_10_7, conn_22_11_5.
+conn_22_11_7 :- conn_22_11_4.
+conn_22_11_7 :- conn_22_11_6.
+0.5::conn_22_12.
+conn_22_12_1 :- conn_22_11_7, conn_22_12.
+0.5::conn_22_12_2.
+conn_22_12_3 :- conn_21_12_7, conn_22_12_2.
+conn_22_12_4 :- conn_22_12_1.
+conn_22_12_4 :- conn_22_12_3.
+0.5::conn_22_12_5.
+conn_22_12_6 :- conn_21_11_7, conn_22_12_5.
+conn_22_12_7 :- conn_22_12_4.
+conn_22_12_7 :- conn_22_12_6.
+0.5::conn_22_13.
+conn_22_13_1 :- conn_22_12_7, conn_22_13.
+0.5::conn_22_13_2.
+conn_22_13_3 :- conn_21_13_7, conn_22_13_2.
+conn_22_13_4 :- conn_22_13_1.
+conn_22_13_4 :- conn_22_13_3.
+0.5::conn_22_13_5.
+conn_22_13_6 :- conn_21_12_7, conn_22_13_5.
+conn_22_13_7 :- conn_22_13_4.
+conn_22_13_7 :- conn_22_13_6.
+0.5::conn_22_14.
+conn_22_14_1 :- conn_22_13_7, conn_22_14.
+0.5::conn_22_14_2.
+conn_22_14_3 :- conn_21_14_7, conn_22_14_2.
+conn_22_14_4 :- conn_22_14_1.
+conn_22_14_4 :- conn_22_14_3.
+0.5::conn_22_14_5.
+conn_22_14_6 :- conn_21_13_7, conn_22_14_5.
+conn_22_14_7 :- conn_22_14_4.
+conn_22_14_7 :- conn_22_14_6.
+0.5::conn_22_15.
+conn_22_15_1 :- conn_22_14_7, conn_22_15.
+0.5::conn_22_15_2.
+conn_22_15_3 :- conn_21_15_7, conn_22_15_2.
+conn_22_15_4 :- conn_22_15_1.
+conn_22_15_4 :- conn_22_15_3.
+0.5::conn_22_15_5.
+conn_22_15_6 :- conn_21_14_7, conn_22_15_5.
+conn_22_15_7 :- conn_22_15_4.
+conn_22_15_7 :- conn_22_15_6.
+0.5::conn_22_16.
+conn_22_16_1 :- conn_22_15_7, conn_22_16.
+0.5::conn_22_16_2.
+conn_22_16_3 :- conn_21_16_7, conn_22_16_2.
+conn_22_16_4 :- conn_22_16_1.
+conn_22_16_4 :- conn_22_16_3.
+0.5::conn_22_16_5.
+conn_22_16_6 :- conn_21_15_7, conn_22_16_5.
+conn_22_16_7 :- conn_22_16_4.
+conn_22_16_7 :- conn_22_16_6.
+0.5::conn_22_17.
+conn_22_17_1 :- conn_22_16_7, conn_22_17.
+0.5::conn_22_17_2.
+conn_22_17_3 :- conn_21_17_7, conn_22_17_2.
+conn_22_17_4 :- conn_22_17_1.
+conn_22_17_4 :- conn_22_17_3.
+0.5::conn_22_17_5.
+conn_22_17_6 :- conn_21_16_7, conn_22_17_5.
+conn_22_17_7 :- conn_22_17_4.
+conn_22_17_7 :- conn_22_17_6.
+0.5::conn_22_18.
+conn_22_18_1 :- conn_22_17_7, conn_22_18.
+0.5::conn_22_18_2.
+conn_22_18_3 :- conn_21_18_7, conn_22_18_2.
+conn_22_18_4 :- conn_22_18_1.
+conn_22_18_4 :- conn_22_18_3.
+0.5::conn_22_18_5.
+conn_22_18_6 :- conn_21_17_7, conn_22_18_5.
+conn_22_18_7 :- conn_22_18_4.
+conn_22_18_7 :- conn_22_18_6.
+0.5::conn_22_19.
+conn_22_19_1 :- conn_22_18_7, conn_22_19.
+0.5::conn_22_19_2.
+conn_22_19_3 :- conn_21_19_7, conn_22_19_2.
+conn_22_19_4 :- conn_22_19_1.
+conn_22_19_4 :- conn_22_19_3.
+0.5::conn_22_19_5.
+conn_22_19_6 :- conn_21_18_7, conn_22_19_5.
+conn_22_19_7 :- conn_22_19_4.
+conn_22_19_7 :- conn_22_19_6.
+0.5::conn_22_20.
+conn_22_20_1 :- conn_22_19_7, conn_22_20.
+0.5::conn_22_20_2.
+conn_22_20_3 :- conn_21_20_7, conn_22_20_2.
+conn_22_20_4 :- conn_22_20_1.
+conn_22_20_4 :- conn_22_20_3.
+0.5::conn_22_20_5.
+conn_22_20_6 :- conn_21_19_7, conn_22_20_5.
+conn_22_20_7 :- conn_22_20_4.
+conn_22_20_7 :- conn_22_20_6.
+0.5::conn_22_21.
+conn_22_21_1 :- conn_22_20_7, conn_22_21.
+0.5::conn_22_21_2.
+conn_22_21_3 :- conn_21_21_7, conn_22_21_2.
+conn_22_21_4 :- conn_22_21_1.
+conn_22_21_4 :- conn_22_21_3.
+0.5::conn_22_21_5.
+conn_22_21_6 :- conn_21_20_7, conn_22_21_5.
+conn_22_21_7 :- conn_22_21_4.
+conn_22_21_7 :- conn_22_21_6.
+0.5::conn_22_22.
+conn_22_22_1 :- conn_22_21_7, conn_22_22.
+0.5::conn_22_22_2.
+conn_22_22_3 :- conn_21_22_7, conn_22_22_2.
+conn_22_22_4 :- conn_22_22_1.
+conn_22_22_4 :- conn_22_22_3.
+0.5::conn_22_22_5.
+conn_22_22_6 :- conn_21_21_7, conn_22_22_5.
+conn_22_22_7 :- conn_22_22_4.
+conn_22_22_7 :- conn_22_22_6.
+0.5::conn_22_23.
+conn_22_23_1 :- conn_22_22_7, conn_22_23.
+0.5::conn_22_23_2.
+conn_22_23_3 :- conn_21_23_7, conn_22_23_2.
+conn_22_23_4 :- conn_22_23_1.
+conn_22_23_4 :- conn_22_23_3.
+0.5::conn_22_23_5.
+conn_22_23_6 :- conn_21_22_7, conn_22_23_5.
+conn_22_23_7 :- conn_22_23_4.
+conn_22_23_7 :- conn_22_23_6.
+0.5::conn_22_24.
+conn_22_24_1 :- conn_22_23_7, conn_22_24.
+0.5::conn_22_24_2.
+conn_22_24_3 :- conn_21_24_7, conn_22_24_2.
+conn_22_24_4 :- conn_22_24_1.
+conn_22_24_4 :- conn_22_24_3.
+0.5::conn_22_24_5.
+conn_22_24_6 :- conn_21_23_7, conn_22_24_5.
+conn_22_24_7 :- conn_22_24_4.
+conn_22_24_7 :- conn_22_24_6.
+0.5::conn_23_1.
+conn_23_1_1 :- conn_22_1_1, conn_23_1.
+0.5::conn_23_2.
+conn_23_2_1 :- conn_23_1_1, conn_23_2.
+0.5::conn_23_2_2.
+conn_23_2_3 :- conn_22_2_7, conn_23_2_2.
+conn_23_2_4 :- conn_23_2_1.
+conn_23_2_4 :- conn_23_2_3.
+0.5::conn_23_2_5.
+conn_23_2_6 :- conn_22_1_1, conn_23_2_5.
+conn_23_2_7 :- conn_23_2_4.
+conn_23_2_7 :- conn_23_2_6.
+0.5::conn_23_3.
+conn_23_3_1 :- conn_23_2_7, conn_23_3.
+0.5::conn_23_3_2.
+conn_23_3_3 :- conn_22_3_7, conn_23_3_2.
+conn_23_3_4 :- conn_23_3_1.
+conn_23_3_4 :- conn_23_3_3.
+0.5::conn_23_3_5.
+conn_23_3_6 :- conn_22_2_7, conn_23_3_5.
+conn_23_3_7 :- conn_23_3_4.
+conn_23_3_7 :- conn_23_3_6.
+0.5::conn_23_4.
+conn_23_4_1 :- conn_23_3_7, conn_23_4.
+0.5::conn_23_4_2.
+conn_23_4_3 :- conn_22_4_7, conn_23_4_2.
+conn_23_4_4 :- conn_23_4_1.
+conn_23_4_4 :- conn_23_4_3.
+0.5::conn_23_4_5.
+conn_23_4_6 :- conn_22_3_7, conn_23_4_5.
+conn_23_4_7 :- conn_23_4_4.
+conn_23_4_7 :- conn_23_4_6.
+0.5::conn_23_5.
+conn_23_5_1 :- conn_23_4_7, conn_23_5.
+0.5::conn_23_5_2.
+conn_23_5_3 :- conn_22_5_7, conn_23_5_2.
+conn_23_5_4 :- conn_23_5_1.
+conn_23_5_4 :- conn_23_5_3.
+0.5::conn_23_5_5.
+conn_23_5_6 :- conn_22_4_7, conn_23_5_5.
+conn_23_5_7 :- conn_23_5_4.
+conn_23_5_7 :- conn_23_5_6.
+0.5::conn_23_6.
+conn_23_6_1 :- conn_23_5_7, conn_23_6.
+0.5::conn_23_6_2.
+conn_23_6_3 :- conn_22_6_7, conn_23_6_2.
+conn_23_6_4 :- conn_23_6_1.
+conn_23_6_4 :- conn_23_6_3.
+0.5::conn_23_6_5.
+conn_23_6_6 :- conn_22_5_7, conn_23_6_5.
+conn_23_6_7 :- conn_23_6_4.
+conn_23_6_7 :- conn_23_6_6.
+0.5::conn_23_7.
+conn_23_7_1 :- conn_23_6_7, conn_23_7.
+0.5::conn_23_7_2.
+conn_23_7_3 :- conn_22_7_7, conn_23_7_2.
+conn_23_7_4 :- conn_23_7_1.
+conn_23_7_4 :- conn_23_7_3.
+0.5::conn_23_7_5.
+conn_23_7_6 :- conn_22_6_7, conn_23_7_5.
+conn_23_7_7 :- conn_23_7_4.
+conn_23_7_7 :- conn_23_7_6.
+0.5::conn_23_8.
+conn_23_8_1 :- conn_23_7_7, conn_23_8.
+0.5::conn_23_8_2.
+conn_23_8_3 :- conn_22_8_7, conn_23_8_2.
+conn_23_8_4 :- conn_23_8_1.
+conn_23_8_4 :- conn_23_8_3.
+0.5::conn_23_8_5.
+conn_23_8_6 :- conn_22_7_7, conn_23_8_5.
+conn_23_8_7 :- conn_23_8_4.
+conn_23_8_7 :- conn_23_8_6.
+0.5::conn_23_9.
+conn_23_9_1 :- conn_23_8_7, conn_23_9.
+0.5::conn_23_9_2.
+conn_23_9_3 :- conn_22_9_7, conn_23_9_2.
+conn_23_9_4 :- conn_23_9_1.
+conn_23_9_4 :- conn_23_9_3.
+0.5::conn_23_9_5.
+conn_23_9_6 :- conn_22_8_7, conn_23_9_5.
+conn_23_9_7 :- conn_23_9_4.
+conn_23_9_7 :- conn_23_9_6.
+0.5::conn_23_10.
+conn_23_10_1 :- conn_23_9_7, conn_23_10.
+0.5::conn_23_10_2.
+conn_23_10_3 :- conn_22_10_7, conn_23_10_2.
+conn_23_10_4 :- conn_23_10_1.
+conn_23_10_4 :- conn_23_10_3.
+0.5::conn_23_10_5.
+conn_23_10_6 :- conn_22_9_7, conn_23_10_5.
+conn_23_10_7 :- conn_23_10_4.
+conn_23_10_7 :- conn_23_10_6.
+0.5::conn_23_11.
+conn_23_11_1 :- conn_23_10_7, conn_23_11.
+0.5::conn_23_11_2.
+conn_23_11_3 :- conn_22_11_7, conn_23_11_2.
+conn_23_11_4 :- conn_23_11_1.
+conn_23_11_4 :- conn_23_11_3.
+0.5::conn_23_11_5.
+conn_23_11_6 :- conn_22_10_7, conn_23_11_5.
+conn_23_11_7 :- conn_23_11_4.
+conn_23_11_7 :- conn_23_11_6.
+0.5::conn_23_12.
+conn_23_12_1 :- conn_23_11_7, conn_23_12.
+0.5::conn_23_12_2.
+conn_23_12_3 :- conn_22_12_7, conn_23_12_2.
+conn_23_12_4 :- conn_23_12_1.
+conn_23_12_4 :- conn_23_12_3.
+0.5::conn_23_12_5.
+conn_23_12_6 :- conn_22_11_7, conn_23_12_5.
+conn_23_12_7 :- conn_23_12_4.
+conn_23_12_7 :- conn_23_12_6.
+0.5::conn_23_13.
+conn_23_13_1 :- conn_23_12_7, conn_23_13.
+0.5::conn_23_13_2.
+conn_23_13_3 :- conn_22_13_7, conn_23_13_2.
+conn_23_13_4 :- conn_23_13_1.
+conn_23_13_4 :- conn_23_13_3.
+0.5::conn_23_13_5.
+conn_23_13_6 :- conn_22_12_7, conn_23_13_5.
+conn_23_13_7 :- conn_23_13_4.
+conn_23_13_7 :- conn_23_13_6.
+0.5::conn_23_14.
+conn_23_14_1 :- conn_23_13_7, conn_23_14.
+0.5::conn_23_14_2.
+conn_23_14_3 :- conn_22_14_7, conn_23_14_2.
+conn_23_14_4 :- conn_23_14_1.
+conn_23_14_4 :- conn_23_14_3.
+0.5::conn_23_14_5.
+conn_23_14_6 :- conn_22_13_7, conn_23_14_5.
+conn_23_14_7 :- conn_23_14_4.
+conn_23_14_7 :- conn_23_14_6.
+0.5::conn_23_15.
+conn_23_15_1 :- conn_23_14_7, conn_23_15.
+0.5::conn_23_15_2.
+conn_23_15_3 :- conn_22_15_7, conn_23_15_2.
+conn_23_15_4 :- conn_23_15_1.
+conn_23_15_4 :- conn_23_15_3.
+0.5::conn_23_15_5.
+conn_23_15_6 :- conn_22_14_7, conn_23_15_5.
+conn_23_15_7 :- conn_23_15_4.
+conn_23_15_7 :- conn_23_15_6.
+0.5::conn_23_16.
+conn_23_16_1 :- conn_23_15_7, conn_23_16.
+0.5::conn_23_16_2.
+conn_23_16_3 :- conn_22_16_7, conn_23_16_2.
+conn_23_16_4 :- conn_23_16_1.
+conn_23_16_4 :- conn_23_16_3.
+0.5::conn_23_16_5.
+conn_23_16_6 :- conn_22_15_7, conn_23_16_5.
+conn_23_16_7 :- conn_23_16_4.
+conn_23_16_7 :- conn_23_16_6.
+0.5::conn_23_17.
+conn_23_17_1 :- conn_23_16_7, conn_23_17.
+0.5::conn_23_17_2.
+conn_23_17_3 :- conn_22_17_7, conn_23_17_2.
+conn_23_17_4 :- conn_23_17_1.
+conn_23_17_4 :- conn_23_17_3.
+0.5::conn_23_17_5.
+conn_23_17_6 :- conn_22_16_7, conn_23_17_5.
+conn_23_17_7 :- conn_23_17_4.
+conn_23_17_7 :- conn_23_17_6.
+0.5::conn_23_18.
+conn_23_18_1 :- conn_23_17_7, conn_23_18.
+0.5::conn_23_18_2.
+conn_23_18_3 :- conn_22_18_7, conn_23_18_2.
+conn_23_18_4 :- conn_23_18_1.
+conn_23_18_4 :- conn_23_18_3.
+0.5::conn_23_18_5.
+conn_23_18_6 :- conn_22_17_7, conn_23_18_5.
+conn_23_18_7 :- conn_23_18_4.
+conn_23_18_7 :- conn_23_18_6.
+0.5::conn_23_19.
+conn_23_19_1 :- conn_23_18_7, conn_23_19.
+0.5::conn_23_19_2.
+conn_23_19_3 :- conn_22_19_7, conn_23_19_2.
+conn_23_19_4 :- conn_23_19_1.
+conn_23_19_4 :- conn_23_19_3.
+0.5::conn_23_19_5.
+conn_23_19_6 :- conn_22_18_7, conn_23_19_5.
+conn_23_19_7 :- conn_23_19_4.
+conn_23_19_7 :- conn_23_19_6.
+0.5::conn_23_20.
+conn_23_20_1 :- conn_23_19_7, conn_23_20.
+0.5::conn_23_20_2.
+conn_23_20_3 :- conn_22_20_7, conn_23_20_2.
+conn_23_20_4 :- conn_23_20_1.
+conn_23_20_4 :- conn_23_20_3.
+0.5::conn_23_20_5.
+conn_23_20_6 :- conn_22_19_7, conn_23_20_5.
+conn_23_20_7 :- conn_23_20_4.
+conn_23_20_7 :- conn_23_20_6.
+0.5::conn_23_21.
+conn_23_21_1 :- conn_23_20_7, conn_23_21.
+0.5::conn_23_21_2.
+conn_23_21_3 :- conn_22_21_7, conn_23_21_2.
+conn_23_21_4 :- conn_23_21_1.
+conn_23_21_4 :- conn_23_21_3.
+0.5::conn_23_21_5.
+conn_23_21_6 :- conn_22_20_7, conn_23_21_5.
+conn_23_21_7 :- conn_23_21_4.
+conn_23_21_7 :- conn_23_21_6.
+0.5::conn_23_22.
+conn_23_22_1 :- conn_23_21_7, conn_23_22.
+0.5::conn_23_22_2.
+conn_23_22_3 :- conn_22_22_7, conn_23_22_2.
+conn_23_22_4 :- conn_23_22_1.
+conn_23_22_4 :- conn_23_22_3.
+0.5::conn_23_22_5.
+conn_23_22_6 :- conn_22_21_7, conn_23_22_5.
+conn_23_22_7 :- conn_23_22_4.
+conn_23_22_7 :- conn_23_22_6.
+0.5::conn_23_23.
+conn_23_23_1 :- conn_23_22_7, conn_23_23.
+0.5::conn_23_23_2.
+conn_23_23_3 :- conn_22_23_7, conn_23_23_2.
+conn_23_23_4 :- conn_23_23_1.
+conn_23_23_4 :- conn_23_23_3.
+0.5::conn_23_23_5.
+conn_23_23_6 :- conn_22_22_7, conn_23_23_5.
+conn_23_23_7 :- conn_23_23_4.
+conn_23_23_7 :- conn_23_23_6.
+0.5::conn_23_24.
+conn_23_24_1 :- conn_23_23_7, conn_23_24.
+0.5::conn_23_24_2.
+conn_23_24_3 :- conn_22_24_7, conn_23_24_2.
+conn_23_24_4 :- conn_23_24_1.
+conn_23_24_4 :- conn_23_24_3.
+0.5::conn_23_24_5.
+conn_23_24_6 :- conn_22_23_7, conn_23_24_5.
+conn_23_24_7 :- conn_23_24_4.
+conn_23_24_7 :- conn_23_24_6.
+0.5::conn_24_1.
+conn_24_1_1 :- conn_23_1_1, conn_24_1.
+0.5::conn_24_2.
+conn_24_2_1 :- conn_24_1_1, conn_24_2.
+0.5::conn_24_2_2.
+conn_24_2_3 :- conn_23_2_7, conn_24_2_2.
+conn_24_2_4 :- conn_24_2_1.
+conn_24_2_4 :- conn_24_2_3.
+0.5::conn_24_2_5.
+conn_24_2_6 :- conn_23_1_1, conn_24_2_5.
+conn_24_2_7 :- conn_24_2_4.
+conn_24_2_7 :- conn_24_2_6.
+0.5::conn_24_3.
+conn_24_3_1 :- conn_24_2_7, conn_24_3.
+0.5::conn_24_3_2.
+conn_24_3_3 :- conn_23_3_7, conn_24_3_2.
+conn_24_3_4 :- conn_24_3_1.
+conn_24_3_4 :- conn_24_3_3.
+0.5::conn_24_3_5.
+conn_24_3_6 :- conn_23_2_7, conn_24_3_5.
+conn_24_3_7 :- conn_24_3_4.
+conn_24_3_7 :- conn_24_3_6.
+0.5::conn_24_4.
+conn_24_4_1 :- conn_24_3_7, conn_24_4.
+0.5::conn_24_4_2.
+conn_24_4_3 :- conn_23_4_7, conn_24_4_2.
+conn_24_4_4 :- conn_24_4_1.
+conn_24_4_4 :- conn_24_4_3.
+0.5::conn_24_4_5.
+conn_24_4_6 :- conn_23_3_7, conn_24_4_5.
+conn_24_4_7 :- conn_24_4_4.
+conn_24_4_7 :- conn_24_4_6.
+0.5::conn_24_5.
+conn_24_5_1 :- conn_24_4_7, conn_24_5.
+0.5::conn_24_5_2.
+conn_24_5_3 :- conn_23_5_7, conn_24_5_2.
+conn_24_5_4 :- conn_24_5_1.
+conn_24_5_4 :- conn_24_5_3.
+0.5::conn_24_5_5.
+conn_24_5_6 :- conn_23_4_7, conn_24_5_5.
+conn_24_5_7 :- conn_24_5_4.
+conn_24_5_7 :- conn_24_5_6.
+0.5::conn_24_6.
+conn_24_6_1 :- conn_24_5_7, conn_24_6.
+0.5::conn_24_6_2.
+conn_24_6_3 :- conn_23_6_7, conn_24_6_2.
+conn_24_6_4 :- conn_24_6_1.
+conn_24_6_4 :- conn_24_6_3.
+0.5::conn_24_6_5.
+conn_24_6_6 :- conn_23_5_7, conn_24_6_5.
+conn_24_6_7 :- conn_24_6_4.
+conn_24_6_7 :- conn_24_6_6.
+0.5::conn_24_7.
+conn_24_7_1 :- conn_24_6_7, conn_24_7.
+0.5::conn_24_7_2.
+conn_24_7_3 :- conn_23_7_7, conn_24_7_2.
+conn_24_7_4 :- conn_24_7_1.
+conn_24_7_4 :- conn_24_7_3.
+0.5::conn_24_7_5.
+conn_24_7_6 :- conn_23_6_7, conn_24_7_5.
+conn_24_7_7 :- conn_24_7_4.
+conn_24_7_7 :- conn_24_7_6.
+0.5::conn_24_8.
+conn_24_8_1 :- conn_24_7_7, conn_24_8.
+0.5::conn_24_8_2.
+conn_24_8_3 :- conn_23_8_7, conn_24_8_2.
+conn_24_8_4 :- conn_24_8_1.
+conn_24_8_4 :- conn_24_8_3.
+0.5::conn_24_8_5.
+conn_24_8_6 :- conn_23_7_7, conn_24_8_5.
+conn_24_8_7 :- conn_24_8_4.
+conn_24_8_7 :- conn_24_8_6.
+0.5::conn_24_9.
+conn_24_9_1 :- conn_24_8_7, conn_24_9.
+0.5::conn_24_9_2.
+conn_24_9_3 :- conn_23_9_7, conn_24_9_2.
+conn_24_9_4 :- conn_24_9_1.
+conn_24_9_4 :- conn_24_9_3.
+0.5::conn_24_9_5.
+conn_24_9_6 :- conn_23_8_7, conn_24_9_5.
+conn_24_9_7 :- conn_24_9_4.
+conn_24_9_7 :- conn_24_9_6.
+0.5::conn_24_10.
+conn_24_10_1 :- conn_24_9_7, conn_24_10.
+0.5::conn_24_10_2.
+conn_24_10_3 :- conn_23_10_7, conn_24_10_2.
+conn_24_10_4 :- conn_24_10_1.
+conn_24_10_4 :- conn_24_10_3.
+0.5::conn_24_10_5.
+conn_24_10_6 :- conn_23_9_7, conn_24_10_5.
+conn_24_10_7 :- conn_24_10_4.
+conn_24_10_7 :- conn_24_10_6.
+0.5::conn_24_11.
+conn_24_11_1 :- conn_24_10_7, conn_24_11.
+0.5::conn_24_11_2.
+conn_24_11_3 :- conn_23_11_7, conn_24_11_2.
+conn_24_11_4 :- conn_24_11_1.
+conn_24_11_4 :- conn_24_11_3.
+0.5::conn_24_11_5.
+conn_24_11_6 :- conn_23_10_7, conn_24_11_5.
+conn_24_11_7 :- conn_24_11_4.
+conn_24_11_7 :- conn_24_11_6.
+0.5::conn_24_12.
+conn_24_12_1 :- conn_24_11_7, conn_24_12.
+0.5::conn_24_12_2.
+conn_24_12_3 :- conn_23_12_7, conn_24_12_2.
+conn_24_12_4 :- conn_24_12_1.
+conn_24_12_4 :- conn_24_12_3.
+0.5::conn_24_12_5.
+conn_24_12_6 :- conn_23_11_7, conn_24_12_5.
+conn_24_12_7 :- conn_24_12_4.
+conn_24_12_7 :- conn_24_12_6.
+0.5::conn_24_13.
+conn_24_13_1 :- conn_24_12_7, conn_24_13.
+0.5::conn_24_13_2.
+conn_24_13_3 :- conn_23_13_7, conn_24_13_2.
+conn_24_13_4 :- conn_24_13_1.
+conn_24_13_4 :- conn_24_13_3.
+0.5::conn_24_13_5.
+conn_24_13_6 :- conn_23_12_7, conn_24_13_5.
+conn_24_13_7 :- conn_24_13_4.
+conn_24_13_7 :- conn_24_13_6.
+0.5::conn_24_14.
+conn_24_14_1 :- conn_24_13_7, conn_24_14.
+0.5::conn_24_14_2.
+conn_24_14_3 :- conn_23_14_7, conn_24_14_2.
+conn_24_14_4 :- conn_24_14_1.
+conn_24_14_4 :- conn_24_14_3.
+0.5::conn_24_14_5.
+conn_24_14_6 :- conn_23_13_7, conn_24_14_5.
+conn_24_14_7 :- conn_24_14_4.
+conn_24_14_7 :- conn_24_14_6.
+0.5::conn_24_15.
+conn_24_15_1 :- conn_24_14_7, conn_24_15.
+0.5::conn_24_15_2.
+conn_24_15_3 :- conn_23_15_7, conn_24_15_2.
+conn_24_15_4 :- conn_24_15_1.
+conn_24_15_4 :- conn_24_15_3.
+0.5::conn_24_15_5.
+conn_24_15_6 :- conn_23_14_7, conn_24_15_5.
+conn_24_15_7 :- conn_24_15_4.
+conn_24_15_7 :- conn_24_15_6.
+0.5::conn_24_16.
+conn_24_16_1 :- conn_24_15_7, conn_24_16.
+0.5::conn_24_16_2.
+conn_24_16_3 :- conn_23_16_7, conn_24_16_2.
+conn_24_16_4 :- conn_24_16_1.
+conn_24_16_4 :- conn_24_16_3.
+0.5::conn_24_16_5.
+conn_24_16_6 :- conn_23_15_7, conn_24_16_5.
+conn_24_16_7 :- conn_24_16_4.
+conn_24_16_7 :- conn_24_16_6.
+0.5::conn_24_17.
+conn_24_17_1 :- conn_24_16_7, conn_24_17.
+0.5::conn_24_17_2.
+conn_24_17_3 :- conn_23_17_7, conn_24_17_2.
+conn_24_17_4 :- conn_24_17_1.
+conn_24_17_4 :- conn_24_17_3.
+0.5::conn_24_17_5.
+conn_24_17_6 :- conn_23_16_7, conn_24_17_5.
+conn_24_17_7 :- conn_24_17_4.
+conn_24_17_7 :- conn_24_17_6.
+0.5::conn_24_18.
+conn_24_18_1 :- conn_24_17_7, conn_24_18.
+0.5::conn_24_18_2.
+conn_24_18_3 :- conn_23_18_7, conn_24_18_2.
+conn_24_18_4 :- conn_24_18_1.
+conn_24_18_4 :- conn_24_18_3.
+0.5::conn_24_18_5.
+conn_24_18_6 :- conn_23_17_7, conn_24_18_5.
+conn_24_18_7 :- conn_24_18_4.
+conn_24_18_7 :- conn_24_18_6.
+0.5::conn_24_19.
+conn_24_19_1 :- conn_24_18_7, conn_24_19.
+0.5::conn_24_19_2.
+conn_24_19_3 :- conn_23_19_7, conn_24_19_2.
+conn_24_19_4 :- conn_24_19_1.
+conn_24_19_4 :- conn_24_19_3.
+0.5::conn_24_19_5.
+conn_24_19_6 :- conn_23_18_7, conn_24_19_5.
+conn_24_19_7 :- conn_24_19_4.
+conn_24_19_7 :- conn_24_19_6.
+0.5::conn_24_20.
+conn_24_20_1 :- conn_24_19_7, conn_24_20.
+0.5::conn_24_20_2.
+conn_24_20_3 :- conn_23_20_7, conn_24_20_2.
+conn_24_20_4 :- conn_24_20_1.
+conn_24_20_4 :- conn_24_20_3.
+0.5::conn_24_20_5.
+conn_24_20_6 :- conn_23_19_7, conn_24_20_5.
+conn_24_20_7 :- conn_24_20_4.
+conn_24_20_7 :- conn_24_20_6.
+0.5::conn_24_21.
+conn_24_21_1 :- conn_24_20_7, conn_24_21.
+0.5::conn_24_21_2.
+conn_24_21_3 :- conn_23_21_7, conn_24_21_2.
+conn_24_21_4 :- conn_24_21_1.
+conn_24_21_4 :- conn_24_21_3.
+0.5::conn_24_21_5.
+conn_24_21_6 :- conn_23_20_7, conn_24_21_5.
+conn_24_21_7 :- conn_24_21_4.
+conn_24_21_7 :- conn_24_21_6.
+0.5::conn_24_22.
+conn_24_22_1 :- conn_24_21_7, conn_24_22.
+0.5::conn_24_22_2.
+conn_24_22_3 :- conn_23_22_7, conn_24_22_2.
+conn_24_22_4 :- conn_24_22_1.
+conn_24_22_4 :- conn_24_22_3.
+0.5::conn_24_22_5.
+conn_24_22_6 :- conn_23_21_7, conn_24_22_5.
+conn_24_22_7 :- conn_24_22_4.
+conn_24_22_7 :- conn_24_22_6.
+0.5::conn_24_23.
+conn_24_23_1 :- conn_24_22_7, conn_24_23.
+0.5::conn_24_23_2.
+conn_24_23_3 :- conn_23_23_7, conn_24_23_2.
+conn_24_23_4 :- conn_24_23_1.
+conn_24_23_4 :- conn_24_23_3.
+0.5::conn_24_23_5.
+conn_24_23_6 :- conn_23_22_7, conn_24_23_5.
+conn_24_23_7 :- conn_24_23_4.
+conn_24_23_7 :- conn_24_23_6.
+0.5::conn_24_24.
+conn_24_24_1 :- conn_24_23_7, conn_24_24.
+0.5::conn_24_24_2.
+conn_24_24_3 :- conn_23_24_7, conn_24_24_2.
+conn_24_24_4 :- conn_24_24_1.
+conn_24_24_4 :- conn_24_24_3.
+0.5::conn_24_24_5.
+conn_24_24_6 :- conn_23_23_7, conn_24_24_5.
+conn_24_24_7 :- conn_24_24_4.
+conn_24_24_7 :- conn_24_24_6.
+query(conn_24_24_7).

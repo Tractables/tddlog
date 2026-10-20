@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_fair_dt14_w32 · tddlog results</title>
+<meta name="description" content="bb_fair_dt14_w32, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_fair_dt14_w32</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/fairsquare/fairness.jl</code> with <code>dt=14 bits=24</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">70.8</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set dt=14 --set bits=24 data/alea/fairsquare/fairness.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/fairsquare/fairness.jl</code><span>5 596 bytes, 102 lines</span><span class="sha" title="SHA-256">sha256 197f36ea88f4d648d0468861db3b52d301867d651e82ac3a50b186fb025556fa</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/fairsquare/fairness.jl</code>.</p><pre># Fairness of a decision tree (FairSquare, Albarghouthi, D&#x27;Antoni, Drews and
+# Nori, OOPSLA 2017; SPPL, Saad, Rinard and Mansinghka, PLDI 2021, Table 3):
+# a population model of the Adult census data and a decision tree trained on
+# it. The program returns two Booleans: that the tree&#x27;s decision is the
+# fairness target (t = 0) and the person is female, and that it is the
+# target and the person is male. The tree&#x27;s fairness ratio is
+# (q1 / 0.3307) / (q2 / 0.6693). The population model is FairSquare&#x27;s
+# second Bayes net (`M_BNc_...`), and `dt` picks the tree: 4, 14, 16 or 44
+# (`F_DT_V2_D2_N4`, `F_DT_V2_D3_N14`, `F_DT_V2_D2_N16`, `F_DT_V3_D2_N44`),
+# from oopsla/noqual of github.com/sedrews/fairsquare at bd27437 (MIT
+# License). Each tree&#x27;s population model draws only the variables the tree
+# reads; drawing the others too, as here, leaves its answers unchanged.
+#
+# The translation: FairSquare&#x27;s `gaussian(m, v)` takes a variance and is
+# bit blasted here as a normal of standard deviation sqrt(v), in
+# exponential pieces (bitblast_exponential), on an interval of more than 4
+# standard deviations on each side; its `step` over unit intervals,
+# compared only with integers, is a categorical; a capital gain is in
+# units of 1024 dollars, its thresholds divided alike; `if education_num &gt;
+# age: age = education_num` is an `ifelse`. `bits` is the bits after the
+# binary point of every number.
+using Alea, Distributions
+
+const QUERY = :pr
+const dt = 4
+const bits = 6
+const pieces = 32
+const DFiP = DistFix{8 + bits, bits}
+const K = 1024.0
+
+gauss(m, v, lo, hi) = bitblast_exponential(DFiP, Normal(m, sqrt(v)), pieces, lo, hi)
+categorical(W, p) = discrete(DistUInt{W}, p ./ sum(p))
+below(x, c) = x &lt; DFiP(c)
+is(r, k) = prob_equals(r, DistUInt{3}(k))
+
+# The population (FairSquare&#x27;s M_BNc_F_DT_V3_D2_N44, with the
+# education_num of its other trees).
+function population()
+    female = flip(0.3307)
+    cg_f = gauss(568.4105 / K, 24248365.5428 / K^2, -64.0, 64.0)
+    cg_m = gauss(1329.3700 / K, 69327473.1006 / K^2, -64.0, 64.0)
+    capital_gain = ifelse(female, cg_f, cg_m)
+    low = ifelse(female, below(cg_f, 7298.0000 / K), below(cg_m, 5178.0000 / K))
+    pick(f_low, f_high, m_low, m_high) = ifelse(female, ifelse(low, f_low, f_high), ifelse(low, m_low, m_high))
+    age = pick(gauss(38.4208, 184.9151, -32.0, 96.0), gauss(38.8125, 193.4918, -32.0, 96.0),
+               gauss(38.6361, 187.2435, -32.0, 96.0), gauss(38.2668, 187.2747, -32.0, 96.0))
+    education = pick(
+        categorical(4, [0.1638, 0.2308, 0.0354, 0.3230, 0.0173, 0.0321, 0.0412, 0.0156,
+                        0.0200, 0.0112, 0.0528, 0.0050, 0.0290, 0.0119, 0.0092, 0.0017]),
+        categorical(4, [0.1916, 0.2000, 0.0500, 0.3542, 0.0208, 0.0125, 0.0375, 0.0125,
+                        0.0292, 0.0042, 0.0541, 0.0000, 0.0250, 0.0042, 0.0042, 0.0000]),
+        categorical(4, [0.1670, 0.2239, 0.0358, 0.3267, 0.0159, 0.0320, 0.0426, 0.0155,
+                        0.0198, 0.0121, 0.0518, 0.0047, 0.0287, 0.0125, 0.0096, 0.0014]),
+        categorical(4, [0.1569, 0.2205, 0.0417, 0.3071, 0.0255, 0.0302, 0.0409, 0.0155,
+                        0.0178, 0.0147, 0.0619, 0.0062, 0.0317, 0.0139, 0.0139, 0.0016]))
+    education_num = pick(gauss(10.0827, 6.5096, -6.0, 26.0), gauss(10.1041, 6.1522, -6.0, 26.0),
+                         gauss(10.0817, 6.4841, -6.0, 26.0), gauss(10.0974, 7.1793, -6.0, 26.0))
+    relationship = pick(
+        categorical(3, [0.0491, 0.1556, 0.4012, 0.2589, 0.0294, 0.1058]),
+        categorical(3, [0.0416, 0.1667, 0.4583, 0.2292, 0.0166, 0.0876]),
+        categorical(3, [0.0497, 0.1545, 0.4021, 0.2590, 0.0294, 0.1053]),
+        categorical(3, [0.0417, 0.1624, 0.3976, 0.2606, 0.0356, 0.1021]))
+    age = ifelse(age &lt; education_num, education_num, age)
+    (female, capital_gain, age, education, relationship)
+end
+
+# The trees: whether t = 1.
+function tree(capital_gain, age, education, relationship)
+    if dt == 4
+        ifelse(below(capital_gain, 7073.5 / K), true, below(age, 20.0))
+    elseif dt == 14
+        ifelse(is(relationship, 0), true,
+        ifelse(is(relationship, 1), ifelse(below(age, 21.5), true, below(age, 47.5)),
+        ifelse(is(relationship, 2), true,
+        ifelse(is(relationship, 3), below(age, 50.5),
+        ifelse(is(relationship, 4), below(age, 49.5), true)))))
+    elseif dt == 16
+        ifelse(is(relationship, 0), below(capital_gain, 5095.5 / K),
+        ifelse(is(relationship, 1), below(capital_gain, 4718.5 / K),
+        ifelse(is(relationship, 2), below(capital_gain, 5095.5 / K),
+        ifelse(is(relationship, 3), below(capital_gain, 8296.0 / K),
+        ifelse(is(relationship, 4), true, below(capital_gain, 4668.5 / K))))))
+    elseif dt == 44
+        # t by education (0 to 15) where relationship is 0 and where it is 2
+        t0 = [0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1]
+        t2 = [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1]
+        by_education(t) = reduce(|, [prob_equals(education, DistUInt{4}(e)) for e in 0:15 if t[e + 1] == 1])
+        ifelse(is(relationship, 0), by_education(t0),
+        ifelse(is(relationship, 1), below(capital_gain, 4718.5 / K),
+        ifelse(is(relationship, 2), by_education(t2),
+        ifelse(is(relationship, 3), below(capital_gain, 8296.0 / K),
+        ifelse(is(relationship, 4), true, below(capital_gain, 4668.5 / K))))))
+    else
+        error(&quot;no tree $dt&quot;)
+    end
+end
+
+model() = @alea begin
+    (female, capital_gain, age, education, relationship) = population()
+    target = !tree(capital_gain, age, education, relationship)
+    (female &amp; target, !female &amp; target)
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_fair_dt14_w32.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_fair_dt14_w32.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_fair_dt14_w32.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_fair_dt14_w32.pl</code><span>934 698 bytes, 42 721 lines</span><span class="sha" title="SHA-256">sha256 bb08c57e568e4b48126b64a0bcf488cb11a3c26ee2dbf60754b8858fe9a4d491</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/fairsquare/fairness.jl dt=14 bits=24</code>.</p><p class="note"><a href="../files/bb08c57e568e4b48126b.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/bb08c57e568e4b48126b.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>70.8</td><td></td><td>largest formula, pairs 75 005 513; final formula, pairs 4 880; variables 7 240; ground atoms 15 498; ground rules 16 206; vtree program:fanin (from auto: 47 attempts, 20.507s discarded)</td></tr><tr><td>2</td><td>answered</td><td>70.8</td><td></td><td>largest formula, pairs 75 005 513; final formula, pairs 4 880; variables 7 240; ground atoms 15 498; ground rules 16 206; vtree program:fanin (from auto: 47 attempts, 20.541s discarded)</td></tr><tr><td>3</td><td>answered</td><td>70.8</td><td></td><td>largest formula, pairs 75 005 513; final formula, pairs 4 880; variables 7 240; ground atoms 15 498; ground rules 16 206; vtree program:fanin (from auto: 47 attempts, 20.540s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Alea.jl</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.03102985032</td></tr><tr><th>q2</th><td class="num">0.06441987912</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

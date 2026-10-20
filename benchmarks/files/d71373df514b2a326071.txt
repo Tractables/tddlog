@@ -1,0 +1,2501 @@
+# geni_weather_h200.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function d_hit(x1_path, x2_packedstate)
+    x3_sun = x2_packedstate[1]
+    x4_state1 = x2_packedstate[2][1]
+    x5_state2 = x2_packedstate[2][2][1]
+    x6_state3 = x2_packedstate[2][2][2][1]
+    x7_state4 = x2_packedstate[2][2][2][2][1]
+    x8_state5 = x2_packedstate[2][2][2][2][2][1]
+    x9_state6 = x2_packedstate[2][2][2][2][2][2][1]
+    x10_state7 = x2_packedstate[2][2][2][2][2][2][2][1]
+    x11_state8 = x2_packedstate[2][2][2][2][2][2][2][2][1]
+    x12_state9 = x2_packedstate[2][2][2][2][2][2][2][2][2][1]
+    x13_state10 = x2_packedstate[2][2][2][2][2][2][2][2][2][2]
+    x14_allStrike = (((((((((x4_state1 & x5_state2) & x6_state3) & x7_state4) & x8_state5) & x9_state6) & x10_state7) & x11_state8) & x12_state9) & x13_state10)
+    return x14_allStrike
+end
+
+function d_step(x15_path, x16_packedstate)
+    x17_sun = x16_packedstate[1]
+    x18_state1 = x16_packedstate[2][1]
+    x19_state2 = x16_packedstate[2][2][1]
+    x20_state3 = x16_packedstate[2][2][2][1]
+    x21_state4 = x16_packedstate[2][2][2][2][1]
+    x22_state5 = x16_packedstate[2][2][2][2][2][1]
+    x23_state6 = x16_packedstate[2][2][2][2][2][2][1]
+    x24_state7 = x16_packedstate[2][2][2][2][2][2][2][1]
+    x25_state8 = x16_packedstate[2][2][2][2][2][2][2][2][1]
+    x26_state9 = x16_packedstate[2][2][2][2][2][2][2][2][2][1]
+    x27_state10 = x16_packedstate[2][2][2][2][2][2][2][2][2][2]
+    x28_allStrike = (((((((((x18_state1 & x19_state2) & x20_state3) & x21_state4) & x22_state5) & x23_state6) & x24_state7) & x25_state8) & x26_state9) & x27_state10)
+    x29__cmd_act_1 = (((((((((((x17_sun | !(x17_sun)) & ((((x18_state1 & x17_sun) | (!(x18_state1) & x17_sun)) | (x18_state1 & !(x17_sun))) | (!(x18_state1) & !(x17_sun)))) & ((((x19_state2 & x17_sun) | (!(x19_state2) & x17_sun)) | (x19_state2 & !(x17_sun))) | (!(x19_state2) & !(x17_sun)))) & ((((x20_state3 & x17_sun) | (!(x20_state3) & x17_sun)) | (x20_state3 & !(x17_sun))) | (!(x20_state3) & !(x17_sun)))) & ((((x21_state4 & x17_sun) | (!(x21_state4) & x17_sun)) | (x21_state4 & !(x17_sun))) | (!(x21_state4) & !(x17_sun)))) & ((((x22_state5 & x17_sun) | (!(x22_state5) & x17_sun)) | (x22_state5 & !(x17_sun))) | (!(x22_state5) & !(x17_sun)))) & ((((x23_state6 & x17_sun) | (!(x23_state6) & x17_sun)) | (x23_state6 & !(x17_sun))) | (!(x23_state6) & !(x17_sun)))) & ((((x24_state7 & x17_sun) | (!(x24_state7) & x17_sun)) | (x24_state7 & !(x17_sun))) | (!(x24_state7) & !(x17_sun)))) & ((((x25_state8 & x17_sun) | (!(x25_state8) & x17_sun)) | (x25_state8 & !(x17_sun))) | (!(x25_state8) & !(x17_sun)))) & ((((x26_state9 & x17_sun) | (!(x26_state9) & x17_sun)) | (x26_state9 & !(x17_sun))) | (!(x26_state9) & !(x17_sun)))) & ((((x27_state10 & x17_sun) | (!(x27_state10) & x17_sun)) | (x27_state10 & !(x17_sun))) | (!(x27_state10) & !(x17_sun))))
+    x30__count = x29__cmd_act_1 === true ? DistUInt{1}(1) : x29__cmd_act_1 === false ? DistUInt{1}(0) : ifelse(x29__cmd_act_1, DistUInt{1}(1), DistUInt{1}(0))
+    x31_step = prob_equals(x30__count, DistUInt{1}(0))
+    if x31_step !== false
+     x32_step = (x17_sun, (x18_state1, (x19_state2, (x20_state3, (x21_state4, (x22_state5, (x23_state6, (x24_state7, (x25_state8, (x26_state9, x27_state10))))))))))
+    end
+    if x31_step !== true
+     x33__sel_act = prob_equals(x30__count, DistUInt{1}(1))
+     if x33__sel_act !== true
+      x34__sel_act = discrete(DistUInt{1}, [0.0, 1.0])
+     end
+     x35__sel_act = x33__sel_act === true ? DistUInt{1}(1) : x33__sel_act === false ? x34__sel_act : ifelse(x33__sel_act, DistUInt{1}(1), x34__sel_act)
+     x36__take1 = (prob_equals(x35__sel_act, DistUInt{1}(1)) & x29__cmd_act_1)
+     if x36__take1 !== false
+      if x17_sun !== false
+       x37__sel_update_0 = discrete(DistUInt{1}, [0.7, 0.3])
+       x38__result_0 = prob_equals(x37__sel_update_0, DistUInt{1}(0))
+       if x38__result_0 !== true
+        x39__result_0 = !(x17_sun)
+       end
+       x40__result_0 = x38__result_0 === true ? x17_sun : x38__result_0 === false ? x39__result_0 : ifelse(x38__result_0, x17_sun, x39__result_0)
+      end
+      if x17_sun !== true
+       x41__result_0 = !(x17_sun)
+       if x41__result_0 !== false
+        x42__sel_update_0 = discrete(DistUInt{1}, [0.4, 0.6])
+        x43__result_0 = prob_equals(x42__sel_update_0, DistUInt{1}(0))
+        if x43__result_0 !== true
+         x44__result_0 = !(x17_sun)
+        end
+        x45__result_0 = x43__result_0 === true ? x17_sun : x43__result_0 === false ? x44__result_0 : ifelse(x43__result_0, x17_sun, x44__result_0)
+       end
+       x46__result_0 = x41__result_0 === true ? x45__result_0 : x41__result_0 === false ? x17_sun : ifelse(x41__result_0, x45__result_0, x17_sun)
+      end
+      x47__result_0 = x17_sun === true ? x40__result_0 : x17_sun === false ? x46__result_0 : ifelse(x17_sun, x40__result_0, x46__result_0)
+      x48__result_1 = (x18_state1 & x17_sun)
+      if x48__result_1 !== false
+       x49__sel_update_1 = discrete(DistUInt{1}, [0.03, 0.97])
+       x50__result_1 = prob_equals(x49__sel_update_1, DistUInt{1}(0))
+       x51__result_1 = x50__result_1 === true ? true : x50__result_1 === false ? false : ifelse(x50__result_1, true, false)
+      end
+      if x48__result_1 !== true
+       x52__result_1 = (!(x18_state1) & x17_sun)
+       if x52__result_1 !== false
+        x53__sel_update_1 = discrete(DistUInt{1}, [0.14, 0.86])
+        x54__result_1 = prob_equals(x53__sel_update_1, DistUInt{1}(0))
+        x55__result_1 = x54__result_1 === true ? true : x54__result_1 === false ? false : ifelse(x54__result_1, true, false)
+       end
+       if x52__result_1 !== true
+        x56__result_1 = (x18_state1 & !(x17_sun))
+        if x56__result_1 !== false
+         x57__sel_update_1 = discrete(DistUInt{1}, [0.06, 0.94])
+         x58__result_1 = prob_equals(x57__sel_update_1, DistUInt{1}(0))
+         x59__result_1 = x58__result_1 === true ? true : x58__result_1 === false ? false : ifelse(x58__result_1, true, false)
+        end
+        if x56__result_1 !== true
+         x60__result_1 = (!(x18_state1) & !(x17_sun))
+         if x60__result_1 !== false
+          x61__sel_update_1 = discrete(DistUInt{1}, [0.08, 0.92])
+          x62__result_1 = prob_equals(x61__sel_update_1, DistUInt{1}(0))
+          x63__result_1 = x62__result_1 === true ? true : x62__result_1 === false ? false : ifelse(x62__result_1, true, false)
+         end
+         x64__result_1 = x60__result_1 === true ? x63__result_1 : x60__result_1 === false ? x18_state1 : ifelse(x60__result_1, x63__result_1, x18_state1)
+        end
+        x65__result_1 = x56__result_1 === true ? x59__result_1 : x56__result_1 === false ? x64__result_1 : ifelse(x56__result_1, x59__result_1, x64__result_1)
+       end
+       x66__result_1 = x52__result_1 === true ? x55__result_1 : x52__result_1 === false ? x65__result_1 : ifelse(x52__result_1, x55__result_1, x65__result_1)
+      end
+      x67__result_1 = x48__result_1 === true ? x51__result_1 : x48__result_1 === false ? x66__result_1 : ifelse(x48__result_1, x51__result_1, x66__result_1)
+      x68__result_2 = (x19_state2 & x17_sun)
+      if x68__result_2 !== false
+       x69__sel_update_2 = discrete(DistUInt{1}, [0.06, 0.94])
+       x70__result_2 = prob_equals(x69__sel_update_2, DistUInt{1}(0))
+       x71__result_2 = x70__result_2 === true ? true : x70__result_2 === false ? false : ifelse(x70__result_2, true, false)
+      end
+      if x68__result_2 !== true
+       x72__result_2 = (!(x19_state2) & x17_sun)
+       if x72__result_2 !== false
+        x73__sel_update_2 = discrete(DistUInt{1}, [0.21, 0.79])
+        x74__result_2 = prob_equals(x73__sel_update_2, DistUInt{1}(0))
+        x75__result_2 = x74__result_2 === true ? true : x74__result_2 === false ? false : ifelse(x74__result_2, true, false)
+       end
+       if x72__result_2 !== true
+        x76__result_2 = (x19_state2 & !(x17_sun))
+        if x76__result_2 !== false
+         x77__sel_update_2 = discrete(DistUInt{1}, [0.12, 0.88])
+         x78__result_2 = prob_equals(x77__sel_update_2, DistUInt{1}(0))
+         x79__result_2 = x78__result_2 === true ? true : x78__result_2 === false ? false : ifelse(x78__result_2, true, false)
+        end
+        if x76__result_2 !== true
+         x80__result_2 = (!(x19_state2) & !(x17_sun))
+         if x80__result_2 !== false
+          x81__sel_update_2 = discrete(DistUInt{1}, [0.12, 0.88])
+          x82__result_2 = prob_equals(x81__sel_update_2, DistUInt{1}(0))
+          x83__result_2 = x82__result_2 === true ? true : x82__result_2 === false ? false : ifelse(x82__result_2, true, false)
+         end
+         x84__result_2 = x80__result_2 === true ? x83__result_2 : x80__result_2 === false ? x19_state2 : ifelse(x80__result_2, x83__result_2, x19_state2)
+        end
+        x85__result_2 = x76__result_2 === true ? x79__result_2 : x76__result_2 === false ? x84__result_2 : ifelse(x76__result_2, x79__result_2, x84__result_2)
+       end
+       x86__result_2 = x72__result_2 === true ? x75__result_2 : x72__result_2 === false ? x85__result_2 : ifelse(x72__result_2, x75__result_2, x85__result_2)
+      end
+      x87__result_2 = x68__result_2 === true ? x71__result_2 : x68__result_2 === false ? x86__result_2 : ifelse(x68__result_2, x71__result_2, x86__result_2)
+      x88__result_3 = (x20_state3 & x17_sun)
+      if x88__result_3 !== false
+       x89__sel_update_3 = discrete(DistUInt{1}, [0.123, 0.877])
+       x90__result_3 = prob_equals(x89__sel_update_3, DistUInt{1}(0))
+       x91__result_3 = x90__result_3 === true ? true : x90__result_3 === false ? false : ifelse(x90__result_3, true, false)
+      end
+      if x88__result_3 !== true
+       x92__result_3 = (!(x20_state3) & x17_sun)
+       if x92__result_3 !== false
+        x93__sel_update_3 = discrete(DistUInt{1}, [0.315, 0.685])
+        x94__result_3 = prob_equals(x93__sel_update_3, DistUInt{1}(0))
+        x95__result_3 = x94__result_3 === true ? true : x94__result_3 === false ? false : ifelse(x94__result_3, true, false)
+       end
+       if x92__result_3 !== true
+        x96__result_3 = (x20_state3 & !(x17_sun))
+        if x96__result_3 !== false
+         x97__sel_update_3 = discrete(DistUInt{1}, [0.246, 0.754])
+         x98__result_3 = prob_equals(x97__sel_update_3, DistUInt{1}(0))
+         x99__result_3 = x98__result_3 === true ? true : x98__result_3 === false ? false : ifelse(x98__result_3, true, false)
+        end
+        if x96__result_3 !== true
+         x100__result_3 = (!(x20_state3) & !(x17_sun))
+         if x100__result_3 !== false
+          x101__sel_update_3 = discrete(DistUInt{1}, [0.18, 0.82])
+          x102__result_3 = prob_equals(x101__sel_update_3, DistUInt{1}(0))
+          x103__result_3 = x102__result_3 === true ? true : x102__result_3 === false ? false : ifelse(x102__result_3, true, false)
+         end
+         x104__result_3 = x100__result_3 === true ? x103__result_3 : x100__result_3 === false ? x20_state3 : ifelse(x100__result_3, x103__result_3, x20_state3)
+        end
+        x105__result_3 = x96__result_3 === true ? x99__result_3 : x96__result_3 === false ? x104__result_3 : ifelse(x96__result_3, x99__result_3, x104__result_3)
+       end
+       x106__result_3 = x92__result_3 === true ? x95__result_3 : x92__result_3 === false ? x105__result_3 : ifelse(x92__result_3, x95__result_3, x105__result_3)
+      end
+      x107__result_3 = x88__result_3 === true ? x91__result_3 : x88__result_3 === false ? x106__result_3 : ifelse(x88__result_3, x91__result_3, x106__result_3)
+      x108__result_4 = (x21_state4 & x17_sun)
+      if x108__result_4 !== false
+       x109__sel_update_4 = discrete(DistUInt{1}, [0.282, 0.718])
+       x110__result_4 = prob_equals(x109__sel_update_4, DistUInt{1}(0))
+       x111__result_4 = x110__result_4 === true ? true : x110__result_4 === false ? false : ifelse(x110__result_4, true, false)
+      end
+      if x108__result_4 !== true
+       x112__result_4 = (!(x21_state4) & x17_sun)
+       if x112__result_4 !== false
+        x113__sel_update_4 = discrete(DistUInt{1}, [0.1701, 0.8299])
+        x114__result_4 = prob_equals(x113__sel_update_4, DistUInt{1}(0))
+        x115__result_4 = x114__result_4 === true ? true : x114__result_4 === false ? false : ifelse(x114__result_4, true, false)
+       end
+       if x112__result_4 !== true
+        x116__result_4 = (x21_state4 & !(x17_sun))
+        if x116__result_4 !== false
+         x117__sel_update_4 = discrete(DistUInt{1}, [0.564, 0.436])
+         x118__result_4 = prob_equals(x117__sel_update_4, DistUInt{1}(0))
+         x119__result_4 = x118__result_4 === true ? true : x118__result_4 === false ? false : ifelse(x118__result_4, true, false)
+        end
+        if x116__result_4 !== true
+         x120__result_4 = (!(x21_state4) & !(x17_sun))
+         if x120__result_4 !== false
+          x121__sel_update_4 = discrete(DistUInt{1}, [0.0972, 0.9028])
+          x122__result_4 = prob_equals(x121__sel_update_4, DistUInt{1}(0))
+          x123__result_4 = x122__result_4 === true ? true : x122__result_4 === false ? false : ifelse(x122__result_4, true, false)
+         end
+         x124__result_4 = x120__result_4 === true ? x123__result_4 : x120__result_4 === false ? x21_state4 : ifelse(x120__result_4, x123__result_4, x21_state4)
+        end
+        x125__result_4 = x116__result_4 === true ? x119__result_4 : x116__result_4 === false ? x124__result_4 : ifelse(x116__result_4, x119__result_4, x124__result_4)
+       end
+       x126__result_4 = x112__result_4 === true ? x115__result_4 : x112__result_4 === false ? x125__result_4 : ifelse(x112__result_4, x115__result_4, x125__result_4)
+      end
+      x127__result_4 = x108__result_4 === true ? x111__result_4 : x108__result_4 === false ? x126__result_4 : ifelse(x108__result_4, x111__result_4, x126__result_4)
+      x128__result_5 = (x22_state5 & x17_sun)
+      if x128__result_5 !== false
+       x129__sel_update_5 = discrete(DistUInt{1}, [0.1302, 0.8698])
+       x130__result_5 = prob_equals(x129__sel_update_5, DistUInt{1}(0))
+       x131__result_5 = x130__result_5 === true ? true : x130__result_5 === false ? false : ifelse(x130__result_5, true, false)
+      end
+      if x128__result_5 !== true
+       x132__result_5 = (!(x22_state5) & x17_sun)
+       if x132__result_5 !== false
+        x133__sel_update_5 = discrete(DistUInt{1}, [0.2051, 0.7949])
+        x134__result_5 = prob_equals(x133__sel_update_5, DistUInt{1}(0))
+        x135__result_5 = x134__result_5 === true ? true : x134__result_5 === false ? false : ifelse(x134__result_5, true, false)
+       end
+       if x132__result_5 !== true
+        x136__result_5 = (x22_state5 & !(x17_sun))
+        if x136__result_5 !== false
+         x137__sel_update_5 = discrete(DistUInt{1}, [0.2604, 0.7396])
+         x138__result_5 = prob_equals(x137__sel_update_5, DistUInt{1}(0))
+         x139__result_5 = x138__result_5 === true ? true : x138__result_5 === false ? false : ifelse(x138__result_5, true, false)
+        end
+        if x136__result_5 !== true
+         x140__result_5 = (!(x22_state5) & !(x17_sun))
+         if x140__result_5 !== false
+          x141__sel_update_5 = discrete(DistUInt{1}, [0.1172, 0.8828])
+          x142__result_5 = prob_equals(x141__sel_update_5, DistUInt{1}(0))
+          x143__result_5 = x142__result_5 === true ? true : x142__result_5 === false ? false : ifelse(x142__result_5, true, false)
+         end
+         x144__result_5 = x140__result_5 === true ? x143__result_5 : x140__result_5 === false ? x22_state5 : ifelse(x140__result_5, x143__result_5, x22_state5)
+        end
+        x145__result_5 = x136__result_5 === true ? x139__result_5 : x136__result_5 === false ? x144__result_5 : ifelse(x136__result_5, x139__result_5, x144__result_5)
+       end
+       x146__result_5 = x132__result_5 === true ? x135__result_5 : x132__result_5 === false ? x145__result_5 : ifelse(x132__result_5, x135__result_5, x145__result_5)
+      end
+      x147__result_5 = x128__result_5 === true ? x131__result_5 : x128__result_5 === false ? x146__result_5 : ifelse(x128__result_5, x131__result_5, x146__result_5)
+      x148__result_6 = (x23_state6 & x17_sun)
+      if x148__result_6 !== false
+       x149__sel_update_6 = discrete(DistUInt{1}, [0.13023, 0.86977])
+       x150__result_6 = prob_equals(x149__sel_update_6, DistUInt{1}(0))
+       x151__result_6 = x150__result_6 === true ? true : x150__result_6 === false ? false : ifelse(x150__result_6, true, false)
+      end
+      if x148__result_6 !== true
+       x152__result_6 = (!(x23_state6) & x17_sun)
+       if x152__result_6 !== false
+        x153__sel_update_6 = discrete(DistUInt{1}, [0.20538, 0.79462])
+        x154__result_6 = prob_equals(x153__sel_update_6, DistUInt{1}(0))
+        x155__result_6 = x154__result_6 === true ? true : x154__result_6 === false ? false : ifelse(x154__result_6, true, false)
+       end
+       if x152__result_6 !== true
+        x156__result_6 = (x23_state6 & !(x17_sun))
+        if x156__result_6 !== false
+         x157__sel_update_6 = discrete(DistUInt{1}, [0.26046, 0.73954])
+         x158__result_6 = prob_equals(x157__sel_update_6, DistUInt{1}(0))
+         x159__result_6 = x158__result_6 === true ? true : x158__result_6 === false ? false : ifelse(x158__result_6, true, false)
+        end
+        if x156__result_6 !== true
+         x160__result_6 = (!(x23_state6) & !(x17_sun))
+         if x160__result_6 !== false
+          x161__sel_update_6 = discrete(DistUInt{1}, [0.11736, 0.88264])
+          x162__result_6 = prob_equals(x161__sel_update_6, DistUInt{1}(0))
+          x163__result_6 = x162__result_6 === true ? true : x162__result_6 === false ? false : ifelse(x162__result_6, true, false)
+         end
+         x164__result_6 = x160__result_6 === true ? x163__result_6 : x160__result_6 === false ? x23_state6 : ifelse(x160__result_6, x163__result_6, x23_state6)
+        end
+        x165__result_6 = x156__result_6 === true ? x159__result_6 : x156__result_6 === false ? x164__result_6 : ifelse(x156__result_6, x159__result_6, x164__result_6)
+       end
+       x166__result_6 = x152__result_6 === true ? x155__result_6 : x152__result_6 === false ? x165__result_6 : ifelse(x152__result_6, x155__result_6, x165__result_6)
+      end
+      x167__result_6 = x148__result_6 === true ? x151__result_6 : x148__result_6 === false ? x166__result_6 : ifelse(x148__result_6, x151__result_6, x166__result_6)
+      x168__result_7 = (x24_state7 & x17_sun)
+      if x168__result_7 !== false
+       x169__sel_update_7 = discrete(DistUInt{1}, [0.13035, 0.86965])
+       x170__result_7 = prob_equals(x169__sel_update_7, DistUInt{1}(0))
+       x171__result_7 = x170__result_7 === true ? true : x170__result_7 === false ? false : ifelse(x170__result_7, true, false)
+      end
+      if x168__result_7 !== true
+       x172__result_7 = (!(x24_state7) & x17_sun)
+       if x172__result_7 !== false
+        x173__sel_update_7 = discrete(DistUInt{1}, [0.20573, 0.79427])
+        x174__result_7 = prob_equals(x173__sel_update_7, DistUInt{1}(0))
+        x175__result_7 = x174__result_7 === true ? true : x174__result_7 === false ? false : ifelse(x174__result_7, true, false)
+       end
+       if x172__result_7 !== true
+        x176__result_7 = (x24_state7 & !(x17_sun))
+        if x176__result_7 !== false
+         x177__sel_update_7 = discrete(DistUInt{1}, [0.2607, 0.7393])
+         x178__result_7 = prob_equals(x177__sel_update_7, DistUInt{1}(0))
+         x179__result_7 = x178__result_7 === true ? true : x178__result_7 === false ? false : ifelse(x178__result_7, true, false)
+        end
+        if x176__result_7 !== true
+         x180__result_7 = (!(x24_state7) & !(x17_sun))
+         if x180__result_7 !== false
+          x181__sel_update_7 = discrete(DistUInt{1}, [0.11756, 0.88244])
+          x182__result_7 = prob_equals(x181__sel_update_7, DistUInt{1}(0))
+          x183__result_7 = x182__result_7 === true ? true : x182__result_7 === false ? false : ifelse(x182__result_7, true, false)
+         end
+         x184__result_7 = x180__result_7 === true ? x183__result_7 : x180__result_7 === false ? x24_state7 : ifelse(x180__result_7, x183__result_7, x24_state7)
+        end
+        x185__result_7 = x176__result_7 === true ? x179__result_7 : x176__result_7 === false ? x184__result_7 : ifelse(x176__result_7, x179__result_7, x184__result_7)
+       end
+       x186__result_7 = x172__result_7 === true ? x175__result_7 : x172__result_7 === false ? x185__result_7 : ifelse(x172__result_7, x175__result_7, x185__result_7)
+      end
+      x187__result_7 = x168__result_7 === true ? x171__result_7 : x168__result_7 === false ? x186__result_7 : ifelse(x168__result_7, x171__result_7, x186__result_7)
+      x188__result_8 = (x25_state8 & x17_sun)
+      if x188__result_8 !== false
+       x189__sel_update_8 = discrete(DistUInt{1}, [0.13032, 0.86968])
+       x190__result_8 = prob_equals(x189__sel_update_8, DistUInt{1}(0))
+       x191__result_8 = x190__result_8 === true ? true : x190__result_8 === false ? false : ifelse(x190__result_8, true, false)
+      end
+      if x188__result_8 !== true
+       x192__result_8 = (!(x25_state8) & x17_sun)
+       if x192__result_8 !== false
+        x193__sel_update_8 = discrete(DistUInt{1}, [0.20468, 0.79532])
+        x194__result_8 = prob_equals(x193__sel_update_8, DistUInt{1}(0))
+        x195__result_8 = x194__result_8 === true ? true : x194__result_8 === false ? false : ifelse(x194__result_8, true, false)
+       end
+       if x192__result_8 !== true
+        x196__result_8 = (x25_state8 & !(x17_sun))
+        if x196__result_8 !== false
+         x197__sel_update_8 = discrete(DistUInt{1}, [0.26064, 0.73936])
+         x198__result_8 = prob_equals(x197__sel_update_8, DistUInt{1}(0))
+         x199__result_8 = x198__result_8 === true ? true : x198__result_8 === false ? false : ifelse(x198__result_8, true, false)
+        end
+        if x196__result_8 !== true
+         x200__result_8 = (!(x25_state8) & !(x17_sun))
+         if x200__result_8 !== false
+          x201__sel_update_8 = discrete(DistUInt{1}, [0.11696, 0.88304])
+          x202__result_8 = prob_equals(x201__sel_update_8, DistUInt{1}(0))
+          x203__result_8 = x202__result_8 === true ? true : x202__result_8 === false ? false : ifelse(x202__result_8, true, false)
+         end
+         x204__result_8 = x200__result_8 === true ? x203__result_8 : x200__result_8 === false ? x25_state8 : ifelse(x200__result_8, x203__result_8, x25_state8)
+        end
+        x205__result_8 = x196__result_8 === true ? x199__result_8 : x196__result_8 === false ? x204__result_8 : ifelse(x196__result_8, x199__result_8, x204__result_8)
+       end
+       x206__result_8 = x192__result_8 === true ? x195__result_8 : x192__result_8 === false ? x205__result_8 : ifelse(x192__result_8, x195__result_8, x205__result_8)
+      end
+      x207__result_8 = x188__result_8 === true ? x191__result_8 : x188__result_8 === false ? x206__result_8 : ifelse(x188__result_8, x191__result_8, x206__result_8)
+      x208__result_9 = (x26_state9 & x17_sun)
+      if x208__result_9 !== false
+       x209__sel_update_9 = discrete(DistUInt{1}, [0.13497, 0.86503])
+       x210__result_9 = prob_equals(x209__sel_update_9, DistUInt{1}(0))
+       x211__result_9 = x210__result_9 === true ? true : x210__result_9 === false ? false : ifelse(x210__result_9, true, false)
+      end
+      if x208__result_9 !== true
+       x212__result_9 = (!(x26_state9) & x17_sun)
+       if x212__result_9 !== false
+        x213__sel_update_9 = discrete(DistUInt{1}, [0.20531, 0.79469])
+        x214__result_9 = prob_equals(x213__sel_update_9, DistUInt{1}(0))
+        x215__result_9 = x214__result_9 === true ? true : x214__result_9 === false ? false : ifelse(x214__result_9, true, false)
+       end
+       if x212__result_9 !== true
+        x216__result_9 = (x26_state9 & !(x17_sun))
+        if x216__result_9 !== false
+         x217__sel_update_9 = discrete(DistUInt{1}, [0.26994, 0.73006])
+         x218__result_9 = prob_equals(x217__sel_update_9, DistUInt{1}(0))
+         x219__result_9 = x218__result_9 === true ? true : x218__result_9 === false ? false : ifelse(x218__result_9, true, false)
+        end
+        if x216__result_9 !== true
+         x220__result_9 = (!(x26_state9) & !(x17_sun))
+         if x220__result_9 !== false
+          x221__sel_update_9 = discrete(DistUInt{1}, [0.11732, 0.88268])
+          x222__result_9 = prob_equals(x221__sel_update_9, DistUInt{1}(0))
+          x223__result_9 = x222__result_9 === true ? true : x222__result_9 === false ? false : ifelse(x222__result_9, true, false)
+         end
+         x224__result_9 = x220__result_9 === true ? x223__result_9 : x220__result_9 === false ? x26_state9 : ifelse(x220__result_9, x223__result_9, x26_state9)
+        end
+        x225__result_9 = x216__result_9 === true ? x219__result_9 : x216__result_9 === false ? x224__result_9 : ifelse(x216__result_9, x219__result_9, x224__result_9)
+       end
+       x226__result_9 = x212__result_9 === true ? x215__result_9 : x212__result_9 === false ? x225__result_9 : ifelse(x212__result_9, x215__result_9, x225__result_9)
+      end
+      x227__result_9 = x208__result_9 === true ? x211__result_9 : x208__result_9 === false ? x226__result_9 : ifelse(x208__result_9, x211__result_9, x226__result_9)
+      x228__result_10 = (x27_state10 & x17_sun)
+      if x228__result_10 !== false
+       x229__sel_update_10 = discrete(DistUInt{1}, [0.1314, 0.8686])
+       x230__result_10 = prob_equals(x229__sel_update_10, DistUInt{1}(0))
+       x231__result_10 = x230__result_10 === true ? true : x230__result_10 === false ? false : ifelse(x230__result_10, true, false)
+      end
+      if x228__result_10 !== true
+       x232__result_10 = (!(x27_state10) & x17_sun)
+       if x232__result_10 !== false
+        x233__sel_update_10 = discrete(DistUInt{1}, [0.1631, 0.8369])
+        x234__result_10 = prob_equals(x233__sel_update_10, DistUInt{1}(0))
+        x235__result_10 = x234__result_10 === true ? true : x234__result_10 === false ? false : ifelse(x234__result_10, true, false)
+       end
+       if x232__result_10 !== true
+        x236__result_10 = (x27_state10 & !(x17_sun))
+        if x236__result_10 !== false
+         x237__sel_update_10 = discrete(DistUInt{1}, [0.2628, 0.7372])
+         x238__result_10 = prob_equals(x237__sel_update_10, DistUInt{1}(0))
+         x239__result_10 = x238__result_10 === true ? true : x238__result_10 === false ? false : ifelse(x238__result_10, true, false)
+        end
+        if x236__result_10 !== true
+         x240__result_10 = (!(x27_state10) & !(x17_sun))
+         if x240__result_10 !== false
+          x241__sel_update_10 = discrete(DistUInt{1}, [0.0932, 0.9068])
+          x242__result_10 = prob_equals(x241__sel_update_10, DistUInt{1}(0))
+          x243__result_10 = x242__result_10 === true ? true : x242__result_10 === false ? false : ifelse(x242__result_10, true, false)
+         end
+         x244__result_10 = x240__result_10 === true ? x243__result_10 : x240__result_10 === false ? x27_state10 : ifelse(x240__result_10, x243__result_10, x27_state10)
+        end
+        x245__result_10 = x236__result_10 === true ? x239__result_10 : x236__result_10 === false ? x244__result_10 : ifelse(x236__result_10, x239__result_10, x244__result_10)
+       end
+       x246__result_10 = x232__result_10 === true ? x235__result_10 : x232__result_10 === false ? x245__result_10 : ifelse(x232__result_10, x235__result_10, x245__result_10)
+      end
+      x247__result_10 = x228__result_10 === true ? x231__result_10 : x228__result_10 === false ? x246__result_10 : ifelse(x228__result_10, x231__result_10, x246__result_10)
+      x248_step = (x47__result_0, (x67__result_1, (x87__result_2, (x107__result_3, (x127__result_4, (x147__result_5, (x167__result_6, (x187__result_7, (x207__result_8, (x227__result_9, x247__result_10))))))))))
+     end
+     if x36__take1 !== true
+      x249_step = (x17_sun, (x18_state1, (x19_state2, (x20_state3, (x21_state4, (x22_state5, (x23_state6, (x24_state7, (x25_state8, (x26_state9, x27_state10))))))))))
+     end
+     x250_step = x36__take1 === true ? x248_step : x36__take1 === false ? x249_step : ifelse(x36__take1, x248_step, x249_step)
+    end
+    x251_step = x31_step === true ? x32_step : x31_step === false ? x250_step : ifelse(x31_step, x32_step, x250_step)
+    return x251_step
+end
+
+function chunk_1()
+    x252_res = (true, (false, (false, (false, (false, (false, (false, (false, (false, (false, false))))))))))
+    x253__goal = d_hit(true, x252_res)
+    x254_res = !(x253__goal)
+    if x254_res !== false
+     x255_res = d_step(true, x252_res)
+    end
+    x256_res = x254_res === true ? x255_res : x254_res === false ? x252_res : ifelse(x254_res, x255_res, x252_res)
+    x257__goal = !(x253__goal)
+    if x257__goal !== false
+     x258__goal = d_hit(true, x256_res)
+    end
+    x259__goal = x257__goal === true ? x258__goal : x257__goal === false ? x253__goal : ifelse(x257__goal, x258__goal, x253__goal)
+    x260_res = !(x259__goal)
+    if x260_res !== false
+     x261_res = d_step(true, x256_res)
+    end
+    x262_res = x260_res === true ? x261_res : x260_res === false ? x256_res : ifelse(x260_res, x261_res, x256_res)
+    x263__goal = !(x259__goal)
+    if x263__goal !== false
+     x264__goal = d_hit(true, x262_res)
+    end
+    x265__goal = x263__goal === true ? x264__goal : x263__goal === false ? x259__goal : ifelse(x263__goal, x264__goal, x259__goal)
+    x266_res = !(x265__goal)
+    if x266_res !== false
+     x267_res = d_step(true, x262_res)
+    end
+    x268_res = x266_res === true ? x267_res : x266_res === false ? x262_res : ifelse(x266_res, x267_res, x262_res)
+    x269__goal = !(x265__goal)
+    if x269__goal !== false
+     x270__goal = d_hit(true, x268_res)
+    end
+    x271__goal = x269__goal === true ? x270__goal : x269__goal === false ? x265__goal : ifelse(x269__goal, x270__goal, x265__goal)
+    x272_res = !(x271__goal)
+    if x272_res !== false
+     x273_res = d_step(true, x268_res)
+    end
+    x274_res = x272_res === true ? x273_res : x272_res === false ? x268_res : ifelse(x272_res, x273_res, x268_res)
+    x275__goal = !(x271__goal)
+    if x275__goal !== false
+     x276__goal = d_hit(true, x274_res)
+    end
+    x277__goal = x275__goal === true ? x276__goal : x275__goal === false ? x271__goal : ifelse(x275__goal, x276__goal, x271__goal)
+    x278_res = !(x277__goal)
+    if x278_res !== false
+     x279_res = d_step(true, x274_res)
+    end
+    x280_res = x278_res === true ? x279_res : x278_res === false ? x274_res : ifelse(x278_res, x279_res, x274_res)
+    x281__goal = !(x277__goal)
+    if x281__goal !== false
+     x282__goal = d_hit(true, x280_res)
+    end
+    x283__goal = x281__goal === true ? x282__goal : x281__goal === false ? x277__goal : ifelse(x281__goal, x282__goal, x277__goal)
+    x284_res = !(x283__goal)
+    if x284_res !== false
+     x285_res = d_step(true, x280_res)
+    end
+    x286_res = x284_res === true ? x285_res : x284_res === false ? x280_res : ifelse(x284_res, x285_res, x280_res)
+    x287__goal = !(x283__goal)
+    if x287__goal !== false
+     x288__goal = d_hit(true, x286_res)
+    end
+    x289__goal = x287__goal === true ? x288__goal : x287__goal === false ? x283__goal : ifelse(x287__goal, x288__goal, x283__goal)
+    x290_res = !(x289__goal)
+    if x290_res !== false
+     x291_res = d_step(true, x286_res)
+    end
+    x292_res = x290_res === true ? x291_res : x290_res === false ? x286_res : ifelse(x290_res, x291_res, x286_res)
+    x293__goal = !(x289__goal)
+    if x293__goal !== false
+     x294__goal = d_hit(true, x292_res)
+    end
+    x295__goal = x293__goal === true ? x294__goal : x293__goal === false ? x289__goal : ifelse(x293__goal, x294__goal, x289__goal)
+    x296_res = !(x295__goal)
+    if x296_res !== false
+     x297_res = d_step(true, x292_res)
+    end
+    x298_res = x296_res === true ? x297_res : x296_res === false ? x292_res : ifelse(x296_res, x297_res, x292_res)
+    x299__goal = !(x295__goal)
+    if x299__goal !== false
+     x300__goal = d_hit(true, x298_res)
+    end
+    x301__goal = x299__goal === true ? x300__goal : x299__goal === false ? x295__goal : ifelse(x299__goal, x300__goal, x295__goal)
+    x302_res = !(x301__goal)
+    if x302_res !== false
+     x303_res = d_step(true, x298_res)
+    end
+    x304_res = x302_res === true ? x303_res : x302_res === false ? x298_res : ifelse(x302_res, x303_res, x298_res)
+    x305__goal = !(x301__goal)
+    if x305__goal !== false
+     x306__goal = d_hit(true, x304_res)
+    end
+    x307__goal = x305__goal === true ? x306__goal : x305__goal === false ? x301__goal : ifelse(x305__goal, x306__goal, x301__goal)
+    x308_res = !(x307__goal)
+    if x308_res !== false
+     x309_res = d_step(true, x304_res)
+    end
+    x310_res = x308_res === true ? x309_res : x308_res === false ? x304_res : ifelse(x308_res, x309_res, x304_res)
+    x311__goal = !(x307__goal)
+    if x311__goal !== false
+     x312__goal = d_hit(true, x310_res)
+    end
+    x313__goal = x311__goal === true ? x312__goal : x311__goal === false ? x307__goal : ifelse(x311__goal, x312__goal, x307__goal)
+    x314_res = !(x313__goal)
+    if x314_res !== false
+     x315_res = d_step(true, x310_res)
+    end
+    x316_res = x314_res === true ? x315_res : x314_res === false ? x310_res : ifelse(x314_res, x315_res, x310_res)
+    x317__goal = !(x313__goal)
+    if x317__goal !== false
+     x318__goal = d_hit(true, x316_res)
+    end
+    x319__goal = x317__goal === true ? x318__goal : x317__goal === false ? x313__goal : ifelse(x317__goal, x318__goal, x313__goal)
+    x320_res = !(x319__goal)
+    if x320_res !== false
+     x321_res = d_step(true, x316_res)
+    end
+    x322_res = x320_res === true ? x321_res : x320_res === false ? x316_res : ifelse(x320_res, x321_res, x316_res)
+    x323__goal = !(x319__goal)
+    if x323__goal !== false
+     x324__goal = d_hit(true, x322_res)
+    end
+    x325__goal = x323__goal === true ? x324__goal : x323__goal === false ? x319__goal : ifelse(x323__goal, x324__goal, x319__goal)
+    x326_res = !(x325__goal)
+    if x326_res !== false
+     x327_res = d_step(true, x322_res)
+    end
+    x328_res = x326_res === true ? x327_res : x326_res === false ? x322_res : ifelse(x326_res, x327_res, x322_res)
+    x329__goal = !(x325__goal)
+    if x329__goal !== false
+     x330__goal = d_hit(true, x328_res)
+    end
+    x331__goal = x329__goal === true ? x330__goal : x329__goal === false ? x325__goal : ifelse(x329__goal, x330__goal, x325__goal)
+    x332_res = !(x331__goal)
+    if x332_res !== false
+     x333_res = d_step(true, x328_res)
+    end
+    x334_res = x332_res === true ? x333_res : x332_res === false ? x328_res : ifelse(x332_res, x333_res, x328_res)
+    x335__goal = !(x331__goal)
+    if x335__goal !== false
+     x336__goal = d_hit(true, x334_res)
+    end
+    x337__goal = x335__goal === true ? x336__goal : x335__goal === false ? x331__goal : ifelse(x335__goal, x336__goal, x331__goal)
+    x338_res = !(x337__goal)
+    if x338_res !== false
+     x339_res = d_step(true, x334_res)
+    end
+    x340_res = x338_res === true ? x339_res : x338_res === false ? x334_res : ifelse(x338_res, x339_res, x334_res)
+    x341__goal = !(x337__goal)
+    if x341__goal !== false
+     x342__goal = d_hit(true, x340_res)
+    end
+    x343__goal = x341__goal === true ? x342__goal : x341__goal === false ? x337__goal : ifelse(x341__goal, x342__goal, x337__goal)
+    x344_res = !(x343__goal)
+    if x344_res !== false
+     x345_res = d_step(true, x340_res)
+    end
+    x346_res = x344_res === true ? x345_res : x344_res === false ? x340_res : ifelse(x344_res, x345_res, x340_res)
+    x347__goal = !(x343__goal)
+    if x347__goal !== false
+     x348__goal = d_hit(true, x346_res)
+    end
+    x349__goal = x347__goal === true ? x348__goal : x347__goal === false ? x343__goal : ifelse(x347__goal, x348__goal, x343__goal)
+    x350_res = !(x349__goal)
+    if x350_res !== false
+     x351_res = d_step(true, x346_res)
+    end
+    x352_res = x350_res === true ? x351_res : x350_res === false ? x346_res : ifelse(x350_res, x351_res, x346_res)
+    x353__goal = !(x349__goal)
+    if x353__goal !== false
+     x354__goal = d_hit(true, x352_res)
+    end
+    x355__goal = x353__goal === true ? x354__goal : x353__goal === false ? x349__goal : ifelse(x353__goal, x354__goal, x349__goal)
+    x356_res = !(x355__goal)
+    if x356_res !== false
+     x357_res = d_step(true, x352_res)
+    end
+    x358_res = x356_res === true ? x357_res : x356_res === false ? x352_res : ifelse(x356_res, x357_res, x352_res)
+    x359__goal = !(x355__goal)
+    if x359__goal !== false
+     x360__goal = d_hit(true, x358_res)
+    end
+    x361__goal = x359__goal === true ? x360__goal : x359__goal === false ? x355__goal : ifelse(x359__goal, x360__goal, x355__goal)
+    x362_res = !(x361__goal)
+    if x362_res !== false
+     x363_res = d_step(true, x358_res)
+    end
+    x364_res = x362_res === true ? x363_res : x362_res === false ? x358_res : ifelse(x362_res, x363_res, x358_res)
+    x365__goal = !(x361__goal)
+    if x365__goal !== false
+     x366__goal = d_hit(true, x364_res)
+    end
+    x367__goal = x365__goal === true ? x366__goal : x365__goal === false ? x361__goal : ifelse(x365__goal, x366__goal, x361__goal)
+    x368_res = !(x367__goal)
+    if x368_res !== false
+     x369_res = d_step(true, x364_res)
+    end
+    x370_res = x368_res === true ? x369_res : x368_res === false ? x364_res : ifelse(x368_res, x369_res, x364_res)
+    x371__goal = !(x367__goal)
+    if x371__goal !== false
+     x372__goal = d_hit(true, x370_res)
+    end
+    x373__goal = x371__goal === true ? x372__goal : x371__goal === false ? x367__goal : ifelse(x371__goal, x372__goal, x367__goal)
+    x374_res = !(x373__goal)
+    if x374_res !== false
+     x375_res = d_step(true, x370_res)
+    end
+    x376_res = x374_res === true ? x375_res : x374_res === false ? x370_res : ifelse(x374_res, x375_res, x370_res)
+    x377__goal = !(x373__goal)
+    if x377__goal !== false
+     x378__goal = d_hit(true, x376_res)
+    end
+    x379__goal = x377__goal === true ? x378__goal : x377__goal === false ? x373__goal : ifelse(x377__goal, x378__goal, x373__goal)
+    x380_res = !(x379__goal)
+    if x380_res !== false
+     x381_res = d_step(true, x376_res)
+    end
+    x382_res = x380_res === true ? x381_res : x380_res === false ? x376_res : ifelse(x380_res, x381_res, x376_res)
+    x383__goal = !(x379__goal)
+    if x383__goal !== false
+     x384__goal = d_hit(true, x382_res)
+    end
+    x385__goal = x383__goal === true ? x384__goal : x383__goal === false ? x379__goal : ifelse(x383__goal, x384__goal, x379__goal)
+    x386_res = !(x385__goal)
+    if x386_res !== false
+     x387_res = d_step(true, x382_res)
+    end
+    x388_res = x386_res === true ? x387_res : x386_res === false ? x382_res : ifelse(x386_res, x387_res, x382_res)
+    x389__goal = !(x385__goal)
+    if x389__goal !== false
+     x390__goal = d_hit(true, x388_res)
+    end
+    x391__goal = x389__goal === true ? x390__goal : x389__goal === false ? x385__goal : ifelse(x389__goal, x390__goal, x385__goal)
+    x392_res = !(x391__goal)
+    if x392_res !== false
+     x393_res = d_step(true, x388_res)
+    end
+    x394_res = x392_res === true ? x393_res : x392_res === false ? x388_res : ifelse(x392_res, x393_res, x388_res)
+    x395__goal = !(x391__goal)
+    if x395__goal !== false
+     x396__goal = d_hit(true, x394_res)
+    end
+    x397__goal = x395__goal === true ? x396__goal : x395__goal === false ? x391__goal : ifelse(x395__goal, x396__goal, x391__goal)
+    x398_res = !(x397__goal)
+    if x398_res !== false
+     x399_res = d_step(true, x394_res)
+    end
+    x400_res = x398_res === true ? x399_res : x398_res === false ? x394_res : ifelse(x398_res, x399_res, x394_res)
+    x401__goal = !(x397__goal)
+    if x401__goal !== false
+     x402__goal = d_hit(true, x400_res)
+    end
+    x403__goal = x401__goal === true ? x402__goal : x401__goal === false ? x397__goal : ifelse(x401__goal, x402__goal, x397__goal)
+    x404_res = !(x403__goal)
+    if x404_res !== false
+     x405_res = d_step(true, x400_res)
+    end
+    x406_res = x404_res === true ? x405_res : x404_res === false ? x400_res : ifelse(x404_res, x405_res, x400_res)
+    x407__goal = !(x403__goal)
+    if x407__goal !== false
+     x408__goal = d_hit(true, x406_res)
+    end
+    x409__goal = x407__goal === true ? x408__goal : x407__goal === false ? x403__goal : ifelse(x407__goal, x408__goal, x403__goal)
+    x410_res = !(x409__goal)
+    if x410_res !== false
+     x411_res = d_step(true, x406_res)
+    end
+    x412_res = x410_res === true ? x411_res : x410_res === false ? x406_res : ifelse(x410_res, x411_res, x406_res)
+    x413__goal = !(x409__goal)
+    if x413__goal !== false
+     x414__goal = d_hit(true, x412_res)
+    end
+    x415__goal = x413__goal === true ? x414__goal : x413__goal === false ? x409__goal : ifelse(x413__goal, x414__goal, x409__goal)
+    x416_res = !(x415__goal)
+    if x416_res !== false
+     x417_res = d_step(true, x412_res)
+    end
+    x418_res = x416_res === true ? x417_res : x416_res === false ? x412_res : ifelse(x416_res, x417_res, x412_res)
+    x419__goal = !(x415__goal)
+    if x419__goal !== false
+     x420__goal = d_hit(true, x418_res)
+    end
+    x421__goal = x419__goal === true ? x420__goal : x419__goal === false ? x415__goal : ifelse(x419__goal, x420__goal, x415__goal)
+    x422_res = !(x421__goal)
+    if x422_res !== false
+     x423_res = d_step(true, x418_res)
+    end
+    x424_res = x422_res === true ? x423_res : x422_res === false ? x418_res : ifelse(x422_res, x423_res, x418_res)
+    x425__goal = !(x421__goal)
+    if x425__goal !== false
+     x426__goal = d_hit(true, x424_res)
+    end
+    x427__goal = x425__goal === true ? x426__goal : x425__goal === false ? x421__goal : ifelse(x425__goal, x426__goal, x421__goal)
+    x428_res = !(x427__goal)
+    if x428_res !== false
+     x429_res = d_step(true, x424_res)
+    end
+    x430_res = x428_res === true ? x429_res : x428_res === false ? x424_res : ifelse(x428_res, x429_res, x424_res)
+    x431__goal = !(x427__goal)
+    if x431__goal !== false
+     x432__goal = d_hit(true, x430_res)
+    end
+    x433__goal = x431__goal === true ? x432__goal : x431__goal === false ? x427__goal : ifelse(x431__goal, x432__goal, x427__goal)
+    x434_res = !(x433__goal)
+    if x434_res !== false
+     x435_res = d_step(true, x430_res)
+    end
+    x436_res = x434_res === true ? x435_res : x434_res === false ? x430_res : ifelse(x434_res, x435_res, x430_res)
+    x437__goal = !(x433__goal)
+    if x437__goal !== false
+     x438__goal = d_hit(true, x436_res)
+    end
+    x439__goal = x437__goal === true ? x438__goal : x437__goal === false ? x433__goal : ifelse(x437__goal, x438__goal, x433__goal)
+    x440_res = !(x439__goal)
+    if x440_res !== false
+     x441_res = d_step(true, x436_res)
+    end
+    x442_res = x440_res === true ? x441_res : x440_res === false ? x436_res : ifelse(x440_res, x441_res, x436_res)
+    x443__goal = !(x439__goal)
+    if x443__goal !== false
+     x444__goal = d_hit(true, x442_res)
+    end
+    x445__goal = x443__goal === true ? x444__goal : x443__goal === false ? x439__goal : ifelse(x443__goal, x444__goal, x439__goal)
+    x446_res = !(x445__goal)
+    if x446_res !== false
+     x447_res = d_step(true, x442_res)
+    end
+    x448_res = x446_res === true ? x447_res : x446_res === false ? x442_res : ifelse(x446_res, x447_res, x442_res)
+    x449__goal = !(x445__goal)
+    if x449__goal !== false
+     x450__goal = d_hit(true, x448_res)
+    end
+    x451__goal = x449__goal === true ? x450__goal : x449__goal === false ? x445__goal : ifelse(x449__goal, x450__goal, x445__goal)
+    x452_res = !(x451__goal)
+    if x452_res !== false
+     x453_res = d_step(true, x448_res)
+    end
+    x454_res = x452_res === true ? x453_res : x452_res === false ? x448_res : ifelse(x452_res, x453_res, x448_res)
+    x455__goal = !(x451__goal)
+    if x455__goal !== false
+     x456__goal = d_hit(true, x454_res)
+    end
+    x457__goal = x455__goal === true ? x456__goal : x455__goal === false ? x451__goal : ifelse(x455__goal, x456__goal, x451__goal)
+    x458_res = !(x457__goal)
+    if x458_res !== false
+     x459_res = d_step(true, x454_res)
+    end
+    x460_res = x458_res === true ? x459_res : x458_res === false ? x454_res : ifelse(x458_res, x459_res, x454_res)
+    x461__goal = !(x457__goal)
+    if x461__goal !== false
+     x462__goal = d_hit(true, x460_res)
+    end
+    x463__goal = x461__goal === true ? x462__goal : x461__goal === false ? x457__goal : ifelse(x461__goal, x462__goal, x457__goal)
+    x464_res = !(x463__goal)
+    if x464_res !== false
+     x465_res = d_step(true, x460_res)
+    end
+    x466_res = x464_res === true ? x465_res : x464_res === false ? x460_res : ifelse(x464_res, x465_res, x460_res)
+    x467__goal = !(x463__goal)
+    if x467__goal !== false
+     x468__goal = d_hit(true, x466_res)
+    end
+    x469__goal = x467__goal === true ? x468__goal : x467__goal === false ? x463__goal : ifelse(x467__goal, x468__goal, x463__goal)
+    x470_res = !(x469__goal)
+    if x470_res !== false
+     x471_res = d_step(true, x466_res)
+    end
+    x472_res = x470_res === true ? x471_res : x470_res === false ? x466_res : ifelse(x470_res, x471_res, x466_res)
+    x473__goal = !(x469__goal)
+    if x473__goal !== false
+     x474__goal = d_hit(true, x472_res)
+    end
+    x475__goal = x473__goal === true ? x474__goal : x473__goal === false ? x469__goal : ifelse(x473__goal, x474__goal, x469__goal)
+    x476_res = !(x475__goal)
+    if x476_res !== false
+     x477_res = d_step(true, x472_res)
+    end
+    x478_res = x476_res === true ? x477_res : x476_res === false ? x472_res : ifelse(x476_res, x477_res, x472_res)
+    x479__goal = !(x475__goal)
+    if x479__goal !== false
+     x480__goal = d_hit(true, x478_res)
+    end
+    x481__goal = x479__goal === true ? x480__goal : x479__goal === false ? x475__goal : ifelse(x479__goal, x480__goal, x475__goal)
+    x482_res = !(x481__goal)
+    if x482_res !== false
+     x483_res = d_step(true, x478_res)
+    end
+    x484_res = x482_res === true ? x483_res : x482_res === false ? x478_res : ifelse(x482_res, x483_res, x478_res)
+    x485__goal = !(x481__goal)
+    if x485__goal !== false
+     x486__goal = d_hit(true, x484_res)
+    end
+    x487__goal = x485__goal === true ? x486__goal : x485__goal === false ? x481__goal : ifelse(x485__goal, x486__goal, x481__goal)
+    x488_res = !(x487__goal)
+    if x488_res !== false
+     x489_res = d_step(true, x484_res)
+    end
+    x490_res = x488_res === true ? x489_res : x488_res === false ? x484_res : ifelse(x488_res, x489_res, x484_res)
+    x491__goal = !(x487__goal)
+    if x491__goal !== false
+     x492__goal = d_hit(true, x490_res)
+    end
+    x493__goal = x491__goal === true ? x492__goal : x491__goal === false ? x487__goal : ifelse(x491__goal, x492__goal, x487__goal)
+    x494_res = !(x493__goal)
+    if x494_res !== false
+     x495_res = d_step(true, x490_res)
+    end
+    x496_res = x494_res === true ? x495_res : x494_res === false ? x490_res : ifelse(x494_res, x495_res, x490_res)
+    x497__goal = !(x493__goal)
+    if x497__goal !== false
+     x498__goal = d_hit(true, x496_res)
+    end
+    x499__goal = x497__goal === true ? x498__goal : x497__goal === false ? x493__goal : ifelse(x497__goal, x498__goal, x493__goal)
+    x500_res = !(x499__goal)
+    if x500_res !== false
+     x501_res = d_step(true, x496_res)
+    end
+    x502_res = x500_res === true ? x501_res : x500_res === false ? x496_res : ifelse(x500_res, x501_res, x496_res)
+    x503__goal = !(x499__goal)
+    if x503__goal !== false
+     x504__goal = d_hit(true, x502_res)
+    end
+    x505__goal = x503__goal === true ? x504__goal : x503__goal === false ? x499__goal : ifelse(x503__goal, x504__goal, x499__goal)
+    x506_res = !(x505__goal)
+    if x506_res !== false
+     x507_res = d_step(true, x502_res)
+    end
+    x508_res = x506_res === true ? x507_res : x506_res === false ? x502_res : ifelse(x506_res, x507_res, x502_res)
+    x509__goal = !(x505__goal)
+    if x509__goal !== false
+     x510__goal = d_hit(true, x508_res)
+    end
+    x511__goal = x509__goal === true ? x510__goal : x509__goal === false ? x505__goal : ifelse(x509__goal, x510__goal, x505__goal)
+    x512_res = !(x511__goal)
+    if x512_res !== false
+     x513_res = d_step(true, x508_res)
+    end
+    x514_res = x512_res === true ? x513_res : x512_res === false ? x508_res : ifelse(x512_res, x513_res, x508_res)
+    x515__goal = !(x511__goal)
+    if x515__goal !== false
+     x516__goal = d_hit(true, x514_res)
+    end
+    x517__goal = x515__goal === true ? x516__goal : x515__goal === false ? x511__goal : ifelse(x515__goal, x516__goal, x511__goal)
+    x518_res = !(x517__goal)
+    if x518_res !== false
+     x519_res = d_step(true, x514_res)
+    end
+    x520_res = x518_res === true ? x519_res : x518_res === false ? x514_res : ifelse(x518_res, x519_res, x514_res)
+    x521__goal = !(x517__goal)
+    if x521__goal !== false
+     x522__goal = d_hit(true, x520_res)
+    end
+    x523__goal = x521__goal === true ? x522__goal : x521__goal === false ? x517__goal : ifelse(x521__goal, x522__goal, x517__goal)
+    x524_res = !(x523__goal)
+    if x524_res !== false
+     x525_res = d_step(true, x520_res)
+    end
+    x526_res = x524_res === true ? x525_res : x524_res === false ? x520_res : ifelse(x524_res, x525_res, x520_res)
+    x527__goal = !(x523__goal)
+    if x527__goal !== false
+     x528__goal = d_hit(true, x526_res)
+    end
+    x529__goal = x527__goal === true ? x528__goal : x527__goal === false ? x523__goal : ifelse(x527__goal, x528__goal, x523__goal)
+    x530_res = !(x529__goal)
+    if x530_res !== false
+     x531_res = d_step(true, x526_res)
+    end
+    x532_res = x530_res === true ? x531_res : x530_res === false ? x526_res : ifelse(x530_res, x531_res, x526_res)
+    x533__goal = !(x529__goal)
+    if x533__goal !== false
+     x534__goal = d_hit(true, x532_res)
+    end
+    x535__goal = x533__goal === true ? x534__goal : x533__goal === false ? x529__goal : ifelse(x533__goal, x534__goal, x529__goal)
+    x536_res = !(x535__goal)
+    if x536_res !== false
+     x537_res = d_step(true, x532_res)
+    end
+    x538_res = x536_res === true ? x537_res : x536_res === false ? x532_res : ifelse(x536_res, x537_res, x532_res)
+    x539__goal = !(x535__goal)
+    if x539__goal !== false
+     x540__goal = d_hit(true, x538_res)
+    end
+    x541__goal = x539__goal === true ? x540__goal : x539__goal === false ? x535__goal : ifelse(x539__goal, x540__goal, x535__goal)
+    x542_res = !(x541__goal)
+    if x542_res !== false
+     x543_res = d_step(true, x538_res)
+    end
+    x544_res = x542_res === true ? x543_res : x542_res === false ? x538_res : ifelse(x542_res, x543_res, x538_res)
+    x545__goal = !(x541__goal)
+    if x545__goal !== false
+     x546__goal = d_hit(true, x544_res)
+    end
+    x547__goal = x545__goal === true ? x546__goal : x545__goal === false ? x541__goal : ifelse(x545__goal, x546__goal, x541__goal)
+    x548_res = !(x547__goal)
+    if x548_res !== false
+     x549_res = d_step(true, x544_res)
+    end
+    x550_res = x548_res === true ? x549_res : x548_res === false ? x544_res : ifelse(x548_res, x549_res, x544_res)
+    x551__goal = !(x547__goal)
+    if x551__goal !== false
+     x552__goal = d_hit(true, x550_res)
+    end
+    x553__goal = x551__goal === true ? x552__goal : x551__goal === false ? x547__goal : ifelse(x551__goal, x552__goal, x547__goal)
+    x554_res = !(x553__goal)
+    if x554_res !== false
+     x555_res = d_step(true, x550_res)
+    end
+    x556_res = x554_res === true ? x555_res : x554_res === false ? x550_res : ifelse(x554_res, x555_res, x550_res)
+    x557__goal = !(x553__goal)
+    if x557__goal !== false
+     x558__goal = d_hit(true, x556_res)
+    end
+    x559__goal = x557__goal === true ? x558__goal : x557__goal === false ? x553__goal : ifelse(x557__goal, x558__goal, x553__goal)
+    x560_res = !(x559__goal)
+    if x560_res !== false
+     x561_res = d_step(true, x556_res)
+    end
+    x562_res = x560_res === true ? x561_res : x560_res === false ? x556_res : ifelse(x560_res, x561_res, x556_res)
+    x563__goal = !(x559__goal)
+    if x563__goal !== false
+     x564__goal = d_hit(true, x562_res)
+    end
+    x565__goal = x563__goal === true ? x564__goal : x563__goal === false ? x559__goal : ifelse(x563__goal, x564__goal, x559__goal)
+    x566_res = !(x565__goal)
+    if x566_res !== false
+     x567_res = d_step(true, x562_res)
+    end
+    x568_res = x566_res === true ? x567_res : x566_res === false ? x562_res : ifelse(x566_res, x567_res, x562_res)
+    x569__goal = !(x565__goal)
+    if x569__goal !== false
+     x570__goal = d_hit(true, x568_res)
+    end
+    x571__goal = x569__goal === true ? x570__goal : x569__goal === false ? x565__goal : ifelse(x569__goal, x570__goal, x565__goal)
+    x572_res = !(x571__goal)
+    if x572_res !== false
+     x573_res = d_step(true, x568_res)
+    end
+    x574_res = x572_res === true ? x573_res : x572_res === false ? x568_res : ifelse(x572_res, x573_res, x568_res)
+    x575__goal = !(x571__goal)
+    if x575__goal !== false
+     x576__goal = d_hit(true, x574_res)
+    end
+    x577__goal = x575__goal === true ? x576__goal : x575__goal === false ? x571__goal : ifelse(x575__goal, x576__goal, x571__goal)
+    x578_res = !(x577__goal)
+    if x578_res !== false
+     x579_res = d_step(true, x574_res)
+    end
+    x580_res = x578_res === true ? x579_res : x578_res === false ? x574_res : ifelse(x578_res, x579_res, x574_res)
+    x581__goal = !(x577__goal)
+    if x581__goal !== false
+     x582__goal = d_hit(true, x580_res)
+    end
+    x583__goal = x581__goal === true ? x582__goal : x581__goal === false ? x577__goal : ifelse(x581__goal, x582__goal, x577__goal)
+    x584_res = !(x583__goal)
+    if x584_res !== false
+     x585_res = d_step(true, x580_res)
+    end
+    x586_res = x584_res === true ? x585_res : x584_res === false ? x580_res : ifelse(x584_res, x585_res, x580_res)
+    x587__goal = !(x583__goal)
+    if x587__goal !== false
+     x588__goal = d_hit(true, x586_res)
+    end
+    x589__goal = x587__goal === true ? x588__goal : x587__goal === false ? x583__goal : ifelse(x587__goal, x588__goal, x583__goal)
+    x590_res = !(x589__goal)
+    if x590_res !== false
+     x591_res = d_step(true, x586_res)
+    end
+    x592_res = x590_res === true ? x591_res : x590_res === false ? x586_res : ifelse(x590_res, x591_res, x586_res)
+    x593__goal = !(x589__goal)
+    if x593__goal !== false
+     x594__goal = d_hit(true, x592_res)
+    end
+    x595__goal = x593__goal === true ? x594__goal : x593__goal === false ? x589__goal : ifelse(x593__goal, x594__goal, x589__goal)
+    x596_res = !(x595__goal)
+    if x596_res !== false
+     x597_res = d_step(true, x592_res)
+    end
+    x598_res = x596_res === true ? x597_res : x596_res === false ? x592_res : ifelse(x596_res, x597_res, x592_res)
+    x599__goal = !(x595__goal)
+    if x599__goal !== false
+     x600__goal = d_hit(true, x598_res)
+    end
+    x601__goal = x599__goal === true ? x600__goal : x599__goal === false ? x595__goal : ifelse(x599__goal, x600__goal, x595__goal)
+    x602_res = !(x601__goal)
+    if x602_res !== false
+     x603_res = d_step(true, x598_res)
+    end
+    x604_res = x602_res === true ? x603_res : x602_res === false ? x598_res : ifelse(x602_res, x603_res, x598_res)
+    x605__goal = !(x601__goal)
+    if x605__goal !== false
+     x606__goal = d_hit(true, x604_res)
+    end
+    x607__goal = x605__goal === true ? x606__goal : x605__goal === false ? x601__goal : ifelse(x605__goal, x606__goal, x601__goal)
+    x608_res = !(x607__goal)
+    if x608_res !== false
+     x609_res = d_step(true, x604_res)
+    end
+    x610_res = x608_res === true ? x609_res : x608_res === false ? x604_res : ifelse(x608_res, x609_res, x604_res)
+    x611__goal = !(x607__goal)
+    if x611__goal !== false
+     x612__goal = d_hit(true, x610_res)
+    end
+    x613__goal = x611__goal === true ? x612__goal : x611__goal === false ? x607__goal : ifelse(x611__goal, x612__goal, x607__goal)
+    x614_res = !(x613__goal)
+    if x614_res !== false
+     x615_res = d_step(true, x610_res)
+    end
+    x616_res = x614_res === true ? x615_res : x614_res === false ? x610_res : ifelse(x614_res, x615_res, x610_res)
+    x617__goal = !(x613__goal)
+    if x617__goal !== false
+     x618__goal = d_hit(true, x616_res)
+    end
+    x619__goal = x617__goal === true ? x618__goal : x617__goal === false ? x613__goal : ifelse(x617__goal, x618__goal, x613__goal)
+    x620_res = !(x619__goal)
+    if x620_res !== false
+     x621_res = d_step(true, x616_res)
+    end
+    x622_res = x620_res === true ? x621_res : x620_res === false ? x616_res : ifelse(x620_res, x621_res, x616_res)
+    x623__goal = !(x619__goal)
+    if x623__goal !== false
+     x624__goal = d_hit(true, x622_res)
+    end
+    x625__goal = x623__goal === true ? x624__goal : x623__goal === false ? x619__goal : ifelse(x623__goal, x624__goal, x619__goal)
+    x626_res = !(x625__goal)
+    if x626_res !== false
+     x627_res = d_step(true, x622_res)
+    end
+    x628_res = x626_res === true ? x627_res : x626_res === false ? x622_res : ifelse(x626_res, x627_res, x622_res)
+    x629__goal = !(x625__goal)
+    if x629__goal !== false
+     x630__goal = d_hit(true, x628_res)
+    end
+    x631__goal = x629__goal === true ? x630__goal : x629__goal === false ? x625__goal : ifelse(x629__goal, x630__goal, x625__goal)
+    x632_res = !(x631__goal)
+    if x632_res !== false
+     x633_res = d_step(true, x628_res)
+    end
+    x634_res = x632_res === true ? x633_res : x632_res === false ? x628_res : ifelse(x632_res, x633_res, x628_res)
+    x635__goal = !(x631__goal)
+    if x635__goal !== false
+     x636__goal = d_hit(true, x634_res)
+    end
+    x637__goal = x635__goal === true ? x636__goal : x635__goal === false ? x631__goal : ifelse(x635__goal, x636__goal, x631__goal)
+    x638_res = !(x637__goal)
+    if x638_res !== false
+     x639_res = d_step(true, x634_res)
+    end
+    x640_res = x638_res === true ? x639_res : x638_res === false ? x634_res : ifelse(x638_res, x639_res, x634_res)
+    x641__goal = !(x637__goal)
+    if x641__goal !== false
+     x642__goal = d_hit(true, x640_res)
+    end
+    x643__goal = x641__goal === true ? x642__goal : x641__goal === false ? x637__goal : ifelse(x641__goal, x642__goal, x637__goal)
+    x644_res = !(x643__goal)
+    if x644_res !== false
+     x645_res = d_step(true, x640_res)
+    end
+    x646_res = x644_res === true ? x645_res : x644_res === false ? x640_res : ifelse(x644_res, x645_res, x640_res)
+    x647__goal = !(x643__goal)
+    if x647__goal !== false
+     x648__goal = d_hit(true, x646_res)
+    end
+    x649__goal = x647__goal === true ? x648__goal : x647__goal === false ? x643__goal : ifelse(x647__goal, x648__goal, x643__goal)
+    x650_res = !(x649__goal)
+    return (x646_res, x649__goal, x650_res,)
+end
+
+function chunk_2(x646_res, x649__goal, x650_res)
+    if x650_res !== false
+     x651_res = d_step(true, x646_res)
+    end
+    x652_res = x650_res === true ? x651_res : x650_res === false ? x646_res : ifelse(x650_res, x651_res, x646_res)
+    x653__goal = !(x649__goal)
+    if x653__goal !== false
+     x654__goal = d_hit(true, x652_res)
+    end
+    x655__goal = x653__goal === true ? x654__goal : x653__goal === false ? x649__goal : ifelse(x653__goal, x654__goal, x649__goal)
+    x656_res = !(x655__goal)
+    if x656_res !== false
+     x657_res = d_step(true, x652_res)
+    end
+    x658_res = x656_res === true ? x657_res : x656_res === false ? x652_res : ifelse(x656_res, x657_res, x652_res)
+    x659__goal = !(x655__goal)
+    if x659__goal !== false
+     x660__goal = d_hit(true, x658_res)
+    end
+    x661__goal = x659__goal === true ? x660__goal : x659__goal === false ? x655__goal : ifelse(x659__goal, x660__goal, x655__goal)
+    x662_res = !(x661__goal)
+    if x662_res !== false
+     x663_res = d_step(true, x658_res)
+    end
+    x664_res = x662_res === true ? x663_res : x662_res === false ? x658_res : ifelse(x662_res, x663_res, x658_res)
+    x665__goal = !(x661__goal)
+    if x665__goal !== false
+     x666__goal = d_hit(true, x664_res)
+    end
+    x667__goal = x665__goal === true ? x666__goal : x665__goal === false ? x661__goal : ifelse(x665__goal, x666__goal, x661__goal)
+    x668_res = !(x667__goal)
+    if x668_res !== false
+     x669_res = d_step(true, x664_res)
+    end
+    x670_res = x668_res === true ? x669_res : x668_res === false ? x664_res : ifelse(x668_res, x669_res, x664_res)
+    x671__goal = !(x667__goal)
+    if x671__goal !== false
+     x672__goal = d_hit(true, x670_res)
+    end
+    x673__goal = x671__goal === true ? x672__goal : x671__goal === false ? x667__goal : ifelse(x671__goal, x672__goal, x667__goal)
+    x674_res = !(x673__goal)
+    if x674_res !== false
+     x675_res = d_step(true, x670_res)
+    end
+    x676_res = x674_res === true ? x675_res : x674_res === false ? x670_res : ifelse(x674_res, x675_res, x670_res)
+    x677__goal = !(x673__goal)
+    if x677__goal !== false
+     x678__goal = d_hit(true, x676_res)
+    end
+    x679__goal = x677__goal === true ? x678__goal : x677__goal === false ? x673__goal : ifelse(x677__goal, x678__goal, x673__goal)
+    x680_res = !(x679__goal)
+    if x680_res !== false
+     x681_res = d_step(true, x676_res)
+    end
+    x682_res = x680_res === true ? x681_res : x680_res === false ? x676_res : ifelse(x680_res, x681_res, x676_res)
+    x683__goal = !(x679__goal)
+    if x683__goal !== false
+     x684__goal = d_hit(true, x682_res)
+    end
+    x685__goal = x683__goal === true ? x684__goal : x683__goal === false ? x679__goal : ifelse(x683__goal, x684__goal, x679__goal)
+    x686_res = !(x685__goal)
+    if x686_res !== false
+     x687_res = d_step(true, x682_res)
+    end
+    x688_res = x686_res === true ? x687_res : x686_res === false ? x682_res : ifelse(x686_res, x687_res, x682_res)
+    x689__goal = !(x685__goal)
+    if x689__goal !== false
+     x690__goal = d_hit(true, x688_res)
+    end
+    x691__goal = x689__goal === true ? x690__goal : x689__goal === false ? x685__goal : ifelse(x689__goal, x690__goal, x685__goal)
+    x692_res = !(x691__goal)
+    if x692_res !== false
+     x693_res = d_step(true, x688_res)
+    end
+    x694_res = x692_res === true ? x693_res : x692_res === false ? x688_res : ifelse(x692_res, x693_res, x688_res)
+    x695__goal = !(x691__goal)
+    if x695__goal !== false
+     x696__goal = d_hit(true, x694_res)
+    end
+    x697__goal = x695__goal === true ? x696__goal : x695__goal === false ? x691__goal : ifelse(x695__goal, x696__goal, x691__goal)
+    x698_res = !(x697__goal)
+    if x698_res !== false
+     x699_res = d_step(true, x694_res)
+    end
+    x700_res = x698_res === true ? x699_res : x698_res === false ? x694_res : ifelse(x698_res, x699_res, x694_res)
+    x701__goal = !(x697__goal)
+    if x701__goal !== false
+     x702__goal = d_hit(true, x700_res)
+    end
+    x703__goal = x701__goal === true ? x702__goal : x701__goal === false ? x697__goal : ifelse(x701__goal, x702__goal, x697__goal)
+    x704_res = !(x703__goal)
+    if x704_res !== false
+     x705_res = d_step(true, x700_res)
+    end
+    x706_res = x704_res === true ? x705_res : x704_res === false ? x700_res : ifelse(x704_res, x705_res, x700_res)
+    x707__goal = !(x703__goal)
+    if x707__goal !== false
+     x708__goal = d_hit(true, x706_res)
+    end
+    x709__goal = x707__goal === true ? x708__goal : x707__goal === false ? x703__goal : ifelse(x707__goal, x708__goal, x703__goal)
+    x710_res = !(x709__goal)
+    if x710_res !== false
+     x711_res = d_step(true, x706_res)
+    end
+    x712_res = x710_res === true ? x711_res : x710_res === false ? x706_res : ifelse(x710_res, x711_res, x706_res)
+    x713__goal = !(x709__goal)
+    if x713__goal !== false
+     x714__goal = d_hit(true, x712_res)
+    end
+    x715__goal = x713__goal === true ? x714__goal : x713__goal === false ? x709__goal : ifelse(x713__goal, x714__goal, x709__goal)
+    x716_res = !(x715__goal)
+    if x716_res !== false
+     x717_res = d_step(true, x712_res)
+    end
+    x718_res = x716_res === true ? x717_res : x716_res === false ? x712_res : ifelse(x716_res, x717_res, x712_res)
+    x719__goal = !(x715__goal)
+    if x719__goal !== false
+     x720__goal = d_hit(true, x718_res)
+    end
+    x721__goal = x719__goal === true ? x720__goal : x719__goal === false ? x715__goal : ifelse(x719__goal, x720__goal, x715__goal)
+    x722_res = !(x721__goal)
+    if x722_res !== false
+     x723_res = d_step(true, x718_res)
+    end
+    x724_res = x722_res === true ? x723_res : x722_res === false ? x718_res : ifelse(x722_res, x723_res, x718_res)
+    x725__goal = !(x721__goal)
+    if x725__goal !== false
+     x726__goal = d_hit(true, x724_res)
+    end
+    x727__goal = x725__goal === true ? x726__goal : x725__goal === false ? x721__goal : ifelse(x725__goal, x726__goal, x721__goal)
+    x728_res = !(x727__goal)
+    if x728_res !== false
+     x729_res = d_step(true, x724_res)
+    end
+    x730_res = x728_res === true ? x729_res : x728_res === false ? x724_res : ifelse(x728_res, x729_res, x724_res)
+    x731__goal = !(x727__goal)
+    if x731__goal !== false
+     x732__goal = d_hit(true, x730_res)
+    end
+    x733__goal = x731__goal === true ? x732__goal : x731__goal === false ? x727__goal : ifelse(x731__goal, x732__goal, x727__goal)
+    x734_res = !(x733__goal)
+    if x734_res !== false
+     x735_res = d_step(true, x730_res)
+    end
+    x736_res = x734_res === true ? x735_res : x734_res === false ? x730_res : ifelse(x734_res, x735_res, x730_res)
+    x737__goal = !(x733__goal)
+    if x737__goal !== false
+     x738__goal = d_hit(true, x736_res)
+    end
+    x739__goal = x737__goal === true ? x738__goal : x737__goal === false ? x733__goal : ifelse(x737__goal, x738__goal, x733__goal)
+    x740_res = !(x739__goal)
+    if x740_res !== false
+     x741_res = d_step(true, x736_res)
+    end
+    x742_res = x740_res === true ? x741_res : x740_res === false ? x736_res : ifelse(x740_res, x741_res, x736_res)
+    x743__goal = !(x739__goal)
+    if x743__goal !== false
+     x744__goal = d_hit(true, x742_res)
+    end
+    x745__goal = x743__goal === true ? x744__goal : x743__goal === false ? x739__goal : ifelse(x743__goal, x744__goal, x739__goal)
+    x746_res = !(x745__goal)
+    if x746_res !== false
+     x747_res = d_step(true, x742_res)
+    end
+    x748_res = x746_res === true ? x747_res : x746_res === false ? x742_res : ifelse(x746_res, x747_res, x742_res)
+    x749__goal = !(x745__goal)
+    if x749__goal !== false
+     x750__goal = d_hit(true, x748_res)
+    end
+    x751__goal = x749__goal === true ? x750__goal : x749__goal === false ? x745__goal : ifelse(x749__goal, x750__goal, x745__goal)
+    x752_res = !(x751__goal)
+    if x752_res !== false
+     x753_res = d_step(true, x748_res)
+    end
+    x754_res = x752_res === true ? x753_res : x752_res === false ? x748_res : ifelse(x752_res, x753_res, x748_res)
+    x755__goal = !(x751__goal)
+    if x755__goal !== false
+     x756__goal = d_hit(true, x754_res)
+    end
+    x757__goal = x755__goal === true ? x756__goal : x755__goal === false ? x751__goal : ifelse(x755__goal, x756__goal, x751__goal)
+    x758_res = !(x757__goal)
+    if x758_res !== false
+     x759_res = d_step(true, x754_res)
+    end
+    x760_res = x758_res === true ? x759_res : x758_res === false ? x754_res : ifelse(x758_res, x759_res, x754_res)
+    x761__goal = !(x757__goal)
+    if x761__goal !== false
+     x762__goal = d_hit(true, x760_res)
+    end
+    x763__goal = x761__goal === true ? x762__goal : x761__goal === false ? x757__goal : ifelse(x761__goal, x762__goal, x757__goal)
+    x764_res = !(x763__goal)
+    if x764_res !== false
+     x765_res = d_step(true, x760_res)
+    end
+    x766_res = x764_res === true ? x765_res : x764_res === false ? x760_res : ifelse(x764_res, x765_res, x760_res)
+    x767__goal = !(x763__goal)
+    if x767__goal !== false
+     x768__goal = d_hit(true, x766_res)
+    end
+    x769__goal = x767__goal === true ? x768__goal : x767__goal === false ? x763__goal : ifelse(x767__goal, x768__goal, x763__goal)
+    x770_res = !(x769__goal)
+    if x770_res !== false
+     x771_res = d_step(true, x766_res)
+    end
+    x772_res = x770_res === true ? x771_res : x770_res === false ? x766_res : ifelse(x770_res, x771_res, x766_res)
+    x773__goal = !(x769__goal)
+    if x773__goal !== false
+     x774__goal = d_hit(true, x772_res)
+    end
+    x775__goal = x773__goal === true ? x774__goal : x773__goal === false ? x769__goal : ifelse(x773__goal, x774__goal, x769__goal)
+    x776_res = !(x775__goal)
+    if x776_res !== false
+     x777_res = d_step(true, x772_res)
+    end
+    x778_res = x776_res === true ? x777_res : x776_res === false ? x772_res : ifelse(x776_res, x777_res, x772_res)
+    x779__goal = !(x775__goal)
+    if x779__goal !== false
+     x780__goal = d_hit(true, x778_res)
+    end
+    x781__goal = x779__goal === true ? x780__goal : x779__goal === false ? x775__goal : ifelse(x779__goal, x780__goal, x775__goal)
+    x782_res = !(x781__goal)
+    if x782_res !== false
+     x783_res = d_step(true, x778_res)
+    end
+    x784_res = x782_res === true ? x783_res : x782_res === false ? x778_res : ifelse(x782_res, x783_res, x778_res)
+    x785__goal = !(x781__goal)
+    if x785__goal !== false
+     x786__goal = d_hit(true, x784_res)
+    end
+    x787__goal = x785__goal === true ? x786__goal : x785__goal === false ? x781__goal : ifelse(x785__goal, x786__goal, x781__goal)
+    x788_res = !(x787__goal)
+    if x788_res !== false
+     x789_res = d_step(true, x784_res)
+    end
+    x790_res = x788_res === true ? x789_res : x788_res === false ? x784_res : ifelse(x788_res, x789_res, x784_res)
+    x791__goal = !(x787__goal)
+    if x791__goal !== false
+     x792__goal = d_hit(true, x790_res)
+    end
+    x793__goal = x791__goal === true ? x792__goal : x791__goal === false ? x787__goal : ifelse(x791__goal, x792__goal, x787__goal)
+    x794_res = !(x793__goal)
+    if x794_res !== false
+     x795_res = d_step(true, x790_res)
+    end
+    x796_res = x794_res === true ? x795_res : x794_res === false ? x790_res : ifelse(x794_res, x795_res, x790_res)
+    x797__goal = !(x793__goal)
+    if x797__goal !== false
+     x798__goal = d_hit(true, x796_res)
+    end
+    x799__goal = x797__goal === true ? x798__goal : x797__goal === false ? x793__goal : ifelse(x797__goal, x798__goal, x793__goal)
+    x800_res = !(x799__goal)
+    if x800_res !== false
+     x801_res = d_step(true, x796_res)
+    end
+    x802_res = x800_res === true ? x801_res : x800_res === false ? x796_res : ifelse(x800_res, x801_res, x796_res)
+    x803__goal = !(x799__goal)
+    if x803__goal !== false
+     x804__goal = d_hit(true, x802_res)
+    end
+    x805__goal = x803__goal === true ? x804__goal : x803__goal === false ? x799__goal : ifelse(x803__goal, x804__goal, x799__goal)
+    x806_res = !(x805__goal)
+    if x806_res !== false
+     x807_res = d_step(true, x802_res)
+    end
+    x808_res = x806_res === true ? x807_res : x806_res === false ? x802_res : ifelse(x806_res, x807_res, x802_res)
+    x809__goal = !(x805__goal)
+    if x809__goal !== false
+     x810__goal = d_hit(true, x808_res)
+    end
+    x811__goal = x809__goal === true ? x810__goal : x809__goal === false ? x805__goal : ifelse(x809__goal, x810__goal, x805__goal)
+    x812_res = !(x811__goal)
+    if x812_res !== false
+     x813_res = d_step(true, x808_res)
+    end
+    x814_res = x812_res === true ? x813_res : x812_res === false ? x808_res : ifelse(x812_res, x813_res, x808_res)
+    x815__goal = !(x811__goal)
+    if x815__goal !== false
+     x816__goal = d_hit(true, x814_res)
+    end
+    x817__goal = x815__goal === true ? x816__goal : x815__goal === false ? x811__goal : ifelse(x815__goal, x816__goal, x811__goal)
+    x818_res = !(x817__goal)
+    if x818_res !== false
+     x819_res = d_step(true, x814_res)
+    end
+    x820_res = x818_res === true ? x819_res : x818_res === false ? x814_res : ifelse(x818_res, x819_res, x814_res)
+    x821__goal = !(x817__goal)
+    if x821__goal !== false
+     x822__goal = d_hit(true, x820_res)
+    end
+    x823__goal = x821__goal === true ? x822__goal : x821__goal === false ? x817__goal : ifelse(x821__goal, x822__goal, x817__goal)
+    x824_res = !(x823__goal)
+    if x824_res !== false
+     x825_res = d_step(true, x820_res)
+    end
+    x826_res = x824_res === true ? x825_res : x824_res === false ? x820_res : ifelse(x824_res, x825_res, x820_res)
+    x827__goal = !(x823__goal)
+    if x827__goal !== false
+     x828__goal = d_hit(true, x826_res)
+    end
+    x829__goal = x827__goal === true ? x828__goal : x827__goal === false ? x823__goal : ifelse(x827__goal, x828__goal, x823__goal)
+    x830_res = !(x829__goal)
+    if x830_res !== false
+     x831_res = d_step(true, x826_res)
+    end
+    x832_res = x830_res === true ? x831_res : x830_res === false ? x826_res : ifelse(x830_res, x831_res, x826_res)
+    x833__goal = !(x829__goal)
+    if x833__goal !== false
+     x834__goal = d_hit(true, x832_res)
+    end
+    x835__goal = x833__goal === true ? x834__goal : x833__goal === false ? x829__goal : ifelse(x833__goal, x834__goal, x829__goal)
+    x836_res = !(x835__goal)
+    if x836_res !== false
+     x837_res = d_step(true, x832_res)
+    end
+    x838_res = x836_res === true ? x837_res : x836_res === false ? x832_res : ifelse(x836_res, x837_res, x832_res)
+    x839__goal = !(x835__goal)
+    if x839__goal !== false
+     x840__goal = d_hit(true, x838_res)
+    end
+    x841__goal = x839__goal === true ? x840__goal : x839__goal === false ? x835__goal : ifelse(x839__goal, x840__goal, x835__goal)
+    x842_res = !(x841__goal)
+    if x842_res !== false
+     x843_res = d_step(true, x838_res)
+    end
+    x844_res = x842_res === true ? x843_res : x842_res === false ? x838_res : ifelse(x842_res, x843_res, x838_res)
+    x845__goal = !(x841__goal)
+    if x845__goal !== false
+     x846__goal = d_hit(true, x844_res)
+    end
+    x847__goal = x845__goal === true ? x846__goal : x845__goal === false ? x841__goal : ifelse(x845__goal, x846__goal, x841__goal)
+    x848_res = !(x847__goal)
+    if x848_res !== false
+     x849_res = d_step(true, x844_res)
+    end
+    x850_res = x848_res === true ? x849_res : x848_res === false ? x844_res : ifelse(x848_res, x849_res, x844_res)
+    x851__goal = !(x847__goal)
+    if x851__goal !== false
+     x852__goal = d_hit(true, x850_res)
+    end
+    x853__goal = x851__goal === true ? x852__goal : x851__goal === false ? x847__goal : ifelse(x851__goal, x852__goal, x847__goal)
+    x854_res = !(x853__goal)
+    if x854_res !== false
+     x855_res = d_step(true, x850_res)
+    end
+    x856_res = x854_res === true ? x855_res : x854_res === false ? x850_res : ifelse(x854_res, x855_res, x850_res)
+    x857__goal = !(x853__goal)
+    if x857__goal !== false
+     x858__goal = d_hit(true, x856_res)
+    end
+    x859__goal = x857__goal === true ? x858__goal : x857__goal === false ? x853__goal : ifelse(x857__goal, x858__goal, x853__goal)
+    x860_res = !(x859__goal)
+    if x860_res !== false
+     x861_res = d_step(true, x856_res)
+    end
+    x862_res = x860_res === true ? x861_res : x860_res === false ? x856_res : ifelse(x860_res, x861_res, x856_res)
+    x863__goal = !(x859__goal)
+    if x863__goal !== false
+     x864__goal = d_hit(true, x862_res)
+    end
+    x865__goal = x863__goal === true ? x864__goal : x863__goal === false ? x859__goal : ifelse(x863__goal, x864__goal, x859__goal)
+    x866_res = !(x865__goal)
+    if x866_res !== false
+     x867_res = d_step(true, x862_res)
+    end
+    x868_res = x866_res === true ? x867_res : x866_res === false ? x862_res : ifelse(x866_res, x867_res, x862_res)
+    x869__goal = !(x865__goal)
+    if x869__goal !== false
+     x870__goal = d_hit(true, x868_res)
+    end
+    x871__goal = x869__goal === true ? x870__goal : x869__goal === false ? x865__goal : ifelse(x869__goal, x870__goal, x865__goal)
+    x872_res = !(x871__goal)
+    if x872_res !== false
+     x873_res = d_step(true, x868_res)
+    end
+    x874_res = x872_res === true ? x873_res : x872_res === false ? x868_res : ifelse(x872_res, x873_res, x868_res)
+    x875__goal = !(x871__goal)
+    if x875__goal !== false
+     x876__goal = d_hit(true, x874_res)
+    end
+    x877__goal = x875__goal === true ? x876__goal : x875__goal === false ? x871__goal : ifelse(x875__goal, x876__goal, x871__goal)
+    x878_res = !(x877__goal)
+    if x878_res !== false
+     x879_res = d_step(true, x874_res)
+    end
+    x880_res = x878_res === true ? x879_res : x878_res === false ? x874_res : ifelse(x878_res, x879_res, x874_res)
+    x881__goal = !(x877__goal)
+    if x881__goal !== false
+     x882__goal = d_hit(true, x880_res)
+    end
+    x883__goal = x881__goal === true ? x882__goal : x881__goal === false ? x877__goal : ifelse(x881__goal, x882__goal, x877__goal)
+    x884_res = !(x883__goal)
+    if x884_res !== false
+     x885_res = d_step(true, x880_res)
+    end
+    x886_res = x884_res === true ? x885_res : x884_res === false ? x880_res : ifelse(x884_res, x885_res, x880_res)
+    x887__goal = !(x883__goal)
+    if x887__goal !== false
+     x888__goal = d_hit(true, x886_res)
+    end
+    x889__goal = x887__goal === true ? x888__goal : x887__goal === false ? x883__goal : ifelse(x887__goal, x888__goal, x883__goal)
+    x890_res = !(x889__goal)
+    if x890_res !== false
+     x891_res = d_step(true, x886_res)
+    end
+    x892_res = x890_res === true ? x891_res : x890_res === false ? x886_res : ifelse(x890_res, x891_res, x886_res)
+    x893__goal = !(x889__goal)
+    if x893__goal !== false
+     x894__goal = d_hit(true, x892_res)
+    end
+    x895__goal = x893__goal === true ? x894__goal : x893__goal === false ? x889__goal : ifelse(x893__goal, x894__goal, x889__goal)
+    x896_res = !(x895__goal)
+    if x896_res !== false
+     x897_res = d_step(true, x892_res)
+    end
+    x898_res = x896_res === true ? x897_res : x896_res === false ? x892_res : ifelse(x896_res, x897_res, x892_res)
+    x899__goal = !(x895__goal)
+    if x899__goal !== false
+     x900__goal = d_hit(true, x898_res)
+    end
+    x901__goal = x899__goal === true ? x900__goal : x899__goal === false ? x895__goal : ifelse(x899__goal, x900__goal, x895__goal)
+    x902_res = !(x901__goal)
+    if x902_res !== false
+     x903_res = d_step(true, x898_res)
+    end
+    x904_res = x902_res === true ? x903_res : x902_res === false ? x898_res : ifelse(x902_res, x903_res, x898_res)
+    x905__goal = !(x901__goal)
+    if x905__goal !== false
+     x906__goal = d_hit(true, x904_res)
+    end
+    x907__goal = x905__goal === true ? x906__goal : x905__goal === false ? x901__goal : ifelse(x905__goal, x906__goal, x901__goal)
+    x908_res = !(x907__goal)
+    if x908_res !== false
+     x909_res = d_step(true, x904_res)
+    end
+    x910_res = x908_res === true ? x909_res : x908_res === false ? x904_res : ifelse(x908_res, x909_res, x904_res)
+    x911__goal = !(x907__goal)
+    if x911__goal !== false
+     x912__goal = d_hit(true, x910_res)
+    end
+    x913__goal = x911__goal === true ? x912__goal : x911__goal === false ? x907__goal : ifelse(x911__goal, x912__goal, x907__goal)
+    x914_res = !(x913__goal)
+    if x914_res !== false
+     x915_res = d_step(true, x910_res)
+    end
+    x916_res = x914_res === true ? x915_res : x914_res === false ? x910_res : ifelse(x914_res, x915_res, x910_res)
+    x917__goal = !(x913__goal)
+    if x917__goal !== false
+     x918__goal = d_hit(true, x916_res)
+    end
+    x919__goal = x917__goal === true ? x918__goal : x917__goal === false ? x913__goal : ifelse(x917__goal, x918__goal, x913__goal)
+    x920_res = !(x919__goal)
+    if x920_res !== false
+     x921_res = d_step(true, x916_res)
+    end
+    x922_res = x920_res === true ? x921_res : x920_res === false ? x916_res : ifelse(x920_res, x921_res, x916_res)
+    x923__goal = !(x919__goal)
+    if x923__goal !== false
+     x924__goal = d_hit(true, x922_res)
+    end
+    x925__goal = x923__goal === true ? x924__goal : x923__goal === false ? x919__goal : ifelse(x923__goal, x924__goal, x919__goal)
+    x926_res = !(x925__goal)
+    if x926_res !== false
+     x927_res = d_step(true, x922_res)
+    end
+    x928_res = x926_res === true ? x927_res : x926_res === false ? x922_res : ifelse(x926_res, x927_res, x922_res)
+    x929__goal = !(x925__goal)
+    if x929__goal !== false
+     x930__goal = d_hit(true, x928_res)
+    end
+    x931__goal = x929__goal === true ? x930__goal : x929__goal === false ? x925__goal : ifelse(x929__goal, x930__goal, x925__goal)
+    x932_res = !(x931__goal)
+    if x932_res !== false
+     x933_res = d_step(true, x928_res)
+    end
+    x934_res = x932_res === true ? x933_res : x932_res === false ? x928_res : ifelse(x932_res, x933_res, x928_res)
+    x935__goal = !(x931__goal)
+    if x935__goal !== false
+     x936__goal = d_hit(true, x934_res)
+    end
+    x937__goal = x935__goal === true ? x936__goal : x935__goal === false ? x931__goal : ifelse(x935__goal, x936__goal, x931__goal)
+    x938_res = !(x937__goal)
+    if x938_res !== false
+     x939_res = d_step(true, x934_res)
+    end
+    x940_res = x938_res === true ? x939_res : x938_res === false ? x934_res : ifelse(x938_res, x939_res, x934_res)
+    x941__goal = !(x937__goal)
+    if x941__goal !== false
+     x942__goal = d_hit(true, x940_res)
+    end
+    x943__goal = x941__goal === true ? x942__goal : x941__goal === false ? x937__goal : ifelse(x941__goal, x942__goal, x937__goal)
+    x944_res = !(x943__goal)
+    if x944_res !== false
+     x945_res = d_step(true, x940_res)
+    end
+    x946_res = x944_res === true ? x945_res : x944_res === false ? x940_res : ifelse(x944_res, x945_res, x940_res)
+    x947__goal = !(x943__goal)
+    if x947__goal !== false
+     x948__goal = d_hit(true, x946_res)
+    end
+    x949__goal = x947__goal === true ? x948__goal : x947__goal === false ? x943__goal : ifelse(x947__goal, x948__goal, x943__goal)
+    x950_res = !(x949__goal)
+    if x950_res !== false
+     x951_res = d_step(true, x946_res)
+    end
+    x952_res = x950_res === true ? x951_res : x950_res === false ? x946_res : ifelse(x950_res, x951_res, x946_res)
+    x953__goal = !(x949__goal)
+    if x953__goal !== false
+     x954__goal = d_hit(true, x952_res)
+    end
+    x955__goal = x953__goal === true ? x954__goal : x953__goal === false ? x949__goal : ifelse(x953__goal, x954__goal, x949__goal)
+    x956_res = !(x955__goal)
+    if x956_res !== false
+     x957_res = d_step(true, x952_res)
+    end
+    x958_res = x956_res === true ? x957_res : x956_res === false ? x952_res : ifelse(x956_res, x957_res, x952_res)
+    x959__goal = !(x955__goal)
+    if x959__goal !== false
+     x960__goal = d_hit(true, x958_res)
+    end
+    x961__goal = x959__goal === true ? x960__goal : x959__goal === false ? x955__goal : ifelse(x959__goal, x960__goal, x955__goal)
+    x962_res = !(x961__goal)
+    if x962_res !== false
+     x963_res = d_step(true, x958_res)
+    end
+    x964_res = x962_res === true ? x963_res : x962_res === false ? x958_res : ifelse(x962_res, x963_res, x958_res)
+    x965__goal = !(x961__goal)
+    if x965__goal !== false
+     x966__goal = d_hit(true, x964_res)
+    end
+    x967__goal = x965__goal === true ? x966__goal : x965__goal === false ? x961__goal : ifelse(x965__goal, x966__goal, x961__goal)
+    x968_res = !(x967__goal)
+    if x968_res !== false
+     x969_res = d_step(true, x964_res)
+    end
+    x970_res = x968_res === true ? x969_res : x968_res === false ? x964_res : ifelse(x968_res, x969_res, x964_res)
+    x971__goal = !(x967__goal)
+    if x971__goal !== false
+     x972__goal = d_hit(true, x970_res)
+    end
+    x973__goal = x971__goal === true ? x972__goal : x971__goal === false ? x967__goal : ifelse(x971__goal, x972__goal, x967__goal)
+    x974_res = !(x973__goal)
+    if x974_res !== false
+     x975_res = d_step(true, x970_res)
+    end
+    x976_res = x974_res === true ? x975_res : x974_res === false ? x970_res : ifelse(x974_res, x975_res, x970_res)
+    x977__goal = !(x973__goal)
+    if x977__goal !== false
+     x978__goal = d_hit(true, x976_res)
+    end
+    x979__goal = x977__goal === true ? x978__goal : x977__goal === false ? x973__goal : ifelse(x977__goal, x978__goal, x973__goal)
+    x980_res = !(x979__goal)
+    if x980_res !== false
+     x981_res = d_step(true, x976_res)
+    end
+    x982_res = x980_res === true ? x981_res : x980_res === false ? x976_res : ifelse(x980_res, x981_res, x976_res)
+    x983__goal = !(x979__goal)
+    if x983__goal !== false
+     x984__goal = d_hit(true, x982_res)
+    end
+    x985__goal = x983__goal === true ? x984__goal : x983__goal === false ? x979__goal : ifelse(x983__goal, x984__goal, x979__goal)
+    x986_res = !(x985__goal)
+    if x986_res !== false
+     x987_res = d_step(true, x982_res)
+    end
+    x988_res = x986_res === true ? x987_res : x986_res === false ? x982_res : ifelse(x986_res, x987_res, x982_res)
+    x989__goal = !(x985__goal)
+    if x989__goal !== false
+     x990__goal = d_hit(true, x988_res)
+    end
+    x991__goal = x989__goal === true ? x990__goal : x989__goal === false ? x985__goal : ifelse(x989__goal, x990__goal, x985__goal)
+    x992_res = !(x991__goal)
+    if x992_res !== false
+     x993_res = d_step(true, x988_res)
+    end
+    x994_res = x992_res === true ? x993_res : x992_res === false ? x988_res : ifelse(x992_res, x993_res, x988_res)
+    x995__goal = !(x991__goal)
+    if x995__goal !== false
+     x996__goal = d_hit(true, x994_res)
+    end
+    x997__goal = x995__goal === true ? x996__goal : x995__goal === false ? x991__goal : ifelse(x995__goal, x996__goal, x991__goal)
+    x998_res = !(x997__goal)
+    if x998_res !== false
+     x999_res = d_step(true, x994_res)
+    end
+    x1000_res = x998_res === true ? x999_res : x998_res === false ? x994_res : ifelse(x998_res, x999_res, x994_res)
+    x1001__goal = !(x997__goal)
+    if x1001__goal !== false
+     x1002__goal = d_hit(true, x1000_res)
+    end
+    x1003__goal = x1001__goal === true ? x1002__goal : x1001__goal === false ? x997__goal : ifelse(x1001__goal, x1002__goal, x997__goal)
+    x1004_res = !(x1003__goal)
+    if x1004_res !== false
+     x1005_res = d_step(true, x1000_res)
+    end
+    x1006_res = x1004_res === true ? x1005_res : x1004_res === false ? x1000_res : ifelse(x1004_res, x1005_res, x1000_res)
+    x1007__goal = !(x1003__goal)
+    if x1007__goal !== false
+     x1008__goal = d_hit(true, x1006_res)
+    end
+    x1009__goal = x1007__goal === true ? x1008__goal : x1007__goal === false ? x1003__goal : ifelse(x1007__goal, x1008__goal, x1003__goal)
+    x1010_res = !(x1009__goal)
+    if x1010_res !== false
+     x1011_res = d_step(true, x1006_res)
+    end
+    x1012_res = x1010_res === true ? x1011_res : x1010_res === false ? x1006_res : ifelse(x1010_res, x1011_res, x1006_res)
+    x1013__goal = !(x1009__goal)
+    if x1013__goal !== false
+     x1014__goal = d_hit(true, x1012_res)
+    end
+    x1015__goal = x1013__goal === true ? x1014__goal : x1013__goal === false ? x1009__goal : ifelse(x1013__goal, x1014__goal, x1009__goal)
+    x1016_res = !(x1015__goal)
+    if x1016_res !== false
+     x1017_res = d_step(true, x1012_res)
+    end
+    x1018_res = x1016_res === true ? x1017_res : x1016_res === false ? x1012_res : ifelse(x1016_res, x1017_res, x1012_res)
+    x1019__goal = !(x1015__goal)
+    if x1019__goal !== false
+     x1020__goal = d_hit(true, x1018_res)
+    end
+    x1021__goal = x1019__goal === true ? x1020__goal : x1019__goal === false ? x1015__goal : ifelse(x1019__goal, x1020__goal, x1015__goal)
+    x1022_res = !(x1021__goal)
+    if x1022_res !== false
+     x1023_res = d_step(true, x1018_res)
+    end
+    x1024_res = x1022_res === true ? x1023_res : x1022_res === false ? x1018_res : ifelse(x1022_res, x1023_res, x1018_res)
+    x1025__goal = !(x1021__goal)
+    if x1025__goal !== false
+     x1026__goal = d_hit(true, x1024_res)
+    end
+    x1027__goal = x1025__goal === true ? x1026__goal : x1025__goal === false ? x1021__goal : ifelse(x1025__goal, x1026__goal, x1021__goal)
+    x1028_res = !(x1027__goal)
+    if x1028_res !== false
+     x1029_res = d_step(true, x1024_res)
+    end
+    x1030_res = x1028_res === true ? x1029_res : x1028_res === false ? x1024_res : ifelse(x1028_res, x1029_res, x1024_res)
+    x1031__goal = !(x1027__goal)
+    if x1031__goal !== false
+     x1032__goal = d_hit(true, x1030_res)
+    end
+    x1033__goal = x1031__goal === true ? x1032__goal : x1031__goal === false ? x1027__goal : ifelse(x1031__goal, x1032__goal, x1027__goal)
+    x1034_res = !(x1033__goal)
+    if x1034_res !== false
+     x1035_res = d_step(true, x1030_res)
+    end
+    x1036_res = x1034_res === true ? x1035_res : x1034_res === false ? x1030_res : ifelse(x1034_res, x1035_res, x1030_res)
+    x1037__goal = !(x1033__goal)
+    if x1037__goal !== false
+     x1038__goal = d_hit(true, x1036_res)
+    end
+    x1039__goal = x1037__goal === true ? x1038__goal : x1037__goal === false ? x1033__goal : ifelse(x1037__goal, x1038__goal, x1033__goal)
+    x1040_res = !(x1039__goal)
+    if x1040_res !== false
+     x1041_res = d_step(true, x1036_res)
+    end
+    x1042_res = x1040_res === true ? x1041_res : x1040_res === false ? x1036_res : ifelse(x1040_res, x1041_res, x1036_res)
+    x1043__goal = !(x1039__goal)
+    if x1043__goal !== false
+     x1044__goal = d_hit(true, x1042_res)
+    end
+    x1045__goal = x1043__goal === true ? x1044__goal : x1043__goal === false ? x1039__goal : ifelse(x1043__goal, x1044__goal, x1039__goal)
+    x1046_res = !(x1045__goal)
+    if x1046_res !== false
+     x1047_res = d_step(true, x1042_res)
+    end
+    x1048_res = x1046_res === true ? x1047_res : x1046_res === false ? x1042_res : ifelse(x1046_res, x1047_res, x1042_res)
+    x1049__goal = !(x1045__goal)
+    return (x1045__goal, x1048_res, x1049__goal,)
+end
+
+function chunk_3(x1045__goal, x1048_res, x1049__goal)
+    if x1049__goal !== false
+     x1050__goal = d_hit(true, x1048_res)
+    end
+    x1051__goal = x1049__goal === true ? x1050__goal : x1049__goal === false ? x1045__goal : ifelse(x1049__goal, x1050__goal, x1045__goal)
+    x1052_res = !(x1051__goal)
+    if x1052_res !== false
+     x1053_res = d_step(true, x1048_res)
+    end
+    x1054_res = x1052_res === true ? x1053_res : x1052_res === false ? x1048_res : ifelse(x1052_res, x1053_res, x1048_res)
+    x1055__goal = !(x1051__goal)
+    if x1055__goal !== false
+     x1056__goal = d_hit(true, x1054_res)
+    end
+    x1057__goal = x1055__goal === true ? x1056__goal : x1055__goal === false ? x1051__goal : ifelse(x1055__goal, x1056__goal, x1051__goal)
+    x1058_res = !(x1057__goal)
+    if x1058_res !== false
+     x1059_res = d_step(true, x1054_res)
+    end
+    x1060_res = x1058_res === true ? x1059_res : x1058_res === false ? x1054_res : ifelse(x1058_res, x1059_res, x1054_res)
+    x1061__goal = !(x1057__goal)
+    if x1061__goal !== false
+     x1062__goal = d_hit(true, x1060_res)
+    end
+    x1063__goal = x1061__goal === true ? x1062__goal : x1061__goal === false ? x1057__goal : ifelse(x1061__goal, x1062__goal, x1057__goal)
+    x1064_res = !(x1063__goal)
+    if x1064_res !== false
+     x1065_res = d_step(true, x1060_res)
+    end
+    x1066_res = x1064_res === true ? x1065_res : x1064_res === false ? x1060_res : ifelse(x1064_res, x1065_res, x1060_res)
+    x1067__goal = !(x1063__goal)
+    if x1067__goal !== false
+     x1068__goal = d_hit(true, x1066_res)
+    end
+    x1069__goal = x1067__goal === true ? x1068__goal : x1067__goal === false ? x1063__goal : ifelse(x1067__goal, x1068__goal, x1063__goal)
+    x1070_res = !(x1069__goal)
+    if x1070_res !== false
+     x1071_res = d_step(true, x1066_res)
+    end
+    x1072_res = x1070_res === true ? x1071_res : x1070_res === false ? x1066_res : ifelse(x1070_res, x1071_res, x1066_res)
+    x1073__goal = !(x1069__goal)
+    if x1073__goal !== false
+     x1074__goal = d_hit(true, x1072_res)
+    end
+    x1075__goal = x1073__goal === true ? x1074__goal : x1073__goal === false ? x1069__goal : ifelse(x1073__goal, x1074__goal, x1069__goal)
+    x1076_res = !(x1075__goal)
+    if x1076_res !== false
+     x1077_res = d_step(true, x1072_res)
+    end
+    x1078_res = x1076_res === true ? x1077_res : x1076_res === false ? x1072_res : ifelse(x1076_res, x1077_res, x1072_res)
+    x1079__goal = !(x1075__goal)
+    if x1079__goal !== false
+     x1080__goal = d_hit(true, x1078_res)
+    end
+    x1081__goal = x1079__goal === true ? x1080__goal : x1079__goal === false ? x1075__goal : ifelse(x1079__goal, x1080__goal, x1075__goal)
+    x1082_res = !(x1081__goal)
+    if x1082_res !== false
+     x1083_res = d_step(true, x1078_res)
+    end
+    x1084_res = x1082_res === true ? x1083_res : x1082_res === false ? x1078_res : ifelse(x1082_res, x1083_res, x1078_res)
+    x1085__goal = !(x1081__goal)
+    if x1085__goal !== false
+     x1086__goal = d_hit(true, x1084_res)
+    end
+    x1087__goal = x1085__goal === true ? x1086__goal : x1085__goal === false ? x1081__goal : ifelse(x1085__goal, x1086__goal, x1081__goal)
+    x1088_res = !(x1087__goal)
+    if x1088_res !== false
+     x1089_res = d_step(true, x1084_res)
+    end
+    x1090_res = x1088_res === true ? x1089_res : x1088_res === false ? x1084_res : ifelse(x1088_res, x1089_res, x1084_res)
+    x1091__goal = !(x1087__goal)
+    if x1091__goal !== false
+     x1092__goal = d_hit(true, x1090_res)
+    end
+    x1093__goal = x1091__goal === true ? x1092__goal : x1091__goal === false ? x1087__goal : ifelse(x1091__goal, x1092__goal, x1087__goal)
+    x1094_res = !(x1093__goal)
+    if x1094_res !== false
+     x1095_res = d_step(true, x1090_res)
+    end
+    x1096_res = x1094_res === true ? x1095_res : x1094_res === false ? x1090_res : ifelse(x1094_res, x1095_res, x1090_res)
+    x1097__goal = !(x1093__goal)
+    if x1097__goal !== false
+     x1098__goal = d_hit(true, x1096_res)
+    end
+    x1099__goal = x1097__goal === true ? x1098__goal : x1097__goal === false ? x1093__goal : ifelse(x1097__goal, x1098__goal, x1093__goal)
+    x1100_res = !(x1099__goal)
+    if x1100_res !== false
+     x1101_res = d_step(true, x1096_res)
+    end
+    x1102_res = x1100_res === true ? x1101_res : x1100_res === false ? x1096_res : ifelse(x1100_res, x1101_res, x1096_res)
+    x1103__goal = !(x1099__goal)
+    if x1103__goal !== false
+     x1104__goal = d_hit(true, x1102_res)
+    end
+    x1105__goal = x1103__goal === true ? x1104__goal : x1103__goal === false ? x1099__goal : ifelse(x1103__goal, x1104__goal, x1099__goal)
+    x1106_res = !(x1105__goal)
+    if x1106_res !== false
+     x1107_res = d_step(true, x1102_res)
+    end
+    x1108_res = x1106_res === true ? x1107_res : x1106_res === false ? x1102_res : ifelse(x1106_res, x1107_res, x1102_res)
+    x1109__goal = !(x1105__goal)
+    if x1109__goal !== false
+     x1110__goal = d_hit(true, x1108_res)
+    end
+    x1111__goal = x1109__goal === true ? x1110__goal : x1109__goal === false ? x1105__goal : ifelse(x1109__goal, x1110__goal, x1105__goal)
+    x1112_res = !(x1111__goal)
+    if x1112_res !== false
+     x1113_res = d_step(true, x1108_res)
+    end
+    x1114_res = x1112_res === true ? x1113_res : x1112_res === false ? x1108_res : ifelse(x1112_res, x1113_res, x1108_res)
+    x1115__goal = !(x1111__goal)
+    if x1115__goal !== false
+     x1116__goal = d_hit(true, x1114_res)
+    end
+    x1117__goal = x1115__goal === true ? x1116__goal : x1115__goal === false ? x1111__goal : ifelse(x1115__goal, x1116__goal, x1111__goal)
+    x1118_res = !(x1117__goal)
+    if x1118_res !== false
+     x1119_res = d_step(true, x1114_res)
+    end
+    x1120_res = x1118_res === true ? x1119_res : x1118_res === false ? x1114_res : ifelse(x1118_res, x1119_res, x1114_res)
+    x1121__goal = !(x1117__goal)
+    if x1121__goal !== false
+     x1122__goal = d_hit(true, x1120_res)
+    end
+    x1123__goal = x1121__goal === true ? x1122__goal : x1121__goal === false ? x1117__goal : ifelse(x1121__goal, x1122__goal, x1117__goal)
+    x1124_res = !(x1123__goal)
+    if x1124_res !== false
+     x1125_res = d_step(true, x1120_res)
+    end
+    x1126_res = x1124_res === true ? x1125_res : x1124_res === false ? x1120_res : ifelse(x1124_res, x1125_res, x1120_res)
+    x1127__goal = !(x1123__goal)
+    if x1127__goal !== false
+     x1128__goal = d_hit(true, x1126_res)
+    end
+    x1129__goal = x1127__goal === true ? x1128__goal : x1127__goal === false ? x1123__goal : ifelse(x1127__goal, x1128__goal, x1123__goal)
+    x1130_res = !(x1129__goal)
+    if x1130_res !== false
+     x1131_res = d_step(true, x1126_res)
+    end
+    x1132_res = x1130_res === true ? x1131_res : x1130_res === false ? x1126_res : ifelse(x1130_res, x1131_res, x1126_res)
+    x1133__goal = !(x1129__goal)
+    if x1133__goal !== false
+     x1134__goal = d_hit(true, x1132_res)
+    end
+    x1135__goal = x1133__goal === true ? x1134__goal : x1133__goal === false ? x1129__goal : ifelse(x1133__goal, x1134__goal, x1129__goal)
+    x1136_res = !(x1135__goal)
+    if x1136_res !== false
+     x1137_res = d_step(true, x1132_res)
+    end
+    x1138_res = x1136_res === true ? x1137_res : x1136_res === false ? x1132_res : ifelse(x1136_res, x1137_res, x1132_res)
+    x1139__goal = !(x1135__goal)
+    if x1139__goal !== false
+     x1140__goal = d_hit(true, x1138_res)
+    end
+    x1141__goal = x1139__goal === true ? x1140__goal : x1139__goal === false ? x1135__goal : ifelse(x1139__goal, x1140__goal, x1135__goal)
+    x1142_res = !(x1141__goal)
+    if x1142_res !== false
+     x1143_res = d_step(true, x1138_res)
+    end
+    x1144_res = x1142_res === true ? x1143_res : x1142_res === false ? x1138_res : ifelse(x1142_res, x1143_res, x1138_res)
+    x1145__goal = !(x1141__goal)
+    if x1145__goal !== false
+     x1146__goal = d_hit(true, x1144_res)
+    end
+    x1147__goal = x1145__goal === true ? x1146__goal : x1145__goal === false ? x1141__goal : ifelse(x1145__goal, x1146__goal, x1141__goal)
+    x1148_res = !(x1147__goal)
+    if x1148_res !== false
+     x1149_res = d_step(true, x1144_res)
+    end
+    x1150_res = x1148_res === true ? x1149_res : x1148_res === false ? x1144_res : ifelse(x1148_res, x1149_res, x1144_res)
+    x1151__goal = !(x1147__goal)
+    if x1151__goal !== false
+     x1152__goal = d_hit(true, x1150_res)
+    end
+    x1153__goal = x1151__goal === true ? x1152__goal : x1151__goal === false ? x1147__goal : ifelse(x1151__goal, x1152__goal, x1147__goal)
+    x1154_res = !(x1153__goal)
+    if x1154_res !== false
+     x1155_res = d_step(true, x1150_res)
+    end
+    x1156_res = x1154_res === true ? x1155_res : x1154_res === false ? x1150_res : ifelse(x1154_res, x1155_res, x1150_res)
+    x1157__goal = !(x1153__goal)
+    if x1157__goal !== false
+     x1158__goal = d_hit(true, x1156_res)
+    end
+    x1159__goal = x1157__goal === true ? x1158__goal : x1157__goal === false ? x1153__goal : ifelse(x1157__goal, x1158__goal, x1153__goal)
+    x1160_res = !(x1159__goal)
+    if x1160_res !== false
+     x1161_res = d_step(true, x1156_res)
+    end
+    x1162_res = x1160_res === true ? x1161_res : x1160_res === false ? x1156_res : ifelse(x1160_res, x1161_res, x1156_res)
+    x1163__goal = !(x1159__goal)
+    if x1163__goal !== false
+     x1164__goal = d_hit(true, x1162_res)
+    end
+    x1165__goal = x1163__goal === true ? x1164__goal : x1163__goal === false ? x1159__goal : ifelse(x1163__goal, x1164__goal, x1159__goal)
+    x1166_res = !(x1165__goal)
+    if x1166_res !== false
+     x1167_res = d_step(true, x1162_res)
+    end
+    x1168_res = x1166_res === true ? x1167_res : x1166_res === false ? x1162_res : ifelse(x1166_res, x1167_res, x1162_res)
+    x1169__goal = !(x1165__goal)
+    if x1169__goal !== false
+     x1170__goal = d_hit(true, x1168_res)
+    end
+    x1171__goal = x1169__goal === true ? x1170__goal : x1169__goal === false ? x1165__goal : ifelse(x1169__goal, x1170__goal, x1165__goal)
+    x1172_res = !(x1171__goal)
+    if x1172_res !== false
+     x1173_res = d_step(true, x1168_res)
+    end
+    x1174_res = x1172_res === true ? x1173_res : x1172_res === false ? x1168_res : ifelse(x1172_res, x1173_res, x1168_res)
+    x1175__goal = !(x1171__goal)
+    if x1175__goal !== false
+     x1176__goal = d_hit(true, x1174_res)
+    end
+    x1177__goal = x1175__goal === true ? x1176__goal : x1175__goal === false ? x1171__goal : ifelse(x1175__goal, x1176__goal, x1171__goal)
+    x1178_res = !(x1177__goal)
+    if x1178_res !== false
+     x1179_res = d_step(true, x1174_res)
+    end
+    x1180_res = x1178_res === true ? x1179_res : x1178_res === false ? x1174_res : ifelse(x1178_res, x1179_res, x1174_res)
+    x1181__goal = !(x1177__goal)
+    if x1181__goal !== false
+     x1182__goal = d_hit(true, x1180_res)
+    end
+    x1183__goal = x1181__goal === true ? x1182__goal : x1181__goal === false ? x1177__goal : ifelse(x1181__goal, x1182__goal, x1177__goal)
+    x1184_res = !(x1183__goal)
+    if x1184_res !== false
+     x1185_res = d_step(true, x1180_res)
+    end
+    x1186_res = x1184_res === true ? x1185_res : x1184_res === false ? x1180_res : ifelse(x1184_res, x1185_res, x1180_res)
+    x1187__goal = !(x1183__goal)
+    if x1187__goal !== false
+     x1188__goal = d_hit(true, x1186_res)
+    end
+    x1189__goal = x1187__goal === true ? x1188__goal : x1187__goal === false ? x1183__goal : ifelse(x1187__goal, x1188__goal, x1183__goal)
+    x1190_res = !(x1189__goal)
+    if x1190_res !== false
+     x1191_res = d_step(true, x1186_res)
+    end
+    x1192_res = x1190_res === true ? x1191_res : x1190_res === false ? x1186_res : ifelse(x1190_res, x1191_res, x1186_res)
+    x1193__goal = !(x1189__goal)
+    if x1193__goal !== false
+     x1194__goal = d_hit(true, x1192_res)
+    end
+    x1195__goal = x1193__goal === true ? x1194__goal : x1193__goal === false ? x1189__goal : ifelse(x1193__goal, x1194__goal, x1189__goal)
+    x1196_res = !(x1195__goal)
+    if x1196_res !== false
+     x1197_res = d_step(true, x1192_res)
+    end
+    x1198_res = x1196_res === true ? x1197_res : x1196_res === false ? x1192_res : ifelse(x1196_res, x1197_res, x1192_res)
+    x1199__goal = !(x1195__goal)
+    if x1199__goal !== false
+     x1200__goal = d_hit(true, x1198_res)
+    end
+    x1201__goal = x1199__goal === true ? x1200__goal : x1199__goal === false ? x1195__goal : ifelse(x1199__goal, x1200__goal, x1195__goal)
+    x1202_res = !(x1201__goal)
+    if x1202_res !== false
+     x1203_res = d_step(true, x1198_res)
+    end
+    x1204_res = x1202_res === true ? x1203_res : x1202_res === false ? x1198_res : ifelse(x1202_res, x1203_res, x1198_res)
+    x1205__goal = !(x1201__goal)
+    if x1205__goal !== false
+     x1206__goal = d_hit(true, x1204_res)
+    end
+    x1207__goal = x1205__goal === true ? x1206__goal : x1205__goal === false ? x1201__goal : ifelse(x1205__goal, x1206__goal, x1201__goal)
+    x1208_res = !(x1207__goal)
+    if x1208_res !== false
+     x1209_res = d_step(true, x1204_res)
+    end
+    x1210_res = x1208_res === true ? x1209_res : x1208_res === false ? x1204_res : ifelse(x1208_res, x1209_res, x1204_res)
+    x1211__goal = !(x1207__goal)
+    if x1211__goal !== false
+     x1212__goal = d_hit(true, x1210_res)
+    end
+    x1213__goal = x1211__goal === true ? x1212__goal : x1211__goal === false ? x1207__goal : ifelse(x1211__goal, x1212__goal, x1207__goal)
+    x1214_res = !(x1213__goal)
+    if x1214_res !== false
+     x1215_res = d_step(true, x1210_res)
+    end
+    x1216_res = x1214_res === true ? x1215_res : x1214_res === false ? x1210_res : ifelse(x1214_res, x1215_res, x1210_res)
+    x1217__goal = !(x1213__goal)
+    if x1217__goal !== false
+     x1218__goal = d_hit(true, x1216_res)
+    end
+    x1219__goal = x1217__goal === true ? x1218__goal : x1217__goal === false ? x1213__goal : ifelse(x1217__goal, x1218__goal, x1213__goal)
+    x1220_res = !(x1219__goal)
+    if x1220_res !== false
+     x1221_res = d_step(true, x1216_res)
+    end
+    x1222_res = x1220_res === true ? x1221_res : x1220_res === false ? x1216_res : ifelse(x1220_res, x1221_res, x1216_res)
+    x1223__goal = !(x1219__goal)
+    if x1223__goal !== false
+     x1224__goal = d_hit(true, x1222_res)
+    end
+    x1225__goal = x1223__goal === true ? x1224__goal : x1223__goal === false ? x1219__goal : ifelse(x1223__goal, x1224__goal, x1219__goal)
+    x1226_res = !(x1225__goal)
+    if x1226_res !== false
+     x1227_res = d_step(true, x1222_res)
+    end
+    x1228_res = x1226_res === true ? x1227_res : x1226_res === false ? x1222_res : ifelse(x1226_res, x1227_res, x1222_res)
+    x1229__goal = !(x1225__goal)
+    if x1229__goal !== false
+     x1230__goal = d_hit(true, x1228_res)
+    end
+    x1231__goal = x1229__goal === true ? x1230__goal : x1229__goal === false ? x1225__goal : ifelse(x1229__goal, x1230__goal, x1225__goal)
+    x1232_res = !(x1231__goal)
+    if x1232_res !== false
+     x1233_res = d_step(true, x1228_res)
+    end
+    x1234_res = x1232_res === true ? x1233_res : x1232_res === false ? x1228_res : ifelse(x1232_res, x1233_res, x1228_res)
+    x1235__goal = !(x1231__goal)
+    if x1235__goal !== false
+     x1236__goal = d_hit(true, x1234_res)
+    end
+    x1237__goal = x1235__goal === true ? x1236__goal : x1235__goal === false ? x1231__goal : ifelse(x1235__goal, x1236__goal, x1231__goal)
+    x1238_res = !(x1237__goal)
+    if x1238_res !== false
+     x1239_res = d_step(true, x1234_res)
+    end
+    x1240_res = x1238_res === true ? x1239_res : x1238_res === false ? x1234_res : ifelse(x1238_res, x1239_res, x1234_res)
+    x1241__goal = !(x1237__goal)
+    if x1241__goal !== false
+     x1242__goal = d_hit(true, x1240_res)
+    end
+    x1243__goal = x1241__goal === true ? x1242__goal : x1241__goal === false ? x1237__goal : ifelse(x1241__goal, x1242__goal, x1237__goal)
+    x1244_res = !(x1243__goal)
+    if x1244_res !== false
+     x1245_res = d_step(true, x1240_res)
+    end
+    x1246_res = x1244_res === true ? x1245_res : x1244_res === false ? x1240_res : ifelse(x1244_res, x1245_res, x1240_res)
+    x1247__goal = !(x1243__goal)
+    if x1247__goal !== false
+     x1248__goal = d_hit(true, x1246_res)
+    end
+    x1249__goal = x1247__goal === true ? x1248__goal : x1247__goal === false ? x1243__goal : ifelse(x1247__goal, x1248__goal, x1243__goal)
+    x1250_res = !(x1249__goal)
+    if x1250_res !== false
+     x1251_res = d_step(true, x1246_res)
+    end
+    x1252_res = x1250_res === true ? x1251_res : x1250_res === false ? x1246_res : ifelse(x1250_res, x1251_res, x1246_res)
+    x1253__goal = !(x1249__goal)
+    if x1253__goal !== false
+     x1254__goal = d_hit(true, x1252_res)
+    end
+    x1255__goal = x1253__goal === true ? x1254__goal : x1253__goal === false ? x1249__goal : ifelse(x1253__goal, x1254__goal, x1249__goal)
+    x1256_res = !(x1255__goal)
+    if x1256_res !== false
+     x1257_res = d_step(true, x1252_res)
+    end
+    x1258_res = x1256_res === true ? x1257_res : x1256_res === false ? x1252_res : ifelse(x1256_res, x1257_res, x1252_res)
+    x1259__goal = !(x1255__goal)
+    if x1259__goal !== false
+     x1260__goal = d_hit(true, x1258_res)
+    end
+    x1261__goal = x1259__goal === true ? x1260__goal : x1259__goal === false ? x1255__goal : ifelse(x1259__goal, x1260__goal, x1255__goal)
+    x1262_res = !(x1261__goal)
+    if x1262_res !== false
+     x1263_res = d_step(true, x1258_res)
+    end
+    x1264_res = x1262_res === true ? x1263_res : x1262_res === false ? x1258_res : ifelse(x1262_res, x1263_res, x1258_res)
+    x1265__goal = !(x1261__goal)
+    if x1265__goal !== false
+     x1266__goal = d_hit(true, x1264_res)
+    end
+    x1267__goal = x1265__goal === true ? x1266__goal : x1265__goal === false ? x1261__goal : ifelse(x1265__goal, x1266__goal, x1261__goal)
+    x1268_res = !(x1267__goal)
+    if x1268_res !== false
+     x1269_res = d_step(true, x1264_res)
+    end
+    x1270_res = x1268_res === true ? x1269_res : x1268_res === false ? x1264_res : ifelse(x1268_res, x1269_res, x1264_res)
+    x1271__goal = !(x1267__goal)
+    if x1271__goal !== false
+     x1272__goal = d_hit(true, x1270_res)
+    end
+    x1273__goal = x1271__goal === true ? x1272__goal : x1271__goal === false ? x1267__goal : ifelse(x1271__goal, x1272__goal, x1267__goal)
+    x1274_res = !(x1273__goal)
+    if x1274_res !== false
+     x1275_res = d_step(true, x1270_res)
+    end
+    x1276_res = x1274_res === true ? x1275_res : x1274_res === false ? x1270_res : ifelse(x1274_res, x1275_res, x1270_res)
+    x1277__goal = !(x1273__goal)
+    if x1277__goal !== false
+     x1278__goal = d_hit(true, x1276_res)
+    end
+    x1279__goal = x1277__goal === true ? x1278__goal : x1277__goal === false ? x1273__goal : ifelse(x1277__goal, x1278__goal, x1273__goal)
+    x1280_res = !(x1279__goal)
+    if x1280_res !== false
+     x1281_res = d_step(true, x1276_res)
+    end
+    x1282_res = x1280_res === true ? x1281_res : x1280_res === false ? x1276_res : ifelse(x1280_res, x1281_res, x1276_res)
+    x1283__goal = !(x1279__goal)
+    if x1283__goal !== false
+     x1284__goal = d_hit(true, x1282_res)
+    end
+    x1285__goal = x1283__goal === true ? x1284__goal : x1283__goal === false ? x1279__goal : ifelse(x1283__goal, x1284__goal, x1279__goal)
+    x1286_res = !(x1285__goal)
+    if x1286_res !== false
+     x1287_res = d_step(true, x1282_res)
+    end
+    x1288_res = x1286_res === true ? x1287_res : x1286_res === false ? x1282_res : ifelse(x1286_res, x1287_res, x1282_res)
+    x1289__goal = !(x1285__goal)
+    if x1289__goal !== false
+     x1290__goal = d_hit(true, x1288_res)
+    end
+    x1291__goal = x1289__goal === true ? x1290__goal : x1289__goal === false ? x1285__goal : ifelse(x1289__goal, x1290__goal, x1285__goal)
+    x1292_res = !(x1291__goal)
+    if x1292_res !== false
+     x1293_res = d_step(true, x1288_res)
+    end
+    x1294_res = x1292_res === true ? x1293_res : x1292_res === false ? x1288_res : ifelse(x1292_res, x1293_res, x1288_res)
+    x1295__goal = !(x1291__goal)
+    if x1295__goal !== false
+     x1296__goal = d_hit(true, x1294_res)
+    end
+    x1297__goal = x1295__goal === true ? x1296__goal : x1295__goal === false ? x1291__goal : ifelse(x1295__goal, x1296__goal, x1291__goal)
+    x1298_res = !(x1297__goal)
+    if x1298_res !== false
+     x1299_res = d_step(true, x1294_res)
+    end
+    x1300_res = x1298_res === true ? x1299_res : x1298_res === false ? x1294_res : ifelse(x1298_res, x1299_res, x1294_res)
+    x1301__goal = !(x1297__goal)
+    if x1301__goal !== false
+     x1302__goal = d_hit(true, x1300_res)
+    end
+    x1303__goal = x1301__goal === true ? x1302__goal : x1301__goal === false ? x1297__goal : ifelse(x1301__goal, x1302__goal, x1297__goal)
+    x1304_res = !(x1303__goal)
+    if x1304_res !== false
+     x1305_res = d_step(true, x1300_res)
+    end
+    x1306_res = x1304_res === true ? x1305_res : x1304_res === false ? x1300_res : ifelse(x1304_res, x1305_res, x1300_res)
+    x1307__goal = !(x1303__goal)
+    if x1307__goal !== false
+     x1308__goal = d_hit(true, x1306_res)
+    end
+    x1309__goal = x1307__goal === true ? x1308__goal : x1307__goal === false ? x1303__goal : ifelse(x1307__goal, x1308__goal, x1303__goal)
+    x1310_res = !(x1309__goal)
+    if x1310_res !== false
+     x1311_res = d_step(true, x1306_res)
+    end
+    x1312_res = x1310_res === true ? x1311_res : x1310_res === false ? x1306_res : ifelse(x1310_res, x1311_res, x1306_res)
+    x1313__goal = !(x1309__goal)
+    if x1313__goal !== false
+     x1314__goal = d_hit(true, x1312_res)
+    end
+    x1315__goal = x1313__goal === true ? x1314__goal : x1313__goal === false ? x1309__goal : ifelse(x1313__goal, x1314__goal, x1309__goal)
+    x1316_res = !(x1315__goal)
+    if x1316_res !== false
+     x1317_res = d_step(true, x1312_res)
+    end
+    x1318_res = x1316_res === true ? x1317_res : x1316_res === false ? x1312_res : ifelse(x1316_res, x1317_res, x1312_res)
+    x1319__goal = !(x1315__goal)
+    if x1319__goal !== false
+     x1320__goal = d_hit(true, x1318_res)
+    end
+    x1321__goal = x1319__goal === true ? x1320__goal : x1319__goal === false ? x1315__goal : ifelse(x1319__goal, x1320__goal, x1315__goal)
+    x1322_res = !(x1321__goal)
+    if x1322_res !== false
+     x1323_res = d_step(true, x1318_res)
+    end
+    x1324_res = x1322_res === true ? x1323_res : x1322_res === false ? x1318_res : ifelse(x1322_res, x1323_res, x1318_res)
+    x1325__goal = !(x1321__goal)
+    if x1325__goal !== false
+     x1326__goal = d_hit(true, x1324_res)
+    end
+    x1327__goal = x1325__goal === true ? x1326__goal : x1325__goal === false ? x1321__goal : ifelse(x1325__goal, x1326__goal, x1321__goal)
+    x1328_res = !(x1327__goal)
+    if x1328_res !== false
+     x1329_res = d_step(true, x1324_res)
+    end
+    x1330_res = x1328_res === true ? x1329_res : x1328_res === false ? x1324_res : ifelse(x1328_res, x1329_res, x1324_res)
+    x1331__goal = !(x1327__goal)
+    if x1331__goal !== false
+     x1332__goal = d_hit(true, x1330_res)
+    end
+    x1333__goal = x1331__goal === true ? x1332__goal : x1331__goal === false ? x1327__goal : ifelse(x1331__goal, x1332__goal, x1327__goal)
+    x1334_res = !(x1333__goal)
+    if x1334_res !== false
+     x1335_res = d_step(true, x1330_res)
+    end
+    x1336_res = x1334_res === true ? x1335_res : x1334_res === false ? x1330_res : ifelse(x1334_res, x1335_res, x1330_res)
+    x1337__goal = !(x1333__goal)
+    if x1337__goal !== false
+     x1338__goal = d_hit(true, x1336_res)
+    end
+    x1339__goal = x1337__goal === true ? x1338__goal : x1337__goal === false ? x1333__goal : ifelse(x1337__goal, x1338__goal, x1333__goal)
+    x1340_res = !(x1339__goal)
+    if x1340_res !== false
+     x1341_res = d_step(true, x1336_res)
+    end
+    x1342_res = x1340_res === true ? x1341_res : x1340_res === false ? x1336_res : ifelse(x1340_res, x1341_res, x1336_res)
+    x1343__goal = !(x1339__goal)
+    if x1343__goal !== false
+     x1344__goal = d_hit(true, x1342_res)
+    end
+    x1345__goal = x1343__goal === true ? x1344__goal : x1343__goal === false ? x1339__goal : ifelse(x1343__goal, x1344__goal, x1339__goal)
+    x1346_res = !(x1345__goal)
+    if x1346_res !== false
+     x1347_res = d_step(true, x1342_res)
+    end
+    x1348_res = x1346_res === true ? x1347_res : x1346_res === false ? x1342_res : ifelse(x1346_res, x1347_res, x1342_res)
+    x1349__goal = !(x1345__goal)
+    if x1349__goal !== false
+     x1350__goal = d_hit(true, x1348_res)
+    end
+    x1351__goal = x1349__goal === true ? x1350__goal : x1349__goal === false ? x1345__goal : ifelse(x1349__goal, x1350__goal, x1345__goal)
+    x1352_res = !(x1351__goal)
+    if x1352_res !== false
+     x1353_res = d_step(true, x1348_res)
+    end
+    x1354_res = x1352_res === true ? x1353_res : x1352_res === false ? x1348_res : ifelse(x1352_res, x1353_res, x1348_res)
+    x1355__goal = !(x1351__goal)
+    if x1355__goal !== false
+     x1356__goal = d_hit(true, x1354_res)
+    end
+    x1357__goal = x1355__goal === true ? x1356__goal : x1355__goal === false ? x1351__goal : ifelse(x1355__goal, x1356__goal, x1351__goal)
+    x1358_res = !(x1357__goal)
+    if x1358_res !== false
+     x1359_res = d_step(true, x1354_res)
+    end
+    x1360_res = x1358_res === true ? x1359_res : x1358_res === false ? x1354_res : ifelse(x1358_res, x1359_res, x1354_res)
+    x1361__goal = !(x1357__goal)
+    if x1361__goal !== false
+     x1362__goal = d_hit(true, x1360_res)
+    end
+    x1363__goal = x1361__goal === true ? x1362__goal : x1361__goal === false ? x1357__goal : ifelse(x1361__goal, x1362__goal, x1357__goal)
+    x1364_res = !(x1363__goal)
+    if x1364_res !== false
+     x1365_res = d_step(true, x1360_res)
+    end
+    x1366_res = x1364_res === true ? x1365_res : x1364_res === false ? x1360_res : ifelse(x1364_res, x1365_res, x1360_res)
+    x1367__goal = !(x1363__goal)
+    if x1367__goal !== false
+     x1368__goal = d_hit(true, x1366_res)
+    end
+    x1369__goal = x1367__goal === true ? x1368__goal : x1367__goal === false ? x1363__goal : ifelse(x1367__goal, x1368__goal, x1363__goal)
+    x1370_res = !(x1369__goal)
+    if x1370_res !== false
+     x1371_res = d_step(true, x1366_res)
+    end
+    x1372_res = x1370_res === true ? x1371_res : x1370_res === false ? x1366_res : ifelse(x1370_res, x1371_res, x1366_res)
+    x1373__goal = !(x1369__goal)
+    if x1373__goal !== false
+     x1374__goal = d_hit(true, x1372_res)
+    end
+    x1375__goal = x1373__goal === true ? x1374__goal : x1373__goal === false ? x1369__goal : ifelse(x1373__goal, x1374__goal, x1369__goal)
+    x1376_res = !(x1375__goal)
+    if x1376_res !== false
+     x1377_res = d_step(true, x1372_res)
+    end
+    x1378_res = x1376_res === true ? x1377_res : x1376_res === false ? x1372_res : ifelse(x1376_res, x1377_res, x1372_res)
+    x1379__goal = !(x1375__goal)
+    if x1379__goal !== false
+     x1380__goal = d_hit(true, x1378_res)
+    end
+    x1381__goal = x1379__goal === true ? x1380__goal : x1379__goal === false ? x1375__goal : ifelse(x1379__goal, x1380__goal, x1375__goal)
+    x1382_res = !(x1381__goal)
+    if x1382_res !== false
+     x1383_res = d_step(true, x1378_res)
+    end
+    x1384_res = x1382_res === true ? x1383_res : x1382_res === false ? x1378_res : ifelse(x1382_res, x1383_res, x1378_res)
+    x1385__goal = !(x1381__goal)
+    if x1385__goal !== false
+     x1386__goal = d_hit(true, x1384_res)
+    end
+    x1387__goal = x1385__goal === true ? x1386__goal : x1385__goal === false ? x1381__goal : ifelse(x1385__goal, x1386__goal, x1381__goal)
+    x1388_res = !(x1387__goal)
+    if x1388_res !== false
+     x1389_res = d_step(true, x1384_res)
+    end
+    x1390_res = x1388_res === true ? x1389_res : x1388_res === false ? x1384_res : ifelse(x1388_res, x1389_res, x1384_res)
+    x1391__goal = !(x1387__goal)
+    if x1391__goal !== false
+     x1392__goal = d_hit(true, x1390_res)
+    end
+    x1393__goal = x1391__goal === true ? x1392__goal : x1391__goal === false ? x1387__goal : ifelse(x1391__goal, x1392__goal, x1387__goal)
+    x1394_res = !(x1393__goal)
+    if x1394_res !== false
+     x1395_res = d_step(true, x1390_res)
+    end
+    x1396_res = x1394_res === true ? x1395_res : x1394_res === false ? x1390_res : ifelse(x1394_res, x1395_res, x1390_res)
+    x1397__goal = !(x1393__goal)
+    if x1397__goal !== false
+     x1398__goal = d_hit(true, x1396_res)
+    end
+    x1399__goal = x1397__goal === true ? x1398__goal : x1397__goal === false ? x1393__goal : ifelse(x1397__goal, x1398__goal, x1393__goal)
+    x1400_res = !(x1399__goal)
+    if x1400_res !== false
+     x1401_res = d_step(true, x1396_res)
+    end
+    x1402_res = x1400_res === true ? x1401_res : x1400_res === false ? x1396_res : ifelse(x1400_res, x1401_res, x1396_res)
+    x1403__goal = !(x1399__goal)
+    if x1403__goal !== false
+     x1404__goal = d_hit(true, x1402_res)
+    end
+    x1405__goal = x1403__goal === true ? x1404__goal : x1403__goal === false ? x1399__goal : ifelse(x1403__goal, x1404__goal, x1399__goal)
+    x1406_res = !(x1405__goal)
+    if x1406_res !== false
+     x1407_res = d_step(true, x1402_res)
+    end
+    x1408_res = x1406_res === true ? x1407_res : x1406_res === false ? x1402_res : ifelse(x1406_res, x1407_res, x1402_res)
+    x1409__goal = !(x1405__goal)
+    if x1409__goal !== false
+     x1410__goal = d_hit(true, x1408_res)
+    end
+    x1411__goal = x1409__goal === true ? x1410__goal : x1409__goal === false ? x1405__goal : ifelse(x1409__goal, x1410__goal, x1405__goal)
+    x1412_res = !(x1411__goal)
+    if x1412_res !== false
+     x1413_res = d_step(true, x1408_res)
+    end
+    x1414_res = x1412_res === true ? x1413_res : x1412_res === false ? x1408_res : ifelse(x1412_res, x1413_res, x1408_res)
+    x1415__goal = !(x1411__goal)
+    if x1415__goal !== false
+     x1416__goal = d_hit(true, x1414_res)
+    end
+    x1417__goal = x1415__goal === true ? x1416__goal : x1415__goal === false ? x1411__goal : ifelse(x1415__goal, x1416__goal, x1411__goal)
+    x1418_res = !(x1417__goal)
+    if x1418_res !== false
+     x1419_res = d_step(true, x1414_res)
+    end
+    x1420_res = x1418_res === true ? x1419_res : x1418_res === false ? x1414_res : ifelse(x1418_res, x1419_res, x1414_res)
+    x1421__goal = !(x1417__goal)
+    if x1421__goal !== false
+     x1422__goal = d_hit(true, x1420_res)
+    end
+    x1423__goal = x1421__goal === true ? x1422__goal : x1421__goal === false ? x1417__goal : ifelse(x1421__goal, x1422__goal, x1417__goal)
+    x1424_res = !(x1423__goal)
+    if x1424_res !== false
+     x1425_res = d_step(true, x1420_res)
+    end
+    x1426_res = x1424_res === true ? x1425_res : x1424_res === false ? x1420_res : ifelse(x1424_res, x1425_res, x1420_res)
+    x1427__goal = !(x1423__goal)
+    if x1427__goal !== false
+     x1428__goal = d_hit(true, x1426_res)
+    end
+    x1429__goal = x1427__goal === true ? x1428__goal : x1427__goal === false ? x1423__goal : ifelse(x1427__goal, x1428__goal, x1423__goal)
+    x1430_res = !(x1429__goal)
+    if x1430_res !== false
+     x1431_res = d_step(true, x1426_res)
+    end
+    x1432_res = x1430_res === true ? x1431_res : x1430_res === false ? x1426_res : ifelse(x1430_res, x1431_res, x1426_res)
+    x1433__goal = !(x1429__goal)
+    if x1433__goal !== false
+     x1434__goal = d_hit(true, x1432_res)
+    end
+    x1435__goal = x1433__goal === true ? x1434__goal : x1433__goal === false ? x1429__goal : ifelse(x1433__goal, x1434__goal, x1429__goal)
+    x1436_res = !(x1435__goal)
+    if x1436_res !== false
+     x1437_res = d_step(true, x1432_res)
+    end
+    x1438_res = x1436_res === true ? x1437_res : x1436_res === false ? x1432_res : ifelse(x1436_res, x1437_res, x1432_res)
+    x1439__goal = !(x1435__goal)
+    if x1439__goal !== false
+     x1440__goal = d_hit(true, x1438_res)
+    end
+    x1441__goal = x1439__goal === true ? x1440__goal : x1439__goal === false ? x1435__goal : ifelse(x1439__goal, x1440__goal, x1435__goal)
+    x1442_res = !(x1441__goal)
+    if x1442_res !== false
+     x1443_res = d_step(true, x1438_res)
+    end
+    x1444_res = x1442_res === true ? x1443_res : x1442_res === false ? x1438_res : ifelse(x1442_res, x1443_res, x1438_res)
+    x1445__goal = !(x1441__goal)
+    if x1445__goal !== false
+     x1446__goal = d_hit(true, x1444_res)
+    end
+    x1447__goal = x1445__goal === true ? x1446__goal : x1445__goal === false ? x1441__goal : ifelse(x1445__goal, x1446__goal, x1441__goal)
+    x1448_res = !(x1447__goal)
+    return (x1444_res, x1448_res,)
+end
+
+function chunk_4(x1444_res, x1448_res)
+    if x1448_res !== false
+     x1449_res = d_step(true, x1444_res)
+    end
+    x1450_res = x1448_res === true ? x1449_res : x1448_res === false ? x1444_res : ifelse(x1448_res, x1449_res, x1444_res)
+    x1451_result = d_hit(true, x1450_res)
+    x1452_result = (x1451_result, false)
+    return x1452_result
+end
+
+function dice_main()
+    (x646_res, x649__goal, x650_res,) = chunk_1()
+    (x1045__goal, x1048_res, x1049__goal,) = chunk_2(x646_res, x649__goal, x650_res)
+    (x1444_res, x1448_res,) = chunk_3(x1045__goal, x1048_res, x1049__goal)
+    x1452_result = chunk_4(x1444_res, x1448_res)
+    return x1452_result
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println("alea ", k, " true ", d[true])
+        println("alea ", k, " false ", d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println("alea ", k, " ", v, " ", d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println("alea_seconds ", stats.time)
+    println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 << 30)
+schedule(task)
+wait(task)
+end

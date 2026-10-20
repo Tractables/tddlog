@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_markov_n50 · tddlog results</title>
+<meta name="description" content="bb_markov_n50, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_markov_n50</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/sppl/markov_switching.jl</code> with <code>n=50</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">1.3</td><td class="num">0.59</td><td class="num">89.4</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num fail" title="an answer off the reference by more than 1e-6">wrong</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; wrong: an answer off the reference by more than 1e-6. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">SPPL</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set n=50 data/alea/sppl/markov_switching.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/sppl/markov_switching.jl</code><span>2 771 bytes, 69 lines</span><span class="sha" title="SHA-256">sha256 7638a2d30c852f14d61187b30af5eb6567df908369d84bbac6a78adc2deab1f5</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/sppl/markov_switching.jl</code>.</p><pre># Hierarchical Markov switching model (SPPL, Saad, Rinard and Mansinghka,
+# PLDI 2021, Table 2 and examples/hierarchcial-markov-switching.ipynb of
+# github.com/probsys/sppl at e537b0c, Apache License 2.0): a hidden
+# Boolean `separated` (probability 0.4) picks the means of a two-state
+# Markov chain&#x27;s emissions; state z_i moves to 1 with probability 0.2
+# from 0 and 0.8 from 1; at each step a normal X_i of variance 1 and a
+# Poisson Y_i are observed, their means mu_x[s][z] and mu_y[s][z]. The
+# queries are `separated` and the last state z_n given the n
+# observations. The observations are a draw from the model with
+# `separated` false (means 5 and 7, which overlap), by the linear
+# congruential generator below (seeded with 2021) and Distributions&#x27;
+# quantiles, so that they are the same on every Julia; SPPL&#x27;s notebook
+# draws them with numpy at n = 100.
+#
+# Bit blasting: each X_i is observed as g + mean == x_i, g a standard
+# normal in `pieces` exponential pieces on [-8, 8] (gaussian_observe&#x27;s
+# form), the mean the constant its state picks; each Y_i is a categorical
+# over 0 to 31 (the Poisson truncated there) per state, compared with
+# y_i. `bits` is the bits after the binary point of the numbers, `n` the
+# number of steps.
+using Alea, Distributions
+
+const QUERY = :pr
+const n = 20
+const bits = 4
+const pieces = 16
+const DFiP = DistFix{6 + bits, bits}
+const Y = DistUInt{5}
+const p_transition = [0.2, 0.8]
+const mu_x = [[5.0, 7.0], [5.0, 15.0]]
+const mu_y = [[5.0, 8.0], [3.0, 8.0]]
+
+function lcg(seed)
+    state = Ref(UInt64(seed))
+    () -&gt; (state[] = state[] * 0x5851f42d4c957f2d + 0x14057b7ef767814f; ((state[] &gt;&gt; 11) + 0.5) * 2.0^-53)
+end
+
+# The observations (x_i, y_i), i = 1 .. 2000, drawn with s = 1 (not separated).
+const DATA = let u = lcg(2021), s = 1, xs = Float64[], ys = Int[], z = u() &lt; 0.5
+    for i in 1:2000
+        i &gt; 1 &amp;&amp; (z = u() &lt; p_transition[z + 1])
+        push!(xs, quantile(Normal(mu_x[s][z + 1], 1.0), u()))
+        push!(ys, min(Int(quantile(Poisson(mu_y[s][z + 1]), u())), 31))
+    end
+    (xs, ys)
+end
+
+poisson(mu) = discrete(Y, (p = [pdf(Poisson(mu), k) for k in 0:31]; p ./ sum(p)))
+
+function emit(s, z, i)
+    m(a, b) = ifelse(z, DFiP(b), DFiP(a))
+    mean = ifelse(s, m(mu_x[2]...), m(mu_x[1]...))
+    g = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+    observe(prob_equals(g + mean, DFiP(DATA[1][i])))
+    y = ifelse(s, ifelse(z, poisson(mu_y[2][2]), poisson(mu_y[2][1])),
+                  ifelse(z, poisson(mu_y[1][2]), poisson(mu_y[1][1])))
+    observe(prob_equals(y, Y(DATA[2][i])))
+end
+
+model() = @alea begin
+    s = flip(0.4)
+    z = flip(0.5)
+    emit(s, z, 1)
+    for i in 2:n
+        z = ifelse(z, flip(p_transition[2]), flip(p_transition[1]))
+        emit(s, z, i)
+    end
+    (s, z)
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_markov_n50.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_markov_n50.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_markov_n50.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_markov_n50.pl</code><span>1 423 284 bytes, 63 838 lines</span><span class="sha" title="SHA-256">sha256 05fd32446a35c174a628b11ff0cf75e535d872c2f491ea6b248abb13d30c76cf</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/sppl/markov_switching.jl n=50</code>.</p><p class="note"><a href="../files/05fd32446a35c174a628.txt">the first 65 513 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/05fd32446a35c174a628.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into SPPL; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by SPPL.</p>
+<dl class="cmds">
+<dt>SPPL</dt><dd><code>python -I scripts/sppl_markov.py 50</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_markov_n50.sppl</code><span>591 bytes, 21 lines</span><span class="sha" title="SHA-256">sha256 7108b4208e284789b342db19c76b21013459c7aedeea6d274d20c40162307b8f</span></div><p class="made">The program of <code>sppl_markov.py 50</code> when SPPL runs: the hierarchical Markov switching model for that many steps. The same script constrains it on the observations of <code>data/alea/sppl/markov_switching.jl</code>'s generator and asks the two queries.</p><pre>n = 50
+p_transition = [.2, .8]
+mu_x = [[5, 7], [5, 15]]
+mu_y = [[5, 8], [3, 8]]
+
+X = array(n)
+Y = array(n)
+Z = array(n)
+
+separated ~= bernoulli(p=.4)
+switch (separated) cases (s in [0,1]):
+    Z[0] ~= bernoulli(p=.5)
+    switch (Z[0]) cases (z in [0, 1]):
+        X[0] ~= norm(loc=mu_x[s][z])
+        Y[0] ~= poisson(mu=mu_y[s][z])
+    for i in range(1, n):
+        switch (Z[i-1]) cases (z in [0, 1]):
+            Z[i] ~= bernoulli(p=p_transition[z])
+            switch (Z[i]) cases (z in [0, 1]):
+                X[i] ~= norm(loc=mu_x[s][z])
+                Y[i] ~= poisson(mu=mu_y[s][z])
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.3</td><td></td><td>largest formula, pairs 32 818; final formula, pairs 3 556; variables 8 275; ground atoms 18 509; ground rules 18 484; vtree program (from auto: 2 attempts, 0.165s discarded)</td></tr><tr><td>2</td><td>answered</td><td>1.3</td><td></td><td>largest formula, pairs 32 818; final formula, pairs 3 556; variables 8 275; ground atoms 18 509; ground rules 18 484; vtree program (from auto: 2 attempts, 0.170s discarded)</td></tr><tr><td>3</td><td>answered</td><td>1.3</td><td></td><td>largest formula, pairs 32 818; final formula, pairs 3 556; variables 8 275; ground atoms 18 509; ground rules 18 484; vtree program (from auto: 2 attempts, 0.168s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.89</td><td></td><td>largest formula, pairs 32 818; final formula, pairs 3 556; variables 8 275; ground atoms 18 509; ground rules 18 484; vtree program</td></tr><tr><td>2</td><td>answered</td><td>0.89</td><td></td><td>largest formula, pairs 32 818; final formula, pairs 3 556; variables 8 275; ground atoms 18 509; ground rules 18 484; vtree program</td></tr><tr><td>3</td><td>answered</td><td>0.89</td><td></td><td>largest formula, pairs 32 818; final formula, pairs 3 556; variables 8 275; ground atoms 18 509; ground rules 18 484; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>89.3</td><td>77.6</td><td>76.9</td><td>0.59</td><td></td><td>circuit flips 10 250; circuit gates 39 447; BDD peak, nodes 509 978; evidence BDD, nodes 2 338; largest query BDD, nodes 100</td></tr><tr><td>2</td><td>answered</td><td>89.4</td><td>77.8</td><td>77.1</td><td>0.62</td><td></td><td>circuit flips 10 250; circuit gates 39 447; BDD peak, nodes 509 978; evidence BDD, nodes 2 338; largest query BDD, nodes 100</td></tr><tr><td>3</td><td>answered</td><td>89.6</td><td>77.9</td><td>77.2</td><td>0.59</td><td></td><td>circuit flips 10 250; circuit gates 39 447; BDD peak, nodes 509 978; evidence BDD, nodes 2 338; largest query BDD, nodes 100</td></tr></tbody></table></div>
+<h3>SPPL</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td><span title="an answer off the reference by more than 1e-6">wrong</span></td><td>2.3</td><td></td><td>in-process s 1.696</td></tr><tr><td>2</td><td><span title="an answer off the reference by more than 1e-6">wrong</span></td><td>2.3</td><td></td><td>in-process s 1.633</td></tr><tr><td>3</td><td><span title="an answer off the reference by more than 1e-6">wrong</span></td><td>2.1</td><td></td><td>in-process s 1.469</td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th><th class="num">SPPL</th></tr></thead><tbody><tr><th>q1</th><td class="num">5.6465e-62</td><td class="num">5.6465e-62</td><td class="num">5.6465e-62</td><td class="num">6.76141e-62</td></tr><tr><th>q2</th><td class="num">0.9794579399</td><td class="num">0.9794579399</td><td class="num">0.9794579399</td><td class="num">0.9798502489</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

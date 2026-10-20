@@ -1,0 +1,250 @@
+:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table mchrom/2.
+:- table pchrom/2.
+mchrom(Person,a):0.9 ; mchrom(Person,b):0.05 ; mchrom(Person,null):0.05 :- mother(Mother,Person), pchrom(Mother,a ), mchrom(Mother,a ).
+mchrom(Person,a):0.49 ; mchrom(Person,b):0.49 ; mchrom(Person,null):0.02 :- mother(Mother,Person), pchrom(Mother,b ), mchrom(Mother,a ).
+mchrom(Person,a):0.49 ; mchrom(Person,b):0.02 ; mchrom(Person,null):0.49 :- mother(Mother,Person), pchrom(Mother,null), mchrom(Mother,a ).
+mchrom(Person,a):0.49 ; mchrom(Person,b):0.49 ; mchrom(Person,null):0.02 :- mother(Mother,Person), pchrom(Mother,a ), mchrom(Mother,b ).
+mchrom(Person,a):0.05 ; mchrom(Person,b):0.9 ; mchrom(Person,null):0.05 :- mother(Mother,Person), pchrom(Mother,b ), mchrom(Mother,b ).
+mchrom(Person,a):0.02 ; mchrom(Person,b):0.49 ; mchrom(Person,null):0.49 :- mother(Mother,Person), pchrom(Mother,null), mchrom(Mother,b ).
+mchrom(Person,a):0.49 ; mchrom(Person,b):0.02 ; mchrom(Person,null):0.49 :- mother(Mother,Person), pchrom(Mother,a ), mchrom(Mother,null).
+mchrom(Person,a):0.02 ; mchrom(Person,b):0.49 ; mchrom(Person,null):0.49 :- mother(Mother,Person), pchrom(Mother,b ), mchrom(Mother,null).
+mchrom(Person,a):0.05 ; mchrom(Person,b):0.05 ; mchrom(Person,null):0.9 :- mother(Mother,Person), pchrom(Mother,null), mchrom(Mother,null).
+pchrom(Person,a):0.9 ; pchrom(Person,b):0.05 ; pchrom(Person,null):0.05 :- father(Father,Person), pchrom(Father,a ), mchrom(Father,a ).
+pchrom(Person,a):0.49 ; pchrom(Person,b):0.49 ; pchrom(Person,null):0.02 :- father(Father,Person), pchrom(Father,b ), mchrom(Father,a ).
+pchrom(Person,a):0.49 ; pchrom(Person,b):0.02 ; pchrom(Person,null):0.49 :- father(Father,Person), pchrom(Father,null), mchrom(Father,a ).
+pchrom(Person,a):0.49 ; pchrom(Person,b):0.49 ; pchrom(Person,null):0.02 :- father(Father,Person), pchrom(Father,a ), mchrom(Father,b ).
+pchrom(Person,a):0.05 ; pchrom(Person,b):0.9 ; pchrom(Person,null):0.05 :- father(Father,Person), pchrom(Father,b ), mchrom(Father,b ).
+pchrom(Person,a):0.02 ; pchrom(Person,b):0.49 ; pchrom(Person,null):0.49 :- father(Father,Person), pchrom(Father,null), mchrom(Father,b ).
+pchrom(Person,a):0.49 ; pchrom(Person,b):0.02 ; pchrom(Person,null):0.49 :- father(Father,Person), pchrom(Father,a ), mchrom(Father,null).
+pchrom(Person,a):0.02 ; pchrom(Person,b):0.49 ; pchrom(Person,null):0.49 :- father(Father,Person), pchrom(Father,b ), mchrom(Father,null).
+pchrom(Person,a):0.05 ; pchrom(Person,b):0.05 ; pchrom(Person,null):0.9 :- father(Father,Person), pchrom(Father,null), mchrom(Father,null).
+bloodtype(Person,a):0.9 ; bloodtype(Person,b):0.03 ; bloodtype(Person,ab):0.03 ; bloodtype(Person,null):0.04 :- pchrom(Person,a ),mchrom(Person,a ).
+bloodtype(Person,a):0.03 ; bloodtype(Person,b):0.03 ; bloodtype(Person,ab):0.9 ; bloodtype(Person,null):0.04 :- pchrom(Person,b ),mchrom(Person,a ).
+bloodtype(Person,a):0.9 ; bloodtype(Person,b):0.04 ; bloodtype(Person,ab):0.03 ; bloodtype(Person,null):0.03 :- pchrom(Person,null),mchrom(Person,a ).
+bloodtype(Person,a):0.03 ; bloodtype(Person,b):0.03 ; bloodtype(Person,ab):0.9 ; bloodtype(Person,null):0.04 :- pchrom(Person,a ),mchrom(Person,b ).
+bloodtype(Person,a):0.04 ; bloodtype(Person,b):0.9 ; bloodtype(Person,ab):0.03 ; bloodtype(Person,null):0.03 :- pchrom(Person,b ),mchrom(Person,b ).
+bloodtype(Person,a):0.03 ; bloodtype(Person,b):0.09 ; bloodtype(Person,ab):0.04 ; bloodtype(Person,null):0.03 :- pchrom(Person,null),mchrom(Person,b ).
+bloodtype(Person,a):0.9 ; bloodtype(Person,b):0.03 ; bloodtype(Person,ab):0.03 ; bloodtype(Person,null):0.04 :- pchrom(Person,a ),mchrom(Person,null).
+bloodtype(Person,a):0.03 ; bloodtype(Person,b):0.9 ; bloodtype(Person,ab):0.04 ; bloodtype(Person,null):0.03 :- pchrom(Person,b ),mchrom(Person,null).
+bloodtype(Person,a):0.03 ; bloodtype(Person,b):0.04 ; bloodtype(Person,ab):0.03 ; bloodtype(Person,null):0.9 :- pchrom(Person,null),mchrom(Person,null).
+mchrom(i0_0,a):0.3 ; mchrom(i0_0,b):0.3 ; mchrom(i0_0,null):0.4.
+pchrom(i0_0,a):0.3 ; pchrom(i0_0,b):0.3 ; pchrom(i0_0,null):0.4.
+mchrom(i0_1,a):0.3 ; mchrom(i0_1,b):0.3 ; mchrom(i0_1,null):0.4.
+pchrom(i0_1,a):0.3 ; pchrom(i0_1,b):0.3 ; pchrom(i0_1,null):0.4.
+mchrom(i0_2,a):0.3 ; mchrom(i0_2,b):0.3 ; mchrom(i0_2,null):0.4.
+pchrom(i0_2,a):0.3 ; pchrom(i0_2,b):0.3 ; pchrom(i0_2,null):0.4.
+mchrom(i0_3,a):0.3 ; mchrom(i0_3,b):0.3 ; mchrom(i0_3,null):0.4.
+pchrom(i0_3,a):0.3 ; pchrom(i0_3,b):0.3 ; pchrom(i0_3,null):0.4.
+mchrom(i0_4,a):0.3 ; mchrom(i0_4,b):0.3 ; mchrom(i0_4,null):0.4.
+pchrom(i0_4,a):0.3 ; pchrom(i0_4,b):0.3 ; pchrom(i0_4,null):0.4.
+mchrom(i0_5,a):0.3 ; mchrom(i0_5,b):0.3 ; mchrom(i0_5,null):0.4.
+pchrom(i0_5,a):0.3 ; pchrom(i0_5,b):0.3 ; pchrom(i0_5,null):0.4.
+father(i0_0,i1_0).
+mother(i0_5,i1_0).
+father(i0_0,i1_1).
+mother(i0_3,i1_1).
+father(i0_0,i1_2).
+mother(i0_3,i1_2).
+father(i0_2,i1_3).
+mother(i0_3,i1_3).
+father(i0_4,i1_4).
+mother(i0_3,i1_4).
+father(i0_0,i1_5).
+mother(i0_1,i1_5).
+father(i1_2,i2_0).
+mother(i1_1,i2_0).
+father(i1_2,i2_1).
+mother(i1_3,i2_1).
+father(i1_4,i2_2).
+mother(i1_1,i2_2).
+father(i1_4,i2_3).
+mother(i1_3,i2_3).
+father(i1_2,i2_4).
+mother(i1_5,i2_4).
+father(i1_0,i2_5).
+mother(i1_5,i2_5).
+father(i2_0,i3_0).
+mother(i2_3,i3_0).
+father(i2_0,i3_1).
+mother(i2_1,i3_1).
+father(i2_0,i3_2).
+mother(i2_5,i3_2).
+father(i2_4,i3_3).
+mother(i2_1,i3_3).
+father(i2_2,i3_4).
+mother(i2_5,i3_4).
+father(i2_0,i3_5).
+mother(i2_3,i3_5).
+father(i3_4,i4_0).
+mother(i3_1,i4_0).
+father(i3_4,i4_1).
+mother(i3_1,i4_1).
+father(i3_2,i4_2).
+mother(i3_3,i4_2).
+father(i3_4,i4_3).
+mother(i3_1,i4_3).
+father(i3_2,i4_4).
+mother(i3_1,i4_4).
+father(i3_4,i4_5).
+mother(i3_1,i4_5).
+father(i4_2,i5_0).
+mother(i4_3,i5_0).
+father(i4_0,i5_1).
+mother(i4_3,i5_1).
+father(i4_4,i5_2).
+mother(i4_5,i5_2).
+father(i4_0,i5_3).
+mother(i4_1,i5_3).
+father(i4_4,i5_4).
+mother(i4_5,i5_4).
+father(i4_2,i5_5).
+mother(i4_1,i5_5).
+father(i5_4,i6_0).
+mother(i5_3,i6_0).
+father(i5_4,i6_1).
+mother(i5_5,i6_1).
+father(i5_4,i6_2).
+mother(i5_3,i6_2).
+father(i5_4,i6_3).
+mother(i5_5,i6_3).
+father(i5_0,i6_4).
+mother(i5_3,i6_4).
+father(i5_2,i6_5).
+mother(i5_5,i6_5).
+father(i6_2,i7_0).
+mother(i6_5,i7_0).
+father(i6_2,i7_1).
+mother(i6_5,i7_1).
+father(i6_0,i7_2).
+mother(i6_3,i7_2).
+father(i6_0,i7_3).
+mother(i6_5,i7_3).
+father(i6_2,i7_4).
+mother(i6_3,i7_4).
+father(i6_4,i7_5).
+mother(i6_1,i7_5).
+father(i7_2,i8_0).
+mother(i7_5,i8_0).
+father(i7_4,i8_1).
+mother(i7_5,i8_1).
+father(i7_4,i8_2).
+mother(i7_3,i8_2).
+father(i7_0,i8_3).
+mother(i7_3,i8_3).
+father(i7_4,i8_4).
+mother(i7_5,i8_4).
+father(i7_0,i8_5).
+mother(i7_1,i8_5).
+father(i8_4,i9_0).
+mother(i8_3,i9_0).
+father(i8_2,i9_1).
+mother(i8_3,i9_1).
+father(i8_4,i9_2).
+mother(i8_1,i9_2).
+father(i8_2,i9_3).
+mother(i8_1,i9_3).
+father(i8_2,i9_4).
+mother(i8_5,i9_4).
+father(i8_4,i9_5).
+mother(i8_5,i9_5).
+father(i9_4,i10_0).
+mother(i9_3,i10_0).
+father(i9_4,i10_1).
+mother(i9_1,i10_1).
+father(i9_0,i10_2).
+mother(i9_5,i10_2).
+father(i9_0,i10_3).
+mother(i9_1,i10_3).
+father(i9_0,i10_4).
+mother(i9_5,i10_4).
+father(i9_4,i10_5).
+mother(i9_1,i10_5).
+father(i10_2,i11_0).
+mother(i10_5,i11_0).
+father(i10_2,i11_1).
+mother(i10_5,i11_1).
+father(i10_2,i11_2).
+mother(i10_3,i11_2).
+father(i10_2,i11_3).
+mother(i10_5,i11_3).
+father(i10_4,i11_4).
+mother(i10_5,i11_4).
+father(i10_4,i11_5).
+mother(i10_1,i11_5).
+father(i11_2,i12_0).
+mother(i11_5,i12_0).
+father(i11_4,i12_1).
+mother(i11_1,i12_1).
+father(i11_4,i12_2).
+mother(i11_5,i12_2).
+father(i11_0,i12_3).
+mother(i11_3,i12_3).
+father(i11_0,i12_4).
+mother(i11_3,i12_4).
+father(i11_2,i12_5).
+mother(i11_5,i12_5).
+father(i12_4,i13_0).
+mother(i12_1,i13_0).
+father(i12_4,i13_1).
+mother(i12_3,i13_1).
+father(i12_2,i13_2).
+mother(i12_3,i13_2).
+father(i12_2,i13_3).
+mother(i12_3,i13_3).
+father(i12_0,i13_4).
+mother(i12_5,i13_4).
+father(i12_4,i13_5).
+mother(i12_5,i13_5).
+father(i13_4,i14_0).
+mother(i13_3,i14_0).
+father(i13_2,i14_1).
+mother(i13_5,i14_1).
+father(i13_0,i14_2).
+mother(i13_1,i14_2).
+father(i13_4,i14_3).
+mother(i13_1,i14_3).
+father(i13_4,i14_4).
+mother(i13_5,i14_4).
+father(i13_0,i14_5).
+mother(i13_1,i14_5).
+father(i14_4,i15_0).
+mother(i14_3,i15_0).
+father(i14_0,i15_1).
+mother(i14_5,i15_1).
+father(i14_0,i15_2).
+mother(i14_1,i15_2).
+father(i14_0,i15_3).
+mother(i14_3,i15_3).
+father(i14_0,i15_4).
+mother(i14_3,i15_4).
+father(i14_0,i15_5).
+mother(i14_3,i15_5).
+:- end_lpad.
+main :-
+    forall((Q = bloodtype(i15_0,a)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_0,b)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_0,ab)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_0,null)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_1,a)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_1,b)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_1,ab)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_1,null)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_2,a)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_2,b)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_2,ab)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_2,null)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_3,a)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_3,b)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_3,ab)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_3,null)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_4,a)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_4,b)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_4,ab)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_4,null)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_5,a)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_5,b)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_5,ab)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))),
+    forall((Q = bloodtype(i15_5,null)), (prob(Q, (bloodtype(i0_0,a), bloodtype(i0_1,ab), bloodtype(i0_3,a), bloodtype(i0_5,b), bloodtype(i1_2,a), bloodtype(i1_4,ab), bloodtype(i1_5,a), bloodtype(i2_3,ab), bloodtype(i2_5,a), bloodtype(i3_0,ab), bloodtype(i3_1,ab), bloodtype(i4_2,ab), bloodtype(i4_3,ab), bloodtype(i4_5,ab), bloodtype(i6_2,a), bloodtype(i7_0,ab), bloodtype(i7_1,ab), bloodtype(i7_2,a), bloodtype(i8_0,a), bloodtype(i9_1,ab), bloodtype(i9_3,a), bloodtype(i10_1,ab), bloodtype(i10_2,ab), bloodtype(i10_5,a), bloodtype(i13_0,a), bloodtype(i13_1,a), bloodtype(i13_3,a), bloodtype(i14_1,b), bloodtype(i14_2,null), bloodtype(i14_5,b)), P), format("~q:\t~w~n", [Q, P]))).

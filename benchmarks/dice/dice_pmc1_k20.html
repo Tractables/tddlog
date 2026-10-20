@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dice_pmc1_k20 · tddlog results</title>
+<meta name="description" content="dice_pmc1_k20, an instance of The Dice paper&#x27;s programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#dice">The Dice paper&#x27;s programs</a></p>
+    <h1>dice_pmc1_k20</h1>
+    <p class="lede">The programs and Bayesian networks of the Dice paper (Holtzen, Van den Broeck and Millstein, OOPSLA 2020), a network as one Dice program per queried variable, and its loop programs scaled up. tddlog runs them translated to ProbLog, Alea.jl translated to Julia, Roulette translated to Racket. 300 s a run (600 s on the loop programs). noDice, Psi and Genfer ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. Made by <code>dice2problog.py dice_pmc1_k20.dice</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th></tr></thead><tbody><tr><td class="num">0.003</td><td class="num">0.03</td><td class="num">14.7</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">0.02</td><td class="num">0.38</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Dice (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Alea.jl</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Roulette</label>
+<input type="radio" name="ptab" id="t4"><label for="t4">Psi</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Dice, noDice as it is.</b></p>
+<p class="readers">Read by Dice, noDice.</p>
+<p class="readers">noDice reads Dice&#x27;s programs as they are; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>Dice</dt><dd><code>dice dice_pmc1_k20.dice</code></dd>
+<dt>noDice</dt><dd><code>nDice.exe dice_pmc1_k20.dice</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_pmc1_k20.dice</code><span>57 374 bytes, 289 lines</span><span class="sha" title="SHA-256">sha256 ea0948bff3a42a2c4e6fabce649a315fb119c408dd3c1c9435ac11ad1340ae61</span></div><p class="made">Written by <code>dice_scale.py data/dice/pmc1.dice 20</code>: the loop of the Dice program run that many times.</p><p class="note"><a href="../files/ea0948bff3a42a2c4e6f.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/ea0948bff3a42a2c4e6f.txt"></pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto dice_pmc1_k20.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_pmc1_k20.pl</code><span>419 bytes, 22 lines</span><span class="sha" title="SHA-256">sha256 e455c6ca3c17931d546602130ae06603dc85e3126ba773681d00bd689cc39b54</span></div><p class="made">Written by <code>dice2problog.py dice_pmc1_k20.dice</code>.</p><pre>0.5::res_then_c.
+0.5::res_then_c_1.
+0.5::res_then_c_2.
+0.5::res_then_c_3.
+0.5::res_then_c_4.
+0.5::res_then_c_5.
+0.5::res_then_c_6.
+0.5::res_then_c_7.
+0.5::res_then_c_8.
+0.5::res_then_c_9.
+0.5::res_then_c_10.
+0.5::res_then_c_11.
+0.5::res_then_c_12.
+0.5::res_then_c_13.
+0.5::res_then_c_14.
+0.5::res_then_c_15.
+0.5::res_then_c_16.
+0.5::res_then_c_17.
+0.5::res_then_c_18.
+0.5::res_then_c_19.
+result :- fail.
+query(result).
+</pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Alea.jl; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia dice_pmc1_k20.alea.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_pmc1_k20.alea.jl</code><span>110 839 bytes, 805 lines</span><span class="sha" title="SHA-256">sha256 e33052664f9969ba5ca3e35f6ac9da3c11cac4778841f95f09f5c08d74475dca</span></div><p class="made">Written by <code>dice2alea.py</code> from the Dice program when Alea.jl runs.</p><p class="note"><a href="../files/e33052664f9969ba5ca3.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/e33052664f9969ba5ca3.txt"></pre></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Roulette; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Roulette.</p>
+<dl class="cmds">
+<dt>Roulette</dt><dd><code>racket -l- raco make dice_pmc1_k20.roulette.rkt</code></dd>
+<dt>Roulette</dt><dd><code>racket dice_pmc1_k20.roulette.rkt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_pmc1_k20.roulette.rkt</code><span>108 975 bytes, 665 lines</span><span class="sha" title="SHA-256">sha256 e96210282ca864e35ae81bbf6787c2f0d8ee33fae005b87db1685a61527ca663</span></div><p class="made">Written by <code>dice2roulette.py</code> from the Dice program when Roulette runs, and compiled by <code>raco make</code> before it runs, untimed, as the artifact's programs are.</p><p class="note"><a href="../files/e96210282ca864e35ae8.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/e96210282ca864e35ae8.txt"></pre></div>
+</div>
+<div class="panel" id="p4">
+<p class="readers"><b>A translation of the original into Psi; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Psi.</p>
+<dl class="cmds">
+<dt>Psi</dt><dd><code>prlimit --stack=unlimited psi dice_pmc1_k20.psi0.psi</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_pmc1_k20.psi0.psi</code><span>236 230 bytes, 2 200 lines</span><span class="sha" title="SHA-256">sha256 160c49f80433518fc90c612c3dbfc4d0aae5cb3499a9e2cbc4f0fe63da0f237d</span></div><p class="made">Written by <code>dice2psi.py</code> from the Dice program when Psi runs: component 0 of the program's value, one Psi run each.</p><p class="note"><a href="../files/160c49f80433518fc90c.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/160c49f80433518fc90c.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.004</td><td>0.0e+00 at most</td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.003</td><td>0.0e+00 at most</td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.003</td><td>0.0e+00 at most</td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (auto+onehot)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.003</td><td>0.0e+00 at most</td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.003</td><td>0.0e+00 at most</td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.003</td><td>0.0e+00 at most</td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.8</td><td>6.3</td><td>6.3</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>14.7</td><td>6.2</td><td>6.2</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>14.5</td><td>6.1</td><td>6.1</td><td></td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.49</td><td>0.03</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.38</td><td>0.02</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.36</td><td>0.02</td><td></td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">tddlog (auto+onehot)</th><th class="num">Alea.jl</th><th class="num">Roulette</th></tr></thead><tbody><tr><th>result</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

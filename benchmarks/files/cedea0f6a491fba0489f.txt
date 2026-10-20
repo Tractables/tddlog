@@ -1,0 +1,1556 @@
+# alarm.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function chunk_1()
+    x1_HYPOVOLEMIA = discrete(DistUInt{1}, [0.2, 0.8])
+    x2_LVFAILURE = discrete(DistUInt{1}, [0.05, 0.95])
+    x3_ERRLOWOUTPUT = discrete(DistUInt{1}, [0.05, 0.95])
+    x4_ERRCAUTER = discrete(DistUInt{1}, [0.1, 0.9])
+    x5_INSUFFANESTH = discrete(DistUInt{1}, [0.1, 0.9])
+    x6_ANAPHYLAXIS = discrete(DistUInt{1}, [0.01, 0.99])
+    x7_KINKEDTUBE = discrete(DistUInt{1}, [0.04, 0.96])
+    x8_FIO2 = discrete(DistUInt{1}, [0.05, 0.95])
+    x9_PULMEMBOLUS = discrete(DistUInt{1}, [0.01, 0.99])
+    x10_INTUBATION = discrete(DistUInt{2}, [0.92, 0.03, 0.05])
+    x11_DISCONNECT = discrete(DistUInt{1}, [0.1, 0.9])
+    x12_MINVOLSET = discrete(DistUInt{2}, [0.05, 0.9, 0.05])
+    x13_STROKEVOLUME = prob_equals(x1_HYPOVOLEMIA, DistUInt{1}(0))
+    if x13_STROKEVOLUME !== false
+     x14_STROKEVOLUME = prob_equals(x2_LVFAILURE, DistUInt{1}(0))
+     if x14_STROKEVOLUME !== false
+      x15_STROKEVOLUME = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     if x14_STROKEVOLUME !== true
+      x16_STROKEVOLUME = discrete(DistUInt{2}, [0.5, 0.49, 0.01])
+     end
+     x17_STROKEVOLUME = x14_STROKEVOLUME === true ? x15_STROKEVOLUME : x14_STROKEVOLUME === false ? x16_STROKEVOLUME : ifelse(x14_STROKEVOLUME, x15_STROKEVOLUME, x16_STROKEVOLUME)
+    end
+    if x13_STROKEVOLUME !== true
+     x18_STROKEVOLUME = prob_equals(x2_LVFAILURE, DistUInt{1}(0))
+     if x18_STROKEVOLUME !== false
+      x19_STROKEVOLUME = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+     end
+     if x18_STROKEVOLUME !== true
+      x20_STROKEVOLUME = discrete(DistUInt{2}, [0.05, 0.9, 0.05])
+     end
+     x21_STROKEVOLUME = x18_STROKEVOLUME === true ? x19_STROKEVOLUME : x18_STROKEVOLUME === false ? x20_STROKEVOLUME : ifelse(x18_STROKEVOLUME, x19_STROKEVOLUME, x20_STROKEVOLUME)
+    end
+    x22_STROKEVOLUME = x13_STROKEVOLUME === true ? x17_STROKEVOLUME : x13_STROKEVOLUME === false ? x21_STROKEVOLUME : ifelse(x13_STROKEVOLUME, x17_STROKEVOLUME, x21_STROKEVOLUME)
+    x23_LVEDVOLUME = prob_equals(x1_HYPOVOLEMIA, DistUInt{1}(0))
+    if x23_LVEDVOLUME !== false
+     x24_LVEDVOLUME = prob_equals(x2_LVFAILURE, DistUInt{1}(0))
+     if x24_LVEDVOLUME !== false
+      x25_LVEDVOLUME = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+     end
+     if x24_LVEDVOLUME !== true
+      x26_LVEDVOLUME = discrete(DistUInt{2}, [0.01, 0.09, 0.9])
+     end
+     x27_LVEDVOLUME = x24_LVEDVOLUME === true ? x25_LVEDVOLUME : x24_LVEDVOLUME === false ? x26_LVEDVOLUME : ifelse(x24_LVEDVOLUME, x25_LVEDVOLUME, x26_LVEDVOLUME)
+    end
+    if x23_LVEDVOLUME !== true
+     x28_LVEDVOLUME = prob_equals(x2_LVFAILURE, DistUInt{1}(0))
+     if x28_LVEDVOLUME !== false
+      x29_LVEDVOLUME = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     if x28_LVEDVOLUME !== true
+      x30_LVEDVOLUME = discrete(DistUInt{2}, [0.05, 0.9, 0.05])
+     end
+     x31_LVEDVOLUME = x28_LVEDVOLUME === true ? x29_LVEDVOLUME : x28_LVEDVOLUME === false ? x30_LVEDVOLUME : ifelse(x28_LVEDVOLUME, x29_LVEDVOLUME, x30_LVEDVOLUME)
+    end
+    x32_LVEDVOLUME = x23_LVEDVOLUME === true ? x27_LVEDVOLUME : x23_LVEDVOLUME === false ? x31_LVEDVOLUME : ifelse(x23_LVEDVOLUME, x27_LVEDVOLUME, x31_LVEDVOLUME)
+    x33_PCWP = prob_equals(x32_LVEDVOLUME, DistUInt{2}(0))
+    if x33_PCWP !== false
+     x34_PCWP = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+    end
+    if x33_PCWP !== true
+     x35_PCWP = prob_equals(x32_LVEDVOLUME, DistUInt{2}(1))
+     if x35_PCWP !== false
+      x36_PCWP = discrete(DistUInt{2}, [0.04, 0.95, 0.01])
+     end
+     if x35_PCWP !== true
+      x37_PCWP = discrete(DistUInt{2}, [0.01, 0.04, 0.95])
+     end
+     x38_PCWP = x35_PCWP === true ? x36_PCWP : x35_PCWP === false ? x37_PCWP : ifelse(x35_PCWP, x36_PCWP, x37_PCWP)
+    end
+    x39_PCWP = x33_PCWP === true ? x34_PCWP : x33_PCWP === false ? x38_PCWP : ifelse(x33_PCWP, x34_PCWP, x38_PCWP)
+    x40_CVP = prob_equals(x32_LVEDVOLUME, DistUInt{2}(0))
+    if x40_CVP !== false
+     x41_CVP = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+    end
+    if x40_CVP !== true
+     x42_CVP = prob_equals(x32_LVEDVOLUME, DistUInt{2}(1))
+     if x42_CVP !== false
+      x43_CVP = discrete(DistUInt{2}, [0.04, 0.95, 0.01])
+     end
+     if x42_CVP !== true
+      x44_CVP = discrete(DistUInt{2}, [0.010000000000000002, 0.29000000000000004, 0.7000000000000001])
+     end
+     x45_CVP = x42_CVP === true ? x43_CVP : x42_CVP === false ? x44_CVP : ifelse(x42_CVP, x43_CVP, x44_CVP)
+    end
+    x46_CVP = x40_CVP === true ? x41_CVP : x40_CVP === false ? x45_CVP : ifelse(x40_CVP, x41_CVP, x45_CVP)
+    x47_HISTORY = prob_equals(x2_LVFAILURE, DistUInt{1}(0))
+    if x47_HISTORY !== false
+     x48_HISTORY = discrete(DistUInt{1}, [0.9, 0.1])
+    end
+    if x47_HISTORY !== true
+     x49_HISTORY = discrete(DistUInt{1}, [0.01, 0.99])
+    end
+    x50_HISTORY = x47_HISTORY === true ? x48_HISTORY : x47_HISTORY === false ? x49_HISTORY : ifelse(x47_HISTORY, x48_HISTORY, x49_HISTORY)
+    x51_TPR = prob_equals(x6_ANAPHYLAXIS, DistUInt{1}(0))
+    if x51_TPR !== false
+     x52_TPR = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+    end
+    if x51_TPR !== true
+     x53_TPR = discrete(DistUInt{2}, [0.3, 0.4, 0.3])
+    end
+    x54_TPR = x51_TPR === true ? x52_TPR : x51_TPR === false ? x53_TPR : ifelse(x51_TPR, x52_TPR, x53_TPR)
+    x55_PAP = prob_equals(x9_PULMEMBOLUS, DistUInt{1}(0))
+    if x55_PAP !== false
+     x56_PAP = discrete(DistUInt{2}, [0.01, 0.19, 0.8])
+    end
+    if x55_PAP !== true
+     x57_PAP = discrete(DistUInt{2}, [0.05, 0.9, 0.05])
+    end
+    x58_PAP = x55_PAP === true ? x56_PAP : x55_PAP === false ? x57_PAP : ifelse(x55_PAP, x56_PAP, x57_PAP)
+    x59_SHUNT = prob_equals(x10_INTUBATION, DistUInt{2}(0))
+    if x59_SHUNT !== false
+     x60_SHUNT = prob_equals(x9_PULMEMBOLUS, DistUInt{1}(0))
+     if x60_SHUNT !== false
+      x61_SHUNT = discrete(DistUInt{1}, [0.1, 0.9])
+     end
+     if x60_SHUNT !== true
+      x62_SHUNT = discrete(DistUInt{1}, [0.95, 0.05])
+     end
+     x63_SHUNT = x60_SHUNT === true ? x61_SHUNT : x60_SHUNT === false ? x62_SHUNT : ifelse(x60_SHUNT, x61_SHUNT, x62_SHUNT)
+    end
+    if x59_SHUNT !== true
+     x64_SHUNT = prob_equals(x10_INTUBATION, DistUInt{2}(1))
+     if x64_SHUNT !== false
+      x65_SHUNT = prob_equals(x9_PULMEMBOLUS, DistUInt{1}(0))
+      if x65_SHUNT !== false
+       x66_SHUNT = discrete(DistUInt{1}, [0.1, 0.9])
+      end
+      if x65_SHUNT !== true
+       x67_SHUNT = discrete(DistUInt{1}, [0.95, 0.05])
+      end
+      x68_SHUNT = x65_SHUNT === true ? x66_SHUNT : x65_SHUNT === false ? x67_SHUNT : ifelse(x65_SHUNT, x66_SHUNT, x67_SHUNT)
+     end
+     if x64_SHUNT !== true
+      x69_SHUNT = prob_equals(x9_PULMEMBOLUS, DistUInt{1}(0))
+      if x69_SHUNT !== false
+       x70_SHUNT = discrete(DistUInt{1}, [0.01, 0.99])
+      end
+      if x69_SHUNT !== true
+       x71_SHUNT = discrete(DistUInt{1}, [0.05, 0.95])
+      end
+      x72_SHUNT = x69_SHUNT === true ? x70_SHUNT : x69_SHUNT === false ? x71_SHUNT : ifelse(x69_SHUNT, x70_SHUNT, x71_SHUNT)
+     end
+     x73_SHUNT = x64_SHUNT === true ? x68_SHUNT : x64_SHUNT === false ? x72_SHUNT : ifelse(x64_SHUNT, x68_SHUNT, x72_SHUNT)
+    end
+    x74_SHUNT = x59_SHUNT === true ? x63_SHUNT : x59_SHUNT === false ? x73_SHUNT : ifelse(x59_SHUNT, x63_SHUNT, x73_SHUNT)
+    x75_VENTMACH = prob_equals(x12_MINVOLSET, DistUInt{2}(0))
+    if x75_VENTMACH !== false
+     x76_VENTMACH = discrete(DistUInt{2}, [0.05, 0.93, 0.01, 0.01])
+    end
+    if x75_VENTMACH !== true
+     x77_VENTMACH = prob_equals(x12_MINVOLSET, DistUInt{2}(1))
+     if x77_VENTMACH !== false
+      x78_VENTMACH = discrete(DistUInt{2}, [0.05, 0.01, 0.93, 0.01])
+     end
+     if x77_VENTMACH !== true
+      x79_VENTMACH = discrete(DistUInt{2}, [0.05, 0.01, 0.01, 0.93])
+     end
+     x80_VENTMACH = x77_VENTMACH === true ? x78_VENTMACH : x77_VENTMACH === false ? x79_VENTMACH : ifelse(x77_VENTMACH, x78_VENTMACH, x79_VENTMACH)
+    end
+    x81_VENTMACH = x75_VENTMACH === true ? x76_VENTMACH : x75_VENTMACH === false ? x80_VENTMACH : ifelse(x75_VENTMACH, x76_VENTMACH, x80_VENTMACH)
+    x82_VENTTUBE = prob_equals(x11_DISCONNECT, DistUInt{1}(0))
+    if x82_VENTTUBE !== false
+     x83_VENTTUBE = prob_equals(x81_VENTMACH, DistUInt{2}(0))
+     if x83_VENTTUBE !== false
+      x84_VENTTUBE = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+     end
+     if x83_VENTTUBE !== true
+      x85_VENTTUBE = prob_equals(x81_VENTMACH, DistUInt{2}(1))
+      if x85_VENTTUBE !== false
+       x86_VENTTUBE = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+      end
+      if x85_VENTTUBE !== true
+       x87_VENTTUBE = prob_equals(x81_VENTMACH, DistUInt{2}(2))
+       if x87_VENTTUBE !== false
+        x88_VENTTUBE = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x87_VENTTUBE !== true
+        x89_VENTTUBE = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+       end
+       x90_VENTTUBE = x87_VENTTUBE === true ? x88_VENTTUBE : x87_VENTTUBE === false ? x89_VENTTUBE : ifelse(x87_VENTTUBE, x88_VENTTUBE, x89_VENTTUBE)
+      end
+      x91_VENTTUBE = x85_VENTTUBE === true ? x86_VENTTUBE : x85_VENTTUBE === false ? x90_VENTTUBE : ifelse(x85_VENTTUBE, x86_VENTTUBE, x90_VENTTUBE)
+     end
+     x92_VENTTUBE = x83_VENTTUBE === true ? x84_VENTTUBE : x83_VENTTUBE === false ? x91_VENTTUBE : ifelse(x83_VENTTUBE, x84_VENTTUBE, x91_VENTTUBE)
+    end
+    if x82_VENTTUBE !== true
+     x93_VENTTUBE = prob_equals(x81_VENTMACH, DistUInt{2}(0))
+     if x93_VENTTUBE !== false
+      x94_VENTTUBE = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+     end
+     if x93_VENTTUBE !== true
+      x95_VENTTUBE = prob_equals(x81_VENTMACH, DistUInt{2}(1))
+      if x95_VENTTUBE !== false
+       x96_VENTTUBE = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+      end
+      if x95_VENTTUBE !== true
+       x97_VENTTUBE = prob_equals(x81_VENTMACH, DistUInt{2}(2))
+       if x97_VENTTUBE !== false
+        x98_VENTTUBE = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+       end
+       if x97_VENTTUBE !== true
+        x99_VENTTUBE = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+       end
+       x100_VENTTUBE = x97_VENTTUBE === true ? x98_VENTTUBE : x97_VENTTUBE === false ? x99_VENTTUBE : ifelse(x97_VENTTUBE, x98_VENTTUBE, x99_VENTTUBE)
+      end
+      x101_VENTTUBE = x95_VENTTUBE === true ? x96_VENTTUBE : x95_VENTTUBE === false ? x100_VENTTUBE : ifelse(x95_VENTTUBE, x96_VENTTUBE, x100_VENTTUBE)
+     end
+     x102_VENTTUBE = x93_VENTTUBE === true ? x94_VENTTUBE : x93_VENTTUBE === false ? x101_VENTTUBE : ifelse(x93_VENTTUBE, x94_VENTTUBE, x101_VENTTUBE)
+    end
+    x103_VENTTUBE = x82_VENTTUBE === true ? x92_VENTTUBE : x82_VENTTUBE === false ? x102_VENTTUBE : ifelse(x82_VENTTUBE, x92_VENTTUBE, x102_VENTTUBE)
+    x104_VENTLUNG = prob_equals(x10_INTUBATION, DistUInt{2}(0))
+    if x104_VENTLUNG !== false
+     x105_VENTLUNG = prob_equals(x7_KINKEDTUBE, DistUInt{1}(0))
+     if x105_VENTLUNG !== false
+      x106_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+      if x106_VENTLUNG !== false
+       x107_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+      end
+      if x106_VENTLUNG !== true
+       x108_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+       if x108_VENTLUNG !== false
+        x109_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x108_VENTLUNG !== true
+        x110_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+        if x110_VENTLUNG !== false
+         x111_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x110_VENTLUNG !== true
+         x112_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        x113_VENTLUNG = x110_VENTLUNG === true ? x111_VENTLUNG : x110_VENTLUNG === false ? x112_VENTLUNG : ifelse(x110_VENTLUNG, x111_VENTLUNG, x112_VENTLUNG)
+       end
+       x114_VENTLUNG = x108_VENTLUNG === true ? x109_VENTLUNG : x108_VENTLUNG === false ? x113_VENTLUNG : ifelse(x108_VENTLUNG, x109_VENTLUNG, x113_VENTLUNG)
+      end
+      x115_VENTLUNG = x106_VENTLUNG === true ? x107_VENTLUNG : x106_VENTLUNG === false ? x114_VENTLUNG : ifelse(x106_VENTLUNG, x107_VENTLUNG, x114_VENTLUNG)
+     end
+     if x105_VENTLUNG !== true
+      x116_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+      if x116_VENTLUNG !== false
+       x117_VENTLUNG = discrete(DistUInt{2}, [0.3, 0.68, 0.01, 0.01])
+      end
+      if x116_VENTLUNG !== true
+       x118_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+       if x118_VENTLUNG !== false
+        x119_VENTLUNG = discrete(DistUInt{2}, [0.95, 0.03, 0.01, 0.01])
+       end
+       if x118_VENTLUNG !== true
+        x120_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+        if x120_VENTLUNG !== false
+         x121_VENTLUNG = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        if x120_VENTLUNG !== true
+         x122_VENTLUNG = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+        end
+        x123_VENTLUNG = x120_VENTLUNG === true ? x121_VENTLUNG : x120_VENTLUNG === false ? x122_VENTLUNG : ifelse(x120_VENTLUNG, x121_VENTLUNG, x122_VENTLUNG)
+       end
+       x124_VENTLUNG = x118_VENTLUNG === true ? x119_VENTLUNG : x118_VENTLUNG === false ? x123_VENTLUNG : ifelse(x118_VENTLUNG, x119_VENTLUNG, x123_VENTLUNG)
+      end
+      x125_VENTLUNG = x116_VENTLUNG === true ? x117_VENTLUNG : x116_VENTLUNG === false ? x124_VENTLUNG : ifelse(x116_VENTLUNG, x117_VENTLUNG, x124_VENTLUNG)
+     end
+     x126_VENTLUNG = x105_VENTLUNG === true ? x115_VENTLUNG : x105_VENTLUNG === false ? x125_VENTLUNG : ifelse(x105_VENTLUNG, x115_VENTLUNG, x125_VENTLUNG)
+    end
+    if x104_VENTLUNG !== true
+     x127_VENTLUNG = prob_equals(x10_INTUBATION, DistUInt{2}(1))
+     if x127_VENTLUNG !== false
+      x128_VENTLUNG = prob_equals(x7_KINKEDTUBE, DistUInt{1}(0))
+      if x128_VENTLUNG !== false
+       x129_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x129_VENTLUNG !== false
+        x130_VENTLUNG = discrete(DistUInt{2}, [0.95, 0.03, 0.01, 0.01])
+       end
+       if x129_VENTLUNG !== true
+        x131_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x131_VENTLUNG !== false
+         x132_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x131_VENTLUNG !== true
+         x133_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x133_VENTLUNG !== false
+          x134_VENTLUNG = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+         end
+         if x133_VENTLUNG !== true
+          x135_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+         end
+         x136_VENTLUNG = x133_VENTLUNG === true ? x134_VENTLUNG : x133_VENTLUNG === false ? x135_VENTLUNG : ifelse(x133_VENTLUNG, x134_VENTLUNG, x135_VENTLUNG)
+        end
+        x137_VENTLUNG = x131_VENTLUNG === true ? x132_VENTLUNG : x131_VENTLUNG === false ? x136_VENTLUNG : ifelse(x131_VENTLUNG, x132_VENTLUNG, x136_VENTLUNG)
+       end
+       x138_VENTLUNG = x129_VENTLUNG === true ? x130_VENTLUNG : x129_VENTLUNG === false ? x137_VENTLUNG : ifelse(x129_VENTLUNG, x130_VENTLUNG, x137_VENTLUNG)
+      end
+      if x128_VENTLUNG !== true
+       x139_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x139_VENTLUNG !== false
+        x140_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x139_VENTLUNG !== true
+        x141_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x141_VENTLUNG !== false
+         x142_VENTLUNG = discrete(DistUInt{2}, [0.5, 0.48, 0.01, 0.01])
+        end
+        if x141_VENTLUNG !== true
+         x143_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x143_VENTLUNG !== false
+          x144_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+         end
+         if x143_VENTLUNG !== true
+          x145_VENTLUNG = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+         end
+         x146_VENTLUNG = x143_VENTLUNG === true ? x144_VENTLUNG : x143_VENTLUNG === false ? x145_VENTLUNG : ifelse(x143_VENTLUNG, x144_VENTLUNG, x145_VENTLUNG)
+        end
+        x147_VENTLUNG = x141_VENTLUNG === true ? x142_VENTLUNG : x141_VENTLUNG === false ? x146_VENTLUNG : ifelse(x141_VENTLUNG, x142_VENTLUNG, x146_VENTLUNG)
+       end
+       x148_VENTLUNG = x139_VENTLUNG === true ? x140_VENTLUNG : x139_VENTLUNG === false ? x147_VENTLUNG : ifelse(x139_VENTLUNG, x140_VENTLUNG, x147_VENTLUNG)
+      end
+      x149_VENTLUNG = x128_VENTLUNG === true ? x138_VENTLUNG : x128_VENTLUNG === false ? x148_VENTLUNG : ifelse(x128_VENTLUNG, x138_VENTLUNG, x148_VENTLUNG)
+     end
+     if x127_VENTLUNG !== true
+      x150_VENTLUNG = prob_equals(x7_KINKEDTUBE, DistUInt{1}(0))
+      if x150_VENTLUNG !== false
+       x151_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x151_VENTLUNG !== false
+        x152_VENTLUNG = discrete(DistUInt{2}, [0.4, 0.58, 0.01, 0.01])
+       end
+       if x151_VENTLUNG !== true
+        x153_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x153_VENTLUNG !== false
+         x154_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x153_VENTLUNG !== true
+         x155_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x155_VENTLUNG !== false
+          x156_VENTLUNG = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+         end
+         if x155_VENTLUNG !== true
+          x157_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+         end
+         x158_VENTLUNG = x155_VENTLUNG === true ? x156_VENTLUNG : x155_VENTLUNG === false ? x157_VENTLUNG : ifelse(x155_VENTLUNG, x156_VENTLUNG, x157_VENTLUNG)
+        end
+        x159_VENTLUNG = x153_VENTLUNG === true ? x154_VENTLUNG : x153_VENTLUNG === false ? x158_VENTLUNG : ifelse(x153_VENTLUNG, x154_VENTLUNG, x158_VENTLUNG)
+       end
+       x160_VENTLUNG = x151_VENTLUNG === true ? x152_VENTLUNG : x151_VENTLUNG === false ? x159_VENTLUNG : ifelse(x151_VENTLUNG, x152_VENTLUNG, x159_VENTLUNG)
+      end
+      if x150_VENTLUNG !== true
+       x161_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x161_VENTLUNG !== false
+        x162_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x161_VENTLUNG !== true
+        x163_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x163_VENTLUNG !== false
+         x164_VENTLUNG = discrete(DistUInt{2}, [0.3, 0.68, 0.01, 0.01])
+        end
+        if x163_VENTLUNG !== true
+         x165_VENTLUNG = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x165_VENTLUNG !== false
+          x166_VENTLUNG = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+         end
+         if x165_VENTLUNG !== true
+          x167_VENTLUNG = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+         end
+         x168_VENTLUNG = x165_VENTLUNG === true ? x166_VENTLUNG : x165_VENTLUNG === false ? x167_VENTLUNG : ifelse(x165_VENTLUNG, x166_VENTLUNG, x167_VENTLUNG)
+        end
+        x169_VENTLUNG = x163_VENTLUNG === true ? x164_VENTLUNG : x163_VENTLUNG === false ? x168_VENTLUNG : ifelse(x163_VENTLUNG, x164_VENTLUNG, x168_VENTLUNG)
+       end
+       x170_VENTLUNG = x161_VENTLUNG === true ? x162_VENTLUNG : x161_VENTLUNG === false ? x169_VENTLUNG : ifelse(x161_VENTLUNG, x162_VENTLUNG, x169_VENTLUNG)
+      end
+      x171_VENTLUNG = x150_VENTLUNG === true ? x160_VENTLUNG : x150_VENTLUNG === false ? x170_VENTLUNG : ifelse(x150_VENTLUNG, x160_VENTLUNG, x170_VENTLUNG)
+     end
+     x172_VENTLUNG = x127_VENTLUNG === true ? x149_VENTLUNG : x127_VENTLUNG === false ? x171_VENTLUNG : ifelse(x127_VENTLUNG, x149_VENTLUNG, x171_VENTLUNG)
+    end
+    x173_VENTLUNG = x104_VENTLUNG === true ? x126_VENTLUNG : x104_VENTLUNG === false ? x172_VENTLUNG : ifelse(x104_VENTLUNG, x126_VENTLUNG, x172_VENTLUNG)
+    x174_VENTALV = prob_equals(x10_INTUBATION, DistUInt{2}(0))
+    if x174_VENTALV !== false
+     x175_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+     if x175_VENTALV !== false
+      x176_VENTALV = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+     end
+     if x175_VENTALV !== true
+      x177_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+      if x177_VENTALV !== false
+       x178_VENTALV = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+      end
+      if x177_VENTALV !== true
+       x179_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+       if x179_VENTALV !== false
+        x180_VENTALV = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+       end
+       if x179_VENTALV !== true
+        x181_VENTALV = discrete(DistUInt{2}, [0.03, 0.95, 0.01, 0.01])
+       end
+       x182_VENTALV = x179_VENTALV === true ? x180_VENTALV : x179_VENTALV === false ? x181_VENTALV : ifelse(x179_VENTALV, x180_VENTALV, x181_VENTALV)
+      end
+      x183_VENTALV = x177_VENTALV === true ? x178_VENTALV : x177_VENTALV === false ? x182_VENTALV : ifelse(x177_VENTALV, x178_VENTALV, x182_VENTALV)
+     end
+     x184_VENTALV = x175_VENTALV === true ? x176_VENTALV : x175_VENTALV === false ? x183_VENTALV : ifelse(x175_VENTALV, x176_VENTALV, x183_VENTALV)
+    end
+    if x174_VENTALV !== true
+     x185_VENTALV = prob_equals(x10_INTUBATION, DistUInt{2}(1))
+     if x185_VENTALV !== false
+      x186_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+      if x186_VENTALV !== false
+       x187_VENTALV = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+      end
+      if x186_VENTALV !== true
+       x188_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+       if x188_VENTALV !== false
+        x189_VENTALV = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x188_VENTALV !== true
+        x190_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+        if x190_VENTALV !== false
+         x191_VENTALV = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        if x190_VENTALV !== true
+         x192_VENTALV = discrete(DistUInt{2}, [0.01, 0.94, 0.04, 0.01])
+        end
+        x193_VENTALV = x190_VENTALV === true ? x191_VENTALV : x190_VENTALV === false ? x192_VENTALV : ifelse(x190_VENTALV, x191_VENTALV, x192_VENTALV)
+       end
+       x194_VENTALV = x188_VENTALV === true ? x189_VENTALV : x188_VENTALV === false ? x193_VENTALV : ifelse(x188_VENTALV, x189_VENTALV, x193_VENTALV)
+      end
+      x195_VENTALV = x186_VENTALV === true ? x187_VENTALV : x186_VENTALV === false ? x194_VENTALV : ifelse(x186_VENTALV, x187_VENTALV, x194_VENTALV)
+     end
+     if x185_VENTALV !== true
+      x196_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+      if x196_VENTALV !== false
+       x197_VENTALV = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+      end
+      if x196_VENTALV !== true
+       x198_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+       if x198_VENTALV !== false
+        x199_VENTALV = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+       end
+       if x198_VENTALV !== true
+        x200_VENTALV = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+        if x200_VENTALV !== false
+         x201_VENTALV = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x200_VENTALV !== true
+         x202_VENTALV = discrete(DistUInt{2}, [0.01, 0.88, 0.1, 0.01])
+        end
+        x203_VENTALV = x200_VENTALV === true ? x201_VENTALV : x200_VENTALV === false ? x202_VENTALV : ifelse(x200_VENTALV, x201_VENTALV, x202_VENTALV)
+       end
+       x204_VENTALV = x198_VENTALV === true ? x199_VENTALV : x198_VENTALV === false ? x203_VENTALV : ifelse(x198_VENTALV, x199_VENTALV, x203_VENTALV)
+      end
+      x205_VENTALV = x196_VENTALV === true ? x197_VENTALV : x196_VENTALV === false ? x204_VENTALV : ifelse(x196_VENTALV, x197_VENTALV, x204_VENTALV)
+     end
+     x206_VENTALV = x185_VENTALV === true ? x195_VENTALV : x185_VENTALV === false ? x205_VENTALV : ifelse(x185_VENTALV, x195_VENTALV, x205_VENTALV)
+    end
+    x207_VENTALV = x174_VENTALV === true ? x184_VENTALV : x174_VENTALV === false ? x206_VENTALV : ifelse(x174_VENTALV, x184_VENTALV, x206_VENTALV)
+    x208_ARTCO2 = prob_equals(x207_VENTALV, DistUInt{2}(0))
+    if x208_ARTCO2 !== false
+     x209_ARTCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+    end
+    if x208_ARTCO2 !== true
+     x210_ARTCO2 = prob_equals(x207_VENTALV, DistUInt{2}(1))
+     if x210_ARTCO2 !== false
+      x211_ARTCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+     end
+     if x210_ARTCO2 !== true
+      x212_ARTCO2 = prob_equals(x207_VENTALV, DistUInt{2}(2))
+      if x212_ARTCO2 !== false
+       x213_ARTCO2 = discrete(DistUInt{2}, [0.04, 0.92, 0.04])
+      end
+      if x212_ARTCO2 !== true
+       x214_ARTCO2 = discrete(DistUInt{2}, [0.9, 0.09, 0.01])
+      end
+      x215_ARTCO2 = x212_ARTCO2 === true ? x213_ARTCO2 : x212_ARTCO2 === false ? x214_ARTCO2 : ifelse(x212_ARTCO2, x213_ARTCO2, x214_ARTCO2)
+     end
+     x216_ARTCO2 = x210_ARTCO2 === true ? x211_ARTCO2 : x210_ARTCO2 === false ? x215_ARTCO2 : ifelse(x210_ARTCO2, x211_ARTCO2, x215_ARTCO2)
+    end
+    x217_ARTCO2 = x208_ARTCO2 === true ? x209_ARTCO2 : x208_ARTCO2 === false ? x216_ARTCO2 : ifelse(x208_ARTCO2, x209_ARTCO2, x216_ARTCO2)
+    x218_PVSAT = prob_equals(x8_FIO2, DistUInt{1}(0))
+    if x218_PVSAT !== false
+     x219_PVSAT = prob_equals(x207_VENTALV, DistUInt{2}(0))
+     if x219_PVSAT !== false
+      x220_PVSAT = discrete(DistUInt{2}, [1.0, 0.0, 0.0])
+     end
+     if x219_PVSAT !== true
+      x221_PVSAT = prob_equals(x207_VENTALV, DistUInt{2}(1))
+      if x221_PVSAT !== false
+       x222_PVSAT = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+      end
+      if x221_PVSAT !== true
+       x223_PVSAT = prob_equals(x207_VENTALV, DistUInt{2}(2))
+       if x223_PVSAT !== false
+        x224_PVSAT = discrete(DistUInt{2}, [1.0, 0.0, 0.0])
+       end
+       if x223_PVSAT !== true
+        x225_PVSAT = discrete(DistUInt{2}, [0.01, 0.95, 0.04])
+       end
+       x226_PVSAT = x223_PVSAT === true ? x224_PVSAT : x223_PVSAT === false ? x225_PVSAT : ifelse(x223_PVSAT, x224_PVSAT, x225_PVSAT)
+      end
+      x227_PVSAT = x221_PVSAT === true ? x222_PVSAT : x221_PVSAT === false ? x226_PVSAT : ifelse(x221_PVSAT, x222_PVSAT, x226_PVSAT)
+     end
+     x228_PVSAT = x219_PVSAT === true ? x220_PVSAT : x219_PVSAT === false ? x227_PVSAT : ifelse(x219_PVSAT, x220_PVSAT, x227_PVSAT)
+    end
+    if x218_PVSAT !== true
+     x229_PVSAT = prob_equals(x207_VENTALV, DistUInt{2}(0))
+     if x229_PVSAT !== false
+      x230_PVSAT = discrete(DistUInt{2}, [0.99, 0.01, 0.0])
+     end
+     if x229_PVSAT !== true
+      x231_PVSAT = prob_equals(x207_VENTALV, DistUInt{2}(1))
+      if x231_PVSAT !== false
+       x232_PVSAT = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+      end
+      if x231_PVSAT !== true
+       x233_PVSAT = prob_equals(x207_VENTALV, DistUInt{2}(2))
+       if x233_PVSAT !== false
+        x234_PVSAT = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+       end
+       if x233_PVSAT !== true
+        x235_PVSAT = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+       end
+       x236_PVSAT = x233_PVSAT === true ? x234_PVSAT : x233_PVSAT === false ? x235_PVSAT : ifelse(x233_PVSAT, x234_PVSAT, x235_PVSAT)
+      end
+      x237_PVSAT = x231_PVSAT === true ? x232_PVSAT : x231_PVSAT === false ? x236_PVSAT : ifelse(x231_PVSAT, x232_PVSAT, x236_PVSAT)
+     end
+     x238_PVSAT = x229_PVSAT === true ? x230_PVSAT : x229_PVSAT === false ? x237_PVSAT : ifelse(x229_PVSAT, x230_PVSAT, x237_PVSAT)
+    end
+    x239_PVSAT = x218_PVSAT === true ? x228_PVSAT : x218_PVSAT === false ? x238_PVSAT : ifelse(x218_PVSAT, x228_PVSAT, x238_PVSAT)
+    x240_SAO2 = prob_equals(x239_PVSAT, DistUInt{2}(0))
+    if x240_SAO2 !== false
+     x241_SAO2 = prob_equals(x74_SHUNT, DistUInt{1}(0))
+     if x241_SAO2 !== false
+      x242_SAO2 = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     if x241_SAO2 !== true
+      x243_SAO2 = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     x244_SAO2 = x241_SAO2 === true ? x242_SAO2 : x241_SAO2 === false ? x243_SAO2 : ifelse(x241_SAO2, x242_SAO2, x243_SAO2)
+    end
+    if x240_SAO2 !== true
+     x245_SAO2 = prob_equals(x239_PVSAT, DistUInt{2}(1))
+     if x245_SAO2 !== false
+      x246_SAO2 = prob_equals(x74_SHUNT, DistUInt{1}(0))
+      if x246_SAO2 !== false
+       x247_SAO2 = discrete(DistUInt{2}, [0.01, 0.98, 0.01])
+      end
+      if x246_SAO2 !== true
+       x248_SAO2 = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+      end
+      x249_SAO2 = x246_SAO2 === true ? x247_SAO2 : x246_SAO2 === false ? x248_SAO2 : ifelse(x246_SAO2, x247_SAO2, x248_SAO2)
+     end
+     if x245_SAO2 !== true
+      x250_SAO2 = prob_equals(x74_SHUNT, DistUInt{1}(0))
+      if x250_SAO2 !== false
+       x251_SAO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+      end
+      if x250_SAO2 !== true
+       x252_SAO2 = discrete(DistUInt{2}, [0.6900000000000001, 0.30000000000000004, 0.010000000000000002])
+      end
+      x253_SAO2 = x250_SAO2 === true ? x251_SAO2 : x250_SAO2 === false ? x252_SAO2 : ifelse(x250_SAO2, x251_SAO2, x252_SAO2)
+     end
+     x254_SAO2 = x245_SAO2 === true ? x249_SAO2 : x245_SAO2 === false ? x253_SAO2 : ifelse(x245_SAO2, x249_SAO2, x253_SAO2)
+    end
+    x255_SAO2 = x240_SAO2 === true ? x244_SAO2 : x240_SAO2 === false ? x254_SAO2 : ifelse(x240_SAO2, x244_SAO2, x254_SAO2)
+    x256_CATECHOL = prob_equals(x217_ARTCO2, DistUInt{2}(0))
+    return (x3_ERRLOWOUTPUT, x4_ERRCAUTER, x5_INSUFFANESTH, x7_KINKEDTUBE, x10_INTUBATION, x22_STROKEVOLUME, x54_TPR, x103_VENTTUBE, x173_VENTLUNG, x217_ARTCO2, x255_SAO2, x256_CATECHOL,)
+end
+
+function chunk_2(x3_ERRLOWOUTPUT, x4_ERRCAUTER, x5_INSUFFANESTH, x7_KINKEDTUBE, x10_INTUBATION, x22_STROKEVOLUME, x54_TPR, x103_VENTTUBE, x173_VENTLUNG, x217_ARTCO2, x255_SAO2, x256_CATECHOL)
+    if x256_CATECHOL !== false
+     x257_CATECHOL = prob_equals(x5_INSUFFANESTH, DistUInt{1}(0))
+     if x257_CATECHOL !== false
+      x258_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(0))
+      if x258_CATECHOL !== false
+       x259_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+       if x259_CATECHOL !== false
+        x260_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+       end
+       if x259_CATECHOL !== true
+        x261_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+        if x261_CATECHOL !== false
+         x262_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x261_CATECHOL !== true
+         x263_CATECHOL = discrete(DistUInt{1}, [0.7, 0.3])
+        end
+        x264_CATECHOL = x261_CATECHOL === true ? x262_CATECHOL : x261_CATECHOL === false ? x263_CATECHOL : ifelse(x261_CATECHOL, x262_CATECHOL, x263_CATECHOL)
+       end
+       x265_CATECHOL = x259_CATECHOL === true ? x260_CATECHOL : x259_CATECHOL === false ? x264_CATECHOL : ifelse(x259_CATECHOL, x260_CATECHOL, x264_CATECHOL)
+      end
+      if x258_CATECHOL !== true
+       x266_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(1))
+       if x266_CATECHOL !== false
+        x267_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x267_CATECHOL !== false
+         x268_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x267_CATECHOL !== true
+         x269_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x269_CATECHOL !== false
+          x270_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+         end
+         if x269_CATECHOL !== true
+          x271_CATECHOL = discrete(DistUInt{1}, [0.7, 0.3])
+         end
+         x272_CATECHOL = x269_CATECHOL === true ? x270_CATECHOL : x269_CATECHOL === false ? x271_CATECHOL : ifelse(x269_CATECHOL, x270_CATECHOL, x271_CATECHOL)
+        end
+        x273_CATECHOL = x267_CATECHOL === true ? x268_CATECHOL : x267_CATECHOL === false ? x272_CATECHOL : ifelse(x267_CATECHOL, x268_CATECHOL, x272_CATECHOL)
+       end
+       if x266_CATECHOL !== true
+        x274_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x274_CATECHOL !== false
+         x275_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x274_CATECHOL !== true
+         x276_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x276_CATECHOL !== false
+          x277_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+         end
+         if x276_CATECHOL !== true
+          x278_CATECHOL = discrete(DistUInt{1}, [0.95, 0.05])
+         end
+         x279_CATECHOL = x276_CATECHOL === true ? x277_CATECHOL : x276_CATECHOL === false ? x278_CATECHOL : ifelse(x276_CATECHOL, x277_CATECHOL, x278_CATECHOL)
+        end
+        x280_CATECHOL = x274_CATECHOL === true ? x275_CATECHOL : x274_CATECHOL === false ? x279_CATECHOL : ifelse(x274_CATECHOL, x275_CATECHOL, x279_CATECHOL)
+       end
+       x281_CATECHOL = x266_CATECHOL === true ? x273_CATECHOL : x266_CATECHOL === false ? x280_CATECHOL : ifelse(x266_CATECHOL, x273_CATECHOL, x280_CATECHOL)
+      end
+      x282_CATECHOL = x258_CATECHOL === true ? x265_CATECHOL : x258_CATECHOL === false ? x281_CATECHOL : ifelse(x258_CATECHOL, x265_CATECHOL, x281_CATECHOL)
+     end
+     if x257_CATECHOL !== true
+      x283_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(0))
+      if x283_CATECHOL !== false
+       x284_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+       if x284_CATECHOL !== false
+        x285_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+       end
+       if x284_CATECHOL !== true
+        x286_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+        if x286_CATECHOL !== false
+         x287_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+        end
+        if x286_CATECHOL !== true
+         x288_CATECHOL = discrete(DistUInt{1}, [0.7, 0.3])
+        end
+        x289_CATECHOL = x286_CATECHOL === true ? x287_CATECHOL : x286_CATECHOL === false ? x288_CATECHOL : ifelse(x286_CATECHOL, x287_CATECHOL, x288_CATECHOL)
+       end
+       x290_CATECHOL = x284_CATECHOL === true ? x285_CATECHOL : x284_CATECHOL === false ? x289_CATECHOL : ifelse(x284_CATECHOL, x285_CATECHOL, x289_CATECHOL)
+      end
+      if x283_CATECHOL !== true
+       x291_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(1))
+       if x291_CATECHOL !== false
+        x292_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x292_CATECHOL !== false
+         x293_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x292_CATECHOL !== true
+         x294_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x294_CATECHOL !== false
+          x295_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+         end
+         if x294_CATECHOL !== true
+          x296_CATECHOL = discrete(DistUInt{1}, [0.95, 0.05])
+         end
+         x297_CATECHOL = x294_CATECHOL === true ? x295_CATECHOL : x294_CATECHOL === false ? x296_CATECHOL : ifelse(x294_CATECHOL, x295_CATECHOL, x296_CATECHOL)
+        end
+        x298_CATECHOL = x292_CATECHOL === true ? x293_CATECHOL : x292_CATECHOL === false ? x297_CATECHOL : ifelse(x292_CATECHOL, x293_CATECHOL, x297_CATECHOL)
+       end
+       if x291_CATECHOL !== true
+        x299_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x299_CATECHOL !== false
+         x300_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+        end
+        if x299_CATECHOL !== true
+         x301_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x301_CATECHOL !== false
+          x302_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+         end
+         if x301_CATECHOL !== true
+          x303_CATECHOL = discrete(DistUInt{1}, [0.95, 0.05])
+         end
+         x304_CATECHOL = x301_CATECHOL === true ? x302_CATECHOL : x301_CATECHOL === false ? x303_CATECHOL : ifelse(x301_CATECHOL, x302_CATECHOL, x303_CATECHOL)
+        end
+        x305_CATECHOL = x299_CATECHOL === true ? x300_CATECHOL : x299_CATECHOL === false ? x304_CATECHOL : ifelse(x299_CATECHOL, x300_CATECHOL, x304_CATECHOL)
+       end
+       x306_CATECHOL = x291_CATECHOL === true ? x298_CATECHOL : x291_CATECHOL === false ? x305_CATECHOL : ifelse(x291_CATECHOL, x298_CATECHOL, x305_CATECHOL)
+      end
+      x307_CATECHOL = x283_CATECHOL === true ? x290_CATECHOL : x283_CATECHOL === false ? x306_CATECHOL : ifelse(x283_CATECHOL, x290_CATECHOL, x306_CATECHOL)
+     end
+     x308_CATECHOL = x257_CATECHOL === true ? x282_CATECHOL : x257_CATECHOL === false ? x307_CATECHOL : ifelse(x257_CATECHOL, x282_CATECHOL, x307_CATECHOL)
+    end
+    if x256_CATECHOL !== true
+     x309_CATECHOL = prob_equals(x217_ARTCO2, DistUInt{2}(1))
+     if x309_CATECHOL !== false
+      x310_CATECHOL = prob_equals(x5_INSUFFANESTH, DistUInt{1}(0))
+      if x310_CATECHOL !== false
+       x311_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(0))
+       if x311_CATECHOL !== false
+        x312_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x312_CATECHOL !== false
+         x313_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x312_CATECHOL !== true
+         x314_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x314_CATECHOL !== false
+          x315_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x314_CATECHOL !== true
+          x316_CATECHOL = discrete(DistUInt{1}, [0.7, 0.3])
+         end
+         x317_CATECHOL = x314_CATECHOL === true ? x315_CATECHOL : x314_CATECHOL === false ? x316_CATECHOL : ifelse(x314_CATECHOL, x315_CATECHOL, x316_CATECHOL)
+        end
+        x318_CATECHOL = x312_CATECHOL === true ? x313_CATECHOL : x312_CATECHOL === false ? x317_CATECHOL : ifelse(x312_CATECHOL, x313_CATECHOL, x317_CATECHOL)
+       end
+       if x311_CATECHOL !== true
+        x319_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(1))
+        if x319_CATECHOL !== false
+         x320_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x320_CATECHOL !== false
+          x321_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x320_CATECHOL !== true
+          x322_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x322_CATECHOL !== false
+           x323_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+          end
+          if x322_CATECHOL !== true
+           x324_CATECHOL = discrete(DistUInt{1}, [0.7, 0.3])
+          end
+          x325_CATECHOL = x322_CATECHOL === true ? x323_CATECHOL : x322_CATECHOL === false ? x324_CATECHOL : ifelse(x322_CATECHOL, x323_CATECHOL, x324_CATECHOL)
+         end
+         x326_CATECHOL = x320_CATECHOL === true ? x321_CATECHOL : x320_CATECHOL === false ? x325_CATECHOL : ifelse(x320_CATECHOL, x321_CATECHOL, x325_CATECHOL)
+        end
+        if x319_CATECHOL !== true
+         x327_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x327_CATECHOL !== false
+          x328_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x327_CATECHOL !== true
+          x329_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x329_CATECHOL !== false
+           x330_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+          end
+          if x329_CATECHOL !== true
+           x331_CATECHOL = discrete(DistUInt{1}, [0.99, 0.01])
+          end
+          x332_CATECHOL = x329_CATECHOL === true ? x330_CATECHOL : x329_CATECHOL === false ? x331_CATECHOL : ifelse(x329_CATECHOL, x330_CATECHOL, x331_CATECHOL)
+         end
+         x333_CATECHOL = x327_CATECHOL === true ? x328_CATECHOL : x327_CATECHOL === false ? x332_CATECHOL : ifelse(x327_CATECHOL, x328_CATECHOL, x332_CATECHOL)
+        end
+        x334_CATECHOL = x319_CATECHOL === true ? x326_CATECHOL : x319_CATECHOL === false ? x333_CATECHOL : ifelse(x319_CATECHOL, x326_CATECHOL, x333_CATECHOL)
+       end
+       x335_CATECHOL = x311_CATECHOL === true ? x318_CATECHOL : x311_CATECHOL === false ? x334_CATECHOL : ifelse(x311_CATECHOL, x318_CATECHOL, x334_CATECHOL)
+      end
+      if x310_CATECHOL !== true
+       x336_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(0))
+       if x336_CATECHOL !== false
+        x337_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x337_CATECHOL !== false
+         x338_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x337_CATECHOL !== true
+         x339_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x339_CATECHOL !== false
+          x340_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+         end
+         if x339_CATECHOL !== true
+          x341_CATECHOL = discrete(DistUInt{1}, [0.7, 0.3])
+         end
+         x342_CATECHOL = x339_CATECHOL === true ? x340_CATECHOL : x339_CATECHOL === false ? x341_CATECHOL : ifelse(x339_CATECHOL, x340_CATECHOL, x341_CATECHOL)
+        end
+        x343_CATECHOL = x337_CATECHOL === true ? x338_CATECHOL : x337_CATECHOL === false ? x342_CATECHOL : ifelse(x337_CATECHOL, x338_CATECHOL, x342_CATECHOL)
+       end
+       if x336_CATECHOL !== true
+        x344_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(1))
+        if x344_CATECHOL !== false
+         x345_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x345_CATECHOL !== false
+          x346_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x345_CATECHOL !== true
+          x347_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x347_CATECHOL !== false
+           x348_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+          end
+          if x347_CATECHOL !== true
+           x349_CATECHOL = discrete(DistUInt{1}, [0.99, 0.01])
+          end
+          x350_CATECHOL = x347_CATECHOL === true ? x348_CATECHOL : x347_CATECHOL === false ? x349_CATECHOL : ifelse(x347_CATECHOL, x348_CATECHOL, x349_CATECHOL)
+         end
+         x351_CATECHOL = x345_CATECHOL === true ? x346_CATECHOL : x345_CATECHOL === false ? x350_CATECHOL : ifelse(x345_CATECHOL, x346_CATECHOL, x350_CATECHOL)
+        end
+        if x344_CATECHOL !== true
+         x352_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x352_CATECHOL !== false
+          x353_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+         end
+         if x352_CATECHOL !== true
+          x354_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x354_CATECHOL !== false
+           x355_CATECHOL = discrete(DistUInt{1}, [0.05, 0.95])
+          end
+          if x354_CATECHOL !== true
+           x356_CATECHOL = discrete(DistUInt{1}, [0.99, 0.01])
+          end
+          x357_CATECHOL = x354_CATECHOL === true ? x355_CATECHOL : x354_CATECHOL === false ? x356_CATECHOL : ifelse(x354_CATECHOL, x355_CATECHOL, x356_CATECHOL)
+         end
+         x358_CATECHOL = x352_CATECHOL === true ? x353_CATECHOL : x352_CATECHOL === false ? x357_CATECHOL : ifelse(x352_CATECHOL, x353_CATECHOL, x357_CATECHOL)
+        end
+        x359_CATECHOL = x344_CATECHOL === true ? x351_CATECHOL : x344_CATECHOL === false ? x358_CATECHOL : ifelse(x344_CATECHOL, x351_CATECHOL, x358_CATECHOL)
+       end
+       x360_CATECHOL = x336_CATECHOL === true ? x343_CATECHOL : x336_CATECHOL === false ? x359_CATECHOL : ifelse(x336_CATECHOL, x343_CATECHOL, x359_CATECHOL)
+      end
+      x361_CATECHOL = x310_CATECHOL === true ? x335_CATECHOL : x310_CATECHOL === false ? x360_CATECHOL : ifelse(x310_CATECHOL, x335_CATECHOL, x360_CATECHOL)
+     end
+     if x309_CATECHOL !== true
+      x362_CATECHOL = prob_equals(x5_INSUFFANESTH, DistUInt{1}(0))
+      if x362_CATECHOL !== false
+       x363_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(0))
+       if x363_CATECHOL !== false
+        x364_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x364_CATECHOL !== false
+         x365_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x364_CATECHOL !== true
+         x366_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x366_CATECHOL !== false
+          x367_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x366_CATECHOL !== true
+          x368_CATECHOL = discrete(DistUInt{1}, [0.1, 0.9])
+         end
+         x369_CATECHOL = x366_CATECHOL === true ? x367_CATECHOL : x366_CATECHOL === false ? x368_CATECHOL : ifelse(x366_CATECHOL, x367_CATECHOL, x368_CATECHOL)
+        end
+        x370_CATECHOL = x364_CATECHOL === true ? x365_CATECHOL : x364_CATECHOL === false ? x369_CATECHOL : ifelse(x364_CATECHOL, x365_CATECHOL, x369_CATECHOL)
+       end
+       if x363_CATECHOL !== true
+        x371_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(1))
+        if x371_CATECHOL !== false
+         x372_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x372_CATECHOL !== false
+          x373_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x372_CATECHOL !== true
+          x374_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x374_CATECHOL !== false
+           x375_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+          end
+          if x374_CATECHOL !== true
+           x376_CATECHOL = discrete(DistUInt{1}, [0.1, 0.9])
+          end
+          x377_CATECHOL = x374_CATECHOL === true ? x375_CATECHOL : x374_CATECHOL === false ? x376_CATECHOL : ifelse(x374_CATECHOL, x375_CATECHOL, x376_CATECHOL)
+         end
+         x378_CATECHOL = x372_CATECHOL === true ? x373_CATECHOL : x372_CATECHOL === false ? x377_CATECHOL : ifelse(x372_CATECHOL, x373_CATECHOL, x377_CATECHOL)
+        end
+        if x371_CATECHOL !== true
+         x379_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x379_CATECHOL !== false
+          x380_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x379_CATECHOL !== true
+          x381_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x381_CATECHOL !== false
+           x382_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+          end
+          if x381_CATECHOL !== true
+           x383_CATECHOL = discrete(DistUInt{1}, [0.3, 0.7])
+          end
+          x384_CATECHOL = x381_CATECHOL === true ? x382_CATECHOL : x381_CATECHOL === false ? x383_CATECHOL : ifelse(x381_CATECHOL, x382_CATECHOL, x383_CATECHOL)
+         end
+         x385_CATECHOL = x379_CATECHOL === true ? x380_CATECHOL : x379_CATECHOL === false ? x384_CATECHOL : ifelse(x379_CATECHOL, x380_CATECHOL, x384_CATECHOL)
+        end
+        x386_CATECHOL = x371_CATECHOL === true ? x378_CATECHOL : x371_CATECHOL === false ? x385_CATECHOL : ifelse(x371_CATECHOL, x378_CATECHOL, x385_CATECHOL)
+       end
+       x387_CATECHOL = x363_CATECHOL === true ? x370_CATECHOL : x363_CATECHOL === false ? x386_CATECHOL : ifelse(x363_CATECHOL, x370_CATECHOL, x386_CATECHOL)
+      end
+      if x362_CATECHOL !== true
+       x388_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(0))
+       if x388_CATECHOL !== false
+        x389_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+        if x389_CATECHOL !== false
+         x390_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+        end
+        if x389_CATECHOL !== true
+         x391_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+         if x391_CATECHOL !== false
+          x392_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x391_CATECHOL !== true
+          x393_CATECHOL = discrete(DistUInt{1}, [0.1, 0.9])
+         end
+         x394_CATECHOL = x391_CATECHOL === true ? x392_CATECHOL : x391_CATECHOL === false ? x393_CATECHOL : ifelse(x391_CATECHOL, x392_CATECHOL, x393_CATECHOL)
+        end
+        x395_CATECHOL = x389_CATECHOL === true ? x390_CATECHOL : x389_CATECHOL === false ? x394_CATECHOL : ifelse(x389_CATECHOL, x390_CATECHOL, x394_CATECHOL)
+       end
+       if x388_CATECHOL !== true
+        x396_CATECHOL = prob_equals(x255_SAO2, DistUInt{2}(1))
+        if x396_CATECHOL !== false
+         x397_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x397_CATECHOL !== false
+          x398_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x397_CATECHOL !== true
+          x399_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x399_CATECHOL !== false
+           x400_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+          end
+          if x399_CATECHOL !== true
+           x401_CATECHOL = discrete(DistUInt{1}, [0.3, 0.7])
+          end
+          x402_CATECHOL = x399_CATECHOL === true ? x400_CATECHOL : x399_CATECHOL === false ? x401_CATECHOL : ifelse(x399_CATECHOL, x400_CATECHOL, x401_CATECHOL)
+         end
+         x403_CATECHOL = x397_CATECHOL === true ? x398_CATECHOL : x397_CATECHOL === false ? x402_CATECHOL : ifelse(x397_CATECHOL, x398_CATECHOL, x402_CATECHOL)
+        end
+        if x396_CATECHOL !== true
+         x404_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(0))
+         if x404_CATECHOL !== false
+          x405_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+         end
+         if x404_CATECHOL !== true
+          x406_CATECHOL = prob_equals(x54_TPR, DistUInt{2}(1))
+          if x406_CATECHOL !== false
+           x407_CATECHOL = discrete(DistUInt{1}, [0.01, 0.99])
+          end
+          if x406_CATECHOL !== true
+           x408_CATECHOL = discrete(DistUInt{1}, [0.3, 0.7])
+          end
+          x409_CATECHOL = x406_CATECHOL === true ? x407_CATECHOL : x406_CATECHOL === false ? x408_CATECHOL : ifelse(x406_CATECHOL, x407_CATECHOL, x408_CATECHOL)
+         end
+         x410_CATECHOL = x404_CATECHOL === true ? x405_CATECHOL : x404_CATECHOL === false ? x409_CATECHOL : ifelse(x404_CATECHOL, x405_CATECHOL, x409_CATECHOL)
+        end
+        x411_CATECHOL = x396_CATECHOL === true ? x403_CATECHOL : x396_CATECHOL === false ? x410_CATECHOL : ifelse(x396_CATECHOL, x403_CATECHOL, x410_CATECHOL)
+       end
+       x412_CATECHOL = x388_CATECHOL === true ? x395_CATECHOL : x388_CATECHOL === false ? x411_CATECHOL : ifelse(x388_CATECHOL, x395_CATECHOL, x411_CATECHOL)
+      end
+      x413_CATECHOL = x362_CATECHOL === true ? x387_CATECHOL : x362_CATECHOL === false ? x412_CATECHOL : ifelse(x362_CATECHOL, x387_CATECHOL, x412_CATECHOL)
+     end
+     x414_CATECHOL = x309_CATECHOL === true ? x361_CATECHOL : x309_CATECHOL === false ? x413_CATECHOL : ifelse(x309_CATECHOL, x361_CATECHOL, x413_CATECHOL)
+    end
+    x415_CATECHOL = x256_CATECHOL === true ? x308_CATECHOL : x256_CATECHOL === false ? x414_CATECHOL : ifelse(x256_CATECHOL, x308_CATECHOL, x414_CATECHOL)
+    x416_HR = prob_equals(x415_CATECHOL, DistUInt{1}(0))
+    if x416_HR !== false
+     x417_HR = discrete(DistUInt{2}, [0.05, 0.9, 0.05])
+    end
+    if x416_HR !== true
+     x418_HR = discrete(DistUInt{2}, [0.01, 0.09, 0.9])
+    end
+    x419_HR = x416_HR === true ? x417_HR : x416_HR === false ? x418_HR : ifelse(x416_HR, x417_HR, x418_HR)
+    x420_CO = prob_equals(x419_HR, DistUInt{2}(0))
+    if x420_CO !== false
+     x421_CO = prob_equals(x22_STROKEVOLUME, DistUInt{2}(0))
+     if x421_CO !== false
+      x422_CO = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     if x421_CO !== true
+      x423_CO = prob_equals(x22_STROKEVOLUME, DistUInt{2}(1))
+      if x423_CO !== false
+       x424_CO = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+      end
+      if x423_CO !== true
+       x425_CO = discrete(DistUInt{2}, [0.30000000000000004, 0.6900000000000001, 0.010000000000000002])
+      end
+      x426_CO = x423_CO === true ? x424_CO : x423_CO === false ? x425_CO : ifelse(x423_CO, x424_CO, x425_CO)
+     end
+     x427_CO = x421_CO === true ? x422_CO : x421_CO === false ? x426_CO : ifelse(x421_CO, x422_CO, x426_CO)
+    end
+    if x420_CO !== true
+     x428_CO = prob_equals(x419_HR, DistUInt{2}(1))
+     if x428_CO !== false
+      x429_CO = prob_equals(x22_STROKEVOLUME, DistUInt{2}(0))
+      if x429_CO !== false
+       x430_CO = discrete(DistUInt{2}, [0.95, 0.04, 0.01])
+      end
+      if x429_CO !== true
+       x431_CO = prob_equals(x22_STROKEVOLUME, DistUInt{2}(1))
+       if x431_CO !== false
+        x432_CO = discrete(DistUInt{2}, [0.04, 0.95, 0.01])
+       end
+       if x431_CO !== true
+        x433_CO = discrete(DistUInt{2}, [0.010000000000000002, 0.30000000000000004, 0.6900000000000001])
+       end
+       x434_CO = x431_CO === true ? x432_CO : x431_CO === false ? x433_CO : ifelse(x431_CO, x432_CO, x433_CO)
+      end
+      x435_CO = x429_CO === true ? x430_CO : x429_CO === false ? x434_CO : ifelse(x429_CO, x430_CO, x434_CO)
+     end
+     if x428_CO !== true
+      x436_CO = prob_equals(x22_STROKEVOLUME, DistUInt{2}(0))
+      if x436_CO !== false
+       x437_CO = discrete(DistUInt{2}, [0.8, 0.19, 0.01])
+      end
+      if x436_CO !== true
+       x438_CO = prob_equals(x22_STROKEVOLUME, DistUInt{2}(1))
+       if x438_CO !== false
+        x439_CO = discrete(DistUInt{2}, [0.01, 0.04, 0.95])
+       end
+       if x438_CO !== true
+        x440_CO = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+       end
+       x441_CO = x438_CO === true ? x439_CO : x438_CO === false ? x440_CO : ifelse(x438_CO, x439_CO, x440_CO)
+      end
+      x442_CO = x436_CO === true ? x437_CO : x436_CO === false ? x441_CO : ifelse(x436_CO, x437_CO, x441_CO)
+     end
+     x443_CO = x428_CO === true ? x435_CO : x428_CO === false ? x442_CO : ifelse(x428_CO, x435_CO, x442_CO)
+    end
+    x444_CO = x420_CO === true ? x427_CO : x420_CO === false ? x443_CO : ifelse(x420_CO, x427_CO, x443_CO)
+    x445_BP = prob_equals(x444_CO, DistUInt{2}(0))
+    if x445_BP !== false
+     x446_BP = prob_equals(x54_TPR, DistUInt{2}(0))
+     if x446_BP !== false
+      x447_BP = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     if x446_BP !== true
+      x448_BP = prob_equals(x54_TPR, DistUInt{2}(1))
+      if x448_BP !== false
+       x449_BP = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+      end
+      if x448_BP !== true
+       x450_BP = discrete(DistUInt{2}, [0.3, 0.6, 0.1])
+      end
+      x451_BP = x448_BP === true ? x449_BP : x448_BP === false ? x450_BP : ifelse(x448_BP, x449_BP, x450_BP)
+     end
+     x452_BP = x446_BP === true ? x447_BP : x446_BP === false ? x451_BP : ifelse(x446_BP, x447_BP, x451_BP)
+    end
+    if x445_BP !== true
+     x453_BP = prob_equals(x444_CO, DistUInt{2}(1))
+     if x453_BP !== false
+      x454_BP = prob_equals(x54_TPR, DistUInt{2}(0))
+      if x454_BP !== false
+       x455_BP = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+      end
+      if x454_BP !== true
+       x456_BP = prob_equals(x54_TPR, DistUInt{2}(1))
+       if x456_BP !== false
+        x457_BP = discrete(DistUInt{2}, [0.1, 0.85, 0.05])
+       end
+       if x456_BP !== true
+        x458_BP = discrete(DistUInt{2}, [0.05, 0.4, 0.55])
+       end
+       x459_BP = x456_BP === true ? x457_BP : x456_BP === false ? x458_BP : ifelse(x456_BP, x457_BP, x458_BP)
+      end
+      x460_BP = x454_BP === true ? x455_BP : x454_BP === false ? x459_BP : ifelse(x454_BP, x455_BP, x459_BP)
+     end
+     if x453_BP !== true
+      x461_BP = prob_equals(x54_TPR, DistUInt{2}(0))
+      if x461_BP !== false
+       x462_BP = discrete(DistUInt{2}, [0.9, 0.09, 0.01])
+      end
+      if x461_BP !== true
+       x463_BP = prob_equals(x54_TPR, DistUInt{2}(1))
+       if x463_BP !== false
+        x464_BP = discrete(DistUInt{2}, [0.05, 0.2, 0.75])
+       end
+       if x463_BP !== true
+        x465_BP = discrete(DistUInt{2}, [0.01, 0.09, 0.9])
+       end
+       x466_BP = x463_BP === true ? x464_BP : x463_BP === false ? x465_BP : ifelse(x463_BP, x464_BP, x465_BP)
+      end
+      x467_BP = x461_BP === true ? x462_BP : x461_BP === false ? x466_BP : ifelse(x461_BP, x462_BP, x466_BP)
+     end
+     x468_BP = x453_BP === true ? x460_BP : x453_BP === false ? x467_BP : ifelse(x453_BP, x460_BP, x467_BP)
+    end
+    x469_BP = x445_BP === true ? x452_BP : x445_BP === false ? x468_BP : ifelse(x445_BP, x452_BP, x468_BP)
+    x470_HRSAT = prob_equals(x4_ERRCAUTER, DistUInt{1}(0))
+    if x470_HRSAT !== false
+     x471_HRSAT = prob_equals(x419_HR, DistUInt{2}(0))
+     if x471_HRSAT !== false
+      x472_HRSAT = discrete(DistUInt{2}, [0.3333333333333333, 0.3333333333333333, 0.3333333333333333])
+     end
+     if x471_HRSAT !== true
+      x473_HRSAT = prob_equals(x419_HR, DistUInt{2}(1))
+      if x473_HRSAT !== false
+       x474_HRSAT = discrete(DistUInt{2}, [0.3333333333333333, 0.3333333333333333, 0.3333333333333333])
+      end
+      if x473_HRSAT !== true
+       x475_HRSAT = discrete(DistUInt{2}, [0.01, 0.98, 0.01])
+      end
+      x476_HRSAT = x473_HRSAT === true ? x474_HRSAT : x473_HRSAT === false ? x475_HRSAT : ifelse(x473_HRSAT, x474_HRSAT, x475_HRSAT)
+     end
+     x477_HRSAT = x471_HRSAT === true ? x472_HRSAT : x471_HRSAT === false ? x476_HRSAT : ifelse(x471_HRSAT, x472_HRSAT, x476_HRSAT)
+    end
+    if x470_HRSAT !== true
+     x478_HRSAT = prob_equals(x419_HR, DistUInt{2}(0))
+     if x478_HRSAT !== false
+      x479_HRSAT = discrete(DistUInt{2}, [0.3333333333333333, 0.3333333333333333, 0.3333333333333333])
+     end
+     if x478_HRSAT !== true
+      x480_HRSAT = prob_equals(x419_HR, DistUInt{2}(1))
+      if x480_HRSAT !== false
+       x481_HRSAT = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+      end
+      if x480_HRSAT !== true
+       x482_HRSAT = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+      end
+      x483_HRSAT = x480_HRSAT === true ? x481_HRSAT : x480_HRSAT === false ? x482_HRSAT : ifelse(x480_HRSAT, x481_HRSAT, x482_HRSAT)
+     end
+     x484_HRSAT = x478_HRSAT === true ? x479_HRSAT : x478_HRSAT === false ? x483_HRSAT : ifelse(x478_HRSAT, x479_HRSAT, x483_HRSAT)
+    end
+    x485_HRSAT = x470_HRSAT === true ? x477_HRSAT : x470_HRSAT === false ? x484_HRSAT : ifelse(x470_HRSAT, x477_HRSAT, x484_HRSAT)
+    x486_HREKG = prob_equals(x4_ERRCAUTER, DistUInt{1}(0))
+    if x486_HREKG !== false
+     x487_HREKG = prob_equals(x419_HR, DistUInt{2}(0))
+     if x487_HREKG !== false
+      x488_HREKG = discrete(DistUInt{2}, [0.3333333333333333, 0.3333333333333333, 0.3333333333333333])
+     end
+     if x487_HREKG !== true
+      x489_HREKG = prob_equals(x419_HR, DistUInt{2}(1))
+      if x489_HREKG !== false
+       x490_HREKG = discrete(DistUInt{2}, [0.3333333333333333, 0.3333333333333333, 0.3333333333333333])
+      end
+      if x489_HREKG !== true
+       x491_HREKG = discrete(DistUInt{2}, [0.01, 0.98, 0.01])
+      end
+      x492_HREKG = x489_HREKG === true ? x490_HREKG : x489_HREKG === false ? x491_HREKG : ifelse(x489_HREKG, x490_HREKG, x491_HREKG)
+     end
+     x493_HREKG = x487_HREKG === true ? x488_HREKG : x487_HREKG === false ? x492_HREKG : ifelse(x487_HREKG, x488_HREKG, x492_HREKG)
+    end
+    if x486_HREKG !== true
+     x494_HREKG = prob_equals(x419_HR, DistUInt{2}(0))
+     if x494_HREKG !== false
+      x495_HREKG = discrete(DistUInt{2}, [0.3333333333333333, 0.3333333333333333, 0.3333333333333333])
+     end
+     if x494_HREKG !== true
+      x496_HREKG = prob_equals(x419_HR, DistUInt{2}(1))
+      if x496_HREKG !== false
+       x497_HREKG = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+      end
+      if x496_HREKG !== true
+       x498_HREKG = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+      end
+      x499_HREKG = x496_HREKG === true ? x497_HREKG : x496_HREKG === false ? x498_HREKG : ifelse(x496_HREKG, x497_HREKG, x498_HREKG)
+     end
+     x500_HREKG = x494_HREKG === true ? x495_HREKG : x494_HREKG === false ? x499_HREKG : ifelse(x494_HREKG, x495_HREKG, x499_HREKG)
+    end
+    x501_HREKG = x486_HREKG === true ? x493_HREKG : x486_HREKG === false ? x500_HREKG : ifelse(x486_HREKG, x493_HREKG, x500_HREKG)
+    x502_HRBP = prob_equals(x3_ERRLOWOUTPUT, DistUInt{1}(0))
+    if x502_HRBP !== false
+     x503_HRBP = prob_equals(x419_HR, DistUInt{2}(0))
+     if x503_HRBP !== false
+      x504_HRBP = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+     end
+     if x503_HRBP !== true
+      x505_HRBP = prob_equals(x419_HR, DistUInt{2}(1))
+      if x505_HRBP !== false
+       x506_HRBP = discrete(DistUInt{2}, [0.3, 0.4, 0.3])
+      end
+      if x505_HRBP !== true
+       x507_HRBP = discrete(DistUInt{2}, [0.01, 0.98, 0.01])
+      end
+      x508_HRBP = x505_HRBP === true ? x506_HRBP : x505_HRBP === false ? x507_HRBP : ifelse(x505_HRBP, x506_HRBP, x507_HRBP)
+     end
+     x509_HRBP = x503_HRBP === true ? x504_HRBP : x503_HRBP === false ? x508_HRBP : ifelse(x503_HRBP, x504_HRBP, x508_HRBP)
+    end
+    if x502_HRBP !== true
+     x510_HRBP = prob_equals(x419_HR, DistUInt{2}(0))
+     if x510_HRBP !== false
+      x511_HRBP = discrete(DistUInt{2}, [0.4, 0.59, 0.01])
+     end
+     if x510_HRBP !== true
+      x512_HRBP = prob_equals(x419_HR, DistUInt{2}(1))
+      if x512_HRBP !== false
+       x513_HRBP = discrete(DistUInt{2}, [0.98, 0.01, 0.01])
+      end
+      if x512_HRBP !== true
+       x514_HRBP = discrete(DistUInt{2}, [0.01, 0.01, 0.98])
+      end
+      x515_HRBP = x512_HRBP === true ? x513_HRBP : x512_HRBP === false ? x514_HRBP : ifelse(x512_HRBP, x513_HRBP, x514_HRBP)
+     end
+     x516_HRBP = x510_HRBP === true ? x511_HRBP : x510_HRBP === false ? x515_HRBP : ifelse(x510_HRBP, x511_HRBP, x515_HRBP)
+    end
+    x517_HRBP = x502_HRBP === true ? x509_HRBP : x502_HRBP === false ? x516_HRBP : ifelse(x502_HRBP, x509_HRBP, x516_HRBP)
+    x518_MINVOL = prob_equals(x10_INTUBATION, DistUInt{2}(0))
+    if x518_MINVOL !== false
+     x519_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+     if x519_MINVOL !== false
+      x520_MINVOL = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+     end
+     if x519_MINVOL !== true
+      x521_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+      if x521_MINVOL !== false
+       x522_MINVOL = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+      end
+      if x521_MINVOL !== true
+       x523_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+       if x523_MINVOL !== false
+        x524_MINVOL = discrete(DistUInt{2}, [0.5, 0.48, 0.01, 0.01])
+       end
+       if x523_MINVOL !== true
+        x525_MINVOL = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+       end
+       x526_MINVOL = x523_MINVOL === true ? x524_MINVOL : x523_MINVOL === false ? x525_MINVOL : ifelse(x523_MINVOL, x524_MINVOL, x525_MINVOL)
+      end
+      x527_MINVOL = x521_MINVOL === true ? x522_MINVOL : x521_MINVOL === false ? x526_MINVOL : ifelse(x521_MINVOL, x522_MINVOL, x526_MINVOL)
+     end
+     x528_MINVOL = x519_MINVOL === true ? x520_MINVOL : x519_MINVOL === false ? x527_MINVOL : ifelse(x519_MINVOL, x520_MINVOL, x527_MINVOL)
+    end
+    if x518_MINVOL !== true
+     x529_MINVOL = prob_equals(x10_INTUBATION, DistUInt{2}(1))
+     if x529_MINVOL !== false
+      x530_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+      if x530_MINVOL !== false
+       x531_MINVOL = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+      end
+      if x530_MINVOL !== true
+       x532_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+       if x532_MINVOL !== false
+        x533_MINVOL = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x532_MINVOL !== true
+        x534_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+        if x534_MINVOL !== false
+         x535_MINVOL = discrete(DistUInt{2}, [0.5, 0.48, 0.01, 0.01])
+        end
+        if x534_MINVOL !== true
+         x536_MINVOL = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+        end
+        x537_MINVOL = x534_MINVOL === true ? x535_MINVOL : x534_MINVOL === false ? x536_MINVOL : ifelse(x534_MINVOL, x535_MINVOL, x536_MINVOL)
+       end
+       x538_MINVOL = x532_MINVOL === true ? x533_MINVOL : x532_MINVOL === false ? x537_MINVOL : ifelse(x532_MINVOL, x533_MINVOL, x537_MINVOL)
+      end
+      x539_MINVOL = x530_MINVOL === true ? x531_MINVOL : x530_MINVOL === false ? x538_MINVOL : ifelse(x530_MINVOL, x531_MINVOL, x538_MINVOL)
+     end
+     if x529_MINVOL !== true
+      x540_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+      if x540_MINVOL !== false
+       x541_MINVOL = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+      end
+      if x540_MINVOL !== true
+       x542_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+       if x542_MINVOL !== false
+        x543_MINVOL = discrete(DistUInt{2}, [0.6, 0.38, 0.01, 0.01])
+       end
+       if x542_MINVOL !== true
+        x544_MINVOL = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+        if x544_MINVOL !== false
+         x545_MINVOL = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x544_MINVOL !== true
+         x546_MINVOL = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        x547_MINVOL = x544_MINVOL === true ? x545_MINVOL : x544_MINVOL === false ? x546_MINVOL : ifelse(x544_MINVOL, x545_MINVOL, x546_MINVOL)
+       end
+       x548_MINVOL = x542_MINVOL === true ? x543_MINVOL : x542_MINVOL === false ? x547_MINVOL : ifelse(x542_MINVOL, x543_MINVOL, x547_MINVOL)
+      end
+      x549_MINVOL = x540_MINVOL === true ? x541_MINVOL : x540_MINVOL === false ? x548_MINVOL : ifelse(x540_MINVOL, x541_MINVOL, x548_MINVOL)
+     end
+     x550_MINVOL = x529_MINVOL === true ? x539_MINVOL : x529_MINVOL === false ? x549_MINVOL : ifelse(x529_MINVOL, x539_MINVOL, x549_MINVOL)
+    end
+    x551_MINVOL = x518_MINVOL === true ? x528_MINVOL : x518_MINVOL === false ? x550_MINVOL : ifelse(x518_MINVOL, x528_MINVOL, x550_MINVOL)
+    x552_EXPCO2 = prob_equals(x217_ARTCO2, DistUInt{2}(0))
+    if x552_EXPCO2 !== false
+     x553_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+     if x553_EXPCO2 !== false
+      x554_EXPCO2 = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+     end
+     if x553_EXPCO2 !== true
+      x555_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+      if x555_EXPCO2 !== false
+       x556_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+      end
+      if x555_EXPCO2 !== true
+       x557_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+       if x557_EXPCO2 !== false
+        x558_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+       end
+       if x557_EXPCO2 !== true
+        x559_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+       end
+       x560_EXPCO2 = x557_EXPCO2 === true ? x558_EXPCO2 : x557_EXPCO2 === false ? x559_EXPCO2 : ifelse(x557_EXPCO2, x558_EXPCO2, x559_EXPCO2)
+      end
+      x561_EXPCO2 = x555_EXPCO2 === true ? x556_EXPCO2 : x555_EXPCO2 === false ? x560_EXPCO2 : ifelse(x555_EXPCO2, x556_EXPCO2, x560_EXPCO2)
+     end
+     x562_EXPCO2 = x553_EXPCO2 === true ? x554_EXPCO2 : x553_EXPCO2 === false ? x561_EXPCO2 : ifelse(x553_EXPCO2, x554_EXPCO2, x561_EXPCO2)
+    end
+    if x552_EXPCO2 !== true
+     x563_EXPCO2 = prob_equals(x217_ARTCO2, DistUInt{2}(1))
+     if x563_EXPCO2 !== false
+      x564_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+      if x564_EXPCO2 !== false
+       x565_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+      end
+      if x564_EXPCO2 !== true
+       x566_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+       if x566_EXPCO2 !== false
+        x567_EXPCO2 = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x566_EXPCO2 !== true
+        x568_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+        if x568_EXPCO2 !== false
+         x569_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+        end
+        if x568_EXPCO2 !== true
+         x570_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        x571_EXPCO2 = x568_EXPCO2 === true ? x569_EXPCO2 : x568_EXPCO2 === false ? x570_EXPCO2 : ifelse(x568_EXPCO2, x569_EXPCO2, x570_EXPCO2)
+       end
+       x572_EXPCO2 = x566_EXPCO2 === true ? x567_EXPCO2 : x566_EXPCO2 === false ? x571_EXPCO2 : ifelse(x566_EXPCO2, x567_EXPCO2, x571_EXPCO2)
+      end
+      x573_EXPCO2 = x564_EXPCO2 === true ? x565_EXPCO2 : x564_EXPCO2 === false ? x572_EXPCO2 : ifelse(x564_EXPCO2, x565_EXPCO2, x572_EXPCO2)
+     end
+     if x563_EXPCO2 !== true
+      x574_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(0))
+      if x574_EXPCO2 !== false
+       x575_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+      end
+      if x574_EXPCO2 !== true
+       x576_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(1))
+       if x576_EXPCO2 !== false
+        x577_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+       end
+       if x576_EXPCO2 !== true
+        x578_EXPCO2 = prob_equals(x173_VENTLUNG, DistUInt{2}(2))
+        if x578_EXPCO2 !== false
+         x579_EXPCO2 = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x578_EXPCO2 !== true
+         x580_EXPCO2 = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        x581_EXPCO2 = x578_EXPCO2 === true ? x579_EXPCO2 : x578_EXPCO2 === false ? x580_EXPCO2 : ifelse(x578_EXPCO2, x579_EXPCO2, x580_EXPCO2)
+       end
+       x582_EXPCO2 = x576_EXPCO2 === true ? x577_EXPCO2 : x576_EXPCO2 === false ? x581_EXPCO2 : ifelse(x576_EXPCO2, x577_EXPCO2, x581_EXPCO2)
+      end
+      x583_EXPCO2 = x574_EXPCO2 === true ? x575_EXPCO2 : x574_EXPCO2 === false ? x582_EXPCO2 : ifelse(x574_EXPCO2, x575_EXPCO2, x582_EXPCO2)
+     end
+     x584_EXPCO2 = x563_EXPCO2 === true ? x573_EXPCO2 : x563_EXPCO2 === false ? x583_EXPCO2 : ifelse(x563_EXPCO2, x573_EXPCO2, x583_EXPCO2)
+    end
+    x585_EXPCO2 = x552_EXPCO2 === true ? x562_EXPCO2 : x552_EXPCO2 === false ? x584_EXPCO2 : ifelse(x552_EXPCO2, x562_EXPCO2, x584_EXPCO2)
+    x586_PRESS = prob_equals(x10_INTUBATION, DistUInt{2}(0))
+    if x586_PRESS !== false
+     x587_PRESS = prob_equals(x7_KINKEDTUBE, DistUInt{1}(0))
+     if x587_PRESS !== false
+      x588_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+      if x588_PRESS !== false
+       x589_PRESS = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+      end
+      if x588_PRESS !== true
+       x590_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+       if x590_PRESS !== false
+        x591_PRESS = discrete(DistUInt{2}, [0.05, 0.25, 0.25, 0.45])
+       end
+       if x590_PRESS !== true
+        x592_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+        if x592_PRESS !== false
+         x593_PRESS = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x592_PRESS !== true
+         x594_PRESS = discrete(DistUInt{2}, [0.2, 0.75, 0.04, 0.01])
+        end
+        x595_PRESS = x592_PRESS === true ? x593_PRESS : x592_PRESS === false ? x594_PRESS : ifelse(x592_PRESS, x593_PRESS, x594_PRESS)
+       end
+       x596_PRESS = x590_PRESS === true ? x591_PRESS : x590_PRESS === false ? x595_PRESS : ifelse(x590_PRESS, x591_PRESS, x595_PRESS)
+      end
+      x597_PRESS = x588_PRESS === true ? x589_PRESS : x588_PRESS === false ? x596_PRESS : ifelse(x588_PRESS, x589_PRESS, x596_PRESS)
+     end
+     if x587_PRESS !== true
+      x598_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+      if x598_PRESS !== false
+       x599_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+      end
+      if x598_PRESS !== true
+       x600_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+       if x600_PRESS !== false
+        x601_PRESS = discrete(DistUInt{2}, [0.01, 0.29, 0.3, 0.4])
+       end
+       if x600_PRESS !== true
+        x602_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+        if x602_PRESS !== false
+         x603_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        if x602_PRESS !== true
+         x604_PRESS = discrete(DistUInt{2}, [0.01, 0.9, 0.08, 0.01])
+        end
+        x605_PRESS = x602_PRESS === true ? x603_PRESS : x602_PRESS === false ? x604_PRESS : ifelse(x602_PRESS, x603_PRESS, x604_PRESS)
+       end
+       x606_PRESS = x600_PRESS === true ? x601_PRESS : x600_PRESS === false ? x605_PRESS : ifelse(x600_PRESS, x601_PRESS, x605_PRESS)
+      end
+      x607_PRESS = x598_PRESS === true ? x599_PRESS : x598_PRESS === false ? x606_PRESS : ifelse(x598_PRESS, x599_PRESS, x606_PRESS)
+     end
+     x608_PRESS = x587_PRESS === true ? x597_PRESS : x587_PRESS === false ? x607_PRESS : ifelse(x587_PRESS, x597_PRESS, x607_PRESS)
+    end
+    if x586_PRESS !== true
+     x609_PRESS = prob_equals(x10_INTUBATION, DistUInt{2}(1))
+     if x609_PRESS !== false
+      x610_PRESS = prob_equals(x7_KINKEDTUBE, DistUInt{1}(0))
+      if x610_PRESS !== false
+       x611_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x611_PRESS !== false
+        x612_PRESS = discrete(DistUInt{2}, [0.01, 0.3, 0.49, 0.2])
+       end
+       if x611_PRESS !== true
+        x613_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x613_PRESS !== false
+         x614_PRESS = discrete(DistUInt{2}, [0.01, 0.15, 0.25, 0.59])
+        end
+        if x613_PRESS !== true
+         x615_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x615_PRESS !== false
+          x616_PRESS = discrete(DistUInt{2}, [0.01, 0.97, 0.01, 0.01])
+         end
+         if x615_PRESS !== true
+          x617_PRESS = discrete(DistUInt{2}, [0.2, 0.7, 0.09, 0.01])
+         end
+         x618_PRESS = x615_PRESS === true ? x616_PRESS : x615_PRESS === false ? x617_PRESS : ifelse(x615_PRESS, x616_PRESS, x617_PRESS)
+        end
+        x619_PRESS = x613_PRESS === true ? x614_PRESS : x613_PRESS === false ? x618_PRESS : ifelse(x613_PRESS, x614_PRESS, x618_PRESS)
+       end
+       x620_PRESS = x611_PRESS === true ? x612_PRESS : x611_PRESS === false ? x619_PRESS : ifelse(x611_PRESS, x612_PRESS, x619_PRESS)
+      end
+      if x610_PRESS !== true
+       x621_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x621_PRESS !== false
+        x622_PRESS = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+       end
+       if x621_PRESS !== true
+        x623_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x623_PRESS !== false
+         x624_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.08, 0.9])
+        end
+        if x623_PRESS !== true
+         x625_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x625_PRESS !== false
+          x626_PRESS = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+         end
+         if x625_PRESS !== true
+          x627_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.38, 0.6])
+         end
+         x628_PRESS = x625_PRESS === true ? x626_PRESS : x625_PRESS === false ? x627_PRESS : ifelse(x625_PRESS, x626_PRESS, x627_PRESS)
+        end
+        x629_PRESS = x623_PRESS === true ? x624_PRESS : x623_PRESS === false ? x628_PRESS : ifelse(x623_PRESS, x624_PRESS, x628_PRESS)
+       end
+       x630_PRESS = x621_PRESS === true ? x622_PRESS : x621_PRESS === false ? x629_PRESS : ifelse(x621_PRESS, x622_PRESS, x629_PRESS)
+      end
+      x631_PRESS = x610_PRESS === true ? x620_PRESS : x610_PRESS === false ? x630_PRESS : ifelse(x610_PRESS, x620_PRESS, x630_PRESS)
+     end
+     if x609_PRESS !== true
+      x632_PRESS = prob_equals(x7_KINKEDTUBE, DistUInt{1}(0))
+      if x632_PRESS !== false
+       x633_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x633_PRESS !== false
+        x634_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.08, 0.9])
+       end
+       if x633_PRESS !== true
+        x635_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x635_PRESS !== false
+         x636_PRESS = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+        end
+        if x635_PRESS !== true
+         x637_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x637_PRESS !== false
+          x638_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.97, 0.01])
+         end
+         if x637_PRESS !== true
+          x639_PRESS = discrete(DistUInt{2}, [0.97, 0.01, 0.01, 0.01])
+         end
+         x640_PRESS = x637_PRESS === true ? x638_PRESS : x637_PRESS === false ? x639_PRESS : ifelse(x637_PRESS, x638_PRESS, x639_PRESS)
+        end
+        x641_PRESS = x635_PRESS === true ? x636_PRESS : x635_PRESS === false ? x640_PRESS : ifelse(x635_PRESS, x636_PRESS, x640_PRESS)
+       end
+       x642_PRESS = x633_PRESS === true ? x634_PRESS : x633_PRESS === false ? x641_PRESS : ifelse(x633_PRESS, x634_PRESS, x641_PRESS)
+      end
+      if x632_PRESS !== true
+       x643_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(0))
+       if x643_PRESS !== false
+        x644_PRESS = discrete(DistUInt{2}, [0.1, 0.84, 0.05, 0.01])
+       end
+       if x643_PRESS !== true
+        x645_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(1))
+        if x645_PRESS !== false
+         x646_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+        end
+        if x645_PRESS !== true
+         x647_PRESS = prob_equals(x103_VENTTUBE, DistUInt{2}(2))
+         if x647_PRESS !== false
+          x648_PRESS = discrete(DistUInt{2}, [0.4, 0.58, 0.01, 0.01])
+         end
+         if x647_PRESS !== true
+          x649_PRESS = discrete(DistUInt{2}, [0.01, 0.01, 0.01, 0.97])
+         end
+         x650_PRESS = x647_PRESS === true ? x648_PRESS : x647_PRESS === false ? x649_PRESS : ifelse(x647_PRESS, x648_PRESS, x649_PRESS)
+        end
+        x651_PRESS = x645_PRESS === true ? x646_PRESS : x645_PRESS === false ? x650_PRESS : ifelse(x645_PRESS, x646_PRESS, x650_PRESS)
+       end
+       x652_PRESS = x643_PRESS === true ? x644_PRESS : x643_PRESS === false ? x651_PRESS : ifelse(x643_PRESS, x644_PRESS, x651_PRESS)
+      end
+      x653_PRESS = x632_PRESS === true ? x642_PRESS : x632_PRESS === false ? x652_PRESS : ifelse(x632_PRESS, x642_PRESS, x652_PRESS)
+     end
+     x654_PRESS = x609_PRESS === true ? x631_PRESS : x609_PRESS === false ? x653_PRESS : ifelse(x609_PRESS, x631_PRESS, x653_PRESS)
+    end
+    x655_PRESS = x586_PRESS === true ? x608_PRESS : x586_PRESS === false ? x654_PRESS : ifelse(x586_PRESS, x608_PRESS, x654_PRESS)
+    return x469_BP
+end
+
+function dice_main()
+    (x3_ERRLOWOUTPUT, x4_ERRCAUTER, x5_INSUFFANESTH, x7_KINKEDTUBE, x10_INTUBATION, x22_STROKEVOLUME, x54_TPR, x103_VENTTUBE, x173_VENTLUNG, x217_ARTCO2, x255_SAO2, x256_CATECHOL,) = chunk_1()
+    x469_BP = chunk_2(x3_ERRLOWOUTPUT, x4_ERRCAUTER, x5_INSUFFANESTH, x7_KINKEDTUBE, x10_INTUBATION, x22_STROKEVOLUME, x54_TPR, x103_VENTTUBE, x173_VENTLUNG, x217_ARTCO2, x255_SAO2, x256_CATECHOL)
+    return x469_BP
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println("alea ", k, " true ", d[true])
+        println("alea ", k, " false ", d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println("alea ", k, " ", v, " ", d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println("alea_seconds ", stats.time)
+    println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 << 30)
+schedule(task)
+wait(task)
+end

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pdb10 · tddlog results</title>
+<meta name="description" content="pdb10, an instance of Literature suite: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
+    <h1>pdb10</h1>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_pdb.py 10 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.005</td><td class="num">0.10</td><td class="num">0.47</td><td class="num">4.1</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto pdb10.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf pdb10.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd pdb10.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd pdb10.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result pdb10.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">pdb10.pl</code><span>809 bytes, 48 lines</span><span class="sha" title="SHA-256">sha256 b6f03073f62c4deddf42f9dee5fbd26b72d59d5fef60922cccc51b5d1711914e</span></div><p class="made">Written by <code>gen_pdb.py 10 --seed 1</code> (bench.py gen).</p><pre>% tuple-independent database: domain 10, 2 S-tuples per constant, seed 1
+0.17::r(c0).
+0.81::t(c0).
+0.74::r(c1).
+0.28::t(c1).
+0.5::r(c2).
+0.45::t(c2).
+0.64::r(c3).
+0.76::t(c3).
+0.13::r(c4).
+0.08::t(c4).
+0.8::r(c5).
+0.44::t(c5).
+0.74::r(c6).
+0.05::t(c6).
+0.45::r(c7).
+0.7::t(c7).
+0.26::r(c8).
+0.9::t(c8).
+0.86::r(c9).
+0.08::t(c9).
+0.0117::s(c0,c0).
+0.1686::s(c0,c8).
+0.1407::s(c1,c3).
+0.105::s(c1,c6).
+0.1095::s(c2,c7).
+0.0722::s(c2,c9).
+0.1814::s(c3,c3).
+0.1768::s(c3,c7).
+0.176::s(c4,c6).
+0.028::s(c4,c8).
+0.1438::s(c5,c1).
+0.1712::s(c5,c4).
+0.1014::s(c6,c6).
+0.1738::s(c6,c8).
+0.0611::s(c7,c3).
+0.1852::s(c7,c4).
+0.0808::s(c8,c7).
+0.1636::s(c8,c8).
+0.1439::s(c9,c3).
+0.0828::s(c9,c7).
+h0 :- r(X), s(X,Y), t(Y).
+h1 :- r(X), s(X,Y).
+h1 :- s(X,Y), t(Y).
+safe :- r(X), s(X,Y).
+query(h0).
+query(h1).
+query(safe).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;pdb10.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">pdb10.lpad.pl</code><span>933 bytes, 52 lines</span><span class="sha" title="SHA-256">sha256 73a648fe78ba189eb5f4c3b76a46378d82cf7a4e17e3ffd0bfafcca85badfd85</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>pdb10.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+r(c0):0.17.
+t(c0):0.81.
+r(c1):0.74.
+t(c1):0.28.
+r(c2):0.5.
+t(c2):0.45.
+r(c3):0.64.
+t(c3):0.76.
+r(c4):0.13.
+t(c4):0.08.
+r(c5):0.8.
+t(c5):0.44.
+r(c6):0.74.
+t(c6):0.05.
+r(c7):0.45.
+t(c7):0.7.
+r(c8):0.26.
+t(c8):0.9.
+r(c9):0.86.
+t(c9):0.08.
+s(c0,c0):0.0117.
+s(c0,c8):0.1686.
+s(c1,c3):0.1407.
+s(c1,c6):0.105.
+s(c2,c7):0.1095.
+s(c2,c9):0.0722.
+s(c3,c3):0.1814.
+s(c3,c7):0.1768.
+s(c4,c6):0.176.
+s(c4,c8):0.028.
+s(c5,c1):0.1438.
+s(c5,c4):0.1712.
+s(c6,c6):0.1014.
+s(c6,c8):0.1738.
+s(c7,c3):0.0611.
+s(c7,c4):0.1852.
+s(c8,c7):0.0808.
+s(c8,c8):0.1636.
+s(c9,c3):0.1439.
+s(c9,c7):0.0828.
+h0 :- r(X), s(X,Y), t(Y).
+h1 :- r(X), s(X,Y).
+h1 :- s(X,Y), t(Y).
+safe :- r(X), s(X,Y).
+:- end_lpad.
+main :-
+    forall((Q = h0), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = h1), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = safe), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.005</td><td>1.1e-16 at most</td><td>largest formula, pairs 315; final formula, pairs 0; variables 38; ground atoms 41; ground rules 80; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>6.5</td><td>3.5e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.20</td><td>3.5e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.10</td><td>3.5e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.47</td><td>2.2e-16 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.1</td><td>3.3e-16 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><th>h0</th><td class="num">0.5090767024</td><td class="num">0.5090767024</td><td class="num">0.5090767</td><td class="num">0.5090767</td><td class="num">0.5090767</td><td class="num">0.5090767024</td><td class="num">0.5090767024</td></tr><tr><th>h1</th><td class="num">0.8762003409</td><td class="num">0.8762003409</td><td class="num">0.87620034</td><td class="num">0.87620034</td><td class="num">0.87620034</td><td class="num">0.8762003409</td><td class="num">0.8762003409</td></tr><tr><th>safe</th><td class="num">0.7590623765</td><td class="num">0.7590623765</td><td class="num">0.75906238</td><td class="num">0.75906238</td><td class="num">0.75906238</td><td class="num">0.7590623765</td><td class="num">0.7590623765</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

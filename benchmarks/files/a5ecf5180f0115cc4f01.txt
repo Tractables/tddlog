@@ -1,0 +1,2026 @@
+0.2::age_f1.
+0.75::age_f0.
+age_b0 :- \+age_f1, age_f0.
+0.5::mileage_f1.
+0.8::mileage_f0.
+0.2::mileage_f0_1.
+mileage_b0 :- \+mileage_f1, mileage_f0.
+mileage_b0 :- mileage_f1, mileage_f0_1.
+socioecon_c :- \+age_b0, \+age_f1.
+0.19999999999999998::socioecon_then_f1.
+0.5::socioecon_then_f0.
+0.05::socioecon_then_f0_1.
+socioecon_then_b0 :- \+socioecon_then_f1, socioecon_then_f0.
+socioecon_then_b0 :- socioecon_then_f1, socioecon_then_f0_1.
+socioecon_c_1 :- age_b0, \+age_f1.
+socioecon_g :- \+socioecon_c, socioecon_c_1.
+0.19999999999999998::socioecon_then_1_f1.
+0.5::socioecon_then_1_f0.
+0.05::socioecon_then_1_f0_1.
+socioecon_then_1_b0 :- \+socioecon_then_1_f1, socioecon_then_1_f0.
+socioecon_then_1_b0 :- socioecon_then_1_f1, socioecon_then_1_f0_1.
+socioecon_g_1 :- \+socioecon_c, \+socioecon_c_1.
+0.3::socioecon_else_f1.
+0.2857142857142857::socioecon_else_f0.
+0.03333333333333333::socioecon_else_f0_1.
+socioecon_else_b0 :- \+socioecon_else_f1, socioecon_else_f0.
+socioecon_else_b0 :- socioecon_else_f1, socioecon_else_f0_1.
+socioecon_b :- socioecon_c, socioecon_then_b0.
+socioecon_b :- socioecon_g, socioecon_then_1_b0.
+socioecon_b :- socioecon_g_1, socioecon_else_b0.
+socioecon_b_1 :- socioecon_c, socioecon_then_f1.
+socioecon_b_1 :- socioecon_g, socioecon_then_1_f1.
+socioecon_b_1 :- socioecon_g_1, socioecon_else_f1.
+othercar_c :- \+socioecon_b, \+socioecon_b_1.
+0.5::othercar_then_f0.
+othercar_c_1 :- socioecon_b, \+socioecon_b_1.
+othercar_g :- \+othercar_c, othercar_c_1.
+0.2::othercar_then_1_f0.
+othercar_g_1 :- \+othercar_c, \+othercar_c_1.
+othercar_g_2 :- othercar_g_1, \+socioecon_b.
+0.1::othercar_then_2_f0.
+othercar_g_3 :- othercar_g_1, socioecon_b.
+0.05::othercar_else_f0.
+othercar_b :- othercar_c, othercar_then_f0.
+othercar_b :- othercar_g, othercar_then_1_f0.
+othercar_b :- othercar_g_2, othercar_then_2_f0.
+othercar_b :- othercar_g_3, othercar_else_f0.
+0.4::riskaversion_then_then_f1.
+0.9666666666666667::riskaversion_then_then_f0.
+0.25::riskaversion_then_then_f0_1.
+riskaversion_then_then_b0 :- \+riskaversion_then_then_f1, riskaversion_then_then_f0.
+riskaversion_then_then_b0 :- riskaversion_then_then_f1, riskaversion_then_then_f0_1.
+0.6::riskaversion_then_then_1_f1.
+0.95::riskaversion_then_then_1_f0.
+0.16666666666666669::riskaversion_then_then_1_f0_1.
+riskaversion_then_then_1_b0 :- \+riskaversion_then_then_1_f1, riskaversion_then_then_1_f0.
+riskaversion_then_then_1_b0 :- riskaversion_then_then_1_f1, riskaversion_then_then_1_f0_1.
+0.5::riskaversion_then_then_2_f1.
+0.96::riskaversion_then_then_2_f0.
+0.2::riskaversion_then_then_2_f0_1.
+riskaversion_then_then_2_b0 :- \+riskaversion_then_then_2_f1, riskaversion_then_then_2_f0.
+riskaversion_then_then_2_b0 :- riskaversion_then_then_2_f1, riskaversion_then_then_2_f0_1.
+0.4::riskaversion_then_else_f1.
+0.9666666666666667::riskaversion_then_else_f0.
+0.25::riskaversion_then_else_f0_1.
+riskaversion_then_else_b0 :- \+riskaversion_then_else_f1, riskaversion_then_else_f0.
+riskaversion_then_else_b0 :- riskaversion_then_else_f1, riskaversion_then_else_f0_1.
+riskaversion_then_b :- othercar_c, riskaversion_then_then_b0.
+riskaversion_then_b :- othercar_g, riskaversion_then_then_1_b0.
+riskaversion_then_b :- othercar_g_2, riskaversion_then_then_2_b0.
+riskaversion_then_b :- othercar_g_3, riskaversion_then_else_b0.
+riskaversion_then_b_1 :- othercar_c, riskaversion_then_then_f1.
+riskaversion_then_b_1 :- othercar_g, riskaversion_then_then_1_f1.
+riskaversion_then_b_1 :- othercar_g_2, riskaversion_then_then_2_f1.
+riskaversion_then_b_1 :- othercar_g_3, riskaversion_then_else_f1.
+0.7000000000000001::riskaversion_then_then_3_f1.
+0.95::riskaversion_then_then_3_f0.
+0.2857142857142857::riskaversion_then_then_3_f0_1.
+riskaversion_then_then_3_b0 :- \+riskaversion_then_then_3_f1, riskaversion_then_then_3_f0.
+riskaversion_then_then_3_b0 :- riskaversion_then_then_3_f1, riskaversion_then_then_3_f0_1.
+0.8::riskaversion_then_then_4_f1.
+0.925::riskaversion_then_then_4_f0.
+0.25::riskaversion_then_then_4_f0_1.
+riskaversion_then_then_4_b0 :- \+riskaversion_then_then_4_f1, riskaversion_then_then_4_f0.
+riskaversion_then_then_4_b0 :- riskaversion_then_then_4_f1, riskaversion_then_then_4_f0_1.
+0.7000000000000001::riskaversion_then_then_5_f1.
+0.95::riskaversion_then_then_5_f0.
+0.2857142857142857::riskaversion_then_then_5_f0_1.
+riskaversion_then_then_5_b0 :- \+riskaversion_then_then_5_f1, riskaversion_then_then_5_f0.
+riskaversion_then_then_5_b0 :- riskaversion_then_then_5_f1, riskaversion_then_then_5_f0_1.
+0.7000000000000001::riskaversion_then_else_1_f1.
+0.95::riskaversion_then_else_1_f0.
+0.42857142857142855::riskaversion_then_else_1_f0_1.
+riskaversion_then_else_1_b0 :- \+riskaversion_then_else_1_f1, riskaversion_then_else_1_f0.
+riskaversion_then_else_1_b0 :- riskaversion_then_else_1_f1, riskaversion_then_else_1_f0_1.
+riskaversion_then_b_2 :- othercar_c, riskaversion_then_then_3_b0.
+riskaversion_then_b_2 :- othercar_g, riskaversion_then_then_4_b0.
+riskaversion_then_b_2 :- othercar_g_2, riskaversion_then_then_5_b0.
+riskaversion_then_b_2 :- othercar_g_3, riskaversion_then_else_1_b0.
+riskaversion_then_b_3 :- othercar_c, riskaversion_then_then_3_f1.
+riskaversion_then_b_3 :- othercar_g, riskaversion_then_then_4_f1.
+riskaversion_then_b_3 :- othercar_g_2, riskaversion_then_then_5_f1.
+riskaversion_then_b_3 :- othercar_g_3, riskaversion_then_else_1_f1.
+riskaversion_g :- socioecon_g_1, othercar_c.
+0.9::riskaversion_then_f1.
+0.9::riskaversion_then_f0.
+0.5555555555555556::riskaversion_then_f0_1.
+riskaversion_then_b0 :- \+riskaversion_then_f1, riskaversion_then_f0.
+riskaversion_then_b0 :- riskaversion_then_f1, riskaversion_then_f0_1.
+riskaversion_g_1 :- socioecon_g_1, \+othercar_c.
+riskaversion_g_2 :- riskaversion_g_1, othercar_c_1.
+0.95::riskaversion_then_1_f1.
+0.8::riskaversion_then_1_f0.
+0.631578947368421::riskaversion_then_1_f0_1.
+riskaversion_then_1_b0 :- \+riskaversion_then_1_f1, riskaversion_then_1_f0.
+riskaversion_then_1_b0 :- riskaversion_then_1_f1, riskaversion_then_1_f0_1.
+riskaversion_g_3 :- riskaversion_g_1, \+othercar_c_1.
+riskaversion_g_4 :- riskaversion_g_3, \+socioecon_b.
+0.9::riskaversion_then_2_f1.
+0.9::riskaversion_then_2_f0.
+0.5555555555555556::riskaversion_then_2_f0_1.
+riskaversion_then_2_b0 :- \+riskaversion_then_2_f1, riskaversion_then_2_f0.
+riskaversion_then_2_b0 :- riskaversion_then_2_f1, riskaversion_then_2_f0_1.
+riskaversion_g_5 :- riskaversion_g_3, socioecon_b.
+0.9::riskaversion_else_f1.
+0.9::riskaversion_else_f0.
+0.5555555555555556::riskaversion_else_f0_1.
+riskaversion_else_b0 :- \+riskaversion_else_f1, riskaversion_else_f0.
+riskaversion_else_b0 :- riskaversion_else_f1, riskaversion_else_f0_1.
+riskaversion_b :- socioecon_c, riskaversion_then_b.
+riskaversion_b :- socioecon_g, riskaversion_then_b_2.
+riskaversion_b :- riskaversion_g, riskaversion_then_b0.
+riskaversion_b :- riskaversion_g_2, riskaversion_then_1_b0.
+riskaversion_b :- riskaversion_g_4, riskaversion_then_2_b0.
+riskaversion_b :- riskaversion_g_5, riskaversion_else_b0.
+riskaversion_b_1 :- socioecon_c, riskaversion_then_b_1.
+riskaversion_b_1 :- socioecon_g, riskaversion_then_b_3.
+riskaversion_b_1 :- riskaversion_g, riskaversion_then_f1.
+riskaversion_b_1 :- riskaversion_g_2, riskaversion_then_1_f1.
+riskaversion_b_1 :- riskaversion_g_4, riskaversion_then_2_f1.
+riskaversion_b_1 :- riskaversion_g_5, riskaversion_else_f1.
+antitheft_c :- \+riskaversion_b, \+riskaversion_b_1.
+0.999999::antitheft_then_then_f0.
+0.999999::antitheft_then_then_1_f0.
+0.95::antitheft_then_then_2_f0.
+0.5::antitheft_then_else_f0.
+antitheft_then_b :- othercar_c, antitheft_then_then_f0.
+antitheft_then_b :- othercar_g, antitheft_then_then_1_f0.
+antitheft_then_b :- othercar_g_2, antitheft_then_then_2_f0.
+antitheft_then_b :- othercar_g_3, antitheft_then_else_f0.
+antitheft_c_1 :- riskaversion_b, \+riskaversion_b_1.
+antitheft_g :- \+antitheft_c, antitheft_c_1.
+0.999999::antitheft_then_then_3_f0.
+0.999999::antitheft_then_then_4_f0.
+0.8::antitheft_then_then_5_f0.
+0.5::antitheft_then_else_1_f0.
+antitheft_then_b_1 :- othercar_c, antitheft_then_then_3_f0.
+antitheft_then_b_1 :- othercar_g, antitheft_then_then_4_f0.
+antitheft_then_b_1 :- othercar_g_2, antitheft_then_then_5_f0.
+antitheft_then_b_1 :- othercar_g_3, antitheft_then_else_1_f0.
+antitheft_g_1 :- \+antitheft_c, \+antitheft_c_1.
+antitheft_g_2 :- antitheft_g_1, \+riskaversion_b.
+0.9::antitheft_then_then_6_f0.
+0.7::antitheft_then_then_7_f0.
+0.1::antitheft_then_then_8_f0.
+0.2::antitheft_then_else_2_f0.
+antitheft_then_b_2 :- othercar_c, antitheft_then_then_6_f0.
+antitheft_then_b_2 :- othercar_g, antitheft_then_then_7_f0.
+antitheft_then_b_2 :- othercar_g_2, antitheft_then_then_8_f0.
+antitheft_then_b_2 :- othercar_g_3, antitheft_then_else_2_f0.
+antitheft_g_3 :- antitheft_g_1, riskaversion_b.
+antitheft_g_4 :- antitheft_g_3, othercar_c.
+0.05::antitheft_then_f0.
+antitheft_g_5 :- antitheft_g_3, \+othercar_c.
+antitheft_g_6 :- antitheft_g_5, othercar_c_1.
+1e-06::antitheft_then_1_f0.
+antitheft_g_7 :- antitheft_g_5, \+othercar_c_1.
+antitheft_g_8 :- antitheft_g_7, \+socioecon_b.
+1e-06::antitheft_then_2_f0.
+antitheft_g_9 :- antitheft_g_7, socioecon_b.
+1e-06::antitheft_else_f0.
+antitheft_b :- antitheft_c, antitheft_then_b.
+antitheft_b :- antitheft_g, antitheft_then_b_1.
+antitheft_b :- antitheft_g_2, antitheft_then_b_2.
+antitheft_b :- antitheft_g_4, antitheft_then_f0.
+antitheft_b :- antitheft_g_6, antitheft_then_1_f0.
+antitheft_b :- antitheft_g_8, antitheft_then_2_f0.
+antitheft_b :- antitheft_g_9, antitheft_else_f0.
+0.19999899999999998::homebase_then_then_f1.
+0.9999987500015625::homebase_then_then_f0.
+0.7500037500187501::homebase_then_then_f0_1.
+homebase_then_then_b0 :- \+homebase_then_then_f1, homebase_then_then_f0.
+homebase_then_then_b0 :- homebase_then_then_f1, homebase_then_then_f0_1.
+0.049999999999999996::homebase_then_then_1_f1.
+0.8421052631578948::homebase_then_then_1_f0.
+0.2::homebase_then_then_1_f0_1.
+homebase_then_then_1_b0 :- \+homebase_then_then_1_f1, homebase_then_then_1_f0.
+homebase_then_then_1_b0 :- homebase_then_then_1_f1, homebase_then_then_1_f0_1.
+0.05::homebase_then_then_2_f1.
+0.631578947368421::homebase_then_then_2_f0.
+0.2::homebase_then_then_2_f0_1.
+homebase_then_then_2_b0 :- \+homebase_then_then_2_f1, homebase_then_then_2_f0.
+homebase_then_then_2_b0 :- homebase_then_then_2_f1, homebase_then_then_2_f0_1.
+0.010001::homebase_then_else_f1.
+0.5050510152030456::homebase_then_else_f0.
+0.9999000099990001::homebase_then_else_f0_1.
+homebase_then_else_b0 :- \+homebase_then_else_f1, homebase_then_else_f0.
+homebase_then_else_b0 :- homebase_then_else_f1, homebase_then_else_f0_1.
+homebase_then_b :- othercar_c, homebase_then_then_b0.
+homebase_then_b :- othercar_g, homebase_then_then_1_b0.
+homebase_then_b :- othercar_g_2, homebase_then_then_2_b0.
+homebase_then_b :- othercar_g_3, homebase_then_else_b0.
+homebase_then_b_1 :- othercar_c, homebase_then_then_f1.
+homebase_then_b_1 :- othercar_g, homebase_then_then_1_f1.
+homebase_then_b_1 :- othercar_g_2, homebase_then_then_2_f1.
+homebase_then_b_1 :- othercar_g_3, homebase_then_else_f1.
+0.19999899999999998::homebase_then_then_3_f1.
+0.9999987500015625::homebase_then_then_3_f0.
+0.7499987499937499::homebase_then_then_3_f0_1.
+homebase_then_then_3_b0 :- \+homebase_then_then_3_f1, homebase_then_then_3_f0.
+homebase_then_then_3_b0 :- homebase_then_then_3_f1, homebase_then_then_3_f0_1.
+0.74::homebase_then_then_4_f1.
+0.9615384615384616::homebase_then_then_4_f0.
+0.1891891891891892::homebase_then_then_4_f0_1.
+homebase_then_then_4_b0 :- \+homebase_then_then_4_f1, homebase_then_then_4_f0.
+homebase_then_then_4_b0 :- homebase_then_then_4_f1, homebase_then_then_4_f0_1.
+0.39999999999999997::homebase_then_then_5_f1.
+0.6666666666666666::homebase_then_then_5_f0.
+0.25::homebase_then_then_5_f0_1.
+homebase_then_then_5_b0 :- \+homebase_then_then_5_f1, homebase_then_then_5_f0.
+homebase_then_then_5_b0 :- homebase_then_then_5_f1, homebase_then_then_5_f0_1.
+0.049999::homebase_then_else_1_f1.
+1.0526304709152937e-06::homebase_then_else_1_f0.
+0.999979999599992::homebase_then_else_1_f0_1.
+homebase_then_else_1_b0 :- \+homebase_then_else_1_f1, homebase_then_else_1_f0.
+homebase_then_else_1_b0 :- homebase_then_else_1_f1, homebase_then_else_1_f0_1.
+homebase_then_b_2 :- othercar_c, homebase_then_then_3_b0.
+homebase_then_b_2 :- othercar_g, homebase_then_then_4_b0.
+homebase_then_b_2 :- othercar_g_2, homebase_then_then_5_b0.
+homebase_then_b_2 :- othercar_g_3, homebase_then_else_1_b0.
+homebase_then_b_3 :- othercar_c, homebase_then_then_3_f1.
+homebase_then_b_3 :- othercar_g, homebase_then_then_4_f1.
+homebase_then_b_3 :- othercar_g_2, homebase_then_then_5_f1.
+homebase_then_b_3 :- othercar_g_3, homebase_then_else_1_f1.
+0.19999899999999998::homebase_then_then_6_f1.
+0.9999987500015625::homebase_then_then_6_f0.
+0.7499987499937499::homebase_then_then_6_f0_1.
+homebase_then_then_6_b0 :- \+homebase_then_then_6_f1, homebase_then_then_6_f0.
+homebase_then_then_6_b0 :- homebase_then_then_6_f1, homebase_then_then_6_f0_1.
+0.7::homebase_then_then_7_f1.
+3.333333333333333e-06::homebase_then_then_7_f0.
+0.14285714285714288::homebase_then_then_7_f0_1.
+homebase_then_then_7_b0 :- \+homebase_then_then_7_f1, homebase_then_then_7_f0.
+homebase_then_then_7_b0 :- homebase_then_then_7_f1, homebase_then_then_7_f0_1.
+0.499999::homebase_then_then_8_f1.
+1.999996000008e-06::homebase_then_then_8_f0.
+0.1999983999968::homebase_then_then_8_f0_1.
+homebase_then_then_8_b0 :- \+homebase_then_then_8_f1, homebase_then_then_8_f0.
+homebase_then_then_8_b0 :- homebase_then_then_8_f1, homebase_then_then_8_f0_1.
+0.149999::homebase_then_else_2_f1.
+1.1764692041538775e-06::homebase_then_else_2_f0.
+0.9933332888885926::homebase_then_else_2_f0_1.
+homebase_then_else_2_b0 :- \+homebase_then_else_2_f1, homebase_then_else_2_f0.
+homebase_then_else_2_b0 :- homebase_then_else_2_f1, homebase_then_else_2_f0_1.
+homebase_then_b_4 :- othercar_c, homebase_then_then_6_b0.
+homebase_then_b_4 :- othercar_g, homebase_then_then_7_b0.
+homebase_then_b_4 :- othercar_g_2, homebase_then_then_8_b0.
+homebase_then_b_4 :- othercar_g_3, homebase_then_else_2_b0.
+homebase_then_b_5 :- othercar_c, homebase_then_then_6_f1.
+homebase_then_b_5 :- othercar_g, homebase_then_then_7_f1.
+homebase_then_b_5 :- othercar_g_2, homebase_then_then_8_f1.
+homebase_then_b_5 :- othercar_g_3, homebase_then_else_2_f1.
+0.19999899999999998::homebase_then_f1.
+0.9999987500015625::homebase_then_f0.
+0.7499987499937499::homebase_then_f0_1.
+homebase_then_b0 :- \+homebase_then_f1, homebase_then_f0.
+homebase_then_b0 :- homebase_then_f1, homebase_then_f0_1.
+0.049999::homebase_then_1_f1.
+1.0526304709152937e-06::homebase_then_1_f0.
+0.5110902218044361::homebase_then_1_f0_1.
+homebase_then_1_b0 :- \+homebase_then_1_f1, homebase_then_1_f0.
+homebase_then_1_b0 :- homebase_then_1_f1, homebase_then_1_f0_1.
+2e-06::homebase_then_2_f1.
+1.000002000004e-06::homebase_then_2_f0.
+0.5::homebase_then_2_f0_1.
+homebase_then_2_b0 :- \+homebase_then_2_f1, homebase_then_2_f0.
+homebase_then_2_b0 :- homebase_then_2_f1, homebase_then_2_f0_1.
+2e-06::homebase_else_f1.
+1.000002000004e-06::homebase_else_f0.
+0.5::homebase_else_f0_1.
+homebase_else_b0 :- \+homebase_else_f1, homebase_else_f0.
+homebase_else_b0 :- homebase_else_f1, homebase_else_f0_1.
+homebase_b :- antitheft_c, homebase_then_b.
+homebase_b :- antitheft_g, homebase_then_b_2.
+homebase_b :- antitheft_g_2, homebase_then_b_4.
+homebase_b :- antitheft_g_4, homebase_then_b0.
+homebase_b :- antitheft_g_6, homebase_then_1_b0.
+homebase_b :- antitheft_g_8, homebase_then_2_b0.
+homebase_b :- antitheft_g_9, homebase_else_b0.
+homebase_b_1 :- antitheft_c, homebase_then_b_1.
+homebase_b_1 :- antitheft_g, homebase_then_b_3.
+homebase_b_1 :- antitheft_g_2, homebase_then_b_5.
+homebase_b_1 :- antitheft_g_4, homebase_then_f1.
+homebase_b_1 :- antitheft_g_6, homebase_then_1_f1.
+homebase_b_1 :- antitheft_g_8, homebase_then_2_f1.
+homebase_b_1 :- antitheft_g_9, homebase_else_f1.
+seniortrain_g :- socioecon_g_1, antitheft_c.
+0.999999::seniortrain_then_f0.
+seniortrain_g_1 :- socioecon_g_1, \+antitheft_c.
+seniortrain_g_2 :- seniortrain_g_1, antitheft_c_1.
+0.999999::seniortrain_then_1_f0.
+seniortrain_g_3 :- seniortrain_g_1, \+antitheft_c_1.
+seniortrain_g_4 :- seniortrain_g_3, \+riskaversion_b.
+0.7::seniortrain_then_2_f0.
+seniortrain_g_5 :- seniortrain_g_3, riskaversion_b.
+0.1::seniortrain_else_f0.
+seniortrain_b :- socioecon_c.
+seniortrain_b :- socioecon_g.
+seniortrain_b :- seniortrain_g, seniortrain_then_f0.
+seniortrain_b :- seniortrain_g_2, seniortrain_then_1_f0.
+seniortrain_b :- seniortrain_g_4, seniortrain_then_2_f0.
+seniortrain_b :- seniortrain_g_5, seniortrain_else_f0.
+0.05::drivingskill_then_then_f1.
+0.4736842105263158::drivingskill_then_then_f0.
+drivingskill_then_then_b0 :- \+drivingskill_then_then_f1, drivingskill_then_then_f0.
+0.05::drivingskill_then_else_f1.
+0.4736842105263158::drivingskill_then_else_f0.
+drivingskill_then_else_b0 :- \+drivingskill_then_else_f1, drivingskill_then_else_f0.
+drivingskill_then_b :- \+seniortrain_b, drivingskill_then_then_b0.
+drivingskill_then_b :- seniortrain_b, drivingskill_then_else_b0.
+drivingskill_then_b_1 :- \+seniortrain_b, drivingskill_then_then_f1.
+drivingskill_then_b_1 :- seniortrain_b, drivingskill_then_else_f1.
+0.1::drivingskill_then_then_1_f1.
+0.6666666666666666::drivingskill_then_then_1_f0.
+drivingskill_then_then_1_b0 :- \+drivingskill_then_then_1_f1, drivingskill_then_then_1_f0.
+0.1::drivingskill_then_else_1_f1.
+0.6666666666666666::drivingskill_then_else_1_f0.
+drivingskill_then_else_1_b0 :- \+drivingskill_then_else_1_f1, drivingskill_then_else_1_f0.
+drivingskill_then_b_2 :- \+seniortrain_b, drivingskill_then_then_1_b0.
+drivingskill_then_b_2 :- seniortrain_b, drivingskill_then_else_1_b0.
+drivingskill_then_b_3 :- \+seniortrain_b, drivingskill_then_then_1_f1.
+drivingskill_then_b_3 :- seniortrain_b, drivingskill_then_else_1_f1.
+drivingskill_g :- socioecon_g_1, \+seniortrain_b.
+0.3::drivingskill_then_f1.
+0.8571428571428571::drivingskill_then_f0.
+drivingskill_then_b0 :- \+drivingskill_then_f1, drivingskill_then_f0.
+drivingskill_g_1 :- socioecon_g_1, seniortrain_b.
+0.1::drivingskill_else_f1.
+0.5555555555555556::drivingskill_else_f0.
+drivingskill_else_b0 :- \+drivingskill_else_f1, drivingskill_else_f0.
+drivingskill_b :- socioecon_c, drivingskill_then_b.
+drivingskill_b :- socioecon_g, drivingskill_then_b_2.
+drivingskill_b :- drivingskill_g, drivingskill_then_b0.
+drivingskill_b :- drivingskill_g_1, drivingskill_else_b0.
+drivingskill_b_1 :- socioecon_c, drivingskill_then_b_1.
+drivingskill_b_1 :- socioecon_g, drivingskill_then_b_3.
+drivingskill_b_1 :- drivingskill_g, drivingskill_then_f1.
+drivingskill_b_1 :- drivingskill_g_1, drivingskill_else_f1.
+drivhist_c :- \+drivingskill_b, \+drivingskill_b_1.
+0.995::drivhist_then_then_f1.
+0.8::drivhist_then_then_f0.
+drivhist_then_then_b0 :- \+drivhist_then_then_f1, drivhist_then_then_f0.
+0.99::drivhist_then_then_1_f1.
+0.8::drivhist_then_then_1_f0.
+drivhist_then_then_1_b0 :- \+drivhist_then_then_1_f1, drivhist_then_then_1_f0.
+0.82::drivhist_then_then_2_f1.
+0.8333333333333334::drivhist_then_then_2_f0.
+drivhist_then_then_2_b0 :- \+drivhist_then_then_2_f1, drivhist_then_then_2_f0.
+0.4::drivhist_then_else_f1.
+0.5::drivhist_then_else_f0.
+drivhist_then_else_b0 :- \+drivhist_then_else_f1, drivhist_then_else_f0.
+drivhist_then_b :- antitheft_c, drivhist_then_then_b0.
+drivhist_then_b :- antitheft_g, drivhist_then_then_1_b0.
+drivhist_then_b :- antitheft_g_2, drivhist_then_then_2_b0.
+drivhist_then_b :- antitheft_g_3, drivhist_then_else_b0.
+drivhist_then_b_1 :- antitheft_c, drivhist_then_then_f1.
+drivhist_then_b_1 :- antitheft_g, drivhist_then_then_1_f1.
+drivhist_then_b_1 :- antitheft_g_2, drivhist_then_then_2_f1.
+drivhist_then_b_1 :- antitheft_g_3, drivhist_then_else_f1.
+drivhist_c_1 :- drivingskill_b, \+drivingskill_b_1.
+drivhist_g :- \+drivhist_c, drivhist_c_1.
+0.6::drivhist_then_then_3_f1.
+0.75::drivhist_then_then_3_f0.
+drivhist_then_then_3_b0 :- \+drivhist_then_then_3_f1, drivhist_then_then_3_f0.
+0.2::drivhist_then_then_4_f1.
+0.375::drivhist_then_then_4_f0.
+drivhist_then_then_4_b0 :- \+drivhist_then_then_4_f1, drivhist_then_then_4_f0.
+0.03::drivhist_then_then_5_f1.
+0.07216494845360825::drivhist_then_then_5_f0.
+drivhist_then_then_5_b0 :- \+drivhist_then_then_5_f1, drivhist_then_then_5_f0.
+0.01::drivhist_then_else_1_f1.
+0.04040404040404041::drivhist_then_else_1_f0.
+drivhist_then_else_1_b0 :- \+drivhist_then_else_1_f1, drivhist_then_else_1_f0.
+drivhist_then_b_2 :- antitheft_c, drivhist_then_then_3_b0.
+drivhist_then_b_2 :- antitheft_g, drivhist_then_then_4_b0.
+drivhist_then_b_2 :- antitheft_g_2, drivhist_then_then_5_b0.
+drivhist_then_b_2 :- antitheft_g_3, drivhist_then_else_1_b0.
+drivhist_then_b_3 :- antitheft_c, drivhist_then_then_3_f1.
+drivhist_then_b_3 :- antitheft_g, drivhist_then_then_4_f1.
+drivhist_then_b_3 :- antitheft_g_2, drivhist_then_then_5_f1.
+drivhist_then_b_3 :- antitheft_g_3, drivhist_then_else_1_f1.
+drivhist_g_1 :- \+drivhist_c, \+drivhist_c_1.
+drivhist_g_2 :- drivhist_g_1, antitheft_c.
+0.4::drivhist_then_f1.
+0.5::drivhist_then_f0.
+drivhist_then_b0 :- \+drivhist_then_f1, drivhist_then_f0.
+drivhist_g_3 :- drivhist_g_1, \+antitheft_c.
+drivhist_g_4 :- drivhist_g_3, antitheft_c_1.
+0.1::drivhist_then_1_f1.
+0.3333333333333333::drivhist_then_1_f0.
+drivhist_then_1_b0 :- \+drivhist_then_1_f1, drivhist_then_1_f0.
+drivhist_g_5 :- drivhist_g_3, \+antitheft_c_1.
+drivhist_g_6 :- drivhist_g_5, \+riskaversion_b.
+1e-06::drivhist_then_2_f1.
+0.009999009999009998::drivhist_then_2_f0.
+drivhist_then_2_b0 :- \+drivhist_then_2_f1, drivhist_then_2_f0.
+drivhist_g_7 :- drivhist_g_5, riskaversion_b.
+1e-06::drivhist_else_f1.
+1.000001000001e-06::drivhist_else_f0.
+drivhist_else_b0 :- \+drivhist_else_f1, drivhist_else_f0.
+drivhist_b :- drivhist_c, drivhist_then_b.
+drivhist_b :- drivhist_g, drivhist_then_b_2.
+drivhist_b :- drivhist_g_2, drivhist_then_b0.
+drivhist_b :- drivhist_g_4, drivhist_then_1_b0.
+drivhist_b :- drivhist_g_6, drivhist_then_2_b0.
+drivhist_b :- drivhist_g_7, drivhist_else_b0.
+drivhist_b_1 :- drivhist_c, drivhist_then_b_1.
+drivhist_b_1 :- drivhist_g, drivhist_then_b_3.
+drivhist_b_1 :- drivhist_g_2, drivhist_then_f1.
+drivhist_b_1 :- drivhist_g_4, drivhist_then_1_f1.
+drivhist_b_1 :- drivhist_g_6, drivhist_then_2_f1.
+drivhist_b_1 :- drivhist_g_7, drivhist_else_f1.
+0.3::drivquality_then_then_3_f1.
+0.2857142857142857::drivquality_then_then_3_f0.
+drivquality_then_then_3_b0 :- \+drivquality_then_then_3_f1, drivquality_then_then_3_f0.
+0.3::drivquality_then_then_4_f1.
+0.5714285714285714::drivquality_then_then_4_f0.
+drivquality_then_then_4_b0 :- \+drivquality_then_then_4_f1, drivquality_then_then_4_f0.
+0.2::drivquality_then_else_1_f1.
+drivquality_then_b :- antitheft_c, drivquality_then_then_3_b0.
+drivquality_then_b :- antitheft_g, drivquality_then_then_4_b0.
+drivquality_then_b :- antitheft_g_2.
+drivquality_then_b :- antitheft_g_3, \+drivquality_then_else_1_f1.
+drivquality_then_b_1 :- antitheft_c, drivquality_then_then_3_f1.
+drivquality_then_b_1 :- antitheft_g, drivquality_then_then_4_f1.
+drivquality_then_b_1 :- antitheft_g_3, drivquality_then_else_1_f1.
+0.5::drivquality_then_f1.
+0.4::drivquality_then_f0.
+drivquality_then_b0 :- \+drivquality_then_f1, drivquality_then_f0.
+0.98::drivquality_then_1_f1.
+0.5::drivquality_then_1_f0.
+drivquality_then_1_b0 :- \+drivquality_then_1_f1, drivquality_then_1_f0.
+drivquality_b :- drivhist_g, drivquality_then_b.
+drivquality_b :- drivhist_g_2, drivquality_then_b0.
+drivquality_b :- drivhist_g_4, drivquality_then_1_b0.
+drivquality_b_1 :- drivhist_g, drivquality_then_b_1.
+drivquality_b_1 :- drivhist_g_2, drivquality_then_f1.
+drivquality_b_1 :- drivhist_g_4, drivquality_then_1_f1.
+drivquality_b_1 :- drivhist_g_6.
+drivquality_b_1 :- drivhist_g_7.
+0.2::makemodel_then_then_f1.
+0.875::makemodel_then_then_f0.
+makemodel_then_then_b0 :- \+makemodel_then_then_f1, makemodel_then_then_f0.
+0.2::makemodel_then_then_1_f1.
+0.875::makemodel_then_then_1_f0.
+makemodel_then_then_1_b0 :- \+makemodel_then_then_1_f1, makemodel_then_then_1_f0.
+0.2::makemodel_then_then_2_f1.
+0.875::makemodel_then_then_2_f0.
+makemodel_then_then_2_b0 :- \+makemodel_then_then_2_f1, makemodel_then_then_2_f0.
+0.2::makemodel_then_else_f1.
+0.875::makemodel_then_else_f0.
+makemodel_then_else_b0 :- \+makemodel_then_else_f1, makemodel_then_else_f0.
+makemodel_then_b :- antitheft_c, makemodel_then_then_b0.
+makemodel_then_b :- antitheft_g, makemodel_then_then_1_b0.
+makemodel_then_b :- antitheft_g_2, makemodel_then_then_2_b0.
+makemodel_then_b :- antitheft_g_3, makemodel_then_else_b0.
+makemodel_then_b_1 :- antitheft_c, makemodel_then_then_f1.
+makemodel_then_b_1 :- antitheft_g, makemodel_then_then_1_f1.
+makemodel_then_b_1 :- antitheft_g_2, makemodel_then_then_2_f1.
+makemodel_then_b_1 :- antitheft_g_3, makemodel_then_else_f1.
+0.65::makemodel_then_then_3_f1.
+0.5714285714285714::makemodel_then_then_3_f0.
+makemodel_then_then_3_b0 :- \+makemodel_then_then_3_f1, makemodel_then_then_3_f0.
+0.65::makemodel_then_then_4_f1.
+0.5714285714285714::makemodel_then_then_4_f0.
+makemodel_then_then_4_b0 :- \+makemodel_then_then_4_f1, makemodel_then_then_4_f0.
+0.65::makemodel_then_then_5_f1.
+0.5714285714285714::makemodel_then_then_5_f0.
+makemodel_then_then_5_b0 :- \+makemodel_then_then_5_f1, makemodel_then_then_5_f0.
+0.65::makemodel_then_else_1_f1.
+0.5714285714285714::makemodel_then_else_1_f0.
+makemodel_then_else_1_b0 :- \+makemodel_then_else_1_f1, makemodel_then_else_1_f0.
+makemodel_then_b_2 :- antitheft_c, makemodel_then_then_3_b0.
+makemodel_then_b_2 :- antitheft_g, makemodel_then_then_4_b0.
+makemodel_then_b_2 :- antitheft_g_2, makemodel_then_then_5_b0.
+makemodel_then_b_2 :- antitheft_g_3, makemodel_then_else_1_b0.
+makemodel_then_b_3 :- antitheft_c, makemodel_then_then_3_f1.
+makemodel_then_b_3 :- antitheft_g, makemodel_then_then_4_f1.
+makemodel_then_b_3 :- antitheft_g_2, makemodel_then_then_5_f1.
+makemodel_then_b_3 :- antitheft_g_3, makemodel_then_else_1_f1.
+0.75::makemodel_then_then_6_f1.
+0.2::makemodel_then_then_6_f0.
+0.6::makemodel_then_then_6_f0_1.
+makemodel_then_then_6_b0 :- \+makemodel_then_then_6_f1, makemodel_then_then_6_f0.
+makemodel_then_then_6_b0 :- makemodel_then_then_6_f1, makemodel_then_then_6_f0_1.
+0.75::makemodel_then_then_7_f1.
+0.2::makemodel_then_then_7_f0.
+0.6::makemodel_then_then_7_f0_1.
+makemodel_then_then_7_b0 :- \+makemodel_then_then_7_f1, makemodel_then_then_7_f0.
+makemodel_then_then_7_b0 :- makemodel_then_then_7_f1, makemodel_then_then_7_f0_1.
+0.75::makemodel_then_then_8_f1.
+0.2::makemodel_then_then_8_f0.
+0.6::makemodel_then_then_8_f0_1.
+makemodel_then_then_8_b0 :- \+makemodel_then_then_8_f1, makemodel_then_then_8_f0.
+makemodel_then_then_8_b0 :- makemodel_then_then_8_f1, makemodel_then_then_8_f0_1.
+0.75::makemodel_then_else_2_f1.
+0.2::makemodel_then_else_2_f0.
+0.6::makemodel_then_else_2_f0_1.
+makemodel_then_else_2_b0 :- \+makemodel_then_else_2_f1, makemodel_then_else_2_f0.
+makemodel_then_else_2_b0 :- makemodel_then_else_2_f1, makemodel_then_else_2_f0_1.
+makemodel_then_b_4 :- antitheft_c, makemodel_then_then_6_b0.
+makemodel_then_b_4 :- antitheft_g, makemodel_then_then_7_b0.
+makemodel_then_b_4 :- antitheft_g_2, makemodel_then_then_8_b0.
+makemodel_then_b_4 :- antitheft_g_3, makemodel_then_else_2_b0.
+makemodel_then_b_5 :- antitheft_c, makemodel_then_then_6_f1.
+makemodel_then_b_5 :- antitheft_g, makemodel_then_then_7_f1.
+makemodel_then_b_5 :- antitheft_g_2, makemodel_then_then_8_f1.
+makemodel_then_b_5 :- antitheft_g_3, makemodel_then_else_2_f1.
+makemodel_g :- othercar_g_3, antitheft_c.
+0.2::makemodel_then_f2.
+0.6125::makemodel_then_f1.
+makemodel_then_b1 :- \+makemodel_then_f2, makemodel_then_f1.
+0.03225806451612903::makemodel_then_f0.
+0.8163265306122449::makemodel_then_f0_1.
+makemodel_then_b0 :- \+makemodel_then_f2, \+makemodel_then_b1, makemodel_then_f0.
+makemodel_then_b0 :- \+makemodel_then_f2, makemodel_then_b1, makemodel_then_f0_1.
+makemodel_g_1 :- othercar_g_3, \+antitheft_c.
+makemodel_g_2 :- makemodel_g_1, antitheft_c_1.
+0.2::makemodel_then_1_f2.
+0.6125::makemodel_then_1_f1.
+makemodel_then_1_b1 :- \+makemodel_then_1_f2, makemodel_then_1_f1.
+0.03225806451612903::makemodel_then_1_f0.
+0.8163265306122449::makemodel_then_1_f0_1.
+makemodel_then_1_b0 :- \+makemodel_then_1_f2, \+makemodel_then_1_b1, makemodel_then_1_f0.
+makemodel_then_1_b0 :- \+makemodel_then_1_f2, makemodel_then_1_b1, makemodel_then_1_f0_1.
+makemodel_g_3 :- makemodel_g_1, \+antitheft_c_1.
+makemodel_g_4 :- makemodel_g_3, \+riskaversion_b.
+0.2::makemodel_then_2_f2.
+0.6125::makemodel_then_2_f1.
+makemodel_then_2_b1 :- \+makemodel_then_2_f2, makemodel_then_2_f1.
+0.03225806451612903::makemodel_then_2_f0.
+0.8163265306122449::makemodel_then_2_f0_1.
+makemodel_then_2_b0 :- \+makemodel_then_2_f2, \+makemodel_then_2_b1, makemodel_then_2_f0.
+makemodel_then_2_b0 :- \+makemodel_then_2_f2, makemodel_then_2_b1, makemodel_then_2_f0_1.
+makemodel_g_5 :- makemodel_g_3, riskaversion_b.
+0.2::makemodel_else_f2.
+0.6125::makemodel_else_f1.
+makemodel_else_b1 :- \+makemodel_else_f2, makemodel_else_f1.
+0.03225806451612903::makemodel_else_f0.
+0.8163265306122449::makemodel_else_f0_1.
+makemodel_else_b0 :- \+makemodel_else_f2, \+makemodel_else_b1, makemodel_else_f0.
+makemodel_else_b0 :- \+makemodel_else_f2, makemodel_else_b1, makemodel_else_f0_1.
+makemodel_b :- othercar_c, makemodel_then_b.
+makemodel_b :- othercar_g, makemodel_then_b_2.
+makemodel_b :- othercar_g_2, makemodel_then_b_4.
+makemodel_b :- makemodel_g, makemodel_then_b0.
+makemodel_b :- makemodel_g_2, makemodel_then_1_b0.
+makemodel_b :- makemodel_g_4, makemodel_then_2_b0.
+makemodel_b :- makemodel_g_5, makemodel_else_b0.
+makemodel_b_1 :- othercar_c, makemodel_then_b_1.
+makemodel_b_1 :- othercar_g, makemodel_then_b_3.
+makemodel_b_1 :- othercar_g_2, makemodel_then_b_5.
+makemodel_b_1 :- makemodel_g, makemodel_then_b1.
+makemodel_b_1 :- makemodel_g_2, makemodel_then_1_b1.
+makemodel_b_1 :- makemodel_g_4, makemodel_then_2_b1.
+makemodel_b_1 :- makemodel_g_5, makemodel_else_b1.
+makemodel_b_2 :- makemodel_g, makemodel_then_f2.
+makemodel_b_2 :- makemodel_g_2, makemodel_then_1_f2.
+makemodel_b_2 :- makemodel_g_4, makemodel_then_2_f2.
+makemodel_b_2 :- makemodel_g_5, makemodel_else_f2.
+0.85::vehicleyear_then_then_f0.
+0.85::vehicleyear_then_then_1_f0.
+0.85::vehicleyear_then_then_2_f0.
+0.85::vehicleyear_then_else_f0.
+vehicleyear_then_b :- antitheft_c, vehicleyear_then_then_f0.
+vehicleyear_then_b :- antitheft_g, vehicleyear_then_then_1_f0.
+vehicleyear_then_b :- antitheft_g_2, vehicleyear_then_then_2_f0.
+vehicleyear_then_b :- antitheft_g_3, vehicleyear_then_else_f0.
+0.7::vehicleyear_then_then_3_f0.
+0.7::vehicleyear_then_then_4_f0.
+0.7::vehicleyear_then_then_5_f0.
+0.7::vehicleyear_then_else_1_f0.
+vehicleyear_then_b_1 :- antitheft_c, vehicleyear_then_then_3_f0.
+vehicleyear_then_b_1 :- antitheft_g, vehicleyear_then_then_4_f0.
+vehicleyear_then_b_1 :- antitheft_g_2, vehicleyear_then_then_5_f0.
+vehicleyear_then_b_1 :- antitheft_g_3, vehicleyear_then_else_1_f0.
+0.2::vehicleyear_then_then_6_f0.
+0.2::vehicleyear_then_then_7_f0.
+0.2::vehicleyear_then_then_8_f0.
+0.2::vehicleyear_then_else_2_f0.
+vehicleyear_then_b_2 :- antitheft_c, vehicleyear_then_then_6_f0.
+vehicleyear_then_b_2 :- antitheft_g, vehicleyear_then_then_7_f0.
+vehicleyear_then_b_2 :- antitheft_g_2, vehicleyear_then_then_8_f0.
+vehicleyear_then_b_2 :- antitheft_g_3, vehicleyear_then_else_2_f0.
+0.1::vehicleyear_then_f0.
+0.1::vehicleyear_then_1_f0.
+0.1::vehicleyear_then_2_f0.
+0.1::vehicleyear_else_f0.
+vehicleyear_b :- othercar_c, vehicleyear_then_b.
+vehicleyear_b :- othercar_g, vehicleyear_then_b_1.
+vehicleyear_b :- othercar_g_2, vehicleyear_then_b_2.
+vehicleyear_b :- makemodel_g, vehicleyear_then_f0.
+vehicleyear_b :- makemodel_g_2, vehicleyear_then_1_f0.
+vehicleyear_b :- makemodel_g_4, vehicleyear_then_2_f0.
+vehicleyear_b :- makemodel_g_5, vehicleyear_else_f0.
+airbag_c :- \+makemodel_b, \+makemodel_b_1, \+makemodel_b_2.
+0.9::airbag_then_else_f0.
+airbag_then_b :- vehicleyear_b, airbag_then_else_f0.
+airbag_c_1 :- makemodel_b, \+makemodel_b_1, \+makemodel_b_2.
+airbag_g :- \+airbag_c, airbag_c_1.
+0.95::airbag_then_else_1_f0.
+airbag_then_b_1 :- vehicleyear_b, airbag_then_else_1_f0.
+airbag_g_1 :- \+airbag_c, \+airbag_c_1.
+airbag_c_2 :- \+makemodel_b, makemodel_b_1, \+makemodel_b_2.
+airbag_g_2 :- airbag_g_1, airbag_c_2.
+0.8::airbag_then_else_2_f0.
+airbag_then_b_2 :- vehicleyear_b, airbag_then_else_2_f0.
+airbag_g_3 :- airbag_g_1, \+airbag_c_2.
+airbag_c_3 :- makemodel_b, makemodel_b_1, \+makemodel_b_2.
+airbag_g_4 :- airbag_g_3, airbag_c_3.
+0.4::airbag_then_else_3_f0.
+airbag_then_b_3 :- vehicleyear_b, airbag_then_else_3_f0.
+airbag_g_5 :- airbag_g_3, \+airbag_c_3.
+airbag_g_6 :- airbag_g_5, \+vehicleyear_b.
+airbag_g_7 :- airbag_g_5, vehicleyear_b.
+0.9::airbag_else_f0.
+airbag_b :- airbag_c, airbag_then_b.
+airbag_b :- airbag_g, airbag_then_b_1.
+airbag_b :- airbag_g_2, airbag_then_b_2.
+airbag_b :- airbag_g_4, airbag_then_b_3.
+airbag_b :- airbag_g_7, airbag_else_f0.
+0.1::antilock_then_then_f0.
+0.9::antilock_then_else_f0.
+antilock_then_b :- \+vehicleyear_b, antilock_then_then_f0.
+antilock_then_b :- vehicleyear_b, antilock_then_else_f0.
+0.999::antilock_then_then_1_f0.
+antilock_then_b_1 :- \+vehicleyear_b, antilock_then_then_1_f0.
+antilock_then_b_1 :- vehicleyear_b.
+0.6::antilock_then_then_2_f0.
+antilock_then_b_2 :- \+vehicleyear_b, antilock_then_then_2_f0.
+antilock_then_b_2 :- vehicleyear_b.
+0.01::antilock_then_then_3_f0.
+0.7::antilock_then_else_3_f0.
+antilock_then_b_3 :- \+vehicleyear_b, antilock_then_then_3_f0.
+antilock_then_b_3 :- vehicleyear_b, antilock_then_else_3_f0.
+0.01::antilock_then_f0.
+0.85::antilock_else_f0.
+antilock_b :- airbag_c, antilock_then_b.
+antilock_b :- airbag_g, antilock_then_b_1.
+antilock_b :- airbag_g_2, antilock_then_b_2.
+antilock_b :- airbag_g_4, antilock_then_b_3.
+antilock_b :- airbag_g_6, antilock_then_f0.
+antilock_b :- airbag_g_7, antilock_else_f0.
+0.01::ruggedauto_then_then_f1.
+0.04040404040404041::ruggedauto_then_then_f0.
+ruggedauto_then_then_b0 :- \+ruggedauto_then_then_f1, ruggedauto_then_then_f0.
+0.01::ruggedauto_then_else_f1.
+0.04040404040404041::ruggedauto_then_else_f0.
+ruggedauto_then_else_b0 :- \+ruggedauto_then_else_f1, ruggedauto_then_else_f0.
+ruggedauto_then_b :- \+vehicleyear_b, ruggedauto_then_then_b0.
+ruggedauto_then_b :- vehicleyear_b, ruggedauto_then_else_b0.
+ruggedauto_then_b_1 :- \+vehicleyear_b, ruggedauto_then_then_f1.
+ruggedauto_then_b_1 :- vehicleyear_b, ruggedauto_then_else_f1.
+0.5::ruggedauto_then_then_1_f0.
+0.1::ruggedauto_then_else_1_f0.
+ruggedauto_then_b_2 :- \+vehicleyear_b, ruggedauto_then_then_1_f0.
+ruggedauto_then_b_2 :- vehicleyear_b, ruggedauto_then_else_1_f0.
+0.2::ruggedauto_then_then_2_f1.
+0.75::ruggedauto_then_then_2_f0.
+ruggedauto_then_then_2_b0 :- \+ruggedauto_then_then_2_f1, ruggedauto_then_then_2_f0.
+0.4::ruggedauto_then_else_2_f1.
+0.9166666666666666::ruggedauto_then_else_2_f0.
+ruggedauto_then_else_2_b0 :- \+ruggedauto_then_else_2_f1, ruggedauto_then_else_2_f0.
+ruggedauto_then_b_3 :- \+vehicleyear_b, ruggedauto_then_then_2_b0.
+ruggedauto_then_b_3 :- vehicleyear_b, ruggedauto_then_else_2_b0.
+ruggedauto_then_b_4 :- \+vehicleyear_b, ruggedauto_then_then_2_f1.
+ruggedauto_then_b_4 :- vehicleyear_b, ruggedauto_then_else_2_f1.
+0.3::ruggedauto_then_then_3_f1.
+0.8571428571428571::ruggedauto_then_then_3_f0.
+ruggedauto_then_then_3_b0 :- \+ruggedauto_then_then_3_f1, ruggedauto_then_then_3_f0.
+0.3::ruggedauto_then_else_3_f1.
+0.8571428571428571::ruggedauto_then_else_3_f0.
+ruggedauto_then_else_3_b0 :- \+ruggedauto_then_else_3_f1, ruggedauto_then_else_3_f0.
+ruggedauto_then_b_5 :- \+vehicleyear_b, ruggedauto_then_then_3_b0.
+ruggedauto_then_b_5 :- vehicleyear_b, ruggedauto_then_else_3_b0.
+ruggedauto_then_b_6 :- \+vehicleyear_b, ruggedauto_then_then_3_f1.
+ruggedauto_then_b_6 :- vehicleyear_b, ruggedauto_then_else_3_f1.
+0.4::ruggedauto_then_f1.
+0.9166666666666666::ruggedauto_then_f0.
+ruggedauto_then_b0 :- \+ruggedauto_then_f1, ruggedauto_then_f0.
+0.4::ruggedauto_else_f1.
+0.9166666666666666::ruggedauto_else_f0.
+ruggedauto_else_b0 :- \+ruggedauto_else_f1, ruggedauto_else_f0.
+ruggedauto_b :- airbag_c, ruggedauto_then_b.
+ruggedauto_b :- airbag_g, ruggedauto_then_b_2.
+ruggedauto_b :- airbag_g_2, ruggedauto_then_b_3.
+ruggedauto_b :- airbag_g_4, ruggedauto_then_b_5.
+ruggedauto_b :- airbag_g_6, ruggedauto_then_b0.
+ruggedauto_b :- airbag_g_7, ruggedauto_else_b0.
+ruggedauto_b_1 :- airbag_c, ruggedauto_then_b_1.
+ruggedauto_b_1 :- airbag_g_2, ruggedauto_then_b_4.
+ruggedauto_b_1 :- airbag_g_4, ruggedauto_then_b_6.
+ruggedauto_b_1 :- airbag_g_6, ruggedauto_then_f1.
+ruggedauto_b_1 :- airbag_g_7, ruggedauto_else_f1.
+cushioning_c :- \+ruggedauto_b, \+ruggedauto_b_1.
+0.2::cushioning_then_then_f1.
+0.375::cushioning_then_then_f0.
+cushioning_then_then_b0 :- \+cushioning_then_then_f1, cushioning_then_then_f0.
+0.3::cushioning_then_else_f0.
+cushioning_then_b :- \+airbag_b, cushioning_then_then_b0.
+cushioning_then_b :- airbag_b, cushioning_then_else_f0.
+cushioning_then_b_1 :- \+airbag_b, cushioning_then_then_f1.
+cushioning_c_1 :- ruggedauto_b, \+ruggedauto_b_1.
+cushioning_g :- \+cushioning_c, cushioning_c_1.
+0.9::cushioning_then_then_1_f1.
+0.3333333333333333::cushioning_then_then_1_f0.
+cushioning_then_then_1_b0 :- \+cushioning_then_then_1_f1.
+cushioning_then_then_1_b0 :- cushioning_then_then_1_f1, cushioning_then_then_1_f0.
+0.3::cushioning_then_else_1_f1.
+0.8571428571428571::cushioning_then_else_1_f0.
+cushioning_then_else_1_b0 :- \+cushioning_then_else_1_f1, cushioning_then_else_1_f0.
+cushioning_then_b_2 :- \+airbag_b, cushioning_then_then_1_b0.
+cushioning_then_b_2 :- airbag_b, cushioning_then_else_1_b0.
+cushioning_then_b_3 :- \+airbag_b, cushioning_then_then_1_f1.
+cushioning_then_b_3 :- airbag_b, cushioning_then_else_1_f1.
+cushioning_g_1 :- \+cushioning_c, \+cushioning_c_1.
+cushioning_g_2 :- cushioning_g_1, \+airbag_b.
+cushioning_g_3 :- cushioning_g_1, airbag_b.
+0.3::cushioning_else_f0.
+cushioning_b :- cushioning_c, cushioning_then_b.
+cushioning_b :- cushioning_g, cushioning_then_b_2.
+cushioning_b :- cushioning_g_2.
+cushioning_b :- cushioning_g_3, cushioning_else_f0.
+cushioning_b_1 :- cushioning_c, cushioning_then_b_1.
+cushioning_b_1 :- cushioning_g, cushioning_then_b_3.
+cushioning_b_1 :- cushioning_g_2.
+cushioning_b_1 :- cushioning_g_3.
+0.9::goodstudent_then_then_f0.
+goodstudent_then_b :- socioecon_c, goodstudent_then_then_f0.
+goodstudent_then_b :- socioecon_g.
+goodstudent_then_b :- socioecon_g_1.
+0.8::goodstudent_then_then_2_f0.
+goodstudent_then_b_1 :- socioecon_c, goodstudent_then_then_2_f0.
+goodstudent_then_b_1 :- socioecon_g.
+goodstudent_then_b_1 :- socioecon_g_1.
+0.5::goodstudent_then_then_4_f0.
+goodstudent_then_b_2 :- socioecon_c, goodstudent_then_then_4_f0.
+goodstudent_then_b_2 :- socioecon_g.
+goodstudent_then_b_2 :- socioecon_g_1.
+goodstudent_g :- othercar_g_3, socioecon_c.
+0.6::goodstudent_then_f0.
+goodstudent_g_1 :- othercar_g_3, \+socioecon_c.
+goodstudent_g_2 :- goodstudent_g_1, socioecon_c_1.
+goodstudent_g_3 :- goodstudent_g_1, \+socioecon_c_1.
+goodstudent_b :- othercar_c, goodstudent_then_b.
+goodstudent_b :- othercar_g, goodstudent_then_b_1.
+goodstudent_b :- othercar_g_2, goodstudent_then_b_2.
+goodstudent_b :- goodstudent_g, goodstudent_then_f0.
+goodstudent_b :- goodstudent_g_2.
+goodstudent_b :- goodstudent_g_3.
+carvalue_then_then_c :- \+mileage_b0, \+mileage_f1.
+0.01::carvalue_then_then_then_f2.
+0.898989898989899::carvalue_then_then_then_f1.
+carvalue_then_then_then_b1 :- \+carvalue_then_then_then_f2, carvalue_then_then_then_f1.
+0.10112359550561797::carvalue_then_then_then_f0.
+carvalue_then_then_then_b0 :- \+carvalue_then_then_then_f2, \+carvalue_then_then_then_b1.
+carvalue_then_then_then_b0 :- \+carvalue_then_then_then_f2, carvalue_then_then_then_b1, carvalue_then_then_then_f0.
+carvalue_then_then_c_1 :- mileage_b0, \+mileage_f1.
+carvalue_then_then_g :- \+carvalue_then_then_c, carvalue_then_then_c_1.
+0.01::carvalue_then_then_then_1_f2.
+0.898989898989899::carvalue_then_then_then_1_f1.
+carvalue_then_then_then_1_b1 :- \+carvalue_then_then_then_1_f2, carvalue_then_then_then_1_f1.
+0.10112359550561797::carvalue_then_then_then_1_f0.
+carvalue_then_then_then_1_b0 :- \+carvalue_then_then_then_1_f2, \+carvalue_then_then_then_1_b1.
+carvalue_then_then_then_1_b0 :- \+carvalue_then_then_then_1_f2, carvalue_then_then_then_1_b1, carvalue_then_then_then_1_f0.
+carvalue_then_then_g_1 :- \+carvalue_then_then_c, \+carvalue_then_then_c_1.
+carvalue_then_then_g_2 :- carvalue_then_then_g_1, \+mileage_b0.
+0.01::carvalue_then_then_then_2_f2.
+0.898989898989899::carvalue_then_then_then_2_f1.
+carvalue_then_then_then_2_b1 :- \+carvalue_then_then_then_2_f2, carvalue_then_then_then_2_f1.
+0.10112359550561797::carvalue_then_then_then_2_f0.
+carvalue_then_then_then_2_b0 :- \+carvalue_then_then_then_2_f2, \+carvalue_then_then_then_2_b1.
+carvalue_then_then_then_2_b0 :- \+carvalue_then_then_then_2_f2, carvalue_then_then_then_2_b1, carvalue_then_then_then_2_f0.
+carvalue_then_then_g_3 :- carvalue_then_then_g_1, mileage_b0.
+0.01::carvalue_then_then_else_f2.
+0.898989898989899::carvalue_then_then_else_f1.
+carvalue_then_then_else_b1 :- \+carvalue_then_then_else_f2, carvalue_then_then_else_f1.
+0.10112359550561797::carvalue_then_then_else_f0.
+carvalue_then_then_else_b0 :- \+carvalue_then_then_else_f2, \+carvalue_then_then_else_b1.
+carvalue_then_then_else_b0 :- \+carvalue_then_then_else_f2, carvalue_then_then_else_b1, carvalue_then_then_else_f0.
+carvalue_then_then_b :- carvalue_then_then_c, carvalue_then_then_then_b0.
+carvalue_then_then_b :- carvalue_then_then_g, carvalue_then_then_then_1_b0.
+carvalue_then_then_b :- carvalue_then_then_g_2, carvalue_then_then_then_2_b0.
+carvalue_then_then_b :- carvalue_then_then_g_3, carvalue_then_then_else_b0.
+carvalue_then_then_b_1 :- carvalue_then_then_c, carvalue_then_then_then_b1.
+carvalue_then_then_b_1 :- carvalue_then_then_g, carvalue_then_then_then_1_b1.
+carvalue_then_then_b_1 :- carvalue_then_then_g_2, carvalue_then_then_then_2_b1.
+carvalue_then_then_b_1 :- carvalue_then_then_g_3, carvalue_then_then_else_b1.
+carvalue_then_then_b_2 :- carvalue_then_then_c, carvalue_then_then_then_f2.
+carvalue_then_then_b_2 :- carvalue_then_then_g, carvalue_then_then_then_1_f2.
+carvalue_then_then_b_2 :- carvalue_then_then_g_2, carvalue_then_then_then_2_f2.
+carvalue_then_then_b_2 :- carvalue_then_then_g_3, carvalue_then_then_else_f2.
+carvalue_then_g :- vehicleyear_b, carvalue_then_then_c.
+0.01::carvalue_then_then_f2.
+0.6666666666666666::carvalue_then_then_f1.
+carvalue_then_then_b1 :- \+carvalue_then_then_f2, carvalue_then_then_f1.
+0.9090909090909091::carvalue_then_then_f0.
+0.09090909090909091::carvalue_then_then_f0_1.
+carvalue_then_then_b0 :- \+carvalue_then_then_f2, \+carvalue_then_then_b1, carvalue_then_then_f0.
+carvalue_then_then_b0 :- \+carvalue_then_then_f2, carvalue_then_then_b1, carvalue_then_then_f0_1.
+carvalue_then_g_1 :- vehicleyear_b, \+carvalue_then_then_c.
+carvalue_then_g_2 :- carvalue_then_g_1, carvalue_then_then_c_1.
+0.01::carvalue_then_then_1_f2.
+0.3333333333333333::carvalue_then_then_1_f1.
+carvalue_then_then_1_b1 :- \+carvalue_then_then_1_f2, carvalue_then_then_1_f1.
+0.7575757575757576::carvalue_then_then_1_f0.
+0.09090909090909091::carvalue_then_then_1_f0_1.
+carvalue_then_then_1_b0 :- \+carvalue_then_then_1_f2, \+carvalue_then_then_1_b1, carvalue_then_then_1_f0.
+carvalue_then_then_1_b0 :- \+carvalue_then_then_1_f2, carvalue_then_then_1_b1, carvalue_then_then_1_f0_1.
+carvalue_then_g_3 :- carvalue_then_g_1, \+carvalue_then_then_c_1.
+carvalue_then_g_4 :- carvalue_then_g_3, \+mileage_b0.
+0.01::carvalue_then_then_2_f2.
+0.12121212121212122::carvalue_then_then_2_f1.
+carvalue_then_then_2_b1 :- \+carvalue_then_then_2_f2, carvalue_then_then_2_f1.
+0.5402298850574713::carvalue_then_then_2_f0.
+0.16666666666666666::carvalue_then_then_2_f0_1.
+carvalue_then_then_2_b0 :- \+carvalue_then_then_2_f2, \+carvalue_then_then_2_b1, carvalue_then_then_2_f0.
+carvalue_then_then_2_b0 :- \+carvalue_then_then_2_f2, carvalue_then_then_2_b1, carvalue_then_then_2_f0_1.
+carvalue_then_g_5 :- carvalue_then_g_3, mileage_b0.
+0.01::carvalue_then_else_f2.
+0.030303030303030304::carvalue_then_else_f1.
+carvalue_then_else_b1 :- \+carvalue_then_else_f2, carvalue_then_else_f1.
+0.06249999999999999::carvalue_then_else_f0.
+0.3333333333333333::carvalue_then_else_f0_1.
+carvalue_then_else_b0 :- \+carvalue_then_else_f2, \+carvalue_then_else_b1, carvalue_then_else_f0.
+carvalue_then_else_b0 :- \+carvalue_then_else_f2, carvalue_then_else_b1, carvalue_then_else_f0_1.
+carvalue_then_b :- \+vehicleyear_b, carvalue_then_then_b.
+carvalue_then_b :- carvalue_then_g, carvalue_then_then_b0.
+carvalue_then_b :- carvalue_then_g_2, carvalue_then_then_1_b0.
+carvalue_then_b :- carvalue_then_g_4, carvalue_then_then_2_b0.
+carvalue_then_b :- carvalue_then_g_5, carvalue_then_else_b0.
+carvalue_then_b_1 :- \+vehicleyear_b, carvalue_then_then_b_1.
+carvalue_then_b_1 :- carvalue_then_g, carvalue_then_then_b1.
+carvalue_then_b_1 :- carvalue_then_g_2, carvalue_then_then_1_b1.
+carvalue_then_b_1 :- carvalue_then_g_4, carvalue_then_then_2_b1.
+carvalue_then_b_1 :- carvalue_then_g_5, carvalue_then_else_b1.
+carvalue_then_b_2 :- \+vehicleyear_b, carvalue_then_then_b_2.
+carvalue_then_b_2 :- carvalue_then_g, carvalue_then_then_f2.
+carvalue_then_b_2 :- carvalue_then_g_2, carvalue_then_then_1_f2.
+carvalue_then_b_2 :- carvalue_then_g_4, carvalue_then_then_2_f2.
+carvalue_then_b_2 :- carvalue_then_g_5, carvalue_then_else_f2.
+0.1::carvalue_then_then_then_3_f1.
+0.8888888888888888::carvalue_then_then_then_3_f0.
+carvalue_then_then_then_3_b0 :- \+carvalue_then_then_then_3_f1, carvalue_then_then_then_3_f0.
+0.1::carvalue_then_then_then_4_f1.
+0.8888888888888888::carvalue_then_then_then_4_f0.
+carvalue_then_then_then_4_b0 :- \+carvalue_then_then_then_4_f1, carvalue_then_then_then_4_f0.
+0.1::carvalue_then_then_then_5_f1.
+0.8888888888888888::carvalue_then_then_then_5_f0.
+carvalue_then_then_then_5_b0 :- \+carvalue_then_then_then_5_f1, carvalue_then_then_then_5_f0.
+0.1::carvalue_then_then_else_1_f1.
+0.8888888888888888::carvalue_then_then_else_1_f0.
+carvalue_then_then_else_1_b0 :- \+carvalue_then_then_else_1_f1, carvalue_then_then_else_1_f0.
+carvalue_then_then_b_3 :- carvalue_then_then_c, carvalue_then_then_then_3_b0.
+carvalue_then_then_b_3 :- carvalue_then_then_g, carvalue_then_then_then_4_b0.
+carvalue_then_then_b_3 :- carvalue_then_then_g_2, carvalue_then_then_then_5_b0.
+carvalue_then_then_b_3 :- carvalue_then_then_g_3, carvalue_then_then_else_1_b0.
+carvalue_then_then_b_4 :- carvalue_then_then_c, carvalue_then_then_then_3_f1.
+carvalue_then_then_b_4 :- carvalue_then_then_g, carvalue_then_then_then_4_f1.
+carvalue_then_then_b_4 :- carvalue_then_then_g_2, carvalue_then_then_then_5_f1.
+carvalue_then_then_b_4 :- carvalue_then_then_g_3, carvalue_then_then_else_1_f1.
+0.05::carvalue_then_then_3_f1.
+0.7368421052631579::carvalue_then_then_3_f0.
+carvalue_then_then_3_b0 :- \+carvalue_then_then_3_f1, carvalue_then_then_3_f0.
+0.0001::carvalue_then_then_4_f1.
+0.29992999299929995::carvalue_then_then_4_f0.
+carvalue_then_then_4_b0 :- \+carvalue_then_then_4_f1, carvalue_then_then_4_f0.
+1e-06::carvalue_then_then_5_f1.
+0.009999009999009998::carvalue_then_then_5_f0.
+carvalue_then_then_5_b0 :- \+carvalue_then_then_5_f1, carvalue_then_then_5_f0.
+1e-06::carvalue_then_else_1_f1.
+1.000001000001e-06::carvalue_then_else_1_f0.
+carvalue_then_else_1_b0 :- \+carvalue_then_else_1_f1, carvalue_then_else_1_f0.
+carvalue_then_b_3 :- \+vehicleyear_b, carvalue_then_then_b_3.
+carvalue_then_b_3 :- carvalue_then_g, carvalue_then_then_3_b0.
+carvalue_then_b_3 :- carvalue_then_g_2, carvalue_then_then_4_b0.
+carvalue_then_b_3 :- carvalue_then_g_4, carvalue_then_then_5_b0.
+carvalue_then_b_3 :- carvalue_then_g_5, carvalue_then_else_1_b0.
+carvalue_then_b_4 :- \+vehicleyear_b, carvalue_then_then_b_4.
+carvalue_then_b_4 :- carvalue_then_g, carvalue_then_then_3_f1.
+carvalue_then_b_4 :- carvalue_then_g_2, carvalue_then_then_4_f1.
+carvalue_then_b_4 :- carvalue_then_g_4, carvalue_then_then_5_f1.
+carvalue_then_b_4 :- carvalue_then_g_5, carvalue_then_else_1_f1.
+0.9::carvalue_then_then_then_6_f1.
+0.9::carvalue_then_then_then_7_f1.
+0.9::carvalue_then_then_then_8_f1.
+0.9::carvalue_then_then_else_2_f1.
+carvalue_then_then_b_5 :- carvalue_then_then_c, \+carvalue_then_then_then_6_f1.
+carvalue_then_then_b_5 :- carvalue_then_then_g, \+carvalue_then_then_then_7_f1.
+carvalue_then_then_b_5 :- carvalue_then_then_g_2, \+carvalue_then_then_then_8_f1.
+carvalue_then_then_b_5 :- carvalue_then_then_g_3, \+carvalue_then_then_else_2_f1.
+carvalue_then_then_b_6 :- carvalue_then_then_c, carvalue_then_then_then_6_f1.
+carvalue_then_then_b_6 :- carvalue_then_then_g, carvalue_then_then_then_7_f1.
+carvalue_then_then_b_6 :- carvalue_then_then_g_2, carvalue_then_then_then_8_f1.
+carvalue_then_then_b_6 :- carvalue_then_then_g_3, carvalue_then_then_else_2_f1.
+0.5::carvalue_then_then_6_f1.
+0.6::carvalue_then_then_6_f0.
+carvalue_then_then_6_b0 :- \+carvalue_then_then_6_f1, carvalue_then_then_6_f0.
+0.2::carvalue_then_then_7_f1.
+0.375::carvalue_then_then_7_f0.
+carvalue_then_then_7_b0 :- \+carvalue_then_then_7_f1, carvalue_then_then_7_f0.
+0.1::carvalue_then_then_8_f1.
+0.22222222222222224::carvalue_then_then_8_f0.
+carvalue_then_then_8_b0 :- \+carvalue_then_then_8_f1, carvalue_then_then_8_f0.
+1e-06::carvalue_then_else_2_f1.
+0.009999009999009998::carvalue_then_else_2_f0.
+carvalue_then_else_2_b0 :- \+carvalue_then_else_2_f1, carvalue_then_else_2_f0.
+carvalue_then_b_5 :- \+vehicleyear_b, carvalue_then_then_b_5.
+carvalue_then_b_5 :- carvalue_then_g, carvalue_then_then_6_b0.
+carvalue_then_b_5 :- carvalue_then_g_2, carvalue_then_then_7_b0.
+carvalue_then_b_5 :- carvalue_then_g_4, carvalue_then_then_8_b0.
+carvalue_then_b_5 :- carvalue_then_g_5, carvalue_then_else_2_b0.
+carvalue_then_b_6 :- \+vehicleyear_b, carvalue_then_then_b_6.
+carvalue_then_b_6 :- carvalue_then_g, carvalue_then_then_6_f1.
+carvalue_then_b_6 :- carvalue_then_g_2, carvalue_then_then_7_f1.
+carvalue_then_b_6 :- carvalue_then_g_4, carvalue_then_then_8_f1.
+carvalue_then_b_6 :- carvalue_then_g_5, carvalue_then_else_2_f1.
+0.9::carvalue_then_then_9_f1.
+0.9::carvalue_then_then_9_f0.
+0.7777777777777778::carvalue_then_then_9_f0_1.
+carvalue_then_then_9_b0 :- \+carvalue_then_then_9_f1, carvalue_then_then_9_f0.
+carvalue_then_then_9_b0 :- carvalue_then_then_9_f1, carvalue_then_then_9_f0_1.
+0.8::carvalue_then_then_10_f1.
+0.75::carvalue_then_then_10_f0.
+0.625::carvalue_then_then_10_f0_1.
+carvalue_then_then_10_b0 :- \+carvalue_then_then_10_f1, carvalue_then_then_10_f0.
+carvalue_then_then_10_b0 :- carvalue_then_then_10_f1, carvalue_then_then_10_f0_1.
+0.6::carvalue_then_then_11_f1.
+0.75::carvalue_then_then_11_f0.
+0.5::carvalue_then_then_11_f0_1.
+carvalue_then_then_11_b0 :- \+carvalue_then_then_11_f1, carvalue_then_then_11_f0.
+carvalue_then_then_11_b0 :- carvalue_then_then_11_f1, carvalue_then_then_11_f0_1.
+0.6::carvalue_then_else_3_f1.
+0.5::carvalue_then_else_3_f0.
+carvalue_then_b_7 :- \+vehicleyear_b.
+carvalue_then_b_7 :- carvalue_then_g, carvalue_then_then_9_b0.
+carvalue_then_b_7 :- carvalue_then_g_2, carvalue_then_then_10_b0.
+carvalue_then_b_7 :- carvalue_then_g_4, carvalue_then_then_11_b0.
+carvalue_then_b_7 :- carvalue_then_g_5, carvalue_then_else_3_f0.
+carvalue_then_b_8 :- \+vehicleyear_b.
+carvalue_then_b_8 :- carvalue_then_g, carvalue_then_then_9_f1.
+carvalue_then_b_8 :- carvalue_then_g_2, carvalue_then_then_10_f1.
+carvalue_then_b_8 :- carvalue_then_g_4, carvalue_then_then_11_f1.
+carvalue_then_b_8 :- carvalue_then_g_5, carvalue_then_else_3_f1.
+carvalue_g :- airbag_g_7, carvalue_then_then_c.
+0.999996::carvalue_then_f2.
+0.5::carvalue_then_f1.
+carvalue_then_b1 :- \+carvalue_then_f2, carvalue_then_f1.
+0.5::carvalue_then_f0.
+carvalue_then_b0 :- \+carvalue_then_f2, carvalue_then_f0.
+carvalue_g_1 :- airbag_g_7, \+carvalue_then_then_c.
+carvalue_g_2 :- carvalue_g_1, carvalue_then_then_c_1.
+0.999996::carvalue_then_1_f2.
+0.5::carvalue_then_1_f1.
+carvalue_then_1_b1 :- \+carvalue_then_1_f2, carvalue_then_1_f1.
+0.5::carvalue_then_1_f0.
+carvalue_then_1_b0 :- \+carvalue_then_1_f2, carvalue_then_1_f0.
+carvalue_g_3 :- carvalue_g_1, \+carvalue_then_then_c_1.
+carvalue_g_4 :- carvalue_g_3, \+mileage_b0.
+0.999996::carvalue_then_2_f2.
+0.5::carvalue_then_2_f1.
+carvalue_then_2_b1 :- \+carvalue_then_2_f2, carvalue_then_2_f1.
+0.5::carvalue_then_2_f0.
+carvalue_then_2_b0 :- \+carvalue_then_2_f2, carvalue_then_2_f0.
+carvalue_g_5 :- carvalue_g_3, mileage_b0.
+0.999996::carvalue_else_f2.
+0.5::carvalue_else_f1.
+carvalue_else_b1 :- \+carvalue_else_f2, carvalue_else_f1.
+0.5::carvalue_else_f0.
+carvalue_else_b0 :- \+carvalue_else_f2, carvalue_else_f0.
+carvalue_b :- airbag_c, carvalue_then_b.
+carvalue_b :- airbag_g, carvalue_then_b_3.
+carvalue_b :- airbag_g_2, carvalue_then_b_5.
+carvalue_b :- airbag_g_4, carvalue_then_b_7.
+carvalue_b :- carvalue_g, carvalue_then_b0.
+carvalue_b :- carvalue_g_2, carvalue_then_1_b0.
+carvalue_b :- carvalue_g_4, carvalue_then_2_b0.
+carvalue_b :- carvalue_g_5, carvalue_else_b0.
+carvalue_b_1 :- airbag_c, carvalue_then_b_1.
+carvalue_b_1 :- airbag_g, carvalue_then_b_4.
+carvalue_b_1 :- airbag_g_2, carvalue_then_b_6.
+carvalue_b_1 :- airbag_g_4, carvalue_then_b_8.
+carvalue_b_1 :- carvalue_g, carvalue_then_b1.
+carvalue_b_1 :- carvalue_g_2, carvalue_then_1_b1.
+carvalue_b_1 :- carvalue_g_4, carvalue_then_2_b1.
+carvalue_b_1 :- carvalue_g_5, carvalue_else_b1.
+carvalue_b_2 :- airbag_c, carvalue_then_b_2.
+carvalue_b_2 :- airbag_g_6.
+carvalue_b_2 :- carvalue_g, carvalue_then_f2.
+carvalue_b_2 :- carvalue_g_2, carvalue_then_1_f2.
+carvalue_b_2 :- carvalue_g_4, carvalue_then_2_f2.
+carvalue_b_2 :- carvalue_g_5, carvalue_else_f2.
+theft_then_c :- \+homebase_b, \+homebase_b_1.
+theft_then_then_c :- \+carvalue_b, \+carvalue_b_1, \+carvalue_b_2.
+0.999999::theft_then_then_then_f0.
+theft_then_then_c_1 :- carvalue_b, \+carvalue_b_1, \+carvalue_b_2.
+theft_then_then_g :- \+theft_then_then_c, theft_then_then_c_1.
+0.999998::theft_then_then_then_1_f0.
+theft_then_then_g_1 :- \+theft_then_then_c, \+theft_then_then_c_1.
+theft_then_then_c_2 :- \+carvalue_b, carvalue_b_1, \+carvalue_b_2.
+theft_then_then_g_2 :- theft_then_then_g_1, theft_then_then_c_2.
+0.999997::theft_then_then_then_2_f0.
+theft_then_then_g_3 :- theft_then_then_g_1, \+theft_then_then_c_2.
+theft_then_then_c_3 :- carvalue_b, carvalue_b_1, \+carvalue_b_2.
+theft_then_then_g_4 :- theft_then_then_g_3, theft_then_then_c_3.
+0.999998::theft_then_then_then_3_f0.
+theft_then_then_g_5 :- theft_then_then_g_3, \+theft_then_then_c_3.
+0.999999::theft_then_then_else_f0.
+theft_then_then_b :- theft_then_then_c, theft_then_then_then_f0.
+theft_then_then_b :- theft_then_then_g, theft_then_then_then_1_f0.
+theft_then_then_b :- theft_then_then_g_2, theft_then_then_then_2_f0.
+theft_then_then_b :- theft_then_then_g_4, theft_then_then_then_3_f0.
+theft_then_then_b :- theft_then_then_g_5, theft_then_then_else_f0.
+theft_then_c_1 :- homebase_b, \+homebase_b_1.
+theft_then_g :- \+theft_then_c, theft_then_c_1.
+0.9995::theft_then_then_then_4_f0.
+0.998::theft_then_then_then_5_f0.
+0.995::theft_then_then_then_6_f0.
+0.995::theft_then_then_then_7_f0.
+0.999999::theft_then_then_else_1_f0.
+theft_then_then_b_1 :- theft_then_then_c, theft_then_then_then_4_f0.
+theft_then_then_b_1 :- theft_then_then_g, theft_then_then_then_5_f0.
+theft_then_then_b_1 :- theft_then_then_g_2, theft_then_then_then_6_f0.
+theft_then_then_b_1 :- theft_then_then_g_4, theft_then_then_then_7_f0.
+theft_then_then_b_1 :- theft_then_then_g_5, theft_then_then_else_1_f0.
+theft_then_g_1 :- \+theft_then_c, \+theft_then_c_1.
+theft_then_g_2 :- theft_then_g_1, \+homebase_b.
+0.99999::theft_then_then_then_8_f0.
+0.9999::theft_then_then_then_9_f0.
+0.9997::theft_then_then_then_10_f0.
+0.9997::theft_then_then_then_11_f0.
+0.999999::theft_then_then_else_2_f0.
+theft_then_then_b_2 :- theft_then_then_c, theft_then_then_then_8_f0.
+theft_then_then_b_2 :- theft_then_then_g, theft_then_then_then_9_f0.
+theft_then_then_b_2 :- theft_then_then_g_2, theft_then_then_then_10_f0.
+theft_then_then_b_2 :- theft_then_then_g_4, theft_then_then_then_11_f0.
+theft_then_then_b_2 :- theft_then_then_g_5, theft_then_then_else_2_f0.
+theft_then_g_3 :- theft_then_g_1, homebase_b.
+theft_then_g_4 :- theft_then_g_3, theft_then_then_c.
+0.99999::theft_then_then_f0.
+theft_then_g_5 :- theft_then_g_3, \+theft_then_then_c.
+theft_then_g_6 :- theft_then_g_5, theft_then_then_c_1.
+0.99998::theft_then_then_1_f0.
+theft_then_g_7 :- theft_then_g_5, \+theft_then_then_c_1.
+theft_then_g_8 :- theft_then_g_7, theft_then_then_c_2.
+0.99995::theft_then_then_2_f0.
+theft_then_g_9 :- theft_then_g_7, \+theft_then_then_c_2.
+theft_then_g_10 :- theft_then_g_9, theft_then_then_c_3.
+0.99995::theft_then_then_3_f0.
+theft_then_g_11 :- theft_then_g_9, \+theft_then_then_c_3.
+0.999999::theft_then_else_f0.
+theft_then_b :- theft_then_c, theft_then_then_b.
+theft_then_b :- theft_then_g, theft_then_then_b_1.
+theft_then_b :- theft_then_g_2, theft_then_then_b_2.
+theft_then_b :- theft_then_g_4, theft_then_then_f0.
+theft_then_b :- theft_then_g_6, theft_then_then_1_f0.
+theft_then_b :- theft_then_g_8, theft_then_then_2_f0.
+theft_then_b :- theft_then_g_10, theft_then_then_3_f0.
+theft_then_b :- theft_then_g_11, theft_then_else_f0.
+theft_g :- antitheft_b, theft_then_c.
+0.999999::theft_then_then_4_f0.
+0.999998::theft_then_then_5_f0.
+0.999997::theft_then_then_6_f0.
+0.999998::theft_then_then_7_f0.
+0.999999::theft_then_else_1_f0.
+theft_then_b_1 :- theft_then_then_c, theft_then_then_4_f0.
+theft_then_b_1 :- theft_then_then_g, theft_then_then_5_f0.
+theft_then_b_1 :- theft_then_then_g_2, theft_then_then_6_f0.
+theft_then_b_1 :- theft_then_then_g_4, theft_then_then_7_f0.
+theft_then_b_1 :- theft_then_then_g_5, theft_then_else_1_f0.
+theft_g_1 :- antitheft_b, \+theft_then_c.
+theft_g_2 :- theft_g_1, theft_then_c_1.
+0.999::theft_then_then_8_f0.
+0.995::theft_then_then_9_f0.
+0.99::theft_then_then_10_f0.
+0.99::theft_then_then_11_f0.
+0.999999::theft_then_else_2_f0.
+theft_then_b_2 :- theft_then_then_c, theft_then_then_8_f0.
+theft_then_b_2 :- theft_then_then_g, theft_then_then_9_f0.
+theft_then_b_2 :- theft_then_then_g_2, theft_then_then_10_f0.
+theft_then_b_2 :- theft_then_then_g_4, theft_then_then_11_f0.
+theft_then_b_2 :- theft_then_then_g_5, theft_then_else_2_f0.
+theft_g_3 :- theft_g_1, \+theft_then_c_1.
+theft_g_4 :- theft_g_3, \+homebase_b.
+0.99999::theft_then_then_12_f0.
+0.9998::theft_then_then_13_f0.
+0.9995::theft_then_then_14_f0.
+0.9995::theft_then_then_15_f0.
+0.999999::theft_then_else_3_f0.
+theft_then_b_3 :- theft_then_then_c, theft_then_then_12_f0.
+theft_then_b_3 :- theft_then_then_g, theft_then_then_13_f0.
+theft_then_b_3 :- theft_then_then_g_2, theft_then_then_14_f0.
+theft_then_b_3 :- theft_then_then_g_4, theft_then_then_15_f0.
+theft_then_b_3 :- theft_then_then_g_5, theft_then_else_3_f0.
+theft_g_5 :- theft_g_3, homebase_b.
+theft_g_6 :- theft_g_5, theft_then_then_c.
+0.99999::theft_then_f0.
+theft_g_7 :- theft_g_5, \+theft_then_then_c.
+theft_g_8 :- theft_g_7, theft_then_then_c_1.
+0.9999::theft_then_1_f0.
+theft_g_9 :- theft_g_7, \+theft_then_then_c_1.
+theft_g_10 :- theft_g_9, theft_then_then_c_2.
+0.9998::theft_then_2_f0.
+theft_g_11 :- theft_g_9, \+theft_then_then_c_2.
+theft_g_12 :- theft_g_11, theft_then_then_c_3.
+0.9998::theft_then_3_f0.
+theft_g_13 :- theft_g_11, \+theft_then_then_c_3.
+0.999999::theft_else_f0.
+theft_b :- \+antitheft_b, theft_then_b.
+theft_b :- theft_g, theft_then_b_1.
+theft_b :- theft_g_2, theft_then_b_2.
+theft_b :- theft_g_4, theft_then_b_3.
+theft_b :- theft_g_6, theft_then_f0.
+theft_b :- theft_g_8, theft_then_1_f0.
+theft_b :- theft_g_10, theft_then_2_f0.
+theft_b :- theft_g_12, theft_then_3_f0.
+theft_b :- theft_g_13, theft_else_f0.
+accident_then_then_c :- \+drivquality_b, \+drivquality_b_1.
+0.1::accident_then_then_then_f1.
+0.22222222222222224::accident_then_then_then_f0.
+0.3::accident_then_then_then_f0_1.
+accident_then_then_then_b0 :- \+accident_then_then_then_f1, accident_then_then_then_f0.
+accident_then_then_then_b0 :- accident_then_then_then_f1, accident_then_then_then_f0_1.
+accident_then_then_c_1 :- drivquality_b, \+drivquality_b_1.
+accident_then_then_g :- \+accident_then_then_c, accident_then_then_c_1.
+0.003::accident_then_then_then_1_f1.
+0.007021063189568706::accident_then_then_then_1_f0.
+0.3333333333333333::accident_then_then_then_1_f0_1.
+accident_then_then_then_1_b0 :- \+accident_then_then_then_1_f1, accident_then_then_then_1_f0.
+accident_then_then_then_1_b0 :- accident_then_then_then_1_f1, accident_then_then_then_1_f0_1.
+accident_then_then_g_1 :- \+accident_then_then_c, \+accident_then_then_c_1.
+0.00030000000000000003::accident_then_then_else_f1.
+0.0007002100630189057::accident_then_then_else_f0.
+0.3333333333333333::accident_then_then_else_f0_1.
+accident_then_then_else_b0 :- \+accident_then_then_else_f1, accident_then_then_else_f0.
+accident_then_then_else_b0 :- accident_then_then_else_f1, accident_then_then_else_f0_1.
+accident_then_then_b :- accident_then_then_c, accident_then_then_then_b0.
+accident_then_then_b :- accident_then_then_g, accident_then_then_then_1_b0.
+accident_then_then_b :- accident_then_then_g_1, accident_then_then_else_b0.
+accident_then_then_b_1 :- accident_then_then_c, accident_then_then_then_f1.
+accident_then_then_b_1 :- accident_then_then_g, accident_then_then_then_1_f1.
+accident_then_then_b_1 :- accident_then_then_g_1, accident_then_then_else_f1.
+0.3::accident_then_then_then_2_f1.
+0.42857142857142855::accident_then_then_then_2_f0.
+0.3333333333333333::accident_then_then_then_2_f0_1.
+accident_then_then_then_2_b0 :- \+accident_then_then_then_2_f1, accident_then_then_then_2_f0.
+accident_then_then_then_2_b0 :- accident_then_then_then_2_f1, accident_then_then_then_2_f0_1.
+0.01::accident_then_then_then_3_f1.
+0.010101010101010102::accident_then_then_then_3_f0.
+0.5::accident_then_then_then_3_f0_1.
+accident_then_then_then_3_b0 :- \+accident_then_then_then_3_f1, accident_then_then_then_3_f0.
+accident_then_then_then_3_b0 :- accident_then_then_then_3_f1, accident_then_then_then_3_f0_1.
+0.002::accident_then_then_else_1_f1.
+0.003006012024048096::accident_then_then_else_1_f0.
+0.5::accident_then_then_else_1_f0_1.
+accident_then_then_else_1_b0 :- \+accident_then_then_else_1_f1, accident_then_then_else_1_f0.
+accident_then_then_else_1_b0 :- accident_then_then_else_1_f1, accident_then_then_else_1_f0_1.
+accident_then_then_b_2 :- accident_then_then_c, accident_then_then_then_2_b0.
+accident_then_then_b_2 :- accident_then_then_g, accident_then_then_then_3_b0.
+accident_then_then_b_2 :- accident_then_then_g_1, accident_then_then_else_1_b0.
+accident_then_then_b_3 :- accident_then_then_c, accident_then_then_then_2_f1.
+accident_then_then_b_3 :- accident_then_then_g, accident_then_then_then_3_f1.
+accident_then_then_b_3 :- accident_then_then_g_1, accident_then_then_else_1_f1.
+0.4::accident_then_then_then_4_f1.
+0.5::accident_then_then_then_4_f0.
+0.01::accident_then_then_then_5_f1.
+0.020202020202020204::accident_then_then_then_5_f0.
+0.3::accident_then_then_then_5_f0_1.
+accident_then_then_then_5_b0 :- \+accident_then_then_then_5_f1, accident_then_then_then_5_f0.
+accident_then_then_then_5_b0 :- accident_then_then_then_5_f1, accident_then_then_then_5_f0_1.
+0.003::accident_then_then_else_2_f1.
+0.007021063189568706::accident_then_then_else_2_f0.
+0.3333333333333333::accident_then_then_else_2_f0_1.
+accident_then_then_else_2_b0 :- \+accident_then_then_else_2_f1, accident_then_then_else_2_f0.
+accident_then_then_else_2_b0 :- accident_then_then_else_2_f1, accident_then_then_else_2_f0_1.
+accident_then_then_b_4 :- accident_then_then_c, accident_then_then_then_4_f0.
+accident_then_then_b_4 :- accident_then_then_g, accident_then_then_then_5_b0.
+accident_then_then_b_4 :- accident_then_then_g_1, accident_then_then_else_2_b0.
+accident_then_then_b_5 :- accident_then_then_c, accident_then_then_then_4_f1.
+accident_then_then_b_5 :- accident_then_then_g, accident_then_then_then_5_f1.
+accident_then_then_b_5 :- accident_then_then_g_1, accident_then_then_else_2_f1.
+accident_then_g :- carvalue_then_then_g_3, accident_then_then_c.
+0.6::accident_then_then_f1.
+0.5::accident_then_then_f0.
+accident_then_g_1 :- carvalue_then_then_g_3, \+accident_then_then_c.
+accident_then_g_2 :- accident_then_g_1, accident_then_then_c_1.
+0.02::accident_then_then_1_f1.
+0.030612244897959183::accident_then_then_1_f0.
+0.5::accident_then_then_1_f0_1.
+accident_then_then_1_b0 :- \+accident_then_then_1_f1, accident_then_then_1_f0.
+accident_then_then_1_b0 :- accident_then_then_1_f1, accident_then_then_1_f0_1.
+accident_then_g_3 :- accident_then_g_1, \+accident_then_then_c_1.
+0.005::accident_then_else_f1.
+0.010050251256281407::accident_then_else_f0.
+0.4::accident_then_else_f0_1.
+accident_then_else_b0 :- \+accident_then_else_f1, accident_then_else_f0.
+accident_then_else_b0 :- accident_then_else_f1, accident_then_else_f0_1.
+accident_then_b :- carvalue_then_then_c, accident_then_then_b.
+accident_then_b :- carvalue_then_then_g, accident_then_then_b_2.
+accident_then_b :- carvalue_then_then_g_2, accident_then_then_b_4.
+accident_then_b :- accident_then_g, accident_then_then_f0.
+accident_then_b :- accident_then_g_2, accident_then_then_1_b0.
+accident_then_b :- accident_then_g_3, accident_then_else_b0.
+accident_then_b_1 :- carvalue_then_then_c, accident_then_then_b_1.
+accident_then_b_1 :- carvalue_then_then_g, accident_then_then_b_3.
+accident_then_b_1 :- carvalue_then_then_g_2, accident_then_then_b_5.
+accident_then_b_1 :- accident_then_g, accident_then_then_f1.
+accident_then_b_1 :- accident_then_g_2, accident_then_then_1_f1.
+accident_then_b_1 :- accident_then_g_3, accident_then_else_f1.
+accident_g :- antilock_b, carvalue_then_then_c.
+0.2::accident_then_then_2_f1.
+0.25::accident_then_then_2_f0.
+0.5::accident_then_then_2_f0_1.
+accident_then_then_2_b0 :- \+accident_then_then_2_f1, accident_then_then_2_f0.
+accident_then_then_2_b0 :- accident_then_then_2_f1, accident_then_then_2_f0_1.
+0.01::accident_then_then_3_f1.
+0.010101010101010102::accident_then_then_3_f0.
+0.5::accident_then_then_3_f0_1.
+accident_then_then_3_b0 :- \+accident_then_then_3_f1, accident_then_then_3_f0.
+accident_then_then_3_b0 :- accident_then_then_3_f1, accident_then_then_3_f0_1.
+0.002::accident_then_else_1_f1.
+0.003006012024048096::accident_then_else_1_f0.
+0.5::accident_then_else_1_f0_1.
+accident_then_else_1_b0 :- \+accident_then_else_1_f1, accident_then_else_1_f0.
+accident_then_else_1_b0 :- accident_then_else_1_f1, accident_then_else_1_f0_1.
+accident_then_b_2 :- accident_then_then_c, accident_then_then_2_b0.
+accident_then_b_2 :- accident_then_then_g, accident_then_then_3_b0.
+accident_then_b_2 :- accident_then_then_g_1, accident_then_else_1_b0.
+accident_then_b_3 :- accident_then_then_c, accident_then_then_2_f1.
+accident_then_b_3 :- accident_then_then_g, accident_then_then_3_f1.
+accident_then_b_3 :- accident_then_then_g_1, accident_then_else_1_f1.
+accident_g_1 :- antilock_b, \+carvalue_then_then_c.
+accident_g_2 :- accident_g_1, carvalue_then_then_c_1.
+0.5::accident_then_then_4_f1.
+0.4::accident_then_then_4_f0.
+0.6::accident_then_then_4_f0_1.
+accident_then_then_4_b0 :- \+accident_then_then_4_f1, accident_then_then_4_f0.
+accident_then_then_4_b0 :- accident_then_then_4_f1, accident_then_then_4_f0_1.
+0.02::accident_then_then_5_f1.
+0.020408163265306124::accident_then_then_5_f0.
+0.25::accident_then_then_5_f0_1.
+accident_then_then_5_b0 :- \+accident_then_then_5_f1, accident_then_then_5_f0.
+accident_then_then_5_b0 :- accident_then_then_5_f1, accident_then_then_5_f0_1.
+0.003::accident_then_else_2_f1.
+0.007021063189568706::accident_then_else_2_f0.
+0.3333333333333333::accident_then_else_2_f0_1.
+accident_then_else_2_b0 :- \+accident_then_else_2_f1, accident_then_else_2_f0.
+accident_then_else_2_b0 :- accident_then_else_2_f1, accident_then_else_2_f0_1.
+accident_then_b_4 :- accident_then_then_c, accident_then_then_4_b0.
+accident_then_b_4 :- accident_then_then_g, accident_then_then_5_b0.
+accident_then_b_4 :- accident_then_then_g_1, accident_then_else_2_b0.
+accident_then_b_5 :- accident_then_then_c, accident_then_then_4_f1.
+accident_then_b_5 :- accident_then_then_g, accident_then_then_5_f1.
+accident_then_b_5 :- accident_then_then_g_1, accident_then_else_2_f1.
+accident_g_3 :- accident_g_1, \+carvalue_then_then_c_1.
+accident_g_4 :- accident_g_3, \+mileage_b0.
+0.6::accident_then_then_6_f1.
+0.5::accident_then_then_6_f0.
+0.6666666666666666::accident_then_then_6_f0_1.
+accident_then_then_6_b0 :- \+accident_then_then_6_f1, accident_then_then_6_f0.
+accident_then_then_6_b0 :- accident_then_then_6_f1, accident_then_then_6_f0_1.
+0.02::accident_then_then_7_f1.
+0.030612244897959183::accident_then_then_7_f0.
+0.25::accident_then_then_7_f0_1.
+accident_then_then_7_b0 :- \+accident_then_then_7_f1, accident_then_then_7_f0.
+accident_then_then_7_b0 :- accident_then_then_7_f1, accident_then_then_7_f0_1.
+0.01::accident_then_else_3_f1.
+0.010101010101010102::accident_then_else_3_f0.
+0.5::accident_then_else_3_f0_1.
+accident_then_else_3_b0 :- \+accident_then_else_3_f1, accident_then_else_3_f0.
+accident_then_else_3_b0 :- accident_then_else_3_f1, accident_then_else_3_f0_1.
+accident_then_b_6 :- accident_then_then_c, accident_then_then_6_b0.
+accident_then_b_6 :- accident_then_then_g, accident_then_then_7_b0.
+accident_then_b_6 :- accident_then_then_g_1, accident_then_else_3_b0.
+accident_then_b_7 :- accident_then_then_c, accident_then_then_6_f1.
+accident_then_b_7 :- accident_then_then_g, accident_then_then_7_f1.
+accident_then_b_7 :- accident_then_then_g_1, accident_then_else_3_f1.
+accident_g_5 :- accident_g_3, mileage_b0.
+accident_g_6 :- accident_g_5, accident_then_then_c.
+0.8::accident_then_f1.
+0.5::accident_then_f0.
+0.625::accident_then_f0_1.
+accident_then_b0 :- \+accident_then_f1, accident_then_f0.
+accident_then_b0 :- accident_then_f1, accident_then_f0_1.
+accident_g_7 :- accident_g_5, \+accident_then_then_c.
+accident_g_8 :- accident_g_7, accident_then_then_c_1.
+0.030000000000000002::accident_then_1_f1.
+0.030927835051546393::accident_then_1_f0.
+0.3333333333333333::accident_then_1_f0_1.
+accident_then_1_b0 :- \+accident_then_1_f1, accident_then_1_f0.
+accident_then_1_b0 :- accident_then_1_f1, accident_then_1_f0_1.
+accident_g_9 :- accident_g_7, \+accident_then_then_c_1.
+0.01::accident_else_f1.
+0.010101010101010102::accident_else_f0.
+0.3::accident_else_f0_1.
+accident_else_b0 :- \+accident_else_f1, accident_else_f0.
+accident_else_b0 :- accident_else_f1, accident_else_f0_1.
+accident_b :- \+antilock_b, accident_then_b.
+accident_b :- accident_g, accident_then_b_2.
+accident_b :- accident_g_2, accident_then_b_4.
+accident_b :- accident_g_4, accident_then_b_6.
+accident_b :- accident_g_6, accident_then_b0.
+accident_b :- accident_g_8, accident_then_1_b0.
+accident_b :- accident_g_9, accident_else_b0.
+accident_b_1 :- \+antilock_b, accident_then_b_1.
+accident_b_1 :- accident_g, accident_then_b_3.
+accident_b_1 :- accident_g_2, accident_then_b_5.
+accident_b_1 :- accident_g_4, accident_then_b_7.
+accident_b_1 :- accident_g_6, accident_then_f1.
+accident_b_1 :- accident_g_8, accident_then_1_f1.
+accident_b_1 :- accident_g_9, accident_else_f1.
+ilicost_c :- \+accident_b, \+accident_b_1.
+ilicost_c_1 :- accident_b, \+accident_b_1.
+ilicost_g :- \+ilicost_c, ilicost_c_1.
+2e-06::ilicost_then_1_f1.
+0.000998001996003992::ilicost_then_1_f0.
+0.5::ilicost_then_1_f0_1.
+ilicost_then_1_b0 :- \+ilicost_then_1_f1, ilicost_then_1_f0.
+ilicost_then_1_b0 :- ilicost_then_1_f1, ilicost_then_1_f0_1.
+ilicost_g_1 :- \+ilicost_c, \+ilicost_c_1.
+ilicost_g_2 :- ilicost_g_1, \+accident_b.
+0.049999999999999996::ilicost_then_2_f1.
+0.052631578947368425::ilicost_then_2_f0.
+0.4::ilicost_then_2_f0_1.
+ilicost_then_2_b0 :- \+ilicost_then_2_f1, ilicost_then_2_f0.
+ilicost_then_2_b0 :- ilicost_then_2_f1, ilicost_then_2_f0_1.
+ilicost_g_3 :- ilicost_g_1, accident_b.
+0.09999999999999999::ilicost_else_f1.
+0.1111111111111111::ilicost_else_f0.
+0.4::ilicost_else_f0_1.
+ilicost_else_b0 :- \+ilicost_else_f1, ilicost_else_f0.
+ilicost_else_b0 :- ilicost_else_f1, ilicost_else_f0_1.
+ilicost_b :- ilicost_g, ilicost_then_1_b0.
+ilicost_b :- ilicost_g_2, ilicost_then_2_b0.
+ilicost_b :- ilicost_g_3, ilicost_else_b0.
+ilicost_b_1 :- ilicost_g, ilicost_then_1_f1.
+ilicost_b_1 :- ilicost_g_2, ilicost_then_2_f1.
+ilicost_b_1 :- ilicost_g_3, ilicost_else_f1.
+medcost_then_then_c :- \+cushioning_b, \+cushioning_b_1.
+medcost_then_then_c_1 :- cushioning_b, \+cushioning_b_1.
+medcost_then_then_g :- \+medcost_then_then_c, medcost_then_then_c_1.
+medcost_then_then_g_1 :- \+medcost_then_then_c, \+medcost_then_then_c_1.
+medcost_then_then_g_2 :- medcost_then_then_g_1, \+cushioning_b.
+medcost_then_then_g_3 :- medcost_then_then_g_1, cushioning_b.
+medcost_then_g :- socioecon_g_1, medcost_then_then_c.
+medcost_then_g_1 :- socioecon_g_1, \+medcost_then_then_c.
+medcost_then_g_2 :- medcost_then_g_1, medcost_then_then_c_1.
+medcost_then_g_3 :- medcost_then_g_1, \+medcost_then_then_c_1.
+medcost_then_g_4 :- medcost_then_g_3, \+cushioning_b.
+medcost_then_g_5 :- medcost_then_g_3, cushioning_b.
+0.01::medcost_then_then_then_6_f1.
+0.030303030303030304::medcost_then_then_then_6_f0.
+0.1::medcost_then_then_then_6_f0_1.
+medcost_then_then_then_6_b0 :- \+medcost_then_then_then_6_f1, medcost_then_then_then_6_f0.
+medcost_then_then_then_6_b0 :- medcost_then_then_then_6_f1, medcost_then_then_then_6_f0_1.
+0.001::medcost_then_then_then_7_f1.
+0.01901901901901902::medcost_then_then_then_7_f0.
+0.1::medcost_then_then_then_7_f0_1.
+medcost_then_then_then_7_b0 :- \+medcost_then_then_then_7_f1, medcost_then_then_then_7_f0.
+medcost_then_then_then_7_b0 :- medcost_then_then_then_7_f1, medcost_then_then_then_7_f0_1.
+0.0001::medcost_then_then_then_8_f1.
+0.009900990099009901::medcost_then_then_then_8_f0.
+0.1::medcost_then_then_then_8_f0_1.
+medcost_then_then_then_8_b0 :- \+medcost_then_then_then_8_f1, medcost_then_then_then_8_f0.
+medcost_then_then_then_8_b0 :- medcost_then_then_then_8_f1, medcost_then_then_then_8_f0_1.
+1e-05::medcost_then_then_else_2_f1.
+0.000990009900099001::medcost_then_then_else_2_f0.
+0.09999999999999999::medcost_then_then_else_2_f0_1.
+medcost_then_then_else_2_b0 :- \+medcost_then_then_else_2_f1, medcost_then_then_else_2_f0.
+medcost_then_then_else_2_b0 :- medcost_then_then_else_2_f1, medcost_then_then_else_2_f0_1.
+medcost_then_then_b :- medcost_then_then_c, medcost_then_then_then_6_b0.
+medcost_then_then_b :- medcost_then_then_g, medcost_then_then_then_7_b0.
+medcost_then_then_b :- medcost_then_then_g_2, medcost_then_then_then_8_b0.
+medcost_then_then_b :- medcost_then_then_g_3, medcost_then_then_else_2_b0.
+medcost_then_then_b_1 :- medcost_then_then_c, medcost_then_then_then_6_f1.
+medcost_then_then_b_1 :- medcost_then_then_g, medcost_then_then_then_7_f1.
+medcost_then_then_b_1 :- medcost_then_then_g_2, medcost_then_then_then_8_f1.
+medcost_then_then_b_1 :- medcost_then_then_g_3, medcost_then_then_else_2_f1.
+0.01::medcost_then_then_then_9_f1.
+0.030303030303030304::medcost_then_then_then_9_f0.
+0.1::medcost_then_then_then_9_f0_1.
+medcost_then_then_then_9_b0 :- \+medcost_then_then_then_9_f1, medcost_then_then_then_9_f0.
+medcost_then_then_then_9_b0 :- medcost_then_then_then_9_f1, medcost_then_then_then_9_f0_1.
+0.001::medcost_then_then_then_10_f1.
+0.01901901901901902::medcost_then_then_then_10_f0.
+0.1::medcost_then_then_then_10_f0_1.
+medcost_then_then_then_10_b0 :- \+medcost_then_then_then_10_f1, medcost_then_then_then_10_f0.
+medcost_then_then_then_10_b0 :- medcost_then_then_then_10_f1, medcost_then_then_then_10_f0_1.
+0.0001::medcost_then_then_then_11_f1.
+0.009900990099009901::medcost_then_then_then_11_f0.
+0.1::medcost_then_then_then_11_f0_1.
+medcost_then_then_then_11_b0 :- \+medcost_then_then_then_11_f1, medcost_then_then_then_11_f0.
+medcost_then_then_then_11_b0 :- medcost_then_then_then_11_f1, medcost_then_then_then_11_f0_1.
+1e-05::medcost_then_then_else_3_f1.
+0.000990009900099001::medcost_then_then_else_3_f0.
+0.09999999999999999::medcost_then_then_else_3_f0_1.
+medcost_then_then_else_3_b0 :- \+medcost_then_then_else_3_f1, medcost_then_then_else_3_f0.
+medcost_then_then_else_3_b0 :- medcost_then_then_else_3_f1, medcost_then_then_else_3_f0_1.
+medcost_then_then_b_2 :- medcost_then_then_c, medcost_then_then_then_9_b0.
+medcost_then_then_b_2 :- medcost_then_then_g, medcost_then_then_then_10_b0.
+medcost_then_then_b_2 :- medcost_then_then_g_2, medcost_then_then_then_11_b0.
+medcost_then_then_b_2 :- medcost_then_then_g_3, medcost_then_then_else_3_b0.
+medcost_then_then_b_3 :- medcost_then_then_c, medcost_then_then_then_9_f1.
+medcost_then_then_b_3 :- medcost_then_then_g, medcost_then_then_then_10_f1.
+medcost_then_then_b_3 :- medcost_then_then_g_2, medcost_then_then_then_11_f1.
+medcost_then_then_b_3 :- medcost_then_then_g_3, medcost_then_then_else_3_f1.
+0.03::medcost_then_then_3_f1.
+0.07216494845360825::medcost_then_then_3_f0.
+0.3333333333333333::medcost_then_then_3_f0_1.
+medcost_then_then_3_b0 :- \+medcost_then_then_3_f1, medcost_then_then_3_f0.
+medcost_then_then_3_b0 :- medcost_then_then_3_f1, medcost_then_then_3_f0_1.
+0.01::medcost_then_then_4_f1.
+0.04040404040404041::medcost_then_then_4_f0.
+0.3::medcost_then_then_4_f0_1.
+medcost_then_then_4_b0 :- \+medcost_then_then_4_f1, medcost_then_then_4_f0.
+medcost_then_then_4_b0 :- medcost_then_then_4_f1, medcost_then_then_4_f0_1.
+0.005::medcost_then_then_5_f1.
+0.02512562814070352::medcost_then_then_5_f0.
+0.4::medcost_then_then_5_f0_1.
+medcost_then_then_5_b0 :- \+medcost_then_then_5_f1, medcost_then_then_5_f0.
+medcost_then_then_5_b0 :- medcost_then_then_5_f1, medcost_then_then_5_f0_1.
+0.003::medcost_then_else_1_f1.
+0.007021063189568706::medcost_then_else_1_f0.
+0.3333333333333333::medcost_then_else_1_f0_1.
+medcost_then_else_1_b0 :- \+medcost_then_else_1_f1, medcost_then_else_1_f0.
+medcost_then_else_1_b0 :- medcost_then_else_1_f1, medcost_then_else_1_f0_1.
+medcost_then_b :- socioecon_c, medcost_then_then_b.
+medcost_then_b :- socioecon_g, medcost_then_then_b_2.
+medcost_then_b :- medcost_then_g, medcost_then_then_3_b0.
+medcost_then_b :- medcost_then_g_2, medcost_then_then_4_b0.
+medcost_then_b :- medcost_then_g_4, medcost_then_then_5_b0.
+medcost_then_b :- medcost_then_g_5, medcost_then_else_1_b0.
+medcost_then_b_1 :- socioecon_c, medcost_then_then_b_1.
+medcost_then_b_1 :- socioecon_g, medcost_then_then_b_3.
+medcost_then_b_1 :- medcost_then_g, medcost_then_then_3_f1.
+medcost_then_b_1 :- medcost_then_g_2, medcost_then_then_4_f1.
+medcost_then_b_1 :- medcost_then_g_4, medcost_then_then_5_f1.
+medcost_then_b_1 :- medcost_then_g_5, medcost_then_else_1_f1.
+0.3::medcost_then_then_then_12_f1.
+0.2857142857142857::medcost_then_then_then_12_f0.
+0.3333333333333333::medcost_then_then_then_12_f0_1.
+medcost_then_then_then_12_b0 :- \+medcost_then_then_then_12_f1, medcost_then_then_then_12_f0.
+medcost_then_then_then_12_b0 :- medcost_then_then_then_12_f1, medcost_then_then_then_12_f0_1.
+0.049999999999999996::medcost_then_then_then_13_f1.
+0.15789473684210525::medcost_then_then_then_13_f0.
+0.4::medcost_then_then_then_13_f0_1.
+medcost_then_then_then_13_b0 :- \+medcost_then_then_then_13_f1, medcost_then_then_then_13_f0.
+medcost_then_then_then_13_b0 :- medcost_then_then_then_13_f1, medcost_then_then_then_13_f0_1.
+0.030000000000000002::medcost_then_then_then_14_f1.
+0.02061855670103093::medcost_then_then_then_14_f0.
+0.3333333333333333::medcost_then_then_then_14_f0_1.
+medcost_then_then_then_14_b0 :- \+medcost_then_then_then_14_f1, medcost_then_then_then_14_f0.
+medcost_then_then_then_14_b0 :- medcost_then_then_then_14_f1, medcost_then_then_then_14_f0_1.
+0.003::medcost_then_then_else_4_f1.
+0.007021063189568706::medcost_then_then_else_4_f0.
+0.3333333333333333::medcost_then_then_else_4_f0_1.
+medcost_then_then_else_4_b0 :- \+medcost_then_then_else_4_f1, medcost_then_then_else_4_f0.
+medcost_then_then_else_4_b0 :- medcost_then_then_else_4_f1, medcost_then_then_else_4_f0_1.
+medcost_then_then_b_4 :- medcost_then_then_c, medcost_then_then_then_12_b0.
+medcost_then_then_b_4 :- medcost_then_then_g, medcost_then_then_then_13_b0.
+medcost_then_then_b_4 :- medcost_then_then_g_2, medcost_then_then_then_14_b0.
+medcost_then_then_b_4 :- medcost_then_then_g_3, medcost_then_then_else_4_b0.
+medcost_then_then_b_5 :- medcost_then_then_c, medcost_then_then_then_12_f1.
+medcost_then_then_b_5 :- medcost_then_then_g, medcost_then_then_then_13_f1.
+medcost_then_then_b_5 :- medcost_then_then_g_2, medcost_then_then_then_14_f1.
+medcost_then_then_b_5 :- medcost_then_then_g_3, medcost_then_then_else_4_f1.
+0.3::medcost_then_then_then_15_f1.
+0.2857142857142857::medcost_then_then_then_15_f0.
+0.3333333333333333::medcost_then_then_then_15_f0_1.
+medcost_then_then_then_15_b0 :- \+medcost_then_then_then_15_f1, medcost_then_then_then_15_f0.
+medcost_then_then_then_15_b0 :- medcost_then_then_then_15_f1, medcost_then_then_then_15_f0_1.
+0.049999999999999996::medcost_then_then_then_16_f1.
+0.15789473684210525::medcost_then_then_then_16_f0.
+0.4::medcost_then_then_then_16_f0_1.
+medcost_then_then_then_16_b0 :- \+medcost_then_then_then_16_f1, medcost_then_then_then_16_f0.
+medcost_then_then_then_16_b0 :- medcost_then_then_then_16_f1, medcost_then_then_then_16_f0_1.
+0.030000000000000002::medcost_then_then_then_17_f1.
+0.02061855670103093::medcost_then_then_then_17_f0.
+0.3333333333333333::medcost_then_then_then_17_f0_1.
+medcost_then_then_then_17_b0 :- \+medcost_then_then_then_17_f1, medcost_then_then_then_17_f0.
+medcost_then_then_then_17_b0 :- medcost_then_then_then_17_f1, medcost_then_then_then_17_f0_1.
+0.003::medcost_then_then_else_5_f1.
+0.007021063189568706::medcost_then_then_else_5_f0.
+0.3333333333333333::medcost_then_then_else_5_f0_1.
+medcost_then_then_else_5_b0 :- \+medcost_then_then_else_5_f1, medcost_then_then_else_5_f0.
+medcost_then_then_else_5_b0 :- medcost_then_then_else_5_f1, medcost_then_then_else_5_f0_1.
+medcost_then_then_b_6 :- medcost_then_then_c, medcost_then_then_then_15_b0.
+medcost_then_then_b_6 :- medcost_then_then_g, medcost_then_then_then_16_b0.
+medcost_then_then_b_6 :- medcost_then_then_g_2, medcost_then_then_then_17_b0.
+medcost_then_then_b_6 :- medcost_then_then_g_3, medcost_then_then_else_5_b0.
+medcost_then_then_b_7 :- medcost_then_then_c, medcost_then_then_then_15_f1.
+medcost_then_then_b_7 :- medcost_then_then_g, medcost_then_then_then_16_f1.
+medcost_then_then_b_7 :- medcost_then_then_g_2, medcost_then_then_then_17_f1.
+medcost_then_then_b_7 :- medcost_then_then_g_3, medcost_then_then_else_5_f1.
+0.4::medcost_then_then_6_f1.
+0.5::medcost_then_then_6_f0.
+0.3::medcost_then_then_7_f1.
+0.2857142857142857::medcost_then_then_7_f0.
+0.3333333333333333::medcost_then_then_7_f0_1.
+medcost_then_then_7_b0 :- \+medcost_then_then_7_f1, medcost_then_then_7_f0.
+medcost_then_then_7_b0 :- medcost_then_then_7_f1, medcost_then_then_7_f0_1.
+0.03::medcost_then_then_8_f1.
+0.07216494845360825::medcost_then_then_8_f0.
+0.3333333333333333::medcost_then_then_8_f0_1.
+medcost_then_then_8_b0 :- \+medcost_then_then_8_f1, medcost_then_then_8_f0.
+medcost_then_then_8_b0 :- medcost_then_then_8_f1, medcost_then_then_8_f0_1.
+0.02::medcost_then_else_2_f1.
+0.030612244897959183::medcost_then_else_2_f0.
+0.5::medcost_then_else_2_f0_1.
+medcost_then_else_2_b0 :- \+medcost_then_else_2_f1, medcost_then_else_2_f0.
+medcost_then_else_2_b0 :- medcost_then_else_2_f1, medcost_then_else_2_f0_1.
+medcost_then_b_2 :- socioecon_c, medcost_then_then_b_4.
+medcost_then_b_2 :- socioecon_g, medcost_then_then_b_6.
+medcost_then_b_2 :- medcost_then_g, medcost_then_then_6_f0.
+medcost_then_b_2 :- medcost_then_g_2, medcost_then_then_7_b0.
+medcost_then_b_2 :- medcost_then_g_4, medcost_then_then_8_b0.
+medcost_then_b_2 :- medcost_then_g_5, medcost_then_else_2_b0.
+medcost_then_b_3 :- socioecon_c, medcost_then_then_b_5.
+medcost_then_b_3 :- socioecon_g, medcost_then_then_b_7.
+medcost_then_b_3 :- medcost_then_g, medcost_then_then_6_f1.
+medcost_then_b_3 :- medcost_then_g_2, medcost_then_then_7_f1.
+medcost_then_b_3 :- medcost_then_g_4, medcost_then_then_8_f1.
+medcost_then_b_3 :- medcost_then_g_5, medcost_then_else_2_f1.
+medcost_g :- ilicost_g_3, socioecon_c.
+0.4::medcost_then_then_9_f1.
+0.5::medcost_then_then_9_f0.
+0.3::medcost_then_then_10_f1.
+0.2857142857142857::medcost_then_then_10_f0.
+0.3333333333333333::medcost_then_then_10_f0_1.
+medcost_then_then_10_b0 :- \+medcost_then_then_10_f1, medcost_then_then_10_f0.
+medcost_then_then_10_b0 :- medcost_then_then_10_f1, medcost_then_then_10_f0_1.
+0.03::medcost_then_then_11_f1.
+0.07216494845360825::medcost_then_then_11_f0.
+0.3333333333333333::medcost_then_then_11_f0_1.
+medcost_then_then_11_b0 :- \+medcost_then_then_11_f1, medcost_then_then_11_f0.
+medcost_then_then_11_b0 :- medcost_then_then_11_f1, medcost_then_then_11_f0_1.
+0.02::medcost_then_else_3_f1.
+0.030612244897959183::medcost_then_else_3_f0.
+0.5::medcost_then_else_3_f0_1.
+medcost_then_else_3_b0 :- \+medcost_then_else_3_f1, medcost_then_else_3_f0.
+medcost_then_else_3_b0 :- medcost_then_else_3_f1, medcost_then_else_3_f0_1.
+medcost_then_b_4 :- medcost_then_then_c, medcost_then_then_9_f0.
+medcost_then_b_4 :- medcost_then_then_g, medcost_then_then_10_b0.
+medcost_then_b_4 :- medcost_then_then_g_2, medcost_then_then_11_b0.
+medcost_then_b_4 :- medcost_then_then_g_3, medcost_then_else_3_b0.
+medcost_then_b_5 :- medcost_then_then_c, medcost_then_then_9_f1.
+medcost_then_b_5 :- medcost_then_then_g, medcost_then_then_10_f1.
+medcost_then_b_5 :- medcost_then_then_g_2, medcost_then_then_11_f1.
+medcost_then_b_5 :- medcost_then_then_g_3, medcost_then_else_3_f1.
+medcost_g_1 :- ilicost_g_3, \+socioecon_c.
+medcost_g_2 :- medcost_g_1, socioecon_c_1.
+0.4::medcost_then_then_12_f1.
+0.5::medcost_then_then_12_f0.
+0.3::medcost_then_then_13_f1.
+0.2857142857142857::medcost_then_then_13_f0.
+0.3333333333333333::medcost_then_then_13_f0_1.
+medcost_then_then_13_b0 :- \+medcost_then_then_13_f1, medcost_then_then_13_f0.
+medcost_then_then_13_b0 :- medcost_then_then_13_f1, medcost_then_then_13_f0_1.
+0.03::medcost_then_then_14_f1.
+0.07216494845360825::medcost_then_then_14_f0.
+0.3333333333333333::medcost_then_then_14_f0_1.
+medcost_then_then_14_b0 :- \+medcost_then_then_14_f1, medcost_then_then_14_f0.
+medcost_then_then_14_b0 :- medcost_then_then_14_f1, medcost_then_then_14_f0_1.
+0.02::medcost_then_else_4_f1.
+0.030612244897959183::medcost_then_else_4_f0.
+0.5::medcost_then_else_4_f0_1.
+medcost_then_else_4_b0 :- \+medcost_then_else_4_f1, medcost_then_else_4_f0.
+medcost_then_else_4_b0 :- medcost_then_else_4_f1, medcost_then_else_4_f0_1.
+medcost_then_b_6 :- medcost_then_then_c, medcost_then_then_12_f0.
+medcost_then_b_6 :- medcost_then_then_g, medcost_then_then_13_b0.
+medcost_then_b_6 :- medcost_then_then_g_2, medcost_then_then_14_b0.
+medcost_then_b_6 :- medcost_then_then_g_3, medcost_then_else_4_b0.
+medcost_then_b_7 :- medcost_then_then_c, medcost_then_then_12_f1.
+medcost_then_b_7 :- medcost_then_then_g, medcost_then_then_13_f1.
+medcost_then_b_7 :- medcost_then_then_g_2, medcost_then_then_14_f1.
+medcost_then_b_7 :- medcost_then_then_g_3, medcost_then_else_4_f1.
+medcost_g_3 :- medcost_g_1, \+socioecon_c_1.
+medcost_g_4 :- medcost_g_3, medcost_then_then_c.
+0.6::medcost_then_f1.
+0.5::medcost_then_f0.
+medcost_g_5 :- medcost_g_3, \+medcost_then_then_c.
+medcost_g_6 :- medcost_g_5, medcost_then_then_c_1.
+0.4::medcost_then_1_f1.
+0.5::medcost_then_1_f0.
+medcost_g_7 :- medcost_g_5, \+medcost_then_then_c_1.
+medcost_g_8 :- medcost_g_7, \+cushioning_b.
+0.1::medcost_then_2_f1.
+0.3333333333333333::medcost_then_2_f0.
+0.3::medcost_then_2_f0_1.
+medcost_then_2_b0 :- \+medcost_then_2_f1, medcost_then_2_f0.
+medcost_then_2_b0 :- medcost_then_2_f1, medcost_then_2_f0_1.
+medcost_g_9 :- medcost_g_7, cushioning_b.
+0.049999999999999996::medcost_else_f1.
+0.052631578947368425::medcost_else_f0.
+0.4::medcost_else_f0_1.
+medcost_else_b0 :- \+medcost_else_f1, medcost_else_f0.
+medcost_else_b0 :- medcost_else_f1, medcost_else_f0_1.
+medcost_b :- ilicost_g, medcost_then_b.
+medcost_b :- ilicost_g_2, medcost_then_b_2.
+medcost_b :- medcost_g, medcost_then_b_4.
+medcost_b :- medcost_g_2, medcost_then_b_6.
+medcost_b :- medcost_g_4, medcost_then_f0.
+medcost_b :- medcost_g_6, medcost_then_1_f0.
+medcost_b :- medcost_g_8, medcost_then_2_b0.
+medcost_b :- medcost_g_9, medcost_else_b0.
+medcost_b_1 :- ilicost_g, medcost_then_b_1.
+medcost_b_1 :- ilicost_g_2, medcost_then_b_3.
+medcost_b_1 :- medcost_g, medcost_then_b_5.
+medcost_b_1 :- medcost_g_2, medcost_then_b_7.
+medcost_b_1 :- medcost_g_4, medcost_then_f1.
+medcost_b_1 :- medcost_g_6, medcost_then_1_f1.
+medcost_b_1 :- medcost_g_8, medcost_then_2_f1.
+medcost_b_1 :- medcost_g_9, medcost_else_f1.
+0.005::othercarcost_then_then_2_f1.
+0.005025125628140704::othercarcost_then_then_2_f0.
+0.0020000000000000005::othercarcost_then_then_2_f0_1.
+othercarcost_then_then_2_b0 :- \+othercarcost_then_then_2_f1, othercarcost_then_then_2_f0.
+othercarcost_then_then_2_b0 :- othercarcost_then_then_2_f1, othercarcost_then_then_2_f0_1.
+0.010034989965010037::othercarcost_then_then_3_f1.
+0.01010135701630157::othercarcost_then_then_3_f0.
+0.004982561036372696::othercarcost_then_then_3_f0_1.
+othercarcost_then_then_3_b0 :- \+othercarcost_then_then_3_f1, othercarcost_then_then_3_f0.
+othercarcost_then_then_3_b0 :- othercarcost_then_then_3_f1, othercarcost_then_then_3_f0_1.
+0.02::othercarcost_then_else_1_f1.
+0.030612244897959183::othercarcost_then_else_1_f0.
+0.001::othercarcost_then_else_1_f0_1.
+othercarcost_then_else_1_b0 :- \+othercarcost_then_else_1_f1, othercarcost_then_else_1_f0.
+othercarcost_then_else_1_b0 :- othercarcost_then_else_1_f1, othercarcost_then_else_1_f0_1.
+othercarcost_then_b :- cushioning_c, othercarcost_then_then_2_b0.
+othercarcost_then_b :- cushioning_g, othercarcost_then_then_3_b0.
+othercarcost_then_b :- cushioning_g_1, othercarcost_then_else_1_b0.
+othercarcost_then_b_1 :- cushioning_c, othercarcost_then_then_2_f1.
+othercarcost_then_b_1 :- cushioning_g, othercarcost_then_then_3_f1.
+othercarcost_then_b_1 :- cushioning_g_1, othercarcost_then_else_1_f1.
+0.19999999999999998::othercarcost_then_then_4_f1.
+0.25::othercarcost_then_then_4_f0.
+0.00010000000000000002::othercarcost_then_then_4_f0_1.
+othercarcost_then_then_4_b0 :- \+othercarcost_then_then_4_f1, othercarcost_then_then_4_f0.
+othercarcost_then_then_4_b0 :- othercarcost_then_then_4_f1, othercarcost_then_then_4_f0_1.
+0.3::othercarcost_then_then_5_f1.
+0.2857142857142857::othercarcost_then_then_5_f0.
+9.999999999999999e-05::othercarcost_then_then_5_f0_1.
+othercarcost_then_then_5_b0 :- \+othercarcost_then_then_5_f1, othercarcost_then_then_5_f0.
+othercarcost_then_then_5_b0 :- othercarcost_then_then_5_f1, othercarcost_then_then_5_f0_1.
+0.3::othercarcost_then_else_2_f1.
+0.42857142857142855::othercarcost_then_else_2_f0.
+0.00013333333333333334::othercarcost_then_else_2_f0_1.
+othercarcost_then_else_2_b0 :- \+othercarcost_then_else_2_f1, othercarcost_then_else_2_f0.
+othercarcost_then_else_2_b0 :- othercarcost_then_else_2_f1, othercarcost_then_else_2_f0_1.
+othercarcost_then_b_2 :- cushioning_c, othercarcost_then_then_4_b0.
+othercarcost_then_b_2 :- cushioning_g, othercarcost_then_then_5_b0.
+othercarcost_then_b_2 :- cushioning_g_1, othercarcost_then_else_2_b0.
+othercarcost_then_b_3 :- cushioning_c, othercarcost_then_then_4_f1.
+othercarcost_then_b_3 :- cushioning_g, othercarcost_then_then_5_f1.
+othercarcost_then_b_3 :- cushioning_g_1, othercarcost_then_else_2_f1.
+othercarcost_g :- ilicost_g_3, cushioning_c.
+0.39999999999999997::othercarcost_then_f1.
+0.6666666666666666::othercarcost_then_f0.
+0.00010000000000000002::othercarcost_then_f0_1.
+othercarcost_then_b0 :- \+othercarcost_then_f1, othercarcost_then_f0.
+othercarcost_then_b0 :- othercarcost_then_f1, othercarcost_then_f0_1.
+othercarcost_g_1 :- ilicost_g_3, \+cushioning_c.
+othercarcost_g_2 :- othercarcost_g_1, cushioning_c_1.
+0.4::othercarcost_then_1_f1.
+0.8333333333333334::othercarcost_then_1_f0.
+0.00015::othercarcost_then_1_f0_1.
+othercarcost_then_1_b0 :- \+othercarcost_then_1_f1, othercarcost_then_1_f0.
+othercarcost_then_1_b0 :- othercarcost_then_1_f1, othercarcost_then_1_f0_1.
+othercarcost_g_3 :- othercarcost_g_1, \+cushioning_c_1.
+0.445::othercarcost_else_f1.
+0.990990990990991::othercarcost_else_f0.
+0.00022471910112359551::othercarcost_else_f0_1.
+othercarcost_else_b0 :- \+othercarcost_else_f1, othercarcost_else_f0.
+othercarcost_else_b0 :- othercarcost_else_f1, othercarcost_else_f0_1.
+othercarcost_b :- ilicost_g, othercarcost_then_b.
+othercarcost_b :- ilicost_g_2, othercarcost_then_b_2.
+othercarcost_b :- othercarcost_g, othercarcost_then_b0.
+othercarcost_b :- othercarcost_g_2, othercarcost_then_1_b0.
+othercarcost_b :- othercarcost_g_3, othercarcost_else_b0.
+othercarcost_b_1 :- ilicost_g, othercarcost_then_b_1.
+othercarcost_b_1 :- ilicost_g_2, othercarcost_then_b_3.
+othercarcost_b_1 :- othercarcost_g, othercarcost_then_f1.
+othercarcost_b_1 :- othercarcost_g_2, othercarcost_then_1_f1.
+othercarcost_b_1 :- othercarcost_g_3, othercarcost_else_f1.
+0.099::thiscardam_then_then_2_f1.
+0.9988901220865705::thiscardam_then_then_2_f0.
+0.0101010101010101::thiscardam_then_then_2_f0_1.
+thiscardam_then_then_2_b0 :- \+thiscardam_then_then_2_f1, thiscardam_then_then_2_f0.
+thiscardam_then_then_2_b0 :- thiscardam_then_then_2_f1, thiscardam_then_then_2_f0_1.
+0.05::thiscardam_then_then_3_f1.
+0.7894736842105263::thiscardam_then_then_3_f0.
+1.9999999999999998e-05::thiscardam_then_then_3_f0_1.
+thiscardam_then_then_3_b0 :- \+thiscardam_then_then_3_f1, thiscardam_then_then_3_f0.
+thiscardam_then_then_3_b0 :- thiscardam_then_then_3_f1, thiscardam_then_then_3_f0_1.
+0.01::thiscardam_then_else_1_f1.
+0.29292929292929293::thiscardam_then_else_1_f0.
+0.0001::thiscardam_then_else_1_f0_1.
+thiscardam_then_else_1_b0 :- \+thiscardam_then_else_1_f1, thiscardam_then_else_1_f0.
+thiscardam_then_else_1_b0 :- thiscardam_then_else_1_f1, thiscardam_then_else_1_f0_1.
+thiscardam_then_b :- cushioning_c, thiscardam_then_then_2_b0.
+thiscardam_then_b :- cushioning_g, thiscardam_then_then_3_b0.
+thiscardam_then_b :- cushioning_g_1, thiscardam_then_else_1_b0.
+thiscardam_then_b_1 :- cushioning_c, thiscardam_then_then_2_f1.
+thiscardam_then_b_1 :- cushioning_g, thiscardam_then_then_3_f1.
+thiscardam_then_b_1 :- cushioning_g_1, thiscardam_then_else_1_f1.
+0.999::thiscardam_then_then_4_f1.
+0.999::thiscardam_then_then_4_f0.
+0.2992992992992993::thiscardam_then_then_4_f0_1.
+thiscardam_then_then_4_b0 :- \+thiscardam_then_then_4_f1, thiscardam_then_then_4_f0.
+thiscardam_then_then_4_b0 :- thiscardam_then_then_4_f1, thiscardam_then_then_4_f0_1.
+0.9::thiscardam_then_then_5_f1.
+0.99::thiscardam_then_then_5_f0.
+0.1111111111111111::thiscardam_then_then_5_f0_1.
+thiscardam_then_then_5_b0 :- \+thiscardam_then_then_5_f1, thiscardam_then_then_5_f0.
+thiscardam_then_then_5_b0 :- thiscardam_then_then_5_f1, thiscardam_then_then_5_f0_1.
+0.35::thiscardam_then_else_2_f1.
+0.923076923076923::thiscardam_then_else_2_f0.
+0.14285714285714288::thiscardam_then_else_2_f0_1.
+thiscardam_then_else_2_b0 :- \+thiscardam_then_else_2_f1, thiscardam_then_else_2_f0.
+thiscardam_then_else_2_b0 :- thiscardam_then_else_2_f1, thiscardam_then_else_2_f0_1.
+thiscardam_then_b_2 :- cushioning_c, thiscardam_then_then_4_b0.
+thiscardam_then_b_2 :- cushioning_g, thiscardam_then_then_5_b0.
+thiscardam_then_b_2 :- cushioning_g_1, thiscardam_then_else_2_b0.
+thiscardam_then_b_3 :- cushioning_c, thiscardam_then_then_4_f1.
+thiscardam_then_b_3 :- cushioning_g, thiscardam_then_then_5_f1.
+thiscardam_then_b_3 :- cushioning_g_1, thiscardam_then_else_2_f1.
+0.99999::thiscardam_then_f1.
+0.9::thiscardam_then_f0.
+0.999909999099991::thiscardam_then_f0_1.
+thiscardam_then_b0 :- \+thiscardam_then_f1, thiscardam_then_f0.
+thiscardam_then_b0 :- thiscardam_then_f1, thiscardam_then_f0_1.
+0.999::thiscardam_then_1_f1.
+0.999::thiscardam_then_1_f0.
+0.990990990990991::thiscardam_then_1_f0_1.
+thiscardam_then_1_b0 :- \+thiscardam_then_1_f1, thiscardam_then_1_f0.
+thiscardam_then_1_b0 :- thiscardam_then_1_f1, thiscardam_then_1_f0_1.
+0.75::thiscardam_else_f1.
+0.8::thiscardam_else_f0.
+0.7333333333333334::thiscardam_else_f0_1.
+thiscardam_else_b0 :- \+thiscardam_else_f1, thiscardam_else_f0.
+thiscardam_else_b0 :- thiscardam_else_f1, thiscardam_else_f0_1.
+thiscardam_b :- ilicost_g, thiscardam_then_b.
+thiscardam_b :- ilicost_g_2, thiscardam_then_b_2.
+thiscardam_b :- othercarcost_g, thiscardam_then_b0.
+thiscardam_b :- othercarcost_g_2, thiscardam_then_1_b0.
+thiscardam_b :- othercarcost_g_3, thiscardam_else_b0.
+thiscardam_b_1 :- ilicost_g, thiscardam_then_b_1.
+thiscardam_b_1 :- ilicost_g_2, thiscardam_then_b_3.
+thiscardam_b_1 :- othercarcost_g, thiscardam_then_f1.
+thiscardam_b_1 :- othercarcost_g_2, thiscardam_then_1_f1.
+thiscardam_b_1 :- othercarcost_g_3, thiscardam_else_f1.
+thiscarcost_c :- \+thiscardam_b, \+thiscardam_b_1.
+0.8::thiscarcost_then_then_then_f0.
+thiscarcost_then_then_b :- \+theft_b, thiscarcost_then_then_then_f0.
+0.95::thiscarcost_then_then_then_1_f0.
+thiscarcost_then_then_b_1 :- \+theft_b, thiscarcost_then_then_then_1_f0.
+0.95::thiscarcost_then_then_then_2_f1.
+0.2::thiscarcost_then_then_then_2_f0.
+thiscarcost_then_then_then_2_b0 :- \+thiscarcost_then_then_then_2_f1, thiscarcost_then_then_then_2_f0.
+thiscarcost_then_then_b_2 :- \+theft_b, thiscarcost_then_then_then_2_b0.
+thiscarcost_then_then_b_3 :- \+theft_b, thiscarcost_then_then_then_2_f1.
+0.95::thiscarcost_then_then_then_3_f1.
+0.2::thiscarcost_then_then_then_3_f0.
+thiscarcost_then_then_then_3_b0 :- \+thiscarcost_then_then_then_3_f1, thiscarcost_then_then_then_3_f0.
+thiscarcost_then_then_b_4 :- \+theft_b, thiscarcost_then_then_then_3_b0.
+thiscarcost_then_then_b_5 :- \+theft_b, thiscarcost_then_then_then_3_f1.
+thiscarcost_then_g :- theft_then_then_g_5, \+theft_b.
+0.95::thiscarcost_then_then_f1.
+0.2::thiscarcost_then_then_f0.
+0.7894736842105263::thiscarcost_then_then_f0_1.
+thiscarcost_then_then_b0 :- \+thiscarcost_then_then_f1, thiscarcost_then_then_f0.
+thiscarcost_then_then_b0 :- thiscarcost_then_then_f1, thiscarcost_then_then_f0_1.
+thiscarcost_then_g_1 :- theft_then_then_g_5, theft_b.
+thiscarcost_then_b :- theft_then_then_c, thiscarcost_then_then_b.
+thiscarcost_then_b :- theft_then_then_g, thiscarcost_then_then_b_1.
+thiscarcost_then_b :- theft_then_then_g_2, thiscarcost_then_then_b_2.
+thiscarcost_then_b :- theft_then_then_g_4, thiscarcost_then_then_b_4.
+thiscarcost_then_b :- thiscarcost_then_g, thiscarcost_then_then_b0.
+thiscarcost_then_b_1 :- theft_then_then_g_2, thiscarcost_then_then_b_3.
+thiscarcost_then_b_1 :- theft_then_then_g_4, thiscarcost_then_then_b_5.
+thiscarcost_then_b_1 :- thiscarcost_then_g, thiscarcost_then_then_f1.
+thiscarcost_c_1 :- thiscardam_b, \+thiscardam_b_1.
+thiscarcost_g :- \+thiscarcost_c, thiscarcost_c_1.
+0.85::thiscarcost_then_then_then_4_f0.
+0.05::thiscarcost_then_then_else_4_f0.
+thiscarcost_then_then_b_6 :- \+theft_b, thiscarcost_then_then_then_4_f0.
+thiscarcost_then_then_b_6 :- theft_b, thiscarcost_then_then_else_4_f0.
+0.97::thiscarcost_then_then_then_5_f0.
+0.05::thiscarcost_then_then_else_5_f0.
+thiscarcost_then_then_b_7 :- \+theft_b, thiscarcost_then_then_then_5_f0.
+thiscarcost_then_then_b_7 :- theft_b, thiscarcost_then_then_else_5_f0.
+0.95::thiscarcost_then_then_then_6_f1.
+0.4::thiscarcost_then_then_then_6_f0.
+thiscarcost_then_then_then_6_b0 :- \+thiscarcost_then_then_then_6_f1, thiscarcost_then_then_then_6_f0.
+0.01::thiscarcost_then_then_else_6_f0.
+thiscarcost_then_then_b_8 :- \+theft_b, thiscarcost_then_then_then_6_b0.
+thiscarcost_then_then_b_8 :- theft_b, thiscarcost_then_then_else_6_f0.
+thiscarcost_then_then_b_9 :- \+theft_b, thiscarcost_then_then_then_6_f1.
+0.95::thiscarcost_then_then_then_7_f1.
+0.4::thiscarcost_then_then_then_7_f0.
+thiscarcost_then_then_then_7_b0 :- \+thiscarcost_then_then_then_7_f1, thiscarcost_then_then_then_7_f0.
+0.01::thiscarcost_then_then_else_7_f0.
+thiscarcost_then_then_b_10 :- \+theft_b, thiscarcost_then_then_then_7_b0.
+thiscarcost_then_then_b_10 :- theft_b, thiscarcost_then_then_else_7_f0.
+thiscarcost_then_then_b_11 :- \+theft_b, thiscarcost_then_then_then_7_f1.
+0.95::thiscarcost_then_then_1_f1.
+0.6::thiscarcost_then_then_1_f0.
+0.7368421052631579::thiscarcost_then_then_1_f0_1.
+thiscarcost_then_then_1_b0 :- \+thiscarcost_then_then_1_f1, thiscarcost_then_then_1_f0.
+thiscarcost_then_then_1_b0 :- thiscarcost_then_then_1_f1, thiscarcost_then_then_1_f0_1.
+0.01::thiscarcost_then_else_1_f1.
+0.010101010101010102::thiscarcost_then_else_1_f0.
+thiscarcost_then_else_1_b0 :- \+thiscarcost_then_else_1_f1, thiscarcost_then_else_1_f0.
+thiscarcost_then_b_2 :- theft_then_then_c, thiscarcost_then_then_b_6.
+thiscarcost_then_b_2 :- theft_then_then_g, thiscarcost_then_then_b_7.
+thiscarcost_then_b_2 :- theft_then_then_g_2, thiscarcost_then_then_b_8.
+thiscarcost_then_b_2 :- theft_then_then_g_4, thiscarcost_then_then_b_10.
+thiscarcost_then_b_2 :- thiscarcost_then_g, thiscarcost_then_then_1_b0.
+thiscarcost_then_b_2 :- thiscarcost_then_g_1, thiscarcost_then_else_1_b0.
+thiscarcost_then_b_3 :- theft_then_then_g_2, thiscarcost_then_then_b_9.
+thiscarcost_then_b_3 :- theft_then_then_g_4, thiscarcost_then_then_b_11.
+thiscarcost_then_b_3 :- thiscarcost_then_g, thiscarcost_then_then_1_f1.
+thiscarcost_then_b_3 :- thiscarcost_then_g_1, thiscarcost_then_else_1_f1.
+thiscarcost_g_1 :- \+thiscarcost_c, \+thiscarcost_c_1.
+thiscarcost_g_2 :- thiscarcost_g_1, \+thiscardam_b.
+0.95::thiscarcost_then_then_then_8_f0.
+0.75::thiscarcost_then_then_else_8_f0.
+thiscarcost_then_then_b_12 :- \+theft_b, thiscarcost_then_then_then_8_f0.
+thiscarcost_then_then_b_12 :- theft_b, thiscarcost_then_then_else_8_f0.
+0.99::thiscarcost_then_then_then_9_f0.
+0.85::thiscarcost_then_then_else_9_f0.
+thiscarcost_then_then_b_13 :- \+theft_b, thiscarcost_then_then_then_9_f0.
+thiscarcost_then_then_b_13 :- theft_b, thiscarcost_then_then_else_9_f0.
+0.998::thiscarcost_then_then_then_10_f1.
+0.5::thiscarcost_then_then_then_10_f0.
+thiscarcost_then_then_then_10_b0 :- \+thiscarcost_then_then_then_10_f1, thiscarcost_then_then_then_10_f0.
+0.98::thiscarcost_then_then_else_10_f1.
+0.5::thiscarcost_then_then_else_10_f0.
+thiscarcost_then_then_else_10_b0 :- \+thiscarcost_then_then_else_10_f1, thiscarcost_then_then_else_10_f0.
+thiscarcost_then_then_b_14 :- \+theft_b, thiscarcost_then_then_then_10_b0.
+thiscarcost_then_then_b_14 :- theft_b, thiscarcost_then_then_else_10_b0.
+thiscarcost_then_then_b_15 :- \+theft_b, thiscarcost_then_then_then_10_f1.
+thiscarcost_then_then_b_15 :- theft_b, thiscarcost_then_then_else_10_f1.
+0.998::thiscarcost_then_then_then_11_f1.
+0.5::thiscarcost_then_then_then_11_f0.
+thiscarcost_then_then_then_11_b0 :- \+thiscarcost_then_then_then_11_f1, thiscarcost_then_then_then_11_f0.
+0.99::thiscarcost_then_then_else_11_f1.
+0.5::thiscarcost_then_then_else_11_f0.
+thiscarcost_then_then_else_11_b0 :- \+thiscarcost_then_then_else_11_f1, thiscarcost_then_then_else_11_f0.
+thiscarcost_then_then_b_16 :- \+theft_b, thiscarcost_then_then_then_11_b0.
+thiscarcost_then_then_b_16 :- theft_b, thiscarcost_then_then_else_11_b0.
+thiscarcost_then_then_b_17 :- \+theft_b, thiscarcost_then_then_then_11_f1.
+thiscarcost_then_then_b_17 :- theft_b, thiscarcost_then_then_else_11_f1.
+0.998::thiscarcost_then_then_2_f1.
+0.5::thiscarcost_then_then_2_f0.
+0.9819639278557114::thiscarcost_then_then_2_f0_1.
+thiscarcost_then_then_2_b0 :- \+thiscarcost_then_then_2_f1, thiscarcost_then_then_2_f0.
+thiscarcost_then_then_2_b0 :- thiscarcost_then_then_2_f1, thiscarcost_then_then_2_f0_1.
+0.994::thiscarcost_then_else_2_f1.
+0.5::thiscarcost_then_else_2_f0.
+0.9557344064386318::thiscarcost_then_else_2_f0_1.
+thiscarcost_then_else_2_b0 :- \+thiscarcost_then_else_2_f1, thiscarcost_then_else_2_f0.
+thiscarcost_then_else_2_b0 :- thiscarcost_then_else_2_f1, thiscarcost_then_else_2_f0_1.
+thiscarcost_then_b_4 :- theft_then_then_c, thiscarcost_then_then_b_12.
+thiscarcost_then_b_4 :- theft_then_then_g, thiscarcost_then_then_b_13.
+thiscarcost_then_b_4 :- theft_then_then_g_2, thiscarcost_then_then_b_14.
+thiscarcost_then_b_4 :- theft_then_then_g_4, thiscarcost_then_then_b_16.
+thiscarcost_then_b_4 :- thiscarcost_then_g, thiscarcost_then_then_2_b0.
+thiscarcost_then_b_4 :- thiscarcost_then_g_1, thiscarcost_then_else_2_b0.
+thiscarcost_then_b_5 :- theft_then_then_g_2, thiscarcost_then_then_b_15.
+thiscarcost_then_b_5 :- theft_then_then_g_4, thiscarcost_then_then_b_17.
+thiscarcost_then_b_5 :- thiscarcost_then_g, thiscarcost_then_then_2_f1.
+thiscarcost_then_b_5 :- thiscarcost_then_g_1, thiscarcost_then_else_2_f1.
+thiscarcost_g_3 :- thiscarcost_g_1, thiscardam_b.
+thiscarcost_g_4 :- thiscarcost_g_3, theft_then_then_c.
+0.97::thiscarcost_then_then_3_f0.
+0.95::thiscarcost_then_else_3_f0.
+thiscarcost_then_b_6 :- \+theft_b, thiscarcost_then_then_3_f0.
+thiscarcost_then_b_6 :- theft_b, thiscarcost_then_else_3_f0.
+thiscarcost_g_5 :- thiscarcost_g_3, \+theft_then_then_c.
+thiscarcost_g_6 :- thiscarcost_g_5, theft_then_then_c_1.
+0.999999::thiscarcost_then_then_4_f0.
+0.99::thiscarcost_then_else_4_f0.
+thiscarcost_then_b_7 :- \+theft_b, thiscarcost_then_then_4_f0.
+thiscarcost_then_b_7 :- theft_b, thiscarcost_then_else_4_f0.
+thiscarcost_g_7 :- thiscarcost_g_5, \+theft_then_then_c_1.
+thiscarcost_g_8 :- thiscarcost_g_7, theft_then_then_c_2.
+0.999998::thiscarcost_then_then_5_f1.
+0.5::thiscarcost_then_then_5_f0.
+thiscarcost_then_then_5_b0 :- \+thiscarcost_then_then_5_f1, thiscarcost_then_then_5_f0.
+0.99::thiscarcost_then_else_5_f1.
+0.5::thiscarcost_then_else_5_f0.
+thiscarcost_then_else_5_b0 :- \+thiscarcost_then_else_5_f1, thiscarcost_then_else_5_f0.
+thiscarcost_then_b_8 :- \+theft_b, thiscarcost_then_then_5_b0.
+thiscarcost_then_b_8 :- theft_b, thiscarcost_then_else_5_b0.
+thiscarcost_then_b_9 :- \+theft_b, thiscarcost_then_then_5_f1.
+thiscarcost_then_b_9 :- theft_b, thiscarcost_then_else_5_f1.
+thiscarcost_g_9 :- thiscarcost_g_7, \+theft_then_then_c_2.
+thiscarcost_g_10 :- thiscarcost_g_9, theft_then_then_c_3.
+0.999998::thiscarcost_then_then_6_f1.
+0.5::thiscarcost_then_then_6_f0.
+thiscarcost_then_then_6_b0 :- \+thiscarcost_then_then_6_f1, thiscarcost_then_then_6_f0.
+0.998::thiscarcost_then_else_6_f1.
+0.5::thiscarcost_then_else_6_f0.
+thiscarcost_then_else_6_b0 :- \+thiscarcost_then_else_6_f1, thiscarcost_then_else_6_f0.
+thiscarcost_then_b_10 :- \+theft_b, thiscarcost_then_then_6_b0.
+thiscarcost_then_b_10 :- theft_b, thiscarcost_then_else_6_b0.
+thiscarcost_then_b_11 :- \+theft_b, thiscarcost_then_then_6_f1.
+thiscarcost_then_b_11 :- theft_b, thiscarcost_then_else_6_f1.
+thiscarcost_g_11 :- thiscarcost_g_9, \+theft_then_then_c_3.
+thiscarcost_g_12 :- thiscarcost_g_11, \+theft_b.
+0.999998::thiscarcost_then_f1.
+0.5::thiscarcost_then_f0.
+0.99000198000396::thiscarcost_then_f0_1.
+thiscarcost_then_b0 :- \+thiscarcost_then_f1, thiscarcost_then_f0.
+thiscarcost_then_b0 :- thiscarcost_then_f1, thiscarcost_then_f0_1.
+thiscarcost_g_13 :- thiscarcost_g_11, theft_b.
+0.999998::thiscarcost_else_f1.
+0.5::thiscarcost_else_f0.
+0.97000194000388::thiscarcost_else_f0_1.
+thiscarcost_else_b0 :- \+thiscarcost_else_f1, thiscarcost_else_f0.
+thiscarcost_else_b0 :- thiscarcost_else_f1, thiscarcost_else_f0_1.
+thiscarcost_b :- thiscarcost_c, thiscarcost_then_b.
+thiscarcost_b :- thiscarcost_g, thiscarcost_then_b_2.
+thiscarcost_b :- thiscarcost_g_2, thiscarcost_then_b_4.
+thiscarcost_b :- thiscarcost_g_4, thiscarcost_then_b_6.
+thiscarcost_b :- thiscarcost_g_6, thiscarcost_then_b_7.
+thiscarcost_b :- thiscarcost_g_8, thiscarcost_then_b_8.
+thiscarcost_b :- thiscarcost_g_10, thiscarcost_then_b_10.
+thiscarcost_b :- thiscarcost_g_12, thiscarcost_then_b0.
+thiscarcost_b :- thiscarcost_g_13, thiscarcost_else_b0.
+thiscarcost_b_1 :- thiscarcost_c, thiscarcost_then_b_1.
+thiscarcost_b_1 :- thiscarcost_g, thiscarcost_then_b_3.
+thiscarcost_b_1 :- thiscarcost_g_2, thiscarcost_then_b_5.
+thiscarcost_b_1 :- thiscarcost_g_8, thiscarcost_then_b_9.
+thiscarcost_b_1 :- thiscarcost_g_10, thiscarcost_then_b_11.
+thiscarcost_b_1 :- thiscarcost_g_12, thiscarcost_then_f1.
+thiscarcost_b_1 :- thiscarcost_g_13, thiscarcost_else_f1.
+propcost_c :- \+othercarcost_b, \+othercarcost_b_1.
+propcost_then_c :- \+thiscarcost_b, \+thiscarcost_b_1.
+0.3::propcost_then_then_f0.
+propcost_then_c_1 :- thiscarcost_b, \+thiscarcost_b_1.
+propcost_then_g :- \+propcost_then_c, propcost_then_c_1.
+0.05::propcost_then_then_1_f1.
+propcost_then_g_1 :- \+propcost_then_c, \+propcost_then_c_1.
+propcost_then_g_2 :- propcost_then_g_1, \+thiscarcost_b.
+0.02::propcost_then_then_2_f0.
+propcost_then_g_3 :- propcost_then_g_1, thiscarcost_b.
+propcost_then_b :- propcost_then_c, propcost_then_then_f0.
+propcost_then_b :- propcost_then_g, \+propcost_then_then_1_f1.
+propcost_then_b :- propcost_then_g_2, propcost_then_then_2_f0.
+propcost_then_b :- propcost_then_g_3.
+propcost_then_b_1 :- propcost_then_g, propcost_then_then_1_f1.
+propcost_then_b_1 :- propcost_then_g_2.
+propcost_then_b_1 :- propcost_then_g_3.
+propcost_c_1 :- othercarcost_b, \+othercarcost_b_1.
+propcost_g :- \+propcost_c, propcost_c_1.
+0.05::propcost_then_then_3_f1.
+0.4::propcost_then_then_4_f1.
+0.05::propcost_then_then_5_f0.
+propcost_then_b_2 :- propcost_then_c, \+propcost_then_then_3_f1.
+propcost_then_b_2 :- propcost_then_g, \+propcost_then_then_4_f1.
+propcost_then_b_2 :- propcost_then_g_2, propcost_then_then_5_f0.
+propcost_then_b_2 :- propcost_then_g_3.
+propcost_then_b_3 :- propcost_then_c, propcost_then_then_3_f1.
+propcost_then_b_3 :- propcost_then_g, propcost_then_then_4_f1.
+propcost_then_b_3 :- propcost_then_g_2.
+propcost_then_b_3 :- propcost_then_g_3.
+propcost_g_1 :- \+propcost_c, \+propcost_c_1.
+propcost_g_2 :- propcost_g_1, \+othercarcost_b.
+0.02::propcost_then_then_6_f0.
+0.2::propcost_then_then_7_f0.
+0.4::propcost_then_then_8_f0.
+propcost_then_b_4 :- propcost_then_c, propcost_then_then_6_f0.
+propcost_then_b_4 :- propcost_then_g, propcost_then_then_7_f0.
+propcost_then_b_4 :- propcost_then_g_2, propcost_then_then_8_f0.
+propcost_then_b_4 :- propcost_then_g_3.
+propcost_g_3 :- propcost_g_1, othercarcost_b.
+propcost_g_4 :- propcost_g_3, propcost_then_c.
+propcost_g_5 :- propcost_g_3, \+propcost_then_c.
+propcost_g_6 :- propcost_g_5, propcost_then_c_1.
+propcost_g_7 :- propcost_g_5, \+propcost_then_c_1.
+propcost_g_8 :- propcost_g_7, \+thiscarcost_b.
+propcost_g_9 :- propcost_g_7, thiscarcost_b.
+propcost_b :- propcost_c, propcost_then_b.
+propcost_b :- propcost_g, propcost_then_b_2.
+propcost_b :- propcost_g_2, propcost_then_b_4.
+propcost_b :- propcost_g_4.
+propcost_b :- propcost_g_6.
+propcost_b :- propcost_g_8.
+propcost_b :- propcost_g_9.
+propcost_b_1 :- propcost_c, propcost_then_b_1.
+propcost_b_1 :- propcost_g, propcost_then_b_3.
+propcost_b_1 :- propcost_g_2.
+propcost_b_1 :- propcost_g_4.
+propcost_b_1 :- propcost_g_6.
+propcost_b_1 :- propcost_g_8.
+propcost_b_1 :- propcost_g_9.
+propcost(0) :- \+propcost_b, \+propcost_b_1.
+query(propcost(0)).
+propcost(1) :- propcost_b, \+propcost_b_1.
+query(propcost(1)).
+propcost(2) :- \+propcost_b, propcost_b_1.
+query(propcost(2)).
+propcost(3) :- propcost_b, propcost_b_1.
+query(propcost(3)).

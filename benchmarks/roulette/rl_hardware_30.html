@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rl_hardware_30 · tddlog results</title>
+<meta name="description" content="rl_hardware_30, an instance of Roulette&#x27;s programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#roulette">Roulette&#x27;s programs</a></p>
+    <h1>rl_hardware_30</h1>
+    <p class="lede">The scaling programs of the Roulette paper (Moy et al., PLDI 2025) on ladders of size, and its nine Bayesian networks. Roulette runs the artifact&#x27;s programs; tddlog, Dice and Alea.jl run programs of the same models. On caesar Roulette&#x27;s time is that of its query with <code>#f</code>, which keeps the answer. 600 s a run. Made by <code>gen_roulette.py hardware 30</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th></tr></thead><tbody><tr><td class="num">0.03</td><td class="num">0.04</td><td class="num">10.7</td><td class="num">0.04</td><td class="num">0.14</td><td class="num">0.54</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Roulette (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Dice</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Alea.jl</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to Roulette as it is.</b></p>
+<p class="readers">Read by Roulette.</p>
+<dl class="cmds">
+<dt>Roulette</dt><dd><code>racket data/roulette/hardware.rkt 30</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/roulette/hardware.rkt</code><span>627 bytes, 12 lines</span><span class="sha" title="SHA-256">sha256 4ac16b2ed999ecf6d55f6953fb3486c5a4ac452e3413a208ff79a404dceb7410</span></div><p class="made">Roulette's own program of this benchmark, from its artifact (<code>data/roulette/README.md</code>): not a translation, the system's own program.</p><pre>#lang racket/base
+;; racket hardware.rkt FUEL: benchmark/scaling/hardware.rkt of the
+;; Roulette artifact under rsdd with bit width 2 and n = FUEL - 2 (`-m rsdd
+;; -p (2 n FUEL)`, the artifact&#x27;s fuel ladder), its distribution printed
+;; in full (print.rkt): res(T) for a total T, res(4) for #f (out of fuel).
+(require (submod roulette/benchmark/scaling/hardware rsdd)
+         roulette/example/private/pmf
+         &quot;print.rkt&quot;)
+(define fuel (string-&gt;number (vector-ref (current-command-line-arguments) 0)))
+(define result (main 2 (max 0 (- fuel 2)) fuel))
+(for ([(v p) (in-pmf result)])
+  (emit (format &quot;res(~a)&quot; (or v 4)) p))
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision), reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto rl_hardware_30.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program rl_hardware_30.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision rl_hardware_30.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_hardware_30.pl</code><span>22 298 bytes, 840 lines</span><span class="sha" title="SHA-256">sha256 987d0a2f1543c48c22068ab66dd5fcd0242f84b0afee7d3c6ed9b4ec8eb5bee9</span></div><p class="made">Written by <code>gen_roulette.py hardware 30</code> (bench.py gen).</p><p class="note"><a href="../files/987d0a2f1543c48c2206.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/987d0a2f1543c48c2206.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Dice; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Dice.</p>
+<dl class="cmds">
+<dt>Dice</dt><dd><code>dice rl_hardware_30.dice</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_hardware_30.dice</code><span>14 070 bytes, 426 lines</span><span class="sha" title="SHA-256">sha256 e184ce5bde1322962a7a019aa6cf89f13715fc94ca126bf2148e914b9e2782f4</span></div><p class="made">Written by <code>gen_roulette.py hardware 30 --dice</code> (bench.py gen).</p><pre>let t0 = int(2, 0) in
+let c0 = int(2, 3) in
+let on0 = true in
+let done0 = false in
+let r0 = int(2, 0) in
+let z1a = flip 0.0001 in
+let d1 = if z1a then int(2, 0) else c0 in
+let x1 = on0 &amp;&amp; d1 == int(2, 0) in
+let r1 = if x1 then t0 else r0 in
+let done1 = done0 || x1 in
+let on1 = on0 &amp;&amp; !x1 in
+let z1b = flip 0.0001 in
+let u1 = if z1b then int(2, 0) else t0 in
+let z1c = flip 0.0001 in
+let g1 = if z1c then int(2, 0) else d1 in
+let t1 = u1 + g1 in
+let z1d = flip 0.0001 in
+let f1 = if z1d then int(2, 0) else g1 in
+let c1 = f1 + int(2, 1) in
+let z2a = flip 0.0001 in
+let d2 = if z2a then int(2, 0) else c1 in
+let x2 = on1 &amp;&amp; d2 == int(2, 0) in
+let r2 = if x2 then t1 else r1 in
+let done2 = done1 || x2 in
+let on2 = on1 &amp;&amp; !x2 in
+let z2b = flip 0.0001 in
+let u2 = if z2b then int(2, 0) else t1 in
+let z2c = flip 0.0001 in
+let g2 = if z2c then int(2, 0) else d2 in
+let t2 = u2 + g2 in
+let z2d = flip 0.0001 in
+let f2 = if z2d then int(2, 0) else g2 in
+let c2 = f2 + int(2, 1) in
+let z3a = flip 0.0001 in
+let d3 = if z3a then int(2, 0) else c2 in
+let x3 = on2 &amp;&amp; d3 == int(2, 0) in
+let r3 = if x3 then t2 else r2 in
+let done3 = done2 || x3 in
+let on3 = on2 &amp;&amp; !x3 in
+let z3b = flip 0.0001 in
+let u3 = if z3b then int(2, 0) else t2 in
+let z3c = flip 0.0001 in
+let g3 = if z3c then int(2, 0) else d3 in
+let t3 = u3 + g3 in
+let z3d = flip 0.0001 in
+let f3 = if z3d then int(2, 0) else g3 in
+let c3 = f3 + int(2, 1) in
+let z4a = flip 0.0001 in
+let d4 = if z4a then int(2, 0) else c3 in
+let x4 = on3 &amp;&amp; d4 == int(2, 0) in
+let r4 = if x4 then t3 else r3 in
+let done4 = done3 || x4 in
+let on4 = on3 &amp;&amp; !x4 in
+let z4b = flip 0.0001 in
+let u4 = if z4b then int(2, 0) else t3 in
+let z4c = flip 0.0001 in
+let g4 = if z4c then int(2, 0) else d4 in
+let t4 = u4 + g4 in
+let z4d = flip 0.0001 in
+let f4 = if z4d then int(2, 0) else g4 in
+let c4 = f4 + int(2, 1) in
+let z5a = flip 0.0001 in
+let d5 = if z5a then int(2, 0) else c4 in
+let x5 = on4 &amp;&amp; d5 == int(2, 0) in
+let r5 = if x5 then t4 else r4 in
+let done5 = done4 || x5 in
+let on5 = on4 &amp;&amp; !x5 in
+let z5b = flip 0.0001 in
+let u5 = if z5b then int(2, 0) else t4 in
+let z5c = flip 0.0001 in
+let g5 = if z5c then int(2, 0) else d5 in
+let t5 = u5 + g5 in
+let z5d = flip 0.0001 in
+let f5 = if z5d then int(2, 0) else g5 in
+let c5 = f5 + int(2, 1) in
+let z6a = flip 0.0001 in
+let d6 = if z6a then int(2, 0) else c5 in
+let x6 = on5 &amp;&amp; d6 == int(2, 0) in
+let r6 = if x6 then t5 else r5 in
+let done6 = done5 || x6 in
+let on6 = on5 &amp;&amp; !x6 in
+let z6b = flip 0.0001 in
+let u6 = if z6b then int(2, 0) else t5 in
+let z6c = flip 0.0001 in
+let g6 = if z6c then int(2, 0) else d6 in
+let t6 = u6 + g6 in
+let z6d = flip 0.0001 in
+let f6 = if z6d then int(2, 0) else g6 in
+let c6 = f6 + int(2, 1) in
+let z7a = flip 0.0001 in
+let d7 = if z7a then int(2, 0) else c6 in
+let x7 = on6 &amp;&amp; d7 == int(2, 0) in
+let r7 = if x7 then t6 else r6 in
+let done7 = done6 || x7 in
+let on7 = on6 &amp;&amp; !x7 in
+let z7b = flip 0.0001 in
+let u7 = if z7b then int(2, 0) else t6 in
+let z7c = flip 0.0001 in
+let g7 = if z7c then int(2, 0) else d7 in
+let t7 = u7 + g7 in
+let z7d = flip 0.0001 in
+let f7 = if z7d then int(2, 0) else g7 in
+let c7 = f7 + int(2, 1) in
+let z8a = flip 0.0001 in
+let d8 = if z8a then int(2, 0) else c7 in
+let x8 = on7 &amp;&amp; d8 == int(2, 0) in
+let r8 = if x8 then t7 else r7 in
+let done8 = done7 || x8 in
+let on8 = on7 &amp;&amp; !x8 in
+let z8b = flip 0.0001 in
+let u8 = if z8b then int(2, 0) else t7 in
+let z8c = flip 0.0001 in
+let g8 = if z8c then int(2, 0) else d8 in
+let t8 = u8 + g8 in
+let z8d = flip 0.0001 in
+let f8 = if z8d then int(2, 0) else g8 in
+let c8 = f8 + int(2, 1) in
+let z9a = flip 0.0001 in
+let d9 = if z9a then int(2, 0) else c8 in
+let x9 = on8 &amp;&amp; d9 == int(2, 0) in
+let r9 = if x9 then t8 else r8 in
+let done9 = done8 || x9 in
+let on9 = on8 &amp;&amp; !x9 in
+let z9b = flip 0.0001 in
+let u9 = if z9b then int(2, 0) else t8 in
+let z9c = flip 0.0001 in
+let g9 = if z9c then int(2, 0) else d9 in
+let t9 = u9 + g9 in
+let z9d = flip 0.0001 in
+let f9 = if z9d then int(2, 0) else g9 in
+let c9 = f9 + int(2, 1) in
+let z10a = flip 0.0001 in
+let d10 = if z10a then int(2, 0) else c9 in
+let x10 = on9 &amp;&amp; d10 == int(2, 0) in
+let r10 = if x10 then t9 else r9 in
+let done10 = done9 || x10 in
+let on10 = on9 &amp;&amp; !x10 in
+let z10b = flip 0.0001 in
+let u10 = if z10b then int(2, 0) else t9 in
+let z10c = flip 0.0001 in
+let g10 = if z10c then int(2, 0) else d10 in
+let t10 = u10 + g10 in
+let z10d = flip 0.0001 in
+let f10 = if z10d then int(2, 0) else g10 in
+let c10 = f10 + int(2, 1) in
+let z11a = flip 0.0001 in
+let d11 = if z11a then int(2, 0) else c10 in
+let x11 = on10 &amp;&amp; d11 == int(2, 0) in
+let r11 = if x11 then t10 else r10 in
+let done11 = done10 || x11 in
+let on11 = on10 &amp;&amp; !x11 in
+let z11b = flip 0.0001 in
+let u11 = if z11b then int(2, 0) else t10 in
+let z11c = flip 0.0001 in
+let g11 = if z11c then int(2, 0) else d11 in
+let t11 = u11 + g11 in
+let z11d = flip 0.0001 in
+let f11 = if z11d then int(2, 0) else g11 in
+let c11 = f11 + int(2, 1) in
+let z12a = flip 0.0001 in
+let d12 = if z12a then int(2, 0) else c11 in
+let x12 = on11 &amp;&amp; d12 == int(2, 0) in
+let r12 = if x12 then t11 else r11 in
+let done12 = done11 || x12 in
+let on12 = on11 &amp;&amp; !x12 in
+let z12b = flip 0.0001 in
+let u12 = if z12b then int(2, 0) else t11 in
+let z12c = flip 0.0001 in
+let g12 = if z12c then int(2, 0) else d12 in
+let t12 = u12 + g12 in
+let z12d = flip 0.0001 in
+let f12 = if z12d then int(2, 0) else g12 in
+let c12 = f12 + int(2, 1) in
+let z13a = flip 0.0001 in
+let d13 = if z13a then int(2, 0) else c12 in
+let x13 = on12 &amp;&amp; d13 == int(2, 0) in
+let r13 = if x13 then t12 else r12 in
+let done13 = done12 || x13 in
+let on13 = on12 &amp;&amp; !x13 in
+let z13b = flip 0.0001 in
+let u13 = if z13b then int(2, 0) else t12 in
+let z13c = flip 0.0001 in
+let g13 = if z13c then int(2, 0) else d13 in
+let t13 = u13 + g13 in
+let z13d = flip 0.0001 in
+let f13 = if z13d then int(2, 0) else g13 in
+let c13 = f13 + int(2, 1) in
+let z14a = flip 0.0001 in
+let d14 = if z14a then int(2, 0) else c13 in
+let x14 = on13 &amp;&amp; d14 == int(2, 0) in
+let r14 = if x14 then t13 else r13 in
+let done14 = done13 || x14 in
+let on14 = on13 &amp;&amp; !x14 in
+let z14b = flip 0.0001 in
+let u14 = if z14b then int(2, 0) else t13 in
+let z14c = flip 0.0001 in
+let g14 = if z14c then int(2, 0) else d14 in
+let t14 = u14 + g14 in
+let z14d = flip 0.0001 in
+let f14 = if z14d then int(2, 0) else g14 in
+let c14 = f14 + int(2, 1) in
+let z15a = flip 0.0001 in
+let d15 = if z15a then int(2, 0) else c14 in
+let x15 = on14 &amp;&amp; d15 == int(2, 0) in
+let r15 = if x15 then t14 else r14 in
+let done15 = done14 || x15 in
+let on15 = on14 &amp;&amp; !x15 in
+let z15b = flip 0.0001 in
+let u15 = if z15b then int(2, 0) else t14 in
+let z15c = flip 0.0001 in
+let g15 = if z15c then int(2, 0) else d15 in
+let t15 = u15 + g15 in
+let z15d = flip 0.0001 in
+let f15 = if z15d then int(2, 0) else g15 in
+let c15 = f15 + int(2, 1) in
+let z16a = flip 0.0001 in
+let d16 = if z16a then int(2, 0) else c15 in
+let x16 = on15 &amp;&amp; d16 == int(2, 0) in
+let r16 = if x16 then t15 else r15 in
+let done16 = done15 || x16 in
+let on16 = on15 &amp;&amp; !x16 in
+let z16b = flip 0.0001 in
+let u16 = if z16b then int(2, 0) else t15 in
+let z16c = flip 0.0001 in
+let g16 = if z16c then int(2, 0) else d16 in
+let t16 = u16 + g16 in
+let z16d = flip 0.0001 in
+let f16 = if z16d then int(2, 0) else g16 in
+let c16 = f16 + int(2, 1) in
+let z17a = flip 0.0001 in
+let d17 = if z17a then int(2, 0) else c16 in
+let x17 = on16 &amp;&amp; d17 == int(2, 0) in
+let r17 = if x17 then t16 else r16 in
+let done17 = done16 || x17 in
+let on17 = on16 &amp;&amp; !x17 in
+let z17b = flip 0.0001 in
+let u17 = if z17b then int(2, 0) else t16 in
+let z17c = flip 0.0001 in
+let g17 = if z17c then int(2, 0) else d17 in
+let t17 = u17 + g17 in
+let z17d = flip 0.0001 in
+let f17 = if z17d then int(2, 0) else g17 in
+let c17 = f17 + int(2, 1) in
+let z18a = flip 0.0001 in
+let d18 = if z18a then int(2, 0) else c17 in
+let x18 = on17 &amp;&amp; d18 == int(2, 0) in
+let r18 = if x18 then t17 else r17 in
+let done18 = done17 || x18 in
+let on18 = on17 &amp;&amp; !x18 in
+let z18b = flip 0.0001 in
+let u18 = if z18b then int(2, 0) else t17 in
+let z18c = flip 0.0001 in
+let g18 = if z18c then int(2, 0) else d18 in
+let t18 = u18 + g18 in
+let z18d = flip 0.0001 in
+let f18 = if z18d then int(2, 0) else g18 in
+let c18 = f18 + int(2, 1) in
+let z19a = flip 0.0001 in
+let d19 = if z19a then int(2, 0) else c18 in
+let x19 = on18 &amp;&amp; d19 == int(2, 0) in
+let r19 = if x19 then t18 else r18 in
+let done19 = done18 || x19 in
+let on19 = on18 &amp;&amp; !x19 in
+let z19b = flip 0.0001 in
+let u19 = if z19b then int(2, 0) else t18 in
+let z19c = flip 0.0001 in
+let g19 = if z19c then int(2, 0) else d19 in
+let t19 = u19 + g19 in
+let z19d = flip 0.0001 in
+let f19 = if z19d then int(2, 0) else g19 in
+let c19 = f19 + int(2, 1) in
+let z20a = flip 0.0001 in
+let d20 = if z20a then int(2, 0) else c19 in
+let x20 = on19 &amp;&amp; d20 == int(2, 0) in
+let r20 = if x20 then t19 else r19 in
+let done20 = done19 || x20 in
+let on20 = on19 &amp;&amp; !x20 in
+let z20b = flip 0.0001 in
+let u20 = if z20b then int(2, 0) else t19 in
+let z20c = flip 0.0001 in
+let g20 = if z20c then int(2, 0) else d20 in
+let t20 = u20 + g20 in
+let z20d = flip 0.0001 in
+let f20 = if z20d then int(2, 0) else g20 in
+let c20 = f20 + int(2, 1) in
+let z21a = flip 0.0001 in
+let d21 = if z21a then int(2, 0) else c20 in
+let x21 = on20 &amp;&amp; d21 == int(2, 0) in
+let r21 = if x21 then t20 else r20 in
+let done21 = done20 || x21 in
+let on21 = on20 &amp;&amp; !x21 in
+let z21b = flip 0.0001 in
+let u21 = if z21b then int(2, 0) else t20 in
+let z21c = flip 0.0001 in
+let g21 = if z21c then int(2, 0) else d21 in
+let t21 = u21 + g21 in
+let z21d = flip 0.0001 in
+let f21 = if z21d then int(2, 0) else g21 in
+let c21 = f21 + int(2, 1) in
+let z22a = flip 0.0001 in
+let d22 = if z22a then int(2, 0) else c21 in
+let x22 = on21 &amp;&amp; d22 == int(2, 0) in
+let r22 = if x22 then t21 else r21 in
+let done22 = done21 || x22 in
+let on22 = on21 &amp;&amp; !x22 in
+let z22b = flip 0.0001 in
+let u22 = if z22b then int(2, 0) else t21 in
+let z22c = flip 0.0001 in
+let g22 = if z22c then int(2, 0) else d22 in
+let t22 = u22 + g22 in
+let z22d = flip 0.0001 in
+let f22 = if z22d then int(2, 0) else g22 in
+let c22 = f22 + int(2, 1) in
+let z23a = flip 0.0001 in
+let d23 = if z23a then int(2, 0) else c22 in
+let x23 = on22 &amp;&amp; d23 == int(2, 0) in
+let r23 = if x23 then t22 else r22 in
+let done23 = done22 || x23 in
+let on23 = on22 &amp;&amp; !x23 in
+let z23b = flip 0.0001 in
+let u23 = if z23b then int(2, 0) else t22 in
+let z23c = flip 0.0001 in
+let g23 = if z23c then int(2, 0) else d23 in
+let t23 = u23 + g23 in
+let z23d = flip 0.0001 in
+let f23 = if z23d then int(2, 0) else g23 in
+let c23 = f23 + int(2, 1) in
+let z24a = flip 0.0001 in
+let d24 = if z24a then int(2, 0) else c23 in
+let x24 = on23 &amp;&amp; d24 == int(2, 0) in
+let r24 = if x24 then t23 else r23 in
+let done24 = done23 || x24 in
+let on24 = on23 &amp;&amp; !x24 in
+let z24b = flip 0.0001 in
+let u24 = if z24b then int(2, 0) else t23 in
+let z24c = flip 0.0001 in
+let g24 = if z24c then int(2, 0) else d24 in
+let t24 = u24 + g24 in
+let z24d = flip 0.0001 in
+let f24 = if z24d then int(2, 0) else g24 in
+let c24 = f24 + int(2, 1) in
+let z25a = flip 0.0001 in
+let d25 = if z25a then int(2, 0) else c24 in
+let x25 = on24 &amp;&amp; d25 == int(2, 0) in
+let r25 = if x25 then t24 else r24 in
+let done25 = done24 || x25 in
+let on25 = on24 &amp;&amp; !x25 in
+let z25b = flip 0.0001 in
+let u25 = if z25b then int(2, 0) else t24 in
+let z25c = flip 0.0001 in
+let g25 = if z25c then int(2, 0) else d25 in
+let t25 = u25 + g25 in
+let z25d = flip 0.0001 in
+let f25 = if z25d then int(2, 0) else g25 in
+let c25 = f25 + int(2, 1) in
+let z26a = flip 0.0001 in
+let d26 = if z26a then int(2, 0) else c25 in
+let x26 = on25 &amp;&amp; d26 == int(2, 0) in
+let r26 = if x26 then t25 else r25 in
+let done26 = done25 || x26 in
+let on26 = on25 &amp;&amp; !x26 in
+let z26b = flip 0.0001 in
+let u26 = if z26b then int(2, 0) else t25 in
+let z26c = flip 0.0001 in
+let g26 = if z26c then int(2, 0) else d26 in
+let t26 = u26 + g26 in
+let z26d = flip 0.0001 in
+let f26 = if z26d then int(2, 0) else g26 in
+let c26 = f26 + int(2, 1) in
+let z27a = flip 0.0001 in
+let d27 = if z27a then int(2, 0) else c26 in
+let x27 = on26 &amp;&amp; d27 == int(2, 0) in
+let r27 = if x27 then t26 else r26 in
+let done27 = done26 || x27 in
+let on27 = on26 &amp;&amp; !x27 in
+let z27b = flip 0.0001 in
+let u27 = if z27b then int(2, 0) else t26 in
+let z27c = flip 0.0001 in
+let g27 = if z27c then int(2, 0) else d27 in
+let t27 = u27 + g27 in
+let z27d = flip 0.0001 in
+let f27 = if z27d then int(2, 0) else g27 in
+let c27 = f27 + int(2, 1) in
+let z28a = flip 0.0001 in
+let d28 = if z28a then int(2, 0) else c27 in
+let x28 = on27 &amp;&amp; d28 == int(2, 0) in
+let r28 = if x28 then t27 else r27 in
+let done28 = done27 || x28 in
+let on28 = on27 &amp;&amp; !x28 in
+let z28b = flip 0.0001 in
+let u28 = if z28b then int(2, 0) else t27 in
+let z28c = flip 0.0001 in
+let g28 = if z28c then int(2, 0) else d28 in
+let t28 = u28 + g28 in
+let z28d = flip 0.0001 in
+let f28 = if z28d then int(2, 0) else g28 in
+let c28 = f28 + int(2, 1) in
+let z29a = flip 0.0001 in
+let d29 = if z29a then int(2, 0) else c28 in
+let x29 = on28 &amp;&amp; d29 == int(2, 0) in
+let r29 = if x29 then t28 else r28 in
+let done29 = done28 || x29 in
+let on29 = on28 &amp;&amp; !x29 in
+let z29b = flip 0.0001 in
+let u29 = if z29b then int(2, 0) else t28 in
+let z29c = flip 0.0001 in
+let g29 = if z29c then int(2, 0) else d29 in
+let t29 = u29 + g29 in
+let z29d = flip 0.0001 in
+let f29 = if z29d then int(2, 0) else g29 in
+let c29 = f29 + int(2, 1) in
+let z30a = flip 0.0001 in
+let d30 = if z30a then int(2, 0) else c29 in
+let x30 = on29 &amp;&amp; d30 == int(2, 0) in
+let r30 = if x30 then t29 else r29 in
+let done30 = done29 || x30 in
+let on30 = on29 &amp;&amp; !x30 in
+let z30b = flip 0.0001 in
+let u30 = if z30b then int(2, 0) else t29 in
+let z30c = flip 0.0001 in
+let g30 = if z30c then int(2, 0) else d30 in
+let t30 = u30 + g30 in
+let z30d = flip 0.0001 in
+let f30 = if z30d then int(2, 0) else g30 in
+let c30 = f30 + int(2, 1) in
+if done30 then (if r30 == int(2, 0) then int(3, 0) else (if r30 == int(2, 1) then int(3, 1) else (if r30 == int(2, 2) then int(3, 2) else (if r30 == int(2, 3) then int(3, 3) else int(3, 4))))) else int(3, 4)
+</pre></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Alea.jl; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia rl_hardware_30.alea.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_hardware_30.alea.jl</code><span>32 028 bytes, 514 lines</span><span class="sha" title="SHA-256">sha256 1718eb28710dac58e0e633cf0182c3f92e3dac481ee53687d82bfe109c425d75</span></div><p class="made">Written by <code>dice2alea.py</code> from the Dice program when Alea.jl runs.</p><p class="note"><a href="../files/1718eb28710dac58e0e6.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/1718eb28710dac58e0e6.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.03</td><td>2.2e-16 at most</td><td>largest formula, pairs 28 600; final formula, pairs 233; variables 936; ground atoms 2 213; ground rules 2 320; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.03</td><td>2.2e-16 at most</td><td>largest formula, pairs 28 600; final formula, pairs 233; variables 936; ground atoms 2 213; ground rules 2 320; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.03</td><td>2.2e-16 at most</td><td>largest formula, pairs 28 600; final formula, pairs 233; variables 936; ground atoms 2 213; ground rules 2 320; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.06</td><td>4.4e-16 at most</td><td>largest formula, pairs 3 285; final formula, pairs 2 568; variables 117; ground atoms 575; ground rules 682; vtree program</td></tr><tr><td>2</td><td>answered</td><td>0.06</td><td>4.4e-16 at most</td><td>largest formula, pairs 3 285; final formula, pairs 2 568; variables 117; ground atoms 575; ground rules 682; vtree program</td></tr><tr><td>3</td><td>answered</td><td>0.06</td><td>4.4e-16 at most</td><td>largest formula, pairs 3 285; final formula, pairs 2 568; variables 117; ground atoms 575; ground rules 682; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>10.8</td><td>1.7</td><td>1.7</td><td></td><td>1.1e-16 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>10.7</td><td>1.7</td><td>1.6</td><td></td><td>1.1e-16 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>10.7</td><td>1.7</td><td>1.7</td><td></td><td>1.1e-16 at most</td><td></td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.04</td><td>1.7e-14 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.04</td><td>1.7e-14 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.04</td><td>1.7e-14 at most</td><td></td></tr></tbody></table></div>
+<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.53</td><td>0.14</td><td></td><td>1.1e-16 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.54</td><td>0.14</td><td></td><td>1.1e-16 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.55</td><td>0.14</td><td></td><td>1.1e-16 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th></tr></thead><tbody><tr><th>res(0)</th><td class="num">0.000100049957</td><td class="num">0.000100049957</td><td class="num">0.000100049957</td><td class="num">0.000100049957</td><td class="num">0.000100049957</td><td class="num">0.000100049957</td></tr><tr><th>res(1)</th><td class="num">9.99201e-05</td><td class="num">9.99201e-05</td><td class="num">9.99201e-05</td><td class="num">9.99201e-05</td><td class="num">9.99201e-05</td><td class="num">9.99201e-05</td></tr><tr><th>res(2)</th><td class="num">9.993e-05</td><td class="num">9.993e-05</td><td class="num">9.993e-05</td><td class="num">9.993e-05</td><td class="num">9.993e-05</td><td class="num">9.993e-05</td></tr><tr><th>res(3)</th><td class="num">0.9997001</td><td class="num">0.9997001</td><td class="num">0.9997001</td><td class="num">0.9997001</td><td class="num">0.9997001</td><td class="num">0.9997001</td></tr><tr><th>res(4)</th><td class="num">1.03451e-36</td><td class="num">1.03451e-36</td><td class="num">1.03451e-36</td><td class="num">1.03451e-36</td><td class="num">1.03451e-36</td><td class="num">1.03451e-36</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

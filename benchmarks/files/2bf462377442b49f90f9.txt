@@ -1,0 +1,613 @@
+# geni_router_6.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function dice_main()
+    x1_x_0_0 = flip(0.5)
+    if x1_x_0_0 !== false
+     x2_x_0_1 = flip(0.5000001)
+    end
+    if x1_x_0_0 !== true
+     x3_x_0_1 = flip(0.5000002)
+    end
+    x4_x_0_1 = x1_x_0_0 === true ? x2_x_0_1 : x1_x_0_0 === false ? x3_x_0_1 : ifelse(x1_x_0_0, x2_x_0_1, x3_x_0_1)
+    if x4_x_0_1 !== false
+     x5_x_0_2 = flip(0.5000001)
+    end
+    if x4_x_0_1 !== true
+     x6_x_0_2 = flip(0.5000002)
+    end
+    x7_x_0_2 = x4_x_0_1 === true ? x5_x_0_2 : x4_x_0_1 === false ? x6_x_0_2 : ifelse(x4_x_0_1, x5_x_0_2, x6_x_0_2)
+    if x7_x_0_2 !== false
+     x8_x_0_3 = flip(0.5000001)
+    end
+    if x7_x_0_2 !== true
+     x9_x_0_3 = flip(0.5000002)
+    end
+    x10_x_0_3 = x7_x_0_2 === true ? x8_x_0_3 : x7_x_0_2 === false ? x9_x_0_3 : ifelse(x7_x_0_2, x8_x_0_3, x9_x_0_3)
+    if x10_x_0_3 !== false
+     x11_x_0_4 = flip(0.5000001)
+    end
+    if x10_x_0_3 !== true
+     x12_x_0_4 = flip(0.5000002)
+    end
+    x13_x_0_4 = x10_x_0_3 === true ? x11_x_0_4 : x10_x_0_3 === false ? x12_x_0_4 : ifelse(x10_x_0_3, x11_x_0_4, x12_x_0_4)
+    if x13_x_0_4 !== false
+     x14_x_0_5 = flip(0.5000001)
+    end
+    if x13_x_0_4 !== true
+     x15_x_0_5 = flip(0.5000002)
+    end
+    x16_x_0_5 = x13_x_0_4 === true ? x14_x_0_5 : x13_x_0_4 === false ? x15_x_0_5 : ifelse(x13_x_0_4, x14_x_0_5, x15_x_0_5)
+    if x1_x_0_0 !== false
+     x17_x_1_0 = flip(0.5000001)
+    end
+    if x1_x_0_0 !== true
+     x18_x_1_0 = flip(0.5000002)
+    end
+    x19_x_1_0 = x1_x_0_0 === true ? x17_x_1_0 : x1_x_0_0 === false ? x18_x_1_0 : ifelse(x1_x_0_0, x17_x_1_0, x18_x_1_0)
+    if x19_x_1_0 !== false
+     if x4_x_0_1 !== false
+      x20_x_1_1 = flip(0.5000003)
+     end
+     if x4_x_0_1 !== true
+      x21_x_1_1 = flip(0.5000004)
+     end
+     x22_x_1_1 = x4_x_0_1 === true ? x20_x_1_1 : x4_x_0_1 === false ? x21_x_1_1 : ifelse(x4_x_0_1, x20_x_1_1, x21_x_1_1)
+    end
+    if x19_x_1_0 !== true
+     if x4_x_0_1 !== false
+      x23_x_1_1 = flip(0.5000005)
+     end
+     if x4_x_0_1 !== true
+      x24_x_1_1 = flip(0.5000006)
+     end
+     x25_x_1_1 = x4_x_0_1 === true ? x23_x_1_1 : x4_x_0_1 === false ? x24_x_1_1 : ifelse(x4_x_0_1, x23_x_1_1, x24_x_1_1)
+    end
+    x26_x_1_1 = x19_x_1_0 === true ? x22_x_1_1 : x19_x_1_0 === false ? x25_x_1_1 : ifelse(x19_x_1_0, x22_x_1_1, x25_x_1_1)
+    if x26_x_1_1 !== false
+     if x7_x_0_2 !== false
+      x27_x_1_2 = flip(0.5000003)
+     end
+     if x7_x_0_2 !== true
+      x28_x_1_2 = flip(0.5000004)
+     end
+     x29_x_1_2 = x7_x_0_2 === true ? x27_x_1_2 : x7_x_0_2 === false ? x28_x_1_2 : ifelse(x7_x_0_2, x27_x_1_2, x28_x_1_2)
+    end
+    if x26_x_1_1 !== true
+     if x7_x_0_2 !== false
+      x30_x_1_2 = flip(0.5000005)
+     end
+     if x7_x_0_2 !== true
+      x31_x_1_2 = flip(0.5000006)
+     end
+     x32_x_1_2 = x7_x_0_2 === true ? x30_x_1_2 : x7_x_0_2 === false ? x31_x_1_2 : ifelse(x7_x_0_2, x30_x_1_2, x31_x_1_2)
+    end
+    x33_x_1_2 = x26_x_1_1 === true ? x29_x_1_2 : x26_x_1_1 === false ? x32_x_1_2 : ifelse(x26_x_1_1, x29_x_1_2, x32_x_1_2)
+    if x33_x_1_2 !== false
+     if x10_x_0_3 !== false
+      x34_x_1_3 = flip(0.5000003)
+     end
+     if x10_x_0_3 !== true
+      x35_x_1_3 = flip(0.5000004)
+     end
+     x36_x_1_3 = x10_x_0_3 === true ? x34_x_1_3 : x10_x_0_3 === false ? x35_x_1_3 : ifelse(x10_x_0_3, x34_x_1_3, x35_x_1_3)
+    end
+    if x33_x_1_2 !== true
+     if x10_x_0_3 !== false
+      x37_x_1_3 = flip(0.5000005)
+     end
+     if x10_x_0_3 !== true
+      x38_x_1_3 = flip(0.5000006)
+     end
+     x39_x_1_3 = x10_x_0_3 === true ? x37_x_1_3 : x10_x_0_3 === false ? x38_x_1_3 : ifelse(x10_x_0_3, x37_x_1_3, x38_x_1_3)
+    end
+    x40_x_1_3 = x33_x_1_2 === true ? x36_x_1_3 : x33_x_1_2 === false ? x39_x_1_3 : ifelse(x33_x_1_2, x36_x_1_3, x39_x_1_3)
+    if x40_x_1_3 !== false
+     if x13_x_0_4 !== false
+      x41_x_1_4 = flip(0.5000003)
+     end
+     if x13_x_0_4 !== true
+      x42_x_1_4 = flip(0.5000004)
+     end
+     x43_x_1_4 = x13_x_0_4 === true ? x41_x_1_4 : x13_x_0_4 === false ? x42_x_1_4 : ifelse(x13_x_0_4, x41_x_1_4, x42_x_1_4)
+    end
+    if x40_x_1_3 !== true
+     if x13_x_0_4 !== false
+      x44_x_1_4 = flip(0.5000005)
+     end
+     if x13_x_0_4 !== true
+      x45_x_1_4 = flip(0.5000006)
+     end
+     x46_x_1_4 = x13_x_0_4 === true ? x44_x_1_4 : x13_x_0_4 === false ? x45_x_1_4 : ifelse(x13_x_0_4, x44_x_1_4, x45_x_1_4)
+    end
+    x47_x_1_4 = x40_x_1_3 === true ? x43_x_1_4 : x40_x_1_3 === false ? x46_x_1_4 : ifelse(x40_x_1_3, x43_x_1_4, x46_x_1_4)
+    if x47_x_1_4 !== false
+     if x16_x_0_5 !== false
+      x48_x_1_5 = flip(0.5000003)
+     end
+     if x16_x_0_5 !== true
+      x49_x_1_5 = flip(0.5000004)
+     end
+     x50_x_1_5 = x16_x_0_5 === true ? x48_x_1_5 : x16_x_0_5 === false ? x49_x_1_5 : ifelse(x16_x_0_5, x48_x_1_5, x49_x_1_5)
+    end
+    if x47_x_1_4 !== true
+     if x16_x_0_5 !== false
+      x51_x_1_5 = flip(0.5000005)
+     end
+     if x16_x_0_5 !== true
+      x52_x_1_5 = flip(0.5000006)
+     end
+     x53_x_1_5 = x16_x_0_5 === true ? x51_x_1_5 : x16_x_0_5 === false ? x52_x_1_5 : ifelse(x16_x_0_5, x51_x_1_5, x52_x_1_5)
+    end
+    x54_x_1_5 = x47_x_1_4 === true ? x50_x_1_5 : x47_x_1_4 === false ? x53_x_1_5 : ifelse(x47_x_1_4, x50_x_1_5, x53_x_1_5)
+    if x19_x_1_0 !== false
+     x55_x_2_0 = flip(0.5000001)
+    end
+    if x19_x_1_0 !== true
+     x56_x_2_0 = flip(0.5000002)
+    end
+    x57_x_2_0 = x19_x_1_0 === true ? x55_x_2_0 : x19_x_1_0 === false ? x56_x_2_0 : ifelse(x19_x_1_0, x55_x_2_0, x56_x_2_0)
+    if x57_x_2_0 !== false
+     if x26_x_1_1 !== false
+      x58_x_2_1 = flip(0.5000003)
+     end
+     if x26_x_1_1 !== true
+      x59_x_2_1 = flip(0.5000004)
+     end
+     x60_x_2_1 = x26_x_1_1 === true ? x58_x_2_1 : x26_x_1_1 === false ? x59_x_2_1 : ifelse(x26_x_1_1, x58_x_2_1, x59_x_2_1)
+    end
+    if x57_x_2_0 !== true
+     if x26_x_1_1 !== false
+      x61_x_2_1 = flip(0.5000005)
+     end
+     if x26_x_1_1 !== true
+      x62_x_2_1 = flip(0.5000006)
+     end
+     x63_x_2_1 = x26_x_1_1 === true ? x61_x_2_1 : x26_x_1_1 === false ? x62_x_2_1 : ifelse(x26_x_1_1, x61_x_2_1, x62_x_2_1)
+    end
+    x64_x_2_1 = x57_x_2_0 === true ? x60_x_2_1 : x57_x_2_0 === false ? x63_x_2_1 : ifelse(x57_x_2_0, x60_x_2_1, x63_x_2_1)
+    if x64_x_2_1 !== false
+     if x33_x_1_2 !== false
+      x65_x_2_2 = flip(0.5000003)
+     end
+     if x33_x_1_2 !== true
+      x66_x_2_2 = flip(0.5000004)
+     end
+     x67_x_2_2 = x33_x_1_2 === true ? x65_x_2_2 : x33_x_1_2 === false ? x66_x_2_2 : ifelse(x33_x_1_2, x65_x_2_2, x66_x_2_2)
+    end
+    if x64_x_2_1 !== true
+     if x33_x_1_2 !== false
+      x68_x_2_2 = flip(0.5000005)
+     end
+     if x33_x_1_2 !== true
+      x69_x_2_2 = flip(0.5000006)
+     end
+     x70_x_2_2 = x33_x_1_2 === true ? x68_x_2_2 : x33_x_1_2 === false ? x69_x_2_2 : ifelse(x33_x_1_2, x68_x_2_2, x69_x_2_2)
+    end
+    x71_x_2_2 = x64_x_2_1 === true ? x67_x_2_2 : x64_x_2_1 === false ? x70_x_2_2 : ifelse(x64_x_2_1, x67_x_2_2, x70_x_2_2)
+    if x71_x_2_2 !== false
+     if x40_x_1_3 !== false
+      x72_x_2_3 = flip(0.5000003)
+     end
+     if x40_x_1_3 !== true
+      x73_x_2_3 = flip(0.5000004)
+     end
+     x74_x_2_3 = x40_x_1_3 === true ? x72_x_2_3 : x40_x_1_3 === false ? x73_x_2_3 : ifelse(x40_x_1_3, x72_x_2_3, x73_x_2_3)
+    end
+    if x71_x_2_2 !== true
+     if x40_x_1_3 !== false
+      x75_x_2_3 = flip(0.5000005)
+     end
+     if x40_x_1_3 !== true
+      x76_x_2_3 = flip(0.5000006)
+     end
+     x77_x_2_3 = x40_x_1_3 === true ? x75_x_2_3 : x40_x_1_3 === false ? x76_x_2_3 : ifelse(x40_x_1_3, x75_x_2_3, x76_x_2_3)
+    end
+    x78_x_2_3 = x71_x_2_2 === true ? x74_x_2_3 : x71_x_2_2 === false ? x77_x_2_3 : ifelse(x71_x_2_2, x74_x_2_3, x77_x_2_3)
+    if x78_x_2_3 !== false
+     if x47_x_1_4 !== false
+      x79_x_2_4 = flip(0.5000003)
+     end
+     if x47_x_1_4 !== true
+      x80_x_2_4 = flip(0.5000004)
+     end
+     x81_x_2_4 = x47_x_1_4 === true ? x79_x_2_4 : x47_x_1_4 === false ? x80_x_2_4 : ifelse(x47_x_1_4, x79_x_2_4, x80_x_2_4)
+    end
+    if x78_x_2_3 !== true
+     if x47_x_1_4 !== false
+      x82_x_2_4 = flip(0.5000005)
+     end
+     if x47_x_1_4 !== true
+      x83_x_2_4 = flip(0.5000006)
+     end
+     x84_x_2_4 = x47_x_1_4 === true ? x82_x_2_4 : x47_x_1_4 === false ? x83_x_2_4 : ifelse(x47_x_1_4, x82_x_2_4, x83_x_2_4)
+    end
+    x85_x_2_4 = x78_x_2_3 === true ? x81_x_2_4 : x78_x_2_3 === false ? x84_x_2_4 : ifelse(x78_x_2_3, x81_x_2_4, x84_x_2_4)
+    if x85_x_2_4 !== false
+     if x54_x_1_5 !== false
+      x86_x_2_5 = flip(0.5000003)
+     end
+     if x54_x_1_5 !== true
+      x87_x_2_5 = flip(0.5000004)
+     end
+     x88_x_2_5 = x54_x_1_5 === true ? x86_x_2_5 : x54_x_1_5 === false ? x87_x_2_5 : ifelse(x54_x_1_5, x86_x_2_5, x87_x_2_5)
+    end
+    if x85_x_2_4 !== true
+     if x54_x_1_5 !== false
+      x89_x_2_5 = flip(0.5000005)
+     end
+     if x54_x_1_5 !== true
+      x90_x_2_5 = flip(0.5000006)
+     end
+     x91_x_2_5 = x54_x_1_5 === true ? x89_x_2_5 : x54_x_1_5 === false ? x90_x_2_5 : ifelse(x54_x_1_5, x89_x_2_5, x90_x_2_5)
+    end
+    x92_x_2_5 = x85_x_2_4 === true ? x88_x_2_5 : x85_x_2_4 === false ? x91_x_2_5 : ifelse(x85_x_2_4, x88_x_2_5, x91_x_2_5)
+    if x57_x_2_0 !== false
+     x93_x_3_0 = flip(0.5000001)
+    end
+    if x57_x_2_0 !== true
+     x94_x_3_0 = flip(0.5000002)
+    end
+    x95_x_3_0 = x57_x_2_0 === true ? x93_x_3_0 : x57_x_2_0 === false ? x94_x_3_0 : ifelse(x57_x_2_0, x93_x_3_0, x94_x_3_0)
+    if x95_x_3_0 !== false
+     if x64_x_2_1 !== false
+      x96_x_3_1 = flip(0.5000003)
+     end
+     if x64_x_2_1 !== true
+      x97_x_3_1 = flip(0.5000004)
+     end
+     x98_x_3_1 = x64_x_2_1 === true ? x96_x_3_1 : x64_x_2_1 === false ? x97_x_3_1 : ifelse(x64_x_2_1, x96_x_3_1, x97_x_3_1)
+    end
+    if x95_x_3_0 !== true
+     if x64_x_2_1 !== false
+      x99_x_3_1 = flip(0.5000005)
+     end
+     if x64_x_2_1 !== true
+      x100_x_3_1 = flip(0.5000006)
+     end
+     x101_x_3_1 = x64_x_2_1 === true ? x99_x_3_1 : x64_x_2_1 === false ? x100_x_3_1 : ifelse(x64_x_2_1, x99_x_3_1, x100_x_3_1)
+    end
+    x102_x_3_1 = x95_x_3_0 === true ? x98_x_3_1 : x95_x_3_0 === false ? x101_x_3_1 : ifelse(x95_x_3_0, x98_x_3_1, x101_x_3_1)
+    if x102_x_3_1 !== false
+     if x71_x_2_2 !== false
+      x103_x_3_2 = flip(0.5000003)
+     end
+     if x71_x_2_2 !== true
+      x104_x_3_2 = flip(0.5000004)
+     end
+     x105_x_3_2 = x71_x_2_2 === true ? x103_x_3_2 : x71_x_2_2 === false ? x104_x_3_2 : ifelse(x71_x_2_2, x103_x_3_2, x104_x_3_2)
+    end
+    if x102_x_3_1 !== true
+     if x71_x_2_2 !== false
+      x106_x_3_2 = flip(0.5000005)
+     end
+     if x71_x_2_2 !== true
+      x107_x_3_2 = flip(0.5000006)
+     end
+     x108_x_3_2 = x71_x_2_2 === true ? x106_x_3_2 : x71_x_2_2 === false ? x107_x_3_2 : ifelse(x71_x_2_2, x106_x_3_2, x107_x_3_2)
+    end
+    x109_x_3_2 = x102_x_3_1 === true ? x105_x_3_2 : x102_x_3_1 === false ? x108_x_3_2 : ifelse(x102_x_3_1, x105_x_3_2, x108_x_3_2)
+    if x109_x_3_2 !== false
+     if x78_x_2_3 !== false
+      x110_x_3_3 = flip(0.5000003)
+     end
+     if x78_x_2_3 !== true
+      x111_x_3_3 = flip(0.5000004)
+     end
+     x112_x_3_3 = x78_x_2_3 === true ? x110_x_3_3 : x78_x_2_3 === false ? x111_x_3_3 : ifelse(x78_x_2_3, x110_x_3_3, x111_x_3_3)
+    end
+    if x109_x_3_2 !== true
+     if x78_x_2_3 !== false
+      x113_x_3_3 = flip(0.5000005)
+     end
+     if x78_x_2_3 !== true
+      x114_x_3_3 = flip(0.5000006)
+     end
+     x115_x_3_3 = x78_x_2_3 === true ? x113_x_3_3 : x78_x_2_3 === false ? x114_x_3_3 : ifelse(x78_x_2_3, x113_x_3_3, x114_x_3_3)
+    end
+    x116_x_3_3 = x109_x_3_2 === true ? x112_x_3_3 : x109_x_3_2 === false ? x115_x_3_3 : ifelse(x109_x_3_2, x112_x_3_3, x115_x_3_3)
+    if x116_x_3_3 !== false
+     if x85_x_2_4 !== false
+      x117_x_3_4 = flip(0.5000003)
+     end
+     if x85_x_2_4 !== true
+      x118_x_3_4 = flip(0.5000004)
+     end
+     x119_x_3_4 = x85_x_2_4 === true ? x117_x_3_4 : x85_x_2_4 === false ? x118_x_3_4 : ifelse(x85_x_2_4, x117_x_3_4, x118_x_3_4)
+    end
+    if x116_x_3_3 !== true
+     if x85_x_2_4 !== false
+      x120_x_3_4 = flip(0.5000005)
+     end
+     if x85_x_2_4 !== true
+      x121_x_3_4 = flip(0.5000006)
+     end
+     x122_x_3_4 = x85_x_2_4 === true ? x120_x_3_4 : x85_x_2_4 === false ? x121_x_3_4 : ifelse(x85_x_2_4, x120_x_3_4, x121_x_3_4)
+    end
+    x123_x_3_4 = x116_x_3_3 === true ? x119_x_3_4 : x116_x_3_3 === false ? x122_x_3_4 : ifelse(x116_x_3_3, x119_x_3_4, x122_x_3_4)
+    if x123_x_3_4 !== false
+     if x92_x_2_5 !== false
+      x124_x_3_5 = flip(0.5000003)
+     end
+     if x92_x_2_5 !== true
+      x125_x_3_5 = flip(0.5000004)
+     end
+     x126_x_3_5 = x92_x_2_5 === true ? x124_x_3_5 : x92_x_2_5 === false ? x125_x_3_5 : ifelse(x92_x_2_5, x124_x_3_5, x125_x_3_5)
+    end
+    if x123_x_3_4 !== true
+     if x92_x_2_5 !== false
+      x127_x_3_5 = flip(0.5000005)
+     end
+     if x92_x_2_5 !== true
+      x128_x_3_5 = flip(0.5000006)
+     end
+     x129_x_3_5 = x92_x_2_5 === true ? x127_x_3_5 : x92_x_2_5 === false ? x128_x_3_5 : ifelse(x92_x_2_5, x127_x_3_5, x128_x_3_5)
+    end
+    x130_x_3_5 = x123_x_3_4 === true ? x126_x_3_5 : x123_x_3_4 === false ? x129_x_3_5 : ifelse(x123_x_3_4, x126_x_3_5, x129_x_3_5)
+    if x95_x_3_0 !== false
+     x131_x_4_0 = flip(0.5000001)
+    end
+    if x95_x_3_0 !== true
+     x132_x_4_0 = flip(0.5000002)
+    end
+    x133_x_4_0 = x95_x_3_0 === true ? x131_x_4_0 : x95_x_3_0 === false ? x132_x_4_0 : ifelse(x95_x_3_0, x131_x_4_0, x132_x_4_0)
+    if x133_x_4_0 !== false
+     if x102_x_3_1 !== false
+      x134_x_4_1 = flip(0.5000003)
+     end
+     if x102_x_3_1 !== true
+      x135_x_4_1 = flip(0.5000004)
+     end
+     x136_x_4_1 = x102_x_3_1 === true ? x134_x_4_1 : x102_x_3_1 === false ? x135_x_4_1 : ifelse(x102_x_3_1, x134_x_4_1, x135_x_4_1)
+    end
+    if x133_x_4_0 !== true
+     if x102_x_3_1 !== false
+      x137_x_4_1 = flip(0.5000005)
+     end
+     if x102_x_3_1 !== true
+      x138_x_4_1 = flip(0.5000006)
+     end
+     x139_x_4_1 = x102_x_3_1 === true ? x137_x_4_1 : x102_x_3_1 === false ? x138_x_4_1 : ifelse(x102_x_3_1, x137_x_4_1, x138_x_4_1)
+    end
+    x140_x_4_1 = x133_x_4_0 === true ? x136_x_4_1 : x133_x_4_0 === false ? x139_x_4_1 : ifelse(x133_x_4_0, x136_x_4_1, x139_x_4_1)
+    if x140_x_4_1 !== false
+     if x109_x_3_2 !== false
+      x141_x_4_2 = flip(0.5000003)
+     end
+     if x109_x_3_2 !== true
+      x142_x_4_2 = flip(0.5000004)
+     end
+     x143_x_4_2 = x109_x_3_2 === true ? x141_x_4_2 : x109_x_3_2 === false ? x142_x_4_2 : ifelse(x109_x_3_2, x141_x_4_2, x142_x_4_2)
+    end
+    if x140_x_4_1 !== true
+     if x109_x_3_2 !== false
+      x144_x_4_2 = flip(0.5000005)
+     end
+     if x109_x_3_2 !== true
+      x145_x_4_2 = flip(0.5000006)
+     end
+     x146_x_4_2 = x109_x_3_2 === true ? x144_x_4_2 : x109_x_3_2 === false ? x145_x_4_2 : ifelse(x109_x_3_2, x144_x_4_2, x145_x_4_2)
+    end
+    x147_x_4_2 = x140_x_4_1 === true ? x143_x_4_2 : x140_x_4_1 === false ? x146_x_4_2 : ifelse(x140_x_4_1, x143_x_4_2, x146_x_4_2)
+    if x147_x_4_2 !== false
+     if x116_x_3_3 !== false
+      x148_x_4_3 = flip(0.5000003)
+     end
+     if x116_x_3_3 !== true
+      x149_x_4_3 = flip(0.5000004)
+     end
+     x150_x_4_3 = x116_x_3_3 === true ? x148_x_4_3 : x116_x_3_3 === false ? x149_x_4_3 : ifelse(x116_x_3_3, x148_x_4_3, x149_x_4_3)
+    end
+    if x147_x_4_2 !== true
+     if x116_x_3_3 !== false
+      x151_x_4_3 = flip(0.5000005)
+     end
+     if x116_x_3_3 !== true
+      x152_x_4_3 = flip(0.5000006)
+     end
+     x153_x_4_3 = x116_x_3_3 === true ? x151_x_4_3 : x116_x_3_3 === false ? x152_x_4_3 : ifelse(x116_x_3_3, x151_x_4_3, x152_x_4_3)
+    end
+    x154_x_4_3 = x147_x_4_2 === true ? x150_x_4_3 : x147_x_4_2 === false ? x153_x_4_3 : ifelse(x147_x_4_2, x150_x_4_3, x153_x_4_3)
+    if x154_x_4_3 !== false
+     if x123_x_3_4 !== false
+      x155_x_4_4 = flip(0.5000003)
+     end
+     if x123_x_3_4 !== true
+      x156_x_4_4 = flip(0.5000004)
+     end
+     x157_x_4_4 = x123_x_3_4 === true ? x155_x_4_4 : x123_x_3_4 === false ? x156_x_4_4 : ifelse(x123_x_3_4, x155_x_4_4, x156_x_4_4)
+    end
+    if x154_x_4_3 !== true
+     if x123_x_3_4 !== false
+      x158_x_4_4 = flip(0.5000005)
+     end
+     if x123_x_3_4 !== true
+      x159_x_4_4 = flip(0.5000006)
+     end
+     x160_x_4_4 = x123_x_3_4 === true ? x158_x_4_4 : x123_x_3_4 === false ? x159_x_4_4 : ifelse(x123_x_3_4, x158_x_4_4, x159_x_4_4)
+    end
+    x161_x_4_4 = x154_x_4_3 === true ? x157_x_4_4 : x154_x_4_3 === false ? x160_x_4_4 : ifelse(x154_x_4_3, x157_x_4_4, x160_x_4_4)
+    if x161_x_4_4 !== false
+     if x130_x_3_5 !== false
+      x162_x_4_5 = flip(0.5000003)
+     end
+     if x130_x_3_5 !== true
+      x163_x_4_5 = flip(0.5000004)
+     end
+     x164_x_4_5 = x130_x_3_5 === true ? x162_x_4_5 : x130_x_3_5 === false ? x163_x_4_5 : ifelse(x130_x_3_5, x162_x_4_5, x163_x_4_5)
+    end
+    if x161_x_4_4 !== true
+     if x130_x_3_5 !== false
+      x165_x_4_5 = flip(0.5000005)
+     end
+     if x130_x_3_5 !== true
+      x166_x_4_5 = flip(0.5000006)
+     end
+     x167_x_4_5 = x130_x_3_5 === true ? x165_x_4_5 : x130_x_3_5 === false ? x166_x_4_5 : ifelse(x130_x_3_5, x165_x_4_5, x166_x_4_5)
+    end
+    x168_x_4_5 = x161_x_4_4 === true ? x164_x_4_5 : x161_x_4_4 === false ? x167_x_4_5 : ifelse(x161_x_4_4, x164_x_4_5, x167_x_4_5)
+    if x133_x_4_0 !== false
+     x169_x_5_0 = flip(0.5000001)
+    end
+    if x133_x_4_0 !== true
+     x170_x_5_0 = flip(0.5000002)
+    end
+    x171_x_5_0 = x133_x_4_0 === true ? x169_x_5_0 : x133_x_4_0 === false ? x170_x_5_0 : ifelse(x133_x_4_0, x169_x_5_0, x170_x_5_0)
+    if x171_x_5_0 !== false
+     if x140_x_4_1 !== false
+      x172_x_5_1 = flip(0.5000003)
+     end
+     if x140_x_4_1 !== true
+      x173_x_5_1 = flip(0.5000004)
+     end
+     x174_x_5_1 = x140_x_4_1 === true ? x172_x_5_1 : x140_x_4_1 === false ? x173_x_5_1 : ifelse(x140_x_4_1, x172_x_5_1, x173_x_5_1)
+    end
+    if x171_x_5_0 !== true
+     if x140_x_4_1 !== false
+      x175_x_5_1 = flip(0.5000005)
+     end
+     if x140_x_4_1 !== true
+      x176_x_5_1 = flip(0.5000006)
+     end
+     x177_x_5_1 = x140_x_4_1 === true ? x175_x_5_1 : x140_x_4_1 === false ? x176_x_5_1 : ifelse(x140_x_4_1, x175_x_5_1, x176_x_5_1)
+    end
+    x178_x_5_1 = x171_x_5_0 === true ? x174_x_5_1 : x171_x_5_0 === false ? x177_x_5_1 : ifelse(x171_x_5_0, x174_x_5_1, x177_x_5_1)
+    if x178_x_5_1 !== false
+     if x147_x_4_2 !== false
+      x179_x_5_2 = flip(0.5000003)
+     end
+     if x147_x_4_2 !== true
+      x180_x_5_2 = flip(0.5000004)
+     end
+     x181_x_5_2 = x147_x_4_2 === true ? x179_x_5_2 : x147_x_4_2 === false ? x180_x_5_2 : ifelse(x147_x_4_2, x179_x_5_2, x180_x_5_2)
+    end
+    if x178_x_5_1 !== true
+     if x147_x_4_2 !== false
+      x182_x_5_2 = flip(0.5000005)
+     end
+     if x147_x_4_2 !== true
+      x183_x_5_2 = flip(0.5000006)
+     end
+     x184_x_5_2 = x147_x_4_2 === true ? x182_x_5_2 : x147_x_4_2 === false ? x183_x_5_2 : ifelse(x147_x_4_2, x182_x_5_2, x183_x_5_2)
+    end
+    x185_x_5_2 = x178_x_5_1 === true ? x181_x_5_2 : x178_x_5_1 === false ? x184_x_5_2 : ifelse(x178_x_5_1, x181_x_5_2, x184_x_5_2)
+    if x185_x_5_2 !== false
+     if x154_x_4_3 !== false
+      x186_x_5_3 = flip(0.5000003)
+     end
+     if x154_x_4_3 !== true
+      x187_x_5_3 = flip(0.5000004)
+     end
+     x188_x_5_3 = x154_x_4_3 === true ? x186_x_5_3 : x154_x_4_3 === false ? x187_x_5_3 : ifelse(x154_x_4_3, x186_x_5_3, x187_x_5_3)
+    end
+    if x185_x_5_2 !== true
+     if x154_x_4_3 !== false
+      x189_x_5_3 = flip(0.5000005)
+     end
+     if x154_x_4_3 !== true
+      x190_x_5_3 = flip(0.5000006)
+     end
+     x191_x_5_3 = x154_x_4_3 === true ? x189_x_5_3 : x154_x_4_3 === false ? x190_x_5_3 : ifelse(x154_x_4_3, x189_x_5_3, x190_x_5_3)
+    end
+    x192_x_5_3 = x185_x_5_2 === true ? x188_x_5_3 : x185_x_5_2 === false ? x191_x_5_3 : ifelse(x185_x_5_2, x188_x_5_3, x191_x_5_3)
+    if x192_x_5_3 !== false
+     if x161_x_4_4 !== false
+      x193_x_5_4 = flip(0.5000003)
+     end
+     if x161_x_4_4 !== true
+      x194_x_5_4 = flip(0.5000004)
+     end
+     x195_x_5_4 = x161_x_4_4 === true ? x193_x_5_4 : x161_x_4_4 === false ? x194_x_5_4 : ifelse(x161_x_4_4, x193_x_5_4, x194_x_5_4)
+    end
+    if x192_x_5_3 !== true
+     if x161_x_4_4 !== false
+      x196_x_5_4 = flip(0.5000005)
+     end
+     if x161_x_4_4 !== true
+      x197_x_5_4 = flip(0.5000006)
+     end
+     x198_x_5_4 = x161_x_4_4 === true ? x196_x_5_4 : x161_x_4_4 === false ? x197_x_5_4 : ifelse(x161_x_4_4, x196_x_5_4, x197_x_5_4)
+    end
+    x199_x_5_4 = x192_x_5_3 === true ? x195_x_5_4 : x192_x_5_3 === false ? x198_x_5_4 : ifelse(x192_x_5_3, x195_x_5_4, x198_x_5_4)
+    if x199_x_5_4 !== false
+     if x168_x_4_5 !== false
+      x200_x_5_5 = flip(0.5000003)
+     end
+     if x168_x_4_5 !== true
+      x201_x_5_5 = flip(0.5000004)
+     end
+     x202_x_5_5 = x168_x_4_5 === true ? x200_x_5_5 : x168_x_4_5 === false ? x201_x_5_5 : ifelse(x168_x_4_5, x200_x_5_5, x201_x_5_5)
+    end
+    if x199_x_5_4 !== true
+     if x168_x_4_5 !== false
+      x203_x_5_5 = flip(0.5000005)
+     end
+     if x168_x_4_5 !== true
+      x204_x_5_5 = flip(0.5000006)
+     end
+     x205_x_5_5 = x168_x_4_5 === true ? x203_x_5_5 : x168_x_4_5 === false ? x204_x_5_5 : ifelse(x168_x_4_5, x203_x_5_5, x204_x_5_5)
+    end
+    x206_x_5_5 = x199_x_5_4 === true ? x202_x_5_5 : x199_x_5_4 === false ? x205_x_5_5 : ifelse(x199_x_5_4, x202_x_5_5, x205_x_5_5)
+    return x206_x_5_5
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println("alea ", k, " true ", d[true])
+        println("alea ", k, " false ", d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println("alea ", k, " ", v, " ", d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println("alea_seconds ", stats.time)
+    println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 << 30)
+schedule(task)
+wait(task)
+end

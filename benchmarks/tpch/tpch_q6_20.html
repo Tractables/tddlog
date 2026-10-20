@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tpch_q6_20 · tddlog results</title>
+<meta name="description" content="tpch_q6_20, an instance of TPC-H: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#tpch">TPC-H</a></p>
+    <h1>tpch_q6_20</h1>
+    <p class="lede">The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Made by <code>gen_tpch.py 0.02 --queries q6 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><td class="num">0.98</td><td class="num">121</td><td class="num">190</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">0.34</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">SQL</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto tpch_q6_20.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf tpch_q6_20.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd tpch_q6_20.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd tpch_q6_20.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result tpch_q6_20.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">tpch_q6_20.pl</code><span>11 252 983 bytes, 119 821 lines</span><span class="sha" title="SHA-256">sha256 43f26d88f8bdd14aa4e73a3b6100b40cf9390f2db14a1d31eacbc8306930876e</span></div><p class="made">Written by <code>gen_tpch.py 0.02 --queries q6 --seed 1</code> (bench.py gen).</p><p class="note"><a href="../files/43f26d88f8bdd14aa4e7.txt">the first 65 515 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/43f26d88f8bdd14aa4e7.txt"></pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;tpch_q6_20.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">tpch_q6_20.lpad.pl</code><span>11 133 238 bytes, 119 825 lines</span><span class="sha" title="SHA-256">sha256 0f31345ded65151928ab29f7e5825994f28de63d37c9e13f78fd163614789b7e</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>tpch_q6_20.pl</code> when PITA runs.</p><p class="note"><a href="../files/0f31345ded65151928ab.txt">the first 65 521 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/0f31345ded65151928ab.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>Not a translation: this system&#x27;s own program of the benchmark, as its artifact has it.</b></p>
+<p class="readers">Read by ProvSQL.</p>
+<dl class="cmds">
+<dt>ProvSQL</dt><dd><code>psql -h SOCKET -d postgres -X -q -v ON_ERROR_STOP=1 -f provsql-tpch_q6_20/load.sql</code></dd>
+<dt>ProvSQL</dt><dd><code>psql -h SOCKET -d postgres -X -At -c &#x27;SELECT probability_evaluate(provenance()) FROM q6&#x27;</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">provsql-tpch_q6_20/load.sql</code><span>9 815 423 bytes, 119 824 lines</span><span class="sha" title="SHA-256">sha256 a7fca58e8f366a7daeecae146d1fda53916d3e355f23503fed4a6b511d0a0a47</span></div><p class="made">Written by <code>tpch2provsql.py</code> from the ProbLog program when ProvSQL runs: a table per fact predicate, its data, and a view per rule predicate. It is loaded before the clock, as a database holds its data; each query is a command below.</p><p class="note"><a href="../files/a7fca58e8f366a7daeec.txt">the first 65 518 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/a7fca58e8f366a7daeec.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.98</td><td>1.4e-15 at most</td><td>largest formula, pairs 2 299; final formula, pairs 0; variables 2 300; ground atoms 2 301; ground rules 2 300; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>221</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;probability.py&quot;, line 143, in execute
+    result = formula.evaluate(semiring=semiring, **kwdargs)
+  File &quot;evaluator.py&quot;, line 440, in evaluate
+    evaluator = self.get_evaluator(semiring, evidence, weights, **kwargs)
+  File &quot;evaluator.py&quot;, line 425, in get_evaluator
+    evaluator.propagate()
+  File &quot;ddnnf_formula.py&quot;, line 112, in propagate
+    self._initialize()
+  File &quot;ddnnf_formula.py&quot;, line 108, in _initialize
+    if self.semiring.is_zero(self._get_z()):
+  File &quot;ddnnf_formula.py&quot;, line 115, in _get_z
+    result = self.get_root_weight()
+  File &quot;ddnnf_formula.py&quot;, line 173, in get_root_weight
+    result = self._get_weight(len(self.formula))
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 241, in &lt;listcomp&gt;
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 241, in &lt;listcomp&gt;
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 241, in &lt;listcomp&gt;
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 241, in &lt;listcomp&gt;
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 241, in &lt;listcomp&gt;
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;s
+... output truncated ...
+children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 241, in &lt;listcomp&gt;
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.py&quot;, line 191, in _get_weight
+    w = self._calculate_weight(index)
+  File &quot;ddnnf_formula.py&quot;, line 241, in _calculate_weight
+    childprobs = [self._get_weight(c) for c in node.children]
+  File &quot;ddnnf_formula.p</pre></details></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>121</td><td>1.6e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>190</td><td>1.6e-15 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProvSQL</h3><p class="note">The data is loaded before the clock, as a database holds its data; the time is the queries&#x27;.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.34</td><td>1.0e-15 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is tpch_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><th>q6</th><td class="num">0.6104994916</td><td class="num">0.6104994916</td><td class="num">0.61049949</td><td class="num">0.6104994916</td><td class="num">0.6104994916</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

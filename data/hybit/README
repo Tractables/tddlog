@@ -1,0 +1,22 @@
+The Stan, WebPPL and Psi programs of the bit-blasting paper's artifact
+(Garg, Holtzen, Van den Broeck and Millstein, "Bit Blasting Probabilistic
+Programs", PLDI 2024), which scripts/samplers/samplers.py runs.
+
+Source: https://github.com/Tractables/Alea.jl, branch hybit, commit
+96b69a58 ("simple examples added"), Apache License 2.0.
+
+  baselines/stan, baselines/webppl   hybrid/baselines/{stan,webppl}: only the
+                                     .stan, .data.R and .wppl files (the
+                                     artifact's compiled models are left out)
+  benchmarks/                        hybrid/benchmarks/{or,multimodal,
+                                     conjugate_gaussians}: the same files
+  psi/                               hybrid/baselines/psi: the .psi programs,
+                                     data/ and or/
+  psi/cobs/                          ours: altermu2, conjugate_gaussians and
+                                     normal_mixture with each
+                                     `observe(gauss(m, s) == y)` written as
+                                     `cobserve(gauss(m, s), y)`. Psi treats
+                                     the first as an observation of an event
+                                     of probability zero (it prints a
+                                     posterior density 0 and Pr[error] = 1);
+                                     the second conditions on the density.

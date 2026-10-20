@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>geni_weather_h6 · tddlog results</title>
+<meta name="description" content="geni_weather_h6, an instance of Geni&#x27;s programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#geni">Geni&#x27;s programs</a></p>
+    <h1>geni_weather_h6</h1>
+    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. Six more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 10 6</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.16</td><td class="num">14.3</td><td class="num">29.1</td><td class="num">0.30</td><td class="num">27.8</td><td class="num">28.8</td><td class="num fail" title="out of memory">memory</td><td class="num">0.75</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">2.1</td><td class="num">11.4</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Geni (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Dice</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Alea.jl</label>
+<input type="radio" name="ptab" id="t4"><label for="t4">Roulette</label>
+<input type="radio" name="ptab" id="t5"><label for="t5">Psi</label>
+<input type="radio" name="ptab" id="t6"><label for="t6">PRISM</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to Geni as it is.</b></p>
+<p class="readers">Read by Geni.</p>
+<dl class="cmds">
+<dt>Geni</dt><dd><code>gennifer -l -i geni_weather_h6.geni</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">geni_weather_h6.geni</code><span>13 564 bytes, 84 lines</span><span class="sha" title="SHA-256">sha256 02d48548bda367fe72f9962ef2c7014782048bfe0261cd9bfd7a05d1fd94c28f</span></div><p class="made">Written by <code>gen_geni.py weather 10 6 --gir</code> when Geni runs: the program in Geni's own language (the weather factory's equal the artifact's <code>bench/ICFP</code> files byte for byte).</p><pre>let sun_0 = false in
+let state_1_0 = true in
+let state_2_0 = true in
+let state_3_0 = true in
+let state_4_0 = true in
+let state_5_0 = true in
+let state_6_0 = true in
+let state_7_0 = true in
+let state_8_0 = true in
+let state_9_0 = true in
+let state_10_0 = true in
+if !(state_1_0 + state_2_0 + state_3_0 + state_4_0 + state_5_0 + state_6_0 + state_7_0 + state_8_0 + state_9_0 + state_10_0) then 0 else
+let sun_1 = if sun_0 then sample(Bernoulli(0.4)) else sample(Bernoulli(0.30000000000000004)) in
+let state_1_1 = if sun_0 then if state_1_0 then sample(Bernoulli(0.9199999999999999)) else sample(Bernoulli(0.94)) else if state_1_0 then sample(Bernoulli(0.86)) else sample(Bernoulli(0.97)) in
+let state_2_1 = if sun_0 then if state_2_0 then sample(Bernoulli(0.88)) else sample(Bernoulli(0.88)) else if state_2_0 then sample(Bernoulli(0.79)) else sample(Bernoulli(0.94)) in
+let state_3_1 = if sun_0 then if state_3_0 then sample(Bernoulli(0.82)) else sample(Bernoulli(0.754)) else if state_3_0 then sample(Bernoulli(0.685)) else sample(Bernoulli(0.877)) in
+let state_4_1 = if sun_0 then if state_4_0 then sample(Bernoulli(0.9028)) else sample(Bernoulli(0.43600000000000005)) else if state_4_0 then sample(Bernoulli(0.8299000000000001)) else sample(Bernoulli(0.718)) in
+let state_5_1 = if sun_0 then if state_5_0 then sample(Bernoulli(0.8828)) else sample(Bernoulli(0.7396)) else if state_5_0 then sample(Bernoulli(0.7949)) else sample(Bernoulli(0.8698)) in
+let state_6_1 = if sun_0 then if state_6_0 then sample(Bernoulli(0.88264)) else sample(Bernoulli(0.7395400000000001)) else if state_6_0 then sample(Bernoulli(0.79462)) else sample(Bernoulli(0.86977)) in
+let state_7_1 = if sun_0 then if state_7_0 then sample(Bernoulli(0.88244)) else sample(Bernoulli(0.7393000000000001)) else if state_7_0 then sample(Bernoulli(0.79427)) else sample(Bernoulli(0.86965)) in
+let state_8_1 = if sun_0 then if state_8_0 then sample(Bernoulli(0.88304)) else sample(Bernoulli(0.73936)) else if state_8_0 then sample(Bernoulli(0.79532)) else sample(Bernoulli(0.86968)) in
+let state_9_1 = if sun_0 then if state_9_0 then sample(Bernoulli(0.88268)) else sample(Bernoulli(0.7300599999999999)) else if state_9_0 then sample(Bernoulli(0.79469)) else sample(Bernoulli(0.86503)) in
+let state_10_1 = if sun_0 then if state_10_0 then sample(Bernoulli(0.9068)) else sample(Bernoulli(0.7372000000000001)) else if state_10_0 then sample(Bernoulli(0.8369)) else sample(Bernoulli(0.8686)) in
+if !(state_1_1 + state_2_1 + state_3_1 + state_4_1 + state_5_1 + state_6_1 + state_7_1 + state_8_1 + state_9_1 + state_10_1) then 0 else
+let sun_2 = if sun_1 then sample(Bernoulli(0.4)) else sample(Bernoulli(0.30000000000000004)) in
+let state_1_2 = if sun_1 then if state_1_1 then sample(Bernoulli(0.9199999999999999)) else sample(Bernoulli(0.94)) else if state_1_1 then sample(Bernoulli(0.86)) else sample(Bernoulli(0.97)) in
+let state_2_2 = if sun_1 then if state_2_1 then sample(Bernoulli(0.88)) else sample(Bernoulli(0.88)) else if state_2_1 then sample(Bernoulli(0.79)) else sample(Bernoulli(0.94)) in
+let state_3_2 = if sun_1 then if state_3_1 then sample(Bernoulli(0.82)) else sample(Bernoulli(0.754)) else if state_3_1 then sample(Bernoulli(0.685)) else sample(Bernoulli(0.877)) in
+let state_4_2 = if sun_1 then if state_4_1 then sample(Bernoulli(0.9028)) else sample(Bernoulli(0.43600000000000005)) else if state_4_1 then sample(Bernoulli(0.8299000000000001)) else sample(Bernoulli(0.718)) in
+let state_5_2 = if sun_1 then if state_5_1 then sample(Bernoulli(0.8828)) else sample(Bernoulli(0.7396)) else if state_5_1 then sample(Bernoulli(0.7949)) else sample(Bernoulli(0.8698)) in
+let state_6_2 = if sun_1 then if state_6_1 then sample(Bernoulli(0.88264)) else sample(Bernoulli(0.7395400000000001)) else if state_6_1 then sample(Bernoulli(0.79462)) else sample(Bernoulli(0.86977)) in
+let state_7_2 = if sun_1 then if state_7_1 then sample(Bernoulli(0.88244)) else sample(Bernoulli(0.7393000000000001)) else if state_7_1 then sample(Bernoulli(0.79427)) else sample(Bernoulli(0.86965)) in
+let state_8_2 = if sun_1 then if state_8_1 then sample(Bernoulli(0.88304)) else sample(Bernoulli(0.73936)) else if state_8_1 then sample(Bernoulli(0.79532)) else sample(Bernoulli(0.86968)) in
+let state_9_2 = if sun_1 then if state_9_1 then sample(Bernoulli(0.88268)) else sample(Bernoulli(0.7300599999999999)) else if state_9_1 then sample(Bernoulli(0.79469)) else sample(Bernoulli(0.86503)) in
+let state_10_2 = if sun_1 then if state_10_1 then sample(Bernoulli(0.9068)) else sample(Bernoulli(0.7372000000000001)) else if state_10_1 then sample(Bernoulli(0.8369)) else sample(Bernoulli(0.8686)) in
+if !(state_1_2 + state_2_2 + state_3_2 + state_4_2 + state_5_2 + state_6_2 + state_7_2 + state_8_2 + state_9_2 + state_10_2) then 0 else
+let sun_3 = if sun_2 then sample(Bernoulli(0.4)) else sample(Bernoulli(0.30000000000000004)) in
+let state_1_3 = if sun_2 then if state_1_2 then sample(Bernoulli(0.9199999999999999)) else sample(Bernoulli(0.94)) else if state_1_2 then sample(Bernoulli(0.86)) else sample(Bernoulli(0.97)) in
+let state_2_3 = if sun_2 then if state_2_2 then sample(Bernoulli(0.88)) else sample(Bernoulli(0.88)) else if state_2_2 then sample(Bernoulli(0.79)) else sample(Bernoulli(0.94)) in
+let state_3_3 = if sun_2 then if state_3_2 then sample(Bernoulli(0.82)) else sample(Bernoulli(0.754)) else if state_3_2 then sample(Bernoulli(0.685)) else sample(Bernoulli(0.877)) in
+let state_4_3 = if sun_2 then if state_4_2 then sample(Bernoulli(0.9028)) else sample(Bernoulli(0.43600000000000005)) else if state_4_2 then sample(Bernoulli(0.8299000000000001)) else sample(Bernoulli(0.718)) in
+let state_5_3 = if sun_2 then if state_5_2 then sample(Bernoulli(0.8828)) else sample(Bernoulli(0.7396)) else if state_5_2 then sample(Bernoulli(0.7949)) else sample(Bernoulli(0.8698)) in
+let state_6_3 = if sun_2 then if state_6_2 then sample(Bernoulli(0.88264)) else sample(Bernoulli(0.7395400000000001)) else if state_6_2 then sample(Bernoulli(0.79462)) else sample(Bernoulli(0.86977)) in
+let state_7_3 = if sun_2 then if state_7_2 then sample(Bernoulli(0.88244)) else sample(Bernoulli(0.7393000000000001)) else if state_7_2 then sample(Bernoulli(0.79427)) else sample(Bernoulli(0.86965)) in
+let state_8_3 = if sun_2 then if state_8_2 then sample(Bernoulli(0.88304)) else sample(Bernoulli(0.73936)) else if state_8_2 then sample(Bernoulli(0.79532)) else sample(Bernoulli(0.86968)) in
+let state_9_3 = if sun_2 then if state_9_2 then sample(Bernoulli(0.88268)) else sample(Bernoulli(0.7300599999999999)) else if state_9_2 then sample(Bernoulli(0.79469)) else sample(Bernoulli(0.86503)) in
+let state_10_3 = if sun_2 then if state_10_2 then sample(Bernoulli(0.9068)) else sample(Bernoulli(0.7372000000000001)) else if state_10_2 then sample(Bernoulli(0.8369)) else sample(Bernoulli(0.8686)) in
+if !(state_1_3 + state_2_3 + state_3_3 + state_4_3 + state_5_3 + state_6_3 + state_7_3 + state_8_3 + state_9_3 + state_10_3) then 0 else
+let sun_4 = if sun_3 then sample(Bernoulli(0.4)) else sample(Bernoulli(0.30000000000000004)) in
+let state_1_4 = if sun_3 then if state_1_3 then sample(Bernoulli(0.9199999999999999)) else sample(Bernoulli(0.94)) else if state_1_3 then sample(Bernoulli(0.86)) else sample(Bernoulli(0.97)) in
+let state_2_4 = if sun_3 then if state_2_3 then sample(Bernoulli(0.88)) else sample(Bernoulli(0.88)) else if state_2_3 then sample(Bernoulli(0.79)) else sample(Bernoulli(0.94)) in
+let state_3_4 = if sun_3 then if state_3_3 then sample(Bernoulli(0.82)) else sample(Bernoulli(0.754)) else if state_3_3 then sample(Bernoulli(0.685)) else sample(Bernoulli(0.877)) in
+let state_4_4 = if sun_3 then if state_4_3 then sample(Bernoulli(0.9028)) else sample(Bernoulli(0.43600000000000005)) else if state_4_3 then sample(Bernoulli(0.8299000000000001)) else sample(Bernoulli(0.718)) in
+let state_5_4 = if sun_3 then if state_5_3 then sample(Bernoulli(0.8828)) else sample(Bernoulli(0.7396)) else if state_5_3 then sample(Bernoulli(0.7949)) else sample(Bernoulli(0.8698)) in
+let state_6_4 = if sun_3 then if state_6_3 then sample(Bernoulli(0.88264)) else sample(Bernoulli(0.7395400000000001)) else if state_6_3 then sample(Bernoulli(0.79462)) else sample(Bernoulli(0.86977)) in
+let state_7_4 = if sun_3 then if state_7_3 then sample(Bernoulli(0.88244)) else sample(Bernoulli(0.7393000000000001)) else if state_7_3 then sample(Bernoulli(0.79427)) else sample(Bernoulli(0.86965)) in
+let state_8_4 = if sun_3 then if state_8_3 then sample(Bernoulli(0.88304)) else sample(Bernoulli(0.73936)) else if state_8_3 then sample(Bernoulli(0.79532)) else sample(Bernoulli(0.86968)) in
+let state_9_4 = if sun_3 then if state_9_3 then sample(Bernoulli(0.88268)) else sample(Bernoulli(0.7300599999999999)) else if state_9_3 then sample(Bernoulli(0.79469)) else sample(Bernoulli(0.86503)) in
+let state_10_4 = if sun_3 then if state_10_3 then sample(Bernoulli(0.9068)) else sample(Bernoulli(0.7372000000000001)) else if state_10_3 then sample(Bernoulli(0.8369)) else sample(Bernoulli(0.8686)) in
+if !(state_1_4 + state_2_4 + state_3_4 + state_4_4 + state_5_4 + state_6_4 + state_7_4 + state_8_4 + state_9_4 + state_10_4) then 0 else
+let sun_5 = if sun_4 then sample(Bernoulli(0.4)) else sample(Bernoulli(0.30000000000000004)) in
+let state_1_5 = if sun_4 then if state_1_4 then sample(Bernoulli(0.9199999999999999)) else sample(Bernoulli(0.94)) else if state_1_4 then sample(Bernoulli(0.86)) else sample(Bernoulli(0.97)) in
+let state_2_5 = if sun_4 then if state_2_4 then sample(Bernoulli(0.88)) else sample(Bernoulli(0.88)) else if state_2_4 then sample(Bernoulli(0.79)) else sample(Bernoulli(0.94)) in
+let state_3_5 = if sun_4 then if state_3_4 then sample(Bernoulli(0.82)) else sample(Bernoulli(0.754)) else if state_3_4 then sample(Bernoulli(0.685)) else sample(Bernoulli(0.877)) in
+let state_4_5 = if sun_4 then if state_4_4 then sample(Bernoulli(0.9028)) else sample(Bernoulli(0.43600000000000005)) else if state_4_4 then sample(Bernoulli(0.8299000000000001)) else sample(Bernoulli(0.718)) in
+let state_5_5 = if sun_4 then if state_5_4 then sample(Bernoulli(0.8828)) else sample(Bernoulli(0.7396)) else if state_5_4 then sample(Bernoulli(0.7949)) else sample(Bernoulli(0.8698)) in
+let state_6_5 = if sun_4 then if state_6_4 then sample(Bernoulli(0.88264)) else sample(Bernoulli(0.7395400000000001)) else if state_6_4 then sample(Bernoulli(0.79462)) else sample(Bernoulli(0.86977)) in
+let state_7_5 = if sun_4 then if state_7_4 then sample(Bernoulli(0.88244)) else sample(Bernoulli(0.7393000000000001)) else if state_7_4 then sample(Bernoulli(0.79427)) else sample(Bernoulli(0.86965)) in
+let state_8_5 = if sun_4 then if state_8_4 then sample(Bernoulli(0.88304)) else sample(Bernoulli(0.73936)) else if state_8_4 then sample(Bernoulli(0.79532)) else sample(Bernoulli(0.86968)) in
+let state_9_5 = if sun_4 then if state_9_4 then sample(Bernoulli(0.88268)) else sample(Bernoulli(0.7300599999999999)) else if state_9_4 then sample(Bernoulli(0.79469)) else sample(Bernoulli(0.86503)) in
+let state_10_5 = if sun_4 then if state_10_4 then sample(Bernoulli(0.9068)) else sample(Bernoulli(0.7372000000000001)) else if state_10_4 then sample(Bernoulli(0.8369)) else sample(Bernoulli(0.8686)) in
+if !(state_1_5 + state_2_5 + state_3_5 + state_4_5 + state_5_5 + state_6_5 + state_7_5 + state_8_5 + state_9_5 + state_10_5) then 0 else
+let sun_6 = if sun_5 then sample(Bernoulli(0.4)) else sample(Bernoulli(0.30000000000000004)) in
+let state_1_6 = if sun_5 then if state_1_5 then sample(Bernoulli(0.9199999999999999)) else sample(Bernoulli(0.94)) else if state_1_5 then sample(Bernoulli(0.86)) else sample(Bernoulli(0.97)) in
+let state_2_6 = if sun_5 then if state_2_5 then sample(Bernoulli(0.88)) else sample(Bernoulli(0.88)) else if state_2_5 then sample(Bernoulli(0.79)) else sample(Bernoulli(0.94)) in
+let state_3_6 = if sun_5 then if state_3_5 then sample(Bernoulli(0.82)) else sample(Bernoulli(0.754)) else if state_3_5 then sample(Bernoulli(0.685)) else sample(Bernoulli(0.877)) in
+let state_4_6 = if sun_5 then if state_4_5 then sample(Bernoulli(0.9028)) else sample(Bernoulli(0.43600000000000005)) else if state_4_5 then sample(Bernoulli(0.8299000000000001)) else sample(Bernoulli(0.718)) in
+let state_5_6 = if sun_5 then if state_5_5 then sample(Bernoulli(0.8828)) else sample(Bernoulli(0.7396)) else if state_5_5 then sample(Bernoulli(0.7949)) else sample(Bernoulli(0.8698)) in
+let state_6_6 = if sun_5 then if state_6_5 then sample(Bernoulli(0.88264)) else sample(Bernoulli(0.7395400000000001)) else if state_6_5 then sample(Bernoulli(0.79462)) else sample(Bernoulli(0.86977)) in
+let state_7_6 = if sun_5 then if state_7_5 then sample(Bernoulli(0.88244)) else sample(Bernoulli(0.7393000000000001)) else if state_7_5 then sample(Bernoulli(0.79427)) else sample(Bernoulli(0.86965)) in
+let state_8_6 = if sun_5 then if state_8_5 then sample(Bernoulli(0.88304)) else sample(Bernoulli(0.73936)) else if state_8_5 then sample(Bernoulli(0.79532)) else sample(Bernoulli(0.86968)) in
+let state_9_6 = if sun_5 then if state_9_5 then sample(Bernoulli(0.88268)) else sample(Bernoulli(0.7300599999999999)) else if state_9_5 then sample(Bernoulli(0.79469)) else sample(Bernoulli(0.86503)) in
+let state_10_6 = if sun_5 then if state_10_5 then sample(Bernoulli(0.9068)) else sample(Bernoulli(0.7372000000000001)) else if state_10_5 then sample(Bernoulli(0.8369)) else sample(Bernoulli(0.8686)) in
+if (state_1_6 + state_2_6 + state_3_6 + state_4_6 + state_5_6 + state_6_6 + state_7_6 + state_8_6 + state_9_6 + state_10_6) then 1 else 0
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto geni_weather_h6.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf geni_weather_h6.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">geni_weather_h6.pl</code><span>87 136 bytes, 1 737 lines</span><span class="sha" title="SHA-256">sha256 d489f434cc4e51266879d8d82116888632fe550ef36e083467579f7873737dce</span></div><p class="made">Written by <code>gen_geni.py weather 10 6</code> (bench.py gen).</p><p class="note"><a href="../files/d489f434cc4e51266879.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/d489f434cc4e51266879.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Dice; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Dice, noDice.</p>
+<p class="readers">noDice reads Dice&#x27;s programs as they are; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>Dice</dt><dd><code>dice geni_weather_h6.dice</code></dd>
+<dt>noDice</dt><dd><code>nDice.exe geni_weather_h6.dice</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">geni_weather_h6.dice</code><span>13 350 bytes, 368 lines</span><span class="sha" title="SHA-256">sha256 424e94b01f600eea45843ba2caf1b945700b8198a958e710d4b6ff24aeaf95b3</span></div><p class="made">Written by <code>gen_geni.py weather 10 6 --dice</code> (bench.py gen).</p><pre>
+fun hit(packedstate : ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, (bool, bool))))))))))) {
+	let sun = fst packedstate in 
+	let state1 = fst (snd packedstate) in 
+	let state2 = fst (snd (snd packedstate)) in 
+	let state3 = fst (snd (snd (snd packedstate))) in 
+	let state4 = fst (snd (snd (snd (snd packedstate)))) in 
+	let state5 = fst (snd (snd (snd (snd (snd packedstate))))) in 
+	let state6 = fst (snd (snd (snd (snd (snd (snd packedstate)))))) in 
+	let state7 = fst (snd (snd (snd (snd (snd (snd (snd packedstate))))))) in 
+	let state8 = fst (snd (snd (snd (snd (snd (snd (snd (snd packedstate)))))))) in 
+	let state9 = fst (snd (snd (snd (snd (snd (snd (snd (snd (snd packedstate))))))))) in 
+	 let state10 = snd (snd (snd (snd (snd (snd (snd (snd (snd (snd packedstate))))))))) in 
+
+	let allStrike = (((((((((state1 &amp;&amp; state2) &amp;&amp; state3) &amp;&amp; state4) &amp;&amp; state5) &amp;&amp; state6) &amp;&amp; state7) &amp;&amp; state8) &amp;&amp; state9) &amp;&amp; state10) in
+allStrike
+}
+fun step(packedstate : ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, ( bool, (bool, bool))))))))))) {
+	let sun = fst packedstate in 
+	let state1 = fst (snd packedstate) in 
+	let state2 = fst (snd (snd packedstate)) in 
+	let state3 = fst (snd (snd (snd packedstate))) in 
+	let state4 = fst (snd (snd (snd (snd packedstate)))) in 
+	let state5 = fst (snd (snd (snd (snd (snd packedstate))))) in 
+	let state6 = fst (snd (snd (snd (snd (snd (snd packedstate)))))) in 
+	let state7 = fst (snd (snd (snd (snd (snd (snd (snd packedstate))))))) in 
+	let state8 = fst (snd (snd (snd (snd (snd (snd (snd (snd packedstate)))))))) in 
+	let state9 = fst (snd (snd (snd (snd (snd (snd (snd (snd (snd packedstate))))))))) in 
+	 let state10 = snd (snd (snd (snd (snd (snd (snd (snd (snd (snd packedstate))))))))) in 
+
+	let allStrike = (((((((((state1 &amp;&amp; state2) &amp;&amp; state3) &amp;&amp; state4) &amp;&amp; state5) &amp;&amp; state6) &amp;&amp; state7) &amp;&amp; state8) &amp;&amp; state9) &amp;&amp; state10) in
+		let _cmd_act_1 = (((((((((((sun || !(sun)) &amp;&amp; ((((state1 &amp;&amp; sun) || (!(state1) &amp;&amp; sun)) || (state1 &amp;&amp; !(sun))) || (!(state1) &amp;&amp; !(sun)))) &amp;&amp; ((((state2 &amp;&amp; sun) || (!(state2) &amp;&amp; sun)) || (state2 &amp;&amp; !(sun))) || (!(state2) &amp;&amp; !(sun)))) &amp;&amp; ((((state3 &amp;&amp; sun) || (!(state3) &amp;&amp; sun)) || (state3 &amp;&amp; !(sun))) || (!(state3) &amp;&amp; !(sun)))) &amp;&amp; ((((state4 &amp;&amp; sun) || (!(state4) &amp;&amp; sun)) || (state4 &amp;&amp; !(sun))) || (!(state4) &amp;&amp; !(sun)))) &amp;&amp; ((((state5 &amp;&amp; sun) || (!(state5) &amp;&amp; sun)) || (state5 &amp;&amp; !(sun))) || (!(state5) &amp;&amp; !(sun)))) &amp;&amp; ((((state6 &amp;&amp; sun) || (!(state6) &amp;&amp; sun)) || (state6 &amp;&amp; !(sun))) || (!(state6) &amp;&amp; !(sun)))) &amp;&amp; ((((state7 &amp;&amp; sun) || (!(state7) &amp;&amp; sun)) || (state7 &amp;&amp; !(sun))) || (!(state7) &amp;&amp; !(sun)))) &amp;&amp; ((((state8 &amp;&amp; sun) || (!(state8) &amp;&amp; sun)) || (state8 &amp;&amp; !(sun))) || (!(state8) &amp;&amp; !(sun)))) &amp;&amp; ((((state9 &amp;&amp; sun) || (!(state9) &amp;&amp; sun)) || (state9 &amp;&amp; !(sun))) || (!(state9) &amp;&amp; !(sun)))) &amp;&amp; ((((state10 &amp;&amp; sun) || (!(state10) &amp;&amp; sun)) || (state10 &amp;&amp; !(sun))) || (!(state10) &amp;&amp; !(sun)))) in
+		let _count = 
+			(if _cmd_act_1 then int(1, 1) else int(1, 0)) in 
+		if _count == int(1,0) then
+			( sun, ( state1, ( state2, ( state3, ( state4, ( state5, ( state6, ( state7, ( state8, (state9, state10))))))))))
+		else
+			let _sel_act =
+				if _count == int(1, 1) then int(1, 1) else 
+					discrete(0.0, 1.0)
+					in
+			let _offset0 = _sel_act in 
+			let _take1 = ((_offset0 == int(1, 1)) &amp;&amp; _cmd_act_1) in 
+			 if _take1 then
+				let _result_0 =
+					 if sun then 
+						let _sel_update_0 = discrete(0.700000000, 0.300000000) in 
+							if _sel_update_0 == int(1, 0) then
+								(sun)
+							else
+								(!(sun))
+					else if !(sun) then 
+						let _sel_update_0 = discrete(0.400000000, 0.600000000) in 
+							if _sel_update_0 == int(1, 0) then
+								(sun)
+							else
+								(!(sun))
+					else
+						sun
+				in
+				let sun_prime = _result_0 in 
+				let _result_1 =
+					 if (state1 &amp;&amp; sun) then 
+						let _sel_update_1 = discrete(0.030000000, 0.970000000) in 
+							if _sel_update_1 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state1) &amp;&amp; sun) then 
+						let _sel_update_1 = discrete(0.140000000, 0.860000000) in 
+							if _sel_update_1 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state1 &amp;&amp; !(sun)) then 
+						let _sel_update_1 = discrete(0.060000000, 0.940000000) in 
+							if _sel_update_1 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state1) &amp;&amp; !(sun)) then 
+						let _sel_update_1 = discrete(0.080000000, 0.920000000) in 
+							if _sel_update_1 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state1
+				in
+				let state1_prime = _result_1 in 
+				let _result_2 =
+					 if (state2 &amp;&amp; sun) then 
+						let _sel_update_2 = discrete(0.060000000, 0.940000000) in 
+							if _sel_update_2 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state2) &amp;&amp; sun) then 
+						let _sel_update_2 = discrete(0.210000000, 0.790000000) in 
+							if _sel_update_2 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state2 &amp;&amp; !(sun)) then 
+						let _sel_update_2 = discrete(0.120000000, 0.880000000) in 
+							if _sel_update_2 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state2) &amp;&amp; !(sun)) then 
+						let _sel_update_2 = discrete(0.120000000, 0.880000000) in 
+							if _sel_update_2 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state2
+				in
+				let state2_prime = _result_2 in 
+				let _result_3 =
+					 if (state3 &amp;&amp; sun) then 
+						let _sel_update_3 = discrete(0.123000000, 0.877000000) in 
+							if _sel_update_3 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state3) &amp;&amp; sun) then 
+						let _sel_update_3 = discrete(0.315000000, 0.685000000) in 
+							if _sel_update_3 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state3 &amp;&amp; !(sun)) then 
+						let _sel_update_3 = discrete(0.246000000, 0.754000000) in 
+							if _sel_update_3 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state3) &amp;&amp; !(sun)) then 
+						let _sel_update_3 = discrete(0.180000000, 0.820000000) in 
+							if _sel_update_3 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state3
+				in
+				let state3_prime = _result_3 in 
+				let _result_4 =
+					 if (state4 &amp;&amp; sun) then 
+						let _sel_update_4 = discrete(0.282000000, 0.718000000) in 
+							if _sel_update_4 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state4) &amp;&amp; sun) then 
+						let _sel_update_4 = discrete(0.170100000, 0.829900000) in 
+							if _sel_update_4 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state4 &amp;&amp; !(sun)) then 
+						let _sel_update_4 = discrete(0.564000000, 0.436000000) in 
+							if _sel_update_4 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state4) &amp;&amp; !(sun)) then 
+						let _sel_update_4 = discrete(0.097200000, 0.902800000) in 
+							if _sel_update_4 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state4
+				in
+				let state4_prime = _result_4 in 
+				let _result_5 =
+					 if (state5 &amp;&amp; sun) then 
+						let _sel_update_5 = discrete(0.130200000, 0.869800000) in 
+							if _sel_update_5 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state5) &amp;&amp; sun) then 
+						let _sel_update_5 = discrete(0.205100000, 0.794900000) in 
+							if _sel_update_5 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state5 &amp;&amp; !(sun)) then 
+						let _sel_update_5 = discrete(0.260400000, 0.739600000) in 
+							if _sel_update_5 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state5) &amp;&amp; !(sun)) then 
+						let _sel_update_5 = discrete(0.117200000, 0.882800000) in 
+							if _sel_update_5 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state5
+				in
+				let state5_prime = _result_5 in 
+				let _result_6 =
+					 if (state6 &amp;&amp; sun) then 
+						let _sel_update_6 = discrete(0.130230000, 0.869770000) in 
+							if _sel_update_6 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state6) &amp;&amp; sun) then 
+						let _sel_update_6 = discrete(0.205380000, 0.794620000) in 
+							if _sel_update_6 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state6 &amp;&amp; !(sun)) then 
+						let _sel_update_6 = discrete(0.260460000, 0.739540000) in 
+							if _sel_update_6 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state6) &amp;&amp; !(sun)) then 
+						let _sel_update_6 = discrete(0.117360000, 0.882640000) in 
+							if _sel_update_6 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state6
+				in
+				let state6_prime = _result_6 in 
+				let _result_7 =
+					 if (state7 &amp;&amp; sun) then 
+						let _sel_update_7 = discrete(0.130350000, 0.869650000) in 
+							if _sel_update_7 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state7) &amp;&amp; sun) then 
+						let _sel_update_7 = discrete(0.205730000, 0.794270000) in 
+							if _sel_update_7 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state7 &amp;&amp; !(sun)) then 
+						let _sel_update_7 = discrete(0.260700000, 0.739300000) in 
+							if _sel_update_7 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state7) &amp;&amp; !(sun)) then 
+						let _sel_update_7 = discrete(0.117560000, 0.882440000) in 
+							if _sel_update_7 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state7
+				in
+				let state7_prime = _result_7 in 
+				let _result_8 =
+					 if (state8 &amp;&amp; sun) then 
+						let _sel_update_8 = discrete(0.130320000, 0.869680000) in 
+							if _sel_update_8 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state8) &amp;&amp; sun) then 
+						let _sel_update_8 = discrete(0.204680000, 0.795320000) in 
+							if _sel_update_8 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state8 &amp;&amp; !(sun)) then 
+						let _sel_update_8 = discrete(0.260640000, 0.739360000) in 
+							if _sel_update_8 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state8) &amp;&amp; !(sun)) then 
+						let _sel_update_8 = discrete(0.116960000, 0.883040000) in 
+							if _sel_update_8 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state8
+				in
+				let state8_prime = _result_8 in 
+				let _result_9 =
+					 if (state9 &amp;&amp; sun) then 
+						let _sel_update_9 = discrete(0.134970000, 0.865030000) in 
+							if _sel_update_9 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state9) &amp;&amp; sun) then 
+						let _sel_update_9 = discrete(0.205310000, 0.794690000) in 
+							if _sel_update_9 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state9 &amp;&amp; !(sun)) then 
+						let _sel_update_9 = discrete(0.269940000, 0.730060000) in 
+							if _sel_update_9 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state9) &amp;&amp; !(sun)) then 
+						let _sel_update_9 = discrete(0.117320000, 0.882680000) in 
+							if _sel_update_9 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state9
+				in
+				let state9_prime = _result_9 in 
+				let _result_10 =
+					 if (state10 &amp;&amp; sun) then 
+						let _sel_update_10 = discrete(0.131400000, 0.868600000) in 
+							if _sel_update_10 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state10) &amp;&amp; sun) then 
+						let _sel_update_10 = discrete(0.163100000, 0.836900000) in 
+							if _sel_update_10 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (state10 &amp;&amp; !(sun)) then 
+						let _sel_update_10 = discrete(0.262800000, 0.737200000) in 
+							if _sel_update_10 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else if (!(state10) &amp;&amp; !(sun)) then 
+						let _sel_update_10 = discrete(0.093200000, 0.906800000) in 
+							if _sel_update_10 == int(1, 0) then
+								( true )
+							else
+								( false )
+					else
+						state10
+				in
+				let state10_prime = _result_10 in 
+				( sun_prime, ( state1_prime, ( state2_prime, ( state3_prime, ( state4_prime, ( state5_prime, ( state6_prime, ( state7_prime, ( state8_prime, (state9_prime, state10_prime))))))))))
+			else ( sun, ( state1, ( state2, ( state3, ( state4, ( state5, ( state6, ( state7, ( state8, (state9, state10))))))))))
+}
+let _goal = false in 
+let res = ( true, ( false, ( false, ( false, ( false, ( false, ( false, ( false, ( false, (false, false)))))))))) in
+let _goal = if !_goal then hit(res) else _goal in
+let res = if !_goal then step(res) else res in
+let _goal = if !_goal then hit(res) else _goal in
+let res = if !_goal then step(res) else res in
+let _goal = if !_goal then hit(res) else _goal in
+let res = if !_goal then step(res) else res in
+let _goal = if !_goal then hit(res) else _goal in
+let res = if !_goal then step(res) else res in
+let _goal = if !_goal then hit(res) else _goal in
+let res = if !_goal then step(res) else res in
+let _goal = if !_goal then hit(res) else _goal in
+let res = if !_goal then step(res) else res in
+(hit(res), false)</pre></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Alea.jl; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia geni_weather_h6.alea.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">geni_weather_h6.alea.jl</code><span>32 688 bytes, 541 lines</span><span class="sha" title="SHA-256">sha256 6b5fc2926eee2f69f534e30a81543c9d433f65a0757631126b57a9384119d0b8</span></div><p class="made">Written by <code>dice2alea.py</code> from the Dice program when Alea.jl runs.</p><p class="note"><a href="../files/6b5fc2926eee2f69f534.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/6b5fc2926eee2f69f534.txt"></pre></div>
+</div>
+<div class="panel" id="p4">
+<p class="readers"><b>A translation of the original into Roulette; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Roulette.</p>
+<dl class="cmds">
+<dt>Roulette</dt><dd><code>racket -l- raco make geni_weather_h6.roulette.rkt</code></dd>
+<dt>Roulette</dt><dd><code>racket geni_weather_h6.roulette.rkt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">geni_weather_h6.roulette.rkt</code><span>24 265 bytes, 481 lines</span><span class="sha" title="SHA-256">sha256 e1998fb470a6f48645126b579ef111c4ce8be20a228029545e996037842d8ae6</span></div><p class="made">Written by <code>dice2roulette.py</code> from the Dice program when Roulette runs, and compiled by <code>raco make</code> before it runs, untimed, as the artifact's programs are.</p><p class="note"><a href="../files/e1998fb470a6f4864512.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/e1998fb470a6f4864512.txt"></pre></div>
+</div>
+<div class="panel" id="p5">
+<p class="readers"><b>A translation of the original into Psi; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Psi.</p>
+<dl class="cmds">
+<dt>Psi</dt><dd><code>prlimit --stack=unlimited psi geni_weather_h6.psi0.psi</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">geni_weather_h6.psi0.psi</code><span>30 127 bytes, 324 lines</span><span class="sha" title="SHA-256">sha256 9f51ba86e8baa6908acd5e03f512241226cf042fbbd31f9905bc1f9f1dc3606e</span></div><p class="made">Written by <code>dice2psi.py</code> from the Dice program when Psi runs: component 0 of the program's value, one Psi run each.</p><p class="note"><a href="../files/9f51ba86e8baa6908acd.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/9f51ba86e8baa6908acd.txt"></pre></div>
+</div>
+<div class="panel" id="p6">
+<p class="readers"><b>Not a translation: this system&#x27;s own program of the benchmark, as its artifact has it.</b></p>
+<p class="readers">Read by Storm sparse, Storm exact, Storm dd, PRISM sparse, PRISM hybrid.</p>
+<dl class="cmds">
+<dt>Storm sparse</dt><dd><code>python scripts/storm_weather.py weather-models/weatherfactory10.prism 6 sparse</code></dd>
+<dt>Storm exact</dt><dd><code>python scripts/storm_weather.py weather-models/weatherfactory10.prism 6 exact</code></dd>
+<dt>Storm dd</dt><dd><code>python scripts/storm_weather.py weather-models/weatherfactory10.prism 6 dd</code></dd>
+<dt>PRISM sparse</dt><dd><code>prism weather-models/weatherfactory10.prism -pf &#x27;P=? [F&lt;=6 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g</code></dd>
+<dt>PRISM hybrid</dt><dd><code>prism weather-models/weatherfactory10.prism -pf &#x27;P=? [F&lt;=6 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g</code></dd>
+</dl>
+<p class="readers">Rubicon&#x27;s model, not the program: the same Markov chain as the Dice program, written for the model checkers.</p>
+<div class="file"><div class="fhead"><code class="fname">weather-models/weatherfactory10.prism</code><span>2 052 bytes, 74 lines</span><span class="sha" title="SHA-256">sha256 af1fc9aea3d921c0816497c592b0152f6757cdfa0d2481a907a534199788673c</span></div><p class="made">Rubicon's PRISM model (<code>examples/weatherfactory</code> of github.com/sjunges/rubicon), downloaded from there (GPL-3, not redistributed); the property is the probability that all the factories are on strike within the horizon of the instance.</p><p class="note">Not shown: the model Storm and PRISM read is Rubicon&#x27;s PRISM model of the weather factory, licensed GPL-3, which this release does not redistribute, downloaded from <a href="https://github.com/sjunges/rubicon/tree/master/examples/weatherfactory">https://github.com/sjunges/rubicon/tree/master/examples/weatherfactory</a>. Its size and SHA-256 above check a copy.</p></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.16</td><td>1.6e-22 at most</td><td>largest formula, pairs 1 788 546; final formula, pairs 188; variables 278; ground atoms 801; ground rules 844; vtree program (from auto: 11 attempts, 0.087s discarded)</td></tr><tr><td>1</td><td>answered</td><td>0.16</td><td>1.6e-22 at most</td><td>largest formula, pairs 1 788 546; final formula, pairs 188; variables 278; ground atoms 801; ground rules 844; vtree program (from auto: 11 attempts, 0.087s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.16</td><td>1.6e-22 at most</td><td>largest formula, pairs 1 788 546; final formula, pairs 188; variables 278; ground atoms 801; ground rules 844; vtree program (from auto: 11 attempts, 0.088s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.16</td><td>1.6e-22 at most</td><td>largest formula, pairs 1 788 546; final formula, pairs 188; variables 278; ground atoms 801; ground rules 844; vtree program (from auto: 11 attempts, 0.088s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.16</td><td>1.6e-22 at most</td><td>largest formula, pairs 1 788 546; final formula, pairs 188; variables 278; ground atoms 801; ground rules 844; vtree program (from auto: 11 attempts, 0.087s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.16</td><td>1.6e-22 at most</td><td>largest formula, pairs 1 788 546; final formula, pairs 188; variables 278; ground atoms 801; ground rules 844; vtree program (from auto: 11 attempts, 0.087s discarded)</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>28.8</td><td>20.5</td><td>6.4</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>28.8</td><td>20.5</td><td>6.4</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>29.1</td><td>20.7</td><td>6.4</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>29.1</td><td>20.7</td><td>6.4</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>29.6</td><td>21.1</td><td>6.6</td><td></td><td>0.0e+00 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>29.6</td><td>21.1</td><td>6.6</td><td></td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.29</td><td>5.0e-19 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>0.29</td><td>5.0e-19 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.30</td><td>5.0e-19 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.30</td><td>5.0e-19 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.31</td><td>5.0e-19 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.31</td><td>5.0e-19 at most</td><td></td></tr></tbody></table></div>
+<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>28.8</td><td>27.8</td><td></td><td>1.7e-16 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>28.8</td><td>27.8</td><td></td><td>1.7e-16 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>28.9</td><td>27.8</td><td></td><td>1.7e-16 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>28.9</td><td>27.8</td><td></td><td>1.7e-16 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>28.5</td><td>27.4</td><td></td><td>1.7e-16 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>28.5</td><td>27.4</td><td></td><td>1.7e-16 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>109</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr><tr><td>1</td><td>error</td><td>109</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr><tr><td>2</td><td>error</td><td>109</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr><tr><td>2</td><td>error</td><td>109</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr><tr><td>3</td><td>error</td><td>110</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr><tr><td>3</td><td>error</td><td>110</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr></tbody></table></div>
+<h3>Geni</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.75</td><td>3.8e-08 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>0.75</td><td>3.8e-08 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.75</td><td>3.8e-08 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.75</td><td>3.8e-08 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.75</td><td>3.8e-08 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.75</td><td>3.8e-08 at most</td><td></td></tr></tbody></table></div>
+<h3>noDice</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Psi</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Storm dd</h3><p class="note">The model is Rubicon&#x27;s PRISM model of the weather factory, not the program: the same Markov chain.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>22.3</td><td>5.3e-23 at most</td><td>inference s 21.537065</td></tr><tr><td>1</td><td>answered</td><td>22.3</td><td>5.3e-23 at most</td><td>inference s 21.537065</td></tr><tr><td>2</td><td>answered</td><td>22.7</td><td>5.3e-23 at most</td><td>inference s 21.998878</td></tr><tr><td>2</td><td>answered</td><td>22.7</td><td>5.3e-23 at most</td><td>inference s 21.998878</td></tr><tr><td>3</td><td>answered</td><td>23.1</td><td>5.3e-23 at most</td><td>inference s 22.366508</td></tr><tr><td>3</td><td>answered</td><td>23.1</td><td>5.3e-23 at most</td><td>inference s 22.366508</td></tr></tbody></table></div>
+<h3>Storm exact</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>66.3</td><td>5.3e-23 at most</td><td>inference s 65.586466</td></tr><tr><td>1</td><td>answered</td><td>66.3</td><td>5.3e-23 at most</td><td>inference s 65.586466</td></tr><tr><td>2</td><td>answered</td><td>66.3</td><td>5.3e-23 at most</td><td>inference s 65.553047</td></tr><tr><td>2</td><td>answered</td><td>66.3</td><td>5.3e-23 at most</td><td>inference s 65.553047</td></tr><tr><td>3</td><td>answered</td><td>66.2</td><td>5.3e-23 at most</td><td>inference s 65.533884</td></tr><tr><td>3</td><td>answered</td><td>66.2</td><td>5.3e-23 at most</td><td>inference s 65.533884</td></tr></tbody></table></div>
+<h3>Storm sparse</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.1</td><td>6.4e-22 at most</td><td>inference s 1.952332</td></tr><tr><td>1</td><td>answered</td><td>2.1</td><td>6.4e-22 at most</td><td>inference s 1.952332</td></tr><tr><td>2</td><td>answered</td><td>2.1</td><td>6.4e-22 at most</td><td>inference s 1.947246</td></tr><tr><td>2</td><td>answered</td><td>2.1</td><td>6.4e-22 at most</td><td>inference s 1.947246</td></tr><tr><td>3</td><td>answered</td><td>2.1</td><td>6.4e-22 at most</td><td>inference s 1.946844</td></tr><tr><td>3</td><td>answered</td><td>2.1</td><td>6.4e-22 at most</td><td>inference s 1.946844</td></tr></tbody></table></div>
+<h3>PRISM hybrid</h3><p class="note">The model is Rubicon&#x27;s PRISM model of the weather factory, not the program: the same Markov chain. The time includes the JVM&#x27;s start.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>PRISM sparse</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>9.8</td><td>1.6e-17 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>9.8</td><td>1.6e-17 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>11.4</td><td>1.6e-17 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>11.4</td><td>1.6e-17 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>11.5</td><td>1.6e-17 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>11.5</td><td>1.6e-17 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Geni</th><th class="num">Storm dd</th><th class="num">Storm exact</th><th class="num">Storm sparse</th><th class="num">PRISM sparse</th></tr></thead><tbody><tr><th>allstrike_53</th><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td><td class="num">3e-07</td><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td><td class="num">2.61594e-07</td></tr><tr><th>result_2</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

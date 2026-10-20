@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bn_win95pts_ev · tddlog results</title>
+<meta name="description" content="bn_win95pts_ev, an instance of Standard suite: networks: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#networks">Bayesian and Markov networks</a> › <a href="../index.html#std_bn">Standard suite: networks</a></p>
+    <h1>bn_win95pts_ev</h1>
+    <p class="lede">34 Bayesian networks of the bnlearn repository, with and without evidence, one annotated disjunction per row of a table, every leaf queried; 300 s a run. Made by <code>gen_bn.py data/bn/win95pts.net --query leaves --evidence half</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.01</td><td class="num">1.2</td><td class="num">0.01</td><td class="num">0.12</td><td class="num">1.4</td><td class="num">0.009</td><td class="num">29.3</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Network (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">PITA</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Ace</label>
+<input type="radio" name="ptab" id="t4"><label for="t4">UAI network</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Ace auto, Ace forceC2d as it is.</b></p>
+<p class="readers">Read by Ace auto, Ace forceC2d.</p>
+<dl class="cmds">
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -e bn_win95pts_ev.inst ace-bn_win95pts_ev-auto/win95pts.net</code></dd>
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-bn_win95pts_ev-auto/win95pts.net bn_win95pts_ev.inst</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -forceC2d -e bn_win95pts_ev.inst ace-bn_win95pts_ev-forceC2d/win95pts.net</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-bn_win95pts_ev-forceC2d/win95pts.net bn_win95pts_ev.inst</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/bn/win95pts.net</code><span>15 052 bytes, 611 lines</span><span class="sha" title="SHA-256">sha256 1e5bf684177b5b5db8a872227e588162d0feafd554565863671c0388a6dafbd4</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/bn/win95pts.net</code>.</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://raw.githubusercontent.com/ML-KULeuven/problog/00e4bfe7322866ec82cd1a9601708d0a10ea98cc/conversions/hugin_samples/win95pts.net">https://raw.githubusercontent.com/ML-KULeuven/problog/00e4bfe7322866ec82cd1a9601708d0a10ea98cc/conversions/hugin_samples/win95pts.net</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bn_win95pts_ev.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf bn_win95pts_ev.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd bn_win95pts_ev.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd bn_win95pts_ev.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bn_win95pts_ev.pl</code><span>72 129 bytes, 598 lines</span><span class="sha" title="SHA-256">sha256 49028330c814b360c6bf0e3bf5d3293f14d0d6f35fe6a9f2566fcdfaaeb7be07</span></div><p class="made">Written by <code>gen_bn.py data/bn/win95pts.net --query leaves --evidence half</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;bn_win95pts_ev.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bn_win95pts_ev.lpad.pl</code><span>74 860 bytes, 595 lines</span><span class="sha" title="SHA-256">sha256 f04961dba9aa6e11f65082f054e624fca146647eb4f79e220e7d03a9d7488209</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>bn_win95pts_ev.pl</code> when PITA runs.</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Ace; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Ace auto, Ace forceC2d.</p>
+<dl class="cmds">
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -e bn_win95pts_ev.inst ace-bn_win95pts_ev-auto/win95pts.net</code></dd>
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-bn_win95pts_ev-auto/win95pts.net bn_win95pts_ev.inst</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -forceC2d -e bn_win95pts_ev.inst ace-bn_win95pts_ev-forceC2d/win95pts.net</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-bn_win95pts_ev-forceC2d/win95pts.net bn_win95pts_ev.inst</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bn_win95pts_ev.inst</code><span>370 bytes, 11 lines</span><span class="sha" title="SHA-256">sha256 412df489d0827193e5f275ef807c59dc039c3aaccb435417f253282be1431989</span></div><p class="made">The observations, as Ace reads them, written by <code>gen_bn.py --inst</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p4">
+<p class="readers"><b>A translation of the original into UAI network; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl treesa, TensorInference.jl greedy.</p>
+<dl class="cmds">
+<dt>Merlin</dt><dd><code>merlin -f bn_win95pts_ev.uai -e bn_win95pts_ev.uai.evid -a bte -t MAR -O uai -o out</code></dd>
+<dt>pyAgrum</dt><dd><code>python scripts/bn_uai_run.py agrum bn_win95pts_ev.uai bn_win95pts_ev.uai.evid out MAR 58,59,61,62,67,68,73,74</code></dd>
+<dt>pgmpy</dt><dd><code>python scripts/bn_uai_run.py pgmpy bn_win95pts_ev.uai bn_win95pts_ev.uai.evid out MAR 58,59,61,62,67,68,73,74</code></dd>
+<dt>libDAI</dt><dd><code>libdai_uai bn_win95pts_ev.uai bn_win95pts_ev.uai.evid out MAR 58,59,61,62,67,68,73,74</code></dd>
+<dt>TensorInference.jl treesa</dt><dd><code>julia scripts/tensorinference_uai.jl bn_win95pts_ev.uai bn_win95pts_ev.uai.evid out MAR 58,59,61,62,67,68,73,74</code></dd>
+<dt>TensorInference.jl greedy</dt><dd><code>julia scripts/tensorinference_uai.jl bn_win95pts_ev.uai bn_win95pts_ev.uai.evid out MAR 58,59,61,62,67,68,73,74</code></dd>
+</dl>
+<p class="readers">One file and its observations, which every network system reads: each command below names them, and none has a copy of its own.</p>
+<div class="file"><div class="fhead"><code class="fname">bn_win95pts_ev.uai</code><span>6 071 bytes, 308 lines</span><span class="sha" title="SHA-256">sha256 eebe32f684e662d6aa77726491d77e6d8e404781f977039d6d55ea7da372fde4</span></div><p class="made">The network as a UAI file and its observations, for Merlin and the other network systems, written by <code>gen_bn.py --uai</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">bn_win95pts_ev.uai.evid</code><span>42 bytes, 1 lines</span><span class="sha" title="SHA-256">sha256 f4f537741076059f7b4fb338355fc2a5865f363df67e2b485f41433b966ff6a9</span></div><p class="made">The network as a UAI file and its observations, for Merlin and the other network systems, written by <code>gen_bn.py --uai</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.01</td><td>2.9e-16 at most</td><td>largest formula, pairs 5 434; final formula, pairs 161; variables 401; ground atoms 692; ground rules 1 474; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.2</td><td>3.3e-16 at most</td><td>route tabularCompilation; circuit nodes 2 932; circuit edges 5 504</td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.3</td><td>5.6e-16 at most</td><td>route c2dCompilation; circuit nodes 2 407; circuit edges 5 279</td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.01</td><td>4.5e-07 at most</td><td>induced width 8</td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.12</td><td>4.8e-13 at most</td><td>inference s 0.003906</td></tr></tbody></table></div>
+<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.4</td><td>4.8e-13 at most</td><td>inference s 0.04651</td></tr></tbody></table></div>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.009</td><td>4.8e-13 at most</td><td>inference s 0.004947969</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>29.3</td><td>2.2e-16 at most</td><td>inference s 23.3533392</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>37.7</td><td>2.2e-16 at most</td><td>inference s 31.60852194</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>PITA</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl greedy</th><th class="num">TensorInference.jl treesa</th></tr></thead><tbody><tr><th>hrglssdrtnaftrprnt(fast_enough)</th><td class="num">0.9899984228</td><td class="num">0.9899984228</td><td class="num">0.9899984228</td><td class="num">0.9899984228</td><td class="num">0.989998</td><td class="num">0.9899984228</td><td class="num">0.9899984228</td><td class="num">0.9899984228</td><td class="num">0.9899984228</td><td class="num">0.9899984228</td></tr><tr><th>hrglssdrtnaftrprnt(too_long)</th><td class="num">0.0100015772</td><td class="num">0.0100015772</td><td class="num">0.0100015772</td><td class="num">0.0100015772</td><td class="num">0.010002</td><td class="num">0.0100015772</td><td class="num">0.0100015772</td><td class="num">0.0100015772</td><td class="num">0.0100015772</td><td class="num">0.0100015772</td></tr><tr><th>repeat(yes__always_the_same_)</th><td class="num">0.9953506375</td><td class="num">0.9953506375</td><td class="num">0.9953506375</td><td class="num">0.9953506375</td><td class="num">0.995351</td><td class="num">0.9953506375</td><td class="num">0.9953506375</td><td class="num">0.9953506375</td><td class="num">0.9953506375</td><td class="num">0.9953506375</td></tr><tr><th>repeat(no__different_each_time_)</th><td class="num">0.004649362458</td><td class="num">0.004649362458</td><td class="num">0.004649362458</td><td class="num">0.004649362458</td><td class="num">0.004649</td><td class="num">0.004649362458</td><td class="num">0.004649362458</td><td class="num">0.004649362458</td><td class="num">0.004649362458</td><td class="num">0.004649362458</td></tr><tr><th>pserrmem(no_error)</th><td class="num">0.9923543613</td><td class="num">0.9923543613</td><td class="num">0.9923543613</td><td class="num">0.9923543613</td><td class="num">0.992354</td><td class="num">0.9923543613</td><td class="num">0.9923543613</td><td class="num">0.9923543613</td><td class="num">0.9923543613</td><td class="num">0.9923543613</td></tr><tr><th>pserrmem(low_memory)</th><td class="num">0.007645638741</td><td class="num">0.007645638741</td><td class="num">0.007645638741</td><td class="num">0.007645638741</td><td class="num">0.007646</td><td class="num">0.007645638741</td><td class="num">0.007645638741</td><td class="num">0.007645638741</td><td class="num">0.007645638741</td><td class="num">0.007645638741</td></tr><tr><th>tstpstxt(x_1_mb_available_vm)</th><td class="num">0.9915656571</td><td class="num">0.9915656571</td><td class="num">0.9915656571</td><td class="num">0.9915656571</td><td class="num">0.991566</td><td class="num">0.9915656571</td><td class="num">0.9915656571</td><td class="num">0.9915656571</td><td class="num">0.9915656571</td><td class="num">0.9915656571</td></tr><tr><th>tstpstxt(x_1_mb_available_vm2)</th><td class="num">0.008434342875</td><td class="num">0.008434342875</td><td class="num">0.008434342875</td><td class="num">0.008434342875</td><td class="num">0.008434</td><td class="num">0.008434342875</td><td class="num">0.008434342875</td><td class="num">0.008434342875</td><td class="num">0.008434342875</td><td class="num">0.008434342875</td></tr><tr><th>problem6(no)</th><td class="num">0.9769436257</td><td class="num">0.9769436257</td><td class="num">0.9769436257</td><td class="num">0.9769436257</td><td class="num">0.976944</td><td class="num">0.9769436257</td><td class="num">0.9769436257</td><td class="num">0.9769436257</td><td class="num">0.9769436257</td><td class="num">0.9769436257</td></tr><tr><th>problem6(yes)</th><td class="num">0.02305637434</td><td class="num">0.02305637434</td><td class="num">0.02305637434</td><td class="num">0.02305637434</td><td class="num">0.023056</td><td class="num">0.02305637434</td><td class="num">0.02305637434</td><td class="num">0.02305637434</td><td class="num">0.02305637434</td><td class="num">0.02305637434</td></tr><tr><th>problem3(no)</th><td class="num">0.08072934409</td><td class="num">0.08072934409</td><td class="num">0.08072934409</td><td class="num">0.08072934409</td><td class="num">0.080729</td><td class="num">0.08072934409</td><td class="num">0.08072934409</td><td class="num">0.08072934409</td><td class="num">0.08072934409</td><td class="num">0.08072934409</td></tr><tr><th>problem3(yes)</th><td class="num">0.9192706559</td><td class="num">0.9192706559</td><td class="num">0.9192706559</td><td class="num">0.9192706559</td><td class="num">0.919271</td><td class="num">0.9192706559</td><td class="num">0.9192706559</td><td class="num">0.9192706559</td><td class="num">0.9192706559</td><td class="num">0.9192706559</td></tr><tr><th>prtstattoner(no_error)</th><td class="num">0.9978914539</td><td class="num">0.9978914539</td><td class="num">0.9978914539</td><td class="num">0.9978914539</td><td class="num">0.997891</td><td class="num">0.9978914539</td><td class="num">0.9978914539</td><td class="num">0.9978914539</td><td class="num">0.9978914539</td><td class="num">0.9978914539</td></tr><tr><th>prtstattoner(low__none)</th><td class="num">0.002108546055</td><td class="num">0.002108546055</td><td class="num">0.002108546055</td><td class="num">0.002108546055</td><td class="num">0.002109</td><td class="num">0.002108546055</td><td class="num">0.002108546055</td><td class="num">0.002108546055</td><td class="num">0.002108546055</td><td class="num">0.002108546055</td></tr><tr><th>prtstatmem(no_error)</th><td class="num">0.9984662638</td><td class="num">0.9984662638</td><td class="num">0.9984662638</td><td class="num">0.9984662638</td><td class="num">0.998466</td><td class="num">0.9984662638</td><td class="num">0.9984662638</td><td class="num">0.9984662638</td><td class="num">0.9984662638</td><td class="num">0.9984662638</td></tr><tr><th>prtstatmem(out_of_memory)</th><td class="num">0.001533736157</td><td class="num">0.001533736157</td><td class="num">0.001533736157</td><td class="num">0.001533736157</td><td class="num">0.001534</td><td class="num">0.001533736157</td><td class="num">0.001533736157</td><td class="num">0.001533736157</td><td class="num">0.001533736157</td><td class="num">0.001533736157</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

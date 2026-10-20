@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_pedestrian_s32 · tddlog results</title>
+<meta name="description" content="bb_pedestrian_s32, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_pedestrian_s32</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/gubpi/pedestrian.jl</code> with <code>steps=32</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">407</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set steps=32 data/alea/gubpi/pedestrian.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/gubpi/pedestrian.jl</code><span>1 826 bytes, 41 lines</span><span class="sha" title="SHA-256">sha256 dd12dc3fc9d1a0582c89cdc99d54c73d2cdbdcfe93b657e5903187aa04a85eb0</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/gubpi/pedestrian.jl</code>.</p><pre># The pedestrian (Mak, Ong, Paquet and Wagner, &quot;Densities of Almost Surely
+# Terminating Probabilistic Programs are Differentiable Almost Everywhere&quot;,
+# ESOP 2021, Example 1.1; Beutner, Ong and Zaiser, &quot;Guaranteed Bounds for
+# Posterior Inference in Universal Probabilistic Programming&quot;, PLDI 2022,
+# Section 7): a pedestrian starts at a distance uniform on [0, 3] from
+# home and walks steps of length uniform on [0, 1], each towards home or
+# away from it with probability 1/2, until reaching home; the total
+# distance walked is observed as 1.1 under normal noise of standard
+# deviation 0.1. The query is the expectation of the starting point. The
+# walk is unrolled to `steps` steps, and the program observes that it has
+# reached home by then, which conditions the posterior on a walk of at
+# most that many steps; the posterior converges to the unbounded one as
+# `steps` grows.
+#
+# Bit blasting: the start and the steps are uniform fixed-point numbers
+# with `bits` bits after the binary point; the noise is a normal in
+# `pieces` exponential pieces on [-1, 1], observed as noise + distance ==
+# 1.1 (gaussian_observe&#x27;s form).
+using Alea, Distributions
+
+const QUERY = :expectation
+const steps = 8
+const bits = 4
+const pieces = 16
+const DFiP = DistFix{7 + bits, bits}
+
+model() = @alea begin
+    start = uniform(DFiP, 0.0, 3.0)
+    position = start
+    distance = DFiP(0.0)
+    for k in 1:steps
+        walking = DFiP(0.0) &lt; position
+        step = uniform(DFiP, 0.0, 1.0)
+        position = ifelse(walking, ifelse(flip(0.5), position + step, position - step), position)
+        distance = ifelse(walking, distance + step, distance)
+    end
+    observe(!(DFiP(0.0) &lt; position))
+    noise = bitblast_exponential(DFiP, Normal(0, 0.1), pieces, -1.0, 1.0)
+    observe(prob_equals(noise + distance, DFiP(1.1)))
+    start
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_pedestrian_s32.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_pedestrian_s32.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_pedestrian_s32.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_pedestrian_s32.pl</code><span>259 688 bytes, 13 453 lines</span><span class="sha" title="SHA-256">sha256 aa1b0d14664ee6ac882a8c03d9846edc314cfb8e42b3ea9fd71f9f4735b1091f</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/gubpi/pedestrian.jl steps=32</code>.</p><p class="note"><a href="../files/aa1b0d14664ee6ac882a.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/aa1b0d14664ee6ac882a.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>407</td><td></td><td>largest formula, pairs 31 825 126; final formula, pairs 29 252 189; variables 200; ground atoms 4 529; ground rules 7 090; vtree program (from auto: 58 attempts, 180.663s discarded)</td></tr><tr><td>2</td><td>answered</td><td>403</td><td></td><td>largest formula, pairs 31 825 126; final formula, pairs 29 252 189; variables 200; ground atoms 4 529; ground rules 7 090; vtree program (from auto: 58 attempts, 178.847s discarded)</td></tr><tr><td>3</td><td>answered</td><td>407</td><td></td><td>largest formula, pairs 31 825 126; final formula, pairs 29 252 189; variables 200; ground atoms 4 529; ground rules 7 090; vtree program (from auto: 58 attempts, 180.882s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>216</td><td></td><td>largest formula, pairs 31 825 126; final formula, pairs 29 252 189; variables 200; ground atoms 4 529; ground rules 7 090; vtree program</td></tr><tr><td>2</td><td>answered</td><td>218</td><td></td><td>largest formula, pairs 31 825 126; final formula, pairs 29 252 189; variables 200; ground atoms 4 529; ground rules 7 090; vtree program</td></tr><tr><td>3</td><td>answered</td><td>216</td><td></td><td>largest formula, pairs 31 825 126; final formula, pairs 29 252 189; variables 200; ground atoms 4 529; ground rules 7 090; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th></tr></thead><tbody><tr><th>e1(6)</th><td class="num">2.69799e-20</td><td class="num">2.69799e-20</td></tr><tr><th>e1(7)</th><td class="num">0.1620322035</td><td class="num">0.1620322035</td></tr><tr><th>e1(8)</th><td class="num">0.5062066019</td><td class="num">0.5062066019</td></tr><tr><th>e1(9)</th><td class="num">0.4768077529</td><td class="num">0.4768077529</td></tr><tr><th>e1(10)</th><td class="num">0.5015926964</td><td class="num">0.5015926964</td></tr><tr><th>e1(11)</th><td class="num">0.5119031793</td><td class="num">0.5119031793</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

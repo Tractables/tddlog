@@ -1,8 +1,9 @@
-tddlog
+tddlog, baselines branch
 
 The source code of tddlog is licensed under the Apache License 2.0
-(LICENSE). The repository also holds copies of third-party programs and
-data, under their own terms:
+(LICENSE). This branch, the main branch plus the code and programs that
+reproduce the published comparisons, also holds copies of third-party
+programs and data, under their own terms:
 
 - tests/problog: programs from ProbLog's system test suite
   (https://github.com/ML-KULeuven/problog, test/*.pl), Apache License 2.0.
@@ -21,6 +22,36 @@ The benchmarks' other Bayesian networks, of the bnlearn repository
 license for redistributing them is established: data/fetch.txt names
 where each is downloaded (ProbLog's copies, and bnlearn for munin1 to
 munin4) and its SHA-256.
+- data/alea: benchmark programs of the papers on Alea.jl
+  (https://github.com/Tractables/Alea.jl) and of a paper that compares
+  with it: arith, hybit and bitblast under the Apache License 2.0, pluck
+  under CC-BY-4.0 (the artifact's record). And programs of other papers
+  written in Alea.jl, each directory's README citing its source:
+  fairsquare, from FairSquare (https://github.com/sedrews/fairsquare),
+  MIT License, Copyright (c) 2017 Samuel Drews, data/alea/fairsquare/LICENSE
+  its text; sppl, from SPPL (https://github.com/probsys/sppl), Apache
+  License 2.0; psi, from PSI (https://github.com/eth-sri/psi), Boost
+  Software License 1.0, data/alea/psi/LICENSE its text; genfer, from
+  Genfer (https://github.com/fzaiser/genfer), MIT License, Copyright (c)
+  2023 Fabian Zaiser, data/alea/genfer/LICENSE its text; gubpi and wmi,
+  written for tddlog from the papers they cite, under the Apache License
+  2.0 with the rest.
+- data/hybit: the Stan, WebPPL and Psi programs of the artifact of
+  Garg, Holtzen, Van den Broeck and Millstein, "Bit Blasting Probabilistic
+  Programs", PLDI 2024 (https://github.com/Tractables/Alea.jl, branch
+  hybit), Apache License 2.0; psi/cobs holds rewrites of three of them.
+- scripts/samplers/webppl-package-lock.json pins the npm packages of
+  WebPPL (MIT) that install_webppl.sh installs; no package is copied.
+- data/geni: programs from the artifact of Li and Zhang, "Compiling with
+  Generating Functions", ICFP 2025
+  (https://github.com/geni-icfp25-ae/geni-icfp25-ae), MIT License,
+  Copyright (c) 2025 Jianlin Li, Oghenevwogaga Ebresafe; data/geni/LICENSE
+  holds its text.
+- data/nodice: programs from the artifact of Gürtler and Kaminski,
+  "noDice", OOPSLA 2026 (Zenodo 10.5281/zenodo.18739789), record under
+  CC-BY-4.0, its repository under the Apache License 2.0.
+- data/roulette: programs from the artifact of Moy et al., "Roulette",
+  PLDI 2025 (Zenodo 10.5281/zenodo.15253254), CC-BY-4.0, from
+  https://github.com/camoy/roulette (Apache License 2.0).
 
-Each directory's README gives the source and commit of its files. The
-repository's baselines branch holds further copies, listed in its NOTICE.
+Each directory's README gives the source and commit of its files.

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>g20_56 · tddlog results</title>
+<meta name="description" content="g20_56, an instance of Standard suite: programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#std">Standard suite: programs</a></p>
+    <h1>g20_56</h1>
+    <p class="lede">50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper&#x27;s programs translated to ProbLog; 300 s a run. Made by <code>gen_graph.py 20 56 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.20</td><td class="num">89.4</td><td class="num">128</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto g20_56.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf g20_56.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd g20_56.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd g20_56.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result g20_56.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">g20_56.pl</code><span>1 477 bytes, 78 lines</span><span class="sha" title="SHA-256">sha256 87212623258f46ba6b72d53bf9e37e3a2aa973d079b2ba1024ec09ceb2dc8b76</span></div><p class="made">Written by <code>gen_graph.py 20 56 --seed 1</code> (bench.py gen).</p><pre>% random graph: 20 nodes, 56 edges, seed 1
+0.61::edge(1,7).
+0.54::edge(1,8).
+0.24::edge(1,13).
+0.17::edge(1,15).
+0.54::edge(1,16).
+0.78::edge(1,18).
+0.84::edge(2,10).
+0.13::edge(2,16).
+0.85::edge(3,9).
+0.16::edge(4,6).
+0.79::edge(4,16).
+0.46::edge(5,19).
+0.7::edge(7,10).
+0.32::edge(7,14).
+0.31::edge(8,13).
+0.74::edge(8,15).
+0.25::edge(9,8).
+0.33::edge(10,1).
+0.23::edge(10,4).
+0.3::edge(10,19).
+0.86::edge(11,1).
+0.63::edge(11,17).
+0.62::edge(12,3).
+0.34::edge(12,8).
+0.66::edge(12,16).
+0.5::edge(12,18).
+0.19::edge(12,19).
+0.35::edge(13,7).
+0.37::edge(13,19).
+0.74::edge(14,1).
+0.31::edge(14,6).
+0.3::edge(14,12).
+0.68::edge(14,17).
+0.88::edge(14,18).
+0.87::edge(14,20).
+0.45::edge(15,9).
+0.88::edge(15,16).
+0.28::edge(15,17).
+0.42::edge(15,20).
+0.13::edge(16,12).
+0.87::edge(16,17).
+0.46::edge(17,5).
+0.51::edge(17,8).
+0.44::edge(17,12).
+0.77::edge(17,13).
+0.88::edge(17,14).
+0.6::edge(17,18).
+0.66::edge(18,1).
+0.46::edge(18,7).
+0.52::edge(18,8).
+0.12::edge(18,20).
+0.64::edge(19,4).
+0.74::edge(19,12).
+0.63::edge(19,13).
+0.44::edge(20,11).
+0.69::edge(20,19).
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+query(path(1,2)).
+query(path(1,3)).
+query(path(1,4)).
+query(path(1,5)).
+query(path(1,6)).
+query(path(1,7)).
+query(path(1,8)).
+query(path(1,9)).
+query(path(1,10)).
+query(path(1,11)).
+query(path(1,12)).
+query(path(1,13)).
+query(path(1,14)).
+query(path(1,15)).
+query(path(1,16)).
+query(path(1,17)).
+query(path(1,18)).
+query(path(1,19)).
+query(path(1,20)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;g20_56.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">g20_56.lpad.pl</code><span>2 496 bytes, 83 lines</span><span class="sha" title="SHA-256">sha256 981000c89d4d54591b856574b7114708dc831515214c4ad643ed50bdaa400e10</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>g20_56.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table path/2.
+edge(1,7):0.61.
+edge(1,8):0.54.
+edge(1,13):0.24.
+edge(1,15):0.17.
+edge(1,16):0.54.
+edge(1,18):0.78.
+edge(2,10):0.84.
+edge(2,16):0.13.
+edge(3,9):0.85.
+edge(4,6):0.16.
+edge(4,16):0.79.
+edge(5,19):0.46.
+edge(7,10):0.7.
+edge(7,14):0.32.
+edge(8,13):0.31.
+edge(8,15):0.74.
+edge(9,8):0.25.
+edge(10,1):0.33.
+edge(10,4):0.23.
+edge(10,19):0.3.
+edge(11,1):0.86.
+edge(11,17):0.63.
+edge(12,3):0.62.
+edge(12,8):0.34.
+edge(12,16):0.66.
+edge(12,18):0.5.
+edge(12,19):0.19.
+edge(13,7):0.35.
+edge(13,19):0.37.
+edge(14,1):0.74.
+edge(14,6):0.31.
+edge(14,12):0.3.
+edge(14,17):0.68.
+edge(14,18):0.88.
+edge(14,20):0.87.
+edge(15,9):0.45.
+edge(15,16):0.88.
+edge(15,17):0.28.
+edge(15,20):0.42.
+edge(16,12):0.13.
+edge(16,17):0.87.
+edge(17,5):0.46.
+edge(17,8):0.51.
+edge(17,12):0.44.
+edge(17,13):0.77.
+edge(17,14):0.88.
+edge(17,18):0.6.
+edge(18,1):0.66.
+edge(18,7):0.46.
+edge(18,8):0.52.
+edge(18,20):0.12.
+edge(19,4):0.64.
+edge(19,12):0.74.
+edge(19,13):0.63.
+edge(20,11):0.44.
+edge(20,19):0.69.
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+:- end_lpad.
+main :-
+    forall((Q = path(1,2)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,3)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,4)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,5)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,6)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,7)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,8)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,9)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,10)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,11)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,12)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,13)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,14)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,15)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,16)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,17)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,18)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,19)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = path(1,20)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.20</td><td>4.9e-09 at most</td><td>largest formula, pairs 25 385; final formula, pairs 0; variables 50; ground atoms 95; ground rules 138; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>89.4</td><td>the reference</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>128</td><td>4.9e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k sdd. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">PITA</th></tr></thead><tbody><tr><th>path(1,10)</th><td class="num">0.58567936</td><td class="num">0.5856793619</td><td class="num">0.5856793619</td></tr><tr><th>path(1,11)</th><td class="num">0.33486253</td><td class="num">0.334862534</td><td class="num">0.334862534</td></tr><tr><th>path(1,12)</th><td class="num">0.74929594</td><td class="num">0.7492959434</td><td class="num">0.7492959434</td></tr><tr><th>path(1,13)</th><td class="num">0.84389913</td><td class="num">0.8438991291</td><td class="num">0.8438991291</td></tr><tr><th>path(1,14)</th><td class="num">0.76792689</td><td class="num">0.7679268882</td><td class="num">0.7679268882</td></tr><tr><th>path(1,15)</th><td class="num">0.70211538</td><td class="num">0.7021153836</td><td class="num">0.7021153836</td></tr><tr><th>path(1,16)</th><td class="num">0.88173162</td><td class="num">0.881731619</td><td class="num">0.881731619</td></tr><tr><th>path(1,17)</th><td class="num">0.8267056</td><td class="num">0.8267056046</td><td class="num">0.8267056046</td></tr><tr><th>path(1,18)</th><td class="num">0.94747593</td><td class="num">0.9474759333</td><td class="num">0.9474759333</td></tr><tr><th>path(1,19)</th><td class="num">0.75017914</td><td class="num">0.7501791363</td><td class="num">0.7501791363</td></tr><tr><th>path(1,2)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>path(1,20)</th><td class="num">0.76105121</td><td class="num">0.7610512137</td><td class="num">0.7610512137</td></tr><tr><th>path(1,3)</th><td class="num">0.46456348</td><td class="num">0.4645634849</td><td class="num">0.4645634849</td></tr><tr><th>path(1,4)</th><td class="num">0.5423519</td><td class="num">0.5423518969</td><td class="num">0.5423518969</td></tr><tr><th>path(1,5)</th><td class="num">0.38028458</td><td class="num">0.3802845781</td><td class="num">0.3802845781</td></tr><tr><th>path(1,6)</th><td class="num">0.3011734</td><td class="num">0.3011733969</td><td class="num">0.3011733969</td></tr><tr><th>path(1,7)</th><td class="num">0.8366848</td><td class="num">0.8366848028</td><td class="num">0.8366848028</td></tr><tr><th>path(1,8)</th><td class="num">0.87621845</td><td class="num">0.8762184485</td><td class="num">0.8762184485</td></tr><tr><th>path(1,9)</th><td class="num">0.57085044</td><td class="num">0.5708504354</td><td class="num">0.5708504354</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

@@ -1,0 +1,1922 @@
+CREATE TABLE part (c1 bigint, c2 text, c3 text, c4 text, c5 text, c6 text, c7 text, c8 bigint, c9 text, c10 text, prob float8);
+COPY part FROM STDIN;
+1	slate	manufacturer2	brand25	economy	polished	tin	43	med	pkg	0.453704471
+2	maroon	manufacturer2	brand24	economy	anodized	tin	41	wrap	jar	0.751971573
+3	firebrick	manufacturer3	brand32	medium	plated	copper	49	med	drum	0.141065515
+4	red	manufacturer2	brand22	economy	polished	nickel	19	sm	case	0.75368763
+5	royal	manufacturer1	brand12	standard	brushed	brass	37	med	can	0.81996803
+6	tomato	manufacturer5	brand51	large	polished	brass	20	wrap	can	0.518859682
+7	turquoise	manufacturer3	brand34	large	burnished	copper	1	med	jar	0.091032886
+8	seashell	manufacturer4	brand42	large	brushed	copper	13	med	case	0.158206434
+9	salmon	manufacturer4	brand45	promo	anodized	steel	48	lg	pkg	0.090358921
+10	mint	manufacturer1	brand13	small	anodized	copper	1	med	pkg	0.108651665
+11	turquoise	manufacturer4	brand43	large	burnished	steel	33	sm	pkg	0.103481842
+12	burnished	manufacturer5	brand51	promo	polished	tin	11	wrap	bag	0.059247212
+13	midnight	manufacturer1	brand13	small	brushed	nickel	16	med	pkg	0.847737654
+14	blush	manufacturer1	brand14	economy	brushed	tin	11	med	pkg	0.326122832
+15	sky	manufacturer3	brand32	large	plated	copper	22	lg	pkg	0.625644507
+16	white	manufacturer5	brand54	medium	polished	nickel	18	lg	box	0.296741621
+17	salmon	manufacturer2	brand24	economy	burnished	nickel	50	lg	drum	0.262441927
+18	khaki	manufacturer3	brand32	promo	plated	tin	7	lg	can	0.735367568
+19	peru	manufacturer3	brand35	standard	burnished	tin	32	wrap	drum	0.432456134
+20	tan	manufacturer3	brand32	standard	burnished	steel	15	jumbo	drum	0.16662948
+21	dark	manufacturer4	brand45	economy	polished	nickel	29	med	pack	0.784932967
+22	sandy	manufacturer4	brand41	standard	polished	brass	25	wrap	pkg	0.171814726
+23	midnight	manufacturer2	brand21	large	burnished	copper	4	wrap	can	0.251790363
+24	coral	manufacturer3	brand31	standard	brushed	tin	34	lg	case	0.822713419
+25	chocolate	manufacturer3	brand34	promo	burnished	brass	44	lg	drum	0.472899628
+26	lawn	manufacturer4	brand42	small	anodized	copper	38	lg	pack	0.914760215
+27	sienna	manufacturer4	brand41	medium	brushed	steel	35	lg	can	0.512774706
+28	yellow	manufacturer1	brand12	standard	burnished	tin	14	jumbo	case	0.396520573
+29	snow	manufacturer1	brand13	standard	plated	tin	9	wrap	case	0.518728852
+30	thistle	manufacturer4	brand41	promo	brushed	brass	6	med	pack	0.927092689
+31	ivory	manufacturer1	brand13	promo	burnished	brass	25	sm	pkg	0.690335077
+32	moccasin	manufacturer1	brand13	medium	brushed	steel	38	jumbo	box	0.139794853
+33	steel	manufacturer2	brand25	economy	anodized	brass	48	lg	jar	0.199687808
+34	medium	manufacturer3	brand33	small	brushed	tin	3	med	pack	0.874916776
+35	ivory	manufacturer4	brand45	economy	anodized	copper	8	lg	pack	0.126097271
+36	lavender	manufacturer3	brand34	large	plated	steel	6	wrap	case	0.38302248
+37	black	manufacturer2	brand22	promo	brushed	brass	24	med	can	0.128752854
+38	orchid	manufacturer3	brand32	standard	burnished	brass	44	lg	bag	0.858809202
+39	dim	manufacturer1	brand15	promo	plated	tin	14	med	box	0.054644015
+40	puff	manufacturer5	brand52	economy	polished	tin	38	med	drum	0.265330242
+41	forest	manufacturer3	brand34	large	plated	copper	13	jumbo	box	0.700129279
+42	mint	manufacturer3	brand35	large	anodized	steel	40	wrap	can	0.416048567
+43	lime	manufacturer1	brand11	economy	anodized	brass	33	med	pkg	0.281800657
+44	mint	manufacturer5	brand55	medium	polished	brass	9	wrap	drum	0.434600114
+45	cornflower	manufacturer5	brand51	large	brushed	tin	24	jumbo	can	0.078242058
+46	tan	manufacturer3	brand34	medium	polished	brass	24	jumbo	pack	0.496280472
+47	orange	manufacturer4	brand44	small	anodized	nickel	17	med	bag	0.340209834
+48	hot	manufacturer5	brand53	large	plated	steel	14	jumbo	can	0.475368411
+49	burlywood	manufacturer4	brand42	promo	anodized	tin	17	lg	drum	0.883792973
+50	midnight	manufacturer1	brand14	economy	anodized	copper	14	wrap	can	0.571763492
+51	black	manufacturer3	brand34	promo	anodized	brass	44	med	bag	0.650545635
+52	white	manufacturer4	brand41	large	anodized	steel	19	wrap	drum	0.27345987
+53	chiffon	manufacturer4	brand44	economy	burnished	nickel	34	med	can	0.656693414
+54	hot	manufacturer5	brand55	medium	polished	tin	1	med	pkg	0.551282502
+55	red	manufacturer1	brand12	economy	plated	brass	46	lg	can	0.885819948
+56	coral	manufacturer2	brand25	standard	brushed	copper	33	lg	can	0.581693002
+57	honeydew	manufacturer3	brand34	small	polished	brass	39	jumbo	jar	0.641643599
+58	deep	manufacturer3	brand34	economy	burnished	tin	33	med	bag	0.629195845
+59	lace	manufacturer2	brand21	small	burnished	brass	15	sm	case	0.442246327
+60	deep	manufacturer5	brand52	economy	brushed	brass	28	med	case	0.351547898
+61	khaki	manufacturer1	brand13	medium	brushed	copper	25	sm	box	0.584934366
+62	light	manufacturer3	brand35	standard	plated	tin	6	sm	pkg	0.782672021
+63	ghost	manufacturer3	brand31	standard	burnished	steel	24	lg	box	0.27286211
+64	honeydew	manufacturer3	brand33	promo	burnished	copper	18	jumbo	box	0.929178499
+65	slate	manufacturer5	brand55	large	plated	nickel	41	med	bag	0.648185813
+66	seashell	manufacturer1	brand12	large	plated	copper	2	med	pkg	0.116516729
+67	green	manufacturer5	brand51	promo	plated	tin	42	wrap	pack	0.178681279
+68	rosy	manufacturer5	brand55	medium	polished	nickel	10	sm	bag	0.812443659
+69	papaya	manufacturer2	brand22	large	polished	steel	8	wrap	bag	0.602860895
+70	indian	manufacturer3	brand31	economy	anodized	nickel	25	wrap	box	0.626133951
+71	azure	manufacturer4	brand43	medium	polished	steel	39	jumbo	case	0.563689075
+72	pale	manufacturer1	brand11	standard	anodized	copper	9	wrap	pack	0.612522022
+73	grey	manufacturer5	brand52	economy	burnished	tin	36	med	bag	0.847539969
+74	bisque	manufacturer1	brand13	promo	anodized	copper	28	jumbo	can	0.382544328
+75	indian	manufacturer3	brand35	economy	burnished	tin	22	sm	bag	0.258152223
+76	spring	manufacturer5	brand51	economy	anodized	steel	14	jumbo	bag	0.838515315
+77	yellow	manufacturer4	brand43	promo	burnished	steel	48	jumbo	pack	0.423657792
+78	steel	manufacturer4	brand44	economy	anodized	copper	32	med	bag	0.824864043
+79	antique	manufacturer2	brand21	small	polished	steel	43	wrap	pkg	0.603253416
+80	cream	manufacturer2	brand24	large	burnished	copper	45	jumbo	case	0.245380776
+81	ghost	manufacturer5	brand53	promo	burnished	tin	50	wrap	bag	0.689086768
+82	maroon	manufacturer2	brand24	small	anodized	copper	47	lg	box	0.692763908
+83	metallic	manufacturer2	brand21	large	anodized	copper	7	jumbo	case	0.813326498
+84	gainsboro	manufacturer5	brand53	promo	polished	nickel	39	lg	pack	0.464594998
+85	snow	manufacturer5	brand52	promo	polished	steel	13	jumbo	pkg	0.43488148
+86	cream	manufacturer3	brand35	standard	plated	brass	10	med	pkg	0.268533891
+87	light	manufacturer3	brand31	small	burnished	brass	15	lg	box	0.275974936
+88	purple	manufacturer5	brand52	economy	burnished	copper	30	jumbo	jar	0.751815636
+89	smoke	manufacturer1	brand11	promo	polished	steel	27	lg	bag	0.154231795
+90	red	manufacturer5	brand53	small	polished	brass	48	lg	jar	0.642311609
+91	white	manufacturer3	brand33	standard	brushed	brass	14	jumbo	case	0.866176016
+92	slate	manufacturer3	brand34	medium	brushed	tin	4	med	bag	0.295778249
+93	smoke	manufacturer2	brand25	small	burnished	copper	33	jumbo	box	0.763995071
+94	medium	manufacturer2	brand25	medium	anodized	tin	13	wrap	can	0.940175207
+95	red	manufacturer4	brand42	promo	brushed	copper	15	jumbo	pkg	0.691942899
+96	midnight	manufacturer4	brand42	small	brushed	tin	30	sm	drum	0.601172746
+97	metallic	manufacturer2	brand21	promo	anodized	steel	29	lg	bag	0.892801829
+98	pink	manufacturer5	brand53	small	burnished	brass	43	wrap	box	0.597698087
+99	black	manufacturer3	brand32	medium	polished	tin	38	wrap	box	0.512263263
+100	metallic	manufacturer5	brand53	large	plated	brass	31	sm	drum	0.84871341
+101	moccasin	manufacturer1	brand15	economy	brushed	brass	5	wrap	pack	0.948784917
+102	metallic	manufacturer4	brand41	standard	brushed	copper	1	sm	pack	0.10818193
+103	magenta	manufacturer3	brand31	large	anodized	copper	29	med	case	0.900001025
+104	lavender	manufacturer2	brand22	economy	anodized	steel	21	wrap	can	0.496317086
+105	lemon	manufacturer3	brand31	promo	burnished	brass	49	jumbo	pkg	0.387257413
+106	slate	manufacturer5	brand53	large	anodized	nickel	19	wrap	pkg	0.131131904
+107	firebrick	manufacturer2	brand25	medium	burnished	copper	5	wrap	pack	0.055934141
+108	indian	manufacturer3	brand33	promo	anodized	tin	21	jumbo	bag	0.608578376
+109	bisque	manufacturer5	brand55	large	burnished	nickel	15	sm	bag	0.759573527
+110	pink	manufacturer5	brand51	medium	polished	brass	40	med	jar	0.594166008
+111	antique	manufacturer1	brand15	standard	anodized	nickel	49	sm	bag	0.888243025
+112	puff	manufacturer1	brand12	large	brushed	brass	21	jumbo	box	0.407229914
+113	seashell	manufacturer2	brand23	economy	polished	copper	31	med	case	0.100581411
+114	aquamarine	manufacturer4	brand45	large	brushed	brass	22	sm	can	0.540519761
+115	wheat	manufacturer2	brand25	economy	polished	copper	44	wrap	drum	0.824779428
+116	pale	manufacturer5	brand53	economy	polished	copper	35	med	pkg	0.758552767
+117	antique	manufacturer3	brand32	economy	polished	nickel	45	jumbo	pack	0.367536134
+118	medium	manufacturer2	brand23	standard	plated	copper	48	sm	pkg	0.365879768
+119	antique	manufacturer4	brand41	small	anodized	brass	8	sm	bag	0.284735396
+120	mint	manufacturer3	brand32	economy	brushed	brass	20	med	can	0.80616308
+121	puff	manufacturer4	brand42	economy	anodized	copper	16	lg	jar	0.633318101
+122	maroon	manufacturer4	brand43	standard	plated	steel	32	lg	bag	0.427975883
+123	magenta	manufacturer1	brand14	medium	brushed	tin	38	med	pkg	0.87684079
+124	antique	manufacturer4	brand41	economy	burnished	copper	48	med	can	0.405397851
+125	frosted	manufacturer3	brand35	economy	burnished	nickel	19	sm	box	0.547551948
+126	almond	manufacturer2	brand21	standard	anodized	tin	3	wrap	pack	0.071165652
+127	aquamarine	manufacturer3	brand34	small	plated	brass	38	wrap	pkg	0.096566219
+128	dim	manufacturer2	brand25	promo	polished	tin	22	med	can	0.558774891
+129	aquamarine	manufacturer1	brand11	small	burnished	nickel	12	med	box	0.682743787
+130	lace	manufacturer1	brand12	standard	plated	brass	4	wrap	box	0.277048134
+131	drab	manufacturer4	brand41	small	anodized	tin	6	lg	pkg	0.214203214
+132	puff	manufacturer3	brand32	medium	plated	brass	30	wrap	can	0.65033187
+133	burlywood	manufacturer4	brand42	economy	anodized	nickel	5	jumbo	pkg	0.363756605
+134	ivory	manufacturer5	brand53	medium	plated	steel	31	wrap	case	0.194438434
+135	coral	manufacturer3	brand32	small	polished	nickel	9	lg	box	0.185859779
+136	goldenrod	manufacturer5	brand52	medium	polished	brass	5	jumbo	bag	0.129133218
+137	lime	manufacturer5	brand53	standard	burnished	steel	35	sm	case	0.730098356
+138	steel	manufacturer2	brand23	medium	anodized	nickel	25	sm	pkg	0.139604365
+139	yellow	manufacturer5	brand53	economy	polished	nickel	24	sm	jar	0.795167278
+140	wheat	manufacturer3	brand32	small	plated	copper	18	lg	bag	0.118255797
+141	blush	manufacturer2	brand25	economy	polished	steel	38	wrap	drum	0.587510172
+142	plum	manufacturer2	brand23	small	burnished	nickel	9	lg	case	0.718187629
+143	peach	manufacturer2	brand25	small	burnished	tin	29	lg	pack	0.126596851
+144	saddle	manufacturer2	brand22	medium	polished	copper	3	sm	pack	0.73136181
+145	rosy	manufacturer4	brand45	medium	brushed	brass	39	med	box	0.561381075
+146	lemon	manufacturer4	brand43	standard	burnished	brass	15	med	pkg	0.725612747
+147	khaki	manufacturer3	brand32	promo	plated	tin	8	jumbo	can	0.443157995
+148	floral	manufacturer5	brand54	economy	plated	copper	17	lg	pack	0.70927788
+149	lime	manufacturer2	brand22	large	polished	nickel	31	lg	case	0.129708396
+150	brown	manufacturer2	brand24	economy	polished	brass	34	lg	drum	0.363179544
+151	antique	manufacturer4	brand42	economy	brushed	brass	4	med	pack	0.802558196
+152	gainsboro	manufacturer4	brand43	standard	polished	brass	13	lg	bag	0.389579095
+153	bisque	manufacturer4	brand45	large	polished	tin	37	lg	case	0.134644212
+154	steel	manufacturer4	brand44	standard	plated	brass	9	lg	pack	0.220350585
+155	dim	manufacturer2	brand25	promo	polished	steel	30	wrap	pkg	0.596399879
+156	powder	manufacturer2	brand22	medium	burnished	tin	22	sm	can	0.42358146
+157	yellow	manufacturer4	brand44	large	brushed	steel	24	lg	case	0.665372409
+158	chartreuse	manufacturer1	brand14	large	burnished	steel	29	wrap	case	0.127741032
+159	dodger	manufacturer5	brand53	medium	burnished	copper	18	lg	case	0.709551331
+160	blanched	manufacturer5	brand54	medium	polished	brass	48	sm	can	0.705630818
+161	orchid	manufacturer1	brand11	small	polished	copper	28	wrap	drum	0.168256648
+162	cream	manufacturer5	brand55	small	burnished	nickel	30	lg	box	0.702801471
+163	moccasin	manufacturer1	brand15	medium	plated	steel	1	jumbo	drum	0.763924831
+164	ivory	manufacturer4	brand43	medium	burnished	tin	32	lg	drum	0.508304483
+165	orange	manufacturer2	brand23	large	brushed	brass	47	wrap	pack	0.554507815
+166	sandy	manufacturer5	brand54	economy	burnished	nickel	16	wrap	jar	0.174050439
+167	ghost	manufacturer5	brand53	large	anodized	brass	24	med	can	0.322151233
+168	hot	manufacturer2	brand24	promo	burnished	tin	25	med	jar	0.477918644
+169	blue	manufacturer2	brand23	standard	polished	tin	23	sm	can	0.198337177
+170	chiffon	manufacturer2	brand24	large	plated	copper	41	wrap	pkg	0.380440179
+171	dodger	manufacturer2	brand21	large	brushed	copper	9	jumbo	bag	0.901742859
+172	sienna	manufacturer3	brand32	standard	plated	nickel	15	lg	drum	0.917881325
+173	peach	manufacturer5	brand55	large	brushed	nickel	14	med	bag	0.180045866
+174	light	manufacturer3	brand35	large	burnished	nickel	14	sm	pkg	0.699523166
+175	grey	manufacturer1	brand11	large	plated	tin	29	wrap	drum	0.794293326
+176	cornsilk	manufacturer3	brand34	large	polished	brass	36	lg	jar	0.590119197
+177	cornsilk	manufacturer1	brand14	economy	polished	copper	7	sm	bag	0.10940054
+178	almond	manufacturer5	brand52	small	plated	steel	50	med	case	0.690299794
+179	orange	manufacturer5	brand55	standard	plated	tin	16	sm	can	0.923422922
+180	aquamarine	manufacturer2	brand21	large	anodized	steel	5	wrap	can	0.053699115
+181	pale	manufacturer1	brand12	economy	polished	copper	35	jumbo	jar	0.740549368
+182	maroon	manufacturer5	brand51	small	brushed	copper	45	med	box	0.297278663
+183	lime	manufacturer1	brand15	standard	anodized	copper	28	lg	box	0.585131941
+184	peach	manufacturer3	brand35	medium	polished	tin	43	wrap	case	0.17069007
+185	slate	manufacturer3	brand33	large	polished	copper	4	med	bag	0.811921856
+186	orange	manufacturer4	brand43	economy	polished	steel	44	wrap	can	0.298237068
+187	smoke	manufacturer4	brand42	large	anodized	brass	17	med	pkg	0.861207429
+188	chartreuse	manufacturer2	brand24	large	brushed	brass	35	med	bag	0.827462006
+189	purple	manufacturer1	brand14	medium	anodized	brass	47	wrap	case	0.337316668
+190	midnight	manufacturer5	brand55	economy	brushed	steel	6	wrap	drum	0.503170373
+191	lemon	manufacturer5	brand52	standard	brushed	tin	3	sm	pkg	0.313077582
+192	cyan	manufacturer2	brand21	economy	plated	copper	28	med	bag	0.850105236
+193	saddle	manufacturer3	brand31	standard	polished	copper	19	jumbo	can	0.909503566
+194	blue	manufacturer4	brand44	large	plated	brass	33	lg	bag	0.22828535
+195	frosted	manufacturer2	brand23	small	burnished	brass	10	wrap	can	0.839390328
+196	papaya	manufacturer1	brand13	medium	plated	nickel	9	jumbo	case	0.85771033
+197	orange	manufacturer4	brand44	promo	anodized	brass	45	wrap	can	0.114051692
+198	powder	manufacturer2	brand25	standard	burnished	steel	23	wrap	can	0.863278292
+199	rose	manufacturer4	brand42	large	burnished	tin	19	jumbo	can	0.861696312
+200	drab	manufacturer1	brand13	economy	anodized	brass	10	wrap	pkg	0.677032141
+201	rosy	manufacturer1	brand13	standard	plated	nickel	6	jumbo	can	0.801365841
+202	papaya	manufacturer1	brand14	small	brushed	tin	25	sm	can	0.51019971
+203	brown	manufacturer5	brand51	medium	brushed	tin	23	sm	box	0.64674321
+204	bisque	manufacturer1	brand15	large	brushed	brass	21	lg	pack	0.415444149
+205	ghost	manufacturer5	brand52	medium	plated	copper	21	med	case	0.529723615
+206	goldenrod	manufacturer4	brand42	standard	plated	steel	13	lg	bag	0.065429916
+207	slate	manufacturer5	brand52	small	anodized	steel	14	jumbo	box	0.199711882
+208	forest	manufacturer3	brand34	medium	anodized	tin	5	lg	box	0.061580761
+209	orchid	manufacturer5	brand55	small	polished	steel	35	sm	jar	0.474728227
+210	ghost	manufacturer1	brand13	medium	plated	brass	18	med	case	0.235480129
+211	antique	manufacturer1	brand11	medium	polished	brass	8	lg	box	0.433733659
+212	azure	manufacturer2	brand25	promo	anodized	steel	47	sm	jar	0.194828482
+213	deep	manufacturer4	brand41	standard	burnished	brass	37	sm	pkg	0.858419311
+214	metallic	manufacturer2	brand23	economy	polished	steel	34	wrap	drum	0.778728263
+215	burlywood	manufacturer3	brand32	economy	burnished	copper	2	wrap	case	0.589638562
+216	cornsilk	manufacturer3	brand34	promo	brushed	steel	33	sm	case	0.366925041
+217	rosy	manufacturer2	brand25	standard	burnished	nickel	20	jumbo	pkg	0.073445852
+218	aquamarine	manufacturer5	brand55	promo	brushed	nickel	15	sm	jar	0.612072636
+219	dark	manufacturer4	brand41	small	anodized	tin	46	wrap	can	0.604512555
+220	deep	manufacturer4	brand41	promo	polished	nickel	5	lg	pack	0.593016894
+221	pale	manufacturer5	brand54	economy	burnished	steel	17	jumbo	pack	0.118393358
+222	royal	manufacturer4	brand42	promo	brushed	brass	5	sm	can	0.59068235
+223	peru	manufacturer5	brand52	large	plated	copper	6	med	case	0.541024306
+224	sandy	manufacturer3	brand35	small	polished	brass	46	jumbo	jar	0.264969176
+225	medium	manufacturer4	brand43	medium	anodized	copper	6	med	bag	0.82807452
+226	indian	manufacturer2	brand24	promo	polished	steel	43	sm	drum	0.711259503
+227	brown	manufacturer5	brand53	standard	plated	brass	12	wrap	drum	0.582310549
+228	yellow	manufacturer5	brand53	small	burnished	brass	48	sm	case	0.739968517
+229	plum	manufacturer4	brand42	standard	polished	tin	12	med	case	0.491228035
+230	purple	manufacturer4	brand44	small	plated	copper	29	lg	case	0.219807527
+231	yellow	manufacturer5	brand54	medium	polished	brass	37	sm	box	0.062745325
+232	misty	manufacturer4	brand45	promo	brushed	copper	12	med	can	0.388806671
+233	hot	manufacturer4	brand45	large	plated	nickel	23	wrap	jar	0.551318857
+234	aquamarine	manufacturer3	brand34	small	plated	copper	17	jumbo	case	0.107193005
+235	papaya	manufacturer2	brand21	small	anodized	tin	30	wrap	drum	0.885452267
+236	blanched	manufacturer1	brand12	medium	brushed	steel	8	med	pack	0.300026993
+237	steel	manufacturer4	brand44	economy	plated	steel	28	jumbo	pkg	0.376070194
+238	cream	manufacturer2	brand21	promo	brushed	brass	37	lg	bag	0.450859768
+239	purple	manufacturer1	brand13	economy	brushed	nickel	50	lg	pkg	0.373577848
+240	cornflower	manufacturer2	brand23	promo	anodized	copper	5	sm	pack	0.32690617
+241	cream	manufacturer2	brand25	medium	polished	copper	22	jumbo	pack	0.742438801
+242	sandy	manufacturer1	brand14	small	anodized	tin	5	sm	bag	0.127614811
+243	dodger	manufacturer3	brand35	medium	plated	copper	25	sm	can	0.140461111
+244	gainsboro	manufacturer4	brand45	standard	polished	tin	19	med	case	0.308551303
+245	navy	manufacturer5	brand53	promo	polished	tin	38	jumbo	box	0.904626581
+246	midnight	manufacturer4	brand45	economy	polished	brass	12	jumbo	case	0.20822205
+247	hot	manufacturer2	brand22	economy	polished	brass	38	wrap	pkg	0.261724944
+248	metallic	manufacturer1	brand13	small	polished	steel	37	wrap	bag	0.749529138
+249	spring	manufacturer5	brand54	medium	polished	steel	47	sm	pkg	0.214412479
+250	snow	manufacturer2	brand23	standard	anodized	tin	30	lg	drum	0.399656895
+251	gainsboro	manufacturer2	brand21	promo	anodized	copper	43	sm	case	0.544896783
+252	misty	manufacturer3	brand34	economy	brushed	nickel	11	wrap	drum	0.907317148
+253	lime	manufacturer2	brand22	medium	brushed	tin	41	sm	case	0.540614491
+254	ivory	manufacturer5	brand51	promo	plated	copper	20	wrap	pkg	0.679392948
+255	medium	manufacturer4	brand42	economy	brushed	tin	24	jumbo	box	0.572540413
+256	tomato	manufacturer4	brand43	small	plated	copper	10	wrap	jar	0.941291089
+257	almond	manufacturer5	brand52	large	plated	steel	40	jumbo	box	0.89068053
+258	black	manufacturer3	brand33	small	burnished	nickel	48	lg	can	0.139159787
+259	goldenrod	manufacturer3	brand34	large	anodized	copper	18	sm	jar	0.085726476
+260	moccasin	manufacturer1	brand14	economy	burnished	nickel	14	med	pack	0.423399633
+261	light	manufacturer3	brand32	medium	polished	copper	35	sm	pack	0.124081301
+262	deep	manufacturer1	brand12	standard	polished	brass	45	med	jar	0.916292683
+263	almond	manufacturer1	brand14	medium	brushed	brass	26	wrap	pkg	0.060206759
+264	sky	manufacturer3	brand33	medium	anodized	tin	39	wrap	case	0.853816687
+265	slate	manufacturer2	brand24	large	brushed	tin	5	jumbo	bag	0.54842141
+266	firebrick	manufacturer5	brand51	large	burnished	steel	14	med	case	0.562118978
+267	indian	manufacturer3	brand33	large	burnished	steel	22	wrap	pack	0.469040803
+268	honeydew	manufacturer2	brand23	large	plated	brass	11	med	pkg	0.628236995
+269	cream	manufacturer3	brand34	promo	burnished	steel	3	sm	jar	0.195747502
+270	black	manufacturer3	brand31	economy	plated	nickel	1	med	jar	0.788804724
+271	lime	manufacturer5	brand55	standard	anodized	brass	2	jumbo	case	0.370266298
+272	honeydew	manufacturer2	brand23	promo	burnished	tin	3	jumbo	can	0.751976551
+273	turquoise	manufacturer5	brand54	standard	burnished	brass	27	wrap	drum	0.316506696
+274	firebrick	manufacturer5	brand53	promo	polished	nickel	50	lg	drum	0.892637189
+275	snow	manufacturer1	brand13	standard	plated	tin	17	sm	bag	0.537573925
+276	goldenrod	manufacturer5	brand51	medium	anodized	steel	12	med	jar	0.074774202
+277	bisque	manufacturer2	brand25	economy	plated	tin	47	jumbo	pack	0.644128952
+278	goldenrod	manufacturer1	brand11	small	brushed	steel	34	wrap	case	0.594030756
+279	midnight	manufacturer2	brand25	large	brushed	nickel	4	jumbo	can	0.559446247
+280	cyan	manufacturer2	brand25	economy	plated	brass	13	wrap	pkg	0.394651636
+281	ghost	manufacturer4	brand42	promo	plated	brass	38	med	jar	0.63381013
+282	purple	manufacturer2	brand23	small	plated	nickel	11	sm	jar	0.729877015
+283	green	manufacturer4	brand41	standard	burnished	steel	28	med	pack	0.463897814
+284	lime	manufacturer4	brand43	large	brushed	nickel	38	med	bag	0.699255468
+285	blanched	manufacturer4	brand44	medium	anodized	brass	22	sm	drum	0.8512894
+286	navajo	manufacturer4	brand42	promo	polished	steel	19	sm	box	0.448410362
+287	white	manufacturer2	brand24	standard	polished	tin	28	wrap	jar	0.77875323
+288	frosted	manufacturer1	brand12	small	brushed	tin	45	med	pack	0.158257404
+289	navy	manufacturer5	brand55	small	anodized	copper	13	lg	bag	0.179545846
+290	honeydew	manufacturer1	brand13	small	anodized	brass	43	lg	bag	0.620347734
+291	yellow	manufacturer1	brand12	standard	burnished	nickel	39	jumbo	jar	0.93215075
+292	red	manufacturer4	brand44	small	burnished	tin	44	lg	jar	0.333928837
+293	sky	manufacturer2	brand21	economy	plated	tin	23	wrap	pkg	0.759857105
+294	tan	manufacturer2	brand25	promo	brushed	nickel	9	wrap	box	0.8679391
+295	moccasin	manufacturer4	brand45	large	plated	copper	12	sm	case	0.211714208
+296	slate	manufacturer3	brand33	medium	burnished	steel	13	wrap	drum	0.349093549
+297	hot	manufacturer5	brand52	medium	anodized	tin	42	lg	can	0.158021047
+298	floral	manufacturer5	brand51	large	burnished	tin	20	med	jar	0.884750714
+299	antique	manufacturer4	brand41	small	brushed	tin	48	jumbo	bag	0.787646567
+300	plum	manufacturer1	brand14	standard	brushed	steel	25	lg	case	0.865601292
+301	smoke	manufacturer5	brand53	standard	burnished	steel	45	lg	drum	0.153056706
+302	cornsilk	manufacturer2	brand21	economy	anodized	tin	45	jumbo	drum	0.296697509
+303	firebrick	manufacturer3	brand34	small	burnished	nickel	13	wrap	pack	0.432596329
+304	papaya	manufacturer3	brand32	medium	anodized	copper	1	sm	pack	0.363072291
+305	puff	manufacturer1	brand11	large	burnished	copper	3	lg	pack	0.544206247
+306	olive	manufacturer3	brand34	medium	anodized	brass	14	wrap	pack	0.288702269
+307	smoke	manufacturer3	brand33	promo	burnished	brass	48	lg	pack	0.067526148
+308	floral	manufacturer3	brand32	economy	polished	brass	46	sm	pkg	0.55289448
+309	puff	manufacturer5	brand52	standard	burnished	steel	23	med	drum	0.655558784
+310	medium	manufacturer1	brand12	small	brushed	copper	28	wrap	pkg	0.508682171
+311	almond	manufacturer1	brand11	economy	burnished	copper	42	wrap	bag	0.229303235
+312	midnight	manufacturer2	brand22	small	burnished	copper	45	sm	bag	0.893312518
+313	seashell	manufacturer1	brand12	promo	anodized	tin	30	jumbo	can	0.090032244
+314	turquoise	manufacturer3	brand34	medium	plated	steel	12	med	case	0.601411882
+315	frosted	manufacturer3	brand31	standard	brushed	steel	1	lg	bag	0.632267892
+316	sky	manufacturer4	brand43	small	burnished	nickel	6	med	pack	0.484976173
+317	chocolate	manufacturer1	brand15	economy	polished	tin	28	wrap	pack	0.537243294
+318	dim	manufacturer2	brand24	economy	anodized	steel	28	lg	box	0.634733746
+319	thistle	manufacturer1	brand13	economy	plated	steel	34	wrap	box	0.436938063
+320	mint	manufacturer2	brand21	large	plated	tin	15	med	can	0.851093588
+321	dodger	manufacturer2	brand21	small	brushed	brass	4	sm	pkg	0.364513857
+322	chiffon	manufacturer5	brand54	economy	burnished	steel	28	sm	bag	0.818040785
+323	linen	manufacturer4	brand45	large	burnished	copper	15	jumbo	drum	0.564712692
+324	sandy	manufacturer1	brand11	promo	burnished	nickel	2	med	jar	0.244968348
+325	white	manufacturer2	brand24	small	burnished	tin	15	wrap	case	0.765521509
+326	rose	manufacturer2	brand23	small	plated	brass	47	lg	box	0.520446664
+327	mint	manufacturer3	brand31	promo	polished	tin	47	med	pkg	0.946245997
+328	tomato	manufacturer3	brand31	economy	anodized	tin	28	sm	jar	0.502618221
+329	smoke	manufacturer1	brand12	medium	burnished	brass	19	jumbo	drum	0.728524669
+330	saddle	manufacturer5	brand54	large	anodized	tin	5	med	drum	0.824747492
+331	indian	manufacturer2	brand24	large	polished	nickel	16	jumbo	case	0.729068012
+332	grey	manufacturer3	brand35	promo	anodized	nickel	45	jumbo	can	0.443397332
+333	misty	manufacturer2	brand24	large	plated	copper	10	sm	bag	0.433941577
+334	salmon	manufacturer1	brand13	medium	polished	nickel	2	jumbo	can	0.927375048
+335	light	manufacturer5	brand53	small	polished	copper	31	med	can	0.63493712
+336	honeydew	manufacturer3	brand34	promo	plated	copper	15	wrap	pack	0.368636457
+337	cream	manufacturer2	brand24	standard	polished	steel	15	lg	box	0.507224599
+338	dark	manufacturer1	brand13	economy	polished	brass	1	med	bag	0.440935097
+339	navajo	manufacturer1	brand14	economy	anodized	nickel	7	lg	drum	0.395776182
+340	chiffon	manufacturer4	brand43	standard	plated	steel	3	med	pkg	0.282003282
+341	smoke	manufacturer5	brand53	economy	plated	copper	6	sm	bag	0.079564219
+342	medium	manufacturer2	brand23	standard	plated	tin	35	wrap	case	0.258894861
+343	red	manufacturer4	brand44	standard	anodized	copper	37	sm	can	0.142266582
+344	peru	manufacturer1	brand14	large	brushed	brass	13	sm	bag	0.195589085
+345	pale	manufacturer4	brand41	large	polished	copper	34	med	box	0.47733488
+346	moccasin	manufacturer1	brand14	medium	anodized	copper	39	med	box	0.77239052
+347	sienna	manufacturer2	brand22	promo	plated	copper	38	sm	drum	0.086246031
+348	orchid	manufacturer5	brand55	promo	brushed	steel	12	lg	case	0.797032631
+349	khaki	manufacturer2	brand22	small	burnished	steel	9	sm	drum	0.947814933
+350	rose	manufacturer5	brand54	economy	brushed	steel	31	med	drum	0.771422481
+351	thistle	manufacturer2	brand23	economy	burnished	steel	14	lg	can	0.352114802
+352	smoke	manufacturer4	brand42	promo	burnished	brass	38	wrap	drum	0.906908854
+353	cream	manufacturer3	brand35	large	anodized	tin	1	sm	box	0.422978112
+354	coral	manufacturer1	brand14	medium	plated	brass	13	lg	can	0.844651508
+355	lime	manufacturer1	brand15	standard	anodized	tin	10	jumbo	jar	0.559273186
+356	blue	manufacturer2	brand21	medium	brushed	brass	43	med	bag	0.249658871
+357	black	manufacturer4	brand45	medium	anodized	nickel	17	sm	jar	0.203828425
+358	steel	manufacturer3	brand32	medium	anodized	nickel	11	lg	jar	0.564829324
+359	sky	manufacturer5	brand55	medium	burnished	brass	7	sm	pkg	0.312713221
+360	maroon	manufacturer2	brand21	medium	brushed	tin	50	lg	drum	0.430887534
+361	snow	manufacturer4	brand41	medium	polished	steel	24	lg	jar	0.225157576
+362	rose	manufacturer4	brand42	small	polished	nickel	46	med	drum	0.569697053
+363	black	manufacturer2	brand21	small	polished	brass	48	jumbo	drum	0.378896851
+364	orange	manufacturer4	brand44	medium	anodized	nickel	44	med	bag	0.616444125
+365	chartreuse	manufacturer5	brand52	small	polished	nickel	20	med	pack	0.731649002
+366	azure	manufacturer2	brand23	small	anodized	tin	23	lg	can	0.279219554
+367	orange	manufacturer4	brand43	standard	anodized	nickel	11	lg	can	0.790680644
+368	maroon	manufacturer2	brand21	economy	polished	copper	23	med	pack	0.400713427
+369	magenta	manufacturer3	brand33	standard	brushed	steel	18	sm	drum	0.398572336
+370	white	manufacturer3	brand35	small	burnished	copper	3	jumbo	pkg	0.637132607
+371	lace	manufacturer2	brand24	large	brushed	brass	39	lg	box	0.816198266
+372	gainsboro	manufacturer3	brand34	large	anodized	nickel	20	wrap	bag	0.941990912
+373	mint	manufacturer2	brand25	promo	anodized	steel	7	med	can	0.355766771
+374	chartreuse	manufacturer4	brand41	medium	brushed	tin	19	med	pack	0.151455372
+375	azure	manufacturer5	brand53	promo	anodized	nickel	20	jumbo	bag	0.392017749
+376	puff	manufacturer1	brand13	promo	burnished	steel	26	wrap	pack	0.143663832
+377	peru	manufacturer3	brand31	promo	anodized	nickel	39	wrap	pack	0.091185015
+378	plum	manufacturer4	brand44	standard	anodized	brass	41	med	pkg	0.686466233
+379	magenta	manufacturer3	brand34	medium	plated	copper	45	jumbo	bag	0.468678568
+380	wheat	manufacturer2	brand23	large	brushed	steel	39	sm	pkg	0.365433691
+381	peru	manufacturer5	brand54	small	burnished	brass	50	sm	pack	0.356410295
+382	misty	manufacturer2	brand22	economy	anodized	steel	23	sm	pkg	0.066974661
+383	metallic	manufacturer4	brand44	economy	burnished	brass	10	lg	can	0.773315403
+384	chiffon	manufacturer1	brand15	large	brushed	nickel	32	lg	case	0.432984929
+385	white	manufacturer2	brand24	medium	anodized	steel	6	lg	case	0.568925496
+386	lace	manufacturer5	brand54	medium	polished	brass	44	med	box	0.394399417
+387	beige	manufacturer3	brand35	promo	plated	tin	17	med	box	0.76189119
+388	orange	manufacturer4	brand42	large	anodized	tin	25	jumbo	pack	0.652104651
+389	orchid	manufacturer1	brand12	small	polished	nickel	19	med	jar	0.218128367
+390	sky	manufacturer2	brand24	large	polished	brass	28	jumbo	box	0.464028669
+391	light	manufacturer2	brand24	economy	polished	brass	10	lg	box	0.304019825
+392	peru	manufacturer3	brand31	large	brushed	brass	47	wrap	box	0.552549648
+393	coral	manufacturer5	brand51	large	brushed	nickel	10	sm	box	0.705322498
+394	brown	manufacturer1	brand15	economy	plated	steel	44	jumbo	box	0.312424784
+395	spring	manufacturer4	brand44	economy	brushed	copper	9	jumbo	drum	0.5697685
+396	chartreuse	manufacturer4	brand43	promo	anodized	tin	50	lg	case	0.44211501
+397	lavender	manufacturer1	brand14	economy	anodized	steel	36	wrap	can	0.69255623
+398	tomato	manufacturer1	brand12	economy	polished	steel	21	lg	pkg	0.262638415
+399	cornflower	manufacturer5	brand52	promo	burnished	tin	14	jumbo	drum	0.778507323
+400	pale	manufacturer3	brand34	small	polished	brass	40	sm	pack	0.067303592
+\.
+SELECT add_provenance('part');
+SELECT set_prob(provenance(), prob) FROM part;
+CREATE TABLE partsupp (c1 bigint, c2 bigint, prob float8);
+COPY partsupp FROM STDIN;
+1	2	0.040091098
+1	7	0.043159442
+1	12	0.024919765
+1	17	0.026682192
+2	3	0.018510034
+2	8	0.02813839
+2	13	0.037390403
+2	18	0.012192227
+3	4	0.033703358
+3	9	0.01957975
+3	14	0.034078226
+3	19	0.027910075
+4	5	0.032285755
+4	10	0.007491721
+4	15	0.024542274
+4	20	0.035431087
+5	6	0.059256318
+5	11	0.063159982
+5	16	0.026230763
+5	1	0.032554107
+6	7	0.044357439
+6	12	0.038900214
+6	17	0.055302431
+6	2	0.062842459
+7	8	0.06079084
+7	13	0.012301471
+7	18	0.03813579
+7	3	0.010477869
+8	9	0.009278111
+8	14	0.004600808
+8	19	0.017590007
+8	4	0.051904042
+9	10	0.022879194
+9	15	0.051890004
+9	20	0.03481026
+9	5	0.017773806
+10	11	0.006895149
+10	16	0.010613682
+10	1	0.047791786
+10	6	0.027483229
+11	12	0.049943516
+11	17	0.043081838
+11	2	0.008734644
+11	7	0.052176829
+12	13	0.026946942
+12	18	0.06092017
+12	3	0.030358201
+12	8	0.058575992
+13	14	0.008049944
+13	19	0.036655826
+13	4	0.011683683
+13	9	0.005915639
+14	15	0.034910415
+14	20	0.009627263
+14	5	0.035985652
+14	10	0.049588103
+15	16	0.042438932
+15	1	0.004003148
+15	6	0.048760745
+15	11	0.022731303
+16	17	0.024528118
+16	2	0.004958026
+16	7	0.014792892
+16	12	0.004698379
+17	18	0.04385887
+17	3	0.036097338
+17	8	0.004098989
+17	13	0.015844067
+18	19	0.013140135
+18	4	0.051956521
+18	9	0.061680596
+18	14	0.04373023
+19	20	0.030177758
+19	5	0.050501593
+19	10	0.033794616
+19	15	0.019856094
+20	1	0.014835291
+20	6	0.039525242
+20	11	0.033726895
+20	16	0.016987744
+21	2	0.042637238
+21	8	0.045222068
+21	14	0.054637272
+21	20	0.026311734
+22	3	0.057883291
+22	9	0.018795624
+22	15	0.027074895
+22	1	0.058563123
+23	4	0.040361932
+23	10	0.035024272
+23	16	0.037817559
+23	2	0.011977999
+24	5	0.047269093
+24	11	0.033734723
+24	17	0.007248053
+24	3	0.00936028
+25	6	0.01261222
+25	12	0.050992579
+25	18	0.054545875
+25	4	0.059882725
+26	7	0.015736564
+26	13	0.01427336
+26	19	0.032095709
+26	5	0.015811598
+27	8	0.051888908
+27	14	0.041888766
+27	20	0.056895312
+27	6	0.044380685
+28	9	0.062864587
+28	15	0.033851236
+28	1	0.05035087
+28	7	0.050974174
+29	10	0.041448147
+29	16	0.060894675
+29	2	0.009847256
+29	8	0.013217892
+30	11	0.045771939
+30	17	0.06277208
+30	3	0.0323192
+30	9	0.008045565
+31	12	0.010533371
+31	18	0.021333564
+31	4	0.012126559
+31	10	0.023829237
+32	13	0.046814086
+32	19	0.028601823
+32	5	0.057417049
+32	11	0.033985264
+33	14	0.034416976
+33	20	0.017678696
+33	6	0.009585009
+33	12	0.019940463
+34	15	0.047307928
+34	1	0.03326751
+34	7	0.009273547
+34	13	0.058119526
+35	16	0.003985999
+35	2	0.018881597
+35	8	0.055011082
+35	14	0.026185865
+36	17	0.033519343
+36	3	0.029542834
+36	9	0.047516421
+36	15	0.050811864
+37	18	0.028101803
+37	4	0.058101209
+37	10	0.028140141
+37	16	0.005135364
+38	19	0.037314619
+38	5	0.054474189
+38	11	0.037731076
+38	17	0.023428026
+39	20	0.004898891
+39	6	0.007908887
+39	12	0.035069514
+39	18	0.045625681
+40	1	0.044240356
+40	7	0.010298008
+40	13	0.013184194
+40	19	0.023214708
+41	2	0.021635521
+41	9	0.019871105
+41	16	0.007850616
+41	3	0.062411621
+42	3	0.042705841
+42	10	0.022771071
+42	17	0.042831513
+42	4	0.032210234
+43	4	0.019840039
+43	11	0.044120745
+43	18	0.045052699
+43	5	0.047375189
+44	5	0.017680743
+44	12	0.060525895
+44	19	0.05720887
+44	6	0.04297511
+45	6	0.045564624
+45	13	0.007998887
+45	20	0.011673517
+45	7	0.021352106
+46	7	0.055452541
+46	14	0.028392608
+46	1	0.022068529
+46	8	0.05515741
+47	8	0.007711141
+47	15	0.043637527
+47	2	0.055065227
+47	9	0.01160663
+48	9	0.029925035
+48	16	0.059494496
+48	3	0.023419503
+48	10	0.009317795
+49	10	0.042449937
+49	17	0.009131321
+49	4	0.050595807
+49	11	0.046435182
+50	11	0.016755472
+50	18	0.036213052
+50	5	0.032185332
+50	12	0.009081522
+51	12	0.049200945
+51	19	0.053272832
+51	6	0.028776237
+51	13	0.032527598
+52	13	0.032955558
+52	20	0.011889311
+52	7	0.00527948
+52	14	0.025681407
+53	14	0.015995489
+53	1	0.051886404
+53	8	0.017187834
+53	15	0.026938709
+54	15	0.049701877
+54	2	0.019848705
+54	9	0.039776173
+54	16	0.018852817
+55	16	0.009739167
+55	3	0.046979949
+55	10	0.020061394
+55	17	0.058661532
+56	17	0.009143597
+56	4	0.025824057
+56	11	0.038099171
+56	18	0.034294755
+57	18	0.060501322
+57	5	0.015638598
+57	12	0.018989969
+57	19	0.042363448
+58	19	0.053363894
+58	6	0.023530561
+58	13	0.011087343
+58	20	0.048955533
+59	20	0.030111641
+59	7	0.059578915
+59	14	0.036816846
+59	1	0.022179281
+60	1	0.047811418
+60	8	0.046993245
+60	15	0.005874622
+60	2	0.028264924
+61	2	0.045218061
+61	10	0.006324357
+61	18	0.004412753
+61	6	0.030564531
+62	3	0.02545213
+62	11	0.041457563
+62	19	0.040519328
+62	7	0.053767848
+63	4	0.005058057
+63	12	0.01992722
+63	20	0.013787624
+63	8	0.005727637
+64	5	0.021130451
+64	13	0.049216311
+64	1	0.008613266
+64	9	0.020861746
+65	6	0.054203897
+65	14	0.011133508
+65	2	0.021897855
+65	10	0.028459639
+66	7	0.018520649
+66	15	0.041196977
+66	3	0.017641365
+66	11	0.030273954
+67	8	0.051068308
+67	16	0.039853407
+67	4	0.060280024
+67	12	0.036096722
+68	9	0.042326529
+68	17	0.038144443
+68	5	0.037685167
+68	13	0.03252032
+69	10	0.053965766
+69	18	0.036067047
+69	6	0.00963689
+69	14	0.059284374
+70	11	0.036476428
+70	19	0.04078738
+70	7	0.017493453
+70	15	0.018716633
+71	12	0.023392823
+71	20	0.056060506
+71	8	0.019080759
+71	16	0.034439584
+72	13	0.015540012
+72	1	0.036372685
+72	9	0.017694493
+72	17	0.060732551
+73	14	0.026863454
+73	2	0.020597199
+73	10	0.028568817
+73	18	0.045509275
+74	15	0.016257867
+74	3	0.034066085
+74	11	0.032315716
+74	19	0.015603453
+75	16	0.05347185
+75	4	0.01447387
+75	12	0.024879303
+75	20	0.019990106
+76	17	0.055887704
+76	5	0.041763183
+76	13	0.02418404
+76	1	0.061266508
+77	18	0.042422281
+77	6	0.053150108
+77	14	0.036612085
+77	2	0.053240111
+78	19	0.005491058
+78	7	0.016388146
+78	15	0.013865714
+78	3	0.00831432
+79	20	0.042367504
+79	8	0.040312992
+79	16	0.057057282
+79	4	0.011657819
+80	1	0.038590992
+80	9	0.030515039
+80	17	0.048807575
+80	5	0.006567667
+81	2	0.006567523
+81	11	0.040907855
+81	20	0.043413091
+81	9	0.020877255
+82	3	0.020310986
+82	12	0.025357671
+82	1	0.013151543
+82	10	0.025387166
+83	4	0.047992016
+83	13	0.006464633
+83	2	0.052516302
+83	11	0.046488404
+84	5	0.054624359
+84	14	0.05363224
+84	3	0.025439874
+84	12	0.023363828
+85	6	0.024056226
+85	15	0.020127723
+85	4	0.003643873
+85	13	0.032935227
+86	7	0.036998593
+86	16	0.008999389
+86	5	0.037547476
+86	14	0.00900848
+87	8	0.020798909
+87	17	0.013549694
+87	6	0.048549099
+87	15	0.034484467
+88	9	0.050739074
+88	18	0.005936773
+88	7	0.009758617
+88	16	0.056745117
+89	10	0.021790736
+89	19	0.022420561
+89	8	0.054169267
+89	17	0.011292773
+90	11	0.041413258
+90	20	0.046718888
+90	9	0.059268192
+90	18	0.047065929
+91	12	0.047619963
+91	1	0.03006583
+91	10	0.021557391
+91	19	0.011926851
+92	13	0.024443331
+92	2	0.037849173
+92	11	0.027094283
+92	20	0.026872594
+93	14	0.029647851
+93	3	0.005758746
+93	12	0.004766199
+93	1	0.004296961
+94	15	0.025455096
+94	4	0.020403214
+94	13	0.03256437
+94	2	0.048076075
+95	16	0.004845932
+95	5	0.047616693
+95	14	0.025745015
+95	3	0.003797537
+96	17	0.034719659
+96	6	0.04412316
+96	15	0.060359177
+96	4	0.008052027
+97	18	0.0101052
+97	7	0.011495066
+97	16	0.036878297
+97	5	0.013400501
+98	19	0.02144107
+98	8	0.014998526
+98	17	0.023751656
+98	6	0.034044642
+99	20	0.044916943
+99	9	0.045210552
+99	18	0.006592166
+99	7	0.026501944
+100	1	0.035127999
+100	10	0.005017823
+100	19	0.029500744
+100	8	0.056217966
+101	2	0.059532557
+101	12	0.01320471
+102	3	0.019381912
+102	13	0.00858202
+103	4	0.007418453
+103	14	0.024906974
+104	5	0.025655523
+104	15	0.037607764
+105	6	0.036033556
+105	16	0.045739592
+106	7	0.061950149
+106	17	0.027936817
+107	8	0.016836113
+107	18	0.006136955
+108	9	0.061879839
+108	19	0.014404753
+109	10	0.033794196
+109	20	0.050408774
+110	11	0.02173043
+110	1	0.02160702
+111	12	0.014089074
+111	2	0.010264227
+112	13	0.041353074
+112	3	0.05449395
+113	14	0.028651947
+113	4	0.020923289
+114	15	0.049601595
+114	5	0.014236906
+115	16	0.027495594
+115	6	0.045874608
+116	17	0.053594273
+116	7	0.051318658
+117	18	0.024759794
+117	8	0.006776403
+118	19	0.055633007
+118	9	0.011177957
+119	20	0.003966745
+119	10	0.00840404
+120	1	0.024346204
+120	11	0.027739841
+121	2	0.027200709
+121	13	0.008111001
+121	4	0.059986004
+121	15	0.04502394
+122	3	0.01776848
+122	14	0.039401867
+122	5	0.034621984
+122	16	0.034298616
+123	4	0.006915361
+123	15	0.061160322
+123	6	0.012768657
+123	17	0.004670569
+124	5	0.04545885
+124	16	0.041018303
+124	7	0.014979883
+124	18	0.055459865
+125	6	0.046598519
+125	17	0.040842921
+125	8	0.018605691
+125	19	0.040467454
+126	7	0.030448394
+126	18	0.0203153
+126	9	0.004779362
+126	20	0.042062678
+127	8	0.004263315
+127	19	0.029792545
+127	10	0.037085027
+127	1	0.04101218
+128	9	0.054884189
+128	20	0.021172489
+128	11	0.054062477
+128	2	0.0413229
+129	10	0.007490902
+129	1	0.047578787
+129	12	0.007374862
+129	3	0.014926982
+130	11	0.042057798
+130	2	0.039357466
+130	13	0.056235191
+130	4	0.019604069
+131	12	0.019958234
+131	3	0.022470095
+131	14	0.053976488
+131	5	0.038920062
+132	13	0.034879475
+132	4	0.020062523
+132	15	0.039369908
+132	6	0.019343054
+133	14	0.050604722
+133	5	0.032823188
+133	16	0.057247873
+133	7	0.038082005
+134	15	0.004137043
+134	6	0.031790288
+134	17	0.040169418
+134	8	0.042719046
+135	16	0.044332926
+135	7	0.010252639
+135	18	0.013127376
+135	9	0.012931471
+136	17	0.061249571
+136	8	0.021415999
+136	19	0.022193632
+136	10	0.007505413
+137	18	0.049210057
+137	9	0.040324177
+137	20	0.044236169
+137	11	0.029043917
+138	19	0.02418931
+138	10	0.030486708
+138	1	0.017847607
+138	12	0.015843965
+139	20	0.007062868
+139	11	0.029256255
+139	2	0.022622343
+139	13	0.046413264
+140	1	0.037349019
+140	12	0.006981059
+140	3	0.053599806
+140	14	0.037114331
+141	2	0.004903344
+141	14	0.053635519
+141	6	0.045696699
+141	18	0.046002608
+142	3	0.055401618
+142	15	0.05870249
+142	7	0.007009116
+142	19	0.040994814
+143	4	0.027031236
+143	16	0.055116859
+143	8	0.020733965
+143	20	0.016588064
+144	5	0.032688382
+144	17	0.041054732
+144	9	0.016576837
+144	1	0.010532165
+145	6	0.051793905
+145	18	0.046547448
+145	10	0.005137124
+145	2	0.049480268
+146	7	0.030083295
+146	19	0.038757403
+146	11	0.021122148
+146	3	0.018481833
+147	8	0.061991738
+147	20	0.026601529
+147	12	0.016678575
+147	4	0.005765333
+148	9	0.030540914
+148	1	0.01823731
+148	13	0.056370271
+148	5	0.05586911
+149	10	0.013573665
+149	2	0.046070295
+149	14	0.056669077
+149	6	0.048774433
+150	11	0.051790504
+150	3	0.012483112
+150	15	0.043834965
+150	7	0.02355008
+151	12	0.052677585
+151	4	0.034469947
+151	16	0.026331194
+151	8	0.028471684
+152	13	0.052774826
+152	5	0.055550099
+152	17	0.0162294
+152	9	0.008639252
+153	14	0.044991918
+153	6	0.019735322
+153	18	0.029163902
+153	10	0.027222607
+154	15	0.015148183
+154	7	0.011305127
+154	19	0.00812996
+154	11	0.048841631
+155	16	0.005626576
+155	8	0.011202123
+155	20	0.059119885
+155	12	0.051229834
+156	17	0.03926463
+156	9	0.004293504
+156	1	0.039564103
+156	13	0.004133699
+157	18	0.055535792
+157	10	0.060011519
+157	2	0.061066633
+157	14	0.04427938
+158	19	0.003336831
+158	11	0.037919689
+158	3	0.021352193
+158	15	0.042120798
+159	20	0.012351314
+159	12	0.060909978
+159	4	0.035798819
+159	16	0.017001458
+160	1	0.061691739
+160	13	0.029852013
+160	5	0.049471952
+160	17	0.032781511
+161	2	0.056559755
+161	15	0.011066445
+161	8	0.024695752
+161	1	0.022638732
+162	3	0.01733323
+162	16	0.023121558
+162	9	0.05400296
+162	2	0.062949445
+163	4	0.029078118
+163	17	0.041157164
+163	10	0.043335317
+163	3	0.027473993
+164	5	0.039708868
+164	18	0.027490364
+164	11	0.026921119
+164	4	0.043349897
+165	6	0.022611199
+165	19	0.052404861
+165	12	0.019878709
+165	5	0.02882367
+166	7	0.054195385
+166	20	0.060126208
+166	13	0.05219565
+166	6	0.006308734
+167	8	0.030890054
+167	1	0.061243169
+167	14	0.046549495
+167	7	0.052947596
+168	9	0.057926892
+168	2	0.049942314
+168	15	0.053948568
+168	8	0.041342595
+169	10	0.041327324
+169	3	0.013546249
+169	16	0.046985286
+169	9	0.047092284
+170	11	0.008708725
+170	4	0.01142679
+170	17	0.029829693
+170	10	0.033530548
+171	12	0.062960723
+171	5	0.057657874
+171	18	0.017017376
+171	11	0.027420631
+172	13	0.044916817
+172	6	0.036347013
+172	19	0.05879894
+172	12	0.048636113
+173	14	0.017903589
+173	7	0.061013637
+173	20	0.007255693
+173	13	0.062022581
+174	15	0.008191972
+174	8	0.045627965
+174	1	0.021657869
+174	14	0.032113776
+175	16	0.011246127
+175	9	0.041388238
+175	2	0.042355389
+175	15	0.018158208
+176	17	0.009396921
+176	10	0.007940797
+176	3	0.027077505
+176	16	0.042668755
+177	18	0.048078825
+177	11	0.037607688
+177	4	0.018106867
+177	17	0.019595682
+178	19	0.05493782
+178	12	0.018460779
+178	5	0.022859775
+178	18	0.01648669
+179	20	0.017691407
+179	13	0.051603105
+179	6	0.042745397
+179	19	0.035776204
+180	1	0.05816002
+180	14	0.022922159
+180	7	0.006858259
+180	20	0.022273339
+181	2	0.010616905
+181	16	0.025606148
+181	10	0.050619362
+181	4	0.032334029
+182	3	0.035179363
+182	17	0.052844994
+182	11	0.034367564
+182	5	0.020813829
+183	4	0.016473975
+183	18	0.005810733
+183	12	0.010185288
+183	6	0.014515273
+184	5	0.055092793
+184	19	0.028356343
+184	13	0.034902803
+184	7	0.021791481
+185	6	0.032564623
+185	20	0.016296624
+185	14	0.012985346
+185	8	0.028759086
+186	7	0.007510133
+186	1	0.046425082
+186	15	0.04067905
+186	9	0.0174144
+187	8	0.036863439
+187	2	0.018612782
+187	16	0.030223989
+187	10	0.007830477
+188	9	0.045495608
+188	3	0.047173224
+188	17	0.049343847
+188	11	0.055286311
+189	10	0.024661012
+189	4	0.033441594
+189	18	0.027321491
+189	12	0.01887915
+190	11	0.057283299
+190	5	0.035814304
+190	19	0.028147268
+190	13	0.007716274
+191	12	0.044179373
+191	6	0.032605262
+191	20	0.062470855
+191	14	0.058140302
+192	13	0.045736688
+192	7	0.06251104
+192	1	0.018740775
+192	15	0.056879329
+193	14	0.051717227
+193	8	0.021636656
+193	2	0.003935181
+193	16	0.01503119
+194	15	0.00898657
+194	9	0.055776982
+194	3	0.007243282
+194	17	0.055891109
+195	16	0.05104605
+195	10	0.050602901
+195	4	0.03101433
+195	18	0.022324729
+196	17	0.057285778
+196	11	0.052775261
+196	5	0.007505356
+196	19	0.046534291
+197	18	0.011135018
+197	12	0.058486373
+197	6	0.016888744
+197	20	0.053169168
+198	19	0.059371255
+198	13	0.053224476
+198	7	0.006691037
+198	1	0.028919715
+199	20	0.018596288
+199	14	0.012144037
+199	8	0.036189533
+199	2	0.01674815
+200	1	0.048018984
+200	15	0.024132635
+200	9	0.009919581
+200	3	0.023317671
+201	2	0.024432002
+201	17	0.009933655
+201	12	0.048759708
+201	7	0.015695434
+202	3	0.009714207
+202	18	0.053028315
+202	13	0.01995513
+202	8	0.038836165
+203	4	0.061521281
+203	19	0.04842601
+203	14	0.051024075
+203	9	0.007396324
+204	5	0.016688684
+204	20	0.009771543
+204	15	0.05407749
+204	10	0.056289532
+205	6	0.038233748
+205	1	0.062802039
+205	16	0.025854242
+205	11	0.026798461
+206	7	0.045101952
+206	2	0.014398676
+206	17	0.017013941
+206	12	0.033159504
+207	8	0.02175152
+207	3	0.036034224
+207	18	0.042983128
+207	13	0.020217417
+208	9	0.020770992
+208	4	0.031884419
+208	19	0.058782419
+208	14	0.037980723
+209	10	0.051723616
+209	5	0.061790379
+209	20	0.049826377
+209	15	0.049573876
+210	11	0.035429077
+210	6	0.027109203
+210	1	0.014715986
+210	16	0.028944593
+211	12	0.005071235
+211	7	0.06126644
+211	2	0.017365933
+211	17	0.047663994
+212	13	0.03306875
+212	8	0.042772364
+212	3	0.019839194
+212	18	0.057978858
+213	14	0.049010189
+213	9	0.03869946
+213	4	0.014359114
+213	19	0.033048564
+214	15	0.004549145
+214	10	0.054731461
+214	5	0.033036762
+214	20	0.037991394
+215	16	0.063133415
+215	11	0.04043308
+215	6	0.009359601
+215	1	0.02178386
+216	17	0.043983686
+216	12	0.016478323
+216	7	0.03165983
+216	2	0.056077805
+217	18	0.059337306
+217	13	0.015593401
+217	8	0.013079111
+217	3	0.036605321
+218	19	0.049428663
+218	14	0.048999094
+218	9	0.044061086
+218	4	0.042238387
+219	20	0.034948892
+219	15	0.054958598
+219	10	0.060711836
+219	5	0.052074066
+220	1	0.008200381
+220	16	0.039409966
+220	11	0.03916245
+220	6	0.005011806
+221	2	0.0453525
+221	18	0.01038612
+221	14	0.032869117
+221	10	0.042281432
+222	3	0.051773486
+222	19	0.062251155
+222	15	0.044927361
+222	11	0.026986562
+223	4	0.039682853
+223	20	0.016754523
+223	16	0.01975805
+223	12	0.003825818
+224	5	0.008074292
+224	1	0.058076658
+224	17	0.027927187
+224	13	0.019490413
+225	6	0.007913055
+225	2	0.020923913
+225	18	0.048961445
+225	14	0.052013695
+226	7	0.05452603
+226	3	0.009008712
+226	19	0.035507088
+226	15	0.008576361
+227	8	0.030734864
+227	4	0.028438306
+227	20	0.043252032
+227	16	0.022990663
+228	9	0.013943736
+228	5	0.05155869
+228	1	0.040499896
+228	17	0.038121955
+229	10	0.047147976
+229	6	0.021195488
+229	2	0.043256247
+229	18	0.059411359
+230	11	0.040756247
+230	7	0.057431325
+230	3	0.051825755
+230	19	0.046663702
+231	12	0.028086696
+231	8	0.037223528
+231	4	0.042222178
+231	20	0.038524031
+232	13	0.00449008
+232	9	0.047272603
+232	5	0.050468662
+232	1	0.022914655
+233	14	0.039472258
+233	10	0.022776192
+233	6	0.022669191
+233	2	0.042873083
+234	15	0.03836862
+234	11	0.043684755
+234	7	0.034532518
+234	3	0.015830867
+235	16	0.053646039
+235	12	0.062254818
+235	8	0.012548088
+235	4	0.007926104
+236	17	0.019546984
+236	13	0.014202202
+236	9	0.041056881
+236	5	0.04033629
+237	18	0.020694445
+237	14	0.010605583
+237	10	0.02258899
+237	6	0.031468997
+238	19	0.057317486
+238	15	0.050728246
+238	11	0.03612091
+238	7	0.008430435
+239	20	0.005309649
+239	16	0.004491408
+239	12	0.044354798
+239	8	0.043565626
+240	1	0.06279646
+240	17	0.013215304
+240	13	0.009144558
+240	9	0.017265057
+241	2	0.007444579
+241	19	0.008682356
+241	16	0.049384316
+241	13	0.035240271
+242	3	0.005857803
+242	20	0.052345674
+242	17	0.058570842
+242	14	0.021877358
+243	4	0.055855018
+243	1	0.047625768
+243	18	0.029615589
+243	15	0.03931417
+244	5	0.019187488
+244	2	0.016949531
+244	19	0.012708489
+244	16	0.013884093
+245	6	0.0557186
+245	3	0.023890425
+245	20	0.0357883
+245	17	0.038981013
+246	7	0.01268144
+246	4	0.053837668
+246	1	0.02292638
+246	18	0.015995059
+247	8	0.030898543
+247	5	0.03362239
+247	2	0.062468465
+247	19	0.013558076
+248	9	0.023278848
+248	6	0.045627907
+248	3	0.041544359
+248	20	0.026112549
+249	10	0.028083697
+249	7	0.057985831
+249	4	0.01872862
+249	1	0.051877872
+250	11	0.041427337
+250	8	0.013210393
+250	5	0.029915781
+250	2	0.040800414
+251	12	0.030718773
+251	9	0.013192815
+251	6	0.019372863
+251	3	0.0127376
+252	13	0.003470846
+252	10	0.039466701
+252	7	0.018868748
+252	4	0.024607524
+253	14	0.046591481
+253	11	0.018147103
+253	8	0.013464193
+253	5	0.056070232
+254	15	0.013730541
+254	12	0.022051163
+254	9	0.02754793
+254	6	0.011017289
+255	16	0.00554444
+255	13	0.029229942
+255	10	0.054237943
+255	7	0.034217331
+256	17	0.004955911
+256	14	0.023374361
+256	11	0.032820094
+256	8	0.033397898
+257	18	0.029473152
+257	15	0.058368127
+257	12	0.048314609
+257	9	0.019081697
+258	19	0.050531804
+258	16	0.00675659
+258	13	0.029366698
+258	10	0.023281167
+259	20	0.026570896
+259	17	0.055007811
+259	14	0.058151169
+259	11	0.03227963
+260	1	0.00723613
+260	18	0.013007451
+260	15	0.059428301
+260	12	0.019396036
+261	2	0.007838311
+261	20	0.008067241
+261	18	0.021359571
+261	16	0.00828717
+262	3	0.044385482
+262	1	0.003638065
+262	19	0.056678843
+262	17	0.041319021
+263	4	0.024961495
+263	2	0.05401209
+263	20	0.024131821
+263	18	0.048541078
+264	5	0.051024284
+264	3	0.022282551
+264	1	0.023041067
+264	19	0.051426383
+265	6	0.009813654
+265	4	0.029942346
+265	2	0.044129368
+265	20	0.014513038
+266	7	0.025376857
+266	5	0.026800654
+266	3	0.041764525
+266	1	0.053961694
+267	8	0.005229502
+267	6	0.062785919
+267	4	0.054993206
+267	2	0.037445806
+268	9	0.032042779
+268	7	0.051079937
+268	5	0.013793639
+268	3	0.053344895
+269	10	0.03125476
+269	8	0.029236682
+269	6	0.060961747
+269	4	0.042616319
+270	11	0.03430562
+270	9	0.027424993
+270	7	0.036786634
+270	5	0.030995228
+271	12	0.038595133
+271	10	0.049632997
+271	8	0.037000877
+271	6	0.044071323
+272	13	0.004287744
+272	11	0.037245842
+272	9	0.052859251
+272	7	0.041379395
+273	14	0.007683349
+273	12	0.036342378
+273	10	0.05221584
+273	8	0.02608353
+274	15	0.051004044
+274	13	0.046954102
+274	11	0.055238074
+274	9	0.004397285
+275	16	0.003583631
+275	14	0.045719969
+275	12	0.026046278
+275	10	0.049430342
+276	17	0.022719877
+276	15	0.044181504
+276	13	0.051977079
+276	11	0.014920466
+277	18	0.007874257
+277	16	0.021892817
+277	14	0.01932603
+277	12	0.030979855
+278	19	0.01564452
+278	17	0.039085714
+278	15	0.011566926
+278	13	0.038427694
+279	20	0.014996781
+279	18	0.033263116
+279	16	0.030120156
+279	14	0.01313149
+280	1	0.025291617
+280	19	0.038637903
+280	17	0.031128255
+280	15	0.004545641
+281	2	0.060984878
+281	1	0.036058771
+281	20	0.020190958
+281	19	0.024791602
+282	3	0.05558161
+282	2	0.022622536
+282	1	0.009957147
+282	20	0.004328792
+283	4	0.014379838
+283	3	0.017895071
+283	2	0.038726188
+283	1	0.037052122
+284	5	0.026843271
+284	4	0.06073702
+284	3	0.007788671
+284	2	0.025858898
+285	6	0.032510437
+285	5	0.035341121
+285	4	0.05516123
+285	3	0.029479825
+286	7	0.040002168
+286	6	0.014091671
+286	5	0.042286506
+286	4	0.05821986
+287	8	0.014636061
+287	7	0.007397587
+287	6	0.054584837
+287	5	0.003374451
+288	9	0.028884488
+288	8	0.009421521
+288	7	0.008111427
+288	6	0.038023057
+289	10	0.059754357
+289	9	0.007101167
+289	8	0.058760509
+289	7	0.057754257
+290	11	0.049278898
+290	10	0.038510791
+290	9	0.02738309
+290	8	0.044425835
+291	12	0.033506975
+291	11	0.03614183
+291	10	0.029075679
+291	9	0.034943826
+292	13	0.033537638
+292	12	0.018527999
+292	11	0.04475717
+292	10	0.03909925
+293	14	0.044655648
+293	13	0.050878773
+293	12	0.007014528
+293	11	0.047206114
+294	15	0.011687604
+294	14	0.039672611
+294	13	0.039125994
+294	12	0.056995731
+295	16	0.008102267
+295	15	0.021237682
+295	14	0.045971666
+295	13	0.049174966
+296	17	0.031457385
+296	16	0.02777596
+296	15	0.031673915
+296	14	0.051759196
+297	18	0.057554344
+297	17	0.011136774
+297	16	0.059145254
+297	15	0.056577563
+298	19	0.028608204
+298	18	0.059444277
+298	17	0.025064349
+298	16	0.034127178
+299	20	0.019884394
+299	19	0.033826816
+299	18	0.052541601
+299	17	0.017423754
+300	1	0.018823966
+300	20	0.01427315
+300	19	0.033305751
+300	18	0.03154174
+301	2	0.056505904
+302	3	0.011701249
+303	4	0.012081664
+304	5	0.018600092
+305	6	0.041377956
+306	7	0.017887981
+307	8	0.004509701
+308	9	0.039662984
+309	10	0.003832405
+310	11	0.046083228
+311	12	0.022536636
+312	13	0.047066106
+313	14	0.011314533
+314	15	0.005549033
+315	16	0.021816847
+316	17	0.032155392
+317	18	0.016656115
+318	19	0.042581124
+319	20	0.037001549
+320	1	0.022438996
+321	2	0.052318543
+321	3	0.026405072
+321	4	0.043263447
+321	5	0.039331289
+322	3	0.01792606
+322	4	0.04584295
+322	5	0.05955881
+322	6	0.041415031
+323	4	0.029224494
+323	5	0.003973803
+323	6	0.056160503
+323	7	0.033423624
+324	5	0.01958795
+324	6	0.011003589
+324	7	0.049219514
+324	8	0.029388282
+325	6	0.037542925
+325	7	0.029878452
+325	8	0.034987763
+325	9	0.015347075
+326	7	0.050385088
+326	8	0.049226233
+326	9	0.034830415
+326	10	0.048275431
+327	8	0.026309624
+327	9	0.016057703
+327	10	0.022208194
+327	11	0.060681222
+328	9	0.027021939
+328	10	0.018059743
+328	11	0.051159679
+328	12	0.049651197
+329	10	0.041602942
+329	11	0.018471745
+329	12	0.049575968
+329	13	0.060503457
+330	11	0.00958418
+330	12	0.04898373
+330	13	0.023268995
+330	14	0.027414152
+331	12	0.062342763
+331	13	0.037106785
+331	14	0.006629504
+331	15	0.012526493
+332	13	0.004775614
+332	14	0.01106818
+332	15	0.059914581
+332	16	0.025764054
+333	14	0.030802549
+333	15	0.053625297
+333	16	0.055369552
+333	17	0.055001555
+334	15	0.030137873
+334	16	0.02229784
+334	17	0.033405988
+334	18	0.022872112
+335	16	0.025978629
+335	17	0.023391802
+335	18	0.040907304
+335	19	0.029828923
+336	17	0.031367309
+336	18	0.041152001
+336	19	0.043910337
+336	20	0.012440579
+337	18	0.031247133
+337	19	0.054857414
+337	20	0.047301003
+337	1	0.022150612
+338	19	0.014417312
+338	20	0.055213685
+338	1	0.019267042
+338	2	0.060896056
+339	20	0.032106289
+339	1	0.042708851
+339	2	0.013864885
+339	3	0.020952126
+340	1	0.025816103
+340	2	0.05105308
+340	3	0.030775411
+340	4	0.032940063
+341	2	0.056223255
+341	4	0.050166088
+341	6	0.027830115
+341	8	0.031472067
+342	3	0.009088546
+342	5	0.013064139
+342	7	0.047057276
+342	9	0.010651553
+343	4	0.05573092
+343	6	0.021496584
+343	8	0.052243107
+343	10	0.05305928
+344	5	0.03090279
+344	7	0.007182872
+344	9	0.03120249
+344	11	0.017714013
+345	6	0.062343628
+345	8	0.050051958
+345	10	0.006312351
+345	12	0.049278926
+346	7	0.007395894
+346	9	0.008663957
+346	11	0.003592562
+346	13	0.056060491
+347	8	0.049904778
+347	10	0.053774615
+347	12	0.043214172
+347	14	0.004217124
+348	9	0.037160413
+348	11	0.018843014
+348	13	0.015071168
+348	15	0.048618476
+349	10	0.044147388
+349	12	0.04967594
+349	14	0.040177589
+349	16	0.022716847
+350	11	0.031299505
+350	13	0.030047389
+350	15	0.016453608
+350	17	0.061934122
+351	12	0.062474011
+351	14	0.055409144
+351	16	0.056289403
+351	18	0.037045626
+352	13	0.028877518
+352	15	0.060419582
+352	17	0.024635515
+352	19	0.009642195
+353	14	0.054166639
+353	16	0.013699343
+353	18	0.019501075
+353	20	0.005848283
+354	15	0.013485419
+354	17	0.049093254
+354	19	0.010383977
+354	1	0.015952701
+355	16	0.038615579
+355	18	0.054885261
+355	20	0.042603645
+355	2	0.053195673
+356	17	0.040402786
+356	19	0.053721854
+356	1	0.060113128
+356	3	0.054619195
+357	18	0.031240255
+357	20	0.061755877
+357	2	0.051956368
+357	4	0.024043018
+358	19	0.045753161
+358	1	0.037445999
+358	3	0.010917417
+358	5	0.037556653
+359	20	0.034363702
+359	2	0.054172016
+359	4	0.043025316
+359	6	0.036266606
+360	1	0.043280184
+360	3	0.022806948
+360	5	0.022641412
+360	7	0.011635183
+361	2	0.056291741
+361	5	0.019971422
+361	8	0.046838048
+361	11	0.015041891
+362	3	0.028251658
+362	6	0.044644644
+362	9	0.023185784
+362	12	0.057135968
+363	4	0.040492093
+363	7	0.005193015
+363	10	0.046375227
+363	13	0.045716192
+364	5	0.022512397
+364	8	0.046764082
+364	11	0.022057015
+364	14	0.044452733
+365	6	0.042988504
+365	9	0.057309442
+365	12	0.022029317
+365	15	0.007045141
+366	7	0.027466339
+366	10	0.039017333
+366	13	0.058474198
+366	16	0.055408817
+367	8	0.0519179
+367	11	0.033991637
+367	14	0.011693957
+367	17	0.038911828
+368	9	0.03180003
+368	12	0.061772845
+368	15	0.043321717
+368	18	0.005903386
+369	10	0.060998349
+369	13	0.057920445
+369	16	0.010489644
+369	19	0.043837508
+370	11	0.025445229
+370	14	0.015737255
+370	17	0.021558994
+370	20	0.028762585
+371	12	0.024376868
+371	15	0.044750337
+371	18	0.027785592
+371	1	0.037830455
+372	13	0.063248052
+372	16	0.022744094
+372	19	0.012227418
+372	2	0.062755028
+373	14	0.003791697
+373	17	0.048140805
+373	20	0.023876573
+373	3	0.005910883
+374	15	0.040182803
+374	18	0.00675435
+374	1	0.016336923
+374	4	0.038306278
+375	16	0.046146392
+375	19	0.020263424
+375	2	0.047727969
+375	5	0.013461762
+376	17	0.036126784
+376	20	0.009875936
+376	3	0.017258361
+376	6	0.041234542
+377	18	0.052702316
+377	1	0.017501794
+377	4	0.057646773
+377	7	0.010038554
+378	19	0.011994112
+378	2	0.033018334
+378	5	0.061625616
+378	8	0.005950847
+379	20	0.045561874
+379	3	0.038525012
+379	6	0.050833456
+379	9	0.022966858
+380	1	0.035584891
+380	4	0.061626068
+380	7	0.009651969
+380	10	0.03508366
+381	2	0.031511026
+381	6	0.016184115
+381	10	0.02400816
+381	14	0.004610557
+382	3	0.032758465
+382	7	0.028572567
+382	11	0.052576731
+382	15	0.009536878
+383	4	0.013326609
+383	8	0.039013328
+383	12	0.003631938
+383	16	0.029762276
+384	5	0.038056796
+384	9	0.010571915
+384	13	0.042981698
+384	17	0.042678834
+385	6	0.052736179
+385	10	0.058349068
+385	14	0.004999345
+385	18	0.03500248
+386	7	0.028856715
+386	11	0.054353944
+386	15	0.020851771
+386	19	0.045617082
+387	8	0.031465103
+387	12	0.056552641
+387	16	0.038087049
+387	20	0.055800707
+388	9	0.006665166
+388	13	0.035887718
+388	17	0.062144515
+388	1	0.06108726
+389	10	0.019749286
+389	14	0.060922231
+389	18	0.021911105
+389	2	0.036504489
+390	11	0.061398645
+390	15	0.035123936
+390	19	0.015735914
+390	3	0.020824025
+391	12	0.02896014
+391	16	0.00503516
+391	20	0.019375702
+391	4	0.047390599
+392	13	0.046901175
+392	17	0.036020988
+392	1	0.01615311
+392	5	0.032614161
+393	14	0.049832948
+393	18	0.029491303
+393	2	0.024334351
+393	6	0.056003155
+394	15	0.026938626
+394	19	0.020258001
+394	3	0.017558829
+394	7	0.033622643
+395	16	0.046992542
+395	20	0.004163588
+395	4	0.021150901
+395	8	0.059039535
+396	17	0.045771442
+396	1	0.051213766
+396	5	0.03302166
+396	9	0.027679023
+397	18	0.024152295
+397	2	0.009985333
+397	6	0.044618075
+397	10	0.006032671
+398	19	0.046741328
+398	3	0.003493077
+398	7	0.009406519
+398	11	0.026169943
+399	20	0.02056953
+399	4	0.041444972
+399	8	0.010959577
+399	12	0.034056079
+400	1	0.013965399
+400	5	0.056237546
+400	9	0.01825835
+400	13	0.06232411
+\.
+SELECT add_provenance('partsupp');
+SELECT set_prob(provenance(), prob) FROM partsupp;
+CREATE TABLE q16_size (c1 bigint);
+COPY q16_size FROM STDIN;
+49
+14
+23
+45
+19
+3
+36
+9
+\.
+CREATE VIEW q16 AS SELECT DISTINCT 1 AS c1 FROM partsupp t0, part t1, q16_size t2 WHERE t1.c1 = t0.c1 AND t1.c5 = 'medium' AND t1.c6 = 'polished' AND t2.c1 = t1.c8 AND t1.c4 <> 'brand45';

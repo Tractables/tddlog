@@ -1,0 +1,498 @@
+# rl_hmm_smoothing_marginal_100.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function d_nextState(x1_path, x2_prevHidden)
+    if x2_prevHidden !== false
+     x3_nextHidden = flip(0.3)
+    end
+    if x2_prevHidden !== true
+     x4_nextHidden = flip(0.65)
+    end
+    x5_nextHidden = x2_prevHidden === true ? x3_nextHidden : x2_prevHidden === false ? x4_nextHidden : ifelse(x2_prevHidden, x3_nextHidden, x4_nextHidden)
+    if x5_nextHidden !== false
+     x6_nextVisible = flip(0.65)
+    end
+    if x5_nextHidden !== true
+     x7_nextVisible = flip(0.3)
+    end
+    x8_nextVisible = x5_nextHidden === true ? x6_nextVisible : x5_nextHidden === false ? x7_nextVisible : ifelse(x5_nextHidden, x6_nextVisible, x7_nextVisible)
+    x9_nextState = (x5_nextHidden, x8_nextVisible)
+    return x9_nextState
+end
+
+function chunk_1()
+    x10_hidden0 = flip(0.5)
+    x11_state1 = d_nextState(true, x10_hidden0)
+    x12_hidden1 = x11_state1[1]
+    x13_visible1 = x11_state1[2]
+    x14_state2 = d_nextState(true, x12_hidden1)
+    x15_hidden2 = x14_state2[1]
+    x16_visible2 = x14_state2[2]
+    x17_state3 = d_nextState(true, x15_hidden2)
+    x18_hidden3 = x17_state3[1]
+    x19_visible3 = x17_state3[2]
+    x20_state4 = d_nextState(true, x18_hidden3)
+    x21_hidden4 = x20_state4[1]
+    x22_visible4 = x20_state4[2]
+    x23_state5 = d_nextState(true, x21_hidden4)
+    x24_hidden5 = x23_state5[1]
+    x25_visible5 = x23_state5[2]
+    x26_state6 = d_nextState(true, x24_hidden5)
+    x27_hidden6 = x26_state6[1]
+    x28_visible6 = x26_state6[2]
+    x29_state7 = d_nextState(true, x27_hidden6)
+    x30_hidden7 = x29_state7[1]
+    x31_visible7 = x29_state7[2]
+    x32_state8 = d_nextState(true, x30_hidden7)
+    x33_hidden8 = x32_state8[1]
+    x34_visible8 = x32_state8[2]
+    x35_state9 = d_nextState(true, x33_hidden8)
+    x36_hidden9 = x35_state9[1]
+    x37_visible9 = x35_state9[2]
+    x38_state10 = d_nextState(true, x36_hidden9)
+    x39_hidden10 = x38_state10[1]
+    x40_visible10 = x38_state10[2]
+    x41_state11 = d_nextState(true, x39_hidden10)
+    x42_hidden11 = x41_state11[1]
+    x43_visible11 = x41_state11[2]
+    x44_state12 = d_nextState(true, x42_hidden11)
+    x45_hidden12 = x44_state12[1]
+    x46_visible12 = x44_state12[2]
+    x47_state13 = d_nextState(true, x45_hidden12)
+    x48_hidden13 = x47_state13[1]
+    x49_visible13 = x47_state13[2]
+    x50_state14 = d_nextState(true, x48_hidden13)
+    x51_hidden14 = x50_state14[1]
+    x52_visible14 = x50_state14[2]
+    x53_state15 = d_nextState(true, x51_hidden14)
+    x54_hidden15 = x53_state15[1]
+    x55_visible15 = x53_state15[2]
+    x56_state16 = d_nextState(true, x54_hidden15)
+    x57_hidden16 = x56_state16[1]
+    x58_visible16 = x56_state16[2]
+    x59_state17 = d_nextState(true, x57_hidden16)
+    x60_hidden17 = x59_state17[1]
+    x61_visible17 = x59_state17[2]
+    x62_state18 = d_nextState(true, x60_hidden17)
+    x63_hidden18 = x62_state18[1]
+    x64_visible18 = x62_state18[2]
+    x65_state19 = d_nextState(true, x63_hidden18)
+    x66_hidden19 = x65_state19[1]
+    x67_visible19 = x65_state19[2]
+    x68_state20 = d_nextState(true, x66_hidden19)
+    x69_hidden20 = x68_state20[1]
+    x70_visible20 = x68_state20[2]
+    x71_state21 = d_nextState(true, x69_hidden20)
+    x72_hidden21 = x71_state21[1]
+    x73_visible21 = x71_state21[2]
+    x74_state22 = d_nextState(true, x72_hidden21)
+    x75_hidden22 = x74_state22[1]
+    x76_visible22 = x74_state22[2]
+    x77_state23 = d_nextState(true, x75_hidden22)
+    x78_hidden23 = x77_state23[1]
+    x79_visible23 = x77_state23[2]
+    x80_state24 = d_nextState(true, x78_hidden23)
+    x81_hidden24 = x80_state24[1]
+    x82_visible24 = x80_state24[2]
+    x83_state25 = d_nextState(true, x81_hidden24)
+    x84_hidden25 = x83_state25[1]
+    x85_visible25 = x83_state25[2]
+    x86_state26 = d_nextState(true, x84_hidden25)
+    x87_hidden26 = x86_state26[1]
+    x88_visible26 = x86_state26[2]
+    x89_state27 = d_nextState(true, x87_hidden26)
+    x90_hidden27 = x89_state27[1]
+    x91_visible27 = x89_state27[2]
+    x92_state28 = d_nextState(true, x90_hidden27)
+    x93_hidden28 = x92_state28[1]
+    x94_visible28 = x92_state28[2]
+    x95_state29 = d_nextState(true, x93_hidden28)
+    x96_hidden29 = x95_state29[1]
+    x97_visible29 = x95_state29[2]
+    x98_state30 = d_nextState(true, x96_hidden29)
+    x99_hidden30 = x98_state30[1]
+    x100_visible30 = x98_state30[2]
+    x101_state31 = d_nextState(true, x99_hidden30)
+    x102_hidden31 = x101_state31[1]
+    x103_visible31 = x101_state31[2]
+    x104_state32 = d_nextState(true, x102_hidden31)
+    x105_hidden32 = x104_state32[1]
+    x106_visible32 = x104_state32[2]
+    x107_state33 = d_nextState(true, x105_hidden32)
+    x108_hidden33 = x107_state33[1]
+    x109_visible33 = x107_state33[2]
+    x110_state34 = d_nextState(true, x108_hidden33)
+    x111_hidden34 = x110_state34[1]
+    x112_visible34 = x110_state34[2]
+    x113_state35 = d_nextState(true, x111_hidden34)
+    x114_hidden35 = x113_state35[1]
+    x115_visible35 = x113_state35[2]
+    x116_state36 = d_nextState(true, x114_hidden35)
+    x117_hidden36 = x116_state36[1]
+    x118_visible36 = x116_state36[2]
+    x119_state37 = d_nextState(true, x117_hidden36)
+    x120_hidden37 = x119_state37[1]
+    x121_visible37 = x119_state37[2]
+    x122_state38 = d_nextState(true, x120_hidden37)
+    x123_hidden38 = x122_state38[1]
+    x124_visible38 = x122_state38[2]
+    x125_state39 = d_nextState(true, x123_hidden38)
+    x126_hidden39 = x125_state39[1]
+    x127_visible39 = x125_state39[2]
+    x128_state40 = d_nextState(true, x126_hidden39)
+    x129_hidden40 = x128_state40[1]
+    x130_visible40 = x128_state40[2]
+    x131_state41 = d_nextState(true, x129_hidden40)
+    x132_hidden41 = x131_state41[1]
+    x133_visible41 = x131_state41[2]
+    x134_state42 = d_nextState(true, x132_hidden41)
+    x135_hidden42 = x134_state42[1]
+    x136_visible42 = x134_state42[2]
+    x137_state43 = d_nextState(true, x135_hidden42)
+    x138_hidden43 = x137_state43[1]
+    x139_visible43 = x137_state43[2]
+    x140_state44 = d_nextState(true, x138_hidden43)
+    x141_hidden44 = x140_state44[1]
+    x142_visible44 = x140_state44[2]
+    x143_state45 = d_nextState(true, x141_hidden44)
+    x144_hidden45 = x143_state45[1]
+    x145_visible45 = x143_state45[2]
+    x146_state46 = d_nextState(true, x144_hidden45)
+    x147_hidden46 = x146_state46[1]
+    x148_visible46 = x146_state46[2]
+    x149_state47 = d_nextState(true, x147_hidden46)
+    x150_hidden47 = x149_state47[1]
+    x151_visible47 = x149_state47[2]
+    x152_state48 = d_nextState(true, x150_hidden47)
+    x153_hidden48 = x152_state48[1]
+    x154_visible48 = x152_state48[2]
+    x155_state49 = d_nextState(true, x153_hidden48)
+    x156_hidden49 = x155_state49[1]
+    x157_visible49 = x155_state49[2]
+    x158_state50 = d_nextState(true, x156_hidden49)
+    x159_hidden50 = x158_state50[1]
+    x160_visible50 = x158_state50[2]
+    x161_state51 = d_nextState(true, x159_hidden50)
+    x162_hidden51 = x161_state51[1]
+    x163_visible51 = x161_state51[2]
+    x164_state52 = d_nextState(true, x162_hidden51)
+    x165_hidden52 = x164_state52[1]
+    x166_visible52 = x164_state52[2]
+    x167_state53 = d_nextState(true, x165_hidden52)
+    x168_hidden53 = x167_state53[1]
+    x169_visible53 = x167_state53[2]
+    x170_state54 = d_nextState(true, x168_hidden53)
+    x171_hidden54 = x170_state54[1]
+    x172_visible54 = x170_state54[2]
+    x173_state55 = d_nextState(true, x171_hidden54)
+    x174_hidden55 = x173_state55[1]
+    x175_visible55 = x173_state55[2]
+    x176_state56 = d_nextState(true, x174_hidden55)
+    x177_hidden56 = x176_state56[1]
+    x178_visible56 = x176_state56[2]
+    x179_state57 = d_nextState(true, x177_hidden56)
+    x180_hidden57 = x179_state57[1]
+    x181_visible57 = x179_state57[2]
+    x182_state58 = d_nextState(true, x180_hidden57)
+    x183_hidden58 = x182_state58[1]
+    x184_visible58 = x182_state58[2]
+    x185_state59 = d_nextState(true, x183_hidden58)
+    x186_hidden59 = x185_state59[1]
+    x187_visible59 = x185_state59[2]
+    x188_state60 = d_nextState(true, x186_hidden59)
+    x189_hidden60 = x188_state60[1]
+    x190_visible60 = x188_state60[2]
+    x191_state61 = d_nextState(true, x189_hidden60)
+    x192_hidden61 = x191_state61[1]
+    x193_visible61 = x191_state61[2]
+    x194_state62 = d_nextState(true, x192_hidden61)
+    x195_hidden62 = x194_state62[1]
+    x196_visible62 = x194_state62[2]
+    x197_state63 = d_nextState(true, x195_hidden62)
+    x198_hidden63 = x197_state63[1]
+    x199_visible63 = x197_state63[2]
+    x200_state64 = d_nextState(true, x198_hidden63)
+    x201_hidden64 = x200_state64[1]
+    x202_visible64 = x200_state64[2]
+    x203_state65 = d_nextState(true, x201_hidden64)
+    x204_hidden65 = x203_state65[1]
+    x205_visible65 = x203_state65[2]
+    x206_state66 = d_nextState(true, x204_hidden65)
+    x207_hidden66 = x206_state66[1]
+    x208_visible66 = x206_state66[2]
+    x209_state67 = d_nextState(true, x207_hidden66)
+    x210_hidden67 = x209_state67[1]
+    x211_visible67 = x209_state67[2]
+    x212_state68 = d_nextState(true, x210_hidden67)
+    x213_hidden68 = x212_state68[1]
+    x214_visible68 = x212_state68[2]
+    x215_state69 = d_nextState(true, x213_hidden68)
+    x216_hidden69 = x215_state69[1]
+    x217_visible69 = x215_state69[2]
+    x218_state70 = d_nextState(true, x216_hidden69)
+    x219_hidden70 = x218_state70[1]
+    x220_visible70 = x218_state70[2]
+    x221_state71 = d_nextState(true, x219_hidden70)
+    x222_hidden71 = x221_state71[1]
+    x223_visible71 = x221_state71[2]
+    x224_state72 = d_nextState(true, x222_hidden71)
+    x225_hidden72 = x224_state72[1]
+    x226_visible72 = x224_state72[2]
+    x227_state73 = d_nextState(true, x225_hidden72)
+    x228_hidden73 = x227_state73[1]
+    x229_visible73 = x227_state73[2]
+    x230_state74 = d_nextState(true, x228_hidden73)
+    x231_hidden74 = x230_state74[1]
+    x232_visible74 = x230_state74[2]
+    x233_state75 = d_nextState(true, x231_hidden74)
+    x234_hidden75 = x233_state75[1]
+    x235_visible75 = x233_state75[2]
+    x236_state76 = d_nextState(true, x234_hidden75)
+    x237_hidden76 = x236_state76[1]
+    x238_visible76 = x236_state76[2]
+    x239_state77 = d_nextState(true, x237_hidden76)
+    x240_hidden77 = x239_state77[1]
+    x241_visible77 = x239_state77[2]
+    x242_state78 = d_nextState(true, x240_hidden77)
+    x243_hidden78 = x242_state78[1]
+    x244_visible78 = x242_state78[2]
+    x245_state79 = d_nextState(true, x243_hidden78)
+    x246_hidden79 = x245_state79[1]
+    x247_visible79 = x245_state79[2]
+    x248_state80 = d_nextState(true, x246_hidden79)
+    x249_hidden80 = x248_state80[1]
+    x250_visible80 = x248_state80[2]
+    x251_state81 = d_nextState(true, x249_hidden80)
+    x252_hidden81 = x251_state81[1]
+    x253_visible81 = x251_state81[2]
+    x254_state82 = d_nextState(true, x252_hidden81)
+    x255_hidden82 = x254_state82[1]
+    x256_visible82 = x254_state82[2]
+    x257_state83 = d_nextState(true, x255_hidden82)
+    x258_hidden83 = x257_state83[1]
+    x259_visible83 = x257_state83[2]
+    x260_state84 = d_nextState(true, x258_hidden83)
+    x261_hidden84 = x260_state84[1]
+    x262_visible84 = x260_state84[2]
+    x263_state85 = d_nextState(true, x261_hidden84)
+    x264_hidden85 = x263_state85[1]
+    x265_visible85 = x263_state85[2]
+    x266_state86 = d_nextState(true, x264_hidden85)
+    x267_hidden86 = x266_state86[1]
+    x268_visible86 = x266_state86[2]
+    x269_state87 = d_nextState(true, x267_hidden86)
+    x270_hidden87 = x269_state87[1]
+    x271_visible87 = x269_state87[2]
+    x272_state88 = d_nextState(true, x270_hidden87)
+    x273_hidden88 = x272_state88[1]
+    x274_visible88 = x272_state88[2]
+    x275_state89 = d_nextState(true, x273_hidden88)
+    x276_hidden89 = x275_state89[1]
+    x277_visible89 = x275_state89[2]
+    x278_state90 = d_nextState(true, x276_hidden89)
+    x279_hidden90 = x278_state90[1]
+    x280_visible90 = x278_state90[2]
+    x281_state91 = d_nextState(true, x279_hidden90)
+    x282_hidden91 = x281_state91[1]
+    x283_visible91 = x281_state91[2]
+    x284_state92 = d_nextState(true, x282_hidden91)
+    x285_hidden92 = x284_state92[1]
+    x286_visible92 = x284_state92[2]
+    x287_state93 = d_nextState(true, x285_hidden92)
+    x288_hidden93 = x287_state93[1]
+    x289_visible93 = x287_state93[2]
+    x290_state94 = d_nextState(true, x288_hidden93)
+    x291_hidden94 = x290_state94[1]
+    x292_visible94 = x290_state94[2]
+    x293_state95 = d_nextState(true, x291_hidden94)
+    x294_hidden95 = x293_state95[1]
+    x295_visible95 = x293_state95[2]
+    x296_state96 = d_nextState(true, x294_hidden95)
+    x297_hidden96 = x296_state96[1]
+    x298_visible96 = x296_state96[2]
+    x299_state97 = d_nextState(true, x297_hidden96)
+    x300_hidden97 = x299_state97[1]
+    x301_visible97 = x299_state97[2]
+    x302_state98 = d_nextState(true, x300_hidden97)
+    x303_hidden98 = x302_state98[1]
+    x304_visible98 = x302_state98[2]
+    x305_state99 = d_nextState(true, x303_hidden98)
+    x306_hidden99 = x305_state99[1]
+    x307_visible99 = x305_state99[2]
+    x308_state100 = d_nextState(true, x306_hidden99)
+    x309_hidden100 = x308_state100[1]
+    x310_visible100 = x308_state100[2]
+    observe!(true, x13_visible1)
+    observe!(true, x16_visible2)
+    observe!(true, x19_visible3)
+    observe!(true, x22_visible4)
+    observe!(true, x25_visible5)
+    observe!(true, x28_visible6)
+    observe!(true, x31_visible7)
+    observe!(true, x34_visible8)
+    observe!(true, x37_visible9)
+    observe!(true, x40_visible10)
+    observe!(true, x43_visible11)
+    observe!(true, x46_visible12)
+    observe!(true, x49_visible13)
+    observe!(true, x52_visible14)
+    observe!(true, x55_visible15)
+    observe!(true, x58_visible16)
+    observe!(true, x61_visible17)
+    observe!(true, x64_visible18)
+    observe!(true, x67_visible19)
+    observe!(true, x70_visible20)
+    observe!(true, x73_visible21)
+    observe!(true, x76_visible22)
+    observe!(true, x79_visible23)
+    observe!(true, x82_visible24)
+    observe!(true, x85_visible25)
+    observe!(true, x88_visible26)
+    observe!(true, x91_visible27)
+    observe!(true, x94_visible28)
+    observe!(true, x97_visible29)
+    observe!(true, x100_visible30)
+    observe!(true, x103_visible31)
+    observe!(true, x106_visible32)
+    observe!(true, x109_visible33)
+    observe!(true, x112_visible34)
+    observe!(true, x115_visible35)
+    observe!(true, x118_visible36)
+    observe!(true, x121_visible37)
+    observe!(true, x124_visible38)
+    observe!(true, x127_visible39)
+    observe!(true, x130_visible40)
+    observe!(true, x133_visible41)
+    observe!(true, x136_visible42)
+    observe!(true, x139_visible43)
+    observe!(true, x142_visible44)
+    observe!(true, x145_visible45)
+    observe!(true, x148_visible46)
+    observe!(true, x151_visible47)
+    observe!(true, x154_visible48)
+    observe!(true, x157_visible49)
+    observe!(true, x160_visible50)
+    observe!(true, x163_visible51)
+    observe!(true, x166_visible52)
+    observe!(true, x169_visible53)
+    observe!(true, x172_visible54)
+    observe!(true, x175_visible55)
+    observe!(true, x178_visible56)
+    observe!(true, x181_visible57)
+    observe!(true, x184_visible58)
+    observe!(true, x187_visible59)
+    observe!(true, x190_visible60)
+    observe!(true, x193_visible61)
+    observe!(true, x196_visible62)
+    observe!(true, x199_visible63)
+    observe!(true, x202_visible64)
+    observe!(true, x205_visible65)
+    observe!(true, x208_visible66)
+    observe!(true, x211_visible67)
+    observe!(true, x214_visible68)
+    observe!(true, x217_visible69)
+    observe!(true, x220_visible70)
+    observe!(true, x223_visible71)
+    observe!(true, x226_visible72)
+    observe!(true, x229_visible73)
+    observe!(true, x232_visible74)
+    observe!(true, x235_visible75)
+    observe!(true, x238_visible76)
+    observe!(true, x241_visible77)
+    observe!(true, x244_visible78)
+    observe!(true, x247_visible79)
+    observe!(true, x250_visible80)
+    observe!(true, x253_visible81)
+    observe!(true, x256_visible82)
+    observe!(true, x259_visible83)
+    observe!(true, x262_visible84)
+    observe!(true, x265_visible85)
+    observe!(true, x268_visible86)
+    observe!(true, x271_visible87)
+    observe!(true, x274_visible88)
+    observe!(true, x277_visible89)
+    observe!(true, x280_visible90)
+    observe!(true, x283_visible91)
+    observe!(true, x286_visible92)
+    observe!(true, x289_visible93)
+    observe!(true, x292_visible94)
+    observe!(true, x295_visible95)
+    observe!(true, x298_visible96)
+    observe!(true, x301_visible97)
+    observe!(true, x304_visible98)
+    observe!(true, x307_visible99)
+    return (x10_hidden0, x310_visible100,)
+end
+
+function chunk_2(x10_hidden0, x310_visible100)
+    observe!(true, x310_visible100)
+    x311_result = (true & x10_hidden0)
+    return x311_result
+end
+
+function dice_main()
+    (x10_hidden0, x310_visible100,) = chunk_1()
+    x311_result = chunk_2(x10_hidden0, x310_visible100)
+    return x311_result
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println("alea ", k, " true ", d[true])
+        println("alea ", k, " false ", d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println("alea ", k, " ", v, " ", d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println("alea_seconds ", stats.time)
+    println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 << 30)
+schedule(task)
+wait(task)
+end

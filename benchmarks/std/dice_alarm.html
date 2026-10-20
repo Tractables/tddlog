@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dice_alarm · tddlog results</title>
+<meta name="description" content="dice_alarm, an instance of Standard suite: programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#std">Standard suite: programs</a></p>
+    <h1>dice_alarm</h1>
+    <p class="lede">50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper&#x27;s programs translated to ProbLog; 300 s a run. Made by <code>dice2problog.py data/dice/alarm.dice</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.004</td><td class="num">0.07</td><td class="num">0.44</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Dice (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it.</b></p>
+<div class="file"><div class="fhead"><code class="fname">data/dice/alarm.dice</code><span>350 bytes, 10 lines</span><span class="sha" title="SHA-256">sha256 1d84f546b662a85f27eb89eca93ffd814feb7395604daae1d0fbc406e0ce87b2</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/dice/alarm.dice</code>.</p><pre>let earthquake  = flip 0.0001 in
+let burglary  = flip 0.001 in
+let alarm  = earthquake || burglary in
+let phoneWorking  = if earthquake then flip 0.7 else flip 0.99 in
+let maryWakes  = if alarm then
+    (if earthquake then flip 0.8 else flip 0.6)
+    else flip 0.2 in
+let called  = (maryWakes &amp;&amp; phoneWorking) in
+let tmp = observe called in
+burglary
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto dice_alarm.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf dice_alarm.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd dice_alarm.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd dice_alarm.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_alarm.pl</code><span>561 bytes, 19 lines</span><span class="sha" title="SHA-256">sha256 b1d3427729da1b9cdf611fcf4b6d40c1365ec7dda08c2b64a77e12c2c3099078</span></div><p class="made">Written by <code>dice2problog.py data/dice/alarm.dice</code> (bench.py gen).</p><pre>0.0001::earthquake.
+0.001::burglary.
+alarm :- earthquake.
+alarm :- burglary.
+0.7::phoneworking_then.
+0.99::phoneworking_else.
+phoneworking :- earthquake, phoneworking_then.
+phoneworking :- \+earthquake, phoneworking_else.
+0.8::marywakes_then_then.
+0.6::marywakes_then_else.
+marywakes_then :- earthquake, marywakes_then_then.
+marywakes_then :- \+earthquake, marywakes_then_else.
+0.2::marywakes_else.
+marywakes :- alarm, marywakes_then.
+marywakes :- \+alarm, marywakes_else.
+called :- marywakes, phoneworking.
+obs :- called.
+evidence(obs, true).
+query(burglary).
+</pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;dice_alarm.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_alarm.lpad.pl</code><span>669 bytes, 23 lines</span><span class="sha" title="SHA-256">sha256 1e96b78e5a568531e38e7b75a67f2ae403611bfb8e86c9c2e31a858a16ef3d83</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>dice_alarm.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+earthquake:0.0001.
+burglary:0.001.
+alarm :- earthquake.
+alarm :- burglary.
+phoneworking_then:0.7.
+phoneworking_else:0.99.
+phoneworking :- earthquake, phoneworking_then.
+phoneworking :- \+earthquake, phoneworking_else.
+marywakes_then_then:0.8.
+marywakes_then_else:0.6.
+marywakes_then :- earthquake, marywakes_then_then.
+marywakes_then :- \+earthquake, marywakes_then_else.
+marywakes_else:0.2.
+marywakes :- alarm, marywakes_then.
+marywakes :- \+alarm, marywakes_else.
+called :- marywakes, phoneworking.
+obs :- called.
+:- end_lpad.
+main :-
+    forall((Q = burglary), (prob(Q, (obs), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.004</td><td>4.1e-11 at most</td><td>largest formula, pairs 36; final formula, pairs 36; variables 7; ground atoms 10; ground rules 7; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.09</td><td>the reference</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.07</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.08</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td>4.1e-11 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>burglary</th><td class="num">0.0029934492</td><td class="num">0.002993449241</td><td class="num">0.0029934492</td><td class="num">0.0029934492</td><td class="num">0.002993449241</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

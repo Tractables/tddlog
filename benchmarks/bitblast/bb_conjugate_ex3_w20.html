@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_conjugate_ex3_w20 · tddlog results</title>
+<meta name="description" content="bb_conjugate_ex3_w20, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_conjugate_ex3_w20</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/bitblast/conjugate_ex3.jl</code> with <code>bits=12</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">140</td><td class="num">17.7</td><td class="num">94.3</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set bits=12 data/alea/bitblast/conjugate_ex3.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/bitblast/conjugate_ex3.jl</code><span>1 110 bytes, 26 lines</span><span class="sha" title="SHA-256">sha256 aaf8e7d246fa5fe93cbc27aa71a29ad148305ee7145a44458719ea3492270d39</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/bitblast/conjugate_ex3.jl</code>.</p><pre># Conjugate Gaussians with low-probability observations (bit-blasting
+# paper, Garg, Holtzen, Van den Broeck, Millstein, PLDI 2024, Section 2.3,
+# Figures 5 and 6): a standard normal mean and two observations, 8 and 9,
+# each normal around it with variance 1; the posterior is normal with mean
+# 17/3 and variance 1/3. The paper plots it at 16 bits after the binary
+# point and 2048 pieces; here the program is queried for its expectation.
+# From Tractables/Alea.jl hybrid/benchmarks/conjugate_gaussians/
+# conjugate_gaussians.jl at cf5e5b8 (Apache License 2.0): the bits and
+# pieces, read from the command line there, are constants, and the
+# plotting and results file are dropped; the body is otherwise unchanged.
+using Alea, Distributions
+
+const QUERY = :expectation
+const bits = 16
+const pieces = 2048
+const DFiP = DistFix{8 + bits, bits}
+const data = DFiP.([8.0, 9.0])
+const add_arg = true
+
+model() = @alea begin
+    a = bitblast(DFiP, Normal(0, 1), pieces, -16.0, 16.0)
+    for datapt in data
+        gaussian_observe(DFiP, pieces, -16.0, 16.0, a, 1.0, datapt, add=add_arg, exp=false)
+    end
+    a
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_conjugate_ex3_w20.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_conjugate_ex3_w20.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_conjugate_ex3_w20.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_conjugate_ex3_w20.pl</code><span>9 414 045 bytes, 397 551 lines</span><span class="sha" title="SHA-256">sha256 3a540ac11a4a7d0eaf82840a07efb0fd09a489382b31911c6dd4758f2ae8bef5</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/bitblast/conjugate_ex3.jl bits=12</code>.</p><p class="note"><a href="../files/3a540ac11a4a7d0eaf82.txt">the first 65 519 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/3a540ac11a4a7d0eaf82.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>139</td><td></td><td>largest formula, pairs 76 782 509; final formula, pairs 3 991 809; variables 15 021; ground atoms 100 559; ground rules 144 158; vtree decision (from auto: 7 attempts, 35.955s discarded)</td></tr><tr><td>2</td><td>answered</td><td>140</td><td></td><td>largest formula, pairs 76 782 509; final formula, pairs 3 991 809; variables 15 021; ground atoms 100 559; ground rules 144 158; vtree decision (from auto: 7 attempts, 35.990s discarded)</td></tr><tr><td>3</td><td>answered</td><td>141</td><td></td><td>largest formula, pairs 76 782 509; final formula, pairs 3 991 809; variables 15 021; ground atoms 100 559; ground rules 144 158; vtree decision (from auto: 7 attempts, 35.936s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>66.1</td><td></td><td>largest formula, pairs 76 782 510; final formula, pairs 3 991 809; variables 15 021; ground atoms 100 559; ground rules 144 158; vtree decision</td></tr><tr><td>2</td><td>answered</td><td>65.6</td><td></td><td>largest formula, pairs 76 782 510; final formula, pairs 3 991 809; variables 15 021; ground atoms 100 559; ground rules 144 158; vtree decision</td></tr><tr><td>3</td><td>answered</td><td>66.3</td><td></td><td>largest formula, pairs 76 782 510; final formula, pairs 3 991 809; variables 15 021; ground atoms 100 559; ground rules 144 158; vtree decision</td></tr></tbody></table></div>
+<h3>tddlog (program)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>90.0</td><td>48.2</td><td>32.8</td><td>17.3</td><td></td><td>circuit flips 9 135; circuit gates 290 908; BDD peak, nodes 28 078 428; evidence BDD, nodes 1 103 306; largest query BDD, nodes 2 494</td></tr><tr><td>2</td><td>answered</td><td>94.3</td><td>49.4</td><td>33.6</td><td>17.7</td><td></td><td>circuit flips 9 135; circuit gates 290 908; BDD peak, nodes 28 078 428; evidence BDD, nodes 1 103 306; largest query BDD, nodes 2 494</td></tr><tr><td>3</td><td>answered</td><td>94.5</td><td>49.1</td><td>33.5</td><td>17.7</td><td></td><td>circuit flips 9 135; circuit gates 290 908; BDD peak, nodes 28 078 428; evidence BDD, nodes 1 103 306; largest query BDD, nodes 2 494</td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (decision)</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>e1(1)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>e1(2)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>e1(3)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>e1(4)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>e1(5)</th><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><th>e1(6)</th><td class="num">0.9980545399</td><td class="num">0.9980545399</td><td class="num">0.9980545399</td></tr><tr><th>e1(7)</th><td class="num">0.2835253628</td><td class="num">0.2835253628</td><td class="num">0.2835253628</td></tr><tr><th>e1(8)</th><td class="num">0.6062152697</td><td class="num">0.6062152697</td><td class="num">0.6062152697</td></tr><tr><th>e1(9)</th><td class="num">0.5005358917</td><td class="num">0.5005358917</td><td class="num">0.5005358917</td></tr><tr><th>e1(10)</th><td class="num">0.5001243728</td><td class="num">0.5001243728</td><td class="num">0.5001243728</td></tr><tr><th>e1(11)</th><td class="num">0.5000717336</td><td class="num">0.5000717336</td><td class="num">0.5000717336</td></tr><tr><th>e1(12)</th><td class="num">0.4999737086</td><td class="num">0.4999737086</td><td class="num">0.4999737086</td></tr><tr><th>e1(13)</th><td class="num">0.4999683511</td><td class="num">0.4999683511</td><td class="num">0.4999683511</td></tr><tr><th>e1(14)</th><td class="num">0.5000138443</td><td class="num">0.5000138443</td><td class="num">0.5000138443</td></tr><tr><th>e1(15)</th><td class="num">0.5000212899</td><td class="num">0.5000212899</td><td class="num">0.5000212899</td></tr><tr><th>e1(16)</th><td class="num">0.5000095569</td><td class="num">0.5000095569</td><td class="num">0.5000095569</td></tr><tr><th>e1(17)</th><td class="num">0.5000045537</td><td class="num">0.5000045537</td><td class="num">0.5000045537</td></tr><tr><th>e1(18)</th><td class="num">0.5000021599</td><td class="num">0.5000021599</td><td class="num">0.5000021599</td></tr><tr><th>e1(19)</th><td class="num">0.5000009765</td><td class="num">0.5000009765</td><td class="num">0.5000009765</td></tr><tr><th>e1(20)</th><td class="num">0.5000003865</td><td class="num">0.5000003865</td><td class="num">0.5000003865</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

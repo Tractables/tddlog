@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>uwcse5 · tddlog results</title>
+<meta name="description" content="uwcse5, an instance of Standard suite: programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#std">Standard suite: programs</a></p>
+    <h1>uwcse5</h1>
+    <p class="lede">50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper&#x27;s programs translated to ProbLog; 300 s a run. Made by <code>gen_uwcse.py 5</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.01</td><td class="num">0.35</td><td class="num">0.72</td><td class="num">4.5</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto uwcse5.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf uwcse5.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd uwcse5.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd uwcse5.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result uwcse5.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">uwcse5.pl</code><span>6 235 bytes, 135 lines</span><span class="sha" title="SHA-256">sha256 1f54f47a071be23593b6e15b9645229fba90c873aac625dfb75b5013e16baa3e</span></div><p class="made">Written by <code>gen_uwcse.py 5</code> (bench.py gen).</p><pre>% UW-CSE (cplint uwcse3s) with 5 students
+course(c1).
+student(s1).
+student(s2).
+student(s3).
+student(s4).
+student(s5).
+professor(p1).
+0.10708782742681::advised_by(A,B) :- student(A),
+    professor(B),
+    position(B,faculty).
+0.0278422273781903::advised_by(A,B) :- student(A),
+    professor(B),
+    \+position(B,faculty).
+0.0666666666666667::course_level(A,level_300); 0.318518518518519::course_level(A,level_400); 0.614814814814815::course_level(A,level_500) :- course(A).
+0.935483870967742::phase(A,post_Generals); 0.032258064516129::phase(A,post_Quals); 0.032258064516129::phase(A,pre_Quals) :- student(A),
+    years_in_program(A,year_6_or_more).
+0.04::phase(A,post_Generals); 0.04::phase(A,post_Quals); 0.92::phase(A,pre_Quals) :- student(A),
+    \+years_in_program(A,year_6_or_more),
+    years_in_program(A,year_1).
+0.566666666666667::phase(A,post_Generals); 0.366666666666667::phase(A,post_Quals); 0.0666666666666667::phase(A,pre_Quals) :- student(A),
+    \+years_in_program(A,year_6_or_more),
+    \+years_in_program(A,year_1),
+    years_in_program(A,year_5).
+0.222222222222222::phase(A,post_Generals); 0.666666666666667::phase(A,post_Quals); 0.111111111111111::phase(A,pre_Quals) :- student(A),
+    \+years_in_program(A,year_6_or_more),
+    \+years_in_program(A,year_1),
+    \+years_in_program(A,year_5),
+    years_in_program(A,year_4).
+0.0476190476190476::phase(A,post_Generals); 0.547619047619048::phase(A,post_Quals); 0.404761904761905::phase(A,pre_Quals) :- student(A),
+    \+years_in_program(A,year_6_or_more),
+    \+years_in_program(A,year_1),
+    \+years_in_program(A,year_5),
+    \+years_in_program(A,year_4).
+0.732142857142857::position(A,faculty); 0.125::position(A,faculty_adjunct); 0.0714285714285714::position(A,faculty_affiliate); 0.0714285714285714::position(A,faculty_emeritus) :- professor(A).
+aux1_prof_nb_publications(A) :- advised_by(B,A),
+    student_nb_publications(B,three_or_more).
+0.0416666666666667::prof_nb_publications(A,none); 0.416666666666667::prof_nb_publications(A,one_to_nine); 0.541666666666667::prof_nb_publications(A,ten_or_more) :- professor(A),
+    aux1_prof_nb_publications(A).
+0.5::prof_nb_publications(A,none); 0.294117647058824::prof_nb_publications(A,one_to_nine); 0.205882352941176::prof_nb_publications(A,ten_or_more) :- professor(A),
+    \+aux1_prof_nb_publications(A).
+0.00101010101010101::shared_publication(A,B) :- professor(A),
+    student(B),
+    student_nb_publications(B,none).
+0.956521739130435::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    advised_by(B,A),
+    years_in_program(B,year_6_or_more).
+0.125::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    advised_by(B,A),
+    \+years_in_program(B,year_6_or_more),
+    prof_nb_publications(A,none).
+0.631578947368421::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    advised_by(B,A),
+    \+years_in_program(B,year_6_or_more),
+    \+prof_nb_publications(A,none).
+0.00515463917525773::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    \+advised_by(B,A),
+    prof_nb_publications(A,none).
+0.099236641221374::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    \+advised_by(B,A),
+    \+prof_nb_publications(A,none),
+    prof_nb_publications(A,one_to_nine),
+    student_nb_publications(B,one_or_two).
+0.0152671755725191::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    \+advised_by(B,A),
+    \+prof_nb_publications(A,none),
+    prof_nb_publications(A,one_to_nine),
+    \+student_nb_publications(B,one_or_two).
+0.146017699115044::shared_publication(A,B) :- professor(A),
+    student(B),
+    \+student_nb_publications(B,none),
+    \+advised_by(B,A),
+    \+prof_nb_publications(A,none),
+    \+prof_nb_publications(A,one_to_nine).
+0.594405594405594::student_nb_publications(A,none); 0.195804195804196::student_nb_publications(A,one_or_two); 0.20979020979021::student_nb_publications(A,three_or_more) :- student(A).
+aux1_taught_by(A,B) :- teaching_assistant(A,C),
+    advised_by(C,B).
+aux2_taught_by(A,B) :- teaching_assistant(A,C),
+    advised_by(C,B),
+    shared_publication(B,C).
+0.777777777777778::taught_by(A,B) :- course(A),
+    professor(B),
+    aux1_taught_by(A,B),
+    aux2_taught_by(A,B).
+0.333333333333333::taught_by(A,B) :- course(A),
+    professor(B),
+    aux1_taught_by(A,B),
+    \+aux2_taught_by(A,B).
+0.266666666666667::taught_by(A,B) :- course(A),
+    professor(B),
+    \+aux1_taught_by(A,B),
+    position(B,faculty),
+    course_level(A,level_300).
+0.102941176470588::taught_by(A,B) :- course(A),
+    professor(B),
+    \+aux1_taught_by(A,B),
+    position(B,faculty),
+    \+course_level(A,level_300).
+0.029673590504451::taught_by(A,B) :- course(A),
+    professor(B),
+    \+aux1_taught_by(A,B),
+    \+position(B,faculty).
+0.0333333333333333::teaching_assistant(A,B) :- course(A),
+    student(B),
+    course_level(A,level_300),
+    student_nb_publications(B,three_or_more).
+0.158227848101266::teaching_assistant(A,B) :- course(A),
+    student(B),
+    course_level(A,level_300),
+    \+student_nb_publications(B,three_or_more).
+0.0337519623233909::teaching_assistant(A,B) :- course(A),
+    student(B),
+    \+course_level(A,level_300),
+    course_level(A,level_400).
+0.0120999219359875::teaching_assistant(A,B) :- course(A),
+    student(B),
+    \+course_level(A,level_300),
+    \+course_level(A,level_400).
+0.244444444444444::years_in_program(A,year_1); 0.155555555555556::years_in_program(A,year_2); 0.233333333333333::years_in_program(A,year_3); 0.144444444444444::years_in_program(A,year_4); 0.111111111111111::years_in_program(A,year_5); 0.111111111111111::years_in_program(A,year_6_or_more) :- student(A),
+    student_nb_publications(A,none).
+0.032258064516129::years_in_program(A,year_1); 0.0645161290322581::years_in_program(A,year_2); 0.0645161290322581::years_in_program(A,year_3); 0.209677419354839::years_in_program(A,year_4); 0.306451612903226::years_in_program(A,year_5); 0.32258064516129::years_in_program(A,year_6_or_more) :- student(A),
+    \+student_nb_publications(A,none).
+query(taught_by(c1,p1)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;uwcse5.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">uwcse5.lpad.pl</code><span>5 923 bytes, 47 lines</span><span class="sha" title="SHA-256">sha256 af686952e52a11137fdff9f32ab7f8d1c8f68dde9219d3d5aa7e3f0674fac25e</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>uwcse5.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+course(c1).
+student(s1).
+student(s2).
+student(s3).
+student(s4).
+student(s5).
+professor(p1).
+advised_by(A,B):0.10708782742681 :- student(A), professor(B), position(B,faculty).
+advised_by(A,B):0.0278422273781903 :- student(A), professor(B), \+position(B,faculty).
+course_level(A,level_300):0.0666666666666667 ; course_level(A,level_400):0.318518518518519 ; course_level(A,level_500):0.614814814814815 :- course(A).
+phase(A,post_Generals):0.935483870967742 ; phase(A,post_Quals):0.032258064516129 ; phase(A,pre_Quals):0.032258064516129 :- student(A), years_in_program(A,year_6_or_more).
+phase(A,post_Generals):0.04 ; phase(A,post_Quals):0.04 ; phase(A,pre_Quals):0.92 :- student(A), \+years_in_program(A,year_6_or_more), years_in_program(A,year_1).
+phase(A,post_Generals):0.566666666666667 ; phase(A,post_Quals):0.366666666666667 ; phase(A,pre_Quals):0.0666666666666667 :- student(A), \+years_in_program(A,year_6_or_more), \+years_in_program(A,year_1), years_in_program(A,year_5).
+phase(A,post_Generals):0.222222222222222 ; phase(A,post_Quals):0.666666666666667 ; phase(A,pre_Quals):0.111111111111111 :- student(A), \+years_in_program(A,year_6_or_more), \+years_in_program(A,year_1), \+years_in_program(A,year_5), years_in_program(A,year_4).
+phase(A,post_Generals):0.0476190476190476 ; phase(A,post_Quals):0.547619047619048 ; phase(A,pre_Quals):0.404761904761905 :- student(A), \+years_in_program(A,year_6_or_more), \+years_in_program(A,year_1), \+years_in_program(A,year_5), \+years_in_program(A,year_4).
+position(A,faculty):0.732142857142857 ; position(A,faculty_adjunct):0.125 ; position(A,faculty_affiliate):0.0714285714285714 ; position(A,faculty_emeritus):0.0714285714285714 :- professor(A).
+aux1_prof_nb_publications(A) :- advised_by(B,A), student_nb_publications(B,three_or_more).
+prof_nb_publications(A,none):0.0416666666666667 ; prof_nb_publications(A,one_to_nine):0.416666666666667 ; prof_nb_publications(A,ten_or_more):0.541666666666667 :- professor(A), aux1_prof_nb_publications(A).
+prof_nb_publications(A,none):0.5 ; prof_nb_publications(A,one_to_nine):0.294117647058824 ; prof_nb_publications(A,ten_or_more):0.205882352941176 :- professor(A), \+aux1_prof_nb_publications(A).
+shared_publication(A,B):0.00101010101010101 :- professor(A), student(B), student_nb_publications(B,none).
+shared_publication(A,B):0.956521739130435 :- professor(A), student(B), \+student_nb_publications(B,none), advised_by(B,A), years_in_program(B,year_6_or_more).
+shared_publication(A,B):0.125 :- professor(A), student(B), \+student_nb_publications(B,none), advised_by(B,A), \+years_in_program(B,year_6_or_more), prof_nb_publications(A,none).
+shared_publication(A,B):0.631578947368421 :- professor(A), student(B), \+student_nb_publications(B,none), advised_by(B,A), \+years_in_program(B,year_6_or_more), \+prof_nb_publications(A,none).
+shared_publication(A,B):0.00515463917525773 :- professor(A), student(B), \+student_nb_publications(B,none), \+advised_by(B,A), prof_nb_publications(A,none).
+shared_publication(A,B):0.099236641221374 :- professor(A), student(B), \+student_nb_publications(B,none), \+advised_by(B,A), \+prof_nb_publications(A,none), prof_nb_publications(A,one_to_nine), student_nb_publications(B,one_or_two).
+shared_publication(A,B):0.0152671755725191 :- professor(A), student(B), \+student_nb_publications(B,none), \+advised_by(B,A), \+prof_nb_publications(A,none), prof_nb_publications(A,one_to_nine), \+student_nb_publications(B,one_or_two).
+shared_publication(A,B):0.146017699115044 :- professor(A), student(B), \+student_nb_publications(B,none), \+advised_by(B,A), \+prof_nb_publications(A,none), \+prof_nb_publications(A,one_to_nine).
+student_nb_publications(A,none):0.594405594405594 ; student_nb_publications(A,one_or_two):0.195804195804196 ; student_nb_publications(A,three_or_more):0.20979020979021 :- student(A).
+aux1_taught_by(A,B) :- teaching_assistant(A,C), advised_by(C,B).
+aux2_taught_by(A,B) :- teaching_assistant(A,C), advised_by(C,B), shared_publication(B,C).
+taught_by(A,B):0.777777777777778 :- course(A), professor(B), aux1_taught_by(A,B), aux2_taught_by(A,B).
+taught_by(A,B):0.333333333333333 :- course(A), professor(B), aux1_taught_by(A,B), \+aux2_taught_by(A,B).
+taught_by(A,B):0.266666666666667 :- course(A), professor(B), \+aux1_taught_by(A,B), position(B,faculty), course_level(A,level_300).
+taught_by(A,B):0.102941176470588 :- course(A), professor(B), \+aux1_taught_by(A,B), position(B,faculty), \+course_level(A,level_300).
+taught_by(A,B):0.029673590504451 :- course(A), professor(B), \+aux1_taught_by(A,B), \+position(B,faculty).
+teaching_assistant(A,B):0.0333333333333333 :- course(A), student(B), course_level(A,level_300), student_nb_publications(B,three_or_more).
+teaching_assistant(A,B):0.158227848101266 :- course(A), student(B), course_level(A,level_300), \+student_nb_publications(B,three_or_more).
+teaching_assistant(A,B):0.0337519623233909 :- course(A), student(B), \+course_level(A,level_300), course_level(A,level_400).
+teaching_assistant(A,B):0.0120999219359875 :- course(A), student(B), \+course_level(A,level_300), \+course_level(A,level_400).
+years_in_program(A,year_1):0.244444444444444 ; years_in_program(A,year_2):0.155555555555556 ; years_in_program(A,year_3):0.233333333333333 ; years_in_program(A,year_4):0.144444444444444 ; years_in_program(A,year_5):0.111111111111111 ; years_in_program(A,year_6_or_more):0.111111111111111 :- student(A), student_nb_publications(A,none).
+years_in_program(A,year_1):0.032258064516129 ; years_in_program(A,year_2):0.0645161290322581 ; years_in_program(A,year_3):0.0645161290322581 ; years_in_program(A,year_4):0.209677419354839 ; years_in_program(A,year_5):0.306451612903226 ; years_in_program(A,year_6_or_more):0.32258064516129 :- student(A), \+student_nb_publications(A,none).
+:- end_lpad.
+main :-
+    forall((Q = taught_by(c1,p1)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.01</td><td>3.9e-10 at most</td><td>largest formula, pairs 23 131; final formula, pairs 134; variables 231; ground atoms 363; ground rules 299; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>5.5</td><td>the reference</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.35</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.72</td><td>3.9e-10 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.5</td><td>3.9e-10 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><th>taught_by(c1,p1)</th><td class="num">0.094680186</td><td class="num">0.09468018639</td><td class="num">0.094680186</td><td class="num">0.09468018639</td><td class="num">0.09468018639</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

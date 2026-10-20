@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dice_grass · tddlog results</title>
+<meta name="description" content="dice_grass, an instance of Standard suite: programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#std">Standard suite: programs</a></p>
+    <h1>dice_grass</h1>
+    <p class="lede">50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper&#x27;s programs translated to ProbLog; 300 s a run. Made by <code>dice2problog.py data/dice/grass.dice</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.005</td><td class="num">0.08</td><td class="num">0.44</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Dice (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it.</b></p>
+<div class="file"><div class="fhead"><code class="fname">data/dice/grass.dice</code><span>342 bytes, 9 lines</span><span class="sha" title="SHA-256">sha256 519a2b2fddf45cd86784886fdb0cec713bc0e9936d1968793e1e11c1b6bcf5ed</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/dice/grass.dice</code>.</p><pre>let cloudy  = flip 0.5 in
+let rain  = if cloudy then flip 0.8 else flip 0.2 in
+let sprinkler  = if cloudy then flip 0.1 else flip 0.5 in
+let temp1  = flip 0.7 in
+let wetRoof  = (temp1 &amp;&amp; rain) in
+let temp2  = flip 0.9 in
+let temp3  = flip 0.9 in
+let wetGrass  = ((temp2 &amp;&amp; rain) || ( temp3 &amp;&amp; sprinkler)) in
+let tmp = observe wetGrass in
+rain</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto dice_grass.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf dice_grass.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd dice_grass.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd dice_grass.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_grass.pl</code><span>439 bytes, 20 lines</span><span class="sha" title="SHA-256">sha256 5756fb00d8a4d4776b4662ec888f29e3d98330a24d58371ca52931b91dea4669</span></div><p class="made">Written by <code>dice2problog.py data/dice/grass.dice</code> (bench.py gen).</p><pre>0.5::cloudy.
+0.8::rain_then.
+0.2::rain_else.
+rain :- cloudy, rain_then.
+rain :- \+cloudy, rain_else.
+0.1::sprinkler_then.
+0.5::sprinkler_else.
+sprinkler :- cloudy, sprinkler_then.
+sprinkler :- \+cloudy, sprinkler_else.
+0.7::temp1.
+wetroof :- temp1, rain.
+0.9::temp2.
+0.9::temp3.
+wetgrass :- temp2, rain.
+wetgrass_1 :- temp3, sprinkler.
+wetgrass_2 :- wetgrass.
+wetgrass_2 :- wetgrass_1.
+obs :- wetgrass_2.
+evidence(obs, true).
+query(rain).
+</pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;dice_grass.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">dice_grass.lpad.pl</code><span>546 bytes, 24 lines</span><span class="sha" title="SHA-256">sha256 3d5998832d02d0fc58bb0778e46288d76cc867285cb3c6e04c985041d181a990</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>dice_grass.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+cloudy:0.5.
+rain_then:0.8.
+rain_else:0.2.
+rain :- cloudy, rain_then.
+rain :- \+cloudy, rain_else.
+sprinkler_then:0.1.
+sprinkler_else:0.5.
+sprinkler :- cloudy, sprinkler_then.
+sprinkler :- \+cloudy, sprinkler_else.
+temp1:0.7.
+wetroof :- temp1, rain.
+temp2:0.9.
+temp3:0.9.
+wetgrass :- temp2, rain.
+wetgrass_1 :- temp3, sprinkler.
+wetgrass_2 :- wetgrass.
+wetgrass_2 :- wetgrass_1.
+obs :- wetgrass_2.
+:- end_lpad.
+main :-
+    forall((Q = rain), (prob(Q, (obs), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.005</td><td>2.7e-09 at most</td><td>largest formula, pairs 38; final formula, pairs 38; variables 7; ground atoms 9; ground rules 5; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.09</td><td>the reference</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.08</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.08</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td>2.7e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>rain</th><td class="num">0.70792768</td><td class="num">0.7079276773</td><td class="num">0.70792768</td><td class="num">0.70792768</td><td class="num">0.7079276773</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

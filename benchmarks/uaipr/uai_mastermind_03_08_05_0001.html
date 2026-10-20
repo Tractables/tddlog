@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>uai_mastermind_03_08_05_0001 · tddlog results</title>
+<meta name="description" content="uai_mastermind_03_08_05_0001, an instance of UAI 2022: partition function, final set: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#networks">Bayesian and Markov networks</a> › <a href="../index.html#uaipr">UAI 2022: partition function, final set</a></p>
+    <h1>uai_mastermind_03_08_05_0001</h1>
+    <p class="lede">The 197 networks of the UAI 2022 competition&#x27;s final PR set: tddlog prints the probability of the evidence alone (<code>--evidence-probability --no-queries</code>) and Merlin and the other network tools run their partition function tasks; 300 s a run. Made by <code>gen_bn.py PR_final/mastermind_03_08_05-0001.uai --evid PR_final/mastermind_03_08_05-0001.uai.evid</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th></tr></thead><tbody><tr><td class="num">0.09</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; memory: out of memory. </p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">UAI network (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Merlin, Merlin (PR) as it is.</b></p>
+<p class="readers">Read by Merlin, Merlin (PR).</p>
+<dl class="cmds">
+<dt>Merlin</dt><dd><code>merlin -f PR_final/mastermind_03_08_05-0001.uai -e PR_final/mastermind_03_08_05-0001.uai.evid -a bte -t MAR -O uai -o out</code></dd>
+<dt>Merlin (PR)</dt><dd><code>merlin -f PR_final/mastermind_03_08_05-0001.uai -e PR_final/mastermind_03_08_05-0001.uai.evid -a bte -t PR -O uai -o out</code></dd>
+</dl>
+<p class="readers">One file and its observations, which every network system reads: each command below names them, and none has a copy of its own.</p>
+<div class="file"><div class="fhead"><code class="fname">PR_final/mastermind_03_08_05-0001.uai</code><span>191 999 bytes, 24 174 lines</span><span class="sha" title="SHA-256">sha256 a5e0428102b9bfc4a9e0fdce1b2d0aa0a4dca180f00340e7c6a703cdf6243970</span></div><p class="made">From the UAI 2022 competition&#x27;s final PR.zip, as distributed: <code>mastermind_03_08_05-0001.uai</code>.</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s PR.zip (final set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">PR_final/mastermind_03_08_05-0001.uai.evid</code><span>263 bytes, 46 lines</span><span class="sha" title="SHA-256">sha256 45cea6666cbc570d9e5618ba7cfe587f0f4efe1c50a201204cfa5539c0ef0bd7</span></div><p class="made">From the UAI 2022 competition&#x27;s final PR.zip, as distributed: <code>mastermind_03_08_05-0001.uai.evid</code>.</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s PR.zip (final set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto --evidence-probability --no-queries uai_mastermind_03_08_05_0001.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">uai_mastermind_03_08_05_0001.pl</code><span>466 259 bytes, 13 139 lines</span><span class="sha" title="SHA-256">sha256 cfe01fedc8e279ba87cba58597e4fd45bea19bea003da5a2e10675e8f7e1b32f</span></div><p class="made">Written by <code>gen_bn.py PR_final/mastermind_03_08_05-0001.uai --evid PR_final/mastermind_03_08_05-0001.uai.evid</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s PR.zip (final set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.09</td><td></td><td>largest formula, pairs 0; final formula, pairs 0; variables 1; ground atoms 0; ground rules 0; vtree closed (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>44.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr></tbody></table></div>
+<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>48.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">tddlog</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-15.44985655</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

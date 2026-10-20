@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_population_s8 · tddlog results</title>
+<meta name="description" content="bb_population_s8, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_population_s8</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/genfer/population.jl</code> with <code>steps=8</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">30.7</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num none" title="not run"></td><td class="num">0.03</td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Genfer</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set steps=8 data/alea/genfer/population.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/genfer/population.jl</code><span>2 104 bytes, 50 lines</span><span class="sha" title="SHA-256">sha256 6e900cdbce0a31f79e06c3e3940ff906244fb437e3e6366accc5382976f5bb81</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/genfer/population.jl</code>.</p><pre># Population ecology (Winner and Sheldon, &quot;Probabilistic Inference with
+# Generating Functions for Poisson Latent Variable Models&quot;, NeurIPS 2016),
+# as Genfer has it (Zaiser, Murawski and Ong, &quot;Exact Bayesian Inference on
+# Discrete Models via Probability Generating Functions&quot;, NeurIPS 2023,
+# benchmarks/neurips2023/approx/population/population.sgcl of
+# github.com/fzaiser/genfer at d132c76, MIT License): an initial population
+# Poisson(51.4); each season each animal survives with probability 0.2636
+# (a binomial thinning), new animals arrive (Poisson, rates 232.6, 420.8,
+# 300.8, 85.6), and the number counted is a binomial thinning of the
+# population with probability 0.2 (observed 45, 98, 73, 38). The query
+# is the expectation of the last population. `steps` seasons are run, the
+# four seasons&#x27; rates and counts repeated in turn (Genfer&#x27;s program is
+# `steps = 4`).
+#
+# Bit blasting: the population is an unsigned integer of 10 bits; a
+# Poisson is a categorical over 0 to 1023, the distribution truncated
+# there; a binomial thinning of a random n with probability p is the sum,
+# over the bits j of n that are set, of a categorical Binomial(2^j, p).
+# A population past 1023 (probability below 1e-60 here) wraps around:
+# the program runs with `ignore_errors`.
+using Alea, Distributions
+
+const QUERY = :expectation
+const IGNORE_ERRORS = true
+const steps = 4
+const W = 10
+const N = DistUInt{W}
+const arrivals = [232.6, 420.8, 300.8, 85.6]
+const counts = [45, 98, 73, 38]
+
+truncated_pmf(d, k) = (p = [pdf(d, i) for i in 0:k]; p ./ sum(p))
+poisson(rate) = discrete(N, truncated_pmf(Poisson(rate), 2^W - 1))
+
+function thin(n, p)
+    total = N(0)
+    for j in 0:W-1
+        b = discrete(N, truncated_pmf(Binomial(2^j, p), 2^j))
+        total = total + ifelse(n.bits[W - j], b, N(0))
+    end
+    total
+end
+
+model() = @alea begin
+    population = discrete(N, truncated_pmf(Poisson(51.4), 255))
+    for k in 1:steps
+        population = thin(population, 0.2636) + poisson(arrivals[mod1(k, 4)])
+        observe(prob_equals(thin(population, 0.2), N(counts[mod1(k, 4)])))
+    end
+    population
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_population_s8.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_population_s8.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_population_s8.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_population_s8.pl</code><span>2 901 713 bytes, 124 985 lines</span><span class="sha" title="SHA-256">sha256 756fecbc9fe02d5dd7ef49aceaa8ff13f0c6d480990644b99e3002340e9d11c1</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/genfer/population.jl steps=8</code>.</p><p class="note"><a href="../files/756fecbc9fe02d5dd7ef.txt">the first 65 523 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/756fecbc9fe02d5dd7ef.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Genfer; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Genfer.</p>
+<dl class="cmds">
+<dt>Genfer</dt><dd><code>genfer bb_population_s8.sgcl --limit 1024</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_population_s8.sgcl</code><span>957 bytes, 35 lines</span><span class="sha" title="SHA-256">sha256 a8351d7b29eba0972e7de1d1573d20c9f9a8d2049405b3692e99a249ed7e20fc</span></div><p class="made">Written by <code>gen_genfer.py population 8</code> when Genfer runs: its own population model for that many seasons.</p><pre>population ~ Poisson(51.4);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(232.6);
+observe 45 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(420.8);
+observe 98 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(300.8);
+observe 73 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(85.6);
+observe 38 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(232.6);
+observe 45 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(420.8);
+observe 98 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(300.8);
+observe 73 ~ Binomial(population, 0.2);
+
+population ~ Binomial(population, 0.2636);
+population +~ Poisson(85.6);
+observe 38 ~ Binomial(population, 0.2);
+
+return population
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>30.7</td><td></td><td>largest formula, pairs 160 529 794; final formula, pairs 32; variables 79 816; ground atoms 165 114; ground rules 166 436; vtree families:0 (from auto: 12 attempts, 14.524s discarded)</td></tr><tr><td>2</td><td>answered</td><td>30.7</td><td></td><td>largest formula, pairs 160 529 794; final formula, pairs 32; variables 79 816; ground atoms 165 114; ground rules 166 436; vtree families:0 (from auto: 12 attempts, 14.489s discarded)</td></tr><tr><td>3</td><td>answered</td><td>30.6</td><td></td><td>largest formula, pairs 160 529 794; final formula, pairs 32; variables 79 816; ground atoms 165 114; ground rules 166 436; vtree families:0 (from auto: 12 attempts, 14.442s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Alea.jl</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Genfer</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.03</td><td></td><td>expectation 194.5614213</td></tr><tr><td>2</td><td>answered</td><td>0.03</td><td></td><td>expectation 194.5614213</td></tr><tr><td>3</td><td>answered</td><td>0.03</td><td></td><td>expectation 194.5614213</td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">Genfer</th></tr></thead><tbody><tr><th>e1(1)</th><td class="num">4.94898e-95</td><td class="num">4.94898e-95</td></tr><tr><th>e1(2)</th><td class="num">1.54582e-06</td><td class="num">1.54582e-06</td></tr><tr><th>e1(3)</th><td class="num">0.9999984521</td><td class="num">0.9999984521</td></tr><tr><th>e1(4)</th><td class="num">0.5929717532</td><td class="num">0.5929717532</td></tr><tr><th>e1(5)</th><td class="num">0.4165035788</td><td class="num">0.4165035788</td></tr><tr><th>e1(6)</th><td class="num">0.4864315577</td><td class="num">0.4864315577</td></tr><tr><th>e1(7)</th><td class="num">0.5000015026</td><td class="num">0.5000015026</td></tr><tr><th>e1(8)</th><td class="num">0.5</td><td class="num">0.5</td></tr><tr><th>e1(9)</th><td class="num">0.5</td><td class="num">0.5</td></tr><tr><th>e1(10)</th><td class="num">0.5</td><td class="num">0.5</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

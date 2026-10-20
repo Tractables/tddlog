@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noisyor10_15 · tddlog results</title>
+<meta name="description" content="noisyor10_15, an instance of Literature suite: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
+    <h1>noisyor10_15</h1>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_noisyor.py 10 15 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.006</td><td class="num">0.21</td><td class="num">0.90</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto noisyor10_15.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf noisyor10_15.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd noisyor10_15.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd noisyor10_15.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">noisyor10_15.pl</code><span>2 176 bytes, 98 lines</span><span class="sha" title="SHA-256">sha256 ca881a82b95768893b5d07440c07c23bc86d40789a6b5adffdeb2fe588e5fd62</span></div><p class="made">Written by <code>gen_noisyor.py 10 15 --seed 1</code> (bench.py gen).</p><pre>% noisy-or diagnosis: 10 diseases, 15 findings, 3 causes each, seed 1
+0.084::disease(d0).
+0.262::disease(d1).
+0.241::disease(d2).
+0.114::disease(d3).
+0.174::disease(d4).
+0.162::disease(d5).
+0.213::disease(d6).
+0.247::disease(d7).
+0.073::disease(d8).
+0.057::disease(d9).
+0.043::leak(f0).
+0.735::cause(d0,f0).
+0.857::cause(d3,f0).
+0.587::cause(d6,f0).
+0.027::leak(f1).
+0.733::cause(d3,f1).
+0.867::cause(d5,f1).
+0.849::cause(d8,f1).
+0.04::leak(f2).
+0.33::cause(d1,f2).
+0.895::cause(d6,f2).
+0.802::cause(d8,f2).
+0.01::leak(f3).
+0.555::cause(d1,f3).
+0.837::cause(d5,f3).
+0.333::cause(d6,f3).
+0.028::leak(f4).
+0.612::cause(d4,f4).
+0.224::cause(d6,f4).
+0.37::cause(d7,f4).
+0.039::leak(f5).
+0.457::cause(d2,f5).
+0.818::cause(d6,f5).
+0.743::cause(d9,f5).
+0.019::leak(f6).
+0.665::cause(d1,f6).
+0.276::cause(d5,f6).
+0.315::cause(d7,f6).
+0.048::leak(f7).
+0.713::cause(d5,f7).
+0.529::cause(d6,f7).
+0.416::cause(d7,f7).
+0.046::leak(f8).
+0.318::cause(d2,f8).
+0.359::cause(d6,f8).
+0.209::cause(d9,f8).
+0.011::leak(f9).
+0.483::cause(d3,f9).
+0.441::cause(d8,f9).
+0.793::cause(d9,f9).
+0.011::leak(f10).
+0.661::cause(d4,f10).
+0.626::cause(d5,f10).
+0.711::cause(d7,f10).
+0.032::leak(f11).
+0.563::cause(d2,f11).
+0.593::cause(d6,f11).
+0.498::cause(d8,f11).
+0.048::leak(f12).
+0.599::cause(d0,f12).
+0.34::cause(d5,f12).
+0.553::cause(d7,f12).
+0.025::leak(f13).
+0.442::cause(d5,f13).
+0.577::cause(d6,f13).
+0.636::cause(d7,f13).
+0.019::leak(f14).
+0.62::cause(d5,f14).
+0.763::cause(d7,f14).
+0.645::cause(d9,f14).
+finding(F) :- leak(F).
+finding(F) :- disease(D), cause(D,F).
+evidence(finding(f0),false).
+evidence(finding(f1),true).
+evidence(finding(f2),true).
+evidence(finding(f3),true).
+evidence(finding(f4),false).
+evidence(finding(f5),true).
+evidence(finding(f6),true).
+evidence(finding(f7),true).
+evidence(finding(f8),true).
+evidence(finding(f9),false).
+evidence(finding(f10),false).
+evidence(finding(f11),true).
+evidence(finding(f12),false).
+evidence(finding(f13),true).
+evidence(finding(f14),false).
+query(disease(d0)).
+query(disease(d1)).
+query(disease(d2)).
+query(disease(d3)).
+query(disease(d4)).
+query(disease(d5)).
+query(disease(d6)).
+query(disease(d7)).
+query(disease(d8)).
+query(disease(d9)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;noisyor10_15.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">noisyor10_15.lpad.pl</code><span>4 540 bytes, 87 lines</span><span class="sha" title="SHA-256">sha256 fee653a024321dd47d73123d3984021f57fecc609ad261a49e966782c4f2f5f7</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>noisyor10_15.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+disease(d0):0.084.
+disease(d1):0.262.
+disease(d2):0.241.
+disease(d3):0.114.
+disease(d4):0.174.
+disease(d5):0.162.
+disease(d6):0.213.
+disease(d7):0.247.
+disease(d8):0.073.
+disease(d9):0.057.
+leak(f0):0.043.
+cause(d0,f0):0.735.
+cause(d3,f0):0.857.
+cause(d6,f0):0.587.
+leak(f1):0.027.
+cause(d3,f1):0.733.
+cause(d5,f1):0.867.
+cause(d8,f1):0.849.
+leak(f2):0.04.
+cause(d1,f2):0.33.
+cause(d6,f2):0.895.
+cause(d8,f2):0.802.
+leak(f3):0.01.
+cause(d1,f3):0.555.
+cause(d5,f3):0.837.
+cause(d6,f3):0.333.
+leak(f4):0.028.
+cause(d4,f4):0.612.
+cause(d6,f4):0.224.
+cause(d7,f4):0.37.
+leak(f5):0.039.
+cause(d2,f5):0.457.
+cause(d6,f5):0.818.
+cause(d9,f5):0.743.
+leak(f6):0.019.
+cause(d1,f6):0.665.
+cause(d5,f6):0.276.
+cause(d7,f6):0.315.
+leak(f7):0.048.
+cause(d5,f7):0.713.
+cause(d6,f7):0.529.
+cause(d7,f7):0.416.
+leak(f8):0.046.
+cause(d2,f8):0.318.
+cause(d6,f8):0.359.
+cause(d9,f8):0.209.
+leak(f9):0.011.
+cause(d3,f9):0.483.
+cause(d8,f9):0.441.
+cause(d9,f9):0.793.
+leak(f10):0.011.
+cause(d4,f10):0.661.
+cause(d5,f10):0.626.
+cause(d7,f10):0.711.
+leak(f11):0.032.
+cause(d2,f11):0.563.
+cause(d6,f11):0.593.
+cause(d8,f11):0.498.
+leak(f12):0.048.
+cause(d0,f12):0.599.
+cause(d5,f12):0.34.
+cause(d7,f12):0.553.
+leak(f13):0.025.
+cause(d5,f13):0.442.
+cause(d6,f13):0.577.
+cause(d7,f13):0.636.
+leak(f14):0.019.
+cause(d5,f14):0.62.
+cause(d7,f14):0.763.
+cause(d9,f14):0.645.
+finding(F) :- leak(F).
+finding(F) :- disease(D), cause(D,F).
+:- end_lpad.
+main :-
+    forall((Q = disease(d0)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d1)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d2)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d3)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d4)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d5)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d6)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d7)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d8)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d9)), (prob(Q, (\+ (finding(f0)), finding(f1), finding(f2), finding(f3), \+ (finding(f4)), finding(f5), finding(f6), finding(f7), finding(f8), \+ (finding(f9)), \+ (finding(f10)), finding(f11), \+ (finding(f12)), finding(f13), \+ (finding(f14))), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.006</td><td>3.3e-16 at most</td><td>largest formula, pairs 8 261; final formula, pairs 35; variables 64; ground atoms 79; ground rules 54; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.21</td><td>4.9e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>26.9</td><td>4.9e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.23</td><td>4.9e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.90</td><td>7.4e-12 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>disease(d0)</th><td class="num">0.009650780161</td><td class="num">0.009650780161</td><td class="num">0.0096507802</td><td class="num">0.0096507802</td><td class="num">0.0096507802</td><td class="num">0.009650780164</td></tr><tr><th>disease(d1)</th><td class="num">0.7181711849</td><td class="num">0.7181711849</td><td class="num">0.71817118</td><td class="num">0.71817118</td><td class="num">0.71817118</td><td class="num">0.7181711849</td></tr><tr><th>disease(d2)</th><td class="num">0.4449333405</td><td class="num">0.4449333405</td><td class="num">0.44493334</td><td class="num">0.44493334</td><td class="num">0.44493334</td><td class="num">0.4449333405</td></tr><tr><th>disease(d3)</th><td class="num">0.04414642777</td><td class="num">0.04414642777</td><td class="num">0.044146428</td><td class="num">0.044146428</td><td class="num">0.044146428</td><td class="num">0.04414642777</td></tr><tr><th>disease(d4)</th><td class="num">0.02696069047</td><td class="num">0.02696069047</td><td class="num">0.02696069</td><td class="num">0.02696069</td><td class="num">0.02696069</td><td class="num">0.02696069046</td></tr><tr><th>disease(d5)</th><td class="num">0.5773020401</td><td class="num">0.5773020401</td><td class="num">0.57730204</td><td class="num">0.57730204</td><td class="num">0.57730204</td><td class="num">0.5773020401</td></tr><tr><th>disease(d6)</th><td class="num">0.9287824953</td><td class="num">0.9287824953</td><td class="num">0.9287825</td><td class="num">0.9287825</td><td class="num">0.9287825</td><td class="num">0.9287824953</td></tr><tr><th>disease(d7)</th><td class="num">0.01722486705</td><td class="num">0.01722486705</td><td class="num">0.017224867</td><td class="num">0.017224867</td><td class="num">0.017224867</td><td class="num">0.01722486705</td></tr><tr><th>disease(d8)</th><td class="num">0.29788031</td><td class="num">0.29788031</td><td class="num">0.29788031</td><td class="num">0.29788031</td><td class="num">0.29788031</td><td class="num">0.29788031</td></tr><tr><th>disease(d9)</th><td class="num">0.00680675176</td><td class="num">0.00680675176</td><td class="num">0.0068067518</td><td class="num">0.0068067518</td><td class="num">0.0068067518</td><td class="num">0.006806751758</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

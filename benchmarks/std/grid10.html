@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>grid10 · tddlog results</title>
+<meta name="description" content="grid10, an instance of Standard suite: programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#std">Standard suite: programs</a></p>
+    <h1>grid10</h1>
+    <p class="lede">50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper&#x27;s programs translated to ProbLog; 300 s a run. Made by <code>gen_grid.py 10 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.02</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto grid10.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf grid10.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd grid10.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd grid10.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result grid10.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">grid10.pl</code><span>4 223 bytes, 184 lines</span><span class="sha" title="SHA-256">sha256 01fea1c3939aa507381168f9ba9b8281b0a23cc77f65b6eee30e27f5b37f47d5</span></div><p class="made">Written by <code>gen_grid.py 10 --seed 1</code> (bench.py gen).</p><pre>% grid 10x10, seed 1
+0.21::edge(n0_0,n0_1).
+0.78::edge(n0_0,n1_0).
+0.71::edge(n0_1,n0_2).
+0.3::edge(n0_1,n1_1).
+0.5::edge(n0_2,n0_3).
+0.46::edge(n0_2,n1_2).
+0.62::edge(n0_3,n0_4).
+0.73::edge(n0_3,n1_3).
+0.18::edge(n0_4,n0_5).
+0.12::edge(n0_4,n1_4).
+0.77::edge(n0_5,n0_6).
+0.45::edge(n0_5,n1_5).
+0.71::edge(n0_6,n0_7).
+0.1::edge(n0_6,n1_6).
+0.46::edge(n0_7,n0_8).
+0.68::edge(n0_7,n1_7).
+0.28::edge(n0_8,n0_9).
+0.86::edge(n0_8,n1_8).
+0.82::edge(n0_9,n1_9).
+0.12::edge(n1_0,n1_1).
+0.12::edge(n1_0,n2_0).
+0.53::edge(n1_1,n1_2).
+0.85::edge(n1_1,n2_1).
+0.4::edge(n1_2,n1_3).
+0.27::edge(n1_2,n2_2).
+0.44::edge(n1_3,n1_4).
+0.12::edge(n1_3,n2_3).
+0.28::edge(n1_4,n1_5).
+0.45::edge(n1_4,n2_4).
+0.5::edge(n1_5,n1_6).
+0.29::edge(n1_5,n2_5).
+0.28::edge(n1_6,n1_7).
+0.28::edge(n1_6,n2_6).
+0.47::edge(n1_7,n1_8).
+0.33::edge(n1_7,n2_7).
+0.12::edge(n1_8,n1_9).
+0.77::edge(n1_8,n2_8).
+0.55::edge(n1_9,n2_9).
+0.61::edge(n2_0,n2_1).
+0.25::edge(n2_0,n3_0).
+0.89::edge(n2_1,n2_2).
+0.79::edge(n2_1,n3_1).
+0.2::edge(n2_2,n2_3).
+0.37::edge(n2_2,n3_2).
+0.68::edge(n2_3,n2_4).
+0.67::edge(n2_3,n3_3).
+0.85::edge(n2_4,n2_5).
+0.44::edge(n2_4,n3_4).
+0.76::edge(n2_5,n2_6).
+0.64::edge(n2_5,n3_5).
+0.34::edge(n2_6,n2_7).
+0.57::edge(n2_6,n3_6).
+0.81::edge(n2_7,n2_8).
+0.78::edge(n2_7,n3_7).
+0.5::edge(n2_8,n2_9).
+0.57::edge(n2_8,n3_8).
+0.13::edge(n2_9,n3_9).
+0.29::edge(n3_0,n3_1).
+0.74::edge(n3_0,n4_0).
+0.43::edge(n3_1,n3_2).
+0.24::edge(n3_1,n4_1).
+0.54::edge(n3_2,n3_3).
+0.66::edge(n3_2,n4_2).
+0.64::edge(n3_3,n3_4).
+0.4::edge(n3_3,n4_3).
+0.45::edge(n3_4,n3_5).
+0.51::edge(n3_4,n4_4).
+0.72::edge(n3_5,n3_6).
+0.52::edge(n3_5,n4_5).
+0.41::edge(n3_6,n3_7).
+0.49::edge(n3_6,n4_6).
+0.12::edge(n3_7,n3_8).
+0.13::edge(n3_7,n4_7).
+0.66::edge(n3_8,n3_9).
+0.89::edge(n3_8,n4_8).
+0.57::edge(n3_9,n4_9).
+0.41::edge(n4_0,n4_1).
+0.24::edge(n4_0,n5_0).
+0.5::edge(n4_1,n4_2).
+0.89::edge(n4_1,n5_1).
+0.72::edge(n4_2,n4_3).
+0.53::edge(n4_2,n5_2).
+0.79::edge(n4_3,n4_4).
+0.29::edge(n4_3,n5_3).
+0.51::edge(n4_4,n4_5).
+0.86::edge(n4_4,n5_4).
+0.56::edge(n4_5,n4_6).
+0.47::edge(n4_5,n5_5).
+0.32::edge(n4_6,n4_7).
+0.54::edge(n4_6,n5_6).
+0.87::edge(n4_7,n4_8).
+0.1::edge(n4_7,n5_7).
+0.73::edge(n4_8,n4_9).
+0.76::edge(n4_8,n5_8).
+0.81::edge(n4_9,n5_9).
+0.69::edge(n5_0,n5_1).
+0.75::edge(n5_0,n6_0).
+0.51::edge(n5_1,n5_2).
+0.55::edge(n5_1,n6_1).
+0.44::edge(n5_2,n5_3).
+0.14::edge(n5_2,n6_2).
+0.8::edge(n5_3,n5_4).
+0.56::edge(n5_3,n6_3).
+0.26::edge(n5_4,n5_5).
+0.5::edge(n5_4,n6_4).
+0.49::edge(n5_5,n5_6).
+0.39::edge(n5_5,n6_5).
+0.38::edge(n5_6,n5_7).
+0.53::edge(n5_6,n6_6).
+0.6::edge(n5_7,n5_8).
+0.59::edge(n5_7,n6_7).
+0.47::edge(n5_8,n5_9).
+0.12::edge(n5_8,n6_8).
+0.28::edge(n5_9,n6_9).
+0.24::edge(n6_0,n6_1).
+0.57::edge(n6_0,n7_0).
+0.79::edge(n6_1,n6_2).
+0.74::edge(n6_1,n7_1).
+0.74::edge(n6_2,n6_3).
+0.75::edge(n6_2,n7_2).
+0.3::edge(n6_3,n6_4).
+0.77::edge(n6_3,n7_3).
+0.64::edge(n6_4,n6_5).
+0.17::edge(n6_4,n7_4).
+0.11::edge(n6_5,n6_6).
+0.11::edge(n6_5,n7_5).
+0.7::edge(n6_6,n6_7).
+0.3::edge(n6_6,n7_6).
+0.19::edge(n6_7,n6_8).
+0.6::edge(n6_7,n7_7).
+0.38::edge(n6_8,n6_9).
+0.16::edge(n6_8,n7_8).
+0.23::edge(n6_9,n7_9).
+0.52::edge(n7_0,n7_1).
+0.23::edge(n7_0,n8_0).
+0.32::edge(n7_1,n7_2).
+0.67::edge(n7_1,n8_1).
+0.46::edge(n7_2,n7_3).
+0.36::edge(n7_2,n8_2).
+0.48::edge(n7_3,n7_4).
+0.12::edge(n7_3,n8_3).
+0.41::edge(n7_4,n7_5).
+0.44::edge(n7_4,n8_4).
+0.25::edge(n7_5,n7_6).
+0.19::edge(n7_5,n8_5).
+0.82::edge(n7_6,n7_7).
+0.51::edge(n7_6,n8_6).
+0.27::edge(n7_7,n7_8).
+0.58::edge(n7_7,n8_7).
+0.75::edge(n7_8,n7_9).
+0.12::edge(n7_8,n8_8).
+0.11::edge(n7_9,n8_9).
+0.22::edge(n8_0,n8_1).
+0.68::edge(n8_0,n9_0).
+0.23::edge(n8_1,n8_2).
+0.66::edge(n8_1,n9_1).
+0.64::edge(n8_2,n8_3).
+0.54::edge(n8_2,n9_2).
+0.28::edge(n8_3,n8_4).
+0.88::edge(n8_3,n9_3).
+0.74::edge(n8_4,n8_5).
+0.51::edge(n8_4,n9_4).
+0.28::edge(n8_5,n8_6).
+0.62::edge(n8_5,n9_5).
+0.42::edge(n8_6,n8_7).
+0.56::edge(n8_6,n9_6).
+0.36::edge(n8_7,n8_8).
+0.6::edge(n8_7,n9_7).
+0.15::edge(n8_8,n8_9).
+0.34::edge(n8_8,n9_8).
+0.87::edge(n8_9,n9_9).
+0.8::edge(n9_0,n9_1).
+0.35::edge(n9_1,n9_2).
+0.79::edge(n9_2,n9_3).
+0.35::edge(n9_3,n9_4).
+0.85::edge(n9_4,n9_5).
+0.7::edge(n9_5,n9_6).
+0.43::edge(n9_6,n9_7).
+0.3::edge(n9_7,n9_8).
+0.11::edge(n9_8,n9_9).
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+query(path(n0_0,n9_9)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;grid10.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">grid10.lpad.pl</code><span>4 168 bytes, 189 lines</span><span class="sha" title="SHA-256">sha256 83bf62caf1cabfc1bfd939a68032ea66ad7c428f405a84380d14ed9fd235f1a7</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>grid10.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table path/2.
+edge(n0_0,n0_1):0.21.
+edge(n0_0,n1_0):0.78.
+edge(n0_1,n0_2):0.71.
+edge(n0_1,n1_1):0.3.
+edge(n0_2,n0_3):0.5.
+edge(n0_2,n1_2):0.46.
+edge(n0_3,n0_4):0.62.
+edge(n0_3,n1_3):0.73.
+edge(n0_4,n0_5):0.18.
+edge(n0_4,n1_4):0.12.
+edge(n0_5,n0_6):0.77.
+edge(n0_5,n1_5):0.45.
+edge(n0_6,n0_7):0.71.
+edge(n0_6,n1_6):0.1.
+edge(n0_7,n0_8):0.46.
+edge(n0_7,n1_7):0.68.
+edge(n0_8,n0_9):0.28.
+edge(n0_8,n1_8):0.86.
+edge(n0_9,n1_9):0.82.
+edge(n1_0,n1_1):0.12.
+edge(n1_0,n2_0):0.12.
+edge(n1_1,n1_2):0.53.
+edge(n1_1,n2_1):0.85.
+edge(n1_2,n1_3):0.4.
+edge(n1_2,n2_2):0.27.
+edge(n1_3,n1_4):0.44.
+edge(n1_3,n2_3):0.12.
+edge(n1_4,n1_5):0.28.
+edge(n1_4,n2_4):0.45.
+edge(n1_5,n1_6):0.5.
+edge(n1_5,n2_5):0.29.
+edge(n1_6,n1_7):0.28.
+edge(n1_6,n2_6):0.28.
+edge(n1_7,n1_8):0.47.
+edge(n1_7,n2_7):0.33.
+edge(n1_8,n1_9):0.12.
+edge(n1_8,n2_8):0.77.
+edge(n1_9,n2_9):0.55.
+edge(n2_0,n2_1):0.61.
+edge(n2_0,n3_0):0.25.
+edge(n2_1,n2_2):0.89.
+edge(n2_1,n3_1):0.79.
+edge(n2_2,n2_3):0.2.
+edge(n2_2,n3_2):0.37.
+edge(n2_3,n2_4):0.68.
+edge(n2_3,n3_3):0.67.
+edge(n2_4,n2_5):0.85.
+edge(n2_4,n3_4):0.44.
+edge(n2_5,n2_6):0.76.
+edge(n2_5,n3_5):0.64.
+edge(n2_6,n2_7):0.34.
+edge(n2_6,n3_6):0.57.
+edge(n2_7,n2_8):0.81.
+edge(n2_7,n3_7):0.78.
+edge(n2_8,n2_9):0.5.
+edge(n2_8,n3_8):0.57.
+edge(n2_9,n3_9):0.13.
+edge(n3_0,n3_1):0.29.
+edge(n3_0,n4_0):0.74.
+edge(n3_1,n3_2):0.43.
+edge(n3_1,n4_1):0.24.
+edge(n3_2,n3_3):0.54.
+edge(n3_2,n4_2):0.66.
+edge(n3_3,n3_4):0.64.
+edge(n3_3,n4_3):0.4.
+edge(n3_4,n3_5):0.45.
+edge(n3_4,n4_4):0.51.
+edge(n3_5,n3_6):0.72.
+edge(n3_5,n4_5):0.52.
+edge(n3_6,n3_7):0.41.
+edge(n3_6,n4_6):0.49.
+edge(n3_7,n3_8):0.12.
+edge(n3_7,n4_7):0.13.
+edge(n3_8,n3_9):0.66.
+edge(n3_8,n4_8):0.89.
+edge(n3_9,n4_9):0.57.
+edge(n4_0,n4_1):0.41.
+edge(n4_0,n5_0):0.24.
+edge(n4_1,n4_2):0.5.
+edge(n4_1,n5_1):0.89.
+edge(n4_2,n4_3):0.72.
+edge(n4_2,n5_2):0.53.
+edge(n4_3,n4_4):0.79.
+edge(n4_3,n5_3):0.29.
+edge(n4_4,n4_5):0.51.
+edge(n4_4,n5_4):0.86.
+edge(n4_5,n4_6):0.56.
+edge(n4_5,n5_5):0.47.
+edge(n4_6,n4_7):0.32.
+edge(n4_6,n5_6):0.54.
+edge(n4_7,n4_8):0.87.
+edge(n4_7,n5_7):0.1.
+edge(n4_8,n4_9):0.73.
+edge(n4_8,n5_8):0.76.
+edge(n4_9,n5_9):0.81.
+edge(n5_0,n5_1):0.69.
+edge(n5_0,n6_0):0.75.
+edge(n5_1,n5_2):0.51.
+edge(n5_1,n6_1):0.55.
+edge(n5_2,n5_3):0.44.
+edge(n5_2,n6_2):0.14.
+edge(n5_3,n5_4):0.8.
+edge(n5_3,n6_3):0.56.
+edge(n5_4,n5_5):0.26.
+edge(n5_4,n6_4):0.5.
+edge(n5_5,n5_6):0.49.
+edge(n5_5,n6_5):0.39.
+edge(n5_6,n5_7):0.38.
+edge(n5_6,n6_6):0.53.
+edge(n5_7,n5_8):0.6.
+edge(n5_7,n6_7):0.59.
+edge(n5_8,n5_9):0.47.
+edge(n5_8,n6_8):0.12.
+edge(n5_9,n6_9):0.28.
+edge(n6_0,n6_1):0.24.
+edge(n6_0,n7_0):0.57.
+edge(n6_1,n6_2):0.79.
+edge(n6_1,n7_1):0.74.
+edge(n6_2,n6_3):0.74.
+edge(n6_2,n7_2):0.75.
+edge(n6_3,n6_4):0.3.
+edge(n6_3,n7_3):0.77.
+edge(n6_4,n6_5):0.64.
+edge(n6_4,n7_4):0.17.
+edge(n6_5,n6_6):0.11.
+edge(n6_5,n7_5):0.11.
+edge(n6_6,n6_7):0.7.
+edge(n6_6,n7_6):0.3.
+edge(n6_7,n6_8):0.19.
+edge(n6_7,n7_7):0.6.
+edge(n6_8,n6_9):0.38.
+edge(n6_8,n7_8):0.16.
+edge(n6_9,n7_9):0.23.
+edge(n7_0,n7_1):0.52.
+edge(n7_0,n8_0):0.23.
+edge(n7_1,n7_2):0.32.
+edge(n7_1,n8_1):0.67.
+edge(n7_2,n7_3):0.46.
+edge(n7_2,n8_2):0.36.
+edge(n7_3,n7_4):0.48.
+edge(n7_3,n8_3):0.12.
+edge(n7_4,n7_5):0.41.
+edge(n7_4,n8_4):0.44.
+edge(n7_5,n7_6):0.25.
+edge(n7_5,n8_5):0.19.
+edge(n7_6,n7_7):0.82.
+edge(n7_6,n8_6):0.51.
+edge(n7_7,n7_8):0.27.
+edge(n7_7,n8_7):0.58.
+edge(n7_8,n7_9):0.75.
+edge(n7_8,n8_8):0.12.
+edge(n7_9,n8_9):0.11.
+edge(n8_0,n8_1):0.22.
+edge(n8_0,n9_0):0.68.
+edge(n8_1,n8_2):0.23.
+edge(n8_1,n9_1):0.66.
+edge(n8_2,n8_3):0.64.
+edge(n8_2,n9_2):0.54.
+edge(n8_3,n8_4):0.28.
+edge(n8_3,n9_3):0.88.
+edge(n8_4,n8_5):0.74.
+edge(n8_4,n9_4):0.51.
+edge(n8_5,n8_6):0.28.
+edge(n8_5,n9_5):0.62.
+edge(n8_6,n8_7):0.42.
+edge(n8_6,n9_6):0.56.
+edge(n8_7,n8_8):0.36.
+edge(n8_7,n9_7):0.6.
+edge(n8_8,n8_9):0.15.
+edge(n8_8,n9_8):0.34.
+edge(n8_9,n9_9):0.87.
+edge(n9_0,n9_1):0.8.
+edge(n9_1,n9_2):0.35.
+edge(n9_2,n9_3):0.79.
+edge(n9_3,n9_4):0.35.
+edge(n9_4,n9_5):0.85.
+edge(n9_5,n9_6):0.7.
+edge(n9_6,n9_7):0.43.
+edge(n9_7,n9_8):0.3.
+edge(n9_8,n9_9):0.11.
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+:- end_lpad.
+main :-
+    forall((Q = path(n0_0,n9_9)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.02</td><td></td><td>largest formula, pairs 57 617; final formula, pairs 20; variables 354; ground atoms 625; ground rules 526; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th></tr></thead><tbody><tr><th>path(n0_0,n9_9)</th><td class="num">0.001825797326</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_clickGraph_w4 · tddlog results</title>
+<meta name="description" content="bb_clickGraph_w4, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_clickGraph_w4</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/clickGraph.jl</code> with <code>bits=2</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">0.006</td><td class="num">0.009</td><td class="num">47.9</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set bits=2 data/alea/hybit/clickGraph.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/hybit/clickGraph.jl</code><span>1 080 bytes, 31 lines</span><span class="sha" title="SHA-256">sha256 9301869f78f4610d4a7af8e47685f038fe9a5fd081d691616f6859347186b4e9</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/hybit/clickGraph.jl</code>.</p><pre># ClickGraph (Gehr et al. 2016): the similarity of two search results
+# given ten observed clicks. Bit-blasting paper (Garg, Holtzen, Van den
+# Broeck, Millstein, PLDI 2024), Table 2: 10 bits. From Tractables/Alea.jl
+# hybrid/benchmarks/clickGraph/clickGraph.jl at cf5e5b8 (Apache License
+# 2.0); the vectors sim0 and sim1 made within the block, the body
+# otherwise unchanged.
+using Alea, Distributions
+
+const QUERY = :expectation
+const bits = 8
+const DFiP = DistFix{2+bits, bits}
+const clicks0 = [true, true, true, false, false]
+const clicks1 = [true, true, true, false, false]
+
+model() = @alea begin
+    sim0 = Vector(undef, 5)
+    sim1 = Vector(undef, 5)
+    similarityAll = uniform(DFiP, 0.0, 1.0)
+    for i=1:5
+        sim = parametrised_flip(similarityAll)
+        beta1 = uniform(DFiP, 0.0, 1.0)
+        beta2 = ifelse(sim, beta1, uniform(DFiP, 0.0, 1.0))
+        sim0[i] = parametrised_flip(beta1)
+        sim1[i] = parametrised_flip(beta2)
+    end
+    for i=1:5
+        observe(sim0[i] == clicks0[i])
+        observe(sim1[i] == clicks1[i])
+    end
+    similarityAll
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_clickGraph_w4.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_clickGraph_w4.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_clickGraph_w4.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_clickGraph_w4.pl</code><span>3 752 bytes, 258 lines</span><span class="sha" title="SHA-256">sha256 9e318f382381920a0dd65e1c230ebd76af22bd1a2af4dbc94d7a4d5af85a32f1</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/hybit/clickGraph.jl bits=2</code>.</p><pre>% clickGraph.jl bits=2: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+% 52 flips, 135 gates, 10 observations, 2 queries.
+0.5::f1.
+0.5::f2.
+0.5::f3.
+0.5::f4.
+0.5::f5.
+0.5::f6.
+0.5::f7.
+0.5::f8.
+0.5::f9.
+0.5::f10.
+0.5::f11.
+0.5::f12.
+0.5::f13.
+0.5::f14.
+0.5::f15.
+0.5::f16.
+0.5::f17.
+0.5::f18.
+0.5::f19.
+0.5::f20.
+0.5::f21.
+0.5::f22.
+0.5::f23.
+0.5::f24.
+0.5::f25.
+0.5::f26.
+0.5::f27.
+0.5::f28.
+0.5::f29.
+0.5::f30.
+0.5::f31.
+0.5::f32.
+0.5::f33.
+0.5::f34.
+0.5::f35.
+0.5::f36.
+0.5::f37.
+0.5::f38.
+0.5::f39.
+0.5::f40.
+0.5::f41.
+0.5::f42.
+0.5::f43.
+0.5::f44.
+0.5::f45.
+0.5::f46.
+0.5::f47.
+0.5::f48.
+0.5::f49.
+0.5::f50.
+0.5::f51.
+0.5::f52.
+g1 :- f6, \+f10.
+g2 :- f9.
+g2 :- f5.
+g3 :- f9, f5.
+g4 :- g3.
+g4 :- \+g2.
+g5 :- g4, g1.
+g6 :- f5, \+f9.
+g7 :- g6.
+g7 :- g5.
+g8 :- f2, \+f4.
+g9 :- f3.
+g9 :- f1.
+g10 :- f3, f1.
+g11 :- g10.
+g11 :- \+g9.
+g12 :- g11, g8.
+g13 :- f1, \+f3.
+g14 :- g13.
+g14 :- g12.
+g15 :- f8, \+g14.
+g16 :- g14, f6.
+g17 :- g16.
+g17 :- g15.
+g18 :- g17, \+f12.
+g19 :- f7, \+g14.
+g20 :- g14, f5.
+g21 :- g20.
+g21 :- g19.
+g22 :- f11.
+g22 :- g21.
+g23 :- f11, g21.
+g24 :- g23.
+g24 :- \+g22.
+g25 :- g24, g18.
+g26 :- g21, \+f11.
+g27 :- g26.
+g27 :- g25.
+g28 :- f16, \+f20.
+g29 :- f19.
+g29 :- f15.
+g30 :- f19, f15.
+g31 :- g30.
+g31 :- \+g29.
+g32 :- g31, g28.
+g33 :- f15, \+f19.
+g34 :- g33.
+g34 :- g32.
+g35 :- f2, \+f14.
+g36 :- f13.
+g36 :- f1.
+g37 :- f13, f1.
+g38 :- g37.
+g38 :- \+g36.
+g39 :- g38, g35.
+g40 :- f1, \+f13.
+g41 :- g40.
+g41 :- g39.
+g42 :- f18, \+g41.
+g43 :- g41, f16.
+g44 :- g43.
+g44 :- g42.
+g45 :- g44, \+f22.
+g46 :- f17, \+g41.
+g47 :- g41, f15.
+g48 :- g47.
+g48 :- g46.
+g49 :- f21.
+g49 :- g48.
+g50 :- f21, g48.
+g51 :- g50.
+g51 :- \+g49.
+g52 :- g51, g45.
+g53 :- g48, \+f21.
+g54 :- g53.
+g54 :- g52.
+g55 :- f26, \+f30.
+g56 :- f29.
+g56 :- f25.
+g57 :- f29, f25.
+g58 :- g57.
+g58 :- \+g56.
+g59 :- g58, g55.
+g60 :- f25, \+f29.
+g61 :- g60.
+g61 :- g59.
+g62 :- f2, \+f24.
+g63 :- f23.
+g63 :- f1.
+g64 :- f23, f1.
+g65 :- g64.
+g65 :- \+g63.
+g66 :- g65, g62.
+g67 :- f1, \+f23.
+g68 :- g67.
+g68 :- g66.
+g69 :- f28, \+g68.
+g70 :- g68, f26.
+g71 :- g70.
+g71 :- g69.
+g72 :- g71, \+f32.
+g73 :- f27, \+g68.
+g74 :- g68, f25.
+g75 :- g74.
+g75 :- g73.
+g76 :- f31.
+g76 :- g75.
+g77 :- f31, g75.
+g78 :- g77.
+g78 :- \+g76.
+g79 :- g78, g72.
+g80 :- g75, \+f31.
+g81 :- g80.
+g81 :- g79.
+g82 :- f36, \+f40.
+g83 :- f39.
+g83 :- f35.
+g84 :- f39, f35.
+g85 :- g84.
+g85 :- \+g83.
+g86 :- g85, g82.
+g87 :- f35, \+f39.
+g88 :- g87.
+g88 :- g86.
+g89 :- f2, \+f34.
+g90 :- f33.
+g90 :- f1.
+g91 :- f33, f1.
+g92 :- g91.
+g92 :- \+g90.
+g93 :- g92, g89.
+g94 :- f1, \+f33.
+g95 :- g94.
+g95 :- g93.
+g96 :- f38, \+g95.
+g97 :- g95, f36.
+g98 :- g97.
+g98 :- g96.
+g99 :- g98, \+f42.
+g100 :- f37, \+g95.
+g101 :- g95, f35.
+g102 :- g101.
+g102 :- g100.
+g103 :- f41.
+g103 :- g102.
+g104 :- f41, g102.
+g105 :- g104.
+g105 :- \+g103.
+g106 :- g105, g99.
+g107 :- g102, \+f41.
+g108 :- g107.
+g108 :- g106.
+g109 :- f46, \+f50.
+g110 :- f49.
+g110 :- f45.
+g111 :- f49, f45.
+g112 :- g111.
+g112 :- \+g110.
+g113 :- g112, g109.
+g114 :- f45, \+f49.
+g115 :- g114.
+g115 :- g113.
+g116 :- f2, \+f44.
+g117 :- f43.
+g117 :- f1.
+g118 :- f43, f1.
+g119 :- g118.
+g119 :- \+g117.
+g120 :- g119, g116.
+g121 :- f1, \+f43.
+g122 :- g121.
+g122 :- g120.
+g123 :- f48, \+g122.
+g124 :- g122, f46.
+g125 :- g124.
+g125 :- g123.
+g126 :- g125, \+f52.
+g127 :- f47, \+g122.
+g128 :- g122, f45.
+g129 :- g128.
+g129 :- g127.
+g130 :- f51.
+g130 :- g129.
+g131 :- f51, g129.
+g132 :- g131.
+g132 :- \+g130.
+g133 :- g132, g126.
+g134 :- g129, \+f51.
+g135 :- g134.
+g135 :- g133.
+evidence(g7, true).
+evidence(g27, true).
+evidence(g34, true).
+evidence(g54, true).
+evidence(g61, true).
+evidence(g81, true).
+evidence(g88, false).
+evidence(g108, false).
+evidence(g115, false).
+evidence(g135, false).
+e1(3) :- f1.
+query(e1(3)).
+e1(4) :- f2.
+query(e1(4)).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.005</td><td></td><td>largest formula, pairs 1 300; final formula, pairs 59; variables 54; ground atoms 113; ground rules 116; vtree program (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.008</td><td></td><td>largest formula, pairs 1 300; final formula, pairs 59; variables 54; ground atoms 113; ground rules 116; vtree program (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.006</td><td></td><td>largest formula, pairs 1 300; final formula, pairs 59; variables 54; ground atoms 113; ground rules 116; vtree program (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.009</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>vtree error: vtree `decision`: the grounder read no fact of this program as a guard</pre></details></td></tr><tr><td>2</td><td>error</td><td>0.004</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>vtree error: vtree `decision`: the grounder read no fact of this program as a guard</pre></details></td></tr><tr><td>3</td><td>error</td><td>0.005</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>vtree error: vtree `decision`: the grounder read no fact of this program as a guard</pre></details></td></tr></tbody></table></div>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.004</td><td></td><td>largest formula, pairs 1 300; final formula, pairs 59; variables 54; ground atoms 113; ground rules 116; vtree program</td></tr><tr><td>2</td><td>answered</td><td>0.008</td><td></td><td>largest formula, pairs 1 300; final formula, pairs 59; variables 54; ground atoms 113; ground rules 116; vtree program</td></tr><tr><td>3</td><td>answered</td><td>0.009</td><td></td><td>largest formula, pairs 1 300; final formula, pairs 59; variables 54; ground atoms 113; ground rules 116; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>48.4</td><td>37.7</td><td>37.7</td><td>0.009</td><td></td><td>circuit flips 52; circuit gates 135; BDD peak, nodes 4 088; evidence BDD, nodes 578; largest query BDD, nodes 2</td></tr><tr><td>2</td><td>answered</td><td>47.9</td><td>37.0</td><td>37.0</td><td>0.009</td><td></td><td>circuit flips 52; circuit gates 135; BDD peak, nodes 4 088; evidence BDD, nodes 578; largest query BDD, nodes 2</td></tr><tr><td>3</td><td>answered</td><td>47.3</td><td>36.7</td><td>36.7</td><td>0.009</td><td></td><td>circuit flips 52; circuit gates 135; BDD peak, nodes 4 088; evidence BDD, nodes 578; largest query BDD, nodes 2</td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>e1(3)</th><td class="num">0.7050818229</td><td class="num">0.7050818229</td><td class="num">0.7050818229</td></tr><tr><th>e1(4)</th><td class="num">0.6045858098</td><td class="num">0.6045858098</td><td class="num">0.6045858098</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

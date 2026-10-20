@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_clickGraph_w8 · tddlog results</title>
+<meta name="description" content="bb_clickGraph_w8, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_clickGraph_w8</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/clickGraph.jl</code> with <code>bits=6</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">0.24</td><td class="num">6.5</td><td class="num">64.8</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set bits=6 data/alea/hybit/clickGraph.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/hybit/clickGraph.jl</code><span>1 080 bytes, 31 lines</span><span class="sha" title="SHA-256">sha256 9301869f78f4610d4a7af8e47685f038fe9a5fd081d691616f6859347186b4e9</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/hybit/clickGraph.jl</code>.</p><pre># ClickGraph (Gehr et al. 2016): the similarity of two search results
+# given ten observed clicks. Bit-blasting paper (Garg, Holtzen, Van den
+# Broeck, Millstein, PLDI 2024), Table 2: 10 bits. From Tractables/Alea.jl
+# hybrid/benchmarks/clickGraph/clickGraph.jl at cf5e5b8 (Apache License
+# 2.0); the vectors sim0 and sim1 made within the block, the body
+# otherwise unchanged.
+using Alea, Distributions
+
+const QUERY = :expectation
+const bits = 8
+const DFiP = DistFix{2+bits, bits}
+const clicks0 = [true, true, true, false, false]
+const clicks1 = [true, true, true, false, false]
+
+model() = @alea begin
+    sim0 = Vector(undef, 5)
+    sim1 = Vector(undef, 5)
+    similarityAll = uniform(DFiP, 0.0, 1.0)
+    for i=1:5
+        sim = parametrised_flip(similarityAll)
+        beta1 = uniform(DFiP, 0.0, 1.0)
+        beta2 = ifelse(sim, beta1, uniform(DFiP, 0.0, 1.0))
+        sim0[i] = parametrised_flip(beta1)
+        sim1[i] = parametrised_flip(beta2)
+    end
+    for i=1:5
+        observe(sim0[i] == clicks0[i])
+        observe(sim1[i] == clicks1[i])
+    end
+    similarityAll
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_clickGraph_w8.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_clickGraph_w8.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_clickGraph_w8.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_clickGraph_w8.pl</code><span>14 980 bytes, 990 lines</span><span class="sha" title="SHA-256">sha256 a08b6b74d96278856510cb52a2b0b69c4de0a7652ab4c9174a431b1466cd6259</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/hybit/clickGraph.jl bits=6</code>.</p><pre>% clickGraph.jl bits=6: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+% 156 flips, 555 gates, 10 observations, 6 queries.
+0.5::f1.
+0.5::f2.
+0.5::f3.
+0.5::f4.
+0.5::f5.
+0.5::f6.
+0.5::f7.
+0.5::f8.
+0.5::f9.
+0.5::f10.
+0.5::f11.
+0.5::f12.
+0.5::f13.
+0.5::f14.
+0.5::f15.
+0.5::f16.
+0.5::f17.
+0.5::f18.
+0.5::f19.
+0.5::f20.
+0.5::f21.
+0.5::f22.
+0.5::f23.
+0.5::f24.
+0.5::f25.
+0.5::f26.
+0.5::f27.
+0.5::f28.
+0.5::f29.
+0.5::f30.
+0.5::f31.
+0.5::f32.
+0.5::f33.
+0.5::f34.
+0.5::f35.
+0.5::f36.
+0.5::f37.
+0.5::f38.
+0.5::f39.
+0.5::f40.
+0.5::f41.
+0.5::f42.
+0.5::f43.
+0.5::f44.
+0.5::f45.
+0.5::f46.
+0.5::f47.
+0.5::f48.
+0.5::f49.
+0.5::f50.
+0.5::f51.
+0.5::f52.
+0.5::f53.
+0.5::f54.
+0.5::f55.
+0.5::f56.
+0.5::f57.
+0.5::f58.
+0.5::f59.
+0.5::f60.
+0.5::f61.
+0.5::f62.
+0.5::f63.
+0.5::f64.
+0.5::f65.
+0.5::f66.
+0.5::f67.
+0.5::f68.
+0.5::f69.
+0.5::f70.
+0.5::f71.
+0.5::f72.
+0.5::f73.
+0.5::f74.
+0.5::f75.
+0.5::f76.
+0.5::f77.
+0.5::f78.
+0.5::f79.
+0.5::f80.
+0.5::f81.
+0.5::f82.
+0.5::f83.
+0.5::f84.
+0.5::f85.
+0.5::f86.
+0.5::f87.
+0.5::f88.
+0.5::f89.
+0.5::f90.
+0.5::f91.
+0.5::f92.
+0.5::f93.
+0.5::f94.
+0.5::f95.
+0.5::f96.
+0.5::f97.
+0.5::f98.
+0.5::f99.
+0.5::f100.
+0.5::f101.
+0.5::f102.
+0.5::f103.
+0.5::f104.
+0.5::f105.
+0.5::f106.
+0.5::f107.
+0.5::f108.
+0.5::f109.
+0.5::f110.
+0.5::f111.
+0.5::f112.
+0.5::f113.
+0.5::f114.
+0.5::f115.
+0.5::f116.
+0.5::f117.
+0.5::f118.
+0.5::f119.
+0.5::f120.
+0.5::f121.
+0.5::f122.
+0.5::f123.
+0.5::f124.
+0.5::f125.
+0.5::f126.
+0.5::f127.
+0.5::f128.
+0.5::f129.
+0.5::f130.
+0.5::f131.
+0.5::f132.
+0.5::f133.
+0.5::f134.
+0.5::f135.
+0.5::f136.
+0.5::f137.
+0.5::f138.
+0.5::f139.
+0.5::f140.
+0.5::f141.
+0.5::f142.
+0.5::f143.
+0.5::f144.
+0.5::f145.
+0.5::f146.
+0.5::f147.
+0.5::f148.
+0.5::f149.
+0.5::f150.
+0.5::f151.
+0.5::f152.
+0.5::f153.
+0.5::f154.
+0.5::f155.
+0.5::f156.
+g1 :- f18, \+f30.
+g2 :- f29.
+g2 :- f17.
+g3 :- f29, f17.
+g4 :- g3.
+g4 :- \+g2.
+g5 :- g4, g1.
+g6 :- f17, \+f29.
+g7 :- g6.
+g7 :- g5.
+g8 :- f28.
+g8 :- f16.
+g9 :- f28, f16.
+g10 :- g9.
+g10 :- \+g8.
+g11 :- g10, g7.
+g12 :- f16, \+f28.
+g13 :- g12.
+g13 :- g11.
+g14 :- f27.
+g14 :- f15.
+g15 :- f27, f15.
+g16 :- g15.
+g16 :- \+g14.
+g17 :- g16, g13.
+g18 :- f15, \+f27.
+g19 :- g18.
+g19 :- g17.
+g20 :- f26.
+g20 :- f14.
+g21 :- f26, f14.
+g22 :- g21.
+g22 :- \+g20.
+g23 :- g22, g19.
+g24 :- f14, \+f26.
+g25 :- g24.
+g25 :- g23.
+g26 :- f25.
+g26 :- f13.
+g27 :- f25, f13.
+g28 :- g27.
+g28 :- \+g26.
+g29 :- g28, g25.
+g30 :- f13, \+f25.
+g31 :- g30.
+g31 :- g29.
+g32 :- f6, \+f12.
+g33 :- f11.
+g33 :- f5.
+g34 :- f11, f5.
+g35 :- g34.
+g35 :- \+g33.
+g36 :- g35, g32.
+g37 :- f5, \+f11.
+g38 :- g37.
+g38 :- g36.
+g39 :- f10.
+g39 :- f4.
+g40 :- f10, f4.
+g41 :- g40.
+g41 :- \+g39.
+g42 :- g41, g38.
+g43 :- f4, \+f10.
+g44 :- g43.
+g44 :- g42.
+g45 :- f9.
+g45 :- f3.
+g46 :- f9, f3.
+g47 :- g46.
+g47 :- \+g45.
+g48 :- g47, g44.
+g49 :- f3, \+f9.
+g50 :- g49.
+g50 :- g48.
+g51 :- f8.
+g51 :- f2.
+g52 :- f8, f2.
+g53 :- g52.
+g53 :- \+g51.
+g54 :- g53, g50.
+g55 :- f2, \+f8.
+g56 :- g55.
+g56 :- g54.
+g57 :- f7.
+g57 :- f1.
+g58 :- f7, f1.
+g59 :- g58.
+g59 :- \+g57.
+g60 :- g59, g56.
+g61 :- f1, \+f7.
+g62 :- g61.
+g62 :- g60.
+g63 :- f24, \+g62.
+g64 :- g62, f18.
+g65 :- g64.
+g65 :- g63.
+g66 :- g65, \+f36.
+g67 :- f23, \+g62.
+g68 :- g62, f17.
+g69 :- g68.
+g69 :- g67.
+g70 :- f35.
+g70 :- g69.
+g71 :- f35, g69.
+g72 :- g71.
+g72 :- \+g70.
+g73 :- g72, g66.
+g74 :- g69, \+f35.
+g75 :- g74.
+g75 :- g73.
+g76 :- f22, \+g62.
+g77 :- g62, f16.
+g78 :- g77.
+g78 :- g76.
+g79 :- f34.
+g79 :- g78.
+g80 :- f34, g78.
+g81 :- g80.
+g81 :- \+g79.
+g82 :- g81, g75.
+g83 :- g78, \+f34.
+g84 :- g83.
+g84 :- g82.
+g85 :- f21, \+g62.
+g86 :- g62, f15.
+g87 :- g86.
+g87 :- g85.
+g88 :- f33.
+g88 :- g87.
+g89 :- f33, g87.
+g90 :- g89.
+g90 :- \+g88.
+g91 :- g90, g84.
+g92 :- g87, \+f33.
+g93 :- g92.
+g93 :- g91.
+g94 :- f20, \+g62.
+g95 :- g62, f14.
+g96 :- g95.
+g96 :- g94.
+g97 :- f32.
+g97 :- g96.
+g98 :- f32, g96.
+g99 :- g98.
+g99 :- \+g97.
+g100 :- g99, g93.
+g101 :- g96, \+f32.
+g102 :- g101.
+g102 :- g100.
+g103 :- f19, \+g62.
+g104 :- g62, f13.
+g105 :- g104.
+g105 :- g103.
+g106 :- f31.
+g106 :- g105.
+g107 :- f31, g105.
+g108 :- g107.
+g108 :- \+g106.
+g109 :- g108, g102.
+g110 :- g105, \+f31.
+g111 :- g110.
+g111 :- g109.
+g112 :- f48, \+f60.
+g113 :- f59.
+g113 :- f47.
+g114 :- f59, f47.
+g115 :- g114.
+g115 :- \+g113.
+g116 :- g115, g112.
+g117 :- f47, \+f59.
+g118 :- g117.
+g118 :- g116.
+g119 :- f58.
+g119 :- f46.
+g120 :- f58, f46.
+g121 :- g120.
+g121 :- \+g119.
+g122 :- g121, g118.
+g123 :- f46, \+f58.
+g124 :- g123.
+g124 :- g122.
+g125 :- f57.
+g125 :- f45.
+g126 :- f57, f45.
+g127 :- g126.
+g127 :- \+g125.
+g128 :- g127, g124.
+g129 :- f45, \+f57.
+g130 :- g129.
+g130 :- g128.
+g131 :- f56.
+g131 :- f44.
+g132 :- f56, f44.
+g133 :- g132.
+g133 :- \+g131.
+g134 :- g133, g130.
+g135 :- f44, \+f56.
+g136 :- g135.
+g136 :- g134.
+g137 :- f55.
+g137 :- f43.
+g138 :- f55, f43.
+g139 :- g138.
+g139 :- \+g137.
+g140 :- g139, g136.
+g141 :- f43, \+f55.
+g142 :- g141.
+g142 :- g140.
+g143 :- f6, \+f42.
+g144 :- f41.
+g144 :- f5.
+g145 :- f41, f5.
+g146 :- g145.
+g146 :- \+g144.
+g147 :- g146, g143.
+g148 :- f5, \+f41.
+g149 :- g148.
+g149 :- g147.
+g150 :- f40.
+g150 :- f4.
+g151 :- f40, f4.
+g152 :- g151.
+g152 :- \+g150.
+g153 :- g152, g149.
+g154 :- f4, \+f40.
+g155 :- g154.
+g155 :- g153.
+g156 :- f39.
+g156 :- f3.
+g157 :- f39, f3.
+g158 :- g157.
+g158 :- \+g156.
+g159 :- g158, g155.
+g160 :- f3, \+f39.
+g161 :- g160.
+g161 :- g159.
+g162 :- f38.
+g162 :- f2.
+g163 :- f38, f2.
+g164 :- g163.
+g164 :- \+g162.
+g165 :- g164, g161.
+g166 :- f2, \+f38.
+g167 :- g166.
+g167 :- g165.
+g168 :- f37.
+g168 :- f1.
+g169 :- f37, f1.
+g170 :- g169.
+g170 :- \+g168.
+g171 :- g170, g167.
+g172 :- f1, \+f37.
+g173 :- g172.
+g173 :- g171.
+g174 :- f54, \+g173.
+g175 :- g173, f48.
+g176 :- g175.
+g176 :- g174.
+g177 :- g176, \+f66.
+g178 :- f53, \+g173.
+g179 :- g173, f47.
+g180 :- g179.
+g180 :- g178.
+g181 :- f65.
+g181 :- g180.
+g182 :- f65, g180.
+g183 :- g182.
+g183 :- \+g181.
+g184 :- g183, g177.
+g185 :- g180, \+f65.
+g186 :- g185.
+g186 :- g184.
+g187 :- f52, \+g173.
+g188 :- g173, f46.
+g189 :- g188.
+g189 :- g187.
+g190 :- f64.
+g190 :- g189.
+g191 :- f64, g189.
+g192 :- g191.
+g192 :- \+g190.
+g193 :- g192, g186.
+g194 :- g189, \+f64.
+g195 :- g194.
+g195 :- g193.
+g196 :- f51, \+g173.
+g197 :- g173, f45.
+g198 :- g197.
+g198 :- g196.
+g199 :- f63.
+g199 :- g198.
+g200 :- f63, g198.
+g201 :- g200.
+g201 :- \+g199.
+g202 :- g201, g195.
+g203 :- g198, \+f63.
+g204 :- g203.
+g204 :- g202.
+g205 :- f50, \+g173.
+g206 :- g173, f44.
+g207 :- g206.
+g207 :- g205.
+g208 :- f62.
+g208 :- g207.
+g209 :- f62, g207.
+g210 :- g209.
+g210 :- \+g208.
+g211 :- g210, g204.
+g212 :- g207, \+f62.
+g213 :- g212.
+g213 :- g211.
+g214 :- f49, \+g173.
+g215 :- g173, f43.
+g216 :- g215.
+g216 :- g214.
+g217 :- f61.
+g217 :- g216.
+g218 :- f61, g216.
+g219 :- g218.
+g219 :- \+g217.
+g220 :- g219, g213.
+g221 :- g216, \+f61.
+g222 :- g221.
+g222 :- g220.
+g223 :- f78, \+f90.
+g224 :- f89.
+g224 :- f77.
+g225 :- f89, f77.
+g226 :- g225.
+g226 :- \+g224.
+g227 :- g226, g223.
+g228 :- f77, \+f89.
+g229 :- g228.
+g229 :- g227.
+g230 :- f88.
+g230 :- f76.
+g231 :- f88, f76.
+g232 :- g231.
+g232 :- \+g230.
+g233 :- g232, g229.
+g234 :- f76, \+f88.
+g235 :- g234.
+g235 :- g233.
+g236 :- f87.
+g236 :- f75.
+g237 :- f87, f75.
+g238 :- g237.
+g238 :- \+g236.
+g239 :- g238, g235.
+g240 :- f75, \+f87.
+g241 :- g240.
+g241 :- g239.
+g242 :- f86.
+g242 :- f74.
+g243 :- f86, f74.
+g244 :- g243.
+g244 :- \+g242.
+g245 :- g244, g241.
+g246 :- f74, \+f86.
+g247 :- g246.
+g247 :- g245.
+g248 :- f85.
+g248 :- f73.
+g249 :- f85, f73.
+g250 :- g249.
+g250 :- \+g248.
+g251 :- g250, g247.
+g252 :- f73, \+f85.
+g253 :- g252.
+g253 :- g251.
+g254 :- f6, \+f72.
+g255 :- f71.
+g255 :- f5.
+g256 :- f71, f5.
+g257 :- g256.
+g257 :- \+g255.
+g258 :- g257, g254.
+g259 :- f5, \+f71.
+g260 :- g259.
+g260 :- g258.
+g261 :- f70.
+g261 :- f4.
+g262 :- f70, f4.
+g263 :- g262.
+g263 :- \+g261.
+g264 :- g263, g260.
+g265 :- f4, \+f70.
+g266 :- g265.
+g266 :- g264.
+g267 :- f69.
+g267 :- f3.
+g268 :- f69, f3.
+g269 :- g268.
+g269 :- \+g267.
+g270 :- g269, g266.
+g271 :- f3, \+f69.
+g272 :- g271.
+g272 :- g270.
+g273 :- f68.
+g273 :- f2.
+g274 :- f68, f2.
+g275 :- g274.
+g275 :- \+g273.
+g276 :- g275, g272.
+g277 :- f2, \+f68.
+g278 :- g277.
+g278 :- g276.
+g279 :- f67.
+g279 :- f1.
+g280 :- f67, f1.
+g281 :- g280.
+g281 :- \+g279.
+g282 :- g281, g278.
+g283 :- f1, \+f67.
+g284 :- g283.
+g284 :- g282.
+g285 :- f84, \+g284.
+g286 :- g284, f78.
+g287 :- g286.
+g287 :- g285.
+g288 :- g287, \+f96.
+g289 :- f83, \+g284.
+g290 :- g284, f77.
+g291 :- g290.
+g291 :- g289.
+g292 :- f95.
+g292 :- g291.
+g293 :- f95, g291.
+g294 :- g293.
+g294 :- \+g292.
+g295 :- g294, g288.
+g296 :- g291, \+f95.
+g297 :- g296.
+g297 :- g295.
+g298 :- f82, \+g284.
+g299 :- g284, f76.
+g300 :- g299.
+g300 :- g298.
+g301 :- f94.
+g301 :- g300.
+g302 :- f94, g300.
+g303 :- g302.
+g303 :- \+g301.
+g304 :- g303, g297.
+g305 :- g300, \+f94.
+g306 :- g305.
+g306 :- g304.
+g307 :- f81, \+g284.
+g308 :- g284, f75.
+g309 :- g308.
+g309 :- g307.
+g310 :- f93.
+g310 :- g309.
+g311 :- f93, g309.
+g312 :- g311.
+g312 :- \+g310.
+g313 :- g312, g306.
+g314 :- g309, \+f93.
+g315 :- g314.
+g315 :- g313.
+g316 :- f80, \+g284.
+g317 :- g284, f74.
+g318 :- g317.
+g318 :- g316.
+g319 :- f92.
+g319 :- g318.
+g320 :- f92, g318.
+g321 :- g320.
+g321 :- \+g319.
+g322 :- g321, g315.
+g323 :- g318, \+f92.
+g324 :- g323.
+g324 :- g322.
+g325 :- f79, \+g284.
+g326 :- g284, f73.
+g327 :- g326.
+g327 :- g325.
+g328 :- f91.
+g328 :- g327.
+g329 :- f91, g327.
+g330 :- g329.
+g330 :- \+g328.
+g331 :- g330, g324.
+g332 :- g327, \+f91.
+g333 :- g332.
+g333 :- g331.
+g334 :- f108, \+f120.
+g335 :- f119.
+g335 :- f107.
+g336 :- f119, f107.
+g337 :- g336.
+g337 :- \+g335.
+g338 :- g337, g334.
+g339 :- f107, \+f119.
+g340 :- g339.
+g340 :- g338.
+g341 :- f118.
+g341 :- f106.
+g342 :- f118, f106.
+g343 :- g342.
+g343 :- \+g341.
+g344 :- g343, g340.
+g345 :- f106, \+f118.
+g346 :- g345.
+g346 :- g344.
+g347 :- f117.
+g347 :- f105.
+g348 :- f117, f105.
+g349 :- g348.
+g349 :- \+g347.
+g350 :- g349, g346.
+g351 :- f105, \+f117.
+g352 :- g351.
+g352 :- g350.
+g353 :- f116.
+g353 :- f104.
+g354 :- f116, f104.
+g355 :- g354.
+g355 :- \+g353.
+g356 :- g355, g352.
+g357 :- f104, \+f116.
+g358 :- g357.
+g358 :- g356.
+g359 :- f115.
+g359 :- f103.
+g360 :- f115, f103.
+g361 :- g360.
+g361 :- \+g359.
+g362 :- g361, g358.
+g363 :- f103, \+f115.
+g364 :- g363.
+g364 :- g362.
+g365 :- f6, \+f102.
+g366 :- f101.
+g366 :- f5.
+g367 :- f101, f5.
+g368 :- g367.
+g368 :- \+g366.
+g369 :- g368, g365.
+g370 :- f5, \+f101.
+g371 :- g370.
+g371 :- g369.
+g372 :- f100.
+g372 :- f4.
+g373 :- f100, f4.
+g374 :- g373.
+g374 :- \+g372.
+g375 :- g374, g371.
+g376 :- f4, \+f100.
+g377 :- g376.
+g377 :- g375.
+g378 :- f99.
+g378 :- f3.
+g379 :- f99, f3.
+g380 :- g379.
+g380 :- \+g378.
+g381 :- g380, g377.
+g382 :- f3, \+f99.
+g383 :- g382.
+g383 :- g381.
+g384 :- f98.
+g384 :- f2.
+g385 :- f98, f2.
+g386 :- g385.
+g386 :- \+g384.
+g387 :- g386, g383.
+g388 :- f2, \+f98.
+g389 :- g388.
+g389 :- g387.
+g390 :- f97.
+g390 :- f1.
+g391 :- f97, f1.
+g392 :- g391.
+g392 :- \+g390.
+g393 :- g392, g389.
+g394 :- f1, \+f97.
+g395 :- g394.
+g395 :- g393.
+g396 :- f114, \+g395.
+g397 :- g395, f108.
+g398 :- g397.
+g398 :- g396.
+g399 :- g398, \+f126.
+g400 :- f113, \+g395.
+g401 :- g395, f107.
+g402 :- g401.
+g402 :- g400.
+g403 :- f125.
+g403 :- g402.
+g404 :- f125, g402.
+g405 :- g404.
+g405 :- \+g403.
+g406 :- g405, g399.
+g407 :- g402, \+f125.
+g408 :- g407.
+g408 :- g406.
+g409 :- f112, \+g395.
+g410 :- g395, f106.
+g411 :- g410.
+g411 :- g409.
+g412 :- f124.
+g412 :- g411.
+g413 :- f124, g411.
+g414 :- g413.
+g414 :- \+g412.
+g415 :- g414, g408.
+g416 :- g411, \+f124.
+g417 :- g416.
+g417 :- g415.
+g418 :- f111, \+g395.
+g419 :- g395, f105.
+g420 :- g419.
+g420 :- g418.
+g421 :- f123.
+g421 :- g420.
+g422 :- f123, g420.
+g423 :- g422.
+g423 :- \+g421.
+g424 :- g423, g417.
+g425 :- g420, \+f123.
+g426 :- g425.
+g426 :- g424.
+g427 :- f110, \+g395.
+g428 :- g395, f104.
+g429 :- g428.
+g429 :- g427.
+g430 :- f122.
+g430 :- g429.
+g431 :- f122, g429.
+g432 :- g431.
+g432 :- \+g430.
+g433 :- g432, g426.
+g434 :- g429, \+f122.
+g435 :- g434.
+g435 :- g433.
+g436 :- f109, \+g395.
+g437 :- g395, f103.
+g438 :- g437.
+g438 :- g436.
+g439 :- f121.
+g439 :- g438.
+g440 :- f121, g438.
+g441 :- g440.
+g441 :- \+g439.
+g442 :- g441, g435.
+g443 :- g438, \+f121.
+g444 :- g443.
+g444 :- g442.
+g445 :- f138, \+f150.
+g446 :- f149.
+g446 :- f137.
+g447 :- f149, f137.
+g448 :- g447.
+g448 :- \+g446.
+g449 :- g448, g445.
+g450 :- f137, \+f149.
+g451 :- g450.
+g451 :- g449.
+g452 :- f148.
+g452 :- f136.
+g453 :- f148, f136.
+g454 :- g453.
+g454 :- \+g452.
+g455 :- g454, g451.
+g456 :- f136, \+f148.
+g457 :- g456.
+g457 :- g455.
+g458 :- f147.
+g458 :- f135.
+g459 :- f147, f135.
+g460 :- g459.
+g460 :- \+g458.
+g461 :- g460, g457.
+g462 :- f135, \+f147.
+g463 :- g462.
+g463 :- g461.
+g464 :- f146.
+g464 :- f134.
+g465 :- f146, f134.
+g466 :- g465.
+g466 :- \+g464.
+g467 :- g466, g463.
+g468 :- f134, \+f146.
+g469 :- g468.
+g469 :- g467.
+g470 :- f145.
+g470 :- f133.
+g471 :- f145, f133.
+g472 :- g471.
+g472 :- \+g470.
+g473 :- g472, g469.
+g474 :- f133, \+f145.
+g475 :- g474.
+g475 :- g473.
+g476 :- f6, \+f132.
+g477 :- f131.
+g477 :- f5.
+g478 :- f131, f5.
+g479 :- g478.
+g479 :- \+g477.
+g480 :- g479, g476.
+g481 :- f5, \+f131.
+g482 :- g481.
+g482 :- g480.
+g483 :- f130.
+g483 :- f4.
+g484 :- f130, f4.
+g485 :- g484.
+g485 :- \+g483.
+g486 :- g485, g482.
+g487 :- f4, \+f130.
+g488 :- g487.
+g488 :- g486.
+g489 :- f129.
+g489 :- f3.
+g490 :- f129, f3.
+g491 :- g490.
+g491 :- \+g489.
+g492 :- g491, g488.
+g493 :- f3, \+f129.
+g494 :- g493.
+g494 :- g492.
+g495 :- f128.
+g495 :- f2.
+g496 :- f128, f2.
+g497 :- g496.
+g497 :- \+g495.
+g498 :- g497, g494.
+g499 :- f2, \+f128.
+g500 :- g499.
+g500 :- g498.
+g501 :- f127.
+g501 :- f1.
+g502 :- f127, f1.
+g503 :- g502.
+g503 :- \+g501.
+g504 :- g503, g500.
+g505 :- f1, \+f127.
+g506 :- g505.
+g506 :- g504.
+g507 :- f144, \+g506.
+g508 :- g506, f138.
+g509 :- g508.
+g509 :- g507.
+g510 :- g509, \+f156.
+g511 :- f143, \+g506.
+g512 :- g506, f137.
+g513 :- g512.
+g513 :- g511.
+g514 :- f155.
+g514 :- g513.
+g515 :- f155, g513.
+g516 :- g515.
+g516 :- \+g514.
+g517 :- g516, g510.
+g518 :- g513, \+f155.
+g519 :- g518.
+g519 :- g517.
+g520 :- f142, \+g506.
+g521 :- g506, f136.
+g522 :- g521.
+g522 :- g520.
+g523 :- f154.
+g523 :- g522.
+g524 :- f154, g522.
+g525 :- g524.
+g525 :- \+g523.
+g526 :- g525, g519.
+g527 :- g522, \+f154.
+g528 :- g527.
+g528 :- g526.
+g529 :- f141, \+g506.
+g530 :- g506, f135.
+g531 :- g530.
+g531 :- g529.
+g532 :- f153.
+g532 :- g531.
+g533 :- f153, g531.
+g534 :- g533.
+g534 :- \+g532.
+g535 :- g534, g528.
+g536 :- g531, \+f153.
+g537 :- g536.
+g537 :- g535.
+g538 :- f140, \+g506.
+g539 :- g506, f134.
+g540 :- g539.
+g540 :- g538.
+g541 :- f152.
+g541 :- g540.
+g542 :- f152, g540.
+g543 :- g542.
+g543 :- \+g541.
+g544 :- g543, g537.
+g545 :- g540, \+f152.
+g546 :- g545.
+g546 :- g544.
+g547 :- f139, \+g506.
+g548 :- g506, f133.
+g549 :- g548.
+g549 :- g547.
+g550 :- f151.
+g550 :- g549.
+g551 :- f151, g549.
+g552 :- g551.
+g552 :- \+g550.
+g553 :- g552, g546.
+g554 :- g549, \+f151.
+g555 :- g554.
+g555 :- g553.
+evidence(g31, true).
+evidence(g111, true).
+evidence(g142, true).
+evidence(g222, true).
+evidence(g253, true).
+evidence(g333, true).
+evidence(g364, false).
+evidence(g444, false).
+evidence(g475, false).
+evidence(g555, false).
+e1(3) :- f1.
+query(e1(3)).
+e1(4) :- f2.
+query(e1(4)).
+e1(5) :- f3.
+query(e1(5)).
+e1(6) :- f4.
+query(e1(6)).
+e1(7) :- f5.
+query(e1(7)).
+e1(8) :- f6.
+query(e1(8)).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.25</td><td></td><td>largest formula, pairs 5 395 588; final formula, pairs 1 607; variables 158; ground atoms 421; ground rules 520; vtree program (from auto: 16 attempts, 0.065s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.23</td><td></td><td>largest formula, pairs 5 395 588; final formula, pairs 1 607; variables 158; ground atoms 421; ground rules 520; vtree program (from auto: 16 attempts, 0.062s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.24</td><td></td><td>largest formula, pairs 5 395 588; final formula, pairs 1 607; variables 158; ground atoms 421; ground rules 520; vtree program (from auto: 16 attempts, 0.063s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.15</td><td></td><td>largest formula, pairs 5 395 588; final formula, pairs 1 607; variables 158; ground atoms 421; ground rules 520; vtree program</td></tr><tr><td>2</td><td>answered</td><td>0.14</td><td></td><td>largest formula, pairs 5 395 588; final formula, pairs 1 607; variables 158; ground atoms 421; ground rules 520; vtree program</td></tr><tr><td>3</td><td>answered</td><td>0.14</td><td></td><td>largest formula, pairs 5 395 588; final formula, pairs 1 607; variables 158; ground atoms 421; ground rules 520; vtree program</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>65.5</td><td>43.1</td><td>36.8</td><td>6.6</td><td></td><td>circuit flips 156; circuit gates 555; BDD peak, nodes 12 233 340; evidence BDD, nodes 3 039 286; largest query BDD, nodes 2</td></tr><tr><td>2</td><td>answered</td><td>64.7</td><td>42.6</td><td>36.4</td><td>6.5</td><td></td><td>circuit flips 156; circuit gates 555; BDD peak, nodes 12 233 340; evidence BDD, nodes 3 039 286; largest query BDD, nodes 2</td></tr><tr><td>3</td><td>answered</td><td>64.8</td><td>42.6</td><td>36.4</td><td>6.5</td><td></td><td>circuit flips 156; circuit gates 555; BDD peak, nodes 12 233 340; evidence BDD, nodes 3 039 286; largest query BDD, nodes 2</td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>e1(3)</th><td class="num">0.6717786275</td><td class="num">0.6717786275</td><td class="num">0.6717786275</td></tr><tr><th>e1(4)</th><td class="num">0.5871992991</td><td class="num">0.5871992991</td><td class="num">0.5871992991</td></tr><tr><th>e1(5)</th><td class="num">0.5437640324</td><td class="num">0.5437640324</td><td class="num">0.5437640324</td></tr><tr><th>e1(6)</th><td class="num">0.5219025839</td><td class="num">0.5219025839</td><td class="num">0.5219025839</td></tr><tr><th>e1(7)</th><td class="num">0.5109538635</td><td class="num">0.5109538635</td><td class="num">0.5109538635</td></tr><tr><th>e1(8)</th><td class="num">0.5054772532</td><td class="num">0.5054772532</td><td class="num">0.5054772532</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

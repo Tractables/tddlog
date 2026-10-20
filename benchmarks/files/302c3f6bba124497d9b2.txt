@@ -1,0 +1,246 @@
+// geni_weather_n7.dice, translated by tddlog's scripts/dice2psi.py, component 0.
+def f_hit(v1_packedstate) {
+  v2_sun := v1_packedstate[0];
+  v3_state1 := v1_packedstate[1];
+  v4_state1 := v3_state1[0];
+  v5_state2 := v1_packedstate[1];
+  v6_state2 := v5_state2[1];
+  v7_state2 := v6_state2[0];
+  v8_state3 := v1_packedstate[1];
+  v9_state3 := v8_state3[1];
+  v10_state3 := v9_state3[1];
+  v11_state3 := v10_state3[0];
+  v12_state4 := v1_packedstate[1];
+  v13_state4 := v12_state4[1];
+  v14_state4 := v13_state4[1];
+  v15_state4 := v14_state4[1];
+  v16_state4 := v15_state4[0];
+  v17_state5 := v1_packedstate[1];
+  v18_state5 := v17_state5[1];
+  v19_state5 := v18_state5[1];
+  v20_state5 := v19_state5[1];
+  v21_state5 := v20_state5[1];
+  v22_state5 := v21_state5[0];
+  v23_state6 := v1_packedstate[1];
+  v24_state6 := v23_state6[1];
+  v25_state6 := v24_state6[1];
+  v26_state6 := v25_state6[1];
+  v27_state6 := v26_state6[1];
+  v28_state6 := v27_state6[1];
+  v29_state6 := v28_state6[0];
+  v30_state7 := v1_packedstate[1];
+  v31_state7 := v30_state7[1];
+  v32_state7 := v31_state7[1];
+  v33_state7 := v32_state7[1];
+  v34_state7 := v33_state7[1];
+  v35_state7 := v34_state7[1];
+  v36_state7 := v35_state7[1];
+  v37_allstrike := (v4_state1 && v7_state2);
+  v38_allstrike := (v37_allstrike && v11_state3);
+  v39_allstrike := (v38_allstrike && v16_state4);
+  v40_allstrike := (v39_allstrike && v22_state5);
+  v41_allstrike := (v40_allstrike && v29_state6);
+  v42_allstrike := (v41_allstrike && v36_state7);
+  return v42_allstrike;
+}
+
+def f_step(v43_packedstate) {
+  v44_sun := v43_packedstate[0];
+  v45_state1 := v43_packedstate[1];
+  v46_state1 := v45_state1[0];
+  v47_state2 := v43_packedstate[1];
+  v48_state2 := v47_state2[1];
+  v49_state2 := v48_state2[0];
+  v50_state3 := v43_packedstate[1];
+  v51_state3 := v50_state3[1];
+  v52_state3 := v51_state3[1];
+  v53_state3 := v52_state3[0];
+  v54_state4 := v43_packedstate[1];
+  v55_state4 := v54_state4[1];
+  v56_state4 := v55_state4[1];
+  v57_state4 := v56_state4[1];
+  v58_state4 := v57_state4[0];
+  v59_state5 := v43_packedstate[1];
+  v60_state5 := v59_state5[1];
+  v61_state5 := v60_state5[1];
+  v62_state5 := v61_state5[1];
+  v63_state5 := v62_state5[1];
+  v64_state5 := v63_state5[0];
+  v65_state6 := v43_packedstate[1];
+  v66_state6 := v65_state6[1];
+  v67_state6 := v66_state6[1];
+  v68_state6 := v67_state6[1];
+  v69_state6 := v68_state6[1];
+  v70_state6 := v69_state6[1];
+  v71_state6 := v70_state6[0];
+  v72_state7 := v43_packedstate[1];
+  v73_state7 := v72_state7[1];
+  v74_state7 := v73_state7[1];
+  v75_state7 := v74_state7[1];
+  v76_state7 := v75_state7[1];
+  v77_state7 := v76_state7[1];
+  v78_state7 := v77_state7[1];
+  v79_allstrike := (v46_state1 && v49_state2);
+  v80_allstrike := (v79_allstrike && v53_state3);
+  v81_allstrike := (v80_allstrike && v58_state4);
+  v82_allstrike := (v81_allstrike && v64_state5);
+  v83_allstrike := (v82_allstrike && v71_state6);
+  v84_allstrike := (v83_allstrike && v78_state7);
+  v85_cmdact1 := !v44_sun;
+  v86_cmdact1 := (v44_sun || v85_cmdact1);
+  v87_cmdact1 := (v46_state1 && v44_sun);
+  v88_cmdact1 := !v46_state1;
+  v89_cmdact1 := (v88_cmdact1 && v44_sun);
+  v90_cmdact1 := (v87_cmdact1 || v89_cmdact1);
+  v91_cmdact1 := !v44_sun;
+  v92_cmdact1 := (v46_state1 && v91_cmdact1);
+  v93_cmdact1 := (v90_cmdact1 || v92_cmdact1);
+  v94_cmdact1 := !v46_state1;
+  v95_cmdact1 := !v44_sun;
+  v96_cmdact1 := (v94_cmdact1 && v95_cmdact1);
+  v97_cmdact1 := (v93_cmdact1 || v96_cmdact1);
+  v98_cmdact1 := (v86_cmdact1 && v97_cmdact1);
+  v99_cmdact1 := (v49_state2 && v44_sun);
+  v100_cmdact1 := !v49_state2;
+  v101_cmdact1 := (v100_cmdact1 && v44_sun);
+  v102_cmdact1 := (v99_cmdact1 || v101_cmdact1);
+  v103_cmdact1 := !v44_sun;
+  v104_cmdact1 := (v49_state2 && v103_cmdact1);
+  v105_cmdact1 := (v102_cmdact1 || v104_cmdact1);
+  v106_cmdact1 := !v49_state2;
+  v107_cmdact1 := !v44_sun;
+  v108_cmdact1 := (v106_cmdact1 && v107_cmdact1);
+  v109_cmdact1 := (v105_cmdact1 || v108_cmdact1);
+  v110_cmdact1 := (v98_cmdact1 && v109_cmdact1);
+  v111_cmdact1 := (v53_state3 && v44_sun);
+  v112_cmdact1 := !v53_state3;
+  v113_cmdact1 := (v112_cmdact1 && v44_sun);
+  v114_cmdact1 := (v111_cmdact1 || v113_cmdact1);
+  v115_cmdact1 := !v44_sun;
+  v116_cmdact1 := (v53_state3 && v115_cmdact1);
+  v117_cmdact1 := (v114_cmdact1 || v116_cmdact1);
+  v118_cmdact1 := !v53_state3;
+  v119_cmdact1 := !v44_sun;
+  v120_cmdact1 := (v118_cmdact1 && v119_cmdact1);
+  v121_cmdact1 := (v117_cmdact1 || v120_cmdact1);
+  v122_cmdact1 := (v110_cmdact1 && v121_cmdact1);
+  v123_cmdact1 := (v58_state4 && v44_sun);
+  v124_cmdact1 := !v58_state4;
+  v125_cmdact1 := (v124_cmdact1 && v44_sun);
+  v126_cmdact1 := (v123_cmdact1 || v125_cmdact1);
+  v127_cmdact1 := !v44_sun;
+  v128_cmdact1 := (v58_state4 && v127_cmdact1);
+  v129_cmdact1 := (v126_cmdact1 || v128_cmdact1);
+  v130_cmdact1 := !v58_state4;
+  v131_cmdact1 := !v44_sun;
+  v132_cmdact1 := (v130_cmdact1 && v131_cmdact1);
+  v133_cmdact1 := (v129_cmdact1 || v132_cmdact1);
+  v134_cmdact1 := (v122_cmdact1 && v133_cmdact1);
+  v135_cmdact1 := (v64_state5 && v44_sun);
+  v136_cmdact1 := !v64_state5;
+  v137_cmdact1 := (v136_cmdact1 && v44_sun);
+  v138_cmdact1 := (v135_cmdact1 || v137_cmdact1);
+  v139_cmdact1 := !v44_sun;
+  v140_cmdact1 := (v64_state5 && v139_cmdact1);
+  v141_cmdact1 := (v138_cmdact1 || v140_cmdact1);
+  v142_cmdact1 := !v64_state5;
+  v143_cmdact1 := !v44_sun;
+  v144_cmdact1 := (v142_cmdact1 && v143_cmdact1);
+  v145_cmdact1 := (v141_cmdact1 || v144_cmdact1);
+  v146_cmdact1 := (v134_cmdact1 && v145_cmdact1);
+  v147_cmdact1 := (v71_state6 && v44_sun);
+  v148_cmdact1 := !v71_state6;
+  v149_cmdact1 := (v148_cmdact1 && v44_sun);
+  v150_cmdact1 := (v147_cmdact1 || v149_cmdact1);
+  v151_cmdact1 := !v44_sun;
+  v152_cmdact1 := (v71_state6 && v151_cmdact1);
+  v153_cmdact1 := (v150_cmdact1 || v152_cmdact1);
+  v154_cmdact1 := !v71_state6;
+  v155_cmdact1 := !v44_sun;
+  v156_cmdact1 := (v154_cmdact1 && v155_cmdact1);
+  v157_cmdact1 := (v153_cmdact1 || v156_cmdact1);
+  v158_cmdact1 := (v146_cmdact1 && v157_cmdact1);
+  v159_cmdact1 := (v78_state7 && v44_sun);
+  v160_cmdact1 := !v78_state7;
+  v161_cmdact1 := (v160_cmdact1 && v44_sun);
+  v162_cmdact1 := (v159_cmdact1 || v161_cmdact1);
+  v163_cmdact1 := !v44_sun;
+  v164_cmdact1 := (v78_state7 && v163_cmdact1);
+  v165_cmdact1 := (v162_cmdact1 || v164_cmdact1);
+  v166_cmdact1 := !v78_state7;
+  v167_cmdact1 := !v44_sun;
+  v168_cmdact1 := (v166_cmdact1 && v167_cmdact1);
+  v169_cmdact1 := (v165_cmdact1 || v168_cmdact1);
+  v170_cmdact1 := (v158_cmdact1 && v169_cmdact1);
+  v171_count := 0;
+  if v170_cmdact1 {  v171_count = 1; } else {  v171_count = 0; }
+  v172_step := (v171_count == 0);
+  v379_step := 0;
+  if v172_step { v173_step := (v71_state6, v78_state7); v174_step := (v64_state5, v173_step); v175_step := (v58_state4, v174_step); v176_step := (v53_state3, v175_step); v177_step := (v49_state2, v176_step); v178_step := (v46_state1, v177_step); v179_step := (v44_sun, v178_step); v379_step = v179_step; } else { v180_selact := (v171_count == 1); v182_selact := 0; if v180_selact {  v182_selact = 1; } else { v181_selact := categorical([0/1, 1/1]); v182_selact = v181_selact; } v183_take1 := (v182_selact == 1); v184_take1 := (v183_take1 && v170_cmdact1); v378_step := 0; if v184_take1 { v195_result0 := 0; if v44_sun { v185_selupdate0 := categorical([7/10, 3/10]); v186_result0 := (v185_selupdate0 == 0); v188_result0 := 0; if v186_result0 {  v188_result0 = v44_sun; } else { v187_result0 := !v44_sun; v188_result0 = v187_result0; } v195_result0 = v188_result0; } else { v189_result0 := !v44_sun; v194_result0 := 0; if v189_result0 { v190_selupdate0 := categorical([2/5, 3/5]); v191_result0 := (v190_selupdate0 == 0); v193_result0 := 0; if v191_result0 {  v193_result0 = v44_sun; } else { v192_result0 := !v44_sun; v193_result0 = v192_result0; } v194_result0 = v193_result0; } else {  v194_result0 = v44_sun; } v195_result0 = v194_result0; } v196_result1 := (v46_state1 && v44_sun); v219_result1 := 0; if v196_result1 { v197_selupdate1 := categorical([3/100, 97/100]); v198_result1 := (v197_selupdate1 == 0); v199_result1 := 0; if v198_result1 {  v199_result1 = 1; } else {  v199_result1 = 0; } v219_result1 = v199_result1; } else { v200_result1 := !v46_state1; v201_result1 := (v200_result1 && v44_sun); v218_result1 := 0; if v201_result1 { v202_selupdate1 := categorical([7/50, 43/50]); v203_result1 := (v202_selupdate1 == 0); v204_result1 := 0; if v203_result1 {  v204_result1 = 1; } else {  v204_result1 = 0; } v218_result1 = v204_result1; } else { v205_result1 := !v44_sun; v206_result1 := (v46_state1 && v205_result1); v217_result1 := 0; if v206_result1 { v207_selupdate1 := categorical([3/50, 47/50]); v208_result1 := (v207_selupdate1 == 0); v209_result1 := 0; if v208_result1 {  v209_result1 = 1; } else {  v209_result1 = 0; } v217_result1 = v209_result1; } else { v210_result1 := !v46_state1; v211_result1 := !v44_sun; v212_result1 := (v210_result1 && v211_result1); v216_result1 := 0; if v212_result1 { v213_selupdate1 := categorical([2/25, 23/25]); v214_result1 := (v213_selupdate1 == 0); v215_result1 := 0; if v214_result1 {  v215_result1 = 1; } else {  v215_result1 = 0; } v216_result1 = v215_result1; } else {  v216_result1 = v46_state1; } v217_result1 = v216_result1; } v218_result1 = v217_result1; } v219_result1 = v218_result1; } v220_result2 := (v49_state2 && v44_sun); v243_result2 := 0; if v220_result2 { v221_selupdate2 := categorical([3/50, 47/50]); v222_result2 := (v221_selupdate2 == 0); v223_result2 := 0; if v222_result2 {  v223_result2 = 1; } else {  v223_result2 = 0; } v243_result2 = v223_result2; } else { v224_result2 := !v49_state2; v225_result2 := (v224_result2 && v44_sun); v242_result2 := 0; if v225_result2 { v226_selupdate2 := categorical([21/100, 79/100]); v227_result2 := (v226_selupdate2 == 0); v228_result2 := 0; if v227_result2 {  v228_result2 = 1; } else {  v228_result2 = 0; } v242_result2 = v228_result2; } else { v229_result2 := !v44_sun; v230_result2 := (v49_state2 && v229_result2); v241_result2 := 0; if v230_result2 { v231_selupdate2 := categorical([3/25, 22/25]); v232_result2 := (v231_selupdate2 == 0); v233_result2 := 0; if v232_result2 {  v233_result2 = 1; } else {  v233_result2 = 0; } v241_result2 = v233_result2; } else { v234_result2 := !v49_state2; v235_result2 := !v44_sun; v236_result2 := (v234_result2 && v235_result2); v240_result2 := 0; if v236_result2 { v237_selupdate2 := categorical([3/25, 22/25]); v238_result2 := (v237_selupdate2 == 0); v239_result2 := 0; if v238_result2 {  v239_result2 = 1; } else {  v239_result2 = 0; } v240_result2 = v239_result2; } else {  v240_result2 = v49_state2; } v241_result2 = v240_result2; } v242_result2 = v241_result2; } v243_result2 = v242_result2; } v244_result3 := (v53_state3 && v44_sun); v267_result3 := 0; if v244_result3 { v245_selupdate3 := categorical([123/1000, 877/1000]); v246_result3 := (v245_selupdate3 == 0); v247_result3 := 0; if v246_result3 {  v247_result3 = 1; } else {  v247_result3 = 0; } v267_result3 = v247_result3; } else { v248_result3 := !v53_state3; v249_result3 := (v248_result3 && v44_sun); v266_result3 := 0; if v249_result3 { v250_selupdate3 := categorical([63/200, 137/200]); v251_result3 := (v250_selupdate3 == 0); v252_result3 := 0; if v251_result3 {  v252_result3 = 1; } else {  v252_result3 = 0; } v266_result3 = v252_result3; } else { v253_result3 := !v44_sun; v254_result3 := (v53_state3 && v253_result3); v265_result3 := 0; if v254_result3 { v255_selupdate3 := categorical([123/500, 377/500]); v256_result3 := (v255_selupdate3 == 0); v257_result3 := 0; if v256_result3 {  v257_result3 = 1; } else {  v257_result3 = 0; } v265_result3 = v257_result3; } else { v258_result3 := !v53_state3; v259_result3 := !v44_sun; v260_result3 := (v258_result3 && v259_result3); v264_result3 := 0; if v260_result3 { v261_selupdate3 := categorical([9/50, 41/50]); v262_result3 := (v261_selupdate3 == 0); v263_result3 := 0; if v262_result3 {  v263_result3 = 1; } else {  v263_result3 = 0; } v264_result3 = v263_result3; } else {  v264_result3 = v53_state3; } v265_result3 = v264_result3; } v266_result3 = v265_result3; } v267_result3 = v266_result3; } v268_result4 := (v58_state4 && v44_sun); v291_result4 := 0; if v268_result4 { v269_selupdate4 := categorical([141/500, 359/500]); v270_result4 := (v269_selupdate4 == 0); v271_result4 := 0; if v270_result4 {  v271_result4 = 1; } else {  v271_result4 = 0; } v291_result4 = v271_result4; } else { v272_result4 := !v58_state4; v273_result4 := (v272_result4 && v44_sun); v290_result4 := 0; if v273_result4 { v274_selupdate4 := categorical([1701/10000, 8299/10000]); v275_result4 := (v274_selupdate4 == 0); v276_result4 := 0; if v275_result4 {  v276_result4 = 1; } else {  v276_result4 = 0; } v290_result4 = v276_result4; } else { v277_result4 := !v44_sun; v278_result4 := (v58_state4 && v277_result4); v289_result4 := 0; if v278_result4 { v279_selupdate4 := categorical([141/250, 109/250]); v280_result4 := (v279_selupdate4 == 0); v281_result4 := 0; if v280_result4 {  v281_result4 = 1; } else {  v281_result4 = 0; } v289_result4 = v281_result4; } else { v282_result4 := !v58_state4; v283_result4 := !v44_sun; v284_result4 := (v282_result4 && v283_result4); v288_result4 := 0; if v284_result4 { v285_selupdate4 := categorical([243/2500, 2257/2500]); v286_result4 := (v285_selupdate4 == 0); v287_result4 := 0; if v286_result4 {  v287_result4 = 1; } else {  v287_result4 = 0; } v288_result4 = v287_result4; } else {  v288_result4 = v58_state4; } v289_result4 = v288_result4; } v290_result4 = v289_result4; } v291_result4 = v290_result4; } v292_result5 := (v64_state5 && v44_sun); v315_result5 := 0; if v292_result5 { v293_selupdate5 := categorical([651/5000, 4349/5000]); v294_result5 := (v293_selupdate5 == 0); v295_result5 := 0; if v294_result5 {  v295_result5 = 1; } else {  v295_result5 = 0; } v315_result5 = v295_result5; } else { v296_result5 := !v64_state5; v297_result5 := (v296_result5 && v44_sun); v314_result5 := 0; if v297_result5 { v298_selupdate5 := categorical([2050999990670001/9999999954510001, 7948999963840000/9999999954510001]); v299_result5 := (v298_selupdate5 == 0); v300_result5 := 0; if v299_result5 {  v300_result5 = 1; } else {  v300_result5 = 0; } v314_result5 = v300_result5; } else { v301_result5 := !v44_sun; v302_result5 := (v64_state5 && v301_result5); v313_result5 := 0; if v302_result5 { v303_selupdate5 := categorical([651/2500, 1849/2500]); v304_result5 := (v303_selupdate5 == 0); v305_result5 := 0; if v304_result5 {  v305_result5 = 1; } else {  v305_result5 = 0; } v313_result5 = v305_result5; } else { v306_result5 := !v64_state5; v307_result5 := !v44_sun; v308_result5 := (v306_result5 && v307_result5); v312_result5 := 0; if v308_result5 { v309_selupdate5 := categorical([293/2500, 2207/2500]); v310_result5 := (v309_selupdate5 == 0); v311_result5 := 0; if v310_result5 {  v311_result5 = 1; } else {  v311_result5 = 0; } v312_result5 = v311_result5; } else {  v312_result5 = v64_state5; } v313_result5 = v312_result5; } v314_result5 = v313_result5; } v315_result5 = v314_result5; } v316_result6 := (v71_state6 && v44_sun); v339_result6 := 0; if v316_result6 { v317_selupdate6 := categorical([24337876102623797872092/186883791005327473720565, 162545914902703675848473/186883791005327473720565]); v318_result6 := (v317_selupdate6 == 0); v319_result6 := 0; if v318_result6 {  v319_result6 = 1; } else {  v319_result6 = 0; } v339_result6 = v319_result6; } else { v320_result6 := !v71_state6; v321_result6 := (v320_result6 && v44_sun); v338_result6 := 0; if v321_result6 { v322_selupdate6 := categorical([10269/50000, 39731/50000]); v323_result6 := (v322_selupdate6 == 0); v324_result6 := 0; if v323_result6 {  v324_result6 = 1; } else {  v324_result6 = 0; } v338_result6 = v324_result6; } else { v325_result6 := !v44_sun; v326_result6 := (v71_state6 && v325_result6); v337_result6 := 0; if v326_result6 { v327_selupdate6 := categorical([209765295209/805364720913, 595599425704/805364720913]); v328_result6 := (v327_selupdate6 == 0); v329_result6 := 0; if v328_result6 {  v329_result6 = 1; } else {  v329_result6 = 0; } v337_result6 = v329_result6; } else { v330_result6 := !v71_state6; v331_result6 := !v44_sun; v332_result6 := (v330_result6 && v331_result6); v336_result6 := 0; if v332_result6 { v333_selupdate6 := categorical([1467/12500, 11033/12500]); v334_result6 := (v333_selupdate6 == 0); v335_result6 := 0; if v334_result6 {  v335_result6 = 1; } else {  v335_result6 = 0; } v336_result6 = v335_result6; } else {  v336_result6 = v71_state6; } v337_result6 = v336_result6; } v338_result6 = v337_result6; } v339_result6 = v338_result6; } v340_result7 := (v78_state7 && v44_sun); v363_result7 := 0; if v340_result7 { v341_selupdate7 := categorical([868999991086667/6666666598286667, 5797666607200000/6666666598286667]); v342_result7 := (v341_selupdate7 == 0); v343_result7 := 0; if v342_result7 {  v343_result7 = 1; } else {  v343_result7 = 0; } v363_result7 = v343_result7; } else { v344_result7 := !v78_state7; v345_result7 := (v344_result7 && v44_sun); v362_result7 := 0; if v345_result7 { v346_selupdate7 := categorical([6521153741600001/31697631563700001, 25176477822100000/31697631563700001]); v347_result7 := (v346_selupdate7 == 0); v348_result7 := 0; if v347_result7 {  v348_result7 = 1; } else {  v348_result7 = 0; } v362_result7 = v348_result7; } else { v349_result7 := !v44_sun; v350_result7 := (v78_state7 && v349_result7); v361_result7 := 0; if v350_result7 { v351_selupdate7 := categorical([2607/10000, 7393/10000]); v352_result7 := (v351_selupdate7 == 0); v353_result7 := 0; if v352_result7 {  v353_result7 = 1; } else {  v353_result7 = 0; } v361_result7 = v353_result7; } else { v354_result7 := !v78_state7; v355_result7 := !v44_sun; v356_result7 := (v354_result7 && v355_result7); v360_result7 := 0; if v356_result7 { v357_selupdate7 := categorical([2939/25000, 22061/25000]); v358_result7 := (v357_selupdate7 == 0); v359_result7 := 0; if v358_result7 {  v359_result7 = 1; } else {  v359_result7 = 0; } v360_result7 = v359_result7; } else {  v360_result7 = v78_state7; } v361_result7 = v360_result7; } v362_result7 = v361_result7; } v363_result7 = v362_result7; } v364_step := (v339_result6, v363_result7); v365_step := (v315_result5, v364_step); v366_step := (v291_result4, v365_step); v367_step := (v267_result3, v366_step); v368_step := (v243_result2, v367_step); v369_step := (v219_result1, v368_step); v370_step := (v195_result0, v369_step); v378_step = v370_step; } else { v371_step := (v71_state6, v78_state7); v372_step := (v64_state5, v371_step); v373_step := (v58_state4, v372_step); v374_step := (v53_state3, v373_step); v375_step := (v49_state2, v374_step); v376_step := (v46_state1, v375_step); v377_step := (v44_sun, v376_step); v378_step = v377_step; } v379_step = v378_step; }
+  return v379_step;
+}
+
+def main() {
+  v387_goal := !0;
+  v389_goal := 0;
+  if v387_goal { v380_res := (0, 0); v381_res := (0, v380_res); v382_res := (0, v381_res); v383_res := (0, v382_res); v384_res := (0, v383_res); v385_res := (0, v384_res); v386_res := (1, v385_res); v388_goal := f_hit(v386_res); v389_goal = v388_goal; } else {  v389_goal = 0; }
+  v390_res := !v389_goal;
+  v392_res := 0;
+  if v390_res { v380_res := (0, 0); v381_res := (0, v380_res); v382_res := (0, v381_res); v383_res := (0, v382_res); v384_res := (0, v383_res); v385_res := (0, v384_res); v386_res := (1, v385_res); v391_res := f_step(v386_res); v392_res = v391_res; } else {  v392_res = v386_res; }
+  v393_goal := !v389_goal;
+  v395_goal := 0;
+  if v393_goal { v394_goal := f_hit(v392_res); v395_goal = v394_goal; } else {  v395_goal = v389_goal; }
+  v396_res := !v395_goal;
+  v398_res := 0;
+  if v396_res { v397_res := f_step(v392_res); v398_res = v397_res; } else {  v398_res = v392_res; }
+  v399_goal := !v395_goal;
+  v401_goal := 0;
+  if v399_goal { v400_goal := f_hit(v398_res); v401_goal = v400_goal; } else {  v401_goal = v395_goal; }
+  v402_res := !v401_goal;
+  v404_res := 0;
+  if v402_res { v403_res := f_step(v398_res); v404_res = v403_res; } else {  v404_res = v398_res; }
+  v405_goal := !v401_goal;
+  v407_goal := 0;
+  if v405_goal { v406_goal := f_hit(v404_res); v407_goal = v406_goal; } else {  v407_goal = v401_goal; }
+  v408_res := !v407_goal;
+  v410_res := 0;
+  if v408_res { v409_res := f_step(v404_res); v410_res = v409_res; } else {  v410_res = v404_res; }
+  v411_goal := !v407_goal;
+  v413_goal := 0;
+  if v411_goal { v412_goal := f_hit(v410_res); v413_goal = v412_goal; } else {  v413_goal = v407_goal; }
+  v414_res := !v413_goal;
+  v416_res := 0;
+  if v414_res { v415_res := f_step(v410_res); v416_res = v415_res; } else {  v416_res = v410_res; }
+  v417_goal := !v413_goal;
+  v419_goal := 0;
+  if v417_goal { v418_goal := f_hit(v416_res); v419_goal = v418_goal; } else {  v419_goal = v413_goal; }
+  v420_res := !v419_goal;
+  v422_res := 0;
+  if v420_res { v421_res := f_step(v416_res); v422_res = v421_res; } else {  v422_res = v416_res; }
+  v423_goal := !v419_goal;
+  v425_goal := 0;
+  if v423_goal { v424_goal := f_hit(v422_res); v425_goal = v424_goal; } else {  v425_goal = v419_goal; }
+  v426_res := !v425_goal;
+  v428_res := 0;
+  if v426_res { v427_res := f_step(v422_res); v428_res = v427_res; } else {  v428_res = v422_res; }
+  v429_goal := !v425_goal;
+  v431_goal := 0;
+  if v429_goal { v430_goal := f_hit(v428_res); v431_goal = v430_goal; } else {  v431_goal = v425_goal; }
+  v432_res := !v431_goal;
+  v434_res := 0;
+  if v432_res { v433_res := f_step(v428_res); v434_res = v433_res; } else {  v434_res = v428_res; }
+  v435_goal := !v431_goal;
+  v437_goal := 0;
+  if v435_goal { v436_goal := f_hit(v434_res); v437_goal = v436_goal; } else {  v437_goal = v431_goal; }
+  v438_res := !v437_goal;
+  v440_res := 0;
+  if v438_res { v439_res := f_step(v434_res); v440_res = v439_res; } else {  v440_res = v434_res; }
+  v441_goal := !v437_goal;
+  v443_goal := 0;
+  if v441_goal { v442_goal := f_hit(v440_res); v443_goal = v442_goal; } else {  v443_goal = v437_goal; }
+  v444_res := !v443_goal;
+  v446_res := 0;
+  if v444_res { v445_res := f_step(v440_res); v446_res = v445_res; } else {  v446_res = v440_res; }
+  v447_result := f_hit(v446_res);
+  return v447_result;
+}

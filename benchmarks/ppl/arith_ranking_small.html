@@ -1,0 +1,1828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>arith_ranking_small · tddlog results</title>
+<meta name="description" content="arith_ranking_small, an instance of Alea.jl&#x27;s and noDice&#x27;s programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#ppl">Alea.jl&#x27;s and noDice&#x27;s programs</a></p>
+    <h1>arith_ranking_small</h1>
+    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. noDice, Psi and Pluck ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. The circuit of the Alea.jl program <code>data/alea/arith/ranking_small.jl</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Pluck</th></tr></thead><tbody><tr><td class="num">0.01</td><td class="num">0.007</td><td class="num">40.9</td><td class="num">0.73</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Dice</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 data/alea/arith/ranking_small.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/arith/ranking_small.jl</code><span>1 025 bytes, 33 lines</span><span class="sha" title="SHA-256">sha256 fbd78f576eeb1fce49c613e95fc484208ae9791fa76cfbf8510707f662317019</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/arith/ranking_small.jl</code>.</p><pre># Ported from experiments/dicejl/ranking_small.jl of Tractables/Alea.jl,
+# branch arithmetic, commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5
+# (Apache License 2.0). Mechanical port: Dice -&gt; Alea, @dice -&gt; @alea, the
+# BenchmarkTools harness dropped, the query moved to QUERY.
+# Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: ranking-small.
+using Alea
+
+const QUERY = :pr
+
+model() = @alea begin
+    uniq_count = 4
+    bits = Int(floor(log2(uniq_count)) + 4)
+
+    rankings = [[3, 2, 1, 0]]
+
+    ranks = [uniform(DistInt{bits}, 0, uniq_count) for i in 1:uniq_count]
+    for i in 1:uniq_count
+        for j in i+1:uniq_count
+            observe(!prob_equals(ranks[i], ranks[j]))
+        end
+    end
+
+
+    for data in rankings
+        obs_rank = [x + uniform(DistInt{bits}, -uniq_count, uniq_count+1) for x in ranks]
+        for i in 1:uniq_count-1
+            a, b = data[i]+1, data[i+1] + 1
+            observe(obs_rank[a] &lt; obs_rank[b])
+        end
+    end
+
+    (ranks[1], ranks[2], ranks[3], ranks[4])
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto arith_ranking_small.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">arith_ranking_small.pl</code><span>7 329 bytes, 462 lines</span><span class="sha" title="SHA-256">sha256 34f48c181857991ccd3ed51170def8cc09c1dcaef8a2f674a1d41e8b32d8c15d</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/arith/ranking_small.jl</code>.</p><pre>% ranking_small.jl: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+% 24 flips, 276 gates, 9 observations, 16 queries.
+0.5::f1.
+0.5::f2.
+0.5::f3.
+0.5::f4.
+0.5::f5.
+0.5::f6.
+0.5::f7.
+0.5::f8.
+0.8888888888888888::f9.
+0.5::f10.
+0.5::f11.
+0.5::f12.
+0.8888888888888888::f13.
+0.5::f14.
+0.5::f15.
+0.5::f16.
+0.8888888888888888::f17.
+0.5::f18.
+0.5::f19.
+0.5::f20.
+0.8888888888888888::f21.
+0.5::f22.
+0.5::f23.
+0.5::f24.
+g1 :- f2.
+g1 :- f4.
+g2 :- f2, f4.
+g3 :- g2.
+g3 :- \+g1.
+g4 :- f1.
+g4 :- f3.
+g5 :- f1, f3.
+g6 :- g5.
+g6 :- \+g4.
+g7 :- g6, g3.
+g8 :- f2.
+g8 :- f6.
+g9 :- f2, f6.
+g10 :- g9.
+g10 :- \+g8.
+g11 :- f1.
+g11 :- f5.
+g12 :- f1, f5.
+g13 :- g12.
+g13 :- \+g11.
+g14 :- g13, g10.
+g15 :- f2.
+g15 :- f8.
+g16 :- f2, f8.
+g17 :- g16.
+g17 :- \+g15.
+g18 :- f1.
+g18 :- f7.
+g19 :- f1, f7.
+g20 :- g19.
+g20 :- \+g18.
+g21 :- g20, g17.
+g22 :- f4.
+g22 :- f6.
+g23 :- f4, f6.
+g24 :- g23.
+g24 :- \+g22.
+g25 :- f3.
+g25 :- f5.
+g26 :- f3, f5.
+g27 :- g26.
+g27 :- \+g25.
+g28 :- g27, g24.
+g29 :- f4.
+g29 :- f8.
+g30 :- f4, f8.
+g31 :- g30.
+g31 :- \+g29.
+g32 :- f3.
+g32 :- f7.
+g33 :- f3, f7.
+g34 :- g33.
+g34 :- \+g32.
+g35 :- g34, g31.
+g36 :- f6.
+g36 :- f8.
+g37 :- f6, f8.
+g38 :- g37.
+g38 :- \+g36.
+g39 :- f5.
+g39 :- f7.
+g40 :- f5, f7.
+g41 :- g40.
+g41 :- \+g39.
+g42 :- g41, g38.
+g43 :- f17, f18.
+g44 :- g43.
+g44 :- \+f17.
+g45 :- f17, f20.
+g46 :- f6, g45.
+g47 :- f17, f19.
+g48 :- f5.
+g48 :- g47.
+g49 :- g48, g46.
+g50 :- f5, g47.
+g51 :- g50.
+g51 :- g49.
+g52 :- g51, \+g43.
+g53 :- f17, g43.
+g54 :- f17.
+g54 :- g43.
+g55 :- g54, \+g53.
+g56 :- g55, g52.
+g57 :- g56, \+g44.
+g58 :- g57.
+g58 :- \+g44.
+g59 :- g44.
+g59 :- \+g57.
+g60 :- g59, g58.
+g61 :- f21, f22.
+g62 :- g61.
+g62 :- \+f21.
+g63 :- f21, f24.
+g64 :- f8, g63.
+g65 :- f21, f23.
+g66 :- f7.
+g66 :- g65.
+g67 :- g66, g64.
+g68 :- f7, g65.
+g69 :- g68.
+g69 :- g67.
+g70 :- g69, \+g61.
+g71 :- f21, g61.
+g72 :- f21.
+g72 :- g61.
+g73 :- g72, \+g71.
+g74 :- g73, g70.
+g75 :- g74, \+g62.
+g76 :- g75.
+g76 :- \+g62.
+g77 :- g62.
+g77 :- \+g75.
+g78 :- g77, g76.
+g79 :- g78, \+g60.
+g80 :- g60, \+g78.
+g81 :- f8, g63.
+g82 :- f8.
+g82 :- g63.
+g83 :- g82, \+g81.
+g84 :- f6, g45.
+g85 :- f6.
+g85 :- g45.
+g86 :- g85, \+g84.
+g87 :- g86, \+g83.
+g88 :- f5, g47.
+g89 :- f5.
+g89 :- g47.
+g90 :- g89, \+g88.
+g91 :- g90, g46.
+g92 :- g90.
+g92 :- g46.
+g93 :- g92, \+g91.
+g94 :- f7, g65.
+g95 :- f7.
+g95 :- g65.
+g96 :- g95, \+g94.
+g97 :- g96, g64.
+g98 :- g96.
+g98 :- g64.
+g99 :- g98, \+g97.
+g100 :- g99.
+g100 :- g93.
+g101 :- g99, g93.
+g102 :- g101.
+g102 :- \+g100.
+g103 :- g102, g87.
+g104 :- g93, \+g99.
+g105 :- g104.
+g105 :- g103.
+g106 :- g51.
+g106 :- \+g43.
+g107 :- g43.
+g107 :- \+g51.
+g108 :- g107, g106.
+g109 :- g69.
+g109 :- \+g61.
+g110 :- g61.
+g110 :- \+g69.
+g111 :- g110, g109.
+g112 :- g111.
+g112 :- g108.
+g113 :- g111, g108.
+g114 :- g113.
+g114 :- \+g112.
+g115 :- g114, g105.
+g116 :- g108, \+g111.
+g117 :- g116.
+g117 :- g115.
+g118 :- g55, g52.
+g119 :- g55.
+g119 :- g52.
+g120 :- g119, \+g118.
+g121 :- g73, g70.
+g122 :- g73.
+g122 :- g70.
+g123 :- g122, \+g121.
+g124 :- g123.
+g124 :- g120.
+g125 :- g123, g120.
+g126 :- g125.
+g126 :- \+g124.
+g127 :- g126, g117.
+g128 :- g120, \+g123.
+g129 :- g128.
+g129 :- g127.
+g130 :- g56.
+g130 :- \+g44.
+g131 :- g44.
+g131 :- \+g56.
+g132 :- g131, g130.
+g133 :- g74.
+g133 :- \+g62.
+g134 :- g62.
+g134 :- \+g74.
+g135 :- g134, g133.
+g136 :- g135.
+g136 :- g132.
+g137 :- g135, g132.
+g138 :- g137.
+g138 :- \+g136.
+g139 :- g138, g129.
+g140 :- g132, \+g135.
+g141 :- g140.
+g141 :- g139.
+g142 :- g141, \+g80.
+g143 :- g142, \+g79.
+g144 :- g79.
+g144 :- g143.
+g145 :- f13, f14.
+g146 :- g145.
+g146 :- \+f13.
+g147 :- f13, f16.
+g148 :- f4, g147.
+g149 :- f13, f15.
+g150 :- f3.
+g150 :- g149.
+g151 :- g150, g148.
+g152 :- f3, g149.
+g153 :- g152.
+g153 :- g151.
+g154 :- g153, \+g145.
+g155 :- f13, g145.
+g156 :- f13.
+g156 :- g145.
+g157 :- g156, \+g155.
+g158 :- g157, g154.
+g159 :- g158, \+g146.
+g160 :- g159.
+g160 :- \+g146.
+g161 :- g146.
+g161 :- \+g159.
+g162 :- g161, g160.
+g163 :- g60, \+g162.
+g164 :- g162, \+g60.
+g165 :- f4, g147.
+g166 :- f4.
+g166 :- g147.
+g167 :- g166, \+g165.
+g168 :- g167, \+g86.
+g169 :- f3, g149.
+g170 :- f3.
+g170 :- g149.
+g171 :- g170, \+g169.
+g172 :- g171, g148.
+g173 :- g171.
+g173 :- g148.
+g174 :- g173, \+g172.
+g175 :- g93.
+g175 :- g174.
+g176 :- g93, g174.
+g177 :- g176.
+g177 :- \+g175.
+g178 :- g177, g168.
+g179 :- g174, \+g93.
+g180 :- g179.
+g180 :- g178.
+g181 :- g153.
+g181 :- \+g145.
+g182 :- g145.
+g182 :- \+g153.
+g183 :- g182, g181.
+g184 :- g108.
+g184 :- g183.
+g185 :- g108, g183.
+g186 :- g185.
+g186 :- \+g184.
+g187 :- g186, g180.
+g188 :- g183, \+g108.
+g189 :- g188.
+g189 :- g187.
+g190 :- g157, g154.
+g191 :- g157.
+g191 :- g154.
+g192 :- g191, \+g190.
+g193 :- g120.
+g193 :- g192.
+g194 :- g120, g192.
+g195 :- g194.
+g195 :- \+g193.
+g196 :- g195, g189.
+g197 :- g192, \+g120.
+g198 :- g197.
+g198 :- g196.
+g199 :- g158.
+g199 :- \+g146.
+g200 :- g146.
+g200 :- \+g158.
+g201 :- g200, g199.
+g202 :- g132.
+g202 :- g201.
+g203 :- g132, g201.
+g204 :- g203.
+g204 :- \+g202.
+g205 :- g204, g198.
+g206 :- g201, \+g132.
+g207 :- g206.
+g207 :- g205.
+g208 :- g207, \+g164.
+g209 :- g208, \+g163.
+g210 :- g163.
+g210 :- g209.
+g211 :- f9, f10.
+g212 :- g211.
+g212 :- \+f9.
+g213 :- f9, f12.
+g214 :- f2, g213.
+g215 :- f9, f11.
+g216 :- f1.
+g216 :- g215.
+g217 :- g216, g214.
+g218 :- f1, g215.
+g219 :- g218.
+g219 :- g217.
+g220 :- g219, \+g211.
+g221 :- f9, g211.
+g222 :- f9.
+g222 :- g211.
+g223 :- g222, \+g221.
+g224 :- g223, g220.
+g225 :- g224, \+g212.
+g226 :- g225.
+g226 :- \+g212.
+g227 :- g212.
+g227 :- \+g225.
+g228 :- g227, g226.
+g229 :- g162, \+g228.
+g230 :- g228, \+g162.
+g231 :- f2, g213.
+g232 :- f2.
+g232 :- g213.
+g233 :- g232, \+g231.
+g234 :- g233, \+g167.
+g235 :- f1, g215.
+g236 :- f1.
+g236 :- g215.
+g237 :- g236, \+g235.
+g238 :- g237, g214.
+g239 :- g237.
+g239 :- g214.
+g240 :- g239, \+g238.
+g241 :- g174.
+g241 :- g240.
+g242 :- g174, g240.
+g243 :- g242.
+g243 :- \+g241.
+g244 :- g243, g234.
+g245 :- g240, \+g174.
+g246 :- g245.
+g246 :- g244.
+g247 :- g219.
+g247 :- \+g211.
+g248 :- g211.
+g248 :- \+g219.
+g249 :- g248, g247.
+g250 :- g183.
+g250 :- g249.
+g251 :- g183, g249.
+g252 :- g251.
+g252 :- \+g250.
+g253 :- g252, g246.
+g254 :- g249, \+g183.
+g255 :- g254.
+g255 :- g253.
+g256 :- g223, g220.
+g257 :- g223.
+g257 :- g220.
+g258 :- g257, \+g256.
+g259 :- g192.
+g259 :- g258.
+g260 :- g192, g258.
+g261 :- g260.
+g261 :- \+g259.
+g262 :- g261, g255.
+g263 :- g258, \+g192.
+g264 :- g263.
+g264 :- g262.
+g265 :- g224.
+g265 :- \+g212.
+g266 :- g212.
+g266 :- \+g224.
+g267 :- g266, g265.
+g268 :- g201.
+g268 :- g267.
+g269 :- g201, g267.
+g270 :- g269.
+g270 :- \+g268.
+g271 :- g270, g264.
+g272 :- g267, \+g201.
+g273 :- g272.
+g273 :- g271.
+g274 :- g273, \+g230.
+g275 :- g274, \+g229.
+g276 :- g229.
+g276 :- g275.
+evidence(g7, false).
+evidence(g14, false).
+evidence(g21, false).
+evidence(g28, false).
+evidence(g35, false).
+evidence(g42, false).
+evidence(g144, true).
+evidence(g210, true).
+evidence(g276, true).
+q1(0) :- \+f1, \+f2.
+query(q1(0)).
+q1(1) :- \+f1, f2.
+query(q1(1)).
+q1(2) :- f1, \+f2.
+query(q1(2)).
+q1(3) :- f1, f2.
+query(q1(3)).
+q2(0) :- \+f3, \+f4.
+query(q2(0)).
+q2(1) :- \+f3, f4.
+query(q2(1)).
+q2(2) :- f3, \+f4.
+query(q2(2)).
+q2(3) :- f3, f4.
+query(q2(3)).
+q3(0) :- \+f5, \+f6.
+query(q3(0)).
+q3(1) :- \+f5, f6.
+query(q3(1)).
+q3(2) :- f5, \+f6.
+query(q3(2)).
+q3(3) :- f5, f6.
+query(q3(3)).
+q4(0) :- \+f7, \+f8.
+query(q4(0)).
+q4(1) :- \+f7, f8.
+query(q4(1)).
+q4(2) :- f7, \+f8.
+query(q4(2)).
+q4(3) :- f7, f8.
+query(q4(3)).
+</pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Dice; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Dice.</p>
+<dl class="cmds">
+<dt>Dice</dt><dd><code>dice arith_ranking_small__d1.dice</code></dd>
+<dt>Dice</dt><dd><code>dice arith_ranking_small__d2.dice</code></dd>
+<dt>Dice</dt><dd><code>dice arith_ranking_small__d3.dice</code></dd>
+<dt>Dice</dt><dd><code>dice arith_ranking_small__d4.dice</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">arith_ranking_small__d1.dice</code><span>7 986 bytes, 311 lines</span><span class="sha" title="SHA-256">sha256 51084e8b8f87ab33f86bf8bfbea7edb737c69145198ea799e7f8f237b4fc7cf0</span></div><p class="made">The circuit as Dice programs, one per query or joint of queried bits, written by <code>alea_bench.jl export</code> from <code>data/alea/arith/ranking_small.jl</code>.</p><pre>// ranking_small.jl: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+let f1 = flip 0.5 in
+let f2 = flip 0.5 in
+let f3 = flip 0.5 in
+let f4 = flip 0.5 in
+let f5 = flip 0.5 in
+let f6 = flip 0.5 in
+let f7 = flip 0.5 in
+let f8 = flip 0.5 in
+let f9 = flip 0.8888888888888888 in
+let f10 = flip 0.5 in
+let f11 = flip 0.5 in
+let f12 = flip 0.5 in
+let f13 = flip 0.8888888888888888 in
+let f14 = flip 0.5 in
+let f15 = flip 0.5 in
+let f16 = flip 0.5 in
+let f17 = flip 0.8888888888888888 in
+let f18 = flip 0.5 in
+let f19 = flip 0.5 in
+let f20 = flip 0.5 in
+let f21 = flip 0.8888888888888888 in
+let f22 = flip 0.5 in
+let f23 = flip 0.5 in
+let f24 = flip 0.5 in
+let g1 = f2 || f4 in
+let g2 = f2 &amp;&amp; f4 in
+let g3 = g2 || !g1 in
+let g4 = f1 || f3 in
+let g5 = f1 &amp;&amp; f3 in
+let g6 = g5 || !g4 in
+let g7 = g6 &amp;&amp; g3 in
+let g8 = f2 || f6 in
+let g9 = f2 &amp;&amp; f6 in
+let g10 = g9 || !g8 in
+let g11 = f1 || f5 in
+let g12 = f1 &amp;&amp; f5 in
+let g13 = g12 || !g11 in
+let g14 = g13 &amp;&amp; g10 in
+let g15 = f2 || f8 in
+let g16 = f2 &amp;&amp; f8 in
+let g17 = g16 || !g15 in
+let g18 = f1 || f7 in
+let g19 = f1 &amp;&amp; f7 in
+let g20 = g19 || !g18 in
+let g21 = g20 &amp;&amp; g17 in
+let g22 = f4 || f6 in
+let g23 = f4 &amp;&amp; f6 in
+let g24 = g23 || !g22 in
+let g25 = f3 || f5 in
+let g26 = f3 &amp;&amp; f5 in
+let g27 = g26 || !g25 in
+let g28 = g27 &amp;&amp; g24 in
+let g29 = f4 || f8 in
+let g30 = f4 &amp;&amp; f8 in
+let g31 = g30 || !g29 in
+let g32 = f3 || f7 in
+let g33 = f3 &amp;&amp; f7 in
+let g34 = g33 || !g32 in
+let g35 = g34 &amp;&amp; g31 in
+let g36 = f6 || f8 in
+let g37 = f6 &amp;&amp; f8 in
+let g38 = g37 || !g36 in
+let g39 = f5 || f7 in
+let g40 = f5 &amp;&amp; f7 in
+let g41 = g40 || !g39 in
+let g42 = g41 &amp;&amp; g38 in
+let g43 = f17 &amp;&amp; f18 in
+let g44 = g43 || !f17 in
+let g45 = f17 &amp;&amp; f20 in
+let g46 = f6 &amp;&amp; g45 in
+let g47 = f17 &amp;&amp; f19 in
+let g48 = f5 || g47 in
+let g49 = g48 &amp;&amp; g46 in
+let g50 = f5 &amp;&amp; g47 in
+let g51 = g50 || g49 in
+let g52 = g51 &amp;&amp; !g43 in
+let g53 = f17 &amp;&amp; g43 in
+let g54 = f17 || g43 in
+let g55 = g54 &amp;&amp; !g53 in
+let g56 = g55 &amp;&amp; g52 in
+let g57 = g56 &amp;&amp; !g44 in
+let g58 = g57 || !g44 in
+let g59 = g44 || !g57 in
+let g60 = g59 &amp;&amp; g58 in
+let g61 = f21 &amp;&amp; f22 in
+let g62 = g61 || !f21 in
+let g63 = f21 &amp;&amp; f24 in
+let g64 = f8 &amp;&amp; g63 in
+let g65 = f21 &amp;&amp; f23 in
+let g66 = f7 || g65 in
+let g67 = g66 &amp;&amp; g64 in
+let g68 = f7 &amp;&amp; g65 in
+let g69 = g68 || g67 in
+let g70 = g69 &amp;&amp; !g61 in
+let g71 = f21 &amp;&amp; g61 in
+let g72 = f21 || g61 in
+let g73 = g72 &amp;&amp; !g71 in
+let g74 = g73 &amp;&amp; g70 in
+let g75 = g74 &amp;&amp; !g62 in
+let g76 = g75 || !g62 in
+let g77 = g62 || !g75 in
+let g78 = g77 &amp;&amp; g76 in
+let g79 = g78 &amp;&amp; !g60 in
+let g80 = g60 &amp;&amp; !g78 in
+let g81 = f8 &amp;&amp; g63 in
+let g82 = f8 || g63 in
+let g83 = g82 &amp;&amp; !g81 in
+let g84 = f6 &amp;&amp; g45 in
+let g85 = f6 || g45 in
+let g86 = g85 &amp;&amp; !g84 in
+let g87 = g86 &amp;&amp; !g83 in
+let g88 = f5 &amp;&amp; g47 in
+let g89 = f5 || g47 in
+let g90 = g89 &amp;&amp; !g88 in
+let g91 = g90 &amp;&amp; g46 in
+let g92 = g90 || g46 in
+let g93 = g92 &amp;&amp; !g91 in
+let g94 = f7 &amp;&amp; g65 in
+let g95 = f7 || g65 in
+let g96 = g95 &amp;&amp; !g94 in
+let g97 = g96 &amp;&amp; g64 in
+let g98 = g96 || g64 in
+let g99 = g98 &amp;&amp; !g97 in
+let g100 = g99 || g93 in
+let g101 = g99 &amp;&amp; g93 in
+let g102 = g101 || !g100 in
+let g103 = g102 &amp;&amp; g87 in
+let g104 = g93 &amp;&amp; !g99 in
+let g105 = g104 || g103 in
+let g106 = g51 || !g43 in
+let g107 = g43 || !g51 in
+let g108 = g107 &amp;&amp; g106 in
+let g109 = g69 || !g61 in
+let g110 = g61 || !g69 in
+let g111 = g110 &amp;&amp; g109 in
+let g112 = g111 || g108 in
+let g113 = g111 &amp;&amp; g108 in
+let g114 = g113 || !g112 in
+let g115 = g114 &amp;&amp; g105 in
+let g116 = g108 &amp;&amp; !g111 in
+let g117 = g116 || g115 in
+let g118 = g55 &amp;&amp; g52 in
+let g119 = g55 || g52 in
+let g120 = g119 &amp;&amp; !g118 in
+let g121 = g73 &amp;&amp; g70 in
+let g122 = g73 || g70 in
+let g123 = g122 &amp;&amp; !g121 in
+let g124 = g123 || g120 in
+let g125 = g123 &amp;&amp; g120 in
+let g126 = g125 || !g124 in
+let g127 = g126 &amp;&amp; g117 in
+let g128 = g120 &amp;&amp; !g123 in
+let g129 = g128 || g127 in
+let g130 = g56 || !g44 in
+let g131 = g44 || !g56 in
+let g132 = g131 &amp;&amp; g130 in
+let g133 = g74 || !g62 in
+let g134 = g62 || !g74 in
+let g135 = g134 &amp;&amp; g133 in
+let g136 = g135 || g132 in
+let g137 = g135 &amp;&amp; g132 in
+let g138 = g137 || !g136 in
+let g139 = g138 &amp;&amp; g129 in
+let g140 = g132 &amp;&amp; !g135 in
+let g141 = g140 || g139 in
+let g142 = g141 &amp;&amp; !g80 in
+let g143 = g142 &amp;&amp; !g79 in
+let g144 = g79 || g143 in
+let g145 = f13 &amp;&amp; f14 in
+let g146 = g145 || !f13 in
+let g147 = f13 &amp;&amp; f16 in
+let g148 = f4 &amp;&amp; g147 in
+let g149 = f13 &amp;&amp; f15 in
+let g150 = f3 || g149 in
+let g151 = g150 &amp;&amp; g148 in
+let g152 = f3 &amp;&amp; g149 in
+let g153 = g152 || g151 in
+let g154 = g153 &amp;&amp; !g145 in
+let g155 = f13 &amp;&amp; g145 in
+let g156 = f13 || g145 in
+let g157 = g156 &amp;&amp; !g155 in
+let g158 = g157 &amp;&amp; g154 in
+let g159 = g158 &amp;&amp; !g146 in
+let g160 = g159 || !g146 in
+let g161 = g146 || !g159 in
+let g162 = g161 &amp;&amp; g160 in
+let g163 = g60 &amp;&amp; !g162 in
+let g164 = g162 &amp;&amp; !g60 in
+let g165 = f4 &amp;&amp; g147 in
+let g166 = f4 || g147 in
+let g167 = g166 &amp;&amp; !g165 in
+let g168 = g167 &amp;&amp; !g86 in
+let g169 = f3 &amp;&amp; g149 in
+let g170 = f3 || g149 in
+let g171 = g170 &amp;&amp; !g169 in
+let g172 = g171 &amp;&amp; g148 in
+let g173 = g171 || g148 in
+let g174 = g173 &amp;&amp; !g172 in
+let g175 = g93 || g174 in
+let g176 = g93 &amp;&amp; g174 in
+let g177 = g176 || !g175 in
+let g178 = g177 &amp;&amp; g168 in
+let g179 = g174 &amp;&amp; !g93 in
+let g180 = g179 || g178 in
+let g181 = g153 || !g145 in
+let g182 = g145 || !g153 in
+let g183 = g182 &amp;&amp; g181 in
+let g184 = g108 || g183 in
+let g185 = g108 &amp;&amp; g183 in
+let g186 = g185 || !g184 in
+let g187 = g186 &amp;&amp; g180 in
+let g188 = g183 &amp;&amp; !g108 in
+let g189 = g188 || g187 in
+let g190 = g157 &amp;&amp; g154 in
+let g191 = g157 || g154 in
+let g192 = g191 &amp;&amp; !g190 in
+let g193 = g120 || g192 in
+let g194 = g120 &amp;&amp; g192 in
+let g195 = g194 || !g193 in
+let g196 = g195 &amp;&amp; g189 in
+let g197 = g192 &amp;&amp; !g120 in
+let g198 = g197 || g196 in
+let g199 = g158 || !g146 in
+let g200 = g146 || !g158 in
+let g201 = g200 &amp;&amp; g199 in
+let g202 = g132 || g201 in
+let g203 = g132 &amp;&amp; g201 in
+let g204 = g203 || !g202 in
+let g205 = g204 &amp;&amp; g198 in
+let g206 = g201 &amp;&amp; !g132 in
+let g207 = g206 || g205 in
+let g208 = g207 &amp;&amp; !g164 in
+let g209 = g208 &amp;&amp; !g163 in
+let g210 = g163 || g209 in
+let g211 = f9 &amp;&amp; f10 in
+let g212 = g211 || !f9 in
+let g213 = f9 &amp;&amp; f12 in
+let g214 = f2 &amp;&amp; g213 in
+let g215 = f9 &amp;&amp; f11 in
+let g216 = f1 || g215 in
+let g217 = g216 &amp;&amp; g214 in
+let g218 = f1 &amp;&amp; g215 in
+let g219 = g218 || g217 in
+let g220 = g219 &amp;&amp; !g211 in
+let g221 = f9 &amp;&amp; g211 in
+let g222 = f9 || g211 in
+let g223 = g222 &amp;&amp; !g221 in
+let g224 = g223 &amp;&amp; g220 in
+let g225 = g224 &amp;&amp; !g212 in
+let g226 = g225 || !g212 in
+let g227 = g212 || !g225 in
+let g228 = g227 &amp;&amp; g226 in
+let g229 = g162 &amp;&amp; !g228 in
+let g230 = g228 &amp;&amp; !g162 in
+let g231 = f2 &amp;&amp; g213 in
+let g232 = f2 || g213 in
+let g233 = g232 &amp;&amp; !g231 in
+let g234 = g233 &amp;&amp; !g167 in
+let g235 = f1 &amp;&amp; g215 in
+let g236 = f1 || g215 in
+let g237 = g236 &amp;&amp; !g235 in
+let g238 = g237 &amp;&amp; g214 in
+let g239 = g237 || g214 in
+let g240 = g239 &amp;&amp; !g238 in
+let g241 = g174 || g240 in
+let g242 = g174 &amp;&amp; g240 in
+let g243 = g242 || !g241 in
+let g244 = g243 &amp;&amp; g234 in
+let g245 = g240 &amp;&amp; !g174 in
+let g246 = g245 || g244 in
+let g247 = g219 || !g211 in
+let g248 = g211 || !g219 in
+let g249 = g248 &amp;&amp; g247 in
+let g250 = g183 || g249 in
+let g251 = g183 &amp;&amp; g249 in
+let g252 = g251 || !g250 in
+let g253 = g252 &amp;&amp; g246 in
+let g254 = g249 &amp;&amp; !g183 in
+let g255 = g254 || g253 in
+let g256 = g223 &amp;&amp; g220 in
+let g257 = g223 || g220 in
+let g258 = g257 &amp;&amp; !g256 in
+let g259 = g192 || g258 in
+let g260 = g192 &amp;&amp; g258 in
+let g261 = g260 || !g259 in
+let g262 = g261 &amp;&amp; g255 in
+let g263 = g258 &amp;&amp; !g192 in
+let g264 = g263 || g262 in
+let g265 = g224 || !g212 in
+let g266 = g212 || !g224 in
+let g267 = g266 &amp;&amp; g265 in
+let g268 = g201 || g267 in
+let g269 = g201 &amp;&amp; g267 in
+let g270 = g269 || !g268 in
+let g271 = g270 &amp;&amp; g264 in
+let g272 = g267 &amp;&amp; !g201 in
+let g273 = g272 || g271 in
+let g274 = g273 &amp;&amp; !g230 in
+let g275 = g274 &amp;&amp; !g229 in
+let g276 = g229 || g275 in
+let _ = observe !g7 in
+let _ = observe !g14 in
+let _ = observe !g21 in
+let _ = observe !g28 in
+let _ = observe !g35 in
+let _ = observe !g42 in
+let _ = observe g144 in
+let _ = observe g210 in
+let _ = observe g276 in
+(f1, f2)
+</pre></div>
+<div class="file"><div class="fhead"><code class="fname">arith_ranking_small__d2.dice</code><span>7 986 bytes, 311 lines</span><span class="sha" title="SHA-256">sha256 016e05fc8c08d4d0cf1034dcafa182ac745616b2a85264270a46ac9ff4241f97</span></div><p class="made">The circuit as Dice programs, one per query or joint of queried bits, written by <code>alea_bench.jl export</code> from <code>data/alea/arith/ranking_small.jl</code>.</p><pre>// ranking_small.jl: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+let f1 = flip 0.5 in
+let f2 = flip 0.5 in
+let f3 = flip 0.5 in
+let f4 = flip 0.5 in
+let f5 = flip 0.5 in
+let f6 = flip 0.5 in
+let f7 = flip 0.5 in
+let f8 = flip 0.5 in
+let f9 = flip 0.8888888888888888 in
+let f10 = flip 0.5 in
+let f11 = flip 0.5 in
+let f12 = flip 0.5 in
+let f13 = flip 0.8888888888888888 in
+let f14 = flip 0.5 in
+let f15 = flip 0.5 in
+let f16 = flip 0.5 in
+let f17 = flip 0.8888888888888888 in
+let f18 = flip 0.5 in
+let f19 = flip 0.5 in
+let f20 = flip 0.5 in
+let f21 = flip 0.8888888888888888 in
+let f22 = flip 0.5 in
+let f23 = flip 0.5 in
+let f24 = flip 0.5 in
+let g1 = f2 || f4 in
+let g2 = f2 &amp;&amp; f4 in
+let g3 = g2 || !g1 in
+let g4 = f1 || f3 in
+let g5 = f1 &amp;&amp; f3 in
+let g6 = g5 || !g4 in
+let g7 = g6 &amp;&amp; g3 in
+let g8 = f2 || f6 in
+let g9 = f2 &amp;&amp; f6 in
+let g10 = g9 || !g8 in
+let g11 = f1 || f5 in
+let g12 = f1 &amp;&amp; f5 in
+let g13 = g12 || !g11 in
+let g14 = g13 &amp;&amp; g10 in
+let g15 = f2 || f8 in
+let g16 = f2 &amp;&amp; f8 in
+let g17 = g16 || !g15 in
+let g18 = f1 || f7 in
+let g19 = f1 &amp;&amp; f7 in
+let g20 = g19 || !g18 in
+let g21 = g20 &amp;&amp; g17 in
+let g22 = f4 || f6 in
+let g23 = f4 &amp;&amp; f6 in
+let g24 = g23 || !g22 in
+let g25 = f3 || f5 in
+let g26 = f3 &amp;&amp; f5 in
+let g27 = g26 || !g25 in
+let g28 = g27 &amp;&amp; g24 in
+let g29 = f4 || f8 in
+let g30 = f4 &amp;&amp; f8 in
+let g31 = g30 || !g29 in
+let g32 = f3 || f7 in
+let g33 = f3 &amp;&amp; f7 in
+let g34 = g33 || !g32 in
+let g35 = g34 &amp;&amp; g31 in
+let g36 = f6 || f8 in
+let g37 = f6 &amp;&amp; f8 in
+let g38 = g37 || !g36 in
+let g39 = f5 || f7 in
+let g40 = f5 &amp;&amp; f7 in
+let g41 = g40 || !g39 in
+let g42 = g41 &amp;&amp; g38 in
+let g43 = f17 &amp;&amp; f18 in
+let g44 = g43 || !f17 in
+let g45 = f17 &amp;&amp; f20 in
+let g46 = f6 &amp;&amp; g45 in
+let g47 = f17 &amp;&amp; f19 in
+let g48 = f5 || g47 in
+let g49 = g48 &amp;&amp; g46 in
+let g50 = f5 &amp;&amp; g47 in
+let g51 = g50 || g49 in
+let g52 = g51 &amp;&amp; !g43 in
+let g53 = f17 &amp;&amp; g43 in
+let g54 = f17 || g43 in
+let g55 = g54 &amp;&amp; !g53 in
+let g56 = g55 &amp;&amp; g52 in
+let g57 = g56 &amp;&amp; !g44 in
+let g58 = g57 || !g44 in
+let g59 = g44 || !g57 in
+let g60 = g59 &amp;&amp; g58 in
+let g61 = f21 &amp;&amp; f22 in
+let g62 = g61 || !f21 in
+let g63 = f21 &amp;&amp; f24 in
+let g64 = f8 &amp;&amp; g63 in
+let g65 = f21 &amp;&amp; f23 in
+let g66 = f7 || g65 in
+let g67 = g66 &amp;&amp; g64 in
+let g68 = f7 &amp;&amp; g65 in
+let g69 = g68 || g67 in
+let g70 = g69 &amp;&amp; !g61 in
+let g71 = f21 &amp;&amp; g61 in
+let g72 = f21 || g61 in
+let g73 = g72 &amp;&amp; !g71 in
+let g74 = g73 &amp;&amp; g70 in
+let g75 = g74 &amp;&amp; !g62 in
+let g76 = g75 || !g62 in
+let g77 = g62 || !g75 in
+let g78 = g77 &amp;&amp; g76 in
+let g79 = g78 &amp;&amp; !g60 in
+let g80 = g60 &amp;&amp; !g78 in
+let g81 = f8 &amp;&amp; g63 in
+let g82 = f8 || g63 in
+let g83 = g82 &amp;&amp; !g81 in
+let g84 = f6 &amp;&amp; g45 in
+let g85 = f6 || g45 in
+let g86 = g85 &amp;&amp; !g84 in
+let g87 = g86 &amp;&amp; !g83 in
+let g88 = f5 &amp;&amp; g47 in
+let g89 = f5 || g47 in
+let g90 = g89 &amp;&amp; !g88 in
+let g91 = g90 &amp;&amp; g46 in
+let g92 = g90 || g46 in
+let g93 = g92 &amp;&amp; !g91 in
+let g94 = f7 &amp;&amp; g65 in
+let g95 = f7 || g65 in
+let g96 = g95 &amp;&amp; !g94 in
+let g97 = g96 &amp;&amp; g64 in
+let g98 = g96 || g64 in
+let g99 = g98 &amp;&amp; !g97 in
+let g100 = g99 || g93 in
+let g101 = g99 &amp;&amp; g93 in
+let g102 = g101 || !g100 in
+let g103 = g102 &amp;&amp; g87 in
+let g104 = g93 &amp;&amp; !g99 in
+let g105 = g104 || g103 in
+let g106 = g51 || !g43 in
+let g107 = g43 || !g51 in
+let g108 = g107 &amp;&amp; g106 in
+let g109 = g69 || !g61 in
+let g110 = g61 || !g69 in
+let g111 = g110 &amp;&amp; g109 in
+let g112 = g111 || g108 in
+let g113 = g111 &amp;&amp; g108 in
+let g114 = g113 || !g112 in
+let g115 = g114 &amp;&amp; g105 in
+let g116 = g108 &amp;&amp; !g111 in
+let g117 = g116 || g115 in
+let g118 = g55 &amp;&amp; g52 in
+let g119 = g55 || g52 in
+let g120 = g119 &amp;&amp; !g118 in
+let g121 = g73 &amp;&amp; g70 in
+let g122 = g73 || g70 in
+let g123 = g122 &amp;&amp; !g121 in
+let g124 = g123 || g120 in
+let g125 = g123 &amp;&amp; g120 in
+let g126 = g125 || !g124 in
+let g127 = g126 &amp;&amp; g117 in
+let g128 = g120 &amp;&amp; !g123 in
+let g129 = g128 || g127 in
+let g130 = g56 || !g44 in
+let g131 = g44 || !g56 in
+let g132 = g131 &amp;&amp; g130 in
+let g133 = g74 || !g62 in
+let g134 = g62 || !g74 in
+let g135 = g134 &amp;&amp; g133 in
+let g136 = g135 || g132 in
+let g137 = g135 &amp;&amp; g132 in
+let g138 = g137 || !g136 in
+let g139 = g138 &amp;&amp; g129 in
+let g140 = g132 &amp;&amp; !g135 in
+let g141 = g140 || g139 in
+let g142 = g141 &amp;&amp; !g80 in
+let g143 = g142 &amp;&amp; !g79 in
+let g144 = g79 || g143 in
+let g145 = f13 &amp;&amp; f14 in
+let g146 = g145 || !f13 in
+let g147 = f13 &amp;&amp; f16 in
+let g148 = f4 &amp;&amp; g147 in
+let g149 = f13 &amp;&amp; f15 in
+let g150 = f3 || g149 in
+let g151 = g150 &amp;&amp; g148 in
+let g152 = f3 &amp;&amp; g149 in
+let g153 = g152 || g151 in
+let g154 = g153 &amp;&amp; !g145 in
+let g155 = f13 &amp;&amp; g145 in
+let g156 = f13 || g145 in
+let g157 = g156 &amp;&amp; !g155 in
+let g158 = g157 &amp;&amp; g154 in
+let g159 = g158 &amp;&amp; !g146 in
+let g160 = g159 || !g146 in
+let g161 = g146 || !g159 in
+let g162 = g161 &amp;&amp; g160 in
+let g163 = g60 &amp;&amp; !g162 in
+let g164 = g162 &amp;&amp; !g60 in
+let g165 = f4 &amp;&amp; g147 in
+let g166 = f4 || g147 in
+let g167 = g166 &amp;&amp; !g165 in
+let g168 = g167 &amp;&amp; !g86 in
+let g169 = f3 &amp;&amp; g149 in
+let g170 = f3 || g149 in
+let g171 = g170 &amp;&amp; !g169 in
+let g172 = g171 &amp;&amp; g148 in
+let g173 = g171 || g148 in
+let g174 = g173 &amp;&amp; !g172 in
+let g175 = g93 || g174 in
+let g176 = g93 &amp;&amp; g174 in
+let g177 = g176 || !g175 in
+let g178 = g177 &amp;&amp; g168 in
+let g179 = g174 &amp;&amp; !g93 in
+let g180 = g179 || g178 in
+let g181 = g153 || !g145 in
+let g182 = g145 || !g153 in
+let g183 = g182 &amp;&amp; g181 in
+let g184 = g108 || g183 in
+let g185 = g108 &amp;&amp; g183 in
+let g186 = g185 || !g184 in
+let g187 = g186 &amp;&amp; g180 in
+let g188 = g183 &amp;&amp; !g108 in
+let g189 = g188 || g187 in
+let g190 = g157 &amp;&amp; g154 in
+let g191 = g157 || g154 in
+let g192 = g191 &amp;&amp; !g190 in
+let g193 = g120 || g192 in
+let g194 = g120 &amp;&amp; g192 in
+let g195 = g194 || !g193 in
+let g196 = g195 &amp;&amp; g189 in
+let g197 = g192 &amp;&amp; !g120 in
+let g198 = g197 || g196 in
+let g199 = g158 || !g146 in
+let g200 = g146 || !g158 in
+let g201 = g200 &amp;&amp; g199 in
+let g202 = g132 || g201 in
+let g203 = g132 &amp;&amp; g201 in
+let g204 = g203 || !g202 in
+let g205 = g204 &amp;&amp; g198 in
+let g206 = g201 &amp;&amp; !g132 in
+let g207 = g206 || g205 in
+let g208 = g207 &amp;&amp; !g164 in
+let g209 = g208 &amp;&amp; !g163 in
+let g210 = g163 || g209 in
+let g211 = f9 &amp;&amp; f10 in
+let g212 = g211 || !f9 in
+let g213 = f9 &amp;&amp; f12 in
+let g214 = f2 &amp;&amp; g213 in
+let g215 = f9 &amp;&amp; f11 in
+let g216 = f1 || g215 in
+let g217 = g216 &amp;&amp; g214 in
+let g218 = f1 &amp;&amp; g215 in
+let g219 = g218 || g217 in
+let g220 = g219 &amp;&amp; !g211 in
+let g221 = f9 &amp;&amp; g211 in
+let g222 = f9 || g211 in
+let g223 = g222 &amp;&amp; !g221 in
+let g224 = g223 &amp;&amp; g220 in
+let g225 = g224 &amp;&amp; !g212 in
+let g226 = g225 || !g212 in
+let g227 = g212 || !g225 in
+let g228 = g227 &amp;&amp; g226 in
+let g229 = g162 &amp;&amp; !g228 in
+let g230 = g228 &amp;&amp; !g162 in
+let g231 = f2 &amp;&amp; g213 in
+let g232 = f2 || g213 in
+let g233 = g232 &amp;&amp; !g231 in
+let g234 = g233 &amp;&amp; !g167 in
+let g235 = f1 &amp;&amp; g215 in
+let g236 = f1 || g215 in
+let g237 = g236 &amp;&amp; !g235 in
+let g238 = g237 &amp;&amp; g214 in
+let g239 = g237 || g214 in
+let g240 = g239 &amp;&amp; !g238 in
+let g241 = g174 || g240 in
+let g242 = g174 &amp;&amp; g240 in
+let g243 = g242 || !g241 in
+let g244 = g243 &amp;&amp; g234 in
+let g245 = g240 &amp;&amp; !g174 in
+let g246 = g245 || g244 in
+let g247 = g219 || !g211 in
+let g248 = g211 || !g219 in
+let g249 = g248 &amp;&amp; g247 in
+let g250 = g183 || g249 in
+let g251 = g183 &amp;&amp; g249 in
+let g252 = g251 || !g250 in
+let g253 = g252 &amp;&amp; g246 in
+let g254 = g249 &amp;&amp; !g183 in
+let g255 = g254 || g253 in
+let g256 = g223 &amp;&amp; g220 in
+let g257 = g223 || g220 in
+let g258 = g257 &amp;&amp; !g256 in
+let g259 = g192 || g258 in
+let g260 = g192 &amp;&amp; g258 in
+let g261 = g260 || !g259 in
+let g262 = g261 &amp;&amp; g255 in
+let g263 = g258 &amp;&amp; !g192 in
+let g264 = g263 || g262 in
+let g265 = g224 || !g212 in
+let g266 = g212 || !g224 in
+let g267 = g266 &amp;&amp; g265 in
+let g268 = g201 || g267 in
+let g269 = g201 &amp;&amp; g267 in
+let g270 = g269 || !g268 in
+let g271 = g270 &amp;&amp; g264 in
+let g272 = g267 &amp;&amp; !g201 in
+let g273 = g272 || g271 in
+let g274 = g273 &amp;&amp; !g230 in
+let g275 = g274 &amp;&amp; !g229 in
+let g276 = g229 || g275 in
+let _ = observe !g7 in
+let _ = observe !g14 in
+let _ = observe !g21 in
+let _ = observe !g28 in
+let _ = observe !g35 in
+let _ = observe !g42 in
+let _ = observe g144 in
+let _ = observe g210 in
+let _ = observe g276 in
+(f3, f4)
+</pre></div>
+<div class="file"><div class="fhead"><code class="fname">arith_ranking_small__d3.dice</code><span>7 986 bytes, 311 lines</span><span class="sha" title="SHA-256">sha256 d67bcc83358f7fcd116691dfad286486a8f738c62c602180088d7906511f64e5</span></div><p class="made">The circuit as Dice programs, one per query or joint of queried bits, written by <code>alea_bench.jl export</code> from <code>data/alea/arith/ranking_small.jl</code>.</p><pre>// ranking_small.jl: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+let f1 = flip 0.5 in
+let f2 = flip 0.5 in
+let f3 = flip 0.5 in
+let f4 = flip 0.5 in
+let f5 = flip 0.5 in
+let f6 = flip 0.5 in
+let f7 = flip 0.5 in
+let f8 = flip 0.5 in
+let f9 = flip 0.8888888888888888 in
+let f10 = flip 0.5 in
+let f11 = flip 0.5 in
+let f12 = flip 0.5 in
+let f13 = flip 0.8888888888888888 in
+let f14 = flip 0.5 in
+let f15 = flip 0.5 in
+let f16 = flip 0.5 in
+let f17 = flip 0.8888888888888888 in
+let f18 = flip 0.5 in
+let f19 = flip 0.5 in
+let f20 = flip 0.5 in
+let f21 = flip 0.8888888888888888 in
+let f22 = flip 0.5 in
+let f23 = flip 0.5 in
+let f24 = flip 0.5 in
+let g1 = f2 || f4 in
+let g2 = f2 &amp;&amp; f4 in
+let g3 = g2 || !g1 in
+let g4 = f1 || f3 in
+let g5 = f1 &amp;&amp; f3 in
+let g6 = g5 || !g4 in
+let g7 = g6 &amp;&amp; g3 in
+let g8 = f2 || f6 in
+let g9 = f2 &amp;&amp; f6 in
+let g10 = g9 || !g8 in
+let g11 = f1 || f5 in
+let g12 = f1 &amp;&amp; f5 in
+let g13 = g12 || !g11 in
+let g14 = g13 &amp;&amp; g10 in
+let g15 = f2 || f8 in
+let g16 = f2 &amp;&amp; f8 in
+let g17 = g16 || !g15 in
+let g18 = f1 || f7 in
+let g19 = f1 &amp;&amp; f7 in
+let g20 = g19 || !g18 in
+let g21 = g20 &amp;&amp; g17 in
+let g22 = f4 || f6 in
+let g23 = f4 &amp;&amp; f6 in
+let g24 = g23 || !g22 in
+let g25 = f3 || f5 in
+let g26 = f3 &amp;&amp; f5 in
+let g27 = g26 || !g25 in
+let g28 = g27 &amp;&amp; g24 in
+let g29 = f4 || f8 in
+let g30 = f4 &amp;&amp; f8 in
+let g31 = g30 || !g29 in
+let g32 = f3 || f7 in
+let g33 = f3 &amp;&amp; f7 in
+let g34 = g33 || !g32 in
+let g35 = g34 &amp;&amp; g31 in
+let g36 = f6 || f8 in
+let g37 = f6 &amp;&amp; f8 in
+let g38 = g37 || !g36 in
+let g39 = f5 || f7 in
+let g40 = f5 &amp;&amp; f7 in
+let g41 = g40 || !g39 in
+let g42 = g41 &amp;&amp; g38 in
+let g43 = f17 &amp;&amp; f18 in
+let g44 = g43 || !f17 in
+let g45 = f17 &amp;&amp; f20 in
+let g46 = f6 &amp;&amp; g45 in
+let g47 = f17 &amp;&amp; f19 in
+let g48 = f5 || g47 in
+let g49 = g48 &amp;&amp; g46 in
+let g50 = f5 &amp;&amp; g47 in
+let g51 = g50 || g49 in
+let g52 = g51 &amp;&amp; !g43 in
+let g53 = f17 &amp;&amp; g43 in
+let g54 = f17 || g43 in
+let g55 = g54 &amp;&amp; !g53 in
+let g56 = g55 &amp;&amp; g52 in
+let g57 = g56 &amp;&amp; !g44 in
+let g58 = g57 || !g44 in
+let g59 = g44 || !g57 in
+let g60 = g59 &amp;&amp; g58 in
+let g61 = f21 &amp;&amp; f22 in
+let g62 = g61 || !f21 in
+let g63 = f21 &amp;&amp; f24 in
+let g64 = f8 &amp;&amp; g63 in
+let g65 = f21 &amp;&amp; f23 in
+let g66 = f7 || g65 in
+let g67 = g66 &amp;&amp; g64 in
+let g68 = f7 &amp;&amp; g65 in
+let g69 = g68 || g67 in
+let g70 = g69 &amp;&amp; !g61 in
+let g71 = f21 &amp;&amp; g61 in
+let g72 = f21 || g61 in
+let g73 = g72 &amp;&amp; !g71 in
+let g74 = g73 &amp;&amp; g70 in
+let g75 = g74 &amp;&amp; !g62 in
+let g76 = g75 || !g62 in
+let g77 = g62 || !g75 in
+let g78 = g77 &amp;&amp; g76 in
+let g79 = g78 &amp;&amp; !g60 in
+let g80 = g60 &amp;&amp; !g78 in
+let g81 = f8 &amp;&amp; g63 in
+let g82 = f8 || g63 in
+let g83 = g82 &amp;&amp; !g81 in
+let g84 = f6 &amp;&amp; g45 in
+let g85 = f6 || g45 in
+let g86 = g85 &amp;&amp; !g84 in
+let g87 = g86 &amp;&amp; !g83 in
+let g88 = f5 &amp;&amp; g47 in
+let g89 = f5 || g47 in
+let g90 = g89 &amp;&amp; !g88 in
+let g91 = g90 &amp;&amp; g46 in
+let g92 = g90 || g46 in
+let g93 = g92 &amp;&amp; !g91 in
+let g94 = f7 &amp;&amp; g65 in
+let g95 = f7 || g65 in
+let g96 = g95 &amp;&amp; !g94 in
+let g97 = g96 &amp;&amp; g64 in
+let g98 = g96 || g64 in
+let g99 = g98 &amp;&amp; !g97 in
+let g100 = g99 || g93 in
+let g101 = g99 &amp;&amp; g93 in
+let g102 = g101 || !g100 in
+let g103 = g102 &amp;&amp; g87 in
+let g104 = g93 &amp;&amp; !g99 in
+let g105 = g104 || g103 in
+let g106 = g51 || !g43 in
+let g107 = g43 || !g51 in
+let g108 = g107 &amp;&amp; g106 in
+let g109 = g69 || !g61 in
+let g110 = g61 || !g69 in
+let g111 = g110 &amp;&amp; g109 in
+let g112 = g111 || g108 in
+let g113 = g111 &amp;&amp; g108 in
+let g114 = g113 || !g112 in
+let g115 = g114 &amp;&amp; g105 in
+let g116 = g108 &amp;&amp; !g111 in
+let g117 = g116 || g115 in
+let g118 = g55 &amp;&amp; g52 in
+let g119 = g55 || g52 in
+let g120 = g119 &amp;&amp; !g118 in
+let g121 = g73 &amp;&amp; g70 in
+let g122 = g73 || g70 in
+let g123 = g122 &amp;&amp; !g121 in
+let g124 = g123 || g120 in
+let g125 = g123 &amp;&amp; g120 in
+let g126 = g125 || !g124 in
+let g127 = g126 &amp;&amp; g117 in
+let g128 = g120 &amp;&amp; !g123 in
+let g129 = g128 || g127 in
+let g130 = g56 || !g44 in
+let g131 = g44 || !g56 in
+let g132 = g131 &amp;&amp; g130 in
+let g133 = g74 || !g62 in
+let g134 = g62 || !g74 in
+let g135 = g134 &amp;&amp; g133 in
+let g136 = g135 || g132 in
+let g137 = g135 &amp;&amp; g132 in
+let g138 = g137 || !g136 in
+let g139 = g138 &amp;&amp; g129 in
+let g140 = g132 &amp;&amp; !g135 in
+let g141 = g140 || g139 in
+let g142 = g141 &amp;&amp; !g80 in
+let g143 = g142 &amp;&amp; !g79 in
+let g144 = g79 || g143 in
+let g145 = f13 &amp;&amp; f14 in
+let g146 = g145 || !f13 in
+let g147 = f13 &amp;&amp; f16 in
+let g148 = f4 &amp;&amp; g147 in
+let g149 = f13 &amp;&amp; f15 in
+let g150 = f3 || g149 in
+let g151 = g150 &amp;&amp; g148 in
+let g152 = f3 &amp;&amp; g149 in
+let g153 = g152 || g151 in
+let g154 = g153 &amp;&amp; !g145 in
+let g155 = f13 &amp;&amp; g145 in
+let g156 = f13 || g145 in
+let g157 = g156 &amp;&amp; !g155 in
+let g158 = g157 &amp;&amp; g154 in
+let g159 = g158 &amp;&amp; !g146 in
+let g160 = g159 || !g146 in
+let g161 = g146 || !g159 in
+let g162 = g161 &amp;&amp; g160 in
+let g163 = g60 &amp;&amp; !g162 in
+let g164 = g162 &amp;&amp; !g60 in
+let g165 = f4 &amp;&amp; g147 in
+let g166 = f4 || g147 in
+let g167 = g166 &amp;&amp; !g165 in
+let g168 = g167 &amp;&amp; !g86 in
+let g169 = f3 &amp;&amp; g149 in
+let g170 = f3 || g149 in
+let g171 = g170 &amp;&amp; !g169 in
+let g172 = g171 &amp;&amp; g148 in
+let g173 = g171 || g148 in
+let g174 = g173 &amp;&amp; !g172 in
+let g175 = g93 || g174 in
+let g176 = g93 &amp;&amp; g174 in
+let g177 = g176 || !g175 in
+let g178 = g177 &amp;&amp; g168 in
+let g179 = g174 &amp;&amp; !g93 in
+let g180 = g179 || g178 in
+let g181 = g153 || !g145 in
+let g182 = g145 || !g153 in
+let g183 = g182 &amp;&amp; g181 in
+let g184 = g108 || g183 in
+let g185 = g108 &amp;&amp; g183 in
+let g186 = g185 || !g184 in
+let g187 = g186 &amp;&amp; g180 in
+let g188 = g183 &amp;&amp; !g108 in
+let g189 = g188 || g187 in
+let g190 = g157 &amp;&amp; g154 in
+let g191 = g157 || g154 in
+let g192 = g191 &amp;&amp; !g190 in
+let g193 = g120 || g192 in
+let g194 = g120 &amp;&amp; g192 in
+let g195 = g194 || !g193 in
+let g196 = g195 &amp;&amp; g189 in
+let g197 = g192 &amp;&amp; !g120 in
+let g198 = g197 || g196 in
+let g199 = g158 || !g146 in
+let g200 = g146 || !g158 in
+let g201 = g200 &amp;&amp; g199 in
+let g202 = g132 || g201 in
+let g203 = g132 &amp;&amp; g201 in
+let g204 = g203 || !g202 in
+let g205 = g204 &amp;&amp; g198 in
+let g206 = g201 &amp;&amp; !g132 in
+let g207 = g206 || g205 in
+let g208 = g207 &amp;&amp; !g164 in
+let g209 = g208 &amp;&amp; !g163 in
+let g210 = g163 || g209 in
+let g211 = f9 &amp;&amp; f10 in
+let g212 = g211 || !f9 in
+let g213 = f9 &amp;&amp; f12 in
+let g214 = f2 &amp;&amp; g213 in
+let g215 = f9 &amp;&amp; f11 in
+let g216 = f1 || g215 in
+let g217 = g216 &amp;&amp; g214 in
+let g218 = f1 &amp;&amp; g215 in
+let g219 = g218 || g217 in
+let g220 = g219 &amp;&amp; !g211 in
+let g221 = f9 &amp;&amp; g211 in
+let g222 = f9 || g211 in
+let g223 = g222 &amp;&amp; !g221 in
+let g224 = g223 &amp;&amp; g220 in
+let g225 = g224 &amp;&amp; !g212 in
+let g226 = g225 || !g212 in
+let g227 = g212 || !g225 in
+let g228 = g227 &amp;&amp; g226 in
+let g229 = g162 &amp;&amp; !g228 in
+let g230 = g228 &amp;&amp; !g162 in
+let g231 = f2 &amp;&amp; g213 in
+let g232 = f2 || g213 in
+let g233 = g232 &amp;&amp; !g231 in
+let g234 = g233 &amp;&amp; !g167 in
+let g235 = f1 &amp;&amp; g215 in
+let g236 = f1 || g215 in
+let g237 = g236 &amp;&amp; !g235 in
+let g238 = g237 &amp;&amp; g214 in
+let g239 = g237 || g214 in
+let g240 = g239 &amp;&amp; !g238 in
+let g241 = g174 || g240 in
+let g242 = g174 &amp;&amp; g240 in
+let g243 = g242 || !g241 in
+let g244 = g243 &amp;&amp; g234 in
+let g245 = g240 &amp;&amp; !g174 in
+let g246 = g245 || g244 in
+let g247 = g219 || !g211 in
+let g248 = g211 || !g219 in
+let g249 = g248 &amp;&amp; g247 in
+let g250 = g183 || g249 in
+let g251 = g183 &amp;&amp; g249 in
+let g252 = g251 || !g250 in
+let g253 = g252 &amp;&amp; g246 in
+let g254 = g249 &amp;&amp; !g183 in
+let g255 = g254 || g253 in
+let g256 = g223 &amp;&amp; g220 in
+let g257 = g223 || g220 in
+let g258 = g257 &amp;&amp; !g256 in
+let g259 = g192 || g258 in
+let g260 = g192 &amp;&amp; g258 in
+let g261 = g260 || !g259 in
+let g262 = g261 &amp;&amp; g255 in
+let g263 = g258 &amp;&amp; !g192 in
+let g264 = g263 || g262 in
+let g265 = g224 || !g212 in
+let g266 = g212 || !g224 in
+let g267 = g266 &amp;&amp; g265 in
+let g268 = g201 || g267 in
+let g269 = g201 &amp;&amp; g267 in
+let g270 = g269 || !g268 in
+let g271 = g270 &amp;&amp; g264 in
+let g272 = g267 &amp;&amp; !g201 in
+let g273 = g272 || g271 in
+let g274 = g273 &amp;&amp; !g230 in
+let g275 = g274 &amp;&amp; !g229 in
+let g276 = g229 || g275 in
+let _ = observe !g7 in
+let _ = observe !g14 in
+let _ = observe !g21 in
+let _ = observe !g28 in
+let _ = observe !g35 in
+let _ = observe !g42 in
+let _ = observe g144 in
+let _ = observe g210 in
+let _ = observe g276 in
+(f5, f6)
+</pre></div>
+<div class="file"><div class="fhead"><code class="fname">arith_ranking_small__d4.dice</code><span>7 986 bytes, 311 lines</span><span class="sha" title="SHA-256">sha256 e2df280d8c8b23425946dca6ee33bfcbca9a4d4e0e9006a4f8b1a037d61a9021</span></div><p class="made">The circuit as Dice programs, one per query or joint of queried bits, written by <code>alea_bench.jl export</code> from <code>data/alea/arith/ranking_small.jl</code>.</p><pre>// ranking_small.jl: the circuit Alea.jl builds, written by tddlog&#x27;s scripts/alea_bench.jl.
+let f1 = flip 0.5 in
+let f2 = flip 0.5 in
+let f3 = flip 0.5 in
+let f4 = flip 0.5 in
+let f5 = flip 0.5 in
+let f6 = flip 0.5 in
+let f7 = flip 0.5 in
+let f8 = flip 0.5 in
+let f9 = flip 0.8888888888888888 in
+let f10 = flip 0.5 in
+let f11 = flip 0.5 in
+let f12 = flip 0.5 in
+let f13 = flip 0.8888888888888888 in
+let f14 = flip 0.5 in
+let f15 = flip 0.5 in
+let f16 = flip 0.5 in
+let f17 = flip 0.8888888888888888 in
+let f18 = flip 0.5 in
+let f19 = flip 0.5 in
+let f20 = flip 0.5 in
+let f21 = flip 0.8888888888888888 in
+let f22 = flip 0.5 in
+let f23 = flip 0.5 in
+let f24 = flip 0.5 in
+let g1 = f2 || f4 in
+let g2 = f2 &amp;&amp; f4 in
+let g3 = g2 || !g1 in
+let g4 = f1 || f3 in
+let g5 = f1 &amp;&amp; f3 in
+let g6 = g5 || !g4 in
+let g7 = g6 &amp;&amp; g3 in
+let g8 = f2 || f6 in
+let g9 = f2 &amp;&amp; f6 in
+let g10 = g9 || !g8 in
+let g11 = f1 || f5 in
+let g12 = f1 &amp;&amp; f5 in
+let g13 = g12 || !g11 in
+let g14 = g13 &amp;&amp; g10 in
+let g15 = f2 || f8 in
+let g16 = f2 &amp;&amp; f8 in
+let g17 = g16 || !g15 in
+let g18 = f1 || f7 in
+let g19 = f1 &amp;&amp; f7 in
+let g20 = g19 || !g18 in
+let g21 = g20 &amp;&amp; g17 in
+let g22 = f4 || f6 in
+let g23 = f4 &amp;&amp; f6 in
+let g24 = g23 || !g22 in
+let g25 = f3 || f5 in
+let g26 = f3 &amp;&amp; f5 in
+let g27 = g26 || !g25 in
+let g28 = g27 &amp;&amp; g24 in
+let g29 = f4 || f8 in
+let g30 = f4 &amp;&amp; f8 in
+let g31 = g30 || !g29 in
+let g32 = f3 || f7 in
+let g33 = f3 &amp;&amp; f7 in
+let g34 = g33 || !g32 in
+let g35 = g34 &amp;&amp; g31 in
+let g36 = f6 || f8 in
+let g37 = f6 &amp;&amp; f8 in
+let g38 = g37 || !g36 in
+let g39 = f5 || f7 in
+let g40 = f5 &amp;&amp; f7 in
+let g41 = g40 || !g39 in
+let g42 = g41 &amp;&amp; g38 in
+let g43 = f17 &amp;&amp; f18 in
+let g44 = g43 || !f17 in
+let g45 = f17 &amp;&amp; f20 in
+let g46 = f6 &amp;&amp; g45 in
+let g47 = f17 &amp;&amp; f19 in
+let g48 = f5 || g47 in
+let g49 = g48 &amp;&amp; g46 in
+let g50 = f5 &amp;&amp; g47 in
+let g51 = g50 || g49 in
+let g52 = g51 &amp;&amp; !g43 in
+let g53 = f17 &amp;&amp; g43 in
+let g54 = f17 || g43 in
+let g55 = g54 &amp;&amp; !g53 in
+let g56 = g55 &amp;&amp; g52 in
+let g57 = g56 &amp;&amp; !g44 in
+let g58 = g57 || !g44 in
+let g59 = g44 || !g57 in
+let g60 = g59 &amp;&amp; g58 in
+let g61 = f21 &amp;&amp; f22 in
+let g62 = g61 || !f21 in
+let g63 = f21 &amp;&amp; f24 in
+let g64 = f8 &amp;&amp; g63 in
+let g65 = f21 &amp;&amp; f23 in
+let g66 = f7 || g65 in
+let g67 = g66 &amp;&amp; g64 in
+let g68 = f7 &amp;&amp; g65 in
+let g69 = g68 || g67 in
+let g70 = g69 &amp;&amp; !g61 in
+let g71 = f21 &amp;&amp; g61 in
+let g72 = f21 || g61 in
+let g73 = g72 &amp;&amp; !g71 in
+let g74 = g73 &amp;&amp; g70 in
+let g75 = g74 &amp;&amp; !g62 in
+let g76 = g75 || !g62 in
+let g77 = g62 || !g75 in
+let g78 = g77 &amp;&amp; g76 in
+let g79 = g78 &amp;&amp; !g60 in
+let g80 = g60 &amp;&amp; !g78 in
+let g81 = f8 &amp;&amp; g63 in
+let g82 = f8 || g63 in
+let g83 = g82 &amp;&amp; !g81 in
+let g84 = f6 &amp;&amp; g45 in
+let g85 = f6 || g45 in
+let g86 = g85 &amp;&amp; !g84 in
+let g87 = g86 &amp;&amp; !g83 in
+let g88 = f5 &amp;&amp; g47 in
+let g89 = f5 || g47 in
+let g90 = g89 &amp;&amp; !g88 in
+let g91 = g90 &amp;&amp; g46 in
+let g92 = g90 || g46 in
+let g93 = g92 &amp;&amp; !g91 in
+let g94 = f7 &amp;&amp; g65 in
+let g95 = f7 || g65 in
+let g96 = g95 &amp;&amp; !g94 in
+let g97 = g96 &amp;&amp; g64 in
+let g98 = g96 || g64 in
+let g99 = g98 &amp;&amp; !g97 in
+let g100 = g99 || g93 in
+let g101 = g99 &amp;&amp; g93 in
+let g102 = g101 || !g100 in
+let g103 = g102 &amp;&amp; g87 in
+let g104 = g93 &amp;&amp; !g99 in
+let g105 = g104 || g103 in
+let g106 = g51 || !g43 in
+let g107 = g43 || !g51 in
+let g108 = g107 &amp;&amp; g106 in
+let g109 = g69 || !g61 in
+let g110 = g61 || !g69 in
+let g111 = g110 &amp;&amp; g109 in
+let g112 = g111 || g108 in
+let g113 = g111 &amp;&amp; g108 in
+let g114 = g113 || !g112 in
+let g115 = g114 &amp;&amp; g105 in
+let g116 = g108 &amp;&amp; !g111 in
+let g117 = g116 || g115 in
+let g118 = g55 &amp;&amp; g52 in
+let g119 = g55 || g52 in
+let g120 = g119 &amp;&amp; !g118 in
+let g121 = g73 &amp;&amp; g70 in
+let g122 = g73 || g70 in
+let g123 = g122 &amp;&amp; !g121 in
+let g124 = g123 || g120 in
+let g125 = g123 &amp;&amp; g120 in
+let g126 = g125 || !g124 in
+let g127 = g126 &amp;&amp; g117 in
+let g128 = g120 &amp;&amp; !g123 in
+let g129 = g128 || g127 in
+let g130 = g56 || !g44 in
+let g131 = g44 || !g56 in
+let g132 = g131 &amp;&amp; g130 in
+let g133 = g74 || !g62 in
+let g134 = g62 || !g74 in
+let g135 = g134 &amp;&amp; g133 in
+let g136 = g135 || g132 in
+let g137 = g135 &amp;&amp; g132 in
+let g138 = g137 || !g136 in
+let g139 = g138 &amp;&amp; g129 in
+let g140 = g132 &amp;&amp; !g135 in
+let g141 = g140 || g139 in
+let g142 = g141 &amp;&amp; !g80 in
+let g143 = g142 &amp;&amp; !g79 in
+let g144 = g79 || g143 in
+let g145 = f13 &amp;&amp; f14 in
+let g146 = g145 || !f13 in
+let g147 = f13 &amp;&amp; f16 in
+let g148 = f4 &amp;&amp; g147 in
+let g149 = f13 &amp;&amp; f15 in
+let g150 = f3 || g149 in
+let g151 = g150 &amp;&amp; g148 in
+let g152 = f3 &amp;&amp; g149 in
+let g153 = g152 || g151 in
+let g154 = g153 &amp;&amp; !g145 in
+let g155 = f13 &amp;&amp; g145 in
+let g156 = f13 || g145 in
+let g157 = g156 &amp;&amp; !g155 in
+let g158 = g157 &amp;&amp; g154 in
+let g159 = g158 &amp;&amp; !g146 in
+let g160 = g159 || !g146 in
+let g161 = g146 || !g159 in
+let g162 = g161 &amp;&amp; g160 in
+let g163 = g60 &amp;&amp; !g162 in
+let g164 = g162 &amp;&amp; !g60 in
+let g165 = f4 &amp;&amp; g147 in
+let g166 = f4 || g147 in
+let g167 = g166 &amp;&amp; !g165 in
+let g168 = g167 &amp;&amp; !g86 in
+let g169 = f3 &amp;&amp; g149 in
+let g170 = f3 || g149 in
+let g171 = g170 &amp;&amp; !g169 in
+let g172 = g171 &amp;&amp; g148 in
+let g173 = g171 || g148 in
+let g174 = g173 &amp;&amp; !g172 in
+let g175 = g93 || g174 in
+let g176 = g93 &amp;&amp; g174 in
+let g177 = g176 || !g175 in
+let g178 = g177 &amp;&amp; g168 in
+let g179 = g174 &amp;&amp; !g93 in
+let g180 = g179 || g178 in
+let g181 = g153 || !g145 in
+let g182 = g145 || !g153 in
+let g183 = g182 &amp;&amp; g181 in
+let g184 = g108 || g183 in
+let g185 = g108 &amp;&amp; g183 in
+let g186 = g185 || !g184 in
+let g187 = g186 &amp;&amp; g180 in
+let g188 = g183 &amp;&amp; !g108 in
+let g189 = g188 || g187 in
+let g190 = g157 &amp;&amp; g154 in
+let g191 = g157 || g154 in
+let g192 = g191 &amp;&amp; !g190 in
+let g193 = g120 || g192 in
+let g194 = g120 &amp;&amp; g192 in
+let g195 = g194 || !g193 in
+let g196 = g195 &amp;&amp; g189 in
+let g197 = g192 &amp;&amp; !g120 in
+let g198 = g197 || g196 in
+let g199 = g158 || !g146 in
+let g200 = g146 || !g158 in
+let g201 = g200 &amp;&amp; g199 in
+let g202 = g132 || g201 in
+let g203 = g132 &amp;&amp; g201 in
+let g204 = g203 || !g202 in
+let g205 = g204 &amp;&amp; g198 in
+let g206 = g201 &amp;&amp; !g132 in
+let g207 = g206 || g205 in
+let g208 = g207 &amp;&amp; !g164 in
+let g209 = g208 &amp;&amp; !g163 in
+let g210 = g163 || g209 in
+let g211 = f9 &amp;&amp; f10 in
+let g212 = g211 || !f9 in
+let g213 = f9 &amp;&amp; f12 in
+let g214 = f2 &amp;&amp; g213 in
+let g215 = f9 &amp;&amp; f11 in
+let g216 = f1 || g215 in
+let g217 = g216 &amp;&amp; g214 in
+let g218 = f1 &amp;&amp; g215 in
+let g219 = g218 || g217 in
+let g220 = g219 &amp;&amp; !g211 in
+let g221 = f9 &amp;&amp; g211 in
+let g222 = f9 || g211 in
+let g223 = g222 &amp;&amp; !g221 in
+let g224 = g223 &amp;&amp; g220 in
+let g225 = g224 &amp;&amp; !g212 in
+let g226 = g225 || !g212 in
+let g227 = g212 || !g225 in
+let g228 = g227 &amp;&amp; g226 in
+let g229 = g162 &amp;&amp; !g228 in
+let g230 = g228 &amp;&amp; !g162 in
+let g231 = f2 &amp;&amp; g213 in
+let g232 = f2 || g213 in
+let g233 = g232 &amp;&amp; !g231 in
+let g234 = g233 &amp;&amp; !g167 in
+let g235 = f1 &amp;&amp; g215 in
+let g236 = f1 || g215 in
+let g237 = g236 &amp;&amp; !g235 in
+let g238 = g237 &amp;&amp; g214 in
+let g239 = g237 || g214 in
+let g240 = g239 &amp;&amp; !g238 in
+let g241 = g174 || g240 in
+let g242 = g174 &amp;&amp; g240 in
+let g243 = g242 || !g241 in
+let g244 = g243 &amp;&amp; g234 in
+let g245 = g240 &amp;&amp; !g174 in
+let g246 = g245 || g244 in
+let g247 = g219 || !g211 in
+let g248 = g211 || !g219 in
+let g249 = g248 &amp;&amp; g247 in
+let g250 = g183 || g249 in
+let g251 = g183 &amp;&amp; g249 in
+let g252 = g251 || !g250 in
+let g253 = g252 &amp;&amp; g246 in
+let g254 = g249 &amp;&amp; !g183 in
+let g255 = g254 || g253 in
+let g256 = g223 &amp;&amp; g220 in
+let g257 = g223 || g220 in
+let g258 = g257 &amp;&amp; !g256 in
+let g259 = g192 || g258 in
+let g260 = g192 &amp;&amp; g258 in
+let g261 = g260 || !g259 in
+let g262 = g261 &amp;&amp; g255 in
+let g263 = g258 &amp;&amp; !g192 in
+let g264 = g263 || g262 in
+let g265 = g224 || !g212 in
+let g266 = g212 || !g224 in
+let g267 = g266 &amp;&amp; g265 in
+let g268 = g201 || g267 in
+let g269 = g201 &amp;&amp; g267 in
+let g270 = g269 || !g268 in
+let g271 = g270 &amp;&amp; g264 in
+let g272 = g267 &amp;&amp; !g201 in
+let g273 = g272 || g271 in
+let g274 = g273 &amp;&amp; !g230 in
+let g275 = g274 &amp;&amp; !g229 in
+let g276 = g229 || g275 in
+let _ = observe !g7 in
+let _ = observe !g14 in
+let _ = observe !g21 in
+let _ = observe !g28 in
+let _ = observe !g35 in
+let _ = observe !g42 in
+let _ = observe g144 in
+let _ = observe g210 in
+let _ = observe g276 in
+(f7, f8)
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.01</td><td>5.0e-09 at most</td><td>largest formula, pairs 1 337; final formula, pairs 466; variables 27; ground atoms 176; ground rules 238; vtree program (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.01</td><td>5.0e-09 at most</td><td>largest formula, pairs 1 337; final formula, pairs 466; variables 27; ground atoms 176; ground rules 238; vtree program (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.01</td><td>5.0e-09 at most</td><td>largest formula, pairs 1 337; final formula, pairs 466; variables 27; ground atoms 176; ground rules 238; vtree program (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>40.6</td><td>30.0</td><td>30.0</td><td>0.007</td><td>5.0e-09 at most</td><td>circuit flips 24; circuit gates 276; BDD peak, nodes 5 110; evidence BDD, nodes 682; largest query BDD, nodes 2</td></tr><tr><td>2</td><td>answered</td><td>41.3</td><td>30.5</td><td>30.4</td><td>0.007</td><td>5.0e-09 at most</td><td>circuit flips 24; circuit gates 276; BDD peak, nodes 5 110; evidence BDD, nodes 682; largest query BDD, nodes 2</td></tr><tr><td>3</td><td>answered</td><td>40.9</td><td>30.3</td><td>30.3</td><td>0.005</td><td>5.0e-09 at most</td><td>circuit flips 24; circuit gates 276; BDD peak, nodes 5 110; evidence BDD, nodes 682; largest query BDD, nodes 2</td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.68</td><td>5.0e-09 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.74</td><td>5.0e-09 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.73</td><td>5.0e-09 at most</td><td></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Dice</th></tr></thead><tbody><tr><th>q1(0)</th><td class="num">0.062674095</td><td class="num">0.06267409471</td><td class="num">0.06267409471</td><td class="num">0.06267409471</td></tr><tr><th>q1(1)</th><td class="num">0.14818942</td><td class="num">0.148189415</td><td class="num">0.148189415</td><td class="num">0.148189415</td></tr><tr><th>q1(2)</th><td class="num">0.29247911</td><td class="num">0.2924791086</td><td class="num">0.2924791086</td><td class="num">0.2924791086</td></tr><tr><th>q1(3)</th><td class="num">0.49665738</td><td class="num">0.4966573816</td><td class="num">0.4966573816</td><td class="num">0.4966573816</td></tr><tr><th>q2(0)</th><td class="num">0.19303621</td><td class="num">0.1930362117</td><td class="num">0.1930362117</td><td class="num">0.1930362117</td></tr><tr><th>q2(1)</th><td class="num">0.26350975</td><td class="num">0.2635097493</td><td class="num">0.2635097493</td><td class="num">0.2635097493</td></tr><tr><th>q2(2)</th><td class="num">0.29582173</td><td class="num">0.295821727</td><td class="num">0.295821727</td><td class="num">0.295821727</td></tr><tr><th>q2(3)</th><td class="num">0.24763231</td><td class="num">0.247632312</td><td class="num">0.247632312</td><td class="num">0.247632312</td></tr><tr><th>q3(0)</th><td class="num">0.24763231</td><td class="num">0.247632312</td><td class="num">0.247632312</td><td class="num">0.247632312</td></tr><tr><th>q3(1)</th><td class="num">0.29582173</td><td class="num">0.295821727</td><td class="num">0.295821727</td><td class="num">0.295821727</td></tr><tr><th>q3(2)</th><td class="num">0.26350975</td><td class="num">0.2635097493</td><td class="num">0.2635097493</td><td class="num">0.2635097493</td></tr><tr><th>q3(3)</th><td class="num">0.19303621</td><td class="num">0.1930362117</td><td class="num">0.1930362117</td><td class="num">0.1930362117</td></tr><tr><th>q4(0)</th><td class="num">0.49665738</td><td class="num">0.4966573816</td><td class="num">0.4966573816</td><td class="num">0.4966573816</td></tr><tr><th>q4(1)</th><td class="num">0.29247911</td><td class="num">0.2924791086</td><td class="num">0.2924791086</td><td class="num">0.2924791086</td></tr><tr><th>q4(2)</th><td class="num">0.14818942</td><td class="num">0.148189415</td><td class="num">0.148189415</td><td class="num">0.148189415</td></tr><tr><th>q4(3)</th><td class="num">0.062674095</td><td class="num">0.06267409471</td><td class="num">0.06267409471</td><td class="num">0.06267409471</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

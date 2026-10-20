@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nodice_coupon2-13-obs · tddlog results</title>
+<meta name="description" content="nodice_coupon2-13-obs, an instance of Alea.jl&#x27;s and noDice&#x27;s programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#ppl">Alea.jl&#x27;s and noDice&#x27;s programs</a></p>
+    <h1>nodice_coupon2-13-obs</h1>
+    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. noDice, Psi and Pluck ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. Made by <code>dice2problog.py data/nodice/coupon2-13-obs.dice</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Pluck</th></tr></thead><tbody><tr><td class="num">0.41</td><td class="num">4.6</td><td class="num">14.1</td><td class="num">8.5</td><td class="num">335</td><td class="num">335</td><td class="num">96.4</td><td class="num fail" title="the system stopped with an error">error</td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Dice (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">Alea.jl</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Roulette</label>
+<input type="radio" name="ptab" id="t4"><label for="t4">Psi</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Dice, noDice as it is.</b></p>
+<p class="readers">Read by Dice, noDice.</p>
+<p class="readers">noDice reads Dice&#x27;s programs as they are; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>Dice</dt><dd><code>dice data/nodice/coupon2-13-obs.dice</code></dd>
+<dt>noDice</dt><dd><code>nDice.exe data/nodice/coupon2-13-obs.dice</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/nodice/coupon2-13-obs.dice</code><span>2 776 bytes, 48 lines</span><span class="sha" title="SHA-256">sha256 1163fe3d7d6c1597fe660cbfeb52f94df80d42d6e32cc460b676c0eeff7ea95d</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/nodice/coupon2-13-obs.dice</code>.</p><pre>fun draw (have: (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, bool)))))))))))) ) {
+    let draw1 = uniform(4, 0, 13) in
+    let draw2 = uniform(4, 0, 13) in
+
+    let t = observe(draw1 != draw2) in
+
+    let r0 = (fst have) || (draw1 == int(4, 0)) || (draw2 == int(4, 0)) in
+    let r1 = (fst (snd have)) || (draw1 == int(4, 1)) || (draw2 == int(4, 1)) in
+    let r2 = (fst (snd (snd have))) || (draw1 == int(4, 2)) || (draw2 == int(4, 2)) in
+    let r3 = (fst (snd (snd (snd have)))) || (draw1 == int(4, 3)) || (draw2 == int(4, 3)) in
+    let r4 = (fst (snd (snd (snd (snd have))))) || (draw1 == int(4, 4)) || (draw2 == int(4, 4)) in
+    let r5 = (fst (snd (snd (snd (snd (snd have)))))) || (draw1 == int(4, 5)) || (draw2 == int(4, 5)) in
+    let r6 = (fst (snd (snd (snd (snd (snd (snd have))))))) || (draw1 == int(4, 6)) || (draw2 == int(4, 6)) in
+    let r7 = (fst (snd (snd (snd (snd (snd (snd (snd have)))))))) || (draw1 == int(4, 7)) || (draw2 == int(4, 7)) in
+    let r8 = (fst (snd (snd (snd (snd (snd (snd (snd (snd have))))))))) || (draw1 == int(4, 8)) || (draw2 == int(4, 8)) in
+    let r9 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd have)))))))))) || (draw1 == int(4, 9)) || (draw2 == int(4, 9)) in
+    let r10 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have))))))))))) || (draw1 == int(4, 10)) || (draw2 == int(4, 10)) in
+    let r11 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have)))))))))))) || (draw1 == int(4, 11)) || (draw2 == int(4, 11)) in
+    let r12 = (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have)))))))))))) || (draw1 == int(4, 12)) || (draw2 == int(4, 12)) in
+    (r0, (r1, (r2, (r3, (r4, (r5, (r6, (r7, (r8, (r9, (r10, (r11, r12))))))))))))
+}
+
+let h0 = (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, false)))))))))))) in
+let h1 = draw(h0) in
+let h2 = draw(h1) in
+let h3 = draw(h2) in
+let h4 = draw(h3) in
+let h5 = draw(h4) in
+let h6 = draw(h5) in
+let h7 = draw(h6) in
+let h8 = draw(h7) in
+let h9 = draw(h8) in
+let h10 = draw(h9) in
+let h11 = draw(h10) in
+let h12 = draw(h11) in
+let h = draw(h12) in
+(fst h) &amp;&amp; 
+(fst (snd h)) &amp;&amp; 
+(fst (snd (snd h))) &amp;&amp; 
+(fst (snd (snd (snd h)))) &amp;&amp; 
+(fst (snd (snd (snd (snd h))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd h)))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd (snd h))))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd (snd (snd h)))))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd (snd (snd (snd h))))))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd h)))))))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h))))))))))) &amp;&amp;
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h)))))))))))) &amp;&amp;
+(snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h))))))))))))</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto nodice_coupon2-13-obs.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">nodice_coupon2-13-obs.pl</code><span>46 147 bytes, 1 430 lines</span><span class="sha" title="SHA-256">sha256 807da1c4eda7eb35bee5859f1fd179fe8160c543031180db9fbd47ac20715c98</span></div><p class="made">Written by <code>dice2problog.py data/nodice/coupon2-13-obs.dice</code> (bench.py gen).</p><p class="note"><a href="../files/807da1c4eda7eb35bee5.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/807da1c4eda7eb35bee5.txt"></pre></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into Alea.jl; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia nodice_coupon2-13-obs.alea.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">nodice_coupon2-13-obs.alea.jl</code><span>4 834 bytes, 103 lines</span><span class="sha" title="SHA-256">sha256 19a1a5ae3819bef631a1f717a941d28b22cc2be15353c834bcfaa5275c67a980</span></div><p class="made">Written by <code>dice2alea.py</code> from the Dice program when Alea.jl runs.</p><pre># coupon2-13-obs.dice, translated by tddlog&#x27;s scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea&#x27;s own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] &amp; (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x &lt; z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function d_draw(x1_path, x2_have)
+    x3_draw1 = uniform(DistUInt{4}, 0, 13)
+    x4_draw2 = uniform(DistUInt{4}, 0, 13)
+    observe!(x1_path, !prob_equals(x3_draw1, x4_draw2))
+    x5_r0 = ((x2_have[1] | prob_equals(x3_draw1, DistUInt{4}(0))) | prob_equals(x4_draw2, DistUInt{4}(0)))
+    x6_r1 = ((x2_have[2][1] | prob_equals(x3_draw1, DistUInt{4}(1))) | prob_equals(x4_draw2, DistUInt{4}(1)))
+    x7_r2 = ((x2_have[2][2][1] | prob_equals(x3_draw1, DistUInt{4}(2))) | prob_equals(x4_draw2, DistUInt{4}(2)))
+    x8_r3 = ((x2_have[2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(3))) | prob_equals(x4_draw2, DistUInt{4}(3)))
+    x9_r4 = ((x2_have[2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(4))) | prob_equals(x4_draw2, DistUInt{4}(4)))
+    x10_r5 = ((x2_have[2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(5))) | prob_equals(x4_draw2, DistUInt{4}(5)))
+    x11_r6 = ((x2_have[2][2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(6))) | prob_equals(x4_draw2, DistUInt{4}(6)))
+    x12_r7 = ((x2_have[2][2][2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(7))) | prob_equals(x4_draw2, DistUInt{4}(7)))
+    x13_r8 = ((x2_have[2][2][2][2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(8))) | prob_equals(x4_draw2, DistUInt{4}(8)))
+    x14_r9 = ((x2_have[2][2][2][2][2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(9))) | prob_equals(x4_draw2, DistUInt{4}(9)))
+    x15_r10 = ((x2_have[2][2][2][2][2][2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(10))) | prob_equals(x4_draw2, DistUInt{4}(10)))
+    x16_r11 = ((x2_have[2][2][2][2][2][2][2][2][2][2][2][1] | prob_equals(x3_draw1, DistUInt{4}(11))) | prob_equals(x4_draw2, DistUInt{4}(11)))
+    x17_r12 = ((x2_have[2][2][2][2][2][2][2][2][2][2][2][2] | prob_equals(x3_draw1, DistUInt{4}(12))) | prob_equals(x4_draw2, DistUInt{4}(12)))
+    x18_draw = (x5_r0, (x6_r1, (x7_r2, (x8_r3, (x9_r4, (x10_r5, (x11_r6, (x12_r7, (x13_r8, (x14_r9, (x15_r10, (x16_r11, x17_r12))))))))))))
+    return x18_draw
+end
+
+function dice_main()
+    x19_h0 = (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, false))))))))))))
+    x20_h1 = d_draw(true, x19_h0)
+    x21_h2 = d_draw(true, x20_h1)
+    x22_h3 = d_draw(true, x21_h2)
+    x23_h4 = d_draw(true, x22_h3)
+    x24_h5 = d_draw(true, x23_h4)
+    x25_h6 = d_draw(true, x24_h5)
+    x26_h7 = d_draw(true, x25_h6)
+    x27_h8 = d_draw(true, x26_h7)
+    x28_h9 = d_draw(true, x27_h8)
+    x29_h10 = d_draw(true, x28_h9)
+    x30_h11 = d_draw(true, x29_h10)
+    x31_h12 = d_draw(true, x30_h11)
+    x32_h = d_draw(true, x31_h12)
+    x33_result = ((((((((((((x32_h[1] &amp; x32_h[2][1]) &amp; x32_h[2][2][1]) &amp; x32_h[2][2][2][1]) &amp; x32_h[2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][2][2][2][2][2][1]) &amp; x32_h[2][2][2][2][2][2][2][2][2][2][2][2])
+    return x33_result
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println(&quot;alea &quot;, k, &quot; true &quot;, d[true])
+        println(&quot;alea &quot;, k, &quot; false &quot;, d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println(&quot;alea &quot;, k, &quot; &quot;, v, &quot; &quot;, d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println(&quot;alea_seconds &quot;, stats.time)
+    println(&quot;alea_compile_seconds &quot;, get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 &lt;&lt; 30)
+schedule(task)
+wait(task)
+end
+</pre></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Roulette; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Roulette.</p>
+<dl class="cmds">
+<dt>Roulette</dt><dd><code>racket -l- raco make nodice_coupon2-13-obs.roulette.rkt</code></dd>
+<dt>Roulette</dt><dd><code>racket nodice_coupon2-13-obs.roulette.rkt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">nodice_coupon2-13-obs.roulette.rkt</code><span>7 828 bytes, 134 lines</span><span class="sha" title="SHA-256">sha256 c3f7d735ee7064dd1fa788ca11344391f9212e6a39ea75b49bc5972462c60460</span></div><p class="made">Written by <code>dice2roulette.py</code> from the Dice program when Roulette runs, and compiled by <code>raco make</code> before it runs, untimed, as the artifact's programs are.</p><pre>#lang roulette/example/disrupt
+;; coupon2-13-obs.dice, translated by tddlog&#x27;s scripts/dice2roulette.py.
+
+(define complement?
+  (not (member &quot;--no-complement&quot; (vector-&gt;list (current-command-line-arguments)))))
+
+;; Integers: lists of Booleans, least significant bit first.
+(define (bxor a b) (! (&lt;=&gt; a b)))
+(define (bv-add xs ys [c #f])
+  (if (null? xs)
+      &#x27;()
+      (let* ([x (car xs)] [y (car ys)] [s (bxor x y)])
+        (cons (bxor s c) (bv-add (cdr xs) (cdr ys) (|| (&amp;&amp; x y) (&amp;&amp; c s)))))))
+(define (bv-sub xs ys) (bv-add xs (map ! ys) #t))
+(define (bv-mul xs ys)
+  (define w (length xs))
+  (for/fold ([acc (make-list w #f)]) ([y (in-list ys)] [i (in-naturals)])
+    (if (eq? y #f)
+        acc
+        (bv-add acc (append (make-list i #f) (for/list ([x (in-list (take xs (- w i)))]) (&amp;&amp; y x)))))))
+(define (bv-eq xs ys) (apply &amp;&amp; (map &lt;=&gt; xs ys)))
+(define (bv-ult xs ys)
+  (for/fold ([lt #f]) ([x (in-list xs)] [y (in-list ys)])
+    (|| (&amp;&amp; (! x) y) (&amp;&amp; (&lt;=&gt; x y) lt))))
+(define (bv-shl xs k)
+  (define w (length xs))
+  (take (append (make-list (min k w) #f) xs) w))
+(define (bv-shr xs k)
+  (define j (min k (length xs)))
+  (append (drop xs j) (make-list j #f)))
+
+;; Dice&#x27;s categorical (gen_discrete): from the most significant bit down,
+;; bit k is a flip whose probability is the mass of the values with bit k
+;; set among those that agree on the bits above, over their mass; one flip
+;; for each distinct ratio, chosen by the bits above, settings of no mass
+;; left out.
+(define (discrete w ps)
+  (define size (expt 2 w))
+  (define given (list-&gt;vector ps))
+  (define masses
+    (for/vector ([i (in-range size)])
+      (if (&lt; i (vector-length given)) (inexact-&gt;exact (vector-ref given i)) 0)))
+  (define (mass lo hi) (for/sum ([i (in-range lo hi)]) (vector-ref masses i)))
+  (let level ([k (sub1 w)] [above &#x27;()])
+    (cond
+      [(&lt; k 0) (reverse above)]
+      [else
+       (define span (expt 2 (add1 k)))
+       (define flips (make-hash))
+       (define table
+         (for/vector ([u (in-range (quotient size span))])
+           (define lo (* u span))
+           (define total (mass lo (+ lo span)))
+           (cond
+             [(zero? total) &#x27;none]
+             [else
+              (define r (exact-&gt;inexact (/ (mass (+ lo (quotient span 2)) (+ lo span)) total)))
+              (hash-ref! flips r (λ () (cond [(= r 0) #f] [(= r 1) #t] [else (flip r)])))])))
+       (level (sub1 k) (append above (list (choose above table))))])))
+;; The entry of table for the setting of the bits `above` (most significant
+;; first), constant where every setting of mass agrees.
+(define (choose above table)
+  (define vals (for/list ([x (in-vector table)] #:unless (eq? x &#x27;none)) x))
+  (cond
+    [(null? vals) #f]
+    [(andmap (λ (x) (eq? x (car vals))) vals) (car vals)]
+    [else
+     (define half (quotient (vector-length table) 2))
+     (if (car above)
+         (choose (cdr above) (vector-copy table half))
+         (choose (cdr above) (vector-copy table 0 half)))]))
+(define (uniform w lo hi)
+  (discrete w (for/list ([i (in-range hi)]) (if (&lt; i lo) 0.0 (exact-&gt;inexact (/ 1 (- hi lo)))))))
+
+(define (bits-&gt;natural bs)
+  (for/sum ([b (in-list bs)] [i (in-naturals)]) (if b (expt 2 i) 0)))
+(define (real p) (if (exact? p) (exact-&gt;inexact p) p))
+;; Racket&#x27;s `time` around the program&#x27;s statements and its queries.
+(define (start-clock)
+  (vector (current-process-milliseconds) (current-inexact-milliseconds) (current-gc-milliseconds)))
+(define (print-time c)
+  (printf &quot;cpu time: ~a real time: ~a gc time: ~a\n&quot;
+          (- (current-process-milliseconds) (vector-ref c 0))
+          (inexact-&gt;exact (round (- (current-inexact-milliseconds) (vector-ref c 1))))
+          (- (current-gc-milliseconds) (vector-ref c 2))))
+(define (report-bool k pm)
+  (printf &quot;roulette ~a true ~a\n&quot; k (real (pm #t)))
+  (printf &quot;roulette ~a false ~a\n&quot; k (real (pm #f))))
+(define (report-int k pm w)
+  (define by-value (make-hash))
+  (for ([(v p) (in-pmf pm)])
+    (hash-set! by-value (bits-&gt;natural v) p))
+  (for ([i (in-range (expt 2 w))])
+    (printf &quot;roulette ~a ~a ~a\n&quot; k i (real (hash-ref by-value i 0)))))
+
+(define (f-draw x1-have)
+  (define x2-draw1 (uniform 4 0 13))
+  (define x3-draw2 (uniform 4 0 13))
+  (observe! (! (bv-eq x2-draw1 x3-draw2)))
+  (define x4-r0 (|| (|| (car x1-have) (bv-eq x2-draw1 &#x27;(#f #f #f #f))) (bv-eq x3-draw2 &#x27;(#f #f #f #f))))
+  (define x5-r1 (|| (|| (car (cadr x1-have)) (bv-eq x2-draw1 &#x27;(#t #f #f #f))) (bv-eq x3-draw2 &#x27;(#t #f #f #f))))
+  (define x6-r2 (|| (|| (car (cadr (cadr x1-have))) (bv-eq x2-draw1 &#x27;(#f #t #f #f))) (bv-eq x3-draw2 &#x27;(#f #t #f #f))))
+  (define x7-r3 (|| (|| (car (cadr (cadr (cadr x1-have)))) (bv-eq x2-draw1 &#x27;(#t #t #f #f))) (bv-eq x3-draw2 &#x27;(#t #t #f #f))))
+  (define x8-r4 (|| (|| (car (cadr (cadr (cadr (cadr x1-have))))) (bv-eq x2-draw1 &#x27;(#f #f #t #f))) (bv-eq x3-draw2 &#x27;(#f #f #t #f))))
+  (define x9-r5 (|| (|| (car (cadr (cadr (cadr (cadr (cadr x1-have)))))) (bv-eq x2-draw1 &#x27;(#t #f #t #f))) (bv-eq x3-draw2 &#x27;(#t #f #t #f))))
+  (define x10-r6 (|| (|| (car (cadr (cadr (cadr (cadr (cadr (cadr x1-have))))))) (bv-eq x2-draw1 &#x27;(#f #t #t #f))) (bv-eq x3-draw2 &#x27;(#f #t #t #f))))
+  (define x11-r7 (|| (|| (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr x1-have)))))))) (bv-eq x2-draw1 &#x27;(#t #t #t #f))) (bv-eq x3-draw2 &#x27;(#t #t #t #f))))
+  (define x12-r8 (|| (|| (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x1-have))))))))) (bv-eq x2-draw1 &#x27;(#f #f #f #t))) (bv-eq x3-draw2 &#x27;(#f #f #f #t))))
+  (define x13-r9 (|| (|| (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x1-have)))))))))) (bv-eq x2-draw1 &#x27;(#t #f #f #t))) (bv-eq x3-draw2 &#x27;(#t #f #f #t))))
+  (define x14-r10 (|| (|| (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x1-have))))))))))) (bv-eq x2-draw1 &#x27;(#f #t #f #t))) (bv-eq x3-draw2 &#x27;(#f #t #f #t))))
+  (define x15-r11 (|| (|| (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x1-have)))))))))))) (bv-eq x2-draw1 &#x27;(#t #t #f #t))) (bv-eq x3-draw2 &#x27;(#t #t #f #t))))
+  (define x16-r12 (|| (|| (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x1-have)))))))))))) (bv-eq x2-draw1 &#x27;(#f #f #t #t))) (bv-eq x3-draw2 &#x27;(#f #f #t #t))))
+  (define x17-draw (list x4-r0 (list x5-r1 (list x6-r2 (list x7-r3 (list x8-r4 (list x9-r5 (list x10-r6 (list x11-r7 (list x12-r8 (list x13-r9 (list x14-r10 (list x15-r11 x16-r12)))))))))))))
+  x17-draw)
+
+(define clock (start-clock))
+(define x18-h0 (list #f (list #f (list #f (list #f (list #f (list #f (list #f (list #f (list #f (list #f (list #f (list #f #f)))))))))))))
+(define x19-h1 (f-draw x18-h0))
+(define x20-h2 (f-draw x19-h1))
+(define x21-h3 (f-draw x20-h2))
+(define x22-h4 (f-draw x21-h3))
+(define x23-h5 (f-draw x22-h4))
+(define x24-h6 (f-draw x23-h5))
+(define x25-h7 (f-draw x24-h6))
+(define x26-h8 (f-draw x25-h7))
+(define x27-h9 (f-draw x26-h8))
+(define x28-h10 (f-draw x27-h9))
+(define x29-h11 (f-draw x28-h10))
+(define x30-h12 (f-draw x29-h11))
+(define x31-h (f-draw x30-h12))
+(define x32-result (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (&amp;&amp; (car x31-h) (car (cadr x31-h))) (car (cadr (cadr x31-h)))) (car (cadr (cadr (cadr x31-h))))) (car (cadr (cadr (cadr (cadr x31-h)))))) (car (cadr (cadr (cadr (cadr (cadr x31-h))))))) (car (cadr (cadr (cadr (cadr (cadr (cadr x31-h)))))))) (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr x31-h))))))))) (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x31-h)))))))))) (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x31-h))))))))))) (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x31-h)))))))))))) (car (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x31-h))))))))))))) (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr (cadr x31-h))))))))))))))
+(define pmfs (list (query x32-result complement?)))
+(print-time clock)
+(report-bool 1 (list-ref pmfs 0))
+</pre></div>
+</div>
+<div class="panel" id="p4">
+<p class="readers"><b>A translation of the original into Psi; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Psi.</p>
+<dl class="cmds">
+<dt>Psi</dt><dd><code>prlimit --stack=unlimited psi nodice_coupon2-13-obs.psi0.psi</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">nodice_coupon2-13-obs.psi0.psi</code><span>8 744 bytes, 293 lines</span><span class="sha" title="SHA-256">sha256 9e26a7bc193834fd9846975d8eeb6ea916d7f61942c0b2ea94757f4b4b21cbf5</span></div><p class="made">Written by <code>dice2psi.py</code> from the Dice program when Psi runs: component 0 of the program's value, one Psi run each.</p><pre>// coupon2-13-obs.dice, translated by tddlog&#x27;s scripts/dice2psi.py, component 0.
+def f_draw(v1_have) {
+  v2_draw1 := uniformInt(0, 12);
+  v3_draw2 := uniformInt(0, 12);
+  v4_t := (v2_draw1 != v3_draw2);
+  observe(v4_t);
+  v5_r0 := v1_have[0];
+  v6_r0 := (v2_draw1 == 0);
+  v7_r0 := (v5_r0 || v6_r0);
+  v8_r0 := (v3_draw2 == 0);
+  v9_r0 := (v7_r0 || v8_r0);
+  v10_r1 := v1_have[1];
+  v11_r1 := v10_r1[0];
+  v12_r1 := (v2_draw1 == 1);
+  v13_r1 := (v11_r1 || v12_r1);
+  v14_r1 := (v3_draw2 == 1);
+  v15_r1 := (v13_r1 || v14_r1);
+  v16_r2 := v1_have[1];
+  v17_r2 := v16_r2[1];
+  v18_r2 := v17_r2[0];
+  v19_r2 := (v2_draw1 == 2);
+  v20_r2 := (v18_r2 || v19_r2);
+  v21_r2 := (v3_draw2 == 2);
+  v22_r2 := (v20_r2 || v21_r2);
+  v23_r3 := v1_have[1];
+  v24_r3 := v23_r3[1];
+  v25_r3 := v24_r3[1];
+  v26_r3 := v25_r3[0];
+  v27_r3 := (v2_draw1 == 3);
+  v28_r3 := (v26_r3 || v27_r3);
+  v29_r3 := (v3_draw2 == 3);
+  v30_r3 := (v28_r3 || v29_r3);
+  v31_r4 := v1_have[1];
+  v32_r4 := v31_r4[1];
+  v33_r4 := v32_r4[1];
+  v34_r4 := v33_r4[1];
+  v35_r4 := v34_r4[0];
+  v36_r4 := (v2_draw1 == 4);
+  v37_r4 := (v35_r4 || v36_r4);
+  v38_r4 := (v3_draw2 == 4);
+  v39_r4 := (v37_r4 || v38_r4);
+  v40_r5 := v1_have[1];
+  v41_r5 := v40_r5[1];
+  v42_r5 := v41_r5[1];
+  v43_r5 := v42_r5[1];
+  v44_r5 := v43_r5[1];
+  v45_r5 := v44_r5[0];
+  v46_r5 := (v2_draw1 == 5);
+  v47_r5 := (v45_r5 || v46_r5);
+  v48_r5 := (v3_draw2 == 5);
+  v49_r5 := (v47_r5 || v48_r5);
+  v50_r6 := v1_have[1];
+  v51_r6 := v50_r6[1];
+  v52_r6 := v51_r6[1];
+  v53_r6 := v52_r6[1];
+  v54_r6 := v53_r6[1];
+  v55_r6 := v54_r6[1];
+  v56_r6 := v55_r6[0];
+  v57_r6 := (v2_draw1 == 6);
+  v58_r6 := (v56_r6 || v57_r6);
+  v59_r6 := (v3_draw2 == 6);
+  v60_r6 := (v58_r6 || v59_r6);
+  v61_r7 := v1_have[1];
+  v62_r7 := v61_r7[1];
+  v63_r7 := v62_r7[1];
+  v64_r7 := v63_r7[1];
+  v65_r7 := v64_r7[1];
+  v66_r7 := v65_r7[1];
+  v67_r7 := v66_r7[1];
+  v68_r7 := v67_r7[0];
+  v69_r7 := (v2_draw1 == 7);
+  v70_r7 := (v68_r7 || v69_r7);
+  v71_r7 := (v3_draw2 == 7);
+  v72_r7 := (v70_r7 || v71_r7);
+  v73_r8 := v1_have[1];
+  v74_r8 := v73_r8[1];
+  v75_r8 := v74_r8[1];
+  v76_r8 := v75_r8[1];
+  v77_r8 := v76_r8[1];
+  v78_r8 := v77_r8[1];
+  v79_r8 := v78_r8[1];
+  v80_r8 := v79_r8[1];
+  v81_r8 := v80_r8[0];
+  v82_r8 := (v2_draw1 == 8);
+  v83_r8 := (v81_r8 || v82_r8);
+  v84_r8 := (v3_draw2 == 8);
+  v85_r8 := (v83_r8 || v84_r8);
+  v86_r9 := v1_have[1];
+  v87_r9 := v86_r9[1];
+  v88_r9 := v87_r9[1];
+  v89_r9 := v88_r9[1];
+  v90_r9 := v89_r9[1];
+  v91_r9 := v90_r9[1];
+  v92_r9 := v91_r9[1];
+  v93_r9 := v92_r9[1];
+  v94_r9 := v93_r9[1];
+  v95_r9 := v94_r9[0];
+  v96_r9 := (v2_draw1 == 9);
+  v97_r9 := (v95_r9 || v96_r9);
+  v98_r9 := (v3_draw2 == 9);
+  v99_r9 := (v97_r9 || v98_r9);
+  v100_r10 := v1_have[1];
+  v101_r10 := v100_r10[1];
+  v102_r10 := v101_r10[1];
+  v103_r10 := v102_r10[1];
+  v104_r10 := v103_r10[1];
+  v105_r10 := v104_r10[1];
+  v106_r10 := v105_r10[1];
+  v107_r10 := v106_r10[1];
+  v108_r10 := v107_r10[1];
+  v109_r10 := v108_r10[1];
+  v110_r10 := v109_r10[0];
+  v111_r10 := (v2_draw1 == 10);
+  v112_r10 := (v110_r10 || v111_r10);
+  v113_r10 := (v3_draw2 == 10);
+  v114_r10 := (v112_r10 || v113_r10);
+  v115_r11 := v1_have[1];
+  v116_r11 := v115_r11[1];
+  v117_r11 := v116_r11[1];
+  v118_r11 := v117_r11[1];
+  v119_r11 := v118_r11[1];
+  v120_r11 := v119_r11[1];
+  v121_r11 := v120_r11[1];
+  v122_r11 := v121_r11[1];
+  v123_r11 := v122_r11[1];
+  v124_r11 := v123_r11[1];
+  v125_r11 := v124_r11[1];
+  v126_r11 := v125_r11[0];
+  v127_r11 := (v2_draw1 == 11);
+  v128_r11 := (v126_r11 || v127_r11);
+  v129_r11 := (v3_draw2 == 11);
+  v130_r11 := (v128_r11 || v129_r11);
+  v131_r12 := v1_have[1];
+  v132_r12 := v131_r12[1];
+  v133_r12 := v132_r12[1];
+  v134_r12 := v133_r12[1];
+  v135_r12 := v134_r12[1];
+  v136_r12 := v135_r12[1];
+  v137_r12 := v136_r12[1];
+  v138_r12 := v137_r12[1];
+  v139_r12 := v138_r12[1];
+  v140_r12 := v139_r12[1];
+  v141_r12 := v140_r12[1];
+  v142_r12 := v141_r12[1];
+  v143_r12 := (v2_draw1 == 12);
+  v144_r12 := (v142_r12 || v143_r12);
+  v145_r12 := (v3_draw2 == 12);
+  v146_r12 := (v144_r12 || v145_r12);
+  v147_draw := (v130_r11, v146_r12);
+  v148_draw := (v114_r10, v147_draw);
+  v149_draw := (v99_r9, v148_draw);
+  v150_draw := (v85_r8, v149_draw);
+  v151_draw := (v72_r7, v150_draw);
+  v152_draw := (v60_r6, v151_draw);
+  v153_draw := (v49_r5, v152_draw);
+  v154_draw := (v39_r4, v153_draw);
+  v155_draw := (v30_r3, v154_draw);
+  v156_draw := (v22_r2, v155_draw);
+  v157_draw := (v15_r1, v156_draw);
+  v158_draw := (v9_r0, v157_draw);
+  return v158_draw;
+}
+
+def main() {
+  v159_h0 := (0, 0);
+  v160_h0 := (0, v159_h0);
+  v161_h0 := (0, v160_h0);
+  v162_h0 := (0, v161_h0);
+  v163_h0 := (0, v162_h0);
+  v164_h0 := (0, v163_h0);
+  v165_h0 := (0, v164_h0);
+  v166_h0 := (0, v165_h0);
+  v167_h0 := (0, v166_h0);
+  v168_h0 := (0, v167_h0);
+  v169_h0 := (0, v168_h0);
+  v170_h0 := (0, v169_h0);
+  v171_h1 := f_draw(v170_h0);
+  v172_h2 := f_draw(v171_h1);
+  v173_h3 := f_draw(v172_h2);
+  v174_h4 := f_draw(v173_h3);
+  v175_h5 := f_draw(v174_h4);
+  v176_h6 := f_draw(v175_h5);
+  v177_h7 := f_draw(v176_h6);
+  v178_h8 := f_draw(v177_h7);
+  v179_h9 := f_draw(v178_h8);
+  v180_h10 := f_draw(v179_h9);
+  v181_h11 := f_draw(v180_h10);
+  v182_h12 := f_draw(v181_h11);
+  v183_h := f_draw(v182_h12);
+  v184_result := v183_h[0];
+  v185_result := v183_h[1];
+  v186_result := v185_result[0];
+  v187_result := (v184_result &amp;&amp; v186_result);
+  v188_result := v183_h[1];
+  v189_result := v188_result[1];
+  v190_result := v189_result[0];
+  v191_result := (v187_result &amp;&amp; v190_result);
+  v192_result := v183_h[1];
+  v193_result := v192_result[1];
+  v194_result := v193_result[1];
+  v195_result := v194_result[0];
+  v196_result := (v191_result &amp;&amp; v195_result);
+  v197_result := v183_h[1];
+  v198_result := v197_result[1];
+  v199_result := v198_result[1];
+  v200_result := v199_result[1];
+  v201_result := v200_result[0];
+  v202_result := (v196_result &amp;&amp; v201_result);
+  v203_result := v183_h[1];
+  v204_result := v203_result[1];
+  v205_result := v204_result[1];
+  v206_result := v205_result[1];
+  v207_result := v206_result[1];
+  v208_result := v207_result[0];
+  v209_result := (v202_result &amp;&amp; v208_result);
+  v210_result := v183_h[1];
+  v211_result := v210_result[1];
+  v212_result := v211_result[1];
+  v213_result := v212_result[1];
+  v214_result := v213_result[1];
+  v215_result := v214_result[1];
+  v216_result := v215_result[0];
+  v217_result := (v209_result &amp;&amp; v216_result);
+  v218_result := v183_h[1];
+  v219_result := v218_result[1];
+  v220_result := v219_result[1];
+  v221_result := v220_result[1];
+  v222_result := v221_result[1];
+  v223_result := v222_result[1];
+  v224_result := v223_result[1];
+  v225_result := v224_result[0];
+  v226_result := (v217_result &amp;&amp; v225_result);
+  v227_result := v183_h[1];
+  v228_result := v227_result[1];
+  v229_result := v228_result[1];
+  v230_result := v229_result[1];
+  v231_result := v230_result[1];
+  v232_result := v231_result[1];
+  v233_result := v232_result[1];
+  v234_result := v233_result[1];
+  v235_result := v234_result[0];
+  v236_result := (v226_result &amp;&amp; v235_result);
+  v237_result := v183_h[1];
+  v238_result := v237_result[1];
+  v239_result := v238_result[1];
+  v240_result := v239_result[1];
+  v241_result := v240_result[1];
+  v242_result := v241_result[1];
+  v243_result := v242_result[1];
+  v244_result := v243_result[1];
+  v245_result := v244_result[1];
+  v246_result := v245_result[0];
+  v247_result := (v236_result &amp;&amp; v246_result);
+  v248_result := v183_h[1];
+  v249_result := v248_result[1];
+  v250_result := v249_result[1];
+  v251_result := v250_result[1];
+  v252_result := v251_result[1];
+  v253_result := v252_result[1];
+  v254_result := v253_result[1];
+  v255_result := v254_result[1];
+  v256_result := v255_result[1];
+  v257_result := v256_result[1];
+  v258_result := v257_result[0];
+  v259_result := (v247_result &amp;&amp; v258_result);
+  v260_result := v183_h[1];
+  v261_result := v260_result[1];
+  v262_result := v261_result[1];
+  v263_result := v262_result[1];
+  v264_result := v263_result[1];
+  v265_result := v264_result[1];
+  v266_result := v265_result[1];
+  v267_result := v266_result[1];
+  v268_result := v267_result[1];
+  v269_result := v268_result[1];
+  v270_result := v269_result[1];
+  v271_result := v270_result[0];
+  v272_result := (v259_result &amp;&amp; v271_result);
+  v273_result := v183_h[1];
+  v274_result := v273_result[1];
+  v275_result := v274_result[1];
+  v276_result := v275_result[1];
+  v277_result := v276_result[1];
+  v278_result := v277_result[1];
+  v279_result := v278_result[1];
+  v280_result := v279_result[1];
+  v281_result := v280_result[1];
+  v282_result := v281_result[1];
+  v283_result := v282_result[1];
+  v284_result := v283_result[1];
+  v285_result := (v272_result &amp;&amp; v284_result);
+  return v285_result;
+}
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.42</td><td></td><td>largest formula, pairs 10 183 550; final formula, pairs 98; variables 291; ground atoms 921; ground rules 1 246; vtree program (from auto: 19 attempts, 0.142s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.41</td><td></td><td>largest formula, pairs 10 183 550; final formula, pairs 98; variables 291; ground atoms 921; ground rules 1 246; vtree program (from auto: 19 attempts, 0.142s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.41</td><td></td><td>largest formula, pairs 10 183 550; final formula, pairs 98; variables 291; ground atoms 921; ground rules 1 246; vtree program (from auto: 19 attempts, 0.142s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (auto+onehot)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.2</td><td></td><td>largest formula, pairs 18 090 785; final formula, pairs 393; variables 494; ground atoms 1 341; ground rules 1 511; vtree program (from auto: 27 attempts, 1.588s discarded)</td></tr><tr><td>2</td><td>answered</td><td>2.2</td><td></td><td>largest formula, pairs 18 090 785; final formula, pairs 393; variables 494; ground atoms 1 341; ground rules 1 511; vtree program (from auto: 27 attempts, 1.587s discarded)</td></tr><tr><td>3</td><td>answered</td><td>2.2</td><td></td><td>largest formula, pairs 18 090 785; final formula, pairs 393; variables 494; ground atoms 1 341; ground rules 1 511; vtree program (from auto: 27 attempts, 1.588s discarded)</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.1</td><td>5.7</td><td>1.1</td><td></td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>14.3</td><td>6.0</td><td>1.2</td><td></td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>13.3</td><td>5.2</td><td>1.1</td><td></td><td></td><td></td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>9.7</td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>8.5</td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>8.5</td><td></td><td></td></tr></tbody></table></div>
+<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>335</td><td>335</td><td></td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>336</td><td>336</td><td></td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>335</td><td>335</td><td></td><td></td><td></td></tr></tbody></table></div>
+<h3>noDice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>97.6</td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>96.4</td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>95.0</td><td></td><td></td></tr></tbody></table></div>
+<h3>Psi</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>1.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr><tr><td>2</td><td>error</td><td>1.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr><tr><td>3</td><td>error</td><td>1.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (auto+onehot)</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">noDice</th></tr></thead><tbody><tr><th>result_11</th><td class="num">0.1536232793</td><td class="num">0.1536232793</td><td class="num">0.1536232793</td><td class="num">0.1536232793</td><td class="num">0.1536232793</td><td class="num">0.153623</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

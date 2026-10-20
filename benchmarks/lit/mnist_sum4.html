@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mnist_sum4 · tddlog results</title>
+<meta name="description" content="mnist_sum4, an instance of Literature suite: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
+    <h1>mnist_sum4</h1>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_mnist_sum.py 4 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.01</td><td class="num">4.9</td><td class="num">1.8</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; error: the system stopped with an error. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, aspmc, reference.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto mnist_sum4.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf mnist_sum4.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd mnist_sum4.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd mnist_sum4.pl</code></dd>
+<dt>aspmc</dt><dd><code>python -u -m aspmc.main -m problog -c -v result mnist_sum4.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">mnist_sum4.pl</code><span>1 592 bytes, 48 lines</span><span class="sha" title="SHA-256">sha256 c776811285115c135eef903b3f0ff15ee74a4ae26dacd5a102d1e647ba318f8b</span></div><p class="made">Written by <code>gen_mnist_sum.py 4 --seed 1</code> (bench.py gen).</p><pre>% MNIST sum-4: 4 digits, peak 0.7, seed 1, true digits 2914
+0.0069::digit(1,0); 0.0448::digit(1,1); 0.7285::digit(1,2); 0.0223::digit(1,3); 0.0123::digit(1,4); 0.0287::digit(1,5); 0.0526::digit(1,6); 0.0229::digit(1,7); 0.0358::digit(1,8); 0.0452::digit(1,9).
+0.0481::digit(2,0); 0.0184::digit(2,1); 0.0554::digit(2,2); 0.0408::digit(2,3); 0.0070::digit(2,4); 0.0219::digit(2,5); 0.0015::digit(2,6); 0.0449::digit(2,7); 0.0006::digit(2,8); 0.7614::digit(2,9).
+0.0296::digit(3,0); 0.7423::digit(3,1); 0.0313::digit(3,2); 0.0227::digit(3,3); 0.0329::digit(3,4); 0.0405::digit(3,5); 0.0238::digit(3,6); 0.0149::digit(3,7); 0.0292::digit(3,8); 0.0328::digit(3,9).
+0.0431::digit(4,0); 0.0419::digit(4,1); 0.0188::digit(4,2); 0.0414::digit(4,3); 0.7422::digit(4,4); 0.0045::digit(4,5); 0.0284::digit(4,6); 0.0327::digit(4,7); 0.0134::digit(4,8); 0.0336::digit(4,9).
+next(1,2).
+next(2,3).
+next(3,4).
+partial(1,S) :- digit(1,S).
+partial(K,S) :- next(J,K), partial(J,S0), digit(K,D), S is S0+D.
+sum(S) :- partial(4,S).
+query(sum(0)).
+query(sum(1)).
+query(sum(2)).
+query(sum(3)).
+query(sum(4)).
+query(sum(5)).
+query(sum(6)).
+query(sum(7)).
+query(sum(8)).
+query(sum(9)).
+query(sum(10)).
+query(sum(11)).
+query(sum(12)).
+query(sum(13)).
+query(sum(14)).
+query(sum(15)).
+query(sum(16)).
+query(sum(17)).
+query(sum(18)).
+query(sum(19)).
+query(sum(20)).
+query(sum(21)).
+query(sum(22)).
+query(sum(23)).
+query(sum(24)).
+query(sum(25)).
+query(sum(26)).
+query(sum(27)).
+query(sum(28)).
+query(sum(29)).
+query(sum(30)).
+query(sum(31)).
+query(sum(32)).
+query(sum(33)).
+query(sum(34)).
+query(sum(35)).
+query(sum(36)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;mnist_sum4.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">mnist_sum4.lpad.pl</code><span>3 621 bytes, 53 lines</span><span class="sha" title="SHA-256">sha256 a6eed8daac96dffa174759ff167dab247509a0fd17290f208a7886205729517d</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>mnist_sum4.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table partial/2.
+digit(1,0):0.0069 ; digit(1,1):0.0448 ; digit(1,2):0.7285 ; digit(1,3):0.0223 ; digit(1,4):0.0123 ; digit(1,5):0.0287 ; digit(1,6):0.0526 ; digit(1,7):0.0229 ; digit(1,8):0.0358 ; digit(1,9):0.0452.
+digit(2,0):0.0481 ; digit(2,1):0.0184 ; digit(2,2):0.0554 ; digit(2,3):0.0408 ; digit(2,4):0.0070 ; digit(2,5):0.0219 ; digit(2,6):0.0015 ; digit(2,7):0.0449 ; digit(2,8):0.0006 ; digit(2,9):0.7614.
+digit(3,0):0.0296 ; digit(3,1):0.7423 ; digit(3,2):0.0313 ; digit(3,3):0.0227 ; digit(3,4):0.0329 ; digit(3,5):0.0405 ; digit(3,6):0.0238 ; digit(3,7):0.0149 ; digit(3,8):0.0292 ; digit(3,9):0.0328.
+digit(4,0):0.0431 ; digit(4,1):0.0419 ; digit(4,2):0.0188 ; digit(4,3):0.0414 ; digit(4,4):0.7422 ; digit(4,5):0.0045 ; digit(4,6):0.0284 ; digit(4,7):0.0327 ; digit(4,8):0.0134 ; digit(4,9):0.0336.
+next(1,2).
+next(2,3).
+next(3,4).
+partial(1,S) :- digit(1,S).
+partial(K,S) :- next(J,K), partial(J,S0), digit(K,D), S is S0+D.
+sum(S) :- partial(4,S).
+:- end_lpad.
+main :-
+    forall((Q = sum(0)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(1)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(2)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(3)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(4)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(5)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(6)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(7)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(8)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(9)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(10)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(11)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(12)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(13)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(14)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(15)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(16)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(17)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(18)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(19)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(20)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(21)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(22)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(23)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(24)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(25)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(26)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(27)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(28)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(29)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(30)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(31)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(32)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(33)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(34)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(35)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sum(36)), (prob(Q, P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.01</td><td>1.7e-16 at most</td><td>largest formula, pairs 4 761; final formula, pairs 946; variables 139; ground atoms 329; ground rules 1 255; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>15.4</td><td>3.8e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.9</td><td>3.8e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.8</td><td>3.1e-16 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.57</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;lexer.py&quot;, line 689, in lex
+    yield lexer.next_token(lexer_state, parser_state)
+  File &quot;lexer.py&quot;, line 622, in next_token
+    raise UnexpectedCharacters(lex_state.text.text, line_ctr.char_pos, line_ctr.line, line_ctr.column,
+lark.exceptions.UnexpectedCharacters: No terminal matches &#x27;i&#x27; in the current parser context, at line 10 col 57
+
+next(J,K), partial(J,S0), digit(K,D), S is S0+D.
+                                        ^
+Expected one of: 
+	* /[A-Z][a-zA-Z0-9]*/
+	* LESSTHAN
+	* COMMA
+	* DOT
+	* &quot;&gt;=&quot;
+	* EQUAL
+	* &quot;&lt;=&quot;
+	* RPAR
+	* /[0-9+\-\/\*]+/
+	* &quot;!=&quot;
+	* MORETHAN
+	* &quot;::&quot;
+
+Previous tokens: Token(&#x27;__ANON_8&#x27;, &#x27;S&#x27;)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &quot;runpy.py&quot;, line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File &quot;runpy.py&quot;, line 86, in _run_code
+    exec(code, run_globals)
+  File &quot;main.py&quot;, line 350, in &lt;module&gt;
+    main()
+  File &quot;main.py&quot;, line 249, in main
+    program = ProblogProgram(program_str, program_files)
+  File &quot;problogprogram.py&quot;, line 71, in __init__
+    program = parser.parse(program_str)
+  File &quot;lark.py&quot;, line 677, in parse
+    return self.parser.parse(text, start=start, on_error=on_error)
+  File &quot;parser_frontends.py&quot;, line 131, in parse
+    return self.parser.parse(stream, chosen_start, **kw)
+  File &quot;lalr_parser.py&quot;, line 42, in parse
+    return self.parser.parse(lexer, start)
+  File &quot;lalr_parser.py&quot;, line 88, in parse
+    return self.parse_from_state(parser_state)
+  File &quot;lalr_parser.py&quot;, line 111, in parse_from_state
+    raise e
+  File &quot;lalr_parser.py&quot;, line 100, in parse_from_state
+    for token in state.lexer.lex(state):
+  File &quot;lexer.py&quot;, line 698, in lex
+    raise UnexpectedToken(token, e.allowed, state=parser_state, token_history=[last_token], terminals_by_name=self.root_lexer.terminals_by_name)
+lark.exceptions.UnexpectedToken: Unexpected token Token(&#x27;__ANON_2&#x27;, &#x27;is&#x27;) at line 10, column 57.
+Expected one of: 
+	* /[A-Z][a-zA-Z0-9]*/
+	* LESSTHAN
+	* &quot;&gt;=&quot;
+	* EQUAL
+	* &quot;&lt;=&quot;
+	* /[0-9+\-\/\*]+/
+	* &quot;!=&quot;
+	* MORETHAN
+Previous tokens: [Token(&#x27;__ANON_8&#x27;, &#x27;S&#x27;)]</pre></details></td></tr></tbody></table></div>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>sum(0)</th><td class="num">4.23412e-07</td><td class="num">4.23412e-07</td><td class="num">4.23412e-07</td><td class="num">4.23412e-07</td><td class="num">4.23412e-07</td></tr><tr><th>sum(1)</th><td class="num">1.39409e-05</td><td class="num">1.39409e-05</td><td class="num">1.39409e-05</td><td class="num">1.39409e-05</td><td class="num">1.39409e-05</td></tr><tr><th>sum(2)</th><td class="num">0.0001330312396</td><td class="num">0.0001330312396</td><td class="num">0.00013303124</td><td class="num">0.00013303124</td><td class="num">0.0001330312396</td></tr><tr><th>sum(3)</th><td class="num">0.001307735947</td><td class="num">0.001307735947</td><td class="num">0.0013077359</td><td class="num">0.0013077359</td><td class="num">0.001307735947</td></tr><tr><th>sum(4)</th><td class="num">0.001882906992</td><td class="num">0.001882906992</td><td class="num">0.001882907</td><td class="num">0.001882907</td><td class="num">0.001882906992</td></tr><tr><th>sum(5)</th><td class="num">0.002992886716</td><td class="num">0.002992886716</td><td class="num">0.0029928867</td><td class="num">0.0029928867</td><td class="num">0.002992886716</td></tr><tr><th>sum(6)</th><td class="num">0.006136235633</td><td class="num">0.006136235633</td><td class="num">0.0061362356</td><td class="num">0.0061362356</td><td class="num">0.006136235633</td></tr><tr><th>sum(7)</th><td class="num">0.02342547289</td><td class="num">0.02342547289</td><td class="num">0.023425473</td><td class="num">0.023425473</td><td class="num">0.02342547289</td></tr><tr><th>sum(8)</th><td class="num">0.01488553898</td><td class="num">0.01488553898</td><td class="num">0.014885539</td><td class="num">0.014885539</td><td class="num">0.01488553898</td></tr><tr><th>sum(9)</th><td class="num">0.02936685922</td><td class="num">0.02936685922</td><td class="num">0.029366859</td><td class="num">0.029366859</td><td class="num">0.02936685922</td></tr><tr><th>sum(10)</th><td class="num">0.02537677396</td><td class="num">0.02537677396</td><td class="num">0.025376774</td><td class="num">0.025376774</td><td class="num">0.02537677396</td></tr><tr><th>sum(11)</th><td class="num">0.01646189008</td><td class="num">0.01646189008</td><td class="num">0.01646189</td><td class="num">0.01646189</td><td class="num">0.01646189008</td></tr><tr><th>sum(12)</th><td class="num">0.03946256401</td><td class="num">0.03946256401</td><td class="num">0.039462564</td><td class="num">0.039462564</td><td class="num">0.03946256401</td></tr><tr><th>sum(13)</th><td class="num">0.03432807411</td><td class="num">0.03432807411</td><td class="num">0.034328074</td><td class="num">0.034328074</td><td class="num">0.03432807411</td></tr><tr><th>sum(14)</th><td class="num">0.04473456892</td><td class="num">0.04473456892</td><td class="num">0.044734569</td><td class="num">0.044734569</td><td class="num">0.04473456892</td></tr><tr><th>sum(15)</th><td class="num">0.06244711733</td><td class="num">0.06244711733</td><td class="num">0.062447117</td><td class="num">0.062447117</td><td class="num">0.06244711733</td></tr><tr><th>sum(16)</th><td class="num">0.3227001038</td><td class="num">0.3227001038</td><td class="num">0.3227001</td><td class="num">0.3227001</td><td class="num">0.3227001038</td></tr><tr><th>sum(17)</th><td class="num">0.04058760514</td><td class="num">0.04058760514</td><td class="num">0.040587605</td><td class="num">0.040587605</td><td class="num">0.04058760514</td></tr><tr><th>sum(18)</th><td class="num">0.04200117608</td><td class="num">0.04200117608</td><td class="num">0.042001176</td><td class="num">0.042001176</td><td class="num">0.04200117608</td></tr><tr><th>sum(19)</th><td class="num">0.05497145173</td><td class="num">0.05497145173</td><td class="num">0.054971452</td><td class="num">0.054971452</td><td class="num">0.05497145173</td></tr><tr><th>sum(20)</th><td class="num">0.05828990349</td><td class="num">0.05828990349</td><td class="num">0.058289903</td><td class="num">0.058289903</td><td class="num">0.05828990349</td></tr><tr><th>sum(21)</th><td class="num">0.04591775352</td><td class="num">0.04591775352</td><td class="num">0.045917754</td><td class="num">0.045917754</td><td class="num">0.04591775352</td></tr><tr><th>sum(22)</th><td class="num">0.03415840786</td><td class="num">0.03415840786</td><td class="num">0.034158408</td><td class="num">0.034158408</td><td class="num">0.03415840786</td></tr><tr><th>sum(23)</th><td class="num">0.04127196324</td><td class="num">0.04127196324</td><td class="num">0.041271963</td><td class="num">0.041271963</td><td class="num">0.04127196324</td></tr><tr><th>sum(24)</th><td class="num">0.02279707704</td><td class="num">0.02279707704</td><td class="num">0.022797077</td><td class="num">0.022797077</td><td class="num">0.02279707704</td></tr><tr><th>sum(25)</th><td class="num">0.009150207844</td><td class="num">0.009150207844</td><td class="num">0.0091502078</td><td class="num">0.0091502078</td><td class="num">0.009150207844</td></tr><tr><th>sum(26)</th><td class="num">0.00757118526</td><td class="num">0.00757118526</td><td class="num">0.0075711853</td><td class="num">0.0075711853</td><td class="num">0.00757118526</td></tr><tr><th>sum(27)</th><td class="num">0.006285903048</td><td class="num">0.006285903048</td><td class="num">0.006285903</td><td class="num">0.006285903</td><td class="num">0.006285903048</td></tr><tr><th>sum(28)</th><td class="num">0.004731785611</td><td class="num">0.004731785611</td><td class="num">0.0047317856</td><td class="num">0.0047317856</td><td class="num">0.004731785611</td></tr><tr><th>sum(29)</th><td class="num">0.002693689354</td><td class="num">0.002693689354</td><td class="num">0.0026936894</td><td class="num">0.0026936894</td><td class="num">0.002693689354</td></tr><tr><th>sum(30)</th><td class="num">0.001920885285</td><td class="num">0.001920885285</td><td class="num">0.0019208853</td><td class="num">0.0019208853</td><td class="num">0.001920885285</td></tr><tr><th>sum(31)</th><td class="num">0.001212635968</td><td class="num">0.001212635968</td><td class="num">0.001212636</td><td class="num">0.001212636</td><td class="num">0.001212635968</td></tr><tr><th>sum(32)</th><td class="num">0.000310911103</td><td class="num">0.000310911103</td><td class="num">0.0003109111</td><td class="num">0.0003109111</td><td class="num">0.000310911103</td></tr><tr><th>sum(33)</th><td class="num">0.0002265967982</td><td class="num">0.0002265967982</td><td class="num">0.0002265968</td><td class="num">0.0002265968</td><td class="num">0.0002265967982</td></tr><tr><th>sum(34)</th><td class="num">0.0001278468876</td><td class="num">0.0001278468876</td><td class="num">0.00012784689</td><td class="num">0.00012784689</td><td class="num">0.0001278468876</td></tr><tr><th>sum(35)</th><td class="num">7.89622e-05</td><td class="num">7.89622e-05</td><td class="num">7.89622e-05</td><td class="num">7.89622e-05</td><td class="num">7.89622e-05</td></tr><tr><th>sum(36)</th><td class="num">3.79284e-05</td><td class="num">3.79284e-05</td><td class="num">3.79284e-05</td><td class="num">3.79284e-05</td><td class="num">3.79284e-05</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

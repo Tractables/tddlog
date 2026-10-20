@@ -1,0 +1,2106 @@
+0.5::key_f1.
+0.5::key_f0.
+0.25::gen_f1.
+0.3333333333333333::gen_f0.
+0.5::gen_f0_1.
+gen_b0 :- \+gen_f1, gen_f0.
+gen_b0 :- gen_f1, gen_f0_1.
+enc_b :- gen_b0, \+key_f0.
+enc_b :- \+gen_b0, key_f0.
+enc_b_1 :- key_f0, gen_b0.
+enc_b_2 :- gen_f1, \+key_f1.
+enc_b_2 :- \+gen_f1, key_f1.
+enc_b_3 :- enc_b_1, \+enc_b_2.
+enc_b_3 :- \+enc_b_1, enc_b_2.
+tmp :- \+enc_b, enc_b_3.
+obs :- tmp.
+0.25::gen_1_f1.
+0.3333333333333333::gen_1_f0.
+0.5::gen_1_f0_1.
+gen_1_b0 :- \+gen_1_f1, gen_1_f0.
+gen_1_b0 :- gen_1_f1, gen_1_f0_1.
+enc_b_4 :- gen_1_b0, \+key_f0.
+enc_b_4 :- \+gen_1_b0, key_f0.
+enc_b_5 :- key_f0, gen_1_b0.
+enc_b_6 :- gen_1_f1, \+key_f1.
+enc_b_6 :- \+gen_1_f1, key_f1.
+enc_b_7 :- enc_b_5, \+enc_b_6.
+enc_b_7 :- \+enc_b_5, enc_b_6.
+tmp_1 :- \+enc_b_4, enc_b_7.
+obs_1 :- tmp_1.
+0.25::gen_2_f1.
+0.3333333333333333::gen_2_f0.
+0.5::gen_2_f0_1.
+gen_2_b0 :- \+gen_2_f1, gen_2_f0.
+gen_2_b0 :- gen_2_f1, gen_2_f0_1.
+enc_b_8 :- gen_2_b0, \+key_f0.
+enc_b_8 :- \+gen_2_b0, key_f0.
+enc_b_9 :- key_f0, gen_2_b0.
+enc_b_10 :- gen_2_f1, \+key_f1.
+enc_b_10 :- \+gen_2_f1, key_f1.
+enc_b_11 :- enc_b_10, \+enc_b_9.
+enc_b_11 :- \+enc_b_10, enc_b_9.
+tmp_2 :- \+enc_b_8, enc_b_11.
+obs_2 :- tmp_2.
+0.25::gen_3_f1.
+0.3333333333333333::gen_3_f0.
+0.5::gen_3_f0_1.
+gen_3_b0 :- \+gen_3_f1, gen_3_f0.
+gen_3_b0 :- gen_3_f1, gen_3_f0_1.
+enc_b_12 :- gen_3_b0, \+key_f0.
+enc_b_12 :- \+gen_3_b0, key_f0.
+enc_b_13 :- key_f0, gen_3_b0.
+enc_b_14 :- gen_3_f1, \+key_f1.
+enc_b_14 :- \+gen_3_f1, key_f1.
+enc_b_15 :- enc_b_13, \+enc_b_14.
+enc_b_15 :- \+enc_b_13, enc_b_14.
+tmp_3 :- \+enc_b_12, enc_b_15.
+obs_3 :- tmp_3.
+0.25::gen_4_f1.
+0.3333333333333333::gen_4_f0.
+0.5::gen_4_f0_1.
+gen_4_b0 :- \+gen_4_f1, gen_4_f0.
+gen_4_b0 :- gen_4_f1, gen_4_f0_1.
+enc_b_16 :- gen_4_b0, \+key_f0.
+enc_b_16 :- \+gen_4_b0, key_f0.
+enc_b_17 :- key_f0, gen_4_b0.
+enc_b_18 :- gen_4_f1, \+key_f1.
+enc_b_18 :- \+gen_4_f1, key_f1.
+enc_b_19 :- enc_b_17, \+enc_b_18.
+enc_b_19 :- \+enc_b_17, enc_b_18.
+tmp_4 :- \+enc_b_16, enc_b_19.
+obs_4 :- tmp_4.
+0.25::gen_5_f1.
+0.3333333333333333::gen_5_f0.
+0.5::gen_5_f0_1.
+gen_5_b0 :- \+gen_5_f1, gen_5_f0.
+gen_5_b0 :- gen_5_f1, gen_5_f0_1.
+enc_b_20 :- gen_5_b0, \+key_f0.
+enc_b_20 :- \+gen_5_b0, key_f0.
+enc_b_21 :- key_f0, gen_5_b0.
+enc_b_22 :- gen_5_f1, \+key_f1.
+enc_b_22 :- \+gen_5_f1, key_f1.
+enc_b_23 :- enc_b_21, \+enc_b_22.
+enc_b_23 :- \+enc_b_21, enc_b_22.
+tmp_5 :- \+enc_b_20, enc_b_23.
+obs_5 :- tmp_5.
+0.25::gen_6_f1.
+0.3333333333333333::gen_6_f0.
+0.5::gen_6_f0_1.
+gen_6_b0 :- \+gen_6_f1, gen_6_f0.
+gen_6_b0 :- gen_6_f1, gen_6_f0_1.
+enc_b_24 :- gen_6_b0, \+key_f0.
+enc_b_24 :- \+gen_6_b0, key_f0.
+enc_b_25 :- key_f0, gen_6_b0.
+enc_b_26 :- gen_6_f1, \+key_f1.
+enc_b_26 :- \+gen_6_f1, key_f1.
+enc_b_27 :- enc_b_25, \+enc_b_26.
+enc_b_27 :- \+enc_b_25, enc_b_26.
+tmp_6 :- \+enc_b_24, enc_b_27.
+obs_6 :- tmp_6.
+0.25::gen_7_f1.
+0.3333333333333333::gen_7_f0.
+0.5::gen_7_f0_1.
+gen_7_b0 :- \+gen_7_f1, gen_7_f0.
+gen_7_b0 :- gen_7_f1, gen_7_f0_1.
+enc_b_28 :- gen_7_b0, \+key_f0.
+enc_b_28 :- \+gen_7_b0, key_f0.
+enc_b_29 :- key_f0, gen_7_b0.
+enc_b_30 :- gen_7_f1, \+key_f1.
+enc_b_30 :- \+gen_7_f1, key_f1.
+enc_b_31 :- enc_b_29, \+enc_b_30.
+enc_b_31 :- \+enc_b_29, enc_b_30.
+tmp_7 :- \+enc_b_28, enc_b_31.
+obs_7 :- tmp_7.
+0.25::gen_8_f1.
+0.3333333333333333::gen_8_f0.
+0.5::gen_8_f0_1.
+gen_8_b0 :- \+gen_8_f1, gen_8_f0.
+gen_8_b0 :- gen_8_f1, gen_8_f0_1.
+enc_b_32 :- gen_8_b0, \+key_f0.
+enc_b_32 :- \+gen_8_b0, key_f0.
+enc_b_33 :- key_f0, gen_8_b0.
+enc_b_34 :- gen_8_f1, \+key_f1.
+enc_b_34 :- \+gen_8_f1, key_f1.
+enc_b_35 :- enc_b_33, \+enc_b_34.
+enc_b_35 :- \+enc_b_33, enc_b_34.
+tmp_8 :- \+enc_b_32, enc_b_35.
+obs_8 :- tmp_8.
+0.25::gen_9_f1.
+0.3333333333333333::gen_9_f0.
+0.5::gen_9_f0_1.
+gen_9_b0 :- \+gen_9_f1, gen_9_f0.
+gen_9_b0 :- gen_9_f1, gen_9_f0_1.
+enc_b_36 :- gen_9_b0, \+key_f0.
+enc_b_36 :- \+gen_9_b0, key_f0.
+enc_b_37 :- key_f0, gen_9_b0.
+enc_b_38 :- gen_9_f1, \+key_f1.
+enc_b_38 :- \+gen_9_f1, key_f1.
+enc_b_39 :- enc_b_37, \+enc_b_38.
+enc_b_39 :- \+enc_b_37, enc_b_38.
+tmp_9 :- \+enc_b_36, enc_b_39.
+obs_9 :- tmp_9.
+0.25::gen_10_f1.
+0.3333333333333333::gen_10_f0.
+0.5::gen_10_f0_1.
+gen_10_b0 :- \+gen_10_f1, gen_10_f0.
+gen_10_b0 :- gen_10_f1, gen_10_f0_1.
+enc_b_40 :- gen_10_b0, \+key_f0.
+enc_b_40 :- \+gen_10_b0, key_f0.
+enc_b_41 :- key_f0, gen_10_b0.
+enc_b_42 :- gen_10_f1, \+key_f1.
+enc_b_42 :- \+gen_10_f1, key_f1.
+enc_b_43 :- enc_b_41, \+enc_b_42.
+enc_b_43 :- \+enc_b_41, enc_b_42.
+tmp_10 :- \+enc_b_40, enc_b_43.
+obs_10 :- tmp_10.
+0.25::gen_11_f1.
+0.3333333333333333::gen_11_f0.
+0.5::gen_11_f0_1.
+gen_11_b0 :- \+gen_11_f1, gen_11_f0.
+gen_11_b0 :- gen_11_f1, gen_11_f0_1.
+enc_b_44 :- gen_11_b0, \+key_f0.
+enc_b_44 :- \+gen_11_b0, key_f0.
+enc_b_45 :- key_f0, gen_11_b0.
+enc_b_46 :- gen_11_f1, \+key_f1.
+enc_b_46 :- \+gen_11_f1, key_f1.
+enc_b_47 :- enc_b_45, \+enc_b_46.
+enc_b_47 :- \+enc_b_45, enc_b_46.
+tmp_11 :- \+enc_b_44, enc_b_47.
+obs_11 :- tmp_11.
+0.25::gen_12_f1.
+0.3333333333333333::gen_12_f0.
+0.5::gen_12_f0_1.
+gen_12_b0 :- \+gen_12_f1, gen_12_f0.
+gen_12_b0 :- gen_12_f1, gen_12_f0_1.
+enc_b_48 :- gen_12_b0, \+key_f0.
+enc_b_48 :- \+gen_12_b0, key_f0.
+enc_b_49 :- key_f0, gen_12_b0.
+enc_b_50 :- gen_12_f1, \+key_f1.
+enc_b_50 :- \+gen_12_f1, key_f1.
+enc_b_51 :- enc_b_49, \+enc_b_50.
+enc_b_51 :- \+enc_b_49, enc_b_50.
+tmp_12 :- \+enc_b_48, enc_b_51.
+obs_12 :- tmp_12.
+0.25::gen_13_f1.
+0.3333333333333333::gen_13_f0.
+0.5::gen_13_f0_1.
+gen_13_b0 :- \+gen_13_f1, gen_13_f0.
+gen_13_b0 :- gen_13_f1, gen_13_f0_1.
+enc_b_52 :- gen_13_b0, \+key_f0.
+enc_b_52 :- \+gen_13_b0, key_f0.
+enc_b_53 :- key_f0, gen_13_b0.
+enc_b_54 :- gen_13_f1, \+key_f1.
+enc_b_54 :- \+gen_13_f1, key_f1.
+enc_b_55 :- enc_b_53, \+enc_b_54.
+enc_b_55 :- \+enc_b_53, enc_b_54.
+tmp_13 :- \+enc_b_52, enc_b_55.
+obs_13 :- tmp_13.
+0.25::gen_14_f1.
+0.3333333333333333::gen_14_f0.
+0.5::gen_14_f0_1.
+gen_14_b0 :- \+gen_14_f1, gen_14_f0.
+gen_14_b0 :- gen_14_f1, gen_14_f0_1.
+enc_b_56 :- gen_14_b0, \+key_f0.
+enc_b_56 :- \+gen_14_b0, key_f0.
+enc_b_57 :- key_f0, gen_14_b0.
+enc_b_58 :- gen_14_f1, \+key_f1.
+enc_b_58 :- \+gen_14_f1, key_f1.
+enc_b_59 :- enc_b_57, \+enc_b_58.
+enc_b_59 :- \+enc_b_57, enc_b_58.
+tmp_14 :- \+enc_b_56, enc_b_59.
+obs_14 :- tmp_14.
+0.25::gen_15_f1.
+0.3333333333333333::gen_15_f0.
+0.5::gen_15_f0_1.
+gen_15_b0 :- \+gen_15_f1, gen_15_f0.
+gen_15_b0 :- gen_15_f1, gen_15_f0_1.
+enc_b_60 :- gen_15_b0, \+key_f0.
+enc_b_60 :- \+gen_15_b0, key_f0.
+enc_b_61 :- key_f0, gen_15_b0.
+enc_b_62 :- gen_15_f1, \+key_f1.
+enc_b_62 :- \+gen_15_f1, key_f1.
+enc_b_63 :- enc_b_61, \+enc_b_62.
+enc_b_63 :- \+enc_b_61, enc_b_62.
+tmp_15 :- \+enc_b_60, enc_b_63.
+obs_15 :- tmp_15.
+0.25::gen_16_f1.
+0.3333333333333333::gen_16_f0.
+0.5::gen_16_f0_1.
+gen_16_b0 :- \+gen_16_f1, gen_16_f0.
+gen_16_b0 :- gen_16_f1, gen_16_f0_1.
+enc_b_64 :- gen_16_b0, \+key_f0.
+enc_b_64 :- \+gen_16_b0, key_f0.
+enc_b_65 :- key_f0, gen_16_b0.
+enc_b_66 :- gen_16_f1, \+key_f1.
+enc_b_66 :- \+gen_16_f1, key_f1.
+enc_b_67 :- enc_b_65, \+enc_b_66.
+enc_b_67 :- \+enc_b_65, enc_b_66.
+tmp_16 :- \+enc_b_64, enc_b_67.
+obs_16 :- tmp_16.
+0.25::gen_17_f1.
+0.3333333333333333::gen_17_f0.
+0.5::gen_17_f0_1.
+gen_17_b0 :- \+gen_17_f1, gen_17_f0.
+gen_17_b0 :- gen_17_f1, gen_17_f0_1.
+enc_b_68 :- gen_17_b0, \+key_f0.
+enc_b_68 :- \+gen_17_b0, key_f0.
+enc_b_69 :- key_f0, gen_17_b0.
+enc_b_70 :- gen_17_f1, \+key_f1.
+enc_b_70 :- \+gen_17_f1, key_f1.
+enc_b_71 :- enc_b_69, \+enc_b_70.
+enc_b_71 :- \+enc_b_69, enc_b_70.
+tmp_17 :- \+enc_b_68, enc_b_71.
+obs_17 :- tmp_17.
+0.25::gen_18_f1.
+0.3333333333333333::gen_18_f0.
+0.5::gen_18_f0_1.
+gen_18_b0 :- \+gen_18_f1, gen_18_f0.
+gen_18_b0 :- gen_18_f1, gen_18_f0_1.
+enc_b_72 :- gen_18_b0, \+key_f0.
+enc_b_72 :- \+gen_18_b0, key_f0.
+enc_b_73 :- key_f0, gen_18_b0.
+enc_b_74 :- gen_18_f1, \+key_f1.
+enc_b_74 :- \+gen_18_f1, key_f1.
+enc_b_75 :- enc_b_73, \+enc_b_74.
+enc_b_75 :- \+enc_b_73, enc_b_74.
+tmp_18 :- \+enc_b_72, enc_b_75.
+obs_18 :- tmp_18.
+0.25::gen_19_f1.
+0.3333333333333333::gen_19_f0.
+0.5::gen_19_f0_1.
+gen_19_b0 :- \+gen_19_f1, gen_19_f0.
+gen_19_b0 :- gen_19_f1, gen_19_f0_1.
+enc_b_76 :- gen_19_b0, \+key_f0.
+enc_b_76 :- \+gen_19_b0, key_f0.
+enc_b_77 :- key_f0, gen_19_b0.
+enc_b_78 :- gen_19_f1, \+key_f1.
+enc_b_78 :- \+gen_19_f1, key_f1.
+enc_b_79 :- enc_b_77, \+enc_b_78.
+enc_b_79 :- \+enc_b_77, enc_b_78.
+tmp_19 :- \+enc_b_76, enc_b_79.
+obs_19 :- tmp_19.
+0.25::gen_20_f1.
+0.3333333333333333::gen_20_f0.
+0.5::gen_20_f0_1.
+gen_20_b0 :- \+gen_20_f1, gen_20_f0.
+gen_20_b0 :- gen_20_f1, gen_20_f0_1.
+enc_b_80 :- gen_20_b0, \+key_f0.
+enc_b_80 :- \+gen_20_b0, key_f0.
+enc_b_81 :- key_f0, gen_20_b0.
+enc_b_82 :- gen_20_f1, \+key_f1.
+enc_b_82 :- \+gen_20_f1, key_f1.
+enc_b_83 :- enc_b_81, \+enc_b_82.
+enc_b_83 :- \+enc_b_81, enc_b_82.
+tmp_20 :- \+enc_b_80, enc_b_83.
+obs_20 :- tmp_20.
+0.25::gen_21_f1.
+0.3333333333333333::gen_21_f0.
+0.5::gen_21_f0_1.
+gen_21_b0 :- \+gen_21_f1, gen_21_f0.
+gen_21_b0 :- gen_21_f1, gen_21_f0_1.
+enc_b_84 :- gen_21_b0, \+key_f0.
+enc_b_84 :- \+gen_21_b0, key_f0.
+enc_b_85 :- key_f0, gen_21_b0.
+enc_b_86 :- gen_21_f1, \+key_f1.
+enc_b_86 :- \+gen_21_f1, key_f1.
+enc_b_87 :- enc_b_85, \+enc_b_86.
+enc_b_87 :- \+enc_b_85, enc_b_86.
+tmp_21 :- \+enc_b_84, enc_b_87.
+obs_21 :- tmp_21.
+0.25::gen_22_f1.
+0.3333333333333333::gen_22_f0.
+0.5::gen_22_f0_1.
+gen_22_b0 :- \+gen_22_f1, gen_22_f0.
+gen_22_b0 :- gen_22_f1, gen_22_f0_1.
+enc_b_88 :- gen_22_b0, \+key_f0.
+enc_b_88 :- \+gen_22_b0, key_f0.
+enc_b_89 :- key_f0, gen_22_b0.
+enc_b_90 :- gen_22_f1, \+key_f1.
+enc_b_90 :- \+gen_22_f1, key_f1.
+enc_b_91 :- enc_b_89, \+enc_b_90.
+enc_b_91 :- \+enc_b_89, enc_b_90.
+tmp_22 :- \+enc_b_88, enc_b_91.
+obs_22 :- tmp_22.
+0.25::gen_23_f1.
+0.3333333333333333::gen_23_f0.
+0.5::gen_23_f0_1.
+gen_23_b0 :- \+gen_23_f1, gen_23_f0.
+gen_23_b0 :- gen_23_f1, gen_23_f0_1.
+enc_b_92 :- gen_23_b0, \+key_f0.
+enc_b_92 :- \+gen_23_b0, key_f0.
+enc_b_93 :- key_f0, gen_23_b0.
+enc_b_94 :- gen_23_f1, \+key_f1.
+enc_b_94 :- \+gen_23_f1, key_f1.
+enc_b_95 :- enc_b_93, \+enc_b_94.
+enc_b_95 :- \+enc_b_93, enc_b_94.
+tmp_23 :- \+enc_b_92, enc_b_95.
+obs_23 :- tmp_23.
+0.25::gen_24_f1.
+0.3333333333333333::gen_24_f0.
+0.5::gen_24_f0_1.
+gen_24_b0 :- \+gen_24_f1, gen_24_f0.
+gen_24_b0 :- gen_24_f1, gen_24_f0_1.
+enc_b_96 :- gen_24_b0, \+key_f0.
+enc_b_96 :- \+gen_24_b0, key_f0.
+enc_b_97 :- key_f0, gen_24_b0.
+enc_b_98 :- gen_24_f1, \+key_f1.
+enc_b_98 :- \+gen_24_f1, key_f1.
+enc_b_99 :- enc_b_97, \+enc_b_98.
+enc_b_99 :- \+enc_b_97, enc_b_98.
+tmp_24 :- \+enc_b_96, enc_b_99.
+obs_24 :- tmp_24.
+0.25::gen_25_f1.
+0.3333333333333333::gen_25_f0.
+0.5::gen_25_f0_1.
+gen_25_b0 :- \+gen_25_f1, gen_25_f0.
+gen_25_b0 :- gen_25_f1, gen_25_f0_1.
+enc_b_100 :- gen_25_b0, \+key_f0.
+enc_b_100 :- \+gen_25_b0, key_f0.
+enc_b_101 :- key_f0, gen_25_b0.
+enc_b_102 :- gen_25_f1, \+key_f1.
+enc_b_102 :- \+gen_25_f1, key_f1.
+enc_b_103 :- enc_b_101, \+enc_b_102.
+enc_b_103 :- \+enc_b_101, enc_b_102.
+tmp_25 :- \+enc_b_100, enc_b_103.
+obs_25 :- tmp_25.
+0.25::gen_26_f1.
+0.3333333333333333::gen_26_f0.
+0.5::gen_26_f0_1.
+gen_26_b0 :- \+gen_26_f1, gen_26_f0.
+gen_26_b0 :- gen_26_f1, gen_26_f0_1.
+enc_b_104 :- gen_26_b0, \+key_f0.
+enc_b_104 :- \+gen_26_b0, key_f0.
+enc_b_105 :- key_f0, gen_26_b0.
+enc_b_106 :- gen_26_f1, \+key_f1.
+enc_b_106 :- \+gen_26_f1, key_f1.
+enc_b_107 :- enc_b_105, \+enc_b_106.
+enc_b_107 :- \+enc_b_105, enc_b_106.
+tmp_26 :- \+enc_b_104, enc_b_107.
+obs_26 :- tmp_26.
+0.25::gen_27_f1.
+0.3333333333333333::gen_27_f0.
+0.5::gen_27_f0_1.
+gen_27_b0 :- \+gen_27_f1, gen_27_f0.
+gen_27_b0 :- gen_27_f1, gen_27_f0_1.
+enc_b_108 :- gen_27_b0, \+key_f0.
+enc_b_108 :- \+gen_27_b0, key_f0.
+enc_b_109 :- key_f0, gen_27_b0.
+enc_b_110 :- gen_27_f1, \+key_f1.
+enc_b_110 :- \+gen_27_f1, key_f1.
+enc_b_111 :- enc_b_109, \+enc_b_110.
+enc_b_111 :- \+enc_b_109, enc_b_110.
+tmp_27 :- \+enc_b_108, enc_b_111.
+obs_27 :- tmp_27.
+0.25::gen_28_f1.
+0.3333333333333333::gen_28_f0.
+0.5::gen_28_f0_1.
+gen_28_b0 :- \+gen_28_f1, gen_28_f0.
+gen_28_b0 :- gen_28_f1, gen_28_f0_1.
+enc_b_112 :- gen_28_b0, \+key_f0.
+enc_b_112 :- \+gen_28_b0, key_f0.
+enc_b_113 :- key_f0, gen_28_b0.
+enc_b_114 :- gen_28_f1, \+key_f1.
+enc_b_114 :- \+gen_28_f1, key_f1.
+enc_b_115 :- enc_b_113, \+enc_b_114.
+enc_b_115 :- \+enc_b_113, enc_b_114.
+tmp_28 :- \+enc_b_112, enc_b_115.
+obs_28 :- tmp_28.
+0.25::gen_29_f1.
+0.3333333333333333::gen_29_f0.
+0.5::gen_29_f0_1.
+gen_29_b0 :- \+gen_29_f1, gen_29_f0.
+gen_29_b0 :- gen_29_f1, gen_29_f0_1.
+enc_b_116 :- gen_29_b0, \+key_f0.
+enc_b_116 :- \+gen_29_b0, key_f0.
+enc_b_117 :- key_f0, gen_29_b0.
+enc_b_118 :- gen_29_f1, \+key_f1.
+enc_b_118 :- \+gen_29_f1, key_f1.
+enc_b_119 :- enc_b_117, \+enc_b_118.
+enc_b_119 :- \+enc_b_117, enc_b_118.
+tmp_29 :- \+enc_b_116, enc_b_119.
+obs_29 :- tmp_29.
+0.25::gen_30_f1.
+0.3333333333333333::gen_30_f0.
+0.5::gen_30_f0_1.
+gen_30_b0 :- \+gen_30_f1, gen_30_f0.
+gen_30_b0 :- gen_30_f1, gen_30_f0_1.
+enc_b_120 :- gen_30_b0, \+key_f0.
+enc_b_120 :- \+gen_30_b0, key_f0.
+enc_b_121 :- key_f0, gen_30_b0.
+enc_b_122 :- gen_30_f1, \+key_f1.
+enc_b_122 :- \+gen_30_f1, key_f1.
+enc_b_123 :- enc_b_121, \+enc_b_122.
+enc_b_123 :- \+enc_b_121, enc_b_122.
+tmp_30 :- \+enc_b_120, enc_b_123.
+obs_30 :- tmp_30.
+0.25::gen_31_f1.
+0.3333333333333333::gen_31_f0.
+0.5::gen_31_f0_1.
+gen_31_b0 :- \+gen_31_f1, gen_31_f0.
+gen_31_b0 :- gen_31_f1, gen_31_f0_1.
+enc_b_124 :- gen_31_b0, \+key_f0.
+enc_b_124 :- \+gen_31_b0, key_f0.
+enc_b_125 :- key_f0, gen_31_b0.
+enc_b_126 :- gen_31_f1, \+key_f1.
+enc_b_126 :- \+gen_31_f1, key_f1.
+enc_b_127 :- enc_b_125, \+enc_b_126.
+enc_b_127 :- \+enc_b_125, enc_b_126.
+tmp_31 :- \+enc_b_124, enc_b_127.
+obs_31 :- tmp_31.
+0.25::gen_32_f1.
+0.3333333333333333::gen_32_f0.
+0.5::gen_32_f0_1.
+gen_32_b0 :- \+gen_32_f1, gen_32_f0.
+gen_32_b0 :- gen_32_f1, gen_32_f0_1.
+enc_b_128 :- gen_32_b0, \+key_f0.
+enc_b_128 :- \+gen_32_b0, key_f0.
+enc_b_129 :- key_f0, gen_32_b0.
+enc_b_130 :- gen_32_f1, \+key_f1.
+enc_b_130 :- \+gen_32_f1, key_f1.
+enc_b_131 :- enc_b_129, \+enc_b_130.
+enc_b_131 :- \+enc_b_129, enc_b_130.
+tmp_32 :- \+enc_b_128, enc_b_131.
+obs_32 :- tmp_32.
+0.25::gen_33_f1.
+0.3333333333333333::gen_33_f0.
+0.5::gen_33_f0_1.
+gen_33_b0 :- \+gen_33_f1, gen_33_f0.
+gen_33_b0 :- gen_33_f1, gen_33_f0_1.
+enc_b_132 :- gen_33_b0, \+key_f0.
+enc_b_132 :- \+gen_33_b0, key_f0.
+enc_b_133 :- key_f0, gen_33_b0.
+enc_b_134 :- gen_33_f1, \+key_f1.
+enc_b_134 :- \+gen_33_f1, key_f1.
+enc_b_135 :- enc_b_133, \+enc_b_134.
+enc_b_135 :- \+enc_b_133, enc_b_134.
+tmp_33 :- \+enc_b_132, enc_b_135.
+obs_33 :- tmp_33.
+0.25::gen_34_f1.
+0.3333333333333333::gen_34_f0.
+0.5::gen_34_f0_1.
+gen_34_b0 :- \+gen_34_f1, gen_34_f0.
+gen_34_b0 :- gen_34_f1, gen_34_f0_1.
+enc_b_136 :- gen_34_b0, \+key_f0.
+enc_b_136 :- \+gen_34_b0, key_f0.
+enc_b_137 :- key_f0, gen_34_b0.
+enc_b_138 :- gen_34_f1, \+key_f1.
+enc_b_138 :- \+gen_34_f1, key_f1.
+enc_b_139 :- enc_b_137, \+enc_b_138.
+enc_b_139 :- \+enc_b_137, enc_b_138.
+tmp_34 :- \+enc_b_136, enc_b_139.
+obs_34 :- tmp_34.
+0.25::gen_35_f1.
+0.3333333333333333::gen_35_f0.
+0.5::gen_35_f0_1.
+gen_35_b0 :- \+gen_35_f1, gen_35_f0.
+gen_35_b0 :- gen_35_f1, gen_35_f0_1.
+enc_b_140 :- gen_35_b0, \+key_f0.
+enc_b_140 :- \+gen_35_b0, key_f0.
+enc_b_141 :- key_f0, gen_35_b0.
+enc_b_142 :- gen_35_f1, \+key_f1.
+enc_b_142 :- \+gen_35_f1, key_f1.
+enc_b_143 :- enc_b_141, \+enc_b_142.
+enc_b_143 :- \+enc_b_141, enc_b_142.
+tmp_35 :- \+enc_b_140, enc_b_143.
+obs_35 :- tmp_35.
+0.25::gen_36_f1.
+0.3333333333333333::gen_36_f0.
+0.5::gen_36_f0_1.
+gen_36_b0 :- \+gen_36_f1, gen_36_f0.
+gen_36_b0 :- gen_36_f1, gen_36_f0_1.
+enc_b_144 :- gen_36_b0, \+key_f0.
+enc_b_144 :- \+gen_36_b0, key_f0.
+enc_b_145 :- key_f0, gen_36_b0.
+enc_b_146 :- gen_36_f1, \+key_f1.
+enc_b_146 :- \+gen_36_f1, key_f1.
+enc_b_147 :- enc_b_145, \+enc_b_146.
+enc_b_147 :- \+enc_b_145, enc_b_146.
+tmp_36 :- \+enc_b_144, enc_b_147.
+obs_36 :- tmp_36.
+0.25::gen_37_f1.
+0.3333333333333333::gen_37_f0.
+0.5::gen_37_f0_1.
+gen_37_b0 :- \+gen_37_f1, gen_37_f0.
+gen_37_b0 :- gen_37_f1, gen_37_f0_1.
+enc_b_148 :- gen_37_b0, \+key_f0.
+enc_b_148 :- \+gen_37_b0, key_f0.
+enc_b_149 :- key_f0, gen_37_b0.
+enc_b_150 :- gen_37_f1, \+key_f1.
+enc_b_150 :- \+gen_37_f1, key_f1.
+enc_b_151 :- enc_b_149, \+enc_b_150.
+enc_b_151 :- \+enc_b_149, enc_b_150.
+tmp_37 :- \+enc_b_148, enc_b_151.
+obs_37 :- tmp_37.
+0.25::gen_38_f1.
+0.3333333333333333::gen_38_f0.
+0.5::gen_38_f0_1.
+gen_38_b0 :- \+gen_38_f1, gen_38_f0.
+gen_38_b0 :- gen_38_f1, gen_38_f0_1.
+enc_b_152 :- gen_38_b0, \+key_f0.
+enc_b_152 :- \+gen_38_b0, key_f0.
+enc_b_153 :- key_f0, gen_38_b0.
+enc_b_154 :- gen_38_f1, \+key_f1.
+enc_b_154 :- \+gen_38_f1, key_f1.
+enc_b_155 :- enc_b_153, \+enc_b_154.
+enc_b_155 :- \+enc_b_153, enc_b_154.
+tmp_38 :- \+enc_b_152, enc_b_155.
+obs_38 :- tmp_38.
+0.25::gen_39_f1.
+0.3333333333333333::gen_39_f0.
+0.5::gen_39_f0_1.
+gen_39_b0 :- \+gen_39_f1, gen_39_f0.
+gen_39_b0 :- gen_39_f1, gen_39_f0_1.
+enc_b_156 :- gen_39_b0, \+key_f0.
+enc_b_156 :- \+gen_39_b0, key_f0.
+enc_b_157 :- key_f0, gen_39_b0.
+enc_b_158 :- gen_39_f1, \+key_f1.
+enc_b_158 :- \+gen_39_f1, key_f1.
+enc_b_159 :- enc_b_157, \+enc_b_158.
+enc_b_159 :- \+enc_b_157, enc_b_158.
+tmp_39 :- \+enc_b_156, enc_b_159.
+obs_39 :- tmp_39.
+0.25::gen_40_f1.
+0.3333333333333333::gen_40_f0.
+0.5::gen_40_f0_1.
+gen_40_b0 :- \+gen_40_f1, gen_40_f0.
+gen_40_b0 :- gen_40_f1, gen_40_f0_1.
+enc_b_160 :- gen_40_b0, \+key_f0.
+enc_b_160 :- \+gen_40_b0, key_f0.
+enc_b_161 :- key_f0, gen_40_b0.
+enc_b_162 :- gen_40_f1, \+key_f1.
+enc_b_162 :- \+gen_40_f1, key_f1.
+enc_b_163 :- enc_b_161, \+enc_b_162.
+enc_b_163 :- \+enc_b_161, enc_b_162.
+tmp_40 :- \+enc_b_160, enc_b_163.
+obs_40 :- tmp_40.
+0.25::gen_41_f1.
+0.3333333333333333::gen_41_f0.
+0.5::gen_41_f0_1.
+gen_41_b0 :- \+gen_41_f1, gen_41_f0.
+gen_41_b0 :- gen_41_f1, gen_41_f0_1.
+enc_b_164 :- gen_41_b0, \+key_f0.
+enc_b_164 :- \+gen_41_b0, key_f0.
+enc_b_165 :- key_f0, gen_41_b0.
+enc_b_166 :- gen_41_f1, \+key_f1.
+enc_b_166 :- \+gen_41_f1, key_f1.
+enc_b_167 :- enc_b_165, \+enc_b_166.
+enc_b_167 :- \+enc_b_165, enc_b_166.
+tmp_41 :- \+enc_b_164, enc_b_167.
+obs_41 :- tmp_41.
+0.25::gen_42_f1.
+0.3333333333333333::gen_42_f0.
+0.5::gen_42_f0_1.
+gen_42_b0 :- \+gen_42_f1, gen_42_f0.
+gen_42_b0 :- gen_42_f1, gen_42_f0_1.
+enc_b_168 :- gen_42_b0, \+key_f0.
+enc_b_168 :- \+gen_42_b0, key_f0.
+enc_b_169 :- key_f0, gen_42_b0.
+enc_b_170 :- gen_42_f1, \+key_f1.
+enc_b_170 :- \+gen_42_f1, key_f1.
+enc_b_171 :- enc_b_169, \+enc_b_170.
+enc_b_171 :- \+enc_b_169, enc_b_170.
+tmp_42 :- \+enc_b_168, enc_b_171.
+obs_42 :- tmp_42.
+0.25::gen_43_f1.
+0.3333333333333333::gen_43_f0.
+0.5::gen_43_f0_1.
+gen_43_b0 :- \+gen_43_f1, gen_43_f0.
+gen_43_b0 :- gen_43_f1, gen_43_f0_1.
+enc_b_172 :- gen_43_b0, \+key_f0.
+enc_b_172 :- \+gen_43_b0, key_f0.
+enc_b_173 :- key_f0, gen_43_b0.
+enc_b_174 :- gen_43_f1, \+key_f1.
+enc_b_174 :- \+gen_43_f1, key_f1.
+enc_b_175 :- enc_b_173, \+enc_b_174.
+enc_b_175 :- \+enc_b_173, enc_b_174.
+tmp_43 :- \+enc_b_172, enc_b_175.
+obs_43 :- tmp_43.
+0.25::gen_44_f1.
+0.3333333333333333::gen_44_f0.
+0.5::gen_44_f0_1.
+gen_44_b0 :- \+gen_44_f1, gen_44_f0.
+gen_44_b0 :- gen_44_f1, gen_44_f0_1.
+enc_b_176 :- gen_44_b0, \+key_f0.
+enc_b_176 :- \+gen_44_b0, key_f0.
+enc_b_177 :- key_f0, gen_44_b0.
+enc_b_178 :- gen_44_f1, \+key_f1.
+enc_b_178 :- \+gen_44_f1, key_f1.
+enc_b_179 :- enc_b_177, \+enc_b_178.
+enc_b_179 :- \+enc_b_177, enc_b_178.
+tmp_44 :- \+enc_b_176, enc_b_179.
+obs_44 :- tmp_44.
+0.25::gen_45_f1.
+0.3333333333333333::gen_45_f0.
+0.5::gen_45_f0_1.
+gen_45_b0 :- \+gen_45_f1, gen_45_f0.
+gen_45_b0 :- gen_45_f1, gen_45_f0_1.
+enc_b_180 :- gen_45_b0, \+key_f0.
+enc_b_180 :- \+gen_45_b0, key_f0.
+enc_b_181 :- key_f0, gen_45_b0.
+enc_b_182 :- gen_45_f1, \+key_f1.
+enc_b_182 :- \+gen_45_f1, key_f1.
+enc_b_183 :- enc_b_181, \+enc_b_182.
+enc_b_183 :- \+enc_b_181, enc_b_182.
+tmp_45 :- \+enc_b_180, enc_b_183.
+obs_45 :- tmp_45.
+0.25::gen_46_f1.
+0.3333333333333333::gen_46_f0.
+0.5::gen_46_f0_1.
+gen_46_b0 :- \+gen_46_f1, gen_46_f0.
+gen_46_b0 :- gen_46_f1, gen_46_f0_1.
+enc_b_184 :- gen_46_b0, \+key_f0.
+enc_b_184 :- \+gen_46_b0, key_f0.
+enc_b_185 :- key_f0, gen_46_b0.
+enc_b_186 :- gen_46_f1, \+key_f1.
+enc_b_186 :- \+gen_46_f1, key_f1.
+enc_b_187 :- enc_b_185, \+enc_b_186.
+enc_b_187 :- \+enc_b_185, enc_b_186.
+tmp_46 :- \+enc_b_184, enc_b_187.
+obs_46 :- tmp_46.
+0.25::gen_47_f1.
+0.3333333333333333::gen_47_f0.
+0.5::gen_47_f0_1.
+gen_47_b0 :- \+gen_47_f1, gen_47_f0.
+gen_47_b0 :- gen_47_f1, gen_47_f0_1.
+enc_b_188 :- gen_47_b0, \+key_f0.
+enc_b_188 :- \+gen_47_b0, key_f0.
+enc_b_189 :- key_f0, gen_47_b0.
+enc_b_190 :- gen_47_f1, \+key_f1.
+enc_b_190 :- \+gen_47_f1, key_f1.
+enc_b_191 :- enc_b_189, \+enc_b_190.
+enc_b_191 :- \+enc_b_189, enc_b_190.
+tmp_47 :- \+enc_b_188, enc_b_191.
+obs_47 :- tmp_47.
+0.25::gen_48_f1.
+0.3333333333333333::gen_48_f0.
+0.5::gen_48_f0_1.
+gen_48_b0 :- \+gen_48_f1, gen_48_f0.
+gen_48_b0 :- gen_48_f1, gen_48_f0_1.
+enc_b_192 :- gen_48_b0, \+key_f0.
+enc_b_192 :- \+gen_48_b0, key_f0.
+enc_b_193 :- key_f0, gen_48_b0.
+enc_b_194 :- gen_48_f1, \+key_f1.
+enc_b_194 :- \+gen_48_f1, key_f1.
+enc_b_195 :- enc_b_193, \+enc_b_194.
+enc_b_195 :- \+enc_b_193, enc_b_194.
+tmp_48 :- \+enc_b_192, enc_b_195.
+obs_48 :- tmp_48.
+0.25::gen_49_f1.
+0.3333333333333333::gen_49_f0.
+0.5::gen_49_f0_1.
+gen_49_b0 :- \+gen_49_f1, gen_49_f0.
+gen_49_b0 :- gen_49_f1, gen_49_f0_1.
+enc_b_196 :- gen_49_b0, \+key_f0.
+enc_b_196 :- \+gen_49_b0, key_f0.
+enc_b_197 :- key_f0, gen_49_b0.
+enc_b_198 :- gen_49_f1, \+key_f1.
+enc_b_198 :- \+gen_49_f1, key_f1.
+enc_b_199 :- enc_b_197, \+enc_b_198.
+enc_b_199 :- \+enc_b_197, enc_b_198.
+tmp_49 :- \+enc_b_196, enc_b_199.
+obs_49 :- tmp_49.
+0.25::gen_50_f1.
+0.3333333333333333::gen_50_f0.
+0.5::gen_50_f0_1.
+gen_50_b0 :- \+gen_50_f1, gen_50_f0.
+gen_50_b0 :- gen_50_f1, gen_50_f0_1.
+enc_b_200 :- gen_50_b0, \+key_f0.
+enc_b_200 :- \+gen_50_b0, key_f0.
+enc_b_201 :- key_f0, gen_50_b0.
+enc_b_202 :- gen_50_f1, \+key_f1.
+enc_b_202 :- \+gen_50_f1, key_f1.
+enc_b_203 :- enc_b_201, \+enc_b_202.
+enc_b_203 :- \+enc_b_201, enc_b_202.
+tmp_50 :- \+enc_b_200, enc_b_203.
+obs_50 :- tmp_50.
+0.25::gen_51_f1.
+0.3333333333333333::gen_51_f0.
+0.5::gen_51_f0_1.
+gen_51_b0 :- \+gen_51_f1, gen_51_f0.
+gen_51_b0 :- gen_51_f1, gen_51_f0_1.
+enc_b_204 :- gen_51_b0, \+key_f0.
+enc_b_204 :- \+gen_51_b0, key_f0.
+enc_b_205 :- key_f0, gen_51_b0.
+enc_b_206 :- gen_51_f1, \+key_f1.
+enc_b_206 :- \+gen_51_f1, key_f1.
+enc_b_207 :- enc_b_205, \+enc_b_206.
+enc_b_207 :- \+enc_b_205, enc_b_206.
+tmp_51 :- \+enc_b_204, enc_b_207.
+obs_51 :- tmp_51.
+0.25::gen_52_f1.
+0.3333333333333333::gen_52_f0.
+0.5::gen_52_f0_1.
+gen_52_b0 :- \+gen_52_f1, gen_52_f0.
+gen_52_b0 :- gen_52_f1, gen_52_f0_1.
+enc_b_208 :- gen_52_b0, \+key_f0.
+enc_b_208 :- \+gen_52_b0, key_f0.
+enc_b_209 :- key_f0, gen_52_b0.
+enc_b_210 :- gen_52_f1, \+key_f1.
+enc_b_210 :- \+gen_52_f1, key_f1.
+enc_b_211 :- enc_b_209, \+enc_b_210.
+enc_b_211 :- \+enc_b_209, enc_b_210.
+tmp_52 :- \+enc_b_208, enc_b_211.
+obs_52 :- tmp_52.
+0.25::gen_53_f1.
+0.3333333333333333::gen_53_f0.
+0.5::gen_53_f0_1.
+gen_53_b0 :- \+gen_53_f1, gen_53_f0.
+gen_53_b0 :- gen_53_f1, gen_53_f0_1.
+enc_b_212 :- gen_53_b0, \+key_f0.
+enc_b_212 :- \+gen_53_b0, key_f0.
+enc_b_213 :- key_f0, gen_53_b0.
+enc_b_214 :- gen_53_f1, \+key_f1.
+enc_b_214 :- \+gen_53_f1, key_f1.
+enc_b_215 :- enc_b_213, \+enc_b_214.
+enc_b_215 :- \+enc_b_213, enc_b_214.
+tmp_53 :- \+enc_b_212, enc_b_215.
+obs_53 :- tmp_53.
+0.25::gen_54_f1.
+0.3333333333333333::gen_54_f0.
+0.5::gen_54_f0_1.
+gen_54_b0 :- \+gen_54_f1, gen_54_f0.
+gen_54_b0 :- gen_54_f1, gen_54_f0_1.
+enc_b_216 :- gen_54_b0, \+key_f0.
+enc_b_216 :- \+gen_54_b0, key_f0.
+enc_b_217 :- key_f0, gen_54_b0.
+enc_b_218 :- gen_54_f1, \+key_f1.
+enc_b_218 :- \+gen_54_f1, key_f1.
+enc_b_219 :- enc_b_217, \+enc_b_218.
+enc_b_219 :- \+enc_b_217, enc_b_218.
+tmp_54 :- \+enc_b_216, enc_b_219.
+obs_54 :- tmp_54.
+0.25::gen_55_f1.
+0.3333333333333333::gen_55_f0.
+0.5::gen_55_f0_1.
+gen_55_b0 :- \+gen_55_f1, gen_55_f0.
+gen_55_b0 :- gen_55_f1, gen_55_f0_1.
+enc_b_220 :- gen_55_b0, \+key_f0.
+enc_b_220 :- \+gen_55_b0, key_f0.
+enc_b_221 :- key_f0, gen_55_b0.
+enc_b_222 :- gen_55_f1, \+key_f1.
+enc_b_222 :- \+gen_55_f1, key_f1.
+enc_b_223 :- enc_b_221, \+enc_b_222.
+enc_b_223 :- \+enc_b_221, enc_b_222.
+tmp_55 :- \+enc_b_220, enc_b_223.
+obs_55 :- tmp_55.
+0.25::gen_56_f1.
+0.3333333333333333::gen_56_f0.
+0.5::gen_56_f0_1.
+gen_56_b0 :- \+gen_56_f1, gen_56_f0.
+gen_56_b0 :- gen_56_f1, gen_56_f0_1.
+enc_b_224 :- gen_56_b0, \+key_f0.
+enc_b_224 :- \+gen_56_b0, key_f0.
+enc_b_225 :- key_f0, gen_56_b0.
+enc_b_226 :- gen_56_f1, \+key_f1.
+enc_b_226 :- \+gen_56_f1, key_f1.
+enc_b_227 :- enc_b_225, \+enc_b_226.
+enc_b_227 :- \+enc_b_225, enc_b_226.
+tmp_56 :- \+enc_b_224, enc_b_227.
+obs_56 :- tmp_56.
+0.25::gen_57_f1.
+0.3333333333333333::gen_57_f0.
+0.5::gen_57_f0_1.
+gen_57_b0 :- \+gen_57_f1, gen_57_f0.
+gen_57_b0 :- gen_57_f1, gen_57_f0_1.
+enc_b_228 :- gen_57_b0, \+key_f0.
+enc_b_228 :- \+gen_57_b0, key_f0.
+enc_b_229 :- key_f0, gen_57_b0.
+enc_b_230 :- gen_57_f1, \+key_f1.
+enc_b_230 :- \+gen_57_f1, key_f1.
+enc_b_231 :- enc_b_229, \+enc_b_230.
+enc_b_231 :- \+enc_b_229, enc_b_230.
+tmp_57 :- \+enc_b_228, enc_b_231.
+obs_57 :- tmp_57.
+0.25::gen_58_f1.
+0.3333333333333333::gen_58_f0.
+0.5::gen_58_f0_1.
+gen_58_b0 :- \+gen_58_f1, gen_58_f0.
+gen_58_b0 :- gen_58_f1, gen_58_f0_1.
+enc_b_232 :- gen_58_b0, \+key_f0.
+enc_b_232 :- \+gen_58_b0, key_f0.
+enc_b_233 :- key_f0, gen_58_b0.
+enc_b_234 :- gen_58_f1, \+key_f1.
+enc_b_234 :- \+gen_58_f1, key_f1.
+enc_b_235 :- enc_b_233, \+enc_b_234.
+enc_b_235 :- \+enc_b_233, enc_b_234.
+tmp_58 :- \+enc_b_232, enc_b_235.
+obs_58 :- tmp_58.
+0.25::gen_59_f1.
+0.3333333333333333::gen_59_f0.
+0.5::gen_59_f0_1.
+gen_59_b0 :- \+gen_59_f1, gen_59_f0.
+gen_59_b0 :- gen_59_f1, gen_59_f0_1.
+enc_b_236 :- gen_59_b0, \+key_f0.
+enc_b_236 :- \+gen_59_b0, key_f0.
+enc_b_237 :- key_f0, gen_59_b0.
+enc_b_238 :- gen_59_f1, \+key_f1.
+enc_b_238 :- \+gen_59_f1, key_f1.
+enc_b_239 :- enc_b_237, \+enc_b_238.
+enc_b_239 :- \+enc_b_237, enc_b_238.
+tmp_59 :- \+enc_b_236, enc_b_239.
+obs_59 :- tmp_59.
+0.25::gen_60_f1.
+0.3333333333333333::gen_60_f0.
+0.5::gen_60_f0_1.
+gen_60_b0 :- \+gen_60_f1, gen_60_f0.
+gen_60_b0 :- gen_60_f1, gen_60_f0_1.
+enc_b_240 :- gen_60_b0, \+key_f0.
+enc_b_240 :- \+gen_60_b0, key_f0.
+enc_b_241 :- key_f0, gen_60_b0.
+enc_b_242 :- gen_60_f1, \+key_f1.
+enc_b_242 :- \+gen_60_f1, key_f1.
+enc_b_243 :- enc_b_241, \+enc_b_242.
+enc_b_243 :- \+enc_b_241, enc_b_242.
+tmp_60 :- \+enc_b_240, enc_b_243.
+obs_60 :- tmp_60.
+0.25::gen_61_f1.
+0.3333333333333333::gen_61_f0.
+0.5::gen_61_f0_1.
+gen_61_b0 :- \+gen_61_f1, gen_61_f0.
+gen_61_b0 :- gen_61_f1, gen_61_f0_1.
+enc_b_244 :- gen_61_b0, \+key_f0.
+enc_b_244 :- \+gen_61_b0, key_f0.
+enc_b_245 :- key_f0, gen_61_b0.
+enc_b_246 :- gen_61_f1, \+key_f1.
+enc_b_246 :- \+gen_61_f1, key_f1.
+enc_b_247 :- enc_b_245, \+enc_b_246.
+enc_b_247 :- \+enc_b_245, enc_b_246.
+tmp_61 :- \+enc_b_244, enc_b_247.
+obs_61 :- tmp_61.
+0.25::gen_62_f1.
+0.3333333333333333::gen_62_f0.
+0.5::gen_62_f0_1.
+gen_62_b0 :- \+gen_62_f1, gen_62_f0.
+gen_62_b0 :- gen_62_f1, gen_62_f0_1.
+enc_b_248 :- gen_62_b0, \+key_f0.
+enc_b_248 :- \+gen_62_b0, key_f0.
+enc_b_249 :- key_f0, gen_62_b0.
+enc_b_250 :- gen_62_f1, \+key_f1.
+enc_b_250 :- \+gen_62_f1, key_f1.
+enc_b_251 :- enc_b_249, \+enc_b_250.
+enc_b_251 :- \+enc_b_249, enc_b_250.
+tmp_62 :- \+enc_b_248, enc_b_251.
+obs_62 :- tmp_62.
+0.25::gen_63_f1.
+0.3333333333333333::gen_63_f0.
+0.5::gen_63_f0_1.
+gen_63_b0 :- \+gen_63_f1, gen_63_f0.
+gen_63_b0 :- gen_63_f1, gen_63_f0_1.
+enc_b_252 :- gen_63_b0, \+key_f0.
+enc_b_252 :- \+gen_63_b0, key_f0.
+enc_b_253 :- key_f0, gen_63_b0.
+enc_b_254 :- gen_63_f1, \+key_f1.
+enc_b_254 :- \+gen_63_f1, key_f1.
+enc_b_255 :- enc_b_253, \+enc_b_254.
+enc_b_255 :- \+enc_b_253, enc_b_254.
+tmp_63 :- \+enc_b_252, enc_b_255.
+obs_63 :- tmp_63.
+0.25::gen_64_f1.
+0.3333333333333333::gen_64_f0.
+0.5::gen_64_f0_1.
+gen_64_b0 :- \+gen_64_f1, gen_64_f0.
+gen_64_b0 :- gen_64_f1, gen_64_f0_1.
+enc_b_256 :- gen_64_b0, \+key_f0.
+enc_b_256 :- \+gen_64_b0, key_f0.
+enc_b_257 :- key_f0, gen_64_b0.
+enc_b_258 :- gen_64_f1, \+key_f1.
+enc_b_258 :- \+gen_64_f1, key_f1.
+enc_b_259 :- enc_b_257, \+enc_b_258.
+enc_b_259 :- \+enc_b_257, enc_b_258.
+tmp_64 :- \+enc_b_256, enc_b_259.
+obs_64 :- tmp_64.
+0.25::gen_65_f1.
+0.3333333333333333::gen_65_f0.
+0.5::gen_65_f0_1.
+gen_65_b0 :- \+gen_65_f1, gen_65_f0.
+gen_65_b0 :- gen_65_f1, gen_65_f0_1.
+enc_b_260 :- gen_65_b0, \+key_f0.
+enc_b_260 :- \+gen_65_b0, key_f0.
+enc_b_261 :- key_f0, gen_65_b0.
+enc_b_262 :- gen_65_f1, \+key_f1.
+enc_b_262 :- \+gen_65_f1, key_f1.
+enc_b_263 :- enc_b_261, \+enc_b_262.
+enc_b_263 :- \+enc_b_261, enc_b_262.
+tmp_65 :- \+enc_b_260, enc_b_263.
+obs_65 :- tmp_65.
+0.25::gen_66_f1.
+0.3333333333333333::gen_66_f0.
+0.5::gen_66_f0_1.
+gen_66_b0 :- \+gen_66_f1, gen_66_f0.
+gen_66_b0 :- gen_66_f1, gen_66_f0_1.
+enc_b_264 :- gen_66_b0, \+key_f0.
+enc_b_264 :- \+gen_66_b0, key_f0.
+enc_b_265 :- key_f0, gen_66_b0.
+enc_b_266 :- gen_66_f1, \+key_f1.
+enc_b_266 :- \+gen_66_f1, key_f1.
+enc_b_267 :- enc_b_265, \+enc_b_266.
+enc_b_267 :- \+enc_b_265, enc_b_266.
+tmp_66 :- \+enc_b_264, enc_b_267.
+obs_66 :- tmp_66.
+0.25::gen_67_f1.
+0.3333333333333333::gen_67_f0.
+0.5::gen_67_f0_1.
+gen_67_b0 :- \+gen_67_f1, gen_67_f0.
+gen_67_b0 :- gen_67_f1, gen_67_f0_1.
+enc_b_268 :- gen_67_b0, \+key_f0.
+enc_b_268 :- \+gen_67_b0, key_f0.
+enc_b_269 :- key_f0, gen_67_b0.
+enc_b_270 :- gen_67_f1, \+key_f1.
+enc_b_270 :- \+gen_67_f1, key_f1.
+enc_b_271 :- enc_b_269, \+enc_b_270.
+enc_b_271 :- \+enc_b_269, enc_b_270.
+tmp_67 :- \+enc_b_268, enc_b_271.
+obs_67 :- tmp_67.
+0.25::gen_68_f1.
+0.3333333333333333::gen_68_f0.
+0.5::gen_68_f0_1.
+gen_68_b0 :- \+gen_68_f1, gen_68_f0.
+gen_68_b0 :- gen_68_f1, gen_68_f0_1.
+enc_b_272 :- gen_68_b0, \+key_f0.
+enc_b_272 :- \+gen_68_b0, key_f0.
+enc_b_273 :- key_f0, gen_68_b0.
+enc_b_274 :- gen_68_f1, \+key_f1.
+enc_b_274 :- \+gen_68_f1, key_f1.
+enc_b_275 :- enc_b_273, \+enc_b_274.
+enc_b_275 :- \+enc_b_273, enc_b_274.
+tmp_68 :- \+enc_b_272, enc_b_275.
+obs_68 :- tmp_68.
+0.25::gen_69_f1.
+0.3333333333333333::gen_69_f0.
+0.5::gen_69_f0_1.
+gen_69_b0 :- \+gen_69_f1, gen_69_f0.
+gen_69_b0 :- gen_69_f1, gen_69_f0_1.
+enc_b_276 :- gen_69_b0, \+key_f0.
+enc_b_276 :- \+gen_69_b0, key_f0.
+enc_b_277 :- key_f0, gen_69_b0.
+enc_b_278 :- gen_69_f1, \+key_f1.
+enc_b_278 :- \+gen_69_f1, key_f1.
+enc_b_279 :- enc_b_277, \+enc_b_278.
+enc_b_279 :- \+enc_b_277, enc_b_278.
+tmp_69 :- \+enc_b_276, enc_b_279.
+obs_69 :- tmp_69.
+0.25::gen_70_f1.
+0.3333333333333333::gen_70_f0.
+0.5::gen_70_f0_1.
+gen_70_b0 :- \+gen_70_f1, gen_70_f0.
+gen_70_b0 :- gen_70_f1, gen_70_f0_1.
+enc_b_280 :- gen_70_b0, \+key_f0.
+enc_b_280 :- \+gen_70_b0, key_f0.
+enc_b_281 :- key_f0, gen_70_b0.
+enc_b_282 :- gen_70_f1, \+key_f1.
+enc_b_282 :- \+gen_70_f1, key_f1.
+enc_b_283 :- enc_b_281, \+enc_b_282.
+enc_b_283 :- \+enc_b_281, enc_b_282.
+tmp_70 :- \+enc_b_280, enc_b_283.
+obs_70 :- tmp_70.
+0.25::gen_71_f1.
+0.3333333333333333::gen_71_f0.
+0.5::gen_71_f0_1.
+gen_71_b0 :- \+gen_71_f1, gen_71_f0.
+gen_71_b0 :- gen_71_f1, gen_71_f0_1.
+enc_b_284 :- gen_71_b0, \+key_f0.
+enc_b_284 :- \+gen_71_b0, key_f0.
+enc_b_285 :- key_f0, gen_71_b0.
+enc_b_286 :- gen_71_f1, \+key_f1.
+enc_b_286 :- \+gen_71_f1, key_f1.
+enc_b_287 :- enc_b_285, \+enc_b_286.
+enc_b_287 :- \+enc_b_285, enc_b_286.
+tmp_71 :- \+enc_b_284, enc_b_287.
+obs_71 :- tmp_71.
+0.25::gen_72_f1.
+0.3333333333333333::gen_72_f0.
+0.5::gen_72_f0_1.
+gen_72_b0 :- \+gen_72_f1, gen_72_f0.
+gen_72_b0 :- gen_72_f1, gen_72_f0_1.
+enc_b_288 :- gen_72_b0, \+key_f0.
+enc_b_288 :- \+gen_72_b0, key_f0.
+enc_b_289 :- key_f0, gen_72_b0.
+enc_b_290 :- gen_72_f1, \+key_f1.
+enc_b_290 :- \+gen_72_f1, key_f1.
+enc_b_291 :- enc_b_289, \+enc_b_290.
+enc_b_291 :- \+enc_b_289, enc_b_290.
+tmp_72 :- \+enc_b_288, enc_b_291.
+obs_72 :- tmp_72.
+0.25::gen_73_f1.
+0.3333333333333333::gen_73_f0.
+0.5::gen_73_f0_1.
+gen_73_b0 :- \+gen_73_f1, gen_73_f0.
+gen_73_b0 :- gen_73_f1, gen_73_f0_1.
+enc_b_292 :- gen_73_b0, \+key_f0.
+enc_b_292 :- \+gen_73_b0, key_f0.
+enc_b_293 :- key_f0, gen_73_b0.
+enc_b_294 :- gen_73_f1, \+key_f1.
+enc_b_294 :- \+gen_73_f1, key_f1.
+enc_b_295 :- enc_b_293, \+enc_b_294.
+enc_b_295 :- \+enc_b_293, enc_b_294.
+tmp_73 :- \+enc_b_292, enc_b_295.
+obs_73 :- tmp_73.
+0.25::gen_74_f1.
+0.3333333333333333::gen_74_f0.
+0.5::gen_74_f0_1.
+gen_74_b0 :- \+gen_74_f1, gen_74_f0.
+gen_74_b0 :- gen_74_f1, gen_74_f0_1.
+enc_b_296 :- gen_74_b0, \+key_f0.
+enc_b_296 :- \+gen_74_b0, key_f0.
+enc_b_297 :- key_f0, gen_74_b0.
+enc_b_298 :- gen_74_f1, \+key_f1.
+enc_b_298 :- \+gen_74_f1, key_f1.
+enc_b_299 :- enc_b_297, \+enc_b_298.
+enc_b_299 :- \+enc_b_297, enc_b_298.
+tmp_74 :- \+enc_b_296, enc_b_299.
+obs_74 :- tmp_74.
+0.25::gen_75_f1.
+0.3333333333333333::gen_75_f0.
+0.5::gen_75_f0_1.
+gen_75_b0 :- \+gen_75_f1, gen_75_f0.
+gen_75_b0 :- gen_75_f1, gen_75_f0_1.
+enc_b_300 :- gen_75_b0, \+key_f0.
+enc_b_300 :- \+gen_75_b0, key_f0.
+enc_b_301 :- key_f0, gen_75_b0.
+enc_b_302 :- gen_75_f1, \+key_f1.
+enc_b_302 :- \+gen_75_f1, key_f1.
+enc_b_303 :- enc_b_301, \+enc_b_302.
+enc_b_303 :- \+enc_b_301, enc_b_302.
+tmp_75 :- \+enc_b_300, enc_b_303.
+obs_75 :- tmp_75.
+0.25::gen_76_f1.
+0.3333333333333333::gen_76_f0.
+0.5::gen_76_f0_1.
+gen_76_b0 :- \+gen_76_f1, gen_76_f0.
+gen_76_b0 :- gen_76_f1, gen_76_f0_1.
+enc_b_304 :- gen_76_b0, \+key_f0.
+enc_b_304 :- \+gen_76_b0, key_f0.
+enc_b_305 :- key_f0, gen_76_b0.
+enc_b_306 :- gen_76_f1, \+key_f1.
+enc_b_306 :- \+gen_76_f1, key_f1.
+enc_b_307 :- enc_b_305, \+enc_b_306.
+enc_b_307 :- \+enc_b_305, enc_b_306.
+tmp_76 :- \+enc_b_304, enc_b_307.
+obs_76 :- tmp_76.
+0.25::gen_77_f1.
+0.3333333333333333::gen_77_f0.
+0.5::gen_77_f0_1.
+gen_77_b0 :- \+gen_77_f1, gen_77_f0.
+gen_77_b0 :- gen_77_f1, gen_77_f0_1.
+enc_b_308 :- gen_77_b0, \+key_f0.
+enc_b_308 :- \+gen_77_b0, key_f0.
+enc_b_309 :- key_f0, gen_77_b0.
+enc_b_310 :- gen_77_f1, \+key_f1.
+enc_b_310 :- \+gen_77_f1, key_f1.
+enc_b_311 :- enc_b_309, \+enc_b_310.
+enc_b_311 :- \+enc_b_309, enc_b_310.
+tmp_77 :- \+enc_b_308, enc_b_311.
+obs_77 :- tmp_77.
+0.25::gen_78_f1.
+0.3333333333333333::gen_78_f0.
+0.5::gen_78_f0_1.
+gen_78_b0 :- \+gen_78_f1, gen_78_f0.
+gen_78_b0 :- gen_78_f1, gen_78_f0_1.
+enc_b_312 :- gen_78_b0, \+key_f0.
+enc_b_312 :- \+gen_78_b0, key_f0.
+enc_b_313 :- key_f0, gen_78_b0.
+enc_b_314 :- gen_78_f1, \+key_f1.
+enc_b_314 :- \+gen_78_f1, key_f1.
+enc_b_315 :- enc_b_313, \+enc_b_314.
+enc_b_315 :- \+enc_b_313, enc_b_314.
+tmp_78 :- \+enc_b_312, enc_b_315.
+obs_78 :- tmp_78.
+0.25::gen_79_f1.
+0.3333333333333333::gen_79_f0.
+0.5::gen_79_f0_1.
+gen_79_b0 :- \+gen_79_f1, gen_79_f0.
+gen_79_b0 :- gen_79_f1, gen_79_f0_1.
+enc_b_316 :- gen_79_b0, \+key_f0.
+enc_b_316 :- \+gen_79_b0, key_f0.
+enc_b_317 :- key_f0, gen_79_b0.
+enc_b_318 :- gen_79_f1, \+key_f1.
+enc_b_318 :- \+gen_79_f1, key_f1.
+enc_b_319 :- enc_b_317, \+enc_b_318.
+enc_b_319 :- \+enc_b_317, enc_b_318.
+tmp_79 :- \+enc_b_316, enc_b_319.
+obs_79 :- tmp_79.
+0.25::gen_80_f1.
+0.3333333333333333::gen_80_f0.
+0.5::gen_80_f0_1.
+gen_80_b0 :- \+gen_80_f1, gen_80_f0.
+gen_80_b0 :- gen_80_f1, gen_80_f0_1.
+enc_b_320 :- gen_80_b0, \+key_f0.
+enc_b_320 :- \+gen_80_b0, key_f0.
+enc_b_321 :- key_f0, gen_80_b0.
+enc_b_322 :- gen_80_f1, \+key_f1.
+enc_b_322 :- \+gen_80_f1, key_f1.
+enc_b_323 :- enc_b_321, \+enc_b_322.
+enc_b_323 :- \+enc_b_321, enc_b_322.
+tmp_80 :- \+enc_b_320, enc_b_323.
+obs_80 :- tmp_80.
+0.25::gen_81_f1.
+0.3333333333333333::gen_81_f0.
+0.5::gen_81_f0_1.
+gen_81_b0 :- \+gen_81_f1, gen_81_f0.
+gen_81_b0 :- gen_81_f1, gen_81_f0_1.
+enc_b_324 :- gen_81_b0, \+key_f0.
+enc_b_324 :- \+gen_81_b0, key_f0.
+enc_b_325 :- key_f0, gen_81_b0.
+enc_b_326 :- gen_81_f1, \+key_f1.
+enc_b_326 :- \+gen_81_f1, key_f1.
+enc_b_327 :- enc_b_325, \+enc_b_326.
+enc_b_327 :- \+enc_b_325, enc_b_326.
+tmp_81 :- \+enc_b_324, enc_b_327.
+obs_81 :- tmp_81.
+0.25::gen_82_f1.
+0.3333333333333333::gen_82_f0.
+0.5::gen_82_f0_1.
+gen_82_b0 :- \+gen_82_f1, gen_82_f0.
+gen_82_b0 :- gen_82_f1, gen_82_f0_1.
+enc_b_328 :- gen_82_b0, \+key_f0.
+enc_b_328 :- \+gen_82_b0, key_f0.
+enc_b_329 :- key_f0, gen_82_b0.
+enc_b_330 :- gen_82_f1, \+key_f1.
+enc_b_330 :- \+gen_82_f1, key_f1.
+enc_b_331 :- enc_b_329, \+enc_b_330.
+enc_b_331 :- \+enc_b_329, enc_b_330.
+tmp_82 :- \+enc_b_328, enc_b_331.
+obs_82 :- tmp_82.
+0.25::gen_83_f1.
+0.3333333333333333::gen_83_f0.
+0.5::gen_83_f0_1.
+gen_83_b0 :- \+gen_83_f1, gen_83_f0.
+gen_83_b0 :- gen_83_f1, gen_83_f0_1.
+enc_b_332 :- gen_83_b0, \+key_f0.
+enc_b_332 :- \+gen_83_b0, key_f0.
+enc_b_333 :- key_f0, gen_83_b0.
+enc_b_334 :- gen_83_f1, \+key_f1.
+enc_b_334 :- \+gen_83_f1, key_f1.
+enc_b_335 :- enc_b_333, \+enc_b_334.
+enc_b_335 :- \+enc_b_333, enc_b_334.
+tmp_83 :- \+enc_b_332, enc_b_335.
+obs_83 :- tmp_83.
+0.25::gen_84_f1.
+0.3333333333333333::gen_84_f0.
+0.5::gen_84_f0_1.
+gen_84_b0 :- \+gen_84_f1, gen_84_f0.
+gen_84_b0 :- gen_84_f1, gen_84_f0_1.
+enc_b_336 :- gen_84_b0, \+key_f0.
+enc_b_336 :- \+gen_84_b0, key_f0.
+enc_b_337 :- key_f0, gen_84_b0.
+enc_b_338 :- gen_84_f1, \+key_f1.
+enc_b_338 :- \+gen_84_f1, key_f1.
+enc_b_339 :- enc_b_337, \+enc_b_338.
+enc_b_339 :- \+enc_b_337, enc_b_338.
+tmp_84 :- \+enc_b_336, enc_b_339.
+obs_84 :- tmp_84.
+0.25::gen_85_f1.
+0.3333333333333333::gen_85_f0.
+0.5::gen_85_f0_1.
+gen_85_b0 :- \+gen_85_f1, gen_85_f0.
+gen_85_b0 :- gen_85_f1, gen_85_f0_1.
+enc_b_340 :- gen_85_b0, \+key_f0.
+enc_b_340 :- \+gen_85_b0, key_f0.
+enc_b_341 :- key_f0, gen_85_b0.
+enc_b_342 :- gen_85_f1, \+key_f1.
+enc_b_342 :- \+gen_85_f1, key_f1.
+enc_b_343 :- enc_b_341, \+enc_b_342.
+enc_b_343 :- \+enc_b_341, enc_b_342.
+tmp_85 :- \+enc_b_340, enc_b_343.
+obs_85 :- tmp_85.
+0.25::gen_86_f1.
+0.3333333333333333::gen_86_f0.
+0.5::gen_86_f0_1.
+gen_86_b0 :- \+gen_86_f1, gen_86_f0.
+gen_86_b0 :- gen_86_f1, gen_86_f0_1.
+enc_b_344 :- gen_86_b0, \+key_f0.
+enc_b_344 :- \+gen_86_b0, key_f0.
+enc_b_345 :- key_f0, gen_86_b0.
+enc_b_346 :- gen_86_f1, \+key_f1.
+enc_b_346 :- \+gen_86_f1, key_f1.
+enc_b_347 :- enc_b_345, \+enc_b_346.
+enc_b_347 :- \+enc_b_345, enc_b_346.
+tmp_86 :- \+enc_b_344, enc_b_347.
+obs_86 :- tmp_86.
+0.25::gen_87_f1.
+0.3333333333333333::gen_87_f0.
+0.5::gen_87_f0_1.
+gen_87_b0 :- \+gen_87_f1, gen_87_f0.
+gen_87_b0 :- gen_87_f1, gen_87_f0_1.
+enc_b_348 :- gen_87_b0, \+key_f0.
+enc_b_348 :- \+gen_87_b0, key_f0.
+enc_b_349 :- key_f0, gen_87_b0.
+enc_b_350 :- gen_87_f1, \+key_f1.
+enc_b_350 :- \+gen_87_f1, key_f1.
+enc_b_351 :- enc_b_349, \+enc_b_350.
+enc_b_351 :- \+enc_b_349, enc_b_350.
+tmp_87 :- \+enc_b_348, enc_b_351.
+obs_87 :- tmp_87.
+0.25::gen_88_f1.
+0.3333333333333333::gen_88_f0.
+0.5::gen_88_f0_1.
+gen_88_b0 :- \+gen_88_f1, gen_88_f0.
+gen_88_b0 :- gen_88_f1, gen_88_f0_1.
+enc_b_352 :- gen_88_b0, \+key_f0.
+enc_b_352 :- \+gen_88_b0, key_f0.
+enc_b_353 :- key_f0, gen_88_b0.
+enc_b_354 :- gen_88_f1, \+key_f1.
+enc_b_354 :- \+gen_88_f1, key_f1.
+enc_b_355 :- enc_b_353, \+enc_b_354.
+enc_b_355 :- \+enc_b_353, enc_b_354.
+tmp_88 :- \+enc_b_352, enc_b_355.
+obs_88 :- tmp_88.
+0.25::gen_89_f1.
+0.3333333333333333::gen_89_f0.
+0.5::gen_89_f0_1.
+gen_89_b0 :- \+gen_89_f1, gen_89_f0.
+gen_89_b0 :- gen_89_f1, gen_89_f0_1.
+enc_b_356 :- gen_89_b0, \+key_f0.
+enc_b_356 :- \+gen_89_b0, key_f0.
+enc_b_357 :- key_f0, gen_89_b0.
+enc_b_358 :- gen_89_f1, \+key_f1.
+enc_b_358 :- \+gen_89_f1, key_f1.
+enc_b_359 :- enc_b_357, \+enc_b_358.
+enc_b_359 :- \+enc_b_357, enc_b_358.
+tmp_89 :- \+enc_b_356, enc_b_359.
+obs_89 :- tmp_89.
+0.25::gen_90_f1.
+0.3333333333333333::gen_90_f0.
+0.5::gen_90_f0_1.
+gen_90_b0 :- \+gen_90_f1, gen_90_f0.
+gen_90_b0 :- gen_90_f1, gen_90_f0_1.
+enc_b_360 :- gen_90_b0, \+key_f0.
+enc_b_360 :- \+gen_90_b0, key_f0.
+enc_b_361 :- key_f0, gen_90_b0.
+enc_b_362 :- gen_90_f1, \+key_f1.
+enc_b_362 :- \+gen_90_f1, key_f1.
+enc_b_363 :- enc_b_361, \+enc_b_362.
+enc_b_363 :- \+enc_b_361, enc_b_362.
+tmp_90 :- \+enc_b_360, enc_b_363.
+obs_90 :- tmp_90.
+0.25::gen_91_f1.
+0.3333333333333333::gen_91_f0.
+0.5::gen_91_f0_1.
+gen_91_b0 :- \+gen_91_f1, gen_91_f0.
+gen_91_b0 :- gen_91_f1, gen_91_f0_1.
+enc_b_364 :- gen_91_b0, \+key_f0.
+enc_b_364 :- \+gen_91_b0, key_f0.
+enc_b_365 :- key_f0, gen_91_b0.
+enc_b_366 :- gen_91_f1, \+key_f1.
+enc_b_366 :- \+gen_91_f1, key_f1.
+enc_b_367 :- enc_b_365, \+enc_b_366.
+enc_b_367 :- \+enc_b_365, enc_b_366.
+tmp_91 :- \+enc_b_364, enc_b_367.
+obs_91 :- tmp_91.
+0.25::gen_92_f1.
+0.3333333333333333::gen_92_f0.
+0.5::gen_92_f0_1.
+gen_92_b0 :- \+gen_92_f1, gen_92_f0.
+gen_92_b0 :- gen_92_f1, gen_92_f0_1.
+enc_b_368 :- gen_92_b0, \+key_f0.
+enc_b_368 :- \+gen_92_b0, key_f0.
+enc_b_369 :- key_f0, gen_92_b0.
+enc_b_370 :- gen_92_f1, \+key_f1.
+enc_b_370 :- \+gen_92_f1, key_f1.
+enc_b_371 :- enc_b_369, \+enc_b_370.
+enc_b_371 :- \+enc_b_369, enc_b_370.
+tmp_92 :- \+enc_b_368, enc_b_371.
+obs_92 :- tmp_92.
+0.25::gen_93_f1.
+0.3333333333333333::gen_93_f0.
+0.5::gen_93_f0_1.
+gen_93_b0 :- \+gen_93_f1, gen_93_f0.
+gen_93_b0 :- gen_93_f1, gen_93_f0_1.
+enc_b_372 :- gen_93_b0, \+key_f0.
+enc_b_372 :- \+gen_93_b0, key_f0.
+enc_b_373 :- key_f0, gen_93_b0.
+enc_b_374 :- gen_93_f1, \+key_f1.
+enc_b_374 :- \+gen_93_f1, key_f1.
+enc_b_375 :- enc_b_373, \+enc_b_374.
+enc_b_375 :- \+enc_b_373, enc_b_374.
+tmp_93 :- \+enc_b_372, enc_b_375.
+obs_93 :- tmp_93.
+0.25::gen_94_f1.
+0.3333333333333333::gen_94_f0.
+0.5::gen_94_f0_1.
+gen_94_b0 :- \+gen_94_f1, gen_94_f0.
+gen_94_b0 :- gen_94_f1, gen_94_f0_1.
+enc_b_376 :- gen_94_b0, \+key_f0.
+enc_b_376 :- \+gen_94_b0, key_f0.
+enc_b_377 :- key_f0, gen_94_b0.
+enc_b_378 :- gen_94_f1, \+key_f1.
+enc_b_378 :- \+gen_94_f1, key_f1.
+enc_b_379 :- enc_b_377, \+enc_b_378.
+enc_b_379 :- \+enc_b_377, enc_b_378.
+tmp_94 :- \+enc_b_376, enc_b_379.
+obs_94 :- tmp_94.
+0.25::gen_95_f1.
+0.3333333333333333::gen_95_f0.
+0.5::gen_95_f0_1.
+gen_95_b0 :- \+gen_95_f1, gen_95_f0.
+gen_95_b0 :- gen_95_f1, gen_95_f0_1.
+enc_b_380 :- gen_95_b0, \+key_f0.
+enc_b_380 :- \+gen_95_b0, key_f0.
+enc_b_381 :- key_f0, gen_95_b0.
+enc_b_382 :- gen_95_f1, \+key_f1.
+enc_b_382 :- \+gen_95_f1, key_f1.
+enc_b_383 :- enc_b_381, \+enc_b_382.
+enc_b_383 :- \+enc_b_381, enc_b_382.
+tmp_95 :- \+enc_b_380, enc_b_383.
+obs_95 :- tmp_95.
+0.25::gen_96_f1.
+0.3333333333333333::gen_96_f0.
+0.5::gen_96_f0_1.
+gen_96_b0 :- \+gen_96_f1, gen_96_f0.
+gen_96_b0 :- gen_96_f1, gen_96_f0_1.
+enc_b_384 :- gen_96_b0, \+key_f0.
+enc_b_384 :- \+gen_96_b0, key_f0.
+enc_b_385 :- key_f0, gen_96_b0.
+enc_b_386 :- gen_96_f1, \+key_f1.
+enc_b_386 :- \+gen_96_f1, key_f1.
+enc_b_387 :- enc_b_385, \+enc_b_386.
+enc_b_387 :- \+enc_b_385, enc_b_386.
+tmp_96 :- \+enc_b_384, enc_b_387.
+obs_96 :- tmp_96.
+0.25::gen_97_f1.
+0.3333333333333333::gen_97_f0.
+0.5::gen_97_f0_1.
+gen_97_b0 :- \+gen_97_f1, gen_97_f0.
+gen_97_b0 :- gen_97_f1, gen_97_f0_1.
+enc_b_388 :- gen_97_b0, \+key_f0.
+enc_b_388 :- \+gen_97_b0, key_f0.
+enc_b_389 :- key_f0, gen_97_b0.
+enc_b_390 :- gen_97_f1, \+key_f1.
+enc_b_390 :- \+gen_97_f1, key_f1.
+enc_b_391 :- enc_b_389, \+enc_b_390.
+enc_b_391 :- \+enc_b_389, enc_b_390.
+tmp_97 :- \+enc_b_388, enc_b_391.
+obs_97 :- tmp_97.
+0.25::gen_98_f1.
+0.3333333333333333::gen_98_f0.
+0.5::gen_98_f0_1.
+gen_98_b0 :- \+gen_98_f1, gen_98_f0.
+gen_98_b0 :- gen_98_f1, gen_98_f0_1.
+enc_b_392 :- gen_98_b0, \+key_f0.
+enc_b_392 :- \+gen_98_b0, key_f0.
+enc_b_393 :- key_f0, gen_98_b0.
+enc_b_394 :- gen_98_f1, \+key_f1.
+enc_b_394 :- \+gen_98_f1, key_f1.
+enc_b_395 :- enc_b_393, \+enc_b_394.
+enc_b_395 :- \+enc_b_393, enc_b_394.
+tmp_98 :- \+enc_b_392, enc_b_395.
+obs_98 :- tmp_98.
+0.25::gen_99_f1.
+0.3333333333333333::gen_99_f0.
+0.5::gen_99_f0_1.
+gen_99_b0 :- \+gen_99_f1, gen_99_f0.
+gen_99_b0 :- gen_99_f1, gen_99_f0_1.
+enc_b_396 :- gen_99_b0, \+key_f0.
+enc_b_396 :- \+gen_99_b0, key_f0.
+enc_b_397 :- key_f0, gen_99_b0.
+enc_b_398 :- gen_99_f1, \+key_f1.
+enc_b_398 :- \+gen_99_f1, key_f1.
+enc_b_399 :- enc_b_397, \+enc_b_398.
+enc_b_399 :- \+enc_b_397, enc_b_398.
+tmp_99 :- \+enc_b_396, enc_b_399.
+obs_99 :- tmp_99.
+0.25::gen_100_f1.
+0.3333333333333333::gen_100_f0.
+0.5::gen_100_f0_1.
+gen_100_b0 :- \+gen_100_f1, gen_100_f0.
+gen_100_b0 :- gen_100_f1, gen_100_f0_1.
+enc_b_400 :- gen_100_b0, \+key_f0.
+enc_b_400 :- \+gen_100_b0, key_f0.
+enc_b_401 :- key_f0, gen_100_b0.
+enc_b_402 :- gen_100_f1, \+key_f1.
+enc_b_402 :- \+gen_100_f1, key_f1.
+enc_b_403 :- enc_b_401, \+enc_b_402.
+enc_b_403 :- \+enc_b_401, enc_b_402.
+tmp_100 :- \+enc_b_400, enc_b_403.
+obs_100 :- tmp_100.
+0.25::gen_101_f1.
+0.3333333333333333::gen_101_f0.
+0.5::gen_101_f0_1.
+gen_101_b0 :- \+gen_101_f1, gen_101_f0.
+gen_101_b0 :- gen_101_f1, gen_101_f0_1.
+enc_b_404 :- gen_101_b0, \+key_f0.
+enc_b_404 :- \+gen_101_b0, key_f0.
+enc_b_405 :- key_f0, gen_101_b0.
+enc_b_406 :- gen_101_f1, \+key_f1.
+enc_b_406 :- \+gen_101_f1, key_f1.
+enc_b_407 :- enc_b_405, \+enc_b_406.
+enc_b_407 :- \+enc_b_405, enc_b_406.
+tmp_101 :- \+enc_b_404, enc_b_407.
+obs_101 :- tmp_101.
+0.25::gen_102_f1.
+0.3333333333333333::gen_102_f0.
+0.5::gen_102_f0_1.
+gen_102_b0 :- \+gen_102_f1, gen_102_f0.
+gen_102_b0 :- gen_102_f1, gen_102_f0_1.
+enc_b_408 :- gen_102_b0, \+key_f0.
+enc_b_408 :- \+gen_102_b0, key_f0.
+enc_b_409 :- key_f0, gen_102_b0.
+enc_b_410 :- gen_102_f1, \+key_f1.
+enc_b_410 :- \+gen_102_f1, key_f1.
+enc_b_411 :- enc_b_409, \+enc_b_410.
+enc_b_411 :- \+enc_b_409, enc_b_410.
+tmp_102 :- \+enc_b_408, enc_b_411.
+obs_102 :- tmp_102.
+0.25::gen_103_f1.
+0.3333333333333333::gen_103_f0.
+0.5::gen_103_f0_1.
+gen_103_b0 :- \+gen_103_f1, gen_103_f0.
+gen_103_b0 :- gen_103_f1, gen_103_f0_1.
+enc_b_412 :- gen_103_b0, \+key_f0.
+enc_b_412 :- \+gen_103_b0, key_f0.
+enc_b_413 :- key_f0, gen_103_b0.
+enc_b_414 :- gen_103_f1, \+key_f1.
+enc_b_414 :- \+gen_103_f1, key_f1.
+enc_b_415 :- enc_b_413, \+enc_b_414.
+enc_b_415 :- \+enc_b_413, enc_b_414.
+tmp_103 :- \+enc_b_412, enc_b_415.
+obs_103 :- tmp_103.
+0.25::gen_104_f1.
+0.3333333333333333::gen_104_f0.
+0.5::gen_104_f0_1.
+gen_104_b0 :- \+gen_104_f1, gen_104_f0.
+gen_104_b0 :- gen_104_f1, gen_104_f0_1.
+enc_b_416 :- gen_104_b0, \+key_f0.
+enc_b_416 :- \+gen_104_b0, key_f0.
+enc_b_417 :- key_f0, gen_104_b0.
+enc_b_418 :- gen_104_f1, \+key_f1.
+enc_b_418 :- \+gen_104_f1, key_f1.
+enc_b_419 :- enc_b_417, \+enc_b_418.
+enc_b_419 :- \+enc_b_417, enc_b_418.
+tmp_104 :- \+enc_b_416, enc_b_419.
+obs_104 :- tmp_104.
+0.25::gen_105_f1.
+0.3333333333333333::gen_105_f0.
+0.5::gen_105_f0_1.
+gen_105_b0 :- \+gen_105_f1, gen_105_f0.
+gen_105_b0 :- gen_105_f1, gen_105_f0_1.
+enc_b_420 :- gen_105_b0, \+key_f0.
+enc_b_420 :- \+gen_105_b0, key_f0.
+enc_b_421 :- key_f0, gen_105_b0.
+enc_b_422 :- gen_105_f1, \+key_f1.
+enc_b_422 :- \+gen_105_f1, key_f1.
+enc_b_423 :- enc_b_421, \+enc_b_422.
+enc_b_423 :- \+enc_b_421, enc_b_422.
+tmp_105 :- \+enc_b_420, enc_b_423.
+obs_105 :- tmp_105.
+0.25::gen_106_f1.
+0.3333333333333333::gen_106_f0.
+0.5::gen_106_f0_1.
+gen_106_b0 :- \+gen_106_f1, gen_106_f0.
+gen_106_b0 :- gen_106_f1, gen_106_f0_1.
+enc_b_424 :- gen_106_b0, \+key_f0.
+enc_b_424 :- \+gen_106_b0, key_f0.
+enc_b_425 :- key_f0, gen_106_b0.
+enc_b_426 :- gen_106_f1, \+key_f1.
+enc_b_426 :- \+gen_106_f1, key_f1.
+enc_b_427 :- enc_b_425, \+enc_b_426.
+enc_b_427 :- \+enc_b_425, enc_b_426.
+tmp_106 :- \+enc_b_424, enc_b_427.
+obs_106 :- tmp_106.
+0.25::gen_107_f1.
+0.3333333333333333::gen_107_f0.
+0.5::gen_107_f0_1.
+gen_107_b0 :- \+gen_107_f1, gen_107_f0.
+gen_107_b0 :- gen_107_f1, gen_107_f0_1.
+enc_b_428 :- gen_107_b0, \+key_f0.
+enc_b_428 :- \+gen_107_b0, key_f0.
+enc_b_429 :- key_f0, gen_107_b0.
+enc_b_430 :- gen_107_f1, \+key_f1.
+enc_b_430 :- \+gen_107_f1, key_f1.
+enc_b_431 :- enc_b_429, \+enc_b_430.
+enc_b_431 :- \+enc_b_429, enc_b_430.
+tmp_107 :- \+enc_b_428, enc_b_431.
+obs_107 :- tmp_107.
+0.25::gen_108_f1.
+0.3333333333333333::gen_108_f0.
+0.5::gen_108_f0_1.
+gen_108_b0 :- \+gen_108_f1, gen_108_f0.
+gen_108_b0 :- gen_108_f1, gen_108_f0_1.
+enc_b_432 :- gen_108_b0, \+key_f0.
+enc_b_432 :- \+gen_108_b0, key_f0.
+enc_b_433 :- key_f0, gen_108_b0.
+enc_b_434 :- gen_108_f1, \+key_f1.
+enc_b_434 :- \+gen_108_f1, key_f1.
+enc_b_435 :- enc_b_433, \+enc_b_434.
+enc_b_435 :- \+enc_b_433, enc_b_434.
+tmp_108 :- \+enc_b_432, enc_b_435.
+obs_108 :- tmp_108.
+0.25::gen_109_f1.
+0.3333333333333333::gen_109_f0.
+0.5::gen_109_f0_1.
+gen_109_b0 :- \+gen_109_f1, gen_109_f0.
+gen_109_b0 :- gen_109_f1, gen_109_f0_1.
+enc_b_436 :- gen_109_b0, \+key_f0.
+enc_b_436 :- \+gen_109_b0, key_f0.
+enc_b_437 :- key_f0, gen_109_b0.
+enc_b_438 :- gen_109_f1, \+key_f1.
+enc_b_438 :- \+gen_109_f1, key_f1.
+enc_b_439 :- enc_b_437, \+enc_b_438.
+enc_b_439 :- \+enc_b_437, enc_b_438.
+tmp_109 :- \+enc_b_436, enc_b_439.
+obs_109 :- tmp_109.
+0.25::gen_110_f1.
+0.3333333333333333::gen_110_f0.
+0.5::gen_110_f0_1.
+gen_110_b0 :- \+gen_110_f1, gen_110_f0.
+gen_110_b0 :- gen_110_f1, gen_110_f0_1.
+enc_b_440 :- gen_110_b0, \+key_f0.
+enc_b_440 :- \+gen_110_b0, key_f0.
+enc_b_441 :- key_f0, gen_110_b0.
+enc_b_442 :- gen_110_f1, \+key_f1.
+enc_b_442 :- \+gen_110_f1, key_f1.
+enc_b_443 :- enc_b_441, \+enc_b_442.
+enc_b_443 :- \+enc_b_441, enc_b_442.
+tmp_110 :- \+enc_b_440, enc_b_443.
+obs_110 :- tmp_110.
+0.25::gen_111_f1.
+0.3333333333333333::gen_111_f0.
+0.5::gen_111_f0_1.
+gen_111_b0 :- \+gen_111_f1, gen_111_f0.
+gen_111_b0 :- gen_111_f1, gen_111_f0_1.
+enc_b_444 :- gen_111_b0, \+key_f0.
+enc_b_444 :- \+gen_111_b0, key_f0.
+enc_b_445 :- key_f0, gen_111_b0.
+enc_b_446 :- gen_111_f1, \+key_f1.
+enc_b_446 :- \+gen_111_f1, key_f1.
+enc_b_447 :- enc_b_445, \+enc_b_446.
+enc_b_447 :- \+enc_b_445, enc_b_446.
+tmp_111 :- \+enc_b_444, enc_b_447.
+obs_111 :- tmp_111.
+0.25::gen_112_f1.
+0.3333333333333333::gen_112_f0.
+0.5::gen_112_f0_1.
+gen_112_b0 :- \+gen_112_f1, gen_112_f0.
+gen_112_b0 :- gen_112_f1, gen_112_f0_1.
+enc_b_448 :- gen_112_b0, \+key_f0.
+enc_b_448 :- \+gen_112_b0, key_f0.
+enc_b_449 :- key_f0, gen_112_b0.
+enc_b_450 :- gen_112_f1, \+key_f1.
+enc_b_450 :- \+gen_112_f1, key_f1.
+enc_b_451 :- enc_b_449, \+enc_b_450.
+enc_b_451 :- \+enc_b_449, enc_b_450.
+tmp_112 :- \+enc_b_448, enc_b_451.
+obs_112 :- tmp_112.
+0.25::gen_113_f1.
+0.3333333333333333::gen_113_f0.
+0.5::gen_113_f0_1.
+gen_113_b0 :- \+gen_113_f1, gen_113_f0.
+gen_113_b0 :- gen_113_f1, gen_113_f0_1.
+enc_b_452 :- gen_113_b0, \+key_f0.
+enc_b_452 :- \+gen_113_b0, key_f0.
+enc_b_453 :- key_f0, gen_113_b0.
+enc_b_454 :- gen_113_f1, \+key_f1.
+enc_b_454 :- \+gen_113_f1, key_f1.
+enc_b_455 :- enc_b_453, \+enc_b_454.
+enc_b_455 :- \+enc_b_453, enc_b_454.
+tmp_113 :- \+enc_b_452, enc_b_455.
+obs_113 :- tmp_113.
+0.25::gen_114_f1.
+0.3333333333333333::gen_114_f0.
+0.5::gen_114_f0_1.
+gen_114_b0 :- \+gen_114_f1, gen_114_f0.
+gen_114_b0 :- gen_114_f1, gen_114_f0_1.
+enc_b_456 :- gen_114_b0, \+key_f0.
+enc_b_456 :- \+gen_114_b0, key_f0.
+enc_b_457 :- key_f0, gen_114_b0.
+enc_b_458 :- gen_114_f1, \+key_f1.
+enc_b_458 :- \+gen_114_f1, key_f1.
+enc_b_459 :- enc_b_457, \+enc_b_458.
+enc_b_459 :- \+enc_b_457, enc_b_458.
+tmp_114 :- \+enc_b_456, enc_b_459.
+obs_114 :- tmp_114.
+0.25::gen_115_f1.
+0.3333333333333333::gen_115_f0.
+0.5::gen_115_f0_1.
+gen_115_b0 :- \+gen_115_f1, gen_115_f0.
+gen_115_b0 :- gen_115_f1, gen_115_f0_1.
+enc_b_460 :- gen_115_b0, \+key_f0.
+enc_b_460 :- \+gen_115_b0, key_f0.
+enc_b_461 :- key_f0, gen_115_b0.
+enc_b_462 :- gen_115_f1, \+key_f1.
+enc_b_462 :- \+gen_115_f1, key_f1.
+enc_b_463 :- enc_b_461, \+enc_b_462.
+enc_b_463 :- \+enc_b_461, enc_b_462.
+tmp_115 :- \+enc_b_460, enc_b_463.
+obs_115 :- tmp_115.
+0.25::gen_116_f1.
+0.3333333333333333::gen_116_f0.
+0.5::gen_116_f0_1.
+gen_116_b0 :- \+gen_116_f1, gen_116_f0.
+gen_116_b0 :- gen_116_f1, gen_116_f0_1.
+enc_b_464 :- gen_116_b0, \+key_f0.
+enc_b_464 :- \+gen_116_b0, key_f0.
+enc_b_465 :- key_f0, gen_116_b0.
+enc_b_466 :- gen_116_f1, \+key_f1.
+enc_b_466 :- \+gen_116_f1, key_f1.
+enc_b_467 :- enc_b_465, \+enc_b_466.
+enc_b_467 :- \+enc_b_465, enc_b_466.
+tmp_116 :- \+enc_b_464, enc_b_467.
+obs_116 :- tmp_116.
+0.25::gen_117_f1.
+0.3333333333333333::gen_117_f0.
+0.5::gen_117_f0_1.
+gen_117_b0 :- \+gen_117_f1, gen_117_f0.
+gen_117_b0 :- gen_117_f1, gen_117_f0_1.
+enc_b_468 :- gen_117_b0, \+key_f0.
+enc_b_468 :- \+gen_117_b0, key_f0.
+enc_b_469 :- key_f0, gen_117_b0.
+enc_b_470 :- gen_117_f1, \+key_f1.
+enc_b_470 :- \+gen_117_f1, key_f1.
+enc_b_471 :- enc_b_469, \+enc_b_470.
+enc_b_471 :- \+enc_b_469, enc_b_470.
+tmp_117 :- \+enc_b_468, enc_b_471.
+obs_117 :- tmp_117.
+0.25::gen_118_f1.
+0.3333333333333333::gen_118_f0.
+0.5::gen_118_f0_1.
+gen_118_b0 :- \+gen_118_f1, gen_118_f0.
+gen_118_b0 :- gen_118_f1, gen_118_f0_1.
+enc_b_472 :- gen_118_b0, \+key_f0.
+enc_b_472 :- \+gen_118_b0, key_f0.
+enc_b_473 :- key_f0, gen_118_b0.
+enc_b_474 :- gen_118_f1, \+key_f1.
+enc_b_474 :- \+gen_118_f1, key_f1.
+enc_b_475 :- enc_b_473, \+enc_b_474.
+enc_b_475 :- \+enc_b_473, enc_b_474.
+tmp_118 :- \+enc_b_472, enc_b_475.
+obs_118 :- tmp_118.
+0.25::gen_119_f1.
+0.3333333333333333::gen_119_f0.
+0.5::gen_119_f0_1.
+gen_119_b0 :- \+gen_119_f1, gen_119_f0.
+gen_119_b0 :- gen_119_f1, gen_119_f0_1.
+enc_b_476 :- gen_119_b0, \+key_f0.
+enc_b_476 :- \+gen_119_b0, key_f0.
+enc_b_477 :- key_f0, gen_119_b0.
+enc_b_478 :- gen_119_f1, \+key_f1.
+enc_b_478 :- \+gen_119_f1, key_f1.
+enc_b_479 :- enc_b_477, \+enc_b_478.
+enc_b_479 :- \+enc_b_477, enc_b_478.
+tmp_119 :- \+enc_b_476, enc_b_479.
+obs_119 :- tmp_119.
+0.25::gen_120_f1.
+0.3333333333333333::gen_120_f0.
+0.5::gen_120_f0_1.
+gen_120_b0 :- \+gen_120_f1, gen_120_f0.
+gen_120_b0 :- gen_120_f1, gen_120_f0_1.
+enc_b_480 :- gen_120_b0, \+key_f0.
+enc_b_480 :- \+gen_120_b0, key_f0.
+enc_b_481 :- key_f0, gen_120_b0.
+enc_b_482 :- gen_120_f1, \+key_f1.
+enc_b_482 :- \+gen_120_f1, key_f1.
+enc_b_483 :- enc_b_481, \+enc_b_482.
+enc_b_483 :- \+enc_b_481, enc_b_482.
+tmp_120 :- \+enc_b_480, enc_b_483.
+obs_120 :- tmp_120.
+0.25::gen_121_f1.
+0.3333333333333333::gen_121_f0.
+0.5::gen_121_f0_1.
+gen_121_b0 :- \+gen_121_f1, gen_121_f0.
+gen_121_b0 :- gen_121_f1, gen_121_f0_1.
+enc_b_484 :- gen_121_b0, \+key_f0.
+enc_b_484 :- \+gen_121_b0, key_f0.
+enc_b_485 :- key_f0, gen_121_b0.
+enc_b_486 :- gen_121_f1, \+key_f1.
+enc_b_486 :- \+gen_121_f1, key_f1.
+enc_b_487 :- enc_b_485, \+enc_b_486.
+enc_b_487 :- \+enc_b_485, enc_b_486.
+tmp_121 :- \+enc_b_484, enc_b_487.
+obs_121 :- tmp_121.
+0.25::gen_122_f1.
+0.3333333333333333::gen_122_f0.
+0.5::gen_122_f0_1.
+gen_122_b0 :- \+gen_122_f1, gen_122_f0.
+gen_122_b0 :- gen_122_f1, gen_122_f0_1.
+enc_b_488 :- gen_122_b0, \+key_f0.
+enc_b_488 :- \+gen_122_b0, key_f0.
+enc_b_489 :- key_f0, gen_122_b0.
+enc_b_490 :- gen_122_f1, \+key_f1.
+enc_b_490 :- \+gen_122_f1, key_f1.
+enc_b_491 :- enc_b_489, \+enc_b_490.
+enc_b_491 :- \+enc_b_489, enc_b_490.
+tmp_122 :- \+enc_b_488, enc_b_491.
+obs_122 :- tmp_122.
+0.25::gen_123_f1.
+0.3333333333333333::gen_123_f0.
+0.5::gen_123_f0_1.
+gen_123_b0 :- \+gen_123_f1, gen_123_f0.
+gen_123_b0 :- gen_123_f1, gen_123_f0_1.
+enc_b_492 :- gen_123_b0, \+key_f0.
+enc_b_492 :- \+gen_123_b0, key_f0.
+enc_b_493 :- key_f0, gen_123_b0.
+enc_b_494 :- gen_123_f1, \+key_f1.
+enc_b_494 :- \+gen_123_f1, key_f1.
+enc_b_495 :- enc_b_493, \+enc_b_494.
+enc_b_495 :- \+enc_b_493, enc_b_494.
+tmp_123 :- \+enc_b_492, enc_b_495.
+obs_123 :- tmp_123.
+0.25::gen_124_f1.
+0.3333333333333333::gen_124_f0.
+0.5::gen_124_f0_1.
+gen_124_b0 :- \+gen_124_f1, gen_124_f0.
+gen_124_b0 :- gen_124_f1, gen_124_f0_1.
+enc_b_496 :- gen_124_b0, \+key_f0.
+enc_b_496 :- \+gen_124_b0, key_f0.
+enc_b_497 :- key_f0, gen_124_b0.
+enc_b_498 :- gen_124_f1, \+key_f1.
+enc_b_498 :- \+gen_124_f1, key_f1.
+enc_b_499 :- enc_b_497, \+enc_b_498.
+enc_b_499 :- \+enc_b_497, enc_b_498.
+tmp_124 :- \+enc_b_496, enc_b_499.
+obs_124 :- tmp_124.
+0.25::gen_125_f1.
+0.3333333333333333::gen_125_f0.
+0.5::gen_125_f0_1.
+gen_125_b0 :- \+gen_125_f1, gen_125_f0.
+gen_125_b0 :- gen_125_f1, gen_125_f0_1.
+enc_b_500 :- gen_125_b0, \+key_f0.
+enc_b_500 :- \+gen_125_b0, key_f0.
+enc_b_501 :- key_f0, gen_125_b0.
+enc_b_502 :- gen_125_f1, \+key_f1.
+enc_b_502 :- \+gen_125_f1, key_f1.
+enc_b_503 :- enc_b_501, \+enc_b_502.
+enc_b_503 :- \+enc_b_501, enc_b_502.
+tmp_125 :- \+enc_b_500, enc_b_503.
+obs_125 :- tmp_125.
+0.25::gen_126_f1.
+0.3333333333333333::gen_126_f0.
+0.5::gen_126_f0_1.
+gen_126_b0 :- \+gen_126_f1, gen_126_f0.
+gen_126_b0 :- gen_126_f1, gen_126_f0_1.
+enc_b_504 :- gen_126_b0, \+key_f0.
+enc_b_504 :- \+gen_126_b0, key_f0.
+enc_b_505 :- key_f0, gen_126_b0.
+enc_b_506 :- gen_126_f1, \+key_f1.
+enc_b_506 :- \+gen_126_f1, key_f1.
+enc_b_507 :- enc_b_505, \+enc_b_506.
+enc_b_507 :- \+enc_b_505, enc_b_506.
+tmp_126 :- \+enc_b_504, enc_b_507.
+obs_126 :- tmp_126.
+0.25::gen_127_f1.
+0.3333333333333333::gen_127_f0.
+0.5::gen_127_f0_1.
+gen_127_b0 :- \+gen_127_f1, gen_127_f0.
+gen_127_b0 :- gen_127_f1, gen_127_f0_1.
+enc_b_508 :- gen_127_b0, \+key_f0.
+enc_b_508 :- \+gen_127_b0, key_f0.
+enc_b_509 :- key_f0, gen_127_b0.
+enc_b_510 :- gen_127_f1, \+key_f1.
+enc_b_510 :- \+gen_127_f1, key_f1.
+enc_b_511 :- enc_b_509, \+enc_b_510.
+enc_b_511 :- \+enc_b_509, enc_b_510.
+tmp_127 :- \+enc_b_508, enc_b_511.
+obs_127 :- tmp_127.
+0.25::gen_128_f1.
+0.3333333333333333::gen_128_f0.
+0.5::gen_128_f0_1.
+gen_128_b0 :- \+gen_128_f1, gen_128_f0.
+gen_128_b0 :- gen_128_f1, gen_128_f0_1.
+enc_b_512 :- gen_128_b0, \+key_f0.
+enc_b_512 :- \+gen_128_b0, key_f0.
+enc_b_513 :- key_f0, gen_128_b0.
+enc_b_514 :- gen_128_f1, \+key_f1.
+enc_b_514 :- \+gen_128_f1, key_f1.
+enc_b_515 :- enc_b_513, \+enc_b_514.
+enc_b_515 :- \+enc_b_513, enc_b_514.
+tmp_128 :- \+enc_b_512, enc_b_515.
+obs_128 :- tmp_128.
+0.25::gen_129_f1.
+0.3333333333333333::gen_129_f0.
+0.5::gen_129_f0_1.
+gen_129_b0 :- \+gen_129_f1, gen_129_f0.
+gen_129_b0 :- gen_129_f1, gen_129_f0_1.
+enc_b_516 :- gen_129_b0, \+key_f0.
+enc_b_516 :- \+gen_129_b0, key_f0.
+enc_b_517 :- key_f0, gen_129_b0.
+enc_b_518 :- gen_129_f1, \+key_f1.
+enc_b_518 :- \+gen_129_f1, key_f1.
+enc_b_519 :- enc_b_517, \+enc_b_518.
+enc_b_519 :- \+enc_b_517, enc_b_518.
+tmp_129 :- \+enc_b_516, enc_b_519.
+obs_129 :- tmp_129.
+0.25::gen_130_f1.
+0.3333333333333333::gen_130_f0.
+0.5::gen_130_f0_1.
+gen_130_b0 :- \+gen_130_f1, gen_130_f0.
+gen_130_b0 :- gen_130_f1, gen_130_f0_1.
+enc_b_520 :- gen_130_b0, \+key_f0.
+enc_b_520 :- \+gen_130_b0, key_f0.
+enc_b_521 :- key_f0, gen_130_b0.
+enc_b_522 :- gen_130_f1, \+key_f1.
+enc_b_522 :- \+gen_130_f1, key_f1.
+enc_b_523 :- enc_b_521, \+enc_b_522.
+enc_b_523 :- \+enc_b_521, enc_b_522.
+tmp_130 :- \+enc_b_520, enc_b_523.
+obs_130 :- tmp_130.
+0.25::gen_131_f1.
+0.3333333333333333::gen_131_f0.
+0.5::gen_131_f0_1.
+gen_131_b0 :- \+gen_131_f1, gen_131_f0.
+gen_131_b0 :- gen_131_f1, gen_131_f0_1.
+enc_b_524 :- gen_131_b0, \+key_f0.
+enc_b_524 :- \+gen_131_b0, key_f0.
+enc_b_525 :- key_f0, gen_131_b0.
+enc_b_526 :- gen_131_f1, \+key_f1.
+enc_b_526 :- \+gen_131_f1, key_f1.
+enc_b_527 :- enc_b_525, \+enc_b_526.
+enc_b_527 :- \+enc_b_525, enc_b_526.
+tmp_131 :- \+enc_b_524, enc_b_527.
+obs_131 :- tmp_131.
+0.25::gen_132_f1.
+0.3333333333333333::gen_132_f0.
+0.5::gen_132_f0_1.
+gen_132_b0 :- \+gen_132_f1, gen_132_f0.
+gen_132_b0 :- gen_132_f1, gen_132_f0_1.
+enc_b_528 :- gen_132_b0, \+key_f0.
+enc_b_528 :- \+gen_132_b0, key_f0.
+enc_b_529 :- key_f0, gen_132_b0.
+enc_b_530 :- gen_132_f1, \+key_f1.
+enc_b_530 :- \+gen_132_f1, key_f1.
+enc_b_531 :- enc_b_529, \+enc_b_530.
+enc_b_531 :- \+enc_b_529, enc_b_530.
+tmp_132 :- \+enc_b_528, enc_b_531.
+obs_132 :- tmp_132.
+0.25::gen_133_f1.
+0.3333333333333333::gen_133_f0.
+0.5::gen_133_f0_1.
+gen_133_b0 :- \+gen_133_f1, gen_133_f0.
+gen_133_b0 :- gen_133_f1, gen_133_f0_1.
+enc_b_532 :- gen_133_b0, \+key_f0.
+enc_b_532 :- \+gen_133_b0, key_f0.
+enc_b_533 :- key_f0, gen_133_b0.
+enc_b_534 :- gen_133_f1, \+key_f1.
+enc_b_534 :- \+gen_133_f1, key_f1.
+enc_b_535 :- enc_b_533, \+enc_b_534.
+enc_b_535 :- \+enc_b_533, enc_b_534.
+tmp_133 :- \+enc_b_532, enc_b_535.
+obs_133 :- tmp_133.
+0.25::gen_134_f1.
+0.3333333333333333::gen_134_f0.
+0.5::gen_134_f0_1.
+gen_134_b0 :- \+gen_134_f1, gen_134_f0.
+gen_134_b0 :- gen_134_f1, gen_134_f0_1.
+enc_b_536 :- gen_134_b0, \+key_f0.
+enc_b_536 :- \+gen_134_b0, key_f0.
+enc_b_537 :- key_f0, gen_134_b0.
+enc_b_538 :- gen_134_f1, \+key_f1.
+enc_b_538 :- \+gen_134_f1, key_f1.
+enc_b_539 :- enc_b_537, \+enc_b_538.
+enc_b_539 :- \+enc_b_537, enc_b_538.
+tmp_134 :- \+enc_b_536, enc_b_539.
+obs_134 :- tmp_134.
+0.25::gen_135_f1.
+0.3333333333333333::gen_135_f0.
+0.5::gen_135_f0_1.
+gen_135_b0 :- \+gen_135_f1, gen_135_f0.
+gen_135_b0 :- gen_135_f1, gen_135_f0_1.
+enc_b_540 :- gen_135_b0, \+key_f0.
+enc_b_540 :- \+gen_135_b0, key_f0.
+enc_b_541 :- key_f0, gen_135_b0.
+enc_b_542 :- gen_135_f1, \+key_f1.
+enc_b_542 :- \+gen_135_f1, key_f1.
+enc_b_543 :- enc_b_541, \+enc_b_542.
+enc_b_543 :- \+enc_b_541, enc_b_542.
+tmp_135 :- \+enc_b_540, enc_b_543.
+obs_135 :- tmp_135.
+0.25::gen_136_f1.
+0.3333333333333333::gen_136_f0.
+0.5::gen_136_f0_1.
+gen_136_b0 :- \+gen_136_f1, gen_136_f0.
+gen_136_b0 :- gen_136_f1, gen_136_f0_1.
+enc_b_544 :- gen_136_b0, \+key_f0.
+enc_b_544 :- \+gen_136_b0, key_f0.
+enc_b_545 :- key_f0, gen_136_b0.
+enc_b_546 :- gen_136_f1, \+key_f1.
+enc_b_546 :- \+gen_136_f1, key_f1.
+enc_b_547 :- enc_b_545, \+enc_b_546.
+enc_b_547 :- \+enc_b_545, enc_b_546.
+tmp_136 :- \+enc_b_544, enc_b_547.
+obs_136 :- tmp_136.
+0.25::gen_137_f1.
+0.3333333333333333::gen_137_f0.
+0.5::gen_137_f0_1.
+gen_137_b0 :- \+gen_137_f1, gen_137_f0.
+gen_137_b0 :- gen_137_f1, gen_137_f0_1.
+enc_b_548 :- gen_137_b0, \+key_f0.
+enc_b_548 :- \+gen_137_b0, key_f0.
+enc_b_549 :- key_f0, gen_137_b0.
+enc_b_550 :- gen_137_f1, \+key_f1.
+enc_b_550 :- \+gen_137_f1, key_f1.
+enc_b_551 :- enc_b_549, \+enc_b_550.
+enc_b_551 :- \+enc_b_549, enc_b_550.
+tmp_137 :- \+enc_b_548, enc_b_551.
+obs_137 :- tmp_137.
+0.25::gen_138_f1.
+0.3333333333333333::gen_138_f0.
+0.5::gen_138_f0_1.
+gen_138_b0 :- \+gen_138_f1, gen_138_f0.
+gen_138_b0 :- gen_138_f1, gen_138_f0_1.
+enc_b_552 :- gen_138_b0, \+key_f0.
+enc_b_552 :- \+gen_138_b0, key_f0.
+enc_b_553 :- key_f0, gen_138_b0.
+enc_b_554 :- gen_138_f1, \+key_f1.
+enc_b_554 :- \+gen_138_f1, key_f1.
+enc_b_555 :- enc_b_553, \+enc_b_554.
+enc_b_555 :- \+enc_b_553, enc_b_554.
+tmp_138 :- \+enc_b_552, enc_b_555.
+obs_138 :- tmp_138.
+0.25::gen_139_f1.
+0.3333333333333333::gen_139_f0.
+0.5::gen_139_f0_1.
+gen_139_b0 :- \+gen_139_f1, gen_139_f0.
+gen_139_b0 :- gen_139_f1, gen_139_f0_1.
+enc_b_556 :- gen_139_b0, \+key_f0.
+enc_b_556 :- \+gen_139_b0, key_f0.
+enc_b_557 :- key_f0, gen_139_b0.
+enc_b_558 :- gen_139_f1, \+key_f1.
+enc_b_558 :- \+gen_139_f1, key_f1.
+enc_b_559 :- enc_b_557, \+enc_b_558.
+enc_b_559 :- \+enc_b_557, enc_b_558.
+tmp_139 :- \+enc_b_556, enc_b_559.
+obs_139 :- tmp_139.
+0.25::gen_140_f1.
+0.3333333333333333::gen_140_f0.
+0.5::gen_140_f0_1.
+gen_140_b0 :- \+gen_140_f1, gen_140_f0.
+gen_140_b0 :- gen_140_f1, gen_140_f0_1.
+enc_b_560 :- gen_140_b0, \+key_f0.
+enc_b_560 :- \+gen_140_b0, key_f0.
+enc_b_561 :- key_f0, gen_140_b0.
+enc_b_562 :- gen_140_f1, \+key_f1.
+enc_b_562 :- \+gen_140_f1, key_f1.
+enc_b_563 :- enc_b_561, \+enc_b_562.
+enc_b_563 :- \+enc_b_561, enc_b_562.
+tmp_140 :- \+enc_b_560, enc_b_563.
+obs_140 :- tmp_140.
+0.25::gen_141_f1.
+0.3333333333333333::gen_141_f0.
+0.5::gen_141_f0_1.
+gen_141_b0 :- \+gen_141_f1, gen_141_f0.
+gen_141_b0 :- gen_141_f1, gen_141_f0_1.
+enc_b_564 :- gen_141_b0, \+key_f0.
+enc_b_564 :- \+gen_141_b0, key_f0.
+enc_b_565 :- key_f0, gen_141_b0.
+enc_b_566 :- gen_141_f1, \+key_f1.
+enc_b_566 :- \+gen_141_f1, key_f1.
+enc_b_567 :- enc_b_565, \+enc_b_566.
+enc_b_567 :- \+enc_b_565, enc_b_566.
+tmp_141 :- \+enc_b_564, enc_b_567.
+obs_141 :- tmp_141.
+0.25::gen_142_f1.
+0.3333333333333333::gen_142_f0.
+0.5::gen_142_f0_1.
+gen_142_b0 :- \+gen_142_f1, gen_142_f0.
+gen_142_b0 :- gen_142_f1, gen_142_f0_1.
+enc_b_568 :- gen_142_b0, \+key_f0.
+enc_b_568 :- \+gen_142_b0, key_f0.
+enc_b_569 :- key_f0, gen_142_b0.
+enc_b_570 :- gen_142_f1, \+key_f1.
+enc_b_570 :- \+gen_142_f1, key_f1.
+enc_b_571 :- enc_b_569, \+enc_b_570.
+enc_b_571 :- \+enc_b_569, enc_b_570.
+tmp_142 :- \+enc_b_568, enc_b_571.
+obs_142 :- tmp_142.
+0.25::gen_143_f1.
+0.3333333333333333::gen_143_f0.
+0.5::gen_143_f0_1.
+gen_143_b0 :- \+gen_143_f1, gen_143_f0.
+gen_143_b0 :- gen_143_f1, gen_143_f0_1.
+enc_b_572 :- gen_143_b0, \+key_f0.
+enc_b_572 :- \+gen_143_b0, key_f0.
+enc_b_573 :- key_f0, gen_143_b0.
+enc_b_574 :- gen_143_f1, \+key_f1.
+enc_b_574 :- \+gen_143_f1, key_f1.
+enc_b_575 :- enc_b_573, \+enc_b_574.
+enc_b_575 :- \+enc_b_573, enc_b_574.
+tmp_143 :- \+enc_b_572, enc_b_575.
+obs_143 :- tmp_143.
+0.25::gen_144_f1.
+0.3333333333333333::gen_144_f0.
+0.5::gen_144_f0_1.
+gen_144_b0 :- \+gen_144_f1, gen_144_f0.
+gen_144_b0 :- gen_144_f1, gen_144_f0_1.
+enc_b_576 :- gen_144_b0, \+key_f0.
+enc_b_576 :- \+gen_144_b0, key_f0.
+enc_b_577 :- key_f0, gen_144_b0.
+enc_b_578 :- gen_144_f1, \+key_f1.
+enc_b_578 :- \+gen_144_f1, key_f1.
+enc_b_579 :- enc_b_577, \+enc_b_578.
+enc_b_579 :- \+enc_b_577, enc_b_578.
+tmp_144 :- \+enc_b_576, enc_b_579.
+obs_144 :- tmp_144.
+0.25::gen_145_f1.
+0.3333333333333333::gen_145_f0.
+0.5::gen_145_f0_1.
+gen_145_b0 :- \+gen_145_f1, gen_145_f0.
+gen_145_b0 :- gen_145_f1, gen_145_f0_1.
+enc_b_580 :- gen_145_b0, \+key_f0.
+enc_b_580 :- \+gen_145_b0, key_f0.
+enc_b_581 :- key_f0, gen_145_b0.
+enc_b_582 :- gen_145_f1, \+key_f1.
+enc_b_582 :- \+gen_145_f1, key_f1.
+enc_b_583 :- enc_b_581, \+enc_b_582.
+enc_b_583 :- \+enc_b_581, enc_b_582.
+tmp_145 :- \+enc_b_580, enc_b_583.
+obs_145 :- tmp_145.
+0.25::gen_146_f1.
+0.3333333333333333::gen_146_f0.
+0.5::gen_146_f0_1.
+gen_146_b0 :- \+gen_146_f1, gen_146_f0.
+gen_146_b0 :- gen_146_f1, gen_146_f0_1.
+enc_b_584 :- gen_146_b0, \+key_f0.
+enc_b_584 :- \+gen_146_b0, key_f0.
+enc_b_585 :- key_f0, gen_146_b0.
+enc_b_586 :- gen_146_f1, \+key_f1.
+enc_b_586 :- \+gen_146_f1, key_f1.
+enc_b_587 :- enc_b_585, \+enc_b_586.
+enc_b_587 :- \+enc_b_585, enc_b_586.
+tmp_146 :- \+enc_b_584, enc_b_587.
+obs_146 :- tmp_146.
+0.25::gen_147_f1.
+0.3333333333333333::gen_147_f0.
+0.5::gen_147_f0_1.
+gen_147_b0 :- \+gen_147_f1, gen_147_f0.
+gen_147_b0 :- gen_147_f1, gen_147_f0_1.
+enc_b_588 :- gen_147_b0, \+key_f0.
+enc_b_588 :- \+gen_147_b0, key_f0.
+enc_b_589 :- key_f0, gen_147_b0.
+enc_b_590 :- gen_147_f1, \+key_f1.
+enc_b_590 :- \+gen_147_f1, key_f1.
+enc_b_591 :- enc_b_589, \+enc_b_590.
+enc_b_591 :- \+enc_b_589, enc_b_590.
+tmp_147 :- \+enc_b_588, enc_b_591.
+obs_147 :- tmp_147.
+0.25::gen_148_f1.
+0.3333333333333333::gen_148_f0.
+0.5::gen_148_f0_1.
+gen_148_b0 :- \+gen_148_f1, gen_148_f0.
+gen_148_b0 :- gen_148_f1, gen_148_f0_1.
+enc_b_592 :- gen_148_b0, \+key_f0.
+enc_b_592 :- \+gen_148_b0, key_f0.
+enc_b_593 :- key_f0, gen_148_b0.
+enc_b_594 :- gen_148_f1, \+key_f1.
+enc_b_594 :- \+gen_148_f1, key_f1.
+enc_b_595 :- enc_b_593, \+enc_b_594.
+enc_b_595 :- \+enc_b_593, enc_b_594.
+tmp_148 :- \+enc_b_592, enc_b_595.
+obs_148 :- tmp_148.
+0.25::gen_149_f1.
+0.3333333333333333::gen_149_f0.
+0.5::gen_149_f0_1.
+gen_149_b0 :- \+gen_149_f1, gen_149_f0.
+gen_149_b0 :- gen_149_f1, gen_149_f0_1.
+enc_b_596 :- gen_149_b0, \+key_f0.
+enc_b_596 :- \+gen_149_b0, key_f0.
+enc_b_597 :- key_f0, gen_149_b0.
+enc_b_598 :- gen_149_f1, \+key_f1.
+enc_b_598 :- \+gen_149_f1, key_f1.
+enc_b_599 :- enc_b_597, \+enc_b_598.
+enc_b_599 :- \+enc_b_597, enc_b_598.
+tmp_149 :- \+enc_b_596, enc_b_599.
+obs_149 :- tmp_149.
+0.25::gen_150_f1.
+0.3333333333333333::gen_150_f0.
+0.5::gen_150_f0_1.
+gen_150_b0 :- \+gen_150_f1, gen_150_f0.

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb_altermu2_p64 · tddlog results</title>
+<meta name="description" content="bb_altermu2_p64, an instance of Bit-blasted programs: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
+    <h1>bb_altermu2_p64</h1>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in docs/benchmarks.md and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s or the Dice programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/altermu2.jl</code> with <code>pieces=64</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">14.5</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
+<p class="readers">Read by Alea.jl.</p>
+<dl class="cmds">
+<dt>Alea.jl</dt><dd><code>julia scripts/alea_bench.jl run --warm-below 200 --set pieces=64 data/alea/hybit/altermu2.jl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">data/alea/hybit/altermu2.jl</code><span>1 407 bytes, 32 lines</span><span class="sha" title="SHA-256">sha256 878d9632a450aba748e913f28ecf9aad87436a7ae39f1714d2436d2d7f39a4c3</span></div><p class="made">In the repository (the <code>baselines</code> branch): <code>data/alea/hybit/altermu2.jl</code>.</p><pre># altermu2 (Nishihara et al. 2013): the mean of the first of two uniform
+# parameters whose sum is the mean of 40 observed normal data points.
+# Bit-blasting paper (Garg, Holtzen, Van den Broeck, Millstein, PLDI 2024),
+# Table 2: 17 bits, 256 pieces. From Tractables/Alea.jl
+# hybrid/benchmarks/altermu2/altermu2.jl at cf5e5b8 (Apache License 2.0),
+# its body unchanged.
+using Alea, Distributions
+
+const QUERY = :expectation
+const bits = 11
+const pieces = 256
+const DFiP = DistFix{6+bits, bits}
+const truncation = (-8.0, 8.0)
+const data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
+        -0.91651351,  0.15555127, -2.68160347,  2.47043789,  3.47459025,
+        1.63949862, -1.32148757,  2.64187513,  0.30357848, -4.09546231,
+        -1.50709863, -0.99517866, -2.0648892 , -2.40317949,  3.46383544,
+        0.91173696,  1.18222221,  0.04235722, -0.52815171,  1.15551598,
+        -1.62749724,  0.71473237, -1.08458812,  4.66020296,  1.24563831,
+        -0.67970862,  0.93461681,  1.18187607, -1.49501051,  2.44755622,
+        -2.06424237, -0.04584074,  1.93396696,  1.07685273, -0.09837907])
+
+model() = @alea begin
+    mu1 = uniform(DFiP, -8.0, 8.0)
+    mu2 = uniform(DFiP, -8.0, 8.0)
+    mu = mu1 + mu2
+    for datapoint in data
+        g = bitblast_exponential(DFiP, Normal(0, 1), pieces, truncation[1], truncation[2])
+        observe(g + mu == datapoint)
+    end
+    mu1
+end
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by tddlog, tddlog (program), tddlog (decision).</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto bb_altermu2_p64.pl</code></dd>
+<dt>tddlog (program)</dt><dd><code>tddlog --stats --precision 17 --vtree program bb_altermu2_p64.pl</code></dd>
+<dt>tddlog (decision)</dt><dd><code>tddlog --stats --precision 17 --vtree decision bb_altermu2_p64.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">bb_altermu2_p64.pl</code><span>4 390 572 bytes, 189 063 lines</span><span class="sha" title="SHA-256">sha256 6ef833806ff38f7a9d07503b03c8a21eebe3ab2ec71404d4b5d64957b406c558</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/hybit/altermu2.jl pieces=64</code>.</p><p class="note"><a href="../files/6ef833806ff38f7a9d07.txt">the first 65 528 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/6ef833806ff38f7a9d07.txt"></pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.5</td><td></td><td>largest formula, pairs 6 539 230; final formula, pairs 66; variables 117 156; ground atoms 249 742; ground rules 264 118; vtree families:0 (from auto: 37 attempts, 3.972s discarded)</td></tr><tr><td>2</td><td>answered</td><td>14.4</td><td></td><td>largest formula, pairs 6 539 230; final formula, pairs 66; variables 117 156; ground atoms 249 742; ground rules 264 118; vtree families:0 (from auto: 37 attempts, 3.944s discarded)</td></tr><tr><td>3</td><td>answered</td><td>14.7</td><td></td><td>largest formula, pairs 6 539 230; final formula, pairs 66; variables 117 156; ground atoms 249 742; ground rules 264 118; vtree families:0 (from auto: 37 attempts, 3.986s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (decision)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>tddlog (program)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Alea.jl</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th></tr></thead><tbody><tr><th>e1(1)</th><td class="num">0.4900502212</td></tr><tr><th>e1(4)</th><td class="num">0.5099497788</td></tr><tr><th>e1(5)</th><td class="num">0.5099497788</td></tr><tr><th>e1(6)</th><td class="num">0.5099497648</td></tr><tr><th>e1(7)</th><td class="num">0.50937267</td></tr><tr><th>e1(8)</th><td class="num">0.5042043987</td></tr><tr><th>e1(9)</th><td class="num">0.5019230777</td></tr><tr><th>e1(10)</th><td class="num">0.5009522085</td></tr><tr><th>e1(11)</th><td class="num">0.5004740284</td></tr><tr><th>e1(12)</th><td class="num">0.5002368027</td></tr><tr><th>e1(13)</th><td class="num">0.5001184118</td></tr><tr><th>e1(14)</th><td class="num">0.5000592041</td></tr><tr><th>e1(15)</th><td class="num">0.5000296017</td></tr><tr><th>e1(16)</th><td class="num">0.5000148008</td></tr><tr><th>e1(17)</th><td class="num">0.5000074004</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

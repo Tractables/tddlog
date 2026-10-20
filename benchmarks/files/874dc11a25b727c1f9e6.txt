@@ -1,0 +1,1104 @@
+0.3333333333333333::draw1_f3.
+0.5::draw1_f2.
+draw1_b2 :- \+draw1_f3, draw1_f2.
+0.5::draw1_f1.
+0.5::draw1_f0.
+0.3333333333333333::draw2_f3.
+0.5::draw2_f2.
+draw2_b2 :- \+draw2_f3, draw2_f2.
+0.5::draw2_f1.
+0.5::draw2_f0.
+t_b :- draw1_f0, \+draw2_f0.
+t_b :- \+draw1_f0, draw2_f0.
+t_b_1 :- draw1_f1, \+draw2_f1.
+t_b_1 :- \+draw1_f1, draw2_f1.
+t_b_2 :- draw1_b2, \+draw2_b2.
+t_b_2 :- \+draw1_b2, draw2_b2.
+t_b_3 :- draw1_f3, \+draw2_f3.
+t_b_3 :- \+draw1_f3, draw2_f3.
+t :- \+t_b, \+t_b_1, \+t_b_2, \+t_b_3.
+obs :- \+t.
+r0 :- \+draw1_f0, \+draw1_f1, \+draw1_b2, \+draw1_f3.
+r0_1 :- \+draw2_f0, \+draw2_f1, \+draw2_b2, \+draw2_f3.
+r0_2 :- r0.
+r0_2 :- r0_1.
+r1 :- draw1_f0, \+draw1_f1, \+draw1_b2, \+draw1_f3.
+r1_1 :- draw2_f0, \+draw2_f1, \+draw2_b2, \+draw2_f3.
+r1_2 :- r1.
+r1_2 :- r1_1.
+r2 :- \+draw1_f0, draw1_f1, \+draw1_b2, \+draw1_f3.
+r2_1 :- \+draw2_f0, draw2_f1, \+draw2_b2, \+draw2_f3.
+r2_2 :- r2.
+r2_2 :- r2_1.
+r3 :- draw1_f0, draw1_f1, \+draw1_b2, \+draw1_f3.
+r3_1 :- draw2_f0, draw2_f1, \+draw2_b2, \+draw2_f3.
+r3_2 :- r3.
+r3_2 :- r3_1.
+r4 :- \+draw1_f0, \+draw1_f1, draw1_b2, \+draw1_f3.
+r4_1 :- \+draw2_f0, \+draw2_f1, draw2_b2, \+draw2_f3.
+r4_2 :- r4.
+r4_2 :- r4_1.
+r5 :- draw1_f0, \+draw1_f1, draw1_b2, \+draw1_f3.
+r5_1 :- draw2_f0, \+draw2_f1, draw2_b2, \+draw2_f3.
+r5_2 :- r5.
+r5_2 :- r5_1.
+r6 :- \+draw1_f0, draw1_f1, draw1_b2, \+draw1_f3.
+r6_1 :- \+draw2_f0, draw2_f1, draw2_b2, \+draw2_f3.
+r6_2 :- r6.
+r6_2 :- r6_1.
+r7 :- draw1_f0, draw1_f1, draw1_b2, \+draw1_f3.
+r7_1 :- draw2_f0, draw2_f1, draw2_b2, \+draw2_f3.
+r7_2 :- r7.
+r7_2 :- r7_1.
+r8 :- \+draw1_f0, \+draw1_f1, \+draw1_b2, draw1_f3.
+r8_1 :- \+draw2_f0, \+draw2_f1, \+draw2_b2, draw2_f3.
+r8_2 :- r8.
+r8_2 :- r8_1.
+r9 :- draw1_f0, \+draw1_f1, \+draw1_b2, draw1_f3.
+r9_1 :- draw2_f0, \+draw2_f1, \+draw2_b2, draw2_f3.
+r9_2 :- r9.
+r9_2 :- r9_1.
+r10 :- \+draw1_f0, draw1_f1, \+draw1_b2, draw1_f3.
+r10_1 :- \+draw2_f0, draw2_f1, \+draw2_b2, draw2_f3.
+r10_2 :- r10.
+r10_2 :- r10_1.
+r11 :- draw1_f0, draw1_f1, \+draw1_b2, draw1_f3.
+r11_1 :- draw2_f0, draw2_f1, \+draw2_b2, draw2_f3.
+r11_2 :- r11.
+r11_2 :- r11_1.
+0.3333333333333333::draw1_1_f3.
+0.5::draw1_1_f2.
+draw1_1_b2 :- \+draw1_1_f3, draw1_1_f2.
+0.5::draw1_1_f1.
+0.5::draw1_1_f0.
+0.3333333333333333::draw2_1_f3.
+0.5::draw2_1_f2.
+draw2_1_b2 :- \+draw2_1_f3, draw2_1_f2.
+0.5::draw2_1_f1.
+0.5::draw2_1_f0.
+t_b_4 :- draw1_1_f0, \+draw2_1_f0.
+t_b_4 :- \+draw1_1_f0, draw2_1_f0.
+t_b_5 :- draw1_1_f1, \+draw2_1_f1.
+t_b_5 :- \+draw1_1_f1, draw2_1_f1.
+t_b_6 :- draw1_1_b2, \+draw2_1_b2.
+t_b_6 :- \+draw1_1_b2, draw2_1_b2.
+t_b_7 :- draw1_1_f3, \+draw2_1_f3.
+t_b_7 :- \+draw1_1_f3, draw2_1_f3.
+t_1 :- \+t_b_4, \+t_b_5, \+t_b_6, \+t_b_7.
+obs_1 :- \+t_1.
+r0_3 :- \+draw1_1_f0, \+draw1_1_f1, \+draw1_1_b2, \+draw1_1_f3.
+r0_4 :- r0_2.
+r0_4 :- r0_3.
+r0_5 :- \+draw2_1_f0, \+draw2_1_f1, \+draw2_1_b2, \+draw2_1_f3.
+r0_6 :- r0_4.
+r0_6 :- r0_5.
+r1_3 :- draw1_1_f0, \+draw1_1_f1, \+draw1_1_b2, \+draw1_1_f3.
+r1_4 :- r1_2.
+r1_4 :- r1_3.
+r1_5 :- draw2_1_f0, \+draw2_1_f1, \+draw2_1_b2, \+draw2_1_f3.
+r1_6 :- r1_4.
+r1_6 :- r1_5.
+r2_3 :- \+draw1_1_f0, draw1_1_f1, \+draw1_1_b2, \+draw1_1_f3.
+r2_4 :- r2_2.
+r2_4 :- r2_3.
+r2_5 :- \+draw2_1_f0, draw2_1_f1, \+draw2_1_b2, \+draw2_1_f3.
+r2_6 :- r2_4.
+r2_6 :- r2_5.
+r3_3 :- draw1_1_f0, draw1_1_f1, \+draw1_1_b2, \+draw1_1_f3.
+r3_4 :- r3_2.
+r3_4 :- r3_3.
+r3_5 :- draw2_1_f0, draw2_1_f1, \+draw2_1_b2, \+draw2_1_f3.
+r3_6 :- r3_4.
+r3_6 :- r3_5.
+r4_3 :- \+draw1_1_f0, \+draw1_1_f1, draw1_1_b2, \+draw1_1_f3.
+r4_4 :- r4_2.
+r4_4 :- r4_3.
+r4_5 :- \+draw2_1_f0, \+draw2_1_f1, draw2_1_b2, \+draw2_1_f3.
+r4_6 :- r4_4.
+r4_6 :- r4_5.
+r5_3 :- draw1_1_f0, \+draw1_1_f1, draw1_1_b2, \+draw1_1_f3.
+r5_4 :- r5_2.
+r5_4 :- r5_3.
+r5_5 :- draw2_1_f0, \+draw2_1_f1, draw2_1_b2, \+draw2_1_f3.
+r5_6 :- r5_4.
+r5_6 :- r5_5.
+r6_3 :- \+draw1_1_f0, draw1_1_f1, draw1_1_b2, \+draw1_1_f3.
+r6_4 :- r6_2.
+r6_4 :- r6_3.
+r6_5 :- \+draw2_1_f0, draw2_1_f1, draw2_1_b2, \+draw2_1_f3.
+r6_6 :- r6_4.
+r6_6 :- r6_5.
+r7_3 :- draw1_1_f0, draw1_1_f1, draw1_1_b2, \+draw1_1_f3.
+r7_4 :- r7_2.
+r7_4 :- r7_3.
+r7_5 :- draw2_1_f0, draw2_1_f1, draw2_1_b2, \+draw2_1_f3.
+r7_6 :- r7_4.
+r7_6 :- r7_5.
+r8_3 :- \+draw1_1_f0, \+draw1_1_f1, \+draw1_1_b2, draw1_1_f3.
+r8_4 :- r8_2.
+r8_4 :- r8_3.
+r8_5 :- \+draw2_1_f0, \+draw2_1_f1, \+draw2_1_b2, draw2_1_f3.
+r8_6 :- r8_4.
+r8_6 :- r8_5.
+r9_3 :- draw1_1_f0, \+draw1_1_f1, \+draw1_1_b2, draw1_1_f3.
+r9_4 :- r9_2.
+r9_4 :- r9_3.
+r9_5 :- draw2_1_f0, \+draw2_1_f1, \+draw2_1_b2, draw2_1_f3.
+r9_6 :- r9_4.
+r9_6 :- r9_5.
+r10_3 :- \+draw1_1_f0, draw1_1_f1, \+draw1_1_b2, draw1_1_f3.
+r10_4 :- r10_2.
+r10_4 :- r10_3.
+r10_5 :- \+draw2_1_f0, draw2_1_f1, \+draw2_1_b2, draw2_1_f3.
+r10_6 :- r10_4.
+r10_6 :- r10_5.
+r11_3 :- draw1_1_f0, draw1_1_f1, \+draw1_1_b2, draw1_1_f3.
+r11_4 :- r11_2.
+r11_4 :- r11_3.
+r11_5 :- draw2_1_f0, draw2_1_f1, \+draw2_1_b2, draw2_1_f3.
+r11_6 :- r11_4.
+r11_6 :- r11_5.
+0.3333333333333333::draw1_2_f3.
+0.5::draw1_2_f2.
+draw1_2_b2 :- \+draw1_2_f3, draw1_2_f2.
+0.5::draw1_2_f1.
+0.5::draw1_2_f0.
+0.3333333333333333::draw2_2_f3.
+0.5::draw2_2_f2.
+draw2_2_b2 :- \+draw2_2_f3, draw2_2_f2.
+0.5::draw2_2_f1.
+0.5::draw2_2_f0.
+t_b_8 :- draw1_2_f0, \+draw2_2_f0.
+t_b_8 :- \+draw1_2_f0, draw2_2_f0.
+t_b_9 :- draw1_2_f1, \+draw2_2_f1.
+t_b_9 :- \+draw1_2_f1, draw2_2_f1.
+t_b_10 :- draw1_2_b2, \+draw2_2_b2.
+t_b_10 :- \+draw1_2_b2, draw2_2_b2.
+t_b_11 :- draw1_2_f3, \+draw2_2_f3.
+t_b_11 :- \+draw1_2_f3, draw2_2_f3.
+t_2 :- \+t_b_8, \+t_b_9, \+t_b_10, \+t_b_11.
+obs_2 :- \+t_2.
+r0_7 :- \+draw1_2_f0, \+draw1_2_f1, \+draw1_2_b2, \+draw1_2_f3.
+r0_8 :- r0_6.
+r0_8 :- r0_7.
+r0_9 :- \+draw2_2_f0, \+draw2_2_f1, \+draw2_2_b2, \+draw2_2_f3.
+r0_10 :- r0_8.
+r0_10 :- r0_9.
+r1_7 :- draw1_2_f0, \+draw1_2_f1, \+draw1_2_b2, \+draw1_2_f3.
+r1_8 :- r1_6.
+r1_8 :- r1_7.
+r1_9 :- draw2_2_f0, \+draw2_2_f1, \+draw2_2_b2, \+draw2_2_f3.
+r1_10 :- r1_8.
+r1_10 :- r1_9.
+r2_7 :- \+draw1_2_f0, draw1_2_f1, \+draw1_2_b2, \+draw1_2_f3.
+r2_8 :- r2_6.
+r2_8 :- r2_7.
+r2_9 :- \+draw2_2_f0, draw2_2_f1, \+draw2_2_b2, \+draw2_2_f3.
+r2_10 :- r2_8.
+r2_10 :- r2_9.
+r3_7 :- draw1_2_f0, draw1_2_f1, \+draw1_2_b2, \+draw1_2_f3.
+r3_8 :- r3_6.
+r3_8 :- r3_7.
+r3_9 :- draw2_2_f0, draw2_2_f1, \+draw2_2_b2, \+draw2_2_f3.
+r3_10 :- r3_8.
+r3_10 :- r3_9.
+r4_7 :- \+draw1_2_f0, \+draw1_2_f1, draw1_2_b2, \+draw1_2_f3.
+r4_8 :- r4_6.
+r4_8 :- r4_7.
+r4_9 :- \+draw2_2_f0, \+draw2_2_f1, draw2_2_b2, \+draw2_2_f3.
+r4_10 :- r4_8.
+r4_10 :- r4_9.
+r5_7 :- draw1_2_f0, \+draw1_2_f1, draw1_2_b2, \+draw1_2_f3.
+r5_8 :- r5_6.
+r5_8 :- r5_7.
+r5_9 :- draw2_2_f0, \+draw2_2_f1, draw2_2_b2, \+draw2_2_f3.
+r5_10 :- r5_8.
+r5_10 :- r5_9.
+r6_7 :- \+draw1_2_f0, draw1_2_f1, draw1_2_b2, \+draw1_2_f3.
+r6_8 :- r6_6.
+r6_8 :- r6_7.
+r6_9 :- \+draw2_2_f0, draw2_2_f1, draw2_2_b2, \+draw2_2_f3.
+r6_10 :- r6_8.
+r6_10 :- r6_9.
+r7_7 :- draw1_2_f0, draw1_2_f1, draw1_2_b2, \+draw1_2_f3.
+r7_8 :- r7_6.
+r7_8 :- r7_7.
+r7_9 :- draw2_2_f0, draw2_2_f1, draw2_2_b2, \+draw2_2_f3.
+r7_10 :- r7_8.
+r7_10 :- r7_9.
+r8_7 :- \+draw1_2_f0, \+draw1_2_f1, \+draw1_2_b2, draw1_2_f3.
+r8_8 :- r8_6.
+r8_8 :- r8_7.
+r8_9 :- \+draw2_2_f0, \+draw2_2_f1, \+draw2_2_b2, draw2_2_f3.
+r8_10 :- r8_8.
+r8_10 :- r8_9.
+r9_7 :- draw1_2_f0, \+draw1_2_f1, \+draw1_2_b2, draw1_2_f3.
+r9_8 :- r9_6.
+r9_8 :- r9_7.
+r9_9 :- draw2_2_f0, \+draw2_2_f1, \+draw2_2_b2, draw2_2_f3.
+r9_10 :- r9_8.
+r9_10 :- r9_9.
+r10_7 :- \+draw1_2_f0, draw1_2_f1, \+draw1_2_b2, draw1_2_f3.
+r10_8 :- r10_6.
+r10_8 :- r10_7.
+r10_9 :- \+draw2_2_f0, draw2_2_f1, \+draw2_2_b2, draw2_2_f3.
+r10_10 :- r10_8.
+r10_10 :- r10_9.
+r11_7 :- draw1_2_f0, draw1_2_f1, \+draw1_2_b2, draw1_2_f3.
+r11_8 :- r11_6.
+r11_8 :- r11_7.
+r11_9 :- draw2_2_f0, draw2_2_f1, \+draw2_2_b2, draw2_2_f3.
+r11_10 :- r11_8.
+r11_10 :- r11_9.
+0.3333333333333333::draw1_3_f3.
+0.5::draw1_3_f2.
+draw1_3_b2 :- \+draw1_3_f3, draw1_3_f2.
+0.5::draw1_3_f1.
+0.5::draw1_3_f0.
+0.3333333333333333::draw2_3_f3.
+0.5::draw2_3_f2.
+draw2_3_b2 :- \+draw2_3_f3, draw2_3_f2.
+0.5::draw2_3_f1.
+0.5::draw2_3_f0.
+t_b_12 :- draw1_3_f0, \+draw2_3_f0.
+t_b_12 :- \+draw1_3_f0, draw2_3_f0.
+t_b_13 :- draw1_3_f1, \+draw2_3_f1.
+t_b_13 :- \+draw1_3_f1, draw2_3_f1.
+t_b_14 :- draw1_3_b2, \+draw2_3_b2.
+t_b_14 :- \+draw1_3_b2, draw2_3_b2.
+t_b_15 :- draw1_3_f3, \+draw2_3_f3.
+t_b_15 :- \+draw1_3_f3, draw2_3_f3.
+t_3 :- \+t_b_12, \+t_b_13, \+t_b_14, \+t_b_15.
+obs_3 :- \+t_3.
+r0_11 :- \+draw1_3_f0, \+draw1_3_f1, \+draw1_3_b2, \+draw1_3_f3.
+r0_12 :- r0_10.
+r0_12 :- r0_11.
+r0_13 :- \+draw2_3_f0, \+draw2_3_f1, \+draw2_3_b2, \+draw2_3_f3.
+r0_14 :- r0_12.
+r0_14 :- r0_13.
+r1_11 :- draw1_3_f0, \+draw1_3_f1, \+draw1_3_b2, \+draw1_3_f3.
+r1_12 :- r1_10.
+r1_12 :- r1_11.
+r1_13 :- draw2_3_f0, \+draw2_3_f1, \+draw2_3_b2, \+draw2_3_f3.
+r1_14 :- r1_12.
+r1_14 :- r1_13.
+r2_11 :- \+draw1_3_f0, draw1_3_f1, \+draw1_3_b2, \+draw1_3_f3.
+r2_12 :- r2_10.
+r2_12 :- r2_11.
+r2_13 :- \+draw2_3_f0, draw2_3_f1, \+draw2_3_b2, \+draw2_3_f3.
+r2_14 :- r2_12.
+r2_14 :- r2_13.
+r3_11 :- draw1_3_f0, draw1_3_f1, \+draw1_3_b2, \+draw1_3_f3.
+r3_12 :- r3_10.
+r3_12 :- r3_11.
+r3_13 :- draw2_3_f0, draw2_3_f1, \+draw2_3_b2, \+draw2_3_f3.
+r3_14 :- r3_12.
+r3_14 :- r3_13.
+r4_11 :- \+draw1_3_f0, \+draw1_3_f1, draw1_3_b2, \+draw1_3_f3.
+r4_12 :- r4_10.
+r4_12 :- r4_11.
+r4_13 :- \+draw2_3_f0, \+draw2_3_f1, draw2_3_b2, \+draw2_3_f3.
+r4_14 :- r4_12.
+r4_14 :- r4_13.
+r5_11 :- draw1_3_f0, \+draw1_3_f1, draw1_3_b2, \+draw1_3_f3.
+r5_12 :- r5_10.
+r5_12 :- r5_11.
+r5_13 :- draw2_3_f0, \+draw2_3_f1, draw2_3_b2, \+draw2_3_f3.
+r5_14 :- r5_12.
+r5_14 :- r5_13.
+r6_11 :- \+draw1_3_f0, draw1_3_f1, draw1_3_b2, \+draw1_3_f3.
+r6_12 :- r6_10.
+r6_12 :- r6_11.
+r6_13 :- \+draw2_3_f0, draw2_3_f1, draw2_3_b2, \+draw2_3_f3.
+r6_14 :- r6_12.
+r6_14 :- r6_13.
+r7_11 :- draw1_3_f0, draw1_3_f1, draw1_3_b2, \+draw1_3_f3.
+r7_12 :- r7_10.
+r7_12 :- r7_11.
+r7_13 :- draw2_3_f0, draw2_3_f1, draw2_3_b2, \+draw2_3_f3.
+r7_14 :- r7_12.
+r7_14 :- r7_13.
+r8_11 :- \+draw1_3_f0, \+draw1_3_f1, \+draw1_3_b2, draw1_3_f3.
+r8_12 :- r8_10.
+r8_12 :- r8_11.
+r8_13 :- \+draw2_3_f0, \+draw2_3_f1, \+draw2_3_b2, draw2_3_f3.
+r8_14 :- r8_12.
+r8_14 :- r8_13.
+r9_11 :- draw1_3_f0, \+draw1_3_f1, \+draw1_3_b2, draw1_3_f3.
+r9_12 :- r9_10.
+r9_12 :- r9_11.
+r9_13 :- draw2_3_f0, \+draw2_3_f1, \+draw2_3_b2, draw2_3_f3.
+r9_14 :- r9_12.
+r9_14 :- r9_13.
+r10_11 :- \+draw1_3_f0, draw1_3_f1, \+draw1_3_b2, draw1_3_f3.
+r10_12 :- r10_10.
+r10_12 :- r10_11.
+r10_13 :- \+draw2_3_f0, draw2_3_f1, \+draw2_3_b2, draw2_3_f3.
+r10_14 :- r10_12.
+r10_14 :- r10_13.
+r11_11 :- draw1_3_f0, draw1_3_f1, \+draw1_3_b2, draw1_3_f3.
+r11_12 :- r11_10.
+r11_12 :- r11_11.
+r11_13 :- draw2_3_f0, draw2_3_f1, \+draw2_3_b2, draw2_3_f3.
+r11_14 :- r11_12.
+r11_14 :- r11_13.
+0.3333333333333333::draw1_4_f3.
+0.5::draw1_4_f2.
+draw1_4_b2 :- \+draw1_4_f3, draw1_4_f2.
+0.5::draw1_4_f1.
+0.5::draw1_4_f0.
+0.3333333333333333::draw2_4_f3.
+0.5::draw2_4_f2.
+draw2_4_b2 :- \+draw2_4_f3, draw2_4_f2.
+0.5::draw2_4_f1.
+0.5::draw2_4_f0.
+t_b_16 :- draw1_4_f0, \+draw2_4_f0.
+t_b_16 :- \+draw1_4_f0, draw2_4_f0.
+t_b_17 :- draw1_4_f1, \+draw2_4_f1.
+t_b_17 :- \+draw1_4_f1, draw2_4_f1.
+t_b_18 :- draw1_4_b2, \+draw2_4_b2.
+t_b_18 :- \+draw1_4_b2, draw2_4_b2.
+t_b_19 :- draw1_4_f3, \+draw2_4_f3.
+t_b_19 :- \+draw1_4_f3, draw2_4_f3.
+t_4 :- \+t_b_16, \+t_b_17, \+t_b_18, \+t_b_19.
+obs_4 :- \+t_4.
+r0_15 :- \+draw1_4_f0, \+draw1_4_f1, \+draw1_4_b2, \+draw1_4_f3.
+r0_16 :- r0_14.
+r0_16 :- r0_15.
+r0_17 :- \+draw2_4_f0, \+draw2_4_f1, \+draw2_4_b2, \+draw2_4_f3.
+r0_18 :- r0_16.
+r0_18 :- r0_17.
+r1_15 :- draw1_4_f0, \+draw1_4_f1, \+draw1_4_b2, \+draw1_4_f3.
+r1_16 :- r1_14.
+r1_16 :- r1_15.
+r1_17 :- draw2_4_f0, \+draw2_4_f1, \+draw2_4_b2, \+draw2_4_f3.
+r1_18 :- r1_16.
+r1_18 :- r1_17.
+r2_15 :- \+draw1_4_f0, draw1_4_f1, \+draw1_4_b2, \+draw1_4_f3.
+r2_16 :- r2_14.
+r2_16 :- r2_15.
+r2_17 :- \+draw2_4_f0, draw2_4_f1, \+draw2_4_b2, \+draw2_4_f3.
+r2_18 :- r2_16.
+r2_18 :- r2_17.
+r3_15 :- draw1_4_f0, draw1_4_f1, \+draw1_4_b2, \+draw1_4_f3.
+r3_16 :- r3_14.
+r3_16 :- r3_15.
+r3_17 :- draw2_4_f0, draw2_4_f1, \+draw2_4_b2, \+draw2_4_f3.
+r3_18 :- r3_16.
+r3_18 :- r3_17.
+r4_15 :- \+draw1_4_f0, \+draw1_4_f1, draw1_4_b2, \+draw1_4_f3.
+r4_16 :- r4_14.
+r4_16 :- r4_15.
+r4_17 :- \+draw2_4_f0, \+draw2_4_f1, draw2_4_b2, \+draw2_4_f3.
+r4_18 :- r4_16.
+r4_18 :- r4_17.
+r5_15 :- draw1_4_f0, \+draw1_4_f1, draw1_4_b2, \+draw1_4_f3.
+r5_16 :- r5_14.
+r5_16 :- r5_15.
+r5_17 :- draw2_4_f0, \+draw2_4_f1, draw2_4_b2, \+draw2_4_f3.
+r5_18 :- r5_16.
+r5_18 :- r5_17.
+r6_15 :- \+draw1_4_f0, draw1_4_f1, draw1_4_b2, \+draw1_4_f3.
+r6_16 :- r6_14.
+r6_16 :- r6_15.
+r6_17 :- \+draw2_4_f0, draw2_4_f1, draw2_4_b2, \+draw2_4_f3.
+r6_18 :- r6_16.
+r6_18 :- r6_17.
+r7_15 :- draw1_4_f0, draw1_4_f1, draw1_4_b2, \+draw1_4_f3.
+r7_16 :- r7_14.
+r7_16 :- r7_15.
+r7_17 :- draw2_4_f0, draw2_4_f1, draw2_4_b2, \+draw2_4_f3.
+r7_18 :- r7_16.
+r7_18 :- r7_17.
+r8_15 :- \+draw1_4_f0, \+draw1_4_f1, \+draw1_4_b2, draw1_4_f3.
+r8_16 :- r8_14.
+r8_16 :- r8_15.
+r8_17 :- \+draw2_4_f0, \+draw2_4_f1, \+draw2_4_b2, draw2_4_f3.
+r8_18 :- r8_16.
+r8_18 :- r8_17.
+r9_15 :- draw1_4_f0, \+draw1_4_f1, \+draw1_4_b2, draw1_4_f3.
+r9_16 :- r9_14.
+r9_16 :- r9_15.
+r9_17 :- draw2_4_f0, \+draw2_4_f1, \+draw2_4_b2, draw2_4_f3.
+r9_18 :- r9_16.
+r9_18 :- r9_17.
+r10_15 :- \+draw1_4_f0, draw1_4_f1, \+draw1_4_b2, draw1_4_f3.
+r10_16 :- r10_14.
+r10_16 :- r10_15.
+r10_17 :- \+draw2_4_f0, draw2_4_f1, \+draw2_4_b2, draw2_4_f3.
+r10_18 :- r10_16.
+r10_18 :- r10_17.
+r11_15 :- draw1_4_f0, draw1_4_f1, \+draw1_4_b2, draw1_4_f3.
+r11_16 :- r11_14.
+r11_16 :- r11_15.
+r11_17 :- draw2_4_f0, draw2_4_f1, \+draw2_4_b2, draw2_4_f3.
+r11_18 :- r11_16.
+r11_18 :- r11_17.
+0.3333333333333333::draw1_5_f3.
+0.5::draw1_5_f2.
+draw1_5_b2 :- \+draw1_5_f3, draw1_5_f2.
+0.5::draw1_5_f1.
+0.5::draw1_5_f0.
+0.3333333333333333::draw2_5_f3.
+0.5::draw2_5_f2.
+draw2_5_b2 :- \+draw2_5_f3, draw2_5_f2.
+0.5::draw2_5_f1.
+0.5::draw2_5_f0.
+t_b_20 :- draw1_5_f0, \+draw2_5_f0.
+t_b_20 :- \+draw1_5_f0, draw2_5_f0.
+t_b_21 :- draw1_5_f1, \+draw2_5_f1.
+t_b_21 :- \+draw1_5_f1, draw2_5_f1.
+t_b_22 :- draw1_5_b2, \+draw2_5_b2.
+t_b_22 :- \+draw1_5_b2, draw2_5_b2.
+t_b_23 :- draw1_5_f3, \+draw2_5_f3.
+t_b_23 :- \+draw1_5_f3, draw2_5_f3.
+t_5 :- \+t_b_20, \+t_b_21, \+t_b_22, \+t_b_23.
+obs_5 :- \+t_5.
+r0_19 :- \+draw1_5_f0, \+draw1_5_f1, \+draw1_5_b2, \+draw1_5_f3.
+r0_20 :- r0_18.
+r0_20 :- r0_19.
+r0_21 :- \+draw2_5_f0, \+draw2_5_f1, \+draw2_5_b2, \+draw2_5_f3.
+r0_22 :- r0_20.
+r0_22 :- r0_21.
+r1_19 :- draw1_5_f0, \+draw1_5_f1, \+draw1_5_b2, \+draw1_5_f3.
+r1_20 :- r1_18.
+r1_20 :- r1_19.
+r1_21 :- draw2_5_f0, \+draw2_5_f1, \+draw2_5_b2, \+draw2_5_f3.
+r1_22 :- r1_20.
+r1_22 :- r1_21.
+r2_19 :- \+draw1_5_f0, draw1_5_f1, \+draw1_5_b2, \+draw1_5_f3.
+r2_20 :- r2_18.
+r2_20 :- r2_19.
+r2_21 :- \+draw2_5_f0, draw2_5_f1, \+draw2_5_b2, \+draw2_5_f3.
+r2_22 :- r2_20.
+r2_22 :- r2_21.
+r3_19 :- draw1_5_f0, draw1_5_f1, \+draw1_5_b2, \+draw1_5_f3.
+r3_20 :- r3_18.
+r3_20 :- r3_19.
+r3_21 :- draw2_5_f0, draw2_5_f1, \+draw2_5_b2, \+draw2_5_f3.
+r3_22 :- r3_20.
+r3_22 :- r3_21.
+r4_19 :- \+draw1_5_f0, \+draw1_5_f1, draw1_5_b2, \+draw1_5_f3.
+r4_20 :- r4_18.
+r4_20 :- r4_19.
+r4_21 :- \+draw2_5_f0, \+draw2_5_f1, draw2_5_b2, \+draw2_5_f3.
+r4_22 :- r4_20.
+r4_22 :- r4_21.
+r5_19 :- draw1_5_f0, \+draw1_5_f1, draw1_5_b2, \+draw1_5_f3.
+r5_20 :- r5_18.
+r5_20 :- r5_19.
+r5_21 :- draw2_5_f0, \+draw2_5_f1, draw2_5_b2, \+draw2_5_f3.
+r5_22 :- r5_20.
+r5_22 :- r5_21.
+r6_19 :- \+draw1_5_f0, draw1_5_f1, draw1_5_b2, \+draw1_5_f3.
+r6_20 :- r6_18.
+r6_20 :- r6_19.
+r6_21 :- \+draw2_5_f0, draw2_5_f1, draw2_5_b2, \+draw2_5_f3.
+r6_22 :- r6_20.
+r6_22 :- r6_21.
+r7_19 :- draw1_5_f0, draw1_5_f1, draw1_5_b2, \+draw1_5_f3.
+r7_20 :- r7_18.
+r7_20 :- r7_19.
+r7_21 :- draw2_5_f0, draw2_5_f1, draw2_5_b2, \+draw2_5_f3.
+r7_22 :- r7_20.
+r7_22 :- r7_21.
+r8_19 :- \+draw1_5_f0, \+draw1_5_f1, \+draw1_5_b2, draw1_5_f3.
+r8_20 :- r8_18.
+r8_20 :- r8_19.
+r8_21 :- \+draw2_5_f0, \+draw2_5_f1, \+draw2_5_b2, draw2_5_f3.
+r8_22 :- r8_20.
+r8_22 :- r8_21.
+r9_19 :- draw1_5_f0, \+draw1_5_f1, \+draw1_5_b2, draw1_5_f3.
+r9_20 :- r9_18.
+r9_20 :- r9_19.
+r9_21 :- draw2_5_f0, \+draw2_5_f1, \+draw2_5_b2, draw2_5_f3.
+r9_22 :- r9_20.
+r9_22 :- r9_21.
+r10_19 :- \+draw1_5_f0, draw1_5_f1, \+draw1_5_b2, draw1_5_f3.
+r10_20 :- r10_18.
+r10_20 :- r10_19.
+r10_21 :- \+draw2_5_f0, draw2_5_f1, \+draw2_5_b2, draw2_5_f3.
+r10_22 :- r10_20.
+r10_22 :- r10_21.
+r11_19 :- draw1_5_f0, draw1_5_f1, \+draw1_5_b2, draw1_5_f3.
+r11_20 :- r11_18.
+r11_20 :- r11_19.
+r11_21 :- draw2_5_f0, draw2_5_f1, \+draw2_5_b2, draw2_5_f3.
+r11_22 :- r11_20.
+r11_22 :- r11_21.
+0.3333333333333333::draw1_6_f3.
+0.5::draw1_6_f2.
+draw1_6_b2 :- \+draw1_6_f3, draw1_6_f2.
+0.5::draw1_6_f1.
+0.5::draw1_6_f0.
+0.3333333333333333::draw2_6_f3.
+0.5::draw2_6_f2.
+draw2_6_b2 :- \+draw2_6_f3, draw2_6_f2.
+0.5::draw2_6_f1.
+0.5::draw2_6_f0.
+t_b_24 :- draw1_6_f0, \+draw2_6_f0.
+t_b_24 :- \+draw1_6_f0, draw2_6_f0.
+t_b_25 :- draw1_6_f1, \+draw2_6_f1.
+t_b_25 :- \+draw1_6_f1, draw2_6_f1.
+t_b_26 :- draw1_6_b2, \+draw2_6_b2.
+t_b_26 :- \+draw1_6_b2, draw2_6_b2.
+t_b_27 :- draw1_6_f3, \+draw2_6_f3.
+t_b_27 :- \+draw1_6_f3, draw2_6_f3.
+t_6 :- \+t_b_24, \+t_b_25, \+t_b_26, \+t_b_27.
+obs_6 :- \+t_6.
+r0_23 :- \+draw1_6_f0, \+draw1_6_f1, \+draw1_6_b2, \+draw1_6_f3.
+r0_24 :- r0_22.
+r0_24 :- r0_23.
+r0_25 :- \+draw2_6_f0, \+draw2_6_f1, \+draw2_6_b2, \+draw2_6_f3.
+r0_26 :- r0_24.
+r0_26 :- r0_25.
+r1_23 :- draw1_6_f0, \+draw1_6_f1, \+draw1_6_b2, \+draw1_6_f3.
+r1_24 :- r1_22.
+r1_24 :- r1_23.
+r1_25 :- draw2_6_f0, \+draw2_6_f1, \+draw2_6_b2, \+draw2_6_f3.
+r1_26 :- r1_24.
+r1_26 :- r1_25.
+r2_23 :- \+draw1_6_f0, draw1_6_f1, \+draw1_6_b2, \+draw1_6_f3.
+r2_24 :- r2_22.
+r2_24 :- r2_23.
+r2_25 :- \+draw2_6_f0, draw2_6_f1, \+draw2_6_b2, \+draw2_6_f3.
+r2_26 :- r2_24.
+r2_26 :- r2_25.
+r3_23 :- draw1_6_f0, draw1_6_f1, \+draw1_6_b2, \+draw1_6_f3.
+r3_24 :- r3_22.
+r3_24 :- r3_23.
+r3_25 :- draw2_6_f0, draw2_6_f1, \+draw2_6_b2, \+draw2_6_f3.
+r3_26 :- r3_24.
+r3_26 :- r3_25.
+r4_23 :- \+draw1_6_f0, \+draw1_6_f1, draw1_6_b2, \+draw1_6_f3.
+r4_24 :- r4_22.
+r4_24 :- r4_23.
+r4_25 :- \+draw2_6_f0, \+draw2_6_f1, draw2_6_b2, \+draw2_6_f3.
+r4_26 :- r4_24.
+r4_26 :- r4_25.
+r5_23 :- draw1_6_f0, \+draw1_6_f1, draw1_6_b2, \+draw1_6_f3.
+r5_24 :- r5_22.
+r5_24 :- r5_23.
+r5_25 :- draw2_6_f0, \+draw2_6_f1, draw2_6_b2, \+draw2_6_f3.
+r5_26 :- r5_24.
+r5_26 :- r5_25.
+r6_23 :- \+draw1_6_f0, draw1_6_f1, draw1_6_b2, \+draw1_6_f3.
+r6_24 :- r6_22.
+r6_24 :- r6_23.
+r6_25 :- \+draw2_6_f0, draw2_6_f1, draw2_6_b2, \+draw2_6_f3.
+r6_26 :- r6_24.
+r6_26 :- r6_25.
+r7_23 :- draw1_6_f0, draw1_6_f1, draw1_6_b2, \+draw1_6_f3.
+r7_24 :- r7_22.
+r7_24 :- r7_23.
+r7_25 :- draw2_6_f0, draw2_6_f1, draw2_6_b2, \+draw2_6_f3.
+r7_26 :- r7_24.
+r7_26 :- r7_25.
+r8_23 :- \+draw1_6_f0, \+draw1_6_f1, \+draw1_6_b2, draw1_6_f3.
+r8_24 :- r8_22.
+r8_24 :- r8_23.
+r8_25 :- \+draw2_6_f0, \+draw2_6_f1, \+draw2_6_b2, draw2_6_f3.
+r8_26 :- r8_24.
+r8_26 :- r8_25.
+r9_23 :- draw1_6_f0, \+draw1_6_f1, \+draw1_6_b2, draw1_6_f3.
+r9_24 :- r9_22.
+r9_24 :- r9_23.
+r9_25 :- draw2_6_f0, \+draw2_6_f1, \+draw2_6_b2, draw2_6_f3.
+r9_26 :- r9_24.
+r9_26 :- r9_25.
+r10_23 :- \+draw1_6_f0, draw1_6_f1, \+draw1_6_b2, draw1_6_f3.
+r10_24 :- r10_22.
+r10_24 :- r10_23.
+r10_25 :- \+draw2_6_f0, draw2_6_f1, \+draw2_6_b2, draw2_6_f3.
+r10_26 :- r10_24.
+r10_26 :- r10_25.
+r11_23 :- draw1_6_f0, draw1_6_f1, \+draw1_6_b2, draw1_6_f3.
+r11_24 :- r11_22.
+r11_24 :- r11_23.
+r11_25 :- draw2_6_f0, draw2_6_f1, \+draw2_6_b2, draw2_6_f3.
+r11_26 :- r11_24.
+r11_26 :- r11_25.
+0.3333333333333333::draw1_7_f3.
+0.5::draw1_7_f2.
+draw1_7_b2 :- \+draw1_7_f3, draw1_7_f2.
+0.5::draw1_7_f1.
+0.5::draw1_7_f0.
+0.3333333333333333::draw2_7_f3.
+0.5::draw2_7_f2.
+draw2_7_b2 :- \+draw2_7_f3, draw2_7_f2.
+0.5::draw2_7_f1.
+0.5::draw2_7_f0.
+t_b_28 :- draw1_7_f0, \+draw2_7_f0.
+t_b_28 :- \+draw1_7_f0, draw2_7_f0.
+t_b_29 :- draw1_7_f1, \+draw2_7_f1.
+t_b_29 :- \+draw1_7_f1, draw2_7_f1.
+t_b_30 :- draw1_7_b2, \+draw2_7_b2.
+t_b_30 :- \+draw1_7_b2, draw2_7_b2.
+t_b_31 :- draw1_7_f3, \+draw2_7_f3.
+t_b_31 :- \+draw1_7_f3, draw2_7_f3.
+t_7 :- \+t_b_28, \+t_b_29, \+t_b_30, \+t_b_31.
+obs_7 :- \+t_7.
+r0_27 :- \+draw1_7_f0, \+draw1_7_f1, \+draw1_7_b2, \+draw1_7_f3.
+r0_28 :- r0_26.
+r0_28 :- r0_27.
+r0_29 :- \+draw2_7_f0, \+draw2_7_f1, \+draw2_7_b2, \+draw2_7_f3.
+r0_30 :- r0_28.
+r0_30 :- r0_29.
+r1_27 :- draw1_7_f0, \+draw1_7_f1, \+draw1_7_b2, \+draw1_7_f3.
+r1_28 :- r1_26.
+r1_28 :- r1_27.
+r1_29 :- draw2_7_f0, \+draw2_7_f1, \+draw2_7_b2, \+draw2_7_f3.
+r1_30 :- r1_28.
+r1_30 :- r1_29.
+r2_27 :- \+draw1_7_f0, draw1_7_f1, \+draw1_7_b2, \+draw1_7_f3.
+r2_28 :- r2_26.
+r2_28 :- r2_27.
+r2_29 :- \+draw2_7_f0, draw2_7_f1, \+draw2_7_b2, \+draw2_7_f3.
+r2_30 :- r2_28.
+r2_30 :- r2_29.
+r3_27 :- draw1_7_f0, draw1_7_f1, \+draw1_7_b2, \+draw1_7_f3.
+r3_28 :- r3_26.
+r3_28 :- r3_27.
+r3_29 :- draw2_7_f0, draw2_7_f1, \+draw2_7_b2, \+draw2_7_f3.
+r3_30 :- r3_28.
+r3_30 :- r3_29.
+r4_27 :- \+draw1_7_f0, \+draw1_7_f1, draw1_7_b2, \+draw1_7_f3.
+r4_28 :- r4_26.
+r4_28 :- r4_27.
+r4_29 :- \+draw2_7_f0, \+draw2_7_f1, draw2_7_b2, \+draw2_7_f3.
+r4_30 :- r4_28.
+r4_30 :- r4_29.
+r5_27 :- draw1_7_f0, \+draw1_7_f1, draw1_7_b2, \+draw1_7_f3.
+r5_28 :- r5_26.
+r5_28 :- r5_27.
+r5_29 :- draw2_7_f0, \+draw2_7_f1, draw2_7_b2, \+draw2_7_f3.
+r5_30 :- r5_28.
+r5_30 :- r5_29.
+r6_27 :- \+draw1_7_f0, draw1_7_f1, draw1_7_b2, \+draw1_7_f3.
+r6_28 :- r6_26.
+r6_28 :- r6_27.
+r6_29 :- \+draw2_7_f0, draw2_7_f1, draw2_7_b2, \+draw2_7_f3.
+r6_30 :- r6_28.
+r6_30 :- r6_29.
+r7_27 :- draw1_7_f0, draw1_7_f1, draw1_7_b2, \+draw1_7_f3.
+r7_28 :- r7_26.
+r7_28 :- r7_27.
+r7_29 :- draw2_7_f0, draw2_7_f1, draw2_7_b2, \+draw2_7_f3.
+r7_30 :- r7_28.
+r7_30 :- r7_29.
+r8_27 :- \+draw1_7_f0, \+draw1_7_f1, \+draw1_7_b2, draw1_7_f3.
+r8_28 :- r8_26.
+r8_28 :- r8_27.
+r8_29 :- \+draw2_7_f0, \+draw2_7_f1, \+draw2_7_b2, draw2_7_f3.
+r8_30 :- r8_28.
+r8_30 :- r8_29.
+r9_27 :- draw1_7_f0, \+draw1_7_f1, \+draw1_7_b2, draw1_7_f3.
+r9_28 :- r9_26.
+r9_28 :- r9_27.
+r9_29 :- draw2_7_f0, \+draw2_7_f1, \+draw2_7_b2, draw2_7_f3.
+r9_30 :- r9_28.
+r9_30 :- r9_29.
+r10_27 :- \+draw1_7_f0, draw1_7_f1, \+draw1_7_b2, draw1_7_f3.
+r10_28 :- r10_26.
+r10_28 :- r10_27.
+r10_29 :- \+draw2_7_f0, draw2_7_f1, \+draw2_7_b2, draw2_7_f3.
+r10_30 :- r10_28.
+r10_30 :- r10_29.
+r11_27 :- draw1_7_f0, draw1_7_f1, \+draw1_7_b2, draw1_7_f3.
+r11_28 :- r11_26.
+r11_28 :- r11_27.
+r11_29 :- draw2_7_f0, draw2_7_f1, \+draw2_7_b2, draw2_7_f3.
+r11_30 :- r11_28.
+r11_30 :- r11_29.
+0.3333333333333333::draw1_8_f3.
+0.5::draw1_8_f2.
+draw1_8_b2 :- \+draw1_8_f3, draw1_8_f2.
+0.5::draw1_8_f1.
+0.5::draw1_8_f0.
+0.3333333333333333::draw2_8_f3.
+0.5::draw2_8_f2.
+draw2_8_b2 :- \+draw2_8_f3, draw2_8_f2.
+0.5::draw2_8_f1.
+0.5::draw2_8_f0.
+t_b_32 :- draw1_8_f0, \+draw2_8_f0.
+t_b_32 :- \+draw1_8_f0, draw2_8_f0.
+t_b_33 :- draw1_8_f1, \+draw2_8_f1.
+t_b_33 :- \+draw1_8_f1, draw2_8_f1.
+t_b_34 :- draw1_8_b2, \+draw2_8_b2.
+t_b_34 :- \+draw1_8_b2, draw2_8_b2.
+t_b_35 :- draw1_8_f3, \+draw2_8_f3.
+t_b_35 :- \+draw1_8_f3, draw2_8_f3.
+t_8 :- \+t_b_32, \+t_b_33, \+t_b_34, \+t_b_35.
+obs_8 :- \+t_8.
+r0_31 :- \+draw1_8_f0, \+draw1_8_f1, \+draw1_8_b2, \+draw1_8_f3.
+r0_32 :- r0_30.
+r0_32 :- r0_31.
+r0_33 :- \+draw2_8_f0, \+draw2_8_f1, \+draw2_8_b2, \+draw2_8_f3.
+r0_34 :- r0_32.
+r0_34 :- r0_33.
+r1_31 :- draw1_8_f0, \+draw1_8_f1, \+draw1_8_b2, \+draw1_8_f3.
+r1_32 :- r1_30.
+r1_32 :- r1_31.
+r1_33 :- draw2_8_f0, \+draw2_8_f1, \+draw2_8_b2, \+draw2_8_f3.
+r1_34 :- r1_32.
+r1_34 :- r1_33.
+r2_31 :- \+draw1_8_f0, draw1_8_f1, \+draw1_8_b2, \+draw1_8_f3.
+r2_32 :- r2_30.
+r2_32 :- r2_31.
+r2_33 :- \+draw2_8_f0, draw2_8_f1, \+draw2_8_b2, \+draw2_8_f3.
+r2_34 :- r2_32.
+r2_34 :- r2_33.
+r3_31 :- draw1_8_f0, draw1_8_f1, \+draw1_8_b2, \+draw1_8_f3.
+r3_32 :- r3_30.
+r3_32 :- r3_31.
+r3_33 :- draw2_8_f0, draw2_8_f1, \+draw2_8_b2, \+draw2_8_f3.
+r3_34 :- r3_32.
+r3_34 :- r3_33.
+r4_31 :- \+draw1_8_f0, \+draw1_8_f1, draw1_8_b2, \+draw1_8_f3.
+r4_32 :- r4_30.
+r4_32 :- r4_31.
+r4_33 :- \+draw2_8_f0, \+draw2_8_f1, draw2_8_b2, \+draw2_8_f3.
+r4_34 :- r4_32.
+r4_34 :- r4_33.
+r5_31 :- draw1_8_f0, \+draw1_8_f1, draw1_8_b2, \+draw1_8_f3.
+r5_32 :- r5_30.
+r5_32 :- r5_31.
+r5_33 :- draw2_8_f0, \+draw2_8_f1, draw2_8_b2, \+draw2_8_f3.
+r5_34 :- r5_32.
+r5_34 :- r5_33.
+r6_31 :- \+draw1_8_f0, draw1_8_f1, draw1_8_b2, \+draw1_8_f3.
+r6_32 :- r6_30.
+r6_32 :- r6_31.
+r6_33 :- \+draw2_8_f0, draw2_8_f1, draw2_8_b2, \+draw2_8_f3.
+r6_34 :- r6_32.
+r6_34 :- r6_33.
+r7_31 :- draw1_8_f0, draw1_8_f1, draw1_8_b2, \+draw1_8_f3.
+r7_32 :- r7_30.
+r7_32 :- r7_31.
+r7_33 :- draw2_8_f0, draw2_8_f1, draw2_8_b2, \+draw2_8_f3.
+r7_34 :- r7_32.
+r7_34 :- r7_33.
+r8_31 :- \+draw1_8_f0, \+draw1_8_f1, \+draw1_8_b2, draw1_8_f3.
+r8_32 :- r8_30.
+r8_32 :- r8_31.
+r8_33 :- \+draw2_8_f0, \+draw2_8_f1, \+draw2_8_b2, draw2_8_f3.
+r8_34 :- r8_32.
+r8_34 :- r8_33.
+r9_31 :- draw1_8_f0, \+draw1_8_f1, \+draw1_8_b2, draw1_8_f3.
+r9_32 :- r9_30.
+r9_32 :- r9_31.
+r9_33 :- draw2_8_f0, \+draw2_8_f1, \+draw2_8_b2, draw2_8_f3.
+r9_34 :- r9_32.
+r9_34 :- r9_33.
+r10_31 :- \+draw1_8_f0, draw1_8_f1, \+draw1_8_b2, draw1_8_f3.
+r10_32 :- r10_30.
+r10_32 :- r10_31.
+r10_33 :- \+draw2_8_f0, draw2_8_f1, \+draw2_8_b2, draw2_8_f3.
+r10_34 :- r10_32.
+r10_34 :- r10_33.
+r11_31 :- draw1_8_f0, draw1_8_f1, \+draw1_8_b2, draw1_8_f3.
+r11_32 :- r11_30.
+r11_32 :- r11_31.
+r11_33 :- draw2_8_f0, draw2_8_f1, \+draw2_8_b2, draw2_8_f3.
+r11_34 :- r11_32.
+r11_34 :- r11_33.
+0.3333333333333333::draw1_9_f3.
+0.5::draw1_9_f2.
+draw1_9_b2 :- \+draw1_9_f3, draw1_9_f2.
+0.5::draw1_9_f1.
+0.5::draw1_9_f0.
+0.3333333333333333::draw2_9_f3.
+0.5::draw2_9_f2.
+draw2_9_b2 :- \+draw2_9_f3, draw2_9_f2.
+0.5::draw2_9_f1.
+0.5::draw2_9_f0.
+t_b_36 :- draw1_9_f0, \+draw2_9_f0.
+t_b_36 :- \+draw1_9_f0, draw2_9_f0.
+t_b_37 :- draw1_9_f1, \+draw2_9_f1.
+t_b_37 :- \+draw1_9_f1, draw2_9_f1.
+t_b_38 :- draw1_9_b2, \+draw2_9_b2.
+t_b_38 :- \+draw1_9_b2, draw2_9_b2.
+t_b_39 :- draw1_9_f3, \+draw2_9_f3.
+t_b_39 :- \+draw1_9_f3, draw2_9_f3.
+t_9 :- \+t_b_36, \+t_b_37, \+t_b_38, \+t_b_39.
+obs_9 :- \+t_9.
+r0_35 :- \+draw1_9_f0, \+draw1_9_f1, \+draw1_9_b2, \+draw1_9_f3.
+r0_36 :- r0_34.
+r0_36 :- r0_35.
+r0_37 :- \+draw2_9_f0, \+draw2_9_f1, \+draw2_9_b2, \+draw2_9_f3.
+r0_38 :- r0_36.
+r0_38 :- r0_37.
+r1_35 :- draw1_9_f0, \+draw1_9_f1, \+draw1_9_b2, \+draw1_9_f3.
+r1_36 :- r1_34.
+r1_36 :- r1_35.
+r1_37 :- draw2_9_f0, \+draw2_9_f1, \+draw2_9_b2, \+draw2_9_f3.
+r1_38 :- r1_36.
+r1_38 :- r1_37.
+r2_35 :- \+draw1_9_f0, draw1_9_f1, \+draw1_9_b2, \+draw1_9_f3.
+r2_36 :- r2_34.
+r2_36 :- r2_35.
+r2_37 :- \+draw2_9_f0, draw2_9_f1, \+draw2_9_b2, \+draw2_9_f3.
+r2_38 :- r2_36.
+r2_38 :- r2_37.
+r3_35 :- draw1_9_f0, draw1_9_f1, \+draw1_9_b2, \+draw1_9_f3.
+r3_36 :- r3_34.
+r3_36 :- r3_35.
+r3_37 :- draw2_9_f0, draw2_9_f1, \+draw2_9_b2, \+draw2_9_f3.
+r3_38 :- r3_36.
+r3_38 :- r3_37.
+r4_35 :- \+draw1_9_f0, \+draw1_9_f1, draw1_9_b2, \+draw1_9_f3.
+r4_36 :- r4_34.
+r4_36 :- r4_35.
+r4_37 :- \+draw2_9_f0, \+draw2_9_f1, draw2_9_b2, \+draw2_9_f3.
+r4_38 :- r4_36.
+r4_38 :- r4_37.
+r5_35 :- draw1_9_f0, \+draw1_9_f1, draw1_9_b2, \+draw1_9_f3.
+r5_36 :- r5_34.
+r5_36 :- r5_35.
+r5_37 :- draw2_9_f0, \+draw2_9_f1, draw2_9_b2, \+draw2_9_f3.
+r5_38 :- r5_36.
+r5_38 :- r5_37.
+r6_35 :- \+draw1_9_f0, draw1_9_f1, draw1_9_b2, \+draw1_9_f3.
+r6_36 :- r6_34.
+r6_36 :- r6_35.
+r6_37 :- \+draw2_9_f0, draw2_9_f1, draw2_9_b2, \+draw2_9_f3.
+r6_38 :- r6_36.
+r6_38 :- r6_37.
+r7_35 :- draw1_9_f0, draw1_9_f1, draw1_9_b2, \+draw1_9_f3.
+r7_36 :- r7_34.
+r7_36 :- r7_35.
+r7_37 :- draw2_9_f0, draw2_9_f1, draw2_9_b2, \+draw2_9_f3.
+r7_38 :- r7_36.
+r7_38 :- r7_37.
+r8_35 :- \+draw1_9_f0, \+draw1_9_f1, \+draw1_9_b2, draw1_9_f3.
+r8_36 :- r8_34.
+r8_36 :- r8_35.
+r8_37 :- \+draw2_9_f0, \+draw2_9_f1, \+draw2_9_b2, draw2_9_f3.
+r8_38 :- r8_36.
+r8_38 :- r8_37.
+r9_35 :- draw1_9_f0, \+draw1_9_f1, \+draw1_9_b2, draw1_9_f3.
+r9_36 :- r9_34.
+r9_36 :- r9_35.
+r9_37 :- draw2_9_f0, \+draw2_9_f1, \+draw2_9_b2, draw2_9_f3.
+r9_38 :- r9_36.
+r9_38 :- r9_37.
+r10_35 :- \+draw1_9_f0, draw1_9_f1, \+draw1_9_b2, draw1_9_f3.
+r10_36 :- r10_34.
+r10_36 :- r10_35.
+r10_37 :- \+draw2_9_f0, draw2_9_f1, \+draw2_9_b2, draw2_9_f3.
+r10_38 :- r10_36.
+r10_38 :- r10_37.
+r11_35 :- draw1_9_f0, draw1_9_f1, \+draw1_9_b2, draw1_9_f3.
+r11_36 :- r11_34.
+r11_36 :- r11_35.
+r11_37 :- draw2_9_f0, draw2_9_f1, \+draw2_9_b2, draw2_9_f3.
+r11_38 :- r11_36.
+r11_38 :- r11_37.
+0.3333333333333333::draw1_10_f3.
+0.5::draw1_10_f2.
+draw1_10_b2 :- \+draw1_10_f3, draw1_10_f2.
+0.5::draw1_10_f1.
+0.5::draw1_10_f0.
+0.3333333333333333::draw2_10_f3.
+0.5::draw2_10_f2.
+draw2_10_b2 :- \+draw2_10_f3, draw2_10_f2.
+0.5::draw2_10_f1.
+0.5::draw2_10_f0.
+t_b_40 :- draw1_10_f0, \+draw2_10_f0.
+t_b_40 :- \+draw1_10_f0, draw2_10_f0.
+t_b_41 :- draw1_10_f1, \+draw2_10_f1.
+t_b_41 :- \+draw1_10_f1, draw2_10_f1.
+t_b_42 :- draw1_10_b2, \+draw2_10_b2.
+t_b_42 :- \+draw1_10_b2, draw2_10_b2.
+t_b_43 :- draw1_10_f3, \+draw2_10_f3.
+t_b_43 :- \+draw1_10_f3, draw2_10_f3.
+t_10 :- \+t_b_40, \+t_b_41, \+t_b_42, \+t_b_43.
+obs_10 :- \+t_10.
+r0_39 :- \+draw1_10_f0, \+draw1_10_f1, \+draw1_10_b2, \+draw1_10_f3.
+r0_40 :- r0_38.
+r0_40 :- r0_39.
+r0_41 :- \+draw2_10_f0, \+draw2_10_f1, \+draw2_10_b2, \+draw2_10_f3.
+r0_42 :- r0_40.
+r0_42 :- r0_41.
+r1_39 :- draw1_10_f0, \+draw1_10_f1, \+draw1_10_b2, \+draw1_10_f3.
+r1_40 :- r1_38.
+r1_40 :- r1_39.
+r1_41 :- draw2_10_f0, \+draw2_10_f1, \+draw2_10_b2, \+draw2_10_f3.
+r1_42 :- r1_40.
+r1_42 :- r1_41.
+r2_39 :- \+draw1_10_f0, draw1_10_f1, \+draw1_10_b2, \+draw1_10_f3.
+r2_40 :- r2_38.
+r2_40 :- r2_39.
+r2_41 :- \+draw2_10_f0, draw2_10_f1, \+draw2_10_b2, \+draw2_10_f3.
+r2_42 :- r2_40.
+r2_42 :- r2_41.
+r3_39 :- draw1_10_f0, draw1_10_f1, \+draw1_10_b2, \+draw1_10_f3.
+r3_40 :- r3_38.
+r3_40 :- r3_39.
+r3_41 :- draw2_10_f0, draw2_10_f1, \+draw2_10_b2, \+draw2_10_f3.
+r3_42 :- r3_40.
+r3_42 :- r3_41.
+r4_39 :- \+draw1_10_f0, \+draw1_10_f1, draw1_10_b2, \+draw1_10_f3.
+r4_40 :- r4_38.
+r4_40 :- r4_39.
+r4_41 :- \+draw2_10_f0, \+draw2_10_f1, draw2_10_b2, \+draw2_10_f3.
+r4_42 :- r4_40.
+r4_42 :- r4_41.
+r5_39 :- draw1_10_f0, \+draw1_10_f1, draw1_10_b2, \+draw1_10_f3.
+r5_40 :- r5_38.
+r5_40 :- r5_39.
+r5_41 :- draw2_10_f0, \+draw2_10_f1, draw2_10_b2, \+draw2_10_f3.
+r5_42 :- r5_40.
+r5_42 :- r5_41.
+r6_39 :- \+draw1_10_f0, draw1_10_f1, draw1_10_b2, \+draw1_10_f3.
+r6_40 :- r6_38.
+r6_40 :- r6_39.
+r6_41 :- \+draw2_10_f0, draw2_10_f1, draw2_10_b2, \+draw2_10_f3.
+r6_42 :- r6_40.
+r6_42 :- r6_41.
+r7_39 :- draw1_10_f0, draw1_10_f1, draw1_10_b2, \+draw1_10_f3.
+r7_40 :- r7_38.
+r7_40 :- r7_39.
+r7_41 :- draw2_10_f0, draw2_10_f1, draw2_10_b2, \+draw2_10_f3.
+r7_42 :- r7_40.
+r7_42 :- r7_41.
+r8_39 :- \+draw1_10_f0, \+draw1_10_f1, \+draw1_10_b2, draw1_10_f3.
+r8_40 :- r8_38.
+r8_40 :- r8_39.
+r8_41 :- \+draw2_10_f0, \+draw2_10_f1, \+draw2_10_b2, draw2_10_f3.
+r8_42 :- r8_40.
+r8_42 :- r8_41.
+r9_39 :- draw1_10_f0, \+draw1_10_f1, \+draw1_10_b2, draw1_10_f3.
+r9_40 :- r9_38.
+r9_40 :- r9_39.
+r9_41 :- draw2_10_f0, \+draw2_10_f1, \+draw2_10_b2, draw2_10_f3.
+r9_42 :- r9_40.
+r9_42 :- r9_41.
+r10_39 :- \+draw1_10_f0, draw1_10_f1, \+draw1_10_b2, draw1_10_f3.
+r10_40 :- r10_38.
+r10_40 :- r10_39.
+r10_41 :- \+draw2_10_f0, draw2_10_f1, \+draw2_10_b2, draw2_10_f3.
+r10_42 :- r10_40.
+r10_42 :- r10_41.
+r11_39 :- draw1_10_f0, draw1_10_f1, \+draw1_10_b2, draw1_10_f3.
+r11_40 :- r11_38.
+r11_40 :- r11_39.
+r11_41 :- draw2_10_f0, draw2_10_f1, \+draw2_10_b2, draw2_10_f3.
+r11_42 :- r11_40.
+r11_42 :- r11_41.
+0.3333333333333333::draw1_11_f3.
+0.5::draw1_11_f2.
+draw1_11_b2 :- \+draw1_11_f3, draw1_11_f2.
+0.5::draw1_11_f1.
+0.5::draw1_11_f0.
+0.3333333333333333::draw2_11_f3.
+0.5::draw2_11_f2.
+draw2_11_b2 :- \+draw2_11_f3, draw2_11_f2.
+0.5::draw2_11_f1.
+0.5::draw2_11_f0.
+t_b_44 :- draw1_11_f0, \+draw2_11_f0.
+t_b_44 :- \+draw1_11_f0, draw2_11_f0.
+t_b_45 :- draw1_11_f1, \+draw2_11_f1.
+t_b_45 :- \+draw1_11_f1, draw2_11_f1.
+t_b_46 :- draw1_11_b2, \+draw2_11_b2.
+t_b_46 :- \+draw1_11_b2, draw2_11_b2.
+t_b_47 :- draw1_11_f3, \+draw2_11_f3.
+t_b_47 :- \+draw1_11_f3, draw2_11_f3.
+t_11 :- \+t_b_44, \+t_b_45, \+t_b_46, \+t_b_47.
+obs_11 :- \+t_11.
+r0_43 :- \+draw1_11_f0, \+draw1_11_f1, \+draw1_11_b2, \+draw1_11_f3.
+r0_44 :- r0_42.
+r0_44 :- r0_43.
+r0_45 :- \+draw2_11_f0, \+draw2_11_f1, \+draw2_11_b2, \+draw2_11_f3.
+r0_46 :- r0_44.
+r0_46 :- r0_45.
+r1_43 :- draw1_11_f0, \+draw1_11_f1, \+draw1_11_b2, \+draw1_11_f3.
+r1_44 :- r1_42.
+r1_44 :- r1_43.
+r1_45 :- draw2_11_f0, \+draw2_11_f1, \+draw2_11_b2, \+draw2_11_f3.
+r1_46 :- r1_44.
+r1_46 :- r1_45.
+r2_43 :- \+draw1_11_f0, draw1_11_f1, \+draw1_11_b2, \+draw1_11_f3.
+r2_44 :- r2_42.
+r2_44 :- r2_43.
+r2_45 :- \+draw2_11_f0, draw2_11_f1, \+draw2_11_b2, \+draw2_11_f3.
+r2_46 :- r2_44.
+r2_46 :- r2_45.
+r3_43 :- draw1_11_f0, draw1_11_f1, \+draw1_11_b2, \+draw1_11_f3.
+r3_44 :- r3_42.
+r3_44 :- r3_43.
+r3_45 :- draw2_11_f0, draw2_11_f1, \+draw2_11_b2, \+draw2_11_f3.
+r3_46 :- r3_44.
+r3_46 :- r3_45.
+r4_43 :- \+draw1_11_f0, \+draw1_11_f1, draw1_11_b2, \+draw1_11_f3.
+r4_44 :- r4_42.
+r4_44 :- r4_43.
+r4_45 :- \+draw2_11_f0, \+draw2_11_f1, draw2_11_b2, \+draw2_11_f3.
+r4_46 :- r4_44.
+r4_46 :- r4_45.
+r5_43 :- draw1_11_f0, \+draw1_11_f1, draw1_11_b2, \+draw1_11_f3.
+r5_44 :- r5_42.
+r5_44 :- r5_43.
+r5_45 :- draw2_11_f0, \+draw2_11_f1, draw2_11_b2, \+draw2_11_f3.
+r5_46 :- r5_44.
+r5_46 :- r5_45.
+r6_43 :- \+draw1_11_f0, draw1_11_f1, draw1_11_b2, \+draw1_11_f3.
+r6_44 :- r6_42.
+r6_44 :- r6_43.
+r6_45 :- \+draw2_11_f0, draw2_11_f1, draw2_11_b2, \+draw2_11_f3.
+r6_46 :- r6_44.
+r6_46 :- r6_45.
+r7_43 :- draw1_11_f0, draw1_11_f1, draw1_11_b2, \+draw1_11_f3.
+r7_44 :- r7_42.
+r7_44 :- r7_43.
+r7_45 :- draw2_11_f0, draw2_11_f1, draw2_11_b2, \+draw2_11_f3.
+r7_46 :- r7_44.
+r7_46 :- r7_45.
+r8_43 :- \+draw1_11_f0, \+draw1_11_f1, \+draw1_11_b2, draw1_11_f3.
+r8_44 :- r8_42.
+r8_44 :- r8_43.
+r8_45 :- \+draw2_11_f0, \+draw2_11_f1, \+draw2_11_b2, draw2_11_f3.
+r8_46 :- r8_44.
+r8_46 :- r8_45.
+r9_43 :- draw1_11_f0, \+draw1_11_f1, \+draw1_11_b2, draw1_11_f3.
+r9_44 :- r9_42.
+r9_44 :- r9_43.
+r9_45 :- draw2_11_f0, \+draw2_11_f1, \+draw2_11_b2, draw2_11_f3.
+r9_46 :- r9_44.
+r9_46 :- r9_45.
+r10_43 :- \+draw1_11_f0, draw1_11_f1, \+draw1_11_b2, draw1_11_f3.
+r10_44 :- r10_42.
+r10_44 :- r10_43.
+r10_45 :- \+draw2_11_f0, draw2_11_f1, \+draw2_11_b2, draw2_11_f3.
+r10_46 :- r10_44.
+r10_46 :- r10_45.
+r11_43 :- draw1_11_f0, draw1_11_f1, \+draw1_11_b2, draw1_11_f3.
+r11_44 :- r11_42.
+r11_44 :- r11_43.
+r11_45 :- draw2_11_f0, draw2_11_f1, \+draw2_11_b2, draw2_11_f3.
+r11_46 :- r11_44.
+r11_46 :- r11_45.
+result :- r0_46, r1_46.
+result_1 :- result, r2_46.
+result_2 :- result_1, r3_46.
+result_3 :- result_2, r4_46.
+result_4 :- result_3, r5_46.
+result_5 :- result_4, r6_46.
+result_6 :- result_5, r7_46.
+result_7 :- result_6, r8_46.
+result_8 :- result_7, r9_46.
+result_9 :- result_8, r10_46.
+result_10 :- result_9, r11_46.
+evidence(obs, true).
+evidence(obs_1, true).
+evidence(obs_2, true).
+evidence(obs_3, true).
+evidence(obs_4, true).
+evidence(obs_5, true).
+evidence(obs_6, true).
+evidence(obs_7, true).
+evidence(obs_8, true).
+evidence(obs_9, true).
+evidence(obs_10, true).
+evidence(obs_11, true).
+query(result_10).

@@ -1,0 +1,1049 @@
+# water.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function chunk_1(x2_CKNI_12_00, x54_CBODD_12_00, x56_CNOD_12_00, x57_CBODN_12_00, x59_CBODD_12_15)
+    if x59_CBODD_12_15 !== false
+     x60_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(0))
+     if x60_CBODD_12_15 !== false
+      x61_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+      if x61_CBODD_12_15 !== false
+       x62_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+       if x62_CBODD_12_15 !== false
+        x63_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+       end
+       if x62_CBODD_12_15 !== true
+        x64_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+        if x64_CBODD_12_15 !== false
+         x65_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        if x64_CBODD_12_15 !== true
+         x66_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+         if x66_CBODD_12_15 !== false
+          x67_CBODD_12_15 = discrete(DistUInt{2}, [0.9791, 0.0209, 0.0, 0.0])
+         end
+         if x66_CBODD_12_15 !== true
+          x68_CBODD_12_15 = discrete(DistUInt{2}, [0.9473, 0.0527, 0.0, 0.0])
+         end
+         x69_CBODD_12_15 = x66_CBODD_12_15 === true ? x67_CBODD_12_15 : x66_CBODD_12_15 === false ? x68_CBODD_12_15 : ifelse(x66_CBODD_12_15, x67_CBODD_12_15, x68_CBODD_12_15)
+        end
+        x70_CBODD_12_15 = x64_CBODD_12_15 === true ? x65_CBODD_12_15 : x64_CBODD_12_15 === false ? x69_CBODD_12_15 : ifelse(x64_CBODD_12_15, x65_CBODD_12_15, x69_CBODD_12_15)
+       end
+       x71_CBODD_12_15 = x62_CBODD_12_15 === true ? x63_CBODD_12_15 : x62_CBODD_12_15 === false ? x70_CBODD_12_15 : ifelse(x62_CBODD_12_15, x63_CBODD_12_15, x70_CBODD_12_15)
+      end
+      if x61_CBODD_12_15 !== true
+       x72_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+       if x72_CBODD_12_15 !== false
+        x73_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+        if x73_CBODD_12_15 !== false
+         x74_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+        end
+        if x73_CBODD_12_15 !== true
+         x75_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+         if x75_CBODD_12_15 !== false
+          x76_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         if x75_CBODD_12_15 !== true
+          x77_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+          if x77_CBODD_12_15 !== false
+           x78_CBODD_12_15 = discrete(DistUInt{2}, [0.9951, 0.0049, 0.0, 0.0])
+          end
+          if x77_CBODD_12_15 !== true
+           x79_CBODD_12_15 = discrete(DistUInt{2}, [0.9634, 0.0366, 0.0, 0.0])
+          end
+          x80_CBODD_12_15 = x77_CBODD_12_15 === true ? x78_CBODD_12_15 : x77_CBODD_12_15 === false ? x79_CBODD_12_15 : ifelse(x77_CBODD_12_15, x78_CBODD_12_15, x79_CBODD_12_15)
+         end
+         x81_CBODD_12_15 = x75_CBODD_12_15 === true ? x76_CBODD_12_15 : x75_CBODD_12_15 === false ? x80_CBODD_12_15 : ifelse(x75_CBODD_12_15, x76_CBODD_12_15, x80_CBODD_12_15)
+        end
+        x82_CBODD_12_15 = x73_CBODD_12_15 === true ? x74_CBODD_12_15 : x73_CBODD_12_15 === false ? x81_CBODD_12_15 : ifelse(x73_CBODD_12_15, x74_CBODD_12_15, x81_CBODD_12_15)
+       end
+       if x72_CBODD_12_15 !== true
+        x83_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+        if x83_CBODD_12_15 !== false
+         x84_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x84_CBODD_12_15 !== false
+          x85_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         if x84_CBODD_12_15 !== true
+          x86_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x86_CBODD_12_15 !== false
+           x87_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+          end
+          if x86_CBODD_12_15 !== true
+           x88_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x88_CBODD_12_15 !== false
+            x89_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+           end
+           if x88_CBODD_12_15 !== true
+            x90_CBODD_12_15 = discrete(DistUInt{2}, [0.9762, 0.0238, 0.0, 0.0])
+           end
+           x91_CBODD_12_15 = x88_CBODD_12_15 === true ? x89_CBODD_12_15 : x88_CBODD_12_15 === false ? x90_CBODD_12_15 : ifelse(x88_CBODD_12_15, x89_CBODD_12_15, x90_CBODD_12_15)
+          end
+          x92_CBODD_12_15 = x86_CBODD_12_15 === true ? x87_CBODD_12_15 : x86_CBODD_12_15 === false ? x91_CBODD_12_15 : ifelse(x86_CBODD_12_15, x87_CBODD_12_15, x91_CBODD_12_15)
+         end
+         x93_CBODD_12_15 = x84_CBODD_12_15 === true ? x85_CBODD_12_15 : x84_CBODD_12_15 === false ? x92_CBODD_12_15 : ifelse(x84_CBODD_12_15, x85_CBODD_12_15, x92_CBODD_12_15)
+        end
+        if x83_CBODD_12_15 !== true
+         x94_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x94_CBODD_12_15 !== false
+          x95_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         if x94_CBODD_12_15 !== true
+          x96_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x96_CBODD_12_15 !== false
+           x97_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+          end
+          if x96_CBODD_12_15 !== true
+           x98_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x98_CBODD_12_15 !== false
+            x99_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+           end
+           if x98_CBODD_12_15 !== true
+            x100_CBODD_12_15 = discrete(DistUInt{2}, [0.9848, 0.0152, 0.0, 0.0])
+           end
+           x101_CBODD_12_15 = x98_CBODD_12_15 === true ? x99_CBODD_12_15 : x98_CBODD_12_15 === false ? x100_CBODD_12_15 : ifelse(x98_CBODD_12_15, x99_CBODD_12_15, x100_CBODD_12_15)
+          end
+          x102_CBODD_12_15 = x96_CBODD_12_15 === true ? x97_CBODD_12_15 : x96_CBODD_12_15 === false ? x101_CBODD_12_15 : ifelse(x96_CBODD_12_15, x97_CBODD_12_15, x101_CBODD_12_15)
+         end
+         x103_CBODD_12_15 = x94_CBODD_12_15 === true ? x95_CBODD_12_15 : x94_CBODD_12_15 === false ? x102_CBODD_12_15 : ifelse(x94_CBODD_12_15, x95_CBODD_12_15, x102_CBODD_12_15)
+        end
+        x104_CBODD_12_15 = x83_CBODD_12_15 === true ? x93_CBODD_12_15 : x83_CBODD_12_15 === false ? x103_CBODD_12_15 : ifelse(x83_CBODD_12_15, x93_CBODD_12_15, x103_CBODD_12_15)
+       end
+       x105_CBODD_12_15 = x72_CBODD_12_15 === true ? x82_CBODD_12_15 : x72_CBODD_12_15 === false ? x104_CBODD_12_15 : ifelse(x72_CBODD_12_15, x82_CBODD_12_15, x104_CBODD_12_15)
+      end
+      x106_CBODD_12_15 = x61_CBODD_12_15 === true ? x71_CBODD_12_15 : x61_CBODD_12_15 === false ? x105_CBODD_12_15 : ifelse(x61_CBODD_12_15, x71_CBODD_12_15, x105_CBODD_12_15)
+     end
+     if x60_CBODD_12_15 !== true
+      x107_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(1))
+      if x107_CBODD_12_15 !== false
+       x108_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+       if x108_CBODD_12_15 !== false
+        x109_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+        if x109_CBODD_12_15 !== false
+         x110_CBODD_12_15 = discrete(DistUInt{2}, [0.0903, 0.9097, 0.0, 0.0])
+        end
+        if x109_CBODD_12_15 !== true
+         x111_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+         if x111_CBODD_12_15 !== false
+          x112_CBODD_12_15 = discrete(DistUInt{2}, [0.0585, 0.9415, 0.0, 0.0])
+         end
+         if x111_CBODD_12_15 !== true
+          x113_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+          if x113_CBODD_12_15 !== false
+           x114_CBODD_12_15 = discrete(DistUInt{2}, [0.0268, 0.9732, 0.0, 0.0])
+          end
+          if x113_CBODD_12_15 !== true
+           x115_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.995, 0.005, 0.0])
+          end
+          x116_CBODD_12_15 = x113_CBODD_12_15 === true ? x114_CBODD_12_15 : x113_CBODD_12_15 === false ? x115_CBODD_12_15 : ifelse(x113_CBODD_12_15, x114_CBODD_12_15, x115_CBODD_12_15)
+         end
+         x117_CBODD_12_15 = x111_CBODD_12_15 === true ? x112_CBODD_12_15 : x111_CBODD_12_15 === false ? x116_CBODD_12_15 : ifelse(x111_CBODD_12_15, x112_CBODD_12_15, x116_CBODD_12_15)
+        end
+        x118_CBODD_12_15 = x109_CBODD_12_15 === true ? x110_CBODD_12_15 : x109_CBODD_12_15 === false ? x117_CBODD_12_15 : ifelse(x109_CBODD_12_15, x110_CBODD_12_15, x117_CBODD_12_15)
+       end
+       if x108_CBODD_12_15 !== true
+        x119_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+        if x119_CBODD_12_15 !== false
+         x120_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x120_CBODD_12_15 !== false
+          x121_CBODD_12_15 = discrete(DistUInt{2}, [0.109, 0.891, 0.0, 0.0])
+         end
+         if x120_CBODD_12_15 !== true
+          x122_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x122_CBODD_12_15 !== false
+           x123_CBODD_12_15 = discrete(DistUInt{2}, [0.0773, 0.9227, 0.0, 0.0])
+          end
+          if x122_CBODD_12_15 !== true
+           x124_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x124_CBODD_12_15 !== false
+            x125_CBODD_12_15 = discrete(DistUInt{2}, [0.0455, 0.9545, 0.0, 0.0])
+           end
+           if x124_CBODD_12_15 !== true
+            x126_CBODD_12_15 = discrete(DistUInt{2}, [0.0138, 0.9862, 0.0, 0.0])
+           end
+           x127_CBODD_12_15 = x124_CBODD_12_15 === true ? x125_CBODD_12_15 : x124_CBODD_12_15 === false ? x126_CBODD_12_15 : ifelse(x124_CBODD_12_15, x125_CBODD_12_15, x126_CBODD_12_15)
+          end
+          x128_CBODD_12_15 = x122_CBODD_12_15 === true ? x123_CBODD_12_15 : x122_CBODD_12_15 === false ? x127_CBODD_12_15 : ifelse(x122_CBODD_12_15, x123_CBODD_12_15, x127_CBODD_12_15)
+         end
+         x129_CBODD_12_15 = x120_CBODD_12_15 === true ? x121_CBODD_12_15 : x120_CBODD_12_15 === false ? x128_CBODD_12_15 : ifelse(x120_CBODD_12_15, x121_CBODD_12_15, x128_CBODD_12_15)
+        end
+        if x119_CBODD_12_15 !== true
+         x130_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+         if x130_CBODD_12_15 !== false
+          x131_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x131_CBODD_12_15 !== false
+           x132_CBODD_12_15 = discrete(DistUInt{2}, [0.124, 0.876, 0.0, 0.0])
+          end
+          if x131_CBODD_12_15 !== true
+           x133_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x133_CBODD_12_15 !== false
+            x134_CBODD_12_15 = discrete(DistUInt{2}, [0.0923, 0.9077, 0.0, 0.0])
+           end
+           if x133_CBODD_12_15 !== true
+            x135_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x135_CBODD_12_15 !== false
+             x136_CBODD_12_15 = discrete(DistUInt{2}, [0.0605, 0.9395, 0.0, 0.0])
+            end
+            if x135_CBODD_12_15 !== true
+             x137_CBODD_12_15 = discrete(DistUInt{2}, [0.0288, 0.9712, 0.0, 0.0])
+            end
+            x138_CBODD_12_15 = x135_CBODD_12_15 === true ? x136_CBODD_12_15 : x135_CBODD_12_15 === false ? x137_CBODD_12_15 : ifelse(x135_CBODD_12_15, x136_CBODD_12_15, x137_CBODD_12_15)
+           end
+           x139_CBODD_12_15 = x133_CBODD_12_15 === true ? x134_CBODD_12_15 : x133_CBODD_12_15 === false ? x138_CBODD_12_15 : ifelse(x133_CBODD_12_15, x134_CBODD_12_15, x138_CBODD_12_15)
+          end
+          x140_CBODD_12_15 = x131_CBODD_12_15 === true ? x132_CBODD_12_15 : x131_CBODD_12_15 === false ? x139_CBODD_12_15 : ifelse(x131_CBODD_12_15, x132_CBODD_12_15, x139_CBODD_12_15)
+         end
+         if x130_CBODD_12_15 !== true
+          x141_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x141_CBODD_12_15 !== false
+           x142_CBODD_12_15 = discrete(DistUInt{2}, [0.134, 0.866, 0.0, 0.0])
+          end
+          if x141_CBODD_12_15 !== true
+           x143_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x143_CBODD_12_15 !== false
+            x144_CBODD_12_15 = discrete(DistUInt{2}, [0.1023, 0.8977, 0.0, 0.0])
+           end
+           if x143_CBODD_12_15 !== true
+            x145_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x145_CBODD_12_15 !== false
+             x146_CBODD_12_15 = discrete(DistUInt{2}, [0.0705, 0.9295, 0.0, 0.0])
+            end
+            if x145_CBODD_12_15 !== true
+             x147_CBODD_12_15 = discrete(DistUInt{2}, [0.0388, 0.9612, 0.0, 0.0])
+            end
+            x148_CBODD_12_15 = x145_CBODD_12_15 === true ? x146_CBODD_12_15 : x145_CBODD_12_15 === false ? x147_CBODD_12_15 : ifelse(x145_CBODD_12_15, x146_CBODD_12_15, x147_CBODD_12_15)
+           end
+           x149_CBODD_12_15 = x143_CBODD_12_15 === true ? x144_CBODD_12_15 : x143_CBODD_12_15 === false ? x148_CBODD_12_15 : ifelse(x143_CBODD_12_15, x144_CBODD_12_15, x148_CBODD_12_15)
+          end
+          x150_CBODD_12_15 = x141_CBODD_12_15 === true ? x142_CBODD_12_15 : x141_CBODD_12_15 === false ? x149_CBODD_12_15 : ifelse(x141_CBODD_12_15, x142_CBODD_12_15, x149_CBODD_12_15)
+         end
+         x151_CBODD_12_15 = x130_CBODD_12_15 === true ? x140_CBODD_12_15 : x130_CBODD_12_15 === false ? x150_CBODD_12_15 : ifelse(x130_CBODD_12_15, x140_CBODD_12_15, x150_CBODD_12_15)
+        end
+        x152_CBODD_12_15 = x119_CBODD_12_15 === true ? x129_CBODD_12_15 : x119_CBODD_12_15 === false ? x151_CBODD_12_15 : ifelse(x119_CBODD_12_15, x129_CBODD_12_15, x151_CBODD_12_15)
+       end
+       x153_CBODD_12_15 = x108_CBODD_12_15 === true ? x118_CBODD_12_15 : x108_CBODD_12_15 === false ? x152_CBODD_12_15 : ifelse(x108_CBODD_12_15, x118_CBODD_12_15, x152_CBODD_12_15)
+      end
+      if x107_CBODD_12_15 !== true
+       x154_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(2))
+       if x154_CBODD_12_15 !== false
+        x155_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+        if x155_CBODD_12_15 !== false
+         x156_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x156_CBODD_12_15 !== false
+          x157_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1362, 0.8638, 0.0])
+         end
+         if x156_CBODD_12_15 !== true
+          x158_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x158_CBODD_12_15 !== false
+           x159_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1045, 0.8955, 0.0])
+          end
+          if x158_CBODD_12_15 !== true
+           x160_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x160_CBODD_12_15 !== false
+            x161_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0727, 0.9273, 0.0])
+           end
+           if x160_CBODD_12_15 !== true
+            x162_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.041, 0.959, 0.0])
+           end
+           x163_CBODD_12_15 = x160_CBODD_12_15 === true ? x161_CBODD_12_15 : x160_CBODD_12_15 === false ? x162_CBODD_12_15 : ifelse(x160_CBODD_12_15, x161_CBODD_12_15, x162_CBODD_12_15)
+          end
+          x164_CBODD_12_15 = x158_CBODD_12_15 === true ? x159_CBODD_12_15 : x158_CBODD_12_15 === false ? x163_CBODD_12_15 : ifelse(x158_CBODD_12_15, x159_CBODD_12_15, x163_CBODD_12_15)
+         end
+         x165_CBODD_12_15 = x156_CBODD_12_15 === true ? x157_CBODD_12_15 : x156_CBODD_12_15 === false ? x164_CBODD_12_15 : ifelse(x156_CBODD_12_15, x157_CBODD_12_15, x164_CBODD_12_15)
+        end
+        if x155_CBODD_12_15 !== true
+         x166_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+         if x166_CBODD_12_15 !== false
+          x167_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x167_CBODD_12_15 !== false
+           x168_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.157, 0.843, 0.0])
+          end
+          if x167_CBODD_12_15 !== true
+           x169_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x169_CBODD_12_15 !== false
+            x170_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1253, 0.8747, 0.0])
+           end
+           if x169_CBODD_12_15 !== true
+            x171_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x171_CBODD_12_15 !== false
+             x172_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0935, 0.9065, 0.0])
+            end
+            if x171_CBODD_12_15 !== true
+             x173_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0618, 0.9382, 0.0])
+            end
+            x174_CBODD_12_15 = x171_CBODD_12_15 === true ? x172_CBODD_12_15 : x171_CBODD_12_15 === false ? x173_CBODD_12_15 : ifelse(x171_CBODD_12_15, x172_CBODD_12_15, x173_CBODD_12_15)
+           end
+           x175_CBODD_12_15 = x169_CBODD_12_15 === true ? x170_CBODD_12_15 : x169_CBODD_12_15 === false ? x174_CBODD_12_15 : ifelse(x169_CBODD_12_15, x170_CBODD_12_15, x174_CBODD_12_15)
+          end
+          x176_CBODD_12_15 = x167_CBODD_12_15 === true ? x168_CBODD_12_15 : x167_CBODD_12_15 === false ? x175_CBODD_12_15 : ifelse(x167_CBODD_12_15, x168_CBODD_12_15, x175_CBODD_12_15)
+         end
+         if x166_CBODD_12_15 !== true
+          x177_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+          if x177_CBODD_12_15 !== false
+           x178_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x178_CBODD_12_15 !== false
+            x179_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1737, 0.8263, 0.0])
+           end
+           if x178_CBODD_12_15 !== true
+            x180_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x180_CBODD_12_15 !== false
+             x181_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.142, 0.858, 0.0])
+            end
+            if x180_CBODD_12_15 !== true
+             x182_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x182_CBODD_12_15 !== false
+              x183_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1102, 0.8898, 0.0])
+             end
+             if x182_CBODD_12_15 !== true
+              x184_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0785, 0.9215, 0.0])
+             end
+             x185_CBODD_12_15 = x182_CBODD_12_15 === true ? x183_CBODD_12_15 : x182_CBODD_12_15 === false ? x184_CBODD_12_15 : ifelse(x182_CBODD_12_15, x183_CBODD_12_15, x184_CBODD_12_15)
+            end
+            x186_CBODD_12_15 = x180_CBODD_12_15 === true ? x181_CBODD_12_15 : x180_CBODD_12_15 === false ? x185_CBODD_12_15 : ifelse(x180_CBODD_12_15, x181_CBODD_12_15, x185_CBODD_12_15)
+           end
+           x187_CBODD_12_15 = x178_CBODD_12_15 === true ? x179_CBODD_12_15 : x178_CBODD_12_15 === false ? x186_CBODD_12_15 : ifelse(x178_CBODD_12_15, x179_CBODD_12_15, x186_CBODD_12_15)
+          end
+          if x177_CBODD_12_15 !== true
+           x188_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x188_CBODD_12_15 !== false
+            x189_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1848, 0.8152, 0.0])
+           end
+           if x188_CBODD_12_15 !== true
+            x190_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x190_CBODD_12_15 !== false
+             x191_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1531, 0.8469, 0.0])
+            end
+            if x190_CBODD_12_15 !== true
+             x192_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x192_CBODD_12_15 !== false
+              x193_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1213, 0.8787, 0.0])
+             end
+             if x192_CBODD_12_15 !== true
+              x194_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0896, 0.9104, 0.0])
+             end
+             x195_CBODD_12_15 = x192_CBODD_12_15 === true ? x193_CBODD_12_15 : x192_CBODD_12_15 === false ? x194_CBODD_12_15 : ifelse(x192_CBODD_12_15, x193_CBODD_12_15, x194_CBODD_12_15)
+            end
+            x196_CBODD_12_15 = x190_CBODD_12_15 === true ? x191_CBODD_12_15 : x190_CBODD_12_15 === false ? x195_CBODD_12_15 : ifelse(x190_CBODD_12_15, x191_CBODD_12_15, x195_CBODD_12_15)
+           end
+           x197_CBODD_12_15 = x188_CBODD_12_15 === true ? x189_CBODD_12_15 : x188_CBODD_12_15 === false ? x196_CBODD_12_15 : ifelse(x188_CBODD_12_15, x189_CBODD_12_15, x196_CBODD_12_15)
+          end
+          x198_CBODD_12_15 = x177_CBODD_12_15 === true ? x187_CBODD_12_15 : x177_CBODD_12_15 === false ? x197_CBODD_12_15 : ifelse(x177_CBODD_12_15, x187_CBODD_12_15, x197_CBODD_12_15)
+         end
+         x199_CBODD_12_15 = x166_CBODD_12_15 === true ? x176_CBODD_12_15 : x166_CBODD_12_15 === false ? x198_CBODD_12_15 : ifelse(x166_CBODD_12_15, x176_CBODD_12_15, x198_CBODD_12_15)
+        end
+        x200_CBODD_12_15 = x155_CBODD_12_15 === true ? x165_CBODD_12_15 : x155_CBODD_12_15 === false ? x199_CBODD_12_15 : ifelse(x155_CBODD_12_15, x165_CBODD_12_15, x199_CBODD_12_15)
+       end
+       if x154_CBODD_12_15 !== true
+        x201_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+        if x201_CBODD_12_15 !== false
+         x202_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x202_CBODD_12_15 !== false
+          x203_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1809, 0.8191])
+         end
+         if x202_CBODD_12_15 !== true
+          x204_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x204_CBODD_12_15 !== false
+           x205_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1491, 0.8509])
+          end
+          if x204_CBODD_12_15 !== true
+           x206_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x206_CBODD_12_15 !== false
+            x207_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1174, 0.8826])
+           end
+           if x206_CBODD_12_15 !== true
+            x208_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.0856, 0.9144])
+           end
+           x209_CBODD_12_15 = x206_CBODD_12_15 === true ? x207_CBODD_12_15 : x206_CBODD_12_15 === false ? x208_CBODD_12_15 : ifelse(x206_CBODD_12_15, x207_CBODD_12_15, x208_CBODD_12_15)
+          end
+          x210_CBODD_12_15 = x204_CBODD_12_15 === true ? x205_CBODD_12_15 : x204_CBODD_12_15 === false ? x209_CBODD_12_15 : ifelse(x204_CBODD_12_15, x205_CBODD_12_15, x209_CBODD_12_15)
+         end
+         x211_CBODD_12_15 = x202_CBODD_12_15 === true ? x203_CBODD_12_15 : x202_CBODD_12_15 === false ? x210_CBODD_12_15 : ifelse(x202_CBODD_12_15, x203_CBODD_12_15, x210_CBODD_12_15)
+        end
+        if x201_CBODD_12_15 !== true
+         x212_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+         if x212_CBODD_12_15 !== false
+          x213_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x213_CBODD_12_15 !== false
+           x214_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.2034, 0.7966])
+          end
+          if x213_CBODD_12_15 !== true
+           x215_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x215_CBODD_12_15 !== false
+            x216_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1716, 0.8284])
+           end
+           if x215_CBODD_12_15 !== true
+            x217_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x217_CBODD_12_15 !== false
+             x218_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1399, 0.8601])
+            end
+            if x217_CBODD_12_15 !== true
+             x219_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1081, 0.8919])
+            end
+            x220_CBODD_12_15 = x217_CBODD_12_15 === true ? x218_CBODD_12_15 : x217_CBODD_12_15 === false ? x219_CBODD_12_15 : ifelse(x217_CBODD_12_15, x218_CBODD_12_15, x219_CBODD_12_15)
+           end
+           x221_CBODD_12_15 = x215_CBODD_12_15 === true ? x216_CBODD_12_15 : x215_CBODD_12_15 === false ? x220_CBODD_12_15 : ifelse(x215_CBODD_12_15, x216_CBODD_12_15, x220_CBODD_12_15)
+          end
+          x222_CBODD_12_15 = x213_CBODD_12_15 === true ? x214_CBODD_12_15 : x213_CBODD_12_15 === false ? x221_CBODD_12_15 : ifelse(x213_CBODD_12_15, x214_CBODD_12_15, x221_CBODD_12_15)
+         end
+         if x212_CBODD_12_15 !== true
+          x223_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+          if x223_CBODD_12_15 !== false
+           x224_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x224_CBODD_12_15 !== false
+            x225_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.2214, 0.7786])
+           end
+           if x224_CBODD_12_15 !== true
+            x226_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x226_CBODD_12_15 !== false
+             x227_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1896, 0.8104])
+            end
+            if x226_CBODD_12_15 !== true
+             x228_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x228_CBODD_12_15 !== false
+              x229_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1579, 0.8421])
+             end
+             if x228_CBODD_12_15 !== true
+              x230_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1261, 0.8739])
+             end
+             x231_CBODD_12_15 = x228_CBODD_12_15 === true ? x229_CBODD_12_15 : x228_CBODD_12_15 === false ? x230_CBODD_12_15 : ifelse(x228_CBODD_12_15, x229_CBODD_12_15, x230_CBODD_12_15)
+            end
+            x232_CBODD_12_15 = x226_CBODD_12_15 === true ? x227_CBODD_12_15 : x226_CBODD_12_15 === false ? x231_CBODD_12_15 : ifelse(x226_CBODD_12_15, x227_CBODD_12_15, x231_CBODD_12_15)
+           end
+           x233_CBODD_12_15 = x224_CBODD_12_15 === true ? x225_CBODD_12_15 : x224_CBODD_12_15 === false ? x232_CBODD_12_15 : ifelse(x224_CBODD_12_15, x225_CBODD_12_15, x232_CBODD_12_15)
+          end
+          if x223_CBODD_12_15 !== true
+           x234_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x234_CBODD_12_15 !== false
+            x235_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.2334, 0.7666])
+           end
+           if x234_CBODD_12_15 !== true
+            x236_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x236_CBODD_12_15 !== false
+             x237_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.2016, 0.7984])
+            end
+            if x236_CBODD_12_15 !== true
+             x238_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x238_CBODD_12_15 !== false
+              x239_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1699, 0.8301])
+             end
+             if x238_CBODD_12_15 !== true
+              x240_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1381, 0.8619])
+             end
+             x241_CBODD_12_15 = x238_CBODD_12_15 === true ? x239_CBODD_12_15 : x238_CBODD_12_15 === false ? x240_CBODD_12_15 : ifelse(x238_CBODD_12_15, x239_CBODD_12_15, x240_CBODD_12_15)
+            end
+            x242_CBODD_12_15 = x236_CBODD_12_15 === true ? x237_CBODD_12_15 : x236_CBODD_12_15 === false ? x241_CBODD_12_15 : ifelse(x236_CBODD_12_15, x237_CBODD_12_15, x241_CBODD_12_15)
+           end
+           x243_CBODD_12_15 = x234_CBODD_12_15 === true ? x235_CBODD_12_15 : x234_CBODD_12_15 === false ? x242_CBODD_12_15 : ifelse(x234_CBODD_12_15, x235_CBODD_12_15, x242_CBODD_12_15)
+          end
+          x244_CBODD_12_15 = x223_CBODD_12_15 === true ? x233_CBODD_12_15 : x223_CBODD_12_15 === false ? x243_CBODD_12_15 : ifelse(x223_CBODD_12_15, x233_CBODD_12_15, x243_CBODD_12_15)
+         end
+         x245_CBODD_12_15 = x212_CBODD_12_15 === true ? x222_CBODD_12_15 : x212_CBODD_12_15 === false ? x244_CBODD_12_15 : ifelse(x212_CBODD_12_15, x222_CBODD_12_15, x244_CBODD_12_15)
+        end
+        x246_CBODD_12_15 = x201_CBODD_12_15 === true ? x211_CBODD_12_15 : x201_CBODD_12_15 === false ? x245_CBODD_12_15 : ifelse(x201_CBODD_12_15, x211_CBODD_12_15, x245_CBODD_12_15)
+       end
+       x247_CBODD_12_15 = x154_CBODD_12_15 === true ? x200_CBODD_12_15 : x154_CBODD_12_15 === false ? x246_CBODD_12_15 : ifelse(x154_CBODD_12_15, x200_CBODD_12_15, x246_CBODD_12_15)
+      end
+      x248_CBODD_12_15 = x107_CBODD_12_15 === true ? x153_CBODD_12_15 : x107_CBODD_12_15 === false ? x247_CBODD_12_15 : ifelse(x107_CBODD_12_15, x153_CBODD_12_15, x247_CBODD_12_15)
+     end
+     x249_CBODD_12_15 = x60_CBODD_12_15 === true ? x106_CBODD_12_15 : x60_CBODD_12_15 === false ? x248_CBODD_12_15 : ifelse(x60_CBODD_12_15, x106_CBODD_12_15, x248_CBODD_12_15)
+    end
+    if x59_CBODD_12_15 !== true
+     x250_CBODD_12_15 = prob_equals(x2_CKNI_12_00, DistUInt{2}(1))
+     if x250_CBODD_12_15 !== false
+      x251_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(0))
+      if x251_CBODD_12_15 !== false
+       x252_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+       if x252_CBODD_12_15 !== false
+        x253_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+        if x253_CBODD_12_15 !== false
+         x254_CBODD_12_15 = discrete(DistUInt{2}, [0.9949, 0.0051, 0.0, 0.0])
+        end
+        if x253_CBODD_12_15 !== true
+         x255_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+         if x255_CBODD_12_15 !== false
+          x256_CBODD_12_15 = discrete(DistUInt{2}, [0.9632, 0.0368, 0.0, 0.0])
+         end
+         if x255_CBODD_12_15 !== true
+          x257_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+          if x257_CBODD_12_15 !== false
+           x258_CBODD_12_15 = discrete(DistUInt{2}, [0.9314, 0.0686, 0.0, 0.0])
+          end
+          if x257_CBODD_12_15 !== true
+           x259_CBODD_12_15 = discrete(DistUInt{2}, [0.8997, 0.1003, 0.0, 0.0])
+          end
+          x260_CBODD_12_15 = x257_CBODD_12_15 === true ? x258_CBODD_12_15 : x257_CBODD_12_15 === false ? x259_CBODD_12_15 : ifelse(x257_CBODD_12_15, x258_CBODD_12_15, x259_CBODD_12_15)
+         end
+         x261_CBODD_12_15 = x255_CBODD_12_15 === true ? x256_CBODD_12_15 : x255_CBODD_12_15 === false ? x260_CBODD_12_15 : ifelse(x255_CBODD_12_15, x256_CBODD_12_15, x260_CBODD_12_15)
+        end
+        x262_CBODD_12_15 = x253_CBODD_12_15 === true ? x254_CBODD_12_15 : x253_CBODD_12_15 === false ? x261_CBODD_12_15 : ifelse(x253_CBODD_12_15, x254_CBODD_12_15, x261_CBODD_12_15)
+       end
+       if x252_CBODD_12_15 !== true
+        x263_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+        if x263_CBODD_12_15 !== false
+         x264_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x264_CBODD_12_15 !== false
+          x265_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+         end
+         if x264_CBODD_12_15 !== true
+          x266_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x266_CBODD_12_15 !== false
+           x267_CBODD_12_15 = discrete(DistUInt{2}, [0.9793, 0.0207, 0.0, 0.0])
+          end
+          if x266_CBODD_12_15 !== true
+           x268_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x268_CBODD_12_15 !== false
+            x269_CBODD_12_15 = discrete(DistUInt{2}, [0.9475, 0.0525, 0.0, 0.0])
+           end
+           if x268_CBODD_12_15 !== true
+            x270_CBODD_12_15 = discrete(DistUInt{2}, [0.9158, 0.0842, 0.0, 0.0])
+           end
+           x271_CBODD_12_15 = x268_CBODD_12_15 === true ? x269_CBODD_12_15 : x268_CBODD_12_15 === false ? x270_CBODD_12_15 : ifelse(x268_CBODD_12_15, x269_CBODD_12_15, x270_CBODD_12_15)
+          end
+          x272_CBODD_12_15 = x266_CBODD_12_15 === true ? x267_CBODD_12_15 : x266_CBODD_12_15 === false ? x271_CBODD_12_15 : ifelse(x266_CBODD_12_15, x267_CBODD_12_15, x271_CBODD_12_15)
+         end
+         x273_CBODD_12_15 = x264_CBODD_12_15 === true ? x265_CBODD_12_15 : x264_CBODD_12_15 === false ? x272_CBODD_12_15 : ifelse(x264_CBODD_12_15, x265_CBODD_12_15, x272_CBODD_12_15)
+        end
+        if x263_CBODD_12_15 !== true
+         x274_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+         if x274_CBODD_12_15 !== false
+          x275_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x275_CBODD_12_15 !== false
+           x276_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+          end
+          if x275_CBODD_12_15 !== true
+           x277_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x277_CBODD_12_15 !== false
+            x278_CBODD_12_15 = discrete(DistUInt{2}, [0.9921, 0.0079, 0.0, 0.0])
+           end
+           if x277_CBODD_12_15 !== true
+            x279_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x279_CBODD_12_15 !== false
+             x280_CBODD_12_15 = discrete(DistUInt{2}, [0.9604, 0.0396, 0.0, 0.0])
+            end
+            if x279_CBODD_12_15 !== true
+             x281_CBODD_12_15 = discrete(DistUInt{2}, [0.9286, 0.0714, 0.0, 0.0])
+            end
+            x282_CBODD_12_15 = x279_CBODD_12_15 === true ? x280_CBODD_12_15 : x279_CBODD_12_15 === false ? x281_CBODD_12_15 : ifelse(x279_CBODD_12_15, x280_CBODD_12_15, x281_CBODD_12_15)
+           end
+           x283_CBODD_12_15 = x277_CBODD_12_15 === true ? x278_CBODD_12_15 : x277_CBODD_12_15 === false ? x282_CBODD_12_15 : ifelse(x277_CBODD_12_15, x278_CBODD_12_15, x282_CBODD_12_15)
+          end
+          x284_CBODD_12_15 = x275_CBODD_12_15 === true ? x276_CBODD_12_15 : x275_CBODD_12_15 === false ? x283_CBODD_12_15 : ifelse(x275_CBODD_12_15, x276_CBODD_12_15, x283_CBODD_12_15)
+         end
+         if x274_CBODD_12_15 !== true
+          x285_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x285_CBODD_12_15 !== false
+           x286_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+          end
+          if x285_CBODD_12_15 !== true
+           x287_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x287_CBODD_12_15 !== false
+            x288_CBODD_12_15 = discrete(DistUInt{2}, [1.0, 0.0, 0.0, 0.0])
+           end
+           if x287_CBODD_12_15 !== true
+            x289_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x289_CBODD_12_15 !== false
+             x290_CBODD_12_15 = discrete(DistUInt{2}, [0.9689, 0.0311, 0.0, 0.0])
+            end
+            if x289_CBODD_12_15 !== true
+             x291_CBODD_12_15 = discrete(DistUInt{2}, [0.9372, 0.0628, 0.0, 0.0])
+            end
+            x292_CBODD_12_15 = x289_CBODD_12_15 === true ? x290_CBODD_12_15 : x289_CBODD_12_15 === false ? x291_CBODD_12_15 : ifelse(x289_CBODD_12_15, x290_CBODD_12_15, x291_CBODD_12_15)
+           end
+           x293_CBODD_12_15 = x287_CBODD_12_15 === true ? x288_CBODD_12_15 : x287_CBODD_12_15 === false ? x292_CBODD_12_15 : ifelse(x287_CBODD_12_15, x288_CBODD_12_15, x292_CBODD_12_15)
+          end
+          x294_CBODD_12_15 = x285_CBODD_12_15 === true ? x286_CBODD_12_15 : x285_CBODD_12_15 === false ? x293_CBODD_12_15 : ifelse(x285_CBODD_12_15, x286_CBODD_12_15, x293_CBODD_12_15)
+         end
+         x295_CBODD_12_15 = x274_CBODD_12_15 === true ? x284_CBODD_12_15 : x274_CBODD_12_15 === false ? x294_CBODD_12_15 : ifelse(x274_CBODD_12_15, x284_CBODD_12_15, x294_CBODD_12_15)
+        end
+        x296_CBODD_12_15 = x263_CBODD_12_15 === true ? x273_CBODD_12_15 : x263_CBODD_12_15 === false ? x295_CBODD_12_15 : ifelse(x263_CBODD_12_15, x273_CBODD_12_15, x295_CBODD_12_15)
+       end
+       x297_CBODD_12_15 = x252_CBODD_12_15 === true ? x262_CBODD_12_15 : x252_CBODD_12_15 === false ? x296_CBODD_12_15 : ifelse(x252_CBODD_12_15, x262_CBODD_12_15, x296_CBODD_12_15)
+      end
+      if x251_CBODD_12_15 !== true
+       x298_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(1))
+       if x298_CBODD_12_15 !== false
+        x299_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+        if x299_CBODD_12_15 !== false
+         x300_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x300_CBODD_12_15 !== false
+          x301_CBODD_12_15 = discrete(DistUInt{2}, [0.0426, 0.9574, 0.0, 0.0])
+         end
+         if x300_CBODD_12_15 !== true
+          x302_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x302_CBODD_12_15 !== false
+           x303_CBODD_12_15 = discrete(DistUInt{2}, [0.0109, 0.9891, 0.0, 0.0])
+          end
+          if x302_CBODD_12_15 !== true
+           x304_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x304_CBODD_12_15 !== false
+            x305_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9792, 0.0208, 0.0])
+           end
+           if x304_CBODD_12_15 !== true
+            x306_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9474, 0.0526, 0.0])
+           end
+           x307_CBODD_12_15 = x304_CBODD_12_15 === true ? x305_CBODD_12_15 : x304_CBODD_12_15 === false ? x306_CBODD_12_15 : ifelse(x304_CBODD_12_15, x305_CBODD_12_15, x306_CBODD_12_15)
+          end
+          x308_CBODD_12_15 = x302_CBODD_12_15 === true ? x303_CBODD_12_15 : x302_CBODD_12_15 === false ? x307_CBODD_12_15 : ifelse(x302_CBODD_12_15, x303_CBODD_12_15, x307_CBODD_12_15)
+         end
+         x309_CBODD_12_15 = x300_CBODD_12_15 === true ? x301_CBODD_12_15 : x300_CBODD_12_15 === false ? x308_CBODD_12_15 : ifelse(x300_CBODD_12_15, x301_CBODD_12_15, x308_CBODD_12_15)
+        end
+        if x299_CBODD_12_15 !== true
+         x310_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+         if x310_CBODD_12_15 !== false
+          x311_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x311_CBODD_12_15 !== false
+           x312_CBODD_12_15 = discrete(DistUInt{2}, [0.0614, 0.9386, 0.0, 0.0])
+          end
+          if x311_CBODD_12_15 !== true
+           x313_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x313_CBODD_12_15 !== false
+            x314_CBODD_12_15 = discrete(DistUInt{2}, [0.0296, 0.9704, 0.0, 0.0])
+           end
+           if x313_CBODD_12_15 !== true
+            x315_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x315_CBODD_12_15 !== false
+             x316_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9979, 0.0021, 0.0])
+            end
+            if x315_CBODD_12_15 !== true
+             x317_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9662, 0.0338, 0.0])
+            end
+            x318_CBODD_12_15 = x315_CBODD_12_15 === true ? x316_CBODD_12_15 : x315_CBODD_12_15 === false ? x317_CBODD_12_15 : ifelse(x315_CBODD_12_15, x316_CBODD_12_15, x317_CBODD_12_15)
+           end
+           x319_CBODD_12_15 = x313_CBODD_12_15 === true ? x314_CBODD_12_15 : x313_CBODD_12_15 === false ? x318_CBODD_12_15 : ifelse(x313_CBODD_12_15, x314_CBODD_12_15, x318_CBODD_12_15)
+          end
+          x320_CBODD_12_15 = x311_CBODD_12_15 === true ? x312_CBODD_12_15 : x311_CBODD_12_15 === false ? x319_CBODD_12_15 : ifelse(x311_CBODD_12_15, x312_CBODD_12_15, x319_CBODD_12_15)
+         end
+         if x310_CBODD_12_15 !== true
+          x321_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+          if x321_CBODD_12_15 !== false
+           x322_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x322_CBODD_12_15 !== false
+            x323_CBODD_12_15 = discrete(DistUInt{2}, [0.0764, 0.9236, 0.0, 0.0])
+           end
+           if x322_CBODD_12_15 !== true
+            x324_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x324_CBODD_12_15 !== false
+             x325_CBODD_12_15 = discrete(DistUInt{2}, [0.0446, 0.9554, 0.0, 0.0])
+            end
+            if x324_CBODD_12_15 !== true
+             x326_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x326_CBODD_12_15 !== false
+              x327_CBODD_12_15 = discrete(DistUInt{2}, [0.0129, 0.9871, 0.0, 0.0])
+             end
+             if x326_CBODD_12_15 !== true
+              x328_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9812, 0.0188, 0.0])
+             end
+             x329_CBODD_12_15 = x326_CBODD_12_15 === true ? x327_CBODD_12_15 : x326_CBODD_12_15 === false ? x328_CBODD_12_15 : ifelse(x326_CBODD_12_15, x327_CBODD_12_15, x328_CBODD_12_15)
+            end
+            x330_CBODD_12_15 = x324_CBODD_12_15 === true ? x325_CBODD_12_15 : x324_CBODD_12_15 === false ? x329_CBODD_12_15 : ifelse(x324_CBODD_12_15, x325_CBODD_12_15, x329_CBODD_12_15)
+           end
+           x331_CBODD_12_15 = x322_CBODD_12_15 === true ? x323_CBODD_12_15 : x322_CBODD_12_15 === false ? x330_CBODD_12_15 : ifelse(x322_CBODD_12_15, x323_CBODD_12_15, x330_CBODD_12_15)
+          end
+          if x321_CBODD_12_15 !== true
+           x332_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x332_CBODD_12_15 !== false
+            x333_CBODD_12_15 = discrete(DistUInt{2}, [0.0864, 0.9136, 0.0, 0.0])
+           end
+           if x332_CBODD_12_15 !== true
+            x334_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x334_CBODD_12_15 !== false
+             x335_CBODD_12_15 = discrete(DistUInt{2}, [0.0546, 0.9454, 0.0, 0.0])
+            end
+            if x334_CBODD_12_15 !== true
+             x336_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x336_CBODD_12_15 !== false
+              x337_CBODD_12_15 = discrete(DistUInt{2}, [0.0229, 0.9771, 0.0, 0.0])
+             end
+             if x336_CBODD_12_15 !== true
+              x338_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9912, 0.0088, 0.0])
+             end
+             x339_CBODD_12_15 = x336_CBODD_12_15 === true ? x337_CBODD_12_15 : x336_CBODD_12_15 === false ? x338_CBODD_12_15 : ifelse(x336_CBODD_12_15, x337_CBODD_12_15, x338_CBODD_12_15)
+            end
+            x340_CBODD_12_15 = x334_CBODD_12_15 === true ? x335_CBODD_12_15 : x334_CBODD_12_15 === false ? x339_CBODD_12_15 : ifelse(x334_CBODD_12_15, x335_CBODD_12_15, x339_CBODD_12_15)
+           end
+           x341_CBODD_12_15 = x332_CBODD_12_15 === true ? x333_CBODD_12_15 : x332_CBODD_12_15 === false ? x340_CBODD_12_15 : ifelse(x332_CBODD_12_15, x333_CBODD_12_15, x340_CBODD_12_15)
+          end
+          x342_CBODD_12_15 = x321_CBODD_12_15 === true ? x331_CBODD_12_15 : x321_CBODD_12_15 === false ? x341_CBODD_12_15 : ifelse(x321_CBODD_12_15, x331_CBODD_12_15, x341_CBODD_12_15)
+         end
+         x343_CBODD_12_15 = x310_CBODD_12_15 === true ? x320_CBODD_12_15 : x310_CBODD_12_15 === false ? x342_CBODD_12_15 : ifelse(x310_CBODD_12_15, x320_CBODD_12_15, x342_CBODD_12_15)
+        end
+        x344_CBODD_12_15 = x299_CBODD_12_15 === true ? x309_CBODD_12_15 : x299_CBODD_12_15 === false ? x343_CBODD_12_15 : ifelse(x299_CBODD_12_15, x309_CBODD_12_15, x343_CBODD_12_15)
+       end
+       if x298_CBODD_12_15 !== true
+        x345_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(2))
+        if x345_CBODD_12_15 !== false
+         x346_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+         if x346_CBODD_12_15 !== false
+          x347_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x347_CBODD_12_15 !== false
+           x348_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0886, 0.9114, 0.0])
+          end
+          if x347_CBODD_12_15 !== true
+           x349_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x349_CBODD_12_15 !== false
+            x350_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0568, 0.9432, 0.0])
+           end
+           if x349_CBODD_12_15 !== true
+            x351_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x351_CBODD_12_15 !== false
+             x352_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0251, 0.9749, 0.0])
+            end
+            if x351_CBODD_12_15 !== true
+             x353_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.9933, 0.0067])
+            end
+            x354_CBODD_12_15 = x351_CBODD_12_15 === true ? x352_CBODD_12_15 : x351_CBODD_12_15 === false ? x353_CBODD_12_15 : ifelse(x351_CBODD_12_15, x352_CBODD_12_15, x353_CBODD_12_15)
+           end
+           x355_CBODD_12_15 = x349_CBODD_12_15 === true ? x350_CBODD_12_15 : x349_CBODD_12_15 === false ? x354_CBODD_12_15 : ifelse(x349_CBODD_12_15, x350_CBODD_12_15, x354_CBODD_12_15)
+          end
+          x356_CBODD_12_15 = x347_CBODD_12_15 === true ? x348_CBODD_12_15 : x347_CBODD_12_15 === false ? x355_CBODD_12_15 : ifelse(x347_CBODD_12_15, x348_CBODD_12_15, x355_CBODD_12_15)
+         end
+         if x346_CBODD_12_15 !== true
+          x357_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+          if x357_CBODD_12_15 !== false
+           x358_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x358_CBODD_12_15 !== false
+            x359_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1094, 0.8906, 0.0])
+           end
+           if x358_CBODD_12_15 !== true
+            x360_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x360_CBODD_12_15 !== false
+             x361_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0777, 0.9223, 0.0])
+            end
+            if x360_CBODD_12_15 !== true
+             x362_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x362_CBODD_12_15 !== false
+              x363_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0459, 0.9541, 0.0])
+             end
+             if x362_CBODD_12_15 !== true
+              x364_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0142, 0.9858, 0.0])
+             end
+             x365_CBODD_12_15 = x362_CBODD_12_15 === true ? x363_CBODD_12_15 : x362_CBODD_12_15 === false ? x364_CBODD_12_15 : ifelse(x362_CBODD_12_15, x363_CBODD_12_15, x364_CBODD_12_15)
+            end
+            x366_CBODD_12_15 = x360_CBODD_12_15 === true ? x361_CBODD_12_15 : x360_CBODD_12_15 === false ? x365_CBODD_12_15 : ifelse(x360_CBODD_12_15, x361_CBODD_12_15, x365_CBODD_12_15)
+           end
+           x367_CBODD_12_15 = x358_CBODD_12_15 === true ? x359_CBODD_12_15 : x358_CBODD_12_15 === false ? x366_CBODD_12_15 : ifelse(x358_CBODD_12_15, x359_CBODD_12_15, x366_CBODD_12_15)
+          end
+          if x357_CBODD_12_15 !== true
+           x368_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+           if x368_CBODD_12_15 !== false
+            x369_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+            if x369_CBODD_12_15 !== false
+             x370_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1261, 0.8739, 0.0])
+            end
+            if x369_CBODD_12_15 !== true
+             x371_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+             if x371_CBODD_12_15 !== false
+              x372_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0943, 0.9057, 0.0])
+             end
+             if x371_CBODD_12_15 !== true
+              x373_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+              if x373_CBODD_12_15 !== false
+               x374_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0626, 0.9374, 0.0])
+              end
+              if x373_CBODD_12_15 !== true
+               x375_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0308, 0.9692, 0.0])
+              end
+              x376_CBODD_12_15 = x373_CBODD_12_15 === true ? x374_CBODD_12_15 : x373_CBODD_12_15 === false ? x375_CBODD_12_15 : ifelse(x373_CBODD_12_15, x374_CBODD_12_15, x375_CBODD_12_15)
+             end
+             x377_CBODD_12_15 = x371_CBODD_12_15 === true ? x372_CBODD_12_15 : x371_CBODD_12_15 === false ? x376_CBODD_12_15 : ifelse(x371_CBODD_12_15, x372_CBODD_12_15, x376_CBODD_12_15)
+            end
+            x378_CBODD_12_15 = x369_CBODD_12_15 === true ? x370_CBODD_12_15 : x369_CBODD_12_15 === false ? x377_CBODD_12_15 : ifelse(x369_CBODD_12_15, x370_CBODD_12_15, x377_CBODD_12_15)
+           end
+           if x368_CBODD_12_15 !== true
+            x379_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+            if x379_CBODD_12_15 !== false
+             x380_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1372, 0.8628, 0.0])
+            end
+            if x379_CBODD_12_15 !== true
+             x381_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+             if x381_CBODD_12_15 !== false
+              x382_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.1054, 0.8946, 0.0])
+             end
+             if x381_CBODD_12_15 !== true
+              x383_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+              if x383_CBODD_12_15 !== false
+               x384_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0737, 0.9263, 0.0])
+              end
+              if x383_CBODD_12_15 !== true
+               x385_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.042, 0.958, 0.0])
+              end
+              x386_CBODD_12_15 = x383_CBODD_12_15 === true ? x384_CBODD_12_15 : x383_CBODD_12_15 === false ? x385_CBODD_12_15 : ifelse(x383_CBODD_12_15, x384_CBODD_12_15, x385_CBODD_12_15)
+             end
+             x387_CBODD_12_15 = x381_CBODD_12_15 === true ? x382_CBODD_12_15 : x381_CBODD_12_15 === false ? x386_CBODD_12_15 : ifelse(x381_CBODD_12_15, x382_CBODD_12_15, x386_CBODD_12_15)
+            end
+            x388_CBODD_12_15 = x379_CBODD_12_15 === true ? x380_CBODD_12_15 : x379_CBODD_12_15 === false ? x387_CBODD_12_15 : ifelse(x379_CBODD_12_15, x380_CBODD_12_15, x387_CBODD_12_15)
+           end
+           x389_CBODD_12_15 = x368_CBODD_12_15 === true ? x378_CBODD_12_15 : x368_CBODD_12_15 === false ? x388_CBODD_12_15 : ifelse(x368_CBODD_12_15, x378_CBODD_12_15, x388_CBODD_12_15)
+          end
+          x390_CBODD_12_15 = x357_CBODD_12_15 === true ? x367_CBODD_12_15 : x357_CBODD_12_15 === false ? x389_CBODD_12_15 : ifelse(x357_CBODD_12_15, x367_CBODD_12_15, x389_CBODD_12_15)
+         end
+         x391_CBODD_12_15 = x346_CBODD_12_15 === true ? x356_CBODD_12_15 : x346_CBODD_12_15 === false ? x390_CBODD_12_15 : ifelse(x346_CBODD_12_15, x356_CBODD_12_15, x390_CBODD_12_15)
+        end
+        if x345_CBODD_12_15 !== true
+         x392_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+         if x392_CBODD_12_15 !== false
+          x393_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x393_CBODD_12_15 !== false
+           x394_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1333, 0.8667])
+          end
+          if x393_CBODD_12_15 !== true
+           x395_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x395_CBODD_12_15 !== false
+            x396_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1015, 0.8985])
+           end
+           if x395_CBODD_12_15 !== true
+            x397_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x397_CBODD_12_15 !== false
+             x398_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.0698, 0.9302])
+            end
+            if x397_CBODD_12_15 !== true
+             x399_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.038, 0.962])
+            end
+            x400_CBODD_12_15 = x397_CBODD_12_15 === true ? x398_CBODD_12_15 : x397_CBODD_12_15 === false ? x399_CBODD_12_15 : ifelse(x397_CBODD_12_15, x398_CBODD_12_15, x399_CBODD_12_15)
+           end
+           x401_CBODD_12_15 = x395_CBODD_12_15 === true ? x396_CBODD_12_15 : x395_CBODD_12_15 === false ? x400_CBODD_12_15 : ifelse(x395_CBODD_12_15, x396_CBODD_12_15, x400_CBODD_12_15)
+          end
+          x402_CBODD_12_15 = x393_CBODD_12_15 === true ? x394_CBODD_12_15 : x393_CBODD_12_15 === false ? x401_CBODD_12_15 : ifelse(x393_CBODD_12_15, x394_CBODD_12_15, x401_CBODD_12_15)
+         end
+         if x392_CBODD_12_15 !== true
+          x403_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+          if x403_CBODD_12_15 !== false
+           x404_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+           if x404_CBODD_12_15 !== false
+            x405_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1558, 0.8442])
+           end
+           if x404_CBODD_12_15 !== true
+            x406_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+            if x406_CBODD_12_15 !== false
+             x407_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.124, 0.876])
+            end
+            if x406_CBODD_12_15 !== true
+             x408_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+             if x408_CBODD_12_15 !== false
+              x409_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.0923, 0.9077])
+             end
+             if x408_CBODD_12_15 !== true
+              x410_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.0605, 0.9395])
+             end
+             x411_CBODD_12_15 = x408_CBODD_12_15 === true ? x409_CBODD_12_15 : x408_CBODD_12_15 === false ? x410_CBODD_12_15 : ifelse(x408_CBODD_12_15, x409_CBODD_12_15, x410_CBODD_12_15)
+            end
+            x412_CBODD_12_15 = x406_CBODD_12_15 === true ? x407_CBODD_12_15 : x406_CBODD_12_15 === false ? x411_CBODD_12_15 : ifelse(x406_CBODD_12_15, x407_CBODD_12_15, x411_CBODD_12_15)
+           end
+           x413_CBODD_12_15 = x404_CBODD_12_15 === true ? x405_CBODD_12_15 : x404_CBODD_12_15 === false ? x412_CBODD_12_15 : ifelse(x404_CBODD_12_15, x405_CBODD_12_15, x412_CBODD_12_15)
+          end
+          if x403_CBODD_12_15 !== true
+           x414_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+           if x414_CBODD_12_15 !== false
+            x415_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+            if x415_CBODD_12_15 !== false
+             x416_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1738, 0.8262])
+            end
+            if x415_CBODD_12_15 !== true
+             x417_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+             if x417_CBODD_12_15 !== false
+              x418_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.142, 0.858])
+             end
+             if x417_CBODD_12_15 !== true
+              x419_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+              if x419_CBODD_12_15 !== false
+               x420_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1103, 0.8897])
+              end
+              if x419_CBODD_12_15 !== true
+               x421_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.0785, 0.9215])
+              end
+              x422_CBODD_12_15 = x419_CBODD_12_15 === true ? x420_CBODD_12_15 : x419_CBODD_12_15 === false ? x421_CBODD_12_15 : ifelse(x419_CBODD_12_15, x420_CBODD_12_15, x421_CBODD_12_15)
+             end
+             x423_CBODD_12_15 = x417_CBODD_12_15 === true ? x418_CBODD_12_15 : x417_CBODD_12_15 === false ? x422_CBODD_12_15 : ifelse(x417_CBODD_12_15, x418_CBODD_12_15, x422_CBODD_12_15)
+            end
+            x424_CBODD_12_15 = x415_CBODD_12_15 === true ? x416_CBODD_12_15 : x415_CBODD_12_15 === false ? x423_CBODD_12_15 : ifelse(x415_CBODD_12_15, x416_CBODD_12_15, x423_CBODD_12_15)
+           end
+           if x414_CBODD_12_15 !== true
+            x425_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+            if x425_CBODD_12_15 !== false
+             x426_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1858, 0.8142])
+            end
+            if x425_CBODD_12_15 !== true
+             x427_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+             if x427_CBODD_12_15 !== false
+              x428_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.154, 0.846])
+             end
+             if x427_CBODD_12_15 !== true
+              x429_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+              if x429_CBODD_12_15 !== false
+               x430_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.1223, 0.8777])
+              end
+              if x429_CBODD_12_15 !== true
+               x431_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.0, 0.0905, 0.9095])
+              end
+              x432_CBODD_12_15 = x429_CBODD_12_15 === true ? x430_CBODD_12_15 : x429_CBODD_12_15 === false ? x431_CBODD_12_15 : ifelse(x429_CBODD_12_15, x430_CBODD_12_15, x431_CBODD_12_15)
+             end
+             x433_CBODD_12_15 = x427_CBODD_12_15 === true ? x428_CBODD_12_15 : x427_CBODD_12_15 === false ? x432_CBODD_12_15 : ifelse(x427_CBODD_12_15, x428_CBODD_12_15, x432_CBODD_12_15)
+            end
+            x434_CBODD_12_15 = x425_CBODD_12_15 === true ? x426_CBODD_12_15 : x425_CBODD_12_15 === false ? x433_CBODD_12_15 : ifelse(x425_CBODD_12_15, x426_CBODD_12_15, x433_CBODD_12_15)
+           end
+           x435_CBODD_12_15 = x414_CBODD_12_15 === true ? x424_CBODD_12_15 : x414_CBODD_12_15 === false ? x434_CBODD_12_15 : ifelse(x414_CBODD_12_15, x424_CBODD_12_15, x434_CBODD_12_15)
+          end
+          x436_CBODD_12_15 = x403_CBODD_12_15 === true ? x413_CBODD_12_15 : x403_CBODD_12_15 === false ? x435_CBODD_12_15 : ifelse(x403_CBODD_12_15, x413_CBODD_12_15, x435_CBODD_12_15)
+         end
+         x437_CBODD_12_15 = x392_CBODD_12_15 === true ? x402_CBODD_12_15 : x392_CBODD_12_15 === false ? x436_CBODD_12_15 : ifelse(x392_CBODD_12_15, x402_CBODD_12_15, x436_CBODD_12_15)
+        end
+        x438_CBODD_12_15 = x345_CBODD_12_15 === true ? x391_CBODD_12_15 : x345_CBODD_12_15 === false ? x437_CBODD_12_15 : ifelse(x345_CBODD_12_15, x391_CBODD_12_15, x437_CBODD_12_15)
+       end
+       x439_CBODD_12_15 = x298_CBODD_12_15 === true ? x344_CBODD_12_15 : x298_CBODD_12_15 === false ? x438_CBODD_12_15 : ifelse(x298_CBODD_12_15, x344_CBODD_12_15, x438_CBODD_12_15)
+      end
+      x440_CBODD_12_15 = x251_CBODD_12_15 === true ? x297_CBODD_12_15 : x251_CBODD_12_15 === false ? x439_CBODD_12_15 : ifelse(x251_CBODD_12_15, x297_CBODD_12_15, x439_CBODD_12_15)
+     end
+     if x250_CBODD_12_15 !== true
+      x441_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(0))
+      if x441_CBODD_12_15 !== false
+       x442_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+       if x442_CBODD_12_15 !== false
+        x443_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+        if x443_CBODD_12_15 !== false
+         x444_CBODD_12_15 = discrete(DistUInt{2}, [0.9473, 0.0527, 0.0, 0.0])
+        end
+        if x443_CBODD_12_15 !== true
+         x445_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+         if x445_CBODD_12_15 !== false
+          x446_CBODD_12_15 = discrete(DistUInt{2}, [0.9156, 0.0844, 0.0, 0.0])
+         end
+         if x445_CBODD_12_15 !== true
+          x447_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+          if x447_CBODD_12_15 !== false
+           x448_CBODD_12_15 = discrete(DistUInt{2}, [0.8838, 0.1162, 0.0, 0.0])
+          end
+          if x447_CBODD_12_15 !== true
+           x449_CBODD_12_15 = discrete(DistUInt{2}, [0.8521, 0.1479, 0.0, 0.0])
+          end
+          x450_CBODD_12_15 = x447_CBODD_12_15 === true ? x448_CBODD_12_15 : x447_CBODD_12_15 === false ? x449_CBODD_12_15 : ifelse(x447_CBODD_12_15, x448_CBODD_12_15, x449_CBODD_12_15)
+         end
+         x451_CBODD_12_15 = x445_CBODD_12_15 === true ? x446_CBODD_12_15 : x445_CBODD_12_15 === false ? x450_CBODD_12_15 : ifelse(x445_CBODD_12_15, x446_CBODD_12_15, x450_CBODD_12_15)
+        end
+        x452_CBODD_12_15 = x443_CBODD_12_15 === true ? x444_CBODD_12_15 : x443_CBODD_12_15 === false ? x451_CBODD_12_15 : ifelse(x443_CBODD_12_15, x444_CBODD_12_15, x451_CBODD_12_15)
+       end
+       if x442_CBODD_12_15 !== true
+        x453_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(1))
+        if x453_CBODD_12_15 !== false
+         x454_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x454_CBODD_12_15 !== false
+          x455_CBODD_12_15 = discrete(DistUInt{2}, [0.9634, 0.0366, 0.0, 0.0])
+         end
+         if x454_CBODD_12_15 !== true
+          x456_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x456_CBODD_12_15 !== false
+           x457_CBODD_12_15 = discrete(DistUInt{2}, [0.9316, 0.0684, 0.0, 0.0])
+          end
+          if x456_CBODD_12_15 !== true
+           x458_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+           if x458_CBODD_12_15 !== false
+            x459_CBODD_12_15 = discrete(DistUInt{2}, [0.8999, 0.1001, 0.0, 0.0])
+           end
+           if x458_CBODD_12_15 !== true
+            x460_CBODD_12_15 = discrete(DistUInt{2}, [0.8681, 0.1319, 0.0, 0.0])
+           end
+           x461_CBODD_12_15 = x458_CBODD_12_15 === true ? x459_CBODD_12_15 : x458_CBODD_12_15 === false ? x460_CBODD_12_15 : ifelse(x458_CBODD_12_15, x459_CBODD_12_15, x460_CBODD_12_15)
+          end
+          x462_CBODD_12_15 = x456_CBODD_12_15 === true ? x457_CBODD_12_15 : x456_CBODD_12_15 === false ? x461_CBODD_12_15 : ifelse(x456_CBODD_12_15, x457_CBODD_12_15, x461_CBODD_12_15)
+         end
+         x463_CBODD_12_15 = x454_CBODD_12_15 === true ? x455_CBODD_12_15 : x454_CBODD_12_15 === false ? x462_CBODD_12_15 : ifelse(x454_CBODD_12_15, x455_CBODD_12_15, x462_CBODD_12_15)
+        end
+        if x453_CBODD_12_15 !== true
+         x464_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(2))
+         if x464_CBODD_12_15 !== false
+          x465_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x465_CBODD_12_15 !== false
+           x466_CBODD_12_15 = discrete(DistUInt{2}, [0.9762, 0.0238, 0.0, 0.0])
+          end
+          if x465_CBODD_12_15 !== true
+           x467_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x467_CBODD_12_15 !== false
+            x468_CBODD_12_15 = discrete(DistUInt{2}, [0.9445, 0.0555, 0.0, 0.0])
+           end
+           if x467_CBODD_12_15 !== true
+            x469_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x469_CBODD_12_15 !== false
+             x470_CBODD_12_15 = discrete(DistUInt{2}, [0.9127, 0.0873, 0.0, 0.0])
+            end
+            if x469_CBODD_12_15 !== true
+             x471_CBODD_12_15 = discrete(DistUInt{2}, [0.881, 0.119, 0.0, 0.0])
+            end
+            x472_CBODD_12_15 = x469_CBODD_12_15 === true ? x470_CBODD_12_15 : x469_CBODD_12_15 === false ? x471_CBODD_12_15 : ifelse(x469_CBODD_12_15, x470_CBODD_12_15, x471_CBODD_12_15)
+           end
+           x473_CBODD_12_15 = x467_CBODD_12_15 === true ? x468_CBODD_12_15 : x467_CBODD_12_15 === false ? x472_CBODD_12_15 : ifelse(x467_CBODD_12_15, x468_CBODD_12_15, x472_CBODD_12_15)
+          end
+          x474_CBODD_12_15 = x465_CBODD_12_15 === true ? x466_CBODD_12_15 : x465_CBODD_12_15 === false ? x473_CBODD_12_15 : ifelse(x465_CBODD_12_15, x466_CBODD_12_15, x473_CBODD_12_15)
+         end
+         if x464_CBODD_12_15 !== true
+          x475_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+          if x475_CBODD_12_15 !== false
+           x476_CBODD_12_15 = discrete(DistUInt{2}, [0.9848, 0.0152, 0.0, 0.0])
+          end
+          if x475_CBODD_12_15 !== true
+           x477_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+           if x477_CBODD_12_15 !== false
+            x478_CBODD_12_15 = discrete(DistUInt{2}, [0.9531, 0.0469, 0.0, 0.0])
+           end
+           if x477_CBODD_12_15 !== true
+            x479_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))
+            if x479_CBODD_12_15 !== false
+             x480_CBODD_12_15 = discrete(DistUInt{2}, [0.9213, 0.0787, 0.0, 0.0])
+            end
+            if x479_CBODD_12_15 !== true
+             x481_CBODD_12_15 = discrete(DistUInt{2}, [0.8896, 0.1104, 0.0, 0.0])
+            end
+            x482_CBODD_12_15 = x479_CBODD_12_15 === true ? x480_CBODD_12_15 : x479_CBODD_12_15 === false ? x481_CBODD_12_15 : ifelse(x479_CBODD_12_15, x480_CBODD_12_15, x481_CBODD_12_15)
+           end
+           x483_CBODD_12_15 = x477_CBODD_12_15 === true ? x478_CBODD_12_15 : x477_CBODD_12_15 === false ? x482_CBODD_12_15 : ifelse(x477_CBODD_12_15, x478_CBODD_12_15, x482_CBODD_12_15)
+          end
+          x484_CBODD_12_15 = x475_CBODD_12_15 === true ? x476_CBODD_12_15 : x475_CBODD_12_15 === false ? x483_CBODD_12_15 : ifelse(x475_CBODD_12_15, x476_CBODD_12_15, x483_CBODD_12_15)
+         end
+         x485_CBODD_12_15 = x464_CBODD_12_15 === true ? x474_CBODD_12_15 : x464_CBODD_12_15 === false ? x484_CBODD_12_15 : ifelse(x464_CBODD_12_15, x474_CBODD_12_15, x484_CBODD_12_15)
+        end
+        x486_CBODD_12_15 = x453_CBODD_12_15 === true ? x463_CBODD_12_15 : x453_CBODD_12_15 === false ? x485_CBODD_12_15 : ifelse(x453_CBODD_12_15, x463_CBODD_12_15, x485_CBODD_12_15)
+       end
+       x487_CBODD_12_15 = x442_CBODD_12_15 === true ? x452_CBODD_12_15 : x442_CBODD_12_15 === false ? x486_CBODD_12_15 : ifelse(x442_CBODD_12_15, x452_CBODD_12_15, x486_CBODD_12_15)
+      end
+      if x441_CBODD_12_15 !== true
+       x488_CBODD_12_15 = prob_equals(x54_CBODD_12_00, DistUInt{2}(1))
+       if x488_CBODD_12_15 !== false
+        x489_CBODD_12_15 = prob_equals(x56_CNOD_12_00, DistUInt{2}(0))
+        if x489_CBODD_12_15 !== false
+         x490_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(0))
+         if x490_CBODD_12_15 !== false
+          x491_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.995, 0.005, 0.0])
+         end
+         if x490_CBODD_12_15 !== true
+          x492_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(1))
+          if x492_CBODD_12_15 !== false
+           x493_CBODD_12_15 = discrete(DistUInt{2}, [0.0, 0.9633, 0.0367, 0.0])
+          end
+          if x492_CBODD_12_15 !== true
+           x494_CBODD_12_15 = prob_equals(x57_CBODN_12_00, DistUInt{2}(2))

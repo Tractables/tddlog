@@ -1,0 +1,1303 @@
+0.5::key1_f4.
+0.5::key1_f3.
+0.5::key1_f2.
+0.5::key1_f1.
+0.5::key1_f0.
+0.5::drawnchar_f4.
+0.5::drawnchar_f3.
+0.5::drawnchar_f2.
+0.5::drawnchar_f1.
+0.98::drawnchar_f0.
+0.5::drawnchar_f0_1.
+drawnchar_b0 :- \+drawnchar_f4, \+drawnchar_f3, \+drawnchar_f2, \+drawnchar_f1, drawnchar_f0.
+drawnchar_b0 :- \+drawnchar_f4, \+drawnchar_f3, \+drawnchar_f2, drawnchar_f1, drawnchar_f0_1.
+drawnchar_b0 :- \+drawnchar_f4, \+drawnchar_f3, drawnchar_f2, drawnchar_f0_1.
+drawnchar_b0 :- \+drawnchar_f4, drawnchar_f3, drawnchar_f0_1.
+drawnchar_b0 :- drawnchar_f4, drawnchar_f0_1.
+encrypted_b :- drawnchar_b0, \+key1_f0.
+encrypted_b :- \+drawnchar_b0, key1_f0.
+encrypted_b_1 :- key1_f0, drawnchar_b0.
+encrypted_b_2 :- drawnchar_f1, \+key1_f1.
+encrypted_b_2 :- \+drawnchar_f1, key1_f1.
+encrypted_b_3 :- encrypted_b_1, \+encrypted_b_2.
+encrypted_b_3 :- \+encrypted_b_1, encrypted_b_2.
+encrypted_b_4 :- key1_f1, drawnchar_f1.
+encrypted_b_4 :- encrypted_b_1, encrypted_b_2.
+encrypted_b_5 :- drawnchar_f2, \+key1_f2.
+encrypted_b_5 :- \+drawnchar_f2, key1_f2.
+encrypted_b_6 :- encrypted_b_4, \+encrypted_b_5.
+encrypted_b_6 :- \+encrypted_b_4, encrypted_b_5.
+encrypted_b_7 :- key1_f2, drawnchar_f2.
+encrypted_b_7 :- encrypted_b_4, encrypted_b_5.
+encrypted_b_8 :- drawnchar_f3, \+key1_f3.
+encrypted_b_8 :- \+drawnchar_f3, key1_f3.
+encrypted_b_9 :- encrypted_b_7, \+encrypted_b_8.
+encrypted_b_9 :- \+encrypted_b_7, encrypted_b_8.
+encrypted_b_10 :- key1_f3, drawnchar_f3.
+encrypted_b_10 :- encrypted_b_7, encrypted_b_8.
+encrypted_b_11 :- drawnchar_f4, \+key1_f4.
+encrypted_b_11 :- \+drawnchar_f4, key1_f4.
+encrypted_b_12 :- encrypted_b_10, \+encrypted_b_11.
+encrypted_b_12 :- \+encrypted_b_10, encrypted_b_11.
+tmp :- \+encrypted_b, encrypted_b_3, \+encrypted_b_6, \+encrypted_b_9, \+encrypted_b_12.
+obs :- tmp.
+0.5::drawnchar_1_f4.
+0.5::drawnchar_1_f3.
+0.5::drawnchar_1_f2.
+0.5::drawnchar_1_f1.
+0.98::drawnchar_1_f0.
+0.5::drawnchar_1_f0_1.
+drawnchar_1_b0 :- \+drawnchar_1_f4, \+drawnchar_1_f3, \+drawnchar_1_f2, \+drawnchar_1_f1, drawnchar_1_f0.
+drawnchar_1_b0 :- \+drawnchar_1_f4, \+drawnchar_1_f3, \+drawnchar_1_f2, drawnchar_1_f1, drawnchar_1_f0_1.
+drawnchar_1_b0 :- \+drawnchar_1_f4, \+drawnchar_1_f3, drawnchar_1_f2, drawnchar_1_f0_1.
+drawnchar_1_b0 :- \+drawnchar_1_f4, drawnchar_1_f3, drawnchar_1_f0_1.
+drawnchar_1_b0 :- drawnchar_1_f4, drawnchar_1_f0_1.
+encrypted_b_13 :- drawnchar_1_b0, \+key1_f0.
+encrypted_b_13 :- \+drawnchar_1_b0, key1_f0.
+encrypted_b_14 :- key1_f0, drawnchar_1_b0.
+encrypted_b_15 :- drawnchar_1_f1, \+key1_f1.
+encrypted_b_15 :- \+drawnchar_1_f1, key1_f1.
+encrypted_b_16 :- encrypted_b_14, \+encrypted_b_15.
+encrypted_b_16 :- \+encrypted_b_14, encrypted_b_15.
+encrypted_b_17 :- key1_f1, drawnchar_1_f1.
+encrypted_b_17 :- encrypted_b_14, encrypted_b_15.
+encrypted_b_18 :- drawnchar_1_f2, \+key1_f2.
+encrypted_b_18 :- \+drawnchar_1_f2, key1_f2.
+encrypted_b_19 :- encrypted_b_17, \+encrypted_b_18.
+encrypted_b_19 :- \+encrypted_b_17, encrypted_b_18.
+encrypted_b_20 :- key1_f2, drawnchar_1_f2.
+encrypted_b_20 :- encrypted_b_17, encrypted_b_18.
+encrypted_b_21 :- drawnchar_1_f3, \+key1_f3.
+encrypted_b_21 :- \+drawnchar_1_f3, key1_f3.
+encrypted_b_22 :- encrypted_b_20, \+encrypted_b_21.
+encrypted_b_22 :- \+encrypted_b_20, encrypted_b_21.
+encrypted_b_23 :- key1_f3, drawnchar_1_f3.
+encrypted_b_23 :- encrypted_b_20, encrypted_b_21.
+encrypted_b_24 :- drawnchar_1_f4, \+key1_f4.
+encrypted_b_24 :- \+drawnchar_1_f4, key1_f4.
+encrypted_b_25 :- encrypted_b_23, \+encrypted_b_24.
+encrypted_b_25 :- \+encrypted_b_23, encrypted_b_24.
+tmp_1 :- \+encrypted_b_13, encrypted_b_16, \+encrypted_b_19, \+encrypted_b_22, \+encrypted_b_25.
+obs_1 :- tmp_1.
+0.5::drawnchar_2_f4.
+0.5::drawnchar_2_f3.
+0.5::drawnchar_2_f2.
+0.5::drawnchar_2_f1.
+0.98::drawnchar_2_f0.
+0.5::drawnchar_2_f0_1.
+drawnchar_2_b0 :- \+drawnchar_2_f4, \+drawnchar_2_f3, \+drawnchar_2_f2, \+drawnchar_2_f1, drawnchar_2_f0.
+drawnchar_2_b0 :- \+drawnchar_2_f4, \+drawnchar_2_f3, \+drawnchar_2_f2, drawnchar_2_f1, drawnchar_2_f0_1.
+drawnchar_2_b0 :- \+drawnchar_2_f4, \+drawnchar_2_f3, drawnchar_2_f2, drawnchar_2_f0_1.
+drawnchar_2_b0 :- \+drawnchar_2_f4, drawnchar_2_f3, drawnchar_2_f0_1.
+drawnchar_2_b0 :- drawnchar_2_f4, drawnchar_2_f0_1.
+encrypted_b_26 :- drawnchar_2_b0, \+key1_f0.
+encrypted_b_26 :- \+drawnchar_2_b0, key1_f0.
+encrypted_b_27 :- key1_f0, drawnchar_2_b0.
+encrypted_b_28 :- drawnchar_2_f1, \+key1_f1.
+encrypted_b_28 :- \+drawnchar_2_f1, key1_f1.
+encrypted_b_29 :- encrypted_b_27, \+encrypted_b_28.
+encrypted_b_29 :- \+encrypted_b_27, encrypted_b_28.
+encrypted_b_30 :- key1_f1, drawnchar_2_f1.
+encrypted_b_30 :- encrypted_b_27, encrypted_b_28.
+encrypted_b_31 :- drawnchar_2_f2, \+key1_f2.
+encrypted_b_31 :- \+drawnchar_2_f2, key1_f2.
+encrypted_b_32 :- encrypted_b_30, \+encrypted_b_31.
+encrypted_b_32 :- \+encrypted_b_30, encrypted_b_31.
+encrypted_b_33 :- key1_f2, drawnchar_2_f2.
+encrypted_b_33 :- encrypted_b_30, encrypted_b_31.
+encrypted_b_34 :- drawnchar_2_f3, \+key1_f3.
+encrypted_b_34 :- \+drawnchar_2_f3, key1_f3.
+encrypted_b_35 :- encrypted_b_33, \+encrypted_b_34.
+encrypted_b_35 :- \+encrypted_b_33, encrypted_b_34.
+encrypted_b_36 :- key1_f3, drawnchar_2_f3.
+encrypted_b_36 :- encrypted_b_33, encrypted_b_34.
+encrypted_b_37 :- drawnchar_2_f4, \+key1_f4.
+encrypted_b_37 :- \+drawnchar_2_f4, key1_f4.
+encrypted_b_38 :- encrypted_b_36, \+encrypted_b_37.
+encrypted_b_38 :- \+encrypted_b_36, encrypted_b_37.
+tmp_2 :- \+encrypted_b_26, encrypted_b_29, \+encrypted_b_32, \+encrypted_b_35, \+encrypted_b_38.
+obs_2 :- tmp_2.
+0.5::drawnchar_3_f4.
+0.5::drawnchar_3_f3.
+0.5::drawnchar_3_f2.
+0.5::drawnchar_3_f1.
+0.98::drawnchar_3_f0.
+0.5::drawnchar_3_f0_1.
+drawnchar_3_b0 :- \+drawnchar_3_f4, \+drawnchar_3_f3, \+drawnchar_3_f2, \+drawnchar_3_f1, drawnchar_3_f0.
+drawnchar_3_b0 :- \+drawnchar_3_f4, \+drawnchar_3_f3, \+drawnchar_3_f2, drawnchar_3_f1, drawnchar_3_f0_1.
+drawnchar_3_b0 :- \+drawnchar_3_f4, \+drawnchar_3_f3, drawnchar_3_f2, drawnchar_3_f0_1.
+drawnchar_3_b0 :- \+drawnchar_3_f4, drawnchar_3_f3, drawnchar_3_f0_1.
+drawnchar_3_b0 :- drawnchar_3_f4, drawnchar_3_f0_1.
+encrypted_b_39 :- drawnchar_3_b0, \+key1_f0.
+encrypted_b_39 :- \+drawnchar_3_b0, key1_f0.
+encrypted_b_40 :- key1_f0, drawnchar_3_b0.
+encrypted_b_41 :- drawnchar_3_f1, \+key1_f1.
+encrypted_b_41 :- \+drawnchar_3_f1, key1_f1.
+encrypted_b_42 :- encrypted_b_40, \+encrypted_b_41.
+encrypted_b_42 :- \+encrypted_b_40, encrypted_b_41.
+encrypted_b_43 :- key1_f1, drawnchar_3_f1.
+encrypted_b_43 :- encrypted_b_40, encrypted_b_41.
+encrypted_b_44 :- drawnchar_3_f2, \+key1_f2.
+encrypted_b_44 :- \+drawnchar_3_f2, key1_f2.
+encrypted_b_45 :- encrypted_b_43, \+encrypted_b_44.
+encrypted_b_45 :- \+encrypted_b_43, encrypted_b_44.
+encrypted_b_46 :- key1_f2, drawnchar_3_f2.
+encrypted_b_46 :- encrypted_b_43, encrypted_b_44.
+encrypted_b_47 :- drawnchar_3_f3, \+key1_f3.
+encrypted_b_47 :- \+drawnchar_3_f3, key1_f3.
+encrypted_b_48 :- encrypted_b_46, \+encrypted_b_47.
+encrypted_b_48 :- \+encrypted_b_46, encrypted_b_47.
+encrypted_b_49 :- key1_f3, drawnchar_3_f3.
+encrypted_b_49 :- encrypted_b_46, encrypted_b_47.
+encrypted_b_50 :- drawnchar_3_f4, \+key1_f4.
+encrypted_b_50 :- \+drawnchar_3_f4, key1_f4.
+encrypted_b_51 :- encrypted_b_49, \+encrypted_b_50.
+encrypted_b_51 :- \+encrypted_b_49, encrypted_b_50.
+tmp_3 :- \+encrypted_b_39, encrypted_b_42, \+encrypted_b_45, \+encrypted_b_48, \+encrypted_b_51.
+obs_3 :- tmp_3.
+0.5::drawnchar_4_f4.
+0.5::drawnchar_4_f3.
+0.5::drawnchar_4_f2.
+0.5::drawnchar_4_f1.
+0.98::drawnchar_4_f0.
+0.5::drawnchar_4_f0_1.
+drawnchar_4_b0 :- \+drawnchar_4_f4, \+drawnchar_4_f3, \+drawnchar_4_f2, \+drawnchar_4_f1, drawnchar_4_f0.
+drawnchar_4_b0 :- \+drawnchar_4_f4, \+drawnchar_4_f3, \+drawnchar_4_f2, drawnchar_4_f1, drawnchar_4_f0_1.
+drawnchar_4_b0 :- \+drawnchar_4_f4, \+drawnchar_4_f3, drawnchar_4_f2, drawnchar_4_f0_1.
+drawnchar_4_b0 :- \+drawnchar_4_f4, drawnchar_4_f3, drawnchar_4_f0_1.
+drawnchar_4_b0 :- drawnchar_4_f4, drawnchar_4_f0_1.
+encrypted_b_52 :- drawnchar_4_b0, \+key1_f0.
+encrypted_b_52 :- \+drawnchar_4_b0, key1_f0.
+encrypted_b_53 :- key1_f0, drawnchar_4_b0.
+encrypted_b_54 :- drawnchar_4_f1, \+key1_f1.
+encrypted_b_54 :- \+drawnchar_4_f1, key1_f1.
+encrypted_b_55 :- encrypted_b_53, \+encrypted_b_54.
+encrypted_b_55 :- \+encrypted_b_53, encrypted_b_54.
+encrypted_b_56 :- key1_f1, drawnchar_4_f1.
+encrypted_b_56 :- encrypted_b_53, encrypted_b_54.
+encrypted_b_57 :- drawnchar_4_f2, \+key1_f2.
+encrypted_b_57 :- \+drawnchar_4_f2, key1_f2.
+encrypted_b_58 :- encrypted_b_56, \+encrypted_b_57.
+encrypted_b_58 :- \+encrypted_b_56, encrypted_b_57.
+encrypted_b_59 :- key1_f2, drawnchar_4_f2.
+encrypted_b_59 :- encrypted_b_56, encrypted_b_57.
+encrypted_b_60 :- drawnchar_4_f3, \+key1_f3.
+encrypted_b_60 :- \+drawnchar_4_f3, key1_f3.
+encrypted_b_61 :- encrypted_b_59, \+encrypted_b_60.
+encrypted_b_61 :- \+encrypted_b_59, encrypted_b_60.
+encrypted_b_62 :- key1_f3, drawnchar_4_f3.
+encrypted_b_62 :- encrypted_b_59, encrypted_b_60.
+encrypted_b_63 :- drawnchar_4_f4, \+key1_f4.
+encrypted_b_63 :- \+drawnchar_4_f4, key1_f4.
+encrypted_b_64 :- encrypted_b_62, \+encrypted_b_63.
+encrypted_b_64 :- \+encrypted_b_62, encrypted_b_63.
+tmp_4 :- \+encrypted_b_52, encrypted_b_55, \+encrypted_b_58, \+encrypted_b_61, \+encrypted_b_64.
+obs_4 :- tmp_4.
+0.5::drawnchar_5_f4.
+0.5::drawnchar_5_f3.
+0.5::drawnchar_5_f2.
+0.5::drawnchar_5_f1.
+0.98::drawnchar_5_f0.
+0.5::drawnchar_5_f0_1.
+drawnchar_5_b0 :- \+drawnchar_5_f4, \+drawnchar_5_f3, \+drawnchar_5_f2, \+drawnchar_5_f1, drawnchar_5_f0.
+drawnchar_5_b0 :- \+drawnchar_5_f4, \+drawnchar_5_f3, \+drawnchar_5_f2, drawnchar_5_f1, drawnchar_5_f0_1.
+drawnchar_5_b0 :- \+drawnchar_5_f4, \+drawnchar_5_f3, drawnchar_5_f2, drawnchar_5_f0_1.
+drawnchar_5_b0 :- \+drawnchar_5_f4, drawnchar_5_f3, drawnchar_5_f0_1.
+drawnchar_5_b0 :- drawnchar_5_f4, drawnchar_5_f0_1.
+encrypted_b_65 :- drawnchar_5_b0, \+key1_f0.
+encrypted_b_65 :- \+drawnchar_5_b0, key1_f0.
+encrypted_b_66 :- key1_f0, drawnchar_5_b0.
+encrypted_b_67 :- drawnchar_5_f1, \+key1_f1.
+encrypted_b_67 :- \+drawnchar_5_f1, key1_f1.
+encrypted_b_68 :- encrypted_b_66, \+encrypted_b_67.
+encrypted_b_68 :- \+encrypted_b_66, encrypted_b_67.
+encrypted_b_69 :- key1_f1, drawnchar_5_f1.
+encrypted_b_69 :- encrypted_b_66, encrypted_b_67.
+encrypted_b_70 :- drawnchar_5_f2, \+key1_f2.
+encrypted_b_70 :- \+drawnchar_5_f2, key1_f2.
+encrypted_b_71 :- encrypted_b_69, \+encrypted_b_70.
+encrypted_b_71 :- \+encrypted_b_69, encrypted_b_70.
+encrypted_b_72 :- key1_f2, drawnchar_5_f2.
+encrypted_b_72 :- encrypted_b_69, encrypted_b_70.
+encrypted_b_73 :- drawnchar_5_f3, \+key1_f3.
+encrypted_b_73 :- \+drawnchar_5_f3, key1_f3.
+encrypted_b_74 :- encrypted_b_72, \+encrypted_b_73.
+encrypted_b_74 :- \+encrypted_b_72, encrypted_b_73.
+encrypted_b_75 :- key1_f3, drawnchar_5_f3.
+encrypted_b_75 :- encrypted_b_72, encrypted_b_73.
+encrypted_b_76 :- drawnchar_5_f4, \+key1_f4.
+encrypted_b_76 :- \+drawnchar_5_f4, key1_f4.
+encrypted_b_77 :- encrypted_b_75, \+encrypted_b_76.
+encrypted_b_77 :- \+encrypted_b_75, encrypted_b_76.
+tmp_5 :- \+encrypted_b_65, encrypted_b_68, \+encrypted_b_71, \+encrypted_b_74, \+encrypted_b_77.
+obs_5 :- tmp_5.
+0.5::drawnchar_6_f4.
+0.5::drawnchar_6_f3.
+0.5::drawnchar_6_f2.
+0.5::drawnchar_6_f1.
+0.98::drawnchar_6_f0.
+0.5::drawnchar_6_f0_1.
+drawnchar_6_b0 :- \+drawnchar_6_f4, \+drawnchar_6_f3, \+drawnchar_6_f2, \+drawnchar_6_f1, drawnchar_6_f0.
+drawnchar_6_b0 :- \+drawnchar_6_f4, \+drawnchar_6_f3, \+drawnchar_6_f2, drawnchar_6_f1, drawnchar_6_f0_1.
+drawnchar_6_b0 :- \+drawnchar_6_f4, \+drawnchar_6_f3, drawnchar_6_f2, drawnchar_6_f0_1.
+drawnchar_6_b0 :- \+drawnchar_6_f4, drawnchar_6_f3, drawnchar_6_f0_1.
+drawnchar_6_b0 :- drawnchar_6_f4, drawnchar_6_f0_1.
+encrypted_b_78 :- drawnchar_6_b0, \+key1_f0.
+encrypted_b_78 :- \+drawnchar_6_b0, key1_f0.
+encrypted_b_79 :- key1_f0, drawnchar_6_b0.
+encrypted_b_80 :- drawnchar_6_f1, \+key1_f1.
+encrypted_b_80 :- \+drawnchar_6_f1, key1_f1.
+encrypted_b_81 :- encrypted_b_79, \+encrypted_b_80.
+encrypted_b_81 :- \+encrypted_b_79, encrypted_b_80.
+encrypted_b_82 :- key1_f1, drawnchar_6_f1.
+encrypted_b_82 :- encrypted_b_79, encrypted_b_80.
+encrypted_b_83 :- drawnchar_6_f2, \+key1_f2.
+encrypted_b_83 :- \+drawnchar_6_f2, key1_f2.
+encrypted_b_84 :- encrypted_b_82, \+encrypted_b_83.
+encrypted_b_84 :- \+encrypted_b_82, encrypted_b_83.
+encrypted_b_85 :- key1_f2, drawnchar_6_f2.
+encrypted_b_85 :- encrypted_b_82, encrypted_b_83.
+encrypted_b_86 :- drawnchar_6_f3, \+key1_f3.
+encrypted_b_86 :- \+drawnchar_6_f3, key1_f3.
+encrypted_b_87 :- encrypted_b_85, \+encrypted_b_86.
+encrypted_b_87 :- \+encrypted_b_85, encrypted_b_86.
+encrypted_b_88 :- key1_f3, drawnchar_6_f3.
+encrypted_b_88 :- encrypted_b_85, encrypted_b_86.
+encrypted_b_89 :- drawnchar_6_f4, \+key1_f4.
+encrypted_b_89 :- \+drawnchar_6_f4, key1_f4.
+encrypted_b_90 :- encrypted_b_88, \+encrypted_b_89.
+encrypted_b_90 :- \+encrypted_b_88, encrypted_b_89.
+tmp_6 :- \+encrypted_b_78, encrypted_b_81, \+encrypted_b_84, \+encrypted_b_87, \+encrypted_b_90.
+obs_6 :- tmp_6.
+0.5::drawnchar_7_f4.
+0.5::drawnchar_7_f3.
+0.5::drawnchar_7_f2.
+0.5::drawnchar_7_f1.
+0.98::drawnchar_7_f0.
+0.5::drawnchar_7_f0_1.
+drawnchar_7_b0 :- \+drawnchar_7_f4, \+drawnchar_7_f3, \+drawnchar_7_f2, \+drawnchar_7_f1, drawnchar_7_f0.
+drawnchar_7_b0 :- \+drawnchar_7_f4, \+drawnchar_7_f3, \+drawnchar_7_f2, drawnchar_7_f1, drawnchar_7_f0_1.
+drawnchar_7_b0 :- \+drawnchar_7_f4, \+drawnchar_7_f3, drawnchar_7_f2, drawnchar_7_f0_1.
+drawnchar_7_b0 :- \+drawnchar_7_f4, drawnchar_7_f3, drawnchar_7_f0_1.
+drawnchar_7_b0 :- drawnchar_7_f4, drawnchar_7_f0_1.
+encrypted_b_91 :- drawnchar_7_b0, \+key1_f0.
+encrypted_b_91 :- \+drawnchar_7_b0, key1_f0.
+encrypted_b_92 :- key1_f0, drawnchar_7_b0.
+encrypted_b_93 :- drawnchar_7_f1, \+key1_f1.
+encrypted_b_93 :- \+drawnchar_7_f1, key1_f1.
+encrypted_b_94 :- encrypted_b_92, \+encrypted_b_93.
+encrypted_b_94 :- \+encrypted_b_92, encrypted_b_93.
+encrypted_b_95 :- key1_f1, drawnchar_7_f1.
+encrypted_b_95 :- encrypted_b_92, encrypted_b_93.
+encrypted_b_96 :- drawnchar_7_f2, \+key1_f2.
+encrypted_b_96 :- \+drawnchar_7_f2, key1_f2.
+encrypted_b_97 :- encrypted_b_95, \+encrypted_b_96.
+encrypted_b_97 :- \+encrypted_b_95, encrypted_b_96.
+encrypted_b_98 :- key1_f2, drawnchar_7_f2.
+encrypted_b_98 :- encrypted_b_95, encrypted_b_96.
+encrypted_b_99 :- drawnchar_7_f3, \+key1_f3.
+encrypted_b_99 :- \+drawnchar_7_f3, key1_f3.
+encrypted_b_100 :- encrypted_b_98, \+encrypted_b_99.
+encrypted_b_100 :- \+encrypted_b_98, encrypted_b_99.
+encrypted_b_101 :- key1_f3, drawnchar_7_f3.
+encrypted_b_101 :- encrypted_b_98, encrypted_b_99.
+encrypted_b_102 :- drawnchar_7_f4, \+key1_f4.
+encrypted_b_102 :- \+drawnchar_7_f4, key1_f4.
+encrypted_b_103 :- encrypted_b_101, \+encrypted_b_102.
+encrypted_b_103 :- \+encrypted_b_101, encrypted_b_102.
+tmp_7 :- \+encrypted_b_91, encrypted_b_94, \+encrypted_b_97, \+encrypted_b_100, \+encrypted_b_103.
+obs_7 :- tmp_7.
+0.5::drawnchar_8_f4.
+0.5::drawnchar_8_f3.
+0.5::drawnchar_8_f2.
+0.5::drawnchar_8_f1.
+0.98::drawnchar_8_f0.
+0.5::drawnchar_8_f0_1.
+drawnchar_8_b0 :- \+drawnchar_8_f4, \+drawnchar_8_f3, \+drawnchar_8_f2, \+drawnchar_8_f1, drawnchar_8_f0.
+drawnchar_8_b0 :- \+drawnchar_8_f4, \+drawnchar_8_f3, \+drawnchar_8_f2, drawnchar_8_f1, drawnchar_8_f0_1.
+drawnchar_8_b0 :- \+drawnchar_8_f4, \+drawnchar_8_f3, drawnchar_8_f2, drawnchar_8_f0_1.
+drawnchar_8_b0 :- \+drawnchar_8_f4, drawnchar_8_f3, drawnchar_8_f0_1.
+drawnchar_8_b0 :- drawnchar_8_f4, drawnchar_8_f0_1.
+encrypted_b_104 :- drawnchar_8_b0, \+key1_f0.
+encrypted_b_104 :- \+drawnchar_8_b0, key1_f0.
+encrypted_b_105 :- key1_f0, drawnchar_8_b0.
+encrypted_b_106 :- drawnchar_8_f1, \+key1_f1.
+encrypted_b_106 :- \+drawnchar_8_f1, key1_f1.
+encrypted_b_107 :- encrypted_b_105, \+encrypted_b_106.
+encrypted_b_107 :- \+encrypted_b_105, encrypted_b_106.
+encrypted_b_108 :- key1_f1, drawnchar_8_f1.
+encrypted_b_108 :- encrypted_b_105, encrypted_b_106.
+encrypted_b_109 :- drawnchar_8_f2, \+key1_f2.
+encrypted_b_109 :- \+drawnchar_8_f2, key1_f2.
+encrypted_b_110 :- encrypted_b_108, \+encrypted_b_109.
+encrypted_b_110 :- \+encrypted_b_108, encrypted_b_109.
+encrypted_b_111 :- key1_f2, drawnchar_8_f2.
+encrypted_b_111 :- encrypted_b_108, encrypted_b_109.
+encrypted_b_112 :- drawnchar_8_f3, \+key1_f3.
+encrypted_b_112 :- \+drawnchar_8_f3, key1_f3.
+encrypted_b_113 :- encrypted_b_111, \+encrypted_b_112.
+encrypted_b_113 :- \+encrypted_b_111, encrypted_b_112.
+encrypted_b_114 :- key1_f3, drawnchar_8_f3.
+encrypted_b_114 :- encrypted_b_111, encrypted_b_112.
+encrypted_b_115 :- drawnchar_8_f4, \+key1_f4.
+encrypted_b_115 :- \+drawnchar_8_f4, key1_f4.
+encrypted_b_116 :- encrypted_b_114, \+encrypted_b_115.
+encrypted_b_116 :- \+encrypted_b_114, encrypted_b_115.
+tmp_8 :- \+encrypted_b_104, encrypted_b_107, \+encrypted_b_110, \+encrypted_b_113, \+encrypted_b_116.
+obs_8 :- tmp_8.
+0.5::drawnchar_9_f4.
+0.5::drawnchar_9_f3.
+0.5::drawnchar_9_f2.
+0.5::drawnchar_9_f1.
+0.98::drawnchar_9_f0.
+0.5::drawnchar_9_f0_1.
+drawnchar_9_b0 :- \+drawnchar_9_f4, \+drawnchar_9_f3, \+drawnchar_9_f2, \+drawnchar_9_f1, drawnchar_9_f0.
+drawnchar_9_b0 :- \+drawnchar_9_f4, \+drawnchar_9_f3, \+drawnchar_9_f2, drawnchar_9_f1, drawnchar_9_f0_1.
+drawnchar_9_b0 :- \+drawnchar_9_f4, \+drawnchar_9_f3, drawnchar_9_f2, drawnchar_9_f0_1.
+drawnchar_9_b0 :- \+drawnchar_9_f4, drawnchar_9_f3, drawnchar_9_f0_1.
+drawnchar_9_b0 :- drawnchar_9_f4, drawnchar_9_f0_1.
+encrypted_b_117 :- drawnchar_9_b0, \+key1_f0.
+encrypted_b_117 :- \+drawnchar_9_b0, key1_f0.
+encrypted_b_118 :- key1_f0, drawnchar_9_b0.
+encrypted_b_119 :- drawnchar_9_f1, \+key1_f1.
+encrypted_b_119 :- \+drawnchar_9_f1, key1_f1.
+encrypted_b_120 :- encrypted_b_118, \+encrypted_b_119.
+encrypted_b_120 :- \+encrypted_b_118, encrypted_b_119.
+encrypted_b_121 :- key1_f1, drawnchar_9_f1.
+encrypted_b_121 :- encrypted_b_118, encrypted_b_119.
+encrypted_b_122 :- drawnchar_9_f2, \+key1_f2.
+encrypted_b_122 :- \+drawnchar_9_f2, key1_f2.
+encrypted_b_123 :- encrypted_b_121, \+encrypted_b_122.
+encrypted_b_123 :- \+encrypted_b_121, encrypted_b_122.
+encrypted_b_124 :- key1_f2, drawnchar_9_f2.
+encrypted_b_124 :- encrypted_b_121, encrypted_b_122.
+encrypted_b_125 :- drawnchar_9_f3, \+key1_f3.
+encrypted_b_125 :- \+drawnchar_9_f3, key1_f3.
+encrypted_b_126 :- encrypted_b_124, \+encrypted_b_125.
+encrypted_b_126 :- \+encrypted_b_124, encrypted_b_125.
+encrypted_b_127 :- key1_f3, drawnchar_9_f3.
+encrypted_b_127 :- encrypted_b_124, encrypted_b_125.
+encrypted_b_128 :- drawnchar_9_f4, \+key1_f4.
+encrypted_b_128 :- \+drawnchar_9_f4, key1_f4.
+encrypted_b_129 :- encrypted_b_127, \+encrypted_b_128.
+encrypted_b_129 :- \+encrypted_b_127, encrypted_b_128.
+tmp_9 :- \+encrypted_b_117, encrypted_b_120, \+encrypted_b_123, \+encrypted_b_126, \+encrypted_b_129.
+obs_9 :- tmp_9.
+0.5::drawnchar_10_f4.
+0.5::drawnchar_10_f3.
+0.5::drawnchar_10_f2.
+0.5::drawnchar_10_f1.
+0.98::drawnchar_10_f0.
+0.5::drawnchar_10_f0_1.
+drawnchar_10_b0 :- \+drawnchar_10_f4, \+drawnchar_10_f3, \+drawnchar_10_f2, \+drawnchar_10_f1, drawnchar_10_f0.
+drawnchar_10_b0 :- \+drawnchar_10_f4, \+drawnchar_10_f3, \+drawnchar_10_f2, drawnchar_10_f1, drawnchar_10_f0_1.
+drawnchar_10_b0 :- \+drawnchar_10_f4, \+drawnchar_10_f3, drawnchar_10_f2, drawnchar_10_f0_1.
+drawnchar_10_b0 :- \+drawnchar_10_f4, drawnchar_10_f3, drawnchar_10_f0_1.
+drawnchar_10_b0 :- drawnchar_10_f4, drawnchar_10_f0_1.
+encrypted_b_130 :- drawnchar_10_b0, \+key1_f0.
+encrypted_b_130 :- \+drawnchar_10_b0, key1_f0.
+encrypted_b_131 :- key1_f0, drawnchar_10_b0.
+encrypted_b_132 :- drawnchar_10_f1, \+key1_f1.
+encrypted_b_132 :- \+drawnchar_10_f1, key1_f1.
+encrypted_b_133 :- encrypted_b_131, \+encrypted_b_132.
+encrypted_b_133 :- \+encrypted_b_131, encrypted_b_132.
+encrypted_b_134 :- key1_f1, drawnchar_10_f1.
+encrypted_b_134 :- encrypted_b_131, encrypted_b_132.
+encrypted_b_135 :- drawnchar_10_f2, \+key1_f2.
+encrypted_b_135 :- \+drawnchar_10_f2, key1_f2.
+encrypted_b_136 :- encrypted_b_134, \+encrypted_b_135.
+encrypted_b_136 :- \+encrypted_b_134, encrypted_b_135.
+encrypted_b_137 :- key1_f2, drawnchar_10_f2.
+encrypted_b_137 :- encrypted_b_134, encrypted_b_135.
+encrypted_b_138 :- drawnchar_10_f3, \+key1_f3.
+encrypted_b_138 :- \+drawnchar_10_f3, key1_f3.
+encrypted_b_139 :- encrypted_b_137, \+encrypted_b_138.
+encrypted_b_139 :- \+encrypted_b_137, encrypted_b_138.
+encrypted_b_140 :- key1_f3, drawnchar_10_f3.
+encrypted_b_140 :- encrypted_b_137, encrypted_b_138.
+encrypted_b_141 :- drawnchar_10_f4, \+key1_f4.
+encrypted_b_141 :- \+drawnchar_10_f4, key1_f4.
+encrypted_b_142 :- encrypted_b_140, \+encrypted_b_141.
+encrypted_b_142 :- \+encrypted_b_140, encrypted_b_141.
+tmp_10 :- \+encrypted_b_130, encrypted_b_133, \+encrypted_b_136, \+encrypted_b_139, \+encrypted_b_142.
+obs_10 :- tmp_10.
+0.5::drawnchar_11_f4.
+0.5::drawnchar_11_f3.
+0.5::drawnchar_11_f2.
+0.5::drawnchar_11_f1.
+0.98::drawnchar_11_f0.
+0.5::drawnchar_11_f0_1.
+drawnchar_11_b0 :- \+drawnchar_11_f4, \+drawnchar_11_f3, \+drawnchar_11_f2, \+drawnchar_11_f1, drawnchar_11_f0.
+drawnchar_11_b0 :- \+drawnchar_11_f4, \+drawnchar_11_f3, \+drawnchar_11_f2, drawnchar_11_f1, drawnchar_11_f0_1.
+drawnchar_11_b0 :- \+drawnchar_11_f4, \+drawnchar_11_f3, drawnchar_11_f2, drawnchar_11_f0_1.
+drawnchar_11_b0 :- \+drawnchar_11_f4, drawnchar_11_f3, drawnchar_11_f0_1.
+drawnchar_11_b0 :- drawnchar_11_f4, drawnchar_11_f0_1.
+encrypted_b_143 :- drawnchar_11_b0, \+key1_f0.
+encrypted_b_143 :- \+drawnchar_11_b0, key1_f0.
+encrypted_b_144 :- key1_f0, drawnchar_11_b0.
+encrypted_b_145 :- drawnchar_11_f1, \+key1_f1.
+encrypted_b_145 :- \+drawnchar_11_f1, key1_f1.
+encrypted_b_146 :- encrypted_b_144, \+encrypted_b_145.
+encrypted_b_146 :- \+encrypted_b_144, encrypted_b_145.
+encrypted_b_147 :- key1_f1, drawnchar_11_f1.
+encrypted_b_147 :- encrypted_b_144, encrypted_b_145.
+encrypted_b_148 :- drawnchar_11_f2, \+key1_f2.
+encrypted_b_148 :- \+drawnchar_11_f2, key1_f2.
+encrypted_b_149 :- encrypted_b_147, \+encrypted_b_148.
+encrypted_b_149 :- \+encrypted_b_147, encrypted_b_148.
+encrypted_b_150 :- key1_f2, drawnchar_11_f2.
+encrypted_b_150 :- encrypted_b_147, encrypted_b_148.
+encrypted_b_151 :- drawnchar_11_f3, \+key1_f3.
+encrypted_b_151 :- \+drawnchar_11_f3, key1_f3.
+encrypted_b_152 :- encrypted_b_150, \+encrypted_b_151.
+encrypted_b_152 :- \+encrypted_b_150, encrypted_b_151.
+encrypted_b_153 :- key1_f3, drawnchar_11_f3.
+encrypted_b_153 :- encrypted_b_150, encrypted_b_151.
+encrypted_b_154 :- drawnchar_11_f4, \+key1_f4.
+encrypted_b_154 :- \+drawnchar_11_f4, key1_f4.
+encrypted_b_155 :- encrypted_b_153, \+encrypted_b_154.
+encrypted_b_155 :- \+encrypted_b_153, encrypted_b_154.
+tmp_11 :- \+encrypted_b_143, encrypted_b_146, \+encrypted_b_149, \+encrypted_b_152, \+encrypted_b_155.
+obs_11 :- tmp_11.
+0.5::drawnchar_12_f4.
+0.5::drawnchar_12_f3.
+0.5::drawnchar_12_f2.
+0.5::drawnchar_12_f1.
+0.98::drawnchar_12_f0.
+0.5::drawnchar_12_f0_1.
+drawnchar_12_b0 :- \+drawnchar_12_f4, \+drawnchar_12_f3, \+drawnchar_12_f2, \+drawnchar_12_f1, drawnchar_12_f0.
+drawnchar_12_b0 :- \+drawnchar_12_f4, \+drawnchar_12_f3, \+drawnchar_12_f2, drawnchar_12_f1, drawnchar_12_f0_1.
+drawnchar_12_b0 :- \+drawnchar_12_f4, \+drawnchar_12_f3, drawnchar_12_f2, drawnchar_12_f0_1.
+drawnchar_12_b0 :- \+drawnchar_12_f4, drawnchar_12_f3, drawnchar_12_f0_1.
+drawnchar_12_b0 :- drawnchar_12_f4, drawnchar_12_f0_1.
+encrypted_b_156 :- drawnchar_12_b0, \+key1_f0.
+encrypted_b_156 :- \+drawnchar_12_b0, key1_f0.
+encrypted_b_157 :- key1_f0, drawnchar_12_b0.
+encrypted_b_158 :- drawnchar_12_f1, \+key1_f1.
+encrypted_b_158 :- \+drawnchar_12_f1, key1_f1.
+encrypted_b_159 :- encrypted_b_157, \+encrypted_b_158.
+encrypted_b_159 :- \+encrypted_b_157, encrypted_b_158.
+encrypted_b_160 :- key1_f1, drawnchar_12_f1.
+encrypted_b_160 :- encrypted_b_157, encrypted_b_158.
+encrypted_b_161 :- drawnchar_12_f2, \+key1_f2.
+encrypted_b_161 :- \+drawnchar_12_f2, key1_f2.
+encrypted_b_162 :- encrypted_b_160, \+encrypted_b_161.
+encrypted_b_162 :- \+encrypted_b_160, encrypted_b_161.
+encrypted_b_163 :- key1_f2, drawnchar_12_f2.
+encrypted_b_163 :- encrypted_b_160, encrypted_b_161.
+encrypted_b_164 :- drawnchar_12_f3, \+key1_f3.
+encrypted_b_164 :- \+drawnchar_12_f3, key1_f3.
+encrypted_b_165 :- encrypted_b_163, \+encrypted_b_164.
+encrypted_b_165 :- \+encrypted_b_163, encrypted_b_164.
+encrypted_b_166 :- key1_f3, drawnchar_12_f3.
+encrypted_b_166 :- encrypted_b_163, encrypted_b_164.
+encrypted_b_167 :- drawnchar_12_f4, \+key1_f4.
+encrypted_b_167 :- \+drawnchar_12_f4, key1_f4.
+encrypted_b_168 :- encrypted_b_166, \+encrypted_b_167.
+encrypted_b_168 :- \+encrypted_b_166, encrypted_b_167.
+tmp_12 :- \+encrypted_b_156, encrypted_b_159, \+encrypted_b_162, \+encrypted_b_165, \+encrypted_b_168.
+obs_12 :- tmp_12.
+0.5::drawnchar_13_f4.
+0.5::drawnchar_13_f3.
+0.5::drawnchar_13_f2.
+0.5::drawnchar_13_f1.
+0.98::drawnchar_13_f0.
+0.5::drawnchar_13_f0_1.
+drawnchar_13_b0 :- \+drawnchar_13_f4, \+drawnchar_13_f3, \+drawnchar_13_f2, \+drawnchar_13_f1, drawnchar_13_f0.
+drawnchar_13_b0 :- \+drawnchar_13_f4, \+drawnchar_13_f3, \+drawnchar_13_f2, drawnchar_13_f1, drawnchar_13_f0_1.
+drawnchar_13_b0 :- \+drawnchar_13_f4, \+drawnchar_13_f3, drawnchar_13_f2, drawnchar_13_f0_1.
+drawnchar_13_b0 :- \+drawnchar_13_f4, drawnchar_13_f3, drawnchar_13_f0_1.
+drawnchar_13_b0 :- drawnchar_13_f4, drawnchar_13_f0_1.
+encrypted_b_169 :- drawnchar_13_b0, \+key1_f0.
+encrypted_b_169 :- \+drawnchar_13_b0, key1_f0.
+encrypted_b_170 :- key1_f0, drawnchar_13_b0.
+encrypted_b_171 :- drawnchar_13_f1, \+key1_f1.
+encrypted_b_171 :- \+drawnchar_13_f1, key1_f1.
+encrypted_b_172 :- encrypted_b_170, \+encrypted_b_171.
+encrypted_b_172 :- \+encrypted_b_170, encrypted_b_171.
+encrypted_b_173 :- key1_f1, drawnchar_13_f1.
+encrypted_b_173 :- encrypted_b_170, encrypted_b_171.
+encrypted_b_174 :- drawnchar_13_f2, \+key1_f2.
+encrypted_b_174 :- \+drawnchar_13_f2, key1_f2.
+encrypted_b_175 :- encrypted_b_173, \+encrypted_b_174.
+encrypted_b_175 :- \+encrypted_b_173, encrypted_b_174.
+encrypted_b_176 :- key1_f2, drawnchar_13_f2.
+encrypted_b_176 :- encrypted_b_173, encrypted_b_174.
+encrypted_b_177 :- drawnchar_13_f3, \+key1_f3.
+encrypted_b_177 :- \+drawnchar_13_f3, key1_f3.
+encrypted_b_178 :- encrypted_b_176, \+encrypted_b_177.
+encrypted_b_178 :- \+encrypted_b_176, encrypted_b_177.
+encrypted_b_179 :- key1_f3, drawnchar_13_f3.
+encrypted_b_179 :- encrypted_b_176, encrypted_b_177.
+encrypted_b_180 :- drawnchar_13_f4, \+key1_f4.
+encrypted_b_180 :- \+drawnchar_13_f4, key1_f4.
+encrypted_b_181 :- encrypted_b_179, \+encrypted_b_180.
+encrypted_b_181 :- \+encrypted_b_179, encrypted_b_180.
+tmp_13 :- \+encrypted_b_169, encrypted_b_172, \+encrypted_b_175, \+encrypted_b_178, \+encrypted_b_181.
+obs_13 :- tmp_13.
+0.5::drawnchar_14_f4.
+0.5::drawnchar_14_f3.
+0.5::drawnchar_14_f2.
+0.5::drawnchar_14_f1.
+0.98::drawnchar_14_f0.
+0.5::drawnchar_14_f0_1.
+drawnchar_14_b0 :- \+drawnchar_14_f4, \+drawnchar_14_f3, \+drawnchar_14_f2, \+drawnchar_14_f1, drawnchar_14_f0.
+drawnchar_14_b0 :- \+drawnchar_14_f4, \+drawnchar_14_f3, \+drawnchar_14_f2, drawnchar_14_f1, drawnchar_14_f0_1.
+drawnchar_14_b0 :- \+drawnchar_14_f4, \+drawnchar_14_f3, drawnchar_14_f2, drawnchar_14_f0_1.
+drawnchar_14_b0 :- \+drawnchar_14_f4, drawnchar_14_f3, drawnchar_14_f0_1.
+drawnchar_14_b0 :- drawnchar_14_f4, drawnchar_14_f0_1.
+encrypted_b_182 :- drawnchar_14_b0, \+key1_f0.
+encrypted_b_182 :- \+drawnchar_14_b0, key1_f0.
+encrypted_b_183 :- key1_f0, drawnchar_14_b0.
+encrypted_b_184 :- drawnchar_14_f1, \+key1_f1.
+encrypted_b_184 :- \+drawnchar_14_f1, key1_f1.
+encrypted_b_185 :- encrypted_b_183, \+encrypted_b_184.
+encrypted_b_185 :- \+encrypted_b_183, encrypted_b_184.
+encrypted_b_186 :- key1_f1, drawnchar_14_f1.
+encrypted_b_186 :- encrypted_b_183, encrypted_b_184.
+encrypted_b_187 :- drawnchar_14_f2, \+key1_f2.
+encrypted_b_187 :- \+drawnchar_14_f2, key1_f2.
+encrypted_b_188 :- encrypted_b_186, \+encrypted_b_187.
+encrypted_b_188 :- \+encrypted_b_186, encrypted_b_187.
+encrypted_b_189 :- key1_f2, drawnchar_14_f2.
+encrypted_b_189 :- encrypted_b_186, encrypted_b_187.
+encrypted_b_190 :- drawnchar_14_f3, \+key1_f3.
+encrypted_b_190 :- \+drawnchar_14_f3, key1_f3.
+encrypted_b_191 :- encrypted_b_189, \+encrypted_b_190.
+encrypted_b_191 :- \+encrypted_b_189, encrypted_b_190.
+encrypted_b_192 :- key1_f3, drawnchar_14_f3.
+encrypted_b_192 :- encrypted_b_189, encrypted_b_190.
+encrypted_b_193 :- drawnchar_14_f4, \+key1_f4.
+encrypted_b_193 :- \+drawnchar_14_f4, key1_f4.
+encrypted_b_194 :- encrypted_b_192, \+encrypted_b_193.
+encrypted_b_194 :- \+encrypted_b_192, encrypted_b_193.
+tmp_14 :- \+encrypted_b_182, encrypted_b_185, \+encrypted_b_188, \+encrypted_b_191, \+encrypted_b_194.
+obs_14 :- tmp_14.
+0.5::drawnchar_15_f4.
+0.5::drawnchar_15_f3.
+0.5::drawnchar_15_f2.
+0.5::drawnchar_15_f1.
+0.98::drawnchar_15_f0.
+0.5::drawnchar_15_f0_1.
+drawnchar_15_b0 :- \+drawnchar_15_f4, \+drawnchar_15_f3, \+drawnchar_15_f2, \+drawnchar_15_f1, drawnchar_15_f0.
+drawnchar_15_b0 :- \+drawnchar_15_f4, \+drawnchar_15_f3, \+drawnchar_15_f2, drawnchar_15_f1, drawnchar_15_f0_1.
+drawnchar_15_b0 :- \+drawnchar_15_f4, \+drawnchar_15_f3, drawnchar_15_f2, drawnchar_15_f0_1.
+drawnchar_15_b0 :- \+drawnchar_15_f4, drawnchar_15_f3, drawnchar_15_f0_1.
+drawnchar_15_b0 :- drawnchar_15_f4, drawnchar_15_f0_1.
+encrypted_b_195 :- drawnchar_15_b0, \+key1_f0.
+encrypted_b_195 :- \+drawnchar_15_b0, key1_f0.
+encrypted_b_196 :- key1_f0, drawnchar_15_b0.
+encrypted_b_197 :- drawnchar_15_f1, \+key1_f1.
+encrypted_b_197 :- \+drawnchar_15_f1, key1_f1.
+encrypted_b_198 :- encrypted_b_196, \+encrypted_b_197.
+encrypted_b_198 :- \+encrypted_b_196, encrypted_b_197.
+encrypted_b_199 :- key1_f1, drawnchar_15_f1.
+encrypted_b_199 :- encrypted_b_196, encrypted_b_197.
+encrypted_b_200 :- drawnchar_15_f2, \+key1_f2.
+encrypted_b_200 :- \+drawnchar_15_f2, key1_f2.
+encrypted_b_201 :- encrypted_b_199, \+encrypted_b_200.
+encrypted_b_201 :- \+encrypted_b_199, encrypted_b_200.
+encrypted_b_202 :- key1_f2, drawnchar_15_f2.
+encrypted_b_202 :- encrypted_b_199, encrypted_b_200.
+encrypted_b_203 :- drawnchar_15_f3, \+key1_f3.
+encrypted_b_203 :- \+drawnchar_15_f3, key1_f3.
+encrypted_b_204 :- encrypted_b_202, \+encrypted_b_203.
+encrypted_b_204 :- \+encrypted_b_202, encrypted_b_203.
+encrypted_b_205 :- key1_f3, drawnchar_15_f3.
+encrypted_b_205 :- encrypted_b_202, encrypted_b_203.
+encrypted_b_206 :- drawnchar_15_f4, \+key1_f4.
+encrypted_b_206 :- \+drawnchar_15_f4, key1_f4.
+encrypted_b_207 :- encrypted_b_205, \+encrypted_b_206.
+encrypted_b_207 :- \+encrypted_b_205, encrypted_b_206.
+tmp_15 :- \+encrypted_b_195, encrypted_b_198, \+encrypted_b_201, \+encrypted_b_204, \+encrypted_b_207.
+obs_15 :- tmp_15.
+0.5::drawnchar_16_f4.
+0.5::drawnchar_16_f3.
+0.5::drawnchar_16_f2.
+0.5::drawnchar_16_f1.
+0.98::drawnchar_16_f0.
+0.5::drawnchar_16_f0_1.
+drawnchar_16_b0 :- \+drawnchar_16_f4, \+drawnchar_16_f3, \+drawnchar_16_f2, \+drawnchar_16_f1, drawnchar_16_f0.
+drawnchar_16_b0 :- \+drawnchar_16_f4, \+drawnchar_16_f3, \+drawnchar_16_f2, drawnchar_16_f1, drawnchar_16_f0_1.
+drawnchar_16_b0 :- \+drawnchar_16_f4, \+drawnchar_16_f3, drawnchar_16_f2, drawnchar_16_f0_1.
+drawnchar_16_b0 :- \+drawnchar_16_f4, drawnchar_16_f3, drawnchar_16_f0_1.
+drawnchar_16_b0 :- drawnchar_16_f4, drawnchar_16_f0_1.
+encrypted_b_208 :- drawnchar_16_b0, \+key1_f0.
+encrypted_b_208 :- \+drawnchar_16_b0, key1_f0.
+encrypted_b_209 :- key1_f0, drawnchar_16_b0.
+encrypted_b_210 :- drawnchar_16_f1, \+key1_f1.
+encrypted_b_210 :- \+drawnchar_16_f1, key1_f1.
+encrypted_b_211 :- encrypted_b_209, \+encrypted_b_210.
+encrypted_b_211 :- \+encrypted_b_209, encrypted_b_210.
+encrypted_b_212 :- key1_f1, drawnchar_16_f1.
+encrypted_b_212 :- encrypted_b_209, encrypted_b_210.
+encrypted_b_213 :- drawnchar_16_f2, \+key1_f2.
+encrypted_b_213 :- \+drawnchar_16_f2, key1_f2.
+encrypted_b_214 :- encrypted_b_212, \+encrypted_b_213.
+encrypted_b_214 :- \+encrypted_b_212, encrypted_b_213.
+encrypted_b_215 :- key1_f2, drawnchar_16_f2.
+encrypted_b_215 :- encrypted_b_212, encrypted_b_213.
+encrypted_b_216 :- drawnchar_16_f3, \+key1_f3.
+encrypted_b_216 :- \+drawnchar_16_f3, key1_f3.
+encrypted_b_217 :- encrypted_b_215, \+encrypted_b_216.
+encrypted_b_217 :- \+encrypted_b_215, encrypted_b_216.
+encrypted_b_218 :- key1_f3, drawnchar_16_f3.
+encrypted_b_218 :- encrypted_b_215, encrypted_b_216.
+encrypted_b_219 :- drawnchar_16_f4, \+key1_f4.
+encrypted_b_219 :- \+drawnchar_16_f4, key1_f4.
+encrypted_b_220 :- encrypted_b_218, \+encrypted_b_219.
+encrypted_b_220 :- \+encrypted_b_218, encrypted_b_219.
+tmp_16 :- \+encrypted_b_208, encrypted_b_211, \+encrypted_b_214, \+encrypted_b_217, \+encrypted_b_220.
+obs_16 :- tmp_16.
+0.5::drawnchar_17_f4.
+0.5::drawnchar_17_f3.
+0.5::drawnchar_17_f2.
+0.5::drawnchar_17_f1.
+0.98::drawnchar_17_f0.
+0.5::drawnchar_17_f0_1.
+drawnchar_17_b0 :- \+drawnchar_17_f4, \+drawnchar_17_f3, \+drawnchar_17_f2, \+drawnchar_17_f1, drawnchar_17_f0.
+drawnchar_17_b0 :- \+drawnchar_17_f4, \+drawnchar_17_f3, \+drawnchar_17_f2, drawnchar_17_f1, drawnchar_17_f0_1.
+drawnchar_17_b0 :- \+drawnchar_17_f4, \+drawnchar_17_f3, drawnchar_17_f2, drawnchar_17_f0_1.
+drawnchar_17_b0 :- \+drawnchar_17_f4, drawnchar_17_f3, drawnchar_17_f0_1.
+drawnchar_17_b0 :- drawnchar_17_f4, drawnchar_17_f0_1.
+encrypted_b_221 :- drawnchar_17_b0, \+key1_f0.
+encrypted_b_221 :- \+drawnchar_17_b0, key1_f0.
+encrypted_b_222 :- key1_f0, drawnchar_17_b0.
+encrypted_b_223 :- drawnchar_17_f1, \+key1_f1.
+encrypted_b_223 :- \+drawnchar_17_f1, key1_f1.
+encrypted_b_224 :- encrypted_b_222, \+encrypted_b_223.
+encrypted_b_224 :- \+encrypted_b_222, encrypted_b_223.
+encrypted_b_225 :- key1_f1, drawnchar_17_f1.
+encrypted_b_225 :- encrypted_b_222, encrypted_b_223.
+encrypted_b_226 :- drawnchar_17_f2, \+key1_f2.
+encrypted_b_226 :- \+drawnchar_17_f2, key1_f2.
+encrypted_b_227 :- encrypted_b_225, \+encrypted_b_226.
+encrypted_b_227 :- \+encrypted_b_225, encrypted_b_226.
+encrypted_b_228 :- key1_f2, drawnchar_17_f2.
+encrypted_b_228 :- encrypted_b_225, encrypted_b_226.
+encrypted_b_229 :- drawnchar_17_f3, \+key1_f3.
+encrypted_b_229 :- \+drawnchar_17_f3, key1_f3.
+encrypted_b_230 :- encrypted_b_228, \+encrypted_b_229.
+encrypted_b_230 :- \+encrypted_b_228, encrypted_b_229.
+encrypted_b_231 :- key1_f3, drawnchar_17_f3.
+encrypted_b_231 :- encrypted_b_228, encrypted_b_229.
+encrypted_b_232 :- drawnchar_17_f4, \+key1_f4.
+encrypted_b_232 :- \+drawnchar_17_f4, key1_f4.
+encrypted_b_233 :- encrypted_b_231, \+encrypted_b_232.
+encrypted_b_233 :- \+encrypted_b_231, encrypted_b_232.
+tmp_17 :- \+encrypted_b_221, encrypted_b_224, \+encrypted_b_227, \+encrypted_b_230, \+encrypted_b_233.
+obs_17 :- tmp_17.
+0.5::drawnchar_18_f4.
+0.5::drawnchar_18_f3.
+0.5::drawnchar_18_f2.
+0.5::drawnchar_18_f1.
+0.98::drawnchar_18_f0.
+0.5::drawnchar_18_f0_1.
+drawnchar_18_b0 :- \+drawnchar_18_f4, \+drawnchar_18_f3, \+drawnchar_18_f2, \+drawnchar_18_f1, drawnchar_18_f0.
+drawnchar_18_b0 :- \+drawnchar_18_f4, \+drawnchar_18_f3, \+drawnchar_18_f2, drawnchar_18_f1, drawnchar_18_f0_1.
+drawnchar_18_b0 :- \+drawnchar_18_f4, \+drawnchar_18_f3, drawnchar_18_f2, drawnchar_18_f0_1.
+drawnchar_18_b0 :- \+drawnchar_18_f4, drawnchar_18_f3, drawnchar_18_f0_1.
+drawnchar_18_b0 :- drawnchar_18_f4, drawnchar_18_f0_1.
+encrypted_b_234 :- drawnchar_18_b0, \+key1_f0.
+encrypted_b_234 :- \+drawnchar_18_b0, key1_f0.
+encrypted_b_235 :- key1_f0, drawnchar_18_b0.
+encrypted_b_236 :- drawnchar_18_f1, \+key1_f1.
+encrypted_b_236 :- \+drawnchar_18_f1, key1_f1.
+encrypted_b_237 :- encrypted_b_235, \+encrypted_b_236.
+encrypted_b_237 :- \+encrypted_b_235, encrypted_b_236.
+encrypted_b_238 :- key1_f1, drawnchar_18_f1.
+encrypted_b_238 :- encrypted_b_235, encrypted_b_236.
+encrypted_b_239 :- drawnchar_18_f2, \+key1_f2.
+encrypted_b_239 :- \+drawnchar_18_f2, key1_f2.
+encrypted_b_240 :- encrypted_b_238, \+encrypted_b_239.
+encrypted_b_240 :- \+encrypted_b_238, encrypted_b_239.
+encrypted_b_241 :- key1_f2, drawnchar_18_f2.
+encrypted_b_241 :- encrypted_b_238, encrypted_b_239.
+encrypted_b_242 :- drawnchar_18_f3, \+key1_f3.
+encrypted_b_242 :- \+drawnchar_18_f3, key1_f3.
+encrypted_b_243 :- encrypted_b_241, \+encrypted_b_242.
+encrypted_b_243 :- \+encrypted_b_241, encrypted_b_242.
+encrypted_b_244 :- key1_f3, drawnchar_18_f3.
+encrypted_b_244 :- encrypted_b_241, encrypted_b_242.
+encrypted_b_245 :- drawnchar_18_f4, \+key1_f4.
+encrypted_b_245 :- \+drawnchar_18_f4, key1_f4.
+encrypted_b_246 :- encrypted_b_244, \+encrypted_b_245.
+encrypted_b_246 :- \+encrypted_b_244, encrypted_b_245.
+tmp_18 :- \+encrypted_b_234, encrypted_b_237, \+encrypted_b_240, \+encrypted_b_243, \+encrypted_b_246.
+obs_18 :- tmp_18.
+0.5::drawnchar_19_f4.
+0.5::drawnchar_19_f3.
+0.5::drawnchar_19_f2.
+0.5::drawnchar_19_f1.
+0.98::drawnchar_19_f0.
+0.5::drawnchar_19_f0_1.
+drawnchar_19_b0 :- \+drawnchar_19_f4, \+drawnchar_19_f3, \+drawnchar_19_f2, \+drawnchar_19_f1, drawnchar_19_f0.
+drawnchar_19_b0 :- \+drawnchar_19_f4, \+drawnchar_19_f3, \+drawnchar_19_f2, drawnchar_19_f1, drawnchar_19_f0_1.
+drawnchar_19_b0 :- \+drawnchar_19_f4, \+drawnchar_19_f3, drawnchar_19_f2, drawnchar_19_f0_1.
+drawnchar_19_b0 :- \+drawnchar_19_f4, drawnchar_19_f3, drawnchar_19_f0_1.
+drawnchar_19_b0 :- drawnchar_19_f4, drawnchar_19_f0_1.
+encrypted_b_247 :- drawnchar_19_b0, \+key1_f0.
+encrypted_b_247 :- \+drawnchar_19_b0, key1_f0.
+encrypted_b_248 :- key1_f0, drawnchar_19_b0.
+encrypted_b_249 :- drawnchar_19_f1, \+key1_f1.
+encrypted_b_249 :- \+drawnchar_19_f1, key1_f1.
+encrypted_b_250 :- encrypted_b_248, \+encrypted_b_249.
+encrypted_b_250 :- \+encrypted_b_248, encrypted_b_249.
+encrypted_b_251 :- key1_f1, drawnchar_19_f1.
+encrypted_b_251 :- encrypted_b_248, encrypted_b_249.
+encrypted_b_252 :- drawnchar_19_f2, \+key1_f2.
+encrypted_b_252 :- \+drawnchar_19_f2, key1_f2.
+encrypted_b_253 :- encrypted_b_251, \+encrypted_b_252.
+encrypted_b_253 :- \+encrypted_b_251, encrypted_b_252.
+encrypted_b_254 :- key1_f2, drawnchar_19_f2.
+encrypted_b_254 :- encrypted_b_251, encrypted_b_252.
+encrypted_b_255 :- drawnchar_19_f3, \+key1_f3.
+encrypted_b_255 :- \+drawnchar_19_f3, key1_f3.
+encrypted_b_256 :- encrypted_b_254, \+encrypted_b_255.
+encrypted_b_256 :- \+encrypted_b_254, encrypted_b_255.
+encrypted_b_257 :- key1_f3, drawnchar_19_f3.
+encrypted_b_257 :- encrypted_b_254, encrypted_b_255.
+encrypted_b_258 :- drawnchar_19_f4, \+key1_f4.
+encrypted_b_258 :- \+drawnchar_19_f4, key1_f4.
+encrypted_b_259 :- encrypted_b_257, \+encrypted_b_258.
+encrypted_b_259 :- \+encrypted_b_257, encrypted_b_258.
+tmp_19 :- \+encrypted_b_247, encrypted_b_250, \+encrypted_b_253, \+encrypted_b_256, \+encrypted_b_259.
+obs_19 :- tmp_19.
+0.5::drawnchar_20_f4.
+0.5::drawnchar_20_f3.
+0.5::drawnchar_20_f2.
+0.5::drawnchar_20_f1.
+0.98::drawnchar_20_f0.
+0.5::drawnchar_20_f0_1.
+drawnchar_20_b0 :- \+drawnchar_20_f4, \+drawnchar_20_f3, \+drawnchar_20_f2, \+drawnchar_20_f1, drawnchar_20_f0.
+drawnchar_20_b0 :- \+drawnchar_20_f4, \+drawnchar_20_f3, \+drawnchar_20_f2, drawnchar_20_f1, drawnchar_20_f0_1.
+drawnchar_20_b0 :- \+drawnchar_20_f4, \+drawnchar_20_f3, drawnchar_20_f2, drawnchar_20_f0_1.
+drawnchar_20_b0 :- \+drawnchar_20_f4, drawnchar_20_f3, drawnchar_20_f0_1.
+drawnchar_20_b0 :- drawnchar_20_f4, drawnchar_20_f0_1.
+encrypted_b_260 :- drawnchar_20_b0, \+key1_f0.
+encrypted_b_260 :- \+drawnchar_20_b0, key1_f0.
+encrypted_b_261 :- key1_f0, drawnchar_20_b0.
+encrypted_b_262 :- drawnchar_20_f1, \+key1_f1.
+encrypted_b_262 :- \+drawnchar_20_f1, key1_f1.
+encrypted_b_263 :- encrypted_b_261, \+encrypted_b_262.
+encrypted_b_263 :- \+encrypted_b_261, encrypted_b_262.
+encrypted_b_264 :- key1_f1, drawnchar_20_f1.
+encrypted_b_264 :- encrypted_b_261, encrypted_b_262.
+encrypted_b_265 :- drawnchar_20_f2, \+key1_f2.
+encrypted_b_265 :- \+drawnchar_20_f2, key1_f2.
+encrypted_b_266 :- encrypted_b_264, \+encrypted_b_265.
+encrypted_b_266 :- \+encrypted_b_264, encrypted_b_265.
+encrypted_b_267 :- key1_f2, drawnchar_20_f2.
+encrypted_b_267 :- encrypted_b_264, encrypted_b_265.
+encrypted_b_268 :- drawnchar_20_f3, \+key1_f3.
+encrypted_b_268 :- \+drawnchar_20_f3, key1_f3.
+encrypted_b_269 :- encrypted_b_267, \+encrypted_b_268.
+encrypted_b_269 :- \+encrypted_b_267, encrypted_b_268.
+encrypted_b_270 :- key1_f3, drawnchar_20_f3.
+encrypted_b_270 :- encrypted_b_267, encrypted_b_268.
+encrypted_b_271 :- drawnchar_20_f4, \+key1_f4.
+encrypted_b_271 :- \+drawnchar_20_f4, key1_f4.
+encrypted_b_272 :- encrypted_b_270, \+encrypted_b_271.
+encrypted_b_272 :- \+encrypted_b_270, encrypted_b_271.
+tmp_20 :- \+encrypted_b_260, encrypted_b_263, \+encrypted_b_266, \+encrypted_b_269, \+encrypted_b_272.
+obs_20 :- tmp_20.
+0.5::drawnchar_21_f4.
+0.5::drawnchar_21_f3.
+0.5::drawnchar_21_f2.
+0.5::drawnchar_21_f1.
+0.98::drawnchar_21_f0.
+0.5::drawnchar_21_f0_1.
+drawnchar_21_b0 :- \+drawnchar_21_f4, \+drawnchar_21_f3, \+drawnchar_21_f2, \+drawnchar_21_f1, drawnchar_21_f0.
+drawnchar_21_b0 :- \+drawnchar_21_f4, \+drawnchar_21_f3, \+drawnchar_21_f2, drawnchar_21_f1, drawnchar_21_f0_1.
+drawnchar_21_b0 :- \+drawnchar_21_f4, \+drawnchar_21_f3, drawnchar_21_f2, drawnchar_21_f0_1.
+drawnchar_21_b0 :- \+drawnchar_21_f4, drawnchar_21_f3, drawnchar_21_f0_1.
+drawnchar_21_b0 :- drawnchar_21_f4, drawnchar_21_f0_1.
+encrypted_b_273 :- drawnchar_21_b0, \+key1_f0.
+encrypted_b_273 :- \+drawnchar_21_b0, key1_f0.
+encrypted_b_274 :- key1_f0, drawnchar_21_b0.
+encrypted_b_275 :- drawnchar_21_f1, \+key1_f1.
+encrypted_b_275 :- \+drawnchar_21_f1, key1_f1.
+encrypted_b_276 :- encrypted_b_274, \+encrypted_b_275.
+encrypted_b_276 :- \+encrypted_b_274, encrypted_b_275.
+encrypted_b_277 :- key1_f1, drawnchar_21_f1.
+encrypted_b_277 :- encrypted_b_274, encrypted_b_275.
+encrypted_b_278 :- drawnchar_21_f2, \+key1_f2.
+encrypted_b_278 :- \+drawnchar_21_f2, key1_f2.
+encrypted_b_279 :- encrypted_b_277, \+encrypted_b_278.
+encrypted_b_279 :- \+encrypted_b_277, encrypted_b_278.
+encrypted_b_280 :- key1_f2, drawnchar_21_f2.
+encrypted_b_280 :- encrypted_b_277, encrypted_b_278.
+encrypted_b_281 :- drawnchar_21_f3, \+key1_f3.
+encrypted_b_281 :- \+drawnchar_21_f3, key1_f3.
+encrypted_b_282 :- encrypted_b_280, \+encrypted_b_281.
+encrypted_b_282 :- \+encrypted_b_280, encrypted_b_281.
+encrypted_b_283 :- key1_f3, drawnchar_21_f3.
+encrypted_b_283 :- encrypted_b_280, encrypted_b_281.
+encrypted_b_284 :- drawnchar_21_f4, \+key1_f4.
+encrypted_b_284 :- \+drawnchar_21_f4, key1_f4.
+encrypted_b_285 :- encrypted_b_283, \+encrypted_b_284.
+encrypted_b_285 :- \+encrypted_b_283, encrypted_b_284.
+tmp_21 :- \+encrypted_b_273, encrypted_b_276, \+encrypted_b_279, \+encrypted_b_282, \+encrypted_b_285.
+obs_21 :- tmp_21.
+0.5::drawnchar_22_f4.
+0.5::drawnchar_22_f3.
+0.5::drawnchar_22_f2.
+0.5::drawnchar_22_f1.
+0.98::drawnchar_22_f0.
+0.5::drawnchar_22_f0_1.
+drawnchar_22_b0 :- \+drawnchar_22_f4, \+drawnchar_22_f3, \+drawnchar_22_f2, \+drawnchar_22_f1, drawnchar_22_f0.
+drawnchar_22_b0 :- \+drawnchar_22_f4, \+drawnchar_22_f3, \+drawnchar_22_f2, drawnchar_22_f1, drawnchar_22_f0_1.
+drawnchar_22_b0 :- \+drawnchar_22_f4, \+drawnchar_22_f3, drawnchar_22_f2, drawnchar_22_f0_1.
+drawnchar_22_b0 :- \+drawnchar_22_f4, drawnchar_22_f3, drawnchar_22_f0_1.
+drawnchar_22_b0 :- drawnchar_22_f4, drawnchar_22_f0_1.
+encrypted_b_286 :- drawnchar_22_b0, \+key1_f0.
+encrypted_b_286 :- \+drawnchar_22_b0, key1_f0.
+encrypted_b_287 :- key1_f0, drawnchar_22_b0.
+encrypted_b_288 :- drawnchar_22_f1, \+key1_f1.
+encrypted_b_288 :- \+drawnchar_22_f1, key1_f1.
+encrypted_b_289 :- encrypted_b_287, \+encrypted_b_288.
+encrypted_b_289 :- \+encrypted_b_287, encrypted_b_288.
+encrypted_b_290 :- key1_f1, drawnchar_22_f1.
+encrypted_b_290 :- encrypted_b_287, encrypted_b_288.
+encrypted_b_291 :- drawnchar_22_f2, \+key1_f2.
+encrypted_b_291 :- \+drawnchar_22_f2, key1_f2.
+encrypted_b_292 :- encrypted_b_290, \+encrypted_b_291.
+encrypted_b_292 :- \+encrypted_b_290, encrypted_b_291.
+encrypted_b_293 :- key1_f2, drawnchar_22_f2.
+encrypted_b_293 :- encrypted_b_290, encrypted_b_291.
+encrypted_b_294 :- drawnchar_22_f3, \+key1_f3.
+encrypted_b_294 :- \+drawnchar_22_f3, key1_f3.
+encrypted_b_295 :- encrypted_b_293, \+encrypted_b_294.
+encrypted_b_295 :- \+encrypted_b_293, encrypted_b_294.
+encrypted_b_296 :- key1_f3, drawnchar_22_f3.
+encrypted_b_296 :- encrypted_b_293, encrypted_b_294.
+encrypted_b_297 :- drawnchar_22_f4, \+key1_f4.
+encrypted_b_297 :- \+drawnchar_22_f4, key1_f4.
+encrypted_b_298 :- encrypted_b_296, \+encrypted_b_297.
+encrypted_b_298 :- \+encrypted_b_296, encrypted_b_297.
+tmp_22 :- \+encrypted_b_286, encrypted_b_289, \+encrypted_b_292, \+encrypted_b_295, \+encrypted_b_298.
+obs_22 :- tmp_22.
+0.5::drawnchar_23_f4.
+0.5::drawnchar_23_f3.
+0.5::drawnchar_23_f2.
+0.5::drawnchar_23_f1.
+0.98::drawnchar_23_f0.
+0.5::drawnchar_23_f0_1.
+drawnchar_23_b0 :- \+drawnchar_23_f4, \+drawnchar_23_f3, \+drawnchar_23_f2, \+drawnchar_23_f1, drawnchar_23_f0.
+drawnchar_23_b0 :- \+drawnchar_23_f4, \+drawnchar_23_f3, \+drawnchar_23_f2, drawnchar_23_f1, drawnchar_23_f0_1.
+drawnchar_23_b0 :- \+drawnchar_23_f4, \+drawnchar_23_f3, drawnchar_23_f2, drawnchar_23_f0_1.
+drawnchar_23_b0 :- \+drawnchar_23_f4, drawnchar_23_f3, drawnchar_23_f0_1.
+drawnchar_23_b0 :- drawnchar_23_f4, drawnchar_23_f0_1.
+encrypted_b_299 :- drawnchar_23_b0, \+key1_f0.
+encrypted_b_299 :- \+drawnchar_23_b0, key1_f0.
+encrypted_b_300 :- key1_f0, drawnchar_23_b0.
+encrypted_b_301 :- drawnchar_23_f1, \+key1_f1.
+encrypted_b_301 :- \+drawnchar_23_f1, key1_f1.
+encrypted_b_302 :- encrypted_b_300, \+encrypted_b_301.
+encrypted_b_302 :- \+encrypted_b_300, encrypted_b_301.
+encrypted_b_303 :- key1_f1, drawnchar_23_f1.
+encrypted_b_303 :- encrypted_b_300, encrypted_b_301.
+encrypted_b_304 :- drawnchar_23_f2, \+key1_f2.
+encrypted_b_304 :- \+drawnchar_23_f2, key1_f2.
+encrypted_b_305 :- encrypted_b_303, \+encrypted_b_304.
+encrypted_b_305 :- \+encrypted_b_303, encrypted_b_304.
+encrypted_b_306 :- key1_f2, drawnchar_23_f2.
+encrypted_b_306 :- encrypted_b_303, encrypted_b_304.
+encrypted_b_307 :- drawnchar_23_f3, \+key1_f3.
+encrypted_b_307 :- \+drawnchar_23_f3, key1_f3.
+encrypted_b_308 :- encrypted_b_306, \+encrypted_b_307.
+encrypted_b_308 :- \+encrypted_b_306, encrypted_b_307.
+encrypted_b_309 :- key1_f3, drawnchar_23_f3.
+encrypted_b_309 :- encrypted_b_306, encrypted_b_307.
+encrypted_b_310 :- drawnchar_23_f4, \+key1_f4.
+encrypted_b_310 :- \+drawnchar_23_f4, key1_f4.
+encrypted_b_311 :- encrypted_b_309, \+encrypted_b_310.
+encrypted_b_311 :- \+encrypted_b_309, encrypted_b_310.
+tmp_23 :- \+encrypted_b_299, encrypted_b_302, \+encrypted_b_305, \+encrypted_b_308, \+encrypted_b_311.
+obs_23 :- tmp_23.
+0.5::drawnchar_24_f4.
+0.5::drawnchar_24_f3.
+0.5::drawnchar_24_f2.
+0.5::drawnchar_24_f1.
+0.98::drawnchar_24_f0.
+0.5::drawnchar_24_f0_1.
+drawnchar_24_b0 :- \+drawnchar_24_f4, \+drawnchar_24_f3, \+drawnchar_24_f2, \+drawnchar_24_f1, drawnchar_24_f0.
+drawnchar_24_b0 :- \+drawnchar_24_f4, \+drawnchar_24_f3, \+drawnchar_24_f2, drawnchar_24_f1, drawnchar_24_f0_1.
+drawnchar_24_b0 :- \+drawnchar_24_f4, \+drawnchar_24_f3, drawnchar_24_f2, drawnchar_24_f0_1.
+drawnchar_24_b0 :- \+drawnchar_24_f4, drawnchar_24_f3, drawnchar_24_f0_1.
+drawnchar_24_b0 :- drawnchar_24_f4, drawnchar_24_f0_1.
+encrypted_b_312 :- drawnchar_24_b0, \+key1_f0.
+encrypted_b_312 :- \+drawnchar_24_b0, key1_f0.
+encrypted_b_313 :- key1_f0, drawnchar_24_b0.
+encrypted_b_314 :- drawnchar_24_f1, \+key1_f1.
+encrypted_b_314 :- \+drawnchar_24_f1, key1_f1.
+encrypted_b_315 :- encrypted_b_313, \+encrypted_b_314.
+encrypted_b_315 :- \+encrypted_b_313, encrypted_b_314.
+encrypted_b_316 :- key1_f1, drawnchar_24_f1.
+encrypted_b_316 :- encrypted_b_313, encrypted_b_314.
+encrypted_b_317 :- drawnchar_24_f2, \+key1_f2.
+encrypted_b_317 :- \+drawnchar_24_f2, key1_f2.
+encrypted_b_318 :- encrypted_b_316, \+encrypted_b_317.
+encrypted_b_318 :- \+encrypted_b_316, encrypted_b_317.
+encrypted_b_319 :- key1_f2, drawnchar_24_f2.
+encrypted_b_319 :- encrypted_b_316, encrypted_b_317.
+encrypted_b_320 :- drawnchar_24_f3, \+key1_f3.
+encrypted_b_320 :- \+drawnchar_24_f3, key1_f3.
+encrypted_b_321 :- encrypted_b_319, \+encrypted_b_320.
+encrypted_b_321 :- \+encrypted_b_319, encrypted_b_320.
+encrypted_b_322 :- key1_f3, drawnchar_24_f3.
+encrypted_b_322 :- encrypted_b_319, encrypted_b_320.
+encrypted_b_323 :- drawnchar_24_f4, \+key1_f4.
+encrypted_b_323 :- \+drawnchar_24_f4, key1_f4.
+encrypted_b_324 :- encrypted_b_322, \+encrypted_b_323.
+encrypted_b_324 :- \+encrypted_b_322, encrypted_b_323.
+tmp_24 :- \+encrypted_b_312, encrypted_b_315, \+encrypted_b_318, \+encrypted_b_321, \+encrypted_b_324.
+obs_24 :- tmp_24.
+0.5::drawnchar_25_f4.
+0.5::drawnchar_25_f3.
+0.5::drawnchar_25_f2.
+0.5::drawnchar_25_f1.
+0.98::drawnchar_25_f0.
+0.5::drawnchar_25_f0_1.
+drawnchar_25_b0 :- \+drawnchar_25_f4, \+drawnchar_25_f3, \+drawnchar_25_f2, \+drawnchar_25_f1, drawnchar_25_f0.
+drawnchar_25_b0 :- \+drawnchar_25_f4, \+drawnchar_25_f3, \+drawnchar_25_f2, drawnchar_25_f1, drawnchar_25_f0_1.
+drawnchar_25_b0 :- \+drawnchar_25_f4, \+drawnchar_25_f3, drawnchar_25_f2, drawnchar_25_f0_1.
+drawnchar_25_b0 :- \+drawnchar_25_f4, drawnchar_25_f3, drawnchar_25_f0_1.
+drawnchar_25_b0 :- drawnchar_25_f4, drawnchar_25_f0_1.
+encrypted_b_325 :- drawnchar_25_b0, \+key1_f0.
+encrypted_b_325 :- \+drawnchar_25_b0, key1_f0.
+encrypted_b_326 :- key1_f0, drawnchar_25_b0.
+encrypted_b_327 :- drawnchar_25_f1, \+key1_f1.
+encrypted_b_327 :- \+drawnchar_25_f1, key1_f1.
+encrypted_b_328 :- encrypted_b_326, \+encrypted_b_327.
+encrypted_b_328 :- \+encrypted_b_326, encrypted_b_327.
+encrypted_b_329 :- key1_f1, drawnchar_25_f1.
+encrypted_b_329 :- encrypted_b_326, encrypted_b_327.
+encrypted_b_330 :- drawnchar_25_f2, \+key1_f2.
+encrypted_b_330 :- \+drawnchar_25_f2, key1_f2.
+encrypted_b_331 :- encrypted_b_329, \+encrypted_b_330.
+encrypted_b_331 :- \+encrypted_b_329, encrypted_b_330.
+encrypted_b_332 :- key1_f2, drawnchar_25_f2.
+encrypted_b_332 :- encrypted_b_329, encrypted_b_330.
+encrypted_b_333 :- drawnchar_25_f3, \+key1_f3.
+encrypted_b_333 :- \+drawnchar_25_f3, key1_f3.
+encrypted_b_334 :- encrypted_b_332, \+encrypted_b_333.
+encrypted_b_334 :- \+encrypted_b_332, encrypted_b_333.
+encrypted_b_335 :- key1_f3, drawnchar_25_f3.
+encrypted_b_335 :- encrypted_b_332, encrypted_b_333.
+encrypted_b_336 :- drawnchar_25_f4, \+key1_f4.
+encrypted_b_336 :- \+drawnchar_25_f4, key1_f4.
+encrypted_b_337 :- encrypted_b_335, \+encrypted_b_336.
+encrypted_b_337 :- \+encrypted_b_335, encrypted_b_336.
+tmp_25 :- \+encrypted_b_325, encrypted_b_328, \+encrypted_b_331, \+encrypted_b_334, \+encrypted_b_337.
+obs_25 :- tmp_25.
+0.5::drawnchar_26_f4.
+0.5::drawnchar_26_f3.
+0.5::drawnchar_26_f2.
+0.5::drawnchar_26_f1.
+0.98::drawnchar_26_f0.
+0.5::drawnchar_26_f0_1.
+drawnchar_26_b0 :- \+drawnchar_26_f4, \+drawnchar_26_f3, \+drawnchar_26_f2, \+drawnchar_26_f1, drawnchar_26_f0.
+drawnchar_26_b0 :- \+drawnchar_26_f4, \+drawnchar_26_f3, \+drawnchar_26_f2, drawnchar_26_f1, drawnchar_26_f0_1.
+drawnchar_26_b0 :- \+drawnchar_26_f4, \+drawnchar_26_f3, drawnchar_26_f2, drawnchar_26_f0_1.
+drawnchar_26_b0 :- \+drawnchar_26_f4, drawnchar_26_f3, drawnchar_26_f0_1.
+drawnchar_26_b0 :- drawnchar_26_f4, drawnchar_26_f0_1.
+encrypted_b_338 :- drawnchar_26_b0, \+key1_f0.
+encrypted_b_338 :- \+drawnchar_26_b0, key1_f0.
+encrypted_b_339 :- key1_f0, drawnchar_26_b0.
+encrypted_b_340 :- drawnchar_26_f1, \+key1_f1.
+encrypted_b_340 :- \+drawnchar_26_f1, key1_f1.
+encrypted_b_341 :- encrypted_b_339, \+encrypted_b_340.
+encrypted_b_341 :- \+encrypted_b_339, encrypted_b_340.
+encrypted_b_342 :- key1_f1, drawnchar_26_f1.
+encrypted_b_342 :- encrypted_b_339, encrypted_b_340.
+encrypted_b_343 :- drawnchar_26_f2, \+key1_f2.
+encrypted_b_343 :- \+drawnchar_26_f2, key1_f2.
+encrypted_b_344 :- encrypted_b_342, \+encrypted_b_343.
+encrypted_b_344 :- \+encrypted_b_342, encrypted_b_343.
+encrypted_b_345 :- key1_f2, drawnchar_26_f2.
+encrypted_b_345 :- encrypted_b_342, encrypted_b_343.
+encrypted_b_346 :- drawnchar_26_f3, \+key1_f3.
+encrypted_b_346 :- \+drawnchar_26_f3, key1_f3.
+encrypted_b_347 :- encrypted_b_345, \+encrypted_b_346.
+encrypted_b_347 :- \+encrypted_b_345, encrypted_b_346.
+encrypted_b_348 :- key1_f3, drawnchar_26_f3.
+encrypted_b_348 :- encrypted_b_345, encrypted_b_346.
+encrypted_b_349 :- drawnchar_26_f4, \+key1_f4.
+encrypted_b_349 :- \+drawnchar_26_f4, key1_f4.
+encrypted_b_350 :- encrypted_b_348, \+encrypted_b_349.
+encrypted_b_350 :- \+encrypted_b_348, encrypted_b_349.
+tmp_26 :- \+encrypted_b_338, encrypted_b_341, \+encrypted_b_344, \+encrypted_b_347, \+encrypted_b_350.
+obs_26 :- tmp_26.
+0.5::drawnchar_27_f4.
+0.5::drawnchar_27_f3.
+0.5::drawnchar_27_f2.
+0.5::drawnchar_27_f1.
+0.98::drawnchar_27_f0.
+0.5::drawnchar_27_f0_1.
+drawnchar_27_b0 :- \+drawnchar_27_f4, \+drawnchar_27_f3, \+drawnchar_27_f2, \+drawnchar_27_f1, drawnchar_27_f0.
+drawnchar_27_b0 :- \+drawnchar_27_f4, \+drawnchar_27_f3, \+drawnchar_27_f2, drawnchar_27_f1, drawnchar_27_f0_1.
+drawnchar_27_b0 :- \+drawnchar_27_f4, \+drawnchar_27_f3, drawnchar_27_f2, drawnchar_27_f0_1.
+drawnchar_27_b0 :- \+drawnchar_27_f4, drawnchar_27_f3, drawnchar_27_f0_1.
+drawnchar_27_b0 :- drawnchar_27_f4, drawnchar_27_f0_1.
+encrypted_b_351 :- drawnchar_27_b0, \+key1_f0.
+encrypted_b_351 :- \+drawnchar_27_b0, key1_f0.
+encrypted_b_352 :- key1_f0, drawnchar_27_b0.
+encrypted_b_353 :- drawnchar_27_f1, \+key1_f1.
+encrypted_b_353 :- \+drawnchar_27_f1, key1_f1.
+encrypted_b_354 :- encrypted_b_352, \+encrypted_b_353.
+encrypted_b_354 :- \+encrypted_b_352, encrypted_b_353.
+encrypted_b_355 :- key1_f1, drawnchar_27_f1.
+encrypted_b_355 :- encrypted_b_352, encrypted_b_353.
+encrypted_b_356 :- drawnchar_27_f2, \+key1_f2.
+encrypted_b_356 :- \+drawnchar_27_f2, key1_f2.
+encrypted_b_357 :- encrypted_b_355, \+encrypted_b_356.
+encrypted_b_357 :- \+encrypted_b_355, encrypted_b_356.
+encrypted_b_358 :- key1_f2, drawnchar_27_f2.
+encrypted_b_358 :- encrypted_b_355, encrypted_b_356.
+encrypted_b_359 :- drawnchar_27_f3, \+key1_f3.
+encrypted_b_359 :- \+drawnchar_27_f3, key1_f3.
+encrypted_b_360 :- encrypted_b_358, \+encrypted_b_359.
+encrypted_b_360 :- \+encrypted_b_358, encrypted_b_359.
+encrypted_b_361 :- key1_f3, drawnchar_27_f3.
+encrypted_b_361 :- encrypted_b_358, encrypted_b_359.
+encrypted_b_362 :- drawnchar_27_f4, \+key1_f4.
+encrypted_b_362 :- \+drawnchar_27_f4, key1_f4.
+encrypted_b_363 :- encrypted_b_361, \+encrypted_b_362.
+encrypted_b_363 :- \+encrypted_b_361, encrypted_b_362.
+tmp_27 :- \+encrypted_b_351, encrypted_b_354, \+encrypted_b_357, \+encrypted_b_360, \+encrypted_b_363.
+obs_27 :- tmp_27.
+0.5::drawnchar_28_f4.
+0.5::drawnchar_28_f3.
+0.5::drawnchar_28_f2.
+0.5::drawnchar_28_f1.
+0.98::drawnchar_28_f0.
+0.5::drawnchar_28_f0_1.
+drawnchar_28_b0 :- \+drawnchar_28_f4, \+drawnchar_28_f3, \+drawnchar_28_f2, \+drawnchar_28_f1, drawnchar_28_f0.
+drawnchar_28_b0 :- \+drawnchar_28_f4, \+drawnchar_28_f3, \+drawnchar_28_f2, drawnchar_28_f1, drawnchar_28_f0_1.
+drawnchar_28_b0 :- \+drawnchar_28_f4, \+drawnchar_28_f3, drawnchar_28_f2, drawnchar_28_f0_1.
+drawnchar_28_b0 :- \+drawnchar_28_f4, drawnchar_28_f3, drawnchar_28_f0_1.
+drawnchar_28_b0 :- drawnchar_28_f4, drawnchar_28_f0_1.
+encrypted_b_364 :- drawnchar_28_b0, \+key1_f0.
+encrypted_b_364 :- \+drawnchar_28_b0, key1_f0.
+encrypted_b_365 :- key1_f0, drawnchar_28_b0.
+encrypted_b_366 :- drawnchar_28_f1, \+key1_f1.
+encrypted_b_366 :- \+drawnchar_28_f1, key1_f1.
+encrypted_b_367 :- encrypted_b_365, \+encrypted_b_366.
+encrypted_b_367 :- \+encrypted_b_365, encrypted_b_366.
+encrypted_b_368 :- key1_f1, drawnchar_28_f1.
+encrypted_b_368 :- encrypted_b_365, encrypted_b_366.
+encrypted_b_369 :- drawnchar_28_f2, \+key1_f2.
+encrypted_b_369 :- \+drawnchar_28_f2, key1_f2.
+encrypted_b_370 :- encrypted_b_368, \+encrypted_b_369.
+encrypted_b_370 :- \+encrypted_b_368, encrypted_b_369.
+encrypted_b_371 :- key1_f2, drawnchar_28_f2.
+encrypted_b_371 :- encrypted_b_368, encrypted_b_369.
+encrypted_b_372 :- drawnchar_28_f3, \+key1_f3.
+encrypted_b_372 :- \+drawnchar_28_f3, key1_f3.
+encrypted_b_373 :- encrypted_b_371, \+encrypted_b_372.
+encrypted_b_373 :- \+encrypted_b_371, encrypted_b_372.
+encrypted_b_374 :- key1_f3, drawnchar_28_f3.
+encrypted_b_374 :- encrypted_b_371, encrypted_b_372.
+encrypted_b_375 :- drawnchar_28_f4, \+key1_f4.
+encrypted_b_375 :- \+drawnchar_28_f4, key1_f4.
+encrypted_b_376 :- encrypted_b_374, \+encrypted_b_375.
+encrypted_b_376 :- \+encrypted_b_374, encrypted_b_375.
+tmp_28 :- \+encrypted_b_364, encrypted_b_367, \+encrypted_b_370, \+encrypted_b_373, \+encrypted_b_376.
+obs_28 :- tmp_28.
+0.5::drawnchar_29_f4.
+0.5::drawnchar_29_f3.
+0.5::drawnchar_29_f2.
+0.5::drawnchar_29_f1.
+0.98::drawnchar_29_f0.
+0.5::drawnchar_29_f0_1.
+drawnchar_29_b0 :- \+drawnchar_29_f4, \+drawnchar_29_f3, \+drawnchar_29_f2, \+drawnchar_29_f1, drawnchar_29_f0.
+drawnchar_29_b0 :- \+drawnchar_29_f4, \+drawnchar_29_f3, \+drawnchar_29_f2, drawnchar_29_f1, drawnchar_29_f0_1.
+drawnchar_29_b0 :- \+drawnchar_29_f4, \+drawnchar_29_f3, drawnchar_29_f2, drawnchar_29_f0_1.
+drawnchar_29_b0 :- \+drawnchar_29_f4, drawnchar_29_f3, drawnchar_29_f0_1.
+drawnchar_29_b0 :- drawnchar_29_f4, drawnchar_29_f0_1.
+encrypted_b_377 :- drawnchar_29_b0, \+key1_f0.
+encrypted_b_377 :- \+drawnchar_29_b0, key1_f0.
+encrypted_b_378 :- key1_f0, drawnchar_29_b0.
+encrypted_b_379 :- drawnchar_29_f1, \+key1_f1.
+encrypted_b_379 :- \+drawnchar_29_f1, key1_f1.
+encrypted_b_380 :- encrypted_b_378, \+encrypted_b_379.
+encrypted_b_380 :- \+encrypted_b_378, encrypted_b_379.
+encrypted_b_381 :- key1_f1, drawnchar_29_f1.
+encrypted_b_381 :- encrypted_b_378, encrypted_b_379.
+encrypted_b_382 :- drawnchar_29_f2, \+key1_f2.
+encrypted_b_382 :- \+drawnchar_29_f2, key1_f2.
+encrypted_b_383 :- encrypted_b_381, \+encrypted_b_382.
+encrypted_b_383 :- \+encrypted_b_381, encrypted_b_382.
+encrypted_b_384 :- key1_f2, drawnchar_29_f2.
+encrypted_b_384 :- encrypted_b_381, encrypted_b_382.
+encrypted_b_385 :- drawnchar_29_f3, \+key1_f3.
+encrypted_b_385 :- \+drawnchar_29_f3, key1_f3.
+encrypted_b_386 :- encrypted_b_384, \+encrypted_b_385.
+encrypted_b_386 :- \+encrypted_b_384, encrypted_b_385.
+encrypted_b_387 :- key1_f3, drawnchar_29_f3.
+encrypted_b_387 :- encrypted_b_384, encrypted_b_385.
+encrypted_b_388 :- drawnchar_29_f4, \+key1_f4.
+encrypted_b_388 :- \+drawnchar_29_f4, key1_f4.
+encrypted_b_389 :- encrypted_b_387, \+encrypted_b_388.
+encrypted_b_389 :- \+encrypted_b_387, encrypted_b_388.
+tmp_29 :- \+encrypted_b_377, encrypted_b_380, \+encrypted_b_383, \+encrypted_b_386, \+encrypted_b_389.
+obs_29 :- tmp_29.
+0.5::drawnchar_30_f4.
+0.5::drawnchar_30_f3.
+0.5::drawnchar_30_f2.
+0.5::drawnchar_30_f1.
+0.98::drawnchar_30_f0.
+0.5::drawnchar_30_f0_1.
+drawnchar_30_b0 :- \+drawnchar_30_f4, \+drawnchar_30_f3, \+drawnchar_30_f2, \+drawnchar_30_f1, drawnchar_30_f0.
+drawnchar_30_b0 :- \+drawnchar_30_f4, \+drawnchar_30_f3, \+drawnchar_30_f2, drawnchar_30_f1, drawnchar_30_f0_1.
+drawnchar_30_b0 :- \+drawnchar_30_f4, \+drawnchar_30_f3, drawnchar_30_f2, drawnchar_30_f0_1.
+drawnchar_30_b0 :- \+drawnchar_30_f4, drawnchar_30_f3, drawnchar_30_f0_1.
+drawnchar_30_b0 :- drawnchar_30_f4, drawnchar_30_f0_1.
+encrypted_b_390 :- drawnchar_30_b0, \+key1_f0.
+encrypted_b_390 :- \+drawnchar_30_b0, key1_f0.
+encrypted_b_391 :- key1_f0, drawnchar_30_b0.
+encrypted_b_392 :- drawnchar_30_f1, \+key1_f1.
+encrypted_b_392 :- \+drawnchar_30_f1, key1_f1.
+encrypted_b_393 :- encrypted_b_391, \+encrypted_b_392.
+encrypted_b_393 :- \+encrypted_b_391, encrypted_b_392.
+encrypted_b_394 :- key1_f1, drawnchar_30_f1.
+encrypted_b_394 :- encrypted_b_391, encrypted_b_392.
+encrypted_b_395 :- drawnchar_30_f2, \+key1_f2.
+encrypted_b_395 :- \+drawnchar_30_f2, key1_f2.
+encrypted_b_396 :- encrypted_b_394, \+encrypted_b_395.
+encrypted_b_396 :- \+encrypted_b_394, encrypted_b_395.
+encrypted_b_397 :- key1_f2, drawnchar_30_f2.
+encrypted_b_397 :- encrypted_b_394, encrypted_b_395.
+encrypted_b_398 :- drawnchar_30_f3, \+key1_f3.
+encrypted_b_398 :- \+drawnchar_30_f3, key1_f3.
+encrypted_b_399 :- encrypted_b_397, \+encrypted_b_398.
+encrypted_b_399 :- \+encrypted_b_397, encrypted_b_398.
+encrypted_b_400 :- key1_f3, drawnchar_30_f3.
+encrypted_b_400 :- encrypted_b_397, encrypted_b_398.
+encrypted_b_401 :- drawnchar_30_f4, \+key1_f4.
+encrypted_b_401 :- \+drawnchar_30_f4, key1_f4.
+encrypted_b_402 :- encrypted_b_400, \+encrypted_b_401.
+encrypted_b_402 :- \+encrypted_b_400, encrypted_b_401.
+tmp_30 :- \+encrypted_b_390, encrypted_b_393, \+encrypted_b_396, \+encrypted_b_399, \+encrypted_b_402.
+obs_30 :- tmp_30.
+0.5::drawnchar_31_f4.
+0.5::drawnchar_31_f3.
+0.5::drawnchar_31_f2.
+0.5::drawnchar_31_f1.
+0.98::drawnchar_31_f0.
+0.5::drawnchar_31_f0_1.
+drawnchar_31_b0 :- \+drawnchar_31_f4, \+drawnchar_31_f3, \+drawnchar_31_f2, \+drawnchar_31_f1, drawnchar_31_f0.
+drawnchar_31_b0 :- \+drawnchar_31_f4, \+drawnchar_31_f3, \+drawnchar_31_f2, drawnchar_31_f1, drawnchar_31_f0_1.
+drawnchar_31_b0 :- \+drawnchar_31_f4, \+drawnchar_31_f3, drawnchar_31_f2, drawnchar_31_f0_1.
+drawnchar_31_b0 :- \+drawnchar_31_f4, drawnchar_31_f3, drawnchar_31_f0_1.
+drawnchar_31_b0 :- drawnchar_31_f4, drawnchar_31_f0_1.
+encrypted_b_403 :- drawnchar_31_b0, \+key1_f0.
+encrypted_b_403 :- \+drawnchar_31_b0, key1_f0.
+encrypted_b_404 :- key1_f0, drawnchar_31_b0.
+encrypted_b_405 :- drawnchar_31_f1, \+key1_f1.
+encrypted_b_405 :- \+drawnchar_31_f1, key1_f1.
+encrypted_b_406 :- encrypted_b_404, \+encrypted_b_405.
+encrypted_b_406 :- \+encrypted_b_404, encrypted_b_405.
+encrypted_b_407 :- key1_f1, drawnchar_31_f1.
+encrypted_b_407 :- encrypted_b_404, encrypted_b_405.
+encrypted_b_408 :- drawnchar_31_f2, \+key1_f2.
+encrypted_b_408 :- \+drawnchar_31_f2, key1_f2.
+encrypted_b_409 :- encrypted_b_407, \+encrypted_b_408.
+encrypted_b_409 :- \+encrypted_b_407, encrypted_b_408.
+encrypted_b_410 :- key1_f2, drawnchar_31_f2.
+encrypted_b_410 :- encrypted_b_407, encrypted_b_408.
+encrypted_b_411 :- drawnchar_31_f3, \+key1_f3.
+encrypted_b_411 :- \+drawnchar_31_f3, key1_f3.
+encrypted_b_412 :- encrypted_b_410, \+encrypted_b_411.
+encrypted_b_412 :- \+encrypted_b_410, encrypted_b_411.
+encrypted_b_413 :- key1_f3, drawnchar_31_f3.
+encrypted_b_413 :- encrypted_b_410, encrypted_b_411.
+encrypted_b_414 :- drawnchar_31_f4, \+key1_f4.
+encrypted_b_414 :- \+drawnchar_31_f4, key1_f4.
+encrypted_b_415 :- encrypted_b_413, \+encrypted_b_414.
+encrypted_b_415 :- \+encrypted_b_413, encrypted_b_414.
+tmp_31 :- \+encrypted_b_403, encrypted_b_406, \+encrypted_b_409, \+encrypted_b_412, \+encrypted_b_415.
+obs_31 :- tmp_31.
+0.5::drawnchar_32_f4.
+0.5::drawnchar_32_f3.
+0.5::drawnchar_32_f2.
+0.5::drawnchar_32_f1.
+0.98::drawnchar_32_f0.
+0.5::drawnchar_32_f0_1.
+drawnchar_32_b0 :- \+drawnchar_32_f4, \+drawnchar_32_f3, \+drawnchar_32_f2, \+drawnchar_32_f1, drawnchar_32_f0.
+drawnchar_32_b0 :- \+drawnchar_32_f4, \+drawnchar_32_f3, \+drawnchar_32_f2, drawnchar_32_f1, drawnchar_32_f0_1.
+drawnchar_32_b0 :- \+drawnchar_32_f4, \+drawnchar_32_f3, drawnchar_32_f2, drawnchar_32_f0_1.
+drawnchar_32_b0 :- \+drawnchar_32_f4, drawnchar_32_f3, drawnchar_32_f0_1.
+drawnchar_32_b0 :- drawnchar_32_f4, drawnchar_32_f0_1.
+encrypted_b_416 :- drawnchar_32_b0, \+key1_f0.
+encrypted_b_416 :- \+drawnchar_32_b0, key1_f0.
+encrypted_b_417 :- key1_f0, drawnchar_32_b0.
+encrypted_b_418 :- drawnchar_32_f1, \+key1_f1.
+encrypted_b_418 :- \+drawnchar_32_f1, key1_f1.
+encrypted_b_419 :- encrypted_b_417, \+encrypted_b_418.
+encrypted_b_419 :- \+encrypted_b_417, encrypted_b_418.
+encrypted_b_420 :- key1_f1, drawnchar_32_f1.
+encrypted_b_420 :- encrypted_b_417, encrypted_b_418.
+encrypted_b_421 :- drawnchar_32_f2, \+key1_f2.
+encrypted_b_421 :- \+drawnchar_32_f2, key1_f2.
+encrypted_b_422 :- encrypted_b_420, \+encrypted_b_421.
+encrypted_b_422 :- \+encrypted_b_420, encrypted_b_421.
+encrypted_b_423 :- key1_f2, drawnchar_32_f2.
+encrypted_b_423 :- encrypted_b_420, encrypted_b_421.
+encrypted_b_424 :- drawnchar_32_f3, \+key1_f3.
+encrypted_b_424 :- \+drawnchar_32_f3, key1_f3.
+encrypted_b_425 :- encrypted_b_423, \+encrypted_b_424.
+encrypted_b_425 :- \+encrypted_b_423, encrypted_b_424.
+encrypted_b_426 :- key1_f3, drawnchar_32_f3.
+encrypted_b_426 :- encrypted_b_423, encrypted_b_424.
+encrypted_b_427 :- drawnchar_32_f4, \+key1_f4.
+encrypted_b_427 :- \+drawnchar_32_f4, key1_f4.
+encrypted_b_428 :- encrypted_b_426, \+encrypted_b_427.
+encrypted_b_428 :- \+encrypted_b_426, encrypted_b_427.
+tmp_32 :- \+encrypted_b_416, encrypted_b_419, \+encrypted_b_422, \+encrypted_b_425, \+encrypted_b_428.
+obs_32 :- tmp_32.
+0.5::drawnchar_33_f4.
+0.5::drawnchar_33_f3.
+0.5::drawnchar_33_f2.
+0.5::drawnchar_33_f1.
+0.98::drawnchar_33_f0.
+0.5::drawnchar_33_f0_1.
+drawnchar_33_b0 :- \+drawnchar_33_f4, \+drawnchar_33_f3, \+drawnchar_33_f2, \+drawnchar_33_f1, drawnchar_33_f0.
+drawnchar_33_b0 :- \+drawnchar_33_f4, \+drawnchar_33_f3, \+drawnchar_33_f2, drawnchar_33_f1, drawnchar_33_f0_1.
+drawnchar_33_b0 :- \+drawnchar_33_f4, \+drawnchar_33_f3, drawnchar_33_f2, drawnchar_33_f0_1.
+drawnchar_33_b0 :- \+drawnchar_33_f4, drawnchar_33_f3, drawnchar_33_f0_1.
+drawnchar_33_b0 :- drawnchar_33_f4, drawnchar_33_f0_1.
+encrypted_b_429 :- drawnchar_33_b0, \+key1_f0.
+encrypted_b_429 :- \+drawnchar_33_b0, key1_f0.
+encrypted_b_430 :- key1_f0, drawnchar_33_b0.
+encrypted_b_431 :- drawnchar_33_f1, \+key1_f1.
+encrypted_b_431 :- \+drawnchar_33_f1, key1_f1.
+encrypted_b_432 :- encrypted_b_430, \+encrypted_b_431.
+encrypted_b_432 :- \+encrypted_b_430, encrypted_b_431.
+encrypted_b_433 :- key1_f1, drawnchar_33_f1.
+encrypted_b_433 :- encrypted_b_430, encrypted_b_431.
+encrypted_b_434 :- drawnchar_33_f2, \+key1_f2.
+encrypted_b_434 :- \+drawnchar_33_f2, key1_f2.
+encrypted_b_435 :- encrypted_b_433, \+encrypted_b_434.
+encrypted_b_435 :- \+encrypted_b_433, encrypted_b_434.
+encrypted_b_436 :- key1_f2, drawnchar_33_f2.
+encrypted_b_436 :- encrypted_b_433, encrypted_b_434.
+encrypted_b_437 :- drawnchar_33_f3, \+key1_f3.
+encrypted_b_437 :- \+drawnchar_33_f3, key1_f3.
+encrypted_b_438 :- encrypted_b_436, \+encrypted_b_437.
+encrypted_b_438 :- \+encrypted_b_436, encrypted_b_437.
+encrypted_b_439 :- key1_f3, drawnchar_33_f3.
+encrypted_b_439 :- encrypted_b_436, encrypted_b_437.
+encrypted_b_440 :- drawnchar_33_f4, \+key1_f4.
+encrypted_b_440 :- \+drawnchar_33_f4, key1_f4.
+encrypted_b_441 :- encrypted_b_439, \+encrypted_b_440.
+encrypted_b_441 :- \+encrypted_b_439, encrypted_b_440.
+tmp_33 :- \+encrypted_b_429, encrypted_b_432, \+encrypted_b_435, \+encrypted_b_438, \+encrypted_b_441.
+obs_33 :- tmp_33.
+0.5::drawnchar_34_f4.
+0.5::drawnchar_34_f3.
+0.5::drawnchar_34_f2.
+0.5::drawnchar_34_f1.
+0.98::drawnchar_34_f0.
+0.5::drawnchar_34_f0_1.

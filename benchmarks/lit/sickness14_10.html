@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sickness14_10 · tddlog results</title>
+<meta name="description" content="sickness14_10, an instance of Literature suite: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
+    <h1>sickness14_10</h1>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_sickness.py 14 10 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.01</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">5.9</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto sickness14_10.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf sickness14_10.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd sickness14_10.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd sickness14_10.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">sickness14_10.pl</code><span>2 730 bytes, 130 lines</span><span class="sha" title="SHA-256">sha256 72cc60e12d594bfcbef63dd10127ae9e2f8cfe83fbaa95e5885e1c61ec2ddb58</span></div><p class="made">Written by <code>gen_sickness.py 14 10 --seed 1</code> (bench.py gen).</p><pre>% sickness: 14 people, 10 steps, power-law friendships, evidence 0.33, seed 1
+0.2::cold(T) :- time(T).
+0.4::stay_sick(X,T) :- person(X), time(T).
+sick(X,T) :- person(X), cold(T).
+sick(X,T) :- friend(X,Y), sick(Y,T).
+sick(X,T) :- next(T0,T), sick(X,T0), stay_sick(X,T).
+person(p0).
+person(p1).
+person(p2).
+person(p3).
+person(p4).
+person(p5).
+person(p6).
+person(p7).
+person(p8).
+person(p9).
+person(p10).
+person(p11).
+person(p12).
+person(p13).
+friend(p0,p2).
+friend(p0,p6).
+friend(p0,p8).
+friend(p1,p0).
+friend(p1,p2).
+friend(p1,p3).
+friend(p1,p8).
+friend(p1,p9).
+friend(p2,p3).
+friend(p2,p5).
+friend(p2,p7).
+friend(p3,p4).
+friend(p3,p9).
+friend(p4,p1).
+friend(p5,p3).
+friend(p6,p5).
+friend(p6,p7).
+friend(p7,p10).
+friend(p7,p12).
+friend(p8,p11).
+friend(p10,p4).
+friend(p10,p11).
+friend(p12,p10).
+friend(p13,p2).
+friend(p13,p7).
+time(0).
+time(1).
+time(2).
+time(3).
+time(4).
+time(5).
+time(6).
+time(7).
+time(8).
+time(9).
+next(0,1).
+next(1,2).
+next(2,3).
+next(3,4).
+next(4,5).
+next(5,6).
+next(6,7).
+next(7,8).
+next(8,9).
+evidence(sick(p0,0),false).
+evidence(sick(p1,0),false).
+evidence(sick(p2,0),false).
+evidence(sick(p6,0),false).
+evidence(sick(p1,1),false).
+evidence(sick(p3,1),false).
+evidence(sick(p4,1),false).
+evidence(sick(p6,1),false).
+evidence(sick(p12,1),false).
+evidence(sick(p3,2),false).
+evidence(sick(p5,2),false).
+evidence(sick(p6,2),false).
+evidence(sick(p7,2),false).
+evidence(sick(p2,3),false).
+evidence(sick(p3,3),false).
+evidence(sick(p4,3),false).
+evidence(sick(p9,3),false).
+evidence(sick(p12,3),false).
+evidence(sick(p0,4),false).
+evidence(sick(p1,4),false).
+evidence(sick(p3,4),false).
+evidence(sick(p4,4),false).
+evidence(sick(p7,4),false).
+evidence(sick(p8,4),false).
+evidence(sick(p9,4),false).
+evidence(sick(p11,4),false).
+evidence(sick(p2,5),true).
+evidence(sick(p3,5),true).
+evidence(sick(p5,5),true).
+evidence(sick(p7,5),true).
+evidence(sick(p8,5),true).
+evidence(sick(p10,5),true).
+evidence(sick(p13,5),true).
+evidence(sick(p0,6),true).
+evidence(sick(p4,6),true).
+evidence(sick(p5,6),true).
+evidence(sick(p11,6),true).
+evidence(sick(p13,6),true).
+evidence(sick(p0,7),true).
+evidence(sick(p1,7),true).
+evidence(sick(p2,7),true).
+evidence(sick(p9,7),true).
+evidence(sick(p10,7),true).
+evidence(sick(p11,7),false).
+evidence(sick(p0,8),true).
+evidence(sick(p5,8),true).
+evidence(sick(p6,8),true).
+evidence(sick(p7,8),true).
+evidence(sick(p8,8),false).
+evidence(sick(p10,8),true).
+evidence(sick(p11,8),false).
+evidence(sick(p13,8),true).
+query(sick(p0,9)).
+query(sick(p1,9)).
+query(sick(p2,9)).
+query(sick(p3,9)).
+query(sick(p4,9)).
+query(sick(p5,9)).
+query(sick(p6,9)).
+query(sick(p7,9)).
+query(sick(p8,9)).
+query(sick(p9,9)).
+query(sick(p10,9)).
+query(sick(p11,9)).
+query(sick(p12,9)).
+query(sick(p13,9)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;sickness14_10.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">sickness14_10.lpad.pl</code><span>13 015 bytes, 83 lines</span><span class="sha" title="SHA-256">sha256 46fdfa647ab858fe8a8c4b7552467a4b2862b75543c812691c1da8c8578d7947</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>sickness14_10.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+:- table sick/2.
+cold(T):0.2 :- time(T).
+stay_sick(X,T):0.4 :- person(X), time(T).
+sick(X,T) :- person(X), cold(T).
+sick(X,T) :- friend(X,Y), sick(Y,T).
+sick(X,T) :- next(T0,T), sick(X,T0), stay_sick(X,T).
+person(p0).
+person(p1).
+person(p2).
+person(p3).
+person(p4).
+person(p5).
+person(p6).
+person(p7).
+person(p8).
+person(p9).
+person(p10).
+person(p11).
+person(p12).
+person(p13).
+friend(p0,p2).
+friend(p0,p6).
+friend(p0,p8).
+friend(p1,p0).
+friend(p1,p2).
+friend(p1,p3).
+friend(p1,p8).
+friend(p1,p9).
+friend(p2,p3).
+friend(p2,p5).
+friend(p2,p7).
+friend(p3,p4).
+friend(p3,p9).
+friend(p4,p1).
+friend(p5,p3).
+friend(p6,p5).
+friend(p6,p7).
+friend(p7,p10).
+friend(p7,p12).
+friend(p8,p11).
+friend(p10,p4).
+friend(p10,p11).
+friend(p12,p10).
+friend(p13,p2).
+friend(p13,p7).
+time(0).
+time(1).
+time(2).
+time(3).
+time(4).
+time(5).
+time(6).
+time(7).
+time(8).
+time(9).
+next(0,1).
+next(1,2).
+next(2,3).
+next(3,4).
+next(4,5).
+next(5,6).
+next(6,7).
+next(7,8).
+next(8,9).
+:- end_lpad.
+main :-
+    forall((Q = sick(p0,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p1,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p2,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p3,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p4,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p5,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p6,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p7,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p8,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p9,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p10,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p11,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p12,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = sick(p13,9)), (prob(Q, (\+ (sick(p0,0)), \+ (sick(p1,0)), \+ (sick(p2,0)), \+ (sick(p6,0)), \+ (sick(p1,1)), \+ (sick(p3,1)), \+ (sick(p4,1)), \+ (sick(p6,1)), \+ (sick(p12,1)), \+ (sick(p3,2)), \+ (sick(p5,2)), \+ (sick(p6,2)), \+ (sick(p7,2)), \+ (sick(p2,3)), \+ (sick(p3,3)), \+ (sick(p4,3)), \+ (sick(p9,3)), \+ (sick(p12,3)), \+ (sick(p0,4)), \+ (sick(p1,4)), \+ (sick(p3,4)), \+ (sick(p4,4)), \+ (sick(p7,4)), \+ (sick(p8,4)), \+ (sick(p9,4)), \+ (sick(p11,4)), sick(p2,5), sick(p3,5), sick(p5,5), sick(p7,5), sick(p8,5), sick(p10,5), sick(p13,5), sick(p0,6), sick(p4,6), sick(p5,6), sick(p11,6), sick(p13,6), sick(p0,7), sick(p1,7), sick(p2,7), sick(p9,7), sick(p10,7), \+ (sick(p11,7)), sick(p0,8), sick(p5,8), sick(p6,8), sick(p7,8), \+ (sick(p8,8)), sick(p10,8), \+ (sick(p11,8)), sick(p13,8)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.01</td><td>1.8e-15 at most</td><td>largest formula, pairs 506; final formula, pairs 30; variables 102; ground atoms 221; ground rules 266; vtree families:0 (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>5.9</td><td>4.3e-14 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">PITA</th></tr></thead><tbody><tr><th>sick(p0,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p1,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p2,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p3,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p4,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p5,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p6,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p7,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p8,9)</th><td class="num">0.2</td><td class="num">0.2</td><td class="num">0.2</td></tr><tr><th>sick(p9,9)</th><td class="num">0.3284660711</td><td class="num">0.3284660711</td><td class="num">0.3284660711</td></tr><tr><th>sick(p10,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p11,9)</th><td class="num">0.2</td><td class="num">0.2</td><td class="num">0.2</td></tr><tr><th>sick(p12,9)</th><td class="num">0.9959394911</td><td class="num">0.9959394911</td><td class="num">0.9959394911</td></tr><tr><th>sick(p13,9)</th><td class="num">0.9975636947</td><td class="num">0.9975636947</td><td class="num">0.9975636947</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>

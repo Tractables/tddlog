@@ -1,0 +1,465 @@
+# dice_pmc2_k20.dice, translated by tddlog's scripts/dice2alea.py.
+module AleaProgram
+using Alea
+# Julia would spend more time optimizing the long straight-line functions
+# below than running them takes: they are interpreted, and Alea's own
+# methods compile as usual.
+Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+
+const EV = Ref{AnyBool}(true)
+observe!(path, c) = (EV[] = EV[] & (!path | c); true)
+
+function shr(x::DistUInt{W}, n::Integer) where W
+    k = min(n, W)
+    DistUInt{W}(vcat(fill(false, k), x.bits[1:W - k]))
+end
+
+components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
+components(x) = Any[x]
+width(::DistUInt{W}) where W = W
+
+function warmup()
+    a = flip(0.7)
+    x = discrete(DistUInt{2}, [0.1, 0.2, 0.3, 0.4])
+    y = uniform(DistUInt{3}, 1, 6)
+    z = ifelse(a, x + DistUInt{2}(1), x - DistUInt{2}(1))
+    t = ifelse(flip(0.4), (a, z), (!a, x * x))
+    e = prob_equals(z, DistUInt{2}(2)) | (x < z) | xor(a, flip(0.2))
+    pr(flip(0.7))
+    pr(a, z, y, t...; evidence = e)
+    nothing
+end
+
+function d_min(x1_path, x2_a, x3_b)
+    x4_min = (x2_a < x3_b)
+    x5_min = x4_min === true ? x2_a : x4_min === false ? x3_b : ifelse(x4_min, x2_a, x3_b)
+    return x5_min
+end
+
+function d_step(x6_path, x7_packedstate)
+    x8_b = x7_packedstate[1]
+    x9_n = x7_packedstate[2][1]
+    x10_phase = x7_packedstate[2][2][1]
+    x11_party = x7_packedstate[2][2][2][1]
+    x12_b0 = x7_packedstate[2][2][2][2][1]
+    x13_b20 = x7_packedstate[2][2][2][2][2][1]
+    x14_b1 = x7_packedstate[2][2][2][2][2][2][1]
+    x15_b21 = x7_packedstate[2][2][2][2][2][2][2][1]
+    x16_b2 = x7_packedstate[2][2][2][2][2][2][2][2][1]
+    x17_b22 = x7_packedstate[2][2][2][2][2][2][2][2][2][1]
+    x18_b3 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][1]
+    x19_b23 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][1]
+    x20_b4 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x21_b24 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x22_a0 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x23_a20 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x24_a1 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x25_a21 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x26_a2 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x27_a22 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x28_a3 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x29_a23 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x30_a4 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x31_a24 = x7_packedstate[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2]
+    x32_knowB = (((((prob_equals(x22_a0, DistUInt{5}(2)) & prob_equals(x23_a20, DistUInt{5}(2))) | (prob_equals(x24_a1, DistUInt{5}(2)) & prob_equals(x25_a21, DistUInt{5}(2)))) | (prob_equals(x26_a2, DistUInt{5}(2)) & prob_equals(x27_a22, DistUInt{5}(2)))) | (prob_equals(x28_a3, DistUInt{5}(2)) & prob_equals(x29_a23, DistUInt{5}(2)))) | (prob_equals(x30_a4, DistUInt{5}(2)) & prob_equals(x31_a24, DistUInt{5}(2))))
+    x33_knowA = (((((prob_equals(x12_b0, DistUInt{5}(2)) & prob_equals(x13_b20, DistUInt{5}(2))) | (prob_equals(x14_b1, DistUInt{5}(2)) & prob_equals(x15_b21, DistUInt{5}(2)))) | (prob_equals(x16_b2, DistUInt{5}(2)) & prob_equals(x17_b22, DistUInt{5}(2)))) | (prob_equals(x18_b3, DistUInt{5}(2)) & prob_equals(x19_b23, DistUInt{5}(2)))) | (prob_equals(x20_b4, DistUInt{5}(2)) & prob_equals(x21_b24, DistUInt{5}(2))))
+    x34_step = (!(x32_knowB) & x33_knowA)
+    if x34_step !== false
+     x35_step = (x8_b, (x9_n, (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+    end
+    if x34_step !== true
+     x36_step = prob_equals(x10_phase, DistUInt{5}(4))
+     if x36_step !== false
+      x37_step = (x8_b, (x9_n, (DistUInt{5}(4), (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+     end
+     if x36_step !== true
+      x38_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & (x9_n < DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(3))) & (prob_equals(x9_n, DistUInt{5}(3)) & (x9_n > DistUInt{5}(0)))))
+      if x38_step !== false
+       x39_step = d_min(true, (x29_a23 + DistUInt{5}(1)), DistUInt{5}(2))
+       x40_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x39_step, (x30_a4, x31_a24)))))))))))))))))))))))
+      end
+      if x38_step !== true
+       x41_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & (x9_n < DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(2))) & (prob_equals(x9_n, DistUInt{5}(2)) & (x9_n > DistUInt{5}(0)))))
+       if x41_step !== false
+        x42_step = d_min(true, (x26_a2 + DistUInt{5}(1)), DistUInt{5}(2))
+        x43_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x42_step, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+       end
+       if x41_step !== true
+        x44_step = (((prob_equals(x9_n, DistUInt{5}(0)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & prob_equals(x9_n, DistUInt{5}(0)))) & (prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(2))))
+        if x44_step !== false
+         x45_step = d_min(true, (x22_a0 + DistUInt{5}(1)), DistUInt{5}(2))
+         x46_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x45_step, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+        end
+        if x44_step !== true
+         x47_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & (x9_n < DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(2))) & (prob_equals(x9_n, DistUInt{5}(1)) & (x9_n > DistUInt{5}(0)))))
+         if x47_step !== false
+          x48_step = d_min(true, (x24_a1 + DistUInt{5}(1)), DistUInt{5}(2))
+          x49_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x48_step, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+         end
+         if x47_step !== true
+          x50_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & (x9_n < DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(3))) & (prob_equals(x9_n, DistUInt{5}(2)) & (x9_n > DistUInt{5}(0)))))
+          if x50_step !== false
+           x51_step = d_min(true, (x27_a22 + DistUInt{5}(1)), DistUInt{5}(2))
+           x52_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x51_step, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+          end
+          if x50_step !== true
+           x53_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & (x9_n < DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(2))) & (prob_equals(x9_n, DistUInt{5}(3)) & (x9_n > DistUInt{5}(0)))))
+           if x53_step !== false
+            x54_step = d_min(true, (x28_a3 + DistUInt{5}(1)), DistUInt{5}(2))
+            x55_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x54_step, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+           end
+           if x53_step !== true
+            x56_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & (x9_n < DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(3))) & (prob_equals(x9_n, DistUInt{5}(1)) & (x9_n > DistUInt{5}(0)))))
+            if x56_step !== false
+             x57_step = d_min(true, (x25_a21 + DistUInt{5}(1)), DistUInt{5}(2))
+             x58_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x57_step, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+            end
+            if x56_step !== true
+             x59_step = ((prob_equals(x9_n, DistUInt{5}(1)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+             if x59_step !== false
+              x60_step = flip(0.5)
+              if x60_step !== false
+               x61_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (DistUInt{5}(2), (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+              end
+              if x60_step !== true
+               x62_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (DistUInt{5}(2), (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+              end
+              x63_step = x60_step === true ? x61_step : x60_step === false ? x62_step : ifelse(x60_step, x61_step, x62_step)
+             end
+             if x59_step !== true
+              x64_step = ((prob_equals(x9_n, DistUInt{5}(4)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+              if x64_step !== false
+               x65_step = flip(0.5)
+               if x65_step !== false
+                x66_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (DistUInt{5}(2), x31_a24)))))))))))))))))))))))
+               end
+               if x65_step !== true
+                x67_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, DistUInt{5}(2))))))))))))))))))))))))
+               end
+               x68_step = x65_step === true ? x66_step : x65_step === false ? x67_step : ifelse(x65_step, x66_step, x67_step)
+              end
+              if x64_step !== true
+               x69_step = ((prob_equals(x9_n, DistUInt{5}(3)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+               if x69_step !== false
+                x70_step = flip(0.5)
+                if x70_step !== false
+                 x71_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (DistUInt{5}(2), (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                end
+                if x70_step !== true
+                 x72_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (DistUInt{5}(2), (x30_a4, x31_a24)))))))))))))))))))))))
+                end
+                x73_step = x70_step === true ? x71_step : x70_step === false ? x72_step : ifelse(x70_step, x71_step, x72_step)
+               end
+               if x69_step !== true
+                x74_step = ((prob_equals(x9_n, DistUInt{5}(0)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                if x74_step !== false
+                 x75_step = flip(0.5)
+                 if x75_step !== false
+                  x76_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (DistUInt{5}(2), (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                 end
+                 if x75_step !== true
+                  x77_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (DistUInt{5}(2), (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                 end
+                 x78_step = x75_step === true ? x76_step : x75_step === false ? x77_step : ifelse(x75_step, x76_step, x77_step)
+                end
+                if x74_step !== true
+                 x79_step = ((prob_equals(x9_n, DistUInt{5}(2)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                 if x79_step !== false
+                  x80_step = flip(0.5)
+                  if x80_step !== false
+                   x81_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (DistUInt{5}(2), (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                  end
+                  if x80_step !== true
+                   x82_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (DistUInt{5}(2), (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                  end
+                  x83_step = x80_step === true ? x81_step : x80_step === false ? x82_step : ifelse(x80_step, x81_step, x82_step)
+                 end
+                 if x79_step !== true
+                  x84_step = (((prob_equals(x9_n, DistUInt{5}(0)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & prob_equals(x9_n, DistUInt{5}(0)))) & (prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                  if x84_step !== false
+                   x85_step = d_min(true, (x23_a20 + DistUInt{5}(1)), DistUInt{5}(2))
+                   x86_step = (x8_b, (x9_n, (x10_phase, (DistUInt{5}(2), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x85_step, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                  end
+                  if x84_step !== true
+                   x87_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & prob_equals(x9_n, DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(2))) & (prob_equals(x9_n, DistUInt{5}(4)) & (x8_b < DistUInt{5}(2)))))
+                   if x87_step !== false
+                    x88_step = d_min(true, (x30_a4 + DistUInt{5}(1)), DistUInt{5}(2))
+                    x89_step = ((x8_b + DistUInt{5}(1)), (DistUInt{5}(0), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x88_step, x31_a24)))))))))))))))))))))))
+                   end
+                   if x87_step !== true
+                    x90_step = ((((x10_phase >= DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & prob_equals(x9_n, DistUInt{5}(4))) & ((prob_equals(x11_party, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(3))) & (prob_equals(x9_n, DistUInt{5}(4)) & (x8_b < DistUInt{5}(2)))))
+                    if x90_step !== false
+                     x91_step = d_min(true, (x31_a24 + DistUInt{5}(1)), DistUInt{5}(2))
+                     x92_step = ((x8_b + DistUInt{5}(1)), (DistUInt{5}(0), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x91_step)))))))))))))))))))))))
+                    end
+                    if x90_step !== true
+                     x93_step = (((prob_equals(x9_n, DistUInt{5}(4)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(2)) & prob_equals(x8_b, DistUInt{5}(2)))) & (prob_equals(x9_n, DistUInt{5}(4)) & prob_equals(x10_phase, DistUInt{5}(2))))
+                     if x93_step !== false
+                      x94_step = d_min(true, (x30_a4 + DistUInt{5}(1)), DistUInt{5}(2))
+                      x95_step = (DistUInt{5}(1), (DistUInt{5}(0), (DistUInt{5}(3), (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x94_step, x31_a24)))))))))))))))))))))))
+                     end
+                     if x93_step !== true
+                      x96_step = (((prob_equals(x9_n, DistUInt{5}(4)) & prob_equals(x11_party, DistUInt{5}(1))) & (prob_equals(x10_phase, DistUInt{5}(3)) & prob_equals(x8_b, DistUInt{5}(2)))) & (prob_equals(x9_n, DistUInt{5}(4)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                      if x96_step !== false
+                       x97_step = d_min(true, (x31_a24 + DistUInt{5}(1)), DistUInt{5}(2))
+                       x98_step = (x8_b, (x9_n, (DistUInt{5}(4), (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x97_step)))))))))))))))))))))))
+                      end
+                      if x96_step !== true
+                       x99_step = (((prob_equals(x9_n, DistUInt{5}(3)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                       if x99_step !== false
+                        x100_step = d_min(true, (x19_b23 + DistUInt{5}(1)), DistUInt{5}(2))
+                        x101_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x100_step, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                       end
+                       if x99_step !== true
+                        x102_step = (((prob_equals(x9_n, DistUInt{5}(1)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(2))))
+                        if x102_step !== false
+                         x103_step = d_min(true, (x14_b1 + DistUInt{5}(1)), DistUInt{5}(2))
+                         x104_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x103_step, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                        end
+                        if x102_step !== true
+                         x105_step = (((prob_equals(x9_n, DistUInt{5}(4)) & prob_equals(x11_party, DistUInt{5}(2))) & prob_equals(x9_n, DistUInt{5}(4))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                         if x105_step !== false
+                          x106_step = flip(0.5)
+                          if x106_step !== false
+                           x107_step = (x8_b, (DistUInt{5}(0), (DistUInt{5}(2), (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (DistUInt{5}(2), (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                          end
+                          if x106_step !== true
+                           x108_step = (x8_b, (DistUInt{5}(0), (DistUInt{5}(2), (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (DistUInt{5}(2), (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                          end
+                          x109_step = x106_step === true ? x107_step : x106_step === false ? x108_step : ifelse(x106_step, x107_step, x108_step)
+                         end
+                         if x105_step !== true
+                          x110_step = (((prob_equals(x9_n, DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                          if x110_step !== false
+                           x111_step = d_min(true, (x17_b22 + DistUInt{5}(1)), DistUInt{5}(2))
+                           x112_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x111_step, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                          end
+                          if x110_step !== true
+                           x113_step = (((prob_equals(x9_n, DistUInt{5}(1)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                           if x113_step !== false
+                            x114_step = d_min(true, (x15_b21 + DistUInt{5}(1)), DistUInt{5}(2))
+                            x115_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x114_step, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                           end
+                           if x113_step !== true
+                            x116_step = (((prob_equals(x9_n, DistUInt{5}(0)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                            if x116_step !== false
+                             x117_step = d_min(true, (x13_b20 + DistUInt{5}(1)), DistUInt{5}(2))
+                             x118_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x117_step, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                            end
+                            if x116_step !== true
+                             x119_step = (((prob_equals(x9_n, DistUInt{5}(0)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(2))))
+                             if x119_step !== false
+                              x120_step = d_min(true, (x12_b0 + DistUInt{5}(1)), DistUInt{5}(2))
+                              x121_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x120_step, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                             end
+                             if x119_step !== true
+                              x122_step = (((prob_equals(x9_n, DistUInt{5}(2)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(2))))
+                              if x122_step !== false
+                               x123_step = d_min(true, (x16_b2 + DistUInt{5}(1)), DistUInt{5}(2))
+                               x124_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x123_step, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                              end
+                              if x122_step !== true
+                               x125_step = (((prob_equals(x9_n, DistUInt{5}(3)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & (x9_n < DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(2))))
+                               if x125_step !== false
+                                x126_step = d_min(true, (x18_b3 + DistUInt{5}(1)), DistUInt{5}(2))
+                                x127_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x126_step, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                               end
+                               if x125_step !== true
+                                x128_step = (((prob_equals(x9_n, DistUInt{5}(1)) & prob_equals(x11_party, DistUInt{5}(2))) & (x9_n < DistUInt{5}(4))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                                if x128_step !== false
+                                 x129_step = flip(0.5)
+                                 if x129_step !== false
+                                  x130_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (DistUInt{5}(2), (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                 end
+                                 if x129_step !== true
+                                  x131_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (DistUInt{5}(2), (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                 end
+                                 x132_step = x129_step === true ? x130_step : x129_step === false ? x131_step : ifelse(x129_step, x130_step, x131_step)
+                                end
+                                if x128_step !== true
+                                 x133_step = (((prob_equals(x9_n, DistUInt{5}(3)) & prob_equals(x11_party, DistUInt{5}(2))) & (x9_n < DistUInt{5}(4))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                                 if x133_step !== false
+                                  x134_step = flip(0.5)
+                                  if x134_step !== false
+                                   x135_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (DistUInt{5}(2), (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                  end
+                                  if x134_step !== true
+                                   x136_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (DistUInt{5}(2), (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                  end
+                                  x137_step = x134_step === true ? x135_step : x134_step === false ? x136_step : ifelse(x134_step, x135_step, x136_step)
+                                 end
+                                 if x133_step !== true
+                                  x138_step = (((prob_equals(x9_n, DistUInt{5}(2)) & prob_equals(x11_party, DistUInt{5}(2))) & (x9_n < DistUInt{5}(4))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                                  if x138_step !== false
+                                   x139_step = flip(0.5)
+                                   if x139_step !== false
+                                    x140_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (DistUInt{5}(2), (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                   end
+                                   if x139_step !== true
+                                    x141_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (DistUInt{5}(2), (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                   end
+                                   x142_step = x139_step === true ? x140_step : x139_step === false ? x141_step : ifelse(x139_step, x140_step, x141_step)
+                                  end
+                                  if x138_step !== true
+                                   x143_step = (((prob_equals(x9_n, DistUInt{5}(0)) & prob_equals(x11_party, DistUInt{5}(2))) & (x9_n < DistUInt{5}(4))) & (prob_equals(x10_phase, DistUInt{5}(1)) & prob_equals(x10_phase, DistUInt{5}(1))))
+                                   if x143_step !== false
+                                    x144_step = flip(0.5)
+                                    if x144_step !== false
+                                     x145_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (DistUInt{5}(2), (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                    end
+                                    if x144_step !== true
+                                     x146_step = (x8_b, ((x9_n + DistUInt{5}(1)), (x10_phase, (DistUInt{5}(1), (x12_b0, (DistUInt{5}(2), (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                    end
+                                    x147_step = x144_step === true ? x145_step : x144_step === false ? x146_step : ifelse(x144_step, x145_step, x146_step)
+                                   end
+                                   if x143_step !== true
+                                    x148_step = (((prob_equals(x9_n, DistUInt{5}(4)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & prob_equals(x9_n, DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(2))))
+                                    if x148_step !== false
+                                     x149_step = d_min(true, (x20_b4 + DistUInt{5}(1)), DistUInt{5}(2))
+                                     x150_step = (x8_b, (DistUInt{5}(1), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x149_step, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                    end
+                                    if x148_step !== true
+                                     x151_step = (((prob_equals(x9_n, DistUInt{5}(4)) & (x10_phase <= DistUInt{5}(3))) & ((x10_phase >= DistUInt{5}(2)) & prob_equals(x9_n, DistUInt{5}(4)))) & (prob_equals(x11_party, DistUInt{5}(2)) & prob_equals(x10_phase, DistUInt{5}(3))))
+                                     if x151_step !== false
+                                      x152_step = d_min(true, (x21_b24 + DistUInt{5}(1)), DistUInt{5}(2))
+                                      x153_step = (x8_b, (DistUInt{5}(1), (x10_phase, (DistUInt{5}(1), (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x152_step, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                     end
+                                     if x151_step !== true
+                                      x154_step = (x8_b, (x9_n, (x10_phase, (x11_party, (x12_b0, (x13_b20, (x14_b1, (x15_b21, (x16_b2, (x17_b22, (x18_b3, (x19_b23, (x20_b4, (x21_b24, (x22_a0, (x23_a20, (x24_a1, (x25_a21, (x26_a2, (x27_a22, (x28_a3, (x29_a23, (x30_a4, x31_a24)))))))))))))))))))))))
+                                     end
+                                     x155_step = x151_step === true ? x153_step : x151_step === false ? x154_step : ifelse(x151_step, x153_step, x154_step)
+                                    end
+                                    x156_step = x148_step === true ? x150_step : x148_step === false ? x155_step : ifelse(x148_step, x150_step, x155_step)
+                                   end
+                                   x157_step = x143_step === true ? x147_step : x143_step === false ? x156_step : ifelse(x143_step, x147_step, x156_step)
+                                  end
+                                  x158_step = x138_step === true ? x142_step : x138_step === false ? x157_step : ifelse(x138_step, x142_step, x157_step)
+                                 end
+                                 x159_step = x133_step === true ? x137_step : x133_step === false ? x158_step : ifelse(x133_step, x137_step, x158_step)
+                                end
+                                x160_step = x128_step === true ? x132_step : x128_step === false ? x159_step : ifelse(x128_step, x132_step, x159_step)
+                               end
+                               x161_step = x125_step === true ? x127_step : x125_step === false ? x160_step : ifelse(x125_step, x127_step, x160_step)
+                              end
+                              x162_step = x122_step === true ? x124_step : x122_step === false ? x161_step : ifelse(x122_step, x124_step, x161_step)
+                             end
+                             x163_step = x119_step === true ? x121_step : x119_step === false ? x162_step : ifelse(x119_step, x121_step, x162_step)
+                            end
+                            x164_step = x116_step === true ? x118_step : x116_step === false ? x163_step : ifelse(x116_step, x118_step, x163_step)
+                           end
+                           x165_step = x113_step === true ? x115_step : x113_step === false ? x164_step : ifelse(x113_step, x115_step, x164_step)
+                          end
+                          x166_step = x110_step === true ? x112_step : x110_step === false ? x165_step : ifelse(x110_step, x112_step, x165_step)
+                         end
+                         x167_step = x105_step === true ? x109_step : x105_step === false ? x166_step : ifelse(x105_step, x109_step, x166_step)
+                        end
+                        x168_step = x102_step === true ? x104_step : x102_step === false ? x167_step : ifelse(x102_step, x104_step, x167_step)
+                       end
+                       x169_step = x99_step === true ? x101_step : x99_step === false ? x168_step : ifelse(x99_step, x101_step, x168_step)
+                      end
+                      x170_step = x96_step === true ? x98_step : x96_step === false ? x169_step : ifelse(x96_step, x98_step, x169_step)
+                     end
+                     x171_step = x93_step === true ? x95_step : x93_step === false ? x170_step : ifelse(x93_step, x95_step, x170_step)
+                    end
+                    x172_step = x90_step === true ? x92_step : x90_step === false ? x171_step : ifelse(x90_step, x92_step, x171_step)
+                   end
+                   x173_step = x87_step === true ? x89_step : x87_step === false ? x172_step : ifelse(x87_step, x89_step, x172_step)
+                  end
+                  x174_step = x84_step === true ? x86_step : x84_step === false ? x173_step : ifelse(x84_step, x86_step, x173_step)
+                 end
+                 x175_step = x79_step === true ? x83_step : x79_step === false ? x174_step : ifelse(x79_step, x83_step, x174_step)
+                end
+                x176_step = x74_step === true ? x78_step : x74_step === false ? x175_step : ifelse(x74_step, x78_step, x175_step)
+               end
+               x177_step = x69_step === true ? x73_step : x69_step === false ? x176_step : ifelse(x69_step, x73_step, x176_step)
+              end
+              x178_step = x64_step === true ? x68_step : x64_step === false ? x177_step : ifelse(x64_step, x68_step, x177_step)
+             end
+             x179_step = x59_step === true ? x63_step : x59_step === false ? x178_step : ifelse(x59_step, x63_step, x178_step)
+            end
+            x180_step = x56_step === true ? x58_step : x56_step === false ? x179_step : ifelse(x56_step, x58_step, x179_step)
+           end
+           x181_step = x53_step === true ? x55_step : x53_step === false ? x180_step : ifelse(x53_step, x55_step, x180_step)
+          end
+          x182_step = x50_step === true ? x52_step : x50_step === false ? x181_step : ifelse(x50_step, x52_step, x181_step)
+         end
+         x183_step = x47_step === true ? x49_step : x47_step === false ? x182_step : ifelse(x47_step, x49_step, x182_step)
+        end
+        x184_step = x44_step === true ? x46_step : x44_step === false ? x183_step : ifelse(x44_step, x46_step, x183_step)
+       end
+       x185_step = x41_step === true ? x43_step : x41_step === false ? x184_step : ifelse(x41_step, x43_step, x184_step)
+      end
+      x186_step = x38_step === true ? x40_step : x38_step === false ? x185_step : ifelse(x38_step, x40_step, x185_step)
+     end
+     x187_step = x36_step === true ? x37_step : x36_step === false ? x186_step : ifelse(x36_step, x37_step, x186_step)
+    end
+    x188_step = x34_step === true ? x35_step : x34_step === false ? x187_step : ifelse(x34_step, x35_step, x187_step)
+    return x188_step
+end
+
+function dice_main()
+    x189_res = (DistUInt{5}(1), (DistUInt{5}(0), (DistUInt{5}(1), (DistUInt{5}(1), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), (DistUInt{5}(0), DistUInt{5}(0))))))))))))))))))))))))
+    for _ in 1:20
+     x189_res = d_step(true, x189_res)
+    end
+    x190_b = x189_res[1]
+    x191_n = x189_res[2][1]
+    x192_phase = x189_res[2][2][1]
+    x193_party = x189_res[2][2][2][1]
+    x194_b0 = x189_res[2][2][2][2][1]
+    x195_b20 = x189_res[2][2][2][2][2][1]
+    x196_b1 = x189_res[2][2][2][2][2][2][1]
+    x197_b21 = x189_res[2][2][2][2][2][2][2][1]
+    x198_b2 = x189_res[2][2][2][2][2][2][2][2][1]
+    x199_b22 = x189_res[2][2][2][2][2][2][2][2][2][1]
+    x200_b3 = x189_res[2][2][2][2][2][2][2][2][2][2][1]
+    x201_b23 = x189_res[2][2][2][2][2][2][2][2][2][2][2][1]
+    x202_b4 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x203_b24 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x204_a0 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x205_a20 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x206_a1 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x207_a21 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x208_a2 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x209_a22 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x210_a3 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x211_a23 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x212_a4 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][1]
+    x213_a24 = x189_res[2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2][2]
+    x214_knowB = (((((prob_equals(x204_a0, DistUInt{5}(2)) & prob_equals(x205_a20, DistUInt{5}(2))) | (prob_equals(x206_a1, DistUInt{5}(2)) & prob_equals(x207_a21, DistUInt{5}(2)))) | (prob_equals(x208_a2, DistUInt{5}(2)) & prob_equals(x209_a22, DistUInt{5}(2)))) | (prob_equals(x210_a3, DistUInt{5}(2)) & prob_equals(x211_a23, DistUInt{5}(2)))) | (prob_equals(x212_a4, DistUInt{5}(2)) & prob_equals(x213_a24, DistUInt{5}(2))))
+    x215_knowA = (((((prob_equals(x194_b0, DistUInt{5}(2)) & prob_equals(x195_b20, DistUInt{5}(2))) | (prob_equals(x196_b1, DistUInt{5}(2)) & prob_equals(x197_b21, DistUInt{5}(2)))) | (prob_equals(x198_b2, DistUInt{5}(2)) & prob_equals(x199_b22, DistUInt{5}(2)))) | (prob_equals(x200_b3, DistUInt{5}(2)) & prob_equals(x201_b23, DistUInt{5}(2)))) | (prob_equals(x202_b4, DistUInt{5}(2)) & prob_equals(x203_b24, DistUInt{5}(2))))
+    x216_result = (!(x214_knowB) & x215_knowA)
+    return x216_result
+end
+
+function report(k, x, d)
+    if x isa AnyBool
+        println("alea ", k, " true ", d[true])
+        println("alea ", k, " false ", d[false])
+    else
+        for v in 0:(2^width(x) - 1)
+            println("alea ", k, " ", v, " ", d[v])
+        end
+    end
+end
+
+function run_program()
+    EV[] = true
+    stats = @timed begin
+        comps = components(dice_main())
+        dists = pr(comps...; evidence = EV[])
+        (comps, length(comps) == 1 ? [dists] : dists)
+    end
+    comps, dists = stats.value
+    for k in eachindex(comps)
+        report(k, comps[k], dists[k])
+    end
+    println("alea_seconds ", stats.time)
+    println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+end
+
+warmup()
+task = Task(run_program, 1 << 30)
+schedule(task)
+wait(task)
+end

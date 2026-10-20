@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noisyor20_30 · tddlog results</title>
+<meta name="description" content="noisyor20_30, an instance of Literature suite: its programs in every language the systems ran, and every run's times and answers.">
+<script src="../../../theme.js"></script>
+<link rel="stylesheet" href="../../../styles.css">
+<link rel="stylesheet" href="../bench.css">
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#lit">Literature suite</a></p>
+    <h1>noisyor20_30</h1>
+    <p class="lede">39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. Made by <code>gen_noisyor.py 20 30 --seed 1</code>.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../../../">Playground</a>
+    <a href="../../../guide/">Guide</a>
+    <a href="../../">Results</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+<section class="card">
+  <h2>In the table</h2>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.007</td><td class="num">7.9</td><td class="num">19.1</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+</section>
+<section class="card">
+  <h2>The programs</h2>
+  <p class="note">The files each system was handed, byte for byte: written by the release's scripts at the run's
+  commit and captured by running the benchmark driver's own code with no system started. The first tab is the
+  original program as its authors wrote it; each other tab is a translation of it into the language of the
+  systems that read it, and says which script wrote it.</p>
+  <div class="ptabs">
+<input type="radio" name="ptab" id="t0" checked><label for="t0">ProbLog (original)</label>
+<input type="radio" name="ptab" id="t1"><label for="t1">PITA</label>
+<div class="panel" id="p0">
+<p class="readers"><b>The original: the program as its generator wrote it, handed to tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference as it is.</b></p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference.</p>
+<dl class="cmds">
+<dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto noisyor20_30.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf noisyor20_30.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd noisyor20_30.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd noisyor20_30.pl</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">noisyor20_30.pl</code><span>4 345 bytes, 193 lines</span><span class="sha" title="SHA-256">sha256 426bf6b5e893faa2c641f05b17106c7d2bfd7128f261c65fb36dcd78bd01878b</span></div><p class="made">Written by <code>gen_noisyor.py 20 30 --seed 1</code> (bench.py gen).</p><pre>% noisy-or diagnosis: 20 diseases, 30 findings, 3 causes each, seed 1
+0.084::disease(d0).
+0.262::disease(d1).
+0.241::disease(d2).
+0.114::disease(d3).
+0.174::disease(d4).
+0.162::disease(d5).
+0.213::disease(d6).
+0.247::disease(d7).
+0.073::disease(d8).
+0.057::disease(d9).
+0.259::disease(d10).
+0.158::disease(d11).
+0.241::disease(d12).
+0.051::disease(d13).
+0.161::disease(d14).
+0.23::disease(d15).
+0.107::disease(d16).
+0.286::disease(d17).
+0.275::disease(d18).
+0.058::disease(d19).
+0.011::leak(f0).
+0.792::cause(d9,f0).
+0.554::cause(d15,f0).
+0.612::cause(d19,f0).
+0.032::leak(f1).
+0.721::cause(d1,f1).
+0.483::cause(d7,f1).
+0.665::cause(d15,f1).
+0.048::leak(f2).
+0.261::cause(d11,f2).
+0.665::cause(d17,f2).
+0.276::cause(d19,f2).
+0.025::leak(f3).
+0.459::cause(d5,f3).
+0.713::cause(d12,f3).
+0.529::cause(d16,f3).
+0.019::leak(f4).
+0.653::cause(d9,f4).
+0.318::cause(d12,f4).
+0.359::cause(d18,f4).
+0.027::leak(f5).
+0.844::cause(d0,f5).
+0.584::cause(d6,f5).
+0.483::cause(d17,f5).
+0.011::leak(f6).
+0.521::cause(d11,f6).
+0.388::cause(d18,f6).
+0.584::cause(d19,f6).
+0.019::leak(f7).
+0.766::cause(d0,f7).
+0.563::cause(d12,f7).
+0.593::cause(d16,f7).
+0.028::leak(f8).
+0.809::cause(d1,f8).
+0.599::cause(d13,f8).
+0.34::cause(d15,f8).
+0.03::leak(f9).
+0.769::cause(d13,f9).
+0.49::cause(d15,f9).
+0.201::cause(d16,f9).
+0.019::leak(f10).
+0.62::cause(d10,f10).
+0.763::cause(d14,f10).
+0.645::cause(d17,f10).
+0.019::leak(f11).
+0.803::cause(d5,f11).
+0.759::cause(d17,f11).
+0.758::cause(d18,f11).
+0.019::leak(f12).
+0.258::cause(d1,f12).
+0.212::cause(d2,f12).
+0.21::cause(d8,f12).
+0.028::leak(f13).
+0.277::cause(d7,f13).
+0.637::cause(d8,f13).
+0.441::cause(d19,f13).
+0.022::leak(f14).
+0.379::cause(d2,f14).
+0.866::cause(d5,f14).
+0.66::cause(d18,f14).
+0.011::leak(f15).
+0.548::cause(d9,f15).
+0.28::cause(d10,f15).
+0.418::cause(d14,f15).
+0.044::leak(f16).
+0.381::cause(d6,f16).
+0.377::cause(d10,f16).
+0.711::cause(d13,f16).
+0.032::leak(f17).
+0.358::cause(d0,f17).
+0.478::cause(d6,f17).
+0.225::cause(d13,f17).
+0.036::leak(f18).
+0.675::cause(d5,f18).
+0.581::cause(d14,f18).
+0.354::cause(d16,f18).
+0.017::leak(f19).
+0.567::cause(d7,f19).
+0.221::cause(d14,f19).
+0.672::cause(d16,f19).
+0.05::leak(f20).
+0.716::cause(d1,f20).
+0.288::cause(d10,f20).
+0.348::cause(d13,f20).
+0.044::leak(f21).
+0.801::cause(d1,f21).
+0.417::cause(d2,f21).
+0.858::cause(d9,f21).
+0.015::leak(f22).
+0.291::cause(d5,f22).
+0.593::cause(d8,f22).
+0.795::cause(d13,f22).
+0.023::leak(f23).
+0.32::cause(d6,f23).
+0.807::cause(d14,f23).
+0.882::cause(d18,f23).
+0.039::leak(f24).
+0.465::cause(d1,f24).
+0.443::cause(d16,f24).
+0.344::cause(d19,f24).
+0.038::leak(f25).
+0.545::cause(d6,f25).
+0.857::cause(d13,f25).
+0.473::cause(d18,f25).
+0.047::leak(f26).
+0.428::cause(d0,f26).
+0.81::cause(d15,f26).
+0.83::cause(d16,f26).
+0.027::leak(f27).
+0.8::cause(d0,f27).
+0.768::cause(d5,f27).
+0.594::cause(d6,f27).
+0.043::leak(f28).
+0.349::cause(d4,f28).
+0.672::cause(d10,f28).
+0.786::cause(d13,f28).
+0.037::leak(f29).
+0.539::cause(d11,f29).
+0.89::cause(d17,f29).
+0.364::cause(d19,f29).
+finding(F) :- leak(F).
+finding(F) :- disease(D), cause(D,F).
+evidence(finding(f0),false).
+evidence(finding(f1),true).
+evidence(finding(f2),false).
+evidence(finding(f3),false).
+evidence(finding(f4),true).
+evidence(finding(f5),true).
+evidence(finding(f6),false).
+evidence(finding(f7),false).
+evidence(finding(f8),true).
+evidence(finding(f9),false).
+evidence(finding(f10),true).
+evidence(finding(f11),true).
+evidence(finding(f12),true).
+evidence(finding(f13),false).
+evidence(finding(f14),true).
+evidence(finding(f15),false).
+evidence(finding(f16),false).
+evidence(finding(f17),false).
+evidence(finding(f18),false).
+evidence(finding(f19),false).
+evidence(finding(f20),false).
+evidence(finding(f21),true).
+evidence(finding(f22),false).
+evidence(finding(f23),true).
+evidence(finding(f24),true).
+evidence(finding(f25),true).
+evidence(finding(f26),true).
+evidence(finding(f27),false).
+evidence(finding(f28),false).
+evidence(finding(f29),true).
+query(disease(d0)).
+query(disease(d1)).
+query(disease(d2)).
+query(disease(d3)).
+query(disease(d4)).
+query(disease(d5)).
+query(disease(d6)).
+query(disease(d7)).
+query(disease(d8)).
+query(disease(d9)).
+query(disease(d10)).
+query(disease(d11)).
+query(disease(d12)).
+query(disease(d13)).
+query(disease(d14)).
+query(disease(d15)).
+query(disease(d16)).
+query(disease(d17)).
+query(disease(d18)).
+query(disease(d19)).
+</pre></div>
+</div>
+<div class="panel" id="p1">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;noisyor20_30.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">noisyor20_30.lpad.pl</code><span>14 254 bytes, 167 lines</span><span class="sha" title="SHA-256">sha256 e9ba5af45ebfe6052bd39b764a9bc73677453aeaf215a20f627e2bc20cc70936</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>noisyor20_30.pl</code> when PITA runs.</p><pre>:- use_module(library(pita)).
+:- pita.
+:- begin_lpad.
+disease(d0):0.084.
+disease(d1):0.262.
+disease(d2):0.241.
+disease(d3):0.114.
+disease(d4):0.174.
+disease(d5):0.162.
+disease(d6):0.213.
+disease(d7):0.247.
+disease(d8):0.073.
+disease(d9):0.057.
+disease(d10):0.259.
+disease(d11):0.158.
+disease(d12):0.241.
+disease(d13):0.051.
+disease(d14):0.161.
+disease(d15):0.23.
+disease(d16):0.107.
+disease(d17):0.286.
+disease(d18):0.275.
+disease(d19):0.058.
+leak(f0):0.011.
+cause(d9,f0):0.792.
+cause(d15,f0):0.554.
+cause(d19,f0):0.612.
+leak(f1):0.032.
+cause(d1,f1):0.721.
+cause(d7,f1):0.483.
+cause(d15,f1):0.665.
+leak(f2):0.048.
+cause(d11,f2):0.261.
+cause(d17,f2):0.665.
+cause(d19,f2):0.276.
+leak(f3):0.025.
+cause(d5,f3):0.459.
+cause(d12,f3):0.713.
+cause(d16,f3):0.529.
+leak(f4):0.019.
+cause(d9,f4):0.653.
+cause(d12,f4):0.318.
+cause(d18,f4):0.359.
+leak(f5):0.027.
+cause(d0,f5):0.844.
+cause(d6,f5):0.584.
+cause(d17,f5):0.483.
+leak(f6):0.011.
+cause(d11,f6):0.521.
+cause(d18,f6):0.388.
+cause(d19,f6):0.584.
+leak(f7):0.019.
+cause(d0,f7):0.766.
+cause(d12,f7):0.563.
+cause(d16,f7):0.593.
+leak(f8):0.028.
+cause(d1,f8):0.809.
+cause(d13,f8):0.599.
+cause(d15,f8):0.34.
+leak(f9):0.03.
+cause(d13,f9):0.769.
+cause(d15,f9):0.49.
+cause(d16,f9):0.201.
+leak(f10):0.019.
+cause(d10,f10):0.62.
+cause(d14,f10):0.763.
+cause(d17,f10):0.645.
+leak(f11):0.019.
+cause(d5,f11):0.803.
+cause(d17,f11):0.759.
+cause(d18,f11):0.758.
+leak(f12):0.019.
+cause(d1,f12):0.258.
+cause(d2,f12):0.212.
+cause(d8,f12):0.21.
+leak(f13):0.028.
+cause(d7,f13):0.277.
+cause(d8,f13):0.637.
+cause(d19,f13):0.441.
+leak(f14):0.022.
+cause(d2,f14):0.379.
+cause(d5,f14):0.866.
+cause(d18,f14):0.66.
+leak(f15):0.011.
+cause(d9,f15):0.548.
+cause(d10,f15):0.28.
+cause(d14,f15):0.418.
+leak(f16):0.044.
+cause(d6,f16):0.381.
+cause(d10,f16):0.377.
+cause(d13,f16):0.711.
+leak(f17):0.032.
+cause(d0,f17):0.358.
+cause(d6,f17):0.478.
+cause(d13,f17):0.225.
+leak(f18):0.036.
+cause(d5,f18):0.675.
+cause(d14,f18):0.581.
+cause(d16,f18):0.354.
+leak(f19):0.017.
+cause(d7,f19):0.567.
+cause(d14,f19):0.221.
+cause(d16,f19):0.672.
+leak(f20):0.05.
+cause(d1,f20):0.716.
+cause(d10,f20):0.288.
+cause(d13,f20):0.348.
+leak(f21):0.044.
+cause(d1,f21):0.801.
+cause(d2,f21):0.417.
+cause(d9,f21):0.858.
+leak(f22):0.015.
+cause(d5,f22):0.291.
+cause(d8,f22):0.593.
+cause(d13,f22):0.795.
+leak(f23):0.023.
+cause(d6,f23):0.32.
+cause(d14,f23):0.807.
+cause(d18,f23):0.882.
+leak(f24):0.039.
+cause(d1,f24):0.465.
+cause(d16,f24):0.443.
+cause(d19,f24):0.344.
+leak(f25):0.038.
+cause(d6,f25):0.545.
+cause(d13,f25):0.857.
+cause(d18,f25):0.473.
+leak(f26):0.047.
+cause(d0,f26):0.428.
+cause(d15,f26):0.81.
+cause(d16,f26):0.83.
+leak(f27):0.027.
+cause(d0,f27):0.8.
+cause(d5,f27):0.768.
+cause(d6,f27):0.594.
+leak(f28):0.043.
+cause(d4,f28):0.349.
+cause(d10,f28):0.672.
+cause(d13,f28):0.786.
+leak(f29):0.037.
+cause(d11,f29):0.539.
+cause(d17,f29):0.89.
+cause(d19,f29):0.364.
+finding(F) :- leak(F).
+finding(F) :- disease(D), cause(D,F).
+:- end_lpad.
+main :-
+    forall((Q = disease(d0)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d1)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d2)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d3)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d4)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d5)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d6)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d7)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d8)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d9)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d10)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d11)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d12)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d13)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d14)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d15)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d16)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d17)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d18)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))),
+    forall((Q = disease(d19)), (prob(Q, (\+ (finding(f0)), finding(f1), \+ (finding(f2)), \+ (finding(f3)), finding(f4), finding(f5), \+ (finding(f6)), \+ (finding(f7)), finding(f8), \+ (finding(f9)), finding(f10), finding(f11), finding(f12), \+ (finding(f13)), finding(f14), \+ (finding(f15)), \+ (finding(f16)), \+ (finding(f17)), \+ (finding(f18)), \+ (finding(f19)), \+ (finding(f20)), finding(f21), \+ (finding(f22)), finding(f23), finding(f24), finding(f25), finding(f26), \+ (finding(f27)), \+ (finding(f28)), finding(f29)), P), format(&quot;~q:\t~w~n&quot;, [Q, P]))).
+</pre></div>
+</div>
+</div>
+</section>
+<section class="card">
+  <h2>Every run</h2>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.007</td><td>2.2e-16 at most</td><td>largest formula, pairs 4 086; final formula, pairs 21; variables 124; ground atoms 154; ground rules 104; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>7.9</td><td>4.5e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>142</td><td>4.5e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>19.1</td><td>7.6e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+</section>
+<section class="card">
+  <h2>The answers</h2>
+  <p class="note">The reference is the families&#x27; own exact method (lit_exact.py). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th></tr></thead><tbody><tr><th>disease(d0)</th><td class="num">0.02139796104</td><td class="num">0.02139796104</td><td class="num">0.021397961</td><td class="num">0.021397961</td><td class="num">0.02139795944</td></tr><tr><th>disease(d1)</th><td class="num">0.9832407867</td><td class="num">0.9832407867</td><td class="num">0.98324079</td><td class="num">0.98324079</td><td class="num">0.9832407828</td></tr><tr><th>disease(d2)</th><td class="num">0.4031247767</td><td class="num">0.4031247767</td><td class="num">0.40312478</td><td class="num">0.40312478</td><td class="num">0.403124774</td></tr><tr><th>disease(d3)</th><td class="num">0.114</td><td class="num">0.114</td><td class="num">0.114</td><td class="num">0.114</td><td class="num">0.114</td></tr><tr><th>disease(d4)</th><td class="num">0.1205973976</td><td class="num">0.1205973976</td><td class="num">0.1205974</td><td class="num">0.1205974</td><td class="num">0.1205973969</td></tr><tr><th>disease(d5)</th><td class="num">0.007920903326</td><td class="num">0.007920903326</td><td class="num">0.0079209033</td><td class="num">0.0079209033</td><td class="num">0.007920905201</td></tr><tr><th>disease(d6)</th><td class="num">0.0874760705</td><td class="num">0.0874760705</td><td class="num">0.08747607</td><td class="num">0.08747607</td><td class="num">0.08747606876</td></tr><tr><th>disease(d7)</th><td class="num">0.1019899173</td><td class="num">0.1019899173</td><td class="num">0.10198992</td><td class="num">0.10198992</td><td class="num">0.1019899178</td></tr><tr><th>disease(d8)</th><td class="num">0.01670716515</td><td class="num">0.01670716515</td><td class="num">0.016707165</td><td class="num">0.016707165</td><td class="num">0.01670716413</td></tr><tr><th>disease(d9)</th><td class="num">0.0139959185</td><td class="num">0.0139959185</td><td class="num">0.013995919</td><td class="num">0.013995919</td><td class="num">0.01399591859</td></tr><tr><th>disease(d10)</th><td class="num">0.04777299489</td><td class="num">0.04777299489</td><td class="num">0.047772995</td><td class="num">0.047772995</td><td class="num">0.04777298729</td></tr><tr><th>disease(d11)</th><td class="num">0.06864555478</td><td class="num">0.06864555478</td><td class="num">0.068645555</td><td class="num">0.068645555</td><td class="num">0.06864555313</td></tr><tr><th>disease(d12)</th><td class="num">0.05815145781</td><td class="num">0.05815145781</td><td class="num">0.058151458</td><td class="num">0.058151458</td><td class="num">0.05815146189</td></tr><tr><th>disease(d13)</th><td class="num">0.0001643059704</td><td class="num">0.0001643059704</td><td class="num">0.00016430597</td><td class="num">0.00016430597</td><td class="num">0.0001643101602</td></tr><tr><th>disease(d14)</th><td class="num">0.05573913194</td><td class="num">0.05573913194</td><td class="num">0.055739132</td><td class="num">0.055739132</td><td class="num">0.05573912864</td></tr><tr><th>disease(d15)</th><td class="num">0.5866466545</td><td class="num">0.5866466545</td><td class="num">0.58664665</td><td class="num">0.58664665</td><td class="num">0.5866466531</td></tr><tr><th>disease(d16)</th><td class="num">0.04142913477</td><td class="num">0.04142913477</td><td class="num">0.041429135</td><td class="num">0.041429135</td><td class="num">0.04142913499</td></tr><tr><th>disease(d17)</th><td class="num">0.9936912317</td><td class="num">0.9936912317</td><td class="num">0.99369123</td><td class="num">0.99369123</td><td class="num">0.9936912275</td></tr><tr><th>disease(d18)</th><td class="num">0.9979319774</td><td class="num">0.9979319774</td><td class="num">0.99793198</td><td class="num">0.99793198</td><td class="num">0.9979319805</td></tr><tr><th>disease(d19)</th><td class="num">0.006331263015</td><td class="num">0.006331263015</td><td class="num">0.006331263</td><td class="num">0.006331263</td><td class="num">0.006331264176</td></tr></tbody></table></div>
+</section>
+<footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">How the runs were made</a> ·
+<a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
+</main>
+<script src="../bench.js"></script>
+</body>
+</html>
