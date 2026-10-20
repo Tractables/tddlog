@@ -1,0 +1,7 @@
+/target
+/target-*
+/tmp
+/.claude/worktrees
+*.pdf
+/bench/
+__pycache__/

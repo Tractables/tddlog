@@ -1,0 +1,10 @@
+// The diamond network of the Dice paper's network verification benchmark
+// (bench/dicebench.ml, gen_diamond), its repeated calls written as iterate.
+fun diamond(s1: bool) {
+  let route = flip 0.5 in
+  let s2 = if route then s1 else false in
+  let s3 = if route then false else s1 in
+  let drop = flip 0.0001 in
+  s2 || (s3 && !drop)
+}
+iterate(diamond, true, 100)

@@ -1,0 +1,26 @@
+tddlog
+
+The source code of tddlog is licensed under the Apache License 2.0
+(LICENSE). The repository also holds copies of third-party programs and
+data, under their own terms:
+
+- tests/problog: programs from ProbLog's system test suite
+  (https://github.com/ML-KULeuven/problog, test/*.pl), Apache License 2.0.
+- data/cplint: example and dataset files from cplint
+  (https://github.com/friguzzi/cplint) and cplint_datasets
+  (https://github.com/friguzzi/cplint_datasets), Artistic License 2.0.
+- data/dice: the baseline programs of Dice
+  (https://github.com/SHoltzen/dice, benchmarks/baselines/), Apache
+  License 2.0.
+- examples/asia.net and examples/cancer.net: two Bayesian networks
+  written out from their publications (Lauritzen and Spiegelhalter, 1988;
+  Korb and Nicholson, 2004), under the Apache License 2.0 with the rest.
+
+The benchmarks' other Bayesian networks, of the bnlearn repository
+(https://www.bnlearn.com/bnrepository/), are not in the repository, as no
+license for redistributing them is established: data/fetch.txt names
+where each is downloaded (ProbLog's copies, and bnlearn for munin1 to
+munin4) and its SHA-256.
+
+Each directory's README gives the source and commit of its files. The
+repository's baselines branch holds further copies, listed in its NOTICE.

@@ -1,0 +1,83 @@
+% A two-layer noisy-or network: 8 diseases, 12 findings with three causes
+% and a leak each, every finding observed. Each finding is its own
+% component, and all are merged into one by the diseases they share, so
+% the program has nothing to order (vtree::nothing_to_order) and no atom
+% is recursive. tests/it/examples.rs and src/auto/tests.rs.
+0.1::disease(d0).
+0.2::disease(d1).
+0.3::disease(d2).
+0.1::disease(d3).
+0.2::disease(d4).
+0.3::disease(d5).
+0.1::disease(d6).
+0.2::disease(d7).
+0.01::leak(f0).
+0.3::cause(d0,f0).
+0.4::cause(d3,f0).
+0.5::cause(d6,f0).
+0.02::leak(f1).
+0.4::cause(d5,f1).
+0.5::cause(d0,f1).
+0.6::cause(d3,f1).
+0.03::leak(f2).
+0.5::cause(d2,f2).
+0.6::cause(d5,f2).
+0.7::cause(d0,f2).
+0.04::leak(f3).
+0.6::cause(d7,f3).
+0.7::cause(d2,f3).
+0.8::cause(d5,f3).
+0.01::leak(f4).
+0.7::cause(d4,f4).
+0.8::cause(d7,f4).
+0.3::cause(d2,f4).
+0.02::leak(f5).
+0.8::cause(d1,f5).
+0.3::cause(d4,f5).
+0.4::cause(d7,f5).
+0.03::leak(f6).
+0.3::cause(d6,f6).
+0.4::cause(d1,f6).
+0.5::cause(d4,f6).
+0.04::leak(f7).
+0.4::cause(d3,f7).
+0.5::cause(d6,f7).
+0.6::cause(d1,f7).
+0.01::leak(f8).
+0.5::cause(d1,f8).
+0.6::cause(d4,f8).
+0.7::cause(d7,f8).
+0.02::leak(f9).
+0.6::cause(d6,f9).
+0.7::cause(d1,f9).
+0.8::cause(d4,f9).
+0.03::leak(f10).
+0.7::cause(d3,f10).
+0.8::cause(d6,f10).
+0.3::cause(d1,f10).
+0.04::leak(f11).
+0.8::cause(d0,f11).
+0.3::cause(d3,f11).
+0.4::cause(d6,f11).
+finding(F) :- leak(F).
+finding(F) :- disease(D), cause(D,F).
+evidence(finding(f0),true).
+evidence(finding(f1),false).
+evidence(finding(f2),false).
+evidence(finding(f3),true).
+evidence(finding(f4),false).
+evidence(finding(f5),false).
+evidence(finding(f6),true).
+evidence(finding(f7),false).
+evidence(finding(f8),false).
+evidence(finding(f9),true).
+evidence(finding(f10),false).
+evidence(finding(f11),false).
+query(disease(d0)).
+query(disease(d1)).
+query(disease(d2)).
+query(disease(d3)).
+query(disease(d4)).
+query(disease(d5)).
+query(disease(d6)).
+query(disease(d7)).

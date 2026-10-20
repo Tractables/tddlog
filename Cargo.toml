@@ -1,0 +1,47 @@
+[package]
+name = "tddlog"
+version = "0.1.0"
+authors = ["Guy Van den Broeck"]
+edition = "2024"
+rust-version = "1.88"
+description = "ProbLog inference by Tp-compilation into Tree Decision Diagrams"
+license = "Apache-2.0"
+repository = "https://github.com/Tractables/tddlog"
+readme = "README.md"
+keywords = ["problog", "probabilistic", "logic-programming", "decision-diagram", "inference"]
+categories = ["science", "command-line-utilities"]
+
+[dependencies]
+# The TDD library.
+tididi = { git = "https://github.com/Tractables/tididi", rev = "c7c0c5d61bd74f807071ce9258c71091bdd5ab52" }
+# Tree decompositions for the structure-aware vtree strategies. Its build.rs
+# compiles a vendored C++ FlowCutter, so building needs a C++ compiler.
+goatd = { git = "https://github.com/Tractables/goatd", rev = "e592d1e2233d4f724c6cb3475a4810d95e0b847a" }
+rustc-hash = "2"
+
+# The binary's allocator (`src/bin/tddlog/alloc.rs`), its purge (`mallctl`,
+# from the jemalloc that tikv-jemallocator links), and the switch of its huge
+# pages. The library uses none of them. For WebAssembly (`bindings/wasm`)
+# only the library is built, and jemalloc does not build with MSVC, so the
+# binary uses the system allocator there.
+[target.'cfg(not(any(target_family = "wasm", target_env = "msvc")))'.dependencies]
+tikv-jemallocator = "0.6"
+tikv-jemalloc-sys = "0.6.1"
+libc = "0.2"
+
+# Line tables (debug = 1) let a profile name source lines; they change
+# neither the code nor its speed, only the binary's size.
+[profile.release]
+debug = 1
+lto = "fat"
+codegen-units = 1
+
+# Release without link-time optimization, for correctness tests and count
+# runs (`cargo test --profile quick`). Answers and work units are the same as
+# release; timings come only from release builds.
+[profile.quick]
+inherits = "release"
+debug = 0
+lto = false
+codegen-units = 16
+incremental = true

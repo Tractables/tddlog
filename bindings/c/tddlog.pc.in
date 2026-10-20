@@ -1,0 +1,10 @@
+prefix=${pcfiledir}/@TDDLOG_PC_PREFIX@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: tddlog
+Description: Exact probabilities for ProbLog programs, by compilation into tree decision diagrams
+URL: https://github.com/Tractables/tddlog
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -ltddlog_c
+Cflags: -I${includedir}

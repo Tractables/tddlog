@@ -1,0 +1,32 @@
+# Cargo run from this directory builds for the browser and nothing else.
+[build]
+target = "wasm32-unknown-emscripten"
+
+# Link settings for emcc. They belong here rather than in EMCC_CFLAGS because
+# that variable also reaches the C++ compile of goatd's vendored FlowCutter,
+# where every one of these would be an ignored linker setting.
+[target.wasm32-unknown-emscripten]
+rustflags = [
+  # Exceptions are not among these. rustc links with -fwasm-exceptions of its
+  # own accord, and goatd's C++ has to be compiled to match: the build passes
+  # it through CXXFLAGS (README.md).
+  #
+  # A factory function instead of a script that starts itself, so the worker
+  # decides when to instantiate and `main` is never run.
+  "-Clink-arg=-sMODULARIZE=1",
+  "-Clink-arg=-sEXPORT_NAME=createTddlog",
+  "-Clink-arg=-sINVOKE_RUN=0",
+  # The heap grows as the run asks, up to the 4 GB a 32-bit address space
+  # holds. Past what the browser grants, malloc returns null: an operation
+  # the solver can refuse retires its trial as on the command line, and
+  # any other allocation aborts the module, which the worker reports.
+  "-Clink-arg=-sALLOW_MEMORY_GROWTH=1",
+  "-Clink-arg=-sMAXIMUM_MEMORY=4GB",
+  "-Clink-arg=-sINITIAL_MEMORY=64MB",
+  # The grounder and goatd's decompositions recurse; the 64 KB default stack
+  # is not enough for a program of any size. Twice the 8 MB the command line
+  # runs in on Linux.
+  "-Clink-arg=-sSTACK_SIZE=16777216",
+  "-Clink-arg=-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_tddlog_solve_json,_tddlog_string_free",
+  "-Clink-arg=-sEXPORTED_RUNTIME_METHODS=UTF8ToString,HEAPU8",
+]

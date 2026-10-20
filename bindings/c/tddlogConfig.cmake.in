@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+if(NOT TARGET tddlog::tddlog)
+  add_library(tddlog::tddlog SHARED IMPORTED)
+  set_target_properties(tddlog::tddlog PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@"
+    IMPORTED_LOCATION "@PACKAGE_CMAKE_INSTALL_LIBDIR@/${CMAKE_SHARED_LIBRARY_PREFIX}tddlog_c${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  if(APPLE)
+    set_target_properties(tddlog::tddlog PROPERTIES IMPORTED_SONAME "@rpath/libtddlog_c.dylib")
+  else()
+    set_target_properties(tddlog::tddlog PROPERTIES IMPORTED_NO_SONAME TRUE)
+  endif()
+endif()
+check_required_components(tddlog)

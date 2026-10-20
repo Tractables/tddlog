@@ -1,0 +1,22 @@
+# A made-up graph in the format of Biomine's downloads, for gen_biomine.py:
+# node1 node2 type goodness. The source and the four genes carry the ids the
+# generator looks for; the rest is invented. P1 and P2 are joined by two
+# links of different types, one link holds for certain, one never and one
+# is a loop.
+Phenotype_MIM:104300 Protein_UniProt:P1 refers_to 0.9
+Phenotype_MIM:104300 Protein_UniProt:P2 refers_to 0.5
+Protein_UniProt:P1 Gene_EntrezGene:351 codes_for 0.8
+Protein_UniProt:P2 Gene_EntrezGene:351 codes_for 0.6
+Protein_UniProt:P1 Protein_UniProt:P2 interacts_with 0.7
+Protein_UniProt:P1 Protein_UniProt:P2 functionally_associated_to 0.4
+Protein_UniProt:P2 Gene_EntrezGene:323 codes_for 1
+Gene_EntrezGene:351 Gene_EntrezGene:323 interacts_with 0.3
+Phenotype_MIM:104300 Article_PubMed:1 refers_to 0.2
+Article_PubMed:1 Gene_EntrezGene:590 refers_to 0.9
+Article_PubMed:1 Protein_UniProt:P2 refers_to 0.5
+Gene_EntrezGene:590 Gene_EntrezGene:5126 interacts_with 0.6
+Protein_UniProt:P1 Gene_EntrezGene:5126 refers_to 0.25
+Gene_EntrezGene:5126 GO:0000001 participates_in 0.9
+Phenotype_MIM:104300 Gene_EntrezGene:323 refers_to 0.05
+Gene_EntrezGene:590 GO:0000001 participates_in 0
+Gene_EntrezGene:590 Gene_EntrezGene:590 interacts_with 0.5

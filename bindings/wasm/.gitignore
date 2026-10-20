@@ -1,0 +1,7 @@
+/target
+/site
+/node_modules
+/screenshots
+
+# Resolved on every build; nothing consumes a lockfile from here.
+/Cargo.lock

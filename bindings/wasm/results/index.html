@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tddlog results</title>
+<meta name="description" content="tddlog's release run against ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, ProvSQL, Dice, Alea.jl, Roulette and further program systems: every suite as a plot and a table of times.">
+<script src="../theme.js"></script>
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<main>
+
+<header>
+  <div>
+    <h1>tddlog results</h1>
+    <p class="lede">The release run of tddlog <span id="version"></span>
+    against the systems people use for each kind of problem: ProbLog, PITA
+    and aspmc on logic programs, Ace and Merlin on Bayesian and Markov
+    networks (with pyAgrum, pgmpy, libDAI and TensorInference.jl, and ProvSQL
+    on TPC-H), and Dice, Alea.jl, Roulette, Geni, noDice, Psi, Genfer, SPPL,
+    Pluck, Storm and PRISM on programs.
+    Each system ran single-threaded, in the same job and the same lanes of a
+    lab machine as the systems it is compared with, and every answer of
+    tddlog's is checked against a reference. Where another system is faster,
+    the findings say so.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../">Playground</a>
+    <a href="../guide/">Guide</a>
+    <a href="../api/">API</a>
+    <a href="../python/">Python</a>
+    <a href="../c/">C</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+
+<section class="card overview">
+  <div id="stats" class="stats"></div>
+  <nav id="toc" class="toc" aria-label="Families of suites"></nav>
+  <p class="note">A plot counts the instances each system answers within a
+  time limit, on a log scale from 0.1 s to the suite's limit: a line further
+  up and to the left is better, and a run that takes less than 0.1 s counts
+  at 0.1 s, since differences of a few milliseconds of start-up are not
+  compared. In the findings an instance that both systems finish in under
+  0.1 s counts neither as a win nor as a loss. The numbers come from the
+  same records as the README's and
+  <a href="https://github.com/Tractables/tddlog/blob/main/docs/benchmarks.md">docs/benchmarks.md</a>'s.</p>
+  <noscript><p class="note">The plots and tables of this page need
+  JavaScript; the same results are in docs/benchmarks.md.</p></noscript>
+</section>
+
+<div id="families"></div>
+
+<footer>
+  tddlog is open source under the Apache-2.0 license:
+  <a href="https://github.com/Tractables/tddlog">repository</a> ·
+  <a href="../">playground</a> ·
+  <a href="../guide/">guide</a> ·
+  <a href="../api/">API</a> ·
+  <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts</a>
+</footer>
+
+</main>
+
+<script src="results.js"></script>
+
+</body>
+</html>

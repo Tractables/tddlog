@@ -1,0 +1,710 @@
+/* The palette and the parts are goatd's page's (tractables.github.io/goatd),
+   so that the two read as one family. Both palettes are defined here, so the
+   browser should not invert the page when the reader asks for dark; the
+   theme button sets data-theme on the root, and without it the system's
+   preference decides. */
+:root {
+  color-scheme: light dark;
+  --bg: #f5f5f2;
+  --card: #ffffff;
+  --line: #e0e0d9;
+  --ink: #1d1f21;
+  --muted: #6c7075;
+  --accent: #2070a8;
+  --accent-fill: #dbe9f6;
+  --amber: #d99a2b;
+  --amber-fill: #fbeed0;
+  --code: #f2f2ed;
+  --bad: #b3261e;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16181b;
+    --card: #1d2024;
+    --line: #2e333a;
+    --ink: #e5e8ea;
+    --muted: #9aa1a9;
+    --accent: #6fb3e6;
+    --accent-fill: #1e3448;
+    --amber: #e8a830;
+    --amber-fill: #46381a;
+    --code: #15181b;
+    --bad: #f2827a;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16181b;
+  --card: #1d2024;
+  --line: #2e333a;
+  --ink: #e5e8ea;
+  --muted: #9aa1a9;
+  --accent: #6fb3e6;
+  --accent-fill: #1e3448;
+  --amber: #e8a830;
+  --amber-fill: #46381a;
+  --code: #15181b;
+  --bad: #f2827a;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 var(--sans);
+}
+
+main {
+  max-width: 82rem;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 2.5rem;
+}
+
+@media (max-width: 40rem) {
+  main { padding: 1rem 1rem 2rem; }
+}
+
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.1rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 48rem) {
+  header { flex-direction: column-reverse; }
+}
+
+h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.lede {
+  margin: 0;
+  max-width: 52rem;
+  color: var(--muted);
+}
+
+a { color: var(--accent); }
+
+code {
+  font: 0.9em/1 var(--mono);
+  background: var(--code);
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+}
+
+/* The links to the rest of the site, and the theme. */
+.site-nav {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  font-size: 14px;
+}
+
+.site-nav a { text-decoration: none; font-weight: 500; }
+.site-nav a:hover { text-decoration: underline; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+/* The program beside the controls once there is room for both. */
+.io { display: grid; gap: 1.1rem; }
+
+@media (min-width: 56rem) {
+  .io { grid-template-columns: minmax(0, 1fr) 14rem; }
+}
+
+label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The examples are the way in for most readers, so they come first and look
+   like something to press. */
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.examples .lead { font-size: 14px; font-weight: 500; }
+#examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+#examples button {
+  width: auto;
+  padding: 0.3rem 0.75rem;
+  border-color: transparent;
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: var(--accent);
+  font-size: 13px;
+}
+
+#examples button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--card);
+  color: var(--accent);
+}
+
+#examples button.chosen, #examples button.chosen:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--card);
+}
+
+textarea, select, input {
+  width: 100%;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.45rem 0.55rem;
+  font: 15px/1.4 var(--sans);
+}
+
+textarea {
+  display: block;
+  height: 22rem;
+  resize: vertical;
+  font: 13px/1.5 var(--mono);
+  background: var(--code);
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+}
+
+textarea:focus, select:focus, input:focus, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.controls { display: grid; gap: 0.75rem; align-content: start; }
+.field { margin: 0; }
+
+label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+label.check input { width: auto; margin: 0; accent-color: var(--accent); }
+
+button {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--card);
+  font: 500 15px/1.4 var(--sans);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) { background: var(--card); color: var(--accent); }
+
+/* Cancel takes Run's place while a run is on, and the pointer says the page
+   is busy everywhere but on it. */
+#cancel { background: var(--card); color: var(--accent); }
+#cancel:hover { background: var(--accent); color: var(--card); }
+body.busy, body.busy :not(#cancel) { cursor: progress; }
+button:disabled { opacity: 0.45; cursor: default; }
+
+/* The small buttons that sit in a line of text. */
+#theme, #link {
+  width: auto;
+  padding: 0.1rem 0.6rem;
+  font-size: 12px;
+}
+
+#status, .note, .hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.program-input .hint { margin-top: 0.4rem; }
+#strategy-note { margin-top: 0.3rem; }
+
+.result-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+/* The figures of a result, each a number with its word beside it. */
+#summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0 0 1rem;
+}
+
+#summary:empty { display: none; }
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stat b {
+  font-size: 1.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+}
+
+/* The answers beside what the run did once there is room for both. */
+.result { display: grid; gap: 1.25rem; }
+
+@media (min-width: 60rem) {
+  .result { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+}
+
+#answers { min-width: 0; overflow-x: auto; }
+
+.failed {
+  margin: 0;
+  padding: 0.7rem;
+  border: 1px solid var(--bad);
+  border-radius: 6px;
+  color: var(--ink);
+  font: 13px/1.45 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  padding: 0 0.6rem 0.4rem 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+td {
+  padding: 0.35rem 0.6rem 0.35rem 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+/* A query breaks only where it is longer than a line; on a phone the bar
+   gives way first. */
+td.query { font: 13px/1.4 var(--mono); overflow-wrap: break-word; }
+td.p, th.p { text-align: right; white-space: nowrap; font-family: var(--mono); font-size: 13px; }
+th.p { font-family: var(--sans); font-size: 12px; }
+td.reference { color: var(--muted); }
+
+/* The probability as a length, the full width being one. */
+td.bar { width: 28%; min-width: 2rem; }
+.bar i {
+  display: block;
+  height: 0.55rem;
+  min-width: 1px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+.bar i.zero { background: var(--line); }
+
+.evidence {
+  margin: 0.8rem 0 0;
+  font-size: 14px;
+}
+
+.evidence b { font-family: var(--mono); font-weight: 500; font-size: 13px; }
+
+/* What tddlog did, as terms and their values. */
+#work h3 {
+  margin: 0 0 0.5rem;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.3rem 1rem;
+  margin: 0 0 1rem;
+  font-size: 14px;
+}
+
+dt { color: var(--muted); }
+dd { margin: 0; }
+
+details { margin-top: 1.1rem; }
+
+summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+pre {
+  margin: 0.6rem 0 0;
+  max-height: 22rem;
+  overflow: auto;
+  background: var(--code);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.7rem;
+  font: 12px/1.45 var(--mono);
+}
+
+footer {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* The guide's page: one column of prose, a card per part. */
+.prose { max-width: 46rem; }
+.prose h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.prose h3 { margin: 1.4rem 0 0.4rem; font-size: 1rem; font-weight: 600; }
+.prose li { margin: 0.25rem 0; }
+.prose pre { max-height: none; margin: 0.6rem 0 0.9rem; }
+.prose dt { margin-top: 0.7rem; }
+.prose dd { margin: 0.2rem 0 0 1.4rem; }
+.prose .try { margin-top: 0.4rem; font-weight: 500; }
+.contents ol { margin: 0; padding-left: 1.4rem; }
+
+/* The results page. Each system has a colour of its own, the same in every
+   plot; the light and the dark steps are each checked for contrast against
+   the card they are drawn on and for telling neighbours apart under colour
+   blindness. Roulette never shares a plot with aspmc and takes its green. */
+:root {
+  --s-tddlog: #2070a8;
+  --s-ace: #eb6834;
+  --s-merlin: #1baf7a;
+  --s-problog: #eda100;
+  --s-pita: #e87ba4;
+  --s-aspmc: #008300;
+  --s-dice: #6250d6;
+  --s-alea: #e34948;
+  --s-roulette: #008300;
+  --s-agrum: #7a4fb3;
+  --s-pgmpy: #b0842a;
+  --s-libdai: #2f8f6e;
+  --s-tensorinference: #a8324f;
+  --s-provsql: #5a6b78;
+  --s-geni: #b02a6b;
+  --s-nodice: #9a7b0a;
+  --s-psi: #2a6fb0;
+  --s-genfer: #c0392b;
+  --s-sppl: #7a5230;
+  --s-pluck: #2f8f6e;
+  --s-storm-sparse: #3f5aa8;
+  --s-storm: #3f5aa8;
+  --s-storm-exact: #6f86d0;
+  --s-storm-dd: #1b3a80;
+  --s-prism-sparse: #8a8a2a;
+  --s-prism: #8a8a2a;
+  --s-prism-hybrid: #b4b45e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --s-tddlog: #3987e5;
+    --s-ace: #d95926;
+    --s-merlin: #199e70;
+    --s-problog: #c98500;
+    --s-pita: #d55181;
+    --s-dice: #9085e9;
+    --s-alea: #e66767;
+    --s-agrum: #a58be0;
+    --s-pgmpy: #d9b45e;
+    --s-libdai: #6fd2ad;
+    --s-tensorinference: #e47f98;
+    --s-provsql: #9fb0bd;
+    --s-geni: #ee7fb0;
+    --s-nodice: #e6c453;
+    --s-psi: #7ab4ec;
+    --s-genfer: #f08a7c;
+    --s-sppl: #c9a07a;
+    --s-pluck: #6fd2ad;
+    --s-storm-sparse: #8ea4ea;
+    --s-storm: #8ea4ea;
+    --s-storm-exact: #b7c4f2;
+    --s-storm-dd: #5e7fd0;
+    --s-prism-sparse: #c8c85e;
+    --s-prism: #c8c85e;
+    --s-prism-hybrid: #e3e39a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --s-tddlog: #3987e5;
+  --s-ace: #d95926;
+  --s-merlin: #199e70;
+  --s-problog: #c98500;
+  --s-pita: #d55181;
+  --s-dice: #9085e9;
+  --s-alea: #e66767;
+  --s-agrum: #a58be0;
+  --s-pgmpy: #d9b45e;
+  --s-libdai: #6fd2ad;
+  --s-tensorinference: #e47f98;
+  --s-provsql: #9fb0bd;
+  --s-geni: #ee7fb0;
+  --s-nodice: #e6c453;
+  --s-psi: #7ab4ec;
+  --s-genfer: #f08a7c;
+  --s-sppl: #c9a07a;
+  --s-pluck: #6fd2ad;
+  --s-storm-sparse: #8ea4ea;
+  --s-storm: #8ea4ea;
+  --s-storm-exact: #b7c4f2;
+  --s-storm-dd: #5e7fd0;
+  --s-prism-sparse: #c8c85e;
+  --s-prism: #c8c85e;
+  --s-prism-hybrid: #e3e39a;
+}
+
+.s-tddlog { --s: var(--s-tddlog); }
+.s-ace { --s: var(--s-ace); }
+.s-merlin { --s: var(--s-merlin); }
+.s-problog { --s: var(--s-problog); }
+.s-pita { --s: var(--s-pita); }
+.s-aspmc { --s: var(--s-aspmc); }
+.s-dice { --s: var(--s-dice); }
+.s-alea { --s: var(--s-alea); }
+.s-roulette { --s: var(--s-roulette); }
+.s-agrum { --s: var(--s-agrum); }
+.s-pgmpy { --s: var(--s-pgmpy); }
+.s-libdai { --s: var(--s-libdai); }
+.s-tensorinference { --s: var(--s-tensorinference); }
+.s-provsql { --s: var(--s-provsql); }
+.s-geni { --s: var(--s-geni); }
+.s-nodice { --s: var(--s-nodice); }
+.s-psi { --s: var(--s-psi); }
+.s-genfer { --s: var(--s-genfer); }
+.s-sppl { --s: var(--s-sppl); }
+.s-pluck { --s: var(--s-pluck); }
+.s-storm { --s: var(--s-storm); }
+.s-prism { --s: var(--s-prism); }
+.s-storm-sparse { --s: var(--s-storm-sparse); }
+.s-storm-exact { --s: var(--s-storm-exact); }
+.s-storm-dd { --s: var(--s-storm-dd); }
+.s-prism-sparse { --s: var(--s-prism-sparse); }
+.s-prism-hybrid { --s: var(--s-prism-hybrid); }
+
+.overview .note { max-width: 52rem; margin-top: 0.8rem; }
+.stats { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; }
+.toc { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; margin-top: 0.8rem; font-size: 14px; font-weight: 500; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+.family h2 { font-size: 1.15rem; }
+.family h3 { margin: 0 0 0.4rem; font-size: 14px; font-weight: 600; }
+.family h3.more {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.family .intro, .family .about { max-width: 52rem; }
+.family .about { margin: 0 0 0.8rem; color: var(--muted); font-size: 14px; }
+
+/* The findings, a card a suite. */
+.findings {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+}
+
+.finding {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.8rem 0.9rem;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.finding p { margin: 0 0 0.5rem; }
+
+button.plain {
+  width: auto;
+  padding: 0.15rem 0.6rem;
+  border-color: var(--line);
+  background: var(--card);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+button.plain:hover:not(:disabled) { border-color: var(--accent); }
+
+/* The suites of a family, as buttons that stay pressed. */
+.tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0; scroll-margin-top: 1rem; }
+
+.tabs button {
+  width: auto;
+  padding: 0.3rem 0.75rem;
+  border-color: transparent;
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.tabs button:hover:not(:disabled) { border-color: var(--accent); background: var(--card); color: var(--accent); }
+.tabs button[aria-pressed="true"], .tabs button[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--card);
+}
+
+/* A suite: its plot, and its findings beside it once there is room. */
+.view { display: grid; gap: 0.5rem 1.5rem; }
+
+@media (min-width: 64rem) {
+  .view { grid-template-columns: minmax(0, 2.2fr) minmax(17rem, 1fr); }
+}
+
+.view aside.finding { align-self: start; }
+figure.plot { margin: 0 0 0.5rem; min-width: 0; }
+.plot .box { position: relative; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.2rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.legend li { display: flex; align-items: center; gap: 0.4rem; cursor: default; }
+.legend .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* A line's sample: solid, or dashed for a process's time. */
+i.sw {
+  display: inline-block;
+  flex: none;
+  width: 1.4rem;
+  height: 0;
+  border-top: 3px solid var(--s);
+}
+
+i.sw.dashed { border-top-style: dashed; }
+
+svg.cactus { display: block; max-width: 100%; touch-action: pan-y; }
+.cactus text { font: 11px var(--sans); fill: var(--muted); }
+.cactus text.label { font-size: 12px; }
+.cactus text.end { fill: var(--ink); font-size: 12px; }
+.cactus .grid { stroke: var(--line); stroke-width: 1; }
+.cactus .grid.all { stroke-dasharray: 3 3; }
+.cactus .axis { stroke: var(--muted); stroke-width: 1; }
+.cactus .line { fill: none; stroke: var(--s); stroke-width: 2; stroke-linejoin: round; }
+.cactus .line.mine { stroke-width: 3; }
+.cactus .line.dashed { stroke-dasharray: 6 4; }
+.cactus .dim { opacity: 0.2; }
+.cactus .cross { stroke: var(--muted); stroke-width: 1; }
+.cactus .hit { fill: transparent; cursor: crosshair; }
+
+.tip {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tip[hidden] { display: none; }
+.tip span { display: flex; align-items: center; gap: 0.4rem; }
+
+/* Every instance's times, in a box that scrolls rather than the page. */
+details.instances { margin-top: 0.6rem; }
+.instances .check { margin: 0.7rem 0 0.5rem; }
+
+.tscroll {
+  max-height: 34rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+table.times { font-size: 13px; }
+table.times th, table.times td { padding: 0.25rem 0.6rem; white-space: nowrap; }
+table.times thead th { position: sticky; top: 0; background: var(--card); cursor: pointer; }
+table.times thead th[aria-sort] { color: var(--accent); }
+table.times tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-spacing: 0; color: var(--ink); border-bottom: 1px solid var(--line); }
+table.times .num { text-align: right; }
+table.times td.best { font-weight: 700; color: var(--accent); }
+table.times td.fail { color: var(--muted); }
+table.hide-quick tr.quick { display: none; }
+.instances .note { margin-top: 0.5rem; }
+
+details.setup dl { margin-top: 0.8rem; font-size: 14px; }
+details.setup dd { max-width: 52rem; }
+
+/* The systems that were not given some of the problems of a plot. */
+ul.cannot { margin: 0.6rem 0 0; padding-left: 1.2rem; max-width: 52rem; color: var(--muted); font-size: 13px; }
+ul.cannot li { margin: 0.2rem 0; }

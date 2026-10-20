@@ -1,0 +1,53 @@
+% The lung cancer network of K. B. Korb and A. E. Nicholson, Bayesian
+% Artificial Intelligence, Chapman and Hall/CRC, 2004 (second edition
+% 2010), Section 2.2, written out from the book's description: pollution
+% and smoking cause cancer, which a positive X-ray and dyspnoea follow.
+% Hugin format, as scripts/gen_bn.py reads it.
+net
+{
+}
+node Pollution
+{
+  states = ( "low" "high" );
+}
+node Smoker
+{
+  states = ( "True" "False" );
+}
+node Cancer
+{
+  states = ( "True" "False" );
+}
+node Xray
+{
+  states = ( "positive" "negative" );
+}
+node Dyspnoea
+{
+  states = ( "True" "False" );
+}
+potential ( Pollution )
+{
+  data = ( 0.9 0.1 );
+}
+potential ( Smoker )
+{
+  data = ( 0.3 0.7 );
+}
+potential ( Cancer | Pollution Smoker )
+{
+  data = ((( 0.03 0.97 )     % Pollution = low, Smoker = True
+           ( 0.001 0.999 ))  % Pollution = low, Smoker = False
+          (( 0.05 0.95 )     % Pollution = high, Smoker = True
+           ( 0.02 0.98 )));  % Pollution = high, Smoker = False
+}
+potential ( Xray | Cancer )
+{
+  data = (( 0.9 0.1 )        % Cancer = True
+          ( 0.2 0.8 ));      % Cancer = False
+}
+potential ( Dyspnoea | Cancer )
+{
+  data = (( 0.65 0.35 )      % Cancer = True
+          ( 0.3 0.7 ));      % Cancer = False
+}

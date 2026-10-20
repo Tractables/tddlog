@@ -1,0 +1,8 @@
+// Written for tddlog: a network in the form noDice writes its networks,
+// each variable a `discrete` under nested conditionals on its parents,
+// its rows printed to six digits, so that a row of thirds sums to
+// 0.999999 (Dice normalizes a row within 1e-4 of one). Returns C.
+let A = discrete(0.333333,0.333333,0.333333) in
+let B = if ((A == int(2, 0))) then (discrete(0.900000,0.100000)) else (if ((A == int(2, 1))) then (discrete(0.400000,0.600000)) else (discrete(0.200000,0.800000))) in
+let C = if ((B == int(1, 0))) then (if ((A == int(2, 2))) then (discrete(0.500000,0.300000,0.200000)) else (discrete(0.100000,0.600000,0.300000))) else (discrete(0.333333,0.333333,0.333333)) in
+C

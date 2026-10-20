@@ -1,0 +1,86 @@
+% The chest clinic ("Asia") of S. L. Lauritzen and D. J. Spiegelhalter,
+% "Local computations with probabilities on graphical structures and their
+% application to expert systems", Journal of the Royal Statistical Society,
+% Series B 50(2):157-224, 1988, written out from the paper's description:
+% a visit to Asia raises the chance of tuberculosis, smoking that of lung
+% cancer and of bronchitis; either is tuberculosis or lung cancer; a
+% positive X-ray follows either, dyspnoea either or bronchitis. Hugin
+% format, as scripts/gen_bn.py reads it.
+net
+{
+}
+node asia
+{
+  states = ( "yes" "no" );
+}
+node tub
+{
+  states = ( "yes" "no" );
+}
+node smoke
+{
+  states = ( "yes" "no" );
+}
+node lung
+{
+  states = ( "yes" "no" );
+}
+node bronc
+{
+  states = ( "yes" "no" );
+}
+node either
+{
+  states = ( "yes" "no" );
+}
+node xray
+{
+  states = ( "yes" "no" );
+}
+node dysp
+{
+  states = ( "yes" "no" );
+}
+potential ( asia )
+{
+  data = ( 0.01 0.99 );
+}
+potential ( tub | asia )
+{
+  data = (( 0.05 0.95 )    % asia = yes
+          ( 0.01 0.99 ));  % asia = no
+}
+potential ( smoke )
+{
+  data = ( 0.5 0.5 );
+}
+potential ( lung | smoke )
+{
+  data = (( 0.1 0.9 )      % smoke = yes
+          ( 0.01 0.99 ));  % smoke = no
+}
+potential ( bronc | smoke )
+{
+  data = (( 0.6 0.4 )      % smoke = yes
+          ( 0.3 0.7 ));    % smoke = no
+}
+potential ( either | lung tub )
+{
+  % either = lung or tub
+  data = ((( 1.0 0.0 )     % lung = yes, tub = yes
+           ( 1.0 0.0 ))    % lung = yes, tub = no
+          (( 1.0 0.0 )     % lung = no, tub = yes
+           ( 0.0 1.0 )));  % lung = no, tub = no
+}
+potential ( xray | either )
+{
+  data = (( 0.98 0.02 )    % either = yes
+          ( 0.05 0.95 ));  % either = no
+}
+potential ( dysp | bronc either )
+{
+  data = ((( 0.9 0.1 )     % bronc = yes, either = yes
+           ( 0.8 0.2 ))    % bronc = yes, either = no
+          (( 0.7 0.3 )     % bronc = no, either = yes
+           ( 0.1 0.9 )));  % bronc = no, either = no
+}

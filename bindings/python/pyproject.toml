@@ -1,0 +1,40 @@
+[build-system]
+requires = ["maturin>=1.9,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "tddlog"
+description = "Exact probabilities for ProbLog programs, by compilation into tree decision diagrams."
+readme = "README.md"
+authors = [{ name = "Guy Van den Broeck" }]
+# The extension is built against the stable ABI of CPython 3.10, so one wheel
+# per platform serves every version from there on.
+requires-python = ">=3.10"
+license = "Apache-2.0"
+# PEP 639 resolves these against this directory and forbids `..`, so they are
+# copied in from the repository root before a build; see README.md. The
+# extension compiles goatd's vendored C++ tree decomposition solvers in, whose
+# BSD-2-Clause and MIT notices THIRD-PARTY.md reproduces.
+license-files = ["notices/LICENSE", "notices/NOTICE", "notices/THIRD-PARTY.md"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# The version comes from the crate manifest beside this file.
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://tractables.github.io/tddlog/"
+Repository = "https://github.com/Tractables/tddlog"
+Documentation = "https://tractables.github.io/tddlog/python/"
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.maturin]
+# The Cargo package is `tddlog-python` to keep it distinct from the library it
+# wraps; the module Python imports is `tddlog`.
+module-name = "tddlog"
+strip = true

@@ -1,0 +1,9 @@
+/target
+/dist
+
+# Resolved on every build; nothing consumes a lockfile from here.
+/Cargo.lock
+
+# Copied in from the repository root before a build; the tracked originals are
+# LICENSE, NOTICE and THIRD-PARTY.md.
+/notices

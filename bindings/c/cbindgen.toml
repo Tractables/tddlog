@@ -1,0 +1,26 @@
+language = "C"
+include_guard = "TDDLOG_H"
+cpp_compat = true
+style = "both"
+documentation_style = "doxy"
+usize_is_size_t = true
+no_includes = true
+sys_includes = ["stdbool.h", "stddef.h", "stdint.h"]
+
+header = """
+/* tddlog: exact probabilities for ProbLog programs, by compilation into tree
+ * decision diagrams.
+ *
+ * Copyright the tddlog authors. Licensed under the Apache License, Version 2.0.
+ *
+ * The ABI is unstable before 1.0: struct layouts, status codes and function
+ * signatures can change in any release. Build against the tddlog version you
+ * ship with, and check tddlog_version() at run time.
+ */"""
+
+autogen_warning = """
+/* Generated from bindings/c/src/lib.rs by cbindgen. Do not edit by hand;
+ * regenerate it with python bindings/c/check.py --write-header. */"""
+
+[parse]
+parse_deps = false

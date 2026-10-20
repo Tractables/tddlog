@@ -1,0 +1,161 @@
+name: Site
+
+# Builds the site served at https://tractables.github.io/tddlog/: the
+# playground, which runs tddlog in the browser (bindings/wasm, the crate built
+# for wasm32-unknown-emscripten), the guide's page, the results page, the API
+# documentation and the Python and C bindings' pages.
+# Checks the module against ProbLog's answers on every example and the page in
+# a headless browser, and on main publishes the site to GitHub Pages; a pull
+# request only builds and checks. bindings/wasm/README.md gives the same
+# commands for a build by hand.
+#
+# Publishing needs the repository's Pages source set to GitHub Actions
+# (Settings, Pages).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Pinned: the SDK carries the clang and the libc++ that goatd's vendored
+  # C++20 FlowCutter is compiled with, so a build that worked keeps working.
+  EMSDK_VERSION: 4.0.7
+  PLAYWRIGHT_VERSION: 1.49.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # `activate` writes the config the compiler reads; naming it in
+      # EM_CONFIG is what carries the SDK into the later steps, alongside the
+      # directory holding emcc itself.
+      - name: Install the Emscripten SDK
+        run: |
+          set -eux
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install "$EMSDK_VERSION"
+          "$RUNNER_TEMP/emsdk/emsdk" activate "$EMSDK_VERSION"
+          echo "$RUNNER_TEMP/emsdk/upstream/emscripten" >> "$GITHUB_PATH"
+          echo "EM_CONFIG=$RUNNER_TEMP/emsdk/.emscripten" >> "$GITHUB_ENV"
+
+      - name: Add the target
+        run: rustup target add wasm32-unknown-emscripten
+
+      # goatd's build script leaves the C++ compiler to `cc` for this target,
+      # and these name it. Its vendored FlowCutter throws and catches, so the
+      # C++ is compiled for the exception model rustc links with, Wasm
+      # exceptions.
+      - name: Build the module
+        working-directory: bindings/wasm
+        env:
+          CXX_wasm32_unknown_emscripten: em++
+          AR_wasm32_unknown_emscripten: emar
+          CXXFLAGS_wasm32_unknown_emscripten: -fwasm-exceptions
+        run: cargo build --release
+
+      - name: Test the wrapper natively
+        working-directory: bindings/wasm
+        run: cargo test --release --target x86_64-unknown-linux-gnu
+
+      # rustdoc type-checks the crate without linking it; DOCS_RS makes goatd's
+      # build script skip its C++.
+      - name: Build the API documentation
+        env:
+          DOCS_RS: 1
+        run: cargo doc --no-deps --lib --locked
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # Each binding's README and its reference, by Sphinx. The Python page
+      # reads the docstrings of the package, built and installed from this
+      # checkout; the C page shows the committed header. -W fails the build
+      # on any warning, a reference that does not resolve among them.
+      - name: Build the Python and C pages
+        run: |
+          set -eux
+          mkdir -p bindings/python/notices
+          cp LICENSE NOTICE THIRD-PARTY.md bindings/python/notices/
+          python -m pip install --disable-pip-version-check \
+            -r bindings/python/docs/requirements.txt ./bindings/python
+          python -m sphinx -W --keep-going -b html -d target/docs-cache/python bindings/python/docs target/python-docs
+          python -m sphinx -W --keep-going -b html -d target/docs-cache/c bindings/c/docs target/c-docs
+
+      # The benchmark pages show the baselines' programs, so they are on the
+      # baselines branch (benchmarks/), not on main; the results page links
+      # to them where the branch has them.
+      - name: Fetch the benchmark pages
+        run: |
+          set -eux
+          if git fetch --depth 1 origin baselines && git cat-file -e FETCH_HEAD:benchmarks/index.json; then
+            mkdir -p "$RUNNER_TEMP/baselines"
+            git archive FETCH_HEAD benchmarks | tar -x -C "$RUNNER_TEMP/baselines"
+            echo "BENCHMARKS=$RUNNER_TEMP/baselines/benchmarks" >> "$GITHUB_ENV"
+          fi
+
+      - name: Assemble the site
+        run: bindings/wasm/site.sh site target/doc target/python-docs target/c-docs "${GITHUB_SHA::8}" "${BENCHMARKS:-}"
+
+      - name: Test the browser runtime
+        run: node --test bindings/wasm/tests/runtime.cjs
+
+      - name: Run every example through the module against ProbLog's answers
+        run: node bindings/wasm/tests/examples.cjs site/tddlog.js
+
+      - name: Test the site in a browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/playwright" "playwright@$PLAYWRIGHT_VERSION"
+          "$RUNNER_TEMP/playwright/node_modules/.bin/playwright" install --with-deps chromium
+          NODE_PATH="$RUNNER_TEMP/playwright/node_modules" node bindings/wasm/tests/browser.cjs site "$RUNNER_TEMP/screenshots"
+
+      - name: Upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+
+      - name: Check formatting
+        if: ${{ !cancelled() }}
+        working-directory: bindings/wasm
+        run: cargo fmt --check
+
+      - name: Lint
+        if: ${{ !cancelled() }}
+        working-directory: bindings/wasm
+        env:
+          CXX_wasm32_unknown_emscripten: em++
+          AR_wasm32_unknown_emscripten: emar
+          CXXFLAGS_wasm32_unknown_emscripten: -fwasm-exceptions
+        run: cargo clippy --release --all-targets --no-deps -- -D warnings
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  # What the Pages deployment needs: a token to claim the deployment, and one
+  # deployment at a time, a queued one waiting for the one under way (a
+  # concurrency group does not cancel a run under way unless asked to).
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+    steps:
+      - name: Publish the site
+        id: deployment
+        uses: actions/deploy-pages@v4

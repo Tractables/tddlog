@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tddlog guide</title>
+<meta name="description" content="The guide to tddlog, exact inference for ProbLog programs by compilation into tree decision diagrams: the language, worked examples, the command line and the library.">
+<script src="../theme.js"></script>
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<main>
+
+<header>
+  <div>
+    <h1>tddlog guide</h1>
+    <p class="lede">How to write programs for tddlog, run them from the
+    command line, and call tddlog from Rust, Python and C. Each worked
+    example is a program in the repository that its tests check against
+    ProbLog or a count by hand, and each opens in the playground.</p>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="../">Playground</a>
+    <a href="../results/">Results</a>
+    <a href="../api/">API</a>
+    <a href="../python/">Python</a>
+    <a href="../c/">C</a>
+    <a href="https://github.com/Tractables/tddlog">GitHub</a>
+    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
+  </nav>
+</header>
+
+<nav class="card prose contents" aria-label="Contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#getting-started">Getting started</a></li>
+    <li><a href="#language">The language</a></li>
+    <li><a href="#examples">Worked examples</a>:
+      <a href="#bayesian-network">a Bayesian network with evidence</a>,
+      <a href="#reachability">reachability in a graph with cycles</a>,
+      <a href="#binary-integers">integers in binary</a>,
+      <a href="#negation">negation through recursion</a></li>
+    <li><a href="#command-line">The command line</a></li>
+    <li><a href="#networks">Networks and Dice programs</a></li>
+    <li><a href="#library">From Rust, Python and C</a></li>
+    <li><a href="#how-it-works">How it works</a></li>
+  </ol>
+</nav>
+
+<section class="card prose" id="getting-started">
+  <h2>Getting started</h2>
+  <p>tddlog reads a probabilistic logic program in the Datalog fragment of
+  ProbLog and prints the probability of each of its queries given its
+  evidence. The answers are exact: tddlog compiles the program into tree
+  decision diagrams and counts the queries on them.</p>
+  <p>There are three ways to run it:</p>
+  <ul>
+    <li>In the browser: the <a href="../">playground</a> runs tddlog in
+    the tab, built for WebAssembly. Nothing is installed.</li>
+    <li>From Python: <code>pip install tddlog</code>, then
+    <code>tddlog.solve(program)</code>
+    (<a href="#library">below</a>).</li>
+    <li>From a source checkout, with Rust 1.88 or newer and a C++ compiler
+    (gcc 12 or newer, or a recent clang) for the tree-decomposition solver
+    that the goatd library vendors. The command line is then
+    <code>target/release/tddlog</code>:
+<pre>git clone https://github.com/Tractables/tddlog
+cd tddlog
+cargo build --release</pre></li>
+  </ul>
+
+  <h3>A first program</h3>
+  <p><code>examples/alarm.pl</code> is the alarm example of Fierens et al.
+  (2015):</p>
+<pre>0.1::burglary.
+0.2::earthquake.
+0.7::hears_alarm(john).
+0.4::hears_alarm(mary).
+alarm :- burglary.
+alarm :- earthquake.
+calls(X) :- alarm, hears_alarm(X).
+evidence(calls(john), true).
+query(burglary).
+query(earthquake).
+query(calls(mary)).</pre>
+  <p>Each line <code>p::fact.</code> is a probabilistic fact, true with
+  probability p independently of the others. A choice of truth values for
+  the four facts is a possible world, and in each world the rules decide
+  which other atoms hold: the alarm goes off if there is a burglary or an
+  earthquake, and a person calls if the alarm goes off and they hear it.
+  The evidence keeps the worlds in which John calls, and each query asks
+  for the probability of an atom over those worlds.</p>
+<pre>$ ./target/release/tddlog examples/alarm.pl
+burglary:       0.357143
+earthquake:     0.714286
+calls(mary):    0.400000</pre>
+  <p>The answers can be checked by hand. The alarm goes off with
+  probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
+  0.28 × 0.7 = 0.196. A burglary sets the alarm off, so a burglary and
+  John's call happen together with probability 0.1 × 0.7 = 0.07, and
+  P(burglary | John calls) = 0.07 / 0.196 = 0.357143. Once John calls,
+  the alarm has gone off, and Mary hears it with probability 0.4.</p>
+  <p><code>--evidence-probability</code> adds a line with P(e), the
+  probability of the evidence, in scientific notation and as its base-10
+  logarithm, which stays exact where P(e) is smaller than the least
+  floating-point number:</p>
+<pre>$ ./target/release/tddlog --evidence-probability examples/alarm.pl
+burglary:       0.357143
+earthquake:     0.714286
+calls(mary):    0.400000
+P(e):   1.960000e-1     log10 -0.707744</pre>
+  <p class="try"><a href="../?example=alarm&amp;evidence=1">Open this
+  program in the playground</a>, where it can be edited and run
+  again.</p>
+</section>
+
+<section class="card prose" id="language">
+  <h2>The language</h2>
+  <p>tddlog reads the Datalog fragment of ProbLog: atoms whose arguments
+  are constants, integers and variables. A program for tddlog is a program
+  ProbLog reads too, and the repository's tests check tddlog's answers
+  against ProbLog's.</p>
+
+  <h3>Facts and rules</h3>
+<pre>edge(1,2).                           % a fact
+0.6::edge(2,3).                      % a probabilistic fact
+path(X,Y) :- edge(X,Y).              % rules
+path(X,Y) :- edge(X,Z), path(Z,Y).
+0.7::alarm :- burglary.              % a probabilistic rule</pre>
+  <p>A name that starts with a lower-case letter is a constant or a
+  predicate, one that starts with an upper-case letter or <code>_</code>
+  is a variable, and <code>%</code> starts a comment, as does
+  <code>/*</code>. A probability is a number or an expression of numbers,
+  such as <code>1/3::a.</code> A probabilistic rule makes one independent
+  choice for each instance of its variables: under
+  <code>0.6::q(X) :- p(X).</code>, each q(X) whose p(X) holds is true with
+  probability 0.6, independently of the others. A body is a conjunction
+  (<code>,</code>) and may hold disjunctions (<code>;</code>) in
+  parentheses.</p>
+
+  <h3>Annotated disjunctions</h3>
+<pre>0.2::color(red); 0.5::color(green); 0.3::color(blue).
+0.05::tub(yes); 0.95::tub(no) :- asia(yes).</pre>
+  <p>An annotated disjunction makes one choice among its heads: here the
+  color is red with probability 0.2, green with 0.5 and blue with 0.3.
+  Probabilities that sum to less than one leave the rest of the mass to
+  none of the heads. With a body, as on the second line, the choice is made
+  where the body holds, once for each instance of the variables; a table of
+  a Bayesian network is one annotated disjunction per row.</p>
+
+  <h3>Negation</h3>
+<pre>b :- \+ a.
+c :- not(a).
+\+ d :- b.</pre>
+  <p><code>\+ a</code>, or <code>not(a)</code>, holds in a world where
+  <code>a</code> cannot be derived: negation as failure. A negated literal
+  may reach back into its rule's own recursion, as in the game and the
+  gear wheels <a href="#negation">below</a>. tddlog then reads each world
+  by its well-founded model, which is ProbLog's semantics, and answers
+  where that model is two-valued in every world; where some world leaves an
+  atom undefined the program has no distribution, and tddlog says so
+  rather than answer. A negated head, as on the third line, makes
+  <code>d</code> false wherever <code>b</code> holds, as in ProbLog.</p>
+
+  <h3>Arithmetic and comparisons</h3>
+<pre>n(1). n(2). n(3).
+0.5::x(N) :- n(N).
+s(S) :- x(A), x(B), A &lt; B, S is A + B.</pre>
+  <p><code>is</code> evaluates integer arithmetic: <code>+</code>,
+  <code>-</code>, <code>*</code>, <code>//</code> and <code>mod</code>.
+  The comparisons are <code>=</code>, <code>\=</code>, <code>==</code>,
+  <code>\==</code>, <code>&lt;</code>, <code>&gt;</code>,
+  <code>=&lt;</code> and <code>&gt;=</code>. tddlog grounds a program
+  before it compiles it, so the variables of an arithmetic expression or a
+  comparison must be bound by a positive atom of the body; tddlog orders a
+  body so that the atoms that bind come first. Floating-point arithmetic is
+  not supported.</p>
+
+  <h3>Evidence and queries</h3>
+<pre>evidence(calls(john), true).
+evidence(calls(mary), false).
+evidence(alarm).                     % the same as evidence(alarm, true)
+query(burglary).
+query(\+ burglary).
+query(path(1,X)).                    % each path(1,X) that can hold</pre>
+  <p>Evidence is a list of observations, each an atom and its value; the
+  queries are answered given all of them. A query with variables asks for
+  each of its instances that can hold in some world, and a rule whose head
+  is a query, as <code>query(path(1,X)) :- target(X).</code>, for the
+  instances its body allows. Evidence that no world satisfies is reported
+  as <code>evidence is inconsistent: probability zero</code>.</p>
+
+  <h3>What tddlog does not read</h3>
+  <ul>
+    <li>function symbols (<code>a(f(1))</code>), lists, strings and
+    floating-point arithmetic;</li>
+    <li>cut, <code>findall</code> and the other built-ins beyond arithmetic
+    and comparison, and directives such as <code>use_module</code>;</li>
+    <li>facts with variables (<code>p(X).</code>) and rules that are not
+    range restricted: each variable of a head, of a negated literal and of
+    a comparison must occur in a positive atom of the body, though a query
+    can bind a head's variables.</li>
+  </ul>
+  <p>Each of these stops tddlog with a message and exit status 1, as
+  in</p>
+<pre>$ ./target/release/tddlog lists.pl
+parse error: line 1: lists are not supported (`[`)</pre>
+  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 47, reports as
+  errors the 7 that ProbLog expects to fail, and reports the other 55 as
+  unsupported (<code>scripts/problog_suite.py</code>).</p>
+</section>
+
+<section class="card prose" id="examples">
+  <h2>Worked examples</h2>
+  <p>Each program is in the repository's <code>examples/</code>, and
+  <code>tests/it/examples.rs</code> checks its answers under several vtree
+  strategies.</p>
+
+  <h3 id="bayesian-network">A Bayesian network with evidence</h3>
+  <p><code>examples/bn_asia_evidence.pl</code> is the asia network of
+  Lauritzen and Spiegelhalter (1988), which relates a visit to Asia,
+  smoking, tuberculosis, lung cancer and bronchitis to an x-ray and to
+  dyspnoea. Each variable's table is one annotated disjunction per row of
+  its parents' values; <code>either</code>, which holds where the patient
+  has tuberculosis or lung cancer, is a deterministic node, written as
+  rules:</p>
+<pre>0.01::asia(yes); 0.99::asia(no).
+0.05::tub(yes); 0.95::tub(no) :- asia(yes).
+0.01::tub(yes); 0.99::tub(no) :- asia(no).
+0.5::smoke(yes); 0.5::smoke(no).
+0.1::lung(yes); 0.9::lung(no) :- smoke(yes).
+0.01::lung(yes); 0.99::lung(no) :- smoke(no).
+0.6::bronc(yes); 0.4::bronc(no) :- smoke(yes).
+0.3::bronc(yes); 0.7::bronc(no) :- smoke(no).
+either(yes) :- lung(yes), tub(yes).
+either(yes) :- lung(yes), tub(no).
+either(yes) :- lung(no), tub(yes).
+either(no) :- lung(no), tub(no).
+0.98::xray(yes); 0.02::xray(no) :- either(yes).
+0.05::xray(yes); 0.95::xray(no) :- either(no).
+0.9::dysp(yes); 0.1::dysp(no) :- bronc(yes), either(yes).
+0.8::dysp(yes); 0.2::dysp(no) :- bronc(yes), either(no).
+0.7::dysp(yes); 0.3::dysp(no) :- bronc(no), either(yes).
+0.1::dysp(yes); 0.9::dysp(no) :- bronc(no), either(no).
+evidence(xray(yes)).
+evidence(dysp(no)).
+query(asia(yes)).
+query(asia(no)).
+query(tub(yes)).
+query(tub(no)).
+query(smoke(yes)).
+query(smoke(no)).
+query(lung(yes)).
+query(lung(no)).
+query(bronc(yes)).
+query(bronc(no)).
+query(either(yes)).
+query(either(no)).</pre>
+  <p>The patient has a positive x-ray and no dyspnoea, and the queries ask
+  for both values of six of the variables:</p>
+<pre>$ ./target/release/tddlog --evidence-probability examples/bn_asia_evidence.pl
+asia(yes):      0.011678
+asia(no):       0.988322
+tub(yes):       0.054021
+tub(no):        0.945979
+smoke(yes):     0.513207
+smoke(no):      0.486793
+lung(yes):      0.252297
+lung(no):       0.747703
+bronc(yes):     0.193211
+bronc(no):      0.806789
+either(yes):    0.303695
+either(no):     0.696305
+P(e):   3.961994e-2     log10 -1.402086</pre>
+  <p>The positive x-ray alone would raise the probability of tuberculosis
+  or lung cancer (<code>either</code>) to 0.58; the absence of dyspnoea,
+  which either disease makes likely, brings it back to 0.30. The last line
+  is the probability of the two observations together.
+  <code>scripts/gen_bn.py</code> writes such programs from the usual
+  network files (<a href="#networks">below</a>).</p>
+  <p class="try"><a href="../?example=asia&amp;evidence=1">Open it in the
+  playground</a>.</p>
+
+  <h3 id="reachability">Reachability in a graph with cycles</h3>
+  <p><code>examples/cycle_graph.pl</code> asks how likely a path is from
+  node 1 to each other node of a graph of seven nodes whose fourteen edges
+  are each present with their own probability:</p>
+<pre>0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
+0.3::edge(5,3). 0.6::edge(5,6). 0.5::edge(6,4). 0.4::edge(2,6). 0.3::edge(6,1).
+0.5::edge(4,7). 0.6::edge(7,2). 0.4::edge(7,5). 0.7::edge(1,5).
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+query(path(1,2)).
+query(path(1,3)).
+query(path(1,4)).
+query(path(1,5)).
+query(path(1,6)).
+query(path(1,7)).</pre>
+<pre>$ ./target/release/tddlog examples/cycle_graph.pl
+path(1,2):      0.632256
+path(1,3):      0.460356
+path(1,4):      0.399624
+path(1,5):      0.754432
+path(1,6):      0.571699
+path(1,7):      0.199812</pre>
+  <p>The graph has cycles (1, 2, 3 and back to 1, among others), so a
+  world's paths are the least fixpoint of the two rules, which a naive
+  reading would compute by iterating them until nothing changes. tddlog
+  grounds the rules only for the paths that start at node 1, which are all
+  the queries need. Such a component, whose rules each read one of its own
+  atoms positively, is reachability, and tddlog writes it without
+  recursion by eliminating its nodes one at a time, as Floyd and
+  Warshall's transitive closure does, before it compiles the program.</p>
+  <p class="try"><a href="../?example=reachability">Open it in the
+  playground</a>.</p>
+
+  <h3 id="binary-integers">Integers in binary</h3>
+  <p>Probabilistic programming languages such as Dice and Alea.jl compile
+  an integer into its bits, each a random choice of its own, so that a
+  number from 0 to 7 costs three choices rather than one per value, and
+  arithmetic becomes circuits over the bits. The same program can be
+  written in ProbLog. <code>examples/adder.pl</code> adds two numbers with
+  a ripple-carry adder:</p>
+<pre>bit(0). bit(1). bit(2).
+0.7::x(0). 0.3::x(1). 0.8::x(2).
+0.4::y(0). 0.6::y(1). 0.2::y(2).
+
+% exactly one of x(I) and y(I)
+half(I) :- x(I), \+ y(I).
+half(I) :- y(I), \+ x(I).
+% the carry into bit I + 1
+carry(J) :- x(I), y(I), J is I + 1.
+carry(J) :- half(I), carry(I), J is I + 1.
+% bit I of the sum
+sum(I) :- half(I), \+ carry(I).
+sum(I) :- bit(I), \+ half(I), carry(I).
+sum(3) :- carry(3).
+at_least_8 :- sum(3).
+
+evidence(sum(0), false).
+query(sum(1)).
+query(sum(2)).
+query(at_least_8).
+query(x(0)).</pre>
+  <p><code>x(I)</code> is bit I of x, bit 0 the least significant, so x
+  is odd with probability 0.7, and likewise for y. The evidence says that
+  the sum is even, and a comparison of the sum with a constant, here
+  x + y ≥ 8, reads the sum's bits.</p>
+<pre>$ ./target/release/tddlog --evidence-probability examples/adder.pl
+sum(1): 0.491304
+sum(2): 0.496870
+at_least_8:     0.505913
+x(0):   0.608696
+P(e):   4.600000e-1     log10 -0.337242</pre>
+  <p>The sum is odd where exactly one of x and y is, with probability
+  0.7 × 0.6 + 0.3 × 0.4 = 0.54, so P(e) = 0.46. Both are odd with
+  probability 0.7 × 0.4 = 0.28, so P(x odd | e) = 0.28 / 0.46 = 0.608696.
+  The other answers sum the 64 combinations of the six bits; the test
+  checks them against that sum and against ProbLog.
+  <code>scripts/dice2problog.py</code> translates a Dice program into a
+  program like this one (<a href="#networks">below</a>).</p>
+  <p class="try"><a href="../?example=adder&amp;evidence=1">Open it in the
+  playground</a>.</p>
+
+  <h3 id="negation">Negation through recursion</h3>
+  <p>In <code>examples/win.pl</code>, a position of a game is won if some
+  move leads from it to a position that is not won. Each move is present
+  with probability 0.5:</p>
+<pre>0.5::move(1,2). 0.5::move(1,3). 0.5::move(2,3). 0.5::move(3,4).
+win(X) :- move(X,Y), \+ win(Y).
+query(win(1)).
+query(win(2)).
+query(win(3)).</pre>
+<pre>$ ./target/release/tddlog examples/win.pl
+win(1): 0.562500
+win(2): 0.250000
+win(3): 0.500000</pre>
+  <p>The rule defines <code>win</code> through its own negation, which a
+  stratified program may not do, but the moves form no cycle, so each
+  world has one reading. Position 4 has no moves and is lost, so position
+  3 is won where the move from 3 to 4 is present: 0.5. Position 2 is won
+  where the move to 3 is present and 3 is lost: 0.5 × 0.5 = 0.25.
+  Position 1 is won through 2 with probability 0.5 × 0.75 = 0.375, through
+  3 with 0.5 × 0.5 = 0.25, and through both with 0.0625, so
+  P(win(1)) = 0.375 + 0.25 − 0.0625 = 0.5625. <code>--ground</code>
+  prints the program tddlog compiles, in which <code>win(3)</code> has
+  become a probabilistic fact:</p>
+<pre>$ ./target/release/tddlog --ground examples/win.pl
+0.5::move(1,2).
+0.5::move(1,3).
+0.5::move(2,3).
+0.5::win(3).
+win(1) :- move(1,2), \+win(2).
+win(1) :- move(1,3), \+win(3).
+win(2) :- move(2,3), \+win(3).
+query(win(1)).
+query(win(2)).
+query(win(3)).</pre>
+  <p class="try"><a href="../?example=win">Open it in the
+  playground</a>.</p>
+
+  <p>In <code>examples/gearwheels.pl</code> (Bogaerts and Van den Broeck,
+  2015, Example 4.13), two gear wheels turn each other, so each one's
+  turning is defined through the other's, and a button toggles each wheel
+  from time 0 to time 1. <code>turns1</code> depends on its own negation,
+  so the program is not stratified:</p>
+<pre>0.3::button1(0).
+0.6::button2(0).
+turns1(0) :- turns2(0).
+turns2(0) :- turns1(0).
+turns1(1) :- turns2(1).
+turns2(1) :- turns1(1).
+turns1(1) :- turns1(0), \+button1(0).
+turns2(1) :- turns2(0), \+button2(0).
+turns1(1) :- \+turns1(0), button1(0).
+turns2(1) :- \+turns2(0), button2(0).
+query(turns1(0)).
+query(turns1(1)).
+query(turns2(1)).</pre>
+<pre>$ ./target/release/tddlog examples/gearwheels.pl
+turns1(0):      0.000000
+turns1(1):      0.720000
+turns2(1):      0.720000</pre>
+  <p>At time 0 nothing starts the wheels, and the well-founded model does
+  not let the two support each other, so neither turns. At time 1 a wheel
+  turns where its button is pressed, and then both turn:
+  1 − 0.7 × 0.4 = 0.72.</p>
+  <p class="try"><a href="../?example=gears">Open it in the
+  playground</a>.</p>
+
+  <p>Where the well-founded model leaves an atom undefined, the program
+  has no distribution. In <code>examples/unsound.pl</code>, from the same
+  paper, <code>a :- \+b.</code> and <code>b :- \+a.</code> leave both
+  undefined in every world, and tddlog stops with exit status 1:</p>
+<pre>$ ./target/release/tddlog examples/unsound.pl
+compilation error: atom a is undefined in the well-founded model of some possible world (negation through a cycle); no probability</pre>
+</section>
+
+<section class="card prose" id="command-line">
+  <h2>The command line</h2>
+  <p><code>tddlog [options] program.pl</code> prints one
+  <code>atom:&lt;tab&gt;probability</code> line per query, in the program's
+  order, as ProbLog does. The options:</p>
+  <dl>
+    <dt><code>--vtree &lt;strategy&gt;</code></dt>
+    <dd>The vtree, the tree over the probabilistic facts that shapes the
+    diagrams. Every strategy that answers a program gives the same
+    answers; they differ in how fast they get there, and <code>td</code>,
+    <code>families</code> and <code>decision</code> fail on some programs,
+    with a message that says why. <code>auto</code>, the default, runs trials of
+    the others (<code>td</code>, <code>closed</code>,
+    <code>families</code>, <code>dynamic</code>, <code>program</code>,
+    <code>decision</code>) over rewrites of the program, under bounds on
+    size and work that double until one finishes. <code>tddlog
+    --help</code> describes each.</dd>
+    <dt><code>--evidence-probability</code></dt>
+    <dd>After the queries, print P(e): <code>P(e):&lt;tab&gt;p&lt;tab&gt;log10
+    l</code>, p in scientific notation and l its base-10 logarithm.</dd>
+    <dt><code>--no-queries</code></dt>
+    <dd>With <code>--evidence-probability</code>, print P(e) alone, as for
+    a partition function; what no observation depends on is then not
+    compiled.</dd>
+    <dt><code>--precision &lt;n&gt;</code></dt>
+    <dd>Digits after the decimal point, 6 by default. A probability under
+    10<sup>−4</sup> that is not zero is written in scientific notation, as
+    ProbLog writes it.</dd>
+    <dt><code>--ground</code></dt>
+    <dd>Print the relevant ground program, as ProbLog, and exit. ProbLog
+    reads the output, so the grounding can be checked on its own.</dd>
+    <dt><code>--stats</code></dt>
+    <dd>Print what tddlog did to stderr: the size of the ground program,
+    the trials of <code>auto</code>, the largest diagrams and the time of
+    each stage.</dd>
+  </dl>
+  <p>The exit status is 0 with answers, also where the evidence is
+  inconsistent, 1 for a program tddlog cannot answer, with the reason on
+  stderr, and 2 for options it does not accept, which it checks before it
+  reads the program: an unknown option, one given twice, or one that the
+  others leave unused.</p>
+</section>
+
+<section class="card prose" id="networks">
+  <h2>Networks and Dice programs</h2>
+  <p><code>scripts/gen_bn.py</code> writes a discrete network as a ground
+  program, as in the asia example: a Bayesian network in BIF, Hugin
+  (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
+  the UAI format, and a Markov network in the UAI format, each factor an
+  observed atom.</p>
+<pre>python3 scripts/gen_bn.py examples/asia.net &gt; asia.pl
+python3 scripts/gen_bn.py tests/regress/markov.uai --evid tests/regress/markov.uai.evid &gt; markov.pl
+./target/release/tddlog markov.pl</pre>
+  <p>The program queries every value of every unobserved variable
+  (<code>--query</code> narrows that), and its answers are the network's
+  marginals given the evidence. For a Markov network the program's first
+  line is <code>% log10 Z - log10 P(e) = c</code>, and
+  <code>--evidence-probability --no-queries</code> then gives the partition
+  function given the evidence, the UAI PR task: log10 Z = l + c, where l is
+  the logarithm on the <code>P(e)</code> line. The script's docstring has
+  the encoding and its options.</p>
+  <p><code>scripts/dice2problog.py program.dice &gt; program.pl</code>
+  translates a Dice program into ProbLog: an integer of w bits becomes w
+  atoms, each <code>flip</code> a probabilistic fact, and the integer
+  operations rules over the bits, as in the adder above.
+  <code>data/dice</code> holds the Dice paper's programs.</p>
+</section>
+
+<section class="card prose" id="library">
+  <h2>From Rust, Python and C</h2>
+  <p>Each binding takes the program's text and the command line's options
+  and returns the answers in the order of the program's queries, each
+  written as ProbLog prints it.</p>
+
+  <h3>Rust</h3>
+  <p>The crate builds from its repository, with a C++ compiler as
+  above; in <code>Cargo.toml</code>:</p>
+<pre>[dependencies]
+tddlog = { git = "https://github.com/Tractables/tddlog" }</pre>
+  <p><code>tddlog::solve</code> takes the program, <code>Options</code>
+  and a function that receives what <code>--stats</code> would print:</p>
+<pre>let program = "
+    0.1::burglary.
+    0.2::earthquake.
+    0.7::hears_alarm(john).
+    alarm :- burglary.
+    alarm :- earthquake.
+    calls(X) :- alarm, hears_alarm(X).
+    evidence(calls(john), true).
+    query(burglary).
+";
+let options = tddlog::Options { evidence_probability: true, ..tddlog::Options::default() };
+let solution = tddlog::solve(program, &amp;options, &amp;mut |_| {})?;
+// `answers` is `None` where the evidence is inconsistent.
+for answer in solution.answers.as_deref().unwrap_or_default() {
+    println!("{answer}: {}", answer.probability);
+}</pre>
+  <p>The <a href="../api/tddlog/">API documentation</a> runs this example
+  as a test, and describes <code>Options</code> and
+  <code>Solution</code>.</p>
+
+  <h3>Python</h3>
+<pre>import tddlog
+
+solution = tddlog.solve(open("examples/alarm.pl").read(), evidence_probability=True)
+for query, probability in solution.answers.items():
+    print(f"{query}: {probability:.6f}")
+print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
+  <p><code>pip install tddlog</code> installs a wheel for CPython 3.10 or
+  later on Linux x86-64, macOS arm64 and Windows x86-64, and elsewhere
+  builds from source. <code>solve</code> takes the
+  options as keywords (<code>vtree</code>,
+  <code>evidence_probability</code>, <code>queries</code>), and an error
+  is an exception of its own: <code>tddlog.ParseError</code>,
+  <code>GroundingError</code> or <code>CompilationError</code>. The
+  <a href="../python/">Python page</a> has the rest.</p>
+
+  <h3>C</h3>
+<pre>TddlogOptions options = tddlog_options_default();
+options.evidence_probability = true;
+TddlogSolution *solution;
+if (tddlog_solve(program, &amp;options, &amp;solution) != TDDLOG_OK) {
+    fprintf(stderr, "%s\n", tddlog_last_error_message());
+    return 1;
+}
+for (size_t i = 0; i &lt; tddlog_solution_num_answers(solution); i++)
+    printf("%s:\t%f\n", tddlog_solution_query(solution, i),
+           tddlog_solution_probability(solution, i));
+tddlog_solution_free(solution);</pre>
+  <p>The C library installs with CMake, as a CMake package and a
+  pkg-config file; the <a href="../c/">C page</a> covers building,
+  linking and the header.</p>
+</section>
+
+<section class="card prose" id="how-it-works">
+  <h2>How it works</h2>
+  <ol>
+    <li>tddlog parses the program and grounds it bottom up, only for the
+    atoms the queries and the evidence depend on, and simplifies the
+    ground program.</li>
+    <li>It chooses a vtree over the probabilistic facts. A tree decision
+    diagram (TDD; Capelli, Choi, Mengel, Muñoz and Van den Broeck, 2026)
+    is a canonical decision diagram shaped by a vtree, and the vtree
+    decides its size. The default, <code>auto</code>, tries several
+    vtrees and rewrites of the program under small bounds, and doubles
+    the bounds until one of them finishes.</li>
+    <li>It compiles each derived atom into a TDD by Tp-compilation
+    (Vlasselaer et al., 2015 and 2016): the rules are applied to diagrams
+    rather than to truth values, component by component, until the
+    diagrams stop changing. Negation through recursion takes the
+    well-founded fixpoint of Bogaerts and Van den Broeck (2015).</li>
+    <li>It conjoins the evidence and counts each query against it: the
+    weighted count of a diagram is the probability of the worlds it
+    holds in.</li>
+  </ol>
+  <p>The TDDs are those of the
+  <a href="https://github.com/Tractables/tididi">tididi</a> library.
+  <a href="https://github.com/Tractables/tddlog/blob/main/docs/design.md">docs/design.md</a>
+  describes each stage and the decisions behind it, and the
+  <a href="../results/">results page</a> compares tddlog with ProbLog,
+  PITA, aspmc, Ace, Merlin, Dice, Alea.jl and Roulette on their
+  benchmarks.</p>
+</section>
+
+<footer>
+  tddlog is open source under the Apache-2.0 license:
+  <a href="https://github.com/Tractables/tddlog">repository</a> ·
+  <a href="../">playground</a> ·
+  <a href="../results/">results</a> ·
+  <a href="../api/">API</a>
+</footer>
+
+</main>
+
+</body>
+</html>

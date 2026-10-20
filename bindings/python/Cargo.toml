@@ -1,0 +1,35 @@
+# An empty `[workspace]` table keeps this crate out of any workspace cargo
+# would otherwise infer from the directories above it, so it is built on its
+# own.
+[workspace]
+
+[package]
+name = "tddlog-python"
+version = "0.1.0"
+authors = ["Guy Van den Broeck"]
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/Tractables/tddlog"
+description = "Python bindings for tddlog."
+publish = false
+
+[lib]
+# Python imports the extension by this name, so it matches the `#[pymodule]`
+# function and the package name in pyproject.toml.
+name = "tddlog"
+crate-type = ["cdylib"]
+
+[dependencies]
+# The checkout this crate sits in, so the wheel answers as the command line
+# built from the same commit does. The two versions are kept equal.
+tddlog = { path = "../.." }
+# `extension-module` links against the interpreter that loads the wheel rather
+# than a libpython. `abi3-py310` builds against the stable ABI, so one wheel
+# per platform covers CPython 3.10 and later.
+pyo3 = { version = "0.29.2", features = ["abi3-py310", "extension-module"] }
+
+# The command line's release profile: the solver runs as fast in a wheel.
+[profile.release]
+lto = "fat"
+codegen-units = 1
