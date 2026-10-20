@@ -36,7 +36,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import FixedLocator, NullLocator  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FLOOR = 0.2  # the owner, 2026-10-20 (AGENTS.md rule 16)
+FLOOR = 0.2  # seconds: shorter runs count as this long
 PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
 
