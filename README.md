@@ -29,7 +29,7 @@ and it [runs in the browser](https://tractables.github.io/tddlog/).
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/speedups-dark.svg">
-    <img src="docs/images/speedups.svg" width="760"
+    <img src="docs/images/speedups.svg"
          alt="tddlog's average speedup over each exact inference system, by kind of problem">
   </picture>
 </p>
@@ -93,16 +93,11 @@ so that the translations can be checked for fairness.
 
 ### Probabilistic logic programs: ProbLog, PITA and aspmc
 
-<p>
+<p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/cactus-programs-dark.svg">
-    <img src="docs/images/cactus-programs.svg" width="61%"
-         alt="Cactus plot: probabilistic logic programs answered within each time limit">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/scatter-programs-dark.svg">
-    <img src="docs/images/scatter-programs.svg" width="37%"
-         alt="Scatter plot: tddlog's time against the fastest of ProbLog, PITA and aspmc">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-programs-dark.svg">
+    <img src="docs/images/results-programs.svg"
+         alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest of ProbLog, PITA and aspmc">
   </picture>
 </p>
 
@@ -119,16 +114,11 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
 
 ### Bayesian and Markov networks: Ace, Merlin and the network libraries
 
-<p>
+<p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/cactus-networks-dark.svg">
-    <img src="docs/images/cactus-networks.svg" width="61%"
-         alt="Cactus plot: networks answered within each time limit">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/scatter-networks-dark.svg">
-    <img src="docs/images/scatter-networks.svg" width="37%"
-         alt="Scatter plot: tddlog's time against the fastest network tool's">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-networks-dark.svg">
+    <img src="docs/images/results-networks.svg"
+         alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
   </picture>
 </p>
 
@@ -148,16 +138,11 @@ Bayesian networks only and ran on the 94 among them.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
-<p>
+<p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/cactus-ppl-dark.svg">
-    <img src="docs/images/cactus-ppl.svg" width="61%"
-         alt="Cactus plot: probabilistic programs answered within each time limit">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/scatter-ppl-dark.svg">
-    <img src="docs/images/scatter-ppl.svg" width="37%"
-         alt="Scatter plot: tddlog's time against the fastest other system's">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-ppl-dark.svg">
+    <img src="docs/images/results-ppl.svg"
+         alt="Probabilistic programs answered within each time limit, and tddlog's time against the fastest other system's">
   </picture>
 </p>
 
@@ -181,11 +166,11 @@ circuit Alea.jl builds.
 
 ### Probabilistic databases: ProvSQL
 
-<p>
+<p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/cactus-databases-dark.svg">
-    <img src="docs/images/cactus-databases.svg" width="61%"
-         alt="Cactus plot: TPC-H queries answered within each time limit">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-databases-dark.svg">
+    <img src="docs/images/results-databases.svg"
+         alt="TPC-H queries answered within each time limit, and tddlog's time against ProvSQL's">
   </picture>
 </p>
 
@@ -200,6 +185,8 @@ The TPC-H queries over a tuple-independent database, at scale factors
   answered more, it is faster on every query that takes ProvSQL 5
   seconds or more, and it answers 205 of the 208, 9 of them queries
   ProvSQL does not finish. ProvSQL answers 196, none that tddlog misses.
+- Over the 196 queries both answer, tddlog takes 270 s in total and
+  ProvSQL 366 s.
 
 ### Setup
 

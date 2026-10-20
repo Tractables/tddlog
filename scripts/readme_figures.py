@@ -4,12 +4,16 @@ its text quotes, printed as JSON.
 
     python3 scripts/readme_figures.py [--png] [OUT_DIR]     (default docs/images)
 
---png also writes each figure as a PNG, to look at.
+--png also writes each figure as a PNG at the SVG's own size, to look at.
 
 Writes, each as NAME.svg for a light page and NAME-dark.svg for a dark one:
   speedups         tddlog's average speedup over each baseline;
-  cactus-GROUP     the instances each system answers within a time limit;
-  scatter-GROUP    tddlog's time against the fastest other system's.
+  results-GROUP    a cactus plot (the instances each system answers within
+                   a time limit) beside a scatter plot (tddlog's time
+                   against the fastest other system's on each instance).
+
+Each figure is drawn at the width it is shown at (900 pixels) on a
+background of its own, so that it reads on any page.
 
 Times under 0.1 s count as 0.1 s: an instance both systems answer in under
 0.1 s is left out of a comparison, and no ratio is larger for a run that
@@ -33,6 +37,7 @@ from matplotlib.ticker import FixedLocator, NullLocator  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FLOOR = 0.1
 PNG = '--png' in sys.argv
+WIDTH = 9.4  # inches; 900 pixels in a browser
 
 # The comparisons: the suites of each and the systems drawn in it, tddlog first.
 GROUPS = [
@@ -55,8 +60,8 @@ PALETTE = [('#d55e00', '#ff8a4c'), ('#0072b2', '#58a6ff'), ('#e69f00', '#f2b84b'
            ('#6a3d9a', '#b392f0'), ('#8c564b', '#c9a38f'), ('#999933', '#c8c86a'), ('#56b4e9', '#9ad4f5'),
            ('#882255', '#e0709f'), ('#7f7f7f', '#a8a8a8'), ('#332288', '#8b8bf0'), ('#117733', '#56d364')]
 THEMES = {
-    '': dict(text='#1f2328', muted='#59636e', grid='#d1d9e0', i=0),
-    '-dark': dict(text='#e6edf3', muted='#9198a1', grid='#3d444d', i=1),
+    '': dict(bg='#ffffff', text='#1f2328', muted='#59636e', grid='#d8dee4', i=0),
+    '-dark': dict(bg='#0d1117', text='#e6edf3', muted='#9198a1', grid='#30363d', i=1),
 }
 FONTS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
@@ -123,12 +128,13 @@ def style(theme):
     c = THEMES[theme]
     plt.rcdefaults()
     plt.rcParams.update({
-        'svg.fonttype': 'none', 'svg.hashsalt': 'tddlog', 'font.family': 'DejaVu Sans', 'font.size': 10.5,
+        'svg.fonttype': 'none', 'svg.hashsalt': 'tddlog', 'font.family': 'DejaVu Sans', 'font.size': 12,
         'text.color': c['text'], 'axes.labelcolor': c['text'], 'axes.edgecolor': c['muted'],
         'xtick.color': c['muted'], 'ytick.color': c['muted'], 'xtick.labelcolor': c['text'],
-        'ytick.labelcolor': c['text'], 'axes.spines.top': False, 'axes.spines.right': False,
-        'figure.facecolor': 'none', 'axes.facecolor': 'none', 'savefig.facecolor': 'none',
-        'legend.frameon': False, 'axes.titleweight': 'bold', 'axes.titlesize': 12,
+        'ytick.labelcolor': c['text'], 'xtick.labelsize': 11.5, 'ytick.labelsize': 11.5,
+        'axes.labelsize': 12, 'axes.spines.top': False, 'axes.spines.right': False,
+        'figure.facecolor': c['bg'], 'axes.facecolor': c['bg'], 'savefig.facecolor': c['bg'],
+        'legend.frameon': False, 'axes.titleweight': 'bold', 'axes.titlesize': 13,
     })
     return c
 
@@ -136,9 +142,8 @@ def style(theme):
 def save(fig, out, name):
     path = os.path.join(out, name + '.svg')
     if PNG:
-        fig.savefig(path[:-4] + '.png', format='png', dpi=110, bbox_inches='tight', pad_inches=0.08,
-                    facecolor='#0d1117' if name.endswith('-dark') else 'white')
-    fig.savefig(path, format='svg', bbox_inches='tight', pad_inches=0.08, metadata={'Date': None})
+        fig.savefig(path[:-4] + '.png', format='png', dpi=96, bbox_inches='tight', pad_inches=0.15)
+    fig.savefig(path, format='svg', bbox_inches='tight', pad_inches=0.15, metadata={'Date': None})
     plt.close(fig)
     text = open(path).read()
     # The SVG names the font it was measured with; a page draws it with the system's sans serif.
@@ -146,19 +151,12 @@ def save(fig, out, name):
     open(path, 'w').write(text)
 
 
-def seconds_axis(ax, hi, axis='x'):
-    ticks = [t for t in (0.1, 1, 10, 100) if t < hi * 0.6] + [hi]
-    labels = ['≤0.1' if t == FLOOR else f'{t:g}' for t in ticks]
-    if axis == 'x':
-        ax.set_xscale('log')
-        ax.xaxis.set_major_locator(FixedLocator(ticks))
-        ax.xaxis.set_minor_locator(NullLocator())
-        ax.set_xticklabels(labels)
-    else:
-        ax.set_yscale('log')
-        ax.yaxis.set_major_locator(FixedLocator(ticks))
-        ax.yaxis.set_minor_locator(NullLocator())
-        ax.set_yticklabels(labels)
+def log_axis(ax, axis, ticks, labels):
+    getattr(ax, f'set_{axis}scale')('log')
+    a = getattr(ax, f'{axis}axis')
+    a.set_major_locator(FixedLocator(ticks))
+    a.set_minor_locator(NullLocator())
+    getattr(ax, f'set_{axis}ticklabels')(labels)
 
 
 def colours(systems, i):
@@ -168,41 +166,36 @@ def colours(systems, i):
     return out
 
 
-def cactus(group, rs, names, hi, out, theme):
-    c = style(theme)
-    col = colours(group['systems'], c['i'])
+def cactus(ax, group, rs, names, hi, c, col):
+    """The instances each system answers within each time limit; returns
+    {system: answered} and the lines' legend entries, most answered first."""
     n = len(rs)
-    fig, ax = plt.subplots(figsize=(6.4, 4.2))
-    solved = {}
+    solved, entries = {}, []
     for s in group['systems']:
         ts = sorted(clamp(v[s]) for _, _, v in rs if v.get(s) is not None)
         solved[s] = len(ts)
         xs = [FLOOR] + ts + [hi]
         ys = [sum(t <= FLOOR for t in ts)] + list(range(1, len(ts) + 1)) + [len(ts)]
         lead = s == 'tddlog'
-        ax.step(xs, ys, where='post', color=col[s], lw=2.8 if lead else 1.5, zorder=10 if lead else 5,
-                label=f'{names[s]}  {len(ts)}')
-    ax.axhline(n, color=c['muted'], lw=0.8, ls=(0, (2, 3)), zorder=1)
-    ax.text(FLOOR * 1.08, n, f'all {n}', va='bottom', ha='left', color=c['muted'], fontsize=9)
-    seconds_axis(ax, hi)
+        line, = ax.step(xs, ys, where='post', color=col[s], lw=3.2 if lead else 1.9, zorder=10 if lead else 5)
+        entries.append((line, f'{names[s]}  {len(ts)}', len(ts)))
+    ax.axhline(n, color=c['muted'], lw=0.9, ls=(0, (2, 3)), zorder=1)
+    ax.text(FLOOR * 1.1, n * 1.01, f'all {n}', va='bottom', ha='left', color=c['muted'], fontsize=11)
+    ticks = [t for t in (0.1, 1, 10, 100) if t < hi * 0.6] + [hi]
+    log_axis(ax, 'x', ticks, ['≤0.1' if t == FLOOR else f'{t:g}' for t in ticks])
     ax.set_xlim(FLOOR, hi)
-    ax.set_ylim(0, n * 1.06)
-    ax.grid(True, color=c['grid'], lw=0.6)
+    ax.set_ylim(0, n * 1.09)
+    ax.grid(True, color=c['grid'], lw=0.7)
     ax.set_axisbelow(True)
     ax.set_xlabel('time limit (s)')
     ax.set_ylabel('instances answered')
-    ax.set_title(group['title'], loc='left')
-    handles, labels = ax.get_legend_handles_labels()
-    order = sorted(range(len(labels)), key=lambda k: -solved[group['systems'][k]])
-    ax.legend([handles[k] for k in order], [labels[k] for k in order], loc='upper left',
-              bbox_to_anchor=(1.01, 1.0), fontsize=9.5, handlelength=1.6, labelcolor=c['text'])
-    save(fig, out, f'cactus-{group["key"]}{theme}')
-    return solved
+    ax.set_title(group['title'], loc='left', pad=10)
+    entries.sort(key=lambda e: -e[2])
+    return solved, entries
 
 
-def scatter(group, rs, names, hi, out, theme):
-    c = style(theme)
-    col = colours(group['systems'], c['i'])
+def scatter(ax, group, rs, names, hi, c, col):
+    """tddlog's time against the fastest other system's, instance by instance."""
     fail = 10 ** (math.log10(hi) + 0.32)
     pts, both_fast, neither = [], 0, 0
     for _, _, v in rs:
@@ -215,97 +208,125 @@ def scatter(group, rs, names, hi, out, theme):
             both_fast += 1
         else:
             pts.append((clamp(b) if b is not None else fail, clamp(t) if t is not None else fail))
-    fig, ax = plt.subplots(figsize=(4.6, 4.4))
     faster = [p for p in pts if p[1] < p[0]]
     slower = [p for p in pts if p[1] > p[0]]
     tie = [p for p in pts if p[1] == p[0]]
     other = col[group['systems'][1]]
     for ps, colour in ((faster, col['tddlog']), (slower, other), (tie, c['muted'])):
         if ps:
-            ax.scatter([p[0] for p in ps], [p[1] for p in ps], s=16, color=colour, alpha=0.75, lw=0, zorder=5)
+            ax.scatter([p[0] for p in ps], [p[1] for p in ps], s=24, color=colour, alpha=0.75, lw=0, zorder=5)
     lim = (FLOOR / 1.15, fail * 1.3)
     edge = 10 ** (math.log10(hi) + 0.14)
-    ax.axvspan(edge, lim[1], color=c['grid'], alpha=0.45, lw=0, zorder=1)
-    ax.axhspan(edge, lim[1], color=c['grid'], alpha=0.45, lw=0, zorder=1)
-    ax.plot(lim, lim, color=c['muted'], lw=1, zorder=2)
+    ax.axvspan(edge, lim[1], color=c['grid'], alpha=0.6, lw=0, zorder=1)
+    ax.axhspan(edge, lim[1], color=c['grid'], alpha=0.6, lw=0, zorder=1)
+    ax.plot(lim, lim, color=c['muted'], lw=1.1, zorder=2)
     for k in (10, 100):
-        ax.plot(lim, [x / k for x in lim], color=c['muted'], lw=0.8, ls=(0, (3, 3)), zorder=2)
-        ax.text(hi / 4, hi / 4 / k * 1.25, f'{k}×', color=c['muted'], fontsize=8.5, ha='center', va='bottom',
+        ax.plot(lim, [x / k for x in lim], color=c['muted'], lw=0.9, ls=(0, (3, 3)), zorder=2)
+        ax.text(hi / 4, hi / 4 / k * 1.3, f'{k}×', color=c['muted'], fontsize=11, ha='center', va='bottom',
                 rotation=45, rotation_mode='anchor')
     ticks = [t for t in (0.1, 1, 10, 100) if t < hi / 2] + [fail]
     labels = ['≤0.1' if t == FLOOR else f'{t:g}' for t in ticks[:-1]] + ['fail']
-    for axis in ('x', 'y'):
-        getattr(ax, f'set_{axis}scale')('log')
-        a = getattr(ax, f'{axis}axis')
-        a.set_major_locator(FixedLocator(ticks))
-        a.set_minor_locator(NullLocator())
-        getattr(ax, f'set_{axis}ticklabels')(labels)
+    log_axis(ax, 'x', ticks, labels)
+    log_axis(ax, 'y', ticks, labels)
     ax.set_xlim(*lim)
     ax.set_ylim(*lim)
     ax.set_aspect('equal')
-    ax.grid(True, color=c['grid'], lw=0.6)
+    ax.grid(True, color=c['grid'], lw=0.7)
     ax.set_axisbelow(True)
     others = [names[s] for s in group['systems'][1:]]
-    who = others[0] if len(others) == 1 else 'the fastest other system'
-    ax.set_xlabel(f'{who} (s)')
+    ax.set_xlabel(f'{others[0] if len(others) == 1 else "fastest other system"} (s)')
     ax.set_ylabel('tddlog (s)')
-    ax.set_title(f'tddlog faster on {len(faster)}', loc='left', color=col['tddlog'], fontsize=10.5)
-    ax.set_title(f'slower on {len(slower)}', loc='right', color=other, fontsize=10.5)
-    save(fig, out, f'scatter-{group["key"]}{theme}')
+    ax.set_title(f'tddlog faster on {len(faster)}', loc='left', color=col['tddlog'], fontsize=11.5, pad=10)
+    ax.set_title(f'slower on {len(slower)}', loc='right', color=other, fontsize=11.5, pad=10)
     return dict(points=len(pts), faster=len(faster), slower=len(slower), tie=len(tie), both_fast=both_fast,
                 neither=neither)
 
 
-def speedups(entries, out, theme):
-    """entries: [(group title, [(name, stats)])], each name's bar its geometric mean."""
+def legend_order(entries, ncol):
+    """entries in the order that fills a matplotlib legend of ncol columns
+    (column by column) so that it reads row by row."""
+    rows_, large = divmod(len(entries), ncol)
+    per_col = [rows_ + 1] * large + [rows_] * (ncol - large)
+    return [entries[r * ncol + k] for k in range(ncol) for r in range(per_col[k])]
+
+
+def results(group, rs, names, hi, out, theme):
+    """The cactus plot beside the scatter plot, the systems' legend under both."""
     c = style(theme)
-    lines = []
-    for title, items in entries:
-        lines.append(('head', title))
-        for name, st in sorted(items, key=lambda x: -x[1]['geomean']):
-            lines.append(('bar', name, st))
-    h = 0.30 * len(lines) + 0.5
-    fig, ax = plt.subplots(figsize=(7.2, h))
-    y = 0
-    ys, labels = [], []
-    gs = [rest[1]['geomean'] for kind, *rest in lines if kind == 'bar']
-    hi, lo = max(gs), min(gs)
-    for kind, *rest in lines:
-        if kind == 'head':
-            ax.text(-0.02, -y, rest[0], transform=ax.get_yaxis_transform(), ha='right', va='center',
-                    fontweight='bold', fontsize=10.5)
-        else:
-            name, st = rest
+    col = colours(group['systems'], c['i'])
+    n = len(group['systems'])
+    ncol = math.ceil(n / math.ceil(n / 6))
+    lrows = math.ceil(n / ncol)
+    h = 4.3 + 0.32 * lrows
+    fig = plt.figure(figsize=(WIDTH, h))
+    grid = fig.add_gridspec(1, 2, width_ratios=[1.3, 1], wspace=0.3, left=0.08, right=0.98, top=0.93,
+                            bottom=(0.75 + 0.32 * lrows) / h)
+    solved, entries = cactus(fig.add_subplot(grid[0]), group, rs, names, hi, c, col)
+    sc = scatter(fig.add_subplot(grid[1]), group, rs, names, hi, c, col)
+    entries = legend_order(entries, ncol)
+    fig.legend([e[0] for e in entries], [e[1] for e in entries], loc='lower center', bbox_to_anchor=(0.5, 0.0),
+               ncol=ncol, fontsize=12, handlelength=1.5, columnspacing=1.6, labelcolor=c['text'])
+    save(fig, out, f'results-{group["key"]}{theme}')
+    return solved, sc
+
+
+def speedups(entries, out, theme):
+    """entries: [(group title, [(name, stats)])], each name's bar its geometric
+    mean, the first two groups in a left column and the others in a right one."""
+    c = style(theme)
+
+    def lines(groups):
+        out = []
+        for title, items in groups:
+            out.append(('head', title, None))
+            out += [('bar', name, st) for name, st in sorted(items, key=lambda x: -x[1]['geomean'])]
+        return out
+
+    cols = [lines(entries[:2]), lines(entries[2:])]
+    gs = [st['geomean'] for col in cols for kind, _, st in col if kind == 'bar']
+    xlim = (min(min(gs), 1) / 2.5, max(gs) * 14)
+    nrow = max(len(col) for col in cols)
+    row, top, bottom = 0.36, 0.1, 0.6
+    names_w, bars_w, count_w = 1.75, 2.35, 0.5
+    h = nrow * row + top + bottom
+    fig = plt.figure(figsize=(WIDTH, h))
+    for k, col in enumerate(cols):
+        ax = fig.add_axes([(k * WIDTH / 2 + names_w) / WIDTH, bottom / h, bars_w / WIDTH, nrow * row / h])
+        ys, labels = [], []
+        for y, (kind, name, st) in enumerate(col):
+            if kind == 'head':
+                ax.text(-names_w / bars_w, -y, name, transform=ax.get_yaxis_transform(), ha='left', va='center',
+                        fontweight='bold', fontsize=12.5, zorder=4,
+                        bbox=dict(boxstyle='square,pad=0.15', fc=c['bg'], ec='none'))
+                ax.text(1 + count_w / bars_w, -y, 'instances', transform=ax.get_yaxis_transform(), va='center',
+                        ha='right', fontsize=10.5, color=c['muted'])
+                continue
             g = st['geomean']
             colour = TDDLOG[c['i']] if g >= 1 else PALETTE[0][c['i']]
-            ax.barh(-y, max(g, 1) - min(g, 1), left=min(g, 1), height=0.62, color=colour, lw=0)
-            label = f'{g:.0f}×' if g >= 10 else f'{g:.1f}×'
-            if g < 1:
+            ax.barh(-y, max(g, 1) - min(g, 1), left=min(g, 1), height=0.64, color=colour, lw=0, zorder=3)
+            if g >= 1:
+                label = f'{g:.0f}×' if g >= 10 else f'{g:.1f}×'
+            else:
                 label = f'{1 / g:.0f}× slower' if g <= 0.1 else f'{1 / g:.1f}× slower'
-            ax.text(max(g, 1) * 1.08, -y, label, va='center', ha='left', fontsize=10, fontweight='bold',
-                    color=colour)
-            ax.text(1.0, -y, f'{st["both"]}', transform=ax.get_yaxis_transform(), va='center', ha='right',
-                    fontsize=9, color=c['muted'])
+            ax.text(max(g, 1) * 1.1, -y, label, va='center', ha='left', fontsize=12, fontweight='bold',
+                    color=colour, zorder=4)
+            ax.text(1 + count_w / bars_w, -y, f'{st["both"]}', transform=ax.get_yaxis_transform(), va='center',
+                    ha='right', fontsize=11, color=c['muted'])
             ys.append(-y)
             labels.append(name)
-        y += 1
-    ax.set_xscale('log')
-    ax.set_xlim(min(0.5, lo / 2), hi * 12)
-    ax.axvline(1, color=c['muted'], lw=1)
-    ticks = [t for t in (0.01, 0.1, 1, 10, 100, 1000, 10000) if lo / 2 <= t <= hi * 12 or t == 1]
-    ax.xaxis.set_major_locator(FixedLocator(ticks))
-    ax.xaxis.set_minor_locator(NullLocator())
-    ax.set_xticklabels([f'{t:g}×' for t in ticks])
-    ax.set_yticks(ys)
-    ax.set_yticklabels(labels)
-    ax.tick_params(axis='y', length=0)
-    ax.set_ylim(-y + 0.4, 0.6)
-    ax.spines['left'].set_visible(False)
-    ax.grid(True, axis='x', color=c['grid'], lw=0.6)
-    ax.set_axisbelow(True)
-    ax.text(1.0, 0, 'instances', transform=ax.get_yaxis_transform(), va='center', ha='right', fontsize=8.5,
-            color=c['muted'])
-    ax.set_xlabel("tddlog's speedup, geometric mean over the instances both answer")
+        # The bars carry their values: no axis but the line at 1×, where tddlog is as fast.
+        ax.axvline(1, color=c['muted'], lw=1.1, zorder=2)
+        ax.text(1, -nrow + 0.4, '1×', ha='center', va='top', fontsize=11, color=c['muted'])
+        log_axis(ax, 'x', [], [])
+        ax.set_xlim(*xlim)
+        ax.set_yticks(ys)
+        ax.set_yticklabels(labels, fontsize=12)
+        ax.tick_params(axis='y', length=0)
+        ax.set_ylim(-nrow + 0.4, 0.6)
+        for side in ('left', 'bottom'):
+            ax.spines[side].set_visible(False)
+    fig.text(0.5, 0.1 / h, "tddlog's speedup: the geometric mean over the instances both systems answer",
+             ha='center', va='bottom', fontsize=12, color=c['text'])
     save(fig, out, f'speedups{theme}')
 
 
@@ -320,9 +341,7 @@ def main():
         hi = max(suites[k]['limit'] for k in g['suites'])
         res = dict(instances=len(rs), limit=hi)
         for theme in THEMES:
-            res['solved'] = cactus(g, rs, names, hi, out, theme)
-            if g['key'] != 'databases':
-                res['scatter'] = scatter(g, rs, names, hi, out, theme)
+            res['solved'], res['scatter'] = results(g, rs, names, hi, out, theme)
         res['against'] = {s: compare(rs, 'tddlog', s) for s in g['systems'][1:]}
         best = [(k, i, dict(v, best=best_other(v, g['systems']))) for k, i, v in rs
                 if any(s in v for s in g['systems'][1:])]
