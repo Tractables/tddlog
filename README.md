@@ -27,11 +27,8 @@ library and command-line tool, with Python, C and WebAssembly bindings,
 and it [runs in the browser](https://tractables.github.io/tddlog/).
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/speedups-dark.svg">
-    <img src="docs/images/speedups.svg"
-         alt="tddlog's average speedup over each exact inference system, by kind of problem">
-  </picture>
+  <img src="docs/images/speedups.svg"
+       alt="tddlog's average speedup over each exact inference system, by kind of problem">
 </p>
 
 ## Getting started
@@ -94,11 +91,8 @@ so that the translations can be checked for fairness.
 ### Probabilistic logic programs: ProbLog, PITA and aspmc
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-programs-dark.svg">
-    <img src="docs/images/results-programs.svg"
-         alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest of ProbLog, PITA and aspmc">
-  </picture>
+  <img src="docs/images/results-programs.svg"
+       alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest of ProbLog, PITA and aspmc">
 </p>
 
 - **33× faster than ProbLog** on average, and faster on 225 of the 226
@@ -115,11 +109,8 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
 ### Bayesian and Markov networks: Ace, Merlin and the network libraries
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-networks-dark.svg">
-    <img src="docs/images/results-networks.svg"
-         alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
-  </picture>
+  <img src="docs/images/results-networks.svg"
+       alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
 </p>
 
 - tddlog answers **all 334 networks, each in under 9 seconds**. The next
@@ -139,11 +130,8 @@ Bayesian networks only and ran on the 94 among them.
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-ppl-dark.svg">
-    <img src="docs/images/results-ppl.svg"
-         alt="Probabilistic programs answered within each time limit, and tddlog's time against the fastest other system's">
-  </picture>
+  <img src="docs/images/results-ppl.svg"
+       alt="Probabilistic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
 - tddlog answers 417 of the 450 programs, Alea.jl 309, Dice 136 and
@@ -167,11 +155,8 @@ circuit Alea.jl builds.
 ### Probabilistic databases: ProvSQL
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/results-databases-dark.svg">
-    <img src="docs/images/results-databases.svg"
-         alt="TPC-H queries answered within each time limit, and tddlog's time against ProvSQL's">
-  </picture>
+  <img src="docs/images/results-databases.svg"
+       alt="TPC-H queries answered within each time limit, and tddlog's time against ProvSQL's">
 </p>
 
 The TPC-H queries over a tuple-independent database, at scale factors

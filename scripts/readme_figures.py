@@ -6,14 +6,14 @@ its text quotes, printed as JSON.
 
 --png also writes each figure as a PNG at the SVG's own size, to look at.
 
-Writes, each as NAME.svg for a light page and NAME-dark.svg for a dark one:
+Writes, as SVG:
   speedups         tddlog's average speedup over each baseline;
   results-GROUP    a cactus plot (the instances each system answers within
                    a time limit) beside a scatter plot (tddlog's time
                    against the fastest other system's on each instance).
 
-Each figure is drawn at the width it is shown at (900 pixels) on a
-background of its own, so that it reads on any page.
+Each figure is drawn at the width it is shown at (900 pixels) on a white
+background, which a dark page shows as a light card.
 
 Times under 0.1 s count as 0.1 s: an instance both systems answer in under
 0.1 s is left out of a comparison, and no ratio is larger for a run that
@@ -38,6 +38,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FLOOR = 0.1
 PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
+OVERVIEW = 20  # the instances a baseline shares with tddlog to have a bar in the overview
 
 # The comparisons: the suites of each and the systems drawn in it, tddlog first.
 GROUPS = [
@@ -54,15 +55,11 @@ GROUPS = [
          suites=['tpch'], systems=['tddlog', 'provsql']),
 ]
 
-# (light, dark): tddlog's colour, then the baselines' in the order a figure lists them.
-TDDLOG = ('#0d6670', '#39c5cf')
-PALETTE = [('#d55e00', '#ff8a4c'), ('#0072b2', '#58a6ff'), ('#e69f00', '#f2b84b'), ('#cc79a7', '#e7a4cc'),
-           ('#6a3d9a', '#b392f0'), ('#8c564b', '#c9a38f'), ('#999933', '#c8c86a'), ('#56b4e9', '#9ad4f5'),
-           ('#882255', '#e0709f'), ('#7f7f7f', '#a8a8a8'), ('#332288', '#8b8bf0'), ('#117733', '#56d364')]
-THEMES = {
-    '': dict(bg='#ffffff', text='#1f2328', muted='#59636e', grid='#d8dee4', i=0),
-    '-dark': dict(bg='#0d1117', text='#e6edf3', muted='#9198a1', grid='#30363d', i=1),
-}
+# tddlog's colour, then the baselines' in the order a figure lists them.
+TDDLOG = '#0d6670'
+PALETTE = ['#d55e00', '#0072b2', '#e69f00', '#cc79a7', '#6a3d9a', '#8c564b', '#999933', '#56b4e9', '#882255',
+           '#7f7f7f', '#332288', '#117733']
+THEME = dict(bg='#ffffff', text='#1f2328', muted='#59636e', grid='#d8dee4')
 FONTS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
 
@@ -124,8 +121,8 @@ def best_other(v, systems):
     return min(ts) if ts else None
 
 
-def style(theme):
-    c = THEMES[theme]
+def style():
+    c = THEME
     plt.rcdefaults()
     plt.rcParams.update({
         'svg.fonttype': 'none', 'svg.hashsalt': 'tddlog', 'font.family': 'DejaVu Sans', 'font.size': 12,
@@ -159,10 +156,10 @@ def log_axis(ax, axis, ticks, labels):
     getattr(ax, f'set_{axis}ticklabels')(labels)
 
 
-def colours(systems, i):
-    out = {'tddlog': TDDLOG[i]}
+def colours(systems):
+    out = {'tddlog': TDDLOG}
     for k, s in enumerate(s for s in systems if s != 'tddlog'):
-        out[s] = PALETTE[k % len(PALETTE)][i]
+        out[s] = PALETTE[k % len(PALETTE)]
     return out
 
 
@@ -250,10 +247,10 @@ def legend_order(entries, ncol):
     return [entries[r * ncol + k] for k in range(ncol) for r in range(per_col[k])]
 
 
-def results(group, rs, names, hi, out, theme):
+def results(group, rs, names, hi, out):
     """The cactus plot beside the scatter plot, the systems' legend under both."""
-    c = style(theme)
-    col = colours(group['systems'], c['i'])
+    c = style()
+    col = colours(group['systems'])
     n = len(group['systems'])
     ncol = math.ceil(n / math.ceil(n / 6))
     lrows = math.ceil(n / ncol)
@@ -266,14 +263,14 @@ def results(group, rs, names, hi, out, theme):
     entries = legend_order(entries, ncol)
     fig.legend([e[0] for e in entries], [e[1] for e in entries], loc='lower center', bbox_to_anchor=(0.5, 0.0),
                ncol=ncol, fontsize=12, handlelength=1.5, columnspacing=1.6, labelcolor=c['text'])
-    save(fig, out, f'results-{group["key"]}{theme}')
+    save(fig, out, f'results-{group["key"]}')
     return solved, sc
 
 
-def speedups(entries, out, theme):
+def speedups(entries, out):
     """entries: [(group title, [(name, stats)])], each name's bar its geometric
     mean, the first two groups in a left column and the others in a right one."""
-    c = style(theme)
+    c = style()
 
     def lines(groups):
         out = []
@@ -302,7 +299,7 @@ def speedups(entries, out, theme):
                         ha='right', fontsize=10.5, color=c['muted'])
                 continue
             g = st['geomean']
-            colour = TDDLOG[c['i']] if g >= 1 else PALETTE[0][c['i']]
+            colour = TDDLOG if g >= 1 else PALETTE[0]
             ax.barh(-y, max(g, 1) - min(g, 1), left=min(g, 1), height=0.64, color=colour, lw=0, zorder=3)
             if g >= 1:
                 label = f'{g:.0f}×' if g >= 10 else f'{g:.1f}×'
@@ -327,7 +324,7 @@ def speedups(entries, out, theme):
             ax.spines[side].set_visible(False)
     fig.text(0.5, 0.1 / h, "tddlog's speedup: the geometric mean over the instances both systems answer",
              ha='center', va='bottom', fontsize=12, color=c['text'])
-    save(fig, out, f'speedups{theme}')
+    save(fig, out, 'speedups')
 
 
 def main():
@@ -340,19 +337,18 @@ def main():
         rs = rows(suites, g['suites'])
         hi = max(suites[k]['limit'] for k in g['suites'])
         res = dict(instances=len(rs), limit=hi)
-        for theme in THEMES:
-            res['solved'], res['scatter'] = results(g, rs, names, hi, out, theme)
+        res['solved'], res['scatter'] = results(g, rs, names, hi, out)
         res['against'] = {s: compare(rs, 'tddlog', s) for s in g['systems'][1:]}
         best = [(k, i, dict(v, best=best_other(v, g['systems']))) for k, i, v in rs
                 if any(s in v for s in g['systems'][1:])]
         res['against']['best'] = compare(best, 'tddlog', 'best')
         numbers[g['key']] = res
-    # The overview: each comparison's baselines that share 5 instances or more with tddlog.
+    # The overview: each comparison's baselines that share OVERVIEW instances or more with
+    # tddlog; an average over fewer says little, and the README's text has those systems.
     overview = [(g['title'], [(names[s], numbers[g['key']]['against'][s]) for s in g['systems'][1:]
-                                 if numbers[g['key']]['against'][s]['both'] >= 5]) for g in GROUPS]
+                                 if numbers[g['key']]['against'][s]['both'] >= OVERVIEW]) for g in GROUPS]
     numbers['overview'] = {t: {n: st for n, st in items} for t, items in overview}
-    for theme in THEMES:
-        speedups(overview, out, theme)
+    speedups(overview, out)
     json.dump(numbers, sys.stdout, indent=1)
     print()
 
