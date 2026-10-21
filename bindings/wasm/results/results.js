@@ -5,8 +5,10 @@
 // Roulette), both written by the generator of README.md's results and
 // the baselines branch's docs/benchmarks.md. A family of suites is its
 // findings in prose, plots of the instances each system answers within a
-// time limit (see split), the table of every instance's times, and how the
-// runs were made.
+// time limit (see plots), the table of every instance's times, and how the
+// runs were made. The plots over several suites, and their panels, are the
+// data's kinds (`kinds`), which the results pipeline writes; the page does
+// not split instances itself.
 
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
 // data, as the playground's does to its files.
@@ -138,13 +140,14 @@ function cactus(box, suite, names, small = false) {
     plot.append(svg("path", { class: `line s-${base(key)}${key === "tddlog" ? " mine" : ""}${dashed(key) ? " dashed" : ""}`, d, "data-key": key }));
   }
   // The end labels, where there is room: each line's name at its last
-  // height, moved apart where two would overlap.
+  // height, moved apart where two would overlap: pushed down, the lowest
+  // kept above the axis and those over it pushed up, so that a crowd at the
+  // bottom moves up only as far as it must.
   if (!narrow) {
     const labels = series.map((s) => ({ key: s.key, y: ly(s.times.length), text: label(s) }))
       .sort((a, b) => a.y - b.y);
     for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 13);
-    const over = labels.length ? labels[labels.length - 1].y - (y1 + 4) : 0;
-    if (over > 0) for (const l of labels) l.y -= over;
+    if (labels.length) labels[labels.length - 1].y = Math.min(labels[labels.length - 1].y, y1 + 4);
     for (let i = labels.length - 2; i >= 0; i--) labels[i].y = Math.min(labels[i].y, labels[i + 1].y - 13);
     for (const l of labels) {
       plot.append(svg("text", { class: "end", x: x1 + 8, y: l.y + 4, "data-key": l.key }, l.text));
@@ -186,13 +189,16 @@ function cactus(box, suite, names, small = false) {
   return series;
 }
 
-// The legend: every line, its name and how many instances it answers; a
-// name under the pointer brings its line forward.
-function legend(series, names, n, figure) {
+// The legend: every line, its name and how many instances it answers, and
+// in a large plot how many it expresses; a name under the pointer brings its
+// line forward.
+function legend(series, names, n, figure, expresses) {
   const list = element("ul", { class: "legend" });
   for (const { key, times } of series) {
+    const counts = expresses === undefined ? `answers ${count(times.length)} of ${count(n)}`
+      : `answers ${count(times.length)}, expresses ${count(expresses[key])}, of ${count(n)}`;
     const item = element("li", {}, element("i", { class: `sw s-${base(key)}${dashed(key) ? " dashed" : ""}` }),
-      element("span", {}, names[key]), element("span", { class: "n" }, `${times.length} of ${count(n)}`));
+      element("span", {}, names[key]), element("span", { class: "n" }, counts));
     const focus = (on) => {
       for (const mark of figure.querySelectorAll("[data-key]")) mark.classList.toggle("dim", on && mark.dataset.key !== key);
     };
@@ -203,14 +209,15 @@ function legend(series, names, n, figure) {
   return list;
 }
 
-// A plot of a suite with its legend, drawn again when its box changes width;
-// a small one under its title. The figure names the systems it draws and
-// the number of its instances, and a small one the systems it is for.
+// A plot with its legend, drawn again when its box changes width; a small
+// one (a panel) under its title. The figure names the systems it draws and
+// the number of its instances, and a panel the cluster of systems it is for.
+// A large plot's legend says how many instances each system expresses.
 function plotted(suite, names, small = false) {
   const figure = element("figure", { class: small ? "plot part" : "plot", "data-systems": suite.systems.join(" "),
     "data-instances": String(suite.instances.length) });
   if (small) {
-    figure.dataset.owners = suite.owners.join(" ");
+    figure.dataset.members = suite.members.join(" ");
     figure.append(element("figcaption", {}, suite.title));
   }
   const box = element("div", { class: "box" });
@@ -218,60 +225,35 @@ function plotted(suite, names, small = false) {
   const redraw = () => {
     const series = cactus(box, suite, names, small);
     const old = figure.querySelector(".legend");
-    const fresh = legend(series, names, suite.instances.length, figure);
+    const fresh = legend(series, names, suite.instances.length, figure, small ? undefined : suite.expresses);
     if (old) old.replaceWith(fresh);
     else box.before(fresh);
   };
   return { figure, redraw };
 }
 
-// A plot draws only the systems given every one of its instances, so that
-// its lines count the same instances; a system given an instance has a
-// record of it (an answer, a failure, "skipped" or "unsupported"), and null
-// in the data means it was not given the instance. Each part of the
-// instances that a system was given alone, from PART instances or a quarter
-// of the suite's (whichever is fewer), has a small plot of its own, with
-// every system given all of that part; systems given the same part share
-// its plot. Returns the suite cut to the systems given all of it, then each
-// part's cut, largest first.
-const PART = 20;
-
-function split(suite, names) {
-  const n = suite.instances.length;
-  const every = (rows) => suite.systems.filter((key, i) => rows.every((j) => suite.instances[j][i + 1] !== null));
-  const parts = new Map();
-  suite.systems.forEach((key, i) => {
-    const rows = suite.instances.flatMap((row, j) => (row[i + 1] === null ? [] : [j]));
-    if (rows.length === n || rows.length < Math.min(PART, n / 4)) return;
-    const id = rows.join(" ");
-    if (!parts.has(id)) parts.set(id, { rows, owners: [] });
-    parts.get(id).owners.push(key);
-  });
-  const small = [...parts.values()].sort((a, b) => b.rows.length - a.rows.length).map(({ rows, owners }) => {
-    const who = [...new Set(owners.map((key) => named(key, names)))];
-    const title = `${who.length === 1 ? `${who[0]}'s` : `${joined(who)}:`} ${count(rows.length)} instances`;
-    return cut(suite, title, every(rows), rows, owners);
-  });
-  const all = suite.instances.map((row, j) => j);
-  return [cut(suite, suite.title, every(all), all, []), ...small];
-}
-
-// The suite cut to some of its systems and instances, its limit the longest
-// of theirs.
-function cut(suite, title, systems, rows, owners) {
-  const columns = systems.map((key) => suite.systems.indexOf(key) + 1);
+// A panel of a plot over a kind's suites (kinded): the plot cut to the
+// panel's instances ({suite: [name, ...]}) and systems, its limit the
+// longest of its instances'.
+function panelOf(scope, p) {
+  const key = (suite, name) => `${suite}/${name}`;
+  const wanted = new Set(Object.entries(p.instances).flatMap(([suite, list]) => list.map((name) => key(suite, name))));
+  const rows = scope.instances.flatMap((row, j) => (wanted.has(key(scope.sources[j], row[0])) ? [j] : []));
+  if (rows.length !== wanted.size) throw new Error(`${p.title}: ${wanted.size - rows.length} instances not in its kind`);
+  const columns = p.systems.map((system) => scope.systems.indexOf(system) + 1);
   return {
-    key: suite.key, title, systems, owners,
-    instances: rows.map((j) => [suite.instances[j][0], ...columns.map((c) => suite.instances[j][c])]),
-    limit: Math.max(...rows.map((j) => suite.limits?.[j] ?? suite.limit)),
+    key: scope.key, title: p.title, systems: p.systems, members: p.members,
+    instances: rows.map((j) => [scope.instances[j][0], ...columns.map((c) => scope.instances[j][c])]),
+    limit: Math.max(...rows.map((j) => scope.limits[j])),
   };
 }
 
-// A suite's plots (split): the plot of the systems given every instance, the
-// small plots under a heading, and a function that draws them all.
+// A plot's figures: the plot of every system over all of its instances, the
+// panels of a kind under a heading, and a function that draws them all.
 function plots(suite, names) {
-  const [whole, ...parts] = split(suite, names).map((s, k) => plotted(s, names, k > 0));
-  const grid = parts.length === 0 ? [] : [element("h4", { class: "more" }, "Systems given part of the instances"),
+  const whole = plotted(suite, names);
+  const parts = (suite.panels ?? []).map((p) => plotted(panelOf(suite, p), names, true));
+  const grid = parts.length === 0 ? [] : [element("h4", { class: "more" }, "Systems with similar expressive capabilities"),
     element("div", { class: "parts" }, ...parts.map((p) => p.figure))];
   const redraw = () => {
     for (const p of [whole, ...parts]) p.redraw();
@@ -313,15 +295,14 @@ const NETWORK_SUITES = new Set(["std_bn", "uai", "uai_pr", "large", "ace", "uaip
 const stem = (key) => key.split("-")[0];
 // A system's name without its variant's: Alea.jl for alea-process.
 const named = (key, names) => names[stem(key)] ?? (names[key] ?? key).split(",")[0];
-const joined = (xs) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
-// The instances of several suites as one suite: its systems the union of
-// theirs (tddlog first), a system not given an instance null, a time past
-// its own suite's limit a timeout, each instance's limit its suite's.
-function merged(title, about, suites) {
-  const systems = [];
-  for (const suite of suites) for (const key of suite.systems) if (!systems.includes(key)) systems.push(key);
-  systems.sort((a, b) => (b === "tddlog") - (a === "tddlog"));
+// A kind of the data (its suites) as one suite: the kind's systems (tddlog
+// first), a system without a record of an instance null, a time past its
+// own suite's limit a timeout, each instance's limit its suite's; the
+// kind's panels and how many instances each system expresses.
+function kinded(kind, byKey, title, about) {
+  const suites = kind.suites.map((key) => byKey.get(key)).filter(Boolean);
+  const systems = kind.systems;
   const instances = suites.flatMap((suite) => suite.instances.map((row) => {
     const out = [row[0], ...systems.map(() => null)];
     suite.systems.forEach((key, i) => {
@@ -332,7 +313,8 @@ function merged(title, about, suites) {
   }));
   const sources = suites.flatMap((suite) => suite.instances.map(() => suite.key));
   const limits = suites.flatMap((suite) => suite.instances.map(() => suite.limit));
-  return { key: "all", title, about, systems, instances, sources, limits, limit: Math.max(...suites.map((suite) => suite.limit)) };
+  return { key: "all", title, about, systems, instances, sources, limits,
+    limit: Math.max(...limits), expresses: kind.expresses, panels: kind.panels };
 }
 
 // One sentence for each system that was not given some of the instances.
@@ -352,8 +334,12 @@ function cannot(suite, names) {
   return list;
 }
 
-// What the plots of several suites draw (split).
-const DRAWN = `The large plot draws the systems given every one of these instances, so that its lines count the same instances; an instance a system was given and did not answer counts as unanswered, whether it ran out of time or memory, failed, or the system cannot express the program. A system given only part of them has a small plot of that part, with every system given all of it, where the part has ${PART} instances or a quarter of these, whichever is fewer. The list under the plots says why a system was not given the rest.`;
+// What the plots of a kind draw.
+function drawn(kind) {
+  const whole = "The large plot draws every system over all of these instances, so that its lines count the same instances: an instance a system cannot express (its translator refuses the program) or was not given counts as unanswered, as does one where it ran out of time or memory or failed. Its legend gives how many instances each system answers and how many it expresses.";
+  if (kind.panels.length === 0) return whole;
+  return `${whole} Under it, a small plot for each cluster of systems with similar expressive capabilities (systems linked by pairs whose sets of instances they express have a Jaccard index of ${kind.jaccard} or more), over the instances every member expresses, with every system that expresses all of them, where those are ${kind.least} or more.`;
+}
 
 // ------------------------------------------------------------- the table
 
@@ -450,13 +436,17 @@ function cards(list, choose) {
   return grid;
 }
 
-function family(f, names, pages) {
+// A family's section: its tab of all problems (the data's kind of the same
+// key, with its panels), a tab for each suite, its findings and its setup.
+function family(f, names, pages, kinds) {
   const section = element("section", { class: "card family", id: f.key });
   section.append(element("h2", {}, f.title), prose("p", f.intro, { class: "intro" }));
   const panel = element("div", { class: "suite" });
   const tabs = element("div", { class: "tabs", role: "group", "aria-label": `${f.title}: suites` });
-  const everything = merged("All problems",
-    `The instances of all ${f.suites.length} suites of this family. ${DRAWN}`, f.suites);
+  const kind = kinds.get(f.key);
+  if (kind === undefined) throw new Error(`the family ${f.key} has no kind in the data`);
+  const everything = kinded(kind, new Map(f.suites.map((s) => [s.key, s])), "All problems",
+    `The instances of all ${f.suites.length} suites of this family. ${drawn(kind)}`);
   const byKey = new Map([everything, ...f.suites].map((s) => [s.key, s]));
   let current = null;
   let redraw = () => {};
@@ -508,12 +498,15 @@ function family(f, names, pages) {
   return section;
 }
 
-// The plots over every instance of the run (split), above the families.
-function overall(families, names) {
-  const suites = families.flatMap((f) => f.suites);
-  const total = suites.reduce((n, s) => n + s.instances.length, 0);
-  const suite = merged("Every problem of the release run",
-    `The ${count(total)} instances of all ${families.length} families. ${DRAWN}`, suites);
+// The plot of every system over every instance of the run (the data's kind
+// `all`), above the families.
+function overall(families, names, kinds) {
+  const kind = kinds.get("all");
+  if (kind === undefined) throw new Error("the data has no kind all");
+  const suites = new Map(families.flatMap((f) => f.suites).map((s) => [s.key, s]));
+  const total = kind.suites.reduce((n, key) => n + (suites.get(key)?.instances.length ?? 0), 0);
+  const suite = kinded(kind, suites, "Every problem of the release run",
+    `The ${count(total)} instances of all ${families.length} families. ${drawn(kind)} The families below have a plot for each cluster of systems with similar expressive capabilities. The list under the plot says why a system was not given some of the problems.`);
   const { whole, parts, redraw } = plots(suite, names);
   const section = element("section", { class: "card family", id: "overall" },
     element("h2", {}, suite.title), prose("p", suite.about, { class: "about" }),
@@ -549,6 +542,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const pages = await load("benchmarks/index.json").catch(() => null);
     const families = parts.filter(Boolean).flatMap((p) => p.families);
     const names = Object.assign({}, ...parts.filter(Boolean).map((p) => p.names));
+    const kinds = new Map(parts.filter(Boolean).flatMap((p) => p.kinds).map((k) => [k.key, k]));
     const instances = families.reduce((n, f) => n + f.suites.reduce((m, s) => m + s.instances.length, 0), 0);
     const suites = families.reduce((n, f) => n + f.suites.length, 0);
     const baselines = new Set(families.flatMap((f) => f.suites.flatMap((s) => s.systems)).map(base));
@@ -557,10 +551,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("stats").replaceChildren(
       ...[[count(instances), "instances"], [String(suites), "suites"], [String(baselines.size), "other systems"]]
         .map(([b, what]) => element("span", { class: "stat" }, element("b", {}, b), what)));
-    root.append(overall(families, names));
+    root.append(overall(families, names, kinds));
     toc.append(element("a", { href: "#overall" }, "Every problem"));
     for (const f of families) {
-      root.append(family(f, names, pages));
+      root.append(family(f, names, pages, kinds));
       toc.append(element("a", { href: `#${f.key}` }, f.title));
     }
   } catch (failure) {

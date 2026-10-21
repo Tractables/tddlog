@@ -33,8 +33,8 @@ builds:
 | libDAI 0.3.2 | yes (junction tree, min-fill) | UAI files | `--libdai` |
 | TensorInference.jl | yes (tensor network contraction, `treesa`, `greedy`) | UAI files | `--tensorinference` |
 | ProvSQL 1.13.0 (PostgreSQL 16.4) | yes (its own method choice, tree decomposition) | the TPC-H programs and the literature suite's pdb and noisy-or, as SQL | `--provsql` |
-| Storm 1.14 (stormpy) | yes (`sparse`, `exact`, `dd`) | the weather factory, as a PRISM model | `--storm`, `--storm-variants`, `--weather-models` |
-| PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the weather factory | `--prism`, `--prism-variants`, `--prism-heap` |
+| Storm 1.14 (stormpy) | yes (`sparse`, `exact`, `dd`) | the weather factory as Rubicon's PRISM model; every other Dice program as a Markov chain, through `dice2prism.py` | `--storm`, `--storm-variants`, `--weather-models` |
+| PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the same as Storm | `--prism`, `--prism-variants`, `--prism-heap` |
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
 | sharpSAT-TD | yes, 53-bit MPFR floats | weighted CNFs | `--sharpsat-td`, `--sharpsat-td-decot` |
 | Roulette (Racket 8.16) | yes | its own programs (`--suite roulette`) | `--roulette`, `--roulette-variants` |
@@ -617,8 +617,13 @@ inconsistent where P(bench_e) is 0. aspmc compiles the program once with
 the extra queries, so its time includes what conditioning costs it. It
 computes in doubles, and on the UAI networks, where P(e) is as low as
 1e-618, its answers are checked against the reference.
-It rejects some programs with a parser error (bn_insurance); check the
-coverage on the installation a run uses.
+Its grammar reads a probability as `1`, `1.0...` or `0.` and digits, not
+in exponent notation, in which the network programs write a small one
+(`1e-05`): on the UAI MAR set the parser refused 95 of the 120 networks'
+programs, nearly all for it. bench.py writes such a probability out in positional
+notation, the same double (`aspmc_numbers`). It still rejects some
+programs with a parser error (bn_insurance); check the coverage on the
+installation a run uses.
 
 ---
 
@@ -1168,7 +1173,8 @@ one lowering, `scripts/dice_ir.py`. Psi reaches the same programs through
 `scripts/dice2psi.py` (its own translator, one run a component, `--joint`
 for a circuit's joint lines), Pluck through `scripts/dice2pluck.py` (over
 the same lowering, one Julia run for all the components, by
-`scripts/pluck_dice.jl`), and noDice reads them as they are, as Dice does. It inlines the functions (recursion is
+`scripts/pluck_dice.jl`), Storm and PRISM through `scripts/dice2prism.py`
+(a Markov chain a component, section 22), and noDice reads them as they are, as Dice does. It inlines the functions (recursion is
 refused), resolves tuples, folds constants, and gives each variable the
 values it can take; `iterate` stays a loop. A system's own program is run
 where its paper has one (Genfer's seven Dice programs, Geni's suite);
@@ -1238,11 +1244,6 @@ Left out, with the reason:
   noisy-or, burglary), diamond and ladder (`src/table1/bayesian_networks`,
   `network_verification`); Pluck runs the suites' Dice programs of these
   through `dice2pluck.py` instead, as the other systems are given them.
-- Storm and PRISM run the weather factory, a Markov chain. A Dice program
-  is not one: it has no transitions, only a computation, and as a DTMC it
-  would be a program counter stepping through the statements with every
-  live variable in the state, the program's valuations enumerated rather
-  than a model of the problem.
 
 ### Geni
 
@@ -1553,24 +1554,86 @@ to 1.2e-15.
 
 ## 22. Storm and PRISM
 
-Probabilistic model checkers on the weather factory (Rubicon's
-`weatherfactoryN.prism` models, GPL-3, fetched by the installer and not
-shipped): the property is `P=? [F<=H "allStrike"]` for the program's
-instance (`geni_weather_nN_hH`). Not part of the programs' systems: the
-model is the program's Markov chain written in PRISM.
+Probabilistic model checkers, given every instance that has Dice
+programs, on two routes.
 
-The installation (in a prefix,
-`$HOME/local/code/modelcheckers` in the release run): stormpy 1.14.0 in a venv, PRISM 4.8.1
-(sha256 checked; needs Java), and the models.
+The weather factory: Rubicon's `weatherfactoryN.prism` models (GPL-3,
+fetched by the installer and not shipped), with the property
+`P=? [F<=H "allStrike"]` for the instance (`geni_weather_nN_hH`): the
+program's Markov chain as Rubicon's authors wrote it in PRISM.
 
-`bench.py run --suite geni --storm PY --prism DIR --weather-models DIR`:
-Storm through `scripts/storm_weather.py` with one Sylvan thread, in
-three variants (`sparse`: floating-point sparse engine, `exact`: rational
-sparse model, `dd`: symbolic BDD engine); PRISM with `-sparse` or
-`-hybrid` (`-exact` refuses bounded until) and `-javamaxmem`
-(`--prism-heap`, 4g). The answer is `result X`; the time is the process's,
-with Storm's `inference_seconds` in the stats. Tests:
-`tests/test_modelcheckers.py` against `gen_geni.py weather N H --reference`.
+Every other instance with Dice programs, the ones Genfer, SPPL and Geni
+are given (section 12: `dice_source` and the circuits' dicemaps):
+`scripts/dice2prism.py` writes a discrete-time Markov chain in the PRISM
+language, which both read, one model a component of the program's value
+(`--joint` for a circuit's joint lines), over dice_ir.py's lowering
+(functions inlined, tuples resolved, constants folded). A discrete program
+without unbounded loops is such a chain:
+
+- One module, a program counter `pc`, and the program's values as its
+  variables: a Boolean a `bool`, an int(w) a number in [0..2^w-1] whose
+  +, - and * are taken modulo 2^w as Dice's (`mod`, unless no values in
+  the operands' ranges wrap: PRISM checks every update in every state
+  its guard admits, reachable or not), << a product and >> the `floor`
+  of a quotient.
+- A `flip`, `discrete` or `uniform` is a command's probabilistic choice,
+  and the pure operations after it are computed in the same command, the
+  outcome substituted and folded in each update, up to the next choice:
+  the chain has a step only where something random happens (and where an
+  expression would grow beyond 64 operations, whose operands are then
+  stored). A condition that the outcome decides sends each outcome to its
+  side; a condition on the state splits the command, a guard per case (a
+  network's conditional table is a command per row; at most 256 commands
+  a step).
+- `observe e` sends the states where e is false to an absorbing fail
+  state; the end is an absorbing state labelled "done" that keeps only
+  the value. The answer to value v is P(F "done" & r=v) / P(F "done"): a
+  property per value the component takes (for a Boolean only true),
+  named `vN`, and `obs` for P(F "done") where something is observed (PRISM
+  refuses a property named as a label), all checked on one build of the
+  model. `iterate(f, x, k)` is the inlined body as a loop with a counter:
+  the states of the unrolled program in k times fewer commands (Storm's
+  explicit builder evaluates every command's guard in each state).
+- The state count is what the checkers' time grows with, so a value is in
+  the state only while it is live: a variable is reset to false or 0
+  after its last read, the variables are registers shared by values whose
+  live ranges do not meet, a sample is taken just before its first reader
+  and an observation checked right after what it reads is computed.
+- The probabilities are exact: a decimal as the shortest one that reads
+  back as the program's double, a discrete's outcomes summing to one in
+  rationals (the largest takes up the rounding), a uniform's as fractions.
+- Refused (exit 3, `unsupported`): what every translator of section 12
+  refuses (lists, `/`, `%`, `::`, recursion), and an int wider than 30
+  bits or a product beyond 2^31, past PRISM's 32-bit integers.
+
+The installation (in a prefix, `$HOME/local/code/modelcheckers` in the
+release run): stormpy 1.14.0 in a venv, PRISM 4.8.1 (sha256 checked;
+needs Java), and the weather models.
+
+`bench.py run --storm PY --prism DIR [--weather-models DIR]`: Storm through
+`scripts/storm_check.py`, the model built once for all its properties,
+with one Sylvan thread, in three variants (`sparse`: the explicit model in
+doubles, `exact`: in rationals, `dd`: the model as BDDs, doubles). The
+explicit engines solve unbounded reachability with Storm's topological
+solver, which on an acyclic chain computes each state's value once from
+its successors' (Storm's default for doubles, GMRES to 1e-6, would not
+be exact); `dd` iterates to a relative precision of 1e-15. PRISM with
+`-sparse` or `-hybrid` (`-exact` refuses bounded until), `-javamaxmem`
+(`--prism-heap`, 4g) and on the chains `-cuddmaxmem` (the same),
+`-epsilon 1e-15` and no cap on the iterations: on an acyclic chain they
+reach the exact values after as many as the chain is long, and stop. The
+answers are `result X` and `Result: X`; the time is the process's, the
+components' runs added (PRISM's JVM starts each), with the checkers' own
+building and checking in `inproc_seconds` (`storm_inference_seconds` on
+the weather factory). The translation is not timed, as no system's is;
+its seconds over all the engines of an instance are bounded by the time
+limit, past which the instance is a timeout. Tests:
+`tests/test_modelcheckers.py` against `gen_geni.py weather N H
+--reference`, `tests/test_dice2prism.py` (every program of data/dice and
+data/nodice translates or is refused; with STORM_PYTHON and PRISM_DIR
+each engine's answers, read as bench.py reads them, against the exact
+distribution: observations, integer operations, a function, `iterate`
+and a joint).
 
 Dry run: weather factory (seven instances): Storm
 (all three engines) and PRISM `sparse` agree with the dynamic program to

@@ -123,6 +123,7 @@ Timed numbers are meant to come from a machine with nothing else running,
 or from lanes of one `--cpus` run, all systems under the same load.
 """
 import argparse
+import decimal
 import fractions
 import gzip
 import hashlib
@@ -2066,22 +2067,36 @@ def parse_aspmc(out):
     return {q.removeprefix(ASPMC_QE): p / res[ASPMC_E] for q, p in res.items() if q.startswith(ASPMC_QE)}
 
 
+# aspmc's grammar reads a probability as 1, 1.0... or 0.digits, and not in
+# exponent notation, in which a small one is written (gen_bn.py's 1e-05).
+ASPMC_EXPONENT = re.compile(r'(?<![\w.])(\d+(?:\.\d*)?[eE][-+]?\d+)(?=\s*::)')
+
+
+def aspmc_numbers(text):
+    """The ProbLog program `text` with each probability in exponent notation
+    written out in positional notation, exactly: the same double."""
+    return ASPMC_EXPONENT.sub(lambda m: format(decimal.Decimal(m.group(1)), 'f'), text)
+
+
 def run_aspmc(args, name, path):
     """aspmc on the ProbLog program, with its evidence asked as queries
-    (`aspmc_conditioned`) where it has any. It writes `out.cnf` and the
+    (`aspmc_conditioned`) where it has any and its probabilities in the
+    notation it reads (`aspmc_numbers`). It writes `out.cnf` and the
     decomposer's scratch into the working directory, so each instance gets
     one of its own."""
     d = os.path.join(args.dir, 'aspmc-' + name)
     os.makedirs(d, exist_ok=True)
     with open(path) as f:
-        try:
-            conditioned = aspmc_conditioned(f.read())
-        except ValueError as e:
-            return {'status': 'error', 'seconds': 0.0, 'error': str(e)}
-    if conditioned is not None:
+        text = f.read()
+    try:
+        conditioned = aspmc_conditioned(text)
+    except ValueError as e:
+        return {'status': 'error', 'seconds': 0.0, 'error': str(e)}
+    program = aspmc_numbers(text if conditioned is None else conditioned)
+    if program != text:
         path = os.path.join(d, name + '.pl')
         with open(path, 'w') as f:
-            f.write(conditioned)
+            f.write(program)
     python = os.path.abspath(args.aspmc) if os.sep in args.aspmc else args.aspmc
     r = timed([python, '-u', '-m', 'aspmc.main', '-m', 'problog', '-c', '-v', 'result',
                os.path.abspath(path)], args.timeout, cwd=d)
@@ -2590,15 +2605,17 @@ def run_provsql(args, name, path):
         shutil.rmtree(d, ignore_errors=True)
 
 
-# Probabilistic model checkers on Rubicon's weather factory, the PRISM models
+# Probabilistic model checkers: Storm through stormpy (scripts/storm_check.py)
+# with the explicit model in doubles (`sparse`) or in rationals (`exact`) and
+# the model as decision diagrams (`dd`), and PRISM 4.8.1 with its explicit
+# (`sparse`) and its default hybrid engines (`-exact` refuses bounded until).
+# On Rubicon's weather factory they read its PRISM models
 # `weatherfactoryN.prism` (install_modelcheckers.sh fetches them; GPL-3, so
 # never shipped) with the property `P=? [F<=H "allStrike"]`: the probability
 # that all N factories are on strike within H days, the query of the Dice
-# programs `gen_geni.py weather N H` writes. Storm through stormpy
-# (scripts/storm_weather.py): the explicit model in doubles (`sparse`) or in
-# rationals (`exact`), and the model as decision diagrams (`dd`); PRISM 4.8.1
-# with its explicit (`sparse`) and its default hybrid engines (`-exact`
-# refuses bounded until).
+# programs `gen_geni.py weather N H` writes. On every other instance with
+# Dice programs they read dice2prism.py's Markov chain of each program, one
+# a component of its value (`run_translated`).
 MODEL_CHECKERS = {'storm': ('sparse', 'exact', 'dd'), 'prism': ('sparse', 'hybrid')}
 
 
@@ -2608,32 +2625,147 @@ def weather_size(entry):
     return (int(gargs[2]), int(gargs[3])) if gargs[0] == 'gen_geni.py' and gargs[1] == 'weather' else None
 
 
+def accepts_model_checker(args, name):
+    return weather_size(instances(args)[name]) is not None or accepts_translated(args, name)
+
+
+def checker_command(args, system, variant, model, props, dice=True):
+    """The command of Storm or PRISM on a model and its properties (a file, or
+    for PRISM with dice=False one property, -pf). PRISM's iterations on
+    dice2prism.py's chains (unbounded reachability; the weather factory's is
+    bounded) run to a relative change of 1e-15 and without its default cap of
+    10 000 iterations: on an acyclic chain they stop once nothing changes,
+    after as many as the chain is long."""
+    if system == 'storm':
+        return [args.storm, os.path.join(HERE, 'storm_check.py'), model, variant, props]
+    cmd = [os.path.join(os.path.abspath(args.prism), 'bin', 'prism'), model] + ([props] if dice else ['-pf', props]) + \
+        ['-' + variant, '-javamaxmem', args.prism_heap]
+    return cmd + (['-cuddmaxmem', args.prism_heap, '-epsilon', '1e-15', '-maxiters', '1000000000'] if dice else [])
+
+
+CHECKER_RESULT = {'storm': re.compile(r'^result ([0-9.eE+-]+)(?: (\d+(?:/\d+)?))?\s*$', re.M),
+                  'prism': re.compile(r'^Result: ([0-9.eE+-]+)', re.M)}
+
+
+def checker_results(system, out):
+    """The values Storm or PRISM prints for its properties, in order: a
+    Fraction where Storm's exact engine gives the rational, else a float."""
+    return [fractions.Fraction(m.group(2)) if m.lastindex == 2 and m.group(2) else float(m.group(1))
+            for m in CHECKER_RESULT[system].finditer(out)]
+
+
+def checker_seconds(system, out):
+    """The seconds of the inference proper: Storm's building and checking,
+    PRISM's model construction and model checking."""
+    if system == 'storm':
+        m = re.search(r'^inference_seconds ([0-9.eE+-]+)$', out, re.M)
+        return float(m.group(1)) if m else None
+    times = [float(x) for x in re.findall(r'^Time for model (?:construction|checking): ([0-9.eE+-]+) sec', out, re.M)]
+    return sum(times) if times else None
+
+
+def checker_distribution(system, out, props, ty):
+    """The distribution of a component of type ty (`bool`, or `int W`) from
+    the output of Storm or PRISM on dice2prism.py's model and properties (the
+    file props): value v has P(done and v) / P(done), P(done) 1 where
+    nothing is observed. ValueError where the output does not give them."""
+    with open(props) as f:
+        names = re.findall(r'^"(\w+)":', f.read(), re.M)
+    values = checker_results(system, out)
+    if len(values) != len(names):
+        tail = out.strip().splitlines()[-3:]
+        raise ValueError(f'{len(values)} results for {len(names)} properties: {" / ".join(tail)}')
+    got = dict(zip(names, values))
+    done = got.pop('obs', 1)
+    if done == 0:
+        raise ValueError('the observations have probability 0')
+    if ty[0] == 'bool':
+        t = got.get('v1', 0) / done
+        return {'true': float(t), 'false': float(1 - t)}
+    # the values up to the largest one asked of a number wider than a circuit's joint (16 bits)
+    n = 2 ** int(ty[1]) if int(ty[1]) <= 16 else 1 + max((int(v[1:]) for v in got), default=0)
+    return {str(v): float(got.get(f'v{v}', 0) / done) for v in range(n)}
+
+
+# dice2prism.py's translations in this process, by (label, source, joint):
+# the components' listing and each component's files, made once for every
+# checker and engine, and the seconds they took.
+CHAINS = {}
+
+
+def checker_masses(system, variant):
+    """The `masses` of run_translated for Storm or PRISM: dice2prism.py lists
+    the components (`--components`) and writes a model and its properties
+    for each, which the checker builds once and answers. The translations
+    are not timed, as no system's are, but their seconds over all the
+    engines are bounded by the time limit: past it the instance is a
+    timeout, a chain too large to write."""
+    def masses(args, label, source, joint, budget):
+        j = ['--joint'] if joint else []
+        made = CHAINS.setdefault((label, source, joint), {'seconds': 0.0})
+
+        def once(key, make):
+            if key not in made:
+                t0 = time.time()
+                made[key] = make()
+                made['seconds'] += time.time() - t0
+            return made[key]
+
+        def slow():
+            if made['seconds'] <= args.timeout:
+                return None
+            return {'status': 'timeout', 'seconds': args.timeout,
+                    'error': f'dice2prism.py: the translations took {made["seconds"]:.0f} s, beyond the time limit'}
+        listing, err = once('listing', lambda: translation(args, 'dice2prism.py', [source, '--components'] + j))
+        if err:
+            return None, err
+        comps, total, inproc = [], 0.0, 0.0
+        for k, line in enumerate(listing.splitlines()):
+            base = os.path.abspath(os.path.join(args.dir, f'{label}.dtmc{k}'))  # one for every checker and engine
+            err = slow() or once(k, lambda: translated(args, 'dice2prism.py', [source, str(k), '--props', base + '.props']
+                                                       + j, base + '.prism', system))
+            if err:
+                return None, {**err, 'seconds': max(total, err['seconds'])}
+            r = timed(checker_command(args, system, variant, base + '.prism', base + '.props'), max(0.0, budget - total),
+                      env=dict(os.environ, OMP_NUM_THREADS='1'))
+            total += r['seconds']
+            if r['status'] != 'ok':
+                return None, {**r, 'seconds': total}
+            try:
+                comps.append(checker_distribution(system, r['stdout'], base + '.props', line.split()))
+            except ValueError as x:
+                return None, {'status': 'error', 'seconds': total, 'error': f'{system}: {x}'}
+            inproc += checker_seconds(system, r['stdout']) or 0.0
+        return comps, {'seconds': total, 'stats': {'inproc_seconds': inproc}}
+    return masses
+
+
 def run_model_checker(args, name, path, system, variant):
-    """Storm or PRISM (`MODEL_CHECKERS`) on the PRISM model of the weather
-    factory instance, the answer of the program's one query."""
-    n, h = weather_size(instances(args)[name])
+    """Storm or PRISM (`MODEL_CHECKERS`) on the PRISM model of a weather
+    factory instance, the answer of the program's one query; on the other
+    instances, on the Markov chains of their Dice programs (`run_translated`)."""
+    size = weather_size(instances(args)[name])
+    if size is None:
+        return run_translated(args, name, path, system, checker_masses(system, variant))
+    n, h = size
     model = os.path.join(os.path.abspath(args.weather_models), f'weatherfactory{n}.prism')
     if not os.path.exists(model):
         return {'status': 'error', 'seconds': 0.0, 'error': f'no {model}: run install_modelcheckers.sh'}
-    if system == 'storm':
-        cmd = [args.storm, os.path.join(HERE, 'storm_weather.py'), model, str(h), variant]
-    else:
-        cmd = [os.path.join(os.path.abspath(args.prism), 'bin', 'prism'), model, '-pf', f'P=? [F<={h} "allStrike"]',
-               '-' + variant, '-javamaxmem', args.prism_heap]
-    r = timed(cmd, args.timeout, env=dict(os.environ, OMP_NUM_THREADS='1'))
+    r = timed(checker_command(args, system, variant, model, f'P=? [F<={h} "allStrike"]', dice=False), args.timeout,
+              env=dict(os.environ, OMP_NUM_THREADS='1'))
     if r['status'] != 'ok':
         return r
-    m = re.search(r'^(?:result |Result: )([0-9.eE+-]+)', r['stdout'], re.M)
-    if not m:
+    got = checker_results(system, r['stdout'])
+    if not got:
         return {'status': 'error', 'seconds': r['seconds'], 'error': f'{system}: no result in its output'}
     qs = queries(path)
-    secs = re.search(r'^inference_seconds ([0-9.eE+-]+)$', r['stdout'], re.M)
+    secs = checker_seconds(system, r['stdout']) if system == 'storm' else None
     # The program's queries are the goal and the constant false of the Dice tuple `(hit(res), false)`: the model
     # checker answers the first, the rest have probability 0 (gen_geni.py weather_reference).
     answers = {q: 0.0 for q in qs}
-    answers[qs[0]] = float(m.group(1))
+    answers[qs[0]] = float(got[0])
     return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers,
-            'stats': {f'{system}_inference_seconds': float(secs.group(1))} if secs else {}}
+            'stats': {f'{system}_inference_seconds': secs} if secs is not None else {}}
 
 
 def decimal_log10(digits):
@@ -2931,10 +3063,11 @@ def run(args):
         systems.append(('provsql', 'default'))
     for system, variants in MODEL_CHECKERS.items():
         if getattr(args, system, ''):
-            if not any(weather_size(spec[n]) for n in names):
-                raise SystemExit(f'--{system} answers the weather factory programs of --suite geni, and none is selected')
-            if not getattr(args, 'weather_models', ''):
-                raise SystemExit(f'--{system} reads the PRISM models of --weather-models')
+            if not any(accepts_model_checker(args, n) for n in names):
+                raise SystemExit(f'--{system} answers the weather factory and the instances with Dice programs, '
+                                 'and none is selected')
+            if any(weather_size(spec[n]) for n in names) and not getattr(args, 'weather_models', ''):
+                raise SystemExit(f'--{system} reads the weather factory\'s PRISM models of --weather-models')
             systems += [(system, v) for v in getattr(args, f'{system}_variants') or variants]
     if args.ganak:
         systems.append(('ganak', 'wmc'))
@@ -3021,7 +3154,7 @@ def run_job(args, spec, systems, out, lock, names):
                 continue
             if system == 'provsql' and spec[name][1][0] not in PROVSQL_WRITERS:
                 continue
-            if system in MODEL_CHECKERS and not weather_size(spec[name]):
+            if system in MODEL_CHECKERS and not accepts_model_checker(args, name):
                 continue
             if system in ('ganak', 'sharpsat-td') and not has_cnf(spec[name]):
                 continue
@@ -3414,11 +3547,14 @@ def main():
     r.add_argument('--tensorinference', default='', help="the Julia command that runs TensorInference.jl, for the networks, up "
                    "to the script: `julia --startup-file=no --threads=1 --project=DIR`; empty = not run")
     r.add_argument('--storm', default='', help="a Python with stormpy (Storm), for the weather factory of --suite geni "
-                   '(scripts/storm_weather.py); empty = not run')
+                   'and the Markov chains dice2prism.py writes of the Dice programs (scripts/storm_check.py); '
+                   'empty = not run')
     r.add_argument('--storm-variants', type=lambda s: s.split(','), help='sparse, exact, dd (all by default)')
-    r.add_argument('--prism', default='', help="PRISM's directory (bin/prism), for the weather factory; empty = not run")
+    r.add_argument('--prism', default='', help="PRISM's directory (bin/prism), for the weather factory and the "
+                   'Markov chains of the Dice programs; empty = not run')
     r.add_argument('--prism-variants', type=lambda s: s.split(','), help='the engines sparse, hybrid (both by default)')
-    r.add_argument('--prism-heap', default='4g', help="the Java heap of PRISM's process (-javamaxmem), by default 4g")
+    r.add_argument('--prism-heap', default='4g', help="the Java heap of PRISM's process (-javamaxmem), and on the Dice "
+                   "programs' chains its decision diagrams' memory (-cuddmaxmem), by default 4g")
     r.add_argument('--weather-models', default='', help="the directory with Rubicon's weatherfactoryN.prism, for --storm and --prism")
     r.add_argument('--provsql', default='', help="the directory install_provsql.sh installs ProvSQL in (pg/bin/initdb, ...), "
                    'for the programs of tuple-independent tables (TPC-H, pdb and noisyor of --suite lit); empty = not run')

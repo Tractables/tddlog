@@ -698,6 +698,25 @@ class AspmcTests(unittest.TestCase):
                 self.assertEqual(f.read(), bench.aspmc_conditioned(ALARM))
             self.assertEqual(result['answers'], {'b': 0.5, 'alarm': 0.8})
 
+    def test_a_probability_in_exponent_notation_is_written_out(self):
+        program = '1e-05::a; 0.99999::b.\n5.25e-07::c :- a(1e2).\nquery(c).\n'
+        written = '0.00001::a; 0.99999::b.\n0.000000525::c :- a(1e2).\nquery(c).\n'
+        self.assertEqual(bench.aspmc_numbers(program), written)
+        self.assertEqual((float('0.00001'), float('0.000000525')), (1e-05, 5.25e-07))
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'small.pl')
+            with open(path, 'w') as f:
+                f.write(program)
+            args = SimpleNamespace(dir=d, aspmc='python3', timeout=1)
+            with patch.object(bench, 'timed', return_value={
+                        'status': 'ok', 'seconds': 0.1, 'stderr': '[RESULT] aspmc: c: 5.25e-12\n'}) as run:
+                result = bench.run_aspmc(args, 'small', path)
+            ran = run.call_args[0][0][-1]
+            self.assertEqual(ran, os.path.abspath(os.path.join(d, 'aspmc-small', 'small.pl')))
+            with open(ran) as f:
+                self.assertEqual(f.read(), written)
+            self.assertEqual(result['answers'], {'c': 5.25e-12})
+
     def test_comments_and_atom_named_evidence_are_allowed(self):
         program = ('% evidence(obs, true).\n'
                    '/* evidence(obs). */\n'

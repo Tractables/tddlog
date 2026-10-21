@@ -97,7 +97,19 @@
       ["bn_link",0.848,43.806,29.546,47.891,"timeout",4.071,147.008,"skipped","skipped","skipped"],
       ["bn_munin_ev",0.783,7.079,2.199,0.886,"skipped",3.327,172.042,"skipped","skipped","skipped"],
       ["bn_munin",0.797,6.496,2.193,0.902,"skipped",3.354,163.821,"skipped","skipped","skipped"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":34,
+      "ace":34,
+      "merlin":34,
+      "agrum":34,
+      "pgmpy":34,
+      "libdai":34,
+      "tensorinference":34,
+      "problog":34,
+      "pita":34,
+      "aspmc":33
+     }
     },
     {
      "key":"ace",
@@ -152,7 +164,16 @@
       ["ace_mastermind_04_08_04",0.047,2.592,0.391,1.178,"skipped",1.722,"timeout"],
       ["ace_mastermind_10_08_03",0.057,2.634,0.548,1.142,"skipped",1.01,"skipped"],
       ["ace_mastermind_03_08_05",0.084,3.012,0.621,2.183,"skipped",2.996,"skipped"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":46,
+      "ace":46,
+      "merlin":46,
+      "agrum":46,
+      "pgmpy":46,
+      "libdai":46,
+      "tensorinference":46
+     }
     },
     {
      "key":"large",
@@ -175,7 +196,16 @@
       ["bn_munin2_ev",0.526,5.452,0.348,0.406,"skipped",0.576,169.636],
       ["bn_munin3_ev",0.469,4.844,0.406,0.405,"skipped",0.709,155.662],
       ["bn_munin4_ev",0.824,6.685,2.207,0.835,"skipped",3.202,168.458]
-     ]
+     ],
+     "expresses":{
+      "tddlog":14,
+      "ace":14,
+      "merlin":14,
+      "agrum":14,
+      "pgmpy":14,
+      "libdai":14,
+      "tensorinference":14
+     }
     },
     {
      "key":"uai",
@@ -304,7 +334,15 @@
       ["uai_segmentation_13",0.151,0.854,17.902,108.75,0.517,67.806],
       ["uai_promedus_23",0.069,7.276,37.552,"timeout",8.976,58.676],
       ["uai_promedus_37",0.076,6.25,"memout","timeout",5.629,56.233]
-     ]
+     ],
+     "expresses":{
+      "tddlog":120,
+      "merlin":120,
+      "agrum":120,
+      "pgmpy":120,
+      "libdai":120,
+      "tensorinference":120
+     }
     },
     {
      "key":"uaipr",
@@ -510,7 +548,11 @@
       ["uai_queen5_5_3_wcsp",11.692,108.324],
       ["uai_myciel5g_3_wcsp","memout","memout"],
       ["uai_queen5_5_4_wcsp","memout","memout"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":197,
+      "merlin":197
+     }
     },
     {
      "key":"uaitpr",
@@ -640,7 +682,11 @@
       ["uai_segmentation_15",0.151,0.184],
       ["uai_segmentation_16",0.139,0.195],
       ["uai_segmentation_13",0.442,0.618]
-     ]
+     ],
+     "expresses":{
+      "tddlog":121,
+      "merlin":121
+     }
     },
     {
      "key":"uai_pr",
@@ -769,7 +815,15 @@
       ["uai_promedus_17",0.023,6.984,84.248,3.001,13.617,30.364],
       ["uai_segmentation_15",0.161,0.217,5.746,2.69,1.396,36.311],
       ["uai_segmentation_16",0.137,0.23,4.987,1.975,0.635,36.134]
-     ]
+     ],
+     "expresses":{
+      "tddlog":120,
+      "merlin":120,
+      "agrum":120,
+      "pgmpy":120,
+      "libdai":120,
+      "tensorinference":120
+     }
     }
    ],
    "setup":[
@@ -864,7 +918,13 @@
       ["grid20",2.796,"skipped","skipped","skipped"],
       ["grid25","timeout","skipped","skipped","skipped"],
       ["grid30","skipped","skipped","skipped","skipped"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":50,
+      "problog":50,
+      "pita":50,
+      "aspmc":49
+     }
     },
     {
      "key":"lit",
@@ -915,6 +975,13 @@
      ],
      "pairs":{
       "provsql":[0.004,0.004,0.011,0.017,0.005,0.042,0.009,0.026,0.005,0.007,0.005,0.04,0.011,0.007,0.006,0.028,0.051,0.011,0.01,0.011,0.082,0.035,0.012,0.024,0.039,0.25,0.835,1.82,0.062,0.117,0.466,0.089,0.28,1.129,2.908,0.038,2.117,0.041,0.056]
+     },
+     "expresses":{
+      "tddlog":39,
+      "problog":39,
+      "pita":39,
+      "aspmc":35,
+      "provsql":11
      }
     },
     {
@@ -1132,7 +1199,14 @@
       ["tpch_q21_50",19.301,"skipped","skipped","skipped","timeout"],
       ["tpch_q21v_100","timeout","skipped","skipped","skipped","skipped"],
       ["tpch_q21_100","timeout","skipped","skipped","skipped","skipped"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":208,
+      "problog":208,
+      "pita":208,
+      "aspmc":208,
+      "provsql":208
+     }
     },
     {
      "key":"biomine",
@@ -1151,7 +1225,13 @@
       ["biomine32",3.633,"skipped","skipped","skipped"],
       ["biomine48",2.37,"skipped","skipped","skipped"],
       ["biomine64",174.508,"skipped","skipped","skipped"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":10,
+      "problog":10,
+      "pita":10,
+      "aspmc":10
+     }
     }
    ],
    "setup":[
@@ -1161,6 +1241,156 @@
     ["Answers","Every answer of tddlog's is compared with a reference: ProbLog's, or an exact solver written for the suite ([`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py), [`scripts/tpch_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/tpch_exact.py), [`scripts/reliability_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/reliability_exact.py)). The largest absolute differences: 4.9e-9 on the standard suite (ProbLog prints eight digits), 2.7e-13 on the literature suite, 1.0e-14 on TPC-H, 3.4e-12 on Biomine; ProvSQL's answers differ from the reference's by at most 1.0e-12 on TPC-H and by at most 8.9e-16 on pdb and noisy-or. The random graphs and grids no exact system finishes agree with estimates from sampled graphs ([`scripts/sample_paths.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/sample_paths.py))."]
    ],
    "docs":"https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md"
+  }
+ ],
+ "kinds":[
+  {
+   "key":"all",
+   "title":"Every problem",
+   "noun":"problems",
+   "suites":["std_bn","ace","large","uai","uaipr","uaitpr","uai_pr","std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+   "instances":1409,
+   "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","provsql","alea","alea-process","dice","roulette","roulette-process","nodice","psi","genfer","pluck","sppl","geni","storm","prism"],
+   "expresses":{
+    "tddlog":1409,
+    "ace":94,
+    "merlin":652,
+    "agrum":334,
+    "pgmpy":334,
+    "libdai":334,
+    "tensorinference":334,
+    "problog":392,
+    "pita":341,
+    "aspmc":335,
+    "provsql":219,
+    "alea":450,
+    "alea-process":450,
+    "dice":228,
+    "roulette":196,
+    "roulette-process":196,
+    "nodice":87,
+    "psi":95,
+    "genfer":15,
+    "pluck":4,
+    "sppl":8,
+    "geni":51,
+    "storm":32,
+    "prism":30
+   },
+   "jaccard":0.9,
+   "least":20,
+   "panels":[]
+  },
+  {
+   "key":"programs",
+   "title":"Probabilistic logic programs",
+   "noun":"programs",
+   "suites":["std","lit","tpch","biomine"],
+   "instances":307,
+   "systems":["tddlog","problog","pita","aspmc","provsql"],
+   "expresses":{
+    "tddlog":307,
+    "problog":307,
+    "pita":307,
+    "aspmc":302,
+    "provsql":219
+   },
+   "jaccard":0.9,
+   "least":20,
+   "panels":[
+    {
+     "title":"The 302 programs ProbLog, PITA and aspmc express",
+     "members":["problog","pita","aspmc"],
+     "systems":["tddlog","problog","pita","aspmc"],
+     "instances":{
+      "std":["uwcse2","s6","dice_evidence1","bloodtype","grid4","dice_evidence2","dice_grass","dice_alarm","dice_noisyOr","s10","dice_murderMystery","g10_25","uwcse3","uwcse4","dice_digitRecognition","g11_29","cora10","grid5","s15","grid6","s20","cora50","s50","s100","s200","grid7","cora200","cora500","uwcse5","uwcse6","uwcse8","g12_32","uwcse10","grid8","g13_35","g14_37","g15_40","grid10","g16_44","g18_50","g20_56","grid12","g20_60","grid15","g25_80","g30_100","grid20","grid25","grid30"],
+      "lit":["pdb10","mnist_sum4","pdb15","mastermind6_4_8","noisyor8_12","noisyor10_15","pdb20","mastermind8_4_8","noisyor15_22","pdb30","pdb40","mnist_sum8","mastermind10_4_8","noisyor20_30","sickness10_10","noisyor30_45","mnist_sum16","pedigree4_6","sickness14_10","sickness18_20","mastermind4_5_8","mnist_sum32","mnist_sum64","mnist_sum96","pedigree6_6","pedigree10_6","pedigree5_10","pedigree6_8","pedigree16_6","pedigree32_6","pedigree6_10","sickness22_40","pedigree7_10","mastermind6_5_8","mastermind8_5_8"],
+      "tpch":["tpch_q6v_1","tpch_q2v_2","tpch_q2_2","tpch_q4_1","tpch_q11v_5","tpch_q11_5","tpch_q10v_1","tpch_q1_1","tpch_q6_1","tpch_q4v_1","tpch_q1v_1","tpch_q3v_1","tpch_q2v_5","tpch_q2_5","tpch_q7v_2","tpch_q7_2","tpch_q2v_10","tpch_q2_10","tpch_q2v_20","tpch_q2_20","tpch_q12_1","tpch_q6_2","tpch_q6v_2","tpch_q7_5","tpch_q7v_5","tpch_q2_50","tpch_q2v_50","tpch_q10_1","tpch_q3_1","tpch_q12v_1","tpch_q11v_10","tpch_q12_2","tpch_q3v_2","tpch_q3_2","tpch_q3_5","tpch_q6_5","tpch_q6v_5","tpch_q7v_10","tpch_q3v_5","tpch_q12_5","tpch_q12v_2","tpch_q12v_5","tpch_q11_10","tpch_q4v_2","tpch_q4_2","tpch_q11v_20","tpch_q6v_10","tpch_q6_10","tpch_q6_20","tpch_q12_10","tpch_q12v_10","tpch_q1v_2","tpch_q11_20","tpch_q10v_2","tpch_q10_2","tpch_q7_10","tpch_q4v_5","tpch_q6v_20","tpch_q10v_5","tpch_q4_5","tpch_q7_20","tpch_q3_10","tpch_q1v_5","tpch_q1_2","tpch_q2_100","tpch_q2v_100","tpch_q7v_20","tpch_q14_1","tpch_q6v_50","tpch_q14v_1","tpch_q4v_10","tpch_q7v_50","tpch_q12_20","tpch_q4_10","tpch_q7_50","tpch_q3v_10","tpch_q3_20","tpch_q6_50","tpch_q4_20","tpch_q1_5","tpch_q1v_10","tpch_q12_50","tpch_q1_10","tpch_q10_5","tpch_q4_50","tpch_q4v_20","tpch_q1v_20","tpch_q3_50","tpch_q11_50","tpch_q1_20","tpch_q14_2","tpch_q12v_20","tpch_q3_100","tpch_q10v_10","tpch_q11v_50","tpch_q4v_50","tpch_q10v_20","tpch_q10v_50","tpch_q3v_20","tpch_q14v_2","tpch_q1v_50","tpch_q1_50","tpch_q10_10","tpch_q10_20","tpch_q12_100","tpch_q11_100","tpch_q14_5","tpch_q14v_5","tpch_q15_1","tpch_q12v_50","tpch_q15v_1","tpch_q10_50","tpch_q11v_100","tpch_q6_100","tpch_q6v_100","tpch_q4_100","tpch_q12v_100","tpch_q10v_100","tpch_q16_1","tpch_q16_2","tpch_q16_5","tpch_q4v_100","tpch_q3v_50","tpch_q16v_1","tpch_q16v_2","tpch_q16_10","tpch_q16v_5","tpch_q17v_5","tpch_q16v_10","tpch_q17_5","tpch_q16v_20","tpch_q15_2","tpch_q7v_100","tpch_q15v_2","tpch_q3v_100","tpch_q1_100","tpch_q10_100","tpch_q14_10","tpch_q1v_100","tpch_q16_20","tpch_q20_2","tpch_q18v_1","tpch_q20_5","tpch_q20_10","tpch_q20_20","tpch_q20_50","tpch_q7_100","tpch_q18_1","tpch_q20v_2","tpch_q21_2","tpch_q20v_5","tpch_q20v_10","tpch_q14v_10","tpch_q21v_2","tpch_q20v_20","tpch_q14v_20","tpch_q20v_50","tpch_q14v_50","tpch_q16v_50","tpch_q15v_5","tpch_q17v_10","tpch_q17_10","tpch_q21_5","tpch_q15_5","tpch_q17v_20","tpch_q17_20","tpch_q21_10","tpch_q14v_100","tpch_q14_20","tpch_q14_50","tpch_q20v_100","tpch_q21v_5","tpch_q16_50","tpch_q16v_100","tpch_q17v_50","tpch_q21v_10","tpch_q17_50","tpch_q20_100","tpch_q14_100","tpch_q15_10","tpch_q15_20","tpch_q15v_10","tpch_q15v_20","tpch_q16_100","tpch_q18_2","tpch_q15_50","tpch_q18_5","tpch_q18_10","tpch_q18_20","tpch_q17_100","tpch_q21v_20","tpch_q18_50","tpch_q15v_50","tpch_q15_100","tpch_q18v_2","tpch_q18v_5","tpch_q17v_100","tpch_q18v_10","tpch_q21_20","tpch_q18v_20","tpch_q15v_100","tpch_q18_100","tpch_q18v_50","tpch_q18v_100","tpch_q21v_50","tpch_q21_50","tpch_q21v_100","tpch_q21_100"],
+      "biomine":["biomine1","biomine2","biomine4","biomine8","biomine12","biomine16","biomine24","biomine32","biomine48","biomine64"]
+     }
+    },
+    {
+     "title":"The 219 programs ProvSQL expresses",
+     "members":["provsql"],
+     "systems":["tddlog","problog","pita","provsql"],
+     "instances":{
+      "lit":["noisyor6_9","pdb10","pdb15","noisyor8_12","noisyor10_15","pdb20","noisyor15_22","pdb30","pdb40","noisyor20_30","noisyor30_45"],
+      "tpch":["tpch_q6v_1","tpch_q2v_2","tpch_q2_2","tpch_q4_1","tpch_q11v_5","tpch_q11_5","tpch_q10v_1","tpch_q1_1","tpch_q6_1","tpch_q4v_1","tpch_q1v_1","tpch_q3v_1","tpch_q2v_5","tpch_q2_5","tpch_q7v_2","tpch_q7_2","tpch_q2v_10","tpch_q2_10","tpch_q2v_20","tpch_q2_20","tpch_q12_1","tpch_q6_2","tpch_q6v_2","tpch_q7_5","tpch_q7v_5","tpch_q2_50","tpch_q2v_50","tpch_q10_1","tpch_q3_1","tpch_q12v_1","tpch_q11v_10","tpch_q12_2","tpch_q3v_2","tpch_q3_2","tpch_q3_5","tpch_q6_5","tpch_q6v_5","tpch_q7v_10","tpch_q3v_5","tpch_q12_5","tpch_q12v_2","tpch_q12v_5","tpch_q11_10","tpch_q4v_2","tpch_q4_2","tpch_q11v_20","tpch_q6v_10","tpch_q6_10","tpch_q6_20","tpch_q12_10","tpch_q12v_10","tpch_q1v_2","tpch_q11_20","tpch_q10v_2","tpch_q10_2","tpch_q7_10","tpch_q4v_5","tpch_q6v_20","tpch_q10v_5","tpch_q4_5","tpch_q7_20","tpch_q3_10","tpch_q1v_5","tpch_q1_2","tpch_q2_100","tpch_q2v_100","tpch_q7v_20","tpch_q14_1","tpch_q6v_50","tpch_q14v_1","tpch_q4v_10","tpch_q7v_50","tpch_q12_20","tpch_q4_10","tpch_q7_50","tpch_q3v_10","tpch_q3_20","tpch_q6_50","tpch_q4_20","tpch_q1_5","tpch_q1v_10","tpch_q12_50","tpch_q1_10","tpch_q10_5","tpch_q4_50","tpch_q4v_20","tpch_q1v_20","tpch_q3_50","tpch_q11_50","tpch_q1_20","tpch_q14_2","tpch_q12v_20","tpch_q3_100","tpch_q10v_10","tpch_q11v_50","tpch_q4v_50","tpch_q10v_20","tpch_q10v_50","tpch_q3v_20","tpch_q14v_2","tpch_q1v_50","tpch_q1_50","tpch_q10_10","tpch_q10_20","tpch_q12_100","tpch_q11_100","tpch_q14_5","tpch_q14v_5","tpch_q15_1","tpch_q12v_50","tpch_q15v_1","tpch_q10_50","tpch_q11v_100","tpch_q6_100","tpch_q6v_100","tpch_q4_100","tpch_q12v_100","tpch_q10v_100","tpch_q16_1","tpch_q16_2","tpch_q16_5","tpch_q4v_100","tpch_q3v_50","tpch_q16v_1","tpch_q16v_2","tpch_q16_10","tpch_q16v_5","tpch_q17v_5","tpch_q16v_10","tpch_q17_5","tpch_q16v_20","tpch_q15_2","tpch_q7v_100","tpch_q15v_2","tpch_q3v_100","tpch_q1_100","tpch_q10_100","tpch_q14_10","tpch_q1v_100","tpch_q16_20","tpch_q20_2","tpch_q18v_1","tpch_q20_5","tpch_q20_10","tpch_q20_20","tpch_q20_50","tpch_q7_100","tpch_q18_1","tpch_q20v_2","tpch_q21_2","tpch_q20v_5","tpch_q20v_10","tpch_q14v_10","tpch_q21v_2","tpch_q20v_20","tpch_q14v_20","tpch_q20v_50","tpch_q14v_50","tpch_q16v_50","tpch_q15v_5","tpch_q17v_10","tpch_q17_10","tpch_q21_5","tpch_q15_5","tpch_q17v_20","tpch_q17_20","tpch_q21_10","tpch_q14v_100","tpch_q14_20","tpch_q14_50","tpch_q20v_100","tpch_q21v_5","tpch_q16_50","tpch_q16v_100","tpch_q17v_50","tpch_q21v_10","tpch_q17_50","tpch_q20_100","tpch_q14_100","tpch_q15_10","tpch_q15_20","tpch_q15v_10","tpch_q15v_20","tpch_q16_100","tpch_q18_2","tpch_q15_50","tpch_q18_5","tpch_q18_10","tpch_q18_20","tpch_q17_100","tpch_q21v_20","tpch_q18_50","tpch_q15v_50","tpch_q15_100","tpch_q18v_2","tpch_q18v_5","tpch_q17v_100","tpch_q18v_10","tpch_q21_20","tpch_q18v_20","tpch_q15v_100","tpch_q18_100","tpch_q18v_50","tpch_q18v_100","tpch_q21v_50","tpch_q21_50","tpch_q21v_100","tpch_q21_100"]
+     }
+    }
+   ]
+  },
+  {
+   "key":"networks",
+   "title":"Bayesian and Markov networks",
+   "noun":"networks",
+   "suites":["std_bn","ace","large","uai","uaipr","uaitpr","uai_pr"],
+   "instances":652,
+   "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc"],
+   "expresses":{
+    "tddlog":652,
+    "ace":94,
+    "merlin":652,
+    "agrum":334,
+    "pgmpy":334,
+    "libdai":334,
+    "tensorinference":334,
+    "problog":34,
+    "pita":34,
+    "aspmc":33
+   },
+   "jaccard":0.9,
+   "least":20,
+   "panels":[
+    {
+     "title":"The 334 networks pyAgrum, pgmpy, libDAI and TensorInference.jl express",
+     "members":["agrum","pgmpy","libdai","tensorinference"],
+     "systems":["tddlog","merlin","agrum","pgmpy","libdai","tensorinference"],
+     "instances":{
+      "std_bn":["bn_cancer_ev","bn_cancer","bn_earthquake_ev","bn_earthquake","bn_asia_ev","bn_asia","bn_survey_ev","bn_survey","bn_sachs_ev","bn_sachs","bn_child","bn_child_ev","bn_insurance_ev","bn_insurance","bn_water_ev","bn_alarm_ev","bn_hailfinder_ev","bn_hepar2_ev","bn_win95pts_ev","bn_pathfinder_ev","bn_andes_ev","bn_pigs_ev","bn_water","bn_alarm","bn_hailfinder","bn_hepar2","bn_link_ev","bn_win95pts","bn_pathfinder","bn_andes","bn_pigs","bn_link","bn_munin_ev","bn_munin"],
+      "ace":["ace_water","ace_fs_01","ace_mastermind_03_08_03","ace_blockmap_05_01","ace_fs_04","ace_mildew","ace_munin1","ace_fs_07","ace_alarm","ace_hailfinder","ace_munin2","ace_pathfinder","ace_students_03_02","ace_munin3","ace_diabetes","ace_pigs","ace_blockmap_05_02","ace_munin4","ace_blockmap_05_03","ace_blockmap_10_01","ace_mastermind_04_08_03","ace_fs_10","ace_fs_13","ace_mastermind_05_08_03","ace_fs_16","ace_fs_19","ace_fs_22","ace_fs_25","ace_fs_28","ace_mastermind_06_08_03","ace_blockmap_10_02","ace_blockmap_10_03","ace_fs_29","ace_blockmap_15_01","ace_blockmap_15_02","ace_blockmap_15_03","ace_blockmap_20_01","ace_blockmap_20_02","ace_blockmap_20_03","ace_blockmap_22_01","ace_blockmap_22_02","ace_blockmap_22_03","ace_mastermind_03_08_04","ace_mastermind_04_08_04","ace_mastermind_10_08_03","ace_mastermind_03_08_05"],
+      "large":["bn_barley_ev","bn_barley","bn_diabetes_ev","bn_diabetes","bn_mildew_ev","bn_mildew","bn_munin1","bn_munin1_ev","bn_munin2","bn_munin3","bn_munin4","bn_munin2_ev","bn_munin3_ev","bn_munin4_ev"],
+      "uai":["uai_csp_12","uai_dbn_14","uai_objectdetection_35","uai_objectdetection_54","uai_objectdetection_74","uai_grids_13","uai_grids_12","uai_objectdetection_70","uai_alchemy_11","uai_dbn_16","uai_objectdetection_61","uai_dbn_13","uai_csp_11","uai_objectdetection_47","uai_objectdetection_58","uai_csp_13","uai_dbn_12","uai_objectdetection_28","uai_objectdetection_34","uai_objectdetection_51","uai_grids_14","uai_objectdetection_66","uai_objectdetection_75","uai_objectdetection_42","uai_objectdetection_62","uai_dbn_11","uai_grids_11","uai_objectdetection_46","uai_grids_15","uai_grids_16","uai_dbn_15","uai_grids_18","uai_grids_17","uai_objectdetection_68","uai_objectdetection_22","uai_objectdetection_11","uai_objectdetection_56","uai_objectdetection_30","uai_objectdetection_52","uai_objectdetection_64","uai_objectdetection_29","uai_objectdetection_49","uai_objectdetection_44","uai_objectdetection_71","uai_objectdetection_32","uai_objectdetection_40","uai_objectdetection_67","uai_objectdetection_55","uai_objectdetection_63","uai_objectdetection_38","uai_objectdetection_12","uai_objectdetection_31","uai_objectdetection_16","uai_objectdetection_18","uai_objectdetection_36","uai_objectdetection_72","uai_objectdetection_43","uai_objectdetection_48","uai_objectdetection_13","uai_objectdetection_19","uai_objectdetection_53","uai_objectdetection_39","uai_objectdetection_57","uai_objectdetection_26","uai_objectdetection_50","uai_objectdetection_60","uai_objectdetection_69","uai_objectdetection_73","uai_objectdetection_37","uai_objectdetection_45","uai_objectdetection_21","uai_objectdetection_25","uai_objectdetection_15","uai_objectdetection_23","uai_objectdetection_65","uai_objectdetection_59","uai_objectdetection_41","uai_objectdetection_33","uai_pedigree_11","uai_pedigree_12","uai_objectdetection_17","uai_promedus_33","uai_objectdetection_24","uai_promedus_15","uai_promedus_22","uai_promedus_29","uai_objectdetection_20","uai_promedus_27","uai_promedus_24","uai_promedus_30","uai_pedigree_13","uai_objectdetection_14","uai_promedus_31","uai_promedus_18","uai_promedus_35","uai_promedus_36","uai_promedus_21","uai_promedus_32","uai_promedus_26","uai_promedus_16","uai_promedus_38","uai_promedus_12","uai_promedus_34","uai_promedus_11","uai_objectdetection_27","uai_segmentation_11","uai_promedus_13","uai_segmentation_12","uai_promedus_20","uai_segmentation_15","uai_segmentation_16","uai_promedus_19","uai_promedus_14","uai_promedus_28","uai_segmentation_14","uai_promedus_25","uai_promedus_17","uai_segmentation_13","uai_promedus_23","uai_promedus_37"],
+      "uai_pr":["uai_grids_12","uai_csp_12","uai_objectdetection_34","uai_grids_18","uai_dbn_11","uai_alchemy_11","uai_grids_11","uai_objectdetection_61","uai_dbn_15","uai_objectdetection_46","uai_objectdetection_75","uai_objectdetection_47","uai_objectdetection_58","uai_objectdetection_62","uai_objectdetection_42","uai_csp_13","uai_objectdetection_28","uai_objectdetection_35","uai_objectdetection_51","uai_objectdetection_74","uai_csp_11","uai_objectdetection_70","uai_grids_14","uai_objectdetection_52","uai_objectdetection_66","uai_objectdetection_54","uai_grids_16","uai_grids_15","uai_dbn_13","uai_dbn_16","uai_grids_17","uai_dbn_14","uai_objectdetection_71","uai_dbn_12","uai_grids_13","uai_objectdetection_56","uai_objectdetection_68","uai_objectdetection_11","uai_objectdetection_38","uai_objectdetection_30","uai_objectdetection_22","uai_objectdetection_29","uai_objectdetection_64","uai_objectdetection_49","uai_objectdetection_44","uai_objectdetection_32","uai_objectdetection_55","uai_objectdetection_40","uai_objectdetection_67","uai_objectdetection_48","uai_objectdetection_63","uai_objectdetection_12","uai_objectdetection_43","uai_objectdetection_18","uai_objectdetection_36","uai_objectdetection_53","uai_objectdetection_72","uai_objectdetection_39","uai_objectdetection_26","uai_objectdetection_16","uai_objectdetection_23","uai_objectdetection_69","uai_objectdetection_57","uai_objectdetection_37","uai_objectdetection_60","uai_objectdetection_19","uai_objectdetection_65","uai_objectdetection_59","uai_objectdetection_50","uai_objectdetection_13","uai_objectdetection_31","uai_objectdetection_73","uai_objectdetection_21","uai_objectdetection_33","uai_objectdetection_45","uai_objectdetection_41","uai_objectdetection_15","uai_objectdetection_25","uai_pedigree_11","uai_objectdetection_14","uai_objectdetection_20","uai_pedigree_13","uai_pedigree_12","uai_objectdetection_27","uai_promedus_24","uai_promedus_33","uai_promedus_30","uai_objectdetection_17","uai_promedus_15","uai_promedus_22","uai_promedus_18","uai_promedus_29","uai_promedus_27","uai_promedus_31","uai_promedus_35","uai_promedus_14","uai_promedus_36","uai_promedus_32","uai_promedus_12","uai_objectdetection_24","uai_promedus_11","uai_promedus_23","uai_promedus_34","uai_promedus_26","uai_promedus_19","uai_promedus_21","uai_promedus_38","uai_promedus_20","uai_promedus_13","uai_promedus_37","uai_segmentation_11","uai_segmentation_14","uai_promedus_28","uai_promedus_16","uai_segmentation_12","uai_promedus_25","uai_segmentation_13","uai_promedus_17","uai_segmentation_15","uai_segmentation_16"]
+     }
+    },
+    {
+     "title":"The 94 networks Ace expresses",
+     "members":["ace"],
+     "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference"],
+     "instances":{
+      "std_bn":["bn_cancer_ev","bn_cancer","bn_earthquake_ev","bn_earthquake","bn_asia_ev","bn_asia","bn_survey_ev","bn_survey","bn_sachs_ev","bn_sachs","bn_child","bn_child_ev","bn_insurance_ev","bn_insurance","bn_water_ev","bn_alarm_ev","bn_hailfinder_ev","bn_hepar2_ev","bn_win95pts_ev","bn_pathfinder_ev","bn_andes_ev","bn_pigs_ev","bn_water","bn_alarm","bn_hailfinder","bn_hepar2","bn_link_ev","bn_win95pts","bn_pathfinder","bn_andes","bn_pigs","bn_link","bn_munin_ev","bn_munin"],
+      "ace":["ace_water","ace_fs_01","ace_mastermind_03_08_03","ace_blockmap_05_01","ace_fs_04","ace_mildew","ace_munin1","ace_fs_07","ace_alarm","ace_hailfinder","ace_munin2","ace_pathfinder","ace_students_03_02","ace_munin3","ace_diabetes","ace_pigs","ace_blockmap_05_02","ace_munin4","ace_blockmap_05_03","ace_blockmap_10_01","ace_mastermind_04_08_03","ace_fs_10","ace_fs_13","ace_mastermind_05_08_03","ace_fs_16","ace_fs_19","ace_fs_22","ace_fs_25","ace_fs_28","ace_mastermind_06_08_03","ace_blockmap_10_02","ace_blockmap_10_03","ace_fs_29","ace_blockmap_15_01","ace_blockmap_15_02","ace_blockmap_15_03","ace_blockmap_20_01","ace_blockmap_20_02","ace_blockmap_20_03","ace_blockmap_22_01","ace_blockmap_22_02","ace_blockmap_22_03","ace_mastermind_03_08_04","ace_mastermind_04_08_04","ace_mastermind_10_08_03","ace_mastermind_03_08_05"],
+      "large":["bn_barley_ev","bn_barley","bn_diabetes_ev","bn_diabetes","bn_mildew_ev","bn_mildew","bn_munin1","bn_munin1_ev","bn_munin2","bn_munin3","bn_munin4","bn_munin2_ev","bn_munin3_ev","bn_munin4_ev"]
+     }
+    },
+    {
+     "title":"The 33 networks ProbLog, PITA and aspmc express",
+     "members":["problog","pita","aspmc"],
+     "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc"],
+     "instances":{
+      "std_bn":["bn_cancer","bn_earthquake_ev","bn_earthquake","bn_asia_ev","bn_asia","bn_survey_ev","bn_survey","bn_sachs_ev","bn_sachs","bn_child","bn_child_ev","bn_insurance_ev","bn_insurance","bn_water_ev","bn_alarm_ev","bn_hailfinder_ev","bn_hepar2_ev","bn_win95pts_ev","bn_pathfinder_ev","bn_andes_ev","bn_pigs_ev","bn_water","bn_alarm","bn_hailfinder","bn_hepar2","bn_link_ev","bn_win95pts","bn_pathfinder","bn_andes","bn_pigs","bn_link","bn_munin_ev","bn_munin"]
+     }
+    }
+   ]
+  },
+  {
+   "key":"databases",
+   "title":"Probabilistic databases",
+   "noun":"queries",
+   "suites":["tpch"],
+   "instances":208,
+   "systems":["tddlog","problog","pita","aspmc","provsql"],
+   "expresses":{
+    "tddlog":208,
+    "problog":208,
+    "pita":208,
+    "aspmc":208,
+    "provsql":208
+   },
+   "jaccard":0.9,
+   "least":20,
+   "panels":[]
   }
  ]
 }

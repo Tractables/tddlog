@@ -44,11 +44,13 @@
   time limit, on a log scale from 0.2 s to the suite's limit: a line further
   up and to the left is better, and a run that takes less than 0.2 s counts
   at 0.2 s, since differences of a few milliseconds of start-up are not
-  compared. A plot draws only the systems given all of its instances, so
-  that its lines count the same instances. A system given part of them has
-  a small plot of that part, with every system given all of it, where the
-  part has 20 instances or a quarter of the plot's, whichever is fewer; a
-  smaller part is in the tables only. The findings compare tddlog with
+  compared. A plot draws every system over all of its instances, an
+  instance a system cannot express or was not given counted as unanswered,
+  and its legend gives how many instances each system answers and how many
+  it expresses. Under the plot of a family's problems, a small plot for
+  each cluster of systems with similar expressive capabilities covers the
+  instances all of them express, with every system that expresses all of
+  those. The findings compare tddlog with
   another system on the instances both answer: where each is faster, by
   how much, and their total times over those instances. An instance that
   both finish in under 0.1 s counts neither as a win nor as a loss. The

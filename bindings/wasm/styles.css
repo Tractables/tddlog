@@ -429,7 +429,8 @@ footer {
 /* The results page. Each system has a colour of its own, the same in every
    plot; the light and the dark steps are each checked for contrast against
    the card they are drawn on and for telling neighbours apart under colour
-   blindness. Roulette never shares a plot with aspmc and takes its green.
+   blindness. Roulette's olive and Pluck's navy keep apart from aspmc's
+   green and libDAI's teal, which they meet in the plot of every problem.
    Psi (grey), Storm (teal) and PRISM (brown) share plots with tddlog,
    Dice and noDice, and keep apart from their blue, purple and yellow. */
 :root {
@@ -441,7 +442,7 @@ footer {
   --s-aspmc: #008300;
   --s-dice: #6250d6;
   --s-alea: #e34948;
-  --s-roulette: #008300;
+  --s-roulette: #6b8e23;
   --s-agrum: #7a4fb3;
   --s-pgmpy: #b0842a;
   --s-libdai: #2f8f6e;
@@ -452,7 +453,7 @@ footer {
   --s-psi: #4d4d4d;
   --s-genfer: #c0392b;
   --s-sppl: #7a5230;
-  --s-pluck: #2f8f6e;
+  --s-pluck: #1f3a93;
   --s-storm-sparse: #00838f;
   --s-storm: #00838f;
   --s-storm-exact: #4fb3bb;
@@ -469,6 +470,8 @@ footer {
     --s-merlin: #199e70;
     --s-problog: #c98500;
     --s-pita: #d55181;
+    --s-aspmc: #3fb950;
+    --s-roulette: #a6cf4f;
     --s-dice: #9085e9;
     --s-alea: #e66767;
     --s-agrum: #a58be0;
@@ -481,7 +484,7 @@ footer {
     --s-psi: #bdbdbd;
     --s-genfer: #f08a7c;
     --s-sppl: #c9a07a;
-    --s-pluck: #6fd2ad;
+    --s-pluck: #8fa8f0;
     --s-storm-sparse: #4fc3cf;
     --s-storm: #4fc3cf;
     --s-storm-exact: #9ee0e6;
@@ -498,6 +501,8 @@ footer {
   --s-merlin: #199e70;
   --s-problog: #c98500;
   --s-pita: #d55181;
+  --s-aspmc: #3fb950;
+  --s-roulette: #a6cf4f;
   --s-dice: #9085e9;
   --s-alea: #e66767;
   --s-agrum: #a58be0;
@@ -510,7 +515,7 @@ footer {
   --s-psi: #bdbdbd;
   --s-genfer: #f08a7c;
   --s-sppl: #c9a07a;
-  --s-pluck: #6fd2ad;
+  --s-pluck: #8fa8f0;
   --s-storm-sparse: #4fc3cf;
   --s-storm: #4fc3cf;
   --s-storm-exact: #9ee0e6;
@@ -675,7 +680,7 @@ svg.cactus { display: block; max-width: 100%; touch-action: pan-y; }
 .cactus .grid { stroke: var(--line); stroke-width: 1; }
 .cactus .grid.all { stroke-dasharray: 3 3; }
 .cactus .axis { stroke: var(--muted); stroke-width: 1; }
-.cactus .line { fill: none; stroke: var(--s); stroke-width: 2; stroke-linejoin: round; }
+.cactus .line { fill: none; stroke: var(--s, var(--muted)); stroke-width: 2; stroke-linejoin: round; }
 .cactus .line.mine { stroke-width: 3; }
 .cactus .line.dashed { stroke-dasharray: 6 4; }
 .cactus .dim { opacity: 0.2; }
