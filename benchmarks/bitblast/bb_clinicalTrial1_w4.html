@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
     <h1>bb_clinicalTrial1_w4</h1>
-    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a> and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs or the ProbLog programs); a system&#x27;s time is its process&#x27;s, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/clinicalTrial1.jl</code> with <code>bits=2</code>.</p>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice&#x27;s times on these circuits come from an earlier run, so they are in <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a> and not here. 600 s a run. Psi, Genfer, SPPL, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs or the ProbLog programs); a system&#x27;s time is its process&#x27;s, start-up included. Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/clinicalTrial1.jl</code> with <code>bits=2</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.23</td><td class="num">50.6</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.23</td><td class="num">50.6</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num">33.0</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -103,10 +103,175 @@ end
 <h3>tddlog (decision)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.02</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>vtree error: vtree `decision`: the grounder read no fact of this program as a guard</pre></details></td></tr><tr><td>2</td><td>error</td><td>0.02</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>vtree error: vtree `decision`: the grounder read no fact of this program as a guard</pre></details></td></tr><tr><td>3</td><td>error</td><td>0.02</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>vtree error: vtree `decision`: the grounder read no fact of this program as a guard</pre></details></td></tr></tbody></table></div>
 <h3>tddlog (program)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.04</td><td></td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program</td></tr><tr><td>2</td><td>answered</td><td>0.04</td><td></td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program</td></tr><tr><td>3</td><td>answered</td><td>0.04</td><td></td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program</td></tr></tbody></table></div>
 <h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>51.1</td><td>40.0</td><td>39.8</td><td>0.23</td><td></td><td>circuit flips 807; circuit gates 3 200; BDD peak, nodes 407 778; evidence BDD, nodes 4 002; largest query BDD, nodes 2</td></tr><tr><td>2</td><td>answered</td><td>50.6</td><td>39.4</td><td>39.1</td><td>0.20</td><td></td><td>circuit flips 807; circuit gates 3 200; BDD peak, nodes 407 778; evidence BDD, nodes 4 002; largest query BDD, nodes 2</td></tr><tr><td>3</td><td>answered</td><td>50.3</td><td>39.0</td><td>38.8</td><td>0.24</td><td></td><td>circuit flips 807; circuit gates 3 200; BDD peak, nodes 407 778; evidence BDD, nodes 4 002; largest query BDD, nodes 2</td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.04</td><td></td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program (from auto: 2 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>33.0</td><td></td><td></td></tr></tbody></table></div>
+<h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+=====
+
+Version: 4.8.1
+Date: Wed Oct 21 05:41:12 UTC 2026
+Hostname: ip-172-31-40-143
+Memory limits: cudd=4g, java(heap)=3.9g
+Command line: prism bb_clinicalTrial1_w4__d1.dice.dtmc0.prism bb_clinicalTrial1_w4__d1.dice.dtmc0.props -hybrid -javamaxmem 4g -cuddmaxmem 4g -epsilon 1e-15 -maxiters 1000000000
+
+Parsing model file &quot;bb_clinicalTrial1_w4__d1.dice.dtmc0.prism&quot;...
+
+Type:        DTMC
+Modules:     program
+Variables:   pc x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37 x38 x39 x40 x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 x61 x62 x63 x64 x65 x66 x67 x68 x69 x70 x71 x72 x73 x74 x75 x76 x77 x78 x79 x80 x81 x82 x83 x84 x85 x86 x87 x88 x89 x90 x91 x92 x93 x94 x95 x96 x97 x98 x99 x100 x101
+
+Parsing properties file &quot;bb_clinicalTrial1_w4__d1.dice.dtmc0.props&quot;...
+
+2 properties:
+(1) &quot;obs&quot;: P=? [ F &quot;done&quot; ]
+(2) &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x1) ]
+
+---------------------------------------------------------------------
+
+Model checking: &quot;obs&quot;: P=? [ F &quot;done&quot; ]
+
+Building model...
+
+Warning: Guard for command 14 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 19 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 26 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 33 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 38 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 45 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 50 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 55 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 60 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 65 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 72 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 79 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 94 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 101 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 106 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 115 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 120 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 133 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 138 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 145 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 150 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 155 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 162 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 167 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 172 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 179 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 194 </pre></details></td></tr></tbody></table></div>
+<h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+=====
+
+Version: 4.8.1
+Date: Wed Oct 21 05:40:58 UTC 2026
+Hostname: ip-172-31-40-143
+Memory limits: cudd=4g, java(heap)=3.9g
+Command line: prism bb_clinicalTrial1_w4__d1.dice.dtmc0.prism bb_clinicalTrial1_w4__d1.dice.dtmc0.props -sparse -javamaxmem 4g -cuddmaxmem 4g -epsilon 1e-15 -maxiters 1000000000
+
+Parsing model file &quot;bb_clinicalTrial1_w4__d1.dice.dtmc0.prism&quot;...
+
+Type:        DTMC
+Modules:     program
+Variables:   pc x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37 x38 x39 x40 x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 x61 x62 x63 x64 x65 x66 x67 x68 x69 x70 x71 x72 x73 x74 x75 x76 x77 x78 x79 x80 x81 x82 x83 x84 x85 x86 x87 x88 x89 x90 x91 x92 x93 x94 x95 x96 x97 x98 x99 x100 x101
+
+Parsing properties file &quot;bb_clinicalTrial1_w4__d1.dice.dtmc0.props&quot;...
+
+2 properties:
+(1) &quot;obs&quot;: P=? [ F &quot;done&quot; ]
+(2) &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x1) ]
+
+---------------------------------------------------------------------
+
+Model checking: &quot;obs&quot;: P=? [ F &quot;done&quot; ]
+
+Building model...
+
+Warning: Guard for command 14 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 19 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 26 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 33 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 38 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 45 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 50 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 55 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 60 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 65 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 72 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 79 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 94 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 101 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 106 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 115 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 120 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 133 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 138 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 145 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 150 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 155 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 162 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 167 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 172 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 179 of module &quot;program&quot; is never satisfied.
+
+Warning: Guard for command 194 </pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td></tr></tbody></table></div>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
