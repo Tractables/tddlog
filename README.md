@@ -130,16 +130,20 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
        alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
 </p>
 
-- tddlog answers **600 of the 652 networks**, in 62 minutes in total.
+- tddlog answers **600 of the 652 networks**, in 60 minutes in total.
   The 52 it does not answer are partition functions of the UAI 2022
   final set (19 run out of time, 33 out of memory), and Merlin answers
-  one of them. Merlin answers 444 of the 652.
-- **15× faster than Merlin** (bucket-tree elimination) in total: 1.1
+  one of them. Merlin answers 443 of the 652.
+- **16× faster than Merlin** (bucket-tree elimination) in total: 1.1
   hours over the 601 networks either answers, against Merlin's 17 hours.
-  On the 443 both answer, 17 minutes against 2.3 hours.
-- **35× faster than Ace** (compilation to arithmetic circuits) on the 94
-  Bayesian networks it was run on, and 39× to 86× faster than pyAgrum,
-  libDAI, TensorInference.jl and pgmpy on the 334 they were run on.
+  On the 442 both answer, 15 minutes against 2.2 hours.
+- **70× faster than Ace** (compilation to arithmetic circuits, the
+  fastest of its three settings on each network) in total, on the 334
+  networks it was run on: 9 minutes against 11 hours. Ace answers 228
+  of them.
+- 44× to 104× faster than libDAI, pyAgrum, TensorInference.jl and pgmpy
+  on the same 334, and over 100× faster than ProbLog, PITA and aspmc,
+  which answer 12, 38 and 10 of the networks they were given.
 - Against the fastest other tool on each network, tddlog is 11× faster
   in total: 1.1 hours against 12 hours.
 
@@ -147,9 +151,9 @@ The networks: the bnlearn repository's, Ace's benchmarks, the large
 networks (barley, diabetes, mildew, munin) and the UAI 2022
 competition's sets: the MAR tuning set, for marginals and for the
 probability of the evidence, and the PR tuning and final sets, for the
-partition function. Ace ran on the 94 Bayesian networks of the first
-three, ProbLog, PITA and aspmc on the 34 of the first, the network
-libraries on all but the two PR sets, and Merlin on all 652.
+partition function. Ace and the network libraries ran on the 334
+networks of all but the two PR sets, ProbLog and PITA on 274 of them,
+aspmc on 153, and Merlin on all 652.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 

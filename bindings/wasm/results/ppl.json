@@ -14,6 +14,8 @@
   "genfer":"Genfer",
   "sppl":"SPPL",
   "pluck":"Pluck",
+  "pita":"PITA",
+  "aspmc":"aspmc",
   "storm":"Storm",
   "prism":"PRISM"
  },
@@ -21,7 +23,7 @@
   {
    "key":"ppl",
    "title":"Probabilistic programs: Dice, Alea.jl, Roulette and further systems",
-   "intro":"The programs of the Dice, Alea.jl, Roulette and Geni papers, against Dice, Alea.jl and Roulette, and on the programs they take Geni, noDice, Psi, Genfer, SPPL, Pluck, and Storm and PRISM on the weather factory. tddlog runs its own encoding of a program's integers (binary, never one-hot) and is asked what the baseline answers: single marginals where the baseline gives single marginals, a distribution's values only where it computes them. Alea.jl's times leave out Julia's start-up and compilation, as its papers time it; the dashed lines add them, and Racket's start-up to Roulette's.",
+   "intro":"The programs of the Dice, Alea.jl, Roulette and Geni papers, against Dice, Alea.jl and Roulette, and on the programs they take Geni, noDice, Psi, Genfer, SPPL, Pluck, Storm and PRISM. tddlog runs its own encoding of a program's integers (binary, never one-hot) and is asked what the baseline answers: single marginals where the baseline gives single marginals, a distribution's values only where it computes them. Alea.jl's times leave out Julia's start-up and compilation, as its papers time it; the dashed lines add them, and Racket's start-up to Roulette's.",
    "cards":[
     {
      "suite":"dice",
@@ -90,7 +92,7 @@
     {
      "key":"dice",
      "title":"The Dice paper's programs",
-     "about":"The programs and Bayesian networks of the Dice paper (Holtzen, Van den Broeck and Millstein, OOPSLA 2020), a network as one Dice program per queried variable, and its loop programs scaled up. tddlog runs them translated to ProbLog, Alea.jl translated to Julia, Roulette translated to Racket. 300 s a run (600 s on the loop programs). noDice, Psi and Genfer ran too, each on the programs it takes (its own paper's or the Dice programs); a system's time is its process's, start-up included.",
+     "about":"The programs and Bayesian networks of the Dice paper (Holtzen, Van den Broeck and Millstein, OOPSLA 2020), a network as one Dice program per queried variable, and its loop programs scaled up. tddlog runs them translated to ProbLog, Alea.jl translated to Julia, Roulette translated to Racket. 300 s a run (600 s on the loop programs). noDice, Psi and Genfer ran too, each on the programs it takes (its own paper's, the Dice programs or the ProbLog programs); a system's time is its process's, start-up included.",
      "limit":600,
      "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","nodice","psi","genfer"],
      "instances":[
@@ -156,7 +158,7 @@
     {
      "key":"ppl",
      "title":"Alea.jl's and noDice's programs",
-     "about":"Cao et al.'s integer arithmetic programs (UAI 2023), Pluck's sequence models (PLDI 2025) and noDice's purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. noDice, Psi and Pluck ran too, each on the programs it takes (its own paper's or the Dice programs); a system's time is its process's, start-up included.",
+     "about":"Cao et al.'s integer arithmetic programs (UAI 2023), Pluck's sequence models (PLDI 2025) and noDice's purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. noDice, Psi and Pluck ran too, each on the programs it takes (its own paper's, the Dice programs or the ProbLog programs); a system's time is its process's, start-up included.",
      "limit":600,
      "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","nodice","psi","pluck"],
      "instances":[
@@ -219,7 +221,7 @@
     {
      "key":"bitblast",
      "title":"Bit-blasted programs",
-     "about":"The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice's times on these circuits come from an earlier run, so they are in [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper's or the Dice programs); a system's time is its process's, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size.",
+     "about":"The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it. Dice's times on these circuits come from an earlier run, so they are in [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) and not here. 600 s a run. Psi, Genfer and SPPL ran too, each on the programs it takes (its own paper's, the Dice programs or the ProbLog programs); a system's time is its process's, start-up included. 29 more instances of the ladders no system ran: each system had failed on a smaller size.",
      "limit":600,
      "systems":["tddlog","alea","alea-process","psi","genfer","sppl"],
      "instances":[
@@ -563,7 +565,7 @@
     {
      "key":"geni",
      "title":"Geni's programs",
-     "about":"The programs of Geni's evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog's d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper's or the Dice programs); a system's time is its process's, start-up included. Six more instances of the ladders no system ran: each system had failed on a smaller size.",
+     "about":"The programs of Geni's evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog's d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper's, the Dice programs or the ProbLog programs); a system's time is its process's, start-up included. Six more instances of the ladders no system ran: each system had failed on a smaller size.",
      "limit":600,
      "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","problog","geni","nodice","psi","storm","prism"],
      "instances":[
