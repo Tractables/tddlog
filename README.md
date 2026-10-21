@@ -162,16 +162,17 @@ aspmc on 153, and Merlin on all 652.
        alt="Probabilistic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-- tddlog answers 417 of the 450 programs and Alea.jl 309. Dice answers
-  136 of the 228 it was given, where tddlog answers 218, and Roulette
-  113 of its 196, where tddlog answers 189.
-- **8.3× faster than Alea.jl**, **29× faster than Dice** and **46× faster
-  than Roulette** in total. Alea.jl's and Roulette's times leave out
-  their language's start-up and compilation.
-- In total 58× faster than noDice, 24× than Psi, 5.8× than PRISM, 5.1×
-  than Geni and 3.7× than Storm, each on the programs it is given. Storm
-  is faster on the 27 programs both answer (4 minutes to tddlog's 6) and
-  does not finish the other two.
+- tddlog answers 417 of the 453 programs and Alea.jl 309. The
+  probabilistic model checkers Storm and PRISM, given each program as a
+  Markov chain, answer 197 of the 271 they express and 160 of 244, where
+  tddlog answers 258 and 230. Dice answers 136 of its 231, where tddlog
+  answers 218, and Roulette 113 of its 199, where tddlog answers 189.
+- **8.3× faster than Alea.jl**, **16× faster than Storm**, **13× faster
+  than PRISM**, **29× faster than Dice** and **46× faster than Roulette**
+  in total. Alea.jl's and Roulette's times leave out their language's
+  start-up and compilation.
+- In total 58× faster than noDice, 24× than Psi and 5.1× than Geni,
+  each on the programs it is given.
 - Specialized solvers win on their own programs: Genfer's generating
   functions answer its 15 (the population model and the Dice programs it
   ships) in 0.2 s in total, where tddlog takes 2 minutes; Pluck answers
