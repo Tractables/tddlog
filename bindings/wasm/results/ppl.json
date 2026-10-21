@@ -140,7 +140,18 @@
       ["dice_simpleCaesar_k100",0.209,0.312,11.78,"zero",0.605,1.068,null,null,null],
       ["dice_simpleCaesar_k300",0.842,2.509,13.99,"underflow","underflow","underflow",null,null,null],
       ["dice_simpleCaesar_k1000",6.303,"memout","memout","underflow","memout","memout",null,null,null]
-     ]
+     ],
+     "expresses":{
+      "tddlog":46,
+      "alea":46,
+      "alea-process":46,
+      "dice":46,
+      "roulette":46,
+      "roulette-process":46,
+      "nodice":25,
+      "psi":25,
+      "genfer":7
+     }
     },
     {
      "key":"ppl",
@@ -192,7 +203,18 @@
       ["pluck_pcfg",100.781,9.366,42.066,"timeout",null,null,null,null,5.176],
       ["pluck_sorted_list",7.719,27.342,92.021,44.441,null,null,null,null,"error"],
       ["pluck_string_editing",0.058,51.739,166.618,1.664,null,null,null,null,5.954]
-     ]
+     ],
+     "expresses":{
+      "tddlog":43,
+      "alea":43,
+      "alea-process":43,
+      "dice":43,
+      "roulette":11,
+      "roulette-process":11,
+      "nodice":11,
+      "psi":11,
+      "pluck":4
+     }
     },
     {
      "key":"bitblast",
@@ -423,7 +445,15 @@
       ["bb_zeroone_w2_w21",1.559,71.496,242.54,null,null,null],
       ["bb_zeroone_w2_w23",2.534,326.045,410.167,null,null,null],
       ["bb_zeroone_w2_w25",6.758,"memout","memout",null,null,null]
-     ]
+     ],
+     "expresses":{
+      "tddlog":222,
+      "alea":222,
+      "alea-process":222,
+      "psi":8,
+      "genfer":8,
+      "sppl":8
+     }
     },
     {
      "key":"roulette",
@@ -520,7 +550,15 @@
       ["rl_network_3000",1.269,"memout","memout",13.974,"skipped","skipped"],
       ["rl_network_10000",4.678,"skipped","skipped",64.04,"skipped","skipped"],
       ["rl_network_30000",15.451,"skipped","skipped",238.37,"skipped","skipped"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":88,
+      "alea":88,
+      "alea-process":88,
+      "dice":88,
+      "roulette":88,
+      "roulette-process":88
+     }
     },
     {
      "key":"geni",
@@ -580,7 +618,21 @@
       ["geni_weather_n17","memout","timeout","timeout","timeout","memout","memout","timeout","zero","timeout","error","timeout","memout"],
       ["geni_weather_n18","memout","timeout","timeout","timeout","memout","memout","memout","timeout","timeout","error","timeout","error"],
       ["geni_weather_n19","memout","memout","memout","timeout","memout","memout","memout","timeout","timeout","error","timeout","memout"]
-     ]
+     ],
+     "expresses":{
+      "tddlog":51,
+      "alea":51,
+      "alea-process":51,
+      "dice":51,
+      "roulette":51,
+      "roulette-process":51,
+      "problog":51,
+      "geni":51,
+      "nodice":51,
+      "psi":51,
+      "storm":32,
+      "prism":30
+     }
     }
    ],
    "setup":[
@@ -594,6 +646,85 @@
     ["Samplers","CmdStan 2.32.2 (the paper's 2.28.2 does not build both of the artifact's array syntaxes), WebPPL 0.9.15 on node 18, and Psi at revision ef8a9e5, each on the artifact's own program of the model, in the earlier run, three seeds. AQUA and GuBPI were installed but not timed ([docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md), section 10): the artifact's AQUA inputs crash it or answer other quantities on all but four programs, and GuBPI's repository has programs for three of the models and prints bounds rather than an answer. Mathematica, with which the paper simplified Psi's integrals, is not available. Some of the artifact's sampler programs encode another model than the HyBit program: Stan's and WebPPL's weekend, and WebPPL's clinicalTrial2 and zeroone. The table marks them \"another model\" and gives, in a note, the answer of the model each encodes, worked out by hand; it is the value their estimates settle on."]
    ],
    "docs":"https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl"
+  }
+ ],
+ "kinds":[
+  {
+   "key":"ppl",
+   "title":"Probabilistic programs",
+   "noun":"programs",
+   "suites":["dice","ppl","bitblast","roulette","geni"],
+   "instances":450,
+   "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","nodice","psi","genfer","pluck","sppl","problog","geni","storm","prism"],
+   "expresses":{
+    "tddlog":450,
+    "alea":450,
+    "alea-process":450,
+    "dice":228,
+    "roulette":196,
+    "roulette-process":196,
+    "nodice":87,
+    "psi":95,
+    "genfer":15,
+    "pluck":4,
+    "sppl":8,
+    "problog":51,
+    "geni":51,
+    "storm":32,
+    "prism":30
+   },
+   "jaccard":0.9,
+   "least":20,
+   "panels":[
+    {
+     "title":"The 228 programs Dice expresses",
+     "members":["dice"],
+     "systems":["tddlog","alea","alea-process","dice"],
+     "instances":{
+      "dice":["bn_alarm","bn_andes","bn_asia","bn_cancer","bn_child","bn_earthquake","bn_hailfinder","bn_hepar2","bn_insurance","bn_link","bn_munin","bn_pathfinder","bn_pigs","bn_sachs","bn_survey","bn_water","bn_win95pts","dice_alarm","dice_digitRecognition","dice_evidence1","dice_evidence2","dice_grass","dice_murderMystery","dice_noisyOr","dice_twocoins","dice_caesar-iter_k100","dice_caesar-iter_k1000","dice_caesar-iter_k3000","dice_diamond_k100","dice_diamond_k400","dice_diamond_k1600","dice_diamond_k6400","dice_ladder_k100","dice_ladder_k400","dice_ladder_k1600","dice_ladder_k6400","dice_pmc1_k10","dice_pmc1_k20","dice_pmc1_k40","dice_pmc1_k75","dice_pmc2_k10","dice_pmc2_k20","dice_pmc2_k51","dice_simpleCaesar_k100","dice_simpleCaesar_k300","dice_simpleCaesar_k1000"],
+      "ppl":["arith_book","arith_caesar_huge","arith_caesar_large","arith_caesar_medium","arith_caesar_small","arith_disease_large","arith_disease_medium","arith_disease_small","arith_fw_large","arith_fw_medium","arith_fw_small","arith_gcd_large","arith_gcd_medium","arith_gcd_small","arith_linext_large","arith_linext_medium","arith_linext_small","arith_luhn_medium","arith_luhn_small","arith_plankton","arith_radar","arith_ranking_large","arith_ranking_medium","arith_ranking_small","arith_triangle_large","arith_triangle_medium","arith_triangle_small","arith_tugofwar","nodice_3sat-0","nodice_alarm","nodice_coupon2-10-obs","nodice_coupon2-11-obs","nodice_coupon2-12-obs","nodice_coupon2-13-obs","nodice_coupon2-14-obs","nodice_hepar2","nodice_insurance","nodice_survey","nodice_water","pluck_hmm","pluck_pcfg","pluck_sorted_list","pluck_string_editing"],
+      "roulette":["rl_bn_alarm","rl_bn_cancer","rl_bn_hailfinder","rl_bn_hepar2","rl_bn_insurance","rl_bn_munin","rl_bn_pigs","rl_bn_survey","rl_bn_water","rl_caesar_25","rl_caesar_50","rl_caesar_100","rl_caesar_200","rl_caesar_300","rl_caesar_500","rl_caesar_1000","rl_caesar_2000","rl_caesar_5000","rl_caesar_10000","rl_caesar_20000","rl_diamond_1000","rl_diamond_3000","rl_diamond_10000","rl_diamond_30000","rl_diamond_100000","rl_diamond_300000","rl_diamond_1000000","rl_hardware_10","rl_hardware_30","rl_hardware_100","rl_hardware_300","rl_hardware_1000","rl_hardware_3000","rl_hardware_10000","rl_hmm_filtering_joint_100","rl_hmm_filtering_joint_300","rl_hmm_filtering_joint_1000","rl_hmm_filtering_joint_3000","rl_hmm_filtering_joint_10000","rl_hmm_filtering_joint_30000","rl_hmm_filtering_joint_100000","rl_hmm_filtering_marginal_100","rl_hmm_filtering_marginal_300","rl_hmm_filtering_marginal_1000","rl_hmm_filtering_marginal_3000","rl_hmm_filtering_marginal_10000","rl_hmm_filtering_marginal_30000","rl_hmm_filtering_marginal_100000","rl_hmm_marginal_likelihood_100","rl_hmm_marginal_likelihood_300","rl_hmm_marginal_likelihood_600","rl_hmm_marginal_likelihood_900","rl_hmm_smoothing_joint_100","rl_hmm_smoothing_joint_300","rl_hmm_smoothing_joint_1000","rl_hmm_smoothing_joint_3000","rl_hmm_smoothing_joint_10000","rl_hmm_smoothing_joint_30000","rl_hmm_smoothing_joint_100000","rl_hmm_smoothing_marginal_100","rl_hmm_smoothing_marginal_300","rl_hmm_smoothing_marginal_1000","rl_hmm_smoothing_marginal_3000","rl_hmm_smoothing_marginal_10000","rl_hmm_smoothing_marginal_30000","rl_hmm_smoothing_marginal_100000","rl_ladder_1000","rl_ladder_3000","rl_ladder_10000","rl_ladder_30000","rl_ladder_100000","rl_ladder_300000","rl_ladder_1000000","rl_motivating_1000","rl_motivating_3000","rl_motivating_10000","rl_motivating_30000","rl_motivating_100000","rl_motivating_300000","rl_motivating_1000000","rl_network_10","rl_network_30","rl_network_100","rl_network_300","rl_network_1000","rl_network_3000","rl_network_10000","rl_network_30000"],
+      "geni":["geni_link_4","geni_link_6","geni_link_8","geni_link_10","geni_link_12","geni_link_14","geni_link_16","geni_link_18","geni_link_24","geni_router_4","geni_router_6","geni_router_8","geni_router_10","geni_router_12","geni_router_14","geni_router_16","geni_router_18","geni_router_20","geni_router_24","geni_weather_h1","geni_weather_h2","geni_weather_h3","geni_weather_h4","geni_weather_h5","geni_weather_h6","geni_weather_h7","geni_weather_h8","geni_weather_h9","geni_weather_h100","geni_weather_h200","geni_weather_h300","geni_weather_h400","geni_weather_h500","geni_weather_h600","geni_weather_h700","geni_weather_h800","geni_weather_h900","geni_weather_h1000","geni_weather_n2","geni_weather_n7","geni_weather_n8","geni_weather_n9","geni_weather_n10","geni_weather_n11","geni_weather_n12","geni_weather_n13","geni_weather_n15","geni_weather_n16","geni_weather_n17","geni_weather_n18","geni_weather_n19"]
+     }
+    },
+    {
+     "title":"The 196 programs Roulette expresses",
+     "members":["roulette","roulette-process"],
+     "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process"],
+     "instances":{
+      "dice":["bn_alarm","bn_andes","bn_asia","bn_cancer","bn_child","bn_earthquake","bn_hailfinder","bn_hepar2","bn_insurance","bn_link","bn_munin","bn_pathfinder","bn_pigs","bn_sachs","bn_survey","bn_water","bn_win95pts","dice_alarm","dice_digitRecognition","dice_evidence1","dice_evidence2","dice_grass","dice_murderMystery","dice_noisyOr","dice_twocoins","dice_caesar-iter_k100","dice_caesar-iter_k1000","dice_caesar-iter_k3000","dice_diamond_k100","dice_diamond_k400","dice_diamond_k1600","dice_diamond_k6400","dice_ladder_k100","dice_ladder_k400","dice_ladder_k1600","dice_ladder_k6400","dice_pmc1_k10","dice_pmc1_k20","dice_pmc1_k40","dice_pmc1_k75","dice_pmc2_k10","dice_pmc2_k20","dice_pmc2_k51","dice_simpleCaesar_k100","dice_simpleCaesar_k300","dice_simpleCaesar_k1000"],
+      "ppl":["nodice_3sat-0","nodice_alarm","nodice_coupon2-10-obs","nodice_coupon2-11-obs","nodice_coupon2-12-obs","nodice_coupon2-13-obs","nodice_coupon2-14-obs","nodice_hepar2","nodice_insurance","nodice_survey","nodice_water"],
+      "roulette":["rl_bn_alarm","rl_bn_cancer","rl_bn_hailfinder","rl_bn_hepar2","rl_bn_insurance","rl_bn_munin","rl_bn_pigs","rl_bn_survey","rl_bn_water","rl_caesar_25","rl_caesar_50","rl_caesar_100","rl_caesar_200","rl_caesar_300","rl_caesar_500","rl_caesar_1000","rl_caesar_2000","rl_caesar_5000","rl_caesar_10000","rl_caesar_20000","rl_diamond_1000","rl_diamond_3000","rl_diamond_10000","rl_diamond_30000","rl_diamond_100000","rl_diamond_300000","rl_diamond_1000000","rl_hardware_10","rl_hardware_30","rl_hardware_100","rl_hardware_300","rl_hardware_1000","rl_hardware_3000","rl_hardware_10000","rl_hmm_filtering_joint_100","rl_hmm_filtering_joint_300","rl_hmm_filtering_joint_1000","rl_hmm_filtering_joint_3000","rl_hmm_filtering_joint_10000","rl_hmm_filtering_joint_30000","rl_hmm_filtering_joint_100000","rl_hmm_filtering_marginal_100","rl_hmm_filtering_marginal_300","rl_hmm_filtering_marginal_1000","rl_hmm_filtering_marginal_3000","rl_hmm_filtering_marginal_10000","rl_hmm_filtering_marginal_30000","rl_hmm_filtering_marginal_100000","rl_hmm_marginal_likelihood_100","rl_hmm_marginal_likelihood_300","rl_hmm_marginal_likelihood_600","rl_hmm_marginal_likelihood_900","rl_hmm_smoothing_joint_100","rl_hmm_smoothing_joint_300","rl_hmm_smoothing_joint_1000","rl_hmm_smoothing_joint_3000","rl_hmm_smoothing_joint_10000","rl_hmm_smoothing_joint_30000","rl_hmm_smoothing_joint_100000","rl_hmm_smoothing_marginal_100","rl_hmm_smoothing_marginal_300","rl_hmm_smoothing_marginal_1000","rl_hmm_smoothing_marginal_3000","rl_hmm_smoothing_marginal_10000","rl_hmm_smoothing_marginal_30000","rl_hmm_smoothing_marginal_100000","rl_ladder_1000","rl_ladder_3000","rl_ladder_10000","rl_ladder_30000","rl_ladder_100000","rl_ladder_300000","rl_ladder_1000000","rl_motivating_1000","rl_motivating_3000","rl_motivating_10000","rl_motivating_30000","rl_motivating_100000","rl_motivating_300000","rl_motivating_1000000","rl_network_10","rl_network_30","rl_network_100","rl_network_300","rl_network_1000","rl_network_3000","rl_network_10000","rl_network_30000"],
+      "geni":["geni_link_4","geni_link_6","geni_link_8","geni_link_10","geni_link_12","geni_link_14","geni_link_16","geni_link_18","geni_link_24","geni_router_4","geni_router_6","geni_router_8","geni_router_10","geni_router_12","geni_router_14","geni_router_16","geni_router_18","geni_router_20","geni_router_24","geni_weather_h1","geni_weather_h2","geni_weather_h3","geni_weather_h4","geni_weather_h5","geni_weather_h6","geni_weather_h7","geni_weather_h8","geni_weather_h9","geni_weather_h100","geni_weather_h200","geni_weather_h300","geni_weather_h400","geni_weather_h500","geni_weather_h600","geni_weather_h700","geni_weather_h800","geni_weather_h900","geni_weather_h1000","geni_weather_n2","geni_weather_n7","geni_weather_n8","geni_weather_n9","geni_weather_n10","geni_weather_n11","geni_weather_n12","geni_weather_n13","geni_weather_n15","geni_weather_n16","geni_weather_n17","geni_weather_n18","geni_weather_n19"]
+     }
+    },
+    {
+     "title":"The 87 programs noDice and Psi express",
+     "members":["nodice","psi"],
+     "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","nodice","psi"],
+     "instances":{
+      "dice":["bn_alarm","bn_andes","bn_asia","bn_cancer","bn_child","bn_earthquake","bn_hailfinder","bn_hepar2","bn_insurance","bn_link","bn_munin","bn_pathfinder","bn_pigs","bn_sachs","bn_survey","bn_water","bn_win95pts","dice_alarm","dice_digitRecognition","dice_evidence1","dice_evidence2","dice_grass","dice_murderMystery","dice_noisyOr","dice_twocoins"],
+      "ppl":["nodice_3sat-0","nodice_alarm","nodice_coupon2-10-obs","nodice_coupon2-11-obs","nodice_coupon2-12-obs","nodice_coupon2-13-obs","nodice_coupon2-14-obs","nodice_hepar2","nodice_insurance","nodice_survey","nodice_water"],
+      "geni":["geni_link_4","geni_link_6","geni_link_8","geni_link_10","geni_link_12","geni_link_14","geni_link_16","geni_link_18","geni_link_24","geni_router_4","geni_router_6","geni_router_8","geni_router_10","geni_router_12","geni_router_14","geni_router_16","geni_router_18","geni_router_20","geni_router_24","geni_weather_h1","geni_weather_h2","geni_weather_h3","geni_weather_h4","geni_weather_h5","geni_weather_h6","geni_weather_h7","geni_weather_h8","geni_weather_h9","geni_weather_h100","geni_weather_h200","geni_weather_h300","geni_weather_h400","geni_weather_h500","geni_weather_h600","geni_weather_h700","geni_weather_h800","geni_weather_h900","geni_weather_h1000","geni_weather_n2","geni_weather_n7","geni_weather_n8","geni_weather_n9","geni_weather_n10","geni_weather_n11","geni_weather_n12","geni_weather_n13","geni_weather_n15","geni_weather_n16","geni_weather_n17","geni_weather_n18","geni_weather_n19"]
+     }
+    },
+    {
+     "title":"The 51 programs ProbLog and Geni express",
+     "members":["problog","geni"],
+     "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","nodice","psi","problog","geni"],
+     "instances":{
+      "geni":["geni_link_4","geni_link_6","geni_link_8","geni_link_10","geni_link_12","geni_link_14","geni_link_16","geni_link_18","geni_link_24","geni_router_4","geni_router_6","geni_router_8","geni_router_10","geni_router_12","geni_router_14","geni_router_16","geni_router_18","geni_router_20","geni_router_24","geni_weather_h1","geni_weather_h2","geni_weather_h3","geni_weather_h4","geni_weather_h5","geni_weather_h6","geni_weather_h7","geni_weather_h8","geni_weather_h9","geni_weather_h100","geni_weather_h200","geni_weather_h300","geni_weather_h400","geni_weather_h500","geni_weather_h600","geni_weather_h700","geni_weather_h800","geni_weather_h900","geni_weather_h1000","geni_weather_n2","geni_weather_n7","geni_weather_n8","geni_weather_n9","geni_weather_n10","geni_weather_n11","geni_weather_n12","geni_weather_n13","geni_weather_n15","geni_weather_n16","geni_weather_n17","geni_weather_n18","geni_weather_n19"]
+     }
+    },
+    {
+     "title":"The 30 programs Storm and PRISM express",
+     "members":["storm","prism"],
+     "systems":["tddlog","alea","alea-process","dice","roulette","roulette-process","nodice","psi","problog","geni","storm","prism"],
+     "instances":{
+      "geni":["geni_weather_h1","geni_weather_h2","geni_weather_h3","geni_weather_h4","geni_weather_h5","geni_weather_h6","geni_weather_h7","geni_weather_h8","geni_weather_h9","geni_weather_h100","geni_weather_h200","geni_weather_h300","geni_weather_h400","geni_weather_h500","geni_weather_h600","geni_weather_h700","geni_weather_h800","geni_weather_h900","geni_weather_h1000","geni_weather_n2","geni_weather_n7","geni_weather_n8","geni_weather_n9","geni_weather_n10","geni_weather_n11","geni_weather_n15","geni_weather_n16","geni_weather_n17","geni_weather_n18","geni_weather_n19"]
+     }
+    }
+   ]
   }
  ]
 }

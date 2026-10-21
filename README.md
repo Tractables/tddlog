@@ -81,16 +81,27 @@ instances it is given and either system answers, a run that does not
 finish counting as the time limit (its real time would be longer).
 
 The cactus plots count the instances each system answers within a time
-limit (higher is better). The large one draws the systems tried on every
-instance of the kind; a system tried on part of them has a small one of
-its own, over that part, with every system tried on all of it, so that
-each plot's systems had the same instances. The scatter plots put tddlog's time against
+limit (higher is better). A large one draws every system over all the
+instances of a kind, or of every kind as below: an instance a system
+cannot express (its translator refuses the program) or was not given
+counts as unanswered, and the legend gives how many instances each
+system answers and how many it expresses (was given and did not
+refuse). Under it, a small plot for
+each cluster of systems with similar expressive capabilities (the
+instances they express nearly the same: a Jaccard index of 0.9 or more)
+covers the instances all of them express, with every system that
+expresses all of those. The scatter plots put tddlog's time against
 the fastest other system's on each instance (below the diagonal, tddlog
 is faster). Every instance and time is on the
 [results page](https://tractables.github.io/tddlog/results/), and every
 program has a [page of its own](https://tractables.github.io/tddlog/results/benchmarks/)
 that shows it as its authors wrote it and as each system was given it,
 so that the translations can be checked for fairness.
+
+<p align="center">
+  <img src="docs/images/cactus-all.svg"
+       alt="Problems of every kind answered within each time limit by tddlog and every other system">
+</p>
 
 ### Probabilistic logic programs: ProbLog, PITA and aspmc
 
@@ -119,20 +130,26 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
        alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
 </p>
 
-- tddlog answers **all 334 networks in 11 minutes in total**, none
-  taking more than 9 seconds. The next best, libDAI, answers 313.
-- **33× faster than Merlin** (bucket-tree elimination) and **35× faster
-  than Ace** (compilation to arithmetic circuits) in total, Ace on the
-  94 Bayesian networks it was run on, and 39× to 86× faster than pyAgrum,
-  libDAI, TensorInference.jl and pgmpy.
-- Against the fastest of the six on each network, tddlog is 7.1× faster
-  in total: 11 minutes against 1.3 hours.
+- tddlog answers **600 of the 652 networks**, in 62 minutes in total.
+  The 52 it does not answer are partition functions of the UAI 2022
+  final set (19 run out of time, 33 out of memory), and Merlin answers
+  one of them. Merlin answers 444 of the 652.
+- **15× faster than Merlin** (bucket-tree elimination) in total: 1.1
+  hours over the 601 networks either answers, against Merlin's 17 hours.
+  On the 443 both answer, 17 minutes against 2.3 hours.
+- **35× faster than Ace** (compilation to arithmetic circuits) on the 94
+  Bayesian networks it was run on, and 39× to 86× faster than pyAgrum,
+  libDAI, TensorInference.jl and pgmpy on the 334 they were run on.
+- Against the fastest other tool on each network, tddlog is 11× faster
+  in total: 1.1 hours against 12 hours.
 
 The networks: the bnlearn repository's, Ace's benchmarks, the large
-networks (barley, diabetes, mildew, munin) and the UAI 2022 competition's
-tuning sets, for marginals and for the partition function. Ace ran on
-the 94 Bayesian networks of the first three, and ProbLog, PITA and aspmc
-on the 34 of the first; the other tools ran on all 334.
+networks (barley, diabetes, mildew, munin) and the UAI 2022
+competition's sets: the MAR tuning set, for marginals and for the
+probability of the evidence, and the PR tuning and final sets, for the
+partition function. Ace ran on the 94 Bayesian networks of the first
+three, ProbLog, PITA and aspmc on the 34 of the first, the network
+libraries on all but the two PR sets, and Merlin on all 652.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
@@ -296,8 +313,3 @@ Apache-2.0 ([LICENSE](LICENSE)). The copies of third-party programs and
 data in `tests/problog` and `data/` keep their own licenses
 ([NOTICE](NOTICE)); the components compiled into the binaries are listed
 in [THIRD-PARTY.md](THIRD-PARTY.md).
-
-## Acknowledgements
-
-This material is based upon work supported by the Defense Advanced Research
-Projects Agency (DARPA) under Agreement No. HR0011269E224.
