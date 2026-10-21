@@ -1280,7 +1280,7 @@ L 660.238186 30.677969
      </g>
     </g>
     <g id="text_20">
-     <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="543.164375" y="310.325938" transform="rotate(-0, 543.164375, 310.325938)">ProvSQL (s)</text>
+     <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="543.164375" y="310.325938" transform="rotate(-0, 543.164375, 310.325938)">fastest other system (s)</text>
     </g>
    </g>
    <g id="matplotlib.axis_4">
@@ -1436,7 +1436,7 @@ z
      <use xlink:href="#m28d563fbeb" x="463.462085" y="268.470869" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="426.674481" y="272.082679" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="455.024036" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="660.238186" y="260.315685" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="558.611885" y="260.315685" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="426.674481" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="498.388627" y="253.376796" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="459.621911" y="255.389675" style="fill: #0d6670; fill-opacity: 0.75"/>
@@ -1461,7 +1461,7 @@ z
      <use xlink:href="#m28d563fbeb" x="501.930465" y="251.446324" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="522.472763" y="232.254867" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="543.639358" y="209.098152" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="660.238186" y="210.499479" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="585.161787" y="210.499479" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="569.497001" y="185.13079" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="464.357598" y="267.231349" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="490.140719" y="241.645819" style="fill: #0d6670; fill-opacity: 0.75"/>

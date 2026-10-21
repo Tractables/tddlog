@@ -107,17 +107,25 @@ so that the translations can be checked for fairness.
 
 <p align="center">
   <img src="docs/images/results-programs.svg"
-       alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest of ProbLog, PITA and aspmc">
+       alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
 - **68× faster than ProbLog** in total: 12 minutes for the 302 programs,
   against ProbLog's 13 hours. On the 236 that ProbLog answers, tddlog
   takes 3 minutes and ProbLog 4.2 hours. ProbLog's time is the fastest
   of its three compilers (d-DNNF, SDD and forward SDD) on each program.
-- **110× faster than PITA** and **211× faster than aspmc** in total;
-  they answer 173 and 30 of the programs.
-- tddlog answers 302 of the 307 programs and ProbLog 236. No system
-  answers the other five.
+- **110× faster than PITA** and **205× faster than aspmc** in total;
+  they answer 173 and 45 of the programs.
+- The network tools and the probabilistic programming languages, given
+  81 of the programs as Boolean networks built from their groundings,
+  answer 3 (Psi) to 56 (Roulette) of them, where tddlog answers 79;
+  tddlog is 35× to 161× faster than each in total.
+- Against the fastest other system on each program, tddlog is 12×
+  faster in total: 17 minutes against 3.3 hours. ProvSQL is faster on
+  117 of the TPC-H queries (see the databases below).
+- tddlog answers 302 of the 307 programs and ProbLog 236. Of the other
+  five, pgmpy's variable elimination answers grid25 as a network in
+  144 s, and no system answers the other four.
 
 The programs: random graphs and grids, smokers, UW-CSE, Cora, Biomine's
 graphs, six families from published evaluations (pedigree,
@@ -127,7 +135,7 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
 
 <p align="center">
   <img src="docs/images/results-networks.svg"
-       alt="Networks answered within each time limit, and tddlog's time against the fastest network tool's">
+       alt="Networks answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
 - tddlog answers **600 of the 652 networks**, in 60 minutes in total.
@@ -142,18 +150,22 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
   networks it was run on: 9 minutes against 11 hours. Ace answers 228
   of them.
 - 44× to 104× faster than libDAI, pyAgrum, TensorInference.jl and pgmpy
-  on the same 334, and over 100× faster than ProbLog, PITA and aspmc,
-  which answer 12, 38 and 10 of the networks they were given.
-- Against the fastest other tool on each network, tddlog is 11× faster
+  on the same 334, and 185× to 200× faster than ProbLog, PITA and
+  aspmc, which answer 21, 51 and 30 of them.
+- The probabilistic programming languages (Dice, Alea.jl, Roulette,
+  noDice, Psi, Genfer, SPPL and Geni), given the same 334 networks as
+  programs, answer 9 (Psi) to 54 (Alea.jl) of them; tddlog is over 170×
+  faster than each in total.
+- Against the fastest other system on each network, tddlog is 11× faster
   in total: 1.1 hours against 12 hours.
 
 The networks: the bnlearn repository's, Ace's benchmarks, the large
 networks (barley, diabetes, mildew, munin) and the UAI 2022
 competition's sets: the MAR tuning set, for marginals and for the
 probability of the evidence, and the PR tuning and final sets, for the
-partition function. Ace and the network libraries ran on the 334
-networks of all but the two PR sets, ProbLog and PITA on 274 of them,
-aspmc on 153, and Merlin on all 652.
+partition function. Ace, the network libraries, ProbLog, PITA, aspmc and
+the probabilistic programming languages ran on the 334 networks of all
+but the two PR sets, and Merlin on all 652.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
@@ -166,9 +178,10 @@ aspmc on 153, and Merlin on all 652.
   probabilistic model checkers Storm and PRISM, given each program as a
   Markov chain, answer 197 of the 271 they express and 160 of 244, where
   tddlog answers 258 and 230. Dice answers 136 of its 231, where tddlog
-  answers 218, and Roulette 113 of its 199, where tddlog answers 189.
+  answers 218, and Roulette, given each program or the circuit Alea.jl
+  builds from it, 235 of the 453.
 - **8.3× faster than Alea.jl**, **16× faster than Storm**, **13× faster
-  than PRISM**, **29× faster than Dice** and **46× faster than Roulette**
+  than PRISM**, **21× faster than Roulette** and **29× faster than Dice**
   in total. Alea.jl's and Roulette's times leave out their language's
   start-up and compilation.
 - In total 58× faster than noDice, 24× than Psi and 5.1× than Geni,
