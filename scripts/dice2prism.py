@@ -19,7 +19,9 @@ expression would grow beyond 64 operations, whose operands are then
 stored). Where a condition (of an `if`, or an `observe`) is known from a
 choice's outcome, each outcome jumps to its side; where it is a function
 of the state, the command is split into one guarded by each case (`[] pc=3
-& (x = 2) -> ...`, a network's conditional table a command per row).
+& (x = 2) -> ...`, a network's conditional table a command per row)
+before the choice, and after it such a condition starts the next step, so
+that the cases of two conditions do not multiply.
 `observe e` sends the states where e is false to an absorbing state, and
 the end of the program is an absorbing state labelled "done", where only
 the value is kept. `iterate(f, x, k)` is the inlined body of f as a loop
@@ -417,8 +419,9 @@ class Chain:
         return s
 
     def finish(self, g, path, target):
+        # the live values the path assigned; the others keep their registers
         live = self.live_at(target)
-        g.out += [(p, target, {v: env.get(v, v) for v in live}) for p, env in path.branches]
+        g.out += [(p, target, {v: env[v] for v in live if v in env}) for p, env in path.branches]
         path.pos, path.branches = None, []
 
     def step(self, g, path, room):
@@ -458,7 +461,10 @@ class Chain:
         conds = [self.val(env, s[1]) for _, env in path.branches]
         truth = [self.known(g, c) for c in conds]
         if None in truth:
-            if path.moved and not room:
+            # a condition of the state splits the command before the choice
+            # (a table's rows); after it, the condition starts the next step,
+            # so that the cases of two conditions do not multiply
+            if path.sampled or (path.moved and not room):
                 self.finish(g, path, i)
                 return None
             return self.atom(conds[truth.index(None)])
@@ -583,7 +589,7 @@ class Chain:
             if w is None:
                 parts.append(f"(x{r}'={self.reset(r)})")
             else:
-                e = self.expr(values[w])
+                e = self.expr(values.get(w, w))
                 if e != f'x{r}':
                     parts.append(f"(x{r}'={e})")
         return '&'.join(parts + [f"(pc'={self.pc[target]})"])

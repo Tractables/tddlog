@@ -2401,6 +2401,13 @@ def run_ace(args, name, path, variant):
             m = re.search(pattern, c['stdout'], re.M)
             if m:
                 stats[key] = m.group(1) if key == 'ace_method' else float(m.group(1))
+        if 'Xlog' in variant.split('+') and stats.get('ace_method') == 'c2dCompilation':
+            # Checked on the UAI MAR and PR sets (docs/baselines.md, section 7):
+            # a c2d circuit evaluated in log space gives log_e(Pr(e)) = -inf
+            # where P(e) is 1.6e-2, or fails in the evaluator, so the circuit
+            # is not evaluated and the run fails.
+            return {'status': 'error', 'seconds': c['seconds'], 'stats': stats,
+                    'error': "Ace chose c2d, whose circuit it evaluates wrongly in log space (-Xlog)"}
         rest = args.timeout - c['seconds']
         e = timed(java + ['edu.ucla.belief.ace.AceEvaluate', net, inst], rest, cwd=d, env=env) if rest > 0 else \
             {'status': 'timeout', 'seconds': 0.0}
@@ -2821,6 +2828,8 @@ CHECKER_RESULT = {'storm': re.compile(r'^result ([0-9.eE+-]+)(?: (\d+(?:/\d+)?))
 def checker_results(system, out):
     """The values Storm or PRISM prints for its properties, in order: a
     Fraction where Storm's exact engine gives the rational, else a float."""
+    if hasattr(sys, 'set_int_max_str_digits'):
+        sys.set_int_max_str_digits(0)   # an exact answer's numerator can have 10 000 digits
     return [fractions.Fraction(m.group(2)) if m.lastindex == 2 and m.group(2) else float(m.group(1))
             for m in CHECKER_RESULT[system].finditer(out)]
 

@@ -10,7 +10,8 @@ PROPERTIES is a file of properties, one a line (an optional `"name":`, a
 `;` at the end and `//` comments, as dice2prism.py writes them), or one
 property. ENGINE is `sparse` (the explicit model in double precision),
 `exact` (the explicit model in rational numbers) or `dd` (the model as
-decision diagrams, Sylvan on one thread, double precision). The explicit
+decision diagrams, Sylvan on one thread with half the process's address
+space where it is limited, double precision). The explicit
 engines solve unbounded reachability with Storm's topological solver, which
 on an acyclic chain computes each state's value once from its successors'
 (Storm's default for doubles, GMRES to a precision of 1e-6, would not be
@@ -20,6 +21,7 @@ property in order (17 digits; with `exact` followed by the rational),
 `states N`, `transitions M` and `inference_seconds Y` (building the model
 and checking it, after the import)."""
 import os
+import resource
 import sys
 import time
 
@@ -36,8 +38,13 @@ for line in lines:
         line = line.split('":', 1)[1].strip()   # the property's name
     if line:
         formulas.append(line)
+# Sylvan's tables grow to --sylvan:maxmem (4096 MB by default): half the
+# address space where the process's is limited, as in a lane
+limit = resource.getrlimit(resource.RLIMIT_AS)[0]
+maxmem = max(4096, limit // 2 // 2 ** 20) if limit != resource.RLIM_INFINITY else 4096
 stormpy.set_settings(['--sylvan:threads', '1'] +
-                     (['--precision', '1e-15'] if engine == 'dd' else ['--eqsolver', 'topological']))
+                     (['--precision', '1e-15', '--sylvan:maxmem', str(maxmem)] if engine == 'dd'
+                      else ['--eqsolver', 'topological']))
 env = stormpy.Environment()
 if engine != 'dd':
     env.solver_environment.set_linear_equation_solver_type(stormpy.EquationSolverType.topological)

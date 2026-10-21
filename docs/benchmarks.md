@@ -30,19 +30,24 @@ GB; 16 physical cores and 251 GB; 16 physical cores and 125 GB),
 that job's tddlog, in parallel lanes (Ace in 12 wide lanes of 88 GB,
 half of it its Java heap) (Setup). The baselines: ProbLog 2.3.0 with
 d-DNNF, SDD and forward SDD compilation, PITA's BDDs and aspmc with
-sharpSAT-TD on the program suites and the UAI networks; Ace 3.0 (default
-route and c2d forced, and in log space, `-Xlog`, on the UAI networks),
-Merlin 1.7.0's bucket-tree elimination (`-a bte`), pyAgrum's junction
-tree, pgmpy's variable elimination, libDAI's junction tree and
-TensorInference.jl's tensor network contraction on the networks, and
-ProvSQL on TPC-H. Seconds are wall time, parsing and grounding included;
-the limit is 300 s a run on the standard, literature and UAI suites and
-600 s on Ace's and the large networks.
+sharpSAT-TD on the program suites and Ace's networks, the large networks
+and the UAI networks; Ace 3.0 (default route and c2d forced, and in log
+space, `-Xlog`, on the UAI networks), Merlin 1.7.0's bucket-tree
+elimination (`-a bte`), pyAgrum's junction tree, pgmpy's variable
+elimination, libDAI's junction tree and TensorInference.jl's tensor
+network contraction on the networks, and ProvSQL on TPC-H; Dice,
+Alea.jl, Roulette, noDice, Psi, Genfer, SPPL and Geni, the exact systems
+that read Dice programs, on the standard suite's networks, Ace's
+networks, the large networks and the UAI networks and with Ace, Merlin
+and the network tools on the ground programs of the standard suite and
+the literature suite (the ground route). Seconds are wall time, parsing
+and grounding included; the limit is 300 s a run on the standard,
+literature and UAI suites and 600 s on Ace's and the large networks.
 
 | suite | instances | tddlog finishes (total s) | faster than ProbLog, PITA, aspmc and Ace | Merlin faster | faster than pyAgrum, pgmpy, libDAI and TensorInference.jl (ProvSQL on TPC-H) | finished where no exact system did |
 |---|---:|---:|---:|---:|---:|---:|
-| standard | 84 | 82 (136.5) | 49 of 49 (26 under 0.2 s) | 2 of 8 (26 under 0.2 s) | 6 of 8 (26 under 0.2 s) | 7 |
-| literature | 39 | 39 (10.7) | 19 of 19 (5 under 0.2 s) |  |  | 15 |
+| standard | 84 | 82 (136.5) | 52 of 52 (26 under 0.2 s) | 2 of 8 (26 under 0.2 s) | 6 of 8 (26 under 0.2 s) | 2 |
+| literature | 39 | 39 (10.7) | 20 of 20 (5 under 0.2 s) |  |  | 9 |
 | Ace's networks | 46 | 46 (9.9) | 46 of 46 | 2 of 11 (14 under 0.2 s) | 12 of 13 (12 under 0.2 s) | 0 |
 | large networks | 14 | 14 (13.4) | 14 of 14 | 8 of 14 | 5 of 14 | 0 |
 | TPC-H | 208 | 205 (366.0) | 171 of 172 |  | 32 of 149 (47 under 0.2 s) | 7 |
@@ -53,31 +58,30 @@ milliseconds of start-up are not compared.
 
 **Standard suite** (random graphs, grids, smokers, UW-CSE, Cora, blood
 types, Bayesian networks with and without evidence, the Dice programs).
-No exact system finishes grid25 and grid30, which tddlog does not finish
-either, nor g20_60 to g30_100 and grid10 to grid20, which it does
-(g30_100 in 122.4 s, most of the suite's total). Against the fastest of
-ProbLog, PITA, aspmc and Ace on each instance, in total time: Of the 84
-instances both are given, tddlog answers 82 and ProbLog, PITA, aspmc or
-Ace 75. Over the 82 that either answers, a run that does not answer
-counted at the 300 s limit, tddlog takes 136.5 s in all and the fastest
-of them 2 321 s; over the 75 both answer, 4.98 s against 221.0. tddlog
-alone answers grid10, grid12, g20_60, grid15, g25_80 and 2 more. Neither
-answers grid25 and grid30. Merlin answers all 34 networks; the two both
-take under 0.2 s on 26, and of the other 8 Merlin is faster on 2: 3.9 to
-4.4 times on pathfinder (bn_pathfinder_ev 0.068 s against 0.301). tddlog
-is faster on 6, among them bn_link_ev (0.30 s against 29.1) and
-bn_munin_ev (0.78 s against 2.20), and takes 3.9 s over the 34 against
-Merlin's 64.5.
-
-**Literature suite.** tddlog finishes all 39, 15 of them where no exact
-baseline finishes (mnist_sum16 to mnist_sum96, every pedigree and
-sickness22_40). Against the fastest of ProbLog, PITA and aspmc on each
-instance, in total time: Of the 39 instances both are given, tddlog
-answers 39 and ProbLog, PITA or aspmc 24. Over the 39 that either
+No exact system finishes grid30, which tddlog does not finish either,
+nor g25_80 and g30_100, which it does (g30_100 in 122.4 s, most of the
+suite's total). Against the fastest of ProbLog, PITA, aspmc and Ace on
+each instance, in total time: Of the 84 instances both are given, tddlog
+answers 82 and ProbLog, PITA, aspmc or Ace 78. Over the 82 that either
 answers, a run that does not answer counted at the 300 s limit, tddlog
-takes 10.7 s in all and the fastest of them 4 823 s; over the 24 both
-answer, 0.45 s against 323.2. tddlog alone answers pedigree4_4,
-mnist_sum16, pedigree4_6, mnist_sum32, mnist_sum64 and 10 more.
+takes 136.6 s in all and the fastest of them 1 453 s; over the 78 both
+answer, 5.20 s against 253.1. tddlog alone answers g20_60, g25_80,
+g30_100 and grid20. Neither answers grid25 and grid30. Merlin answers
+all 34 networks; the two both take under 0.2 s on 26, and of the other 8
+Merlin is faster on 2: 3.9 to 4.4 times on pathfinder (bn_pathfinder_ev
+0.068 s against 0.301). tddlog is faster on 6, among them bn_link_ev
+(0.30 s against 29.1) and bn_munin_ev (0.78 s against 2.20), and takes
+3.9 s over the 34 against Merlin's 64.5.
+
+**Literature suite.** tddlog finishes all 39, 9 of them where no exact
+baseline finishes (mnist_sum96, pedigree5_10, pedigree6_8 to
+pedigree32_6 and sickness22_40). Against the fastest of ProbLog, PITA
+and aspmc on each instance, in total time: Of the 39 instances both are
+given, tddlog answers 39 and ProbLog, PITA or aspmc 25. Over the 39 that
+either answers, a run that does not answer counted at the 300 s limit,
+tddlog takes 10.7 s in all and the fastest of them 4 630 s; over the 25
+both answer, 0.49 s against 429.7. tddlog alone answers mnist_sum16,
+pedigree4_6, mnist_sum32, mnist_sum64, mnist_sum96 and 9 more.
 
 **Ace's networks and the large networks.** Against Ace in total time, on
 Ace's networks: Both are given 46 instances and answer all of them. Over
@@ -135,22 +139,42 @@ uai_objectdetection_37 pgmpy 2.62 s against 4.87). Both take under 0.2 s
 on 17 more. They were not run on the final PR set and the PR tuning set
 in this release.
 
+**The Dice family and the ground route.** Dice, Alea.jl, Roulette,
+noDice, Psi, Genfer, SPPL and Geni, the exact systems that read Dice
+programs, ran in a later job, each instance beside that job's tddlog,
+which their rows under Against each baseline compare with: on the
+standard suite's networks, Ace's networks, the large networks and the
+UAI networks as the Dice programs of `scripts/gen_bn.py` and with Ace,
+Merlin and the other network tools on the standard suite and the
+literature suite, on the network and the Dice program that
+`scripts/ground2net.py` writes of each program's ground program.
+Alea.jl's and Roulette's times leave out the start-up and compilation of
+Julia and Racket, as on the page of the Dice family's suites. A
+baseline's answer off the reference by more than 1e-6 counts as a
+failure (`wrong`): Geni on bn_child_ev; Dice on bn_insurance,
+bn_insurance_ev and bn_pathfinder; PITA on ace_fs_07,
+ace_mastermind_03_08_03, uai_pedigree_13, uai_promedus_23,
+uai_promedus_29 and 1 more; Roulette on ace_fs_07, ace_fs_10,
+ace_mastermind_03_08_03, ace_mastermind_03_08_04,
+ace_mastermind_03_08_05 and 4 more; ProbLog on uai_promedus_24; aspmc on
+uai_promedus_15, uai_promedus_24, uai_promedus_30 and uai_promedus_33.
+
 **Validation.** Every answer is compared with a reference (Setup). The
-largest absolute differences: 4.9e-9 over 5 763 answers on 75 standard
+largest absolute differences: 4.9e-9 over 5 766 answers on 78 standard
 instances (ProbLog prints eight digits), 2.7e-13 on the 39 literature
 instances, 6.3e-15 over 25 967 answers on 46 of Ace's 46 networks,
-4.9e-11 on the 14 large networks. g20_60 to g30_100 and grid10 to grid20
-have no exact reference; `scripts/sample_paths.py` estimates their
-answers from a million sampled graphs (200 000 for the grids), and each
-of the 76 answers lies within 2.7 standard errors of its estimate
-(checked with an earlier version's answers, from which this run's differ
-by at most 3.5e-14).
+4.9e-11 on the 14 large networks. g20_60 to g30_100 and grid20 have no
+exact reference; `scripts/sample_paths.py` estimates their answers from
+a million sampled graphs (200 000 for the grids), and each of the 76
+answers lies within 2.7 standard errors of its estimate (checked with an
+earlier version's answers, from which this run's differ by at most
+3.5e-14).
 
 The other network tools' answers against the same references: pyAgrum
-180 marginal runs to 2.0e-7 and 108 partition functions to 2.1e-7 in
-log10; pgmpy 101 marginal runs to 1.2e-10 and 104 partition functions to
-2.2e-7 in log10; libDAI 188 marginal runs to 5.0e-7 and 120 partition
-functions to 2.2e-7 in log10; TensorInference.jl 278 marginal runs to
+214 marginal runs to 2.0e-7 and 108 partition functions to 2.1e-7 in
+log10; pgmpy 129 marginal runs to 4.7e-9 and 104 partition functions to
+2.2e-7 in log10; libDAI 224 marginal runs to 5.0e-7 and 120 partition
+functions to 2.2e-7 in log10; TensorInference.jl 341 marginal runs to
 5.0e-7 and 175 partition functions to 2.2e-7 in log10 (the tools print
 six digits, as Merlin does).
 
@@ -372,7 +396,9 @@ over those either answers (a run that does not answer counted at the
 suite's time limit), the two totals over those both answer, and the
 instances on which tddlog is slower (both under 0.2 s counted for
 neither). TensorInference.jl's row is its faster contraction order on
-each instance; its two orders follow.
+each instance; its two orders follow. A system that ran in a later job
+is compared with that job's tddlog, so tddlog's counts and totals differ
+between such rows.
 
 **Standard suite: networks**
 
@@ -388,7 +414,15 @@ each instance; its two orders follow.
 | TensorInference.jl greedy | 34 | 30 | 34 | 1 935 | 3.9 | 30 | 735.1 | 1.2 | 0 |
 | ProbLog | 34 | 12 | 34 | 6 604 | 3.9 | 12 | 3.6 | 0.1 | 0 |
 | PITA | 34 | 12 | 34 | 6 607 | 3.9 | 12 | 7.4 | 0.1 | 0 |
-| aspmc | 34 | 6 | 34 | 8 483 | 3.9 | 6 | 83.1 | 0.0 | 0 |
+| aspmc | 34 | 18 | 34 | 5 765 | 4.5 | 18 | 964.6 | 0.3 | 0 |
+| Dice | 34 | 17 | 34 | 5 273 | 4.5 | 17 | 173.4 | 0.2 | 0 |
+| Alea.jl | 34 | 26 | 34 | 2 436 | 4.5 | 26 | 35.9 | 1.2 | 0 |
+| Roulette | 34 | 21 | 34 | 3 988 | 4.5 | 21 | 88.0 | 0.7 | 0 |
+| noDice | 34 | 18 | 34 | 5 080 | 4.5 | 18 | 279.5 | 0.3 | 0 |
+| Psi | 34 | 8 | 34 | 7 828 | 4.5 | 8 | 27.6 | 0.0 | 0 |
+| Genfer | 34 | 19 | 34 | 4 855 | 4.5 | 19 | 354.8 | 0.3 | 0 |
+| SPPL | 34 | 12 | 34 | 6 788 | 4.5 | 12 | 188.2 | 0.1 | 0 |
+| Geni | 34 | 18 | 34 | 4 918 | 4.5 | 18 | 117.7 | 0.3 | 0 |
 
 **Ace's networks**
 
@@ -402,6 +436,17 @@ each instance; its two orders follow.
 | TensorInference.jl | 46 | 22 | 46 | 18 157 | 9.9 | 22 | 3 757 | 2.2 | 0 |
 | TensorInference.jl treesa | 46 | 22 | 46 | 18 345 | 9.9 | 22 | 3 945 | 2.2 | 0 |
 | TensorInference.jl greedy | 46 | 10 | 46 | 21 954 | 9.9 | 10 | 353.6 | 0.7 | 0 |
+| ProbLog | 46 | 9 | 46 | 22 255 | 11.5 | 9 | 55.3 | 0.2 | 0 |
+| PITA | 46 | 13 | 46 | 20 826 | 11.5 | 13 | 1 026 | 1.2 | 0 |
+| aspmc | 46 | 7 | 46 | 23 884 | 11.5 | 7 | 484.0 | 0.3 | 0 |
+| Dice | 46 | 2 | 46 | 26 597 | 11.5 | 2 | 197.4 | 0.2 | 0 |
+| Alea.jl | 46 | 28 | 46 | 10 871 | 11.5 | 28 | 71.1 | 3.3 | 0 |
+| Roulette | 46 | 19 | 46 | 16 270 | 11.5 | 19 | 70.2 | 2.8 | 0 |
+| noDice | 46 | 8 | 46 | 23 310 | 11.5 | 8 | 509.7 | 0.3 | 0 |
+| Psi | 46 | 1 | 46 | 27 050 | 11.5 | 1 | 50.2 | 0.0 | 0 |
+| Genfer | 46 | 2 | 46 | 26 405 | 11.5 | 2 | 5.2 | 0.2 | 0 |
+| SPPL | 46 | 18 | 46 | 20 309 | 11.5 | 18 | 3 509 | 1.0 | 0 |
+| Geni | 46 | 3 | 46 | 25 890 | 11.5 | 3 | 89.6 | 0.0 | 0 |
 
 **Large networks**
 
@@ -415,6 +460,66 @@ each instance; its two orders follow.
 | TensorInference.jl | 14 | 14 | 14 | 1 346 | 13.4 | 14 | 1 346 | 13.4 | 0 |
 | TensorInference.jl treesa | 14 | 14 | 14 | 1 360 | 13.4 | 14 | 1 360 | 13.4 | 0 |
 | TensorInference.jl greedy | 14 | 2 | 14 | 7 250 | 13.4 | 2 | 50.1 | 3.3 | 0 |
+| ProbLog | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| PITA | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| aspmc | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| Dice | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| Alea.jl | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| Roulette | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| noDice | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| Psi | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| Genfer | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| SPPL | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+| Geni | 14 | 0 | 14 | 8 400 | 15.3 | 0 | 0.0 | 0.0 | 0 |
+
+**Standard suite: programs**
+
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| ProbLog | 50 | 41 | 48 | 2 297 | 132.6 | 41 | 197.1 | 1.0 | 0 |
+| PITA | 50 | 40 | 48 | 2 564 | 132.6 | 40 | 164.1 | 0.8 | 0 |
+| aspmc | 50 | 26 | 48 | 6 722 | 132.6 | 26 | 122.4 | 0.3 | 0 |
+| Ace | 42 | 23 | 41 | 5 553 | 337.8 | 23 | 153.4 | 0.6 | 0 |
+| Merlin | 42 | 21 | 41 | 6 016 | 337.8 | 21 | 15.8 | 0.6 | 0 |
+| pyAgrum | 42 | 21 | 41 | 6 014 | 337.8 | 21 | 13.6 | 0.6 | 0 |
+| pgmpy | 42 | 22 | 41 | 6 014 | 337.8 | 22 | 314.1 | 187.4 | 1 |
+| libDAI | 42 | 21 | 41 | 6 013 | 337.8 | 21 | 12.7 | 0.6 | 0 |
+| TensorInference.jl | 42 | 21 | 41 | 7 043 | 337.8 | 21 | 1 043 | 3.6 | 0 |
+| TensorInference.jl treesa | 42 | 19 | 41 | 8 090 | 337.8 | 19 | 1 490 | 0.4 | 0 |
+| TensorInference.jl greedy | 42 | 21 | 41 | 7 043 | 337.8 | 21 | 1 043 | 3.6 | 0 |
+| Dice | 42 | 27 | 41 | 4 432 | 337.8 | 27 | 232.5 | 0.5 | 0 |
+| Alea.jl | 42 | 34 | 41 | 2 207 | 337.8 | 34 | 107.0 | 2.4 | 0 |
+| Roulette | 42 | 36 | 41 | 1 664 | 337.8 | 36 | 163.9 | 2.6 | 0 |
+| noDice | 42 | 22 | 41 | 5 835 | 337.8 | 22 | 134.6 | 0.4 | 0 |
+| Psi | 42 | 3 | 41 | 11 629 | 337.8 | 3 | 228.6 | 0.0 | 0 |
+| Genfer | 42 | 13 | 41 | 8 643 | 337.8 | 13 | 242.8 | 0.3 | 0 |
+| SPPL | 42 | 5 | 41 | 10 969 | 337.8 | 5 | 168.7 | 0.0 | 0 |
+| Geni | 42 | 11 | 41 | 9 098 | 337.8 | 11 | 98.4 | 0.3 | 0 |
+
+**Literature suite**
+
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| ProbLog | 39 | 19 | 39 | 6 117 | 10.7 | 19 | 117.1 | 0.4 | 0 |
+| PITA | 39 | 24 | 39 | 4 919 | 10.7 | 24 | 418.9 | 0.4 | 0 |
+| aspmc | 39 | 14 | 39 | 7 854 | 12.4 | 14 | 353.8 | 0.2 | 0 |
+| ProvSQL | 11 | 11 | 11 | 19.2 | 0.1 | 11 | 19.2 | 0.1 | 0 |
+| Ace | 39 | 25 | 39 | 4 419 | 12.5 | 25 | 218.7 | 0.6 | 0 |
+| Merlin | 39 | 14 | 39 | 7 690 | 12.5 | 14 | 190.3 | 0.2 | 0 |
+| pyAgrum | 39 | 13 | 39 | 7 900 | 12.5 | 13 | 99.8 | 0.2 | 0 |
+| pgmpy | 39 | 8 | 39 | 9 334 | 12.5 | 8 | 34.0 | 0.1 | 0 |
+| libDAI | 39 | 15 | 39 | 7 514 | 12.5 | 15 | 314.1 | 0.2 | 0 |
+| TensorInference.jl | 39 | 13 | 39 | 8 947 | 12.5 | 13 | 1 147 | 0.1 | 0 |
+| TensorInference.jl treesa | 39 | 13 | 39 | 9 439 | 12.5 | 13 | 1 639 | 0.1 | 0 |
+| TensorInference.jl greedy | 39 | 11 | 39 | 9 040 | 12.5 | 11 | 640.4 | 0.1 | 0 |
+| Dice | 39 | 10 | 39 | 9 260 | 12.5 | 10 | 560.0 | 0.1 | 0 |
+| Alea.jl | 39 | 19 | 39 | 6 045 | 12.5 | 19 | 45.1 | 0.8 | 0 |
+| Roulette | 39 | 20 | 39 | 5 878 | 12.5 | 20 | 177.5 | 1.8 | 0 |
+| noDice | 39 | 6 | 39 | 10 107 | 12.5 | 6 | 207.1 | 0.1 | 0 |
+| Psi | 39 | 0 | 39 | 11 700 | 12.5 | 0 | 0.0 | 0.0 | 0 |
+| Genfer | 39 | 0 | 39 | 11 700 | 12.5 | 0 | 0.0 | 0.0 | 0 |
+| SPPL | 39 | 5 | 39 | 10 640 | 12.5 | 5 | 440.5 | 0.0 | 0 |
+| Geni | 39 | 0 | 39 | 11 700 | 12.5 | 0 | 0.0 | 0.0 | 0 |
 
 ## The literature suite
 
@@ -538,15 +643,18 @@ ObjectDetection and Pedigree network, CSP_11 and 13, Grids_11, 15 of the
 15 Promedus and 5 of the 6 Segmentation; Merlin is faster on
 Segmentation_12 (339 ms against 423). tddlog's marginals agree with the
 reference's (Setup) to 9.1e-14 on 111 networks and with Merlin's six
-printed digits on the other 5. ProbLog's forward SDD compile (`fsdd`)
-stops with `InconsistentEvidenceError` on 19 networks whose evidence is
-consistent (CSP_12, DBN_11, 12, 13, Grids_11, 12, 13, 14, 15, 16, 17,
-18, Pedigree_13, Segmentation_11, 12, 13, 14, 15, 16; tddlog answers
-them). The error comes from a logical check, the evidence's SDD found
-false, not from a probability; the check also runs while the compile is
-still building that SDD (`ForwardEvaluator.node_updated`), and it stops
-so on smaller programs that ProbLog's other compiles answer
-(bn_sachs_ev, mastermind4_4_8). These runs count as errors.
+printed digits on the other 5. Alea.jl, aspmc, Dice, Genfer, Geni,
+noDice, Psi, Roulette and SPPL also ran in a later job, each instance
+beside that job's tddlog, which their times are compared with. ProbLog's
+forward SDD compile (`fsdd`) stops with `InconsistentEvidenceError` on
+19 networks whose evidence is consistent (CSP_12, DBN_11, 12, 13,
+Grids_11, 12, 13, 14, 15, 16, 17, 18, Pedigree_13, Segmentation_11, 12,
+13, 14, 15, 16; tddlog answers them). The error comes from a logical
+check, the evidence's SDD found false, not from a probability; the check
+also runs while the compile is still building that SDD
+(`ForwardEvaluator.node_updated`), and it stops so on smaller programs
+that ProbLog's other compiles answer (bn_sachs_ev, mastermind4_4_8).
+These runs count as errors.
 
 Against each baseline (columns as in "Against each baseline"):
 
@@ -562,6 +670,15 @@ Against each baseline (columns as in "Against each baseline"):
 | TensorInference.jl greedy | 120 | 59 | 120 | 23 647 | 301.3 | 59 | 5 347 | 61.8 | 0 |
 | ProbLog | 120 | 0 | 120 | 36 000 | 301.3 | 0 | 0.0 | 0.0 | 0 |
 | PITA | 120 | 1 | 120 | 35 894 | 301.3 | 1 | 193.8 | 0.0 | 0 |
+| aspmc | 120 | 1 | 120 | 35 862 | 345.6 | 1 | 162.0 | 0.0 | 0 |
+| Dice | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
+| Alea.jl | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
+| Roulette | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
+| noDice | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
+| Psi | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
+| Genfer | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
+| SPPL | 120 | 1 | 120 | 35 792 | 345.6 | 1 | 91.8 | 0.0 | 0 |
+| Geni | 120 | 0 | 120 | 36 000 | 345.6 | 0 | 0.0 | 0.0 | 0 |
 
 The PR task on the same 120 networks (`--pr`, one job on one lab machine
 (16 physical cores and 251 GB), 2026-10-20 to 2026-10-21): tddlog's
@@ -569,7 +686,9 @@ log10 Z agrees with the reference's to 5.7e-14 on 107 instances and with
 Merlin's to 2.2e-7 on 114. tddlog answers all 120 in 217.5 s, Merlin's
 `-t PR` 114 in 1 247. Summed by family where both answer, Merlin is
 slower on every family (ObjectDetection 984.5 against 180.7, Promedus
-130.9 against 2.9).
+130.9 against 2.9). Alea.jl, Dice, Genfer, Geni, noDice, Psi, Roulette
+and SPPL also ran in a later job, each instance beside that job's
+tddlog, which their times are compared with.
 
 Against each baseline (columns as in "Against each baseline"):
 
@@ -586,6 +705,14 @@ Against each baseline (columns as in "Against each baseline"):
 | ProbLog | 120 | 0 | 120 | 36 000 | 217.5 | 0 | 0.0 | 0.0 | 0 |
 | PITA | 120 | 25 | 120 | 29 131 | 217.5 | 25 | 631.4 | 2.9 | 0 |
 | aspmc | 120 | 4 | 120 | 35 185 | 217.5 | 4 | 385.3 | 1.6 | 0 |
+| Dice | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
+| Alea.jl | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
+| Roulette | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
+| noDice | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
+| Psi | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
+| Genfer | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
+| SPPL | 120 | 1 | 120 | 35 713 | 302.6 | 1 | 13.2 | 0.0 | 0 |
+| Geni | 120 | 0 | 120 | 36 000 | 302.6 | 0 | 0.0 | 0.0 | 0 |
 
 ### Results: the partition function
 
@@ -2262,11 +2389,12 @@ same lanes as the systems above, single-threaded, with the same limits;
 the time is the process's, tddlog's too, start-up included. Every answer
 is compared with the suite's reference, as Dice's and Alea.jl's are; a
 difference of more than 1e-6 absolute and relative is `wrong`. Storm
-sparse, Storm exact, Storm dd, PRISM sparse and PRISM hybrid also ran in
-a later run, on other machines, on the instances the release run did not
-give them, each in the same lanes as tddlog; there a system's time is
-compared with that run's tddlog. A time under 0.2 s counts as 0.2 s, and
-an instance both answer in under 0.2 s is counted in neither's favour.
+sparse, Storm exact, Storm dd, PRISM sparse, PRISM hybrid and Roulette
+also ran in a later run, on other machines, on the instances the release
+run did not give them, each in the same lanes as tddlog; there a
+system's time is compared with that run's tddlog. A time under 0.2 s
+counts as 0.2 s, and an instance both answer in under 0.2 s is counted
+in neither's favour.
 
 | system | answers | runs |
 |---|---|---|
@@ -2276,8 +2404,9 @@ an instance both answer in under 0.2 s is counted in neither's favour.
 | Genfer (Zaiser, Murawski and Ong, NeurIPS 2023) | generating functions | its population model of the bit-blasted suite, the Dice programs of its own comparison, and every other program with a Dice program (the circuits' too), translated by `dice2genfer.py` |
 | SPPL 2.0.4 (Saad, Rinard and Mansinghka, PLDI 2021) | symbolic sum-product | its hierarchical Markov switching model of the bit-blasted suite, and every other program with a Dice program (the circuits' too), translated by `dice2sppl.py` |
 | Pluck (Bowers et al., PLDI 2025) | exact | its four sequence models of the `ppl` suite |
-| Storm 1.14 (stormpy), one Sylvan thread | exact | the weather factory's PRISM model, `P=? [F<=H "allStrike"]`: the sparse engine in floating point (`sparse`), the sparse engine on rationals (`exact`) and the symbolic BDD engine (`dd`) |
-| PRISM 4.8.1 | exact | the weather factory's PRISM model, with the sparse and the hybrid engine |
+| Storm 1.14 (stormpy), one Sylvan thread | exact | the weather factory's PRISM model, `P=? [F<=H "allStrike"]`, and every other program with a Dice program (the circuits' too) as a Markov chain, through `dice2prism.py`: the sparse engine in floating point (`sparse`), the sparse engine on rationals (`exact`) and the symbolic BDD engine (`dd`) |
+| PRISM 4.8.1 | exact | the weather factory's PRISM model and every other program with a Dice program, through `dice2prism.py`, with the sparse and the hybrid engine |
+| Roulette (Moy et al., PLDI 2025) | exact | the circuits of the bit-blasted and Alea.jl programs, their Dice programs translated by `dice2roulette.py`; its own and the Dice programs are in the sections above |
 
 ### On the Dice paper's programs
 
@@ -2470,12 +2599,12 @@ largest absolute and relative difference from the reference named in
 
 ### On Alea.jl's and noDice's programs
 
-| family | instances | tddlog | noDice | Psi | Pluck | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| arith | 28 | 25 |  |  |  | 13 of 28 | 11 of 28 | 16 of 28 | 10 of 28 | 10 of 28 |
-| hybit | 19 | 16 |  |  |  | 0 of 19 | 0 of 19 | 1 of 19 | 2 of 19 | 2 of 19 |
-| nodice | 11 | 11 | 10 of 11 | 1 of 11 |  | 6 of 11 | 7 of 11 | 10 of 11 | 10 of 11 | 10 of 11 |
-| pluck | 4 | 4 |  |  | 3 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 |
+| family | instances | tddlog | noDice | Psi | Pluck | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Roulette |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| arith | 28 | 25 |  |  |  | 13 of 28 | 11 of 28 | 16 of 28 | 10 of 28 | 10 of 28 | 22 of 28 |
+| hybit | 19 | 16 |  |  |  | 0 of 19 | 0 of 19 | 1 of 19 | 2 of 19 | 2 of 19 | 5 of 19 |
+| nodice | 11 | 11 | 10 of 11 | 1 of 11 |  | 6 of 11 | 7 of 11 | 10 of 11 | 10 of 11 | 10 of 11 |  |
+| pluck | 4 | 4 |  |  | 3 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 3 of 4 |
 
 **noDice.** noDice ran 11 instances and answered 10 (1 print zeros). Its
 answers differ from the reference's by at most 7.5e-05 relative (7.4e-07
@@ -2551,70 +2680,83 @@ tddlog's 3.9. tddlog alone answers arith_book, arith_caesar_huge,
 arith_caesar_large, arith_caesar_medium, arith_disease_small and 26
 more.
 
-| instance | flips | gates | tddlog | noDice | Psi | Pluck | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | ProbLog | ref | tddlog diff | noDice diff | Psi diff | Pluck diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| arith_book | 180 | 2453 | 12.8 |  |  |  | >600 | err | err | oom | oom | >600 | alea | 1.2e-16 / 1.0e-15 |  |  |  |  |  |  |  |  |
-| arith_caesar_huge | 6260 | 38517 | 1.66 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 3.5e-69 / 3.1e-12 |  |  |  |  |  |  |  |  |
-| arith_caesar_large | 2510 | 15417 | 0.726 |  |  |  | >600 | >600 | 154 | >600 | >600 | 91.7 | alea | 1.3e-29 / 6.0e-13 |  |  |  |  |  | 1.3e-29 / 6.0e-13 |  |  |
-| arith_caesar_medium | 1260 | 7717 | 0.759 |  |  |  | 205 | 262 | 42.1 | >600 | >600 | 40.5 | alea | 9.1e-15 / 3.4e-13 |  |  |  | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 |  |  |
-| arith_caesar_small | 260 | 1557 | 0.08 |  |  |  | 1.77 | 3.52 | 5.36 | 11.6 | 11 | 7.15 | alea | 1.2e-15 / 3.3e-14 |  |  |  | 1.2e-15 / 3.1e-14 | 1.4e-15 / 3.1e-14 | 1.4e-15 / 3.1e-14 | 1.0e-15 / 3.0e-14 | 1.0e-15 / 3.0e-14 |
-| arith_disease_large | 3044 | 188220 | >600 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom |  |  |  |  |  |  |  |  |  |  |
-| arith_disease_medium | 1022 | 62049 | >600 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom |  |  |  |  |  |  |  |  |  |  |
-| arith_disease_small | 213 | 11614 | 11.7 |  |  |  | >600 | >600 | err | oom | oom | >600 | alea | 1.0e-15 / 6.1e-13 |  |  |  |  |  |  |  |  |
-| arith_fw_large | 44 | 7444 | 0.52 |  |  |  | >600 | >600 | err | oom | oom | >600 | alea | 5.6e-17 / 8.9e-15 |  |  |  |  |  |  |  |  |
-| arith_fw_medium | 17 | 2844 | 0.028 |  |  |  | 16.4 | 55.7 | 60.8 | 294 | 314 | 15.8 | alea | 5.6e-17 / 2.6e-14 |  |  |  | 8.3e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 |
-| arith_fw_small | 3 | 118 | 0.005 |  |  |  | 0.178 | 0.184 | 0.513 | 1.32 | 1.29 | 0.11 | alea | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| arith_gcd_large | 24 | 52462 | >600 |  |  |  | >600 | >600 | >600 | oom | >600 | oom |  |  |  |  |  |  |  |  |  |  |
-| arith_gcd_medium | 20 | 30487 | 159 |  |  |  | >600 | >600 | err | >600 | >600 | >600 | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  |
-| arith_gcd_small | 16 | 15724 | 11.4 |  |  |  | 173 | 188 | 25.9 | >600 | >600 | >600 | alea | 2.2e-16 / 3.6e-16 |  |  |  | 2.2e-16 / 3.6e-16 | 2.2e-16 / 3.6e-16 | 2.2e-16 / 3.6e-16 |  |  |
-| arith_linext_large | 24 | 386 | 0.012 |  |  |  | >600 | >600 | 44.1 | 257 | 260 | >600 | alea | 4.4e-16 / 2.5e-15 |  |  |  |  |  | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 |
-| arith_linext_medium | 24 | 254 | 0.008 |  |  |  | 9.94 | 12.5 | 14 | 10.1 | 10.1 | 24.3 | alea | 6.1e-16 / 1.7e-15 |  |  |  | 6.7e-16 / 1.7e-15 | 6.7e-16 / 1.7e-15 | 7.8e-16 / 1.9e-15 | 7.8e-16 / 1.9e-15 | 7.8e-16 / 1.9e-15 |
-| arith_linext_small | 8 | 56 | 0.005 |  |  |  | 0.78 | 0.828 | 1.85 | 5.29 | 5.28 | 0.151 | alea | 2.2e-16 / 4.4e-16 |  |  |  | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 |
-| arith_luhn_medium | 36 | 485 | 0.126 |  |  |  | 277 | >600 | 42.2 | >600 | >600 | >600 | alea | 2.1e-15 / 1.3e-14 |  |  |  | 3.6e-16 / 2.7e-15 |  | 2.8e-16 / 2.6e-15 |  |  |
-| arith_luhn_small | 24 | 328 | 0.015 |  |  |  | 2.38 | 4.97 | 9.04 | 11.2 | 10.6 | 2.77 | alea | 1.9e-16 / 1.2e-15 |  |  |  | 1.7e-16 / 1.2e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 |
-| arith_plankton | 60 | 1747 | 0.321 |  |  |  | >600 | oom | err | oom | oom | >600 | alea | 1.1e-16 / 4.3e-14 |  |  |  |  |  |  |  |  |
-| arith_radar | 66 | 1195 | 0.04 |  |  |  | oom | err | 22.1 | >600 | >600 | 32.6 | alea | 2.8e-16 / 1.5e-15 |  |  |  |  |  | 2.5e-16 / 1.5e-15 |  |  |
-| arith_ranking_large | 88 | 1212 | 0.072 |  |  |  | 15.7 | 22.5 | 22.2 | 50.2 | 54.1 | 236 | alea | 2.0e-15 / 2.8e-14 |  |  |  | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 |
-| arith_ranking_medium | 56 | 744 | 0.021 |  |  |  | 7.29 | 11.2 | 17.1 | 37.7 | 36.8 | 147 | alea | 5.6e-16 / 1.2e-14 |  |  |  | 6.1e-16 / 1.2e-14 | 6.1e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 |
-| arith_ranking_small | 24 | 276 | 0.014 |  |  |  | 2.11 | 3.22 | 11.7 | 11.9 | 11.7 | 33.9 | alea | 3.3e-16 / 1.1e-15 |  |  |  | 3.3e-16 / 9.4e-16 | 3.9e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 |
-| arith_triangle_large | 132 | 1916 | 25.9 |  |  |  | >600 | err | err | oom | oom | >600 | alea | 5.0e-15 / 7.9e-14 |  |  |  |  |  |  |  |  |
-| arith_triangle_medium | 57 | 1298 | 0.575 |  |  |  | >600 | err | err | >600 | >600 | >600 | alea | 1.8e-15 / 2.9e-14 |  |  |  |  |  |  |  |  |
-| arith_triangle_small | 48 | 1277 | 0.244 |  |  |  | 295 | err | 41 | >600 | >600 | >600 | alea | 2.8e-16 / 5.0e-15 |  |  |  | 4.4e-16 / 9.8e-16 |  | 5.4e-20 / 1.1e-15 |  |  |
-| arith_tugofwar | 44 | 1372 | 0.201 |  |  |  | >600 | err | err | >600 | >600 | >600 | alea | 3.3e-16 / 3.4e-16 |  |  |  |  |  |  |  |  |
-| hybit_GPA | 94168 | 516070 | 23.6 |  |  |  | err | err | err | err | err | oom | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  |
-| hybit_addFun_max | 604 | 26275 | 37.5 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | tddlog | ref |  |  |  |  |  |  |  |  |
-| hybit_addFun_sum | 196 | 3820 | 0.705 |  |  |  | >600 | err | >600 | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |
-| hybit_altermu2 | 80350 | 457880 | oom |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 |  |  |  |  |  |  |  |  |  |  |
-| hybit_clickGraph | 208 | 765 | 0.317 |  |  |  | >600 | >600 | >600 | 282 | 297 | 5.53 | problog | 4.7e-09 / 9.2e-09 |  |  |  |  |  |  | 4.7e-09 / 9.2e-09 | 4.7e-09 / 9.2e-09 |
-| hybit_clinicalTrial1 | 2419 | 12800 | 1.66 |  |  |  | >600 | >600 | >600 | err | err | 21.5 | problog | 6.5e-10 / 3.8e-09 |  |  |  |  |  |  |  |  |
-| hybit_clinicalTrial2 | 221 | 1150 | 0.021 |  |  |  | >600 | err | err | err | err | 22.1 | problog | 4.9e-09 / 2.3e-08 |  |  |  |  |  |  |  |  |
-| hybit_coinBias | 37026 | 226532 | >600 |  |  |  | oom | oom | oom | oom | oom | oom |  |  |  |  |  |  |  |  |  |  |
-| hybit_conjugate_gaussians | 249 | 4198 | 0.879 |  |  |  | >600 | oom | err | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |
-| hybit_normal_mixture_mu1 | 5289 | 35812 | 135 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | tddlog | ref |  |  |  |  |  |  |  |  |
-| hybit_normal_mixture_mu2 | 7913 | 63750 | 162 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | tddlog | ref |  |  |  |  |  |  |  |  |
-| hybit_normal_mixture_theta | 10537 | 118560 | 30 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | exact | 4.4e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |
-| hybit_pi | 24 | 12633 | 1.49 |  |  |  | >600 | >600 | err | >600 | >600 | >600 | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  |  |  |
-| hybit_spacex | 513 | 3195 | oom |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea |  |  |  |  |  |  |  |  |  |
-| hybit_trueskill | 376 | 5592 | 181 |  |  |  | >600 | oom | >600 | >600 | >600 | >600 | alea | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |
-| hybit_tug_of_war | 550 | 2720 | 0.54 |  |  |  | >600 | >600 | 23.5 | 434 | 434 | >600 | exact | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 4.4e-16 / 8.9e-16 | 4.4e-16 / 8.9e-16 |
-| hybit_weekend | 98303 | 516022 | 20.5 |  |  |  | oom | oom | oom | oom | oom | oom | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  |
-| hybit_zeroone_w1 | 44 | 8780 | 0.318 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 3.9e-15 / 7.7e-15 |  |  |  |  |  |  |  |  |
-| hybit_zeroone_w2 | 50 | 13588 | 1.25 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 1.1e-13 / 1.6e-13 |  |  |  |  |  |  |  |  |
-| nodice_3sat-0 |  |  | 0.452 | zero | oom |  | oom | err | 14.4 | >600 | >600 | >600 | alea | 1.3e-22 / 1.1e-15 |  |  |  |  |  | 1.3e-22 / 1.1e-15 |  |  |
-| nodice_alarm |  |  | 0.049 | 381 | oom |  | 0.206 | 0.23 | 2.35 | 1.27 | 1.27 | 1.95 | problog | 2.5e-09 / 1.2e-08 | 2.4e-07 / 1.2e-06 |  |  | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 |
-| nodice_coupon2-10-obs |  |  | 0.075 | 4.49 | err |  | 84.7 | 87.5 | 7.87 | 3.37 | 2.87 | >600 | alea | 1.7e-16 / 6.3e-16 | 5.2e-07 / 2.0e-06 |  |  | 5.6e-16 / 2.1e-15 | 2.2e-16 / 8.5e-16 | 2.2e-16 / 8.5e-16 | 5.6e-16 / 2.1e-15 | 5.6e-16 / 2.1e-15 |
-| nodice_coupon2-11-obs |  |  | 0.138 | 13 | err |  | 328 | 346 | 10.5 | 5.82 | 4.33 | >600 | alea | 5.6e-15 / 2.6e-14 | 7.0e-07 / 3.2e-06 |  |  | 5.6e-17 / 2.5e-16 | 2.2e-16 / 1.0e-15 | 1.9e-16 / 8.8e-16 | 1.1e-16 / 5.1e-16 | 1.1e-16 / 5.1e-16 |
-| nodice_coupon2-12-obs |  |  | 0.187 | 35.7 | err |  | >600 | >600 | 12.6 | 11.1 | 5.9 | >600 | alea | 7.2e-16 / 3.9e-15 | 1.4e-07 / 7.6e-07 |  |  |  |  | 5.8e-16 / 3.2e-15 | 3.9e-16 / 2.1e-15 | 3.9e-16 / 2.1e-15 |
-| nodice_coupon2-13-obs |  |  | 0.415 | 96.4 | err |  | >600 | >600 | 16.4 | 28 | 12.2 | >600 | alea | 5.3e-16 / 3.4e-15 | 2.8e-07 / 1.8e-06 |  |  |  |  | 5.0e-16 / 3.3e-15 | 5.3e-16 / 3.4e-15 | 5.3e-16 / 3.4e-15 |
-| nodice_coupon2-14-obs |  |  | 0.81 | 252 | err |  | >600 | >600 | 20.3 | 77.4 | 31 | >600 | alea | 2.2e-16 / 1.7e-15 | 2.7e-07 / 2.1e-06 |  |  |  |  | 2.2e-16 / 1.7e-15 | 1.9e-16 / 1.5e-15 | 1.9e-16 / 1.5e-15 |
-| nodice_hepar2 |  |  | 0.06 | 0.618 | oom |  | 0.241 | 0.248 | 2.4 | 1.26 | 1.28 | 0.751 | problog | 1.1e-09 / 6.9e-09 | 6.8e-07 / 4.2e-06 |  |  | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 |
-| nodice_insurance |  |  | 0.093 | 3.67 | oom |  | 5.29 | 5.44 | 17.7 | 4.88 | 6.67 | 48.6 | problog | 4.9e-09 / 4.6e-08 | 7.0e-07 / 2.9e-05 |  |  | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 |
-| nodice_survey |  |  | 0.004 | 0.012 | 1.64 |  | 0.153 | 0.152 | 0.254 | 1.27 | 1.27 | 0.083 | problog | 4.0e-09 / 1.3e-08 | 7.5e-07 / 2.7e-06 | 4.0e-09 / 1.3e-08 |  | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 |
-| nodice_water |  |  | 0.777 | 18.9 | oom |  | >600 | 598 | >600 | 219 | 229 | 8.16 | problog | 8.3e-10 / 5.9e-09 | 7.4e-07 / 7.5e-05 |  |  |  | 8.3e-10 / 5.9e-09 |  | 8.3e-10 / 5.9e-09 | 8.3e-10 / 5.9e-09 |
-| pluck_hmm | 199 | 346 | 0.017 |  |  | 5.03 | >600 | err | 3.27 | 2.98 | 2.92 | >600 | alea | 5.6e-27 / 3.1e-14 |  |  | 5.7e-27 / 3.2e-14 |  |  | 5.6e-27 / 3.1e-14 | 6.2e-15 / 3.4e-02 | 6.2e-15 / 3.4e-02 |
-| pluck_pcfg | 12031 | 532827 | 101 |  |  | 5.18 | oom | oom | oom | oom | oom | >600 | alea | 9.3e-23 / 1.6e-15 |  |  | 3.0e-08 / 5.0e-01 |  |  |  |  |  |
-| pluck_sorted_list | 57 | 4056 | 7.72 |  |  | err | oom | oom | >600 | >600 | >600 | >600 | alea | 1.7e-25 / 2.3e-14 |  |  |  |  |  |  |  |  |
-| pluck_string_editing | 130 | 1343 | 0.058 |  |  | 5.95 | oom | oom | err | oom | oom | >600 | alea | 1.7e-26 / 7.4e-15 |  |  | 3.0e-08 / 1.3e+04 |  |  |  |  |  |
+**Roulette.** Roulette ran 51 instances and answered 30 (16 run out of
+memory, 5 time out). Its answers differ from the reference's by at most
+1.0e+00 relative (1.2e-57 absolute, arith_caesar_huge) over 30
+instances. Over the 44 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Roulette takes 8701
+s in all and tddlog 1263 s; over the 30 both answer, 301 s against
+tddlog's 325. Roulette is faster on 12 (arith_luhn_medium 0.22 s against
+0.24, arith_caesar_large 1.1 s against 1.18, arith_fw_large 0.61 s
+against 0.77 and arith_tugofwar 0.16 s against 0.33, the largest
+differences). tddlog alone answers arith_disease_small,
+arith_gcd_medium, arith_plankton, hybit_addFun_max, hybit_addFun_sum and
+9 more.
+
+| instance | flips | gates | tddlog | noDice | Psi | Pluck | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Roulette | Roulette process | ProbLog | ref | tddlog diff | noDice diff | Psi diff | Pluck diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Roulette diff |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| arith_book | 180 | 2453 | 12.8 |  |  |  | >600 | err | err | oom | oom | 3.81 | 4.47 | >600 | alea | 1.2e-16 / 1.0e-15 |  |  |  |  |  |  |  |  | 5.6e-17 / 4.5e-16 |
+| arith_caesar_huge | 6260 | 38517 | 1.66 |  |  |  | >600 | >600 | >600 | >600 | >600 | 4.09 | 5.01 | >600 | alea | 3.5e-69 / 3.1e-12 |  |  |  |  |  |  |  |  | 1.2e-57 / 1.0e+00 |
+| arith_caesar_large | 2510 | 15417 | 0.726 |  |  |  | >600 | >600 | 154 | >600 | >600 | 1.1 | 1.81 | 91.7 | alea | 1.3e-29 / 6.0e-13 |  |  |  |  |  | 1.3e-29 / 6.0e-13 |  |  | 1.3e-29 / 5.9e-13 |
+| arith_caesar_medium | 1260 | 7717 | 0.759 |  |  |  | 205 | 262 | 42.1 | >600 | >600 | 0.453 | 1.16 | 40.5 | alea | 9.1e-15 / 3.4e-13 |  |  |  | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 |  |  | 9.0e-15 / 3.4e-13 |
+| arith_caesar_small | 260 | 1557 | 0.08 |  |  |  | 1.77 | 3.52 | 5.36 | 11.6 | 11 | 0.079 | 0.7 | 7.15 | alea | 1.2e-15 / 3.3e-14 |  |  |  | 1.2e-15 / 3.1e-14 | 1.4e-15 / 3.1e-14 | 1.4e-15 / 3.1e-14 | 1.0e-15 / 3.0e-14 | 1.0e-15 / 3.0e-14 | 1.4e-15 / 3.1e-14 |
+| arith_disease_large | 3044 | 188220 | >600 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | oom |  |  |  |  |  |  |  |  |  |  |  |
+| arith_disease_medium | 1022 | 62049 | >600 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | >600 | oom |  |  |  |  |  |  |  |  |  |  |  |
+| arith_disease_small | 213 | 11614 | 11.7 |  |  |  | >600 | >600 | err | oom | oom | >600 | >600 | >600 | alea | 1.0e-15 / 6.1e-13 |  |  |  |  |  |  |  |  |  |
+| arith_fw_large | 44 | 7444 | 0.52 |  |  |  | >600 | >600 | err | oom | oom | 0.613 | 1.24 | >600 | alea | 5.6e-17 / 8.9e-15 |  |  |  |  |  |  |  |  | 1.1e-16 / 7.7e-15 |
+| arith_fw_medium | 17 | 2844 | 0.028 |  |  |  | 16.4 | 55.7 | 60.8 | 294 | 314 | 0.043 | 0.67 | 15.8 | alea | 5.6e-17 / 2.6e-14 |  |  |  | 8.3e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 |
+| arith_fw_small | 3 | 118 | 0.005 |  |  |  | 0.178 | 0.184 | 0.513 | 1.32 | 1.29 | 0.002 | 0.628 | 0.11 | alea | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| arith_gcd_large | 24 | 52462 | >600 |  |  |  | >600 | >600 | >600 | oom | >600 | oom | oom | oom |  |  |  |  |  |  |  |  |  |  |  |
+| arith_gcd_medium | 20 | 30487 | 159 |  |  |  | >600 | >600 | err | >600 | >600 | oom | oom | >600 | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  |  |
+| arith_gcd_small | 16 | 15724 | 11.4 |  |  |  | 173 | 188 | 25.9 | >600 | >600 | 9.01 | 10 | >600 | alea | 2.2e-16 / 3.6e-16 |  |  |  | 2.2e-16 / 3.6e-16 | 2.2e-16 / 3.6e-16 | 2.2e-16 / 3.6e-16 |  |  | 2.2e-16 / 3.6e-16 |
+| arith_linext_large | 24 | 386 | 0.012 |  |  |  | >600 | >600 | 44.1 | 257 | 260 | 0.241 | 3.8 | >600 | alea | 4.4e-16 / 2.5e-15 |  |  |  |  |  | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 |
+| arith_linext_medium | 24 | 254 | 0.008 |  |  |  | 9.94 | 12.5 | 14 | 10.1 | 10.1 | 0.046 | 3.63 | 24.3 | alea | 6.1e-16 / 1.7e-15 |  |  |  | 6.7e-16 / 1.7e-15 | 6.7e-16 / 1.7e-15 | 7.8e-16 / 1.9e-15 | 7.8e-16 / 1.9e-15 | 7.8e-16 / 1.9e-15 | 7.2e-16 / 1.8e-15 |
+| arith_linext_small | 8 | 56 | 0.005 |  |  |  | 0.78 | 0.828 | 1.85 | 5.29 | 5.28 | 0.008 | 2.43 | 0.151 | alea | 2.2e-16 / 4.4e-16 |  |  |  | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 |
+| arith_luhn_medium | 36 | 485 | 0.126 |  |  |  | 277 | >600 | 42.2 | >600 | >600 | 0.223 | 3.1 | >600 | alea | 2.1e-15 / 1.3e-14 |  |  |  | 3.6e-16 / 2.7e-15 |  | 2.8e-16 / 2.6e-15 |  |  | 2.6e-14 / 2.8e-13 |
+| arith_luhn_small | 24 | 328 | 0.015 |  |  |  | 2.38 | 4.97 | 9.04 | 11.2 | 10.6 | 0.051 | 2.49 | 2.77 | alea | 1.9e-16 / 1.2e-15 |  |  |  | 1.7e-16 / 1.2e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.2e-15 |
+| arith_plankton | 60 | 1747 | 0.321 |  |  |  | >600 | oom | err | oom | oom | >600 | >600 | >600 | alea | 1.1e-16 / 4.3e-14 |  |  |  |  |  |  |  |  |  |
+| arith_radar | 66 | 1195 | 0.04 |  |  |  | oom | err | 22.1 | >600 | >600 | 0.052 | 0.68 | 32.6 | alea | 2.8e-16 / 1.5e-15 |  |  |  |  |  | 2.5e-16 / 1.5e-15 |  |  | 2.5e-16 / 1.4e-15 |
+| arith_ranking_large | 88 | 1212 | 0.072 |  |  |  | 15.7 | 22.5 | 22.2 | 50.2 | 54.1 | 0.408 | 2.79 | 236 | alea | 2.0e-15 / 2.8e-14 |  |  |  | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.4e-08 / 5.3e-06 |
+| arith_ranking_medium | 56 | 744 | 0.021 |  |  |  | 7.29 | 11.2 | 17.1 | 37.7 | 36.8 | 0.195 | 2.45 | 147 | alea | 5.6e-16 / 1.2e-14 |  |  |  | 6.1e-16 / 1.2e-14 | 6.1e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.3e-11 / 3.2e-09 |
+| arith_ranking_small | 24 | 276 | 0.014 |  |  |  | 2.11 | 3.22 | 11.7 | 11.9 | 11.7 | 0.048 | 2.49 | 33.9 | alea | 3.3e-16 / 1.1e-15 |  |  |  | 3.3e-16 / 9.4e-16 | 3.9e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 1.6e-14 / 6.3e-14 |
+| arith_triangle_large | 132 | 1916 | 25.9 |  |  |  | >600 | err | err | oom | oom | 20.8 | 21.8 | >600 | alea | 5.0e-15 / 7.9e-14 |  |  |  |  |  |  |  |  | 2.2e-16 / 7.0e-15 |
+| arith_triangle_medium | 57 | 1298 | 0.575 |  |  |  | >600 | err | err | >600 | >600 | 0.767 | 1.4 | >600 | alea | 1.8e-15 / 2.9e-14 |  |  |  |  |  |  |  |  | 3.3e-16 / 6.1e-14 |
+| arith_triangle_small | 48 | 1277 | 0.244 |  |  |  | 295 | err | 41 | >600 | >600 | 0.189 | 0.803 | >600 | alea | 2.8e-16 / 5.0e-15 |  |  |  | 4.4e-16 / 9.8e-16 |  | 5.4e-20 / 1.1e-15 |  |  | 8.0e-17 / 1.5e-14 |
+| arith_tugofwar | 44 | 1372 | 0.201 |  |  |  | >600 | err | err | >600 | >600 | 0.156 | 0.765 | >600 | alea | 3.3e-16 / 3.4e-16 |  |  |  |  |  |  |  |  | 3.3e-16 / 3.4e-16 |
+| hybit_GPA | 94168 | 516070 | 23.6 |  |  |  | err | err | err | err | err | 33.2 | 37.8 | oom | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| hybit_addFun_max | 604 | 26275 | 37.5 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| hybit_addFun_sum | 196 | 3820 | 0.705 |  |  |  | >600 | err | >600 | oom | oom | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| hybit_altermu2 | 80350 | 457880 | oom |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  |  |  |  |  |  |  |  |  |  |  |
+| hybit_clickGraph | 208 | 765 | 0.317 |  |  |  | >600 | >600 | >600 | 282 | 297 | oom | oom | 5.53 | problog | 4.7e-09 / 9.2e-09 |  |  |  |  |  |  | 4.7e-09 / 9.2e-09 | 4.7e-09 / 9.2e-09 |  |
+| hybit_clinicalTrial1 | 2419 | 12800 | 1.66 |  |  |  | >600 | >600 | >600 | err | err | oom | oom | 21.5 | problog | 6.5e-10 / 3.8e-09 |  |  |  |  |  |  |  |  |  |
+| hybit_clinicalTrial2 | 221 | 1150 | 0.021 |  |  |  | >600 | err | err | err | err | oom | oom | 22.1 | problog | 4.9e-09 / 2.3e-08 |  |  |  |  |  |  |  |  |  |
+| hybit_coinBias | 37026 | 226532 | >600 |  |  |  | oom | oom | oom | oom | oom | oom | oom | oom |  |  |  |  |  |  |  |  |  |  |  |
+| hybit_conjugate_gaussians | 249 | 4198 | 0.879 |  |  |  | >600 | oom | err | oom | oom | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| hybit_normal_mixture_mu1 | 5289 | 35812 | 135 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| hybit_normal_mixture_mu2 | 7913 | 63750 | 162 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| hybit_normal_mixture_theta | 10537 | 118560 | 30 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | exact | 4.4e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |  |
+| hybit_pi | 24 | 12633 | 1.49 |  |  |  | >600 | >600 | err | >600 | >600 | 11.9 | 12.7 | >600 | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 |
+| hybit_spacex | 513 | 3195 | oom |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | alea |  |  |  |  |  |  |  |  |  |  |
+| hybit_trueskill | 376 | 5592 | 181 |  |  |  | >600 | oom | >600 | >600 | >600 | oom | oom | >600 | alea | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |
+| hybit_tug_of_war | 550 | 2720 | 0.54 |  |  |  | >600 | >600 | 23.5 | 434 | 434 | oom | oom | >600 | exact | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 4.4e-16 / 8.9e-16 | 4.4e-16 / 8.9e-16 |  |
+| hybit_weekend | 98303 | 516022 | 20.5 |  |  |  | oom | oom | oom | oom | oom | 30.9 | 35.4 | oom | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  | 1.0e-10 / 2.8e-10 |
+| hybit_zeroone_w1 | 44 | 8780 | 0.318 |  |  |  | >600 | >600 | >600 | >600 | >600 | 11.6 | 19.5 | >600 | alea | 3.9e-15 / 7.7e-15 |  |  |  |  |  |  |  |  | 1.2e-13 / 2.3e-13 |
+| hybit_zeroone_w2 | 50 | 13588 | 1.25 |  |  |  | >600 | >600 | >600 | >600 | >600 | 140 | 155 | >600 | alea | 1.1e-13 / 1.6e-13 |  |  |  |  |  |  |  |  | 1.3e-13 / 2.5e-13 |
+| nodice_3sat-0 |  |  | 0.452 | zero | oom |  | oom | err | 14.4 | >600 | >600 |  |  | >600 | alea | 1.3e-22 / 1.1e-15 |  |  |  |  |  | 1.3e-22 / 1.1e-15 |  |  |  |
+| nodice_alarm |  |  | 0.049 | 381 | oom |  | 0.206 | 0.23 | 2.35 | 1.27 | 1.27 |  |  | 1.95 | problog | 2.5e-09 / 1.2e-08 | 2.4e-07 / 1.2e-06 |  |  | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 | 2.5e-09 / 1.2e-08 |  |
+| nodice_coupon2-10-obs |  |  | 0.075 | 4.49 | err |  | 84.7 | 87.5 | 7.87 | 3.37 | 2.87 |  |  | >600 | alea | 1.7e-16 / 6.3e-16 | 5.2e-07 / 2.0e-06 |  |  | 5.6e-16 / 2.1e-15 | 2.2e-16 / 8.5e-16 | 2.2e-16 / 8.5e-16 | 5.6e-16 / 2.1e-15 | 5.6e-16 / 2.1e-15 |  |
+| nodice_coupon2-11-obs |  |  | 0.138 | 13 | err |  | 328 | 346 | 10.5 | 5.82 | 4.33 |  |  | >600 | alea | 5.6e-15 / 2.6e-14 | 7.0e-07 / 3.2e-06 |  |  | 5.6e-17 / 2.5e-16 | 2.2e-16 / 1.0e-15 | 1.9e-16 / 8.8e-16 | 1.1e-16 / 5.1e-16 | 1.1e-16 / 5.1e-16 |  |
+| nodice_coupon2-12-obs |  |  | 0.187 | 35.7 | err |  | >600 | >600 | 12.6 | 11.1 | 5.9 |  |  | >600 | alea | 7.2e-16 / 3.9e-15 | 1.4e-07 / 7.6e-07 |  |  |  |  | 5.8e-16 / 3.2e-15 | 3.9e-16 / 2.1e-15 | 3.9e-16 / 2.1e-15 |  |
+| nodice_coupon2-13-obs |  |  | 0.415 | 96.4 | err |  | >600 | >600 | 16.4 | 28 | 12.2 |  |  | >600 | alea | 5.3e-16 / 3.4e-15 | 2.8e-07 / 1.8e-06 |  |  |  |  | 5.0e-16 / 3.3e-15 | 5.3e-16 / 3.4e-15 | 5.3e-16 / 3.4e-15 |  |
+| nodice_coupon2-14-obs |  |  | 0.81 | 252 | err |  | >600 | >600 | 20.3 | 77.4 | 31 |  |  | >600 | alea | 2.2e-16 / 1.7e-15 | 2.7e-07 / 2.1e-06 |  |  |  |  | 2.2e-16 / 1.7e-15 | 1.9e-16 / 1.5e-15 | 1.9e-16 / 1.5e-15 |  |
+| nodice_hepar2 |  |  | 0.06 | 0.618 | oom |  | 0.241 | 0.248 | 2.4 | 1.26 | 1.28 |  |  | 0.751 | problog | 1.1e-09 / 6.9e-09 | 6.8e-07 / 4.2e-06 |  |  | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 | 1.1e-09 / 6.9e-09 |  |
+| nodice_insurance |  |  | 0.093 | 3.67 | oom |  | 5.29 | 5.44 | 17.7 | 4.88 | 6.67 |  |  | 48.6 | problog | 4.9e-09 / 4.6e-08 | 7.0e-07 / 2.9e-05 |  |  | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 | 4.9e-09 / 4.6e-08 |  |
+| nodice_survey |  |  | 0.004 | 0.012 | 1.64 |  | 0.153 | 0.152 | 0.254 | 1.27 | 1.27 |  |  | 0.083 | problog | 4.0e-09 / 1.3e-08 | 7.5e-07 / 2.7e-06 | 4.0e-09 / 1.3e-08 |  | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 | 4.0e-09 / 1.3e-08 |  |
+| nodice_water |  |  | 0.777 | 18.9 | oom |  | >600 | 598 | >600 | 219 | 229 |  |  | 8.16 | problog | 8.3e-10 / 5.9e-09 | 7.4e-07 / 7.5e-05 |  |  |  | 8.3e-10 / 5.9e-09 |  | 8.3e-10 / 5.9e-09 | 8.3e-10 / 5.9e-09 |  |
+| pluck_hmm | 199 | 346 | 0.017 |  |  | 5.03 | >600 | err | 3.27 | 2.98 | 2.92 | 0.021 | 0.447 | >600 | alea | 5.6e-27 / 3.1e-14 |  |  | 5.7e-27 / 3.2e-14 |  |  | 5.6e-27 / 3.1e-14 | 6.2e-15 / 3.4e-02 | 6.2e-15 / 3.4e-02 | 6.7e-19 / 3.7e-06 |
+| pluck_pcfg | 12031 | 532827 | 101 |  |  | 5.18 | oom | oom | oom | oom | oom | 15 | 17.6 | >600 | alea | 9.3e-23 / 1.6e-15 |  |  | 3.0e-08 / 5.0e-01 |  |  |  |  |  | 9.3e-23 / 1.6e-15 |
+| pluck_sorted_list | 57 | 4056 | 7.72 |  |  | err | oom | oom | >600 | >600 | >600 | 16.5 | 17.6 | >600 | alea | 1.7e-25 / 2.3e-14 |  |  |  |  |  |  |  |  | 1.7e-25 / 2.3e-14 |
+| pluck_string_editing | 130 | 1343 | 0.058 |  |  | 5.95 | oom | oom | err | oom | oom | oom | oom | >600 | alea | 1.7e-26 / 7.4e-15 |  |  | 3.0e-08 / 1.3e+04 |  |  |  |  |  |  |
 
 Seconds per system, the median over the repetitions; a failure is `>600`
 (timeout), `oom`, `err` or `n/a`; each system's last columns are its
@@ -2623,46 +2765,46 @@ largest absolute and relative difference from the reference named in
 
 ### On the bit-blasted programs
 
-| family | instances | tddlog | Psi | Genfer | SPPL | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bb_GPA | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_addFun_max_p | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_addFun_max | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_addFun_sum | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_altermu2_p | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_altermu2 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_clickGraph | 5 | 5 |  |  |  | 3 of 4 | 3 of 4 | 3 of 4 | 4 of 5 | 4 of 5 |
-| bb_clinicalTrial1 | 3 | 3 |  |  |  | 0 of 1 | 0 of 1 | 2 of 3 | 0 of 1 | 0 of 1 |
-| bb_clinicalTrial2 | 4 | 4 |  |  |  | 2 of 3 | 2 of 3 | 2 of 3 | 3 of 4 | 3 of 4 |
-| bb_coinBias | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_conjugate_ex3 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_conjugate_gaussians | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_fair_dt14 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_fair_dt16 | 3 | 3 |  |  |  | 0 of 1 | 0 of 1 | 2 of 3 | 0 of 1 | 0 of 1 |
-| bb_fair_dt44 | 3 | 3 |  |  |  | 0 of 1 | 0 of 1 | 2 of 3 | 1 of 2 | 1 of 2 |
-| bb_fair_dt4 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_genes5 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_genes | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_laplace | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_linreg | 8 | 6 | 2 of 8 |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_markov | 5 | 5 |  |  | 0 of 5 | 0 of 1 | 0 of 1 | 1 of 2 | 0 of 1 | 0 of 1 |
-| bb_multimodal | 1 | 0 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_normal_mixture_mu1 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_normal_mixture_mu2 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_normal_mixture_theta | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_pedestrian | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_pi | 3 | 3 |  |  |  | 2 of 3 | 2 of 3 | 2 of 3 | 0 of 1 | 0 of 1 |
-| bb_population | 8 | 8 |  | 8 of 8 |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_spacex_p | 2 | 2 |  |  |  | 1 of 2 | 0 of 1 | 0 of 1 | 1 of 2 | 1 of 2 |
-| bb_spacex | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_trueskill | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_tug_of_war | 7 | 7 |  |  |  | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 7 of 7 |
-| bb_weekend_p | 4 | 4 |  |  |  | 0 of 1 | 0 of 1 | 3 of 4 | 1 of 2 | 1 of 2 |
-| bb_weekend | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
-| bb_wmi_path | 4 | 4 |  |  |  | 0 of 1 | 0 of 1 | 3 of 4 | 2 of 3 | 2 of 3 |
-| bb_wmi_star | 4 | 4 |  |  |  | 0 of 1 | 0 of 1 | 3 of 4 | 2 of 3 | 2 of 3 |
-| bb_zeroone_w1 | 3 | 3 |  |  |  | 1 of 2 | 1 of 2 | 2 of 3 | 1 of 2 | 1 of 2 |
-| bb_zeroone_w2 | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| family | instances | tddlog | Psi | Genfer | SPPL | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Roulette |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bb_GPA | 7 | 7 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 7 of 7 |
+| bb_addFun_max_p | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| bb_addFun_max | 3 | 3 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 2 of 3 |
+| bb_addFun_sum | 4 | 4 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 |
+| bb_altermu2_p | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| bb_altermu2 | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_clickGraph | 5 | 5 |  |  |  | 3 of 4 | 3 of 4 | 3 of 4 | 4 of 5 | 4 of 5 | 3 of 4 |
+| bb_clinicalTrial1 | 3 | 3 |  |  |  | 0 of 1 | 0 of 1 | 2 of 3 | 0 of 1 | 0 of 1 | 2 of 3 |
+| bb_clinicalTrial2 | 4 | 4 |  |  |  | 2 of 3 | 2 of 3 | 2 of 3 | 3 of 4 | 3 of 4 | 3 of 4 |
+| bb_coinBias | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_conjugate_ex3 | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_conjugate_gaussians | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_fair_dt14 | 4 | 4 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 |
+| bb_fair_dt16 | 6 | 6 |  |  |  | 0 of 1 | 0 of 1 | 2 of 3 | 0 of 1 | 0 of 1 | 6 of 6 |
+| bb_fair_dt44 | 6 | 6 |  |  |  | 0 of 1 | 0 of 1 | 2 of 3 | 1 of 2 | 1 of 2 | 6 of 6 |
+| bb_fair_dt4 | 4 | 4 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 |
+| bb_genes5 | 5 | 5 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 4 of 5 |
+| bb_genes | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| bb_laplace | 2 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_linreg | 8 | 6 | 2 of 8 |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 4 of 5 |
+| bb_markov | 5 | 5 |  |  | 0 of 5 | 0 of 1 | 0 of 1 | 1 of 2 | 0 of 1 | 0 of 1 | 2 of 3 |
+| bb_multimodal | 1 | 0 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| bb_normal_mixture_mu1 | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_normal_mixture_mu2 | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_normal_mixture_theta | 1 | 1 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| bb_pedestrian | 3 | 3 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 2 of 3 |
+| bb_pi | 5 | 5 |  |  |  | 2 of 3 | 2 of 3 | 2 of 3 | 0 of 1 | 0 of 1 | 4 of 5 |
+| bb_population | 8 | 8 |  | 8 of 8 |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
+| bb_spacex_p | 2 | 2 |  |  |  | 1 of 2 | 0 of 1 | 0 of 1 | 1 of 2 | 1 of 2 | 0 of 1 |
+| bb_spacex | 4 | 3 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 |
+| bb_trueskill | 2 | 2 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
+| bb_tug_of_war | 7 | 7 |  |  |  | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 7 of 7 | 2 of 3 |
+| bb_weekend_p | 5 | 5 |  |  |  | 0 of 1 | 0 of 1 | 3 of 4 | 1 of 2 | 1 of 2 | 5 of 5 |
+| bb_weekend | 7 | 7 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 7 of 7 |
+| bb_wmi_path | 5 | 5 |  |  |  | 0 of 1 | 0 of 1 | 3 of 4 | 2 of 3 | 2 of 3 | 4 of 5 |
+| bb_wmi_star | 5 | 5 |  |  |  | 0 of 1 | 0 of 1 | 3 of 4 | 2 of 3 | 2 of 3 | 4 of 5 |
+| bb_zeroone_w1 | 7 | 7 |  |  |  | 1 of 2 | 1 of 2 | 2 of 3 | 1 of 2 | 1 of 2 | 6 of 7 |
+| bb_zeroone_w2 | 5 | 5 |  |  |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 4 of 5 |
 
 **Psi.** Psi ran 8 instances and answered 2 (6 fail). Over the 7
 instances given to both that either answers, a run that does not answer
@@ -2731,97 +2873,168 @@ hybrid takes 26482 s in all and tddlog 308 s; over the 22 both answer,
 4882 s against tddlog's 5.29. tddlog alone answers GPA_w19,
 addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p4 and 31 more.
 
-| instance | flips | gates | tddlog | Psi | Genfer | SPPL | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | ProbLog | ref | tddlog diff | Psi diff | Genfer diff | SPPL diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| GPA_w19 | 45061 | 368680 | 17.5 |  |  |  | oom | oom | oom | oom | oom | oom | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  |
-| addFun_max_w17 | 566 | 18099 | 38.8 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |
-| addFun_max_p4 | 168 | 1249 | 0.352 |  |  |  | >600 | >600 | >600 | >600 | >600 |  | tddlog | ref |  |  |  |  |  |  |  |  |
-| addFun_sum_w17 | 152 | 2800 | 0.433 |  |  |  | >600 | >600 | >600 | oom | oom | >600 | alea | 7.8e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |
-| altermu2_w11 | 20458 | 274380 | 12.3 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 4.7e-14 / 9.4e-14 |  |  |  |  |  |  |  |  |
-| altermu2_p4 | 2230 | 13800 | 1.01 |  |  |  | >600 | >600 | >600 | >600 | >600 |  | tddlog | ref |  |  |  |  |  |  |  |  |
-| clickGraph_w4 | 52 | 135 | 0.006 |  |  |  | 0.338 | 0.338 | 1.75 | 2.59 | 2.56 | 0.156 | alea | 2.2e-16 / 3.7e-16 |  |  |  | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 |
-| clickGraph_w6 | 104 | 345 | 0.013 |  |  |  | 1.36 | 1.75 | 11.6 | 5.11 | 5.12 | 0.49 | alea | 2.2e-16 / 4.1e-16 |  |  |  | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 |
-| clickGraph_w8 | 156 | 555 | 0.239 |  |  |  | 26.2 | 39.2 | 130 | 16.6 | 15.2 | 2.05 | alea | 8.9e-16 / 1.3e-15 |  |  |  | 4.4e-16 / 6.6e-16 | 4.4e-16 / 8.5e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 6.6e-16 |
-| clickGraph_w10 | 208 | 765 | 0.32 |  |  |  | >600 | >600 | >600 | 285 | 305 | 7.71 | Ganak | 5.2e-15 / 1.0e-14 |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |
-| clickGraph_w12 | 260 | 975 | 0.373 |  |  |  | - | - | - | >600 | >600 | 40.3 | Ganak | 8.3e-15 / 1.4e-14 |  |  |  |  |  |  |  |  |
-| clinicalTrial1_w4 | 807 | 3200 | 0.041 |  |  |  | >600 | >600 | 33 | err | err | 1.43 | alea | 5.8e-15 / 2.9e-14 |  |  |  |  |  | 5.9e-15 / 2.9e-14 |  |  |
-| clinicalTrial1_w6 | 1613 | 8000 | 0.245 |  |  |  | - | - | 330 | - | - | 6.23 | alea | 1.1e-14 / 6.4e-14 |  |  |  |  |  | 1.1e-14 / 6.4e-14 |  |  |
-| clinicalTrial1_w8 | 2419 | 12800 | 1.73 |  |  |  | - | - | >600 | - | - | 22.9 | alea | 4.2e-16 / 2.4e-15 |  |  |  |  |  |  |  |  |
-| clinicalTrial2_w6 | 89 | 412 | 0.009 |  |  |  | 3.91 | 4.91 | 7.62 | 5.14 | 5.11 | 0.385 | alea | 6.7e-16 / 1.3e-15 |  |  |  | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 |
-| clinicalTrial2_w8 | 133 | 658 | 0.008 |  |  |  | 108 | 141 | 38.6 | 21.4 | 20.1 | 1.46 | alea | 5.6e-16 / 1.1e-15 |  |  |  | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |
-| clinicalTrial2_w10 | 177 | 904 | 0.012 |  |  |  | >600 | oom | >600 | 448 | 469 | 6.42 | alea | 1.1e-15 / 2.2e-15 |  |  |  |  |  |  | 1.0e-15 / 2.0e-15 | 1.0e-15 / 2.0e-15 |
-| clinicalTrial2_w12 | 221 | 1150 | 0.022 |  |  |  | - | - | - | err | err | 32 | alea | 6.1e-15 / 1.2e-14 |  |  |  |  |  |  |  |  |
-| coinBias_w16 | 12422 | 152450 | 8.42 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | alea | 2.4e-15 / 5.3e-15 |  |  |  |  |  |  |  |  |
-| conjugate_ex3_w18 | 9147 | 239177 | 41.9 |  |  |  | >600 | >600 | >600 | >600 | >600 | err | alea | 5.6e-15 / 1.0e-14 |  |  |  |  |  |  |  |  |
-| conjugate_gaussians_w17 | 177 | 2788 | 0.425 |  |  |  | >600 | oom | err | >600 | >600 | >600 | alea | 4.0e-15 / 2.1e-14 |  |  |  |  |  |  |  |  |
-| fair_dt14_w12 | 1795 | 9432 | 5.12 |  |  |  | >600 | >600 | err | >600 | >600 |  | alea | 1.7e-17 / 5.6e-16 |  |  |  |  |  |  |  |  |
-| fair_dt16_w12 | 420 | 2143 | 0.125 |  |  |  | >600 | >600 | 36.1 | >600 | >600 |  | alea | 2.8e-17 / 2.8e-16 |  |  |  |  |  | 1.7e-16 / 8.7e-16 |  |  |
-| fair_dt16_w16 | 638 | 2884 | 0.213 |  |  |  | - | - | 108 | - | - |  | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  | 5.6e-17 / 2.9e-16 |  |  |
-| fair_dt16_w20 | 793 | 3420 | 0.358 |  |  |  | - | - | >600 | - | - |  | alea | 8.3e-17 / 5.6e-16 |  |  |  |  |  |  |  |  |
-| fair_dt4_w12 | 1871 | 9632 | 4.25 |  |  |  | >600 | >600 | err | >600 | >600 |  | alea | 2.8e-17 / 1.8e-16 |  |  |  |  |  |  |  |  |
-| fair_dt44_w12 | 478 | 2361 | 0.168 |  |  |  | >600 | >600 | 49.8 | 542 | 543 |  | alea | 5.6e-17 / 8.1e-16 |  |  |  |  |  | 5.6e-17 / 3.2e-16 | 5.6e-17 / 4.6e-16 | 5.6e-17 / 4.6e-16 |
-| fair_dt44_w16 | 696 | 3090 | 0.231 |  |  |  | - | - | 107 | >600 | >600 |  | alea | 3.5e-17 / 5.8e-16 |  |  |  |  |  | 5.6e-17 / 3.5e-16 |  |  |
-| fair_dt44_w20 | 851 | 3614 | 0.329 |  |  |  | - | - | >600 | - | - |  | alea | 1.1e-16 / 6.4e-16 |  |  |  |  |  |  |  |  |
-| genes_t5 | 67284 | 308661 | 12.4 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | tddlog | ref |  |  |  |  |  |  |  |  |
-| genes5_w17 | 24148 | 173021 | 6.52 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | alea | 5.5e-15 / 1.1e-14 |  |  |  |  |  |  |  |  |
-| laplace_w13 | 4125 | 110955 | 6.28 |  |  |  | >600 | >600 | >600 | >600 | >600 |  | alea | 4.6e-15 / 9.1e-15 |  |  |  |  |  |  |  |  |
-| linreg_w8 | 372 | 5404 | 0.131 | err |  |  | >600 | >600 | >600 | >600 | >600 |  | alea | 3.9e-15 / 2.8e-14 |  |  |  |  |  |  |  |  |
-| linreg_w9 | 564 | 6754 | 0.245 | err |  |  | - | - | - | - | - |  | alea | 4.4e-15 / 1.5e-14 |  |  |  |  |  |  |  |  |
-| linreg_w10 | 756 | 8204 | 6.82 | err |  |  | - | - | - | - | - |  | alea | 5.2e-15 / 2.3e-14 |  |  |  |  |  |  |  |  |
-| linreg_w11 | 948 | 9788 | 24.5 | err |  |  | - | - | - | - | - |  | alea | 6.3e-15 / 9.1e-15 |  |  |  |  |  |  |  |  |
-| linreg_w12 | 1140 | 11532 | 40 | err |  |  | - | - | - | - | - |  | alea | 5.3e-15 / 2.0e-14 |  |  |  |  |  |  |  |  |
-| linreg_w13 | 1332 | 13436 | 173 | err |  |  | - | - | - | - | - |  | alea | 8.0e-15 / 2.7e-14 |  |  |  |  |  |  |  |  |
-| linreg_w14 | 1524 | 15500 | oom | 0.186 |  |  | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |
-| linreg_w15 | 1716 | 17724 | - | 0.181 |  |  | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |
-| markov_n10 | 2050 | 7887 | 0.489 |  |  | wrong | >600 | >600 | 137 | >600 | >600 |  | alea | 1.7e-15 / 9.4e-15 |  |  | 6.7e-03 / 4.8e-02 |  |  | 1.7e-15 / 7.8e-15 |  |  |
-| markov_n100 | 20500 | 78897 | 3.24 |  |  | wrong | - | - | - | - | - |  | alea | 3.9e-15 / 2.7e-12 |  |  | 1.8e-03 / 2.4e-01 |  |  |  |  |  |
-| markov_n20 | 4100 | 15777 | 0.456 |  |  | wrong | - | - | >600 | - | - |  | alea | 1.2e-14 / 1.5e-14 |  |  | 6.9e-04 / 4.0e-02 |  |  |  |  |  |
-| markov_n200 | 41000 | 157797 | 10.1 |  |  | oom | - | - | - | - | - |  | alea | 1.3e-13 / 9.0e-12 |  |  |  |  |  |  |  |  |
-| markov_n50 | 10250 | 39447 | 1.33 |  |  | wrong | - | - | - | - | - |  | alea | 2.8e-14 / 2.8e-14 |  |  | 3.9e-04 / 2.0e-01 |  |  |  |  |  |
-| multimodal_w11 | 4617 | 116721 | oom |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea |  |  |  |  |  |  |  |  |  |
-| normal_mixture_mu1_w7 | 2583 | 25704 | 0.964 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 2.9e-15 / 2.5e-14 |  |  |  |  |  |  |  |  |
-| normal_mixture_mu2_w7 | 2583 | 45770 | 1.46 |  |  |  | >600 | >600 | err | >600 | >600 | >600 | alea | 1.3e-14 / 1.1e-13 |  |  |  |  |  |  |  |  |
-| normal_mixture_theta_w9 | 10537 | 118560 | 31.9 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | Ganak | 4.4e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |
-| pedestrian_s4 | 59 | 1393 | 0.229 |  |  |  | >600 | oom | >600 | >600 | >600 |  | alea | 6.7e-16 / 2.7e-14 |  |  |  |  |  |  |  |  |
-| pi_w8 | 12 | 3759 | 0.069 |  |  |  | 7 | 8.22 | 8.29 | >600 | >600 | 3.09 | alea | 1.1e-16 / 2.4e-16 |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  |
-| pi_w10 | 16 | 6141 | 0.143 |  |  |  | 302 | 344 | 55.4 | - | - | 27.1 | alea | 5.6e-17 / 1.2e-16 |  |  |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  |
-| pi_w12 | 20 | 9099 | 0.415 |  |  |  | >600 | >600 | err | - | - | >600 | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  |  |
-| population_s1 | 2540 | 8332 | 0.353 |  | 0.007 |  | >600 | >600 | err | oom | oom |  | alea | 1.1e-15 / 9.3e-14 |  | 1.4e-14 / 3.9e-11 |  |  |  |  |  |  |
-| population_s12 | 34957 | 115507 | 18.2 |  | 0.045 |  | - | - | - | - | - |  | tddlog | ref |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |
-| population_s16 | 46780 | 154582 | 33.7 |  | 0.072 |  | - | - | - | - | - |  | tddlog | ref |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |
-| population_s2 | 5587 | 18373 | 8.29 |  | 0.009 |  | - | - | - | - | - |  | tddlog | ref |  | 2.4e-14 / 1.1e-13 |  |  |  |  |  |  |
-| population_s3 | 8637 | 28421 | 9.33 |  | 0.011 |  | - | - | - | - | - |  | tddlog | ref |  | 8.0e-12 / 9.7e-11 |  |  |  |  |  |  |
-| population_s4 | 11311 | 37357 | 10.2 |  | 0.013 |  | - | - | - | - | - |  | tddlog | ref |  | 6.4e-12 / 9.2e-11 |  |  |  |  |  |  |
-| population_s6 | 17410 | 57448 | 12.6 |  | 0.02 |  | - | - | - | - | - |  | tddlog | ref |  | 1.2e-13 / 2.3e-13 |  |  |  |  |  |  |
-| population_s8 | 23134 | 76432 | 30.7 |  | 0.027 |  | - | - | - | - | - |  | tddlog | ref |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |
-| spacex_w13 | 279 | 2037 | 2.27 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 4.1e-15 / 6.1e-15 |  |  |  |  |  |  |  |  |
-| spacex_p16 | 293 | 1752 | 104 |  |  |  | >600 | - | - | >600 | >600 |  | alea | 6.2e-14 / 1.9e-13 |  |  |  |  |  |  |  |  |
-| spacex_p4 | 106 | 635 | 0.042 |  |  |  | 311 | >600 | >600 | 98 | 74.8 |  | alea | 2.2e-16 / 1.7e-14 |  |  |  | 4.1e-15 / 2.4e-14 |  |  | 3.3e-16 / 1.7e-14 | 3.3e-16 / 1.7e-14 |
-| trueskill_w8 | 312 | 3868 | 8.95 |  |  |  | >600 | >600 | err | >600 | >600 | >600 | alea | 2.2e-16 / 4.6e-16 |  |  |  |  |  |  |  |  |
-| tug_of_war_w16 | 392 | 2044 | 0.374 |  |  |  | >600 | >600 | 14.3 | 163 | 166 | >600 | alea | 1.1e-15 / 2.1e-15 |  |  |  |  |  | 1.1e-15 / 2.2e-15 | 2.1e-15 / 4.1e-15 | 2.1e-15 / 4.1e-15 |
-| tug_of_war_w18 | 456 | 2292 | 0.448 |  |  |  | - | - | 18.5 | 266 | 264 | - | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  | 7.2e-16 / 1.4e-15 | 7.8e-16 / 1.6e-15 | 7.8e-16 / 1.6e-15 |
-| tug_of_war_w20 | 520 | 2540 | 0.568 |  |  |  | - | - | 21.4 | 344 | 341 | - | alea | 8.3e-16 / 1.7e-15 |  |  |  |  |  | 6.7e-16 / 1.3e-15 | 6.1e-16 / 1.2e-15 | 6.1e-16 / 1.2e-15 |
-| tug_of_war_w22 | 550 | 2720 | 0.55 |  |  |  | - | - | 24.6 | 452 | 426 | - | Ganak | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 |
-| tug_of_war_w24 | 610 | 2960 | 0.692 |  |  |  | - | - | 24.6 | 350 | 290 | - | tddlog | ref |  |  |  |  |  | 1.1e-15 / 2.1e-15 | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 |
-| tug_of_war_w26 | 670 | 3200 | 0.723 |  |  |  | - | - | 24.7 | 351 | 343 | - | tddlog | ref |  |  |  |  |  | 7.8e-16 / 1.6e-15 | 4.9e-15 / 9.9e-15 | 4.9e-15 / 9.9e-15 |
-| tug_of_war_w28 | 722 | 3416 | 0.739 |  |  |  | - | - | 28.5 | 484 | 486 | - | tddlog | ref |  |  |  |  |  | 9.4e-16 / 1.9e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |
-| weekend_w18 | 49151 | 368566 | 15.2 |  |  |  | oom | oom | oom | oom | oom | oom | alea | 3.3e-16 / 8.9e-16 |  |  |  |  |  |  |  |  |
-| weekend_p16 | 639 | 2118 | 0.114 |  |  |  | - | - | 10.1 | >600 | >600 |  | alea | 4.4e-16 / 1.2e-15 |  |  |  |  |  | 2.2e-16 / 5.9e-16 |  |  |
-| weekend_p256 | 8191 | 33230 | 2.73 |  |  |  | - | - | >600 | - | - |  | alea | 1.4e-15 / 3.7e-15 |  |  |  |  |  |  |  |  |
-| weekend_p4 | 175 | 530 | 0.011 |  |  |  | >600 | >600 | 2.51 | 222 | 214 |  | alea | 1.7e-15 / 4.4e-15 |  |  |  |  |  | 1.2e-15 / 3.1e-15 | 1.8e-15 / 4.9e-15 | 1.8e-15 / 4.9e-15 |
-| weekend_p64 | 2303 | 8410 | 1.47 |  |  |  | - | - | 126 | - | - |  | alea | 5.6e-17 / 1.5e-16 |  |  |  |  |  | 5.6e-17 / 1.5e-16 |  |  |
-| wmi_path_n128 | 1024 | 11316 | 0.626 |  |  |  | - | - | >600 | - | - |  | alea | 5.6e-16 / 7.8e-16 |  |  |  |  |  |  |  |  |
-| wmi_path_n16 | 128 | 1348 | 0.074 |  |  |  | >600 | oom | 17.6 | 42.7 | 49.1 |  | alea | 2.2e-16 / 3.1e-16 |  |  |  |  |  | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 |
-| wmi_path_n32 | 256 | 2772 | 0.147 |  |  |  | - | - | 94.8 | 184 | 194 |  | alea | 3.3e-16 / 4.7e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| wmi_path_n64 | 512 | 5620 | 0.313 |  |  |  | - | - | 430 | >600 | >600 |  | alea | 7.8e-16 / 1.1e-15 |  |  |  |  |  | 8.9e-16 / 1.3e-15 |  |  |
-| wmi_star_n128 | 1032 | 11405 | 0.742 |  |  |  | - | - | err | - | - |  | alea | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  |  |
-| wmi_star_n16 | 136 | 1437 | 0.1 |  |  |  | >600 | oom | 10.5 | 58.8 | 55.1 |  | alea | 1.1e-16 / 2.1e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |
-| wmi_star_n32 | 264 | 2861 | 0.177 |  |  |  | - | - | 32.4 | 456 | 458 |  | alea | 3.3e-16 / 6.4e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 3.3e-14 / 6.3e-14 | 3.3e-14 / 6.3e-14 |
-| wmi_star_n64 | 520 | 5709 | 0.357 |  |  |  | - | - | 541 | >600 | >600 |  | alea | 1.1e-16 / 2.2e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
-| zeroone_w1_w10 | 32 | 2511 | 0.027 |  |  |  | 31.8 | 45.2 | 29.1 | 68.2 | 156 | 3.41 | alea | 7.8e-16 / 1.5e-15 |  |  |  | 8.9e-16 / 1.8e-15 | 7.8e-16 / 1.5e-15 | 8.9e-16 / 1.8e-15 | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 |
-| zeroone_w1_w12 | 36 | 4184 | 0.088 |  |  |  | >600 | >600 | 226 | >600 | >600 | 183 | alea | 7.8e-16 / 1.5e-15 |  |  |  |  |  | 6.7e-16 / 1.3e-15 |  |  |
-| zeroone_w1_w14 | 40 | 6254 | 0.131 |  |  |  | - | - | >600 | - | - | >600 | alea | 1.2e-15 / 2.4e-15 |  |  |  |  |  |  |  |  |
-| zeroone_w2_w13 | 38 | 5230 | 0.117 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | alea | 1.7e-15 / 3.2e-15 |  |  |  |  |  |  |  |  |
+**Roulette.** Roulette ran 130 instances and answered 97 (22 run out of
+memory, 11 time out). Its answers differ from the reference's by at most
+1.0e+00 relative (3.2e-15 absolute, pedestrian_s4) over 97 instances.
+Over the 125 instances given to both that either answers, a run that
+does not answer counted at the 600 s limit, Roulette takes 21362 s in
+all and tddlog 2385 s; over the 96 both answer, 4419 s against tddlog's
+1025. Roulette is faster on 30 (fair_dt16_w12 0.088 s against 0.22,
+weekend_p16 0.06 s against 0.23, fair_dt44_w20 0.17 s against 0.36 and
+fair_dt16_w16 0.15 s against 0.38, the largest differences). Only
+Roulette answers spacex_w17. tddlog alone answers addFun_max_p4,
+addFun_max_w21, addFun_sum_w23, altermu2_p4, altermu2_w13 and 23 more.
+
+| instance | flips | gates | tddlog | Psi | Genfer | SPPL | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Roulette | Roulette process | ProbLog | ref | tddlog diff | Psi diff | Genfer diff | SPPL diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Roulette diff |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| GPA_w19 | 45061 | 368680 | 17.5 |  |  |  | oom | oom | oom | oom | oom | 34.9 | 39 | oom | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  | 7.8e-16 / 1.3e-15 |
+| GPA_w21 | 61441 | 417832 | 17.9 |  |  |  | - | - | - | - | - | 28.8 | 33 | - | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  | 7.8e-16 / 1.3e-15 |
+| GPA_w23 | 77812 | 466966 | 20 |  |  |  | - | - | - | - | - | 33.9 | 38.2 | - | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| GPA_w25 | 94168 | 516070 | 19.7 |  |  |  | - | - | - | - | - | 31.5 | 36.4 | - | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| GPA_w27 | 110529 | 565184 | 21.5 |  |  |  | - | - | - | - | - | 40.2 | 45.5 | - | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  | 7.8e-16 / 1.3e-15 |
+| GPA_w29 | 126871 | 614260 | 23.5 |  |  |  | - | - | - | - | - | 42 | 47.9 | - | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| GPA_w31 | 143187 | 663285 | 25.6 |  |  |  | - | - | - | - | - | 39.2 | 45.8 | - | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| addFun_max_w17 | 566 | 18099 | 38.8 |  |  |  | >600 | >600 | >600 | >600 | >600 | 48.5 | 59.4 | >600 | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
+| addFun_max_w19 | 580 | 21035 | 44.5 |  |  |  | - | - | - | - | - | 220 | 238 | - | alea | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
+| addFun_max_w21 | 594 | 23603 | 37.1 |  |  |  | - | - | - | - | - | oom | oom | - | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  |  |  |  |
+| addFun_max_p4 | 168 | 1249 | 0.352 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom |  | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| addFun_sum_w17 | 152 | 2800 | 0.433 |  |  |  | >600 | >600 | >600 | oom | oom | 9.07 | 19.1 | >600 | alea | 7.8e-16 / 1.6e-15 |  |  |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |
+| addFun_sum_w19 | 168 | 3212 | 0.5 |  |  |  | - | - | - | - | - | 35 | 47.4 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |
+| addFun_sum_w21 | 184 | 3624 | 0.611 |  |  |  | - | - | - | - | - | 166 | 183 | - | alea | 6.7e-16 / 1.3e-15 |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
+| addFun_sum_w23 | 196 | 3820 | 0.708 |  |  |  | - | - | - | - | - | oom | oom | - | alea | 6.7e-16 / 1.3e-15 |  |  |  |  |  |  |  |  |  |
+| altermu2_w11 | 20458 | 274380 | 12.3 |  |  |  | >600 | >600 | >600 | >600 | >600 | 142 | 161 | >600 | alea | 4.7e-14 / 9.4e-14 |  |  |  |  |  |  |  |  | 4.7e-14 / 9.4e-14 |
+| altermu2_w13 | 40822 | 336280 | 19.6 |  |  |  | - | - | - | - | - | >600 | >600 | - | alea | 3.4e-14 / 6.8e-14 |  |  |  |  |  |  |  |  |  |
+| altermu2_p4 | 2230 | 13800 | 1.01 |  |  |  | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| clickGraph_w4 | 52 | 135 | 0.006 |  |  |  | 0.338 | 0.338 | 1.75 | 2.59 | 2.56 | 0.012 | 1.19 | 0.156 | alea | 2.2e-16 / 3.7e-16 |  |  |  | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 |
+| clickGraph_w6 | 104 | 345 | 0.013 |  |  |  | 1.36 | 1.75 | 11.6 | 5.11 | 5.12 | 0.725 | 3.14 | 0.49 | alea | 2.2e-16 / 4.1e-16 |  |  |  | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 1.6e-14 / 2.8e-14 |
+| clickGraph_w8 | 156 | 555 | 0.239 |  |  |  | 26.2 | 39.2 | 130 | 16.6 | 15.2 | 87.3 | 93.6 | 2.05 | alea | 8.9e-16 / 1.3e-15 |  |  |  | 4.4e-16 / 6.6e-16 | 4.4e-16 / 8.5e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 6.6e-16 | 1.1e-14 / 2.0e-14 |
+| clickGraph_w10 | 208 | 765 | 0.32 |  |  |  | >600 | >600 | >600 | 285 | 305 | oom | oom | 7.71 | Ganak | 5.2e-15 / 1.0e-14 |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |
+| clickGraph_w12 | 260 | 975 | 0.373 |  |  |  | - | - | - | >600 | >600 | - | - | 40.3 | Ganak | 8.3e-15 / 1.4e-14 |  |  |  |  |  |  |  |  |  |
+| clinicalTrial1_w4 | 807 | 3200 | 0.041 |  |  |  | >600 | >600 | 33 | err | err | 0.365 | 1 | 1.43 | alea | 5.8e-15 / 2.9e-14 |  |  |  |  |  | 5.9e-15 / 2.9e-14 |  |  | 5.8e-15 / 2.9e-14 |
+| clinicalTrial1_w6 | 1613 | 8000 | 0.245 |  |  |  | - | - | 330 | - | - | 11.3 | 12.5 | 6.23 | alea | 1.1e-14 / 6.4e-14 |  |  |  |  |  | 1.1e-14 / 6.4e-14 |  |  | 1.1e-14 / 6.4e-14 |
+| clinicalTrial1_w8 | 2419 | 12800 | 1.73 |  |  |  | - | - | >600 | - | - | oom | oom | 22.9 | alea | 4.2e-16 / 2.4e-15 |  |  |  |  |  |  |  |  |  |
+| clinicalTrial2_w6 | 89 | 412 | 0.009 |  |  |  | 3.91 | 4.91 | 7.62 | 5.14 | 5.11 | 0.174 | 2.63 | 0.385 | alea | 6.7e-16 / 1.3e-15 |  |  |  | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 |
+| clinicalTrial2_w8 | 133 | 658 | 0.008 |  |  |  | 108 | 141 | 38.6 | 21.4 | 20.1 | 4.37 | 8.16 | 1.46 | alea | 5.6e-16 / 1.1e-15 |  |  |  | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 4.6e-14 / 3.8e-13 |
+| clinicalTrial2_w10 | 177 | 904 | 0.012 |  |  |  | >600 | oom | >600 | 448 | 469 | 157 | 167 | 6.42 | alea | 1.1e-15 / 2.2e-15 |  |  |  |  |  |  | 1.0e-15 / 2.0e-15 | 1.0e-15 / 2.0e-15 | 1.1e-13 / 7.8e-13 |
+| clinicalTrial2_w12 | 221 | 1150 | 0.022 |  |  |  | - | - | - | err | err | oom | oom | 32 | alea | 6.1e-15 / 1.2e-14 |  |  |  |  |  |  |  |  |  |
+| coinBias_w16 | 12422 | 152450 | 8.42 |  |  |  | >600 | >600 | >600 | >600 | >600 | 421 | 466 | oom | alea | 2.4e-15 / 5.3e-15 |  |  |  |  |  |  |  |  | 8.5e-15 / 9.1e-15 |
+| coinBias_w18 | 20630 | 177156 | 13.7 |  |  |  | - | - | - | - | - | >600 | >600 | - | alea | 3.8e-15 / 6.1e-15 |  |  |  |  |  |  |  |  |  |
+| conjugate_ex3_w18 | 9147 | 239177 | 41.9 |  |  |  | >600 | >600 | >600 | >600 | >600 | 246 | 281 | err | alea | 5.6e-15 / 1.0e-14 |  |  |  |  |  |  |  |  | 5.6e-15 / 1.3e-14 |
+| conjugate_ex3_w20 | 9135 | 290908 | 140 |  |  |  | - | - | - | - | - | >600 | >600 | - | alea | 6.7e-15 / 1.3e-14 |  |  |  |  |  |  |  |  |  |
+| conjugate_gaussians_w17 | 177 | 2788 | 0.425 |  |  |  | >600 | oom | err | >600 | >600 | 87.2 | 107 | >600 | alea | 4.0e-15 / 2.1e-14 |  |  |  |  |  |  |  |  | 2.3e-10 / 7.9e-09 |
+| conjugate_gaussians_w19 | 201 | 3258 | 0.527 |  |  |  | - | - | - | - | - | >600 | >600 | - | alea | 2.4e-15 / 5.8e-15 |  |  |  |  |  |  |  |  |  |
+| fair_dt14_w12 | 1795 | 9432 | 5.12 |  |  |  | >600 | >600 | err | >600 | >600 | 0.606 | 1.69 |  | alea | 1.7e-17 / 5.6e-16 |  |  |  |  |  |  |  |  | 8.3e-17 / 1.3e-15 |
+| fair_dt14_w16 | 3034 | 13225 | 13.2 |  |  |  | - | - | - | - | - | 4.57 | 5.81 |  | alea | 5.2e-17 / 1.7e-15 |  |  |  |  |  |  |  |  | 1.0e-17 / 3.4e-16 |
+| fair_dt14_w20 | 4259 | 17021 | 34.5 |  |  |  | - | - | - | - | - | 105 | 109 |  | alea | 5.6e-17 / 1.0e-15 |  |  |  |  |  |  |  |  | 5.6e-17 / 8.6e-16 |
+| fair_dt14_w24 | 5272 | 20135 | 41.6 |  |  |  | - | - | - | - | - | oom | oom |  | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| fair_dt16_w12 | 420 | 2143 | 0.125 |  |  |  | >600 | >600 | 36.1 | >600 | >600 | 0.088 | 1.09 |  | alea | 2.8e-17 / 2.8e-16 |  |  |  |  |  | 1.7e-16 / 8.7e-16 |  |  | 8.3e-17 / 4.3e-16 |
+| fair_dt16_w16 | 638 | 2884 | 0.213 |  |  |  | - | - | 108 | - | - | 0.149 | 1.36 |  | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  | 5.6e-17 / 2.9e-16 |  |  | 5.6e-17 / 9.8e-16 |
+| fair_dt16_w20 | 793 | 3420 | 0.358 |  |  |  | - | - | >600 | - | - | 0.179 | 1.49 |  | alea | 8.3e-17 / 5.6e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 5.8e-16 |
+| fair_dt16_w24 | 780 | 3394 | 0.356 |  |  |  | - | - | - | - | - | 0.133 | 1.28 |  | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  |  |  |  | 8.3e-17 / 1.7e-15 |
+| fair_dt16_w28 | 754 | 3342 | 0.269 |  |  |  | - | - | - | - | - | 0.175 | 1.5 |  | alea | 2.8e-17 / 4.2e-16 |  |  |  |  |  |  |  |  | 1.4e-17 / 2.8e-16 |
+| fair_dt16_w32 | 741 | 3316 | 0.291 |  |  |  | - | - | - | - | - | 0.168 | 1.36 |  | alea | 2.8e-17 / 4.2e-16 |  |  |  |  |  |  |  |  | 2.8e-17 / 1.5e-16 |
+| fair_dt4_w12 | 1871 | 9632 | 4.25 |  |  |  | >600 | >600 | err | >600 | >600 | 0.717 | 2.04 |  | alea | 2.8e-17 / 1.8e-16 |  |  |  |  |  |  |  |  | 8.3e-17 / 5.5e-16 |
+| fair_dt4_w16 | 3064 | 13311 | 13.1 |  |  |  | - | - | - | - | - | 4.36 | 5.57 |  | alea | 2.8e-17 / 1.9e-16 |  |  |  |  |  |  |  |  | 5.6e-17 / 3.7e-16 |
+| fair_dt4_w20 | 4349 | 17315 | 30.9 |  |  |  | - | - | - | - | - | 87.8 | 91.2 |  | alea | 2.8e-17 / 2.5e-16 |  |  |  |  |  |  |  |  | 2.8e-17 / 8.6e-16 |
+| fair_dt4_w24 | 5360 | 20425 | 43.4 |  |  |  | - | - | - | - | - | oom | oom |  | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| fair_dt44_w12 | 478 | 2361 | 0.168 |  |  |  | >600 | >600 | 49.8 | 542 | 543 | 0.113 | 1.34 |  | alea | 5.6e-17 / 8.1e-16 |  |  |  |  |  | 5.6e-17 / 3.2e-16 | 5.6e-17 / 4.6e-16 | 5.6e-17 / 4.6e-16 | 7.6e-17 / 1.3e-15 |
+| fair_dt44_w16 | 696 | 3090 | 0.231 |  |  |  | - | - | 107 | >600 | >600 | 0.132 | 1.26 |  | alea | 3.5e-17 / 5.8e-16 |  |  |  |  |  | 5.6e-17 / 3.5e-16 |  |  | 5.6e-17 / 9.3e-16 |
+| fair_dt44_w20 | 851 | 3614 | 0.329 |  |  |  | - | - | >600 | - | - | 0.165 | 1.26 |  | alea | 1.1e-16 / 6.4e-16 |  |  |  |  |  |  |  |  | 1.4e-16 / 8.0e-16 |
+| fair_dt44_w24 | 838 | 3588 | 0.282 |  |  |  | - | - | - | - | - | 0.189 | 1.42 |  | alea | 8.3e-17 / 5.8e-16 |  |  |  |  |  |  |  |  | 5.6e-17 / 8.1e-16 |
+| fair_dt44_w28 | 812 | 3536 | 0.273 |  |  |  | - | - | - | - | - | 0.165 | 1.38 |  | alea | 8.3e-17 / 4.8e-16 |  |  |  |  |  |  |  |  | 5.6e-17 / 3.2e-16 |
+| fair_dt44_w32 | 799 | 3510 | 0.267 |  |  |  | - | - | - | - | - | 0.166 | 1.43 |  | alea | 5.6e-17 / 3.2e-16 |  |  |  |  |  |  |  |  | 8.3e-17 / 4.8e-16 |
+| genes_t5 | 67284 | 308661 | 12.4 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| genes5_w17 | 24148 | 173021 | 6.52 |  |  |  | >600 | >600 | >600 | >600 | >600 | 53.1 | 63.4 | oom | alea | 5.5e-15 / 1.1e-14 |  |  |  |  |  |  |  |  | 5.4e-15 / 1.1e-14 |
+| genes5_w19 | 31844 | 196665 | 7.61 |  |  |  | - | - | - | - | - | 86 | 104 | - | alea | 7.5e-15 / 1.5e-14 |  |  |  |  |  |  |  |  | 7.4e-15 / 1.5e-14 |
+| genes5_w21 | 39336 | 219821 | 8.43 |  |  |  | - | - | - | - | - | 144 | 165 | - | alea | 6.9e-15 / 1.4e-14 |  |  |  |  |  |  |  |  | 6.8e-15 / 1.4e-14 |
+| genes5_w23 | 46572 | 242497 | 9.31 |  |  |  | - | - | - | - | - | 313 | 338 | - | alea | 3.7e-15 / 7.3e-15 |  |  |  |  |  |  |  |  | 3.5e-15 / 7.0e-15 |
+| genes5_w25 | 53588 | 264781 | 10.1 |  |  |  | - | - | - | - | - | oom | oom | - | alea | 3.9e-15 / 8.3e-15 |  |  |  |  |  |  |  |  |  |
+| laplace_w13 | 4125 | 110955 | 6.28 |  |  |  | >600 | >600 | >600 | >600 | >600 | 239 | 261 |  | alea | 4.6e-15 / 9.1e-15 |  |  |  |  |  |  |  |  | 3.1e-07 / 1.3e-06 |
+| laplace_w15 | 8145 | 158877 | >600 |  |  |  | - | - | - | - | - | oom | oom |  | alea |  |  |  |  |  |  |  |  |  |  |
+| linreg_w8 | 372 | 5404 | 0.131 | err |  |  | >600 | >600 | >600 | >600 | >600 | 3.67 | 12.6 |  | alea | 3.9e-15 / 2.8e-14 |  |  |  |  |  |  |  |  | 4.1e-15 / 2.8e-14 |
+| linreg_w9 | 564 | 6754 | 0.245 | err |  |  | - | - | - | - | - | 13.5 | 23.4 |  | alea | 4.4e-15 / 1.5e-14 |  |  |  |  |  |  |  |  | 4.2e-15 / 1.5e-14 |
+| linreg_w10 | 756 | 8204 | 6.82 | err |  |  | - | - | - | - | - | 60 | 72.7 |  | alea | 5.2e-15 / 2.3e-14 |  |  |  |  |  |  |  |  | 6.1e-15 / 2.3e-14 |
+| linreg_w11 | 948 | 9788 | 24.5 | err |  |  | - | - | - | - | - | 272 | 292 |  | alea | 6.3e-15 / 9.1e-15 |  |  |  |  |  |  |  |  | 6.8e-15 / 9.3e-15 |
+| linreg_w12 | 1140 | 11532 | 40 | err |  |  | - | - | - | - | - | oom | oom |  | alea | 5.3e-15 / 2.0e-14 |  |  |  |  |  |  |  |  |  |
+| linreg_w13 | 1332 | 13436 | 173 | err |  |  | - | - | - | - | - | - | - |  | alea | 8.0e-15 / 2.7e-14 |  |  |  |  |  |  |  |  |  |
+| linreg_w14 | 1524 | 15500 | oom | 0.186 |  |  | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |
+| linreg_w15 | 1716 | 17724 | - | 0.181 |  |  | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |
+| markov_n10 | 2050 | 7887 | 0.489 |  |  | wrong | >600 | >600 | 137 | >600 | >600 | 0.283 | 1.13 |  | alea | 1.7e-15 / 9.4e-15 |  |  | 6.7e-03 / 4.8e-02 |  |  | 1.7e-15 / 7.8e-15 |  |  | 1.4e-15 / 7.6e-15 |
+| markov_n100 | 20500 | 78897 | 3.24 |  |  | wrong | - | - | - | - | - | - | - |  | alea | 3.9e-15 / 2.7e-12 |  |  | 1.8e-03 / 2.4e-01 |  |  |  |  |  |  |
+| markov_n20 | 4100 | 15777 | 0.456 |  |  | wrong | - | - | >600 | - | - | 1.82 | 2.96 |  | alea | 1.2e-14 / 1.5e-14 |  |  | 6.9e-04 / 4.0e-02 |  |  |  |  |  | 1.2e-14 / 2.2e-14 |
+| markov_n200 | 41000 | 157797 | 10.1 |  |  | oom | - | - | - | - | - | - | - |  | alea | 1.3e-13 / 9.0e-12 |  |  |  |  |  |  |  |  |  |
+| markov_n50 | 10250 | 39447 | 1.33 |  |  | wrong | - | - | - | - | - | >600 | >600 |  | alea | 2.8e-14 / 2.8e-14 |  |  | 3.9e-04 / 2.0e-01 |  |  |  |  |  |  |
+| multimodal_w11 | 4617 | 116721 | oom |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | alea |  |  |  |  |  |  |  |  |  |  |
+| normal_mixture_mu1_w7 | 2583 | 25704 | 0.964 |  |  |  | >600 | >600 | >600 | >600 | >600 | 23.1 | 27.9 | >600 | alea | 2.9e-15 / 2.5e-14 |  |  |  |  |  |  |  |  | 2.9e-15 / 2.4e-14 |
+| normal_mixture_mu1_w9 | 5289 | 35812 | 139 |  |  |  | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| normal_mixture_mu2_w7 | 2583 | 45770 | 1.46 |  |  |  | >600 | >600 | err | >600 | >600 | 24.7 | 30.1 | >600 | alea | 1.3e-14 / 1.1e-13 |  |  |  |  |  |  |  |  | 1.2e-14 / 1.1e-13 |
+| normal_mixture_mu2_w9 | 7913 | 63750 | 173 |  |  |  | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  |  |  |  |
+| normal_mixture_theta_w9 | 10537 | 118560 | 31.9 |  |  |  | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | Ganak | 4.4e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |  |
+| pedestrian_s4 | 59 | 1393 | 0.229 |  |  |  | >600 | oom | >600 | >600 | >600 | 3.99 | 7.79 |  | alea | 6.7e-16 / 2.7e-14 |  |  |  |  |  |  |  |  | 3.2e-15 / 1.0e+00 |
+| pedestrian_s6 | 69 | 1968 | 0.691 |  |  |  | - | - | - | - | - | 296 | 300 |  | alea | 2.8e-16 / 4.0e-14 |  |  |  |  |  |  |  |  | 3.3e-15 / 4.2e-14 |
+| pedestrian_s8 | 79 | 2568 | 1.79 |  |  |  | - | - | - | - | - | >600 | >600 |  | alea | 6.7e-16 / 4.1e-14 |  |  |  |  |  |  |  |  |  |
+| pi_w8 | 12 | 3759 | 0.069 |  |  |  | 7 | 8.22 | 8.29 | >600 | >600 | 0.039 | 0.444 | 3.09 | alea | 1.1e-16 / 2.4e-16 |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | 1.1e-16 / 2.4e-16 |
+| pi_w10 | 16 | 6141 | 0.143 |  |  |  | 302 | 344 | 55.4 | - | - | 0.165 | 0.601 | 27.1 | alea | 5.6e-17 / 1.2e-16 |  |  |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  | 5.6e-17 / 1.2e-16 |
+| pi_w12 | 20 | 9099 | 0.415 |  |  |  | >600 | >600 | err | - | - | 1.01 | 1.47 | >600 | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 |
+| pi_w14 | 24 | 12633 | 1.46 |  |  |  | - | - | - | - | - | 12.3 | 13.3 | - | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 |
+| pi_w16 | 28 | 16743 | 6.12 |  |  |  | - | - | - | - | - | oom | oom | - | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  |  |  |
+| population_s1 | 2540 | 8332 | 0.353 |  | 0.007 |  | >600 | >600 | err | oom | oom | >600 | >600 |  | alea | 1.1e-15 / 9.3e-14 |  | 1.4e-14 / 3.9e-11 |  |  |  |  |  |  |  |
+| population_s12 | 34957 | 115507 | 18.2 |  | 0.045 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |
+| population_s16 | 46780 | 154582 | 33.7 |  | 0.072 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |
+| population_s2 | 5587 | 18373 | 8.29 |  | 0.009 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 2.4e-14 / 1.1e-13 |  |  |  |  |  |  |  |
+| population_s3 | 8637 | 28421 | 9.33 |  | 0.011 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 8.0e-12 / 9.7e-11 |  |  |  |  |  |  |  |
+| population_s4 | 11311 | 37357 | 10.2 |  | 0.013 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 6.4e-12 / 9.2e-11 |  |  |  |  |  |  |  |
+| population_s6 | 17410 | 57448 | 12.6 |  | 0.02 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 1.2e-13 / 2.3e-13 |  |  |  |  |  |  |  |
+| population_s8 | 23134 | 76432 | 30.7 |  | 0.027 |  | - | - | - | - | - | - | - |  | tddlog | ref |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |
+| spacex_w13 | 279 | 2037 | 2.27 |  |  |  | >600 | >600 | >600 | >600 | >600 | 2.14 | 9 | >600 | alea | 4.1e-15 / 6.1e-15 |  |  |  |  |  |  |  |  | 2.2e-16 / 2.0e-02 |
+| spacex_w15 | 357 | 2423 | 12.8 |  |  |  | - | - | - | - | - | 14.7 | 22.8 | - | alea | 5.4e-15 / 8.7e-15 |  |  |  |  |  |  |  |  | 2.2e-16 / 1.8e-02 |
+| spacex_w17 | 435 | 2809 | 55.7 |  |  |  | - | - | - | - | - | 143 | 156 | - | alea | 2.8e-14 / 7.0e-14 |  |  |  |  |  |  |  |  | 2.2e-16 / 6.3e-03 |
+| spacex_w19 | 513 | 3195 | oom |  |  |  | - | - | - | - | - | >600 | >600 | - | alea |  |  |  |  |  |  |  |  |  |  |
+| spacex_p16 | 293 | 1752 | 104 |  |  |  | >600 | - | - | >600 | >600 | - | - |  | alea | 6.2e-14 / 1.9e-13 |  |  |  |  |  |  |  |  |  |
+| spacex_p4 | 106 | 635 | 0.042 |  |  |  | 311 | >600 | >600 | 98 | 74.8 | >600 | >600 |  | alea | 2.2e-16 / 1.7e-14 |  |  |  | 4.1e-15 / 2.4e-14 |  |  | 3.3e-16 / 1.7e-14 | 3.3e-16 / 1.7e-14 |  |
+| trueskill_w8 | 312 | 3868 | 8.95 |  |  |  | >600 | >600 | err | >600 | >600 | 3.91 | 4.5 | >600 | alea | 2.2e-16 / 4.6e-16 |  |  |  |  |  |  |  |  | 7.8e-16 / 1.6e-15 |
+| trueskill_w10 | 376 | 5592 | 193 |  |  |  | - | - | - | - | - | oom | oom | - | alea | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |
+| tug_of_war_w16 | 392 | 2044 | 0.374 |  |  |  | >600 | >600 | 14.3 | 163 | 166 | 12.2 | 13.1 | >600 | alea | 1.1e-15 / 2.1e-15 |  |  |  |  |  | 1.1e-15 / 2.2e-15 | 2.1e-15 / 4.1e-15 | 2.1e-15 / 4.1e-15 | 1.9e-15 / 3.8e-15 |
+| tug_of_war_w18 | 456 | 2292 | 0.448 |  |  |  | - | - | 18.5 | 266 | 264 | 54.4 | 56.2 | - | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  | 7.2e-16 / 1.4e-15 | 7.8e-16 / 1.6e-15 | 7.8e-16 / 1.6e-15 | 3.4e-15 / 6.9e-15 |
+| tug_of_war_w20 | 520 | 2540 | 0.568 |  |  |  | - | - | 21.4 | 344 | 341 | oom | oom | - | alea | 8.3e-16 / 1.7e-15 |  |  |  |  |  | 6.7e-16 / 1.3e-15 | 6.1e-16 / 1.2e-15 | 6.1e-16 / 1.2e-15 |  |
+| tug_of_war_w22 | 550 | 2720 | 0.55 |  |  |  | - | - | 24.6 | 452 | 426 | - | - | - | Ganak | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 |  |
+| tug_of_war_w24 | 610 | 2960 | 0.692 |  |  |  | - | - | 24.6 | 350 | 290 | - | - | - | tddlog | ref |  |  |  |  |  | 1.1e-15 / 2.1e-15 | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 |  |
+| tug_of_war_w26 | 670 | 3200 | 0.723 |  |  |  | - | - | 24.7 | 351 | 343 | - | - | - | tddlog | ref |  |  |  |  |  | 7.8e-16 / 1.6e-15 | 4.9e-15 / 9.9e-15 | 4.9e-15 / 9.9e-15 |  |
+| tug_of_war_w28 | 722 | 3416 | 0.739 |  |  |  | - | - | 28.5 | 484 | 486 | - | - | - | tddlog | ref |  |  |  |  |  | 9.4e-16 / 1.9e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  |
+| weekend_w18 | 49151 | 368566 | 15.2 |  |  |  | oom | oom | oom | oom | oom | 35.7 | 39.9 | oom | alea | 3.3e-16 / 8.9e-16 |  |  |  |  |  |  |  |  | 3.4e-12 / 9.0e-12 |
+| weekend_w20 | 65535 | 417718 | 16.7 |  |  |  | - | - | - | - | - | 30.7 | 35 | - | alea | 2.8e-16 / 7.4e-16 |  |  |  |  |  |  |  |  | 2.6e-11 / 6.9e-11 |
+| weekend_w22 | 81919 | 466870 | 18.6 |  |  |  | - | - | - | - | - | 30.3 | 33.6 | - | alea | 5.6e-17 / 1.5e-16 |  |  |  |  |  |  |  |  | 6.2e-11 / 1.7e-10 |
+| weekend_w24 | 98303 | 516022 | 20.2 |  |  |  | - | - | - | - | - | 39.5 | 44.5 | - | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  | 1.0e-10 / 2.8e-10 |
+| weekend_w26 | 114687 | 565174 | 22 |  |  |  | - | - | - | - | - | 28.4 | 33 | - | alea | 9.4e-16 / 2.5e-15 |  |  |  |  |  |  |  |  | 5.7e-10 / 1.5e-09 |
+| weekend_w28 | 131071 | 614326 | 23.5 |  |  |  | - | - | - | - | - | 43.5 | 49.6 | - | alea | 6.1e-16 / 1.6e-15 |  |  |  |  |  |  |  |  | 8.8e-10 / 2.3e-09 |
+| weekend_w30 | 147455 | 663478 | 24.8 |  |  |  | - | - | - | - | - | 37.5 | 44.3 | - | alea | 1.6e-15 / 4.2e-15 |  |  |  |  |  |  |  |  | 4.3e-09 / 1.2e-08 |
+| weekend_p1024 | 28671 | 131010 | 3.72 |  |  |  | - | - | - | - | - | 5.64 | 7.08 |  | alea | 2.8e-16 / 7.4e-16 |  |  |  |  |  |  |  |  | 2.5e-12 / 6.7e-12 |
+| weekend_p16 | 639 | 2118 | 0.114 |  |  |  | - | - | 10.1 | >600 | >600 | 0.06 | 0.684 |  | alea | 4.4e-16 / 1.2e-15 |  |  |  |  |  | 2.2e-16 / 5.9e-16 |  |  | 6.3e-10 / 1.7e-09 |
+| weekend_p256 | 8191 | 33230 | 2.73 |  |  |  | - | - | >600 | - | - | 1.08 | 1.88 |  | alea | 1.4e-15 / 3.7e-15 |  |  |  |  |  |  |  |  | 1.2e-10 / 3.1e-10 |
+| weekend_p4 | 175 | 530 | 0.011 |  |  |  | >600 | >600 | 2.51 | 222 | 214 | 0.024 | 0.615 |  | alea | 1.7e-15 / 4.4e-15 |  |  |  |  |  | 1.2e-15 / 3.1e-15 | 1.8e-15 / 4.9e-15 | 1.8e-15 / 4.9e-15 | 1.7e-10 / 4.6e-10 |
+| weekend_p64 | 2303 | 8410 | 1.47 |  |  |  | - | - | 126 | - | - | 0.245 | 0.921 |  | alea | 5.6e-17 / 1.5e-16 |  |  |  |  |  | 5.6e-17 / 1.5e-16 |  |  | 7.8e-11 / 2.1e-10 |
+| wmi_path_n128 | 1024 | 11316 | 0.626 |  |  |  | - | - | >600 | - | - | 11.9 | 12.9 |  | alea | 5.6e-16 / 7.8e-16 |  |  |  |  |  |  |  |  | 1.0e-15 / 1.4e-15 |
+| wmi_path_n16 | 128 | 1348 | 0.074 |  |  |  | >600 | oom | 17.6 | 42.7 | 49.1 | 0.174 | 0.576 |  | alea | 2.2e-16 / 3.1e-16 |  |  |  |  |  | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 5.3e-15 / 7.5e-15 |
+| wmi_path_n256 | 2048 | 22708 | 1.3 |  |  |  | - | - | - | - | - | oom | oom |  | alea | 4.6e-15 / 6.4e-15 |  |  |  |  |  |  |  |  |  |
+| wmi_path_n32 | 256 | 2772 | 0.147 |  |  |  | - | - | 94.8 | 184 | 194 | 0.729 | 1.19 |  | alea | 3.3e-16 / 4.7e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 4.7e-12 / 6.6e-12 |
+| wmi_path_n64 | 512 | 5620 | 0.313 |  |  |  | - | - | 430 | >600 | >600 | 3.3 | 4.02 |  | alea | 7.8e-16 / 1.1e-15 |  |  |  |  |  | 8.9e-16 / 1.3e-15 |  |  | 8.9e-16 / 1.3e-15 |
+| wmi_star_n128 | 1032 | 11405 | 0.742 |  |  |  | - | - | err | - | - | 10.6 | 11.5 |  | alea | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  |  | 5.6e-16 / 1.1e-15 |
+| wmi_star_n16 | 136 | 1437 | 0.1 |  |  |  | >600 | oom | 10.5 | 58.8 | 55.1 | 0.186 | 0.599 |  | alea | 1.1e-16 / 2.1e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |
+| wmi_star_n256 | 2056 | 22797 | 1.6 |  |  |  | - | - | - | - | - | oom | oom |  | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |
+| wmi_star_n32 | 264 | 2861 | 0.177 |  |  |  | - | - | 32.4 | 456 | 458 | 0.675 | 1.13 |  | alea | 3.3e-16 / 6.4e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 3.3e-14 / 6.3e-14 | 3.3e-14 / 6.3e-14 | 5.6e-16 / 1.1e-15 |
+| wmi_star_n64 | 520 | 5709 | 0.357 |  |  |  | - | - | 541 | >600 | >600 | 2.48 | 3.02 |  | alea | 1.1e-16 / 2.2e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 1.4e-15 / 2.8e-15 |
+| zeroone_w1_w10 | 32 | 2511 | 0.027 |  |  |  | 31.8 | 45.2 | 29.1 | 68.2 | 156 | 0.252 | 3.58 | 3.41 | alea | 7.8e-16 / 1.5e-15 |  |  |  | 8.9e-16 / 1.8e-15 | 7.8e-16 / 1.5e-15 | 8.9e-16 / 1.8e-15 | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 | 1.2e-13 / 2.4e-13 |
+| zeroone_w1_w12 | 36 | 4184 | 0.088 |  |  |  | >600 | >600 | 226 | >600 | >600 | 0.433 | 3.75 | 183 | alea | 7.8e-16 / 1.5e-15 |  |  |  |  |  | 6.7e-16 / 1.3e-15 |  |  | 1.0e-13 / 2.1e-13 |
+| zeroone_w1_w14 | 40 | 6254 | 0.131 |  |  |  | - | - | >600 | - | - | 2.12 | 7.09 | >600 | alea | 1.2e-15 / 2.4e-15 |  |  |  |  |  |  |  |  | 1.9e-13 / 3.7e-13 |
+| zeroone_w1_w16 | 44 | 8780 | 0.321 |  |  |  | - | - | - | - | - | 9.3 | 15.6 | - | alea | 3.9e-15 / 7.7e-15 |  |  |  |  |  |  |  |  | 1.2e-13 / 2.3e-13 |
+| zeroone_w1_w18 | 48 | 11762 | 0.748 |  |  |  | - | - | - | - | - | 47.4 | 56.4 | - | alea | 1.6e-15 / 3.1e-15 |  |  |  |  |  |  |  |  | 1.5e-13 / 2.9e-13 |
+| zeroone_w1_w20 | 52 | 15200 | 1.28 |  |  |  | - | - | - | - | - | 199 | 213 | - | alea | 5.1e-15 / 1.0e-14 |  |  |  |  |  |  |  |  | 1.0e-13 / 2.0e-13 |
+| zeroone_w1_w22 | 56 | 19094 | 2.08 |  |  |  | - | - | - | - | - | oom | oom | - | alea | 6.2e-15 / 1.2e-14 |  |  |  |  |  |  |  |  |  |
+| zeroone_w2_w13 | 38 | 5230 | 0.117 |  |  |  | >600 | >600 | >600 | >600 | >600 | 1.42 | 7.2 | >600 | alea | 1.7e-15 / 3.2e-15 |  |  |  |  |  |  |  |  | 8.1e-14 / 2.7e-13 |
+| zeroone_w2_w15 | 42 | 7560 | 0.237 |  |  |  | - | - | - | - | - | 6.02 | 13.1 | - | alea | 1.0e-14 / 1.4e-14 |  |  |  |  |  |  |  |  | 2.7e-13 / 6.9e-13 |
+| zeroone_w2_w17 | 46 | 10346 | 0.473 |  |  |  | - | - | - | - | - | 27.8 | 37.2 | - | alea | 2.9e-14 / 5.5e-14 |  |  |  |  |  |  |  |  | 1.5e-13 / 3.0e-13 |
+| zeroone_w2_w19 | 50 | 13588 | 1.28 |  |  |  | - | - | - | - | - | 116 | 130 | - | alea | 1.1e-13 / 1.6e-13 |  |  |  |  |  |  |  |  | 1.3e-13 / 2.5e-13 |
+| zeroone_w2_w21 | 54 | 17286 | 1.56 |  |  |  | - | - | - | - | - | >600 | >600 | - | alea | 3.7e-15 / 7.3e-15 |  |  |  |  |  |  |  |  |  |
 
 Seconds per system, the median over the repetitions; a failure is `>600`
 (timeout), `oom`, `err` or `n/a`; each system's last columns are its

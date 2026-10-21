@@ -772,7 +772,11 @@ the log-space answers are the normal-space ones, at about the same cost
 (Promedus_31, Segmentation_11, Alchemy_11, Grids_14). Its c2d route
 answers wrongly: `log_e(Pr(e)) = -∞` on Promedus_31 and Segmentation_11,
 whose P(e) is 1.6e-2 and 2.0e-52, and a NullPointerException in the
-evaluator on Alchemy_11 and Grids_14 to Grids_18. The uai_pr table
+evaluator on Alchemy_11 and Grids_14 to Grids_18. On the PR sets it
+printed P(e) = 0 for three wcsp networks (myciel5g_3, myciel5g_4,
+queen5_5_4) that have no reference. An `Xlog` run whose compile reports
+`Method : c2dCompilation` is therefore a failed run: bench.py does not
+evaluate the circuit. The uai_pr table
 therefore runs Ace as `Xlog` (its default route, in log space) and
 `forceC2d` (in normal space). The uai table runs `auto` and `forceC2d`,
 as every other network suite does, since log space changes the times
@@ -1611,9 +1615,10 @@ without unbounded loops is such a chain:
   the chain has a step only where something random happens (and where an
   expression would grow beyond 64 operations, whose operands are then
   stored). A condition that the outcome decides sends each outcome to its
-  side; a condition on the state splits the command, a guard per case (a
-  network's conditional table is a command per row; at most 256 commands
-  a step).
+  side; before the choice, a condition on the state splits the command, a
+  guard per case (a network's conditional table is a command per row; at
+  most 256 commands a step), and after it such a condition starts the next
+  step, so that the rows of two tables do not multiply.
 - `observe e` sends the states where e is false to an absorbing fail
   state; the end is an absorbing state labelled "done" that keeps only
   the value. The answer to value v is P(F "done" & r=v) / P(F "done"): a
@@ -1646,14 +1651,20 @@ doubles, `exact`: in rationals, `dd`: the model as BDDs, doubles). The
 explicit engines solve unbounded reachability with Storm's topological
 solver, which on an acyclic chain computes each state's value once from
 its successors' (Storm's default for doubles, GMRES to 1e-6, would not
-be exact); `dd` iterates to a relative precision of 1e-15. PRISM with
-`-sparse` or `-hybrid` (`-exact` refuses bounded until), `-javamaxmem`
-(`--prism-heap`, 4g) and on the chains `-cuddmaxmem` (the same),
-`-epsilon 1e-15` and no cap on the iterations: on an acyclic chain they
-reach the exact values after as many as the chain is long, and stop. The
-answers are `result X` and `Result: X`; the time is the process's, the
-components' runs added (PRISM's JVM starts each), with the checkers' own
-building and checking in `inproc_seconds` (`storm_inference_seconds` on
+be exact); `dd` iterates to a relative precision of 1e-15, with Sylvan's
+tables given half of the process's address space where it is limited
+(its default of 4 GB filled on circuits). PRISM with `-sparse` or
+`-hybrid` (`-exact` refuses bounded until), `-javamaxmem` (`--prism-heap`,
+4g by default; the release runs give it a third of the lane's memory,
+as 4g ran out parsing the larger networks' chains) and on the chains
+`-cuddmaxmem` (the same), `-epsilon 1e-15` and no cap on the iterations:
+on an acyclic chain they reach the exact values after as many as the
+chain is long, and stop. In doubles, a long chain's probability of its
+observations can underflow to 0 (the long hidden Markov models and
+loops): that is the engine's failure, which Storm's `exact` does not
+have. The answers are `result X` and `Result: X`; the time is the
+process's, the components' runs added (PRISM's JVM starts each), with
+the checkers' own building and checking in `inproc_seconds` (`storm_inference_seconds` on
 the weather factory). The translation is not timed, as no system's is;
 its seconds over all the engines of an instance are bounded by the time
 limit, past which the instance is a timeout. Tests:

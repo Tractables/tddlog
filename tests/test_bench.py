@@ -1025,6 +1025,32 @@ class AceTests(unittest.TestCase):
             self.assertEqual(r['answers'], {'xray(yes)': 1.0, 'xray(no)': 0.0})
             self.assertEqual([p.name for p in Path(d).iterdir() if p.name.startswith('ace-')], [])
 
+    def test_a_c2d_circuit_is_not_evaluated_in_log_space(self):
+        with scratch_dir('ace-xlog-') as d:
+            ace = Path(d) / 'ace'
+            ace.mkdir()
+            for f in ['ace.jar', 'inflib.jar', 'jdom.jar', 'c2d_linux']:
+                (ace / f).touch()
+            selection = dict(suite='standard', only=['bn_asia_ev'], families=[], dir=d, cnf=False)
+            with redirect_stdout(io.StringIO()):
+                bench.gen(SimpleNamespace(**selection))
+            args = SimpleNamespace(**selection, strategies=[], kbs=[], pita='', aspmc='', scallop='', dice='',
+                                   exact=False, ace=str(ace), ace_variants=['Xlog'], ace_heap='1g', merlin='',
+                                   ganak='', pr=False, ace_java='java', out=str(Path(d) / 'results.jsonl'),
+                                   timeout=10, no_skip=True)
+            calls = []
+
+            def timed(cmd, timeout, cwd=None, env=None):
+                calls.append(cmd)
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': 'Method : c2dCompilation\n', 'stderr': ''}
+            with patch.object(bench, 'timed', side_effect=timed), redirect_stdout(io.StringIO()):
+                bench.run(args)
+            [r] = [bench.json.loads(l) for l in Path(args.out).read_text().splitlines()]
+            self.assertEqual((r['variant'], r['status'], r['ace_method']), ('Xlog', 'error', 'c2dCompilation'))
+            self.assertIn('log space', r['error'])
+            self.assertIn('-Xlog', calls[0])
+            self.assertEqual([c for c in calls if 'edu.ucla.belief.ace.AceEvaluate' in c], [])
+
     def test_the_copy_drops_a_plus_in_a_number_outside_quotes_and_comments(self):
         self.assertEqual(bench.hugin_for_ace(b'data = (+0.25e+00 .75); % 1e+5\nnode "x+1"'),
                          b'data = (0.25e00 .75); % 1e+5\nnode "x+1"')

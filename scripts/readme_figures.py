@@ -52,9 +52,10 @@ MIN_INSTANCES = 20  # the overview leaves out a system compared with tddlog on f
 PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
 
-# The kinds drawn, in the README's order, each with the systems its scatter
-# plot and the overview compare with tddlog.
-COMPARED = {
+# The kinds drawn, in the README's order, each with the systems its section
+# of the README discusses, which the overview shows. The scatter plots and
+# the totals compare tddlog with every system.
+OVERVIEW = {
     'programs': ['problog', 'pita', 'aspmc'],
     'networks': ['ace', 'merlin', 'agrum', 'pgmpy', 'libdai', 'tensorinference', 'problog', 'pita', 'aspmc'],
     'ppl': ['alea', 'dice', 'roulette', 'geni', 'nodice', 'psi', 'genfer', 'sppl', 'pluck', 'storm', 'prism',
@@ -312,7 +313,6 @@ def results(kind, rs, names, limits, out):
     c = style()
     systems = ordered(drawn(kind['systems']), rs)
     col = colours(systems)
-    compared = ['tddlog'] + [s for s in COMPARED[kind['key']] if s in systems]
     hi = max(limits[k] for k, _, _ in rs)
     n = len(rs)
     ncol = 2
@@ -326,14 +326,19 @@ def results(kind, rs, names, limits, out):
         return [x / WIDTH, (h - top - height) / h, w / WIDTH, height / h]
 
     solved = cactus(fig.add_axes(box(0.8, 0.4, 4.35, 3.45)), systems, kind['title'], rs, hi, c, col)
-    sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), compared, rs, names, hi, c, col)
+    sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), systems, rs, names, hi, c, col)
     panels = []
     for k, p in enumerate(kind['panels']):
         r, q = divmod(k, per_row)
         sub = panel_rows(rs, p)
+        # A cluster of more than three systems is named by its size; the
+        # legend's column of instances expressed says which systems.
+        members = drawn(p['members'])
+        title = (p['title'] if len(members) <= 3
+                 else f"The {len(sub)} {kind['noun']} {len(members)} systems express")
         part = cactus(fig.add_axes(box(0.55 + q * 3.05, main_h + r * pitch + 0.75, 2.55, 1.8)), drawn(p['systems']),
-                      p['title'], sub, max(limits[k_] for k_, _, _ in sub), c, col, small=True)
-        panels.append(dict(title=p['title'], instances=len(sub), answers=part))
+                      title, sub, max(limits[k_] for k_, _, _ in sub), c, col, small=True)
+        panels.append(dict(title=title, instances=len(sub), answers=part))
     entries = [(s, names[s], solved[s], kind['expresses'][s]) for s in systems]
     legend_table(fig, h, (WIDTH - ncol * LEGEND_BLOCK) / 2 + 0.2, legend_top, entries, n, kind['noun'], ncol, c, col)
     save(fig, out, f'results-{kind["key"]}')
@@ -449,7 +454,7 @@ def main():
     names, suites, kinds = load()
     limits = {k: s['limit'] for k, s in suites.items()}
     numbers = {}
-    for key in ['all'] + list(COMPARED):
+    for key in ['all'] + list(OVERVIEW):
         kind = kinds[key]
         rs = rows(suites, kind['suites'])
         assert len(rs) == kind['instances'], f'{key}: {len(rs)} instances, the data says {kind["instances"]}'
@@ -459,16 +464,17 @@ def main():
             numbers[key] = res
             continue
         res['answers'], res['panels'], res['scatter'] = results(kind, rs, names, limits, out)
-        compared = ['tddlog'] + [s for s in COMPARED[key] if s in kind['systems']]
+        compared = ['tddlog'] + [s for s in drawn(kind['systems']) if s != 'tddlog']
         res['against'] = {s: compare(rs, 'tddlog', s, limits) for s in compared[1:]}
         best = [(k, i, dict(v, best=best_other(v, compared))) for k, i, v in rs
                 if any(s in v for s in compared[1:])]
         res['against']['best'] = compare(best, 'tddlog', 'best', limits)
         numbers[key] = res
-    # The overview: the systems compared with tddlog on enough instances for a total to mean something.
+    # The overview: each section's systems compared with tddlog on enough instances for a total to mean
+    # something.
     entries = [(kinds[k]['title'], [(names[s], numbers[k]['against'][s]) for s in numbers[k]['against']
-                                    if s != 'best' and numbers[k]['against'][s]['instances'] >= MIN_INSTANCES])
-               for k in COMPARED]
+                                    if s in OVERVIEW[k] and numbers[k]['against'][s]['instances'] >= MIN_INSTANCES])
+               for k in OVERVIEW]
     numbers['overview'] = {t: {n: st for n, st in items} for t, items in entries}
     overview(entries, out)
     json.dump(numbers, sys.stdout, indent=1)
