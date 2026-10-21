@@ -86,7 +86,9 @@ An observed variable is followed by `observe`, and a Markov network's
 factor, a variable of one value, is a `flip` of its row's weight, observed
 true, as the ProbLog format observes `f(ok)`. The program defines the
 variables it returns or observes and their ancestors only, the part of
-the network the answers depend on.
+the network the answers depend on. For the PR task (bench.py --pr) the
+program of P(e) observes nothing and returns the conjunction of the
+observations, the factors' flips among them (`dice_programs`).
 """
 import argparse
 from decimal import Decimal
@@ -796,11 +798,15 @@ def to_problog(network, query='all', evidence=()):
     return '\n'.join(out) + '\n'
 
 
-def to_dice(network, query, evidence=()):
+def to_dice(network, query, evidence=(), pe=False):
+    """The Dice program of the network returning the variables `query` asks
+    (`queried_variables`), the observations `evidence` observed; with `pe`,
+    the program that observes nothing and returns the conjunction of the
+    observations instead, whose probability of true is P(e)."""
     order, variables, tables = network
     observed = dict(evidence)
-    queried = [v for v in queried_variables(order, variables, tables, query) if v not in observed]
-    if not queried:
+    queried = [] if pe else [v for v in queried_variables(order, variables, tables, query) if v not in observed]
+    if not queried and not pe:
         sys.exit(f'--query {query}: every queried variable is observed, nothing is left to query')
     names = {v: ident(v).upper() for v in order}
     out = []
@@ -828,6 +834,7 @@ def to_dice(network, query, evidence=()):
         if v not in relevant:
             relevant.add(v)
             stack += tables[v][0]
+    seen = None
     for v in topological(order, tables):   # a let must follow its parents
         if v not in relevant:
             continue
@@ -835,9 +842,16 @@ def to_dice(network, query, evidence=()):
         out.append(f'let {names[v]} = {table(v, parents, rows, ())} in')
         if v in observed:   # names in lower case, which no variable's is
             vals = variables[v]
-            seen = names[v] if len(vals) == 1 else \
+            holds = names[v] if len(vals) == 1 else \
                 f'{names[v]} == int({max(1, (len(vals) - 1).bit_length())}, {vals.index(observed[v])})'
-            out.append(f'let obs_{len(out)} = observe ({seen}) in')
+            if pe:   # the observations so far, conjoined as they come
+                out.append(f'let pe_{len(out)} = {seen + " && " if seen else ""}({holds}) in')
+                seen = f'pe_{len(out) - 1}'
+            else:
+                out.append(f'let obs_{len(out)} = observe ({holds}) in')
+    if pe:
+        out.append(seen or 'true')
+        return '\n'.join(out) + '\n'
     result = names[queried[-1]]
     for v in reversed(queried[:-1]):   # Dice's tuples are pairs
         result = f'({names[v]}, {result})'
@@ -867,10 +881,11 @@ def arguments():
     return ap
 
 
-def model(a):
+def model(a, pe=False):
     """The network, its offset (`offset_line`) and its observations, a
     Markov network's factors first, of the arguments `a`; the observations
-    without the factors' too, which the CNF holds as functions."""
+    without the factors' too, which the CNF holds as functions. `pe` asks for
+    the Dice program of P(e) (`dice_programs`), which `--query none` allows."""
     if a.evidence_from != 'leaves' and not a.evidence:
         sys.exit('--evidence-from chooses the evidence pool and needs --evidence')
     if a.seed is not None and not a.evidence:
@@ -879,7 +894,7 @@ def model(a):
         sys.exit('--evidence samples the observations and --evidence-file reads them: one of the two')
     if (a.inst or a.uai or a.cnf) and a.format == 'dice':
         sys.exit("--inst, --uai and --cnf write the ProbLog format's companions, not the Dice format's")
-    if a.query == 'none' and a.format == 'dice':
+    if a.query == 'none' and a.format == 'dice' and not pe:
         sys.exit('--query none asks nothing, and a Dice program returns the queried variables')
     uai = a.network.removesuffix('.gz').endswith('.uai')
     if a.query == 'none' and uai and (a.inst or a.uai):
@@ -916,14 +931,19 @@ def model(a):
     return network, offset, forced + evidence, evidence
 
 
-def dice_programs(argv):
+def dice_programs(argv, pe=False):
     """The Dice program of the network and observations of gen_bn.py's
     arguments `argv` for each variable its `--query` asks, one returned
     each, as (the variable's name in the ProbLog format, the program):
     Dice prints a tuple's joint distribution, the program of one
-    variable its marginal."""
+    variable its marginal. With `pe`, the one program ('pe', ...) whose
+    probability of true is P(e) (`to_dice`), of the network the ProbLog
+    format's program has, so that P(e) times 10 to the offset its first
+    line states is Z."""
     a = arguments().parse_args([*argv, '--format', 'dice'])
-    network, _, evidence, _ = model(a)
+    network, _, evidence, _ = model(a, pe)
+    if pe:
+        return [('pe', to_dice(network, a.query, evidence, pe=True))]
     order, variables, tables = network
     observed = {v for v, _ in evidence}
     return [(ident(v), to_dice(network, v, evidence))

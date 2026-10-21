@@ -36,7 +36,10 @@ returns its type's default value.
 The program's value is queried with Roulette's `query`, one component of a
 returned tuple at a time, as Alea.jl is asked them (dice2alea.py). The
 program prints `roulette K VALUE PROBABILITY` for every value of the K-th
-component (true and false, or 0 to 2^w - 1) and, before them, the time of
+component (true and false, or 0 to 2^w - 1); with `--joint` a value of N
+Booleans is one component, an int N whose most significant bit is the
+first Boolean (the joint distribution a circuit's `joint` program asks).
+Before them it prints the time of
 running the program and the queries as Racket's `time` prints it (`cpu
 time: ... real time: ... gc time: ...`), which leaves out Racket's start
 and loading. The program's statements are the module's own forms rather
@@ -51,7 +54,7 @@ loses that value once the evidence's probability falls below about 1e-16
 Supported: what dice2problog.py supports. Not supported: lists, /, %,
 nth_bit, sample, functions that call each other in a cycle.
 
-Usage: dice2roulette.py program.dice > program.rkt
+Usage: dice2roulette.py program.dice [--joint] > program.rkt
 """
 import os
 import re
@@ -315,7 +318,7 @@ class Translator:
             return self.components(t[1], f'(car {code})') + self.components(t[2], f'(cadr {code})')
         return [(code, t)]
 
-    def translate(self, text, source):
+    def translate(self, text, source, joint=False):
         parser = Parser(tokenize(text))
         funs, body = parser.program()
         names = [f[0] for f in funs]
@@ -332,6 +335,10 @@ class Translator:
         out = []
         value, t = self.value(body, {}, out, 'result')
         comps = self.components(t, value)
+        if joint:   # the Booleans as one int, least significant bit first
+            if any(ct != BOOL for _, ct in comps):
+                raise NotImplementedError("--joint asks a value of Booleans, and the value is " + show(t))
+            comps = [(f"(list {' '.join(c for c, _ in reversed(comps))})", ("int", len(comps)))]
         queries = ' '.join(f'(query {c} complement?)' for c, _ in comps)
         reports = []
         for k, (_, ct) in enumerate(comps, 1):
@@ -440,13 +447,15 @@ PRELUDE = '''\
 '''
 
 
-def translate(text, source='a Dice program'):
+def translate(text, source='a Dice program', joint=False):
     """The Roulette program for a Dice program; `source` names it in the
-    program's second line."""
-    return deep(lambda: Translator().translate(text, source))
+    program's second line. With `joint` the value, a tuple of Booleans, is
+    asked as one int whose bits they are, the most significant first."""
+    return deep(lambda: Translator().translate(text, source, joint))
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    argv = [a for a in sys.argv[1:] if a != '--joint']
+    if len(argv) != 1:
         sys.exit(__doc__)
-    sys.stdout.write(translate(open(sys.argv[1]).read(), os.path.basename(sys.argv[1])))
+    sys.stdout.write(translate(open(argv[0]).read(), os.path.basename(argv[0]), '--joint' in sys.argv[1:]))

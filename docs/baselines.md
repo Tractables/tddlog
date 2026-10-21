@@ -23,11 +23,11 @@ builds:
 | ProbLog 2.3.0 | yes (`ddnnf`, `sdd`, `fsdd`, `bdd`) | programs | `--problog`, `--kbs` |
 | PITA / cplint (SWI-Prolog 9.2.9) | yes | programs, through `problog2pita.py` | `--pita`, `--pita-packs` |
 | Scallop | no (top-k proofs) | ground programs, through `ground2scallop.py` | `--scallop`, `--scallop-k` |
-| Dice | yes | Dice programs and networks | `--dice` |
+| Dice | yes | Dice programs and networks; other programs through `ground2net.py` | `--dice` |
 | Alea.jl (Julia 1.11.9) | yes | Dice programs and networks, through `dice2alea.py` | `--alea` |
 | aspmc 1.1.1 | yes | programs, the evidence asked as queries | `--aspmc` |
-| Ace 3.0 | yes | networks | `--ace`, `--ace-variants`, `--ace-heap`, `--ace-java` |
-| Merlin 1.7.0 | yes (`bte`, `cte`) | UAI files | `--merlin` |
+| Ace 3.0 | yes | networks; other programs through `ground2net.py` (section 23) | `--ace`, `--ace-variants`, `--ace-heap`, `--ace-java` |
+| Merlin 1.7.0 | yes (`bte`, `cte`) | UAI files; other programs through `ground2net.py` | `--merlin` |
 | pyAgrum (aGrUM) | yes (junction tree, Shafer-Shenoy on Markov networks) | UAI files | `--agrum` |
 | pgmpy | yes (variable elimination) | UAI files | `--pgmpy` |
 | libDAI 0.3.2 | yes (junction tree, min-fill) | UAI files | `--libdai` |
@@ -37,7 +37,7 @@ builds:
 | PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the same as Storm | `--prism`, `--prism-variants`, `--prism-heap` |
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
 | sharpSAT-TD | yes, 53-bit MPFR floats | weighted CNFs | `--sharpsat-td`, `--sharpsat-td-decot` |
-| Roulette (Racket 8.16) | yes | its own programs (`--suite roulette`) | `--roulette`, `--roulette-variants` |
+| Roulette (Racket 8.16) | yes | its own programs (`--suite roulette`); Dice programs and circuits through `dice2roulette.py` | `--roulette`, `--roulette-variants` |
 | Geni (gennifer) | yes, f32 | its own `.gir` programs (`--suite geni`) and the other Dice programs, through `dice2geni.py` | `--geni`, `--geni-benchmarks` |
 | noDice | yes | Dice programs without `nflip`, the circuits' included | `--nodice` |
 | Psi (ef8a9e5) | yes, symbolic | Dice programs, the circuits' included, through `dice2psi.py`, and its linear regression | `--psi` |
@@ -311,8 +311,15 @@ would print the joint).
   observes and their ancestors; the others sum out. So every network of
   the standard, large, Ace and UAI suites, with its evidence, is a Dice
   program, and the systems that read Dice programs (Dice, Alea.jl,
-  Roulette, noDice, Psi, Genfer, SPPL and Geni) are given them; the UAI
-  PR task, which asks for Z and not a marginal, is not.
+  Roulette, noDice, Psi, Genfer, SPPL and Geni) are given them. For the
+  PR task (`bench.py run --pr`) the program of P(e) observes nothing and
+  returns the conjunction of the observations, the factors' flips among
+  them (`gen_bn.dice_programs` with `pe`): its probability of true is
+  P(e) of the network the ProbLog program has, and log10 Z is its
+  logarithm plus the offset the ProbLog program states on its first line,
+  as for tddlog. Where a system computes in floating point, an answer
+  that underflows (P(e) is as low as 1e-618 on the UAI PR set) is checked
+  against the reference like any other and fails.
 - Dice 1.0 prints an all-zero distribution whenever the evidence has
   probability below 1e-6: a program that observes a flip of probability
   9e-7 prints 0 for every value, one of 2e-6 the posterior (checked on
@@ -777,6 +784,13 @@ network. It reads a Markov network as a Bayesian one too: `P(e) =
 Infinity` on Grids_14, and no answer in 300 s on Grids_16 to Grids_18.
 bench.py does not use it.
 
+### BIF networks
+
+Ace 3.0's jar leaves out the classes of its BIF reader: on a `.bif` file
+it stops with `NoClassDefFoundError: BayesianNetworks/DiscreteFunction`.
+Roulette's nine networks are BIF files, and bench.py gives Ace each of
+them as a Hugin file written the same way (`write_hugin`).
+
 ---
 
 ## 8. Merlin
@@ -1117,6 +1131,13 @@ map to the instance's queries as Alea.jl's do. The program's statements
 are forms of the module, not a function's body: Racket CS interprets a
 large module's forms, where it took longer than 120 s to compile a
 function of the size of munin's or pathfinder's.
+An Alea.jl program (`--suite ppl` and `--suite bitblast`) reaches Roulette
+as the Dice programs of its circuit, one at a time, as Dice runs them: a
+`bool` program answers its atom, and a `joint` program's N Booleans are
+asked as one int (`dice2roulette.py --joint`, the first Boolean the most
+significant bit), the value U answering PRED(U). The seconds of the
+programs add up. A program that reaches no network or Dice program of its
+own goes through its ground program (section 23).
 tests/test_dice2roulette.py checks the translation, and with
 `ROULETTE_RACKET` set (the command that runs Racket, without `{file}`)
 Roulette's answers on small programs against an exact enumeration.
@@ -1641,3 +1662,61 @@ Dry run: weather factory (seven instances): Storm
 timeout at 17 factories and at 500 days), `exact` and `dd` take 7 to
 104 s, PRISM `sparse` 11 to 13 s (JVM start-up), PRISM `hybrid` times out
 everywhere at 120 s, and Storm `dd` runs out of BDD nodes at 17 factories.
+
+## 23. Programs as networks and Dice programs (`ground2net.py`)
+
+Every system tries every problem (rule 15), so the systems that read
+networks (Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl) are
+given every program that is not a network, and the systems that read
+Dice programs (Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL,
+Geni) every program that has no Dice program of its own and is not a
+circuit: the standard suite's graph, grid, smokers, UW-CSE, Cora and
+cplint families, the literature, Biomine and TPC-H suites. bench.py
+runs `tddlog --ground` on the program, as for Scallop (section 3), and
+`scripts/ground2net.py` writes the ground program as a Bayesian network
+of Boolean variables (UAI and its evidence file for Merlin and the UAI
+systems, Hugin and `.inst` for Ace) or as Dice programs (one program
+returning every query as a tuple for Alea.jl, Roulette, Psi, Genfer,
+SPPL and Geni; one program per query, listed in a `.dicemap`, for Dice
+and noDice, as for the circuits). Both steps are timed, and their
+seconds (`ground_s` in the record) are added to the system's. The
+answers are those of the ground program's queries, which are the ground
+atoms tddlog answers.
+
+The ground program's probabilities are on independent facts: `--ground`
+has turned annotated disjunctions and probabilistic rules into switch
+facts and plain rules. Each fact is a root; each derived atom is the
+disjunction of its rules' bodies and each body the conjunction of its
+literals, built as an and-inverter graph with constants folded and
+equal conjunctions shared. In a network, a conjunction of more than two
+signals is a chain of conjunctions of two, so that every table is
+deterministic over at most three variables; in Dice it is one `&&`.
+The weight `--ground` factors out of the facts it simplifies is a
+constant factor of every world and cancels in every marginal asked.
+
+Recursion. A recursive component (atoms that depend on each other) is
+unrolled into stages: stage 0 has the component's atoms false, stage s
+applies the rules once to stage s - 1, with the atoms outside the
+component at their final values. In every world each stage before the
+least fixpoint adds an atom, so the stage numbered by the component's
+size is the least model and the translation is exact; it stops earlier
+where a stage's formulas are the previous stage's. A component with
+negation inside it (negation through recursion) has a well-founded
+model rather than a least one; tddlog computes it (`src/tp/aft.rs`,
+the alternating fixpoint), and ground2net.py refuses such a component
+(exit status 3, recorded `unsupported`) rather than unroll the
+alternating fixpoint; the records name the instances it leaves out. It also
+refuses a network of more than two million conjunctions, which the
+unrolling of a large component (Biomine's paths) can reach; such an
+instance counts as unanswered.
+
+Under `--pr` there is no ground route: the PR task asks Z of a network,
+which a ground program does not state.
+
+Tests: `tests/test_ground2net.py` checks the network's marginals
+(bn_exact.py), the tuple program's and every per-query program's
+(test_dice2problog.py's enumeration) against the program's own, found
+by enumerating the worlds of its facts with the well-founded model of
+each, on an acyclic program with negation, constants and evidence and
+on a cycle that needs all of its stages; and bench.py's ground route on
+the files the script writes.

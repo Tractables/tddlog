@@ -271,6 +271,35 @@ class DiceFormatTests(unittest.TestCase):
             for got, want in zip(self.dice_marginal(programs[v], 2), probs):
                 self.assertAlmostEqual(float(got), float(Fraction(want)), places=12)
 
+    def test_the_program_of_p_e_returns_the_observations(self):
+        """With `pe`, one program that observes nothing and returns the
+        conjunction of the observations, its probability of true P(e):
+        markov.uai's given markov.uai.evid is 33/192, and with the offset
+        its ProbLog program states, log10 Z is log10 165 (markov_ev.pl);
+        asia's given half its leaves is what bn_exact.py finds for the
+        ProbLog format's program, the program tddlog is given."""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import test_dice2problog
+        regress = Path(__file__).resolve().parent / 'regress'
+        uai = str(regress / 'markov.uai')
+        [(name, text)] = gen_bn.dice_programs([uai, '--evid', uai + '.evid'], pe=True)
+        self.assertEqual(name, 'pe')
+        self.assertNotIn('observe', text)
+        p = test_dice2problog.exact(text).get(True, 0.0)
+        self.assertAlmostEqual(p, 33 / 192, places=12)
+        _, _, offset = gen_bn.parse(uai)
+        self.assertAlmostEqual(math.log10(p) + offset, math.log10(165), places=12)
+        if bn_exact is None:
+            self.skipTest('bn_exact.py is on the baselines branch')
+        net = str(Path(__file__).resolve().parents[1] / 'examples' / 'asia.net')
+        network = gen_bn.parse(net)
+        evidence = gen_bn.sampled_evidence(network, 'half', 1)
+        [(_, text)] = gen_bn.dice_programs([net, '--query', 'all', '--evidence', 'half'], pe=True)
+        rows, values, ev, _ = bn_exact.parse(gen_bn.to_problog(network, 'all', evidence))
+        states, tables = bn_exact.factors(rows, values)
+        _, _, log10_pe = bn_exact.marginals(states, tables, ev)
+        self.assertAlmostEqual(test_dice2problog.exact(text).get(True, 0.0), 10 ** log10_pe, places=12)
+
     def test_a_program_defines_the_ancestors_it_needs(self):
         root = Path(__file__).resolve().parents[1]
         network = gen_bn.parse(str(root / 'examples' / 'asia.net'))
@@ -422,6 +451,28 @@ class FormatTests(unittest.TestCase):
         for v, probs in {'x0': ['2/11', '9/11'], 'x1': ['5/33', '28/33']}.items():
             for u, p in enumerate(probs):
                 self.assertAlmostEqual(mass[v][u] / math.fsum(mass[v]), float(Fraction(p)), places=14)
+
+    def test_a_bif_network_written_as_hugin_reads_back_the_same(self):
+        """`write_hugin` of a BIF network, the file Ace reads for Roulette's
+        networks: the Hugin file's variables, values and tables are the BIF
+        file's."""
+        bif = """network unknown {}
+variable Smoker { type discrete [ 2 ] { True, False }; }
+variable Cancer { type discrete [ 3 ] { none, benign, malignant }; }
+probability ( Smoker ) { table 0.3, 0.7; }
+probability ( Cancer | Smoker ) {
+  (True) 0.5, 0.3, 0.2;
+  (False) 0.9, 0.08, 0.02;
+}
+"""
+        network = gen_bn.parse(self.scratch('cancer.bif', bif.encode()))
+        self.assertEqual(network[1]['Cancer'], ['none', 'benign', 'malignant'])
+        again = gen_bn.parse(self.scratch('cancer.net', gen_bn.write_hugin(network).encode()))
+        self.assertEqual(again[:2], network[:2])
+        for v in network[0]:
+            self.assertEqual(again[2][v][0], network[2][v][0])
+            for key, row in network[2][v][1].items():
+                self.assertEqual([float(p) for p in again[2][v][1][key]], [float(p) for p in row])
 
     def test_the_offset_line_turns_the_probability_of_the_evidence_into_log10_z(self):
         """For markov.uai, markov_pr.uai and random small Markov networks,

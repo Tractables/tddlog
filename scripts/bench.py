@@ -766,9 +766,14 @@ def program_offset(path):
     return offset
 
 
+# The systems that read Dice programs.
+DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', 'geni')
 # Under --pr the systems that print no P(e) are asked it as a query of a
-# program of their own (`pe_program`).
-PE_SYSTEMS = ('problog', 'pita', 'aspmc')
+# program of their own (`pe_program`), and the systems that read Dice
+# programs the probability that a network's program returns true where it
+# returns the conjunction of the observations (`dice_source`), with the
+# program's query `bench_pe` naming it.
+PE_SYSTEMS = ('problog', 'pita', 'aspmc', *DICE_SYSTEMS)
 PE_QUERY = 'bench_pe'
 
 
@@ -1009,7 +1014,7 @@ def timed(cmd, timeout, cwd=None, env=None):
         # including allocation failures, without unbounded trace records.
         if len(err) > 8192:
             err = err[:4096] + '\n... output truncated ...\n' + err[-4096:]
-        return {'status': 'error', 'seconds': dt, 'error': err}
+        return {'status': 'error', 'seconds': dt, 'error': err, 'returncode': p.returncode}
     return {'status': 'ok', 'seconds': dt, 'stdout': stdout, 'stderr': stderr}
 
 
@@ -1050,15 +1055,22 @@ def run_dice(args, name, path, tool='dice'):
     DICE_WRITERS writes beside its instance, the programs of an Alea.jl
     program's circuit (`run_dice_circuit`), and for a network one generated
     program per queried variable, with the observations (Dice returns one
-    value; a tuple of them would print the joint; `gen_bn.dice_programs`). The answers are keyed like the ProbLog program's
+    value; a tuple of them would print the joint; `gen_bn.dice_programs`),
+    and for another program one program per query of its ground program
+    (`ground_route`, run as a circuit's). The answers are keyed like the ProbLog program's
     queries: the row of value k is the k-th query of that variable."""
     family, gargs = instances(args)[name]
-    if gargs[0] == 'dice2problog.py':
+    if getattr(args, 'pr', False):   # P(e), of a network alone, asked as `path`'s one query
+        source = dice_source(args, name)
+        if source is None:
+            return {'status': 'error', 'seconds': 0, 'error': f"--pr: no program of P(e) for family {family}"}
+        programs = [(source, queries(path))]
+    elif gargs[0] == 'dice2problog.py':
         programs = [(gargs[1], queries(path))]
     elif gargs[0] in DICE_WRITERS:
         programs = [(os.path.join(args.dir, name + '.dice'), queries(path))]
     elif gargs[0] == 'alea_bench.jl':
-        return run_dice_circuit(args, name, tool)
+        return run_dice_circuit(args, name, os.path.join(args.dir, name + '.dicemap'), tool)
     elif gargs[0] == 'gen_bn.py':
         try:
             per_variable = gen_bn.dice_programs(gargs[1:])
@@ -1070,6 +1082,8 @@ def run_dice(args, name, path, tool='dice'):
             with open(dice_path, 'w') as f:
                 f.write(text)
             programs.append((dice_path, [q for q in queries(path) if q.split('(')[0] == v]))
+    elif ground_dice(args, name):
+        return run_dice_circuit(args, name, GROUNDED[(name, 'dicemap')]['stem'] + '.dicemap', tool)
     else:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for family {family}'}
     total, answers = 0.0, {}
@@ -1097,17 +1111,18 @@ def run_dice(args, name, path, tool='dice'):
     return {'status': 'ok', 'seconds': total, 'answers': answers}
 
 
-def run_dice_circuit(args, name, tool='dice'):
-    """Dice (or noDice, `tool`) on the programs alea_bench.jl writes for the circuit of an
-    Alea.jl program, NAME__dJ.dice, listed in NAME.dicemap: a line `FILE
+def run_dice_circuit(args, name, dicemap, tool='dice'):
+    """Dice (or noDice, `tool`) on the programs alea_bench.jl writes for the
+    circuit of an Alea.jl program, NAME__dJ.dice, or ground2net.py for the
+    queries of a ground program, listed in `dicemap` beside them: a line `FILE
     bool ATOM` answers ATOM with the probability of true, a line `FILE
     joint PRED N` answers PRED(U) for U in 0 .. 2^N - 1 with the row of the
     returned N Booleans (nested pairs, the most significant first) whose
     value is U. The seconds are the sum of the programs'."""
     total, answers = 0.0, {}
-    for line in open(os.path.join(args.dir, name + '.dicemap')):
+    for line in open(dicemap):
         file, kind, atom, *rest = line.split()
-        program = os.path.abspath(os.path.join(args.dir, file))
+        program = os.path.abspath(os.path.join(os.path.dirname(dicemap), file))
         cmd = getattr(args, tool).format(file=program, dir=os.path.dirname(program),
                                          base=os.path.basename(program)).split()
         r = timed(cmd, max(0.0, args.timeout - total))
@@ -1137,9 +1152,22 @@ def dice_source(args, name):
     instance of a generator of DICE_WRITERS (beside it) or a network (the
     network and its observations, a Markov network's factors among them,
     with its queried variables returned as a tuple, gen_bn.py --format
-    dice; not a program that asks nothing), as a path; None for other
-    families."""
+    dice; not a program that asks nothing), as a path; for another program
+    but a circuit the one ground2net.py writes of its ground program, which
+    returns its queries as a tuple (`ground_route`, run before the system);
+    None for a circuit and a network that asks nothing. Under --pr, the
+    program of a network's P(e), which returns the conjunction of its
+    observations (`gen_bn.dice_programs`), and None for another instance."""
     _, gargs = instances(args)[name]
+    if getattr(args, 'pr', False):
+        if gargs[0] != 'gen_bn.py':
+            return None
+        out = os.path.join(args.dir, f'{name}.pe.dice')
+        if out not in DICE_WRITTEN:
+            with open(out, 'w') as f:
+                f.write(gen_bn.dice_programs(gargs[1:], pe=True)[0][1])
+            DICE_WRITTEN.add(out)
+        return out
     if gargs[0] == 'dice2problog.py':
         return gargs[1]
     if gargs[0] in DICE_WRITERS:
@@ -1152,6 +1180,8 @@ def dice_source(args, name):
                                        capture_output=True, text=True, check=True).stdout)
             DICE_WRITTEN.add(out)
         return out
+    if ground_dice(args, name):
+        return os.path.join(ground_dir(args, name), f'{name}.dice.dice')
     return None
 
 
@@ -1340,17 +1370,15 @@ def roulette_command(args, prog, *words):
     return args.roulette.format(file=file, dir=os.path.dirname(prog), base=os.path.basename(prog)).split()
 
 
-def roulette_translate(args, name, rkt):
-    """The instance's Dice program (`dice_source`) translated by
-    dice2roulette.py into rkt and compiled by `raco make`, as the artifact's
-    programs are before they run: neither is timed, both are bounded by the
-    timeout. An error record where either fails, else None."""
-    source = dice_source(args, name)
-    if source is None:
-        return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for {name}'}
+def roulette_translate(args, source, rkt, joint=False):
+    """The Dice program `source` translated by dice2roulette.py (with
+    `--joint` where `joint`) into rkt and compiled by `raco make`, as the
+    artifact's programs are before they run: neither is timed, both are
+    bounded by the timeout. An error record where either fails, else
+    None."""
     try:
-        t = subprocess.run([sys.executable, os.path.join(HERE, 'dice2roulette.py'), source], capture_output=True,
-                           text=True, timeout=args.timeout)
+        t = subprocess.run([sys.executable, os.path.join(HERE, 'dice2roulette.py'), source]
+                           + (['--joint'] if joint else []), capture_output=True, text=True, timeout=args.timeout)
     except subprocess.TimeoutExpired:
         return {'status': 'error', 'seconds': 0, 'error': f'dice2roulette.py: no translation within {args.timeout:g} s'}
     if t.returncode != 0:
@@ -1363,6 +1391,22 @@ def roulette_translate(args, name, rkt):
     return None
 
 
+def roulette_masses(args, label, source, joint, budget, variant):
+    """Roulette on one of a circuit's Dice programs, as `run_translated`
+    asks it: the distributions of its value's components, and its seconds
+    and `inproc_seconds`."""
+    rkt = os.path.abspath(os.path.join(args.dir, label.removesuffix('.dice') + '.roulette.rkt'))
+    err = roulette_translate(args, source, rkt, joint)
+    if err:
+        return None, err
+    r = timed(roulette_command(args, rkt) + (['--no-complement'] if variant == 'nocomplement' else []), budget)
+    if r['status'] != 'ok':
+        return None, r
+    m = ROULETTE_TIME.search(r['stdout'])
+    return parse_alea(r['stdout'], 'roulette')[0], \
+        {'seconds': r['seconds'], 'stats': {'inproc_seconds': int(m.group(2)) / 1000} if m else {}}
+
+
 def run_roulette(args, name, path, variant):
     """Roulette (`--roulette`, a command template for Racket with Roulette
     installed, {file} the program) on an instance (`roulette_program`). The
@@ -1371,11 +1415,19 @@ def run_roulette(args, name, path, variant):
     building and querying the program (`(time ...)`), kept as
     `inproc_seconds`, without Racket's start and loading. Values that
     answer no query (network.rkt's #t, at a probability of 0 up to
-    rounding) are kept under `other`."""
+    rounding) are kept under `other`. An Alea.jl program's circuit is run
+    as its Dice programs, one at a time (`run_translated`)."""
     family, gargs = instances(args)[name]
+    if args.suite != 'roulette' and gargs[0] == 'alea_bench.jl':
+        return run_translated(args, name, path, 'roulette',
+                              lambda a, label, source, joint, budget:
+                              roulette_masses(a, label, source, joint, budget, variant))
     prog, rest = roulette_program(args, name, variant)
     if args.suite != 'roulette':
-        err = roulette_translate(args, name, prog)
+        source = dice_source(args, name)
+        if source is None:
+            return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for {name}'}
+        err = roulette_translate(args, source, prog)
         if err:
             return err
     r = timed(roulette_command(args, prog) + rest, args.timeout)
@@ -2234,18 +2286,24 @@ def hugin_for_ace(data):
     return re.sub(rb'("[^"]*")|(%[^\n]*)|\+(?=[0-9.])', lambda m: m.group(1) or m.group(2) or b'', data)
 
 
-def network_answers(rows, network, qs):
-    """The marginals of the query atoms `x(v)` of a gen_bn.py program, whose
-    names are the network's through `gen_bn.ident`, from a baseline's
-    marginals by variable."""
+def query_cells(network, qs):
+    """The variable and the value index whose marginal answers each query
+    atom `x(v)` of a gen_bn.py program, whose names are the network's
+    through `gen_bn.ident`."""
     order, variables, _ = network
     by_ident = {gen_bn.ident(v): v for v in order}
-    answers = {}
+    cells = {}
     for q in qs:
         m = re.fullmatch(r'(\w+)\((\w+)\)', q.replace(' ', ''))
         v = by_ident[m.group(1)]
-        answers[q.replace(' ', '')] = rows[v][[gen_bn.ident(u) for u in variables[v]].index(m.group(2))]
-    return answers
+        cells[q.replace(' ', '')] = (v, [gen_bn.ident(u) for u in variables[v]].index(m.group(2)))
+    return cells
+
+
+def network_answers(rows, cells):
+    """The answers to the queries from a baseline's marginals by variable,
+    through the queries' cells (`query_cells`, `ground_cells`)."""
+    return {q: rows[v][i] for q, (v, i) in cells.items()}
 
 
 def run_ace(args, name, path, variant):
@@ -2254,10 +2312,12 @@ def run_ace(args, name, path, variant):
     file is copied (or unzipped) into a scratch directory of the instance,
     since Ace writes the circuit and the marginals next to it, and the copy
     of a Hugin file is written as Ace's reader takes it (`hugin_for_ace`).
-    Ace reads a UAI file only as a Bayesian network, so a UAI network is
-    given to it as the network gen_bn.py makes of it, written as a Hugin
-    file (`gen_bn.write_hugin`): a Markov network's factors are variables
-    observed in the `.inst`, as they are in the program.
+    Ace reads a UAI file only as a Bayesian network, and a BIF file (Roulette's
+    networks) not at all (its reader's classes are not in the jar), so a UAI
+    or BIF network is given to it as the network gen_bn.py makes of it,
+    written as a Hugin file (`gen_bn.write_hugin`): a Markov network's
+    factors are variables observed in the `.inst`, as they are in the
+    program.
 
     Ace multiplies a table's rows as written, and gen_bn.py rescales a row
     that the file's rounding leaves off one (pathfinder's `0.3333333` three
@@ -2283,19 +2343,31 @@ def run_ace(args, name, path, variant):
     and `seconds` is their sum. The record also keeps the route Ace took
     (`ace_method`: tabularCompilation or c2dCompilation), the circuit's
     size, P(e), and Ace's own times, which leave out the JVM's start."""
-    source = instances(args)[name][1][1]
-    inst = os.path.abspath(os.path.join(args.dir, name + '.inst'))
-    if not os.path.exists(inst):
-        return {'status': 'error', 'seconds': 0.0, 'error': f'no {inst}: rerun bench.py gen'}
-    network = gen_bn.parse(source)
-    if source.endswith('.uai'):
-        network = network[0]   # a Markov network's factors are observed in the .inst
-    evidence = gen_bn.read_inst(inst, network)
-    with open(path) as program:
-        observed = len(re.findall(r'^evidence\(', program.read(), re.M))
-    if observed != len(evidence):
-        return {'status': 'error', 'seconds': 0.0,
-                'error': f'{inst} has {len(evidence)} observations and the program {observed}: rerun bench.py gen'}
+    if instances(args)[name][1][0] != 'gen_bn.py':
+        g = GROUNDED[(name, 'hugin')]
+        inst, cells = g['stem'] + '.inst', g['cells']
+        net, data = name + '.net', gen_bn.read_bytes(g['stem'] + '.net')
+        with open(inst) as f:
+            evidence = re.findall(r'^<inst ', f.read(), re.M)
+    else:
+        source = instances(args)[name][1][1]
+        inst = os.path.abspath(os.path.join(args.dir, name + '.inst'))
+        if not os.path.exists(inst):
+            return {'status': 'error', 'seconds': 0.0, 'error': f'no {inst}: rerun bench.py gen'}
+        network = gen_bn.parse(source)
+        if source.endswith('.uai'):
+            network = network[0]   # a Markov network's factors are observed in the .inst
+        evidence = gen_bn.read_inst(inst, network)
+        with open(path) as program:
+            observed = len(re.findall(r'^evidence\(', program.read(), re.M))
+        if observed != len(evidence):
+            return {'status': 'error', 'seconds': 0.0,
+                    'error': f'{inst} has {len(evidence)} observations and the program {observed}: rerun bench.py gen'}
+        cells = query_cells(network, queries(path))
+        net = os.path.basename(source).removesuffix('.gz')
+        data = gen_bn.read_bytes(source)
+        if net.endswith(('.uai', '.bif')):
+            net, data = os.path.splitext(net)[0] + '.net', gen_bn.write_hugin(network).encode()
     if evidence and 'sbk05' in variant.split('+'):
         # Checked on bn_alarm_ev: compiled with -e, the sbk05 circuit gives
         # P(e) = 0.01503 against 0.02740, and posteriors off by 0.02; without
@@ -2306,11 +2378,6 @@ def run_ace(args, name, path, variant):
     d = os.path.abspath(os.path.join(args.dir, f'ace-{name}-{variant}'))
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
-    net = os.path.basename(source).removesuffix('.gz')
-    with (gzip.open if source.endswith('.gz') else open)(source, 'rb') as f:
-        data = f.read()
-    if net.endswith('.uai'):
-        net, data = net.removesuffix('.uai') + '.net', gen_bn.write_hugin(network).encode()
     if net.endswith(('.net', '.hugin')):
         data = hugin_for_ace(data)
     with open(os.path.join(d, net), 'wb') as f:
@@ -2345,7 +2412,7 @@ def run_ace(args, name, path, variant):
             with open(os.path.join(d, net + '.marginals')) as f:
                 log10_pe, rows, head = parse_ace_marginals(f.read(), e.get('stdout', ''))
             stats.update(head, ace_log10_pe=log10_pe)
-            answers = 'inconsistent' if log10_pe == -math.inf else network_answers(rows, network, queries(path))
+            answers = 'inconsistent' if log10_pe == -math.inf else network_answers(rows, cells)
             # under --pr, log10 Z from the P(e) it prints, as tddlog's from its own
             pr = {'log10_z': log10_pe + program_offset(path)} if getattr(args, 'pr', False) else {}
         except (OSError, ValueError, KeyError, AttributeError) as x:
@@ -2398,19 +2465,26 @@ def parse_merlin_pr(text):
     return ln_z / math.log(10)
 
 
-def uai_inputs(args, name):
-    """The network of a gen_bn.py instance, the UAI file the baselines that
-    read UAI files run on and its evidence file: the file the program was
+def uai_inputs(args, name, path):
+    """The variables of an instance's network in order, the UAI file the
+    baselines that read UAI files run on, its evidence file, and the
+    queries' cells: for a gen_bn.py instance the file the program was
     generated from, or for another format the UAI copy and observations
-    `gen` writes beside the program. The network is None where the
+    `gen` writes beside the program; for another program the network of its
+    ground program (`ground_route`). The variables are None where the
     observations are missing."""
     gargs = instances(args)[name][1]
+    if gargs[0] != 'gen_bn.py':
+        g = GROUNDED[(name, 'uai')]
+        return g['order'], g['stem'] + '.uai', g['stem'] + '.uai.evid', g['cells']
     network = gen_bn.parse(gargs[1])
     if gargs[1].endswith('.uai'):
-        return network[0], os.path.abspath(gargs[1]), os.path.abspath(gargs[gargs.index('--evid') + 1])
+        network = network[0]
+        return network[0], os.path.abspath(gargs[1]), os.path.abspath(gargs[gargs.index('--evid') + 1]), \
+            query_cells(network, queries(path))
     model = os.path.abspath(os.path.join(args.dir, name + '.uai'))
     evid = model + '.evid'
-    return (network if os.path.exists(evid) else None), model, evid
+    return (network[0] if os.path.exists(evid) else None), model, evid, query_cells(network, queries(path))
 
 
 def run_merlin(args, name, path, variant='bte'):
@@ -2424,8 +2498,8 @@ def run_merlin(args, name, path, variant='bte'):
     (`parse_merlin_pr`), its natural logarithm to six decimals, so up to
     2.2e-7 off in log10."""
     task = {'bte': 'MAR', 'bte-pr': 'PR'}[variant]
-    network, model, evid = uai_inputs(args, name)
-    if network is None:
+    order, model, evid, cells = uai_inputs(args, name, path)
+    if order is None:
         return {'status': 'error', 'seconds': 0.0, 'error': f'no {evid}: rerun bench.py gen'}
     d = os.path.abspath(os.path.join(args.dir, f'merlin-{name}'))
     shutil.rmtree(d, ignore_errors=True)
@@ -2444,7 +2518,7 @@ def run_merlin(args, name, path, variant='bte'):
                 return {'status': 'ok', 'seconds': r['seconds'], 'log10_z': parse_merlin_pr(text), 'stats': stats}
             rows = parse_merlin_marginals(text)
             answers = 'inconsistent' if rows is None else \
-                network_answers(dict(zip(network[0], rows)), network, queries(path))
+                network_answers(dict(zip(order, rows)), cells)
         except (OSError, ValueError, IndexError, KeyError, AttributeError) as x:
             what = 'partition function' if task == 'PR' else 'marginals'
             return {'status': 'error', 'seconds': r['seconds'], 'error': f'Merlin {what}: {type(x).__name__} {x}',
@@ -2477,15 +2551,15 @@ def run_uai_system(args, name, path, system, variant):
     `log10_z`, the natural logarithm the driver writes over ln 10. The
     record keeps the seconds of the inference proper, without the start of
     the interpreter and the libraries."""
-    network, model, evid = uai_inputs(args, name)
-    if network is None:
+    order, model, evid, cells = uai_inputs(args, name, path)
+    if order is None:
         return {'status': 'error', 'seconds': 0.0, 'error': f'no {evid}: rerun bench.py gen'}
     task = 'PR' if variant.endswith('-pr') else 'MAR'
     variant = variant.removesuffix('-pr')
-    order = network[0]
-    index = {gen_bn.ident(v): i for i, v in enumerate(order)}
-    qs = queries(path) if task == 'MAR' else []
-    qvars = sorted({index[re.fullmatch(r'(\w+)\((\w+)\)', q.replace(' ', '')).group(1)] for q in qs})
+    index = {v: i for i, v in enumerate(order)}
+    if task != 'MAR':
+        cells = {}
+    qvars = sorted({index[v] for v, _ in cells.values()})
     d = os.path.abspath(os.path.join(args.dir, f'{system}-{name}'))
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
@@ -2505,12 +2579,109 @@ def run_uai_system(args, name, path, system, variant):
                 return {'status': 'ok', 'seconds': r['seconds'], 'log10_z': parse_merlin_pr(text), 'stats': stats}
             rows = parse_merlin_marginals(text)
             answers = 'inconsistent' if rows is None else \
-                network_answers({order[i]: row for i, row in zip(qvars, rows)}, network, qs)
+                network_answers({order[i]: row for i, row in zip(qvars, rows)}, cells)
         except (OSError, ValueError, IndexError, KeyError, AttributeError) as x:
             return {'status': 'error', 'seconds': r['seconds'], 'error': f'{system}: {type(x).__name__} {x}'}
         return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': stats}
     finally:
         shutil.rmtree(d, ignore_errors=True)
+
+
+# The systems that read networks or Dice programs are given a program that
+# is neither through its ground program (rule 15: every system tries every
+# problem): `tddlog --ground` prints it, and ground2net.py writes it as a
+# Bayesian network of Boolean variables (UAI for Merlin and the UAI
+# systems, Hugin for Ace) or as Dice programs. Both steps are timed and
+# their seconds added to the system's, as Scallop's grounding is.
+NETWORK_SYSTEMS = ('ace', 'merlin', *UAI_SYSTEMS)
+GROUNDED = {}   # (instance, format) -> the ground route's record, once a run
+
+
+def ground_dice(args, name):
+    """Whether the systems that read Dice programs are given instance `name`
+    through its ground program: it has no Dice program of its own
+    (`dice_source`) and is not a circuit, and the run does not ask log10 Z
+    (--pr), which a ground program does not state."""
+    gen = instances(args)[name][1][0]
+    return not getattr(args, 'pr', False) and gen not in ('dice2problog.py', 'gen_bn.py', 'alea_bench.jl',
+                                                           *DICE_WRITERS)
+
+
+def ground_format(args, name, system, variant):
+    """The format of the ground route `system` takes on instance `name`:
+    'hugin' (Ace) or 'uai' (Merlin, the UAI systems) on an instance that is
+    not a gen_bn.py network, 'dicemap' (Dice and noDice, a program a query)
+    or 'dice' (the other systems that read Dice programs, one program) where
+    `ground_dice`; None otherwise, and under --pr, where the systems are
+    asked log10 Z, which a ground program does not state."""
+    if getattr(args, 'pr', False) or variant.endswith('-pr'):
+        return None
+    if system in NETWORK_SYSTEMS and instances(args)[name][1][0] != 'gen_bn.py':
+        return 'hugin' if system == 'ace' else 'uai'
+    if system in DICE_SYSTEMS and ground_dice(args, name):
+        return 'dicemap' if system in ('dice', 'nodice') else 'dice'
+    return None
+
+
+def takes_networks(args, spec, names, opt):
+    """Fails fast where network system `opt` would run on none of `names`:
+    it answers every instance (a gen_bn.py network as it is, another
+    through its ground program), but under --pr only the networks."""
+    if not names or (args.pr and not any(spec[n][1][0] == 'gen_bn.py' for n in names)):
+        raise SystemExit(f'--{opt} answers log10 Z of the networks gen_bn.py writes under --pr, and none is selected'
+                         if names else f'--{opt}: no instance is selected')
+
+
+def ground_dir(args, name):
+    return os.path.abspath(os.path.join(args.dir, f'ground-{name}'))
+
+
+def ground_route(args, name, path, form):
+    """The ground route of instance `name` in format `form` (`ground_format`),
+    as a record: its status, its seconds (`tddlog --ground` and
+    ground2net.py together), and where it went well the ground program
+    (`ground`, whose queries the Dice systems' answers follow), the stem of
+    the files ground2net.py wrote (`stem`), the network's variables in
+    order (`order`) and the queries' cells (`cells`). A translation
+    ground2net.py refuses (a component with negation through recursion, a
+    network too large) is `unsupported`. Run once a run per instance and
+    format; the instance's directory is removed once its systems have run
+    (`drop_ground`)."""
+    key = (name, form)
+    if key in GROUNDED:
+        return GROUNDED[key]
+    d = ground_dir(args, name)
+    os.makedirs(d, exist_ok=True)
+    ground = os.path.join(d, name + '.ground.pl')
+    g = GROUNDED.get((name, 'ground'))
+    if g is None:
+        g = GROUNDED[(name, 'ground')] = timed([args.tddlog, '--ground', path], args.timeout)
+        if g['status'] == 'ok':
+            with open(ground, 'w') as f:
+                f.write(g.pop('stdout'))
+    if g['status'] != 'ok':
+        rec = {k: g[k] for k in ('status', 'seconds', 'error') if k in g}
+    else:
+        stem = os.path.join(d, f'{name}.{form}')
+        t = timed([sys.executable, os.path.join(HERE, 'ground2net.py'), ground, stem, '--format', form],
+                  max(1.0, args.timeout - g['seconds']))
+        rec = {'status': t['status'], 'seconds': g['seconds'] + t['seconds']}
+        if t['status'] == 'error':
+            rec.update(status='unsupported' if t.get('returncode') == REFUSED else 'error', error=t['error'])
+        elif t['status'] == 'ok':
+            with open(stem + '.json') as f:
+                net = json.load(f)
+            rec.update(ground=ground, stem=stem, order=net['order'],
+                       cells={q: (v, ['false', 'true'].index(u)) for q, (v, u) in net['queries'].items()})
+    GROUNDED[key] = rec
+    return rec
+
+
+def drop_ground(args, name):
+    """Forgets instance `name`'s ground routes and removes their files."""
+    for key in [k for k in list(GROUNDED) if k[0] == name]:
+        del GROUNDED[key]
+    shutil.rmtree(ground_dir(args, name), ignore_errors=True)
 
 
 class ProvSQLServer:
@@ -3029,10 +3200,9 @@ def run(args):
                              'and none is selected')
         systems += [('exact', v) for v in variants]
     if args.ace:
-        if not any(spec[n][1][0] == 'gen_bn.py' for n in names):
-            raise SystemExit('--ace answers the networks gen_bn.py writes, and none is selected')
+        takes_networks(args, spec, names, 'ace')
         networks = [n for n in names if spec[n][1][0] == 'gen_bn.py']
-        if not any(os.path.exists(os.path.join(args.dir, n + '.inst')) for n in networks):
+        if networks and not any(os.path.exists(os.path.join(args.dir, n + '.inst')) for n in networks):
             raise SystemExit(f'--ace reads the observations bench.py gen writes beside each network (NAME.inst), and '
                              f'{args.dir} has none' + (' (gen --pr writes none)' if args.pr else ''))
         missing = [f for f in ['ace.jar', 'inflib.jar', 'jdom.jar', 'c2d_linux'] if not os.path.exists(os.path.join(args.ace, f))]
@@ -3042,8 +3212,7 @@ def run(args):
             ace_flags(v)   # an unknown form fails before the first run
         systems += [('ace', v) for v in args.ace_variants]
     if args.merlin:
-        if not any(spec[n][1][0] == 'gen_bn.py' for n in names):
-            raise SystemExit('--merlin answers the networks gen_bn.py writes, and none is selected')
+        takes_networks(args, spec, names, 'merlin')
         if not os.access(args.merlin, os.X_OK):
             raise SystemExit(f'--merlin {args.merlin}: not an executable')
         systems.append(('merlin', 'bte'))
@@ -3051,8 +3220,7 @@ def run(args):
             systems.append(('merlin', 'bte-pr'))
     for system, (variants, _) in UAI_SYSTEMS.items():
         if getattr(args, system, ''):
-            if not any(spec[n][1][0] == 'gen_bn.py' for n in names):
-                raise SystemExit(f'--{system} answers the networks gen_bn.py writes, and none is selected')
+            takes_networks(args, spec, names, system)
             for variant in variants:
                 systems.append((system, variant))
                 if args.pr:
@@ -3150,7 +3318,8 @@ def run_job(args, spec, systems, out, lock, names):
         for system, variant in system_order(systems, name, getattr(args, 'rotate', None)):
             if system == 'exact' and EXACT.get(spec[name][1][0], ('',))[0] != variant:
                 continue
-            if system in ('ace', 'merlin', *UAI_SYSTEMS) and spec[name][1][0] != 'gen_bn.py':
+            form = ground_format(args, name, system, variant)
+            if system in NETWORK_SYSTEMS and spec[name][1][0] != 'gen_bn.py' and form is None:
                 continue
             if system == 'provsql' and spec[name][1][0] not in PROVSQL_WRITERS:
                 continue
@@ -3170,10 +3339,18 @@ def run_job(args, spec, systems, out, lock, names):
                     print(f"{name:10} {system}:{variant:10} skipped (timed out on a smaller instance)")
                 continue
             src = pe if pe and system in PE_SYSTEMS else path
-            if system == 'dice':
-                r = run_dice(args, name, path)
+            # the systems given the instance through its ground program
+            ground = ground_route(args, name, path, form) if form else None
+            rargs, rpath = args, src
+            if ground and ground['status'] == 'ok':
+                rargs = argparse.Namespace(**{**vars(args), 'timeout': max(1.0, args.timeout - ground['seconds'])})
+                rpath = ground['ground']
+            if ground and ground['status'] != 'ok':
+                r = dict(ground)
+            elif system == 'dice':
+                r = run_dice(rargs, name, rpath)
             elif system == 'alea':
-                r = run_alea(args, name, path)
+                r = run_alea(rargs, name, rpath)
             elif system == 'pita':
                 r = run_pita(args, name, src)
             elif system == 'aspmc':
@@ -3181,19 +3358,19 @@ def run_job(args, spec, systems, out, lock, names):
             elif system == 'scallop':
                 r = run_scallop(args, name, path, variant)
             elif system == 'ace':
-                r = run_ace(args, name, path, variant)
+                r = run_ace(rargs, name, rpath, variant)
             elif system == 'merlin':
-                r = run_merlin(args, name, path, variant)
+                r = run_merlin(rargs, name, rpath, variant)
             elif system in UAI_SYSTEMS:
-                r = run_uai_system(args, name, path, system, variant)
+                r = run_uai_system(rargs, name, rpath, system, variant)
             elif system == 'provsql':
                 r = run_provsql(args, name, path)
             elif system in MODEL_CHECKERS:
                 r = run_model_checker(args, name, path, system, variant)
             elif system == 'roulette':
-                r = run_roulette(args, name, path, variant)
+                r = run_roulette(rargs, name, rpath, variant)
             elif system in PROGRAM_SYSTEMS:
-                r = PROGRAM_SYSTEMS[system]['run'](args, name, path)
+                r = PROGRAM_SYSTEMS[system]['run'](rargs, name, rpath)
             elif system == 'ganak':
                 r = run_ganak(args, name, path)
             elif system == 'sharpsat-td':
@@ -3210,6 +3387,9 @@ def run_job(args, spec, systems, out, lock, names):
                 else:
                     cmd = [args.problog, '-k', variant, src]
                 r = timed(cmd, args.timeout)
+            if ground and ground['status'] == 'ok':   # the grounding and the translation are timed
+                r['seconds'] += ground['seconds']
+                r.setdefault('stats', {})['ground_s'] = round(ground['seconds'], 3)
             rec = {'instance': name, 'family': spec[name][0], 'system': system,
                    'variant': variant, 'status': r['status'], 'seconds': round(r['seconds'], 3)}
             if spec[name][1][0] == 'alea_bench.jl':
@@ -3276,6 +3456,7 @@ def run_job(args, spec, systems, out, lock, names):
         for rec in held:
             check_against_reference(rec, done)
             emit(rec)
+        drop_ground(args, name)
 
 
 def fmt(rec):

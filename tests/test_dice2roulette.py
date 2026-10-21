@@ -116,6 +116,25 @@ class Dice2RouletteTests(unittest.TestCase):
         self.assertEqual(bench.alea_answers(['result_1', 'c(0)', 'c(1)', 'c(2)'], comps),
                          {'result_1': 0.25, 'c(0)': 0.5, 'c(1)': 0.0, 'c(2)': 0.5})
 
+    JOINT = 'let x = flip 0.5 in let y = flip 0.25 in let o = observe (x || y) in (x, y)\n'
+
+    def test_joint_asks_the_booleans_as_one_int(self):
+        code = dice2roulette.translate(self.JOINT, 'test', joint=True)
+        self.assertTrue(balanced(code))
+        self.assertEqual(code.count('(report-int 1 (list-ref pmfs 0) 2)'), 1)
+        self.assertNotIn('report-bool', code.split('(define pmfs')[1])
+        with self.assertRaisesRegex(NotImplementedError, r'--joint asks a value of Booleans.*int\(2\)'):
+            dice2roulette.translate('let x = int(2, 1) in (x, true)\n', 'test', joint=True)
+
+    @unittest.skipUnless(RACKET, 'ROULETTE_RACKET is not set')
+    def test_joint_gives_the_joint_distribution(self):
+        # given x || y: (0, 1) 0.125, (1, 0) 0.375, (1, 1) 0.125 of 0.625
+        out = run(dice2roulette.translate(self.JOINT, 'test', joint=True))
+        comps = bench.parse_alea(out, 'roulette')[0]
+        self.assertEqual(len(comps), 1)
+        for u, p in enumerate([0.0, 0.2, 0.6, 0.2]):
+            self.assertAlmostEqual(comps[0][str(u)], p, delta=1e-12)
+
     @unittest.skipUnless(RACKET, 'ROULETTE_RACKET is not set')
     def test_roulette_gives_the_exact_answers(self):
         for name in SMALL:

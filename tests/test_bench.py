@@ -162,7 +162,7 @@ class PplTests(unittest.TestCase):
             def timed(cmd, timeout):
                 return {'status': 'ok', 'seconds': 1.5, 'stdout': outputs[Path(cmd[-1]).name], 'stderr': ''}
             with patch.object(bench, 'timed', side_effect=timed):
-                r = bench.run_dice_circuit(args, 'p')
+                r = bench.run_dice_circuit(args, 'p', os.path.join(d, 'p.dicemap'))
         self.assertEqual(r['status'], 'ok')
         self.assertEqual(r['seconds'], 3.0)
         self.assertEqual(r['answers'], {'q1': 0.25, 'q2(0)': 0.125, 'q2(1)': 0.375, 'q2(2)': 0.5, 'q2(3)': 0.0})
@@ -198,7 +198,7 @@ class PplTests(unittest.TestCase):
             result = {'status': 'ok', 'seconds': 0.1, 'stdout': 'Value\tProbability\t\n(true, false)\t1.\t\n',
                       'stderr': ''}
             with patch.object(bench, 'timed', return_value=result):
-                r = bench.run_dice_circuit(self.args(dir=d, dice='dice {file}'), 'p')
+                r = bench.run_dice_circuit(self.args(dir=d, dice='dice {file}'), 'p', os.path.join(d, 'p.dicemap'))
         self.assertEqual(r['status'], 'error')
 
     def test_a_translated_system_answers_a_circuit_as_dice_does(self):
@@ -217,6 +217,33 @@ class PplTests(unittest.TestCase):
         self.assertEqual(calls, [('a.dice', False), ('b.dice', True)])
         self.assertEqual(r, {'status': 'ok', 'seconds': 3.0, 'stats': {'inproc_seconds': 0.5},
                              'answers': {'q1': 0.25, 'q2(0)': 0.125, 'q2(1)': 0.375, 'q2(2)': 0.5, 'q2(3)': 0.0}})
+
+    def test_roulette_answers_a_circuit_through_its_dice_programs(self):
+        # The joint program's two Booleans are asked as one int, its first
+        # Boolean the most significant bit (dice2roulette.py --joint).
+        name = next(n for n, (_, gargs) in bench.instances(self.args()).items() if gargs[0] == 'alea_bench.jl')
+        outputs = {'a': 'cpu time: 5 real time: 250 gc time: 0\nroulette 1 true 0.25\nroulette 1 false 0.75\n',
+                   'b': 'cpu time: 5 real time: 500 gc time: 0\nroulette 1 0 0.125\nroulette 1 1 0.375\n'
+                        'roulette 1 2 0.5\nroulette 1 3 0.0\n'}
+        runs = []
+
+        def timed(cmd, timeout):
+            if 'raco' in cmd:
+                return {'status': 'ok', 'seconds': 9.0, 'stdout': '', 'stderr': ''}
+            runs.append(Path(cmd[-1]).read_text())
+            return {'status': 'ok', 'seconds': 1.5, 'stdout': outputs[Path(cmd[-1]).name[0]], 'stderr': ''}
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, f'{name}.dicemap').write_text('a.dice bool q1\nb.dice joint q2 2\n')
+            Path(d, 'a.dice').write_text('let x = flip 0.25 in x\n')
+            Path(d, 'b.dice').write_text('let x = flip 0.5 in let y = flip 0.25 in (x, y)\n')
+            args = self.args(dir=d, roulette='racket {file}')
+            with patch.object(bench, 'timed', side_effect=timed):
+                r = bench.run_roulette(args, name, None, 'rsdd')
+        self.assertEqual(r, {'status': 'ok', 'seconds': 3.0, 'stats': {'inproc_seconds': 0.75},
+                             'answers': {'q1': 0.25, 'q2(0)': 0.125, 'q2(1)': 0.375, 'q2(2)': 0.5, 'q2(3)': 0.0}})
+        self.assertIn('(report-bool 1 ', runs[0])
+        self.assertRegex(runs[1], r'\(query \(list \(cadr (\S+)\) \(car \1\)\) complement\?\)')
+        self.assertIn('(report-int 1 (list-ref pmfs 0) 2)', runs[1])
 
     def test_a_program_the_language_cannot_express_is_unsupported(self):
         refused = SimpleNamespace(returncode=bench.REFUSED, stdout='', stderr='cannot express the program: recursion')
@@ -881,8 +908,8 @@ class AceTests(unittest.TestCase):
         rows, values, evidence, qs = bn_exact.parse(program)
         states, tables = bn_exact.factors(rows, values)
         exact, _, _ = bn_exact.marginals(states, tables, evidence)
-        answers = bench.network_answers(bench.parse_ace_marginals(ASIA_MARGINALS)[1], network,
-                                    [f'{x}({v})' for x, v in qs])
+        answers = bench.network_answers(bench.parse_ace_marginals(ASIA_MARGINALS)[1],
+                                        bench.query_cells(network, [f'{x}({v})' for x, v in qs]))
         self.assertEqual(len(answers), 12)
         for (x, v) in qs:
             self.assertAlmostEqual(answers[f'{x}({v})'], float(exact[x][states[x].index(v)]), places=12)
@@ -970,7 +997,8 @@ class AceTests(unittest.TestCase):
                 bench.gen(SimpleNamespace(**selection))
             self.assertIn('<inst id="dysp" value="no"/>', (Path(d) / 'bn_asia_ev.inst').read_text())
             self.assertFalse((Path(d) / 'grid6.inst').exists())
-            args = SimpleNamespace(**selection, strategies=[], kbs=[], pita='', aspmc='', scallop='', dice='',
+            # grid6 would reach Ace through its ground program (test_ground2net.py)
+            args = SimpleNamespace(**{**selection, 'only': ['bn_asia_ev']}, strategies=[], kbs=[], pita='', aspmc='', scallop='', dice='',
                                    exact=False, ace=str(ace), ace_variants=['auto', 'forceC2d', 'forceC2d+sbk05'],
                                    ace_heap='1g', merlin='', ganak='', pr=False,
                                    ace_java='java', out=str(Path(d) / 'results.jsonl'), timeout=10, no_skip=True)
@@ -1344,12 +1372,16 @@ class MerlinTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, '--ganak counts the weighted CNFs of the uai'):
             bench.run(args)
 
-    def test_merlin_without_a_network_is_refused(self):
-        args = SimpleNamespace(suite='standard', only=['grid6'], families=[], strategies=[], kbs=[], pita='',
-                               aspmc='', scallop='', dice='', exact=False, ace='', merlin='merlin', ganak='', pr=False, out='/dev/null',
-                               dir='bench')
-        with self.assertRaisesRegex(SystemExit, '--merlin answers the networks gen_bn.py writes'):
-            bench.run(args)
+    def test_a_network_system_takes_a_program_but_not_under_pr(self):
+        # a program that is not a network reaches Merlin through its ground
+        # program (`ground_format`), which states no log10 Z
+        spec = {'grid6': ('grid', ['gen_grid.py', '6']), 'bn_asia': ('bn', ['gen_bn.py', 'asia.net'])}
+        bench.takes_networks(SimpleNamespace(pr=False), spec, ['grid6'], 'merlin')
+        bench.takes_networks(SimpleNamespace(pr=True), spec, ['bn_asia', 'grid6'], 'merlin')
+        with self.assertRaisesRegex(SystemExit, '--merlin answers log10 Z of the networks gen_bn.py writes under --pr'):
+            bench.takes_networks(SimpleNamespace(pr=True), spec, ['grid6'], 'merlin')
+        with self.assertRaisesRegex(SystemExit, 'no instance is selected'):
+            bench.takes_networks(SimpleNamespace(pr=False), spec, [], 'merlin')
 
 
 class ReferenceCheckTests(unittest.TestCase):
@@ -1505,6 +1537,7 @@ class ProcessTests(unittest.TestCase):
                               'import sys; print("failed", file=sys.stderr); sys.exit(2)'], 5)
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['error'], 'failed')
+        self.assertEqual(result['returncode'], 2)
 
     def test_error_keeps_the_cause_before_a_backtrace_hint(self):
         message = 'memory allocation failed\nnote: run with RUST_BACKTRACE=1'
