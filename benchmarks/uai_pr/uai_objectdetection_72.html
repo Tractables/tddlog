@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">4.6</td><td class="num">38.4</td><td class="num">65.5</td><td class="num">13.9</td><td class="num">141</td><td class="num">46.5</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  </p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">3.5</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">29.3</td><td class="num">66.2</td><td class="num">11.8</td><td class="num">110</td><td class="num">40.5</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -71,16 +71,18 @@
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.6</td><td>log10 Z off by 7.1e-15</td><td>largest formula, pairs 631 652 055; final formula, pairs 8 533; variables 70 440; ground atoms 103 290; ground rules 102 750; vtree families:0 (from auto: 1 attempts, 0.037s discarded)</td></tr></tbody></table></div>
-<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>96.2</td><td>5.0e-07 at most</td><td>induced width 6</td></tr></tbody></table></div>
-<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>38.4</td><td>log10 Z off by 2.6e-09</td><td>induced width 6</td></tr></tbody></table></div>
-<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>89.5</td><td>4.8e-13 at most</td><td>inference s 89.009848</td></tr></tbody></table></div>
-<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>65.5</td><td>log10 Z off by 5.9e-12</td><td>inference s 65.059674</td></tr></tbody></table></div>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.5</td><td>log10 Z off by 7.1e-15</td><td>largest formula, pairs 631 652 055; final formula, pairs 8 533; variables 70 440; ground atoms 103 290; ground rules 102 750; vtree families:0 (from auto: 1 attempts, 0.032s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>83.4</td><td>5.0e-07 at most</td><td>induced width 6</td></tr></tbody></table></div>
+<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>29.3</td><td>log10 Z off by 2.6e-09</td><td>induced width 6</td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>54.2</td><td>4.8e-13 at most</td><td>inference s 53.730923</td></tr></tbody></table></div>
+<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>66.2</td><td>log10 Z off by 5.9e-12</td><td>inference s 65.618102</td></tr></tbody></table></div>
 <h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
-<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>13.9</td><td>log10 Z off by 5.9e-12</td><td>inference s 11.930317</td></tr></tbody></table></div>
-<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>142</td><td>4.8e-13 at most</td><td>inference s 141.5551781</td></tr></tbody></table></div>
-<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>141</td><td>log10 Z off by 5.9e-12</td><td>inference s 141.1881177</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>27.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>11.8</td><td>log10 Z off by 5.9e-12</td><td>inference s 9.921525</td></tr></tbody></table></div>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>111</td><td>4.8e-13 at most</td><td>inference s 111.198999</td></tr></tbody></table></div>
+<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>110</td><td>log10 Z off by 5.9e-12</td><td>inference s 110.1609043</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>63.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
 Stacktrace:
   [1] GenericMemory
     @ ./boot.jl:516 [inlined]
@@ -90,38 +92,46 @@ Stacktrace:
     @ ./boot.jl:588 [inlined]
   [4] Array
     @ ./boot.jl:594 [inlined]
-  [5] (Array{Float64})(::UndefInitializer, d::NTuple{8, Int64})
-    @ Core ./boot.jl:599
-  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
-    @ Base ./baseext.jl:30
-  [7] get_output_array(xs::Tuple{Array{Float64, 6}, Array{Float64, 6}}, size::Vector{Int64}, fillzero::Bool)
-    @ OMEinsum ~loop_einsum.jl:52
-  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
-    @ OMEinsum ~einsum.jl:25
-  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 6, Array{Float64, 6}}, RescaledArray{Float64, 6, Array{Float64, 6}}}, size_dict::Dict{Int64, Int64})
-    @ TensorInference ~RescaledArray.jl:45
- [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+  [5] Array
+    @ ./boot.jl:599 [inlined]
+  [6] similar
+    @ ./abstractarray.jl:868 [inlined]
+  [7] similar
+    @ ./abstractarray.jl:867 [inlined]
+  [8] similar
+    @ ./broadcast.jl:224 [inlined]
+  [9] similar
+    @ ./broadcast.jl:223 [inlined]
+ [10] copy
+    @ ./broadcast.jl:897 [inlined]
+ [11] materialize
+    @ ./broadcast.jl:872 [inlined]
+ [12] rescale_array(tensor::Array{Float64, 8})
+    @ TensorInference ~RescaledArray.jl:37
+ [13] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 6, Array{Float64, 6}}, RescaledArray{Float64, 6, Array{Float64, 6}}}, size_dict::Dict{Int64, Int64})
+    @ TensorInference ~RescaledArray.jl:46
+ [14] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
     @ OMEinsum ~einsequence.jl:286
- [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 3 times)
+ [15] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 3 times)
     @ OMEinsum ~einsequence.jl:284
- [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
+ [16] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
     @ OMEinsum ~einsequence.jl:260
- [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
+ [17] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
     @ OMEinsum ~einsequence.jl:257
- [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
+ [18] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
     @ TensorInference ~Core.jl:184
- [15] probability
+ [19] probability
     @ ~Core.jl:183 [inlined]
- [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
+ [20] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
     @ TensorInference ~Core.jl:170
- [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
+ [21] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
     @ TensorInference ~Core.jl:169
- [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
+ [22] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
     @ Main tensorinference_uai.jl:22
- [19] top-level scope
+ [23] top-level scope
     @ tensorinference_uai.jl:52
 in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>28.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>54.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
 Stacktrace:
   [1] GenericMemory
     @ ./boot.jl:516 [inlined]
@@ -131,39 +141,52 @@ Stacktrace:
     @ ./boot.jl:588 [inlined]
   [4] Array
     @ ./boot.jl:594 [inlined]
-  [5] (Array{Float64})(::UndefInitializer, d::NTuple{8, Int64})
-    @ Core ./boot.jl:599
-  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
-    @ Base ./baseext.jl:30
-  [7] get_output_array(xs::Tuple{Array{Float64, 6}, Array{Float64, 6}}, size::Vector{Int64}, fillzero::Bool)
-    @ OMEinsum ~loop_einsum.jl:52
-  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
-    @ OMEinsum ~einsum.jl:25
-  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 6, Array{Float64, 6}}, RescaledArray{Float64, 6, Array{Float64, 6}}}, size_dict::Dict{Int64, Int64})
-    @ TensorInference ~RescaledArray.jl:45
- [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+  [5] Array
+    @ ./boot.jl:599 [inlined]
+  [6] similar
+    @ ./abstractarray.jl:868 [inlined]
+  [7] similar
+    @ ./abstractarray.jl:867 [inlined]
+  [8] similar
+    @ ./broadcast.jl:224 [inlined]
+  [9] similar
+    @ ./broadcast.jl:223 [inlined]
+ [10] copy
+    @ ./broadcast.jl:897 [inlined]
+ [11] materialize
+    @ ./broadcast.jl:872 [inlined]
+ [12] rescale_array(tensor::Array{Float64, 8})
+    @ TensorInference ~RescaledArray.jl:37
+ [13] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 6, Array{Float64, 6}}, RescaledArray{Float64, 6, Array{Float64, 6}}}, size_dict::Dict{Int64, Int64})
+    @ TensorInference ~RescaledArray.jl:46
+ [14] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
     @ OMEinsum ~einsequence.jl:286
- [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 3 times)
+ [15] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 3 times)
     @ OMEinsum ~einsequence.jl:284
- [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
+ [16] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
     @ OMEinsum ~einsequence.jl:260
- [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
+ [17] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
     @ OMEinsum ~einsequence.jl:257
- [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
+ [18] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
     @ TensorInference ~Core.jl:184
- [15] probability
+ [19] probability
     @ ~Core.jl:183 [inlined]
- [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
+ [20] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
     @ TensorInference ~Core.jl:170
- [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
+ [21] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
     @ TensorInference ~Core.jl:169
- [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
+ [22] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
     @ Main tensorinference_uai.jl:22
- [19] top-level scope
+ [23] top-level scope
     @ tensorinference_uai.jl:52
 in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>64.1</td><td>1.7e-16 at most</td><td>inference s 55.81503105</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>46.5</td><td>log10 Z off by 1.4e-14</td><td>inference s 38.66503215</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>56.5</td><td>1.7e-16 at most</td><td>inference s 49.5416801</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>40.5</td><td>log10 Z off by 7.1e-15</td><td>inference s 33.55548978</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

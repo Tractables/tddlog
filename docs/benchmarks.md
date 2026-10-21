@@ -23,14 +23,17 @@ records as these tables.
 ## Current results: tddlog 0.1.0
 
 tddlog 0.1.0 `auto` (tididi e4d60911, goatd e237c1a), linked statically,
-and every baseline, each suite's systems in one job (four jobs on two
-lab machines (36 and 20 physical cores, 503 GB each), 2026-10-19 to
-2026-10-20), in parallel lanes (Ace in 12 wide lanes of 88 GB, half of
-it its Java heap) (Setup). The baselines: ProbLog 2.3.0 with d-DNNF, SDD
-and forward SDD compilation, PITA's BDDs and aspmc with sharpSAT-TD on
-the program suites; Ace 3.0 (default route and c2d forced), Merlin
-1.7.0's bucket-tree elimination (`-a bte`), pyAgrum's junction tree,
-pgmpy's variable elimination, libDAI's junction tree and
+and every baseline, each suite's systems in one job (six jobs on four
+lab machines (36 physical cores and 503 GB; 20 physical cores and 503
+GB; 16 physical cores and 251 GB; 16 physical cores and 125 GB),
+2026-10-19 to 2026-10-21); further systems in later jobs, each beside
+that job's tddlog, in parallel lanes (Ace in 12 wide lanes of 88 GB,
+half of it its Java heap) (Setup). The baselines: ProbLog 2.3.0 with
+d-DNNF, SDD and forward SDD compilation, PITA's BDDs and aspmc with
+sharpSAT-TD on the program suites and the UAI networks; Ace 3.0 (default
+route and c2d forced, and in log space, `-Xlog`, on the UAI networks),
+Merlin 1.7.0's bucket-tree elimination (`-a bte`), pyAgrum's junction
+tree, pgmpy's variable elimination, libDAI's junction tree and
 TensorInference.jl's tensor network contraction on the networks, and
 ProvSQL on TPC-H. Seconds are wall time, parsing and grounding included;
 the limit is 300 s a run on the standard, literature and UAI suites and
@@ -114,20 +117,22 @@ more, tddlog is faster than the fastest tool on 5, and takes 13.4 s over
 them against the fastest tool's 29.4; a tool is faster on 9 (bn_mildew
 pyAgrum 0.31 s against 1.64, bn_mildew_ev libDAI 0.45 s against 1.56 and
 bn_barley pyAgrum 0.77 s against 1.82). On the UAI MAR tuning set (120
-instances) pyAgrum answers 107, pgmpy answers 54, libDAI answers 120,
-TensorInference.jl answers 115, Merlin 114, tddlog 120. Of the 102 that
+instances) pyAgrum answers 107, pgmpy answers 53, libDAI answers 117,
+TensorInference.jl answers 113, Merlin 113, tddlog 120. Of the 101 that
 tddlog and a tool both answer in 0.2 s or more, tddlog is faster than
-the fastest tool on 102, and takes 341.1 s over them against the fastest
-tool's 2 886. Both take under 0.2 s on 18 more. On the partition
+the fastest tool on 99, and takes 295.6 s over them against the fastest
+tool's 2 458; a tool is faster on 2 (uai_csp_13 pyAgrum 7.23 s against
+8.14 and uai_segmentation_12 libDAI 0.29 s against 0.42). Both take
+under 0.2 s on 18 more. tddlog alone answers 1. On the partition
 function of the MAR tuning set's networks (120 instances) pyAgrum
-answers 108, pgmpy answers 103, libDAI answers 120, TensorInference.jl
-answers 116, Merlin 114, tddlog 120. Of the 102 that tddlog and a tool
+answers 108, pgmpy answers 104, libDAI answers 120, TensorInference.jl
+answers 115, Merlin 114, tddlog 120. Of the 103 that tddlog and a tool
 both answer in 0.2 s or more, tddlog is faster than the fastest tool on
-82, and takes 295.8 s over them against the fastest tool's 1 307; a tool
-is faster on 20 (uai_objectdetection_69 pgmpy 3.21 s against 7.31,
-uai_objectdetection_65 pgmpy 3.27 s against 7.33 and
-uai_objectdetection_57 pgmpy 3.24 s against 7.22). Both take under 0.2 s
-on 18 more. They were not run on the final PR set and the PR tuning set
+78, and takes 217.2 s over them against the fastest tool's 870.2; a tool
+is faster on 25 (uai_objectdetection_25 pgmpy 1.94 s against 6.30,
+uai_objectdetection_69 pgmpy 2.56 s against 4.86 and
+uai_objectdetection_37 pgmpy 2.62 s against 4.87). Both take under 0.2 s
+on 17 more. They were not run on the final PR set and the PR tuning set
 in this release.
 
 **Validation.** Every answer is compared with a reference (Setup). The
@@ -142,11 +147,11 @@ of the 76 answers lies within 2.7 standard errors of its estimate
 by at most 3.5e-14).
 
 The other network tools' answers against the same references: pyAgrum
-180 marginal runs to 2.0e-7 and 108 partition functions to 5.6e-9 in
-log10; pgmpy 102 marginal runs to 1.2e-10 and 103 partition functions to
-2.2e-7 in log10; libDAI 190 marginal runs to 5.0e-7 and 120 partition
-functions to 2.2e-7 in log10; TensorInference.jl 281 marginal runs to
-5.0e-7 and 176 partition functions to 2.2e-7 in log10 (the tools print
+180 marginal runs to 2.0e-7 and 108 partition functions to 2.1e-7 in
+log10; pgmpy 101 marginal runs to 1.2e-10 and 104 partition functions to
+2.2e-7 in log10; libDAI 188 marginal runs to 5.0e-7 and 120 partition
+functions to 2.2e-7 in log10; TensorInference.jl 278 marginal runs to
+5.0e-7 and 175 partition functions to 2.2e-7 in log10 (the tools print
 six digits, as Merlin does).
 
 In the tables, ratio is the fastest exact baseline's time over tddlog's,
@@ -483,17 +488,19 @@ research use and is not in the tree.
 The 120 instances of the UAI 2022 inference competition's MAR tuning set
 (`--suite uai`; MAR.zip of
 <https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/>,
-passed as `--uai-benchmarks`): Markov networks (Alchemy, CSP, DBN,
-Grids, ObjectDetection, Segmentation) and Bayesian networks (Pedigree,
+passed as `--uai-benchmarks`): Markov networks (Alchemy, CSP, DBN, Grids,
+ObjectDetection, Segmentation) and Bayesian networks (Pedigree,
 Promedus), each with one evidence file. `gen_bn.py` writes a Markov
 network's factors as observed variables, so the program asks for the
 marginals given the evidence. The baselines are Merlin (`--merlin`,
 docs/baselines.md section 8) and pyAgrum, pgmpy, libDAI and
-TensorInference.jl (`--agrum`, `--pgmpy`, `--libdai`,
-`--tensorinference`, section 20), which read the UAI file; the answers
-are checked against the clique tree (`scripts/bn_exact.py`) and Merlin.
-The tuning set's PR.zip (121) and the competition's final sets, MAR.zip
-(88) and PR.zip (197) of
+TensorInference.jl (`--agrum`, `--pgmpy`, `--libdai`, `--tensorinference`,
+section 20), which read the UAI file; Ace (`--ace`, section 7), on the
+network `gen_bn.py` makes of the file written as a Hugin file; and
+ProbLog, PITA and aspmc (sections 1, 2 and 6) on the program tddlog
+reads. The answers are checked against the clique tree
+(`scripts/bn_exact.py`) and Merlin. The tuning set's PR.zip (121)
+and the competition's final sets, MAR.zip (88) and PR.zip (197) of
 <https://www.ics.uci.edu/~dechter/uaicompetition/2022/FinalBenchmarks/>,
 read the same way; `uai_family` takes the family from the network's name
 (mastermind, or_chain, blockmap, rus, protein side chains by PDB code,
@@ -504,63 +511,73 @@ same files.
 
 ### Results: the marginals
 
-The MAR task, in the same run as the current results above (300 s a
-run). tddlog faster than Merlin counts the instances where tddlog is
-faster than Merlin or answers alone, not those both finish in under
-0.2 s; seconds are each one's total over the instances either answers,
-a run that does not answer counted at the limit.
+The MAR task, in one job on one lab machine (16 physical cores and 125
+GB), 2026-10-20 to 2026-10-21 (300 s a run). tddlog faster than Merlin
+counts the instances where tddlog is faster than Merlin or answers
+alone, not those both finish in under 0.2 s; seconds are each one's
+total over the instances either answers, a run that does not answer
+counted at the limit.
 
 | family | instances | tddlog | Merlin | tddlog faster than Merlin | tddlog s | Merlin s |
 |---|---:|---:|---:|---:|---:|---:|
 | Alchemy | 1 | 1 | 0 | 1 | 0.2 | 300.0 |
-| CSP | 3 | 3 | 3 | 2 | 9.3 | 39.8 |
-| DBN | 6 | 6 | 6 | 6 | 12.1 | 106.4 |
-| Grids | 8 | 8 | 3 | 7 | 12.5 | 1 735 |
-| ObjectDetection | 65 | 65 | 65 | 65 | 304.6 | 3 041 |
-| Pedigree | 3 | 3 | 3 | 3 | 0.2 | 4.6 |
-| Promedus | 28 | 28 | 28 | 15 | 2.1 | 464.9 |
-| Segmentation | 6 | 6 | 6 | 6 | 1.0 | 4.1 |
-| all | 120 | 120 | 114 | 105 | 341.9 | 5 695 |
+| CSP | 3 | 3 | 3 | 2 | 18.5 | 63.8 |
+| DBN | 6 | 6 | 6 | 6 | 12.5 | 136.9 |
+| Grids | 8 | 8 | 2 | 7 | 17.6 | 1 804 |
+| ObjectDetection | 65 | 65 | 65 | 65 | 249.1 | 3 157 |
+| Pedigree | 3 | 3 | 3 | 3 | 0.2 | 5.8 |
+| Promedus | 28 | 28 | 28 | 15 | 1.8 | 504.9 |
+| Segmentation | 6 | 6 | 6 | 5 | 1.3 | 4.0 |
+| all | 120 | 120 | 113 | 104 | 301.3 | 5 977 |
 
 Merlin prints `-nan` where the partition function overflows a double
-(Alchemy_11, Grids_13, 14, 16, 17, 18). The two both take under 0.2 s on
-15 of Merlin's 114 answers; tddlog is faster on 99 of the other 99
-(332.4 s against 3 895 over all 114): every DBN, ObjectDetection,
-Pedigree and Segmentation network, CSP_11 and 13, Grids_11 and 15 and 15
-of the 15 Promedus. tddlog's marginals agree with the reference's
-(Setup) to 9.1e-14 on 111 networks and with Merlin's six printed digits
-on the other 6.
+(Alchemy_11, Grids_13, 14, 17) and fails on Grids_15, 16 and 18. The two
+both take under 0.2 s on 15 of Merlin's 113 answers; tddlog is faster on
+97 of the other 98 (283.7 s against 3 877 over all 113): every DBN,
+ObjectDetection and Pedigree network, CSP_11 and 13, Grids_11, 15 of the
+15 Promedus and 5 of the 6 Segmentation; Merlin is faster on
+Segmentation_12 (339 ms against 423). tddlog's marginals agree with the
+reference's (Setup) to 9.1e-14 on 111 networks and with Merlin's six
+printed digits on the other 5.
 
-Against each network tool (columns as in "Against each baseline"):
-
-| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Merlin | 120 | 114 | 120 | 5 695 | 341.9 | 114 | 3 895 | 332.4 | 0 |
-| pyAgrum | 120 | 107 | 120 | 6 763 | 341.9 | 107 | 2 863 | 328.5 | 0 |
-| pgmpy | 120 | 54 | 120 | 23 986 | 341.9 | 54 | 4 186 | 138.6 | 0 |
-| libDAI | 120 | 120 | 120 | 6 403 | 341.9 | 120 | 6 403 | 341.9 | 0 |
-| TensorInference.jl | 120 | 115 | 120 | 9 437 | 341.9 | 115 | 7 937 | 330.6 | 0 |
-| TensorInference.jl treesa | 120 | 115 | 120 | 13 105 | 341.9 | 115 | 11 605 | 330.6 | 0 |
-| TensorInference.jl greedy | 120 | 60 | 120 | 22 867 | 341.9 | 60 | 4 867 | 76.2 | 0 |
-
-The PR task on the same 120 networks (`--pr`, the same run): tddlog's
-log10 Z agrees with the reference's to 5.7e-14 on 112 instances and with
-Merlin's to 2.2e-7 on 114. tddlog answers all 120 in 296.2 s, Merlin's
-`-t PR` 114 in 1 539. Summed by family where both answer, Merlin is
-faster on and slower on the other families (ObjectDetection 1 260
-against 273.7, Promedus 139.6 against 0.6).
-
-Against each network tool (columns as in "Against each baseline"):
+Against each baseline (columns as in "Against each baseline"):
 
 | baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Merlin | 120 | 114 | 120 | 3 339 | 296.2 | 114 | 1 539 | 289.4 | 7 |
-| pyAgrum | 120 | 108 | 120 | 6 670 | 296.2 | 108 | 3 070 | 289.3 | 0 |
-| pgmpy | 120 | 103 | 120 | 6 409 | 296.2 | 103 | 1 309 | 256.3 | 20 |
-| libDAI | 120 | 120 | 120 | 6 492 | 296.2 | 120 | 6 492 | 296.2 | 0 |
-| TensorInference.jl | 120 | 116 | 120 | 6 468 | 296.2 | 116 | 5 268 | 291.3 | 0 |
-| TensorInference.jl treesa | 120 | 116 | 120 | 10 382 | 296.2 | 116 | 9 182 | 291.3 | 0 |
-| TensorInference.jl greedy | 120 | 60 | 120 | 20 302 | 296.2 | 60 | 2 302 | 66.7 | 0 |
+| Ace | 120 | 64 | 120 | 19 247 | 301.3 | 64 | 2 447 | 54.6 | 0 |
+| Merlin | 120 | 113 | 120 | 5 977 | 301.3 | 113 | 3 877 | 283.7 | 1 |
+| pyAgrum | 120 | 107 | 120 | 6 218 | 301.3 | 107 | 2 318 | 283.1 | 1 |
+| pgmpy | 120 | 53 | 120 | 23 848 | 301.3 | 53 | 3 748 | 110.4 | 0 |
+| libDAI | 120 | 117 | 120 | 6 645 | 301.3 | 117 | 5 745 | 286.4 | 1 |
+| TensorInference.jl | 120 | 113 | 120 | 10 416 | 301.3 | 113 | 8 316 | 284.1 | 0 |
+| TensorInference.jl treesa | 120 | 111 | 120 | 13 345 | 301.3 | 111 | 10 645 | 275.1 | 0 |
+| TensorInference.jl greedy | 120 | 59 | 120 | 23 647 | 301.3 | 59 | 5 347 | 61.8 | 0 |
+| ProbLog | 120 | 0 | 120 | 36 000 | 301.3 | 0 | 0.0 | 0.0 | 0 |
+| PITA | 120 | 1 | 120 | 35 894 | 301.3 | 1 | 193.8 | 0.0 | 0 |
+
+The PR task on the same 120 networks (`--pr`, one job on one lab machine
+(16 physical cores and 251 GB), 2026-10-20 to 2026-10-21): tddlog's
+log10 Z agrees with the reference's to 5.7e-14 on 107 instances and with
+Merlin's to 2.2e-7 on 114. tddlog answers all 120 in 217.5 s, Merlin's
+`-t PR` 114 in 1 247. Summed by family where both answer, Merlin is
+slower on every family (ObjectDetection 984.5 against 180.7, Promedus
+130.9 against 2.9).
+
+Against each baseline (columns as in "Against each baseline"):
+
+| baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ace | 120 | 70 | 120 | 17 880 | 217.5 | 70 | 2 880 | 59.3 | 0 |
+| Merlin | 120 | 114 | 120 | 3 047 | 217.5 | 114 | 1 247 | 207.3 | 9 |
+| pyAgrum | 120 | 108 | 120 | 5 812 | 217.5 | 108 | 2 212 | 206.3 | 4 |
+| pgmpy | 120 | 104 | 120 | 6 377 | 217.5 | 104 | 1 577 | 182.8 | 21 |
+| libDAI | 120 | 120 | 120 | 4 564 | 217.5 | 120 | 4 564 | 217.5 | 3 |
+| TensorInference.jl | 120 | 115 | 120 | 5 159 | 217.5 | 115 | 3 659 | 209.9 | 0 |
+| TensorInference.jl treesa | 120 | 115 | 120 | 7 605 | 217.5 | 115 | 6 105 | 209.9 | 0 |
+| TensorInference.jl greedy | 120 | 60 | 120 | 19 769 | 217.5 | 60 | 1 769 | 52.8 | 0 |
+| ProbLog | 120 | 0 | 120 | 36 000 | 217.5 | 0 | 0.0 | 0.0 | 0 |
+| PITA | 120 | 25 | 120 | 29 131 | 217.5 | 25 | 631.4 | 2.9 | 0 |
+| aspmc | 120 | 4 | 120 | 35 185 | 217.5 | 4 | 385.3 | 1.6 | 0 |
 
 ### Results: the partition function
 
@@ -2228,12 +2245,12 @@ relative (6.9e-20 absolute, weather_h200); PRISM sparse 8.7e-11 relative
 ## Further exact systems
 
 The survey of exact systems (docs/baselines.md) adds systems that run
-part of the program suites, each on the programs of its own paper or on
-the Dice programs it accepts. Each ran in the same lanes as the systems
-above, single-threaded, with the same limits; the time is the process's,
-tddlog's too, start-up included. Every answer is compared with the
-suite's reference, as Dice's and Alea.jl's are; a difference of more
-than 1e-6 absolute and relative is `wrong`.
+part of the program suites, each on the programs of its own paper, on
+the Dice programs it accepts or on the ProbLog programs. Each ran in the
+same lanes as the systems above, single-threaded, with the same limits;
+the time is the process's, tddlog's too, start-up included. Every answer
+is compared with the suite's reference, as Dice's and Alea.jl's are; a
+difference of more than 1e-6 absolute and relative is `wrong`.
 
 | system | answers | runs |
 |---|---|---|

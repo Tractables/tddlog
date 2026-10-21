@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.008</td><td class="num">0.02</td><td class="num">0.22</td><td class="num">2.1</td><td class="num">0.02</td><td class="num">21.7</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  </p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">0.005</td><td class="num">1.3</td><td class="num">0.006</td><td class="num">0.12</td><td class="num">1.3</td><td class="num">0.007</td><td class="num">14.4</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">0.95</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. error: the system stopped with an error. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -71,23 +71,77 @@
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.008</td><td>log10 Z off by 8.9e-16</td><td>largest formula, pairs 914; final formula, pairs 180; variables 203; ground atoms 207; ground rules 108; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
-<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.02</td><td>5.0e-07 at most</td><td>induced width 4</td></tr></tbody></table></div>
-<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.02</td><td>log10 Z off by 3.1e-08</td><td>induced width 4</td></tr></tbody></table></div>
-<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.21</td><td>5.0e-13 at most</td><td>inference s 0.018062</td></tr></tbody></table></div>
-<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.22</td><td>log10 Z off by 1.1e-11</td><td>inference s 0.018598</td></tr></tbody></table></div>
-<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>5.4</td><td>5.0e-13 at most</td><td>inference s 3.239539</td></tr></tbody></table></div>
-<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.1</td><td>log10 Z off by 1.1e-11</td><td>inference s 0.017306</td></tr></tbody></table></div>
-<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.02</td><td>5.0e-13 at most</td><td>inference s 0.010828731</td></tr></tbody></table></div>
-<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.02</td><td>log10 Z off by 1.1e-11</td><td>inference s 0.015624181</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>33.9</td><td>2.2e-16 at most</td><td>inference s 25.87292719</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.7</td><td>log10 Z off by 8.9e-16</td><td>inference s 13.77980995</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>61.4</td><td>2.2e-16 at most</td><td>inference s 53.28605795</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>48.0</td><td>log10 Z off by 1.8e-15</td><td>inference s 40.15807986</td></tr></tbody></table></div>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.005</td><td>log10 Z off by 8.9e-16</td><td>largest formula, pairs 914; final formula, pairs 180; variables 203; ground atoms 207; ground rules 108; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.3</td><td>6.7e-15 at most</td><td>route tabularCompilation; circuit nodes 1 925; circuit edges 2 858</td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.4</td><td>7.8e-16 at most</td><td>route c2dCompilation; circuit nodes 2 063; circuit edges 4 674</td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.007</td><td>5.0e-07 at most</td><td>induced width 4</td></tr></tbody></table></div>
+<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.006</td><td>log10 Z off by 3.1e-08</td><td>induced width 4</td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.12</td><td>5.0e-13 at most</td><td>inference s 0.011902</td></tr></tbody></table></div>
+<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.12</td><td>log10 Z off by 1.1e-11</td><td>inference s 0.011787</td></tr></tbody></table></div>
+<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.2</td><td>5.0e-13 at most</td><td>inference s 1.880393</td></tr></tbody></table></div>
+<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.3</td><td>log10 Z off by 1.1e-11</td><td>inference s 0.010491</td></tr></tbody></table></div>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.008</td><td>5.0e-13 at most</td><td>inference s 0.003955196</td></tr></tbody></table></div>
+<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.007</td><td>log10 Z off by 1.1e-11</td><td>inference s 0.004127708</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>22.9</td><td>2.2e-16 at most</td><td>inference s 18.13212585</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.4</td><td>log10 Z off by 8.9e-16</td><td>inference s 9.676245928</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>37.7</td><td>2.2e-16 at most</td><td>inference s 32.80925512</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>29.2</td><td>log10 Z off by 8.9e-16</td><td>inference s 24.418679</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.95</td><td>log10 Z off by 1.9e-10</td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.51</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;lexer.py&quot;, line 689, in lex
+    yield lexer.next_token(lexer_state, parser_state)
+  File &quot;lexer.py&quot;, line 622, in next_token
+    raise UnexpectedCharacters(lex_state.text.text, line_ctr.char_pos, line_ctr.line, line_ctr.column,
+lark.exceptions.UnexpectedCharacters: No terminal matches &#x27;5&#x27; in the current parser context, at line 3 col 20
+
+0.999995::x1(v_0); 5e-06::x1(v_1).
+                   ^
+Expected one of: 
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+	* /[A-Z][a-zA-Z0-9]*/
+
+Previous tokens: Token(&#x27;SEMICOLON&#x27;, &#x27;;&#x27;)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &quot;runpy.py&quot;, line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File &quot;runpy.py&quot;, line 86, in _run_code
+    exec(code, run_globals)
+  File &quot;main.py&quot;, line 350, in &lt;module&gt;
+    main()
+  File &quot;main.py&quot;, line 249, in main
+    program = ProblogProgram(program_str, program_files)
+  File &quot;problogprogram.py&quot;, line 71, in __init__
+    program = parser.parse(program_str)
+  File &quot;lark.py&quot;, line 677, in parse
+    return self.parser.parse(text, start=start, on_error=on_error)
+  File &quot;parser_frontends.py&quot;, line 131, in parse
+    return self.parser.parse(stream, chosen_start, **kw)
+  File &quot;lalr_parser.py&quot;, line 42, in parse
+    return self.parser.parse(lexer, start)
+  File &quot;lalr_parser.py&quot;, line 88, in parse
+    return self.parse_from_state(parser_state)
+  File &quot;lalr_parser.py&quot;, line 111, in parse_from_state
+    raise e
+  File &quot;lalr_parser.py&quot;, line 100, in parse_from_state
+    for token in state.lexer.lex(state):
+  File &quot;lexer.py&quot;, line 698, in lex
+    raise UnexpectedToken(token, e.allowed, state=parser_state, token_history=[last_token], terminals_by_name=self.root_lexer.terminals_by_name)
+lark.exceptions.UnexpectedToken: Unexpected token Token(&#x27;__ANON_7&#x27;, &#x27;5e-06&#x27;) at line 3, column 20.
+Expected one of: 
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+	* /[A-Z][a-zA-Z0-9]*/
+Previous tokens: [Token(&#x27;SEMICOLON&#x27;, &#x27;;&#x27;)]</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">Merlin (PR)</th><th class="num">pyAgrum</th><th class="num">pyAgrum (PR)</th><th class="num">pgmpy</th><th class="num">pgmpy (PR)</th><th class="num">libDAI</th><th class="num">libDAI (PR)</th><th class="num">TensorInference.jl greedy</th><th class="num">TensorInference.jl greedy (PR)</th><th class="num">TensorInference.jl treesa</th><th class="num">TensorInference.jl treesa (PR)</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-5.861811131</td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811162</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td></tr></tbody></table></div>
+  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Ace Xlog</th><th class="num">Ace forceC2d</th><th class="num">Merlin</th><th class="num">Merlin (PR)</th><th class="num">pyAgrum</th><th class="num">pyAgrum (PR)</th><th class="num">pgmpy</th><th class="num">pgmpy (PR)</th><th class="num">libDAI</th><th class="num">libDAI (PR)</th><th class="num">TensorInference.jl greedy</th><th class="num">TensorInference.jl greedy (PR)</th><th class="num">TensorInference.jl treesa</th><th class="num">TensorInference.jl treesa (PR)</th><th class="num">PITA</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-5.861811131</td><td class="num">-5.861811131</td><td class="num">-5.861811131</td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811162</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num"></td><td class="num">-5.861811131</td><td class="num">-5.861811131</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

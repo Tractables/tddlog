@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">4.8</td><td class="num">52.2</td><td class="num">94.8</td><td class="num fail" title="out of memory">memory</td><td class="num">208</td><td class="num">49.9</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; memory: out of memory. </p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">2.5</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">36.6</td><td class="num">62.3</td><td class="num fail" title="out of memory">memory</td><td class="num">126</td><td class="num">29.0</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. memory: out of memory. error: the system stopped with an error. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -71,12 +71,14 @@
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.8</td><td>log10 Z off by 2.8e-14</td><td>largest formula, pairs 818 741 355; final formula, pairs 8 533; variables 77 400; ground atoms 113 445; ground rules 112 935; vtree families:0 (from auto: 3 attempts, 0.044s discarded)</td></tr></tbody></table></div>
-<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>126</td><td>5.0e-07 at most</td><td>induced width 6</td></tr></tbody></table></div>
-<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>52.2</td><td>log10 Z off by 1.8e-07</td><td>induced width 6</td></tr></tbody></table></div>
-<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>124</td><td>5.0e-13 at most</td><td>inference s 122.667395</td></tr></tbody></table></div>
-<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>94.8</td><td>log10 Z off by 2.6e-11</td><td>inference s 93.917087</td></tr></tbody></table></div>
-<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>5.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>__init__.py:4: FutureWarning: `pgmpy.estimators.StructureScore` is deprecated and will be removed in v1.3.0. Use `pgmpy.structure_score` instead.
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.5</td><td>log10 Z off by 2.8e-14</td><td>largest formula, pairs 818 741 355; final formula, pairs 8 533; variables 77 400; ground atoms 113 445; ground rules 112 935; vtree families:0 (from auto: 3 attempts, 0.021s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>82.2</td><td>5.0e-07 at most</td><td>induced width 6</td></tr></tbody></table></div>
+<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>36.6</td><td>log10 Z off by 1.8e-07</td><td>induced width 6</td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>75.2</td><td>5.0e-13 at most</td><td>inference s 74.190167</td></tr></tbody></table></div>
+<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>62.3</td><td>log10 Z off by 2.6e-11</td><td>inference s 61.282027</td></tr></tbody></table></div>
+<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>3.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>__init__.py:4: FutureWarning: `pgmpy.estimators.StructureScore` is deprecated and will be removed in v1.3.0. Use `pgmpy.structure_score` instead.
   from .StructureScore import (
 Traceback (most recent call last):
   File &quot;bn_uai_run.py&quot;, line 193, in &lt;module&gt;
@@ -98,7 +100,7 @@ Traceback (most recent call last):
   File &quot;einsumfunc.py&quot;, line 1423, in einsum
     return c_einsum(*operands, **kwargs)
 numpy._core._exceptions._ArrayMemoryError: Unable to allocate 32.0 GiB for an array with shape (16, 16, 16, 16, 16, 16, 16, 16) and data type float64</pre></details></td></tr></tbody></table></div>
-<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>5.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>__init__.py:4: FutureWarning: `pgmpy.estimators.StructureScore` is deprecated and will be removed in v1.3.0. Use `pgmpy.structure_score` instead.
+<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>3.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>__init__.py:4: FutureWarning: `pgmpy.estimators.StructureScore` is deprecated and will be removed in v1.3.0. Use `pgmpy.structure_score` instead.
   from .StructureScore import (
 Traceback (most recent call last):
   File &quot;bn_uai_run.py&quot;, line 193, in &lt;module&gt;
@@ -120,9 +122,9 @@ Traceback (most recent call last):
   File &quot;einsumfunc.py&quot;, line 1423, in einsum
     return c_einsum(*operands, **kwargs)
 numpy._core._exceptions._ArrayMemoryError: Unable to allocate 32.0 GiB for an array with shape (16, 16, 16, 16, 16, 16, 16, 16) and data type float64</pre></details></td></tr></tbody></table></div>
-<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>207</td><td>5.1e-13 at most</td><td>inference s 206.2979442</td></tr></tbody></table></div>
-<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>208</td><td>log10 Z off by 2.6e-11</td><td>inference s 207.809513</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>39.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>127</td><td>5.1e-13 at most</td><td>inference s 126.7141113</td></tr></tbody></table></div>
+<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>126</td><td>log10 Z off by 2.6e-11</td><td>inference s 125.5914967</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>27.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
 Stacktrace:
   [1] GenericMemory
     @ ./boot.jl:516 [inlined]
@@ -163,7 +165,7 @@ Stacktrace:
  [19] top-level scope
     @ tensorinference_uai.jl:52
 in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>40.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>26.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
 Stacktrace:
   [1] GenericMemory
     @ ./boot.jl:516 [inlined]
@@ -204,8 +206,60 @@ Stacktrace:
  [19] top-level scope
     @ tensorinference_uai.jl:52
 in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>70.1</td><td>1.4e-16 at most</td><td>inference s 61.81167984</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>49.9</td><td>log10 Z off by 1.4e-14</td><td>inference s 42.03220892</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>42.0</td><td>1.7e-16 at most</td><td>inference s 37.16538787</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>29.0</td><td>log10 Z off by 2.8e-14</td><td>inference s 24.45608497</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.52</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;lexer.py&quot;, line 689, in lex
+    yield lexer.next_token(lexer_state, parser_state)
+  File &quot;lexer.py&quot;, line 622, in next_token
+    raise UnexpectedCharacters(lex_state.text.text, line_ctr.char_pos, line_ctr.line, line_ctr.column,
+lark.exceptions.UnexpectedCharacters: No terminal matches &#x27;4&#x27; in the current parser context, at line 6 col 370
+
+(v_11); 0.032301055753580526::x4(v_12); 4.503213300121097e-05::x4(v_13); 2.17213
+                                        ^
+Expected one of: 
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+	* /[A-Z][a-zA-Z0-9]*/
+
+Previous tokens: Token(&#x27;SEMICOLON&#x27;, &#x27;;&#x27;)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &quot;runpy.py&quot;, line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File &quot;runpy.py&quot;, line 86, in _run_code
+    exec(code, run_globals)
+  File &quot;main.py&quot;, line 350, in &lt;module&gt;
+    main()
+  File &quot;main.py&quot;, line 249, in main
+    program = ProblogProgram(program_str, program_files)
+  File &quot;problogprogram.py&quot;, line 71, in __init__
+    program = parser.parse(program_str)
+  File &quot;lark.py&quot;, line 677, in parse
+    return self.parser.parse(text, start=start, on_error=on_error)
+  File &quot;parser_frontends.py&quot;, line 131, in parse
+    return self.parser.parse(stream, chosen_start, **kw)
+  File &quot;lalr_parser.py&quot;, line 42, in parse
+    return self.parser.parse(lexer, start)
+  File &quot;lalr_parser.py&quot;, line 88, in parse
+    return self.parse_from_state(parser_state)
+  File &quot;lalr_parser.py&quot;, line 111, in parse_from_state
+    raise e
+  File &quot;lalr_parser.py&quot;, line 100, in parse_from_state
+    for token in state.lexer.lex(state):
+  File &quot;lexer.py&quot;, line 698, in lex
+    raise UnexpectedToken(token, e.allowed, state=parser_state, token_history=[last_token], terminals_by_name=self.root_lexer.terminals_by_name)
+lark.exceptions.UnexpectedToken: Unexpected token Token(&#x27;__ANON_7&#x27;, &#x27;4.503213300121097e-05&#x27;) at line 6, column 370.
+Expected one of: 
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+	* /[A-Z][a-zA-Z0-9]*/
+Previous tokens: [Token(&#x27;SEMICOLON&#x27;, &#x27;;&#x27;)]</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

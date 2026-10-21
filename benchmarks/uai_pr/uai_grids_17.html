@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">2.3</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">165</td><td class="num">65.6</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; error: the system stopped with an error. </p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">2.3</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">121</td><td class="num">52.8</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. error: the system stopped with an error. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -71,19 +71,103 @@
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.3</td><td></td><td>largest formula, pairs 146 822 296; final formula, pairs 23; variables 4 960; ground atoms 8 040; ground rules 9 920; vtree families (from auto: 3 attempts, 0.278s discarded)</td></tr></tbody></table></div>
-<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>239</td><td></td><td>induced width 28</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Merlin marginals: ValueError marginals that are not numbers (the partition function overflows a double)</pre></details></td></tr></tbody></table></div>
-<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>78.8</td><td></td><td>induced width 28</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Merlin partition function: ValueError a partition function of inf (a message overflows a double)</pre></details></td></tr></tbody></table></div>
-<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>232</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>agrum: ValueError marginals that are not numbers (the partition function overflows a double)</pre></details></td></tr></tbody></table></div>
-<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>296</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>agrum: ValueError a partition function of inf (a message overflows a double)</pre></details></td></tr></tbody></table></div>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.3</td><td></td><td>largest formula, pairs 146 822 296; final formula, pairs 23; variables 4 960; ground atoms 8 040; ground rules 9 920; vtree families (from auto: 3 attempts, 0.223s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>2.3</td><td></td><td>route c2dCompilation</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at mark.core.shell.CliUtil.cli2(CliUtil.java:145)
+	at mark.core.shell.CliUtil.cli1(CliUtil.java:53)
+	at mark.reason.apps.BnIecTest$AlgorithmWrapper.invoke(BnIecTest.java:223)
+	at mark.reason.apps.BnIecTest.main(BnIecTest.java:148)
+	at edu.ucla.belief.ace.AceEvaluate.main(AceEvaluate.java:176)
+Caused by: java.lang.NullPointerException
+	at mark.inf.rdag2.AcParser$2.elimOp(AcParser.java:48)
+	at mark.inf.rdag2.AcParser.ac(AcParser.java:126)
+	at mark.reason.ac.IecAc.create(IecAc.java:70)
+	... 9 more</pre></details></td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>166</td><td></td><td>induced width 28</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Merlin marginals: ValueError marginals that are not numbers (the partition function overflows a double)</pre></details></td></tr></tbody></table></div>
+<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>61.9</td><td></td><td>induced width 28</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Merlin partition function: ValueError a partition function of inf (a message overflows a double)</pre></details></td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>82.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;bn_uai_run.py&quot;, line 193, in &lt;module&gt;
+    main()
+  File &quot;bn_uai_run.py&quot;, line 169, in main
+    log_z, marg, secs = run_agrum(kind, sizes, scopes, tables, evid, factors, qvars, want_z)
+  File &quot;bn_uai_run.py&quot;, line 144, in run_agrum
+    ie.makeInference()
+Exception: std::bad_alloc</pre></details></td></tr></tbody></table></div>
+<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>158</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>agrum: ValueError a partition function of inf (a message overflows a double)</pre></details></td></tr></tbody></table></div>
 <h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
-<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>20.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>pgmpy: ValueError a partition function of inf (a message overflows a double)</pre></details></td></tr></tbody></table></div>
-<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>166</td><td></td><td>inference s 165.8293618</td></tr></tbody></table></div>
-<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>165</td><td></td><td>inference s 164.9346905</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>160</td><td></td><td>inference s 151.806195</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>65.6</td><td></td><td>inference s 57.59784293</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>279</td><td></td><td>inference s 270.7813931</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>210</td><td></td><td>inference s 202.4206581</td></tr></tbody></table></div>
+<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>10.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>pgmpy: ValueError a partition function of inf (a message overflows a double)</pre></details></td></tr></tbody></table></div>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>99.1</td><td></td><td>inference s 99.05952007</td></tr></tbody></table></div>
+<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>121</td><td></td><td>inference s 120.6560278</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>110</td><td></td><td>inference s 103.3568621</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>52.8</td><td></td><td>inference s 38.46349621</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>160</td><td></td><td>inference s 149.904129</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>118</td><td></td><td>inference s 108.1857481</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>247</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>malloc failed in new_sdd_node</pre></details></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>241</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>calloc failed in new_element_array</pre></details></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>2.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;lexer.py&quot;, line 689, in lex
+    yield lexer.next_token(lexer_state, parser_state)
+  File &quot;lexer.py&quot;, line 622, in next_token
+    raise UnexpectedCharacters(lex_state.text.text, line_ctr.char_pos, line_ctr.line, line_ctr.column,
+lark.exceptions.UnexpectedCharacters: No terminal matches &#x27;7&#x27; in the current parser context, at line 407 col 1
+
+7.186419125127162e-07::f1(ok) :- x1(v_0)
+^
+Expected one of: 
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+	* /[a-z]([a-zA-Z0-9_])*/
+	* LPAR
+	* /[A-Z][a-zA-Z0-9]*/
+	* &quot;:-&quot;
+	* NEGATION
+
+Previous tokens: Token(&#x27;DOT&#x27;, &#x27;.&#x27;)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &quot;runpy.py&quot;, line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File &quot;runpy.py&quot;, line 86, in _run_code
+    exec(code, run_globals)
+  File &quot;main.py&quot;, line 350, in &lt;module&gt;
+    main()
+  File &quot;main.py&quot;, line 249, in main
+    program = ProblogProgram(program_str, program_files)
+  File &quot;problogprogram.py&quot;, line 71, in __init__
+    program = parser.parse(program_str)
+  File &quot;lark.py&quot;, line 677, in parse
+    return self.parser.parse(text, start=start, on_error=on_error)
+  File &quot;parser_frontends.py&quot;, line 131, in parse
+    return self.parser.parse(stream, chosen_start, **kw)
+  File &quot;lalr_parser.py&quot;, line 42, in parse
+    return self.parser.parse(lexer, start)
+  File &quot;lalr_parser.py&quot;, line 88, in parse
+    return self.parse_from_state(parser_state)
+  File &quot;lalr_parser.py&quot;, line 111, in parse_from_state
+    raise e
+  File &quot;lalr_parser.py&quot;, line 100, in parse_from_state
+    for token in state.lexer.lex(state):
+  File &quot;lexer.py&quot;, line 698, in lex
+    raise UnexpectedToken(token, e.allowed, state=parser_state, token_history=[last_token], terminals_by_name=self.root_lexer.terminals_by_name)
+lark.exceptions.UnexpectedToken: Unexpected token Token(&#x27;__ANON_7&#x27;, &#x27;7.186419125127162e-07&#x27;) at line 407, column 1.
+Expected one of: 
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+	* /[a-z]([a-zA-Z0-9_])*/
+	* LPAR
+	* /[A-Z][a-zA-Z0-9]*/
+	* &quot;:-&quot;
+	* $END
+	* NEGATION
+Previous tokens: [Token(&#x27;DOT&#x27;, &#x27;.&#x27;)]</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

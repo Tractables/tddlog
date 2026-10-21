@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">7.4</td><td class="num">34.1</td><td class="num">21.7</td><td class="num">141</td><td class="num">55.1</td><td class="num">57.3</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  </p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th></tr></thead><tbody><tr><td class="num">6.0</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">32.2</td><td class="num">11.7</td><td class="num">116</td><td class="num">34.3</td><td class="num">33.7</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -38,6 +38,8 @@
   <div class="ptabs">
 <input type="radio" name="ptab" id="t0" checked><label for="t0">UAI network (original)</label>
 <input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
+<input type="radio" name="ptab" id="t2"><label for="t2">PITA</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">Ace</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its authors wrote it, handed to Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl treesa, TensorInference.jl greedy as it is.</b></p>
 <p class="readers">Read by Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl treesa, TensorInference.jl greedy.</p>
@@ -55,63 +57,62 @@
 </div>
 <div class="panel" id="p1">
 <p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
-<p class="readers">Read by tddlog, reference.</p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf, ProbLog -k sdd, ProbLog -k fsdd, reference.</p>
 <dl class="cmds">
 <dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto uai_objectdetection_45.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf uai_objectdetection_45.pl</code></dd>
+<dt>ProbLog -k sdd</dt><dd><code>problog -k sdd uai_objectdetection_45.pl</code></dd>
+<dt>ProbLog -k fsdd</dt><dd><code>problog -k fsdd uai_objectdetection_45.pl</code></dd>
 </dl>
 <div class="file"><div class="fhead"><code class="fname">uai_objectdetection_45.pl</code><span>2 899 186 bytes, 55 456 lines</span><span class="sha" title="SHA-256">sha256 e5d186d2578631fe9a3dda7cdc5d95ef1963975e4681e097b2d8ffdf94bc234e</span></div><p class="made">Written by <code>gen_bn.py MAR_tune/ObjectDetection_45.uai --evid MAR_tune/ObjectDetection_45.uai.evid</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p2">
+<p class="readers"><b>A translation of the original into PITA; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PITA.</p>
+<dl class="cmds">
+<dt>PITA</dt><dd><code>swipl -q -g &#x27;consult(&#x27;\&#x27;&#x27;uai_objectdetection_45.lpad.pl&#x27;\&#x27;&#x27;), main&#x27; -t halt</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">uai_objectdetection_45.lpad.pl</code><span>4 475 663 bytes, 55 325 lines</span><span class="sha" title="SHA-256">sha256 65b0683bde4c9acabf99484a9880ffc5299010f9b75fcf60cdfa6b52b65bfd6d</span></div><p class="made">Written by <code>problog2pita.py</code> from <code>uai_objectdetection_45.pl</code> when PITA runs.</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into Ace; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Ace auto, Ace forceC2d.</p>
+<dl class="cmds">
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -e uai_objectdetection_45.inst ace-uai_objectdetection_45-auto/ObjectDetection_45.net</code></dd>
+<dt>Ace auto</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-uai_objectdetection_45-auto/ObjectDetection_45.net uai_objectdetection_45.inst</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceCompile -Xnormalize -forceC2d -e uai_objectdetection_45.inst ace-uai_objectdetection_45-forceC2d/ObjectDetection_45.net</code></dd>
+<dt>Ace forceC2d</dt><dd><code>java edu.ucla.belief.ace.AceEvaluate ace-uai_objectdetection_45-forceC2d/ObjectDetection_45.net uai_objectdetection_45.inst</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">ace-uai_objectdetection_45-auto/ObjectDetection_45.net</code><span>2 293 555 bytes, 1 563 lines</span><span class="sha" title="SHA-256">sha256 2ddb6d0c3ea97ba048cf139317307666a93f1537206bd414645ef50924049a8a</span></div><p class="made">Ace's copy of the network, made when Ace runs: the same numbers, written as Ace's reader takes them (bench.py hugin_for_ace, or gen_bn.py write_hugin for a UAI network).</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">uai_objectdetection_45.inst</code><span>3 877 bytes, 138 lines</span><span class="sha" title="SHA-256">sha256 0fad59d69cb24e1c2d386e2b6682a717a8816b6853bd806ada08183c4599c9b9</span></div><p class="made">The observations, as Ace reads them, written by <code>gen_bn.py --inst</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
 </div>
 </div>
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>7.4</td><td>2.2e-16 at most</td><td>largest formula, pairs 252 874 723; final formula, pairs 16 637; variables 111 705; ground atoms 164 610; ground rules 163 740; vtree families:0 (from auto: 2 attempts, 0.064s discarded)</td></tr></tbody></table></div>
-<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>34.1</td><td>5.0e-07 at most</td><td>induced width 5</td></tr></tbody></table></div>
-<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.7</td><td>5.0e-13 at most</td><td>inference s 21.385758</td></tr></tbody></table></div>
-<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>141</td><td>5.0e-13 at most</td><td>inference s 139.003902</td></tr></tbody></table></div>
-<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>55.1</td><td>5.0e-13 at most</td><td>inference s 55.07065343</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>55.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
-Stacktrace:
-  [1] GenericMemory
-    @ ./boot.jl:516 [inlined]
-  [2] new_as_memoryref
-    @ ./boot.jl:535 [inlined]
-  [3] Array
-    @ ./boot.jl:588 [inlined]
-  [4] Array
-    @ ./boot.jl:594 [inlined]
-  [5] (Array{Float64})(::UndefInitializer, d::NTuple{8, Int64})
-    @ Core ./boot.jl:599
-  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
-    @ Base ./baseext.jl:30
-  [7] get_output_array(xs::Tuple{Array{Float64, 7}, Array{Float64, 5}}, size::Vector{Int64}, fillzero::Bool)
-    @ OMEinsum ~loop_einsum.jl:52
-  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
-    @ OMEinsum ~einsum.jl:25
-  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 7, Array{Float64, 7}}, RescaledArray{Float64, 5, Array{Float64, 5}}}, size_dict::Dict{Int64, Int64})
-    @ TensorInference ~RescaledArray.jl:45
- [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
-    @ OMEinsum ~einsequence.jl:286
- [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
-    @ OMEinsum ~einsequence.jl:284
- [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
-    @ OMEinsum ~einsequence.jl:260
- [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
-    @ OMEinsum ~einsequence.jl:257
- [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
-    @ TensorInference ~Core.jl:184
- [15] probability
-    @ ~Core.jl:183 [inlined]
- [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
-    @ TensorInference ~Core.jl:170
- [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
-    @ TensorInference ~Core.jl:169
- [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
-    @ Main tensorinference_uai.jl:22
- [19] top-level scope
-    @ tensorinference_uai.jl:52
-in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>57.3</td><td>2.2e-16 at most</td><td>inference s 48.86715102</td></tr></tbody></table></div>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>6.0</td><td>2.2e-16 at most</td><td>largest formula, pairs 252 874 723; final formula, pairs 16 637; variables 111 705; ground atoms 164 610; ground rules 163 740; vtree families:0 (from auto: 2 attempts, 0.041s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>4.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.OutOfMemoryError: Java heap space
+	at mark.inf.rdag2.AcBuilder.&lt;init&gt;(AcBuilder.java:301)
+	at mark.reason.ac.CompilerTabular.internalCompile(CompilerTabular.java:87)
+	at mark.reason.ac.CompilerAce.internalCompile(CompilerAce.java:91)
+	at mark.reason.ac.Compiler.compile(Compiler.java:336)
+	at edu.ucla.belief.ace.AceCompile.main(AceCompile.java:318)</pre></details></td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>32.2</td><td>5.0e-07 at most</td><td>induced width 5</td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>11.7</td><td>5.0e-13 at most</td><td>inference s 11.345882</td></tr></tbody></table></div>
+<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>116</td><td>5.0e-13 at most</td><td>inference s 114.573708</td></tr></tbody></table></div>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>34.3</td><td>5.0e-13 at most</td><td>inference s 34.24617484</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>41.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>[2053017] signal 15: Terminated
+in expression starting at none:0
+_ZNK4llvm5Value33stripPointerCastsForAliasAnalysisEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7ffc7ce7285f)
+unknown function (ip: (nil))
+Allocations: 33002010 (Pool: 33000276; Big: 1734); GC: 29</pre></details></td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>33.7</td><td>1.4e-16 at most</td><td>inference s 29.06663299</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

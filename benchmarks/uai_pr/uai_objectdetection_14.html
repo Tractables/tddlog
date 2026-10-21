@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">7.5</td><td class="num">25.0</td><td class="num">49.9</td><td class="num">19.1</td><td class="num">128</td><td class="num">40.7</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s;  </p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><td class="num">5.6</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">28.6</td><td class="num">35.0</td><td class="num">14.3</td><td class="num">108</td><td class="num">35.8</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. error: the system stopped with an error. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -71,16 +71,18 @@
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>7.5</td><td>log10 Z off by 1.4e-14</td><td>largest formula, pairs 504 480 664; final formula, pairs 16 637; variables 123 990; ground atoms 182 640; ground rules 181 800; vtree families:0 (from auto: 3 attempts, 0.060s discarded)</td></tr></tbody></table></div>
-<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>51.9</td><td>5.0e-07 at most</td><td>induced width 5</td></tr></tbody></table></div>
-<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>25.0</td><td>log10 Z off by 3.5e-08</td><td>induced width 5</td></tr></tbody></table></div>
-<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>40.5</td><td>5.0e-13 at most</td><td>inference s 40.077039</td></tr></tbody></table></div>
-<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>49.9</td><td>log10 Z off by 1.4e-10</td><td>inference s 49.33175</td></tr></tbody></table></div>
-<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
-<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>19.1</td><td>log10 Z off by 1.4e-10</td><td>inference s 17.089759</td></tr></tbody></table></div>
-<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>129</td><td>5.0e-13 at most</td><td>inference s 128.6475091</td></tr></tbody></table></div>
-<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>128</td><td>log10 Z off by 1.4e-10</td><td>inference s 127.4552702</td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>65.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>5.6</td><td>log10 Z off by 1.4e-14</td><td>largest formula, pairs 504 480 664; final formula, pairs 16 637; variables 123 990; ground atoms 182 640; ground rules 181 800; vtree families:0 (from auto: 3 attempts, 0.039s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Ace forceC2d</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>44.1</td><td>5.0e-07 at most</td><td>induced width 5</td></tr></tbody></table></div>
+<h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>28.6</td><td>log10 Z off by 3.5e-08</td><td>induced width 5</td></tr></tbody></table></div>
+<h3>pyAgrum</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>28.9</td><td>5.0e-13 at most</td><td>inference s 28.189968</td></tr></tbody></table></div>
+<h3>pyAgrum (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>35.0</td><td>log10 Z off by 1.4e-10</td><td>inference s 34.286376</td></tr></tbody></table></div>
+<h3>pgmpy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>270</td><td>5.0e-13 at most</td><td>inference s 268.690917</td></tr></tbody></table></div>
+<h3>pgmpy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.3</td><td>log10 Z off by 1.4e-10</td><td>inference s 12.688355</td></tr></tbody></table></div>
+<h3>libDAI</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>106</td><td>5.0e-13 at most</td><td>inference s 106.0576996</td></tr></tbody></table></div>
+<h3>libDAI (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>108</td><td>log10 Z off by 1.4e-10</td><td>inference s 108.0355322</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>68.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
 Stacktrace:
   [1] GenericMemory
     @ ./boot.jl:516 [inlined]
@@ -104,13 +106,13 @@ Stacktrace:
     @ ./broadcast.jl:897 [inlined]
  [11] materialize
     @ ./broadcast.jl:872 [inlined]
- [12] rescale_array(tensor::Array{Float64, 6})
+ [12] rescale_array(tensor::Array{Float64, 7})
     @ TensorInference ~RescaledArray.jl:37
- [13] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 5, Array{Float64, 5}}, RescaledArray{Float64, 4, Array{Float64, 4}}}, size_dict::Dict{Int64, Int64})
+ [13] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 6, Array{Float64, 6}}, RescaledArray{Float64, 5, Array{Float64, 5}}}, size_dict::Dict{Int64, Int64})
     @ TensorInference ~RescaledArray.jl:46
  [14] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
     @ OMEinsum ~einsequence.jl:286
- [15] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 3 times)
+ [15] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 2 times)
     @ OMEinsum ~einsequence.jl:284
  [16] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
     @ OMEinsum ~einsequence.jl:260
@@ -129,7 +131,7 @@ Stacktrace:
  [23] top-level scope
     @ tensorinference_uai.jl:52
 in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>65.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+<h3>TensorInference.jl greedy (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>72.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
 Stacktrace:
   [1] GenericMemory
     @ ./boot.jl:516 [inlined]
@@ -153,13 +155,13 @@ Stacktrace:
     @ ./broadcast.jl:897 [inlined]
  [11] materialize
     @ ./broadcast.jl:872 [inlined]
- [12] rescale_array(tensor::Array{Float64, 6})
+ [12] rescale_array(tensor::Array{Float64, 7})
     @ TensorInference ~RescaledArray.jl:37
- [13] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 5, Array{Float64, 5}}, RescaledArray{Float64, 4, Array{Float64, 4}}}, size_dict::Dict{Int64, Int64})
+ [13] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 6, Array{Float64, 6}}, RescaledArray{Float64, 5, Array{Float64, 5}}}, size_dict::Dict{Int64, Int64})
     @ TensorInference ~RescaledArray.jl:46
  [14] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
     @ OMEinsum ~einsequence.jl:286
- [15] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 3 times)
+ [15] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 2 times)
     @ OMEinsum ~einsequence.jl:284
  [16] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
     @ OMEinsum ~einsequence.jl:260
@@ -178,12 +180,64 @@ Stacktrace:
  [23] top-level scope
     @ tensorinference_uai.jl:52
 in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>56.3</td><td>1.9e-16 at most</td><td>inference s 48.52087784</td></tr></tbody></table></div>
-<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>40.7</td><td>log10 Z off by 1.4e-14</td><td>inference s 33.57807994</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>47.1</td><td>2.5e-16 at most</td><td>inference s 40.66209602</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>35.8</td><td>log10 Z off by 2.8e-14</td><td>inference s 29.51691008</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k fsdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k sdd</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.68</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;lexer.py&quot;, line 689, in lex
+    yield lexer.next_token(lexer_state, parser_state)
+  File &quot;lexer.py&quot;, line 622, in next_token
+    raise UnexpectedCharacters(lex_state.text.text, line_ctr.char_pos, line_ctr.line, line_ctr.column,
+lark.exceptions.UnexpectedCharacters: No terminal matches &#x27;3&#x27; in the current parser context, at line 6 col 496
+
+v_15); 0.0006599808573886221::x4(v_16); 3.5216086627029595e-05::x4(v_17); 0.0355
+                                        ^
+Expected one of: 
+	* /[A-Z][a-zA-Z0-9]*/
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+
+Previous tokens: Token(&#x27;SEMICOLON&#x27;, &#x27;;&#x27;)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &quot;runpy.py&quot;, line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File &quot;runpy.py&quot;, line 86, in _run_code
+    exec(code, run_globals)
+  File &quot;main.py&quot;, line 350, in &lt;module&gt;
+    main()
+  File &quot;main.py&quot;, line 249, in main
+    program = ProblogProgram(program_str, program_files)
+  File &quot;problogprogram.py&quot;, line 71, in __init__
+    program = parser.parse(program_str)
+  File &quot;lark.py&quot;, line 677, in parse
+    return self.parser.parse(text, start=start, on_error=on_error)
+  File &quot;parser_frontends.py&quot;, line 131, in parse
+    return self.parser.parse(stream, chosen_start, **kw)
+  File &quot;lalr_parser.py&quot;, line 42, in parse
+    return self.parser.parse(lexer, start)
+  File &quot;lalr_parser.py&quot;, line 88, in parse
+    return self.parse_from_state(parser_state)
+  File &quot;lalr_parser.py&quot;, line 111, in parse_from_state
+    raise e
+  File &quot;lalr_parser.py&quot;, line 100, in parse_from_state
+    for token in state.lexer.lex(state):
+  File &quot;lexer.py&quot;, line 698, in lex
+    raise UnexpectedToken(token, e.allowed, state=parser_state, token_history=[last_token], terminals_by_name=self.root_lexer.terminals_by_name)
+lark.exceptions.UnexpectedToken: Unexpected token Token(&#x27;__ANON_7&#x27;, &#x27;3.5216086627029595e-05&#x27;) at line 6, column 496.
+Expected one of: 
+	* /[A-Z][a-zA-Z0-9]*/
+	* /(1(\.0[0]*)?|0\.[0-9]+)/
+Previous tokens: [Token(&#x27;SEMICOLON&#x27;, &#x27;;&#x27;)]</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">Merlin (PR)</th><th class="num">pyAgrum</th><th class="num">pyAgrum (PR)</th><th class="num">pgmpy (PR)</th><th class="num">libDAI</th><th class="num">libDAI (PR)</th><th class="num">TensorInference.jl treesa</th><th class="num">TensorInference.jl treesa (PR)</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-64.09009307</td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009311</td><td class="num"></td><td class="num">-64.09009307</td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009307</td></tr></tbody></table></div>
+  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">Merlin (PR)</th><th class="num">pyAgrum</th><th class="num">pyAgrum (PR)</th><th class="num">pgmpy</th><th class="num">pgmpy (PR)</th><th class="num">libDAI</th><th class="num">libDAI (PR)</th><th class="num">TensorInference.jl treesa</th><th class="num">TensorInference.jl treesa (PR)</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-64.09009307</td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009311</td><td class="num"></td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009307</td><td class="num"></td><td class="num">-64.09009307</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
