@@ -103,7 +103,7 @@ jobs:
         run: bindings/wasm/site.sh site target/doc target/python-docs target/c-docs "${GITHUB_SHA::8}" "${BENCHMARKS:-}"
 
       - name: Test the browser runtime
-        run: node --test bindings/wasm/tests/runtime.cjs
+        run: node --test bindings/wasm/tests/runtime.cjs bindings/wasm/tests/code.cjs
 
       - name: Run every example through the module against ProbLog's answers
         run: node bindings/wasm/tests/examples.cjs site/tddlog.js
