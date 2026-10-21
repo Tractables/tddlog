@@ -124,6 +124,14 @@ as comments; `--format internal` prints the ground node table.
   a time. The repository's checks against ProbLog ask one query at a time.
 - Without PySDD the system tests print "No SDD support" and test only
   `ddnnf`.
+- `-k fsdd` stops with `InconsistentEvidenceError` on programs whose
+  evidence is consistent: bn_sachs_ev and mastermind4_4_8, which `ddnnf`
+  and `sdd` answer, and 19 UAI networks that tddlog and the reference
+  answer. The error comes from a logical check, the evidence's SDD found
+  false (`problog/forward.py`), not from a probability; the check also
+  runs while the forward compile is still building that SDD
+  (`ForwardEvaluator.node_updated`). The results count these runs as
+  errors.
 
 ### The system tests
 

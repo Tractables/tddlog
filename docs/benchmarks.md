@@ -538,7 +538,15 @@ ObjectDetection and Pedigree network, CSP_11 and 13, Grids_11, 15 of the
 15 Promedus and 5 of the 6 Segmentation; Merlin is faster on
 Segmentation_12 (339 ms against 423). tddlog's marginals agree with the
 reference's (Setup) to 9.1e-14 on 111 networks and with Merlin's six
-printed digits on the other 5.
+printed digits on the other 5. ProbLog's forward SDD compile (`fsdd`)
+stops with `InconsistentEvidenceError` on 19 networks whose evidence is
+consistent (CSP_12, DBN_11, 12, 13, Grids_11, 12, 13, 14, 15, 16, 17,
+18, Pedigree_13, Segmentation_11, 12, 13, 14, 15, 16; tddlog answers
+them). The error comes from a logical check, the evidence's SDD found
+false, not from a probability; the check also runs while the compile is
+still building that SDD (`ForwardEvaluator.node_updated`), and it stops
+so on smaller programs that ProbLog's other compiles answer
+(bn_sachs_ev, mastermind4_4_8). These runs count as errors.
 
 Against each baseline (columns as in "Against each baseline"):
 

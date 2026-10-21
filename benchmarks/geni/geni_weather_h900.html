@@ -99,9 +99,12 @@
 <p class="readers"><b>Not a translation: this system&#x27;s own program of the benchmark, as its artifact has it.</b></p>
 <p class="readers">Read by Storm sparse, Storm exact, Storm dd, PRISM sparse, PRISM hybrid.</p>
 <dl class="cmds">
-<dt>Storm sparse</dt><dd><code>python scripts/storm_weather.py weather-models/weatherfactory10.prism 900 sparse</code></dd>
-<dt>Storm exact</dt><dd><code>python scripts/storm_weather.py weather-models/weatherfactory10.prism 900 exact</code></dd>
-<dt>Storm dd</dt><dd><code>python scripts/storm_weather.py weather-models/weatherfactory10.prism 900 dd</code></dd>
+<dt>Storm sparse</dt><dd><code>python storm_weather.py weather-models/weatherfactory10.prism 900 sparse</code></dd>
+<dt></dt><dd><code>storm_weather.py</code>, the harness of this run, has since been replaced by <code>scripts/storm_check.py</code>.</dd>
+<dt>Storm exact</dt><dd><code>python storm_weather.py weather-models/weatherfactory10.prism 900 exact</code></dd>
+<dt></dt><dd><code>storm_weather.py</code>, the harness of this run, has since been replaced by <code>scripts/storm_check.py</code>.</dd>
+<dt>Storm dd</dt><dd><code>python storm_weather.py weather-models/weatherfactory10.prism 900 dd</code></dd>
+<dt></dt><dd><code>storm_weather.py</code>, the harness of this run, has since been replaced by <code>scripts/storm_check.py</code>.</dd>
 <dt>PRISM sparse</dt><dd><code>prism weather-models/weatherfactory10.prism -pf &#x27;P=? [F&lt;=900 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g</code></dd>
 <dt>PRISM hybrid</dt><dd><code>prism weather-models/weatherfactory10.prism -pf &#x27;P=? [F&lt;=900 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g</code></dd>
 </dl>
