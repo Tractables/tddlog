@@ -45,17 +45,25 @@
   up and to the left is better, and a run that takes less than 0.2 s counts
   at 0.2 s, since differences of a few milliseconds of start-up are not
   compared. A plot draws every system over all of its instances, an
-  instance a system cannot express or was not given counted as unanswered,
-  and its legend gives how many instances each system answers and how many
-  it expresses. Under the plot of a family's problems, a small plot for
-  each cluster of systems with similar expressive capabilities covers the
-  instances all of them express, with every system that expresses all of
-  those. The findings compare tddlog with
+  instance a system does not attempt counted as unanswered, so that it
+  shows coverage rather than speed. Its legend gives how many instances
+  each system answers, and how many are its own (from its own papers,
+  benchmarks or distribution), natural to it (written as its users write
+  programs, in a translation that stays close to the original and does
+  none of its work for it: no grounding, unrolling or bit-blasting) and
+  attempted (given to it at all, natural or through such a translation).
+  Under the plot of a family's problems, a small plot for each cluster of
+  systems covers the instances natural to all of them, with tddlog and
+  every system they are all natural to. The README's speed comparisons
+  are over each system's natural instances, the total times over those
+  either answers and over those both answer; under the plot of every
+  problem, what each system is compared on and why. The findings compare tddlog with
   another system on the instances both answer: where each is faster, by
   how much, and their total times over those instances. An instance that
   both finish in under 0.1 s counts neither as a win nor as a loss. The
   README compares by total time instead, a run that does not finish
-  counting as the time limit. The numbers come from the same records as
+  (out of time or memory, failed, or skipped after a smaller instance of
+  its family failed) counting as the time limit. The numbers come from the same records as
   the README's and
   <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>'s.</p>
   <noscript><p class="note">The plots and tables of this page need

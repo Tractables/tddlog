@@ -755,6 +755,7 @@ table.times tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-
 table.times .num { text-align: right; }
 table.times td.best { font-weight: 700; color: var(--accent); }
 table.times td.fail { color: var(--muted); }
+table.times td.attempted { font-style: italic; }
 table.hide-quick tr.quick { display: none; }
 .instances .note { margin-top: 0.5rem; }
 
