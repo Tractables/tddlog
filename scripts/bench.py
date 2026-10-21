@@ -2135,11 +2135,15 @@ def run_aspmc(args, name, path):
     (`aspmc_conditioned`) where it has any and its probabilities in the
     notation it reads (`aspmc_numbers`). It writes `out.cnf` and the
     decomposer's scratch into the working directory, so each instance gets
-    one of its own."""
+    one of its own. A ground query it does not print, an atom its grounder
+    removed as no rule derives it, answers 0."""
+    from lpad2problog import split_clauses, strip_comments
     d = os.path.join(args.dir, 'aspmc-' + name)
     os.makedirs(d, exist_ok=True)
     with open(path) as f:
         text = f.read()
+    asked = [re.sub(r'\s+', '', m.group(1)) for clause in split_clauses(strip_comments(text))
+             if (m := re.fullmatch(r'\s*query\s*\((.*)\)\s*', clause, re.S))]
     try:
         conditioned = aspmc_conditioned(text)
     except ValueError as e:
@@ -2154,6 +2158,10 @@ def run_aspmc(args, name, path):
                os.path.abspath(path)], args.timeout, cwd=d)
     if r['status'] == 'ok':
         r['answers'] = parse_aspmc(r['stderr'])
+        if isinstance(r['answers'], dict):
+            for q in asked:
+                if not re.search(r'[(,][A-Z_]', q):
+                    r['answers'].setdefault(q, 0.0)
     return r
 
 

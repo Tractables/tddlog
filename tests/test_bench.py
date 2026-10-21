@@ -744,6 +744,18 @@ class AspmcTests(unittest.TestCase):
                 self.assertEqual(f.read(), written)
             self.assertEqual(result['answers'], {'c': 5.25e-12})
 
+    def test_a_ground_query_aspmc_leaves_out_answers_0(self):
+        program = '0.5::a.\nb :- a, c.\nquery(a).\nquery(b).\nquery(r(X)).\nquery(p(X)) :- a.\n'
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'gone.pl')
+            with open(path, 'w') as f:
+                f.write(program)
+            args = SimpleNamespace(dir=d, aspmc='python3', timeout=1)
+            with patch.object(bench, 'timed', return_value={
+                        'status': 'ok', 'seconds': 0.1, 'stderr': '[RESULT] aspmc: a: 0.5\n'}):
+                result = bench.run_aspmc(args, 'gone', path)
+            self.assertEqual(result['answers'], {'a': 0.5, 'b': 0.0})
+
     def test_comments_and_atom_named_evidence_are_allowed(self):
         program = ('% evidence(obs, true).\n'
                    '/* evidence(obs). */\n'

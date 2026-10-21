@@ -214,6 +214,21 @@ is the system, not the harness. Its answers agree with ProbLog's to
 ProbLog's printed precision (4.9e-9) on the graph, grid, smokers, uwcse,
 cora, bloodtype, network and Dice families.
 
+PITA loses a probability far below one: bddem evaluates a complemented
+else-edge of CUDD's diagrams as `1.0 - pf` (`Prob` in `bddem.c`), in
+doubles, so a part of P(e) below about 1e-16 that it reaches through such
+an edge vanishes. A cut-down written by hand shows it: n facts `0.5::a_i`,
+evidence that they are all false or all true (P(e) = 2^-(n-1)), and the
+query `a1` (1/2). At n = 45 PITA answers 1/2; at n = 60 it gives
+P(e) = 2^-60, the all-false half lost, and P(a1|e) = 1, on
+`problog2pita.py`'s translation and on the LPAD written by hand alike.
+The Ace programs `ace_fs_07` and `ace_mastermind_03_08_03` have evidence
+that unlikely. On `ace_fs_07` PITA's P(e) is right under the first 700 of
+its 1120 observations (3.4e-13) and reads 1.8e-15 under all of them, where
+every query answers 0 (ProbLog and tddlog 0.0237 on the worst); on
+`ace_mastermind_03_08_03` (P(e) = 2.6e-13) it answers 0.49979 where the
+others answer 0.5. These wrong answers are PITA's, not the translation's.
+
 `scripts/lpad2problog.py` converts cplint's example LPADs to ProbLog, with
 the `?- prob(Q, P)` queries of their `/** <examples> */` block; 28 of the
 29 in tddlog's fragment agree with ProbLog to 1e-6. `data/cplint/`
@@ -617,7 +632,9 @@ tmp/venv/bin/python -m aspmc.main -m problog -c -v result prog.pl
 
 It writes `out.cnf` into the working directory, so bench.py gives each
 instance a directory of its own and reads `[RESULT] aspmc: <query>: <p>`
-from stderr.
+from stderr. A ground query it does not print is an atom its grounder
+removed because no rule derives it, and answers 0 (water's values of
+probability 0).
 
 Its ProbLog frontend does not condition on `evidence/1,2`: it reads them
 as facts and returns unconditional probabilities with exit code zero.
