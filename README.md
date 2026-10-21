@@ -150,22 +150,23 @@ mastermind, mnist_sum and others), the TPC-H queries and more.
   networks it was run on: 9 minutes against 11 hours. Ace answers 228
   of them.
 - 44× to 104× faster than libDAI, pyAgrum, TensorInference.jl and pgmpy
-  on the same 334, and 185× to 200× faster than ProbLog, PITA and
-  aspmc, which answer 21, 51 and 30 of them.
+  on the same 334, and 200× faster than aspmc, which answers 30 of them.
+- ProbLog and PITA, run on all 652, answer 41 and 119; tddlog is 51×
+  and 45× faster in total.
 - The probabilistic programming languages (Dice, Alea.jl, Roulette,
-  noDice, Psi, Genfer, SPPL and Geni), given the same 334 networks as
-  programs, answer 9 (Psi) to 54 (Alea.jl) of them; tddlog is over 170×
-  faster than each in total.
-- Against the fastest other system on each network, tddlog is 11× faster
-  in total: 1.1 hours against 12 hours.
+  noDice, Psi, Genfer, SPPL and Geni), given all 652 networks as
+  programs, answer 10 (Psi) to 70 (Alea.jl) of them; tddlog is 47× to
+  54× faster than each in total.
+- Against the fastest other system on each network, tddlog is 9.2×
+  faster in total: 1.1 hours against 10 hours.
 
 The networks: the bnlearn repository's, Ace's benchmarks, the large
 networks (barley, diabetes, mildew, munin) and the UAI 2022
 competition's sets: the MAR tuning set, for marginals and for the
 probability of the evidence, and the PR tuning and final sets, for the
-partition function. Ace, the network libraries, ProbLog, PITA, aspmc and
-the probabilistic programming languages ran on the 334 networks of all
-but the two PR sets, and Merlin on all 652.
+partition function. Ace, the network libraries and aspmc ran on the 334
+networks of all but the two PR sets; Merlin, ProbLog, PITA and the
+probabilistic programming languages ran on all 652.
 
 ### Probabilistic programs: Dice, Alea.jl, Roulette and others
 
@@ -186,6 +187,10 @@ but the two PR sets, and Merlin on all 652.
   start-up and compilation.
 - In total 58× faster than noDice, 24× than Psi and 5.1× than Geni,
   each on the programs it is given.
+- Ace, Merlin and the network libraries, given the 34 programs that are
+  networks or ground to one (the Dice and Roulette suites' networks and
+  eight more), answer 30 to 34 of them, in 2 minutes (Merlin) to 41
+  minutes (pgmpy) in total, where tddlog takes 2 s.
 - Specialized solvers win on their own programs: Genfer's generating
   functions answer its 15 (the population model and the Dice programs it
   ships) in 0.2 s in total, where tddlog takes 2 minutes; Pluck answers
