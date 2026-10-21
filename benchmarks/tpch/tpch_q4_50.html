@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#tpch">TPC-H</a></p>
     <h1>tpch_q4_50</h1>
-    <p class="lede">The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Made by <code>gen_tpch.py 0.05 --queries q4 --seed 1</code>.</p>
+    <p class="lede">The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_tpch.py 0.05 --queries q4 --seed 1</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><td class="num">2.3</td><td class="num">190</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">1.0</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th></tr></thead><tbody><tr><td class="num">2.3</td><td class="num">190</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">1.0</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">21.5</td><td class="num">99.8</td><td class="num">49.0</td><td class="num">52.5</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -80,10 +80,121 @@
 <h3>PITA</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>aspmc</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>ProvSQL</h3><p class="note">The data is loaded before the clock, as a database holds its data; the time is the queries&#x27;.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.0</td><td>2.3e-15 at most</td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa, Dice, Alea.jl, Roulette nocomplement, Roulette, noDice, Psi, Genfer, SPPL, Geni: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.0</td><td>2.1e-15 at most</td><td>largest formula, pairs 28 067; final formula, pairs 0; variables 9 558; ground atoms 9 559; ground rules 7 017; vtree td (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>7.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.StackOverflowError
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:165)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcBuilder.java:166)
+	at mark.inf.rdag2.AcBuilder.markConnected(AcB</pre></details></td></tr></tbody></table></div>
+<h3>Ace forceC2d (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>7.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.StackOverflowError
+	at java.base/java.util.HashMap.hash(HashMap.java:340)
+	at java.base/java.util.HashMap.containsKey(HashMap.java:592)
+	at java.base/java.util.HashSet.contains(HashSet.java:204)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:144)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.Node.childrenBeforeParentsHelper(Node.java:147)
+	at mark.core.rdag.No</pre></details></td></tr></tbody></table></div>
+<h3>Merlin (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.5</td><td>2.8e-07 at most</td><td>induced width 3</td></tr></tbody></table></div>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>99.8</td><td>2.5e-13 at most</td><td>inference s 10.44318</td></tr></tbody></table></div>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>49.0</td><td>2.5e-13 at most</td><td>inference s 26.46883</td></tr></tbody></table></div>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>52.5</td><td>2.5e-13 at most</td><td>inference s 50.60212398</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl treesa (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Dice (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Alea.jl (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Roulette nocomplement (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Roulette (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>noDice (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Psi (later run)</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is tpch_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k sdd</th><th class="num">ProvSQL</th></tr></thead><tbody><tr><th>q4</th><td class="num">0.4434847195</td><td class="num">0.4434847195</td><td class="num">0.44348472</td><td class="num">0.4434847195</td></tr></tbody></table></div>
+  <p class="note">The reference is tpch_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k sdd</th><th class="num">ProvSQL</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th></tr></thead><tbody><tr><th>q4</th><td class="num">0.4434847195</td><td class="num">0.4434847195</td><td class="num">0.44348472</td><td class="num">0.4434847195</td><td class="num">0.443485</td><td class="num">0.4434847195</td><td class="num">0.4434847195</td><td class="num">0.4434847195</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
