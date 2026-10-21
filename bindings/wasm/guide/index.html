@@ -7,6 +7,7 @@
 <meta name="description" content="The guide to tddlog, exact inference for ProbLog programs by compilation into tree decision diagrams: the language, worked examples, the command line and the library.">
 <script src="../theme.js"></script>
 <link rel="stylesheet" href="../styles.css">
+<script src="../code.js" defer></script>
 </head>
 <body>
 
@@ -65,7 +66,7 @@
     (gcc 12 or newer, or a recent clang) for the tree-decomposition solver
     that the goatd library vendors. The command line is then
     <code>target/release/tddlog</code>:
-<pre>git clone https://github.com/Tractables/tddlog
+<pre data-lang="shell">git clone https://github.com/Tractables/tddlog
 cd tddlog
 cargo build --release</pre></li>
   </ul>
@@ -73,7 +74,7 @@ cargo build --release</pre></li>
   <h3>A first program</h3>
   <p><code>examples/alarm.pl</code> is the alarm example of Fierens et al.
   (2015):</p>
-<pre>0.1::burglary.
+<pre data-lang="problog">0.1::burglary.
 0.2::earthquake.
 0.7::hears_alarm(john).
 0.4::hears_alarm(mary).
@@ -91,7 +92,7 @@ query(calls(mary)).</pre>
   earthquake, and a person calls if the alarm goes off and they hear it.
   The evidence keeps the worlds in which John calls, and each query asks
   for the probability of an atom over those worlds.</p>
-<pre>$ ./target/release/tddlog examples/alarm.pl
+<pre data-lang="shell">$ ./target/release/tddlog examples/alarm.pl
 burglary:       0.357143
 earthquake:     0.714286
 calls(mary):    0.400000</pre>
@@ -105,7 +106,7 @@ calls(mary):    0.400000</pre>
   probability of the evidence, in scientific notation and as its base-10
   logarithm, which stays exact where P(e) is smaller than the least
   floating-point number:</p>
-<pre>$ ./target/release/tddlog --evidence-probability examples/alarm.pl
+<pre data-lang="shell">$ ./target/release/tddlog --evidence-probability examples/alarm.pl
 burglary:       0.357143
 earthquake:     0.714286
 calls(mary):    0.400000
@@ -123,7 +124,7 @@ P(e):   1.960000e-1     log10 -0.707744</pre>
   against ProbLog's.</p>
 
   <h3>Facts and rules</h3>
-<pre>edge(1,2).                           % a fact
+<pre data-lang="problog">edge(1,2).                           % a fact
 0.6::edge(2,3).                      % a probabilistic fact
 path(X,Y) :- edge(X,Y).              % rules
 path(X,Y) :- edge(X,Z), path(Z,Y).
@@ -140,7 +141,7 @@ path(X,Y) :- edge(X,Z), path(Z,Y).
   parentheses.</p>
 
   <h3>Annotated disjunctions</h3>
-<pre>0.2::color(red); 0.5::color(green); 0.3::color(blue).
+<pre data-lang="problog">0.2::color(red); 0.5::color(green); 0.3::color(blue).
 0.05::tub(yes); 0.95::tub(no) :- asia(yes).</pre>
   <p>An annotated disjunction makes one choice among its heads: here the
   color is red with probability 0.2, green with 0.5 and blue with 0.3.
@@ -150,7 +151,7 @@ path(X,Y) :- edge(X,Z), path(Z,Y).
   a Bayesian network is one annotated disjunction per row.</p>
 
   <h3>Negation</h3>
-<pre>b :- \+ a.
+<pre data-lang="problog">b :- \+ a.
 c :- not(a).
 \+ d :- b.</pre>
   <p><code>\+ a</code>, or <code>not(a)</code>, holds in a world where
@@ -164,7 +165,7 @@ c :- not(a).
   <code>d</code> false wherever <code>b</code> holds, as in ProbLog.</p>
 
   <h3>Arithmetic and comparisons</h3>
-<pre>n(1). n(2). n(3).
+<pre data-lang="problog">n(1). n(2). n(3).
 0.5::x(N) :- n(N).
 s(S) :- x(A), x(B), A &lt; B, S is A + B.</pre>
   <p><code>is</code> evaluates integer arithmetic: <code>+</code>,
@@ -178,7 +179,7 @@ s(S) :- x(A), x(B), A &lt; B, S is A + B.</pre>
   not supported.</p>
 
   <h3>Evidence and queries</h3>
-<pre>evidence(calls(john), true).
+<pre data-lang="problog">evidence(calls(john), true).
 evidence(calls(mary), false).
 evidence(alarm).                     % the same as evidence(alarm, true)
 query(burglary).
@@ -204,7 +205,7 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
   </ul>
   <p>Each of these stops tddlog with a message and exit status 1, as
   in</p>
-<pre>$ ./target/release/tddlog lists.pl
+<pre data-lang="shell">$ ./target/release/tddlog lists.pl
 parse error: line 1: lists are not supported (`[`)</pre>
   <p>Of ProbLog 2.3's 109 system tests, tddlog passes 47, reports as
   errors the 7 that ProbLog expects to fail, and reports the other 55 as
@@ -225,7 +226,7 @@ parse error: line 1: lists are not supported (`[`)</pre>
   its parents' values; <code>either</code>, which holds where the patient
   has tuberculosis or lung cancer, is a deterministic node, written as
   rules:</p>
-<pre>0.01::asia(yes); 0.99::asia(no).
+<pre data-lang="problog">0.01::asia(yes); 0.99::asia(no).
 0.05::tub(yes); 0.95::tub(no) :- asia(yes).
 0.01::tub(yes); 0.99::tub(no) :- asia(no).
 0.5::smoke(yes); 0.5::smoke(no).
@@ -259,7 +260,7 @@ query(either(yes)).
 query(either(no)).</pre>
   <p>The patient has a positive x-ray and no dyspnoea, and the queries ask
   for both values of six of the variables:</p>
-<pre>$ ./target/release/tddlog --evidence-probability examples/bn_asia_evidence.pl
+<pre data-lang="shell">$ ./target/release/tddlog --evidence-probability examples/bn_asia_evidence.pl
 asia(yes):      0.011678
 asia(no):       0.988322
 tub(yes):       0.054021
@@ -286,7 +287,7 @@ P(e):   3.961994e-2     log10 -1.402086</pre>
   <p><code>examples/cycle_graph.pl</code> asks how likely a path is from
   node 1 to each other node of a graph of seven nodes whose fourteen edges
   are each present with their own probability:</p>
-<pre>0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
+<pre data-lang="problog">0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
 0.3::edge(5,3). 0.6::edge(5,6). 0.5::edge(6,4). 0.4::edge(2,6). 0.3::edge(6,1).
 0.5::edge(4,7). 0.6::edge(7,2). 0.4::edge(7,5). 0.7::edge(1,5).
 path(X,Y) :- edge(X,Y).
@@ -297,7 +298,7 @@ query(path(1,4)).
 query(path(1,5)).
 query(path(1,6)).
 query(path(1,7)).</pre>
-<pre>$ ./target/release/tddlog examples/cycle_graph.pl
+<pre data-lang="shell">$ ./target/release/tddlog examples/cycle_graph.pl
 path(1,2):      0.632256
 path(1,3):      0.460356
 path(1,4):      0.399624
@@ -322,7 +323,7 @@ path(1,7):      0.199812</pre>
   arithmetic becomes circuits over the bits. The same program can be
   written in ProbLog. <code>examples/adder.pl</code> adds two numbers with
   a ripple-carry adder:</p>
-<pre>bit(0). bit(1). bit(2).
+<pre data-lang="problog">bit(0). bit(1). bit(2).
 0.7::x(0). 0.3::x(1). 0.8::x(2).
 0.4::y(0). 0.6::y(1). 0.2::y(2).
 
@@ -347,7 +348,7 @@ query(x(0)).</pre>
   is odd with probability 0.7, and likewise for y. The evidence says that
   the sum is even, and a comparison of the sum with a constant, here
   x + y ≥ 8, reads the sum's bits.</p>
-<pre>$ ./target/release/tddlog --evidence-probability examples/adder.pl
+<pre data-lang="shell">$ ./target/release/tddlog --evidence-probability examples/adder.pl
 sum(1): 0.491304
 sum(2): 0.496870
 at_least_8:     0.505913
@@ -367,12 +368,12 @@ P(e):   4.600000e-1     log10 -0.337242</pre>
   <p>In <code>examples/win.pl</code>, a position of a game is won if some
   move leads from it to a position that is not won. Each move is present
   with probability 0.5:</p>
-<pre>0.5::move(1,2). 0.5::move(1,3). 0.5::move(2,3). 0.5::move(3,4).
+<pre data-lang="problog">0.5::move(1,2). 0.5::move(1,3). 0.5::move(2,3). 0.5::move(3,4).
 win(X) :- move(X,Y), \+ win(Y).
 query(win(1)).
 query(win(2)).
 query(win(3)).</pre>
-<pre>$ ./target/release/tddlog examples/win.pl
+<pre data-lang="shell">$ ./target/release/tddlog examples/win.pl
 win(1): 0.562500
 win(2): 0.250000
 win(3): 0.500000</pre>
@@ -386,7 +387,7 @@ win(3): 0.500000</pre>
   P(win(1)) = 0.375 + 0.25 − 0.0625 = 0.5625. <code>--ground</code>
   prints the program tddlog compiles, in which <code>win(3)</code> has
   become a probabilistic fact:</p>
-<pre>$ ./target/release/tddlog --ground examples/win.pl
+<pre data-lang="shell">$ ./target/release/tddlog --ground examples/win.pl
 0.5::move(1,2).
 0.5::move(1,3).
 0.5::move(2,3).
@@ -405,7 +406,7 @@ query(win(3)).</pre>
   turning is defined through the other's, and a button toggles each wheel
   from time 0 to time 1. <code>turns1</code> depends on its own negation,
   so the program is not stratified:</p>
-<pre>0.3::button1(0).
+<pre data-lang="problog">0.3::button1(0).
 0.6::button2(0).
 turns1(0) :- turns2(0).
 turns2(0) :- turns1(0).
@@ -418,7 +419,7 @@ turns2(1) :- \+turns2(0), button2(0).
 query(turns1(0)).
 query(turns1(1)).
 query(turns2(1)).</pre>
-<pre>$ ./target/release/tddlog examples/gearwheels.pl
+<pre data-lang="shell">$ ./target/release/tddlog examples/gearwheels.pl
 turns1(0):      0.000000
 turns1(1):      0.720000
 turns2(1):      0.720000</pre>
@@ -433,7 +434,7 @@ turns2(1):      0.720000</pre>
   has no distribution. In <code>examples/unsound.pl</code>, from the same
   paper, <code>a :- \+b.</code> and <code>b :- \+a.</code> leave both
   undefined in every world, and tddlog stops with exit status 1:</p>
-<pre>$ ./target/release/tddlog examples/unsound.pl
+<pre data-lang="shell">$ ./target/release/tddlog examples/unsound.pl
 compilation error: atom a is undefined in the well-founded model of some possible world (negation through a cycle); no probability</pre>
 </section>
 
@@ -487,7 +488,7 @@ compilation error: atom a is undefined in the well-founded model of some possibl
   (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
   the UAI format, and a Markov network in the UAI format, each factor an
   observed atom.</p>
-<pre>python3 scripts/gen_bn.py examples/asia.net &gt; asia.pl
+<pre data-lang="shell">python3 scripts/gen_bn.py examples/asia.net &gt; asia.pl
 python3 scripts/gen_bn.py tests/regress/markov.uai --evid tests/regress/markov.uai.evid &gt; markov.pl
 ./target/release/tddlog markov.pl</pre>
   <p>The program queries every value of every unobserved variable
@@ -514,11 +515,11 @@ python3 scripts/gen_bn.py tests/regress/markov.uai --evid tests/regress/markov.u
   <h3>Rust</h3>
   <p>The crate builds from its repository, with a C++ compiler as
   above; in <code>Cargo.toml</code>:</p>
-<pre>[dependencies]
+<pre data-lang="toml">[dependencies]
 tddlog = { git = "https://github.com/Tractables/tddlog" }</pre>
   <p><code>tddlog::solve</code> takes the program, <code>Options</code>
   and a function that receives what <code>--stats</code> would print:</p>
-<pre>let program = "
+<pre data-lang="rust">let program = "
     0.1::burglary.
     0.2::earthquake.
     0.7::hears_alarm(john).
@@ -539,7 +540,7 @@ for answer in solution.answers.as_deref().unwrap_or_default() {
   <code>Solution</code>.</p>
 
   <h3>Python</h3>
-<pre>import tddlog
+<pre data-lang="python">import tddlog
 
 solution = tddlog.solve(open("examples/alarm.pl").read(), evidence_probability=True)
 for query, probability in solution.answers.items():
@@ -555,7 +556,7 @@ print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
   <a href="../python/">Python page</a> has the rest.</p>
 
   <h3>C</h3>
-<pre>TddlogOptions options = tddlog_options_default();
+<pre data-lang="c">TddlogOptions options = tddlog_options_default();
 options.evidence_probability = true;
 TddlogSolution *solution;
 if (tddlog_solve(program, &amp;options, &amp;solution) != TDDLOG_OK) {

@@ -16,6 +16,15 @@
   --amber-fill: #fbeed0;
   --code: #f2f2ed;
   --bad: #b3261e;
+  /* Syntax highlighting (code.js): comments, strings, numbers, keywords
+     and operators, variables, called names, types and the prompt. */
+  --t-com: #6c7075;
+  --t-str: #2a7a3b;
+  --t-num: #a35200;
+  --t-kw: #8a3ab9;
+  --t-var: #9a6700;
+  --t-fn: #2070a8;
+  --t-typ: #0e7c86;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -33,6 +42,13 @@
     --amber-fill: #46381a;
     --code: #15181b;
     --bad: #f2827a;
+    --t-com: #8b949e;
+    --t-str: #7ee787;
+    --t-num: #f0a35e;
+    --t-kw: #d2a8ff;
+    --t-var: #e3b341;
+    --t-fn: #79c0ff;
+    --t-typ: #56d4dd;
   }
 }
 
@@ -49,6 +65,13 @@
   --amber-fill: #46381a;
   --code: #15181b;
   --bad: #f2827a;
+  --t-com: #8b949e;
+  --t-str: #7ee787;
+  --t-num: #f0a35e;
+  --t-kw: #d2a8ff;
+  --t-var: #e3b341;
+  --t-fn: #79c0ff;
+  --t-typ: #56d4dd;
 }
 
 :root[data-theme="light"] { color-scheme: light; }
@@ -409,6 +432,14 @@ pre {
   padding: 0.7rem;
   font: 12px/1.45 var(--mono);
 }
+.t-com { color: var(--t-com); font-style: italic; }
+.t-str { color: var(--t-str); }
+.t-num { color: var(--t-num); }
+.t-kw, .t-op { color: var(--t-kw); }
+.t-var { color: var(--t-var); }
+.t-fn { color: var(--t-fn); }
+.t-typ { color: var(--t-typ); }
+.t-prompt { color: var(--muted); user-select: none; }
 
 footer {
   font-size: 13px;
@@ -724,6 +755,7 @@ table.times tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-
 table.times .num { text-align: right; }
 table.times td.best { font-weight: 700; color: var(--accent); }
 table.times td.fail { color: var(--muted); }
+table.times td.attempted { font-style: italic; }
 table.hide-quick tr.quick { display: none; }
 .instances .note { margin-top: 0.5rem; }
 

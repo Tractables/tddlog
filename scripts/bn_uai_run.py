@@ -2,7 +2,7 @@
 """pyAgrum's and pgmpy's exact inference on a UAI network, for `bench.py
 run --agrum` and `--pgmpy`. Usage:
 
-    bn_uai_run.py SYSTEM MODEL.uai EVID OUT MAR|PR [I,J,...]
+    bn_uai_run.py SYSTEM MODEL.uai EVID OUT MAR|PR [I,J,...|@FILE]
 
 SYSTEM is `agrum` (LazyPropagation on a BAYES file, ShaferShenoy on a
 MARKOV file: the junction tree engines) or `pgmpy` (its variable
@@ -11,9 +11,10 @@ tables, so that both libraries run on the same reduced network. OUT is
 written in Merlin's format (`PR`, ln Z and Z; `STATUS`; `MAR`, the number of
 variables, then each one's domain size and marginals), 12 digits, which
 `bench.py` reads as it reads Merlin's. MAR gives the marginals of the
-variables listed last (all by default; an observed one is its indicator). The
-seconds of the inference proper, after the imports and the construction of
-the model, go to the last line of the output: `inference_seconds X`.
+variables listed last, inline or in FILE (all by default; an observed one is
+its indicator). The seconds of the inference proper, after the imports and
+the construction of the model, go to the last line of the output:
+`inference_seconds X`.
 Everything runs in one thread."""
 import argparse
 import math
@@ -160,7 +161,8 @@ def main():
     a = ap.parse_args()
     kind, sizes, scopes, tables = read_uai(a.model)
     evid = read_evid(a.evid)
-    qvars = [int(x) for x in a.vars.split(',')] if a.vars else list(range(len(sizes)))
+    listed = open(a.vars[1:]).read().strip() if a.vars.startswith('@') else a.vars
+    qvars = [int(x) for x in listed.split(',')] if listed else list(range(len(sizes)))
     factors, log_const = reduce(sizes, scopes, tables, evid)
     want_z = a.task == 'PR'
     if a.system == 'pgmpy':

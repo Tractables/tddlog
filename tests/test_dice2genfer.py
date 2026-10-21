@@ -9,6 +9,7 @@ translated programs run, and their answers, read as bench.py reads them,
 are checked against the exact distribution of test_dice2problog.py.
 """
 from pathlib import Path
+import math
 import os
 import re
 import shlex
@@ -132,6 +133,8 @@ class Dice2GenferTests(unittest.TestCase):
         normalized = 'Normalized:   p(0) / Z = 0.25\nUnnormalized: p(1)     = 0.5\nNormalized:   p(1) / Z = 0.75\n'
         self.assertEqual(bench.parse_genfer(normalized)[1], {0: 0.25, 1: 0.75})
         self.assertEqual(bench.parse_genfer('p(0) = 0.25\np(1) = 3/4\n')[1], {0: 0.25, 1: 0.75})
+        nan = bench.parse_genfer('p(0) = NaN\np(1) = NaN\n')[1]
+        self.assertTrue(all(math.isnan(p) for p in nan.values()) and sorted(nan) == [0, 1])
 
     @unittest.skipUnless(GENFER, 'GENFER is not set')
     def test_genfer_gives_the_exact_answers(self):

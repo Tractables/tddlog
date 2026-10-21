@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#roulette">Roulette&#x27;s programs</a></p>
     <h1>rl_hmm_marginal_likelihood_300</h1>
-    <p class="lede">The scaling programs of the Roulette paper (Moy et al., PLDI 2025) on ladders of size, and its nine Bayesian networks. Roulette runs the artifact&#x27;s programs; tddlog, Dice and Alea.jl run programs of the same models. On caesar Roulette&#x27;s time is that of its query with <code>#f</code>, which keeps the answer. 600 s a run. Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Made by <code>gen_roulette.py hmm-marginal-likelihood 300</code>.</p>
+    <p class="lede">The scaling programs of the Roulette paper (Moy et al., PLDI 2025) on ladders of size, and its nine Bayesian networks. Roulette runs the artifact&#x27;s programs; tddlog, Dice and Alea.jl run programs of the same models. On caesar Roulette&#x27;s time is that of its query with <code>#f</code>, which keeps the answer. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. ProbLog, Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Made by <code>gen_roulette.py hmm-marginal-likelihood 300</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.14</td><td class="num">9.1</td><td class="num">0.08</td><td class="num">0.15</td><td class="num">0.61</td><td class="num">134</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s;  A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.14</td><td class="num">9.1</td><td class="num">0.08</td><td class="num">0.15</td><td class="num">0.61</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num none" title="not run"></td><td class="num">4.6</td><td class="num">134</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; skipped: not run: the system had failed on a smaller size of the same program. zero: every answer printed as 0 where the reference&#x27;s are positive. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -40,6 +40,8 @@
 <input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
 <input type="radio" name="ptab" id="t2"><label for="t2">Dice</label>
 <input type="radio" name="ptab" id="t3"><label for="t3">Alea.jl</label>
+<input type="radio" name="ptab" id="t4"><label for="t4">Psi</label>
+<input type="radio" name="ptab" id="t5"><label for="t5">PRISM</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its generator wrote it, handed to Roulette as it is.</b></p>
 <p class="readers">Read by Roulette.</p>
@@ -471,9 +473,11 @@
 </div>
 <div class="panel" id="p2">
 <p class="readers"><b>A translation of the original into Dice; the line under each file names the script that wrote it.</b></p>
-<p class="readers">Read by Dice.</p>
+<p class="readers">Read by Dice, noDice.</p>
+<p class="readers">noDice reads Dice&#x27;s programs as they are; it has no translation of its own.</p>
 <dl class="cmds">
 <dt>Dice</dt><dd><code>dice rl_hmm_marginal_likelihood_300.dice</code></dd>
+<dt>noDice</dt><dd><code>nDice.exe rl_hmm_marginal_likelihood_300.dice</code></dd>
 </dl>
 <div class="file"><div class="fhead"><code class="fname">rl_hmm_marginal_likelihood_300.dice</code><span>34 868 bytes, 907 lines</span><span class="sha" title="SHA-256">sha256 597ac11129a77d6923af63b689e793e1de1924e695c625c1c3fdd50f81845631</span></div><p class="made">Written by <code>gen_roulette.py hmm-marginal-likelihood 300 --dice</code> (bench.py gen).</p><p class="note"><a href="../files/597ac11129a77d6923af.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/597ac11129a77d6923af.txt"></pre></div>
 </div>
@@ -484,6 +488,25 @@
 <dt>Alea.jl</dt><dd><code>julia rl_hmm_marginal_likelihood_300.alea.jl</code></dd>
 </dl>
 <div class="file"><div class="fhead"><code class="fname">rl_hmm_marginal_likelihood_300.alea.jl</code><span>64 831 bytes, 1 003 lines</span><span class="sha" title="SHA-256">sha256 81bda74cfa822adfdfca64d27090cc2b51cf5b8b2051b3dea07b939ab136288b</span></div><p class="made">Written by <code>dice2alea.py</code> from the Dice program when Alea.jl runs.</p><p class="note"><a href="../files/81bda74cfa822adfdfca.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/81bda74cfa822adfdfca.txt"></pre></div>
+</div>
+<div class="panel" id="p4">
+<p class="readers"><b>A translation of the original into Psi; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Psi.</p>
+<dl class="cmds">
+<dt>Psi</dt><dd><code>prlimit --stack=unlimited psi rl_hmm_marginal_likelihood_300.psi0.psi</code></dd>
+</dl>
+<div class="file"><div class="fhead"><code class="fname">rl_hmm_marginal_likelihood_300.psi0.psi</code><span>52 825 bytes, 1 213 lines</span><span class="sha" title="SHA-256">sha256 81502f6022fd1e4d6e9623aaee1497a4b26dcf90e5462423061d5747ceb77b2f</span></div><p class="made">Written by <code>dice2psi.py</code> from the Dice program when Psi runs: component 0 of the program's value, one Psi run each.</p><p class="note"><a href="../files/81502f6022fd1e4d6e96.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/81502f6022fd1e4d6e96.txt"></pre></div>
+</div>
+<div class="panel" id="p5">
+<p class="readers"><b>A translation of the original into PRISM; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by Storm dd.</p>
+<dl class="cmds">
+<dt>Storm dd</dt><dd><code>python3 storm_check.py rl_hmm_marginal_likelihood_300.dtmc0.prism dd rl_hmm_marginal_likelihood_300.dtmc0.props</code></dd>
+</dl>
+<p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
+<div class="file"><div class="fhead"><code class="fname">rl_hmm_marginal_likelihood_300.dtmc0.prism</code><span>105 758 bytes</span><span class="sha" title="SHA-256">sha256 60bb8405b4554888e86206fcf1b393347eb8ed7d2c4593767f59f32e63806f2e</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><p class="note"><a href="../files/60bb8405b4554888e862.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/60bb8405b4554888e862.txt"></pre></div>
+<div class="file"><div class="fhead"><code class="fname">rl_hmm_marginal_likelihood_300.dtmc0.props</code><span>29 bytes</span><span class="sha" title="SHA-256">sha256 7ceaf781fd8e84d1ddf63a6127b35c269a7af89ef5531f8e910cdd5c6341496a</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0)];
+</pre></div>
 </div>
 </div>
 </section>
@@ -502,10 +525,20 @@
 <h3>Storm sparse (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>PRISM sparse (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<p class="note">A later run, in lanes of its own, of ProbLog -k ddnnf, Geni, noDice, Psi, Genfer, SPPL, Pluck, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.07</td><td>2.6e-116 at most</td><td>largest formula, pairs 13 778; final formula, pairs 12; variables 2 399; ground atoms 4 497; ground rules 3 896; vtree families:0 (from auto: 1 attempts, 0.001s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>noDice (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>0.70</td><td>2.2e-104 at most</td><td></td></tr></tbody></table></div>
+<h3>Psi (later run)</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.6</td><td>2.7e-116 at most</td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>q</th><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td></tr></tbody></table></div>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">noDice</th><th class="num">aspmc</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>q</th><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td><td class="num">0</td><td class="num">2.1632e-104</td><td class="num">2.1632e-104</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

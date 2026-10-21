@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#networks">Bayesian and Markov networks</a> › <a href="../index.html#uai">UAI 2022: marginals</a></p>
     <h1>uai_csp_11</h1>
-    <p class="lede">The 120 Markov and Bayesian networks of the UAI 2022 competition&#x27;s MAR tuning set, each with its evidence; every marginal given the evidence; 300 s a run. aspmc and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_bn.py MAR_tune/CSP_11.uai --evid MAR_tune/CSP_11.uai.evid</code>.</p>
+    <p class="lede">The 120 Markov and Bayesian networks of the UAI 2022 competition&#x27;s MAR tuning set, each with its evidence; every marginal given the evidence; 300 s a run. aspmc, Ace, Storm, PRISM and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_bn.py MAR_tune/CSP_11.uai --evid MAR_tune/CSP_11.uai.evid</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th></tr></thead><tbody><tr><td class="num">10.2</td><td class="num">45.9</td><td class="num">51.4</td><td class="num">25.2</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">54.9</td><td class="num">180</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">10.2</td><td class="num">45.9</td><td class="num">51.4</td><td class="num">25.2</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">54.9</td><td class="num">180</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. memory: out of memory. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -40,6 +40,7 @@
 <input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
 <input type="radio" name="ptab" id="t2"><label for="t2">PITA</label>
 <input type="radio" name="ptab" id="t3"><label for="t3">Ace</label>
+<input type="radio" name="ptab" id="t4"><label for="t4">PRISM</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its authors wrote it, handed to Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl treesa, TensorInference.jl greedy as it is.</b></p>
 <p class="readers">Read by Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl treesa, TensorInference.jl greedy.</p>
@@ -85,6 +86,20 @@
 </dl>
 <div class="file"><div class="fhead"><code class="fname">ace-uai_csp_11-auto/CSP_11.net</code><span>78 572 bytes, 3 699 lines</span><span class="sha" title="SHA-256">sha256 f41f892adfac6ab3e98feeb78762ac718bc70da4c31f152f5d37242f2127b274</span></div><p class="made">Ace's copy of the network, made when Ace runs: the same numbers, written as Ace's reader takes them (bench.py hugin_for_ace, or gen_bn.py write_hugin for a UAI network).</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
 <div class="file"><div class="fhead"><code class="fname">uai_csp_11.inst</code><span>10 982 bytes, 383 lines</span><span class="sha" title="SHA-256">sha256 c78b75b228ab24a31b9f601a5dc687042cf0976f1095b726ecbc4c0f40c88fd0</span></div><p class="made">The observations, as Ace reads them, written by <code>gen_bn.py --inst</code> (bench.py gen).</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+</div>
+<div class="panel" id="p4">
+<p class="readers"><b>A translation of the original into PRISM; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PRISM hybrid, PRISM sparse, Storm dd, Storm exact, Storm sparse.</p>
+<dl class="cmds">
+<dt>PRISM hybrid</dt><dd><code>prism uai_csp_11.dtmc0.prism uai_csp_11.dtmc0.props -hybrid -javamaxmem 11g -cuddmaxmem 11g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>PRISM sparse</dt><dd><code>prism uai_csp_11.dtmc0.prism uai_csp_11.dtmc0.props -sparse -javamaxmem 11g -cuddmaxmem 11g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>Storm dd</dt><dd><code>python3 storm_check.py uai_csp_11.dtmc0.prism dd uai_csp_11.dtmc0.props</code></dd>
+<dt>Storm exact</dt><dd><code>python3 storm_check.py uai_csp_11.dtmc0.prism exact uai_csp_11.dtmc0.props</code></dd>
+<dt>Storm sparse</dt><dd><code>python3 storm_check.py uai_csp_11.dtmc0.prism sparse uai_csp_11.dtmc0.props</code></dd>
+</dl>
+<p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
+<div class="file"><div class="fhead"><code class="fname">uai_csp_11.dtmc0.prism</code><span>187 812 970 bytes</span><span class="sha" title="SHA-256">sha256 0d35cd9c02be051da46835ca6e9be257288358b8d18b836f2e8cfdce69c3027b</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">uai_csp_11.dtmc0.props</code><span>87 bytes</span><span class="sha" title="SHA-256">sha256 d0b1d4476854a7726ae9e7f33f707b7baadac85ebd5733695e0ba9986ac3fccc</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s MAR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
 </div>
 </div>
 </section>
@@ -162,6 +177,68 @@ in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></t
 <h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<p class="note">A later run, in lanes of its own, of aspmc, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>5.7</td><td>5.8e-15 at most</td><td>largest formula, pairs 337 977 142; final formula, pairs 66; variables 4 078; ground atoms 7 082; ground rules 11 730; vtree families:0 (from auto: 2 attempts, 0.002s discarded)</td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Dice (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Alea.jl (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table></div>
+<h3>Roulette (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>202</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>memory allocation of 12884901888 bytes failed</pre></details></td></tr></tbody></table></div>
+<h3>noDice (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Psi (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>0.16</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>exit -11</pre></details></td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Geni (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.2</td><td>5.8e-15 at most</td><td>largest formula, pairs 337 977 142; final formula, pairs 66; variables 4 078; ground atoms 7 082; ground rules 11 730; vtree families:0 (from auto: 2 attempts, 0.001s discarded)</td></tr></tbody></table></div>
+<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>234</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>cache_create: Unable to allocate memory: Cannot allocate memory!</pre></details></td></tr></tbody></table></div>
+<h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>160</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.OutOfMemoryError: Java heap space
+	at java.base/java.lang.StringLatin1.newString(StringLatin1.java:715)
+	at java.base/java.lang.String.substring(String.java:1879)
+	at parser.PrismParser.IdentifierPrime(PrismParser.java:3980)
+	at parser.PrismParser.UpdateElement(PrismParser.java:1350)
+	at parser.PrismParser.Update(PrismParser.java:1329)
+	at parser.PrismParser.Updates(PrismParser.java:1243)
+	at parser.PrismParser.Command(PrismParser.java:1170)
+	at parser.PrismParser.Module(PrismParser.java:1138)
+	at parser.PrismParser.ModulesFile(PrismParser.java:464)
+	at parser.PrismParser.parseModulesFile(PrismParser.java:148)
+	at prism.Prism.parseModelFile(Prism.java:1256)
+	at prism.PrismCL.doParsing(PrismCL.java:687)
+	at prism.PrismCL.run(PrismCL.java:280)
+	at prism.PrismCL.go(PrismCL.java:228)
+	at prism.PrismCL.main(PrismCL.java:2981)</pre></details></td></tr></tbody></table></div>
+<h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>189</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Exception in thread &quot;main&quot; java.lang.OutOfMemoryError: Java heap space
+	at parser.Token.newToken(Token.java:122)
+	at parser.PrismParserTokenManager.jjFillToken(PrismParserTokenManager.java:1255)
+	at parser.PrismParserTokenManager.getNextToken(PrismParserTokenManager.java:1323)
+	at parser.PrismParser.jj_ntk_f(PrismParser.java:6562)
+	at parser.PrismParser.ExpressionTimesDivide(PrismParser.java:2515)
+	at parser.PrismParser.ExpressionPlusMinus(PrismParser.java:2470)
+	at parser.PrismParser.ExpressionRelop(PrismParser.java:2434)
+	at parser.PrismParser.ExpressionEquality(PrismParser.java:2407)
+	at parser.PrismParser.ExpressionNot(PrismParser.java:2389)
+	at parser.PrismParser.ExpressionAnd(PrismParser.java:2327)
+	at parser.PrismParser.ExpressionOr(PrismParser.java:2302)
+	at parser.PrismParser.ExpressionIff(PrismParser.java:2277)
+	at parser.PrismParser.ExpressionImplies(PrismParser.java:2252)
+	at parser.PrismParser.ExpressionITE(PrismParser.java:2229)
+	at parser.PrismParser.ExpressionTemporalUnary(PrismParser.java:1973)
+	at parser.PrismParser.ExpressionTemporalBinary(PrismParser.java:1839)
+	at parser.PrismParser.Expression(PrismParser.java:1811)
+	at parser.PrismParser.UpdateElement(PrismParser.java:1352)
+	at parser.PrismParser.Update(PrismParser.java:1329)
+	at parser.PrismParser.Updates(PrismParser.java:1243)
+	at parser.PrismParser.Command(PrismParser.java:1170)
+	at parser.PrismParser.Module(PrismParser.java:1138)
+	at parser.PrismParser.ModulesFile(PrismParser.java:464)
+	at parser.PrismParser.parseModulesFile(PrismParser.java:148)
+	at prism.Prism.parseModelFile(Prism.java:1256)
+	at prism.PrismCL.doParsing(PrismCL.java:687)
+	at prism.PrismCL.run(PrismCL.java:280)
+	at prism.PrismCL.go(PrismCL.java:228)
+	at prism.PrismCL.main(PrismCL.java:2981)</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

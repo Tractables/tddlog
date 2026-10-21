@@ -228,6 +228,8 @@ class BenchTests(unittest.TestCase):
                 self.assertEqual(bench.ground_format(args, 'g', 'merlin', 'bte-pr'), None)
                 self.assertEqual(bench.ground_format(args, 'g', 'dice', 'dice'), 'dicemap')
                 self.assertEqual(bench.ground_format(args, 'g', 'alea', 'alea'), 'dice')
+                self.assertEqual(bench.ground_format(args, 'g', 'storm', 'exact'), 'dice')
+                self.assertEqual(bench.ground_format(args, 'g', 'prism', 'sparse'), 'dice')
                 self.assertEqual(bench.ground_format(args, 'g', 'pita', 'pita'), None)
                 g = bench.ground_route(args, 'g', os.path.join(d, 'g.pl'), 'uai')
                 self.assertEqual(g['status'], 'ok')

@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#geni">Geni&#x27;s programs</a></p>
     <h1>geni_weather_n19</h1>
-    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Three more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 19 10</code>.</p>
+    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Two more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 19 10</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -161,7 +161,6 @@ CUDD: out of memory allocating 32736 bytes</pre></details></td></tr></tbody></ta
 
 Version: 4.8.1
 Date: Mon Oct 19 19:55:52 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -202,7 +201,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:55:52 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -243,7 +241,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:45:39 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -284,7 +281,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:45:39 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -325,7 +321,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:45:39 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -366,7 +361,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:45:39 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -408,7 +402,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:52:55 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -449,7 +442,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:52:55 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -490,7 +482,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:42:51 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -531,7 +522,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:42:51 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -572,7 +562,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:42:50 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -613,7 +602,6 @@ Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.<
 
 Version: 4.8.1
 Date: Mon Oct 19 19:42:50 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory19.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -650,6 +638,366 @@ CUDD internal error detected, from the following stack trace:
 
 Error: Out of memory (or other internal error) in the CUDD library.
 Tip: Try using the -cuddmaxmem switch to increase the memory available to CUDD.</pre></details></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Genfer, SPPL, Pluck, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>144</td><td></td><td>ground atoms 2 285; ground rules 2 444</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>1</td><td>error</td><td>144</td><td></td><td>ground atoms 2 285; ground rules 2 444</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>144</td><td></td><td>ground atoms 2 285; ground rules 2 444</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>144</td><td></td><td>ground atoms 2 285; ground rules 2 444</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>146</td><td></td><td>ground atoms 2 285; ground rules 2 444</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>146</td><td></td><td>ground atoms 2 285; ground rules 2 444</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>75.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>1</td><td>error</td><td>75.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>2</td><td>error</td><td>71.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>2</td><td>error</td><td>71.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>3</td><td>error</td><td>74.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>3</td><td>error</td><td>74.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>11.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172745] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+mebdd.jl:305
+unknown function (ip: 0x79f7438f83d9)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x79f7438f6919)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x79f743906f82)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x79f743906e26)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x79f7438f83d9)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x79f743902812)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x79f</pre></details></td></tr><tr><td>1</td><td>error</td><td>11.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172745] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+mebdd.jl:305
+unknown function (ip: 0x79f7438f83d9)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x79f7438f6919)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x79f743906f82)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x79f743906e26)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x79f7438f83d9)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x79f743902812)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x79f</pre></details></td></tr><tr><td>2</td><td>error</td><td>11.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172392] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+mebdd.jl:305
+unknown function (ip: 0x7d641c4f83c9)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7d641c4f6909)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7d641c506f72)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7d641c506e16)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7d641c4f83c9)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7d641c502802)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7d6</pre></details></td></tr><tr><td>2</td><td>error</td><td>11.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172392] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+mebdd.jl:305
+unknown function (ip: 0x7d641c4f83c9)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7d641c4f6909)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7d641c506f72)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7d641c506e16)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7d641c4f83c9)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7d641c502802)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7d6</pre></details></td></tr><tr><td>3</td><td>error</td><td>12.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[171041] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+mebdd.jl:305
+unknown function (ip: 0x7b68bdf3d409)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b68bdf3b949)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7b68bdf4bff2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7b68bdf4be96)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b68bdf3d409)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7b68bdf47822)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7b6</pre></details></td></tr><tr><td>3</td><td>error</td><td>12.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[171041] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+mebdd.jl:305
+unknown function (ip: 0x7b68bdf3d409)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b68bdf3b949)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7b68bdf4bff2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7b68bdf4be96)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b68bdf3d409)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7b68bdf47822)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7b6</pre></details></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

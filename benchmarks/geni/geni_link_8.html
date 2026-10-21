@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#geni">Geni&#x27;s programs</a></p>
     <h1>geni_link_8</h1>
-    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Three more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py link 8</code>.</p>
+    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Two more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py link 8</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.02</td><td class="num">0.13</td><td class="num">8.9</td><td class="num">0.05</td><td class="num">0.31</td><td class="num">0.70</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">0.22</td><td class="num">0.50</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">0.54</td><td class="num">1.3</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.02</td><td class="num">0.13</td><td class="num">8.9</td><td class="num">0.05</td><td class="num">0.31</td><td class="num">0.70</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">0.22</td><td class="num">0.50</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td><td class="num">2.9</td><td class="num">0.54</td><td class="num">1.3</td><td class="num">2.2</td><td class="num">0.09</td><td class="num">0.19</td><td class="num">1.5</td><td class="num">0.10</td><td class="num">60.7</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -42,6 +42,7 @@
 <input type="radio" name="ptab" id="t3"><label for="t3">Alea.jl</label>
 <input type="radio" name="ptab" id="t4"><label for="t4">Roulette</label>
 <input type="radio" name="ptab" id="t5"><label for="t5">Psi</label>
+<input type="radio" name="ptab" id="t6"><label for="t6">PRISM</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its generator wrote it, handed to Geni as it is.</b></p>
 <p class="readers">Read by Geni.</p>
@@ -1032,6 +1033,202 @@ end
 </dl>
 <div class="file"><div class="fhead"><code class="fname">geni_link_8.psi0.psi</code><span>16 395 bytes, 421 lines</span><span class="sha" title="SHA-256">sha256 df9785fcd1a2f191446519970788fd884aebfa4339c5ad7e3c2314375264d670</span></div><p class="made">Written by <code>dice2psi.py</code> from the Dice program when Psi runs: component 0 of the program's value, one Psi run each.</p><p class="note"><a href="../files/df9785fcd1a2f1914465.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/df9785fcd1a2f1914465.txt"></pre></div>
 </div>
+<div class="panel" id="p6">
+<p class="readers"><b>A translation of the original into PRISM; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PRISM hybrid, PRISM sparse, Storm dd, Storm exact, Storm sparse.</p>
+<dl class="cmds">
+<dt>PRISM hybrid</dt><dd><code>prism geni_link_8.dtmc0.prism geni_link_8.dtmc0.props -hybrid -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>PRISM sparse</dt><dd><code>prism geni_link_8.dtmc0.prism geni_link_8.dtmc0.props -sparse -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>Storm dd</dt><dd><code>python3 storm_check.py geni_link_8.dtmc0.prism dd geni_link_8.dtmc0.props</code></dd>
+<dt>Storm exact</dt><dd><code>python3 storm_check.py geni_link_8.dtmc0.prism exact geni_link_8.dtmc0.props</code></dd>
+<dt>Storm sparse</dt><dd><code>python3 storm_check.py geni_link_8.dtmc0.prism sparse geni_link_8.dtmc0.props</code></dd>
+</dl>
+<p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
+<div class="file"><div class="fhead"><code class="fname">geni_link_8.dtmc0.prism</code><span>12 156 bytes</span><span class="sha" title="SHA-256">sha256 cae461cbc053dc3c09afb76c9d0b51e700efb7d0cc466511f71db42a93ad3b80</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><pre>// geni_link_8.dice, translated by tddlog&#x27;s scripts/dice2prism.py, component 0 (bool): 161 steps, 10 registers, 161 commands.
+// &quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0)]
+dtmc
+
+module program
+  pc : [0..161] init 0;
+  x0 : bool init false;
+  x1 : bool init false;
+  x2 : bool init false;
+  x3 : bool init false;
+  x4 : bool init false;
+  x5 : bool init false;
+  x6 : bool init false;
+  x7 : bool init false;
+  x8 : bool init false;
+  x9 : bool init false;
+  [] pc=0 -&gt; 0.5:(x0&#x27;=true)&amp;(pc&#x27;=1) + 0.5:(x0&#x27;=false)&amp;(pc&#x27;=1);
+  [] pc=1 -&gt; 0.5:(x1&#x27;=x0)&amp;(pc&#x27;=2) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=2);
+  [] pc=2 -&gt; 0.5:(x2&#x27;=x1)&amp;(pc&#x27;=3) + 0.5:(x2&#x27;=false)&amp;(pc&#x27;=3);
+  [] pc=3 -&gt; 0.5:(x3&#x27;=x2)&amp;(pc&#x27;=4) + 0.5:(x3&#x27;=false)&amp;(pc&#x27;=4);
+  [] pc=4 -&gt; 0.5:(x4&#x27;=x3)&amp;(pc&#x27;=5) + 0.5:(x4&#x27;=false)&amp;(pc&#x27;=5);
+  [] pc=5 -&gt; 0.5:(x5&#x27;=x4)&amp;(pc&#x27;=6) + 0.5:(x5&#x27;=false)&amp;(pc&#x27;=6);
+  [] pc=6 -&gt; 0.5:(x6&#x27;=x5)&amp;(pc&#x27;=7) + 0.5:(x6&#x27;=false)&amp;(pc&#x27;=7);
+  [] pc=7 -&gt; 0.5:(x7&#x27;=true)&amp;(pc&#x27;=8) + 0.5:(x7&#x27;=false)&amp;(pc&#x27;=8);
+  [] pc=8 -&gt; 0.5:(x8&#x27;=x7)&amp;(pc&#x27;=9) + 0.5:(x8&#x27;=false)&amp;(pc&#x27;=9);
+  [] pc=9 -&gt; 0.5:(x8&#x27;=(x8 | x0))&amp;(pc&#x27;=10) + 0.5:(pc&#x27;=10);
+  [] pc=10 -&gt; 0.5:(x8&#x27;=true)&amp;(pc&#x27;=11) + 0.5:(pc&#x27;=11);
+  [] pc=11 -&gt; 0.5:(x9&#x27;=x8)&amp;(pc&#x27;=12) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=12);
+  [] pc=12 -&gt; 0.5:(x9&#x27;=(x9 | x1))&amp;(pc&#x27;=13) + 0.5:(pc&#x27;=13);
+  [] pc=13 -&gt; 0.5:(x0&#x27;=(x9 | x0))&amp;(x9&#x27;=false)&amp;(pc&#x27;=14) + 0.5:(x0&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=14);
+  [] pc=14 -&gt; 0.5:(x9&#x27;=x0)&amp;(pc&#x27;=15) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=15);
+  [] pc=15 -&gt; 0.5:(x9&#x27;=(x9 | x2))&amp;(pc&#x27;=16) + 0.5:(pc&#x27;=16);
+  [] pc=16 -&gt; 0.5:(x1&#x27;=(x9 | x1))&amp;(x9&#x27;=false)&amp;(pc&#x27;=17) + 0.5:(x1&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=17);
+  [] pc=17 -&gt; 0.5:(x9&#x27;=x1)&amp;(pc&#x27;=18) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=18);
+  [] pc=18 -&gt; 0.5:(x9&#x27;=(x9 | x3))&amp;(pc&#x27;=19) + 0.5:(pc&#x27;=19);
+  [] pc=19 -&gt; 0.5:(x2&#x27;=(x9 | x2))&amp;(x9&#x27;=false)&amp;(pc&#x27;=20) + 0.5:(x2&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=20);
+  [] pc=20 -&gt; 0.5:(x9&#x27;=x2)&amp;(pc&#x27;=21) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=21);
+  [] pc=21 -&gt; 0.5:(x9&#x27;=(x9 | x4))&amp;(pc&#x27;=22) + 0.5:(pc&#x27;=22);
+  [] pc=22 -&gt; 0.5:(x3&#x27;=(x9 | x3))&amp;(x9&#x27;=false)&amp;(pc&#x27;=23) + 0.5:(x3&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=23);
+  [] pc=23 -&gt; 0.5:(x9&#x27;=x3)&amp;(pc&#x27;=24) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=24);
+  [] pc=24 -&gt; 0.5:(x9&#x27;=(x9 | x5))&amp;(pc&#x27;=25) + 0.5:(pc&#x27;=25);
+  [] pc=25 -&gt; 0.5:(x4&#x27;=(x9 | x4))&amp;(x9&#x27;=false)&amp;(pc&#x27;=26) + 0.5:(x4&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=26);
+  [] pc=26 -&gt; 0.5:(x9&#x27;=x4)&amp;(pc&#x27;=27) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=27);
+  [] pc=27 -&gt; 0.5:(x6&#x27;=(x9 | x6))&amp;(x9&#x27;=false)&amp;(pc&#x27;=28) + 0.5:(x6&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=28);
+  [] pc=28 -&gt; 0.5:(x5&#x27;=(x6 | x5))&amp;(x6&#x27;=false)&amp;(pc&#x27;=29) + 0.5:(x5&#x27;=x6)&amp;(x6&#x27;=false)&amp;(pc&#x27;=29);
+  [] pc=29 -&gt; 0.5:(x6&#x27;=x7)&amp;(pc&#x27;=30) + 0.5:(x6&#x27;=false)&amp;(pc&#x27;=30);
+  [] pc=30 -&gt; 0.5:(x9&#x27;=x6)&amp;(pc&#x27;=31) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=31);
+  [] pc=31 -&gt; 0.5:(x9&#x27;=(x9 | x8))&amp;(pc&#x27;=32) + 0.5:(pc&#x27;=32);
+  [] pc=32 -&gt; 0.5:(x7&#x27;=(x9 | x7))&amp;(x9&#x27;=false)&amp;(pc&#x27;=33) + 0.5:(x7&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=33);
+  [] pc=33 -&gt; 0.5:(x9&#x27;=x7)&amp;(pc&#x27;=34) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=34);
+  [] pc=34 -&gt; 0.5:(x9&#x27;=(x9 | x0))&amp;(pc&#x27;=35) + 0.5:(pc&#x27;=35);
+  [] pc=35 -&gt; 0.5:(x8&#x27;=(x9 | x8))&amp;(x9&#x27;=false)&amp;(pc&#x27;=36) + 0.5:(x8&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=36);
+  [] pc=36 -&gt; 0.5:(x9&#x27;=x8)&amp;(pc&#x27;=37) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=37);
+  [] pc=37 -&gt; 0.5:(x9&#x27;=(x9 | x1))&amp;(pc&#x27;=38) + 0.5:(pc&#x27;=38);
+  [] pc=38 -&gt; 0.5:(x0&#x27;=(x9 | x0))&amp;(x9&#x27;=false)&amp;(pc&#x27;=39) + 0.5:(x0&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=39);
+  [] pc=39 -&gt; 0.5:(x9&#x27;=x0)&amp;(pc&#x27;=40) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=40);
+  [] pc=40 -&gt; 0.5:(x9&#x27;=(x9 | x2))&amp;(pc&#x27;=41) + 0.5:(pc&#x27;=41);
+  [] pc=41 -&gt; 0.5:(x1&#x27;=(x9 | x1))&amp;(x9&#x27;=false)&amp;(pc&#x27;=42) + 0.5:(x1&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=42);
+  [] pc=42 -&gt; 0.5:(x9&#x27;=x1)&amp;(pc&#x27;=43) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=43);
+  [] pc=43 -&gt; 0.5:(x9&#x27;=(x9 | x3))&amp;(pc&#x27;=44) + 0.5:(pc&#x27;=44);
+  [] pc=44 -&gt; 0.5:(x2&#x27;=(x9 | x2))&amp;(x9&#x27;=false)&amp;(pc&#x27;=45) + 0.5:(x2&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=45);
+  [] pc=45 -&gt; 0.5:(x9&#x27;=x2)&amp;(pc&#x27;=46) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=46);
+  [] pc=46 -&gt; 0.5:(x9&#x27;=(x9 | x4))&amp;(pc&#x27;=47) + 0.5:(pc&#x27;=47);
+  [] pc=47 -&gt; 0.5:(x3&#x27;=(x9 | x3))&amp;(x9&#x27;=false)&amp;(pc&#x27;=48) + 0.5:(x3&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=48);
+  [] pc=48 -&gt; 0.5:(x9&#x27;=x3)&amp;(pc&#x27;=49) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=49);
+  [] pc=49 -&gt; 0.5:(x5&#x27;=(x9 | x5))&amp;(x9&#x27;=false)&amp;(pc&#x27;=50) + 0.5:(x5&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=50);
+  [] pc=50 -&gt; 0.5:(x4&#x27;=(x5 | x4))&amp;(x5&#x27;=false)&amp;(pc&#x27;=51) + 0.5:(x4&#x27;=x5)&amp;(x5&#x27;=false)&amp;(pc&#x27;=51);
+  [] pc=51 -&gt; 0.5:(x5&#x27;=x6)&amp;(pc&#x27;=52) + 0.5:(x5&#x27;=false)&amp;(pc&#x27;=52);
+  [] pc=52 -&gt; 0.5:(x9&#x27;=x5)&amp;(pc&#x27;=53) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=53);
+  [] pc=53 -&gt; 0.5:(x9&#x27;=(x9 | x7))&amp;(pc&#x27;=54) + 0.5:(pc&#x27;=54);
+  [] pc=54 -&gt; 0.5:(x6&#x27;=(x9 | x6))&amp;(x9&#x27;=false)&amp;(pc&#x27;=55) + 0.5:(x6&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=55);
+  [] pc=55 -&gt; 0.5:(x9&#x27;=x6)&amp;(pc&#x27;=56) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=56);
+  [] pc=56 -&gt; 0.5:(x9&#x27;=(x9 | x8))&amp;(pc&#x27;=57) + 0.5:(pc&#x27;=57);
+  [] pc=57 -&gt; 0.5:(x7&#x27;=(x9 | x7))&amp;(x9&#x27;=false)&amp;(pc&#x27;=58) + 0.5:(x7&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=58);
+  [] pc=58 -&gt; 0.5:(x9&#x27;=x7)&amp;(pc&#x27;=59) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=59);
+  [] pc=59 -&gt; 0.5:(x9&#x27;=(x9 | x0))&amp;(pc&#x27;=60) + 0.5:(pc&#x27;=60);
+  [] pc=60 -&gt; 0.5:(x8&#x27;=(x9 | x8))&amp;(x9&#x27;=false)&amp;(pc&#x27;=61) + 0.5:(x8&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=61);
+  [] pc=61 -&gt; 0.5:(x9&#x27;=x8)&amp;(pc&#x27;=62) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=62);
+  [] pc=62 -&gt; 0.5:(x9&#x27;=(x9 | x1))&amp;(pc&#x27;=63) + 0.5:(pc&#x27;=63);
+  [] pc=63 -&gt; 0.5:(x0&#x27;=(x9 | x0))&amp;(x9&#x27;=false)&amp;(pc&#x27;=64) + 0.5:(x0&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=64);
+  [] pc=64 -&gt; 0.5:(x9&#x27;=x0)&amp;(pc&#x27;=65) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=65);
+  [] pc=65 -&gt; 0.5:(x9&#x27;=(x9 | x2))&amp;(pc&#x27;=66) + 0.5:(pc&#x27;=66);
+  [] pc=66 -&gt; 0.5:(x1&#x27;=(x9 | x1))&amp;(x9&#x27;=false)&amp;(pc&#x27;=67) + 0.5:(x1&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=67);
+  [] pc=67 -&gt; 0.5:(x9&#x27;=x1)&amp;(pc&#x27;=68) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=68);
+  [] pc=68 -&gt; 0.5:(x9&#x27;=(x9 | x3))&amp;(pc&#x27;=69) + 0.5:(pc&#x27;=69);
+  [] pc=69 -&gt; 0.5:(x2&#x27;=(x9 | x2))&amp;(x9&#x27;=false)&amp;(pc&#x27;=70) + 0.5:(x2&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=70);
+  [] pc=70 -&gt; 0.5:(x9&#x27;=x2)&amp;(pc&#x27;=71) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=71);
+  [] pc=71 -&gt; 0.5:(x4&#x27;=(x9 | x4))&amp;(x9&#x27;=false)&amp;(pc&#x27;=72) + 0.5:(x4&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=72);
+  [] pc=72 -&gt; 0.5:(x3&#x27;=(x4 | x3))&amp;(x4&#x27;=false)&amp;(pc&#x27;=73) + 0.5:(x3&#x27;=x4)&amp;(x4&#x27;=false)&amp;(pc&#x27;=73);
+  [] pc=73 -&gt; 0.5:(x4&#x27;=x5)&amp;(pc&#x27;=74) + 0.5:(x4&#x27;=false)&amp;(pc&#x27;=74);
+  [] pc=74 -&gt; 0.5:(x9&#x27;=x4)&amp;(pc&#x27;=75) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=75);
+  [] pc=75 -&gt; 0.5:(x9&#x27;=(x9 | x6))&amp;(pc&#x27;=76) + 0.5:(pc&#x27;=76);
+  [] pc=76 -&gt; 0.5:(x5&#x27;=(x9 | x5))&amp;(x9&#x27;=false)&amp;(pc&#x27;=77) + 0.5:(x5&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=77);
+  [] pc=77 -&gt; 0.5:(x9&#x27;=x5)&amp;(pc&#x27;=78) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=78);
+  [] pc=78 -&gt; 0.5:(x9&#x27;=(x9 | x7))&amp;(pc&#x27;=79) + 0.5:(pc&#x27;=79);
+  [] pc=79 -&gt; 0.5:(x6&#x27;=(x9 | x6))&amp;(x9&#x27;=false)&amp;(pc&#x27;=80) + 0.5:(x6&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=80);
+  [] pc=80 -&gt; 0.5:(x9&#x27;=x6)&amp;(pc&#x27;=81) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=81);
+  [] pc=81 -&gt; 0.5:(x9&#x27;=(x9 | x8))&amp;(pc&#x27;=82) + 0.5:(pc&#x27;=82);
+  [] pc=82 -&gt; 0.5:(x7&#x27;=(x9 | x7))&amp;(x9&#x27;=false)&amp;(pc&#x27;=83) + 0.5:(x7&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=83);
+  [] pc=83 -&gt; 0.5:(x9&#x27;=x7)&amp;(pc&#x27;=84) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=84);
+  [] pc=84 -&gt; 0.5:(x9&#x27;=(x9 | x0))&amp;(pc&#x27;=85) + 0.5:(pc&#x27;=85);
+  [] pc=85 -&gt; 0.5:(x8&#x27;=(x9 | x8))&amp;(x9&#x27;=false)&amp;(pc&#x27;=86) + 0.5:(x8&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=86);
+  [] pc=86 -&gt; 0.5:(x9&#x27;=x8)&amp;(pc&#x27;=87) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=87);
+  [] pc=87 -&gt; 0.5:(x9&#x27;=(x9 | x1))&amp;(pc&#x27;=88) + 0.5:(pc&#x27;=88);
+  [] pc=88 -&gt; 0.5:(x0&#x27;=(x9 | x0))&amp;(x9&#x27;=false)&amp;(pc&#x27;=89) + 0.5:(x0&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=89);
+  [] pc=89 -&gt; 0.5:(x9&#x27;=x0)&amp;(pc&#x27;=90) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=90);
+  [] pc=90 -&gt; 0.5:(x9&#x27;=(x9 | x2))&amp;(pc&#x27;=91) + 0.5:(pc&#x27;=91);
+  [] pc=91 -&gt; 0.5:(x1&#x27;=(x9 | x1))&amp;(x9&#x27;=false)&amp;(pc&#x27;=92) + 0.5:(x1&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=92);
+  [] pc=92 -&gt; 0.5:(x9&#x27;=x1)&amp;(pc&#x27;=93) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=93);
+  [] pc=93 -&gt; 0.5:(x3&#x27;=(x9 | x3))&amp;(x9&#x27;=false)&amp;(pc&#x27;=94) + 0.5:(x3&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=94);
+  [] pc=94 -&gt; 0.5:(x2&#x27;=(x3 | x2))&amp;(x3&#x27;=false)&amp;(pc&#x27;=95) + 0.5:(x2&#x27;=x3)&amp;(x3&#x27;=false)&amp;(pc&#x27;=95);
+  [] pc=95 -&gt; 0.5:(x3&#x27;=x4)&amp;(pc&#x27;=96) + 0.5:(x3&#x27;=false)&amp;(pc&#x27;=96);
+  [] pc=96 -&gt; 0.5:(x9&#x27;=x3)&amp;(pc&#x27;=97) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=97);
+  [] pc=97 -&gt; 0.5:(x9&#x27;=(x9 | x5))&amp;(pc&#x27;=98) + 0.5:(pc&#x27;=98);
+  [] pc=98 -&gt; 0.5:(x4&#x27;=(x9 | x4))&amp;(x9&#x27;=false)&amp;(pc&#x27;=99) + 0.5:(x4&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=99);
+  [] pc=99 -&gt; 0.5:(x9&#x27;=x4)&amp;(pc&#x27;=100) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=100);
+  [] pc=100 -&gt; 0.5:(x9&#x27;=(x9 | x6))&amp;(pc&#x27;=101) + 0.5:(pc&#x27;=101);
+  [] pc=101 -&gt; 0.5:(x5&#x27;=(x9 | x5))&amp;(x9&#x27;=false)&amp;(pc&#x27;=102) + 0.5:(x5&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=102);
+  [] pc=102 -&gt; 0.5:(x9&#x27;=x5)&amp;(pc&#x27;=103) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=103);
+  [] pc=103 -&gt; 0.5:(x9&#x27;=(x9 | x7))&amp;(pc&#x27;=104) + 0.5:(pc&#x27;=104);
+  [] pc=104 -&gt; 0.5:(x6&#x27;=(x9 | x6))&amp;(x9&#x27;=false)&amp;(pc&#x27;=105) + 0.5:(x6&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=105);
+  [] pc=105 -&gt; 0.5:(x9&#x27;=x6)&amp;(pc&#x27;=106) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=106);
+  [] pc=106 -&gt; 0.5:(x9&#x27;=(x9 | x8))&amp;(pc&#x27;=107) + 0.5:(pc&#x27;=107);
+  [] pc=107 -&gt; 0.5:(x7&#x27;=(x9 | x7))&amp;(x9&#x27;=false)&amp;(pc&#x27;=108) + 0.5:(x7&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=108);
+  [] pc=108 -&gt; 0.5:(x9&#x27;=x7)&amp;(pc&#x27;=109) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=109);
+  [] pc=109 -&gt; 0.5:(x9&#x27;=(x9 | x0))&amp;(pc&#x27;=110) + 0.5:(pc&#x27;=110);
+  [] pc=110 -&gt; 0.5:(x8&#x27;=(x9 | x8))&amp;(x9&#x27;=false)&amp;(pc&#x27;=111) + 0.5:(x8&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=111);
+  [] pc=111 -&gt; 0.5:(x9&#x27;=x8)&amp;(pc&#x27;=112) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=112);
+  [] pc=112 -&gt; 0.5:(x9&#x27;=(x9 | x1))&amp;(pc&#x27;=113) + 0.5:(pc&#x27;=113);
+  [] pc=113 -&gt; 0.5:(x0&#x27;=(x9 | x0))&amp;(x9&#x27;=false)&amp;(pc&#x27;=114) + 0.5:(x0&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=114);
+  [] pc=114 -&gt; 0.5:(x9&#x27;=x0)&amp;(pc&#x27;=115) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=115);
+  [] pc=115 -&gt; 0.5:(x2&#x27;=(x9 | x2))&amp;(x9&#x27;=false)&amp;(pc&#x27;=116) + 0.5:(x2&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=116);
+  [] pc=116 -&gt; 0.5:(x1&#x27;=(x2 | x1))&amp;(x2&#x27;=false)&amp;(pc&#x27;=117) + 0.5:(x1&#x27;=x2)&amp;(x2&#x27;=false)&amp;(pc&#x27;=117);
+  [] pc=117 -&gt; 0.5:(x2&#x27;=x3)&amp;(pc&#x27;=118) + 0.5:(x2&#x27;=false)&amp;(pc&#x27;=118);
+  [] pc=118 -&gt; 0.5:(x9&#x27;=x2)&amp;(pc&#x27;=119) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=119);
+  [] pc=119 -&gt; 0.5:(x9&#x27;=(x9 | x4))&amp;(pc&#x27;=120) + 0.5:(pc&#x27;=120);
+  [] pc=120 -&gt; 0.5:(x3&#x27;=(x9 | x3))&amp;(x9&#x27;=false)&amp;(pc&#x27;=121) + 0.5:(x3&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=121);
+  [] pc=121 -&gt; 0.5:(x9&#x27;=x3)&amp;(pc&#x27;=122) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=122);
+  [] pc=122 -&gt; 0.5:(x9&#x27;=(x9 | x5))&amp;(pc&#x27;=123) + 0.5:(pc&#x27;=123);
+  [] pc=123 -&gt; 0.5:(x4&#x27;=(x9 | x4))&amp;(x9&#x27;=false)&amp;(pc&#x27;=124) + 0.5:(x4&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=124);
+  [] pc=124 -&gt; 0.5:(x9&#x27;=x4)&amp;(pc&#x27;=125) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=125);
+  [] pc=125 -&gt; 0.5:(x9&#x27;=(x9 | x6))&amp;(pc&#x27;=126) + 0.5:(pc&#x27;=126);
+  [] pc=126 -&gt; 0.5:(x5&#x27;=(x9 | x5))&amp;(x9&#x27;=false)&amp;(pc&#x27;=127) + 0.5:(x5&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=127);
+  [] pc=127 -&gt; 0.5:(x9&#x27;=x5)&amp;(pc&#x27;=128) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=128);
+  [] pc=128 -&gt; 0.5:(x9&#x27;=(x9 | x7))&amp;(pc&#x27;=129) + 0.5:(pc&#x27;=129);
+  [] pc=129 -&gt; 0.5:(x6&#x27;=(x9 | x6))&amp;(x9&#x27;=false)&amp;(pc&#x27;=130) + 0.5:(x6&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=130);
+  [] pc=130 -&gt; 0.5:(x9&#x27;=x6)&amp;(pc&#x27;=131) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=131);
+  [] pc=131 -&gt; 0.5:(x9&#x27;=(x9 | x8))&amp;(pc&#x27;=132) + 0.5:(pc&#x27;=132);
+  [] pc=132 -&gt; 0.5:(x7&#x27;=(x9 | x7))&amp;(x9&#x27;=false)&amp;(pc&#x27;=133) + 0.5:(x7&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=133);
+  [] pc=133 -&gt; 0.5:(x9&#x27;=x7)&amp;(pc&#x27;=134) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=134);
+  [] pc=134 -&gt; 0.5:(x9&#x27;=(x9 | x0))&amp;(pc&#x27;=135) + 0.5:(pc&#x27;=135);
+  [] pc=135 -&gt; 0.5:(x8&#x27;=(x9 | x8))&amp;(x9&#x27;=false)&amp;(pc&#x27;=136) + 0.5:(x8&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=136);
+  [] pc=136 -&gt; 0.5:(x9&#x27;=x8)&amp;(pc&#x27;=137) + 0.5:(x9&#x27;=false)&amp;(pc&#x27;=137);
+  [] pc=137 -&gt; 0.5:(x1&#x27;=(x9 | x1))&amp;(x9&#x27;=false)&amp;(pc&#x27;=138) + 0.5:(x1&#x27;=x9)&amp;(x9&#x27;=false)&amp;(pc&#x27;=138);
+  [] pc=138 -&gt; 0.5:(x0&#x27;=(x1 | x0))&amp;(x1&#x27;=false)&amp;(pc&#x27;=139) + 0.5:(x0&#x27;=x1)&amp;(x1&#x27;=false)&amp;(pc&#x27;=139);
+  [] pc=139 -&gt; 0.5:(x1&#x27;=x2)&amp;(pc&#x27;=140) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=140);
+  [] pc=140 -&gt; 0.5:(pc&#x27;=141) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=141);
+  [] pc=141 -&gt; 0.5:(x1&#x27;=(x1 | x3))&amp;(pc&#x27;=142) + 0.5:(pc&#x27;=142);
+  [] pc=142 -&gt; 0.5:(x1&#x27;=(x1 | x2))&amp;(x2&#x27;=false)&amp;(pc&#x27;=143) + 0.5:(x2&#x27;=false)&amp;(pc&#x27;=143);
+  [] pc=143 -&gt; 0.5:(pc&#x27;=144) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=144);
+  [] pc=144 -&gt; 0.5:(x1&#x27;=(x1 | x4))&amp;(pc&#x27;=145) + 0.5:(pc&#x27;=145);
+  [] pc=145 -&gt; 0.5:(x1&#x27;=(x1 | x3))&amp;(x3&#x27;=false)&amp;(pc&#x27;=146) + 0.5:(x3&#x27;=false)&amp;(pc&#x27;=146);
+  [] pc=146 -&gt; 0.5:(pc&#x27;=147) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=147);
+  [] pc=147 -&gt; 0.5:(x1&#x27;=(x1 | x5))&amp;(pc&#x27;=148) + 0.5:(pc&#x27;=148);
+  [] pc=148 -&gt; 0.5:(x1&#x27;=(x1 | x4))&amp;(x4&#x27;=false)&amp;(pc&#x27;=149) + 0.5:(x4&#x27;=false)&amp;(pc&#x27;=149);
+  [] pc=149 -&gt; 0.5:(pc&#x27;=150) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=150);
+  [] pc=150 -&gt; 0.5:(x1&#x27;=(x1 | x6))&amp;(pc&#x27;=151) + 0.5:(pc&#x27;=151);
+  [] pc=151 -&gt; 0.5:(x1&#x27;=(x1 | x5))&amp;(x5&#x27;=false)&amp;(pc&#x27;=152) + 0.5:(x5&#x27;=false)&amp;(pc&#x27;=152);
+  [] pc=152 -&gt; 0.5:(pc&#x27;=153) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=153);
+  [] pc=153 -&gt; 0.5:(x1&#x27;=(x1 | x7))&amp;(pc&#x27;=154) + 0.5:(pc&#x27;=154);
+  [] pc=154 -&gt; 0.5:(x1&#x27;=(x1 | x6))&amp;(x6&#x27;=false)&amp;(pc&#x27;=155) + 0.5:(x6&#x27;=false)&amp;(pc&#x27;=155);
+  [] pc=155 -&gt; 0.5:(pc&#x27;=156) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=156);
+  [] pc=156 -&gt; 0.5:(x1&#x27;=(x1 | x8))&amp;(pc&#x27;=157) + 0.5:(pc&#x27;=157);
+  [] pc=157 -&gt; 0.5:(x1&#x27;=(x1 | x7))&amp;(x7&#x27;=false)&amp;(pc&#x27;=158) + 0.5:(x7&#x27;=false)&amp;(pc&#x27;=158);
+  [] pc=158 -&gt; 0.5:(pc&#x27;=159) + 0.5:(x1&#x27;=false)&amp;(pc&#x27;=159);
+  [] pc=159 -&gt; 0.5:(x0&#x27;=(x1 | x0))&amp;(x1&#x27;=false)&amp;(pc&#x27;=160) + 0.5:(x0&#x27;=x1)&amp;(x1&#x27;=false)&amp;(pc&#x27;=160);
+  [] pc=160 -&gt; 0.5:(x0&#x27;=(x0 | x8))&amp;(x8&#x27;=false)&amp;(pc&#x27;=161) + 0.5:(x8&#x27;=false)&amp;(pc&#x27;=161);
+  [] pc=161 -&gt; true;
+endmodule
+
+label &quot;done&quot; = pc=161;
+</pre></div>
+<div class="file"><div class="fhead"><code class="fname">geni_link_8.dtmc0.props</code><span>29 bytes</span><span class="sha" title="SHA-256">sha256 7ceaf781fd8e84d1ddf63a6127b35c269a7af89ef5531f8e910cdd5c6341496a</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0)];
+</pre></div>
+</div>
 </div>
 </section>
 <section class="card">
@@ -1051,10 +1248,374 @@ end
 <h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.54</td><td>5.6e-17 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>0.54</td><td>5.6e-17 at most</td><td></td></tr></tbody></table></div>
 <h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.3</td><td>5.6e-17 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>1.3</td><td>5.6e-17 at most</td><td></td></tr></tbody></table></div>
 <h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.3</td><td>5.6e-17 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>1.3</td><td>5.6e-17 at most</td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Genfer, SPPL, Pluck, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.03</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr><tr><td>1</td><td>answered</td><td>0.03</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.03</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.03</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.02</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.02</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[170661] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+ bdd.jl:305
+unknown function (ip: 0x74d8ab328b39)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74d8ab327079)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x74d8ab333a92)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x74d8ab333936)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74d8ab328b39)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x74d8ab3302a2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x74d8</pre></details></td></tr><tr><td>1</td><td>error</td><td>13.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[170661] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+ bdd.jl:305
+unknown function (ip: 0x74d8ab328b39)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74d8ab327079)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x74d8ab333a92)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x74d8ab333936)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74d8ab328b39)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x74d8ab3302a2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x74d8</pre></details></td></tr><tr><td>2</td><td>error</td><td>13.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[170456] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+ bdd.jl:305
+unknown function (ip: 0x756a83152b39)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x756a83151079)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x756a8315da92)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x756a8315d936)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x756a83152b39)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x756a8315a2a2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x756a</pre></details></td></tr><tr><td>2</td><td>error</td><td>13.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[170456] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+ bdd.jl:305
+unknown function (ip: 0x756a83152b39)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x756a83151079)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x756a8315da92)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x756a8315d936)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x756a83152b39)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x756a8315a2a2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x756a</pre></details></td></tr><tr><td>3</td><td>error</td><td>12.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[170442] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+ bdd.jl:305
+unknown function (ip: 0x7673cc952b39)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7673cc951079)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7673cc95da92)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7673cc95d936)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7673cc952b39)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7673cc95a2a2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7673</pre></details></td></tr><tr><td>3</td><td>error</td><td>12.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[170442] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:97
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+ bdd.jl:305
+unknown function (ip: 0x7673cc952b39)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7673cc951079)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7673cc95da92)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7673cc95d936)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+jfptr_traced_bdd_forward_16174 at RXuPz_DgUBZ.so (unknown line)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7673cc952b39)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7673cc95a2a2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7673</pre></details></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.9</td><td>1.7e-16 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>2.9</td><td>1.7e-16 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>2.9</td><td>1.7e-16 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>2.9</td><td>1.7e-16 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>2.9</td><td>1.7e-16 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>2.9</td><td>1.7e-16 at most</td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.64</td><td>1.1e-16 at most</td><td>largest formula, pairs 162 526; final formula, pairs 1 486; variables 228; ground atoms 392; ground rules 329; vtree program (from auto: 3 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.2</td><td>0.0e+00 at most</td><td>route tabularCompilation; circuit nodes 202 756; circuit edges 403 602</td></tr></tbody></table></div>
+<h3>Ace forceC2d (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.3</td><td>1.7e-16 at most</td><td>route c2dCompilation; circuit nodes 129 098; circuit edges 339 219</td></tr></tbody></table></div>
+<h3>Merlin (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.09</td><td>4.7e-07 at most</td><td>induced width 15</td></tr></tbody></table></div>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.19</td><td>1.7e-13 at most</td><td>inference s 0.018543</td></tr></tbody></table></div>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.5</td><td>1.7e-13 at most</td><td>inference s 0.04903</td></tr></tbody></table></div>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.10</td><td>1.7e-13 at most</td><td>inference s 0.048715049</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>60.7</td><td>5.6e-17 at most</td><td>inference s 55.84852099</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>98.6</td><td>0.0e+00 at most</td><td>inference s 93.14164209</td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Storm dd</th><th class="num">Storm exact</th><th class="num">Storm sparse</th><th class="num">PRISM hybrid</th><th class="num">PRISM sparse</th></tr></thead><tbody><tr><th>conn_8_8_7</th><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770195</td><td class="num">0.47702</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td></tr></tbody></table></div>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">aspmc</th><th class="num">Storm dd</th><th class="num">Storm exact</th><th class="num">Storm sparse</th><th class="num">PRISM hybrid</th><th class="num">PRISM sparse</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl greedy</th><th class="num">TensorInference.jl treesa</th></tr></thead><tbody><tr><th>conn_8_8_7</th><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770195</td><td class="num">0.47702</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.477019</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td><td class="num">0.4770194699</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

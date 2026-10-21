@@ -23,6 +23,50 @@ from fractions import Fraction
 from lpad2problog import split_clauses, split_top, strip_comments
 
 
+# What PITA keeps for itself (cplint 4.5.0, SWI-Prolog 9.2.9): the
+# predicates its user module defines before any clause of the program,
+# PITA's exports, and `db/1`, which PITA reads in a body as a call to plain
+# Prolog. PITA adds two arguments to every predicate of the program, so a
+# program's `v/1` is PITA's own `v/3`, and a program's `db(X)` is not a
+# predicate at all: on Roulette's HMM programs, which name their
+# observations v/1, PITA answered 0 for every length, and on its caesar
+# programs, which name a bit db/2, it printed nothing. These names are
+# renamed with a prefix, and the driver prints the queries without it.
+RESERVED = frozenset((
+    'v av dec db goal_n rule_n tabled zero_clauses local_pita_setting rule_by_num query_rule expand_query '
+    'expand_answer pita_on exception resource message_hook thread_message_hook portray portray_message '
+    'prolog_list_goal prolog_load_file library_directory file_search_path prolog_file_type message_property '
+    'term_expansion goal_expansion '
+    # the exports of library(pita)
+    'probability_dd end_ex or map get_abd_var_n dt_bdd_json_file std_dev to_atom symmetric_dirichlet_sample '
+    'init_em gamma_sample prob_meta key_pair create_dot_string andcnf density equalityc histogram add_var '
+    'compute_optimal_strategy_sp bar dt_solve_sp swi_builtin bdd_not add_decision_var set_pita get_dec_var_n '
+    'variance one dirichlet_sample beta abd_bdd_dot_string rand_seed init_ex abd_prob prob to_pair create_dot '
+    'or_list load_file bdd_notc add_abd_var ret_strategy onec parse ret_prob end load initial_values '
+    'setting_pita agg_val zero add_sum em bin bdd_dot_file init uniform_sample or_listc density2d densities '
+    'orc bar1 zeroc msw ret_abd_prob get_var_n dt_solve and discrete_sample equality add_prod gauss_sample '
+    'average create_json_util end_em map_bdd_dot_string bdd_dot_string value_pair make_query_var ret_probc '
+    'argbar add_query_var debug_cudd_var andc').split())
+PREFIX = 'problog2pita_'
+_NAME = re.compile(r"(?<![\w$'])([a-z][a-zA-Z0-9_]*)(?![\w'])")
+
+
+def rename(text):
+    """`text` with every atom that PITA keeps for itself (RESERVED) given
+    PREFIX, and whether there was one. Atoms are renamed wherever they
+    appear, as predicates and as constants alike, which keeps the program's
+    meaning; the driver strips PREFIX from the queries it prints."""
+    hit = False
+
+    def sub(m):
+        nonlocal hit
+        if m.group(1) in RESERVED:
+            hit = True
+            return PREFIX + m.group(1)
+        return m.group(1)
+    return _NAME.sub(sub, text), hit
+
+
 def split_neck(clause):
     """(head, body) at the first `:-` outside quotes and parentheses, or
     (clause, None) when there is none."""
@@ -108,21 +152,44 @@ def body_functors(body):
 def recursive(rules):
     """The predicates that can reach themselves through `rules`, which is
     what PITA wants tabled: without a `table` declaration a cyclic program
-    loops, and the smokers programs are cyclic by construction."""
+    loops, and the smokers programs are cyclic by construction. They are
+    the strongly connected components with a cycle (Tarjan's algorithm,
+    iterative), found in time linear in the program: a circuit's program
+    has a predicate per gate, hundreds of thousands of them."""
     edges = {}
     for head, body in rules:
         edges.setdefault(head, set()).update(body)
-    out = set()
-    for start in edges:
-        seen, stack = set(), list(edges[start])
-        while stack:
-            p = stack.pop()
-            if p in seen:
+    index, low, stack, on, out = {}, {}, [], set(), set()
+
+    def visit(p):
+        index[p] = low[p] = len(index)
+        stack.append(p)
+        on.add(p)
+        return p, iter(edges.get(p, ()))
+
+    for root in edges:
+        if root in index:
+            continue
+        work = [visit(root)]
+        while work:
+            p, succ = work[-1]
+            q = next(succ, None)
+            if q is not None:
+                if q not in index:
+                    work.append(visit(q))
+                elif q in on:
+                    low[p] = min(low[p], index[q])
                 continue
-            seen.add(p)
-            stack += list(edges.get(p, ()))
-        if start in seen:
-            out.add(start)
+            work.pop()
+            if work:
+                low[work[-1][0]] = min(low[work[-1][0]], low[p])
+            if low[p] == index[p]:
+                comp = []
+                while not comp or comp[-1] != p:
+                    comp.append(stack.pop())
+                    on.discard(comp[-1])
+                if len(comp) > 1 or p in edges.get(p, ()):
+                    out.update(comp)
     return out
 
 
@@ -195,13 +262,18 @@ def generator(body, facts):
 
 
 def program(text, driver=False):
+    text, renamed = rename(text)
     clauses, queries, evidence, facts = translate(text)
     lines = [':- use_module(library(pita)).', ':- pita.', ':- begin_lpad.']
     lines += clauses
     lines.append(':- end_lpad.')
     if driver:
         goal = 'prob(Q, P)' if not evidence else f"prob(Q, ({', '.join(evidence)}), P)"
-        ask = f'({goal}, format("~q:\\t~w~n", [Q, P]))'
+        show = 'format("~q:\\t~w~n", [Q, P])'
+        if renamed:
+            show = (f"term_to_atom(Q, Q0), atomic_list_concat(Qs, '{PREFIX}', Q0), atomic_list_concat(Qs, Q1), "
+                    'format("~w:\\t~w~n", [Q1, P])')
+        ask = f'({goal}, {show})'
         enumerators = []
         for term, body in queries:
             if body is None:

@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#geni">Geni&#x27;s programs</a></p>
     <h1>geni_weather_n15</h1>
-    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Three more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 15 10</code>.</p>
+    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Two more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 15 10</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">22.0</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">99.6</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. memory: out of memory. zero: every answer printed as 0 where the reference&#x27;s are positive. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">22.0</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">99.6</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td><td class="num">163</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. memory: out of memory. zero: every answer printed as 0 where the reference&#x27;s are positive. error: the system stopped with an error. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -191,7 +191,6 @@ MemoryError: std::bad_alloc</pre></details></td></tr></tbody></table></div>
 
 Version: 4.8.1
 Date: Mon Oct 19 19:43:52 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -233,7 +232,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:43:52 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -275,7 +273,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:34:02 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -317,7 +314,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:34:02 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -359,7 +355,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:24:40 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -401,7 +396,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:24:40 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -hybrid -javamaxmem 4g
 
@@ -444,7 +438,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:41:02 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -486,7 +479,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:41:02 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -528,7 +520,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:31:08 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -570,7 +561,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:31:08 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -612,7 +602,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:21:36 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -654,7 +643,6 @@ Building model...
 
 Version: 4.8.1
 Date: Mon Oct 19 19:21:36 UTC 2026
-Hostname: ip-172-31-63-27
 Memory limits: cudd=1g, java(heap)=3.9g
 Command line: prism weatherfactory15.prism -pf &#x27;P=? [F&lt;=10 &quot;allStrike&quot;]&#x27; -sparse -javamaxmem 4g
 
@@ -692,10 +680,203 @@ Building model...
 # The crash happened outside the Java Virtual Machine in native code.
 # See problematic frame for where to report the bug.
 #</pre></details></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Genfer, SPPL, Pluck, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>23.4</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 10.389s discarded)</td></tr><tr><td>1</td><td>answered</td><td>23.4</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 10.389s discarded)</td></tr><tr><td>2</td><td>answered</td><td>23.3</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 10.418s discarded)</td></tr><tr><td>2</td><td>answered</td><td>23.3</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 10.418s discarded)</td></tr><tr><td>3</td><td>answered</td><td>23.5</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 10.467s discarded)</td></tr><tr><td>3</td><td>answered</td><td>23.5</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 10.467s discarded)</td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>63.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>1</td><td>error</td><td>63.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>2</td><td>error</td><td>63.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>2</td><td>error</td><td>63.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>3</td><td>error</td><td>63.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>3</td><td>error</td><td>63.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>12.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 1090519056 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[165842] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at 4a4ef493e3a148</pre></details></td></tr><tr><td>1</td><td>error</td><td>12.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 1090519056 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[165842] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at 4a4ef493e3a148</pre></details></td></tr><tr><td>2</td><td>error</td><td>12.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 1090519056 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172213] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at 4a4ef493e3a148</pre></details></td></tr><tr><td>2</td><td>error</td><td>12.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 1090519056 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172213] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at 4a4ef493e3a148</pre></details></td></tr><tr><td>3</td><td>error</td><td>11.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 1090519056 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[171959] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at 4a4ef493e3a148</pre></details></td></tr><tr><td>3</td><td>error</td><td>11.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 1090519056 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[171959] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at 4a4ef493e3a148</pre></details></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.4</td><td>8.4e-26 at most</td><td>largest formula, pairs 159 975 011; final formula, pairs 2 294 898; variables 707; ground atoms 2 083; ground rules 2 210; vtree program (from auto: 40 attempts, 9.623s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Ace forceC2d (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr></tbody></table></div>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>49.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;bn_uai_run.py&quot;, line 195, in &lt;module&gt;
+    main()
+  File &quot;bn_uai_run.py&quot;, line 171, in main
+    log_z, marg, secs = run_agrum(kind, sizes, scopes, tables, evid, factors, qvars, want_z)
+  File &quot;bn_uai_run.py&quot;, line 119, in run_agrum
+    ie.makeInference()
+Exception: std::bad_alloc</pre></details></td></tr></tbody></table></div>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>37.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
+  what():  std::bad_alloc</pre></details></td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>163</td><td>3.2e-26 at most</td><td>inference s 157.761832</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>599</td><td>3.9e-26 at most</td><td>inference s 593.9197149</td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Dice</th><th class="num">Geni</th></tr></thead><tbody><tr><th>allstrike_139</th><td class="num">4.12349e-11</td><td class="num">4.12349e-11</td><td class="num">4.12349e-11</td><td class="num">0</td></tr><tr><th>result_2</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Dice</th><th class="num">Geni</th><th class="num">TensorInference.jl greedy</th><th class="num">TensorInference.jl treesa</th></tr></thead><tbody><tr><th>allstrike_139</th><td class="num">4.12349e-11</td><td class="num">4.12349e-11</td><td class="num">4.12349e-11</td><td class="num">0</td><td class="num">4.12349e-11</td><td class="num">4.12349e-11</td></tr><tr><th>result_2</th><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

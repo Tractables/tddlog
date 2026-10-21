@@ -182,6 +182,17 @@ Only `libgmp` and a C++ compiler are needed; `pack_install` needs the
 consulting prints `bddem:create_json_util/5 is not defined`, harmless
 (`prob/2` never calls it).
 
+The pack server's cplint 4.5.0 comes with bddem 4.3.1 (`pita.pl` md5
+4b2d4a11a51f63b3b1dcddbd86b9e22b), and that pair works. The GitHub tags
+do not replace it where the pack server cannot be reached (it answered 404
+on 2026-10-21): cplint v4.5.0's `pita.pl` there calls `init_test/1`, which
+no bddem tag defines, so every query fails with `Unknown procedure:
+pita:init_test/1`, with bddem rebuilt from its source or not. Those
+machines take a copy of a working pack directory instead. Check an install
+with one query (`a:0.5.` answers `prob(a, P)` with 0.5). The runs whose
+PITA failed in this way are not in the results; they were run again with
+the working packs.
+
 ### How `bench.py` runs it
 
 `scripts/problog2pita.py` writes `prog.lpad.pl` from the ProbLog program,
@@ -201,6 +212,16 @@ The translation has to:
   the LPAD block under a prefixed name, since PITA rewrites every
   predicate inside the block;
 - turn `evidence/1,2` into the second argument of `prob/3`;
+- rename the atoms PITA keeps for itself (the predicates its user module
+  defines, its exports, and `db/1`) with a prefix, which the driver strips
+  from the queries it prints. PITA adds two arguments to every predicate,
+  so a program's `v/1` is PITA's own `v/3`: on Roulette's HMM programs,
+  whose observations are `v/1`, PITA answered 0 at every length. It reads
+  `db(G)` in a body as a call of `G` in plain Prolog: on Roulette's caesar
+  programs, whose bits are `db/2`, it printed nothing. PITA runs again on
+  these 36 programs (Roulette's HMM programs and its caesar programs
+  below 300 letters) with the renaming; until that run is in, they have no
+  PITA record in the results;
 - write a fact of probability one as a plain fact: PITA reads `a:1.` as
   false (a rule `a:1 :- Body.` is read right).
 
@@ -227,7 +248,11 @@ that unlikely. On `ace_fs_07` PITA's P(e) is right under the first 700 of
 its 1120 observations (3.4e-13) and reads 1.8e-15 under all of them, where
 every query answers 0 (ProbLog and tddlog 0.0237 on the worst); on
 `ace_mastermind_03_08_03` (P(e) = 2.6e-13) it answers 0.49979 where the
-others answer 0.5. These wrong answers are PITA's, not the translation's.
+others answer 0.5. On the arithmetic programs' `arith_caesar_small` (P(e) =
+4.8e-15 as PITA computes it) PITA's probabilities of a query and the
+evidence together come out as multiples of 2^-53, the spacing of doubles
+below one, and its answers are off by up to 0.031. These wrong answers are
+PITA's, not the translation's.
 
 `scripts/lpad2problog.py` converts cplint's example LPADs to ProbLog, with
 the `?- prob(Q, P)` queries of their `/** <examples> */` block; 28 of the
@@ -615,6 +640,19 @@ and SMC; Stan's HMC on programs whose discrete variables SlicStan
 marginalizes), discretizers (AQUA, GuBPI) and the exact symbolic Psi
 (its Table 3).
 
+The bitblast suite's programs, like the ppl suite's `arith_` and
+`pluck_` ones, exist only as Alea.jl source, over its `DistUInt` and
+`DistFix` numbers. Every system other than Alea.jl, tddlog included, is
+given the circuit Alea.jl builds for a program: PREFIX.pl, or the
+PREFIX__dJ.dice programs (a `let` per flip and per gate) that Dice runs
+and the other systems' translators read. Those Dice programs are the
+circuit in Dice's syntax, not a model written in Dice, and
+`dice2problog.py` on them gives the same circuit back, so these
+instances are attempted only for every system but Alea.jl (section 24),
+apart from the three models that Genfer, SPPL and Psi run as their own
+programs (section 12). A natural input would need a translator from
+Alea.jl's source, which does not exist yet.
+
 ---
 
 ## 6. aspmc
@@ -633,8 +671,10 @@ tmp/venv/bin/python -m aspmc.main -m problog -c -v result prog.pl
 It writes `out.cnf` into the working directory, so bench.py gives each
 instance a directory of its own and reads `[RESULT] aspmc: <query>: <p>`
 from stderr. A ground query it does not print is an atom its grounder
-removed because no rule derives it, and answers 0 (water's values of
-probability 0).
+removed: one the program states as a fact answers 1 (`bench_pe :- true.`,
+P(e) on the seven PR networks with no observations, where aspmc prints
+only the program's overall weight), and any other answers 0, since no
+rule derives it (water's values of probability 0).
 
 Its ProbLog frontend does not condition on `evidence/1,2`: it reads them
 as facts and returns unconditional probabilities with exit code zero.
@@ -767,6 +807,12 @@ network `gen_bn.py` makes of the file, written as a Hugin file
 (`write_hugin`): each factor a variable of two values, `ok` and `not_ok`,
 observed `ok`, so Ace compiles the network tddlog compiles. Ace runs in
 the narrow lanes of the uai tables, with half a lane's memory as heap.
+Where that heap ran out (ObjectDetection, two DBNs), normal space
+underflowed (csp_13) or the run timed out, Ace ran again with `Xlog`
+in every other lane, with the lane's memory less 4 GB (25 GB) as heap,
+and each table takes a network's fastest answer over Ace's routes. With
+that heap it answers csp_13 and dbn_12. On every ObjectDetection network
+(48 MAR, 46 PR) it now times out at 300 s instead of running out of heap.
 
 **The PR task.** Under `run --pr` Ace compiles and evaluates as for the
 marginals, with the `.inst` files of a plain `gen` (`gen --pr` writes
@@ -1397,6 +1443,10 @@ with ProbLog's `ddnnf` to 7.5e-7 (the print precision) on every
 instance both finish: twocoins, evidence1, evidence2, grass, alarm,
 noisyOr, murderMystery, survey and coupon2-10-obs (4.2 s; ProbLog times
 out at 120 s); nodice_alarm runs out of time at 120 s, as Psi does.
+On the two smallest programs of the Geni weather factory
+(`geni_weather_h1`, `geni_weather_n2`) noDice exits in 0.03 s without
+printing anything, and the cause is not known. The larger weather
+programs run out of time or memory. Both count as unanswered.
 
 ### Psi
 
@@ -1522,7 +1572,10 @@ The tables carry one column per system (variant). The PR task
 PR mode. The time is the process's wall time; `inference_seconds` goes to
 the record's stats to separate start-up (Python, Julia's package load)
 from the work. A model whose factors overflow memory is an error or a
-timeout, counted as a failure.
+timeout, counted as a failure. A marginals run reads the query
+variables' indices from a file (`@FILE`). On the largest networks of
+the final PR set the list is longer than Linux allows for one argument
+(128 KB, `E2BIG`).
 
 ### Checks
 
@@ -1613,7 +1666,8 @@ fetched by the installer and not shipped), with the property
 program's Markov chain as Rubicon's authors wrote it in PRISM.
 
 Every other instance with Dice programs, the ones Genfer, SPPL and Geni
-are given (section 12: `dice_source` and the circuits' dicemaps):
+are given (section 12: `dice_source` and the circuits' dicemaps; the
+logic programs through their ground programs' Dice programs, section 23):
 `scripts/dice2prism.py` writes a discrete-time Markov chain in the PRISM
 language, which both read, one model a component of the program's value
 (`--joint` for a circuit's joint lines), over dice_ir.py's lowering
@@ -1705,7 +1759,8 @@ Every system tries every problem (rule 15), so the systems that read
 networks (Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl) are
 given every program that is not a network, and the systems that read
 Dice programs (Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL,
-Geni) every program that has no Dice program of its own and is not a
+Geni, and Storm and PRISM through `dice2prism.py`, section 22) every
+program that has no Dice program of its own and is not a
 circuit: the standard suite's graph, grid, smokers, UW-CSE, Cora and
 cplint families, the literature, Biomine and TPC-H suites. bench.py
 runs `tddlog --ground` on the program, as for Scallop (section 3), and
@@ -1713,7 +1768,7 @@ runs `tddlog --ground` on the program, as for Scallop (section 3), and
 of Boolean variables (UAI and its evidence file for Merlin and the UAI
 systems, Hugin and `.inst` for Ace) or as Dice programs (one program
 returning every query as a tuple for Alea.jl, Roulette, Psi, Genfer,
-SPPL and Geni; one program per query, listed in a `.dicemap`, for Dice
+SPPL, Geni, Storm and PRISM; one program per query, listed in a `.dicemap`, for Dice
 and noDice, as for the circuits). Both steps are timed, and their
 seconds (`ground_s` in the record) are added to the system's. The
 answers are those of the ground program's queries, which are the ground
@@ -1756,3 +1811,113 @@ by enumerating the worlds of its facts with the well-founded model of
 each, on an acyclic program with negation, constants and evidence and
 on a cycle that needs all of its stages; and bench.py's ground route on
 the files the script writes.
+
+## 24. What each system is compared on
+
+For each system, an instance is its own, natural to it, attempted or
+not attempted. An instance is the system's **own** if it comes from the
+system's own papers, benchmarks or distribution. It is **natural** if it
+is written as the system's users write programs: in the system's
+language, or translated line for line, within a constant factor of the
+original's size, with none of the system's work done for it by tddlog
+or another system (no grounding, no unrolling of recursion, no
+bit-blasting, no blow-up); a system's own instances are natural to it.
+An instance the system is given otherwise is **attempted** only.
+
+The README's speed claims (every "N× faster", the overview figure, the
+scatter plots and the small cactus plots) are over the other system's
+natural instances: the total times over those either answers, a run
+that does not finish counted at the time limit, and the totals over
+those both answer. Each system's own instances are reported for that
+system, and the attempted ones as answers and total times only. The
+large cactus plots draw every instance, one a system does not attempt
+counted as unanswered; they show coverage, not speed. tddlog's input is
+classified the same way: it only attempts the bit-blasted and integer
+programs (`bb_`, `arith_`, `pluck_`), where it reads the circuit Alea.jl
+builds, and the Dice programs with loops, which `dice2problog.py`
+unrolls.
+
+The first row that matches an instance's system, suite and name (a
+regular expression the name starts with) classifies it; a system's
+variants (`alea-process`, `roulette-process`) take their stem's rows.
+An instance a system attempts that no row classifies stops the results
+pipeline. The uncertain cells were decided as follows: Storm's and
+PRISM's weather factory is natural, not own (Rubicon's model, not
+theirs); pgmpy has no own networks (bnlearn's networks are R's
+package's); the Dice family's systems are natural on every network,
+Markov networks included, as the Dice paper writes networks as nested
+conditionals; the network tools are natural on the networks of the Dice
+and Roulette papers; Alea.jl is natural on Pluck's sequence models,
+which are Dice.jl programs ported to Alea.jl.
+
+| systems | suites | instances | class | reason |
+|---|---|---|---|---|
+| ace | ace | all | own | Ace's own benchmarks (Chavira and Darwiche) |
+| problog | biomine | all | own | the Biomine network of ProbLog's first paper (De Raedt et al., IJCAI 2007) |
+| pita | std | `bloodtype$` | own | cplint's blood type example, which PITA ships |
+| provsql | tpch | all | own | the TPC-H queries, ProvSQL's own evaluation |
+| dice | dice | all | own | the Dice paper's programs and networks (OOPSLA 2020) and its repository's loops |
+| alea | bitblast | all | own | the bit-blasting paper's programs (PLDI 2024), Alea.jl's own |
+| alea | ppl | `arith_` | own | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch |
+| roulette | roulette | all | own | the Roulette paper's programs and networks (PLDI 2025), from its artifact |
+| geni | geni | all | own | the programs of Geni's evaluation (ICFP 2025) |
+| nodice | ppl | `nodice_` | own | noDice's programs (OOPSLA 2026) |
+| pluck | ppl | `pluck_` | own | Pluck's four sequence models (PLDI 2025) |
+| genfer | bitblast | `bb_population_` | own | Genfer's population model (NeurIPS 2023) |
+| genfer | dice | `dice_(twocoins\|evidence\|grass\|noisyOr\|alarm\|murderMystery)` | own | the Dice programs Genfer's repository ships |
+| psi | bitblast | `bb_linreg_` | own | Psi's R2 linear regression, as Psi's own program |
+| sppl | bitblast | `bb_markov_` | own | SPPL's hierarchical Markov switching model (PLDI 2021) |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | natural | a network, the tool's own input |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | natural | the Dice and Roulette papers' Bayesian networks, as networks |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | attempted | a network of Boolean variables built from the ground program (ground2net.py) |
+| tddlog, problog, pita, aspmc | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | natural | a ProbLog program, one annotated disjunction per row of a table (gen_bn.py) |
+| dice, alea, roulette, nodice, psi, genfer, sppl, geni, pluck, storm, prism | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | natural | a Dice program of nested conditionals over discretes, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
+| tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | natural | a ProbLog program (for PITA through problog2pita.py) |
+| provsql | lit | all | natural | tuple-independent tables and non-recursive views (tpch2provsql.py) |
+| dice, alea, roulette, nodice, psi, genfer, sppl, geni, pluck, storm, prism | std, lit, tpch, biomine | all | attempted | Dice programs of the ground program (ground2net.py) |
+| alea | ppl | `pluck_` | natural | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
+| tddlog, problog, pita, aspmc, dice, alea, roulette, nodice, psi, genfer, sppl, geni, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | attempted | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
+| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | attempted | dice2problog.py unrolls the program's loops and bit-blasts its integers |
+| tddlog, problog, pita, aspmc | roulette | all | natural | the paper's model written as a ProbLog program (gen_roulette.py) |
+| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | natural | a loop-free Dice program translated line for line by dice2problog.py |
+| storm, prism | geni | `geni_weather_` | natural | Rubicon's PRISM model of the weather factory (CAV 2021) |
+| dice, alea, roulette, nodice, psi, genfer, sppl, geni, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | natural | a Dice program, as written or translated into the system's language (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
+
+## 25. What this release does not run
+
+The coverage runs closed on 2026-10-21, when the results were
+finalized: what they had not reached by then is not run in this
+release, and the results page says so under each plot ("was not run on
+N of the problems in this release"). By system and suite:
+
+- ProbLog and PITA: the dice suite (46), the ppl suite (43), Roulette's
+  suite (88) and the seven circuits of `bb_GPA`, all programs tddlog
+  reads. aspmc the same, except that of the dice suite it misses only
+  the 17 networks.
+- Dice, noDice, Psi, Genfer, SPPL and Geni: Roulette's suite (88), whose
+  programs have no Dice program of their own; the ground route (section
+  23) gives one, and it was run there for the network tools only. The
+  seven circuits of `bb_GPA`. Genfer, SPPL and Geni also miss the ppl
+  suite (43), and noDice and Psi its 32 circuits (they run noDice's 11
+  programs).
+- The Dice family on the standard suite's dice family (8): these are the
+  dice suite's programs, which the family runs there.
+- Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl: the dice
+  suite's 21 loop programs (caesar-iter, diamond, ladder, pmc1, pmc2,
+  simpleCaesar and the like), which the ground route did not reach, and
+  the two circuits Alea.jl did not write within 30 minutes and 16 GB
+  (`bb_normal_mixture_theta_w7`, `bb_multimodal_w9`).
+- Pluck: everything except its own sequence models and the dice suite's
+  programs, which it is given through `dice2pluck.py`.
+- Storm and PRISM: the logic programs, which reach them through their
+  ground programs' Dice programs (section 22), half of `std_bn`'s
+  networks and the PR sets, and the circuits and Roulette's programs
+  their runs did not reach (152 and 29 for Storm, 163 and 43 for PRISM).
+- ProvSQL: section 21.
+
+Failures that come from a lane's limits rather than from the system:
+Roulette, in the narrow lanes (55 GB of address space) of the UAI
+networks' tables of the Dice family, fails on all 112 networks it was
+given there when it allocates its table (`memory allocation of
+12884901888 bytes failed` on 111); the other Dice systems time out, run
+out of memory or crash (Psi, exit -11) on them as well.

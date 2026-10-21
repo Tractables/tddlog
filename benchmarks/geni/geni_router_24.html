@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#geni">Geni&#x27;s programs</a></p>
     <h1>geni_router_24</h1>
-    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Three more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py router 24</code>.</p>
+    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Two more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py router 24</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">124</td><td class="num">28.0</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">124</td><td class="num">28.0</td><td class="num none" title="not run"></td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -42,6 +42,7 @@
 <input type="radio" name="ptab" id="t3"><label for="t3">Alea.jl</label>
 <input type="radio" name="ptab" id="t4"><label for="t4">Roulette</label>
 <input type="radio" name="ptab" id="t5"><label for="t5">Psi</label>
+<input type="radio" name="ptab" id="t6"><label for="t6">PRISM</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its generator wrote it, handed to Geni as it is.</b></p>
 <p class="readers">Read by Geni.</p>
@@ -94,6 +95,21 @@
 </dl>
 <div class="file"><div class="fhead"><code class="fname">geni_router_24.psi0.psi</code><span>223 220 bytes, 1 155 lines</span><span class="sha" title="SHA-256">sha256 f174974f6643de17275aad02a9ff5ee6173b157e0c8dde8930a0ecaf540cdd8c</span></div><p class="made">Written by <code>dice2psi.py</code> from the Dice program when Psi runs: component 0 of the program's value, one Psi run each.</p><p class="note"><a href="../files/f174974f6643de17275a.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/f174974f6643de17275a.txt"></pre></div>
 </div>
+<div class="panel" id="p6">
+<p class="readers"><b>A translation of the original into PRISM; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PRISM hybrid, PRISM sparse, Storm dd, Storm exact, Storm sparse.</p>
+<dl class="cmds">
+<dt>PRISM hybrid</dt><dd><code>prism geni_router_24.dtmc0.prism geni_router_24.dtmc0.props -hybrid -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>PRISM sparse</dt><dd><code>prism geni_router_24.dtmc0.prism geni_router_24.dtmc0.props -sparse -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>Storm dd</dt><dd><code>python3 storm_check.py geni_router_24.dtmc0.prism dd geni_router_24.dtmc0.props</code></dd>
+<dt>Storm exact</dt><dd><code>python3 storm_check.py geni_router_24.dtmc0.prism exact geni_router_24.dtmc0.props</code></dd>
+<dt>Storm sparse</dt><dd><code>python3 storm_check.py geni_router_24.dtmc0.prism sparse geni_router_24.dtmc0.props</code></dd>
+</dl>
+<p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
+<div class="file"><div class="fhead"><code class="fname">geni_router_24.dtmc0.prism</code><span>196 068 bytes</span><span class="sha" title="SHA-256">sha256 d90c7f3f9f61942bfd1502f6e6c4cc54b61595d04a9caadc05af6c255cb8c299</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><p class="note"><a href="../files/d90c7f3f9f61942bfd15.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/d90c7f3f9f61942bfd15.txt"></pre></div>
+<div class="file"><div class="fhead"><code class="fname">geni_router_24.dtmc0.props</code><span>29 bytes</span><span class="sha" title="SHA-256">sha256 7ceaf781fd8e84d1ddf63a6127b35c269a7af89ef5531f8e910cdd5c6341496a</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0)];
+</pre></div>
+</div>
 </div>
 </section>
 <section class="card">
@@ -143,10 +159,414 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</p
 <h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>28.6</td><td>2.4e-11 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>28.6</td><td>2.4e-11 at most</td><td></td></tr></tbody></table></div>
 <h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>28.0</td><td>2.4e-11 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>28.0</td><td>2.4e-11 at most</td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Genfer, SPPL, Pluck, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>228</td><td></td><td>ground atoms 3 313; ground rules 2 737</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>1</td><td>error</td><td>228</td><td></td><td>ground atoms 3 313; ground rules 2 737</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>232</td><td></td><td>ground atoms 3 313; ground rules 2 737</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>2</td><td>error</td><td>232</td><td></td><td>ground atoms 3 313; ground rules 2 737</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>212</td><td></td><td>ground atoms 3 313; ground rules 2 737</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr><tr><td>3</td><td>error</td><td>212</td><td></td><td>ground atoms 3 313; ground rules 2 737</td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>compilation error: TDD operation failed: memory allocation refused by the byte budget or the allocator</pre></details></td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>10.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172863] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+cbdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75954109)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x74cc7595cfb2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x74cc7595c046)
+bdd_forward at bdd.jl:</pre></details></td></tr><tr><td>1</td><td>error</td><td>10.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[172863] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+cbdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75952649)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x74cc75954109)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x74cc7595cfb2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x74cc7595c046)
+bdd_forward at bdd.jl:</pre></details></td></tr><tr><td>2</td><td>error</td><td>11.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[171467] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+cbdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4f109)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x78e959f57fa2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x78e959f57036)
+bdd_forward at bdd.jl:</pre></details></td></tr><tr><td>2</td><td>error</td><td>11.2</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[171467] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+cbdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4d649)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x78e959f4f109)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x78e959f57fa2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x78e959f57036)
+bdd_forward at bdd.jl:</pre></details></td></tr><tr><td>3</td><td>error</td><td>13.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[169328] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+cbdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf90f9)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7b81aad01fb2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7b81aad01046)
+bdd_forward at bdd.jl:</pre></details></td></tr><tr><td>3</td><td>error</td><td>13.8</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 402653184 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[169328] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+handle_error at mod.rs:861
+with_capacity_in&lt;alloc::alloc::Global&gt; at mod.rs:426 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:177 [inlined]
+with_capacity_in&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at mod.rs:967 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;, alloc::alloc::Global&gt; at spec_from_elem.rs:14 [inlined]
+from_elem&lt;rsdd::backing_store::bump_table::HashTableElement&lt;rsdd::repr::bdd::BddNode&gt;&gt; at mod.rs:3587 [inlined]
+grow&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:138 [inlined]
+get_or_insert_by_hash&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:179 [inlined]
+get_or_insert&lt;rsdd::repr::bdd::BddNode&gt; at bump_table.rs:166
+get_or_insert&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:0
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:112
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt;&gt; at builder.rs:146 [inlined]
+ite_helper&lt;rsdd::builder::cache::all_app::AllIteTable&lt;rsdd::repr::bdd::BddPtr&gt;&gt; at robdd.rs:98
+ite&lt;rsdd::builder::bdd::robdd::RobddBuilder&lt;rsdd::builder::cache::all_app::AllIteT
+... output truncated ...
+cbdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+bdd_forward at bdd.jl:550
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf7639)
+evaluate at bdd.jl:491
+bdd_forward at bdd.jl:783
+traced_bdd_forward at bdd.jl:305
+unknown function (ip: 0x7b81aacf90f9)
+#343 at bdd.jl:586
+#337 at ./none:0
+unknown function (ip: 0x7b81aad01fb2)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7b81aad01046)
+bdd_forward at bdd.jl:</pre></details></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>112</td><td>2.4e-11 at most</td><td>largest formula, pairs 2 885 972 146; final formula, pairs 22; variables 4 369; ground atoms 7 633; ground rules 7 057; vtree families (from auto: 54 attempts, 77.321s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Ace forceC2d (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Merlin (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>157</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+Stacktrace:
+  [1] GenericMemory
+    @ ./boot.jl:516 [inlined]
+  [2] new_as_memoryref
+    @ ./boot.jl:535 [inlined]
+  [3] Array
+    @ ./boot.jl:588 [inlined]
+  [4] Array
+    @ ./boot.jl:594 [inlined]
+  [5] (Array{Float64})(::UndefInitializer, d::NTuple{31, Int64})
+    @ Core ./boot.jl:599
+  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
+    @ Base ./baseext.jl:30
+  [7] get_output_array(xs::Tuple{Array{Float64, 30}, Array{Float64, 25}}, size::Vector{Int64}, fillzero::Bool)
+    @ OMEinsum ~loop_einsum.jl:52
+  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsum.jl:25
+  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 30, Array{Float64, 30}}, RescaledArray{Float64, 25, Array{Float64, 25}}}, size_dict::Dict{Int64, Int64})
+    @ TensorInference ~RescaledArray.jl:45
+ [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsequence.jl:286
+ [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 2 times)
+    @ OMEinsum ~einsequence.jl:284
+ [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
+    @ OMEinsum ~einsequence.jl:260
+ [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
+    @ OMEinsum ~einsequence.jl:257
+ [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
+    @ TensorInference ~Core.jl:184
+ [15] probability
+    @ ~Core.jl:183 [inlined]
+ [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
+    @ TensorInference ~Core.jl:170
+ [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
+    @ TensorInference ~Core.jl:169
+ [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
+    @ Main tensorinference_uai.jl:24
+ [19] top-level scope
+    @ tensorinference_uai.jl:54
+in expression starting at tensorinference_uai.jl:54</pre></details></td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">Storm dd</th><th class="num">PRISM hybrid</th><th class="num">PRISM sparse</th></tr></thead><tbody><tr><th>x_23_23</th><td class="num">0.50000045</td><td class="num">0.50000045</td><td class="num">0.50000045</td><td class="num">0.50000045</td></tr></tbody></table></div>
+  <p class="note">The reference is the generator&#x27;s dynamic program (--reference-of). Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Storm dd</th><th class="num">PRISM hybrid</th><th class="num">PRISM sparse</th></tr></thead><tbody><tr><th>x_23_23</th><td class="num">0.50000045</td><td class="num">0.50000045</td><td class="num">0.50000045</td><td class="num">0.50000045</td><td class="num">0.50000045</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

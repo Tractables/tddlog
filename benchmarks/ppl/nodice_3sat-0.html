@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#ppl">Alea.jl&#x27;s and noDice&#x27;s programs</a></p>
     <h1>nodice_3sat-0</h1>
-    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. noDice, Psi, Pluck, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Made by <code>dice2problog.py data/nodice/3sat-0.dice</code>.</p>
+    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Made by <code>dice2problog.py data/nodice/3sat-0.dice</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Pluck</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.45</td><td class="num">0.93</td><td class="num">9.4</td><td class="num">8.4</td><td class="num">2.8</td><td class="num">3.2</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="out of memory">memory</td><td class="num none" title="not run"></td><td class="num">14.4</td><td class="num fail" title="the time limit ran out">&gt;600</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; zero: every answer printed as 0 where the reference&#x27;s are positive. memory: out of memory. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.45</td><td class="num">0.93</td><td class="num">9.4</td><td class="num">8.4</td><td class="num">2.8</td><td class="num">3.2</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num none" title="not run"></td><td class="num">16.6</td><td class="num">2.7</td><td class="num">14.4</td><td class="num fail" title="the time limit ran out">&gt;600</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. zero: every answer printed as 0 where the reference&#x27;s are positive. memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -41,6 +41,7 @@
 <input type="radio" name="ptab" id="t2"><label for="t2">Alea.jl</label>
 <input type="radio" name="ptab" id="t3"><label for="t3">Roulette</label>
 <input type="radio" name="ptab" id="t4"><label for="t4">Psi</label>
+<input type="radio" name="ptab" id="t5"><label for="t5">PRISM</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its authors wrote it, handed to Dice, noDice as it is.</b></p>
 <p class="readers">Read by Dice, noDice.</p>
@@ -1904,6 +1905,121 @@ def main() {
 }
 </pre></div>
 </div>
+<div class="panel" id="p5">
+<p class="readers"><b>A translation of the original into PRISM; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PRISM hybrid, PRISM sparse, Storm dd, Storm exact, Storm sparse.</p>
+<dl class="cmds">
+<dt>PRISM hybrid</dt><dd><code>prism nodice_3sat-0.dtmc0.prism nodice_3sat-0.dtmc0.props -hybrid -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>PRISM sparse</dt><dd><code>prism nodice_3sat-0.dtmc0.prism nodice_3sat-0.dtmc0.props -sparse -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>Storm dd</dt><dd><code>python3 storm_check.py nodice_3sat-0.dtmc0.prism dd nodice_3sat-0.dtmc0.props</code></dd>
+<dt>Storm exact</dt><dd><code>python3 storm_check.py nodice_3sat-0.dtmc0.prism exact nodice_3sat-0.dtmc0.props</code></dd>
+<dt>Storm sparse</dt><dd><code>python3 storm_check.py nodice_3sat-0.dtmc0.prism sparse nodice_3sat-0.dtmc0.props</code></dd>
+</dl>
+<p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
+<div class="file"><div class="fhead"><code class="fname">nodice_3sat-0.dtmc0.prism</code><span>9 026 bytes</span><span class="sha" title="SHA-256">sha256 35c2a9f0f987b9cfdcdeea74a187c9aa2118a9d3001100a201be346ff6a96767</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><pre>// 3sat-0.dice, translated by tddlog&#x27;s scripts/dice2prism.py, component 0 (bool): 48 steps, 42 registers, 48 commands.
+// &quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0)]
+dtmc
+
+module program
+  pc : [0..48] init 0;
+  x0 : bool init false;
+  x1 : bool init false;
+  x2 : bool init false;
+  x3 : bool init false;
+  x4 : bool init false;
+  x5 : bool init false;
+  x6 : bool init false;
+  x7 : bool init false;
+  x8 : bool init false;
+  x9 : bool init false;
+  x10 : bool init false;
+  x11 : bool init false;
+  x12 : bool init false;
+  x13 : bool init false;
+  x14 : bool init false;
+  x15 : bool init false;
+  x16 : bool init false;
+  x17 : bool init false;
+  x18 : bool init false;
+  x19 : bool init false;
+  x20 : bool init false;
+  x21 : bool init false;
+  x22 : bool init false;
+  x23 : bool init false;
+  x24 : bool init false;
+  x25 : bool init false;
+  x26 : bool init false;
+  x27 : bool init false;
+  x28 : bool init false;
+  x29 : bool init false;
+  x30 : bool init false;
+  x31 : bool init false;
+  x32 : bool init false;
+  x33 : bool init false;
+  x34 : bool init false;
+  x35 : bool init false;
+  x36 : bool init false;
+  x37 : bool init false;
+  x38 : bool init false;
+  x39 : bool init false;
+  x40 : bool init false;
+  x41 : bool init false;
+  [] pc=0 -&gt; 0.5:(x0&#x27;=true)&amp;(x1&#x27;=false)&amp;(pc&#x27;=1) + 0.5:(x0&#x27;=false)&amp;(x1&#x27;=true)&amp;(pc&#x27;=1);
+  [] pc=1 -&gt; 0.5:(x1&#x27;=true)&amp;(x2&#x27;=x1)&amp;(pc&#x27;=2) + 0.5:(x1&#x27;=false)&amp;(x2&#x27;=true)&amp;(pc&#x27;=2);
+  [] pc=2 -&gt; 0.5:(x2&#x27;=true)&amp;(x3&#x27;=true)&amp;(pc&#x27;=3) + 0.5:(x2&#x27;=false)&amp;(x3&#x27;=x2)&amp;(pc&#x27;=3);
+  [] pc=3 -&gt; 0.5:(x4&#x27;=true)&amp;(x5&#x27;=false)&amp;(pc&#x27;=4) + 0.5:(x4&#x27;=false)&amp;(x5&#x27;=true)&amp;(pc&#x27;=4);
+  [] pc=4 -&gt; 0.5:(x5&#x27;=true)&amp;(x6&#x27;=true)&amp;(pc&#x27;=5) + 0.5:(x5&#x27;=false)&amp;(x6&#x27;=x5)&amp;(pc&#x27;=5);
+  [] pc=5 -&gt; 0.5:(x3&#x27;=true)&amp;(x6&#x27;=x3)&amp;(x7&#x27;=false)&amp;(pc&#x27;=6) + 0.5:(x3&#x27;=false)&amp;(x6&#x27;=(x3 &amp; x6))&amp;(x7&#x27;=true)&amp;(pc&#x27;=6);
+  [] pc=6 -&gt; 0.5:(x7&#x27;=true)&amp;(x8&#x27;=x7)&amp;(pc&#x27;=7) + 0.5:(x7&#x27;=false)&amp;(x8&#x27;=true)&amp;(pc&#x27;=7);
+  [] pc=7 -&gt; 0.5:(x6&#x27;=true)&amp;(x8&#x27;=(x6 &amp; x8))&amp;(pc&#x27;=8) + 0.5:(x6&#x27;=false)&amp;(x8&#x27;=x6)&amp;(pc&#x27;=8);
+  [] pc=8 -&gt; 0.5:(x9&#x27;=true)&amp;(x10&#x27;=x6)&amp;(pc&#x27;=9) + 0.5:(x9&#x27;=false)&amp;(x10&#x27;=true)&amp;(pc&#x27;=9);
+  [] pc=9 -&gt; 0.5:(x8&#x27;=true)&amp;(x10&#x27;=(x8 &amp; x10))&amp;(pc&#x27;=10) + 0.5:(x8&#x27;=false)&amp;(x10&#x27;=x8)&amp;(pc&#x27;=10);
+  [] pc=10 -&gt; 0.5:(x10&#x27;=true)&amp;(x11&#x27;=(x10 &amp; (x8 | x6)))&amp;(pc&#x27;=11) + 0.5:(x10&#x27;=false)&amp;(x11&#x27;=x10)&amp;(pc&#x27;=11);
+  [] pc=11 -&gt; 0.5:(x12&#x27;=true)&amp;(x13&#x27;=x6)&amp;(pc&#x27;=12) + 0.5:(x12&#x27;=false)&amp;(x13&#x27;=true)&amp;(pc&#x27;=12);
+  [] pc=12 -&gt; 0.5:(x11&#x27;=true)&amp;(x13&#x27;=x11)&amp;(pc&#x27;=13) + 0.5:(x11&#x27;=false)&amp;(x13&#x27;=(x11 &amp; x13))&amp;(pc&#x27;=13);
+  [] pc=13 -&gt; 0.5:(x14&#x27;=true)&amp;(x15&#x27;=true)&amp;(pc&#x27;=14) + 0.5:(x14&#x27;=false)&amp;(x15&#x27;=x4)&amp;(pc&#x27;=14);
+  [] pc=14 -&gt; 0.5:(x13&#x27;=true)&amp;(x15&#x27;=(x13 &amp; x15))&amp;(pc&#x27;=15) + 0.5:(x13&#x27;=false)&amp;(x15&#x27;=x13)&amp;(pc&#x27;=15);
+  [] pc=15 -&gt; 0.5:(x16&#x27;=true)&amp;(x17&#x27;=false)&amp;(pc&#x27;=16) + 0.5:(x16&#x27;=false)&amp;(x17&#x27;=true)&amp;(pc&#x27;=16);
+  [] pc=16 -&gt; 0.5:(x17&#x27;=true)&amp;(x18&#x27;=x17)&amp;(pc&#x27;=17) + 0.5:(x17&#x27;=false)&amp;(x18&#x27;=true)&amp;(pc&#x27;=17);
+  [] pc=17 -&gt; 0.5:(x15&#x27;=true)&amp;(x18&#x27;=x15)&amp;(x19&#x27;=!x1)&amp;(pc&#x27;=18) + 0.5:(x15&#x27;=false)&amp;(x18&#x27;=(x15 &amp; x18))&amp;(x19&#x27;=!x1)&amp;(pc&#x27;=18);
+  [] pc=18 -&gt; 0.5:(x19&#x27;=true)&amp;(x20&#x27;=true)&amp;(pc&#x27;=19) + 0.5:(x19&#x27;=false)&amp;(x20&#x27;=x19)&amp;(pc&#x27;=19);
+  [] pc=19 -&gt; 0.5:(x18&#x27;=true)&amp;(x20&#x27;=x18)&amp;(pc&#x27;=20) + 0.5:(x18&#x27;=false)&amp;(x20&#x27;=(x18 &amp; x20))&amp;(pc&#x27;=20);
+  [] pc=20 -&gt; 0.5:(x21&#x27;=true)&amp;(x22&#x27;=false)&amp;(pc&#x27;=21) + 0.5:(x21&#x27;=false)&amp;(x22&#x27;=true)&amp;(pc&#x27;=21);
+  [] pc=21 -&gt; 0.5:(x20&#x27;=true)&amp;(x22&#x27;=x20)&amp;(pc&#x27;=22) + 0.5:(x20&#x27;=false)&amp;(x22&#x27;=(x20 &amp; (x22 | !x2)))&amp;(pc&#x27;=22);
+  [] pc=22 -&gt; 0.5:(x22&#x27;=true)&amp;(x23&#x27;=(x22 &amp; (!x20 | !x5)))&amp;(x24&#x27;=!x18)&amp;(pc&#x27;=23) + 0.5:(x22&#x27;=false)&amp;(x23&#x27;=x22)&amp;(x24&#x27;=!x18)&amp;(pc&#x27;=23);
+  [] pc=23 -&gt; 0.5:(x23&#x27;=true)&amp;(x24&#x27;=x23)&amp;(x25&#x27;=!x1)&amp;(pc&#x27;=24) + 0.5:(x23&#x27;=false)&amp;(x24&#x27;=(x23 &amp; (x24 | x6)))&amp;(x25&#x27;=!x1)&amp;(pc&#x27;=24);
+  [] pc=24 -&gt; 0.5:(x24&#x27;=true)&amp;(x25&#x27;=x24)&amp;(x26&#x27;=!x11)&amp;(pc&#x27;=25) + 0.5:(x24&#x27;=false)&amp;(x25&#x27;=(x24 &amp; (x25 | x10)))&amp;(x26&#x27;=!x11)&amp;(pc&#x27;=25);
+  [] pc=25 -&gt; 0.5:(x26&#x27;=true)&amp;(x27&#x27;=true)&amp;(pc&#x27;=26) + 0.5:(x26&#x27;=false)&amp;(x27&#x27;=x26)&amp;(pc&#x27;=26);
+  [] pc=26 -&gt; 0.5:(x25&#x27;=true)&amp;(x27&#x27;=x25)&amp;(x28&#x27;=!x3)&amp;(pc&#x27;=27) + 0.5:(x25&#x27;=false)&amp;(x27&#x27;=(x25 &amp; x27))&amp;(x28&#x27;=!x3)&amp;(pc&#x27;=27);
+  [] pc=27 -&gt; 0.5:(x28&#x27;=true)&amp;(x29&#x27;=x28)&amp;(pc&#x27;=28) + 0.5:(x28&#x27;=false)&amp;(x29&#x27;=true)&amp;(pc&#x27;=28);
+  [] pc=28 -&gt; 0.5:(x27&#x27;=true)&amp;(x29&#x27;=(x27 &amp; x29))&amp;(x30&#x27;=!x23)&amp;(pc&#x27;=29) + 0.5:(x27&#x27;=false)&amp;(x29&#x27;=x27)&amp;(x30&#x27;=!x23)&amp;(pc&#x27;=29);
+  [] pc=29 -&gt; 0.5:(x29&#x27;=true)&amp;(x30&#x27;=(x29 &amp; ((!x6 | !x15) | !x3)))&amp;(x31&#x27;=!x28)&amp;(pc&#x27;=30) + 0.5:(x29&#x27;=false)&amp;(x30&#x27;=((x29 &amp; (x30 | !x10)) &amp; ((!x6 | !x15) | !x3)))&amp;(x31&#x27;=!x28)&amp;(pc&#x27;=30);
+  [] pc=30 -&gt; 0.5:(x31&#x27;=true)&amp;(x32&#x27;=x31)&amp;(pc&#x27;=31) + 0.5:(x31&#x27;=false)&amp;(x32&#x27;=true)&amp;(pc&#x27;=31);
+  [] pc=31 -&gt; 0.5:(x30&#x27;=true)&amp;(x32&#x27;=(((((x30 &amp; x32) &amp; ((x20 | !x1) | x10)) &amp; ((!x16 | x17) | x29)) &amp; ((!x9 | x16) | x24)) &amp; ((x11 | !x26) | x16)))&amp;(x33&#x27;=(x4 | !x28))&amp;(pc&#x27;=32) + 0.5:(x30&#x27;=false)&amp;(x32&#x27;=((((x30 &amp; ((x20 | !x1) | x10)) &amp; ((!x16 | x17) | x29)) &amp; ((!x9 | x16) | x24)) &amp; ((x11 | !x26) | x16)))&amp;(x33&#x27;=(x4 | !x28))&amp;(pc&#x27;=32);
+  [] pc=32 -&gt; 0.5:(x32&#x27;=true)&amp;(x33&#x27;=((x32 &amp; ((x28 | x3) | !x8)) &amp; ((!x17 | x8) | x1)))&amp;(pc&#x27;=33) + 0.5:(x32&#x27;=false)&amp;(x33&#x27;=(((x32 &amp; x33) &amp; ((x28 | x3) | !x8)) &amp; ((!x17 | x8) | x1)))&amp;(pc&#x27;=33);
+  [] pc=33 -&gt; 0.5:(x33&#x27;=true)&amp;(x34&#x27;=(x33 &amp; ((x32 | !x29) | x5)))&amp;(x35&#x27;=true)&amp;(pc&#x27;=34) + 0.5:(x33&#x27;=false)&amp;(x34&#x27;=((x33 &amp; (x6 | x1)) &amp; ((x32 | !x29) | x5)))&amp;(x35&#x27;=!x25)&amp;(pc&#x27;=34);
+  [] pc=34 -&gt; 0.5:(x34&#x27;=true)&amp;(x35&#x27;=(x34 &amp; ((!x9 | !x28) | !x12)))&amp;(x36&#x27;=!x15)&amp;(pc&#x27;=35) + 0.5:(x34&#x27;=false)&amp;(x35&#x27;=((x34 &amp; x35) &amp; ((!x9 | !x28) | !x12)))&amp;(x36&#x27;=!x15)&amp;(pc&#x27;=35);
+  [] pc=35 -&gt; 0.5:(x35&#x27;=true)&amp;(x36&#x27;=x35)&amp;(x37&#x27;=!x29)&amp;(pc&#x27;=36) + 0.5:(x35&#x27;=false)&amp;(x36&#x27;=(x35 &amp; (x36 | !x6)))&amp;(x37&#x27;=!x29)&amp;(pc&#x27;=36);
+  [] pc=36 -&gt; 0.5:(x36&#x27;=true)&amp;(x37&#x27;=(x36 &amp; ((!x27 | !x31) | !x10)))&amp;(x38&#x27;=!x34)&amp;(pc&#x27;=37) + 0.5:(x36&#x27;=false)&amp;(x37&#x27;=((x36 &amp; (x37 | x0)) &amp; ((!x27 | !x31) | !x10)))&amp;(x38&#x27;=!x34)&amp;(pc&#x27;=37);
+  [] pc=37 -&gt; 0.5:(x37&#x27;=true)&amp;(x38&#x27;=((((x37 &amp; (x38 | x28)) &amp; ((!x0 | !x19) | x2)) &amp; ((!x13 | !x26) | x29)) &amp; ((x18 | !x11) | x13)))&amp;(pc&#x27;=38) + 0.5:(x37&#x27;=false)&amp;(x38&#x27;=(((x37 &amp; ((!x0 | !x19) | x2)) &amp; ((!x13 | !x26) | x29)) &amp; ((x18 | !x11) | x13)))&amp;(pc&#x27;=38);
+  [] pc=38 -&gt; 0.5:(x38&#x27;=true)&amp;(x39&#x27;=x38)&amp;(pc&#x27;=39) + 0.5:(x38&#x27;=false)&amp;(x39&#x27;=(x38 &amp; (x22 | x1)))&amp;(pc&#x27;=39);
+  [] pc=39 -&gt; 0.5:(x39&#x27;=true)&amp;(x40&#x27;=(((((((((x39 &amp; (x37 | x15)) &amp; ((x27 | x10) | x28)) &amp; ((x25 | x21) | !x1)) &amp; ((x14 | !x2) | !x8)) &amp; (!x20 | x34)) &amp; (!x23 | x32)) &amp; ((x15 | !x12) | x0)) &amp; ((!x12 | x23) | !x29)) &amp; ((x10 | x18) | !x24)))&amp;(x41&#x27;=((x12 | x32) | !x14))&amp;(pc&#x27;=40) + 0.5:(x39&#x27;=false)&amp;(x40&#x27;=(((((((x39 &amp; ((x27 | x10) | x28)) &amp; ((x25 | x21) | !x1)) &amp; ((x14 | !x2) | !x8)) &amp; ((x15 | !x12) | x0)) &amp; ((!x12 | x23) | !x29)) &amp; (!x22 | !x15)) &amp; ((x10 | x18) | !x24)))&amp;(x41&#x27;=((x12 | x32) | !x14))&amp;(pc&#x27;=40);
+  [] pc=40 -&gt; (x40&#x27;=(((((((((x40 &amp; x41) &amp; ((!x34 | !x19) | !x14)) &amp; ((x17 | x32) | x13)) &amp; ((!x29 | !x38) | !x20)) &amp; ((!x15 | x28) | !x29)) &amp; ((x32 | x39) | !x33)) &amp; ((x35 | x19) | x5)) &amp; ((!x11 | !x39) | !x23)) &amp; ((x2 | x39) | !x16)))&amp;(x41&#x27;=((!x13 | !x29) | x11))&amp;(pc&#x27;=41);
+  [] pc=41 -&gt; (x40&#x27;=(((((((((x40 &amp; x41) &amp; ((!x17 | x37) | x20)) &amp; ((!x1 | !x4) | !x8)) &amp; ((x26 | x14) | !x2)) &amp; ((!x25 | x2) | x34)) &amp; ((x31 | !x25) | x17)) &amp; ((x30 | x37) | x17)) &amp; ((x33 | x3) | x29)) &amp; ((x36 | x6) | !x28)))&amp;(x41&#x27;=((x11 | !x31) | x36))&amp;(pc&#x27;=42);
+  [] pc=42 -&gt; (x40&#x27;=((((((((x40 &amp; x41) &amp; ((!x21 | x6) | x25)) &amp; ((!x15 | x34) | !x32)) &amp; ((!x2 | !x14) | !x32)) &amp; ((x4 | !x3) | !x23)) &amp; ((!x7 | x25) | !x18)) &amp; ((x5 | !x6) | x34)) &amp; ((x22 | !x21) | !x30)))&amp;(x41&#x27;=((!x13 | !x8) | !x21))&amp;(pc&#x27;=43);
+  [] pc=43 -&gt; (x15&#x27;=(((((((((x40 &amp; x41) &amp; ((!x7 | x34) | x22)) &amp; ((!x27 | x15) | !x0)) &amp; ((x10 | !x15) | x31)) &amp; ((x16 | !x3) | !x35)) &amp; ((x34 | x9) | !x18)) &amp; ((!x25 | !x16) | !x13)) &amp; ((x20 | x24) | !x26)) &amp; ((!x33 | x34) | !x0)))&amp;(x40&#x27;=((x7 | !x26) | x17))&amp;(x41&#x27;=false)&amp;(pc&#x27;=44);
+  [] pc=44 -&gt; (x2&#x27;=(((((((((x15 &amp; x40) &amp; ((x23 | !x30) | x35)) &amp; ((x34 | !x2) | x39)) &amp; ((x11 | !x33) | !x17)) &amp; ((!x34 | !x22) | !x1)) &amp; ((!x37 | x25) | x8)) &amp; ((!x32 | x12) | !x25)) &amp; ((!x20 | !x10) | !x9)) &amp; ((x1 | x27) | x14)))&amp;(x9&#x27;=((x5 | !x26) | !x34))&amp;(x15&#x27;=false)&amp;(x17&#x27;=false)&amp;(x30&#x27;=false)&amp;(x32&#x27;=false)&amp;(x39&#x27;=false)&amp;(x40&#x27;=false)&amp;(pc&#x27;=45);
+  [] pc=45 -&gt; (x1&#x27;=(((((((((x2 &amp; x9) &amp; ((x16 | !x19) | !x38)) &amp; ((!x19 | !x5) | !x25)) &amp; ((x4 | x13) | !x11)) &amp; ((x22 | x34) | !x24)) &amp; ((x1 | !x16) | x29)) &amp; ((!x29 | !x12) | !x10)) &amp; ((x36 | x37) | x31)) &amp; ((!x4 | x26) | x21)))&amp;(x2&#x27;=((!x13 | !x38) | !x34))&amp;(x4&#x27;=false)&amp;(x5&#x27;=false)&amp;(x9&#x27;=false)&amp;(x13&#x27;=false)&amp;(x26&#x27;=false)&amp;(x34&#x27;=false)&amp;(x38&#x27;=false)&amp;(pc&#x27;=46);
+  [] pc=46 -&gt; (x0&#x27;=(((((((((x1 &amp; x2) &amp; ((!x14 | x8) | !x19)) &amp; ((!x16 | x27) | x29)) &amp; ((!x22 | !x36) | x21)) &amp; ((x24 | !x29) | x23)) &amp; ((x0 | !x18) | x3)) &amp; ((!x6 | x10) | x22)) &amp; ((x33 | !x16) | x3)) &amp; ((x24 | x18) | !x31)))&amp;(x1&#x27;=((!x11 | x37) | !x33))&amp;(x2&#x27;=false)&amp;(x3&#x27;=false)&amp;(x8&#x27;=false)&amp;(x18&#x27;=false)&amp;(x19&#x27;=false)&amp;(x21&#x27;=false)&amp;(x23&#x27;=false)&amp;(x24&#x27;=false)&amp;(x27&#x27;=false)&amp;(x29&#x27;=false)&amp;(x33&#x27;=false)&amp;(x36&#x27;=false)&amp;(pc&#x27;=47);
+  [] pc=47 -&gt; (x0&#x27;=((((((x0 &amp; x1) &amp; ((x6 | !x25) | !x11)) &amp; ((!x7 | x16) | x10)) &amp; ((!x22 | x35) | !x28)) &amp; ((x14 | !x12) | !x31)) &amp; ((x20 | x37) | !x16)))&amp;(x1&#x27;=false)&amp;(x6&#x27;=false)&amp;(x7&#x27;=false)&amp;(x10&#x27;=false)&amp;(x11&#x27;=false)&amp;(x12&#x27;=false)&amp;(x14&#x27;=false)&amp;(x16&#x27;=false)&amp;(x20&#x27;=false)&amp;(x22&#x27;=false)&amp;(x25&#x27;=false)&amp;(x28&#x27;=false)&amp;(x31&#x27;=false)&amp;(x35&#x27;=false)&amp;(x37&#x27;=false)&amp;(pc&#x27;=48);
+  [] pc=48 -&gt; true;
+endmodule
+
+label &quot;done&quot; = pc=48;
+</pre></div>
+<div class="file"><div class="fhead"><code class="fname">nodice_3sat-0.dtmc0.props</code><span>29 bytes</span><span class="sha" title="SHA-256">sha256 7ceaf781fd8e84d1ddf63a6127b35c269a7af89ef5531f8e910cdd5c6341496a</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0)];
+</pre></div>
+</div>
 </div>
 </section>
 <section class="card">
@@ -1935,10 +2051,18 @@ def main() {
 MemoryError: std::bad_alloc</pre></details></td></tr></tbody></table></div>
 <h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Geni, Genfer, SPPL, PITA, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.66</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>77.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>16.6</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.7</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (auto+onehot)</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">noDice</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>x_343</th><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">0</td><td class="num">1.1777e-07</td></tr></tbody></table></div>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">tddlog (auto+onehot)</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">noDice</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>x_343</th><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">0</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td><td class="num">1.1777e-07</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

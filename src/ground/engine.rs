@@ -264,6 +264,12 @@ struct Grounder<'a> {
     /// the size past which the grounding is given up.
     size: usize,
     bound: usize,
+    /// The control atoms derived, which the bound limits too: they are
+    /// never emitted, and a demand that no rule's size follows can grow
+    /// without end. Grounded from the bound end, `o(T1) :- step(T),
+    /// T1 is T + 1, o(T)` asks `o(T+1)` of every `o(T)` it is asked,
+    /// `step(T)` coming after the call.
+    demands: usize,
 }
 
 impl<'a> Grounder<'a> {
@@ -275,9 +281,10 @@ impl<'a> Grounder<'a> {
         }
     }
 
-    /// Whether the rules kept so far are past the bound.
+    /// Whether the rules kept so far, or the control atoms, are past the
+    /// bound.
     fn over(&self) -> bool {
-        self.size > self.bound
+        self.size > self.bound || self.demands > self.bound
     }
 
     /// A known predicate, and whether it is a switch.
@@ -553,6 +560,7 @@ pub(crate) fn ground_normalized(
         narrow: Narrow::default(),
         size: 0,
         bound: bound.unwrap_or(usize::MAX),
+        demands: 0,
     };
     for (&(ref name, arity), &p) in &norm.switches {
         g.pred(name, arity, Some(p));
@@ -907,8 +915,9 @@ fn ground_body(
     }
     if i == rule.body.len() {
         let head_args = resolve(&rule.head.1, subst);
-        let (head, _new) = g.atom_id(rule.head.0, head_args);
+        let (head, new) = g.atom_id(rule.head.0, head_args);
         if g.preds[rule.head.0 as usize].control {
+            g.demands += new as usize;
             return; // control atoms exist only to drive grounding
         }
         let mut body = body_atoms.clone();

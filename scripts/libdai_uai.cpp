@@ -1,8 +1,9 @@
 // libDAI's junction tree (exact, min-fill) on a UAI network, for `bench.py
-// run --libdai`. Usage:  libdai_uai MODEL.uai EVID OUT MAR|PR [I,J,...]
+// run --libdai`. Usage:  libdai_uai MODEL.uai EVID OUT MAR|PR [I,J,...|@FILE]
 // The observations of EVID are applied by slicing the tables. OUT is in
 // Merlin's format (scripts/bn_uai_run.py describes it); MAR gives the
-// marginals of the listed variables (all by default); the last line is
+// marginals of the listed variables, inline or in FILE (all by default);
+// the last line is
 // `inference_seconds X`, the junction tree's own time.
 #include <dai/alldai.h>
 #include <dai/jtree.h>
@@ -35,7 +36,16 @@ int main(int argc, char **argv) {
     std::map<size_t, size_t> evid;
     { std::ifstream ef(argv[2]); size_t k = 0; ef >> k; for (size_t i = 0; i < k; i++) { size_t v, u; ef >> v >> u; evid[v] = u; } }
     std::vector<size_t> qvars;
-    if (argc > 5 && argv[5][0]) { std::stringstream ss(argv[5]); std::string t; while (std::getline(ss, t, ',')) qvars.push_back(std::stoul(t)); }
+    if (argc > 5 && argv[5][0]) {
+        std::string listed = argv[5];
+        if (listed[0] == '@') {
+            std::ifstream vf(listed.substr(1));
+            if (!vf) { std::fprintf(stderr, "libdai_uai: cannot read %s\n", listed.c_str() + 1); return 2; }
+            std::stringstream all; all << vf.rdbuf(); listed = all.str();
+        }
+        std::stringstream ss(listed); std::string t;
+        while (std::getline(ss, t, ',')) qvars.push_back(std::stoul(t));
+    }
     else for (size_t i = 0; i < n; i++) qvars.push_back(i);
 
     // Slice the observations out; the factors without a variable are constants.

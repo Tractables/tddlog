@@ -128,14 +128,18 @@ class BaselineTests(unittest.TestCase):
                                 self.assertEqual(len(row), len(marg[v]))
                                 for p, q in zip(row, marg[v]):
                                     self.assertAlmostEqual(p, q, places=8)
-                    # a subset of the variables, in the order given
-                    run(cmd + [str(model), str(evid), str(out), 'MAR', '3,0'])
-                    rows = bench.parse_merlin_marginals(out.read_text())
-                    self.assertEqual(len(rows), 2)
-                    for p, q in zip(rows[0], marg[3]):
-                        self.assertAlmostEqual(p, q, places=8)
-                    for p, q in zip(rows[1], marg[0]):
-                        self.assertAlmostEqual(p, q, places=8)
+                    # a subset of the variables, in the order given, inline
+                    # or in a file (`@FILE`, as bench.py passes them)
+                    listed = Path(d, 'vars')
+                    listed.write_text('3,0')
+                    for arg in ('3,0', f'@{listed}'):
+                        run(cmd + [str(model), str(evid), str(out), 'MAR', arg])
+                        rows = bench.parse_merlin_marginals(out.read_text())
+                        self.assertEqual(len(rows), 2)
+                        for p, q in zip(rows[0], marg[3]):
+                            self.assertAlmostEqual(p, q, places=8)
+                        for p, q in zip(rows[1], marg[0]):
+                            self.assertAlmostEqual(p, q, places=8)
 
 
 for _name, _cmd in systems().items():

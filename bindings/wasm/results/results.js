@@ -22,7 +22,7 @@ const FAILURES = {
   timeout: [(limit) => `>${limit}`, "the time limit ran out"],
   memout: [() => "memory", "out of memory (the address space a run gets, or the Java heap)"],
   error: [() => "error", "the system stopped with an error"],
-  unsupported: [() => "n/a", "the system cannot express the program (aspmc's front end does not condition on evidence; a translator refuses what its target language lacks)"],
+  unsupported: [() => "n/a", "the system cannot express the program: a translator refuses what its target language lacks (lists, division and recursion in a Dice program's translation; negation through recursion, or more than two million conjunctions, in a ground program's network), as aspmc's harness refuses an observation with a body"],
   skipped: [() => "skipped", "not run: the system had failed on a smaller size of the same program"],
   wrong: [() => "wrong", "an answer off the reference by more than 1e-6"],
   zero: [() => "zero", "every answer printed as 0 where the reference's are positive"],
@@ -190,13 +190,15 @@ function cactus(box, suite, names, small = false) {
 }
 
 // The legend: every line, its name and how many instances it answers, and
-// in a large plot how many it expresses; a name under the pointer brings its
-// line forward.
-function legend(series, names, n, figure, expresses) {
+// in a large plot how many of them are its own, natural to it and attempted
+// (classes: {system: [own, natural, attempted]}); a name under the pointer
+// brings its line forward.
+function legend(series, names, n, figure, classes) {
   const list = element("ul", { class: "legend" });
   for (const { key, times } of series) {
-    const counts = expresses === undefined ? `answers ${count(times.length)} of ${count(n)}`
-      : `answers ${count(times.length)}, expresses ${count(expresses[key])}, of ${count(n)}`;
+    const c = classes?.[key];
+    const counts = c === undefined ? `answers ${count(times.length)} of ${count(n)}`
+      : `answers ${count(times.length)} of ${count(n)}; own ${count(c[0])}, natural ${count(c[1])}, attempted ${count(c[2])}`;
     const item = element("li", {}, element("i", { class: `sw s-${base(key)}${dashed(key) ? " dashed" : ""}` }),
       element("span", {}, names[key]), element("span", { class: "n" }, counts));
     const focus = (on) => {
@@ -212,7 +214,8 @@ function legend(series, names, n, figure, expresses) {
 // A plot with its legend, drawn again when its box changes width; a small
 // one (a panel) under its title. The figure names the systems it draws and
 // the number of its instances, and a panel the cluster of systems it is for.
-// A large plot's legend says how many instances each system expresses.
+// A large plot's legend says how many instances are each system's own,
+// natural to it and attempted.
 function plotted(suite, names, small = false) {
   const figure = element("figure", { class: small ? "plot part" : "plot", "data-systems": suite.systems.join(" "),
     "data-instances": String(suite.instances.length) });
@@ -225,7 +228,7 @@ function plotted(suite, names, small = false) {
   const redraw = () => {
     const series = cactus(box, suite, names, small);
     const old = figure.querySelector(".legend");
-    const fresh = legend(series, names, suite.instances.length, figure, small ? undefined : suite.expresses);
+    const fresh = legend(series, names, suite.instances.length, figure, small ? undefined : suite.counts);
     if (old) old.replaceWith(fresh);
     else box.before(fresh);
   };
@@ -253,7 +256,7 @@ function panelOf(scope, p) {
 function plots(suite, names) {
   const whole = plotted(suite, names);
   const parts = (suite.panels ?? []).map((p) => plotted(panelOf(suite, p), names, true));
-  const grid = parts.length === 0 ? [] : [element("h4", { class: "more" }, "Systems with similar expressive capabilities"),
+  const grid = parts.length === 0 ? [] : [element("h4", { class: "more" }, "The instances natural to each cluster of systems"),
     element("div", { class: "parts" }, ...parts.map((p) => p.figure))];
   const redraw = () => {
     for (const p of [whole, ...parts]) p.redraw();
@@ -263,35 +266,27 @@ function plots(suite, names) {
 
 // ------------------------------------------------------------- every problem
 
-// Why a system is not given some of the problems: the reasons the coverage
-// of the run states, by system (a system's variants, as alea-process or
-// storm-sparse, share their stem's). A system without one was not run on
-// them.
+// Why a system is not given some of the problems, as the baselines'
+// coverage states it, by system (a system's variants, as alea-process or
+// storm-sparse, share their stem's): a reason for every suite (`all`) or
+// for one suite, by its key. A problem without a reason was not run in this
+// release: every system is given every program it can read, through a
+// translation where it reads no program of the suite's own (a network or
+// a Dice program of a program's ground program, a Markov chain of a Dice
+// program), and what the release's runs did not reach is left out.
+const DICE_OWN = "the standard suite's dice family is the dice suite's programs, which it is given there";
 const CANNOT = {
-  ace: "it reads networks, not programs",
-  merlin: "it reads networks, not programs",
-  agrum: "it reads networks, not programs",
-  pgmpy: "it reads networks, not programs",
-  libdai: "it reads networks, not programs",
-  tensorinference: "it reads networks, not programs",
-  aspmc: "its ProbLog front end ignores evidence, so it is not given programs with evidence",
-  dice: "its language has no relations and no recursion, and it is given the programs written in it",
-  nodice: "its language has no relations and no recursion, and it is given the programs written in it",
-  psi: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
-  geni: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
-  genfer: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
-  sppl: "its language has no relations and no recursion, and it is given the programs written in it or translated into it",
-  alea: "it takes programs written in its own language or translated into it, not relational logic programs",
-  roulette: "it takes programs written in its own language or translated into it, not relational logic programs",
-  pluck: "it runs its own sequence models",
-  provsql: "it reads SQL, and only the queries over a probabilistic database are written in it",
-  storm: "it reads Markov chains, and only the weather factory is written for it",
-  prism: "it reads Markov chains, and only the weather factory is written for it",
+  dice: { std: DICE_OWN },
+  nodice: { std: DICE_OWN },
+  psi: { std: DICE_OWN },
+  geni: { std: DICE_OWN },
+  genfer: { std: DICE_OWN },
+  sppl: { std: DICE_OWN },
+  alea: { std: DICE_OWN },
+  roulette: { std: DICE_OWN },
+  provsql: { all: "its queries are non-recursive SQL over tuple-independent tables, and the translation has no counterpart for a recursive rule, a probabilistic rule, an annotated disjunction or a Dice program" },
 };
-// The network readers' reason holds for the program suites only: a network
-// suite they missed is one they were not run on in this release.
-const READS_NETWORKS = new Set(["ace", "merlin", "agrum", "pgmpy", "libdai", "tensorinference"]);
-const NETWORK_SUITES = new Set(["std_bn", "uai", "uai_pr", "large", "ace", "uaipr", "uaitpr"]);
+const why = (system, suite) => CANNOT[system]?.[suite] ?? CANNOT[system]?.all ?? null;
 const stem = (key) => key.split("-")[0];
 // A system's name without its variant's: Alea.jl for alea-process.
 const named = (key, names) => names[stem(key)] ?? (names[key] ?? key).split(",")[0];
@@ -299,7 +294,8 @@ const named = (key, names) => names[stem(key)] ?? (names[key] ?? key).split(",")
 // A kind of the data (its suites) as one suite: the kind's systems (tddlog
 // first), a system without a record of an instance null, a time past its
 // own suite's limit a timeout, each instance's limit its suite's; the
-// kind's panels and how many instances each system expresses.
+// kind's panels and how many instances are each system's own, natural to it
+// and attempted.
 function kinded(kind, byKey, title, about) {
   const suites = kind.suites.map((key) => byKey.get(key)).filter(Boolean);
   const systems = kind.systems;
@@ -314,31 +310,58 @@ function kinded(kind, byKey, title, about) {
   const sources = suites.flatMap((suite) => suite.instances.map(() => suite.key));
   const limits = suites.flatMap((suite) => suite.instances.map(() => suite.limit));
   return { key: "all", title, about, systems, instances, sources, limits,
-    limit: Math.max(...limits), expresses: kind.expresses, panels: kind.panels };
+    limit: Math.max(...limits), counts: kind.counts, panels: kind.panels };
 }
 
-// One sentence for each system that was not given some of the instances.
+// One sentence for each system and reason for which it was not given some of
+// the instances.
 function cannot(suite, names) {
   const list = element("ul", { class: "cannot" });
   const roots = [...new Set(suite.systems.map(stem))];
   for (const r of roots) {
     const columns = suite.systems.flatMap((key, i) => (stem(key) === r ? [i + 1] : []));
-    const missed = suite.instances.flatMap((row, j) => (columns.every((c) => row[c] === null) ? [suite.sources[j]] : []));
-    if (missed.length === 0) continue;
+    const reasons = new Map();
+    suite.instances.forEach((row, j) => {
+      if (!columns.every((c) => row[c] === null)) return;
+      const w = why(r, suite.sources[j]);
+      reasons.set(w, (reasons.get(w) ?? 0) + 1);
+    });
     const name = named(r, names);
     const all = count(suite.instances.length);
-    const own = READS_NETWORKS.has(r) ? missed.filter((s) => NETWORK_SUITES.has(s)).length : 0;
-    if (missed.length > own) list.append(element("li", {}, `${name} was not given ${count(missed.length - own)} of the ${all} problems: ${CANNOT[r] ?? "it was not run on them"}.`));
-    if (own) list.append(element("li", {}, `${name} was not run on ${count(own)} of the ${all} problems, networks it reads, in this release.`));
+    for (const [w, n] of reasons) {
+      list.append(element("li", {}, w === null
+        ? `${name} was not run on ${count(n)} of the ${all} problems in this release.`
+        : `${name} was not given ${count(n)} of the ${all} problems: ${w}.`));
+    }
   }
   return list;
 }
 
+// What each system is compared on: the data's classification (the rows of
+// the results pipeline's table that classify an instance), by class, each
+// row its systems, its suites, its instances (a pattern their names start
+// with, or all of them) and why.
+const CLASSES = [["own", "Own"], ["natural", "Natural"], ["attempted", "Attempted only"]];
+function compared(rows, titles) {
+  const list = element("ul", { class: "cannot" });
+  for (const [cls, heading] of CLASSES) {
+    for (const r of rows.filter((x) => x.class === cls)) {
+      const item = element("li", {}, element("b", {}, heading), `: ${r.systems.join(", ")} on ${r.suites.map((s) => titles.get(s) ?? s).join(", ")}`);
+      if (r.instances) item.append(", the instances whose names match ", element("code", {}, `^${r.instances}`));
+      item.append(`: ${r.reason}.`);
+      list.append(item);
+    }
+  }
+  return element("details", { class: "setup" }, element("summary", {}, "What each system is compared on"),
+    element("p", { class: "note" }, "An instance is a system's own if it comes from the system's own papers, benchmarks or distribution; natural if the program is written as the system's users write programs, in a translation that stays within a constant factor of the original's size and does none of the system's work for it (no grounding, no unrolling of recursion, no bit-blasting), its own included; attempted only if the system is given it through a translation that does. The speed comparisons are over each system's natural instances; the first row that matches an instance classifies it."),
+    list);
+}
+
 // What the plots of a kind draw.
 function drawn(kind) {
-  const whole = "The large plot draws every system over all of these instances, so that its lines count the same instances: an instance a system cannot express (its translator refuses the program) or was not given counts as unanswered, as does one where it ran out of time or memory or failed. Its legend gives how many instances each system answers and how many it expresses.";
+  const whole = "The large plot draws every system over all of these instances, so that its lines count the same instances: an instance a system does not attempt (it cannot express the program, or a translator refuses it) counts as unanswered, as does one where it ran out of time or memory, failed, or was skipped after a smaller instance of its family failed. It shows coverage, not speed. Its legend gives how many instances each system answers, and how many are its own (from its own papers, benchmarks or distribution), natural to it (written as its users write programs, its own included) and attempted (given to it at all, through a translation that grounds, unrolls or bit-blasts the program where it is not natural).";
   if (kind.panels.length === 0) return whole;
-  return `${whole} Under it, a small plot for each cluster of systems with similar expressive capabilities (systems linked by pairs whose sets of instances they express have a Jaccard index of ${kind.jaccard} or more), over the instances every member expresses, with every system that expresses all of them, where those are ${kind.least} or more.`;
+  return `${whole} Under it, a small plot for each cluster of systems whose natural instances are much the same (systems linked by pairs whose sets of natural instances have a Jaccard index of ${kind.jaccard} or more), over the instances natural to every member, with tddlog and every system those instances are all natural to, where those are ${kind.least} or more.`;
 }
 
 // ------------------------------------------------------------- the table
@@ -358,26 +381,33 @@ function table(suite, names, pages) {
   cols.forEach((key, i) => head.append(element("th", { scope: "col", class: "num", "data-col": String(i + 1) }, names[key])));
   const body = element("tbody");
   const seen = new Set();
-  const rowOf = (row) => {
+  // An instance a system only attempts (its class letter `a`: a translation
+  // that grounds, unrolls or bit-blasts the program) is set apart.
+  let translated = false;
+  const rowOf = (row, j) => {
     const best = fastest(row);
     const page = pages?.[suite.key]?.[row[0]];
     const tr = element("tr", {}, element("th", { scope: "row" }, page ? element("a", { href: `benchmarks/${page}` }, row[0]) : row[0]));
     if (quick(row)) tr.className = "quick";
     cols.forEach((key, i) => {
       const v = row[i + 1];
+      const only = suite.classes?.[key]?.[j] === "a";
+      translated ||= only && v !== null;
+      const mark = only ? " attempted" : "";
+      const why = only ? "; attempted only, through a translation" : "";
       let td;
-      if (answered(v)) td = element("td", { class: `num${v === best && !dashed(key) ? " best" : ""}` }, seconds(v));
+      if (answered(v)) td = element("td", { class: `num${v === best && !dashed(key) ? " best" : ""}${mark}`, ...(only ? { title: why.slice(2) } : {}) }, seconds(v));
       else if (v === null) td = element("td", { class: "num none", title: "not given" }, "");
       else {
         seen.add(v);
         const [text, meaning] = FAILURES[v] ?? [() => v, v];
-        td = element("td", { class: "num fail", title: meaning }, text(suite.limit));
+        td = element("td", { class: `num fail${mark}`, title: meaning + why }, text(suite.limit));
       }
       tr.append(td);
     });
     return tr;
   };
-  let rows = suite.instances.map((row) => [row, rowOf(row)]);
+  let rows = suite.instances.map((row, j) => [row, rowOf(row, j)]);
   body.append(...rows.map(([, tr]) => tr));
   const grid = element("table", { class: "times" }, element("thead", {}, head), body);
 
@@ -414,6 +444,7 @@ function table(suite, names, pages) {
     notes.push(`${FAILURES[status][0](suite.limit)}: ${FAILURES[status][1]}.`);
   }
   if (suite.instances.some((row) => row.slice(1).includes(null))) notes.push("An empty cell: the system was not given the instance.");
+  if (translated) notes.push("In italics: an instance the system only attempts, through a translation that grounds, unrolls or bit-blasts the program, not one written as its users write programs; such times count for coverage, not in the speed comparisons.");
   parts.push(element("p", { class: "note" }, notes.join(" ")));
   return element("details", { class: "instances" },
     element("summary", {}, `Every instance's times (${count(suite.instances.length)})`), ...parts);
@@ -499,18 +530,19 @@ function family(f, names, pages, kinds) {
 }
 
 // The plot of every system over every instance of the run (the data's kind
-// `all`), above the families.
-function overall(families, names, kinds) {
+// `all`), above the families, and what each system is compared on.
+function overall(families, names, kinds, classification) {
   const kind = kinds.get("all");
   if (kind === undefined) throw new Error("the data has no kind all");
   const suites = new Map(families.flatMap((f) => f.suites).map((s) => [s.key, s]));
   const total = kind.suites.reduce((n, key) => n + (suites.get(key)?.instances.length ?? 0), 0);
   const suite = kinded(kind, suites, "Every problem of the release run",
-    `The ${count(total)} instances of all ${families.length} families. ${drawn(kind)} The families below have a plot for each cluster of systems with similar expressive capabilities. The list under the plot says why a system was not given some of the problems.`);
+    `The ${count(total)} instances of all ${families.length} families. ${drawn(kind)} The families below have a plot for each cluster of systems over the instances natural to them. The list under the plot says why a system was not given some of the problems, and the table under it what each system is compared on.`);
   const { whole, parts, redraw } = plots(suite, names);
+  const titles = new Map(families.flatMap((f) => f.suites).map((s) => [s.key, s.title]));
   const section = element("section", { class: "card family", id: "overall" },
     element("h2", {}, suite.title), prose("p", suite.about, { class: "about" }),
-    element("div", { class: "view" }, whole), ...parts, cannot(suite, names));
+    element("div", { class: "view" }, whole), ...parts, cannot(suite, names), compared(classification, titles));
   redraw();
   let last = 0;
   new ResizeObserver(() => {
@@ -551,7 +583,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("stats").replaceChildren(
       ...[[count(instances), "instances"], [String(suites), "suites"], [String(baselines.size), "other systems"]]
         .map(([b, what]) => element("span", { class: "stat" }, element("b", {}, b), what)));
-    root.append(overall(families, names, kinds));
+    // A row of the classification that classifies instances of both files
+    // is in both.
+    const rows = new Map(parts.filter(Boolean).flatMap((p) => p.classification ?? []).map((r) => [JSON.stringify(r), r]));
+    root.append(overall(families, names, kinds, [...rows.values()]));
     toc.append(element("a", { href: "#overall" }, "Every problem"));
     for (const f of families) {
       root.append(family(f, names, pages, kinds));

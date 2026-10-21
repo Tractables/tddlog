@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#geni">Geni&#x27;s programs</a></p>
     <h1>geni_weather_h600</h1>
-    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Three more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 10 600</code>.</p>
+    <p class="lede">The programs of Geni&#x27;s evaluation (Li and Zhang, ICFP 2025) that Dice runs: two grid networks and the weather factory, on ladders of size. ProbLog&#x27;s d-DNNF and Roulette (on the Dice program translated to Racket) run beside the others here. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Genfer, SPPL, Pluck, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Two more instances of the ladders no system ran: each system had failed on a smaller size. Made by <code>gen_geni.py weather 10 600</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">13.6</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num">172</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num">104</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">4.6</td><td class="num">15.3</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">13.6</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num">172</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num">104</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">4.6</td><td class="num">15.3</td><td class="num none" title="not run"></td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. error: the system stopped with an error. &gt;600: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -290,6 +290,190 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</p
 <h3>Storm sparse</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.6</td><td>5.0e-18 at most</td><td>inference s 4.442023</td></tr><tr><td>1</td><td>answered</td><td>4.6</td><td>5.0e-18 at most</td><td>inference s 4.442023</td></tr><tr><td>2</td><td>answered</td><td>4.6</td><td>5.0e-18 at most</td><td>inference s 4.394821</td></tr><tr><td>2</td><td>answered</td><td>4.6</td><td>5.0e-18 at most</td><td>inference s 4.394821</td></tr><tr><td>3</td><td>answered</td><td>4.8</td><td>5.0e-18 at most</td><td>inference s 4.648135</td></tr><tr><td>3</td><td>answered</td><td>4.8</td><td>5.0e-18 at most</td><td>inference s 4.648135</td></tr></tbody></table></div>
 <h3>PRISM hybrid</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PRISM sparse</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>15.2</td><td>1.8e-15 at most</td><td></td></tr><tr><td>1</td><td>answered</td><td>15.2</td><td>1.8e-15 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>15.3</td><td>1.8e-15 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>15.3</td><td>1.8e-15 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>15.9</td><td>1.8e-15 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>15.9</td><td>1.8e-15 at most</td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Genfer, SPPL, Pluck, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.2</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.871s discarded)</td></tr><tr><td>1</td><td>answered</td><td>14.2</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.871s discarded)</td></tr><tr><td>2</td><td>answered</td><td>14.4</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.895s discarded)</td></tr><tr><td>2</td><td>answered</td><td>14.4</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.895s discarded)</td></tr><tr><td>3</td><td>answered</td><td>14.4</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.924s discarded)</td></tr><tr><td>3</td><td>answered</td><td>14.4</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.924s discarded)</td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>2.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>thread &#x27;&lt;unknown&gt;&#x27; (167946) has overflowed its stack
+fatal runtime error: stack overflow, aborting</pre></details></td></tr><tr><td>1</td><td>error</td><td>2.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>thread &#x27;&lt;unknown&gt;&#x27; (167946) has overflowed its stack
+fatal runtime error: stack overflow, aborting</pre></details></td></tr><tr><td>2</td><td>error</td><td>2.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>thread &#x27;&lt;unknown&gt;&#x27; (167060) has overflowed its stack
+fatal runtime error: stack overflow, aborting</pre></details></td></tr><tr><td>2</td><td>error</td><td>2.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>thread &#x27;&lt;unknown&gt;&#x27; (167060) has overflowed its stack
+fatal runtime error: stack overflow, aborting</pre></details></td></tr><tr><td>3</td><td>error</td><td>2.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>thread &#x27;&lt;unknown&gt;&#x27; (176591) has overflowed its stack
+fatal runtime error: stack overflow, aborting</pre></details></td></tr><tr><td>3</td><td>error</td><td>2.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>thread &#x27;&lt;unknown&gt;&#x27; (176591) has overflowed its stack
+fatal runtime error: stack overflow, aborting</pre></details></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>28.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>LLVM ERROR: out of memory
+Allocation failed
+
+[167068] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+_ZN4llvm22report_bad_alloc_errorEPKcb at libLLVM-16jl.so (unknown line)
+_ZN4llvm11compression4zlib8compressENS_8ArrayRefIhEERNS_15SmallVectorImplIhEEi at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcaef2bcd7)
+unknown function (ip: 0x7bfcaef2c479)
+unknown function (ip: 0x7bfcaeefb849)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer9onObjLoadERNS0_29MaterializationResponsibilityERKNS_6object10ObjectFileERNS_11RuntimeDyld13MemoryManagerERNS8_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISE_ESaISt4pairIKSE_SF_EEERSt3setISE_SH_SaISE_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcab4c0c28)
+_ZN4llvm13jitLinkForORCENS_6object12OwningBinaryINS0_10ObjectFileEEERNS_11RuntimeDyld13MemoryManagerERNS_17JITSymbolResolverEbNS_15unique_functionIFNS_5ErrorERKS2_RNS4_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISG_ESaISt4pairIKSG_SH_EEEEEENS9_IFvS3_St10unique_ptrISD_St14default_deleteISD_EESA_EEE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EES2_INS_12MemoryBufferES4_IS7_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcaef0582c)
+_ZN4llvm3orc14IRCompileLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc31BasicIRLayerMaterializationUnit11materializeESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc19MaterializationTask3runEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcab3da24c)
+_ZN4llvm3orc16ExecutionSession22dispatchOutstandingMUsEv at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16ExecutionSession17OL_completeLookupESt10unique_ptrINS0_21InProgressLookupStateESt14default_deleteIS3_EESt10shared_ptrINS0_23AsynchronousSymbolQueryEESt8functionIFvRKNS_8DenseMapIPNS0_8JITDylibENS_8DenseSetINS0_15SymbolStringPtrENS_12DenseMapInfoISF_vEEEENSG_ISD_vEENS_6detail12DenseMapPairISD_SI_EEEEEE at libLLVM-16</pre></details></td></tr><tr><td>1</td><td>error</td><td>28.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>LLVM ERROR: out of memory
+Allocation failed
+
+[167068] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+_ZN4llvm22report_bad_alloc_errorEPKcb at libLLVM-16jl.so (unknown line)
+_ZN4llvm11compression4zlib8compressENS_8ArrayRefIhEERNS_15SmallVectorImplIhEEi at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcaef2bcd7)
+unknown function (ip: 0x7bfcaef2c479)
+unknown function (ip: 0x7bfcaeefb849)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer9onObjLoadERNS0_29MaterializationResponsibilityERKNS_6object10ObjectFileERNS_11RuntimeDyld13MemoryManagerERNS8_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISE_ESaISt4pairIKSE_SF_EEERSt3setISE_SH_SaISE_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcab4c0c28)
+_ZN4llvm13jitLinkForORCENS_6object12OwningBinaryINS0_10ObjectFileEEERNS_11RuntimeDyld13MemoryManagerERNS_17JITSymbolResolverEbNS_15unique_functionIFNS_5ErrorERKS2_RNS4_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISG_ESaISt4pairIKSG_SH_EEEEEENS9_IFvS3_St10unique_ptrISD_St14default_deleteISD_EESA_EEE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EES2_INS_12MemoryBufferES4_IS7_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcaef0582c)
+_ZN4llvm3orc14IRCompileLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc31BasicIRLayerMaterializationUnit11materializeESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc19MaterializationTask3runEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x7bfcab3da24c)
+_ZN4llvm3orc16ExecutionSession22dispatchOutstandingMUsEv at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16ExecutionSession17OL_completeLookupESt10unique_ptrINS0_21InProgressLookupStateESt14default_deleteIS3_EESt10shared_ptrINS0_23AsynchronousSymbolQueryEESt8functionIFvRKNS_8DenseMapIPNS0_8JITDylibENS_8DenseSetINS0_15SymbolStringPtrENS_12DenseMapInfoISF_vEEEENSG_ISD_vEENS_6detail12DenseMapPairISD_SI_EEEEEE at libLLVM-16</pre></details></td></tr><tr><td>2</td><td>error</td><td>25.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>LLVM ERROR: out of memory
+Allocation failed
+
+[176783] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+_ZN4llvm22report_bad_alloc_errorEPKcb at libLLVM-16jl.so (unknown line)
+_ZN4llvm11compression4zlib8compressENS_8ArrayRefIhEERNS_15SmallVectorImplIhEEi at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e6872bcd7)
+unknown function (ip: 0x760e6872c479)
+unknown function (ip: 0x760e686fb849)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer9onObjLoadERNS0_29MaterializationResponsibilityERKNS_6object10ObjectFileERNS_11RuntimeDyld13MemoryManagerERNS8_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISE_ESaISt4pairIKSE_SF_EEERSt3setISE_SH_SaISE_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e64cc0c28)
+_ZN4llvm13jitLinkForORCENS_6object12OwningBinaryINS0_10ObjectFileEEERNS_11RuntimeDyld13MemoryManagerERNS_17JITSymbolResolverEbNS_15unique_functionIFNS_5ErrorERKS2_RNS4_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISG_ESaISt4pairIKSG_SH_EEEEEENS9_IFvS3_St10unique_ptrISD_St14default_deleteISD_EESA_EEE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EES2_INS_12MemoryBufferES4_IS7_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e6870582c)
+_ZN4llvm3orc14IRCompileLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc31BasicIRLayerMaterializationUnit11materializeESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc19MaterializationTask3runEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e64bda24c)
+_ZN4llvm3orc16ExecutionSession22dispatchOutstandingMUsEv at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16ExecutionSession17OL_completeLookupESt10unique_ptrINS0_21InProgressLookupStateESt14default_deleteIS3_EESt10shared_ptrINS0_23AsynchronousSymbolQueryEESt8functionIFvRKNS_8DenseMapIPNS0_8JITDylibENS_8DenseSetINS0_15SymbolStringPtrENS_12DenseMapInfoISF_vEEEENSG_ISD_vEENS_6detail12DenseMapPairISD_SI_EEEEEE at libLLVM-16</pre></details></td></tr><tr><td>2</td><td>error</td><td>25.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>LLVM ERROR: out of memory
+Allocation failed
+
+[176783] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+_ZN4llvm22report_bad_alloc_errorEPKcb at libLLVM-16jl.so (unknown line)
+_ZN4llvm11compression4zlib8compressENS_8ArrayRefIhEERNS_15SmallVectorImplIhEEi at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e6872bcd7)
+unknown function (ip: 0x760e6872c479)
+unknown function (ip: 0x760e686fb849)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer9onObjLoadERNS0_29MaterializationResponsibilityERKNS_6object10ObjectFileERNS_11RuntimeDyld13MemoryManagerERNS8_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISE_ESaISt4pairIKSE_SF_EEERSt3setISE_SH_SaISE_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e64cc0c28)
+_ZN4llvm13jitLinkForORCENS_6object12OwningBinaryINS0_10ObjectFileEEERNS_11RuntimeDyld13MemoryManagerERNS_17JITSymbolResolverEbNS_15unique_functionIFNS_5ErrorERKS2_RNS4_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISG_ESaISt4pairIKSG_SH_EEEEEENS9_IFvS3_St10unique_ptrISD_St14default_deleteISD_EESA_EEE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EES2_INS_12MemoryBufferES4_IS7_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e6870582c)
+_ZN4llvm3orc14IRCompileLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc31BasicIRLayerMaterializationUnit11materializeESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc19MaterializationTask3runEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x760e64bda24c)
+_ZN4llvm3orc16ExecutionSession22dispatchOutstandingMUsEv at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16ExecutionSession17OL_completeLookupESt10unique_ptrINS0_21InProgressLookupStateESt14default_deleteIS3_EESt10shared_ptrINS0_23AsynchronousSymbolQueryEESt8functionIFvRKNS_8DenseMapIPNS0_8JITDylibENS_8DenseSetINS0_15SymbolStringPtrENS_12DenseMapInfoISF_vEEEENSG_ISD_vEENS_6detail12DenseMapPairISD_SI_EEEEEE at libLLVM-16</pre></details></td></tr><tr><td>3</td><td>error</td><td>25.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>LLVM ERROR: out of memory
+Allocation failed
+
+[176480] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+_ZN4llvm22report_bad_alloc_errorEPKcb at libLLVM-16jl.so (unknown line)
+_ZN4llvm11compression4zlib8compressENS_8ArrayRefIhEERNS_15SmallVectorImplIhEEi at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e85f2bcd7)
+unknown function (ip: 0x749e85f2c479)
+unknown function (ip: 0x749e85efb849)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer9onObjLoadERNS0_29MaterializationResponsibilityERKNS_6object10ObjectFileERNS_11RuntimeDyld13MemoryManagerERNS8_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISE_ESaISt4pairIKSE_SF_EEERSt3setISE_SH_SaISE_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e824c0c28)
+_ZN4llvm13jitLinkForORCENS_6object12OwningBinaryINS0_10ObjectFileEEERNS_11RuntimeDyld13MemoryManagerERNS_17JITSymbolResolverEbNS_15unique_functionIFNS_5ErrorERKS2_RNS4_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISG_ESaISt4pairIKSG_SH_EEEEEENS9_IFvS3_St10unique_ptrISD_St14default_deleteISD_EESA_EEE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EES2_INS_12MemoryBufferES4_IS7_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e85f0582c)
+_ZN4llvm3orc14IRCompileLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc31BasicIRLayerMaterializationUnit11materializeESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc19MaterializationTask3runEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e823da24c)
+_ZN4llvm3orc16ExecutionSession22dispatchOutstandingMUsEv at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16ExecutionSession17OL_completeLookupESt10unique_ptrINS0_21InProgressLookupStateESt14default_deleteIS3_EESt10shared_ptrINS0_23AsynchronousSymbolQueryEESt8functionIFvRKNS_8DenseMapIPNS0_8JITDylibENS_8DenseSetINS0_15SymbolStringPtrENS_12DenseMapInfoISF_vEEEENSG_ISD_vEENS_6detail12DenseMapPairISD_SI_EEEEEE at libLLVM-16</pre></details></td></tr><tr><td>3</td><td>error</td><td>25.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>LLVM ERROR: out of memory
+Allocation failed
+
+[176480] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+gsignal at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+_ZN4llvm22report_bad_alloc_errorEPKcb at libLLVM-16jl.so (unknown line)
+_ZN4llvm11compression4zlib8compressENS_8ArrayRefIhEERNS_15SmallVectorImplIhEEi at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e85f2bcd7)
+unknown function (ip: 0x749e85f2c479)
+unknown function (ip: 0x749e85efb849)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer9onObjLoadERNS0_29MaterializationResponsibilityERKNS_6object10ObjectFileERNS_11RuntimeDyld13MemoryManagerERNS8_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISE_ESaISt4pairIKSE_SF_EEERSt3setISE_SH_SaISE_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e824c0c28)
+_ZN4llvm13jitLinkForORCENS_6object12OwningBinaryINS0_10ObjectFileEEERNS_11RuntimeDyld13MemoryManagerERNS_17JITSymbolResolverEbNS_15unique_functionIFNS_5ErrorERKS2_RNS4_16LoadedObjectInfoESt3mapINS_9StringRefENS_18JITEvaluatedSymbolESt4lessISG_ESaISt4pairIKSG_SH_EEEEEENS9_IFvS3_St10unique_ptrISD_St14default_deleteISD_EESA_EEE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc24RTDyldObjectLinkingLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EES2_INS_12MemoryBufferES4_IS7_EE at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e85f0582c)
+_ZN4llvm3orc14IRCompileLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16IRTransformLayer4emitESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EENS0_16ThreadSafeModuleE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc31BasicIRLayerMaterializationUnit11materializeESt10unique_ptrINS0_29MaterializationResponsibilityESt14default_deleteIS3_EE at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc19MaterializationTask3runEv at libLLVM-16jl.so (unknown line)
+unknown function (ip: 0x749e823da24c)
+_ZN4llvm3orc16ExecutionSession22dispatchOutstandingMUsEv at libLLVM-16jl.so (unknown line)
+_ZN4llvm3orc16ExecutionSession17OL_completeLookupESt10unique_ptrINS0_21InProgressLookupStateESt14default_deleteIS3_EESt10shared_ptrINS0_23AsynchronousSymbolQueryEESt8functionIFvRKNS_8DenseMapIPNS0_8JITDylibENS_8DenseSetINS0_15SymbolStringPtrENS_12DenseMapInfoISF_vEEEENSG_ISD_vEENS_6detail12DenseMapPairISD_SI_EEEEEE at libLLVM-16</pre></details></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>12.8</td><td>1.6e-18 at most</td><td>largest formula, pairs 62 003 164; final formula, pairs 76; variables 194 469; ground atoms 422 390; ground rules 469 865; vtree families:0 (from auto: 22 attempts, 1.983s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Ace forceC2d (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Merlin (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl treesa (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 </section>
 <section class="card">
   <h2>The answers</h2>

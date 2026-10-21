@@ -1,8 +1,9 @@
 # TensorInference.jl (exact tensor network contraction) on a UAI network,
 # for `bench.py run --tensorinference`. Usage:
-#   julia --project=DIR tensorinference_uai.jl MODEL.uai EVID OUT MAR|PR [I,J,...]
+#   julia --project=DIR tensorinference_uai.jl MODEL.uai EVID OUT MAR|PR [I,J,...|@FILE]
 # OUT is in Merlin's format (scripts/bn_uai_run.py describes it); MAR gives
-# the marginals of the listed variables (all by default); the environment
+# the marginals of the listed variables, inline or in FILE (all by
+# default); the environment
 # variable BN_VARIANT is `treesa` (default) or `greedy`. The last line is
 # `inference_seconds X`: building the contraction order and contracting,
 # after the packages are loaded.
@@ -14,7 +15,8 @@ function main(model_path, evid_path, out_path, task, vars)
     evid = Dict{Int,Int}(parse(Int, tok[2 + 2i]) + 1 => parse(Int, tok[3 + 2i]) for i in 0:k-1)
     model = read_model_file(model_path)
     sizes = model.cards
-    qvars = isempty(vars) ? collect(1:length(sizes)) : [parse(Int, x) + 1 for x in split(vars, ",")]
+    listed = startswith(vars, "@") ? strip(read(vars[2:end], String)) : vars
+    qvars = isempty(listed) ? collect(1:length(sizes)) : [parse(Int, x) + 1 for x in split(listed, ",")]
     t0 = time()
     # BN_VARIANT: the contraction order by simulated annealing (the package's default) or greedily
     optimizer = get(ENV, "BN_VARIANT", "treesa") == "greedy" ? GreedyMethod() : TreeSA()

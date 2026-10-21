@@ -188,12 +188,13 @@ async function noSidewaysScroll(page, what) {
     for (const [id, lines] of families) assert.ok(lines >= 2, `${id}: ${lines} lines`);
     // Every problem: plots above the families over every instance of the
     // run, the instances of each family in the tab "All problems" first.
-    // The large plot's legend gives "answers k, expresses m, of N" per
-    // system, its axis goes to all N, and the time axis starts at 0.2 s.
+    // The large plot's legend gives "answers k of N; own o, natural m,
+    // attempted a" per system, its axis goes to all N, and the time axis
+    // starts at 0.2 s.
     const legendTotal = async (selector) => {
       const items = await page.$$eval(`${selector} figure.plot:not(.part) .legend .n`, (spans) => spans.map((s) => s.textContent.replace(/\s/g, "")));
       assert.ok(items.length >= 1, `${selector}: ${items.length} legend entries`);
-      const totals = new Set(items.map((t) => t.match(/^answers(\d+),expresses(\d+),of(\d+)$/)?.[3]));
+      const totals = new Set(items.map((t) => t.match(/^answers(\d+)of(\d+);own(\d+),natural(\d+),attempted(\d+)$/)?.[2]));
       assert.equal(totals.size, 1, `${selector}: one total in ${JSON.stringify(items)}`);
       return Number([...totals][0]);
     };
@@ -202,6 +203,9 @@ async function noSidewaysScroll(page, what) {
     assert.ok((await allText("#overall")).replace(/\s/g, "").includes(`all${overall}instances`), "the overall plot's axis");
     assert.match(await allText("#overall"), /≤0\.2/, "the time axis starts at 0.2 s");
     assert.ok((await page.$$("#overall ul.cannot li")).length >= 1, "the overall plot says who was not given what");
+    for (const cls of ["Own", "Natural", "Attempted only"]) {
+      assert.ok(await page.$(`#overall details.setup li b:text-is("${cls}")`), `the classification has ${cls} rows`);
+    }
     let sum = 0;
     for (const [id] of families) {
       const first = await page.$(`#${id} .tabs button:first-child`);
@@ -218,19 +222,26 @@ async function noSidewaysScroll(page, what) {
     console.log(`ok every problem: ${overall} instances in ${families.length} families, an All problems tab each`);
 
     // Each large plot draws every system of its instances, and its legend
-    // counts what each expresses: a record that is neither null (not given)
-    // nor "unsupported" (its translator refused the program). Under a kind's
-    // large plot, its panels: each over the instances that its cluster of
-    // systems all express, drawing every system that expresses all of them
-    // and no other. What each system expresses is read from the page's
-    // records, not from the page or the data's counts.
+    // counts how many are each system's own, natural to it and attempted:
+    // the suites' class letters (o own, n natural, a attempted only, -
+    // not attempted), not the data's counts; an attempted instance is a
+    // record that is neither null (not given) nor "unsupported" (its
+    // translator refused the program). Under a kind's large plot, its
+    // panels: each over the instances natural to its cluster of systems,
+    // drawing tddlog and every system they are all natural to, and no other.
     const data = ["suites.json", "ppl.json"].map((file) => path.join(site, "results", file))
       .filter((file) => fs.existsSync(file)).map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
     const kinds = new Map(data.flatMap((d) => d.kinds).map((k) => [k.key, k]));
     const bySuite = new Map(data.flatMap((d) => d.families.flatMap((f) => f.suites)).map((s) => [s.key, s]));
     const expressing = (v) => v !== null && v !== "unsupported";
-    const records = (suites) => new Map(suites.flatMap((s) => s.instances.map((row) => [`${s.key}/${row[0]}`,
-      new Set(s.systems.filter((key, i) => expressing(row[i + 1])))])));
+    const records = (suites) => new Map(suites.flatMap((s) => s.instances.map((row, j) => {
+      const letter = (key) => s.classes[key][j];
+      for (const [i, key] of s.systems.entries()) {
+        assert.equal(letter(key) !== "-", expressing(row[i + 1]), `${s.key}/${row[0]}: ${key} attempts it as its record says`);
+      }
+      const of = (letters) => new Set(s.systems.filter((key) => letters.includes(letter(key))));
+      return [`${s.key}/${row[0]}`, { own: of("o"), natural: of("on"), attempted: of("ona") }];
+    })));
     let small = 0;
     const check = async (selector, systems, suites, panels, least, what) => {
       const rows = records(suites);
@@ -253,9 +264,10 @@ async function noSidewaysScroll(page, what) {
           const i = s.systems.indexOf(key);
           return n + (i < 0 ? 0 : s.instances.filter((row) => typeof row[i + 1] === "number" && row[i + 1] <= s.limit * 1.001).length);
         }, 0);
-        return `answers${answers},expresses${[...rows.values()].filter((r) => r.has(key)).length},of${rows.size}`;
+        const n = (cls) => [...rows.values()].filter((r) => r[cls].has(key)).length;
+        return `answers${answers}of${rows.size};own${n("own")},natural${n("natural")},attempted${n("attempted")}`;
       });
-      assert.deepEqual(large.legend, counts, `${what}: what each system answers and expresses`);
+      assert.deepEqual(large.legend, counts, `${what}: what each system answers, and its own, natural and attempted instances`);
       assert.equal(parts.length, panels.length, `${what}: its panels`);
       parts.forEach((f, k) => {
         const p = panels[k];
@@ -266,8 +278,8 @@ async function noSidewaysScroll(page, what) {
         assert.deepEqual([...f.lines].sort(), [...p.systems].sort(), `${name}: its lines`);
         assert.deepEqual(f.members, p.members, `${name}: its cluster`);
         for (const key of systems) {
-          const all = keys.every((j) => rows.get(j).has(key));
-          assert.equal(f.systems.includes(key), all, `${name}: ${key} ${all ? "expresses every instance and is not drawn" : "does not express every instance and is drawn"}`);
+          const all = key === "tddlog" || keys.every((j) => rows.get(j).natural.has(key));
+          assert.equal(f.systems.includes(key), all, `${name}: ${key} ${all ? "is tddlog or natural on every instance, and is not drawn" : "is not natural on every instance, and is drawn"}`);
         }
         for (const key of p.members) assert.ok(f.systems.includes(key), `${name}: its member ${key} is drawn`);
         small++;

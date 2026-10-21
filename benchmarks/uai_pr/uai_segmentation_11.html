@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#networks">Bayesian and Markov networks</a> › <a href="../index.html#uai_pr">UAI 2022: partition function of the MAR set</a></p>
     <h1>uai_segmentation_11</h1>
-    <p class="lede">The 120 networks of the UAI 2022 competition&#x27;s MAR tuning set: tddlog prints the probability of the evidence alone (<code>--evidence-probability --no-queries</code>) and Merlin and the other network tools run their partition function tasks; 300 s a run. the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which its comparison uses. Made by <code>gen_bn.py MAR_tune/Segmentation_11.uai --evid MAR_tune/Segmentation_11.uai.evid</code>.</p>
+    <p class="lede">The 120 networks of the UAI 2022 competition&#x27;s MAR tuning set: tddlog prints the probability of the evidence alone (<code>--evidence-probability --no-queries</code>) and Merlin and the other network tools run their partition function tasks; 300 s a run. aspmc, Ace and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_bn.py MAR_tune/Segmentation_11.uai --evid MAR_tune/Segmentation_11.uai.evid</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -102,6 +102,9 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</p
 <h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.10</td><td>log10 Z off by 7.1e-15</td><td>largest formula, pairs 4 191 341; final formula, pairs 31; variables 4 546; ground atoms 6 851; ground rules 7 858; vtree families:0 (from auto: 1 attempts, 0.001s discarded)</td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

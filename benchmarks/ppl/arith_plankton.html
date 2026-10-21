@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#ppl">Alea.jl&#x27;s and noDice&#x27;s programs</a></p>
     <h1>arith_plankton</h1>
-    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. noDice, Psi, Pluck, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. The circuit of the Alea.jl program <code>data/alea/arith/plankton.jl</code>.</p>
+    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. The circuit of the Alea.jl program <code>data/alea/arith/plankton.jl</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Pluck</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.32</td><td class="num">0.10</td><td class="num">43.4</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.32</td><td class="num">0.10</td><td class="num">43.4</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num none" title="not run"></td><td class="num">193</td><td class="num">7.3</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -39,6 +39,7 @@
 <input type="radio" name="ptab" id="t0" checked><label for="t0">Alea.jl (original)</label>
 <input type="radio" name="ptab" id="t1"><label for="t1">Circuit</label>
 <input type="radio" name="ptab" id="t2"><label for="t2">Dice</label>
+<input type="radio" name="ptab" id="t3"><label for="t3">PRISM</label>
 <div class="panel" id="p0">
 <p class="readers"><b>The original: the program as its authors wrote it, handed to Alea.jl as it is.</b></p>
 <p class="readers">Read by Alea.jl.</p>
@@ -86,6 +87,148 @@ end
 </dl>
 <div class="file"><div class="fhead"><code class="fname">arith_plankton__d1.dice</code><span>50 444 bytes, 1 809 lines</span><span class="sha" title="SHA-256">sha256 167417c6c6ec733b9cc227ea14b559e117ebc02f37994e05e774a99019fbf2ac</span></div><p class="made">The circuit as Dice programs, one per query or joint of queried bits, written by <code>alea_bench.jl export</code> from <code>data/alea/arith/plankton.jl</code>.</p><p class="note"><a href="../files/167417c6c6ec733b9cc2.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/167417c6c6ec733b9cc2.txt"></pre></div>
 </div>
+<div class="panel" id="p3">
+<p class="readers"><b>A translation of the original into PRISM; the line under each file names the script that wrote it.</b></p>
+<p class="readers">Read by PRISM hybrid, PRISM sparse, Storm dd, Storm exact, Storm sparse.</p>
+<dl class="cmds">
+<dt>PRISM hybrid</dt><dd><code>prism arith_plankton__d1.dice.dtmc0.prism arith_plankton__d1.dice.dtmc0.props -hybrid -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>PRISM sparse</dt><dd><code>prism arith_plankton__d1.dice.dtmc0.prism arith_plankton__d1.dice.dtmc0.props -sparse -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000</code></dd>
+<dt>Storm dd</dt><dd><code>python3 storm_check.py arith_plankton__d1.dice.dtmc0.prism dd arith_plankton__d1.dice.dtmc0.props</code></dd>
+<dt>Storm exact</dt><dd><code>python3 storm_check.py arith_plankton__d1.dice.dtmc0.prism exact arith_plankton__d1.dice.dtmc0.props</code></dd>
+<dt>Storm sparse</dt><dd><code>python3 storm_check.py arith_plankton__d1.dice.dtmc0.prism sparse arith_plankton__d1.dice.dtmc0.props</code></dd>
+</dl>
+<p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
+<div class="file"><div class="fhead"><code class="fname">arith_plankton__d1.dice.dtmc0.prism</code><span>75 683 bytes</span><span class="sha" title="SHA-256">sha256 8602d00d9b635edb1a8c2d247ee22d4c120e6a03b4dcb70293b9e6eb73bad677</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><p class="note"><a href="../files/8602d00d9b635edb1a8c.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/8602d00d9b635edb1a8c.txt"></pre></div>
+<div class="file"><div class="fhead"><code class="fname">arith_plankton__d1.dice.dtmc0.props</code><span>4 388 bytes</span><span class="sha" title="SHA-256">sha256 4fd38471de9bbfd421de3ad810599b8fc86dcbb20baa1afb94093c514259187a</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v0&quot;: P=? [F (&quot;done&quot; &amp; x99=0)];
+&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x99=1)];
+&quot;v2&quot;: P=? [F (&quot;done&quot; &amp; x99=2)];
+&quot;v3&quot;: P=? [F (&quot;done&quot; &amp; x99=3)];
+&quot;v4&quot;: P=? [F (&quot;done&quot; &amp; x99=4)];
+&quot;v5&quot;: P=? [F (&quot;done&quot; &amp; x99=5)];
+&quot;v6&quot;: P=? [F (&quot;done&quot; &amp; x99=6)];
+&quot;v7&quot;: P=? [F (&quot;done&quot; &amp; x99=7)];
+&quot;v8&quot;: P=? [F (&quot;done&quot; &amp; x99=8)];
+&quot;v9&quot;: P=? [F (&quot;done&quot; &amp; x99=9)];
+&quot;v10&quot;: P=? [F (&quot;done&quot; &amp; x99=10)];
+&quot;v11&quot;: P=? [F (&quot;done&quot; &amp; x99=11)];
+&quot;v12&quot;: P=? [F (&quot;done&quot; &amp; x99=12)];
+&quot;v13&quot;: P=? [F (&quot;done&quot; &amp; x99=13)];
+&quot;v14&quot;: P=? [F (&quot;done&quot; &amp; x99=14)];
+&quot;v15&quot;: P=? [F (&quot;done&quot; &amp; x99=15)];
+&quot;v16&quot;: P=? [F (&quot;done&quot; &amp; x99=16)];
+&quot;v17&quot;: P=? [F (&quot;done&quot; &amp; x99=17)];
+&quot;v18&quot;: P=? [F (&quot;done&quot; &amp; x99=18)];
+&quot;v19&quot;: P=? [F (&quot;done&quot; &amp; x99=19)];
+&quot;v20&quot;: P=? [F (&quot;done&quot; &amp; x99=20)];
+&quot;v21&quot;: P=? [F (&quot;done&quot; &amp; x99=21)];
+&quot;v22&quot;: P=? [F (&quot;done&quot; &amp; x99=22)];
+&quot;v23&quot;: P=? [F (&quot;done&quot; &amp; x99=23)];
+&quot;v24&quot;: P=? [F (&quot;done&quot; &amp; x99=24)];
+&quot;v25&quot;: P=? [F (&quot;done&quot; &amp; x99=25)];
+&quot;v26&quot;: P=? [F (&quot;done&quot; &amp; x99=26)];
+&quot;v27&quot;: P=? [F (&quot;done&quot; &amp; x99=27)];
+&quot;v28&quot;: P=? [F (&quot;done&quot; &amp; x99=28)];
+&quot;v29&quot;: P=? [F (&quot;done&quot; &amp; x99=29)];
+&quot;v30&quot;: P=? [F (&quot;done&quot; &amp; x99=30)];
+&quot;v31&quot;: P=? [F (&quot;done&quot; &amp; x99=31)];
+&quot;v32&quot;: P=? [F (&quot;done&quot; &amp; x99=32)];
+&quot;v33&quot;: P=? [F (&quot;done&quot; &amp; x99=33)];
+&quot;v34&quot;: P=? [F (&quot;done&quot; &amp; x99=34)];
+&quot;v35&quot;: P=? [F (&quot;done&quot; &amp; x99=35)];
+&quot;v36&quot;: P=? [F (&quot;done&quot; &amp; x99=36)];
+&quot;v37&quot;: P=? [F (&quot;done&quot; &amp; x99=37)];
+&quot;v38&quot;: P=? [F (&quot;done&quot; &amp; x99=38)];
+&quot;v39&quot;: P=? [F (&quot;done&quot; &amp; x99=39)];
+&quot;v40&quot;: P=? [F (&quot;done&quot; &amp; x99=40)];
+&quot;v41&quot;: P=? [F (&quot;done&quot; &amp; x99=41)];
+&quot;v42&quot;: P=? [F (&quot;done&quot; &amp; x99=42)];
+&quot;v43&quot;: P=? [F (&quot;done&quot; &amp; x99=43)];
+&quot;v44&quot;: P=? [F (&quot;done&quot; &amp; x99=44)];
+&quot;v45&quot;: P=? [F (&quot;done&quot; &amp; x99=45)];
+&quot;v46&quot;: P=? [F (&quot;done&quot; &amp; x99=46)];
+&quot;v47&quot;: P=? [F (&quot;done&quot; &amp; x99=47)];
+&quot;v48&quot;: P=? [F (&quot;done&quot; &amp; x99=48)];
+&quot;v49&quot;: P=? [F (&quot;done&quot; &amp; x99=49)];
+&quot;v50&quot;: P=? [F (&quot;done&quot; &amp; x99=50)];
+&quot;v51&quot;: P=? [F (&quot;done&quot; &amp; x99=51)];
+&quot;v52&quot;: P=? [F (&quot;done&quot; &amp; x99=52)];
+&quot;v53&quot;: P=? [F (&quot;done&quot; &amp; x99=53)];
+&quot;v54&quot;: P=? [F (&quot;done&quot; &amp; x99=54)];
+&quot;v55&quot;: P=? [F (&quot;done&quot; &amp; x99=55)];
+&quot;v56&quot;: P=? [F (&quot;done&quot; &amp; x99=56)];
+&quot;v57&quot;: P=? [F (&quot;done&quot; &amp; x99=57)];
+&quot;v58&quot;: P=? [F (&quot;done&quot; &amp; x99=58)];
+&quot;v59&quot;: P=? [F (&quot;done&quot; &amp; x99=59)];
+&quot;v60&quot;: P=? [F (&quot;done&quot; &amp; x99=60)];
+&quot;v61&quot;: P=? [F (&quot;done&quot; &amp; x99=61)];
+&quot;v62&quot;: P=? [F (&quot;done&quot; &amp; x99=62)];
+&quot;v63&quot;: P=? [F (&quot;done&quot; &amp; x99=63)];
+&quot;v64&quot;: P=? [F (&quot;done&quot; &amp; x99=64)];
+&quot;v65&quot;: P=? [F (&quot;done&quot; &amp; x99=65)];
+&quot;v66&quot;: P=? [F (&quot;done&quot; &amp; x99=66)];
+&quot;v67&quot;: P=? [F (&quot;done&quot; &amp; x99=67)];
+&quot;v68&quot;: P=? [F (&quot;done&quot; &amp; x99=68)];
+&quot;v69&quot;: P=? [F (&quot;done&quot; &amp; x99=69)];
+&quot;v70&quot;: P=? [F (&quot;done&quot; &amp; x99=70)];
+&quot;v71&quot;: P=? [F (&quot;done&quot; &amp; x99=71)];
+&quot;v72&quot;: P=? [F (&quot;done&quot; &amp; x99=72)];
+&quot;v73&quot;: P=? [F (&quot;done&quot; &amp; x99=73)];
+&quot;v74&quot;: P=? [F (&quot;done&quot; &amp; x99=74)];
+&quot;v75&quot;: P=? [F (&quot;done&quot; &amp; x99=75)];
+&quot;v76&quot;: P=? [F (&quot;done&quot; &amp; x99=76)];
+&quot;v77&quot;: P=? [F (&quot;done&quot; &amp; x99=77)];
+&quot;v78&quot;: P=? [F (&quot;done&quot; &amp; x99=78)];
+&quot;v79&quot;: P=? [F (&quot;done&quot; &amp; x99=79)];
+&quot;v80&quot;: P=? [F (&quot;done&quot; &amp; x99=80)];
+&quot;v81&quot;: P=? [F (&quot;done&quot; &amp; x99=81)];
+&quot;v82&quot;: P=? [F (&quot;done&quot; &amp; x99=82)];
+&quot;v83&quot;: P=? [F (&quot;done&quot; &amp; x99=83)];
+&quot;v84&quot;: P=? [F (&quot;done&quot; &amp; x99=84)];
+&quot;v85&quot;: P=? [F (&quot;done&quot; &amp; x99=85)];
+&quot;v86&quot;: P=? [F (&quot;done&quot; &amp; x99=86)];
+&quot;v87&quot;: P=? [F (&quot;done&quot; &amp; x99=87)];
+&quot;v88&quot;: P=? [F (&quot;done&quot; &amp; x99=88)];
+&quot;v89&quot;: P=? [F (&quot;done&quot; &amp; x99=89)];
+&quot;v90&quot;: P=? [F (&quot;done&quot; &amp; x99=90)];
+&quot;v91&quot;: P=? [F (&quot;done&quot; &amp; x99=91)];
+&quot;v92&quot;: P=? [F (&quot;done&quot; &amp; x99=92)];
+&quot;v93&quot;: P=? [F (&quot;done&quot; &amp; x99=93)];
+&quot;v94&quot;: P=? [F (&quot;done&quot; &amp; x99=94)];
+&quot;v95&quot;: P=? [F (&quot;done&quot; &amp; x99=95)];
+&quot;v96&quot;: P=? [F (&quot;done&quot; &amp; x99=96)];
+&quot;v97&quot;: P=? [F (&quot;done&quot; &amp; x99=97)];
+&quot;v98&quot;: P=? [F (&quot;done&quot; &amp; x99=98)];
+&quot;v99&quot;: P=? [F (&quot;done&quot; &amp; x99=99)];
+&quot;v100&quot;: P=? [F (&quot;done&quot; &amp; x99=100)];
+&quot;v101&quot;: P=? [F (&quot;done&quot; &amp; x99=101)];
+&quot;v102&quot;: P=? [F (&quot;done&quot; &amp; x99=102)];
+&quot;v103&quot;: P=? [F (&quot;done&quot; &amp; x99=103)];
+&quot;v104&quot;: P=? [F (&quot;done&quot; &amp; x99=104)];
+&quot;v105&quot;: P=? [F (&quot;done&quot; &amp; x99=105)];
+&quot;v106&quot;: P=? [F (&quot;done&quot; &amp; x99=106)];
+&quot;v107&quot;: P=? [F (&quot;done&quot; &amp; x99=107)];
+&quot;v108&quot;: P=? [F (&quot;done&quot; &amp; x99=108)];
+&quot;v109&quot;: P=? [F (&quot;done&quot; &amp; x99=109)];
+&quot;v110&quot;: P=? [F (&quot;done&quot; &amp; x99=110)];
+&quot;v111&quot;: P=? [F (&quot;done&quot; &amp; x99=111)];
+&quot;v112&quot;: P=? [F (&quot;done&quot; &amp; x99=112)];
+&quot;v113&quot;: P=? [F (&quot;done&quot; &amp; x99=113)];
+&quot;v114&quot;: P=? [F (&quot;done&quot; &amp; x99=114)];
+&quot;v115&quot;: P=? [F (&quot;done&quot; &amp; x99=115)];
+&quot;v116&quot;: P=? [F (&quot;done&quot; &amp; x99=116)];
+&quot;v117&quot;: P=? [F (&quot;done&quot; &amp; x99=117)];
+&quot;v118&quot;: P=? [F (&quot;done&quot; &amp; x99=118)];
+&quot;v119&quot;: P=? [F (&quot;done&quot; &amp; x99=119)];
+&quot;v120&quot;: P=? [F (&quot;done&quot; &amp; x99=120)];
+&quot;v121&quot;: P=? [F (&quot;done&quot; &amp; x99=121)];
+&quot;v122&quot;: P=? [F (&quot;done&quot; &amp; x99=122)];
+&quot;v123&quot;: P=? [F (&quot;done&quot; &amp; x99=123)];
+&quot;v124&quot;: P=? [F (&quot;done&quot; &amp; x99=124)];
+&quot;v125&quot;: P=? [F (&quot;done&quot; &amp; x99=125)];
+&quot;v126&quot;: P=? [F (&quot;done&quot; &amp; x99=126)];
+&quot;v127&quot;: P=? [F (&quot;done&quot; &amp; x99=127)];
+</pre></div>
+</div>
 </div>
 </section>
 <section class="card">
@@ -128,7 +271,6 @@ MemoryError: std::bad_alloc</pre></details></td></tr></tbody></table></div>
 
 Version: 4.8.1
 Date: Wed Oct 21 01:20:44 UTC 2026
-Hostname: ip-172-31-40-143
 Memory limits: cudd=4g, java(heap)=3.9g
 Command line: prism arith_plankton__d1.dice.dtmc0.prism arith_plankton__d1.dice.dtmc0.props -hybrid -javamaxmem 4g -cuddmaxmem 4g -epsilon 1e-15 -maxiters 1000000000
 
@@ -203,7 +345,6 @@ Parsing properties file &quot;arith_plankton__d1.dice.dtmc0.props&quot;...
 
 Version: 4.8.1
 Date: Wed Oct 21 01:38:03 UTC 2026
-Hostname: ip-172-31-40-143
 Memory limits: cudd=4g, java(heap)=3.9g
 Command line: prism arith_plankton__d1.dice.dtmc0.prism arith_plankton__d1.dice.dtmc0.props -sparse -javamaxmem 4g -cuddmaxmem 4g -epsilon 1e-15 -maxiters 1000000000
 
@@ -276,10 +417,20 @@ Parsing properties file &quot;arith_plankton__d1.dice.dtmc0.props&quot;...
 <p class="note">A later run, in lanes of its own, of Roulette: their times compare with that run's tddlog, shown with them.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.55</td><td></td><td>largest formula, pairs 66 623; final formula, pairs 16 130; variables 89; ground atoms 986; ground rules 1 170; vtree program:fanin (from auto: 14 attempts, 0.246s discarded)</td></tr></tbody></table></div>
 <h3>Roulette (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.60</td><td></td><td>largest formula, pairs 66 623; final formula, pairs 16 130; variables 89; ground atoms 986; ground rules 1 170; vtree program:fanin (from auto: 14 attempts, 0.265s discarded)</td></tr></tbody></table></div>
+<h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>noDice (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Psi (later run)</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>84.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
+<h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>PITA (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>193</td><td></td><td></td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>7.3</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>q1(0)</th><td class="num">4.76372e-05</td><td class="num">4.76372e-05</td></tr><tr><th>q1(1)</th><td class="num">0.0005240091463</td><td class="num">0.0005240091463</td></tr><tr><th>q1(2)</th><td class="num">0.002667682927</td><td class="num">0.002667682927</td></tr><tr><th>q1(3)</th><td class="num">0.008384146341</td><td class="num">0.008384146341</td></tr><tr><th>q1(4)</th><td class="num">0.01838795731</td><td class="num">0.01838795731</td></tr><tr><th>q1(5)</th><td class="num">0.03039253043</td><td class="num">0.03039253043</td></tr><tr><th>q1(6)</th><td class="num">0.04039634102</td><td class="num">0.04039634102</td></tr><tr><th>q1(7)</th><td class="num">0.04611280192</td><td class="num">0.04611280192</td></tr><tr><th>q1(8)</th><td class="num">0.04825646191</td><td class="num">0.04825646191</td></tr><tr><th>q1(9)</th><td class="num">0.04873276796</td><td class="num">0.04873276796</td></tr><tr><th>q1(10)</th><td class="num">0.04878012835</td><td class="num">0.04878012835</td></tr><tr><th>q1(11)</th><td class="num">0.04877909663</td><td class="num">0.04877909663</td></tr><tr><th>q1(12)</th><td class="num">0.04877565757</td><td class="num">0.04877565757</td></tr><tr><th>q1(13)</th><td class="num">0.0487653404</td><td class="num">0.0487653404</td></tr><tr><th>q1(14)</th><td class="num">0.04873733665</td><td class="num">0.04873733665</td></tr><tr><th>q1(15)</th><td class="num">0.04866826074</td><td class="num">0.04866826074</td></tr><tr><th>q1(16)</th><td class="num">0.04851283993</td><td class="num">0.04851283993</td></tr><tr><th>q1(17)</th><td class="num">0.04819285591</td><td class="num">0.04819285591</td></tr><tr><th>q1(18)</th><td class="num">0.04758844165</td><td class="num">0.04758844165</td></tr><tr><th>q1(19)</th><td class="num">0.04653866952</td><td class="num">0.04653866952</td></tr><tr><th>q1(20)</th><td class="num">0.0448590341</td><td class="num">0.0448590341</td></tr><tr><th>q1(21)</th><td class="num">0.0423795723</td><td class="num">0.0423795723</td></tr><tr><th>q1(22)</th><td class="num">0.03899848802</td><td class="num">0.03899848802</td></tr><tr><th>q1(23)</th><td class="num">0.03473538176</td><td class="num">0.03473538176</td></tr><tr><th>q1(24)</th><td class="num">0.02976175779</td><td class="num">0.02976175779</td></tr><tr><th>q1(25)</th><td class="num">0.0243902439</td><td class="num">0.0243902439</td></tr><tr><th>q1(26)</th><td class="num">0.01901873001</td><td class="num">0.01901873001</td></tr><tr><th>q1(27)</th><td class="num">0.01404510604</td><td class="num">0.01404510604</td></tr><tr><th>q1(28)</th><td class="num">0.009781999781</td><td class="num">0.009781999781</td></tr><tr><th>q1(29)</th><td class="num">0.006400915505</td><td class="num">0.006400915505</td></tr><tr><th>q1(30)</th><td class="num">0.003921453703</td><td class="num">0.003921453703</td></tr><tr><th>q1(31)</th><td class="num">0.002241818288</td><td class="num">0.002241818288</td></tr><tr><th>q1(32)</th><td class="num">0.001192046154</td><td class="num">0.001192046154</td></tr><tr><th>q1(33)</th><td class="num">0.0005876318951</td><td class="num">0.0005876318951</td></tr><tr><th>q1(34)</th><td class="num">0.0002676478756</td><td class="num">0.0002676478756</td></tr><tr><th>q1(35)</th><td class="num">0.0001122270661</td><td class="num">0.0001122270661</td></tr><tr><th>q1(36)</th><td class="num">4.31512e-05</td><td class="num">4.31512e-05</td></tr><tr><th>q1(37)</th><td class="num">1.51474e-05</td><td class="num">1.51474e-05</td></tr><tr><th>q1(38)</th><td class="num">4.83023e-06</td><td class="num">4.83023e-06</td></tr><tr><th>q1(39)</th><td class="num">1.39117e-06</td><td class="num">1.39117e-06</td></tr></tbody></table></div><p class="note">The first 40 of 128 queries; the largest difference over all of them is in the table of runs above.</p>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">PITA</th><th class="num">aspmc</th></tr></thead><tbody><tr><th>q1(0)</th><td class="num">4.76372e-05</td><td class="num">4.76372e-05</td><td class="num">4.76372e-05</td><td class="num">4.76372e-05</td></tr><tr><th>q1(1)</th><td class="num">0.0005240091463</td><td class="num">0.0005240091463</td><td class="num">0.0005240091463</td><td class="num">0.0005240091463</td></tr><tr><th>q1(2)</th><td class="num">0.002667682927</td><td class="num">0.002667682927</td><td class="num">0.002667682927</td><td class="num">0.002667682927</td></tr><tr><th>q1(3)</th><td class="num">0.008384146341</td><td class="num">0.008384146341</td><td class="num">0.008384146341</td><td class="num">0.008384146341</td></tr><tr><th>q1(4)</th><td class="num">0.01838795731</td><td class="num">0.01838795731</td><td class="num">0.01838795731</td><td class="num">0.01838795731</td></tr><tr><th>q1(5)</th><td class="num">0.03039253043</td><td class="num">0.03039253043</td><td class="num">0.03039253043</td><td class="num">0.03039253043</td></tr><tr><th>q1(6)</th><td class="num">0.04039634102</td><td class="num">0.04039634102</td><td class="num">0.04039634102</td><td class="num">0.04039634102</td></tr><tr><th>q1(7)</th><td class="num">0.04611280192</td><td class="num">0.04611280192</td><td class="num">0.04611280192</td><td class="num">0.04611280192</td></tr><tr><th>q1(8)</th><td class="num">0.04825646191</td><td class="num">0.04825646191</td><td class="num">0.04825646191</td><td class="num">0.04825646191</td></tr><tr><th>q1(9)</th><td class="num">0.04873276796</td><td class="num">0.04873276796</td><td class="num">0.04873276796</td><td class="num">0.04873276796</td></tr><tr><th>q1(10)</th><td class="num">0.04878012835</td><td class="num">0.04878012835</td><td class="num">0.04878012835</td><td class="num">0.04878012835</td></tr><tr><th>q1(11)</th><td class="num">0.04877909663</td><td class="num">0.04877909663</td><td class="num">0.04877909663</td><td class="num">0.04877909663</td></tr><tr><th>q1(12)</th><td class="num">0.04877565757</td><td class="num">0.04877565757</td><td class="num">0.04877565757</td><td class="num">0.04877565757</td></tr><tr><th>q1(13)</th><td class="num">0.0487653404</td><td class="num">0.0487653404</td><td class="num">0.0487653404</td><td class="num">0.0487653404</td></tr><tr><th>q1(14)</th><td class="num">0.04873733665</td><td class="num">0.04873733665</td><td class="num">0.04873733665</td><td class="num">0.04873733665</td></tr><tr><th>q1(15)</th><td class="num">0.04866826074</td><td class="num">0.04866826074</td><td class="num">0.04866826074</td><td class="num">0.04866826074</td></tr><tr><th>q1(16)</th><td class="num">0.04851283993</td><td class="num">0.04851283993</td><td class="num">0.04851283993</td><td class="num">0.04851283993</td></tr><tr><th>q1(17)</th><td class="num">0.04819285591</td><td class="num">0.04819285591</td><td class="num">0.04819285591</td><td class="num">0.04819285591</td></tr><tr><th>q1(18)</th><td class="num">0.04758844165</td><td class="num">0.04758844165</td><td class="num">0.04758844165</td><td class="num">0.04758844165</td></tr><tr><th>q1(19)</th><td class="num">0.04653866952</td><td class="num">0.04653866952</td><td class="num">0.04653866952</td><td class="num">0.04653866952</td></tr><tr><th>q1(20)</th><td class="num">0.0448590341</td><td class="num">0.0448590341</td><td class="num">0.0448590341</td><td class="num">0.0448590341</td></tr><tr><th>q1(21)</th><td class="num">0.0423795723</td><td class="num">0.0423795723</td><td class="num">0.0423795723</td><td class="num">0.0423795723</td></tr><tr><th>q1(22)</th><td class="num">0.03899848802</td><td class="num">0.03899848802</td><td class="num">0.03899848802</td><td class="num">0.03899848802</td></tr><tr><th>q1(23)</th><td class="num">0.03473538176</td><td class="num">0.03473538176</td><td class="num">0.03473538176</td><td class="num">0.03473538176</td></tr><tr><th>q1(24)</th><td class="num">0.02976175779</td><td class="num">0.02976175779</td><td class="num">0.02976175779</td><td class="num">0.02976175779</td></tr><tr><th>q1(25)</th><td class="num">0.0243902439</td><td class="num">0.0243902439</td><td class="num">0.0243902439</td><td class="num">0.0243902439</td></tr><tr><th>q1(26)</th><td class="num">0.01901873001</td><td class="num">0.01901873001</td><td class="num">0.01901873001</td><td class="num">0.01901873001</td></tr><tr><th>q1(27)</th><td class="num">0.01404510604</td><td class="num">0.01404510604</td><td class="num">0.01404510604</td><td class="num">0.01404510604</td></tr><tr><th>q1(28)</th><td class="num">0.009781999781</td><td class="num">0.009781999781</td><td class="num">0.009781999781</td><td class="num">0.009781999781</td></tr><tr><th>q1(29)</th><td class="num">0.006400915505</td><td class="num">0.006400915505</td><td class="num">0.006400915505</td><td class="num">0.006400915505</td></tr><tr><th>q1(30)</th><td class="num">0.003921453703</td><td class="num">0.003921453703</td><td class="num">0.003921453703</td><td class="num">0.003921453703</td></tr><tr><th>q1(31)</th><td class="num">0.002241818288</td><td class="num">0.002241818288</td><td class="num">0.002241818288</td><td class="num">0.002241818288</td></tr><tr><th>q1(32)</th><td class="num">0.001192046154</td><td class="num">0.001192046154</td><td class="num">0.001192046154</td><td class="num">0.001192046154</td></tr><tr><th>q1(33)</th><td class="num">0.0005876318951</td><td class="num">0.0005876318951</td><td class="num">0.0005876318951</td><td class="num">0.0005876318951</td></tr><tr><th>q1(34)</th><td class="num">0.0002676478756</td><td class="num">0.0002676478756</td><td class="num">0.0002676478756</td><td class="num">0.0002676478756</td></tr><tr><th>q1(35)</th><td class="num">0.0001122270661</td><td class="num">0.0001122270661</td><td class="num">0.0001122270661</td><td class="num">0.0001122270661</td></tr><tr><th>q1(36)</th><td class="num">4.31512e-05</td><td class="num">4.31512e-05</td><td class="num">4.31512e-05</td><td class="num">4.31512e-05</td></tr><tr><th>q1(37)</th><td class="num">1.51474e-05</td><td class="num">1.51474e-05</td><td class="num">1.51474e-05</td><td class="num">1.51474e-05</td></tr><tr><th>q1(38)</th><td class="num">4.83023e-06</td><td class="num">4.83023e-06</td><td class="num">4.83023e-06</td><td class="num">4.83023e-06</td></tr><tr><th>q1(39)</th><td class="num">1.39117e-06</td><td class="num">1.39117e-06</td><td class="num">1.39117e-06</td><td class="num">1.39117e-06</td></tr></tbody></table></div><p class="note">The first 40 of 128 queries; the largest difference over all of them is in the table of runs above.</p>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

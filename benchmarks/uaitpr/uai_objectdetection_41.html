@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#networks">Bayesian and Markov networks</a> › <a href="../index.html#uaitpr">UAI 2022: partition function, tuning set</a></p>
     <h1>uai_objectdetection_41</h1>
-    <p class="lede">The 121 networks of the UAI 2022 competition&#x27;s PR tuning set: tddlog prints the probability of the evidence alone (<code>--evidence-probability --no-queries</code>) and Merlin and the other network tools run their partition function tasks; 300 s a run. ProbLog, PITA and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_bn.py PR_tune/ObjectDetection_41.uai --evid PR_tune/ObjectDetection_41.uai.evid</code>.</p>
+    <p class="lede">The 121 networks of the UAI 2022 competition&#x27;s PR tuning set: tddlog prints the probability of the evidence alone (<code>--evidence-probability --no-queries</code>) and Merlin and the other network tools run their partition function tasks; 300 s a run. ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_bn.py PR_tune/ObjectDetection_41.uai --evid PR_tune/ObjectDetection_41.uai.evid</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th></tr></thead><tbody><tr><td class="num">29.4</td><td class="num">25.9</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th></tr></thead><tbody><tr><td class="num">29.4</td><td class="num fail" title="the time limit ran out">&gt;300</td><td class="num">11.5</td><td class="num">20.2</td><td class="num">3.1</td><td class="num">54.1</td><td class="num">39.8</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 300 s; &gt;300: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -39,11 +39,21 @@
 <input type="radio" name="ptab" id="t0" checked><label for="t0">UAI network (original)</label>
 <input type="radio" name="ptab" id="t1"><label for="t1">ProbLog</label>
 <div class="panel" id="p0">
-<p class="readers"><b>The original: the program as its authors wrote it, handed to Merlin, Merlin (PR) as it is.</b></p>
-<p class="readers">Read by Merlin, Merlin (PR).</p>
+<p class="readers"><b>The original: the program as its authors wrote it, handed to Merlin, Merlin (PR), pyAgrum, pyAgrum (PR), pgmpy, pgmpy (PR), libDAI, libDAI (PR), TensorInference.jl treesa, TensorInference.jl treesa (PR), TensorInference.jl greedy, TensorInference.jl greedy (PR) as it is.</b></p>
+<p class="readers">Read by Merlin, Merlin (PR), pyAgrum, pyAgrum (PR), pgmpy, pgmpy (PR), libDAI, libDAI (PR), TensorInference.jl treesa, TensorInference.jl treesa (PR), TensorInference.jl greedy, TensorInference.jl greedy (PR).</p>
 <dl class="cmds">
 <dt>Merlin</dt><dd><code>merlin -f PR_tune/ObjectDetection_41.uai -e PR_tune/ObjectDetection_41.uai.evid -a bte -t MAR -O uai -o out</code></dd>
 <dt>Merlin (PR)</dt><dd><code>merlin -f PR_tune/ObjectDetection_41.uai -e PR_tune/ObjectDetection_41.uai.evid -a bte -t PR -O uai -o out</code></dd>
+<dt>pyAgrum</dt><dd><code>python scripts/bn_uai_run.py agrum PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out MAR</code></dd>
+<dt>pyAgrum (PR)</dt><dd><code>python scripts/bn_uai_run.py agrum PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out PR</code></dd>
+<dt>pgmpy</dt><dd><code>python scripts/bn_uai_run.py pgmpy PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out MAR</code></dd>
+<dt>pgmpy (PR)</dt><dd><code>python scripts/bn_uai_run.py pgmpy PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out PR</code></dd>
+<dt>libDAI</dt><dd><code>libdai_uai PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out MAR</code></dd>
+<dt>libDAI (PR)</dt><dd><code>libdai_uai PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out PR</code></dd>
+<dt>TensorInference.jl treesa</dt><dd><code>julia scripts/tensorinference_uai.jl PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out MAR</code></dd>
+<dt>TensorInference.jl treesa (PR)</dt><dd><code>julia scripts/tensorinference_uai.jl PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out PR</code></dd>
+<dt>TensorInference.jl greedy</dt><dd><code>julia scripts/tensorinference_uai.jl PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out MAR</code></dd>
+<dt>TensorInference.jl greedy (PR)</dt><dd><code>julia scripts/tensorinference_uai.jl PR_tune/ObjectDetection_41.uai PR_tune/ObjectDetection_41.uai.evid out PR</code></dd>
 </dl>
 <p class="readers">One file and its observations, which every network system reads: each command below names them, and none has a copy of its own.</p>
 <div class="file"><div class="fhead"><code class="fname">PR_tune/ObjectDetection_41.uai</code><span>424 190 bytes, 590 lines</span><span class="sha" title="SHA-256">sha256 573f102416831278675387894bbd6fb5fe21b7edbe471e7725cb0a48e7deb7ef</span></div><p class="made">From the UAI 2022 competition&#x27;s tuning PR.zip, as distributed: <code>ObjectDetection_41.uai</code>.</p><p class="note">Not shown: the programs of this benchmark are written from the UAI 2022 competition&#x27;s PR.zip (tuning set), for which no licence to redistribute is established, downloaded from <a href="https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/">https://www.ics.uci.edu/~dechter/uaicompetition/2022/TuningBenchmarks/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
@@ -64,14 +74,27 @@
   <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>29.4</td><td>log10 Z off by 2.8e-14</td><td>largest formula, pairs 252 874 718; final formula, pairs 16 637; variables 111 705; ground atoms 164 610; ground rules 163 740; vtree families:0 (from auto: 2 attempts, 0.240s discarded)</td></tr></tbody></table></div>
 <h3>Merlin</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>68.6</td><td>no answer in common</td><td>induced width 5</td></tr></tbody></table></div>
 <h3>Merlin (PR)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>25.9</td><td>log10 Z off by 1.5e-07</td><td>induced width 5</td></tr></tbody></table></div>
-<p class="note">A later run, in lanes of its own, of Merlin, Merlin (PR), ProbLog -k ddnnf, ProbLog -k fsdd, ProbLog -k sdd, PITA, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni: their times compare with that run's tddlog, shown with them.</p>
+<p class="note">A later run, in lanes of its own, of Ace Xlog, Ace forceC2d, Merlin, Merlin (PR), pyAgrum, pyAgrum (PR), pgmpy, pgmpy (PR), libDAI, libDAI (PR), TensorInference.jl greedy, TensorInference.jl greedy (PR), TensorInference.jl treesa, TensorInference.jl treesa (PR), ProbLog -k ddnnf, ProbLog -k fsdd, ProbLog -k sdd, PITA, aspmc, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni: their times compare with that run's tddlog, shown with them.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.8</td><td>log10 Z off by 2.8e-14</td><td>largest formula, pairs 252 874 718; final formula, pairs 16 637; variables 111 705; ground atoms 164 610; ground rules 163 740; vtree families:0 (from auto: 2 attempts, 0.043s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Ace forceC2d (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Merlin (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>24.6</td><td>no answer in common</td><td>induced width 5</td></tr></tbody></table></div>
 <h3>Merlin (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>8.7</td><td>log10 Z off by 1.5e-07</td><td>induced width 5</td></tr></tbody></table></div>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>15.5</td><td>no answer in common</td><td>inference s 15.296069</td></tr></tbody></table></div>
+<h3>pyAgrum (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>14.5</td><td>log10 Z off by 1.3e-10</td><td>inference s 14.230817</td></tr></tbody></table></div>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pgmpy (PR) (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>39.9</td><td>no answer in common</td><td>inference s 39.8662686</td></tr></tbody></table></div>
+<h3>libDAI (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>39.9</td><td>log10 Z off by 1.3e-10</td><td>inference s 39.86421961</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl greedy (PR) (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl treesa (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>35.8</td><td>no answer in common</td><td>inference s 30.7058599</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>27.1</td><td>log10 Z off by 2.8e-14</td><td>inference s 22.20898509</td></tr></tbody></table></div>
 <h3>ProbLog -k ddnnf (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>ProbLog -k fsdd (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>ProbLog -k sdd (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>PITA (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>aspmc (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Dice (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Alea.jl (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Roulette (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
@@ -80,10 +103,107 @@
 <h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<p class="note">A later run, in lanes of its own, of Ace Xlog, Ace forceC2d, Merlin, Merlin (PR), pyAgrum, pyAgrum (PR), pgmpy, pgmpy (PR), libDAI, libDAI (PR), TensorInference.jl greedy, TensorInference.jl greedy (PR), TensorInference.jl treesa, TensorInference.jl treesa (PR), aspmc: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.8</td><td>log10 Z off by 2.8e-14</td><td>largest formula, pairs 252 874 718; final formula, pairs 16 637; variables 111 705; ground atoms 164 610; ground rules 163 740; vtree families:0 (from auto: 2 attempts, 0.043s discarded)</td></tr><tr><td>1</td><td>answered</td><td>6.8</td><td>log10 Z off by 2.8e-14</td><td>largest formula, pairs 252 874 718; final formula, pairs 16 637; variables 111 705; ground atoms 164 610; ground rules 163 740; vtree families:0 (from auto: 2 attempts, 0.061s discarded)</td></tr></tbody></table></div>
+<h3>Ace Xlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Ace forceC2d (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
+<h3>Merlin (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>33.4</td><td>no answer in common</td><td>induced width 5</td></tr></tbody></table></div>
+<h3>Merlin (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>11.5</td><td>log10 Z off by 1.5e-07</td><td>induced width 5</td></tr></tbody></table></div>
+<h3>pyAgrum (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>18.7</td><td>no answer in common</td><td>inference s 18.329654</td></tr></tbody></table></div>
+<h3>pyAgrum (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>20.2</td><td>log10 Z off by 1.3e-10</td><td>inference s 19.894711</td></tr></tbody></table></div>
+<h3>pgmpy (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>139</td><td>no answer in common</td><td>inference s 136.634584</td></tr></tbody></table></div>
+<h3>pgmpy (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.1</td><td>log10 Z off by 1.3e-10</td><td>inference s 1.078358</td></tr></tbody></table></div>
+<h3>libDAI (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>54.1</td><td>no answer in common</td><td>inference s 54.08990941</td></tr></tbody></table></div>
+<h3>libDAI (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>54.1</td><td>log10 Z off by 1.3e-10</td><td>inference s 54.05322241</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>50.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+Stacktrace:
+  [1] GenericMemory
+    @ ./boot.jl:516 [inlined]
+  [2] new_as_memoryref
+    @ ./boot.jl:535 [inlined]
+  [3] Array
+    @ ./boot.jl:588 [inlined]
+  [4] Array
+    @ ./boot.jl:594 [inlined]
+  [5] (Array{Float64})(::UndefInitializer, d::NTuple{8, Int64})
+    @ Core ./boot.jl:599
+  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
+    @ Base ./baseext.jl:30
+  [7] get_output_array(xs::Tuple{Array{Float64, 7}, Array{Float64, 5}}, size::Vector{Int64}, fillzero::Bool)
+    @ OMEinsum ~loop_einsum.jl:52
+  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsum.jl:25
+  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 7, Array{Float64, 7}}, RescaledArray{Float64, 5, Array{Float64, 5}}}, size_dict::Dict{Int64, Int64})
+    @ TensorInference ~RescaledArray.jl:45
+ [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsequence.jl:286
+ [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsequence.jl:284
+ [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
+    @ OMEinsum ~einsequence.jl:260
+ [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
+    @ OMEinsum ~einsequence.jl:257
+ [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
+    @ TensorInference ~Core.jl:184
+ [15] probability
+    @ ~Core.jl:183 [inlined]
+ [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
+    @ TensorInference ~Core.jl:170
+ [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
+    @ TensorInference ~Core.jl:169
+ [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
+    @ Main tensorinference_uai.jl:22
+ [19] top-level scope
+    @ tensorinference_uai.jl:52
+in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>50.0</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+Stacktrace:
+  [1] GenericMemory
+    @ ./boot.jl:516 [inlined]
+  [2] new_as_memoryref
+    @ ./boot.jl:535 [inlined]
+  [3] Array
+    @ ./boot.jl:588 [inlined]
+  [4] Array
+    @ ./boot.jl:594 [inlined]
+  [5] (Array{Float64})(::UndefInitializer, d::NTuple{8, Int64})
+    @ Core ./boot.jl:599
+  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
+    @ Base ./baseext.jl:30
+  [7] get_output_array(xs::Tuple{Array{Float64, 7}, Array{Float64, 5}}, size::Vector{Int64}, fillzero::Bool)
+    @ OMEinsum ~loop_einsum.jl:52
+  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsum.jl:25
+  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 7, Array{Float64, 7}}, RescaledArray{Float64, 5, Array{Float64, 5}}}, size_dict::Dict{Int64, Int64})
+    @ TensorInference ~RescaledArray.jl:45
+ [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsequence.jl:286
+ [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsequence.jl:284
+ [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
+    @ OMEinsum ~einsequence.jl:260
+ [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
+    @ OMEinsum ~einsequence.jl:257
+ [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
+    @ TensorInference ~Core.jl:184
+ [15] probability
+    @ ~Core.jl:183 [inlined]
+ [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
+    @ TensorInference ~Core.jl:170
+ [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
+    @ TensorInference ~Core.jl:169
+ [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
+    @ Main tensorinference_uai.jl:22
+ [19] top-level scope
+    @ tensorinference_uai.jl:52
+in expression starting at tensorinference_uai.jl:52</pre></details></td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>52.8</td><td>no answer in common</td><td>inference s 45.19356394</td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (PR) (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>39.8</td><td>log10 Z off by 2.8e-14</td><td>inference s 32.41811514</td></tr></tbody></table></div>
+<h3>aspmc (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">Merlin (PR)</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-71.09451336</td><td class="num">-71.09451336</td><td class="num"></td><td class="num">-71.09451351</td></tr></tbody></table></div>
+  <p class="note">The reference is the clique tree (bn_exact.py). Each system's answers of its first repetition that answered.</p><p>The partition function, log10 Z:</p><div class="tscroll"><table class="answers"><thead><tr><th>quantity</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">Merlin</th><th class="num">Merlin (PR)</th><th class="num">pyAgrum</th><th class="num">pyAgrum (PR)</th><th class="num">pgmpy</th><th class="num">pgmpy (PR)</th><th class="num">libDAI</th><th class="num">libDAI (PR)</th><th class="num">TensorInference.jl treesa</th><th class="num">TensorInference.jl treesa (PR)</th></tr></thead><tbody><tr><th>log10 Z</th><td class="num">-71.09451336</td><td class="num">-71.09451336</td><td class="num"></td><td class="num">-71.09451351</td><td class="num"></td><td class="num">-71.09451336</td><td class="num"></td><td class="num">-71.09451336</td><td class="num"></td><td class="num">-71.09451336</td><td class="num"></td><td class="num">-71.09451336</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

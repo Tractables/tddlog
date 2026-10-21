@@ -8,7 +8,7 @@
 #               (target/wasm32-unknown-emscripten/release)
 #   /examples/  the example programs, copied from where examples.js says
 #               the repository keeps them
-#   /guide/     the guide (guide/index.html)
+#   /guide/     the guide (guide/index.html, its code highlighted by code.js)
 #   /results/   the release run's results (results/): the page, its script
 #               and the data it reads, suites.json and ppl.json, which the
 #               generator of README.md's results and the baselines branch's
@@ -46,7 +46,7 @@ rm -rf "$out"
 mkdir -p "$out/examples" "$out/guide" "$out/results"
 out=$(cd "$out" && pwd)
 cd "$here"
-cp index.html styles.css theme.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
+cp index.html styles.css theme.js code.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
 node -e 'for (const e of require("./examples.js").tddlogExamples) console.log(e.file)' |
   while read -r file; do cp "../../$file" "$out/examples/"; done
 cp guide/index.html "$out/guide/"
@@ -65,10 +65,10 @@ cp -r "$c" "$out/c"
 
 if [ -n "$stamp" ]; then
   for page in "$out/index.html" "$out/guide/index.html" "$out/results/index.html"; do
-    sed -i -E "s#(href|src)=\"((\.\./)?(styles\.css|theme\.js|runtime\.js|examples\.js|app\.js|results\.js))\"#\1=\"\2?v=$stamp\"#" "$page"
+    sed -i -E "s#(href|src)=\"((\.\./)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js))\"#\1=\"\2?v=$stamp\"#" "$page"
   done
   test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 5
-  test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 2
+  test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 3
   test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 3
   if [ -n "$benchmarks" ]; then
     find "$out/results/benchmarks" -name '*.html' -exec \

@@ -1610,6 +1610,7 @@ def by_component(system, script, ext, flags, masses_of):
                 return None, {**r, 'seconds': total}
             got = masses_of(r['stdout'], n)
             why = (f'masses of {sorted(got)} for {n} values' if sorted(got) != list(range(n)) else
+                   'a mass is NaN as printed' if any(math.isnan(p) for p in got.values()) else
                    'every value has mass 0 as printed: the observations\' probability is below its precision'
                    if sum(got.values()) == 0 else None)
             if why:
@@ -1910,13 +1911,15 @@ GENFER_MASSES = by_component('genfer', 'dice2genfer.py', 'sgcl', lambda n: ['--l
 
 def parse_genfer(out):
     """Genfer's expectation and its normalized masses p(n)/Z, as floats
-    (a rational such as 509/719 is read exactly)."""
+    (a rational such as 509/719 is read exactly, NaN as NaN)."""
+    def number(s):
+        return math.nan if s == 'NaN' else float(fractions.Fraction(s))
     stats, masses = {}, {}
     for line in out.splitlines():
         if m := GENFER_STAT.match(line):
-            stats[m.group(1)[-1]] = float(fractions.Fraction(m.group(2)))
+            stats[m.group(1)[-1]] = number(m.group(2))
         elif m := GENFER_MASS.match(line):
-            masses[int(m.group(1))] = float(fractions.Fraction(m.group(2)))
+            masses[int(m.group(1))] = number(m.group(2))
     return stats, masses
 
 
@@ -2136,14 +2139,19 @@ def run_aspmc(args, name, path):
     notation it reads (`aspmc_numbers`). It writes `out.cnf` and the
     decomposer's scratch into the working directory, so each instance gets
     one of its own. A ground query it does not print, an atom its grounder
-    removed as no rule derives it, answers 0."""
+    removed, answers 1 where the program states it as a fact (`bench_pe :-
+    true.`, P(e) where nothing is observed) and 0 otherwise, as no rule
+    derives it."""
     from lpad2problog import split_clauses, strip_comments
     d = os.path.join(args.dir, 'aspmc-' + name)
     os.makedirs(d, exist_ok=True)
     with open(path) as f:
         text = f.read()
-    asked = [re.sub(r'\s+', '', m.group(1)) for clause in split_clauses(strip_comments(text))
+    clauses = split_clauses(strip_comments(text))
+    asked = [re.sub(r'\s+', '', m.group(1)) for clause in clauses
              if (m := re.fullmatch(r'\s*query\s*\((.*)\)\s*', clause, re.S))]
+    facts = {re.sub(r'\s+', '', m.group(1)) for clause in clauses
+             if (m := re.fullmatch(r'\s*([a-z]\w*(?:\(.*\))?)\s*(?::-\s*true\s*)?', clause, re.S))}
     try:
         conditioned = aspmc_conditioned(text)
     except ValueError as e:
@@ -2161,7 +2169,7 @@ def run_aspmc(args, name, path):
         if isinstance(r['answers'], dict):
             for q in asked:
                 if not re.search(r'[(,][A-Z_]', q):
-                    r['answers'].setdefault(q, 0.0)
+                    r['answers'].setdefault(q, 1.0 if q in facts else 0.0)
     return r
 
 
@@ -2580,7 +2588,13 @@ def run_uai_system(args, name, path, system, variant):
     os.makedirs(d)
     try:
         out = os.path.join(d, 'out')
-        cmd = UAI_SYSTEMS[system][1](args) + [model, evid, out, task] + ([','.join(map(str, qvars))] if qvars else [])
+        # the query variables in a file (`@FILE`): on the largest networks
+        # the list is longer than Linux takes for one argument (E2BIG)
+        cmd = UAI_SYSTEMS[system][1](args) + [model, evid, out, task]
+        if qvars:
+            with open(os.path.join(d, 'vars'), 'w') as f:
+                f.write(','.join(map(str, qvars)))
+            cmd.append('@' + os.path.join(d, 'vars'))
         env = dict(os.environ, OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1', BN_VARIANT=variant)
         r = timed(cmd, args.timeout, cwd=d, env=env)
         if r['status'] != 'ok':
@@ -2626,14 +2640,15 @@ def ground_format(args, name, system, variant):
     """The format of the ground route `system` takes on instance `name`:
     'hugin' (Ace) or 'uai' (Merlin, the UAI systems) on an instance that is
     not a gen_bn.py network, 'dicemap' (Dice and noDice, a program a query)
-    or 'dice' (the other systems that read Dice programs, one program) where
-    `ground_dice`; None otherwise, and under --pr, where the systems are
-    asked log10 Z, which a ground program does not state."""
+    or 'dice' (the other systems that read Dice programs, one program, and
+    Storm and PRISM, its Markov chain) where `ground_dice`; None otherwise,
+    and under --pr, where the systems are asked log10 Z, which a ground
+    program does not state."""
     if getattr(args, 'pr', False) or variant.endswith('-pr'):
         return None
     if system in NETWORK_SYSTEMS and instances(args)[name][1][0] != 'gen_bn.py':
         return 'hugin' if system == 'ace' else 'uai'
-    if system in DICE_SYSTEMS and ground_dice(args, name):
+    if (system in DICE_SYSTEMS or system in MODEL_CHECKERS) and ground_dice(args, name):
         return 'dicemap' if system in ('dice', 'nodice') else 'dice'
     return None
 
@@ -3383,7 +3398,7 @@ def run_job(args, spec, systems, out, lock, names):
             elif system == 'provsql':
                 r = run_provsql(args, name, path)
             elif system in MODEL_CHECKERS:
-                r = run_model_checker(args, name, path, system, variant)
+                r = run_model_checker(rargs, name, rpath, system, variant)
             elif system == 'roulette':
                 r = run_roulette(rargs, name, rpath, variant)
             elif system in PROGRAM_SYSTEMS:

@@ -756,6 +756,20 @@ class AspmcTests(unittest.TestCase):
                 result = bench.run_aspmc(args, 'gone', path)
             self.assertEqual(result['answers'], {'a': 0.5, 'b': 0.0})
 
+    def test_a_ground_query_stated_as_a_fact_that_aspmc_leaves_out_answers_1(self):
+        # P(e) of a network where nothing is observed (pe_program)
+        program = f'0.5::a.\n{bench.PE_QUERY} :- true.\nquery({bench.PE_QUERY}).\n'
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'pe.pl')
+            with open(path, 'w') as f:
+                f.write(program)
+            args = SimpleNamespace(dir=d, aspmc='python3', timeout=1)
+            with patch.object(bench, 'timed', return_value={
+                        'status': 'ok', 'seconds': 0.1,
+                        'stderr': '[RESULT] aspmc: The overall weight of the program is 0.9999999999999998\n'}):
+                result = bench.run_aspmc(args, 'pe', path)
+            self.assertEqual(result['answers'], {bench.PE_QUERY: 1.0})
+
     def test_comments_and_atom_named_evidence_are_allowed(self):
         program = ('% evidence(obs, true).\n'
                    '/* evidence(obs). */\n'
@@ -1152,6 +1166,29 @@ class MerlinTests(unittest.TestCase):
         self.assertEqual(r['answers'].keys(), expected.keys())
         for q, p in expected.items():
             self.assertAlmostEqual(r['answers'][q], p, delta=5e-7)
+
+    def test_a_network_tool_reads_the_query_variables_from_a_file(self):
+        """The UAI drivers' query variables go in a file (`@FILE`): on the
+        largest networks the list is longer than one argument may be."""
+        regress = Path(__file__).resolve().parent / 'regress'
+        calls = []
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            calls.append((cmd, Path(cmd[-1][1:]).read_text()))
+            Path(cmd[-3]).write_text(MERLIN_MAR)
+            return {'status': 'ok', 'seconds': 0.5, 'stdout': '', 'stderr': ''}
+        with scratch_dir('uai-tool-') as d:
+            args = SimpleNamespace(suite='uai', only=[], families=[], uai_benchmarks=str(regress), dir=d,
+                                   libdai='libdai_uai', timeout=60)
+            with patch.object(bench, 'timed', timed):
+                r = bench.run_uai_system(args, 'uai_markov', str(regress / 'markov.pl'), 'libdai', 'jtree')
+        [(cmd, listed)] = calls
+        self.assertEqual(cmd[:5], ['libdai_uai', f'{regress}/markov.uai', f'{regress}/markov.uai.evid',
+                                   cmd[3], 'MAR'])
+        self.assertTrue(cmd[5].startswith('@'))
+        self.assertEqual(listed, '0,1,2')
+        self.assertEqual(r['status'], 'ok')
+        self.assertAlmostEqual(r['answers']['x2(v_1)'], 2 / 13, delta=5e-7)
 
     def test_the_partition_function_file_is_read(self):
         """Merlin's PR file for tests/regress/markov.uai without evidence,
