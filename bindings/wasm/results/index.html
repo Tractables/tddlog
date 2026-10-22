@@ -44,27 +44,28 @@
   time limit, on a log scale from 0.2 s to the suite's limit: a line further
   up and to the left is better, and a run that takes less than 0.2 s counts
   at 0.2 s, since differences of a few milliseconds of start-up are not
-  compared. A plot draws every system over all of its instances, an
-  instance a system does not attempt counted as unanswered, so that it
-  shows coverage rather than speed. Its legend gives how many instances
-  each system answers, and how many are its own (from its own papers,
-  benchmarks or distribution), natural to it (written as its users write
-  programs, in a translation that stays close to the original and does
-  none of its work for it: no grounding, unrolling or bit-blasting) and
-  attempted (given to it at all, natural or through such a translation).
-  Under the plot of a family's problems, a small plot for each cluster of
-  systems covers the instances natural to all of them, with tddlog and
-  every system they are all natural to. The README's speed comparisons
-  are over each system's natural instances, the total times over those
-  either answers and over those both answer; under the plot of every
-  problem, what each system is compared on and why. The findings compare tddlog with
-  another system on the instances both answer: where each is faster, by
-  how much, and their total times over those instances. An instance that
-  both finish in under 0.1 s counts neither as a win nor as a loss. The
-  README compares by total time instead, a run that does not finish
-  (out of time or memory, failed, or skipped after a smaller instance of
-  its family failed) counting as the time limit. The numbers come from the same records as
-  the README's and
+  compared. A family's first plots are its kinds of problems, as in the
+  README. A kind is one set of instances, the programs naturally written in
+  the languages of that kind, and its systems are those whose language is
+  of that kind, with ProbLog, PITA and aspmc on every kind: tddlog reads
+  ProbLog, and they are given the program tddlog reads. The bit-blasted
+  circuits are a kind of their own: Alea.jl compiles each of these
+  programs, written in Alea.jl, to a circuit, and every other system is
+  given that circuit, an intermediate representation rather than the
+  program as written. Every system of a kind is tried on all of its
+  instances, and an instance a system does not answer counts as
+  unanswered, whatever the reason: out of time or memory, a wrong answer,
+  a program the system cannot express, or one it was not given. The
+  legend gives each system's answers and its total time over the instances
+  that some system of the kind answers, a run that does not answer counted
+  at its suite's time limit and a time under 0.2 s at 0.2 s; the README
+  gives beside it the totals over the instances both tddlog and the other
+  system answer. A suite's plot draws the systems that were given its
+  instances. The findings compare tddlog with another system on the
+  instances both answer: where each is faster, by how much, and their
+  total times over those instances. An instance that both finish in under
+  0.1 s counts neither as a win nor as a loss. The numbers come from the
+  same records as the README's and
   <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>'s.</p>
   <noscript><p class="note">The plots and tables of this page need
   JavaScript; the same results are in docs/benchmarks.md on the baselines branch.</p></noscript>

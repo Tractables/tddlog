@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#ppl">Alea.jl&#x27;s and noDice&#x27;s programs</a></p>
     <h1>arith_gcd_medium</h1>
-    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm and PRISM ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm and PRISM ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. The circuit of the Alea.jl program <code>data/alea/arith/gcd_medium.jl</code>.</p>
+    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. The circuit of the Alea.jl program <code>data/alea/arith/gcd_medium.jl</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">159</td><td class="num">80.2</td><td class="num">258</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num none" title="not run"></td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. memory: out of memory. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">159</td><td class="num">80.2</td><td class="num">258</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num none" title="not run"></td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">278</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. memory: out of memory. error: the system stopped with an error. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -109,9 +109,10 @@ model() = uniform_coprime(10)
 </div>
 <div class="panel" id="p1">
 <p class="readers"><b>A translation of the original into Circuit; the line under each file names the script that wrote it.</b></p>
-<p class="readers">Read by tddlog.</p>
+<p class="readers">Read by tddlog, ProbLog -k ddnnf.</p>
 <dl class="cmds">
 <dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto arith_gcd_medium.pl</code></dd>
+<dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf arith_gcd_medium.pl</code></dd>
 </dl>
 <div class="file"><div class="fhead"><code class="fname">arith_gcd_medium.pl</code><span>899 321 bytes, 42 656 lines</span><span class="sha" title="SHA-256">sha256 1e277eae2c800a797f861254d4685ec14e9bbf5514a08f3c226ced1c868e2665</span></div><p class="made">The Boolean circuit Alea.jl builds for the program, written as a ProbLog program by <code>alea_bench.jl export data/alea/arith/gcd_medium.jl</code>.</p><p class="note"><a href="../files/1e277eae2c800a797f86.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/1e277eae2c800a797f86.txt"></pre></div>
 </div>
@@ -145,9 +146,10 @@ model() = uniform_coprime(10)
   <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>155</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 90.893s discarded)</td></tr><tr><td>2</td><td>answered</td><td>160</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 93.667s discarded)</td></tr><tr><td>3</td><td>answered</td><td>159</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 93.522s discarded)</td></tr></tbody></table></div>
 <h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>306</td><td>104</td><td>3.7</td><td>95.8</td><td></td><td>circuit flips 20; circuit gates 30 487; BDD peak, nodes 63 482 552; evidence BDD, nodes 1; largest query BDD, nodes 39 372</td></tr><tr><td>2</td><td>answered</td><td>258</td><td>81.6</td><td>3.4</td><td>80.2</td><td></td><td>circuit flips 20; circuit gates 30 487; BDD peak, nodes 63 482 552; evidence BDD, nodes 1; largest query BDD, nodes 39 372</td></tr><tr><td>3</td><td>answered</td><td>247</td><td>81.0</td><td>3.4</td><td>75.9</td><td></td><td>circuit flips 20; circuit gates 30 487; BDD peak, nodes 63 482 552; evidence BDD, nodes 1; largest query BDD, nodes 39 372</td></tr></tbody></table></div>
 <h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>2</td><td>timeout</td><td>600</td><td></td><td></td></tr><tr><td>3</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 <p class="note">A later run, in lanes of its own, of Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
-<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>167</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 52 attempts, 94.924s discarded)</td></tr></tbody></table></div>
-<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>487</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>BDD Unique table full, 65667039 of 67108864 buckets filled!</pre></details></td></tr></tbody></table></div>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>161</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 97.207s discarded)</td></tr></tbody></table></div>
+<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>278</td><td></td><td></td></tr></tbody></table></div>
 <h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
@@ -155,6 +157,76 @@ model() = uniform_coprime(10)
 <p class="note">A later run, in lanes of its own, of Roulette: their times compare with that run's tddlog, shown with them.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>229</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 133.872s discarded)</td></tr></tbody></table></div>
 <h3>Roulette (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>53.3</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>memory allocation of 8724152336 bytes failed</pre></details></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of ProbLog -k ddnnf: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>274</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 159.204s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>52.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>Traceback (most recent call last):
+  File &quot;probability.py&quot;, line 142, in execute
+  File &quot;core.py&quot;, line 156, in create_from
+  File &quot;core.py&quot;, line 121, in convert
+  File &quot;cycles.py&quot;, line 61, in break_cycles
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in
+... output truncated ...
+comp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp</pre></details></td></tr></tbody></table></div>
 <p class="note">A later run, in lanes of its own, of Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc: their times compare with that run's tddlog, shown with them.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>280</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 54 attempts, 162.599s discarded)</td></tr></tbody></table></div>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
@@ -167,10 +239,20 @@ fatal runtime error: stack overflow, aborting</pre></details></td></tr></tbody><
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PITA (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>193</td><td></td><td>largest formula, pairs 188 829; final formula, pairs 78 831; variables 22; ground atoms 13 011; ground rules 23 002; vtree program (from auto: 55 attempts, 118.653s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Ace forceC2d (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>Merlin (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>TensorInference.jl treesa (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">Alea.jl</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.6083745956</td><td class="num">0.6083745956</td></tr></tbody></table></div>
+  <div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.6083745956</td><td class="num">0.6083745956</td><td class="num">0.6083745956</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

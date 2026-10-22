@@ -592,7 +592,7 @@ footer {
 
 .family h2 { font-size: 1.15rem; }
 .family h3 { margin: 0 0 0.4rem; font-size: 14px; font-weight: 600; }
-.family h3.more, .family h4.more {
+.family h3.more {
   margin: 1.4rem 0 0.6rem;
   font-size: 12px;
   font-weight: 500;
@@ -663,22 +663,6 @@ button.plain:hover:not(:disabled) { border-color: var(--accent); }
 .view aside.finding { align-self: start; }
 figure.plot { margin: 0 0 0.5rem; min-width: 0; }
 .plot .box { position: relative; }
-
-/* The small plots under a suite's, one for each part of its instances that
-   some systems were given alone, as many to a row as there is room for. */
-.parts {
-  display: grid;
-  gap: 1.2rem 1.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  margin-bottom: 0.6rem;
-}
-
-/* A row's plots line up at the bottom over legends of different heights. */
-figure.plot.part { display: flex; flex-direction: column; margin: 0; }
-.part .box { margin-top: auto; }
-.part figcaption { margin: 0 0 0.35rem; font-size: 13px; font-weight: 600; }
-.part .legend { gap: 0.2rem 0.9rem; margin-bottom: 0.4rem; font-size: 12px; }
-.part i.sw { width: 1.1rem; }
 
 .legend {
   display: flex;
@@ -755,7 +739,6 @@ table.times tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-
 table.times .num { text-align: right; }
 table.times td.best { font-weight: 700; color: var(--accent); }
 table.times td.fail { color: var(--muted); }
-table.times td.attempted { font-style: italic; }
 table.hide-quick tr.quick { display: none; }
 .instances .note { margin-top: 0.5rem; }
 

@@ -34,10 +34,11 @@ test checks that each key it links to is one of `examples.js`.
 
 `results/` is the page at <https://tractables.github.io/tddlog/results/>:
 the release run against every exact system that accepts a suite's
-programs, a family of suites at a time. Each suite has a plot of the
-instances each system answers within a time limit (from 0.2 s, on a log
-scale) that draws the systems given all of its instances, a small plot
-for each part of the instances that some systems were given alone, the
+programs, a family of suites at a time. A family first has a plot for
+each of its kinds of problems, as the README's figures: the instances
+each of the kind's systems answers within a time limit (from 0.2 s, on a
+log scale) over all of the kind's instances, and each system's total
+time. Then each suite has a plot of the systems given its instances, the
 findings in prose beside it, and a table of every instance's times.
 `results.js` draws it from two files: `suites.json`, the networks
 and the logic programs, and `ppl.json`, the programs of Dice, Alea.jl,

@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#bitblast">Bit-blasted programs</a></p>
     <h1>bb_clinicalTrial1_w4</h1>
-    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it, and Roulette the circuit&#x27;s Dice program translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Dice, Roulette, Roulette&#x27;s process, ProbLog, Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. 29 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/clinicalTrial1.jl</code> with <code>bits=2</code>.</p>
+    <p class="lede">The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and Millstein, PLDI 2024) on ladders of precision. Alea.jl runs each program itself; tddlog runs the circuit Alea.jl builds for it, and Roulette the circuit&#x27;s Dice program translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Dice, Roulette, Roulette&#x27;s process, ProbLog, Geni, noDice, Psi, Genfer, SPPL, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. 27 more instances of the ladders no system ran: each system had failed on a smaller size. The circuit of the Alea.jl program <code>data/alea/hybit/clinicalTrial1.jl</code> with <code>bits=2</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.23</td><td class="num">50.6</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num">0.36</td><td class="num">1.0</td><td class="num">1.1</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">166</td><td class="num">33.0</td><td class="num fail" title="the system stopped with an error">error</td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td><td class="num none" title="not run"></td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; zero: every answer printed as 0 where the reference&#x27;s are positive. &gt;600: the time limit ran out. memory: out of memory. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.04</td><td class="num">0.23</td><td class="num">50.6</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num">0.36</td><td class="num">1.0</td><td class="num">1.1</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">166</td><td class="num">35.0</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">7.6</td><td class="num">6.5</td><td class="num">4.4</td><td class="num">8.1</td><td class="num">44.4</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; zero: every answer printed as 0 where the reference&#x27;s are positive. &gt;600: the time limit ran out. memory: out of memory. error: the system stopped with an error. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -131,16 +131,16 @@ end
 <h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>51.1</td><td>40.0</td><td>39.8</td><td>0.23</td><td>1.9e-09 at most</td><td>circuit flips 807; circuit gates 3 200; BDD peak, nodes 407 778; evidence BDD, nodes 4 002; largest query BDD, nodes 2</td></tr><tr><td>2</td><td>answered</td><td>50.6</td><td>39.4</td><td>39.1</td><td>0.20</td><td>1.9e-09 at most</td><td>circuit flips 807; circuit gates 3 200; BDD peak, nodes 407 778; evidence BDD, nodes 4 002; largest query BDD, nodes 2</td></tr><tr><td>3</td><td>answered</td><td>50.3</td><td>39.0</td><td>38.8</td><td>0.24</td><td>1.9e-09 at most</td><td>circuit flips 807; circuit gates 3 200; BDD peak, nodes 407 778; evidence BDD, nodes 4 002; largest query BDD, nodes 2</td></tr></tbody></table></div>
 <p class="note">A later run, in lanes of its own, of Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.04</td><td>1.9e-09 at most</td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program (from auto: 2 attempts, 0.000s discarded)</td></tr></tbody></table></div>
-<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>33.0</td><td>1.9e-09 at most</td><td></td></tr></tbody></table></div>
+<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>35.0</td><td>1.9e-09 at most</td><td></td></tr></tbody></table></div>
 <h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
-<h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+<h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
 =====
 
 Version: 4.8.1
-Date: Wed Oct 21 05:41:12 UTC 2026
-Memory limits: cudd=4g, java(heap)=3.9g
-Command line: prism bb_clinicalTrial1_w4__d1.dice.dtmc0.prism bb_clinicalTrial1_w4__d1.dice.dtmc0.props -hybrid -javamaxmem 4g -cuddmaxmem 4g -epsilon 1e-15 -maxiters 1000000000
+Date: Wed Oct 21 19:35:48 UTC 2026
+Memory limits: cudd=10g, java(heap)=9.7g
+Command line: prism bb_clinicalTrial1_w4__d1.dice.dtmc0.prism bb_clinicalTrial1_w4__d1.dice.dtmc0.props -hybrid -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000
 
 Parsing model file &quot;bb_clinicalTrial1_w4__d1.dice.dtmc0.prism&quot;...
 
@@ -160,66 +160,54 @@ Model checking: &quot;obs&quot;: P=? [ F &quot;done&quot; ]
 
 Building model...
 
-Warning: Guard for command 14 of module &quot;program&quot; is never satisfied.
+Computing reachable states...
 
-Warning: Guard for command 19 of module &quot;program&quot; is never satisfied.
+Reachability (BFS): 809 iterations in 4.11 seconds (average 0.005080, setup 0.00)
 
-Warning: Guard for command 26 of module &quot;program&quot; is never satisfied.
+Time for model construction: 9.34 seconds.
 
-Warning: Guard for command 33 of module &quot;program&quot; is never satisfied.
+Type:        DTMC
+States:      6.442624918337838E32 (1 initial)
+Transitions: 7.778460672568298E32
 
-Warning: Guard for command 38 of module &quot;program&quot; is never satisfied.
+Transition matrix: 117892 nodes (3 terminal), 7.778460672568298E32 minterms, vars: 112r/112c
 
-Warning: Guard for command 45 of module &quot;program&quot; is never satisfied.
+Warning: Switching to MTBDD engine, as number of states is too large for Hybrid engine.
 
-Warning: Guard for command 50 of module &quot;program&quot; is never satisfied.
+Prob0: 809 iterations in 1.80 seconds (average 0.002225, setup 0.00)
 
-Warning: Guard for command 55 of module &quot;program&quot; is never satisfied.
+Prob1: 404 iterations in 1.33 seconds (average 0.003292, setup 0.00)
 
-Warning: Guard for command 60 of module &quot;program&quot; is never satisfied.
+yes = 2006, no = 6.442624918337838E32, maybe = 13517
 
-Warning: Guard for command 65 of module &quot;program&quot; is never satisfied.
+Computing remaining probabilities...
+Engine: MTBDD
 
-Warning: Guard for command 72 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 79 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 94 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 101 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 106 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 115 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 120 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 133 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 138 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 145 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 150 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 155 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 162 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 167 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 172 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 179 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 194 of module &quot;program&quot; is neve</pre></details></td></tr></tbody></table></div>
-<h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>13.3</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+java.lang.NullPointerException: Cannot invoke &quot;odd.ODDNode.ptr()&quot; because &quot;&lt;parameter2&gt;&quot; is null
+    at mtbdd.PrismMTBDD.ProbUntil(PrismMTBDD.java:413)
+    at prism.ProbModelChecker.computeUntilProbs(ProbModelChecker.java:1655)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:816)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:783)
+    at prism.ProbModelChecker.checkProbPathFormulaSimple(ProbModelChecker.java:523)
+    at prism.ProbModelChecker.checkProbPathFormula(ProbModelChecker.java:485)
+    at prism.ProbModelChecker.checkExpressionProb(ProbModelChecker.java:195)
+    at prism.ProbModelChecker.checkExpression(ProbModelChecker.java:137)
+    at prism.StateModelChecker.checkExpressionFilter(StateModelChecker.java:1158)
+    at prism.StateModelChecker.checkExpression(StateModelChecker.java:312)
+    at prism.NonProbModelChecker.checkExpression(NonProbModelChecker.java:80)
+    at prism.ProbModelChecker.checkExpression(ProbModelChecker.java:149)
+    at prism.StateModelChecker.check(StateModelChecker.java:238)
+    at prism.Prism.modelCheck(Prism.java:3162)
+    at prism.PrismCL.run(PrismCL.java:424)
+    at prism.PrismCL.go(PrismCL.java:228)
+    at prism.PrismCL.main(PrismCL.java:</pre></details></td></tr></tbody></table></div>
+<h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>14.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
 =====
 
 Version: 4.8.1
-Date: Wed Oct 21 05:40:58 UTC 2026
-Memory limits: cudd=4g, java(heap)=3.9g
-Command line: prism bb_clinicalTrial1_w4__d1.dice.dtmc0.prism bb_clinicalTrial1_w4__d1.dice.dtmc0.props -sparse -javamaxmem 4g -cuddmaxmem 4g -epsilon 1e-15 -maxiters 1000000000
+Date: Wed Oct 21 19:35:34 UTC 2026
+Memory limits: cudd=10g, java(heap)=9.7g
+Command line: prism bb_clinicalTrial1_w4__d1.dice.dtmc0.prism bb_clinicalTrial1_w4__d1.dice.dtmc0.props -sparse -javamaxmem 10g -cuddmaxmem 10g -epsilon 1e-15 -maxiters 1000000000
 
 Parsing model file &quot;bb_clinicalTrial1_w4__d1.dice.dtmc0.prism&quot;...
 
@@ -239,59 +227,47 @@ Model checking: &quot;obs&quot;: P=? [ F &quot;done&quot; ]
 
 Building model...
 
-Warning: Guard for command 14 of module &quot;program&quot; is never satisfied.
+Computing reachable states...
 
-Warning: Guard for command 19 of module &quot;program&quot; is never satisfied.
+Reachability (BFS): 809 iterations in 4.18 seconds (average 0.005167, setup 0.00)
 
-Warning: Guard for command 26 of module &quot;program&quot; is never satisfied.
+Time for model construction: 9.46 seconds.
 
-Warning: Guard for command 33 of module &quot;program&quot; is never satisfied.
+Type:        DTMC
+States:      6.442624918337838E32 (1 initial)
+Transitions: 7.778460672568298E32
 
-Warning: Guard for command 38 of module &quot;program&quot; is never satisfied.
+Transition matrix: 117892 nodes (3 terminal), 7.778460672568298E32 minterms, vars: 112r/112c
 
-Warning: Guard for command 45 of module &quot;program&quot; is never satisfied.
+Warning: Switching to MTBDD engine, as number of states is too large for Sparse engine.
 
-Warning: Guard for command 50 of module &quot;program&quot; is never satisfied.
+Prob0: 809 iterations in 1.75 seconds (average 0.002163, setup 0.00)
 
-Warning: Guard for command 55 of module &quot;program&quot; is never satisfied.
+Prob1: 404 iterations in 1.35 seconds (average 0.003342, setup 0.00)
 
-Warning: Guard for command 60 of module &quot;program&quot; is never satisfied.
+yes = 2006, no = 6.442624918337838E32, maybe = 13517
 
-Warning: Guard for command 65 of module &quot;program&quot; is never satisfied.
+Computing remaining probabilities...
+Engine: MTBDD
 
-Warning: Guard for command 72 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 79 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 94 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 101 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 106 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 115 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 120 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 133 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 138 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 145 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 150 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 155 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 162 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 167 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 172 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 179 of module &quot;program&quot; is never satisfied.
-
-Warning: Guard for command 194 of module &quot;program&quot; is neve</pre></details></td></tr></tbody></table></div>
+java.lang.NullPointerException: Cannot invoke &quot;odd.ODDNode.ptr()&quot; because &quot;&lt;parameter2&gt;&quot; is null
+    at mtbdd.PrismMTBDD.ProbUntil(PrismMTBDD.java:413)
+    at prism.ProbModelChecker.computeUntilProbs(ProbModelChecker.java:1655)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:816)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:783)
+    at prism.ProbModelChecker.checkProbPathFormulaSimple(ProbModelChecker.java:523)
+    at prism.ProbModelChecker.checkProbPathFormula(ProbModelChecker.java:485)
+    at prism.ProbModelChecker.checkExpressionProb(ProbModelChecker.java:195)
+    at prism.ProbModelChecker.checkExpression(ProbModelChecker.java:137)
+    at prism.StateModelChecker.checkExpressionFilter(StateModelChecker.java:1158)
+    at prism.StateModelChecker.checkExpression(StateModelChecker.java:312)
+    at prism.NonProbModelChecker.checkExpression(NonProbModelChecker.java:80)
+    at prism.ProbModelChecker.checkExpression(ProbModelChecker.java:149)
+    at prism.StateModelChecker.check(StateModelChecker.java:238)
+    at prism.Prism.modelCheck(Prism.java:3162)
+    at prism.PrismCL.run(PrismCL.java:424)
+    at prism.PrismCL.go(PrismCL.java:228)
+    at prism.PrismCL.main(PrismCL.java:</pre></details></td></tr></tbody></table></div>
 <p class="note">A later run, in lanes of its own, of Roulette: their times compare with that run's tddlog, shown with them.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.12</td><td>1.9e-09 at most</td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program (from auto: 2 attempts, 0.000s discarded)</td></tr></tbody></table></div>
 <h3>Roulette (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.0</td><td>0.38</td><td></td><td>2.0e-01 at most</td><td></td></tr></tbody></table></div>
@@ -320,10 +296,60 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</p
 <h3>ProbLog -k ddnnf (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>1.1</td><td>0.0e+00 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>1.1</td><td>0.0e+00 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>1.1</td><td>0.0e+00 at most</td><td></td></tr></tbody></table></div>
 <h3>PITA (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>19.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>no answers: ERROR:    Exported procedure bddem:create_json_util/5 is not defined</pre></details></td></tr><tr><td>2</td><td>error</td><td>19.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>no answers: ERROR:    Exported procedure bddem:create_json_util/5 is not defined</pre></details></td></tr><tr><td>3</td><td>error</td><td>18.7</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>no answers: ERROR:    Exported procedure bddem:create_json_util/5 is not defined</pre></details></td></tr></tbody></table></div>
 <h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>166</td><td>1.9e-09 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>165</td><td>1.9e-09 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>168</td><td>1.9e-09 at most</td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.10</td><td>1.9e-09 at most</td><td>largest formula, pairs 11 233; final formula, pairs 20; variables 808; ground atoms 2 410; ground rules 3 105; vtree program (from auto: 2 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Ace auto (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>10.4</td><td>1.9e-09 at most</td><td>route tabularCompilation; circuit nodes 32 067; circuit edges 48 904</td></tr></tbody></table></div>
+<h3>Ace forceC2d (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>7.6</td><td>1.9e-09 at most</td><td>route c2dCompilation; circuit nodes 17 918; circuit edges 50 409</td></tr></tbody></table></div>
+<h3>Merlin (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>6.5</td><td>2.5e-07 at most</td><td>induced width 4</td></tr></tbody></table></div>
+<h3>pyAgrum (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>4.4</td><td>1.9e-09 at most</td><td>inference s 0.572782</td></tr></tbody></table></div>
+<h3>pgmpy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>8.1</td><td>1.9e-09 at most</td><td>inference s 4.868485</td></tr></tbody></table></div>
+<h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>44.4</td><td>1.9e-09 at most</td><td>inference s 43.96945907</td></tr></tbody></table></div>
+<h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>62.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ERROR: LoadError: OutOfMemoryError()
+Stacktrace:
+  [1] GenericMemory
+    @ ./boot.jl:516 [inlined]
+  [2] new_as_memoryref
+    @ ./boot.jl:535 [inlined]
+  [3] Array{Float64, 38}(::UndefInitializer, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64, ::Int64)
+    @ Core ./boot.jl:588
+  [4] Array
+    @ ./boot.jl:594 [inlined]
+  [5] (Array{Float64})(::UndefInitializer, d::NTuple{38, Int64})
+    @ Core ./boot.jl:599
+  [6] (Array{Float64})(::UndefInitializer, ::Int64, ::Vararg{Int64})
+    @ Base ./baseext.jl:30
+  [7] get_output_array(xs::Tuple{Array{Float64, 25}, Array{Float64, 28}}, size::Vector{Int64}, fillzero::Bool)
+    @ OMEinsum ~loop_einsum.jl:52
+  [8] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsum.jl:25
+  [9] einsum(code::OMEinsum.DynamicEinCode{Int64}, xs::Tuple{RescaledArray{Float64, 25, Array{Float64, 25}}, RescaledArray{Float64, 28, Array{Float64, 28}}}, size_dict::Dict{Int64, Int64})
+    @ TensorInference ~RescaledArray.jl:45
+ [10] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64})
+    @ OMEinsum ~einsequence.jl:286
+ [11] einsum(neinsum::OMEinsum.DynamicNestedEinsum{Int64}, xs::Tuple{Vararg{AbstractArray}}, size_dict::Dict{Int64, Int64}) (repeats 2 times)
+    @ OMEinsum ~einsequence.jl:284
+ [12] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray}; size_info::Nothing, kwargs::@Kwargs{})
+    @ OMEinsum ~einsequence.jl:260
+ [13] (::OMEinsum.DynamicNestedEinsum{Int64})(::AbstractArray, ::Vararg{AbstractArray})
+    @ OMEinsum ~einsequence.jl:257
+ [14] probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool, rescale::Bool)
+    @ TensorInference ~Core.jl:184
+ [15] probability
+    @ ~Core.jl:183 [inlined]
+ [16] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}}; usecuda::Bool)
+    @ TensorInference ~Core.jl:170
+ [17] log_probability(tn::TensorNetworkModel{OMEinsum.DynamicNestedEinsum{Int64}, Array{Float64}})
+    @ TensorInference ~Core.jl:169
+ [18] main(model_path::String, evid_path::String, out_path::String, task::String, vars::String)
+    @ Main tensorinference_uai.jl:24
+ [19] top-level scope
+    @ tensorinference_uai.jl:54
+in expression starting at tensorinference_uai.jl:54</pre></details></td></tr></tbody></table></div>
+<h3>TensorInference.jl treesa (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette nocomplement</th><th class="num">Roulette</th><th class="num">aspmc</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.20000275</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0</td><td class="num">0.2000027519</td><td class="num">0</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td></tr></tbody></table></div>
+  <p class="note">The reference is ProbLog -k ddnnf. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">tddlog (program)</th><th class="num">Alea.jl</th><th class="num">Dice</th><th class="num">Roulette nocomplement</th><th class="num">Roulette</th><th class="num">aspmc</th><th class="num">Storm dd</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th></tr></thead><tbody><tr><th>q1</th><td class="num">0.20000275</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0</td><td class="num">0.2000027519</td><td class="num">0</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.200003</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td><td class="num">0.2000027519</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md#dice-and-aleajl">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

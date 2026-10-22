@@ -1,10 +1,10 @@
 // The assembled site in headless Chromium: every example's answers on the
 // page against the ProbLog column beside them, P(evidence), an edited program
 // through the address, an error, Cancel, the theme, the guide's links, the
-// results page (every family's plots and every suite's, each drawing every
-// system over all of its instances, and a kind's panels; the hover layer,
-// the table), the API, Python and C pages, and no sideways scrolling at a
-// desktop's width or a phone's.
+// results page (each kind of problems' plot, drawing the kind's systems over
+// all of its instances with their answers and total times, and every
+// suite's; the hover layer, the table), the API, Python and C pages, and no
+// sideways scrolling at a desktop's width or a phone's.
 //
 //   node tests/browser.cjs <site> [<directory for screenshots>]
 //
@@ -183,123 +183,86 @@ async function noSidewaysScroll(page, what) {
     // plot on its button; the time under the pointer; the table sorts.
     await page.goto(`${base}results/`);
     await page.waitForSelector("section.family svg.cactus path.line");
-    const families = await page.$$eval("section.family", (sections) => sections.filter((s) => s.id !== "overall").map((s) => [s.id, s.querySelectorAll("svg.cactus path.line").length]));
+    const families = await page.$$eval("section.family", (sections) => sections.map((s) => [s.id, s.querySelectorAll("svg.cactus path.line").length]));
     assert.ok(families.length >= 2, `the results' families: ${JSON.stringify(families)}`);
     for (const [id, lines] of families) assert.ok(lines >= 2, `${id}: ${lines} lines`);
-    // Every problem: plots above the families over every instance of the
-    // run, the instances of each family in the tab "All problems" first.
-    // The large plot's legend gives "answers k of N; own o, natural m,
-    // attempted a" per system, its axis goes to all N, and the time axis
-    // starts at 0.2 s.
-    const legendTotal = async (selector) => {
-      const items = await page.$$eval(`${selector} figure.plot:not(.part) .legend .n`, (spans) => spans.map((s) => s.textContent.replace(/\s/g, "")));
-      assert.ok(items.length >= 1, `${selector}: ${items.length} legend entries`);
-      const totals = new Set(items.map((t) => t.match(/^answers(\d+)of(\d+);own(\d+),natural(\d+),attempted(\d+)$/)?.[2]));
-      assert.equal(totals.size, 1, `${selector}: one total in ${JSON.stringify(items)}`);
-      return Number([...totals][0]);
-    };
-    const allText = async (selector) => (await page.textContent(`${selector} figure.plot:not(.part) svg.cactus`)).replace(/\s+/g, " ");
-    const overall = await legendTotal("#overall");
-    assert.ok((await allText("#overall")).replace(/\s/g, "").includes(`all${overall}instances`), "the overall plot's axis");
-    assert.match(await allText("#overall"), /≤0\.2/, "the time axis starts at 0.2 s");
-    assert.ok((await page.$$("#overall ul.cannot li")).length >= 1, "the overall plot says who was not given what");
-    for (const cls of ["Own", "Natural", "Attempted only"]) {
-      assert.ok(await page.$(`#overall details.setup li b:text-is("${cls}")`), `the classification has ${cls} rows`);
-    }
-    let sum = 0;
-    for (const [id] of families) {
-      const first = await page.$(`#${id} .tabs button:first-child`);
-      assert.equal(await first.getAttribute("data-suite"), "all", `${id}: the first tab`);
-      assert.equal(await first.getAttribute("aria-pressed"), "true", `${id}: the first tab is shown`);
-      assert.match(await first.textContent(), /^All problems \([\d ]+\)$/);
-      const m = await legendTotal(`#${id}`);
-      assert.equal(m, Number((await first.textContent()).match(/\(([\d ]+)\)/)[1].replace(/ /g, "")), `${id}: N of the legend and the tab`);
-      const suites = await page.$$eval(`#${id} .tabs button:not(:first-child)`, (bs) => bs.map((b) => Number(b.textContent.match(/\(([\d ]+)\)/)[1].replace(/ /g, ""))));
-      assert.equal(m, suites.reduce((a, b) => a + b, 0), `${id}: N is the instances of its suites`);
-      sum += m;
-    }
-    assert.equal(overall, sum, "the overall plot has the instances of every family");
-    console.log(`ok every problem: ${overall} instances in ${families.length} families, an All problems tab each`);
-
-    // Each large plot draws every system of its instances, and its legend
-    // counts how many are each system's own, natural to it and attempted:
-    // the suites' class letters (o own, n natural, a attempted only, -
-    // not attempted), not the data's counts; an attempted instance is a
-    // record that is neither null (not given) nor "unsupported" (its
-    // translator refused the program). Under a kind's large plot, its
-    // panels: each over the instances natural to its cluster of systems,
-    // drawing tddlog and every system they are all natural to, and no other.
+    // A family's tabs: its kinds of problems (the data's kinds whose suites
+    // are the family's, in the README's order), the first shown, then its
+    // suites. A kind's plot draws the kind's systems over all of its
+    // instances, tddlog first and then by the instances they answer; its
+    // legend gives "answers k of N, total T" for each, k the system's
+    // answers in the kind's suites and T its total time over the instances
+    // some system of the kind answers, a run that does not answer counted at
+    // its suite's limit and a time under 0.2 s at 0.2 s, as the README's
+    // legends write it; its axis goes to all N, from 0.2 s; under it, one
+    // line for each system that was not given some of the instances. A
+    // suite's plot draws the suite's systems, its legend "answers k of N".
     const data = ["suites.json", "ppl.json"].map((file) => path.join(site, "results", file))
       .filter((file) => fs.existsSync(file)).map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
-    const kinds = new Map(data.flatMap((d) => d.kinds).map((k) => [k.key, k]));
+    const kinds = data.flatMap((d) => d.kinds).sort((a, b) => a.order - b.order);
     const bySuite = new Map(data.flatMap((d) => d.families.flatMap((f) => f.suites)).map((s) => [s.key, s]));
-    const expressing = (v) => v !== null && v !== "unsupported";
-    const records = (suites) => new Map(suites.flatMap((s) => s.instances.map((row, j) => {
-      const letter = (key) => s.classes[key][j];
-      for (const [i, key] of s.systems.entries()) {
-        assert.equal(letter(key) !== "-", expressing(row[i + 1]), `${s.key}/${row[0]}: ${key} attempts it as its record says`);
-      }
-      const of = (letters) => new Set(s.systems.filter((key) => letters.includes(letter(key))));
-      return [`${s.key}/${row[0]}`, { own: of("o"), natural: of("on"), attempted: of("ona") }];
-    })));
-    let small = 0;
-    const check = async (selector, systems, suites, panels, least, what) => {
-      const rows = records(suites);
-      const figures = await page.$$eval(`${selector} figure.plot`, (figs) => figs.map((f) => ({
-        small: f.classList.contains("part"),
-        systems: f.dataset.systems.split(" ").filter(Boolean),
-        members: (f.dataset.members ?? "").split(" ").filter(Boolean),
-        instances: Number(f.dataset.instances),
-        lines: [...f.querySelectorAll("svg.cactus path.line")].map((p) => p.dataset.key),
-        legend: [...f.querySelectorAll(".legend .n")].map((s) => s.textContent.replace(/\s/g, "")),
-      })));
-      const [large, ...parts] = figures;
-      assert.ok(!large.small && parts.every((f) => f.small), `${what}: one large plot, then the panels`);
-      assert.equal(large.instances, rows.size, `${what}: its instances`);
-      assert.deepEqual(large.systems, systems, `${what}: every system`);
-      assert.deepEqual([...large.lines].sort(), [...systems].sort(), `${what}: its lines`);
-      // An answer counts within its own suite's limit, as the plot draws it.
-      const counts = systems.map((key) => {
-        const answers = suites.reduce((n, s) => {
-          const i = s.systems.indexOf(key);
-          return n + (i < 0 ? 0 : s.instances.filter((row) => typeof row[i + 1] === "number" && row[i + 1] <= s.limit * 1.001).length);
-        }, 0);
-        const n = (cls) => [...rows.values()].filter((r) => r[cls].has(key)).length;
-        return `answers${answers}of${rows.size};own${n("own")},natural${n("natural")},attempted${n("attempted")}`;
-      });
-      assert.deepEqual(large.legend, counts, `${what}: what each system answers, and its own, natural and attempted instances`);
-      assert.equal(parts.length, panels.length, `${what}: its panels`);
-      parts.forEach((f, k) => {
-        const p = panels[k];
-        const name = `${what}, ${p.title}`;
-        const keys = Object.entries(p.instances).flatMap(([s, names]) => names.map((n) => `${s}/${n}`));
-        assert.equal(f.instances, keys.length, `${name}: its instances`);
-        assert.ok(keys.length >= least && keys.length < rows.size, `${name}: ${keys.length} of ${rows.size}`);
-        assert.deepEqual([...f.lines].sort(), [...p.systems].sort(), `${name}: its lines`);
-        assert.deepEqual(f.members, p.members, `${name}: its cluster`);
-        for (const key of systems) {
-          const all = key === "tddlog" || keys.every((j) => rows.get(j).natural.has(key));
-          assert.equal(f.systems.includes(key), all, `${name}: ${key} ${all ? "is tddlog or natural on every instance, and is not drawn" : "is not natural on every instance, and is drawn"}`);
-        }
-        for (const key of p.members) assert.ok(f.systems.includes(key), `${name}: its member ${key} is drawn`);
-        small++;
-      });
-    };
-    const all = kinds.get("all");
-    await check("#overall", all.systems, all.suites.map((k) => bySuite.get(k)), [], all.least, "every problem");
+    const number = (v) => typeof v === "number";
+    const duration = (t) => (t >= 36000 ? `${(t / 3600).toFixed(0)} h` : t >= 3600 ? `${(t / 3600).toFixed(1)} h`
+      : t >= 60 ? `${(t / 60).toFixed(0)} min` : t >= 10 ? `${t.toFixed(0)} s` : `${t.toFixed(1)} s`);
+    const shown = (selector) => page.$eval(`${selector} figure.plot`, (f) => ({
+      systems: f.dataset.systems.split(" ").filter(Boolean),
+      instances: Number(f.dataset.instances),
+      lines: [...f.querySelectorAll("svg.cactus path.line")].map((p) => p.dataset.key),
+      legend: [...f.querySelectorAll(".legend .n")].map((s) => s.textContent.replace(/\s/g, "")),
+      axis: f.querySelector("svg.cactus").textContent.replace(/\s/g, ""),
+    }));
+    let drawn = 0;
     for (const f of data.flatMap((d) => d.families)) {
-      const kind = kinds.get(f.key);
-      await page.click(`#${f.key} .tabs button[data-suite="all"]`);
-      await check(`#${f.key}`, kind.systems, f.suites, kind.panels, kind.least, `${f.key}, all problems`);
+      const mine = kinds.filter((k) => k.suites.every((key) => f.suites.some((s) => s.key === key)));
+      const tabs = await page.$$eval(`#${f.key} .tabs button`, (bs) => bs.map((b) => [b.dataset.kind ? `kind ${b.dataset.kind}` : `suite ${b.dataset.suite}`, b.getAttribute("aria-pressed")]));
+      assert.deepEqual(tabs.map(([t]) => t), [...mine.map((k) => `kind ${k.key}`), ...f.suites.map((s) => `suite ${s.key}`)], `${f.key}: its tabs`);
+      assert.equal(tabs[0][1], "true", `${f.key}: its first tab is shown`);
+      for (const k of mine) {
+        const what = `${f.key}, the kind ${k.key}`;
+        await page.click(`#${f.key} .tabs button[data-kind="${k.key}"]`);
+        const rows = k.suites.flatMap((key) => {
+          const s = bySuite.get(key);
+          return s.instances.map((row) => ({ limit: s.limit, v: Object.fromEntries(s.systems.map((x, i) => [x, row[i + 1]])) }));
+        });
+        const answers = (x) => rows.filter((r) => number(r.v[x])).length;
+        const scored = rows.filter((r) => k.systems.some((x) => number(r.v[x])));
+        const total = (x) => scored.reduce((t, r) => t + (number(r.v[x]) ? Math.max(r.v[x], 0.2) : r.limit), 0);
+        assert.equal(k.systems[0], "tddlog", `${what}: tddlog first in the data`);
+        const order = ["tddlog", ...k.systems.slice(1).sort((a, b) => answers(b) - answers(a))];
+        for (const x of order) {
+          assert.equal(k.answers[x], answers(x), `${what}: ${x}'s answers in the data`);
+          assert.ok(Math.abs(k.total[x] - total(x)) < 0.01, `${what}: ${x}'s total time in the data, ${k.total[x]} against ${total(x)}`);
+        }
+        assert.equal(k.instances, rows.length, `${what}: its instances in the data`);
+        assert.equal(k.scored, scored.length, `${what}: the instances some system answers`);
+        const fig = await shown(`#${f.key}`);
+        assert.equal(fig.instances, rows.length, `${what}: its instances`);
+        assert.deepEqual(fig.systems, order, `${what}: its systems, tddlog first and then by their answers`);
+        assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
+        assert.deepEqual(fig.legend, order.map((x) => `answers${answers(x)}of${rows.length},total${duration(k.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
+        assert.ok(fig.axis.includes(`all${rows.length}instances`), `${what}: its axis`);
+        assert.match(fig.axis, /≤0\.2/, `${what}: the time axis starts at 0.2 s`);
+        const missing = order.filter((x) => rows.some((r) => r.v[x] === undefined || r.v[x] === null)).length;
+        assert.equal((await page.$$(`#${f.key} ul.cannot li`)).length, missing, `${what}: the systems not given some of its instances`);
+        drawn++;
+      }
       for (const s of f.suites) {
+        const what = `${f.key}, the suite ${s.key}`;
         await page.click(`#${f.key} .tabs button[data-suite="${s.key}"]`);
-        await check(`#${f.key}`, s.systems, [s], [], 0, `${f.key}, ${s.key}`);
+        const fig = await shown(`#${f.key}`);
+        assert.equal(fig.instances, s.instances.length, `${what}: its instances`);
+        assert.deepEqual(fig.systems, s.systems, `${what}: its systems`);
+        assert.deepEqual([...fig.lines].sort(), [...s.systems].sort(), `${what}: its lines`);
+        // An answer counts within the suite's limit, as the plot draws it.
+        const answers = s.systems.map((x, i) => s.instances.filter((row) => number(row[i + 1]) && row[i + 1] <= s.limit * 1.001).length);
+        assert.deepEqual(fig.legend, answers.map((a) => `answers${a}of${s.instances.length}`), `${what}: its legend`);
       }
     }
-    assert.ok(small > 0, `${small} panels`);
-    console.log(`ok every large plot draws every system, and ${small} panels each cluster's instances`);
+    assert.equal(drawn, kinds.length, "every kind is a tab of its family");
+    assert.ok(drawn >= 2, `${drawn} kinds`);
+    console.log(`ok the kinds ${kinds.map((k) => `${k.key} ${k.instances}`).join(", ")}: every system of a kind over all of its instances, its answers and total time`);
 
-    const second = await page.$("section.family .tabs button:nth-child(2)");
+    const second = await page.$("section.family .tabs button[data-suite]");
     const key = await second.getAttribute("data-suite");
     await second.click();
     assert.equal(await second.getAttribute("aria-pressed"), "true");
