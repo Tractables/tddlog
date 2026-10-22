@@ -154,12 +154,12 @@ Programs over integers written in Alea.jl, which compiles each to a
 Boolean circuit. Alea.jl runs its own program; every other system is
 given the circuit.
 
-- **5.0× faster than Alea.jl** (2.5× where both answer) and **7.9×
+- **4.1× faster than Alea.jl** (1.7× where both answer) and **5.7×
   faster than Roulette**.
-- tddlog answers 199 of the 224 circuits, Alea.jl 141.
+- tddlog answers 201 of the 224 circuits, Alea.jl 135.
 - Where others win: Alea.jl on 65 circuits, six of which tddlog does not
-  answer; Genfer on the population models, which it answers in
-  milliseconds; Psi on two linear regressions it solves
+  answer, and Roulette on 34; Genfer on the population models, which it
+  answers in milliseconds; Psi on two linear regressions it solves
   symbolically.
 
 ### Probabilistic databases
@@ -185,8 +185,9 @@ the same job, side by side in parallel lanes, so times compare within a
 suite. tddlog's rows come from a rerun of its current version on the
 same machines, with the same memory per run; the suites that had run on
 cloud machines were rerun in full on lab machines, every system side by
-side. The bit-blasted circuits' rerun is still running, and their rows
-are the release run's until it is in. The references are ProbLog, Ace, Merlin and Alea.jl where they
+side. Dice's loops are given to ProbLog, PITA and aspmc both unrolled and
+as recursion, and each is scored on the form it does better on. The
+references are ProbLog, Ace, Merlin and Alea.jl where they
 answer, Ganak's exact model count, and exact solvers written for this
 repository. [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) on the `baselines` branch has the machines,
 versions and every table; the
