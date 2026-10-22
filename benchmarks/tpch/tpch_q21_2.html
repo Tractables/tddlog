@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#tpch">TPC-H</a></p>
     <h1>tpch_q21_2</h1>
-    <p class="lede">The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_tpch.py 0.002 --queries q21 --seed 1</code>.</p>
+    <p class="lede">The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, Storm, PRISM and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_tpch.py 0.002 --queries q21 --seed 1</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th></tr></thead><tbody><tr><td class="num">0.12</td><td class="num">6.7</td><td class="num">11.7</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">0.08</td><td class="num">2.0</td><td class="num">0.33</td><td class="num">0.42</td><td class="num">1.7</td><td class="num">1.1</td><td class="num">198</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; error: the system stopped with an error. &gt;600: the time limit ran out. memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">ProvSQL</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th><th class="num">Pluck</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.12</td><td class="num">6.7</td><td class="num">11.7</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">0.08</td><td class="num">2.0</td><td class="num">0.33</td><td class="num">0.42</td><td class="num">1.7</td><td class="num">1.1</td><td class="num">198</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="out of memory">memory</td><td class="num">79.3</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; error: the system stopped with an error. &gt;600: the time limit ran out. memory: out of memory. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -159,10 +159,166 @@ CUDD: out of memory allocating 32736 bytes</pre></details></td></tr></tbody></ta
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Pluck, Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.57</td><td>7.8e-16 at most</td><td>largest formula, pairs 1 502; final formula, pairs 0; variables 376; ground atoms 377; ground rules 194; vtree td (from auto: 1 attempts, 0.001s discarded)</td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>47.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8724152336 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[3192316] signal 6 (-6): Aborted
+in expression starting at pluck_dice.jl:19
+pthread_kill at libc.so.6 (unknown line)
+raise at libc.so.6 (unknown line)
+abort at libc.so.6 (unknown line)
+abort_internal at mod.rs:305
+abort at process.rs:2533
+{closure#0} at alloc.rs:429
+__rust_end_short_backtrace&lt;std::alloc::rust_oom::{closure_env#0}, !&gt; at backtrace.rs:182
+rust_oom at alloc.rs:424
+__rust_alloc_error_handler at alloc.rs:423
+rt_error at alloc.rs:544 [inlined]
+handle_alloc_error at alloc.rs:550
+alloc_err at mod.rs:46
+new_uninitialized&lt;alloc::alloc::Global&gt; at mod.rs:1635 [inlined]
+fallible_with_capacity&lt;alloc::alloc::Global&gt; at mod.rs:1672 [inlined]
+prepare_resize&lt;alloc::alloc::Global&gt; at mod.rs:2738 [inlined]
+resize_inner&lt;alloc::alloc::Global&gt; at mod.rs:2936 [inlined]
+reserve_rehash_inner&lt;alloc::alloc::Global&gt; at mod.rs:2824 [inlined]
+reserve_rehash&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1013
+reserve&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:962 [inlined]
+find_or_find_insert_index&lt;((rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr), alloc::alloc::Global, hashbrown::map::equivalent_key::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr&gt;, hashbrown::map::make_hasher::{closure_env#0}&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;&gt;&gt; at mod.rs:1167 [inlined]
+find_or_find_insert_index&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global, (rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr)&gt; at map.rs:1863 [inlined]
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at map.rs:1843
+insert&lt;(rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr, rsdd::repr::bdd::BddPtr), rsdd::repr::bdd::BddPtr, core::hash::BuildHasherDefault&lt;rustc_hash::FxHasher&gt;, alloc::alloc::Global&gt; at the machine/
+..</pre></details></td></tr></tbody></table></div>
+<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>79.3</td><td>8.3e-17 at most</td><td></td></tr></tbody></table></div>
+<h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>17.9</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+=====
+
+Version: 4.8.1
+Date: Wed Oct 21 22:22:47 PDT 2026
+Memory limits: cudd=5g, java(heap)=4.8g
+Command line: prism tpch_q21_2.dtmc0.prism tpch_q21_2.dtmc0.props -hybrid -javamaxmem 5g -cuddmaxmem 5g -epsilon 1e-15 -maxiters 1000000000
+
+Parsing model file &quot;tpch_q21_2.dtmc0.prism&quot;...
+
+Type:        DTMC
+Modules:     program
+Variables:   pc x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37 x38 x39 x40 x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 x61 x62 x63 x64 x65 x66 x67 x68 x69 x70 x71 x72 x73 x74 x75 x76 x77 x78 x79 x80 x81 x82 x83 x84 x85 x86 x87 x88 x89 x90 x91 x92 x93 x94 x95 x96 x97 x98 x99 x100 x101 x102 x103 x104 x105 x106 x107 x108 x109 x110 x111 x112 x113 x114 x115 x116 x117 x118 x119 x120 x121 x122 x123 x124 x125 x126 x127 x128 x129 x130 x131 x132 x133 x134 x135 x136 x137 x138 x139 x140 x141 x142 x143 x144 x145 x146 x147 x148 x149 x150 x151 x152 x153 x154 x155 x156 x157 x158 x159 x160 x161 x162 x163 x164 x165 x166 x167 x168 x169 x170 x171 x172 x173 x174 x175 x176 x177 x178 x179 x180 x181 x182 x183 x184 x185 x186 x187 x188 x189 x190 x191 x192 x193 x194
+
+Parsing properties file &quot;tpch_q21_2.dtmc0.props&quot;...
+
+1 property:
+(1) &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+---------------------------------------------------------------------
+
+Model checking: &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 386 iterations in 0.97 seconds (average 0.002513, setup 0.00)
+
+Time for model construction: 12.003 seconds.
+
+Type:        DTMC
+States:      7.532520884983685E58 (1 initial)
+Transitions: 1.1298781926142583E59
+
+Transition matrix: 281502 nodes (754 terminal), 1.1298781926142583E59 minterms, vars: 204r/204c
+
+Warning: Switching to MTBDD engine, as number of states is too large for Hybrid engine.
+
+Prob0: 386 iterations in 0.68 seconds (average 0.001762, setup 0.00)
+
+Prob1: 374 iterations in 2.74 seconds (average 0.007326, setup 0.00)
+
+yes = 7.532520884983685E58, no = 1171, maybe = 569
+
+Computing remaining probabilities...
+Engine: MTBDD
+
+java.lang.NullPointerException
+    at mtbdd.PrismMTBDD.ProbUntil(PrismMTBDD.java:413)
+    at prism.ProbModelChecker.computeUntilProbs(ProbModelChecker.java:1655)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:816)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:783)
+    at prism.ProbModelChecker.checkProbPathFormulaSimple(ProbModelChecker.java:523)
+    at prism.ProbModelChecker.checkProbPathFormula(ProbModelChecker.java:485)
+    at prism.ProbModelChecker.checkExpressionProb(ProbModelChecker.java:195)
+    at prism.ProbModelChecker.checkExpression(ProbModelChecker.java:137)
+    at prism.StateModelChecker.checkExpressionFilter(StateModelChecker.java:1158)
+    at prism.StateModelChecker.checkExpression(StateModelChecker.java:312)
+    at prism.NonProbModelChecker.checkExpression(NonProbModelChecker.java:80)
+    at pris</pre></details></td></tr></tbody></table></div>
+<h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>25.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+=====
+
+Version: 4.8.1
+Date: Wed Oct 21 22:22:29 PDT 2026
+Memory limits: cudd=5g, java(heap)=4.8g
+Command line: prism tpch_q21_2.dtmc0.prism tpch_q21_2.dtmc0.props -sparse -javamaxmem 5g -cuddmaxmem 5g -epsilon 1e-15 -maxiters 1000000000
+
+Parsing model file &quot;tpch_q21_2.dtmc0.prism&quot;...
+
+Type:        DTMC
+Modules:     program
+Variables:   pc x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37 x38 x39 x40 x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 x61 x62 x63 x64 x65 x66 x67 x68 x69 x70 x71 x72 x73 x74 x75 x76 x77 x78 x79 x80 x81 x82 x83 x84 x85 x86 x87 x88 x89 x90 x91 x92 x93 x94 x95 x96 x97 x98 x99 x100 x101 x102 x103 x104 x105 x106 x107 x108 x109 x110 x111 x112 x113 x114 x115 x116 x117 x118 x119 x120 x121 x122 x123 x124 x125 x126 x127 x128 x129 x130 x131 x132 x133 x134 x135 x136 x137 x138 x139 x140 x141 x142 x143 x144 x145 x146 x147 x148 x149 x150 x151 x152 x153 x154 x155 x156 x157 x158 x159 x160 x161 x162 x163 x164 x165 x166 x167 x168 x169 x170 x171 x172 x173 x174 x175 x176 x177 x178 x179 x180 x181 x182 x183 x184 x185 x186 x187 x188 x189 x190 x191 x192 x193 x194
+
+Parsing properties file &quot;tpch_q21_2.dtmc0.props&quot;...
+
+1 property:
+(1) &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+---------------------------------------------------------------------
+
+Model checking: &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 386 iterations in 1.03 seconds (average 0.002668, setup 0.00)
+
+Time for model construction: 12.292 seconds.
+
+Type:        DTMC
+States:      7.532520884983685E58 (1 initial)
+Transitions: 1.1298781926142583E59
+
+Transition matrix: 281502 nodes (754 terminal), 1.1298781926142583E59 minterms, vars: 204r/204c
+
+Warning: Switching to MTBDD engine, as number of states is too large for Sparse engine.
+
+Prob0: 386 iterations in 0.71 seconds (average 0.001839, setup 0.00)
+
+Prob1: 374 iterations in 3.20 seconds (average 0.008556, setup 0.00)
+
+yes = 7.532520884983685E58, no = 1171, maybe = 569
+
+Computing remaining probabilities...
+Engine: MTBDD
+
+java.lang.NullPointerException
+    at mtbdd.PrismMTBDD.ProbUntil(PrismMTBDD.java:413)
+    at prism.ProbModelChecker.computeUntilProbs(ProbModelChecker.java:1655)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:816)
+    at prism.ProbModelChecker.checkProbUntil(ProbModelChecker.java:783)
+    at prism.ProbModelChecker.checkProbPathFormulaSimple(ProbModelChecker.java:523)
+    at prism.ProbModelChecker.checkProbPathFormula(ProbModelChecker.java:485)
+    at prism.ProbModelChecker.checkExpressionProb(ProbModelChecker.java:195)
+    at prism.ProbModelChecker.checkExpression(ProbModelChecker.java:137)
+    at prism.StateModelChecker.checkExpressionFilter(StateModelChecker.java:1158)
+    at prism.StateModelChecker.checkExpression(StateModelChecker.java:312)
+    at prism.NonProbModelChecker.checkExpression(NonProbModelChecker.java:80)
+    at pris</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is tpch_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">ProvSQL</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl treesa</th></tr></thead><tbody><tr><th>q21</th><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.058796576</td><td class="num">0.058796576</td><td class="num">0.058796576</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.058797</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td></tr></tbody></table></div>
+  <p class="note">The reference is tpch_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">ProvSQL</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl treesa</th><th class="num">Storm dd</th></tr></thead><tbody><tr><th>q21</th><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.058796576</td><td class="num">0.058796576</td><td class="num">0.058796576</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.058797</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td><td class="num">0.05879657554</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>

@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.21</td><td class="num">0.31</td><td class="num">11.8</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num">0.60</td><td class="num">1.1</td><td class="num">34.0</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">5.3</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">382</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num none" title="not run"></td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">112</td><td class="num">0.20</td><td class="num">1.5</td><td class="num">9.0</td><td class="num">7.6</td><td class="num">10.1</td><td class="num">222</td><td class="num">94.7</td><td class="num">368</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; zero: every answer printed as 0 where the reference&#x27;s are positive. error: the system stopped with an error. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.21</td><td class="num">0.31</td><td class="num">11.8</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num">0.60</td><td class="num">1.1</td><td class="num">34.0</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">5.3</td><td class="num fail" title="the system stopped with an error">error</td><td class="num">382</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">112</td><td class="num">0.20</td><td class="num">1.5</td><td class="num">9.0</td><td class="num">7.6</td><td class="num">10.1</td><td class="num">222</td><td class="num">94.7</td><td class="num">368</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; zero: every answer printed as 0 where the reference&#x27;s are positive. error: the system stopped with an error. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -476,6 +476,34 @@ Pr((1, (1, (1, (1, 1))))) = 0.0000000</pre></details></td></tr></tbody></table><
 <h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>94.7</td><td>6.7e-39 at most</td><td>inference s 94.06756986</td></tr></tbody></table></div>
 <h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>368</td><td>6.7e-39 at most</td><td>inference s 358.6628149</td></tr></tbody></table></div>
 <h3>TensorInference.jl treesa (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Pluck: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.35</td><td>6.7e-39 at most</td><td>largest formula, pairs 6 476; final formula, pairs 76; variables 607; ground atoms 2 241; ground rules 3 236; vtree program:fanin (from auto: 10 attempts, 0.138s discarded)</td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>39.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>ion (ip: 0x7f6c98cae579)
+#339 at bdd.jl:529
+#337 at ./none:0
+unknown function (ip: 0x7f6c98cacb62)
+iterate at ./generator.jl:48 [inlined]
+collect at ./array.jl:791
+bdd_bind at bdd.jl:512
+unknown function (ip: 0x7f6c98caca06)
+bdd_forward at bdd.jl:521
+traced_bdd_forward at bdd.jl:305
+posterior_query at toplevel.jl:49
+unknown function (ip: 0x7f6c98ca6ad6)
+#process_query#426 at toplevel.jl:73
+process_query at toplevel.jl:56
+unknown function (ip: 0x7f6c98c9adb6)
+parse_and_process_query at toplevel.jl:167
+process_toplevel_form at toplevel.jl:274
+jfptr_process_toplevel_form_16420 at RXuPz_Zgaks.so (unknown line)
+parse_toplevel at toplevel.jl:304
+parse_toplevel at toplevel.jl:300 [inlined]
+load_pluck_file at toplevel.jl:314 [inlined]
+#1 at pluck_dice.jl:18
+unknown function (ip: 0x7f6c98c59ddf)
+jl_apply at julia.h:2157 [inlined]
+start_task at task.c:1204
+Allocations: 11150853 (Pool: 11150569; Big: 284); GC: 13</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>

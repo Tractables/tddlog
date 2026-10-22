@@ -267,7 +267,7 @@ def network(g, observed, asked):
         if node[0] == 'true':
             add(f'n{k}', [], {(): [0.0, 1.0]})
         elif node[0] == 'fact':
-            add(f'n{k}', [], {(): [1.0 - node[1], node[1]]})
+            add(f'n{k}', [], {(): fact_row(node[1])})
         else:
             # a chain of conjunctions of two: n<k>_<j> and, last, n<k>
             cur = ref(node[1][0])
@@ -280,6 +280,23 @@ def network(g, observed, asked):
                 cur = (name, 'true')
     evidence = [(f'n{abs(s)}', VALUES[(s > 0) == v]) for s, v in observed]
     return (order, variables, tables), evidence, {key: ref(s) for key, s in asked}
+
+
+def fact_row(p):
+    """A fact's row, [1 - p, p], as two doubles whose decimals sum to one.
+    gen_bn.py's writers check each row's sum in the decimals its entries
+    mean (`gen_bn.meant_decimal`: a double within two units in its last
+    place of a decimal of at most 12 digits means that decimal). Near a
+    short decimal, the larger entry of [1.0 - p, p] can be within two of
+    its units of that decimal while the smaller is more than two of its
+    own, smaller, units from the complement, and the row means a sum
+    that rounding does not explain (1 + 2.6e-16 on bb_GPA_w19, 1 + 3e-16
+    on uwcse2). So the larger entry is the decimal it means, and the smaller
+    one minus that decimal, which moves p by at most three units in the
+    last place of the larger."""
+    big = gen_bn.meant_decimal(max(p, 1.0 - p))
+    small = float(1 - big)
+    return [float(big), small] if p < 0.5 else [small, float(big)]
 
 
 def decimal(p):

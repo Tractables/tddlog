@@ -225,7 +225,12 @@ The translation has to:
   smoothed marginals, 600 for the marginal likelihood) and runs out of
   time at the next length; its answer on rl_hmm_filtering_marginal_100 is
   1.43, above one, where the smoothing programs of that length come out
-  right, for a reason not found. On rl_caesar_25 it
+  right. The answer is PITA's own, not a misreading of its output:
+  asked apart (2026-10-22), it gives P(q, e) = 2.3e-17 and P(e) =
+  2.8e-35, a joint above the probability of its own evidence, and
+  `prob/3` the 1.43 the harness reads. The cplint pack it ran with
+  reports on loading that bddem does not define `create_json_util/5`,
+  which pita.pl exports. On rl_caesar_25 it
   prints `Undefined: probability of evidence 0.` for every query, the
   evidence's probability computed as 0, so the record has no answer and
   its error shows the consult warning, the last line on stderr; the
@@ -767,6 +772,21 @@ in a scratch directory `D` of the run's own.
   only times, and give a box's runs one heap.
 - **Randomness.** Min-fill and dtree ties are broken at random from the
   clock unless `-Xseed N` (variant `Xseed=N`).
+- **The thread stack**, `--ace-stack` (the JVM's `-Xss`; by default the
+  JVM's own). Ace recurses over the network, and on the deep ones the
+  default stack overflowed (`StackOverflowError`): the Ace suite's
+  blockmaps from 15_01 and fs_28, nine blockmaps of the UAI PR set in log
+  space, the TPC-H programs' and Roulette's diamond, ladder and
+  motivating chains through their ground programs, digitRecognition and
+  bb_wmi_path_n1024. With `--ace-stack 512m` (2026-10-22) Ace ran those
+  again in the variant that had overflowed, from the instance that had
+  failed on: no run overflowed, and every answer agrees with tddlog's
+  (the nine PR networks' log10 Z to 1e-15). What stops it now is the
+  time limit, c2d (exit status non-zero, on TPC-H q1 and q18 at size 5
+  and q15 at 100, and on Roulette's chains at 10000 and 30000), the heap
+  (rl_ladder_300000) and ground2net.py's limit on a network's size (the
+  chains of 1000000 steps); its c2d route prints `NaN` on rl_diamond_3000
+  and rl_ladder_3000, as on the scaled diamond (log space below).
 
 The record's `seconds` cover both JVM runs; `ace_method`, the circuit's
 size and Ace's own timings are kept beside them. The answers are read
@@ -857,6 +877,22 @@ P(e) underflows a double, Grids_17 and Grids_18, `-Xlog` helps only where
 Ace's tabular route compiles them: with a 10 GB heap its default route chose
 c2d in log space (and failed), and in normal space did not compile any of
 Grids_16 to Grids_18 in 300 s.
+
+The networks of the programs (the ground route, section 23) underflow
+too: Ace's evaluator stops with `UnderflowException` on Roulette's
+caesar, hardware and HMM programs, on the circuits clinicalTrial1_w14,
+normal_mixture, markov, population and wmi_star from a size on, on
+digitRecognition and on the scaled caesar-iter and simpleCaesar loops,
+in both normal-space variants. `Xlog` ran on those from the instance
+that had failed (2026-10-22): it answers 29 of Roulette's 33, all four
+loops, digitRecognition and 11 of the 16 circuits, each as tddlog does
+(clinicalTrial1_w14, where tddlog ran out of its lane's memory, as
+pyAgrum and pgmpy do). Where Ace's default route chose c2d
+(normal_mixture at 9 bits, rl_hardware_10000), log space is refused or
+c2d failed. c2d's `NaN` answers (forceC2d on bb_wmi_star, on
+bb_clinicalTrial1, on the scaled diamond and on Roulette's diamond and
+ladder at 3000) have no such option: c2d in log space answers wrongly,
+and bench.py refuses that run.
 
 **uai08_pe.** The package's `uai08_pe` script (`mark.reason.apps.BnUai08
 -z NET EVID SEED`, Pr(e) for the UAI 2008 evaluation) reads a UAI file
@@ -1787,7 +1823,7 @@ Every system tries every problem (rule 15), so the systems that read
 networks (Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl) are
 given every program that is not a network, and the systems that read
 Dice programs (Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL,
-Geni, and Storm and PRISM through `dice2prism.py`, section 22) every
+Geni, Pluck, and Storm and PRISM through `dice2prism.py`, section 22) every
 program that has no Dice program of its own and is not a
 circuit: the standard suite's graph, grid, smokers, UW-CSE, Cora and
 cplint families, the literature, Biomine and TPC-H suites. bench.py
@@ -1812,6 +1848,13 @@ signals is a chain of conjunctions of two, so that every table is
 deterministic over at most three variables; in Dice it is one `&&`.
 The weight `--ground` factors out of the facts it simplifies is a
 constant factor of every world and cancels in every marginal asked.
+A fact of probability p is a row of two doubles whose decimals sum to
+one (`fact_row`): written as 1 - p and p, the two can print as decimals
+that sum to 1.00000000000000026, which `gen_bn.py`'s check of a row
+refuses. That refusal stopped the network tools on uwcse2 and on six
+circuit families (bb_GPA, genes, genes5, markov, population, weekend)
+until 2026-10-22, and the skip rule left each family's larger
+instances untried.
 
 Recursion. A recursive component (atoms that depend on each other) is
 unrolled into stages: stage 0 has the component's atoms false, stage s
@@ -1926,11 +1969,18 @@ family, was run and counts as unanswered. By system and suite:
   dice suite's records of the Dice family, the network tools and Storm
   and PRISM: `bench.py` writes the same files for both (the same
   SHA-256), and each record is compared with its own job's tddlog.
-- Pluck: everything except its own sequence models and the dice suite's
-  programs, which it is given through `dice2pluck.py`: the dice suite's
-  21 scaled loops, 39 of the ppl suite's 43 programs and the circuits.
-- Storm and PRISM: the logic programs, which reach them through their
-  ground programs' Dice programs (section 22), and the PR sets.
+- Pluck: the UAI PR sets, for lack of time, and 4 of the ppl suite's 43
+  programs. Every other program reaches it through `dice2pluck.py`: the
+  dice suite's 21 scaled loops, the circuits, the networks (std_bn, ace,
+  large and the UAI MAR set, through `gen_bn.py`'s Dice programs) and the
+  logic programs (std, lit, tpch and biomine, through their ground
+  programs' Dice programs; 2026-10-22).
+- Storm and PRISM: the UAI PR sets, for lack of time. The logic programs
+  reach them through their ground programs' Dice programs (section 22;
+  std, lit, tpch and biomine, 2026-10-22).
+- Ace: what stopped on Java's thread stack or underflowed ran again with
+  `--ace-stack` or in log space (section 7, the thread stack and log
+  space).
 - ProvSQL: section 21.
 
 Failures that come from a lane's limits rather than from the system:
@@ -1938,4 +1988,8 @@ Roulette, in the narrow lanes (55 GB of address space) of the UAI
 networks' tables of the Dice family, fails on all 112 networks it was
 given there when it allocates its table (`memory allocation of
 12884901888 bytes failed` on 111); the other Dice systems time out, run
-out of memory or crash (Psi, exit -11) on them as well.
+out of memory or crash (Psi, exit -11) on them as well. Pluck's failures
+on the networks and the logic programs are all RSDD's allocations that
+the lane's address space refuses: 3.2 or 8.7 GB in lanes of 17 GB (all
+120 networks of the UAI MAR set, within 40 to 80 s), 34 GB for std_bn,
+ace and large; on the circuits, 8.7 or 17.4 GB in lanes of 25 GB.

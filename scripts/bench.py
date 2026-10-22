@@ -767,7 +767,7 @@ def program_offset(path):
 
 
 # The systems that read Dice programs.
-DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', 'geni')
+DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', 'geni', 'pluck')
 # Under --pr the systems that print no P(e) are asked it as a query of a
 # program of their own (`pe_program`), and the systems that read Dice
 # programs the probability that a network's program returns true where it
@@ -2403,14 +2403,17 @@ def run_ace(args, name, path, variant):
     # order, which the sort of Java 7 and later refuses (munin with its
     # evidence); the property restores the merge sort of the Java it was
     # written for. The JVM's scratch goes to the instance's directory.
-    java = [args.ace_java, f'-Xmx{args.ace_heap}', '-Djava.util.Arrays.useLegacyMergeSort=true',
+    stack = getattr(args, 'ace_stack', None)
+    java = [args.ace_java, f'-Xmx{args.ace_heap}', *([f'-Xss{stack}'] if stack else []),
+            '-Djava.util.Arrays.useLegacyMergeSort=true',
             f'-Djava.io.tmpdir={d}', f'-DACEC2D={ace}/c2d_linux',
             '-classpath', ':'.join(f'{ace}/{jar}' for jar in ['ace.jar', 'inflib.jar', 'jdom.jar'])]
     env = dict(os.environ, LD_LIBRARY_PATH=ace)
     try:
         c = timed(java + ['edu.ucla.belief.ace.AceCompile', '-Xnormalize'] + ace_flags(variant)
                   + (['-e', inst] if evidence else []) + [net], args.timeout, cwd=d, env=env)
-        stats = {'compile_s': round(c['seconds'], 3), 'ace_heap': args.ace_heap}
+        stats = {'compile_s': round(c['seconds'], 3), 'ace_heap': args.ace_heap,
+                 **({'ace_stack': stack} if stack else {})}
         if c['status'] != 'ok':
             return {**c, 'stats': stats}
         for key, pattern in [('ace_method', r'^Method : (\S+)'), ('ace_compile_total_s', r'^Total Time \(s\) : (\S+)')]:
@@ -3698,7 +3701,8 @@ def ace_defaults(args):
         args.uai_benchmarks = os.path.join(ROOT, 'tmp', 'uai-benchmarks', 'MAR')
     if args.cmd != 'run':
         return
-    given = [f'--{k.replace("_", "-")}' for k in ['ace_variants', 'ace_heap', 'ace_java'] if getattr(args, k) is not None]
+    given = [f'--{k.replace("_", "-")}' for k in ['ace_variants', 'ace_heap', 'ace_java', 'ace_stack']
+             if getattr(args, k, None) is not None]
     if given and not args.ace:
         raise SystemExit(f'{", ".join(given)} without --ace: Ace is not run')
     if args.sharpsat_td_decot is not None and not args.sharpsat_td:
@@ -3751,6 +3755,8 @@ def main():
                    help='Ace compile methods, comma separated: auto (the default), or options joined by + '
                    '(forceC2d+cd05)')
     r.add_argument('--ace-heap', help="the Java heap of Ace's processes (-Xmx), by default 8g")
+    r.add_argument('--ace-stack', help="the thread stack of Ace's processes (-Xss, 512m say), against a "
+                   "StackOverflowError on deep networks; by default the JVM's")
     r.add_argument('--ace-java', help='the java that runs Ace (Java 8 or later), by default java')
     r.add_argument('--merlin', default='', help="Merlin's command-line binary, for the networks; empty = not run")
     r.add_argument('--agrum', default='', help="a Python with pyAgrum, for the networks (scripts/bn_uai_run.py); empty = not run")

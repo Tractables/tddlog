@@ -179,6 +179,25 @@ class TranslationTests(unittest.TestCase):
         g, observed, _ = ground2net.build('0.5::a.\nevidence(z,true).\nquery(a).\n')
         self.assertEqual(observed, [(ground2net.TRUE, False)])
 
+    def test_a_fact_row_sums_to_one_in_the_decimals_it_means(self):
+        # p a few units from a short decimal: 1 - p in binary can mean the
+        # short decimal while p does not, and gen_bn.py's writers refused
+        # the row [1.0 - p, p] (bb_GPA_w19, uwcse2)
+        ps = [0.0, 1.0] + [s + k * math.ulp(s) for s in (1e-5, 0.05, 0.1, 0.123, 0.3, 0.45, 0.5, 0.7, 0.999)
+                           for k in range(-48, 49)]
+
+        def refused(row):
+            exact, slack = gen_bn.rounding_slack(row)
+            return abs(exact - 1) >= slack
+
+        self.assertTrue([p for p in ps if refused([1.0 - p, p])])
+        for p in ps:
+            row = ground2net.fact_row(p)
+            with self.subTest(p=repr(p)):
+                self.assertFalse(refused(row))
+                self.assertLessEqual(abs(row[1] - p), 3 * math.ulp(max(p, 1.0 - p)))
+                self.assertEqual(len(gen_bn.normalized(row, repr(p))), 2)
+
     def test_a_large_network_is_refused(self):
         with patch.object(ground2net, 'LIMIT', 3):
             with self.assertRaisesRegex(ground2net.Refused, 'more than 3 conjunctions'):
@@ -228,6 +247,7 @@ class BenchTests(unittest.TestCase):
                 self.assertEqual(bench.ground_format(args, 'g', 'merlin', 'bte-pr'), None)
                 self.assertEqual(bench.ground_format(args, 'g', 'dice', 'dice'), 'dicemap')
                 self.assertEqual(bench.ground_format(args, 'g', 'alea', 'alea'), 'dice')
+                self.assertEqual(bench.ground_format(args, 'g', 'pluck', 'default'), 'dice')
                 self.assertEqual(bench.ground_format(args, 'g', 'storm', 'exact'), 'dice')
                 self.assertEqual(bench.ground_format(args, 'g', 'prism', 'sparse'), 'dice')
                 self.assertEqual(bench.ground_format(args, 'g', 'pita', 'pita'), None)

@@ -986,6 +986,8 @@ class AceTests(unittest.TestCase):
         self.assertEqual((args.ace_variants, args.ace_heap, args.ace_java), (['auto'], '8g', 'java'))
         with self.assertRaisesRegex(SystemExit, '--ace-heap without --ace'):
             bench.ace_defaults(parsed('run', ace_heap='4g'))
+        with self.assertRaisesRegex(SystemExit, '--ace-stack without --ace'):
+            bench.ace_defaults(parsed('run', ace_stack='512m'))
         with self.assertRaisesRegex(SystemExit, '--ace-variants, --ace-java without --ace'):
             bench.ace_defaults(parsed('run', ace_variants=['auto'], ace_java='java'))
         with self.assertRaisesRegex(SystemExit, '--sharpsat-td-decot without --sharpsat-td'):
@@ -1099,6 +1101,14 @@ class AceTests(unittest.TestCase):
             self.assertIn('data = (0.25e00 7.5E-01);', copy)
             self.assertIn('"1e+5"', copy)
             self.assertNotIn('-e', calls[0][0])   # no evidence, no -e
+            self.assertFalse(any(a.startswith('-Xss') for a in calls[0][0]))   # the JVM's stack by default
+            calls.clear()
+            args.ace_stack = '512m'
+            with patch.object(bench, 'instances', return_value=spec), \
+                    patch.object(bench, 'timed', side_effect=self.fake_ace(calls, marginals)):
+                result = bench.run_ace(args, 'one', str(program), 'auto')
+            self.assertIn('-Xss512m', calls[0][0])
+            self.assertEqual(result['stats']['ace_stack'], '512m')
 
 
 MERLIN_MAR = """PR

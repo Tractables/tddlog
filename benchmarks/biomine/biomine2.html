@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#programs">Probabilistic logic programs</a> › <a href="../index.html#biomine">Biomine</a></p>
     <h1>biomine2</h1>
-    <p class="lede">The probability that each of four genes is connected to Alzheimer disease in the human Biomine network, over the union of the K most probable paths, for ten values of K up to 64; 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_biomine.py biomine/human_3_oct_2018.zip 2</code>.</p>
+    <p class="lede">The probability that each of four genes is connected to Alzheimer disease in the human Biomine network, over the union of the K most probable paths, for ten values of K up to 64; 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, Storm, PRISM and the Dice family ran in a later run, each instance beside that run&#x27;s tddlog, which their comparisons use. Made by <code>gen_biomine.py biomine/human_3_oct_2018.zip 2</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th></tr></thead><tbody><tr><td class="num">0.006</td><td class="num">0.20</td><td class="num">0.50</td><td class="num">7.9</td><td class="num">2.5</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num">0.57</td><td class="num">0.008</td><td class="num">9.2</td><td class="num">0.02</td><td class="num">0.45</td><td class="num">2.4</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. skipped: not run: the system had failed on a smaller size of the same program. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">ProbLog</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Geni</th><th class="num">Pluck</th><th class="num">Storm</th><th class="num">PRISM</th></tr></thead><tbody><tr><td class="num">0.006</td><td class="num">0.20</td><td class="num">0.50</td><td class="num">7.9</td><td class="num">2.5</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num">0.57</td><td class="num">0.008</td><td class="num">9.2</td><td class="num">0.02</td><td class="num">0.45</td><td class="num">2.4</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">6.8</td><td class="num">13.1</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. skipped: not run: the system had failed on a smaller size of the same program. &gt;600: the time limit ran out. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -212,10 +212,104 @@ in expression starting at tensorinference_uai.jl:54</pre></details></td></tr></t
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Pluck, Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.006</td><td>1.7e-16 at most</td><td>largest formula, pairs 63; final formula, pairs 0; variables 14; ground atoms 23; ground rules 25; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>6.8</td><td>1.1e-16 at most</td><td>in-process s 5.718</td></tr></tbody></table></div>
+<h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
+<h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.2</td><td>1.1e-16 at most</td><td></td></tr></tbody></table></div>
+<h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>13.1</td><td>5.6e-16 at most</td><td></td></tr></tbody></table></div>
+<h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>301</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+=====
+
+Version: 4.8.1
+Date: Wed Oct 21 23:26:20 PDT 2026
+Memory limits: cudd=5g, java(heap)=4.8g
+Command line: prism biomine2.dtmc0.prism biomine2.dtmc0.props -hybrid -javamaxmem 5g -cuddmaxmem 5g -epsilon 1e-15 -maxiters 1000000000
+
+Parsing model file &quot;biomine2.dtmc0.prism&quot;...
+
+Type:        DTMC
+Modules:     program
+Variables:   pc x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37
+
+Parsing properties file &quot;biomine2.dtmc0.props&quot;...
+
+1 property:
+(1) &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+---------------------------------------------------------------------
+
+Model checking: &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+Building model...
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x000079b0dfed2ce8, pid=3215907, tid=3215914
+#
+# JRE version: OpenJDK Runtime Environment (11.0.31+11) (build 11.0.31+11-post-1ubuntu1-22.04.2-Ubuntu)
+# Java VM: OpenJDK 64-Bit Server VM (11.0.31+11-post-1ubuntu1-22.04.2-Ubuntu, mixed mode, sharing, tiered, compressed oops, serial gc, linux-amd64)
+# Problematic frame:
+# C  [libdd.so+0x32ce8]  Cudd_Ref+0x8
+#
+# No core dump will be written. Core dumps have been disabled. To enable core dumping, try &quot;ulimit -c unlimited&quot; before starting Java again
+#
+# An error report file with more information is saved as:
+# hs_err_pid3215907.log
+#
+# If you would like to submit a bug report, please visit:
+#   https:/openjdk-lts
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#</pre></details></td></tr></tbody></table></div>
+<h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>270</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>PRISM
+=====
+
+Version: 4.8.1
+Date: Wed Oct 21 23:21:51 PDT 2026
+Memory limits: cudd=5g, java(heap)=4.8g
+Command line: prism biomine2.dtmc0.prism biomine2.dtmc0.props -sparse -javamaxmem 5g -cuddmaxmem 5g -epsilon 1e-15 -maxiters 1000000000
+
+Parsing model file &quot;biomine2.dtmc0.prism&quot;...
+
+Type:        DTMC
+Modules:     program
+Variables:   pc x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37
+
+Parsing properties file &quot;biomine2.dtmc0.props&quot;...
+
+1 property:
+(1) &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+---------------------------------------------------------------------
+
+Model checking: &quot;v1&quot;: P=? [ F (&quot;done&quot;&amp;x0) ]
+
+Building model...
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x0000768b2b9a6ce8, pid=3214729, tid=3214736
+#
+# JRE version: OpenJDK Runtime Environment (11.0.31+11) (build 11.0.31+11-post-1ubuntu1-22.04.2-Ubuntu)
+# Java VM: OpenJDK 64-Bit Server VM (11.0.31+11-post-1ubuntu1-22.04.2-Ubuntu, mixed mode, sharing, tiered, compressed oops, serial gc, linux-amd64)
+# Problematic frame:
+# C  [libdd.so+0x32ce8]  Cudd_Ref+0x8
+#
+# No core dump will be written. Core dumps have been disabled. To enable core dumping, try &quot;ulimit -c unlimited&quot; before starting Java again
+#
+# An error report file with more information is saved as:
+# hs_err_pid3214729.log
+#
+# If you would like to submit a bug report, please visit:
+#   https:/openjdk-lts
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#</pre></details></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
-  <p class="note">The reference is reliability_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Roulette nocomplement</th><th class="num">Roulette</th><th class="num">noDice</th></tr></thead><tbody><tr><th>path(phenotype_mim_104300,gene_entrezgene_351)</th><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.76813123</td><td class="num">0.76813123</td><td class="num">0.76813123</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.768131</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_323)</th><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037012</td><td class="num">0.7037012</td><td class="num">0.7037012</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.703701</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_590)</th><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491</td><td class="num">0.3983491</td><td class="num">0.3983491</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.398349</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_5126)</th><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.31222908</td><td class="num">0.31222908</td><td class="num">0.31222908</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.312229</td></tr></tbody></table></div>
+  <p class="note">The reference is reliability_exact.py. Each system's answers of its first repetition that answered.</p><div class="tscroll"><table class="answers"><thead><tr><th>query</th><th class="num">reference</th><th class="num">tddlog</th><th class="num">ProbLog -k ddnnf</th><th class="num">ProbLog -k fsdd</th><th class="num">ProbLog -k sdd</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Ace auto</th><th class="num">Ace forceC2d</th><th class="num">Dice</th><th class="num">Alea.jl</th><th class="num">Roulette nocomplement</th><th class="num">Roulette</th><th class="num">noDice</th><th class="num">Pluck</th><th class="num">Storm exact</th><th class="num">Storm sparse</th></tr></thead><tbody><tr><th>path(phenotype_mim_104300,gene_entrezgene_351)</th><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.76813123</td><td class="num">0.76813123</td><td class="num">0.76813123</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.768131</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td><td class="num">0.7681312309</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_323)</th><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037012</td><td class="num">0.7037012</td><td class="num">0.7037012</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.703701</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td><td class="num">0.7037011983</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_590)</th><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491</td><td class="num">0.3983491</td><td class="num">0.3983491</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.398349</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td><td class="num">0.3983491021</td></tr><tr><th>path(phenotype_mim_104300,gene_entrezgene_5126)</th><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.31222908</td><td class="num">0.31222908</td><td class="num">0.31222908</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.312229</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td><td class="num">0.3122290844</td></tr></tbody></table></div>
 </section>
 <footer>tddlog 0.1.0: Every number on this page comes from the records of the release run. <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">How the runs were made</a> ·
 <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a></footer>
