@@ -1,0 +1,4395 @@
+0.001::result_then_c.
+0.5::f.
+result_then_1 :- \+result_then_c, f.
+result_then_2 :- \+result_then_c, \+f.
+0.001::result_then_c_1.
+0.5::f_1.
+result_then_1_1 :- \+result_then_c_1, f_1.
+result_then_2_1 :- \+result_then_c_1, \+f_1.
+result_g :- \+result_then_1, result_then_2.
+0.5::f_2.
+result_g_1 :- \+result_then_1, \+result_then_2.
+result_1 :- result_then_1, result_then_1_1.
+result_1 :- result_g, f_2.
+result_2 :- result_then_1, result_then_2_1.
+result_2 :- result_g, \+f_2.
+0.001::result_then_c_2.
+0.5::f_3.
+result_then_1_2 :- \+result_then_c_2, f_3.
+result_then_2_2 :- \+result_then_c_2, \+f_3.
+result_g_2 :- \+result_1, result_2.
+0.5::f_4.
+result_g_3 :- \+result_1, \+result_2.
+result_1_1 :- result_1, result_then_1_2.
+result_1_1 :- result_g_2, f_4.
+result_2_1 :- result_1, result_then_2_2.
+result_2_1 :- result_g_2, \+f_4.
+0.001::result_then_c_3.
+0.5::f_5.
+result_then_1_3 :- \+result_then_c_3, f_5.
+result_then_2_3 :- \+result_then_c_3, \+f_5.
+result_g_4 :- \+result_1_1, result_2_1.
+0.5::f_6.
+result_g_5 :- \+result_1_1, \+result_2_1.
+result_1_2 :- result_1_1, result_then_1_3.
+result_1_2 :- result_g_4, f_6.
+result_2_2 :- result_1_1, result_then_2_3.
+result_2_2 :- result_g_4, \+f_6.
+0.001::result_then_c_4.
+0.5::f_7.
+result_then_1_4 :- \+result_then_c_4, f_7.
+result_then_2_4 :- \+result_then_c_4, \+f_7.
+result_g_6 :- \+result_1_2, result_2_2.
+0.5::f_8.
+result_g_7 :- \+result_1_2, \+result_2_2.
+result_1_3 :- result_1_2, result_then_1_4.
+result_1_3 :- result_g_6, f_8.
+result_2_3 :- result_1_2, result_then_2_4.
+result_2_3 :- result_g_6, \+f_8.
+0.001::result_then_c_5.
+0.5::f_9.
+result_then_1_5 :- \+result_then_c_5, f_9.
+result_then_2_5 :- \+result_then_c_5, \+f_9.
+result_g_8 :- \+result_1_3, result_2_3.
+0.5::f_10.
+result_g_9 :- \+result_1_3, \+result_2_3.
+result_1_4 :- result_1_3, result_then_1_5.
+result_1_4 :- result_g_8, f_10.
+result_2_4 :- result_1_3, result_then_2_5.
+result_2_4 :- result_g_8, \+f_10.
+0.001::result_then_c_6.
+0.5::f_11.
+result_then_1_6 :- \+result_then_c_6, f_11.
+result_then_2_6 :- \+result_then_c_6, \+f_11.
+result_g_10 :- \+result_1_4, result_2_4.
+0.5::f_12.
+result_g_11 :- \+result_1_4, \+result_2_4.
+result_1_5 :- result_1_4, result_then_1_6.
+result_1_5 :- result_g_10, f_12.
+result_2_5 :- result_1_4, result_then_2_6.
+result_2_5 :- result_g_10, \+f_12.
+0.001::result_then_c_7.
+0.5::f_13.
+result_then_1_7 :- \+result_then_c_7, f_13.
+result_then_2_7 :- \+result_then_c_7, \+f_13.
+result_g_12 :- \+result_1_5, result_2_5.
+0.5::f_14.
+result_g_13 :- \+result_1_5, \+result_2_5.
+result_1_6 :- result_1_5, result_then_1_7.
+result_1_6 :- result_g_12, f_14.
+result_2_6 :- result_1_5, result_then_2_7.
+result_2_6 :- result_g_12, \+f_14.
+0.001::result_then_c_8.
+0.5::f_15.
+result_then_1_8 :- \+result_then_c_8, f_15.
+result_then_2_8 :- \+result_then_c_8, \+f_15.
+result_g_14 :- \+result_1_6, result_2_6.
+0.5::f_16.
+result_g_15 :- \+result_1_6, \+result_2_6.
+result_1_7 :- result_1_6, result_then_1_8.
+result_1_7 :- result_g_14, f_16.
+result_2_7 :- result_1_6, result_then_2_8.
+result_2_7 :- result_g_14, \+f_16.
+0.001::result_then_c_9.
+0.5::f_17.
+result_then_1_9 :- \+result_then_c_9, f_17.
+result_then_2_9 :- \+result_then_c_9, \+f_17.
+result_g_16 :- \+result_1_7, result_2_7.
+0.5::f_18.
+result_g_17 :- \+result_1_7, \+result_2_7.
+result_1_8 :- result_1_7, result_then_1_9.
+result_1_8 :- result_g_16, f_18.
+result_2_8 :- result_1_7, result_then_2_9.
+result_2_8 :- result_g_16, \+f_18.
+0.001::result_then_c_10.
+0.5::f_19.
+result_then_1_10 :- \+result_then_c_10, f_19.
+result_then_2_10 :- \+result_then_c_10, \+f_19.
+result_g_18 :- \+result_1_8, result_2_8.
+0.5::f_20.
+result_g_19 :- \+result_1_8, \+result_2_8.
+result_1_9 :- result_1_8, result_then_1_10.
+result_1_9 :- result_g_18, f_20.
+result_2_9 :- result_1_8, result_then_2_10.
+result_2_9 :- result_g_18, \+f_20.
+0.001::result_then_c_11.
+0.5::f_21.
+result_then_1_11 :- \+result_then_c_11, f_21.
+result_then_2_11 :- \+result_then_c_11, \+f_21.
+result_g_20 :- \+result_1_9, result_2_9.
+0.5::f_22.
+result_g_21 :- \+result_1_9, \+result_2_9.
+result_1_10 :- result_1_9, result_then_1_11.
+result_1_10 :- result_g_20, f_22.
+result_2_10 :- result_1_9, result_then_2_11.
+result_2_10 :- result_g_20, \+f_22.
+0.001::result_then_c_12.
+0.5::f_23.
+result_then_1_12 :- \+result_then_c_12, f_23.
+result_then_2_12 :- \+result_then_c_12, \+f_23.
+result_g_22 :- \+result_1_10, result_2_10.
+0.5::f_24.
+result_g_23 :- \+result_1_10, \+result_2_10.
+result_1_11 :- result_1_10, result_then_1_12.
+result_1_11 :- result_g_22, f_24.
+result_2_11 :- result_1_10, result_then_2_12.
+result_2_11 :- result_g_22, \+f_24.
+0.001::result_then_c_13.
+0.5::f_25.
+result_then_1_13 :- \+result_then_c_13, f_25.
+result_then_2_13 :- \+result_then_c_13, \+f_25.
+result_g_24 :- \+result_1_11, result_2_11.
+0.5::f_26.
+result_g_25 :- \+result_1_11, \+result_2_11.
+result_1_12 :- result_1_11, result_then_1_13.
+result_1_12 :- result_g_24, f_26.
+result_2_12 :- result_1_11, result_then_2_13.
+result_2_12 :- result_g_24, \+f_26.
+0.001::result_then_c_14.
+0.5::f_27.
+result_then_1_14 :- \+result_then_c_14, f_27.
+result_then_2_14 :- \+result_then_c_14, \+f_27.
+result_g_26 :- \+result_1_12, result_2_12.
+0.5::f_28.
+result_g_27 :- \+result_1_12, \+result_2_12.
+result_1_13 :- result_1_12, result_then_1_14.
+result_1_13 :- result_g_26, f_28.
+result_2_13 :- result_1_12, result_then_2_14.
+result_2_13 :- result_g_26, \+f_28.
+0.001::result_then_c_15.
+0.5::f_29.
+result_then_1_15 :- \+result_then_c_15, f_29.
+result_then_2_15 :- \+result_then_c_15, \+f_29.
+result_g_28 :- \+result_1_13, result_2_13.
+0.5::f_30.
+result_g_29 :- \+result_1_13, \+result_2_13.
+result_1_14 :- result_1_13, result_then_1_15.
+result_1_14 :- result_g_28, f_30.
+result_2_14 :- result_1_13, result_then_2_15.
+result_2_14 :- result_g_28, \+f_30.
+0.001::result_then_c_16.
+0.5::f_31.
+result_then_1_16 :- \+result_then_c_16, f_31.
+result_then_2_16 :- \+result_then_c_16, \+f_31.
+result_g_30 :- \+result_1_14, result_2_14.
+0.5::f_32.
+result_g_31 :- \+result_1_14, \+result_2_14.
+result_1_15 :- result_1_14, result_then_1_16.
+result_1_15 :- result_g_30, f_32.
+result_2_15 :- result_1_14, result_then_2_16.
+result_2_15 :- result_g_30, \+f_32.
+0.001::result_then_c_17.
+0.5::f_33.
+result_then_1_17 :- \+result_then_c_17, f_33.
+result_then_2_17 :- \+result_then_c_17, \+f_33.
+result_g_32 :- \+result_1_15, result_2_15.
+0.5::f_34.
+result_g_33 :- \+result_1_15, \+result_2_15.
+result_1_16 :- result_1_15, result_then_1_17.
+result_1_16 :- result_g_32, f_34.
+result_2_16 :- result_1_15, result_then_2_17.
+result_2_16 :- result_g_32, \+f_34.
+0.001::result_then_c_18.
+0.5::f_35.
+result_then_1_18 :- \+result_then_c_18, f_35.
+result_then_2_18 :- \+result_then_c_18, \+f_35.
+result_g_34 :- \+result_1_16, result_2_16.
+0.5::f_36.
+result_g_35 :- \+result_1_16, \+result_2_16.
+result_1_17 :- result_1_16, result_then_1_18.
+result_1_17 :- result_g_34, f_36.
+result_2_17 :- result_1_16, result_then_2_18.
+result_2_17 :- result_g_34, \+f_36.
+0.001::result_then_c_19.
+0.5::f_37.
+result_then_1_19 :- \+result_then_c_19, f_37.
+result_then_2_19 :- \+result_then_c_19, \+f_37.
+result_g_36 :- \+result_1_17, result_2_17.
+0.5::f_38.
+result_g_37 :- \+result_1_17, \+result_2_17.
+result_1_18 :- result_1_17, result_then_1_19.
+result_1_18 :- result_g_36, f_38.
+result_2_18 :- result_1_17, result_then_2_19.
+result_2_18 :- result_g_36, \+f_38.
+0.001::result_then_c_20.
+0.5::f_39.
+result_then_1_20 :- \+result_then_c_20, f_39.
+result_then_2_20 :- \+result_then_c_20, \+f_39.
+result_g_38 :- \+result_1_18, result_2_18.
+0.5::f_40.
+result_g_39 :- \+result_1_18, \+result_2_18.
+result_1_19 :- result_1_18, result_then_1_20.
+result_1_19 :- result_g_38, f_40.
+result_2_19 :- result_1_18, result_then_2_20.
+result_2_19 :- result_g_38, \+f_40.
+0.001::result_then_c_21.
+0.5::f_41.
+result_then_1_21 :- \+result_then_c_21, f_41.
+result_then_2_21 :- \+result_then_c_21, \+f_41.
+result_g_40 :- \+result_1_19, result_2_19.
+0.5::f_42.
+result_g_41 :- \+result_1_19, \+result_2_19.
+result_1_20 :- result_1_19, result_then_1_21.
+result_1_20 :- result_g_40, f_42.
+result_2_20 :- result_1_19, result_then_2_21.
+result_2_20 :- result_g_40, \+f_42.
+0.001::result_then_c_22.
+0.5::f_43.
+result_then_1_22 :- \+result_then_c_22, f_43.
+result_then_2_22 :- \+result_then_c_22, \+f_43.
+result_g_42 :- \+result_1_20, result_2_20.
+0.5::f_44.
+result_g_43 :- \+result_1_20, \+result_2_20.
+result_1_21 :- result_1_20, result_then_1_22.
+result_1_21 :- result_g_42, f_44.
+result_2_21 :- result_1_20, result_then_2_22.
+result_2_21 :- result_g_42, \+f_44.
+0.001::result_then_c_23.
+0.5::f_45.
+result_then_1_23 :- \+result_then_c_23, f_45.
+result_then_2_23 :- \+result_then_c_23, \+f_45.
+result_g_44 :- \+result_1_21, result_2_21.
+0.5::f_46.
+result_g_45 :- \+result_1_21, \+result_2_21.
+result_1_22 :- result_1_21, result_then_1_23.
+result_1_22 :- result_g_44, f_46.
+result_2_22 :- result_1_21, result_then_2_23.
+result_2_22 :- result_g_44, \+f_46.
+0.001::result_then_c_24.
+0.5::f_47.
+result_then_1_24 :- \+result_then_c_24, f_47.
+result_then_2_24 :- \+result_then_c_24, \+f_47.
+result_g_46 :- \+result_1_22, result_2_22.
+0.5::f_48.
+result_g_47 :- \+result_1_22, \+result_2_22.
+result_1_23 :- result_1_22, result_then_1_24.
+result_1_23 :- result_g_46, f_48.
+result_2_23 :- result_1_22, result_then_2_24.
+result_2_23 :- result_g_46, \+f_48.
+0.001::result_then_c_25.
+0.5::f_49.
+result_then_1_25 :- \+result_then_c_25, f_49.
+result_then_2_25 :- \+result_then_c_25, \+f_49.
+result_g_48 :- \+result_1_23, result_2_23.
+0.5::f_50.
+result_g_49 :- \+result_1_23, \+result_2_23.
+result_1_24 :- result_1_23, result_then_1_25.
+result_1_24 :- result_g_48, f_50.
+result_2_24 :- result_1_23, result_then_2_25.
+result_2_24 :- result_g_48, \+f_50.
+0.001::result_then_c_26.
+0.5::f_51.
+result_then_1_26 :- \+result_then_c_26, f_51.
+result_then_2_26 :- \+result_then_c_26, \+f_51.
+result_g_50 :- \+result_1_24, result_2_24.
+0.5::f_52.
+result_g_51 :- \+result_1_24, \+result_2_24.
+result_1_25 :- result_1_24, result_then_1_26.
+result_1_25 :- result_g_50, f_52.
+result_2_25 :- result_1_24, result_then_2_26.
+result_2_25 :- result_g_50, \+f_52.
+0.001::result_then_c_27.
+0.5::f_53.
+result_then_1_27 :- \+result_then_c_27, f_53.
+result_then_2_27 :- \+result_then_c_27, \+f_53.
+result_g_52 :- \+result_1_25, result_2_25.
+0.5::f_54.
+result_g_53 :- \+result_1_25, \+result_2_25.
+result_1_26 :- result_1_25, result_then_1_27.
+result_1_26 :- result_g_52, f_54.
+result_2_26 :- result_1_25, result_then_2_27.
+result_2_26 :- result_g_52, \+f_54.
+0.001::result_then_c_28.
+0.5::f_55.
+result_then_1_28 :- \+result_then_c_28, f_55.
+result_then_2_28 :- \+result_then_c_28, \+f_55.
+result_g_54 :- \+result_1_26, result_2_26.
+0.5::f_56.
+result_g_55 :- \+result_1_26, \+result_2_26.
+result_1_27 :- result_1_26, result_then_1_28.
+result_1_27 :- result_g_54, f_56.
+result_2_27 :- result_1_26, result_then_2_28.
+result_2_27 :- result_g_54, \+f_56.
+0.001::result_then_c_29.
+0.5::f_57.
+result_then_1_29 :- \+result_then_c_29, f_57.
+result_then_2_29 :- \+result_then_c_29, \+f_57.
+result_g_56 :- \+result_1_27, result_2_27.
+0.5::f_58.
+result_g_57 :- \+result_1_27, \+result_2_27.
+result_1_28 :- result_1_27, result_then_1_29.
+result_1_28 :- result_g_56, f_58.
+result_2_28 :- result_1_27, result_then_2_29.
+result_2_28 :- result_g_56, \+f_58.
+0.001::result_then_c_30.
+0.5::f_59.
+result_then_1_30 :- \+result_then_c_30, f_59.
+result_then_2_30 :- \+result_then_c_30, \+f_59.
+result_g_58 :- \+result_1_28, result_2_28.
+0.5::f_60.
+result_g_59 :- \+result_1_28, \+result_2_28.
+result_1_29 :- result_1_28, result_then_1_30.
+result_1_29 :- result_g_58, f_60.
+result_2_29 :- result_1_28, result_then_2_30.
+result_2_29 :- result_g_58, \+f_60.
+0.001::result_then_c_31.
+0.5::f_61.
+result_then_1_31 :- \+result_then_c_31, f_61.
+result_then_2_31 :- \+result_then_c_31, \+f_61.
+result_g_60 :- \+result_1_29, result_2_29.
+0.5::f_62.
+result_g_61 :- \+result_1_29, \+result_2_29.
+result_1_30 :- result_1_29, result_then_1_31.
+result_1_30 :- result_g_60, f_62.
+result_2_30 :- result_1_29, result_then_2_31.
+result_2_30 :- result_g_60, \+f_62.
+0.001::result_then_c_32.
+0.5::f_63.
+result_then_1_32 :- \+result_then_c_32, f_63.
+result_then_2_32 :- \+result_then_c_32, \+f_63.
+result_g_62 :- \+result_1_30, result_2_30.
+0.5::f_64.
+result_g_63 :- \+result_1_30, \+result_2_30.
+result_1_31 :- result_1_30, result_then_1_32.
+result_1_31 :- result_g_62, f_64.
+result_2_31 :- result_1_30, result_then_2_32.
+result_2_31 :- result_g_62, \+f_64.
+0.001::result_then_c_33.
+0.5::f_65.
+result_then_1_33 :- \+result_then_c_33, f_65.
+result_then_2_33 :- \+result_then_c_33, \+f_65.
+result_g_64 :- \+result_1_31, result_2_31.
+0.5::f_66.
+result_g_65 :- \+result_1_31, \+result_2_31.
+result_1_32 :- result_1_31, result_then_1_33.
+result_1_32 :- result_g_64, f_66.
+result_2_32 :- result_1_31, result_then_2_33.
+result_2_32 :- result_g_64, \+f_66.
+0.001::result_then_c_34.
+0.5::f_67.
+result_then_1_34 :- \+result_then_c_34, f_67.
+result_then_2_34 :- \+result_then_c_34, \+f_67.
+result_g_66 :- \+result_1_32, result_2_32.
+0.5::f_68.
+result_g_67 :- \+result_1_32, \+result_2_32.
+result_1_33 :- result_1_32, result_then_1_34.
+result_1_33 :- result_g_66, f_68.
+result_2_33 :- result_1_32, result_then_2_34.
+result_2_33 :- result_g_66, \+f_68.
+0.001::result_then_c_35.
+0.5::f_69.
+result_then_1_35 :- \+result_then_c_35, f_69.
+result_then_2_35 :- \+result_then_c_35, \+f_69.
+result_g_68 :- \+result_1_33, result_2_33.
+0.5::f_70.
+result_g_69 :- \+result_1_33, \+result_2_33.
+result_1_34 :- result_1_33, result_then_1_35.
+result_1_34 :- result_g_68, f_70.
+result_2_34 :- result_1_33, result_then_2_35.
+result_2_34 :- result_g_68, \+f_70.
+0.001::result_then_c_36.
+0.5::f_71.
+result_then_1_36 :- \+result_then_c_36, f_71.
+result_then_2_36 :- \+result_then_c_36, \+f_71.
+result_g_70 :- \+result_1_34, result_2_34.
+0.5::f_72.
+result_g_71 :- \+result_1_34, \+result_2_34.
+result_1_35 :- result_1_34, result_then_1_36.
+result_1_35 :- result_g_70, f_72.
+result_2_35 :- result_1_34, result_then_2_36.
+result_2_35 :- result_g_70, \+f_72.
+0.001::result_then_c_37.
+0.5::f_73.
+result_then_1_37 :- \+result_then_c_37, f_73.
+result_then_2_37 :- \+result_then_c_37, \+f_73.
+result_g_72 :- \+result_1_35, result_2_35.
+0.5::f_74.
+result_g_73 :- \+result_1_35, \+result_2_35.
+result_1_36 :- result_1_35, result_then_1_37.
+result_1_36 :- result_g_72, f_74.
+result_2_36 :- result_1_35, result_then_2_37.
+result_2_36 :- result_g_72, \+f_74.
+0.001::result_then_c_38.
+0.5::f_75.
+result_then_1_38 :- \+result_then_c_38, f_75.
+result_then_2_38 :- \+result_then_c_38, \+f_75.
+result_g_74 :- \+result_1_36, result_2_36.
+0.5::f_76.
+result_g_75 :- \+result_1_36, \+result_2_36.
+result_1_37 :- result_1_36, result_then_1_38.
+result_1_37 :- result_g_74, f_76.
+result_2_37 :- result_1_36, result_then_2_38.
+result_2_37 :- result_g_74, \+f_76.
+0.001::result_then_c_39.
+0.5::f_77.
+result_then_1_39 :- \+result_then_c_39, f_77.
+result_then_2_39 :- \+result_then_c_39, \+f_77.
+result_g_76 :- \+result_1_37, result_2_37.
+0.5::f_78.
+result_g_77 :- \+result_1_37, \+result_2_37.
+result_1_38 :- result_1_37, result_then_1_39.
+result_1_38 :- result_g_76, f_78.
+result_2_38 :- result_1_37, result_then_2_39.
+result_2_38 :- result_g_76, \+f_78.
+0.001::result_then_c_40.
+0.5::f_79.
+result_then_1_40 :- \+result_then_c_40, f_79.
+result_then_2_40 :- \+result_then_c_40, \+f_79.
+result_g_78 :- \+result_1_38, result_2_38.
+0.5::f_80.
+result_g_79 :- \+result_1_38, \+result_2_38.
+result_1_39 :- result_1_38, result_then_1_40.
+result_1_39 :- result_g_78, f_80.
+result_2_39 :- result_1_38, result_then_2_40.
+result_2_39 :- result_g_78, \+f_80.
+0.001::result_then_c_41.
+0.5::f_81.
+result_then_1_41 :- \+result_then_c_41, f_81.
+result_then_2_41 :- \+result_then_c_41, \+f_81.
+result_g_80 :- \+result_1_39, result_2_39.
+0.5::f_82.
+result_g_81 :- \+result_1_39, \+result_2_39.
+result_1_40 :- result_1_39, result_then_1_41.
+result_1_40 :- result_g_80, f_82.
+result_2_40 :- result_1_39, result_then_2_41.
+result_2_40 :- result_g_80, \+f_82.
+0.001::result_then_c_42.
+0.5::f_83.
+result_then_1_42 :- \+result_then_c_42, f_83.
+result_then_2_42 :- \+result_then_c_42, \+f_83.
+result_g_82 :- \+result_1_40, result_2_40.
+0.5::f_84.
+result_g_83 :- \+result_1_40, \+result_2_40.
+result_1_41 :- result_1_40, result_then_1_42.
+result_1_41 :- result_g_82, f_84.
+result_2_41 :- result_1_40, result_then_2_42.
+result_2_41 :- result_g_82, \+f_84.
+0.001::result_then_c_43.
+0.5::f_85.
+result_then_1_43 :- \+result_then_c_43, f_85.
+result_then_2_43 :- \+result_then_c_43, \+f_85.
+result_g_84 :- \+result_1_41, result_2_41.
+0.5::f_86.
+result_g_85 :- \+result_1_41, \+result_2_41.
+result_1_42 :- result_1_41, result_then_1_43.
+result_1_42 :- result_g_84, f_86.
+result_2_42 :- result_1_41, result_then_2_43.
+result_2_42 :- result_g_84, \+f_86.
+0.001::result_then_c_44.
+0.5::f_87.
+result_then_1_44 :- \+result_then_c_44, f_87.
+result_then_2_44 :- \+result_then_c_44, \+f_87.
+result_g_86 :- \+result_1_42, result_2_42.
+0.5::f_88.
+result_g_87 :- \+result_1_42, \+result_2_42.
+result_1_43 :- result_1_42, result_then_1_44.
+result_1_43 :- result_g_86, f_88.
+result_2_43 :- result_1_42, result_then_2_44.
+result_2_43 :- result_g_86, \+f_88.
+0.001::result_then_c_45.
+0.5::f_89.
+result_then_1_45 :- \+result_then_c_45, f_89.
+result_then_2_45 :- \+result_then_c_45, \+f_89.
+result_g_88 :- \+result_1_43, result_2_43.
+0.5::f_90.
+result_g_89 :- \+result_1_43, \+result_2_43.
+result_1_44 :- result_1_43, result_then_1_45.
+result_1_44 :- result_g_88, f_90.
+result_2_44 :- result_1_43, result_then_2_45.
+result_2_44 :- result_g_88, \+f_90.
+0.001::result_then_c_46.
+0.5::f_91.
+result_then_1_46 :- \+result_then_c_46, f_91.
+result_then_2_46 :- \+result_then_c_46, \+f_91.
+result_g_90 :- \+result_1_44, result_2_44.
+0.5::f_92.
+result_g_91 :- \+result_1_44, \+result_2_44.
+result_1_45 :- result_1_44, result_then_1_46.
+result_1_45 :- result_g_90, f_92.
+result_2_45 :- result_1_44, result_then_2_46.
+result_2_45 :- result_g_90, \+f_92.
+0.001::result_then_c_47.
+0.5::f_93.
+result_then_1_47 :- \+result_then_c_47, f_93.
+result_then_2_47 :- \+result_then_c_47, \+f_93.
+result_g_92 :- \+result_1_45, result_2_45.
+0.5::f_94.
+result_g_93 :- \+result_1_45, \+result_2_45.
+result_1_46 :- result_1_45, result_then_1_47.
+result_1_46 :- result_g_92, f_94.
+result_2_46 :- result_1_45, result_then_2_47.
+result_2_46 :- result_g_92, \+f_94.
+0.001::result_then_c_48.
+0.5::f_95.
+result_then_1_48 :- \+result_then_c_48, f_95.
+result_then_2_48 :- \+result_then_c_48, \+f_95.
+result_g_94 :- \+result_1_46, result_2_46.
+0.5::f_96.
+result_g_95 :- \+result_1_46, \+result_2_46.
+result_1_47 :- result_1_46, result_then_1_48.
+result_1_47 :- result_g_94, f_96.
+result_2_47 :- result_1_46, result_then_2_48.
+result_2_47 :- result_g_94, \+f_96.
+0.001::result_then_c_49.
+0.5::f_97.
+result_then_1_49 :- \+result_then_c_49, f_97.
+result_then_2_49 :- \+result_then_c_49, \+f_97.
+result_g_96 :- \+result_1_47, result_2_47.
+0.5::f_98.
+result_g_97 :- \+result_1_47, \+result_2_47.
+result_1_48 :- result_1_47, result_then_1_49.
+result_1_48 :- result_g_96, f_98.
+result_2_48 :- result_1_47, result_then_2_49.
+result_2_48 :- result_g_96, \+f_98.
+0.001::result_then_c_50.
+0.5::f_99.
+result_then_1_50 :- \+result_then_c_50, f_99.
+result_then_2_50 :- \+result_then_c_50, \+f_99.
+result_g_98 :- \+result_1_48, result_2_48.
+0.5::f_100.
+result_g_99 :- \+result_1_48, \+result_2_48.
+result_1_49 :- result_1_48, result_then_1_50.
+result_1_49 :- result_g_98, f_100.
+result_2_49 :- result_1_48, result_then_2_50.
+result_2_49 :- result_g_98, \+f_100.
+0.001::result_then_c_51.
+0.5::f_101.
+result_then_1_51 :- \+result_then_c_51, f_101.
+result_then_2_51 :- \+result_then_c_51, \+f_101.
+result_g_100 :- \+result_1_49, result_2_49.
+0.5::f_102.
+result_g_101 :- \+result_1_49, \+result_2_49.
+result_1_50 :- result_1_49, result_then_1_51.
+result_1_50 :- result_g_100, f_102.
+result_2_50 :- result_1_49, result_then_2_51.
+result_2_50 :- result_g_100, \+f_102.
+0.001::result_then_c_52.
+0.5::f_103.
+result_then_1_52 :- \+result_then_c_52, f_103.
+result_then_2_52 :- \+result_then_c_52, \+f_103.
+result_g_102 :- \+result_1_50, result_2_50.
+0.5::f_104.
+result_g_103 :- \+result_1_50, \+result_2_50.
+result_1_51 :- result_1_50, result_then_1_52.
+result_1_51 :- result_g_102, f_104.
+result_2_51 :- result_1_50, result_then_2_52.
+result_2_51 :- result_g_102, \+f_104.
+0.001::result_then_c_53.
+0.5::f_105.
+result_then_1_53 :- \+result_then_c_53, f_105.
+result_then_2_53 :- \+result_then_c_53, \+f_105.
+result_g_104 :- \+result_1_51, result_2_51.
+0.5::f_106.
+result_g_105 :- \+result_1_51, \+result_2_51.
+result_1_52 :- result_1_51, result_then_1_53.
+result_1_52 :- result_g_104, f_106.
+result_2_52 :- result_1_51, result_then_2_53.
+result_2_52 :- result_g_104, \+f_106.
+0.001::result_then_c_54.
+0.5::f_107.
+result_then_1_54 :- \+result_then_c_54, f_107.
+result_then_2_54 :- \+result_then_c_54, \+f_107.
+result_g_106 :- \+result_1_52, result_2_52.
+0.5::f_108.
+result_g_107 :- \+result_1_52, \+result_2_52.
+result_1_53 :- result_1_52, result_then_1_54.
+result_1_53 :- result_g_106, f_108.
+result_2_53 :- result_1_52, result_then_2_54.
+result_2_53 :- result_g_106, \+f_108.
+0.001::result_then_c_55.
+0.5::f_109.
+result_then_1_55 :- \+result_then_c_55, f_109.
+result_then_2_55 :- \+result_then_c_55, \+f_109.
+result_g_108 :- \+result_1_53, result_2_53.
+0.5::f_110.
+result_g_109 :- \+result_1_53, \+result_2_53.
+result_1_54 :- result_1_53, result_then_1_55.
+result_1_54 :- result_g_108, f_110.
+result_2_54 :- result_1_53, result_then_2_55.
+result_2_54 :- result_g_108, \+f_110.
+0.001::result_then_c_56.
+0.5::f_111.
+result_then_1_56 :- \+result_then_c_56, f_111.
+result_then_2_56 :- \+result_then_c_56, \+f_111.
+result_g_110 :- \+result_1_54, result_2_54.
+0.5::f_112.
+result_g_111 :- \+result_1_54, \+result_2_54.
+result_1_55 :- result_1_54, result_then_1_56.
+result_1_55 :- result_g_110, f_112.
+result_2_55 :- result_1_54, result_then_2_56.
+result_2_55 :- result_g_110, \+f_112.
+0.001::result_then_c_57.
+0.5::f_113.
+result_then_1_57 :- \+result_then_c_57, f_113.
+result_then_2_57 :- \+result_then_c_57, \+f_113.
+result_g_112 :- \+result_1_55, result_2_55.
+0.5::f_114.
+result_g_113 :- \+result_1_55, \+result_2_55.
+result_1_56 :- result_1_55, result_then_1_57.
+result_1_56 :- result_g_112, f_114.
+result_2_56 :- result_1_55, result_then_2_57.
+result_2_56 :- result_g_112, \+f_114.
+0.001::result_then_c_58.
+0.5::f_115.
+result_then_1_58 :- \+result_then_c_58, f_115.
+result_then_2_58 :- \+result_then_c_58, \+f_115.
+result_g_114 :- \+result_1_56, result_2_56.
+0.5::f_116.
+result_g_115 :- \+result_1_56, \+result_2_56.
+result_1_57 :- result_1_56, result_then_1_58.
+result_1_57 :- result_g_114, f_116.
+result_2_57 :- result_1_56, result_then_2_58.
+result_2_57 :- result_g_114, \+f_116.
+0.001::result_then_c_59.
+0.5::f_117.
+result_then_1_59 :- \+result_then_c_59, f_117.
+result_then_2_59 :- \+result_then_c_59, \+f_117.
+result_g_116 :- \+result_1_57, result_2_57.
+0.5::f_118.
+result_g_117 :- \+result_1_57, \+result_2_57.
+result_1_58 :- result_1_57, result_then_1_59.
+result_1_58 :- result_g_116, f_118.
+result_2_58 :- result_1_57, result_then_2_59.
+result_2_58 :- result_g_116, \+f_118.
+0.001::result_then_c_60.
+0.5::f_119.
+result_then_1_60 :- \+result_then_c_60, f_119.
+result_then_2_60 :- \+result_then_c_60, \+f_119.
+result_g_118 :- \+result_1_58, result_2_58.
+0.5::f_120.
+result_g_119 :- \+result_1_58, \+result_2_58.
+result_1_59 :- result_1_58, result_then_1_60.
+result_1_59 :- result_g_118, f_120.
+result_2_59 :- result_1_58, result_then_2_60.
+result_2_59 :- result_g_118, \+f_120.
+0.001::result_then_c_61.
+0.5::f_121.
+result_then_1_61 :- \+result_then_c_61, f_121.
+result_then_2_61 :- \+result_then_c_61, \+f_121.
+result_g_120 :- \+result_1_59, result_2_59.
+0.5::f_122.
+result_g_121 :- \+result_1_59, \+result_2_59.
+result_1_60 :- result_1_59, result_then_1_61.
+result_1_60 :- result_g_120, f_122.
+result_2_60 :- result_1_59, result_then_2_61.
+result_2_60 :- result_g_120, \+f_122.
+0.001::result_then_c_62.
+0.5::f_123.
+result_then_1_62 :- \+result_then_c_62, f_123.
+result_then_2_62 :- \+result_then_c_62, \+f_123.
+result_g_122 :- \+result_1_60, result_2_60.
+0.5::f_124.
+result_g_123 :- \+result_1_60, \+result_2_60.
+result_1_61 :- result_1_60, result_then_1_62.
+result_1_61 :- result_g_122, f_124.
+result_2_61 :- result_1_60, result_then_2_62.
+result_2_61 :- result_g_122, \+f_124.
+0.001::result_then_c_63.
+0.5::f_125.
+result_then_1_63 :- \+result_then_c_63, f_125.
+result_then_2_63 :- \+result_then_c_63, \+f_125.
+result_g_124 :- \+result_1_61, result_2_61.
+0.5::f_126.
+result_g_125 :- \+result_1_61, \+result_2_61.
+result_1_62 :- result_1_61, result_then_1_63.
+result_1_62 :- result_g_124, f_126.
+result_2_62 :- result_1_61, result_then_2_63.
+result_2_62 :- result_g_124, \+f_126.
+0.001::result_then_c_64.
+0.5::f_127.
+result_then_1_64 :- \+result_then_c_64, f_127.
+result_then_2_64 :- \+result_then_c_64, \+f_127.
+result_g_126 :- \+result_1_62, result_2_62.
+0.5::f_128.
+result_g_127 :- \+result_1_62, \+result_2_62.
+result_1_63 :- result_1_62, result_then_1_64.
+result_1_63 :- result_g_126, f_128.
+result_2_63 :- result_1_62, result_then_2_64.
+result_2_63 :- result_g_126, \+f_128.
+0.001::result_then_c_65.
+0.5::f_129.
+result_then_1_65 :- \+result_then_c_65, f_129.
+result_then_2_65 :- \+result_then_c_65, \+f_129.
+result_g_128 :- \+result_1_63, result_2_63.
+0.5::f_130.
+result_g_129 :- \+result_1_63, \+result_2_63.
+result_1_64 :- result_1_63, result_then_1_65.
+result_1_64 :- result_g_128, f_130.
+result_2_64 :- result_1_63, result_then_2_65.
+result_2_64 :- result_g_128, \+f_130.
+0.001::result_then_c_66.
+0.5::f_131.
+result_then_1_66 :- \+result_then_c_66, f_131.
+result_then_2_66 :- \+result_then_c_66, \+f_131.
+result_g_130 :- \+result_1_64, result_2_64.
+0.5::f_132.
+result_g_131 :- \+result_1_64, \+result_2_64.
+result_1_65 :- result_1_64, result_then_1_66.
+result_1_65 :- result_g_130, f_132.
+result_2_65 :- result_1_64, result_then_2_66.
+result_2_65 :- result_g_130, \+f_132.
+0.001::result_then_c_67.
+0.5::f_133.
+result_then_1_67 :- \+result_then_c_67, f_133.
+result_then_2_67 :- \+result_then_c_67, \+f_133.
+result_g_132 :- \+result_1_65, result_2_65.
+0.5::f_134.
+result_g_133 :- \+result_1_65, \+result_2_65.
+result_1_66 :- result_1_65, result_then_1_67.
+result_1_66 :- result_g_132, f_134.
+result_2_66 :- result_1_65, result_then_2_67.
+result_2_66 :- result_g_132, \+f_134.
+0.001::result_then_c_68.
+0.5::f_135.
+result_then_1_68 :- \+result_then_c_68, f_135.
+result_then_2_68 :- \+result_then_c_68, \+f_135.
+result_g_134 :- \+result_1_66, result_2_66.
+0.5::f_136.
+result_g_135 :- \+result_1_66, \+result_2_66.
+result_1_67 :- result_1_66, result_then_1_68.
+result_1_67 :- result_g_134, f_136.
+result_2_67 :- result_1_66, result_then_2_68.
+result_2_67 :- result_g_134, \+f_136.
+0.001::result_then_c_69.
+0.5::f_137.
+result_then_1_69 :- \+result_then_c_69, f_137.
+result_then_2_69 :- \+result_then_c_69, \+f_137.
+result_g_136 :- \+result_1_67, result_2_67.
+0.5::f_138.
+result_g_137 :- \+result_1_67, \+result_2_67.
+result_1_68 :- result_1_67, result_then_1_69.
+result_1_68 :- result_g_136, f_138.
+result_2_68 :- result_1_67, result_then_2_69.
+result_2_68 :- result_g_136, \+f_138.
+0.001::result_then_c_70.
+0.5::f_139.
+result_then_1_70 :- \+result_then_c_70, f_139.
+result_then_2_70 :- \+result_then_c_70, \+f_139.
+result_g_138 :- \+result_1_68, result_2_68.
+0.5::f_140.
+result_g_139 :- \+result_1_68, \+result_2_68.
+result_1_69 :- result_1_68, result_then_1_70.
+result_1_69 :- result_g_138, f_140.
+result_2_69 :- result_1_68, result_then_2_70.
+result_2_69 :- result_g_138, \+f_140.
+0.001::result_then_c_71.
+0.5::f_141.
+result_then_1_71 :- \+result_then_c_71, f_141.
+result_then_2_71 :- \+result_then_c_71, \+f_141.
+result_g_140 :- \+result_1_69, result_2_69.
+0.5::f_142.
+result_g_141 :- \+result_1_69, \+result_2_69.
+result_1_70 :- result_1_69, result_then_1_71.
+result_1_70 :- result_g_140, f_142.
+result_2_70 :- result_1_69, result_then_2_71.
+result_2_70 :- result_g_140, \+f_142.
+0.001::result_then_c_72.
+0.5::f_143.
+result_then_1_72 :- \+result_then_c_72, f_143.
+result_then_2_72 :- \+result_then_c_72, \+f_143.
+result_g_142 :- \+result_1_70, result_2_70.
+0.5::f_144.
+result_g_143 :- \+result_1_70, \+result_2_70.
+result_1_71 :- result_1_70, result_then_1_72.
+result_1_71 :- result_g_142, f_144.
+result_2_71 :- result_1_70, result_then_2_72.
+result_2_71 :- result_g_142, \+f_144.
+0.001::result_then_c_73.
+0.5::f_145.
+result_then_1_73 :- \+result_then_c_73, f_145.
+result_then_2_73 :- \+result_then_c_73, \+f_145.
+result_g_144 :- \+result_1_71, result_2_71.
+0.5::f_146.
+result_g_145 :- \+result_1_71, \+result_2_71.
+result_1_72 :- result_1_71, result_then_1_73.
+result_1_72 :- result_g_144, f_146.
+result_2_72 :- result_1_71, result_then_2_73.
+result_2_72 :- result_g_144, \+f_146.
+0.001::result_then_c_74.
+0.5::f_147.
+result_then_1_74 :- \+result_then_c_74, f_147.
+result_then_2_74 :- \+result_then_c_74, \+f_147.
+result_g_146 :- \+result_1_72, result_2_72.
+0.5::f_148.
+result_g_147 :- \+result_1_72, \+result_2_72.
+result_1_73 :- result_1_72, result_then_1_74.
+result_1_73 :- result_g_146, f_148.
+result_2_73 :- result_1_72, result_then_2_74.
+result_2_73 :- result_g_146, \+f_148.
+0.001::result_then_c_75.
+0.5::f_149.
+result_then_1_75 :- \+result_then_c_75, f_149.
+result_then_2_75 :- \+result_then_c_75, \+f_149.
+result_g_148 :- \+result_1_73, result_2_73.
+0.5::f_150.
+result_g_149 :- \+result_1_73, \+result_2_73.
+result_1_74 :- result_1_73, result_then_1_75.
+result_1_74 :- result_g_148, f_150.
+result_2_74 :- result_1_73, result_then_2_75.
+result_2_74 :- result_g_148, \+f_150.
+0.001::result_then_c_76.
+0.5::f_151.
+result_then_1_76 :- \+result_then_c_76, f_151.
+result_then_2_76 :- \+result_then_c_76, \+f_151.
+result_g_150 :- \+result_1_74, result_2_74.
+0.5::f_152.
+result_g_151 :- \+result_1_74, \+result_2_74.
+result_1_75 :- result_1_74, result_then_1_76.
+result_1_75 :- result_g_150, f_152.
+result_2_75 :- result_1_74, result_then_2_76.
+result_2_75 :- result_g_150, \+f_152.
+0.001::result_then_c_77.
+0.5::f_153.
+result_then_1_77 :- \+result_then_c_77, f_153.
+result_then_2_77 :- \+result_then_c_77, \+f_153.
+result_g_152 :- \+result_1_75, result_2_75.
+0.5::f_154.
+result_g_153 :- \+result_1_75, \+result_2_75.
+result_1_76 :- result_1_75, result_then_1_77.
+result_1_76 :- result_g_152, f_154.
+result_2_76 :- result_1_75, result_then_2_77.
+result_2_76 :- result_g_152, \+f_154.
+0.001::result_then_c_78.
+0.5::f_155.
+result_then_1_78 :- \+result_then_c_78, f_155.
+result_then_2_78 :- \+result_then_c_78, \+f_155.
+result_g_154 :- \+result_1_76, result_2_76.
+0.5::f_156.
+result_g_155 :- \+result_1_76, \+result_2_76.
+result_1_77 :- result_1_76, result_then_1_78.
+result_1_77 :- result_g_154, f_156.
+result_2_77 :- result_1_76, result_then_2_78.
+result_2_77 :- result_g_154, \+f_156.
+0.001::result_then_c_79.
+0.5::f_157.
+result_then_1_79 :- \+result_then_c_79, f_157.
+result_then_2_79 :- \+result_then_c_79, \+f_157.
+result_g_156 :- \+result_1_77, result_2_77.
+0.5::f_158.
+result_g_157 :- \+result_1_77, \+result_2_77.
+result_1_78 :- result_1_77, result_then_1_79.
+result_1_78 :- result_g_156, f_158.
+result_2_78 :- result_1_77, result_then_2_79.
+result_2_78 :- result_g_156, \+f_158.
+0.001::result_then_c_80.
+0.5::f_159.
+result_then_1_80 :- \+result_then_c_80, f_159.
+result_then_2_80 :- \+result_then_c_80, \+f_159.
+result_g_158 :- \+result_1_78, result_2_78.
+0.5::f_160.
+result_g_159 :- \+result_1_78, \+result_2_78.
+result_1_79 :- result_1_78, result_then_1_80.
+result_1_79 :- result_g_158, f_160.
+result_2_79 :- result_1_78, result_then_2_80.
+result_2_79 :- result_g_158, \+f_160.
+0.001::result_then_c_81.
+0.5::f_161.
+result_then_1_81 :- \+result_then_c_81, f_161.
+result_then_2_81 :- \+result_then_c_81, \+f_161.
+result_g_160 :- \+result_1_79, result_2_79.
+0.5::f_162.
+result_g_161 :- \+result_1_79, \+result_2_79.
+result_1_80 :- result_1_79, result_then_1_81.
+result_1_80 :- result_g_160, f_162.
+result_2_80 :- result_1_79, result_then_2_81.
+result_2_80 :- result_g_160, \+f_162.
+0.001::result_then_c_82.
+0.5::f_163.
+result_then_1_82 :- \+result_then_c_82, f_163.
+result_then_2_82 :- \+result_then_c_82, \+f_163.
+result_g_162 :- \+result_1_80, result_2_80.
+0.5::f_164.
+result_g_163 :- \+result_1_80, \+result_2_80.
+result_1_81 :- result_1_80, result_then_1_82.
+result_1_81 :- result_g_162, f_164.
+result_2_81 :- result_1_80, result_then_2_82.
+result_2_81 :- result_g_162, \+f_164.
+0.001::result_then_c_83.
+0.5::f_165.
+result_then_1_83 :- \+result_then_c_83, f_165.
+result_then_2_83 :- \+result_then_c_83, \+f_165.
+result_g_164 :- \+result_1_81, result_2_81.
+0.5::f_166.
+result_g_165 :- \+result_1_81, \+result_2_81.
+result_1_82 :- result_1_81, result_then_1_83.
+result_1_82 :- result_g_164, f_166.
+result_2_82 :- result_1_81, result_then_2_83.
+result_2_82 :- result_g_164, \+f_166.
+0.001::result_then_c_84.
+0.5::f_167.
+result_then_1_84 :- \+result_then_c_84, f_167.
+result_then_2_84 :- \+result_then_c_84, \+f_167.
+result_g_166 :- \+result_1_82, result_2_82.
+0.5::f_168.
+result_g_167 :- \+result_1_82, \+result_2_82.
+result_1_83 :- result_1_82, result_then_1_84.
+result_1_83 :- result_g_166, f_168.
+result_2_83 :- result_1_82, result_then_2_84.
+result_2_83 :- result_g_166, \+f_168.
+0.001::result_then_c_85.
+0.5::f_169.
+result_then_1_85 :- \+result_then_c_85, f_169.
+result_then_2_85 :- \+result_then_c_85, \+f_169.
+result_g_168 :- \+result_1_83, result_2_83.
+0.5::f_170.
+result_g_169 :- \+result_1_83, \+result_2_83.
+result_1_84 :- result_1_83, result_then_1_85.
+result_1_84 :- result_g_168, f_170.
+result_2_84 :- result_1_83, result_then_2_85.
+result_2_84 :- result_g_168, \+f_170.
+0.001::result_then_c_86.
+0.5::f_171.
+result_then_1_86 :- \+result_then_c_86, f_171.
+result_then_2_86 :- \+result_then_c_86, \+f_171.
+result_g_170 :- \+result_1_84, result_2_84.
+0.5::f_172.
+result_g_171 :- \+result_1_84, \+result_2_84.
+result_1_85 :- result_1_84, result_then_1_86.
+result_1_85 :- result_g_170, f_172.
+result_2_85 :- result_1_84, result_then_2_86.
+result_2_85 :- result_g_170, \+f_172.
+0.001::result_then_c_87.
+0.5::f_173.
+result_then_1_87 :- \+result_then_c_87, f_173.
+result_then_2_87 :- \+result_then_c_87, \+f_173.
+result_g_172 :- \+result_1_85, result_2_85.
+0.5::f_174.
+result_g_173 :- \+result_1_85, \+result_2_85.
+result_1_86 :- result_1_85, result_then_1_87.
+result_1_86 :- result_g_172, f_174.
+result_2_86 :- result_1_85, result_then_2_87.
+result_2_86 :- result_g_172, \+f_174.
+0.001::result_then_c_88.
+0.5::f_175.
+result_then_1_88 :- \+result_then_c_88, f_175.
+result_then_2_88 :- \+result_then_c_88, \+f_175.
+result_g_174 :- \+result_1_86, result_2_86.
+0.5::f_176.
+result_g_175 :- \+result_1_86, \+result_2_86.
+result_1_87 :- result_1_86, result_then_1_88.
+result_1_87 :- result_g_174, f_176.
+result_2_87 :- result_1_86, result_then_2_88.
+result_2_87 :- result_g_174, \+f_176.
+0.001::result_then_c_89.
+0.5::f_177.
+result_then_1_89 :- \+result_then_c_89, f_177.
+result_then_2_89 :- \+result_then_c_89, \+f_177.
+result_g_176 :- \+result_1_87, result_2_87.
+0.5::f_178.
+result_g_177 :- \+result_1_87, \+result_2_87.
+result_1_88 :- result_1_87, result_then_1_89.
+result_1_88 :- result_g_176, f_178.
+result_2_88 :- result_1_87, result_then_2_89.
+result_2_88 :- result_g_176, \+f_178.
+0.001::result_then_c_90.
+0.5::f_179.
+result_then_1_90 :- \+result_then_c_90, f_179.
+result_then_2_90 :- \+result_then_c_90, \+f_179.
+result_g_178 :- \+result_1_88, result_2_88.
+0.5::f_180.
+result_g_179 :- \+result_1_88, \+result_2_88.
+result_1_89 :- result_1_88, result_then_1_90.
+result_1_89 :- result_g_178, f_180.
+result_2_89 :- result_1_88, result_then_2_90.
+result_2_89 :- result_g_178, \+f_180.
+0.001::result_then_c_91.
+0.5::f_181.
+result_then_1_91 :- \+result_then_c_91, f_181.
+result_then_2_91 :- \+result_then_c_91, \+f_181.
+result_g_180 :- \+result_1_89, result_2_89.
+0.5::f_182.
+result_g_181 :- \+result_1_89, \+result_2_89.
+result_1_90 :- result_1_89, result_then_1_91.
+result_1_90 :- result_g_180, f_182.
+result_2_90 :- result_1_89, result_then_2_91.
+result_2_90 :- result_g_180, \+f_182.
+0.001::result_then_c_92.
+0.5::f_183.
+result_then_1_92 :- \+result_then_c_92, f_183.
+result_then_2_92 :- \+result_then_c_92, \+f_183.
+result_g_182 :- \+result_1_90, result_2_90.
+0.5::f_184.
+result_g_183 :- \+result_1_90, \+result_2_90.
+result_1_91 :- result_1_90, result_then_1_92.
+result_1_91 :- result_g_182, f_184.
+result_2_91 :- result_1_90, result_then_2_92.
+result_2_91 :- result_g_182, \+f_184.
+0.001::result_then_c_93.
+0.5::f_185.
+result_then_1_93 :- \+result_then_c_93, f_185.
+result_then_2_93 :- \+result_then_c_93, \+f_185.
+result_g_184 :- \+result_1_91, result_2_91.
+0.5::f_186.
+result_g_185 :- \+result_1_91, \+result_2_91.
+result_1_92 :- result_1_91, result_then_1_93.
+result_1_92 :- result_g_184, f_186.
+result_2_92 :- result_1_91, result_then_2_93.
+result_2_92 :- result_g_184, \+f_186.
+0.001::result_then_c_94.
+0.5::f_187.
+result_then_1_94 :- \+result_then_c_94, f_187.
+result_then_2_94 :- \+result_then_c_94, \+f_187.
+result_g_186 :- \+result_1_92, result_2_92.
+0.5::f_188.
+result_g_187 :- \+result_1_92, \+result_2_92.
+result_1_93 :- result_1_92, result_then_1_94.
+result_1_93 :- result_g_186, f_188.
+result_2_93 :- result_1_92, result_then_2_94.
+result_2_93 :- result_g_186, \+f_188.
+0.001::result_then_c_95.
+0.5::f_189.
+result_then_1_95 :- \+result_then_c_95, f_189.
+result_then_2_95 :- \+result_then_c_95, \+f_189.
+result_g_188 :- \+result_1_93, result_2_93.
+0.5::f_190.
+result_g_189 :- \+result_1_93, \+result_2_93.
+result_1_94 :- result_1_93, result_then_1_95.
+result_1_94 :- result_g_188, f_190.
+result_2_94 :- result_1_93, result_then_2_95.
+result_2_94 :- result_g_188, \+f_190.
+0.001::result_then_c_96.
+0.5::f_191.
+result_then_1_96 :- \+result_then_c_96, f_191.
+result_then_2_96 :- \+result_then_c_96, \+f_191.
+result_g_190 :- \+result_1_94, result_2_94.
+0.5::f_192.
+result_g_191 :- \+result_1_94, \+result_2_94.
+result_1_95 :- result_1_94, result_then_1_96.
+result_1_95 :- result_g_190, f_192.
+result_2_95 :- result_1_94, result_then_2_96.
+result_2_95 :- result_g_190, \+f_192.
+0.001::result_then_c_97.
+0.5::f_193.
+result_then_1_97 :- \+result_then_c_97, f_193.
+result_then_2_97 :- \+result_then_c_97, \+f_193.
+result_g_192 :- \+result_1_95, result_2_95.
+0.5::f_194.
+result_g_193 :- \+result_1_95, \+result_2_95.
+result_1_96 :- result_1_95, result_then_1_97.
+result_1_96 :- result_g_192, f_194.
+result_2_96 :- result_1_95, result_then_2_97.
+result_2_96 :- result_g_192, \+f_194.
+0.001::result_then_c_98.
+0.5::f_195.
+result_then_1_98 :- \+result_then_c_98, f_195.
+result_then_2_98 :- \+result_then_c_98, \+f_195.
+result_g_194 :- \+result_1_96, result_2_96.
+0.5::f_196.
+result_g_195 :- \+result_1_96, \+result_2_96.
+result_1_97 :- result_1_96, result_then_1_98.
+result_1_97 :- result_g_194, f_196.
+result_2_97 :- result_1_96, result_then_2_98.
+result_2_97 :- result_g_194, \+f_196.
+0.001::result_then_c_99.
+0.5::f_197.
+result_then_1_99 :- \+result_then_c_99, f_197.
+result_then_2_99 :- \+result_then_c_99, \+f_197.
+result_g_196 :- \+result_1_97, result_2_97.
+0.5::f_198.
+result_g_197 :- \+result_1_97, \+result_2_97.
+result_1_98 :- result_1_97, result_then_1_99.
+result_1_98 :- result_g_196, f_198.
+result_2_98 :- result_1_97, result_then_2_99.
+result_2_98 :- result_g_196, \+f_198.
+0.001::result_then_c_100.
+0.5::f_199.
+result_then_1_100 :- \+result_then_c_100, f_199.
+result_then_2_100 :- \+result_then_c_100, \+f_199.
+result_g_198 :- \+result_1_98, result_2_98.
+0.5::f_200.
+result_g_199 :- \+result_1_98, \+result_2_98.
+result_1_99 :- result_1_98, result_then_1_100.
+result_1_99 :- result_g_198, f_200.
+result_2_99 :- result_1_98, result_then_2_100.
+result_2_99 :- result_g_198, \+f_200.
+0.001::result_then_c_101.
+0.5::f_201.
+result_then_1_101 :- \+result_then_c_101, f_201.
+result_then_2_101 :- \+result_then_c_101, \+f_201.
+result_g_200 :- \+result_1_99, result_2_99.
+0.5::f_202.
+result_g_201 :- \+result_1_99, \+result_2_99.
+result_1_100 :- result_1_99, result_then_1_101.
+result_1_100 :- result_g_200, f_202.
+result_2_100 :- result_1_99, result_then_2_101.
+result_2_100 :- result_g_200, \+f_202.
+0.001::result_then_c_102.
+0.5::f_203.
+result_then_1_102 :- \+result_then_c_102, f_203.
+result_then_2_102 :- \+result_then_c_102, \+f_203.
+result_g_202 :- \+result_1_100, result_2_100.
+0.5::f_204.
+result_g_203 :- \+result_1_100, \+result_2_100.
+result_1_101 :- result_1_100, result_then_1_102.
+result_1_101 :- result_g_202, f_204.
+result_2_101 :- result_1_100, result_then_2_102.
+result_2_101 :- result_g_202, \+f_204.
+0.001::result_then_c_103.
+0.5::f_205.
+result_then_1_103 :- \+result_then_c_103, f_205.
+result_then_2_103 :- \+result_then_c_103, \+f_205.
+result_g_204 :- \+result_1_101, result_2_101.
+0.5::f_206.
+result_g_205 :- \+result_1_101, \+result_2_101.
+result_1_102 :- result_1_101, result_then_1_103.
+result_1_102 :- result_g_204, f_206.
+result_2_102 :- result_1_101, result_then_2_103.
+result_2_102 :- result_g_204, \+f_206.
+0.001::result_then_c_104.
+0.5::f_207.
+result_then_1_104 :- \+result_then_c_104, f_207.
+result_then_2_104 :- \+result_then_c_104, \+f_207.
+result_g_206 :- \+result_1_102, result_2_102.
+0.5::f_208.
+result_g_207 :- \+result_1_102, \+result_2_102.
+result_1_103 :- result_1_102, result_then_1_104.
+result_1_103 :- result_g_206, f_208.
+result_2_103 :- result_1_102, result_then_2_104.
+result_2_103 :- result_g_206, \+f_208.
+0.001::result_then_c_105.
+0.5::f_209.
+result_then_1_105 :- \+result_then_c_105, f_209.
+result_then_2_105 :- \+result_then_c_105, \+f_209.
+result_g_208 :- \+result_1_103, result_2_103.
+0.5::f_210.
+result_g_209 :- \+result_1_103, \+result_2_103.
+result_1_104 :- result_1_103, result_then_1_105.
+result_1_104 :- result_g_208, f_210.
+result_2_104 :- result_1_103, result_then_2_105.
+result_2_104 :- result_g_208, \+f_210.
+0.001::result_then_c_106.
+0.5::f_211.
+result_then_1_106 :- \+result_then_c_106, f_211.
+result_then_2_106 :- \+result_then_c_106, \+f_211.
+result_g_210 :- \+result_1_104, result_2_104.
+0.5::f_212.
+result_g_211 :- \+result_1_104, \+result_2_104.
+result_1_105 :- result_1_104, result_then_1_106.
+result_1_105 :- result_g_210, f_212.
+result_2_105 :- result_1_104, result_then_2_106.
+result_2_105 :- result_g_210, \+f_212.
+0.001::result_then_c_107.
+0.5::f_213.
+result_then_1_107 :- \+result_then_c_107, f_213.
+result_then_2_107 :- \+result_then_c_107, \+f_213.
+result_g_212 :- \+result_1_105, result_2_105.
+0.5::f_214.
+result_g_213 :- \+result_1_105, \+result_2_105.
+result_1_106 :- result_1_105, result_then_1_107.
+result_1_106 :- result_g_212, f_214.
+result_2_106 :- result_1_105, result_then_2_107.
+result_2_106 :- result_g_212, \+f_214.
+0.001::result_then_c_108.
+0.5::f_215.
+result_then_1_108 :- \+result_then_c_108, f_215.
+result_then_2_108 :- \+result_then_c_108, \+f_215.
+result_g_214 :- \+result_1_106, result_2_106.
+0.5::f_216.
+result_g_215 :- \+result_1_106, \+result_2_106.
+result_1_107 :- result_1_106, result_then_1_108.
+result_1_107 :- result_g_214, f_216.
+result_2_107 :- result_1_106, result_then_2_108.
+result_2_107 :- result_g_214, \+f_216.
+0.001::result_then_c_109.
+0.5::f_217.
+result_then_1_109 :- \+result_then_c_109, f_217.
+result_then_2_109 :- \+result_then_c_109, \+f_217.
+result_g_216 :- \+result_1_107, result_2_107.
+0.5::f_218.
+result_g_217 :- \+result_1_107, \+result_2_107.
+result_1_108 :- result_1_107, result_then_1_109.
+result_1_108 :- result_g_216, f_218.
+result_2_108 :- result_1_107, result_then_2_109.
+result_2_108 :- result_g_216, \+f_218.
+0.001::result_then_c_110.
+0.5::f_219.
+result_then_1_110 :- \+result_then_c_110, f_219.
+result_then_2_110 :- \+result_then_c_110, \+f_219.
+result_g_218 :- \+result_1_108, result_2_108.
+0.5::f_220.
+result_g_219 :- \+result_1_108, \+result_2_108.
+result_1_109 :- result_1_108, result_then_1_110.
+result_1_109 :- result_g_218, f_220.
+result_2_109 :- result_1_108, result_then_2_110.
+result_2_109 :- result_g_218, \+f_220.
+0.001::result_then_c_111.
+0.5::f_221.
+result_then_1_111 :- \+result_then_c_111, f_221.
+result_then_2_111 :- \+result_then_c_111, \+f_221.
+result_g_220 :- \+result_1_109, result_2_109.
+0.5::f_222.
+result_g_221 :- \+result_1_109, \+result_2_109.
+result_1_110 :- result_1_109, result_then_1_111.
+result_1_110 :- result_g_220, f_222.
+result_2_110 :- result_1_109, result_then_2_111.
+result_2_110 :- result_g_220, \+f_222.
+0.001::result_then_c_112.
+0.5::f_223.
+result_then_1_112 :- \+result_then_c_112, f_223.
+result_then_2_112 :- \+result_then_c_112, \+f_223.
+result_g_222 :- \+result_1_110, result_2_110.
+0.5::f_224.
+result_g_223 :- \+result_1_110, \+result_2_110.
+result_1_111 :- result_1_110, result_then_1_112.
+result_1_111 :- result_g_222, f_224.
+result_2_111 :- result_1_110, result_then_2_112.
+result_2_111 :- result_g_222, \+f_224.
+0.001::result_then_c_113.
+0.5::f_225.
+result_then_1_113 :- \+result_then_c_113, f_225.
+result_then_2_113 :- \+result_then_c_113, \+f_225.
+result_g_224 :- \+result_1_111, result_2_111.
+0.5::f_226.
+result_g_225 :- \+result_1_111, \+result_2_111.
+result_1_112 :- result_1_111, result_then_1_113.
+result_1_112 :- result_g_224, f_226.
+result_2_112 :- result_1_111, result_then_2_113.
+result_2_112 :- result_g_224, \+f_226.
+0.001::result_then_c_114.
+0.5::f_227.
+result_then_1_114 :- \+result_then_c_114, f_227.
+result_then_2_114 :- \+result_then_c_114, \+f_227.
+result_g_226 :- \+result_1_112, result_2_112.
+0.5::f_228.
+result_g_227 :- \+result_1_112, \+result_2_112.
+result_1_113 :- result_1_112, result_then_1_114.
+result_1_113 :- result_g_226, f_228.
+result_2_113 :- result_1_112, result_then_2_114.
+result_2_113 :- result_g_226, \+f_228.
+0.001::result_then_c_115.
+0.5::f_229.
+result_then_1_115 :- \+result_then_c_115, f_229.
+result_then_2_115 :- \+result_then_c_115, \+f_229.
+result_g_228 :- \+result_1_113, result_2_113.
+0.5::f_230.
+result_g_229 :- \+result_1_113, \+result_2_113.
+result_1_114 :- result_1_113, result_then_1_115.
+result_1_114 :- result_g_228, f_230.
+result_2_114 :- result_1_113, result_then_2_115.
+result_2_114 :- result_g_228, \+f_230.
+0.001::result_then_c_116.
+0.5::f_231.
+result_then_1_116 :- \+result_then_c_116, f_231.
+result_then_2_116 :- \+result_then_c_116, \+f_231.
+result_g_230 :- \+result_1_114, result_2_114.
+0.5::f_232.
+result_g_231 :- \+result_1_114, \+result_2_114.
+result_1_115 :- result_1_114, result_then_1_116.
+result_1_115 :- result_g_230, f_232.
+result_2_115 :- result_1_114, result_then_2_116.
+result_2_115 :- result_g_230, \+f_232.
+0.001::result_then_c_117.
+0.5::f_233.
+result_then_1_117 :- \+result_then_c_117, f_233.
+result_then_2_117 :- \+result_then_c_117, \+f_233.
+result_g_232 :- \+result_1_115, result_2_115.
+0.5::f_234.
+result_g_233 :- \+result_1_115, \+result_2_115.
+result_1_116 :- result_1_115, result_then_1_117.
+result_1_116 :- result_g_232, f_234.
+result_2_116 :- result_1_115, result_then_2_117.
+result_2_116 :- result_g_232, \+f_234.
+0.001::result_then_c_118.
+0.5::f_235.
+result_then_1_118 :- \+result_then_c_118, f_235.
+result_then_2_118 :- \+result_then_c_118, \+f_235.
+result_g_234 :- \+result_1_116, result_2_116.
+0.5::f_236.
+result_g_235 :- \+result_1_116, \+result_2_116.
+result_1_117 :- result_1_116, result_then_1_118.
+result_1_117 :- result_g_234, f_236.
+result_2_117 :- result_1_116, result_then_2_118.
+result_2_117 :- result_g_234, \+f_236.
+0.001::result_then_c_119.
+0.5::f_237.
+result_then_1_119 :- \+result_then_c_119, f_237.
+result_then_2_119 :- \+result_then_c_119, \+f_237.
+result_g_236 :- \+result_1_117, result_2_117.
+0.5::f_238.
+result_g_237 :- \+result_1_117, \+result_2_117.
+result_1_118 :- result_1_117, result_then_1_119.
+result_1_118 :- result_g_236, f_238.
+result_2_118 :- result_1_117, result_then_2_119.
+result_2_118 :- result_g_236, \+f_238.
+0.001::result_then_c_120.
+0.5::f_239.
+result_then_1_120 :- \+result_then_c_120, f_239.
+result_then_2_120 :- \+result_then_c_120, \+f_239.
+result_g_238 :- \+result_1_118, result_2_118.
+0.5::f_240.
+result_g_239 :- \+result_1_118, \+result_2_118.
+result_1_119 :- result_1_118, result_then_1_120.
+result_1_119 :- result_g_238, f_240.
+result_2_119 :- result_1_118, result_then_2_120.
+result_2_119 :- result_g_238, \+f_240.
+0.001::result_then_c_121.
+0.5::f_241.
+result_then_1_121 :- \+result_then_c_121, f_241.
+result_then_2_121 :- \+result_then_c_121, \+f_241.
+result_g_240 :- \+result_1_119, result_2_119.
+0.5::f_242.
+result_g_241 :- \+result_1_119, \+result_2_119.
+result_1_120 :- result_1_119, result_then_1_121.
+result_1_120 :- result_g_240, f_242.
+result_2_120 :- result_1_119, result_then_2_121.
+result_2_120 :- result_g_240, \+f_242.
+0.001::result_then_c_122.
+0.5::f_243.
+result_then_1_122 :- \+result_then_c_122, f_243.
+result_then_2_122 :- \+result_then_c_122, \+f_243.
+result_g_242 :- \+result_1_120, result_2_120.
+0.5::f_244.
+result_g_243 :- \+result_1_120, \+result_2_120.
+result_1_121 :- result_1_120, result_then_1_122.
+result_1_121 :- result_g_242, f_244.
+result_2_121 :- result_1_120, result_then_2_122.
+result_2_121 :- result_g_242, \+f_244.
+0.001::result_then_c_123.
+0.5::f_245.
+result_then_1_123 :- \+result_then_c_123, f_245.
+result_then_2_123 :- \+result_then_c_123, \+f_245.
+result_g_244 :- \+result_1_121, result_2_121.
+0.5::f_246.
+result_g_245 :- \+result_1_121, \+result_2_121.
+result_1_122 :- result_1_121, result_then_1_123.
+result_1_122 :- result_g_244, f_246.
+result_2_122 :- result_1_121, result_then_2_123.
+result_2_122 :- result_g_244, \+f_246.
+0.001::result_then_c_124.
+0.5::f_247.
+result_then_1_124 :- \+result_then_c_124, f_247.
+result_then_2_124 :- \+result_then_c_124, \+f_247.
+result_g_246 :- \+result_1_122, result_2_122.
+0.5::f_248.
+result_g_247 :- \+result_1_122, \+result_2_122.
+result_1_123 :- result_1_122, result_then_1_124.
+result_1_123 :- result_g_246, f_248.
+result_2_123 :- result_1_122, result_then_2_124.
+result_2_123 :- result_g_246, \+f_248.
+0.001::result_then_c_125.
+0.5::f_249.
+result_then_1_125 :- \+result_then_c_125, f_249.
+result_then_2_125 :- \+result_then_c_125, \+f_249.
+result_g_248 :- \+result_1_123, result_2_123.
+0.5::f_250.
+result_g_249 :- \+result_1_123, \+result_2_123.
+result_1_124 :- result_1_123, result_then_1_125.
+result_1_124 :- result_g_248, f_250.
+result_2_124 :- result_1_123, result_then_2_125.
+result_2_124 :- result_g_248, \+f_250.
+0.001::result_then_c_126.
+0.5::f_251.
+result_then_1_126 :- \+result_then_c_126, f_251.
+result_then_2_126 :- \+result_then_c_126, \+f_251.
+result_g_250 :- \+result_1_124, result_2_124.
+0.5::f_252.
+result_g_251 :- \+result_1_124, \+result_2_124.
+result_1_125 :- result_1_124, result_then_1_126.
+result_1_125 :- result_g_250, f_252.
+result_2_125 :- result_1_124, result_then_2_126.
+result_2_125 :- result_g_250, \+f_252.
+0.001::result_then_c_127.
+0.5::f_253.
+result_then_1_127 :- \+result_then_c_127, f_253.
+result_then_2_127 :- \+result_then_c_127, \+f_253.
+result_g_252 :- \+result_1_125, result_2_125.
+0.5::f_254.
+result_g_253 :- \+result_1_125, \+result_2_125.
+result_1_126 :- result_1_125, result_then_1_127.
+result_1_126 :- result_g_252, f_254.
+result_2_126 :- result_1_125, result_then_2_127.
+result_2_126 :- result_g_252, \+f_254.
+0.001::result_then_c_128.
+0.5::f_255.
+result_then_1_128 :- \+result_then_c_128, f_255.
+result_then_2_128 :- \+result_then_c_128, \+f_255.
+result_g_254 :- \+result_1_126, result_2_126.
+0.5::f_256.
+result_g_255 :- \+result_1_126, \+result_2_126.
+result_1_127 :- result_1_126, result_then_1_128.
+result_1_127 :- result_g_254, f_256.
+result_2_127 :- result_1_126, result_then_2_128.
+result_2_127 :- result_g_254, \+f_256.
+0.001::result_then_c_129.
+0.5::f_257.
+result_then_1_129 :- \+result_then_c_129, f_257.
+result_then_2_129 :- \+result_then_c_129, \+f_257.
+result_g_256 :- \+result_1_127, result_2_127.
+0.5::f_258.
+result_g_257 :- \+result_1_127, \+result_2_127.
+result_1_128 :- result_1_127, result_then_1_129.
+result_1_128 :- result_g_256, f_258.
+result_2_128 :- result_1_127, result_then_2_129.
+result_2_128 :- result_g_256, \+f_258.
+0.001::result_then_c_130.
+0.5::f_259.
+result_then_1_130 :- \+result_then_c_130, f_259.
+result_then_2_130 :- \+result_then_c_130, \+f_259.
+result_g_258 :- \+result_1_128, result_2_128.
+0.5::f_260.
+result_g_259 :- \+result_1_128, \+result_2_128.
+result_1_129 :- result_1_128, result_then_1_130.
+result_1_129 :- result_g_258, f_260.
+result_2_129 :- result_1_128, result_then_2_130.
+result_2_129 :- result_g_258, \+f_260.
+0.001::result_then_c_131.
+0.5::f_261.
+result_then_1_131 :- \+result_then_c_131, f_261.
+result_then_2_131 :- \+result_then_c_131, \+f_261.
+result_g_260 :- \+result_1_129, result_2_129.
+0.5::f_262.
+result_g_261 :- \+result_1_129, \+result_2_129.
+result_1_130 :- result_1_129, result_then_1_131.
+result_1_130 :- result_g_260, f_262.
+result_2_130 :- result_1_129, result_then_2_131.
+result_2_130 :- result_g_260, \+f_262.
+0.001::result_then_c_132.
+0.5::f_263.
+result_then_1_132 :- \+result_then_c_132, f_263.
+result_then_2_132 :- \+result_then_c_132, \+f_263.
+result_g_262 :- \+result_1_130, result_2_130.
+0.5::f_264.
+result_g_263 :- \+result_1_130, \+result_2_130.
+result_1_131 :- result_1_130, result_then_1_132.
+result_1_131 :- result_g_262, f_264.
+result_2_131 :- result_1_130, result_then_2_132.
+result_2_131 :- result_g_262, \+f_264.
+0.001::result_then_c_133.
+0.5::f_265.
+result_then_1_133 :- \+result_then_c_133, f_265.
+result_then_2_133 :- \+result_then_c_133, \+f_265.
+result_g_264 :- \+result_1_131, result_2_131.
+0.5::f_266.
+result_g_265 :- \+result_1_131, \+result_2_131.
+result_1_132 :- result_1_131, result_then_1_133.
+result_1_132 :- result_g_264, f_266.
+result_2_132 :- result_1_131, result_then_2_133.
+result_2_132 :- result_g_264, \+f_266.
+0.001::result_then_c_134.
+0.5::f_267.
+result_then_1_134 :- \+result_then_c_134, f_267.
+result_then_2_134 :- \+result_then_c_134, \+f_267.
+result_g_266 :- \+result_1_132, result_2_132.
+0.5::f_268.
+result_g_267 :- \+result_1_132, \+result_2_132.
+result_1_133 :- result_1_132, result_then_1_134.
+result_1_133 :- result_g_266, f_268.
+result_2_133 :- result_1_132, result_then_2_134.
+result_2_133 :- result_g_266, \+f_268.
+0.001::result_then_c_135.
+0.5::f_269.
+result_then_1_135 :- \+result_then_c_135, f_269.
+result_then_2_135 :- \+result_then_c_135, \+f_269.
+result_g_268 :- \+result_1_133, result_2_133.
+0.5::f_270.
+result_g_269 :- \+result_1_133, \+result_2_133.
+result_1_134 :- result_1_133, result_then_1_135.
+result_1_134 :- result_g_268, f_270.
+result_2_134 :- result_1_133, result_then_2_135.
+result_2_134 :- result_g_268, \+f_270.
+0.001::result_then_c_136.
+0.5::f_271.
+result_then_1_136 :- \+result_then_c_136, f_271.
+result_then_2_136 :- \+result_then_c_136, \+f_271.
+result_g_270 :- \+result_1_134, result_2_134.
+0.5::f_272.
+result_g_271 :- \+result_1_134, \+result_2_134.
+result_1_135 :- result_1_134, result_then_1_136.
+result_1_135 :- result_g_270, f_272.
+result_2_135 :- result_1_134, result_then_2_136.
+result_2_135 :- result_g_270, \+f_272.
+0.001::result_then_c_137.
+0.5::f_273.
+result_then_1_137 :- \+result_then_c_137, f_273.
+result_then_2_137 :- \+result_then_c_137, \+f_273.
+result_g_272 :- \+result_1_135, result_2_135.
+0.5::f_274.
+result_g_273 :- \+result_1_135, \+result_2_135.
+result_1_136 :- result_1_135, result_then_1_137.
+result_1_136 :- result_g_272, f_274.
+result_2_136 :- result_1_135, result_then_2_137.
+result_2_136 :- result_g_272, \+f_274.
+0.001::result_then_c_138.
+0.5::f_275.
+result_then_1_138 :- \+result_then_c_138, f_275.
+result_then_2_138 :- \+result_then_c_138, \+f_275.
+result_g_274 :- \+result_1_136, result_2_136.
+0.5::f_276.
+result_g_275 :- \+result_1_136, \+result_2_136.
+result_1_137 :- result_1_136, result_then_1_138.
+result_1_137 :- result_g_274, f_276.
+result_2_137 :- result_1_136, result_then_2_138.
+result_2_137 :- result_g_274, \+f_276.
+0.001::result_then_c_139.
+0.5::f_277.
+result_then_1_139 :- \+result_then_c_139, f_277.
+result_then_2_139 :- \+result_then_c_139, \+f_277.
+result_g_276 :- \+result_1_137, result_2_137.
+0.5::f_278.
+result_g_277 :- \+result_1_137, \+result_2_137.
+result_1_138 :- result_1_137, result_then_1_139.
+result_1_138 :- result_g_276, f_278.
+result_2_138 :- result_1_137, result_then_2_139.
+result_2_138 :- result_g_276, \+f_278.
+0.001::result_then_c_140.
+0.5::f_279.
+result_then_1_140 :- \+result_then_c_140, f_279.
+result_then_2_140 :- \+result_then_c_140, \+f_279.
+result_g_278 :- \+result_1_138, result_2_138.
+0.5::f_280.
+result_g_279 :- \+result_1_138, \+result_2_138.
+result_1_139 :- result_1_138, result_then_1_140.
+result_1_139 :- result_g_278, f_280.
+result_2_139 :- result_1_138, result_then_2_140.
+result_2_139 :- result_g_278, \+f_280.
+0.001::result_then_c_141.
+0.5::f_281.
+result_then_1_141 :- \+result_then_c_141, f_281.
+result_then_2_141 :- \+result_then_c_141, \+f_281.
+result_g_280 :- \+result_1_139, result_2_139.
+0.5::f_282.
+result_g_281 :- \+result_1_139, \+result_2_139.
+result_1_140 :- result_1_139, result_then_1_141.
+result_1_140 :- result_g_280, f_282.
+result_2_140 :- result_1_139, result_then_2_141.
+result_2_140 :- result_g_280, \+f_282.
+0.001::result_then_c_142.
+0.5::f_283.
+result_then_1_142 :- \+result_then_c_142, f_283.
+result_then_2_142 :- \+result_then_c_142, \+f_283.
+result_g_282 :- \+result_1_140, result_2_140.
+0.5::f_284.
+result_g_283 :- \+result_1_140, \+result_2_140.
+result_1_141 :- result_1_140, result_then_1_142.
+result_1_141 :- result_g_282, f_284.
+result_2_141 :- result_1_140, result_then_2_142.
+result_2_141 :- result_g_282, \+f_284.
+0.001::result_then_c_143.
+0.5::f_285.
+result_then_1_143 :- \+result_then_c_143, f_285.
+result_then_2_143 :- \+result_then_c_143, \+f_285.
+result_g_284 :- \+result_1_141, result_2_141.
+0.5::f_286.
+result_g_285 :- \+result_1_141, \+result_2_141.
+result_1_142 :- result_1_141, result_then_1_143.
+result_1_142 :- result_g_284, f_286.
+result_2_142 :- result_1_141, result_then_2_143.
+result_2_142 :- result_g_284, \+f_286.
+0.001::result_then_c_144.
+0.5::f_287.
+result_then_1_144 :- \+result_then_c_144, f_287.
+result_then_2_144 :- \+result_then_c_144, \+f_287.
+result_g_286 :- \+result_1_142, result_2_142.
+0.5::f_288.
+result_g_287 :- \+result_1_142, \+result_2_142.
+result_1_143 :- result_1_142, result_then_1_144.
+result_1_143 :- result_g_286, f_288.
+result_2_143 :- result_1_142, result_then_2_144.
+result_2_143 :- result_g_286, \+f_288.
+0.001::result_then_c_145.
+0.5::f_289.
+result_then_1_145 :- \+result_then_c_145, f_289.
+result_then_2_145 :- \+result_then_c_145, \+f_289.
+result_g_288 :- \+result_1_143, result_2_143.
+0.5::f_290.
+result_g_289 :- \+result_1_143, \+result_2_143.
+result_1_144 :- result_1_143, result_then_1_145.
+result_1_144 :- result_g_288, f_290.
+result_2_144 :- result_1_143, result_then_2_145.
+result_2_144 :- result_g_288, \+f_290.
+0.001::result_then_c_146.
+0.5::f_291.
+result_then_1_146 :- \+result_then_c_146, f_291.
+result_then_2_146 :- \+result_then_c_146, \+f_291.
+result_g_290 :- \+result_1_144, result_2_144.
+0.5::f_292.
+result_g_291 :- \+result_1_144, \+result_2_144.
+result_1_145 :- result_1_144, result_then_1_146.
+result_1_145 :- result_g_290, f_292.
+result_2_145 :- result_1_144, result_then_2_146.
+result_2_145 :- result_g_290, \+f_292.
+0.001::result_then_c_147.
+0.5::f_293.
+result_then_1_147 :- \+result_then_c_147, f_293.
+result_then_2_147 :- \+result_then_c_147, \+f_293.
+result_g_292 :- \+result_1_145, result_2_145.
+0.5::f_294.
+result_g_293 :- \+result_1_145, \+result_2_145.
+result_1_146 :- result_1_145, result_then_1_147.
+result_1_146 :- result_g_292, f_294.
+result_2_146 :- result_1_145, result_then_2_147.
+result_2_146 :- result_g_292, \+f_294.
+0.001::result_then_c_148.
+0.5::f_295.
+result_then_1_148 :- \+result_then_c_148, f_295.
+result_then_2_148 :- \+result_then_c_148, \+f_295.
+result_g_294 :- \+result_1_146, result_2_146.
+0.5::f_296.
+result_g_295 :- \+result_1_146, \+result_2_146.
+result_1_147 :- result_1_146, result_then_1_148.
+result_1_147 :- result_g_294, f_296.
+result_2_147 :- result_1_146, result_then_2_148.
+result_2_147 :- result_g_294, \+f_296.
+0.001::result_then_c_149.
+0.5::f_297.
+result_then_1_149 :- \+result_then_c_149, f_297.
+result_then_2_149 :- \+result_then_c_149, \+f_297.
+result_g_296 :- \+result_1_147, result_2_147.
+0.5::f_298.
+result_g_297 :- \+result_1_147, \+result_2_147.
+result_1_148 :- result_1_147, result_then_1_149.
+result_1_148 :- result_g_296, f_298.
+result_2_148 :- result_1_147, result_then_2_149.
+result_2_148 :- result_g_296, \+f_298.
+0.001::result_then_c_150.
+0.5::f_299.
+result_then_1_150 :- \+result_then_c_150, f_299.
+result_then_2_150 :- \+result_then_c_150, \+f_299.
+result_g_298 :- \+result_1_148, result_2_148.
+0.5::f_300.
+result_g_299 :- \+result_1_148, \+result_2_148.
+result_1_149 :- result_1_148, result_then_1_150.
+result_1_149 :- result_g_298, f_300.
+result_2_149 :- result_1_148, result_then_2_150.
+result_2_149 :- result_g_298, \+f_300.
+0.001::result_then_c_151.
+0.5::f_301.
+result_then_1_151 :- \+result_then_c_151, f_301.
+result_then_2_151 :- \+result_then_c_151, \+f_301.
+result_g_300 :- \+result_1_149, result_2_149.
+0.5::f_302.
+result_g_301 :- \+result_1_149, \+result_2_149.
+result_1_150 :- result_1_149, result_then_1_151.
+result_1_150 :- result_g_300, f_302.
+result_2_150 :- result_1_149, result_then_2_151.
+result_2_150 :- result_g_300, \+f_302.
+0.001::result_then_c_152.
+0.5::f_303.
+result_then_1_152 :- \+result_then_c_152, f_303.
+result_then_2_152 :- \+result_then_c_152, \+f_303.
+result_g_302 :- \+result_1_150, result_2_150.
+0.5::f_304.
+result_g_303 :- \+result_1_150, \+result_2_150.
+result_1_151 :- result_1_150, result_then_1_152.
+result_1_151 :- result_g_302, f_304.
+result_2_151 :- result_1_150, result_then_2_152.
+result_2_151 :- result_g_302, \+f_304.
+0.001::result_then_c_153.
+0.5::f_305.
+result_then_1_153 :- \+result_then_c_153, f_305.
+result_then_2_153 :- \+result_then_c_153, \+f_305.
+result_g_304 :- \+result_1_151, result_2_151.
+0.5::f_306.
+result_g_305 :- \+result_1_151, \+result_2_151.
+result_1_152 :- result_1_151, result_then_1_153.
+result_1_152 :- result_g_304, f_306.
+result_2_152 :- result_1_151, result_then_2_153.
+result_2_152 :- result_g_304, \+f_306.
+0.001::result_then_c_154.
+0.5::f_307.
+result_then_1_154 :- \+result_then_c_154, f_307.
+result_then_2_154 :- \+result_then_c_154, \+f_307.
+result_g_306 :- \+result_1_152, result_2_152.
+0.5::f_308.
+result_g_307 :- \+result_1_152, \+result_2_152.
+result_1_153 :- result_1_152, result_then_1_154.
+result_1_153 :- result_g_306, f_308.
+result_2_153 :- result_1_152, result_then_2_154.
+result_2_153 :- result_g_306, \+f_308.
+0.001::result_then_c_155.
+0.5::f_309.
+result_then_1_155 :- \+result_then_c_155, f_309.
+result_then_2_155 :- \+result_then_c_155, \+f_309.
+result_g_308 :- \+result_1_153, result_2_153.
+0.5::f_310.
+result_g_309 :- \+result_1_153, \+result_2_153.
+result_1_154 :- result_1_153, result_then_1_155.
+result_1_154 :- result_g_308, f_310.
+result_2_154 :- result_1_153, result_then_2_155.
+result_2_154 :- result_g_308, \+f_310.
+0.001::result_then_c_156.
+0.5::f_311.
+result_then_1_156 :- \+result_then_c_156, f_311.
+result_then_2_156 :- \+result_then_c_156, \+f_311.
+result_g_310 :- \+result_1_154, result_2_154.
+0.5::f_312.
+result_g_311 :- \+result_1_154, \+result_2_154.
+result_1_155 :- result_1_154, result_then_1_156.
+result_1_155 :- result_g_310, f_312.
+result_2_155 :- result_1_154, result_then_2_156.
+result_2_155 :- result_g_310, \+f_312.
+0.001::result_then_c_157.
+0.5::f_313.
+result_then_1_157 :- \+result_then_c_157, f_313.
+result_then_2_157 :- \+result_then_c_157, \+f_313.
+result_g_312 :- \+result_1_155, result_2_155.
+0.5::f_314.
+result_g_313 :- \+result_1_155, \+result_2_155.
+result_1_156 :- result_1_155, result_then_1_157.
+result_1_156 :- result_g_312, f_314.
+result_2_156 :- result_1_155, result_then_2_157.
+result_2_156 :- result_g_312, \+f_314.
+0.001::result_then_c_158.
+0.5::f_315.
+result_then_1_158 :- \+result_then_c_158, f_315.
+result_then_2_158 :- \+result_then_c_158, \+f_315.
+result_g_314 :- \+result_1_156, result_2_156.
+0.5::f_316.
+result_g_315 :- \+result_1_156, \+result_2_156.
+result_1_157 :- result_1_156, result_then_1_158.
+result_1_157 :- result_g_314, f_316.
+result_2_157 :- result_1_156, result_then_2_158.
+result_2_157 :- result_g_314, \+f_316.
+0.001::result_then_c_159.
+0.5::f_317.
+result_then_1_159 :- \+result_then_c_159, f_317.
+result_then_2_159 :- \+result_then_c_159, \+f_317.
+result_g_316 :- \+result_1_157, result_2_157.
+0.5::f_318.
+result_g_317 :- \+result_1_157, \+result_2_157.
+result_1_158 :- result_1_157, result_then_1_159.
+result_1_158 :- result_g_316, f_318.
+result_2_158 :- result_1_157, result_then_2_159.
+result_2_158 :- result_g_316, \+f_318.
+0.001::result_then_c_160.
+0.5::f_319.
+result_then_1_160 :- \+result_then_c_160, f_319.
+result_then_2_160 :- \+result_then_c_160, \+f_319.
+result_g_318 :- \+result_1_158, result_2_158.
+0.5::f_320.
+result_g_319 :- \+result_1_158, \+result_2_158.
+result_1_159 :- result_1_158, result_then_1_160.
+result_1_159 :- result_g_318, f_320.
+result_2_159 :- result_1_158, result_then_2_160.
+result_2_159 :- result_g_318, \+f_320.
+0.001::result_then_c_161.
+0.5::f_321.
+result_then_1_161 :- \+result_then_c_161, f_321.
+result_then_2_161 :- \+result_then_c_161, \+f_321.
+result_g_320 :- \+result_1_159, result_2_159.
+0.5::f_322.
+result_g_321 :- \+result_1_159, \+result_2_159.
+result_1_160 :- result_1_159, result_then_1_161.
+result_1_160 :- result_g_320, f_322.
+result_2_160 :- result_1_159, result_then_2_161.
+result_2_160 :- result_g_320, \+f_322.
+0.001::result_then_c_162.
+0.5::f_323.
+result_then_1_162 :- \+result_then_c_162, f_323.
+result_then_2_162 :- \+result_then_c_162, \+f_323.
+result_g_322 :- \+result_1_160, result_2_160.
+0.5::f_324.
+result_g_323 :- \+result_1_160, \+result_2_160.
+result_1_161 :- result_1_160, result_then_1_162.
+result_1_161 :- result_g_322, f_324.
+result_2_161 :- result_1_160, result_then_2_162.
+result_2_161 :- result_g_322, \+f_324.
+0.001::result_then_c_163.
+0.5::f_325.
+result_then_1_163 :- \+result_then_c_163, f_325.
+result_then_2_163 :- \+result_then_c_163, \+f_325.
+result_g_324 :- \+result_1_161, result_2_161.
+0.5::f_326.
+result_g_325 :- \+result_1_161, \+result_2_161.
+result_1_162 :- result_1_161, result_then_1_163.
+result_1_162 :- result_g_324, f_326.
+result_2_162 :- result_1_161, result_then_2_163.
+result_2_162 :- result_g_324, \+f_326.
+0.001::result_then_c_164.
+0.5::f_327.
+result_then_1_164 :- \+result_then_c_164, f_327.
+result_then_2_164 :- \+result_then_c_164, \+f_327.
+result_g_326 :- \+result_1_162, result_2_162.
+0.5::f_328.
+result_g_327 :- \+result_1_162, \+result_2_162.
+result_1_163 :- result_1_162, result_then_1_164.
+result_1_163 :- result_g_326, f_328.
+result_2_163 :- result_1_162, result_then_2_164.
+result_2_163 :- result_g_326, \+f_328.
+0.001::result_then_c_165.
+0.5::f_329.
+result_then_1_165 :- \+result_then_c_165, f_329.
+result_then_2_165 :- \+result_then_c_165, \+f_329.
+result_g_328 :- \+result_1_163, result_2_163.
+0.5::f_330.
+result_g_329 :- \+result_1_163, \+result_2_163.
+result_1_164 :- result_1_163, result_then_1_165.
+result_1_164 :- result_g_328, f_330.
+result_2_164 :- result_1_163, result_then_2_165.
+result_2_164 :- result_g_328, \+f_330.
+0.001::result_then_c_166.
+0.5::f_331.
+result_then_1_166 :- \+result_then_c_166, f_331.
+result_then_2_166 :- \+result_then_c_166, \+f_331.
+result_g_330 :- \+result_1_164, result_2_164.
+0.5::f_332.
+result_g_331 :- \+result_1_164, \+result_2_164.
+result_1_165 :- result_1_164, result_then_1_166.
+result_1_165 :- result_g_330, f_332.
+result_2_165 :- result_1_164, result_then_2_166.
+result_2_165 :- result_g_330, \+f_332.
+0.001::result_then_c_167.
+0.5::f_333.
+result_then_1_167 :- \+result_then_c_167, f_333.
+result_then_2_167 :- \+result_then_c_167, \+f_333.
+result_g_332 :- \+result_1_165, result_2_165.
+0.5::f_334.
+result_g_333 :- \+result_1_165, \+result_2_165.
+result_1_166 :- result_1_165, result_then_1_167.
+result_1_166 :- result_g_332, f_334.
+result_2_166 :- result_1_165, result_then_2_167.
+result_2_166 :- result_g_332, \+f_334.
+0.001::result_then_c_168.
+0.5::f_335.
+result_then_1_168 :- \+result_then_c_168, f_335.
+result_then_2_168 :- \+result_then_c_168, \+f_335.
+result_g_334 :- \+result_1_166, result_2_166.
+0.5::f_336.
+result_g_335 :- \+result_1_166, \+result_2_166.
+result_1_167 :- result_1_166, result_then_1_168.
+result_1_167 :- result_g_334, f_336.
+result_2_167 :- result_1_166, result_then_2_168.
+result_2_167 :- result_g_334, \+f_336.
+0.001::result_then_c_169.
+0.5::f_337.
+result_then_1_169 :- \+result_then_c_169, f_337.
+result_then_2_169 :- \+result_then_c_169, \+f_337.
+result_g_336 :- \+result_1_167, result_2_167.
+0.5::f_338.
+result_g_337 :- \+result_1_167, \+result_2_167.
+result_1_168 :- result_1_167, result_then_1_169.
+result_1_168 :- result_g_336, f_338.
+result_2_168 :- result_1_167, result_then_2_169.
+result_2_168 :- result_g_336, \+f_338.
+0.001::result_then_c_170.
+0.5::f_339.
+result_then_1_170 :- \+result_then_c_170, f_339.
+result_then_2_170 :- \+result_then_c_170, \+f_339.
+result_g_338 :- \+result_1_168, result_2_168.
+0.5::f_340.
+result_g_339 :- \+result_1_168, \+result_2_168.
+result_1_169 :- result_1_168, result_then_1_170.
+result_1_169 :- result_g_338, f_340.
+result_2_169 :- result_1_168, result_then_2_170.
+result_2_169 :- result_g_338, \+f_340.
+0.001::result_then_c_171.
+0.5::f_341.
+result_then_1_171 :- \+result_then_c_171, f_341.
+result_then_2_171 :- \+result_then_c_171, \+f_341.
+result_g_340 :- \+result_1_169, result_2_169.
+0.5::f_342.
+result_g_341 :- \+result_1_169, \+result_2_169.
+result_1_170 :- result_1_169, result_then_1_171.
+result_1_170 :- result_g_340, f_342.
+result_2_170 :- result_1_169, result_then_2_171.
+result_2_170 :- result_g_340, \+f_342.
+0.001::result_then_c_172.
+0.5::f_343.
+result_then_1_172 :- \+result_then_c_172, f_343.
+result_then_2_172 :- \+result_then_c_172, \+f_343.
+result_g_342 :- \+result_1_170, result_2_170.
+0.5::f_344.
+result_g_343 :- \+result_1_170, \+result_2_170.
+result_1_171 :- result_1_170, result_then_1_172.
+result_1_171 :- result_g_342, f_344.
+result_2_171 :- result_1_170, result_then_2_172.
+result_2_171 :- result_g_342, \+f_344.
+0.001::result_then_c_173.
+0.5::f_345.
+result_then_1_173 :- \+result_then_c_173, f_345.
+result_then_2_173 :- \+result_then_c_173, \+f_345.
+result_g_344 :- \+result_1_171, result_2_171.
+0.5::f_346.
+result_g_345 :- \+result_1_171, \+result_2_171.
+result_1_172 :- result_1_171, result_then_1_173.
+result_1_172 :- result_g_344, f_346.
+result_2_172 :- result_1_171, result_then_2_173.
+result_2_172 :- result_g_344, \+f_346.
+0.001::result_then_c_174.
+0.5::f_347.
+result_then_1_174 :- \+result_then_c_174, f_347.
+result_then_2_174 :- \+result_then_c_174, \+f_347.
+result_g_346 :- \+result_1_172, result_2_172.
+0.5::f_348.
+result_g_347 :- \+result_1_172, \+result_2_172.
+result_1_173 :- result_1_172, result_then_1_174.
+result_1_173 :- result_g_346, f_348.
+result_2_173 :- result_1_172, result_then_2_174.
+result_2_173 :- result_g_346, \+f_348.
+0.001::result_then_c_175.
+0.5::f_349.
+result_then_1_175 :- \+result_then_c_175, f_349.
+result_then_2_175 :- \+result_then_c_175, \+f_349.
+result_g_348 :- \+result_1_173, result_2_173.
+0.5::f_350.
+result_g_349 :- \+result_1_173, \+result_2_173.
+result_1_174 :- result_1_173, result_then_1_175.
+result_1_174 :- result_g_348, f_350.
+result_2_174 :- result_1_173, result_then_2_175.
+result_2_174 :- result_g_348, \+f_350.
+0.001::result_then_c_176.
+0.5::f_351.
+result_then_1_176 :- \+result_then_c_176, f_351.
+result_then_2_176 :- \+result_then_c_176, \+f_351.
+result_g_350 :- \+result_1_174, result_2_174.
+0.5::f_352.
+result_g_351 :- \+result_1_174, \+result_2_174.
+result_1_175 :- result_1_174, result_then_1_176.
+result_1_175 :- result_g_350, f_352.
+result_2_175 :- result_1_174, result_then_2_176.
+result_2_175 :- result_g_350, \+f_352.
+0.001::result_then_c_177.
+0.5::f_353.
+result_then_1_177 :- \+result_then_c_177, f_353.
+result_then_2_177 :- \+result_then_c_177, \+f_353.
+result_g_352 :- \+result_1_175, result_2_175.
+0.5::f_354.
+result_g_353 :- \+result_1_175, \+result_2_175.
+result_1_176 :- result_1_175, result_then_1_177.
+result_1_176 :- result_g_352, f_354.
+result_2_176 :- result_1_175, result_then_2_177.
+result_2_176 :- result_g_352, \+f_354.
+0.001::result_then_c_178.
+0.5::f_355.
+result_then_1_178 :- \+result_then_c_178, f_355.
+result_then_2_178 :- \+result_then_c_178, \+f_355.
+result_g_354 :- \+result_1_176, result_2_176.
+0.5::f_356.
+result_g_355 :- \+result_1_176, \+result_2_176.
+result_1_177 :- result_1_176, result_then_1_178.
+result_1_177 :- result_g_354, f_356.
+result_2_177 :- result_1_176, result_then_2_178.
+result_2_177 :- result_g_354, \+f_356.
+0.001::result_then_c_179.
+0.5::f_357.
+result_then_1_179 :- \+result_then_c_179, f_357.
+result_then_2_179 :- \+result_then_c_179, \+f_357.
+result_g_356 :- \+result_1_177, result_2_177.
+0.5::f_358.
+result_g_357 :- \+result_1_177, \+result_2_177.
+result_1_178 :- result_1_177, result_then_1_179.
+result_1_178 :- result_g_356, f_358.
+result_2_178 :- result_1_177, result_then_2_179.
+result_2_178 :- result_g_356, \+f_358.
+0.001::result_then_c_180.
+0.5::f_359.
+result_then_1_180 :- \+result_then_c_180, f_359.
+result_then_2_180 :- \+result_then_c_180, \+f_359.
+result_g_358 :- \+result_1_178, result_2_178.
+0.5::f_360.
+result_g_359 :- \+result_1_178, \+result_2_178.
+result_1_179 :- result_1_178, result_then_1_180.
+result_1_179 :- result_g_358, f_360.
+result_2_179 :- result_1_178, result_then_2_180.
+result_2_179 :- result_g_358, \+f_360.
+0.001::result_then_c_181.
+0.5::f_361.
+result_then_1_181 :- \+result_then_c_181, f_361.
+result_then_2_181 :- \+result_then_c_181, \+f_361.
+result_g_360 :- \+result_1_179, result_2_179.
+0.5::f_362.
+result_g_361 :- \+result_1_179, \+result_2_179.
+result_1_180 :- result_1_179, result_then_1_181.
+result_1_180 :- result_g_360, f_362.
+result_2_180 :- result_1_179, result_then_2_181.
+result_2_180 :- result_g_360, \+f_362.
+0.001::result_then_c_182.
+0.5::f_363.
+result_then_1_182 :- \+result_then_c_182, f_363.
+result_then_2_182 :- \+result_then_c_182, \+f_363.
+result_g_362 :- \+result_1_180, result_2_180.
+0.5::f_364.
+result_g_363 :- \+result_1_180, \+result_2_180.
+result_1_181 :- result_1_180, result_then_1_182.
+result_1_181 :- result_g_362, f_364.
+result_2_181 :- result_1_180, result_then_2_182.
+result_2_181 :- result_g_362, \+f_364.
+0.001::result_then_c_183.
+0.5::f_365.
+result_then_1_183 :- \+result_then_c_183, f_365.
+result_then_2_183 :- \+result_then_c_183, \+f_365.
+result_g_364 :- \+result_1_181, result_2_181.
+0.5::f_366.
+result_g_365 :- \+result_1_181, \+result_2_181.
+result_1_182 :- result_1_181, result_then_1_183.
+result_1_182 :- result_g_364, f_366.
+result_2_182 :- result_1_181, result_then_2_183.
+result_2_182 :- result_g_364, \+f_366.
+0.001::result_then_c_184.
+0.5::f_367.
+result_then_1_184 :- \+result_then_c_184, f_367.
+result_then_2_184 :- \+result_then_c_184, \+f_367.
+result_g_366 :- \+result_1_182, result_2_182.
+0.5::f_368.
+result_g_367 :- \+result_1_182, \+result_2_182.
+result_1_183 :- result_1_182, result_then_1_184.
+result_1_183 :- result_g_366, f_368.
+result_2_183 :- result_1_182, result_then_2_184.
+result_2_183 :- result_g_366, \+f_368.
+0.001::result_then_c_185.
+0.5::f_369.
+result_then_1_185 :- \+result_then_c_185, f_369.
+result_then_2_185 :- \+result_then_c_185, \+f_369.
+result_g_368 :- \+result_1_183, result_2_183.
+0.5::f_370.
+result_g_369 :- \+result_1_183, \+result_2_183.
+result_1_184 :- result_1_183, result_then_1_185.
+result_1_184 :- result_g_368, f_370.
+result_2_184 :- result_1_183, result_then_2_185.
+result_2_184 :- result_g_368, \+f_370.
+0.001::result_then_c_186.
+0.5::f_371.
+result_then_1_186 :- \+result_then_c_186, f_371.
+result_then_2_186 :- \+result_then_c_186, \+f_371.
+result_g_370 :- \+result_1_184, result_2_184.
+0.5::f_372.
+result_g_371 :- \+result_1_184, \+result_2_184.
+result_1_185 :- result_1_184, result_then_1_186.
+result_1_185 :- result_g_370, f_372.
+result_2_185 :- result_1_184, result_then_2_186.
+result_2_185 :- result_g_370, \+f_372.
+0.001::result_then_c_187.
+0.5::f_373.
+result_then_1_187 :- \+result_then_c_187, f_373.
+result_then_2_187 :- \+result_then_c_187, \+f_373.
+result_g_372 :- \+result_1_185, result_2_185.
+0.5::f_374.
+result_g_373 :- \+result_1_185, \+result_2_185.
+result_1_186 :- result_1_185, result_then_1_187.
+result_1_186 :- result_g_372, f_374.
+result_2_186 :- result_1_185, result_then_2_187.
+result_2_186 :- result_g_372, \+f_374.
+0.001::result_then_c_188.
+0.5::f_375.
+result_then_1_188 :- \+result_then_c_188, f_375.
+result_then_2_188 :- \+result_then_c_188, \+f_375.
+result_g_374 :- \+result_1_186, result_2_186.
+0.5::f_376.
+result_g_375 :- \+result_1_186, \+result_2_186.
+result_1_187 :- result_1_186, result_then_1_188.
+result_1_187 :- result_g_374, f_376.
+result_2_187 :- result_1_186, result_then_2_188.
+result_2_187 :- result_g_374, \+f_376.
+0.001::result_then_c_189.
+0.5::f_377.
+result_then_1_189 :- \+result_then_c_189, f_377.
+result_then_2_189 :- \+result_then_c_189, \+f_377.
+result_g_376 :- \+result_1_187, result_2_187.
+0.5::f_378.
+result_g_377 :- \+result_1_187, \+result_2_187.
+result_1_188 :- result_1_187, result_then_1_189.
+result_1_188 :- result_g_376, f_378.
+result_2_188 :- result_1_187, result_then_2_189.
+result_2_188 :- result_g_376, \+f_378.
+0.001::result_then_c_190.
+0.5::f_379.
+result_then_1_190 :- \+result_then_c_190, f_379.
+result_then_2_190 :- \+result_then_c_190, \+f_379.
+result_g_378 :- \+result_1_188, result_2_188.
+0.5::f_380.
+result_g_379 :- \+result_1_188, \+result_2_188.
+result_1_189 :- result_1_188, result_then_1_190.
+result_1_189 :- result_g_378, f_380.
+result_2_189 :- result_1_188, result_then_2_190.
+result_2_189 :- result_g_378, \+f_380.
+0.001::result_then_c_191.
+0.5::f_381.
+result_then_1_191 :- \+result_then_c_191, f_381.
+result_then_2_191 :- \+result_then_c_191, \+f_381.
+result_g_380 :- \+result_1_189, result_2_189.
+0.5::f_382.
+result_g_381 :- \+result_1_189, \+result_2_189.
+result_1_190 :- result_1_189, result_then_1_191.
+result_1_190 :- result_g_380, f_382.
+result_2_190 :- result_1_189, result_then_2_191.
+result_2_190 :- result_g_380, \+f_382.
+0.001::result_then_c_192.
+0.5::f_383.
+result_then_1_192 :- \+result_then_c_192, f_383.
+result_then_2_192 :- \+result_then_c_192, \+f_383.
+result_g_382 :- \+result_1_190, result_2_190.
+0.5::f_384.
+result_g_383 :- \+result_1_190, \+result_2_190.
+result_1_191 :- result_1_190, result_then_1_192.
+result_1_191 :- result_g_382, f_384.
+result_2_191 :- result_1_190, result_then_2_192.
+result_2_191 :- result_g_382, \+f_384.
+0.001::result_then_c_193.
+0.5::f_385.
+result_then_1_193 :- \+result_then_c_193, f_385.
+result_then_2_193 :- \+result_then_c_193, \+f_385.
+result_g_384 :- \+result_1_191, result_2_191.
+0.5::f_386.
+result_g_385 :- \+result_1_191, \+result_2_191.
+result_1_192 :- result_1_191, result_then_1_193.
+result_1_192 :- result_g_384, f_386.
+result_2_192 :- result_1_191, result_then_2_193.
+result_2_192 :- result_g_384, \+f_386.
+0.001::result_then_c_194.
+0.5::f_387.
+result_then_1_194 :- \+result_then_c_194, f_387.
+result_then_2_194 :- \+result_then_c_194, \+f_387.
+result_g_386 :- \+result_1_192, result_2_192.
+0.5::f_388.
+result_g_387 :- \+result_1_192, \+result_2_192.
+result_1_193 :- result_1_192, result_then_1_194.
+result_1_193 :- result_g_386, f_388.
+result_2_193 :- result_1_192, result_then_2_194.
+result_2_193 :- result_g_386, \+f_388.
+0.001::result_then_c_195.
+0.5::f_389.
+result_then_1_195 :- \+result_then_c_195, f_389.
+result_then_2_195 :- \+result_then_c_195, \+f_389.
+result_g_388 :- \+result_1_193, result_2_193.
+0.5::f_390.
+result_g_389 :- \+result_1_193, \+result_2_193.
+result_1_194 :- result_1_193, result_then_1_195.
+result_1_194 :- result_g_388, f_390.
+result_2_194 :- result_1_193, result_then_2_195.
+result_2_194 :- result_g_388, \+f_390.
+0.001::result_then_c_196.
+0.5::f_391.
+result_then_1_196 :- \+result_then_c_196, f_391.
+result_then_2_196 :- \+result_then_c_196, \+f_391.
+result_g_390 :- \+result_1_194, result_2_194.
+0.5::f_392.
+result_g_391 :- \+result_1_194, \+result_2_194.
+result_1_195 :- result_1_194, result_then_1_196.
+result_1_195 :- result_g_390, f_392.
+result_2_195 :- result_1_194, result_then_2_196.
+result_2_195 :- result_g_390, \+f_392.
+0.001::result_then_c_197.
+0.5::f_393.
+result_then_1_197 :- \+result_then_c_197, f_393.
+result_then_2_197 :- \+result_then_c_197, \+f_393.
+result_g_392 :- \+result_1_195, result_2_195.
+0.5::f_394.
+result_g_393 :- \+result_1_195, \+result_2_195.
+result_1_196 :- result_1_195, result_then_1_197.
+result_1_196 :- result_g_392, f_394.
+result_2_196 :- result_1_195, result_then_2_197.
+result_2_196 :- result_g_392, \+f_394.
+0.001::result_then_c_198.
+0.5::f_395.
+result_then_1_198 :- \+result_then_c_198, f_395.
+result_then_2_198 :- \+result_then_c_198, \+f_395.
+result_g_394 :- \+result_1_196, result_2_196.
+0.5::f_396.
+result_g_395 :- \+result_1_196, \+result_2_196.
+result_1_197 :- result_1_196, result_then_1_198.
+result_1_197 :- result_g_394, f_396.
+result_2_197 :- result_1_196, result_then_2_198.
+result_2_197 :- result_g_394, \+f_396.
+0.001::result_then_c_199.
+0.5::f_397.
+result_then_1_199 :- \+result_then_c_199, f_397.
+result_then_2_199 :- \+result_then_c_199, \+f_397.
+result_g_396 :- \+result_1_197, result_2_197.
+0.5::f_398.
+result_g_397 :- \+result_1_197, \+result_2_197.
+result_1_198 :- result_1_197, result_then_1_199.
+result_1_198 :- result_g_396, f_398.
+result_2_198 :- result_1_197, result_then_2_199.
+result_2_198 :- result_g_396, \+f_398.
+0.001::result_then_c_200.
+0.5::f_399.
+result_then_1_200 :- \+result_then_c_200, f_399.
+result_then_2_200 :- \+result_then_c_200, \+f_399.
+result_g_398 :- \+result_1_198, result_2_198.
+0.5::f_400.
+result_g_399 :- \+result_1_198, \+result_2_198.
+result_1_199 :- result_1_198, result_then_1_200.
+result_1_199 :- result_g_398, f_400.
+result_2_199 :- result_1_198, result_then_2_200.
+result_2_199 :- result_g_398, \+f_400.
+0.001::result_then_c_201.
+0.5::f_401.
+result_then_1_201 :- \+result_then_c_201, f_401.
+result_then_2_201 :- \+result_then_c_201, \+f_401.
+result_g_400 :- \+result_1_199, result_2_199.
+0.5::f_402.
+result_g_401 :- \+result_1_199, \+result_2_199.
+result_1_200 :- result_1_199, result_then_1_201.
+result_1_200 :- result_g_400, f_402.
+result_2_200 :- result_1_199, result_then_2_201.
+result_2_200 :- result_g_400, \+f_402.
+0.001::result_then_c_202.
+0.5::f_403.
+result_then_1_202 :- \+result_then_c_202, f_403.
+result_then_2_202 :- \+result_then_c_202, \+f_403.
+result_g_402 :- \+result_1_200, result_2_200.
+0.5::f_404.
+result_g_403 :- \+result_1_200, \+result_2_200.
+result_1_201 :- result_1_200, result_then_1_202.
+result_1_201 :- result_g_402, f_404.
+result_2_201 :- result_1_200, result_then_2_202.
+result_2_201 :- result_g_402, \+f_404.
+0.001::result_then_c_203.
+0.5::f_405.
+result_then_1_203 :- \+result_then_c_203, f_405.
+result_then_2_203 :- \+result_then_c_203, \+f_405.
+result_g_404 :- \+result_1_201, result_2_201.
+0.5::f_406.
+result_g_405 :- \+result_1_201, \+result_2_201.
+result_1_202 :- result_1_201, result_then_1_203.
+result_1_202 :- result_g_404, f_406.
+result_2_202 :- result_1_201, result_then_2_203.
+result_2_202 :- result_g_404, \+f_406.
+0.001::result_then_c_204.
+0.5::f_407.
+result_then_1_204 :- \+result_then_c_204, f_407.
+result_then_2_204 :- \+result_then_c_204, \+f_407.
+result_g_406 :- \+result_1_202, result_2_202.
+0.5::f_408.
+result_g_407 :- \+result_1_202, \+result_2_202.
+result_1_203 :- result_1_202, result_then_1_204.
+result_1_203 :- result_g_406, f_408.
+result_2_203 :- result_1_202, result_then_2_204.
+result_2_203 :- result_g_406, \+f_408.
+0.001::result_then_c_205.
+0.5::f_409.
+result_then_1_205 :- \+result_then_c_205, f_409.
+result_then_2_205 :- \+result_then_c_205, \+f_409.
+result_g_408 :- \+result_1_203, result_2_203.
+0.5::f_410.
+result_g_409 :- \+result_1_203, \+result_2_203.
+result_1_204 :- result_1_203, result_then_1_205.
+result_1_204 :- result_g_408, f_410.
+result_2_204 :- result_1_203, result_then_2_205.
+result_2_204 :- result_g_408, \+f_410.
+0.001::result_then_c_206.
+0.5::f_411.
+result_then_1_206 :- \+result_then_c_206, f_411.
+result_then_2_206 :- \+result_then_c_206, \+f_411.
+result_g_410 :- \+result_1_204, result_2_204.
+0.5::f_412.
+result_g_411 :- \+result_1_204, \+result_2_204.
+result_1_205 :- result_1_204, result_then_1_206.
+result_1_205 :- result_g_410, f_412.
+result_2_205 :- result_1_204, result_then_2_206.
+result_2_205 :- result_g_410, \+f_412.
+0.001::result_then_c_207.
+0.5::f_413.
+result_then_1_207 :- \+result_then_c_207, f_413.
+result_then_2_207 :- \+result_then_c_207, \+f_413.
+result_g_412 :- \+result_1_205, result_2_205.
+0.5::f_414.
+result_g_413 :- \+result_1_205, \+result_2_205.
+result_1_206 :- result_1_205, result_then_1_207.
+result_1_206 :- result_g_412, f_414.
+result_2_206 :- result_1_205, result_then_2_207.
+result_2_206 :- result_g_412, \+f_414.
+0.001::result_then_c_208.
+0.5::f_415.
+result_then_1_208 :- \+result_then_c_208, f_415.
+result_then_2_208 :- \+result_then_c_208, \+f_415.
+result_g_414 :- \+result_1_206, result_2_206.
+0.5::f_416.
+result_g_415 :- \+result_1_206, \+result_2_206.
+result_1_207 :- result_1_206, result_then_1_208.
+result_1_207 :- result_g_414, f_416.
+result_2_207 :- result_1_206, result_then_2_208.
+result_2_207 :- result_g_414, \+f_416.
+0.001::result_then_c_209.
+0.5::f_417.
+result_then_1_209 :- \+result_then_c_209, f_417.
+result_then_2_209 :- \+result_then_c_209, \+f_417.
+result_g_416 :- \+result_1_207, result_2_207.
+0.5::f_418.
+result_g_417 :- \+result_1_207, \+result_2_207.
+result_1_208 :- result_1_207, result_then_1_209.
+result_1_208 :- result_g_416, f_418.
+result_2_208 :- result_1_207, result_then_2_209.
+result_2_208 :- result_g_416, \+f_418.
+0.001::result_then_c_210.
+0.5::f_419.
+result_then_1_210 :- \+result_then_c_210, f_419.
+result_then_2_210 :- \+result_then_c_210, \+f_419.
+result_g_418 :- \+result_1_208, result_2_208.
+0.5::f_420.
+result_g_419 :- \+result_1_208, \+result_2_208.
+result_1_209 :- result_1_208, result_then_1_210.
+result_1_209 :- result_g_418, f_420.
+result_2_209 :- result_1_208, result_then_2_210.
+result_2_209 :- result_g_418, \+f_420.
+0.001::result_then_c_211.
+0.5::f_421.
+result_then_1_211 :- \+result_then_c_211, f_421.
+result_then_2_211 :- \+result_then_c_211, \+f_421.
+result_g_420 :- \+result_1_209, result_2_209.
+0.5::f_422.
+result_g_421 :- \+result_1_209, \+result_2_209.
+result_1_210 :- result_1_209, result_then_1_211.
+result_1_210 :- result_g_420, f_422.
+result_2_210 :- result_1_209, result_then_2_211.
+result_2_210 :- result_g_420, \+f_422.
+0.001::result_then_c_212.
+0.5::f_423.
+result_then_1_212 :- \+result_then_c_212, f_423.
+result_then_2_212 :- \+result_then_c_212, \+f_423.
+result_g_422 :- \+result_1_210, result_2_210.
+0.5::f_424.
+result_g_423 :- \+result_1_210, \+result_2_210.
+result_1_211 :- result_1_210, result_then_1_212.
+result_1_211 :- result_g_422, f_424.
+result_2_211 :- result_1_210, result_then_2_212.
+result_2_211 :- result_g_422, \+f_424.
+0.001::result_then_c_213.
+0.5::f_425.
+result_then_1_213 :- \+result_then_c_213, f_425.
+result_then_2_213 :- \+result_then_c_213, \+f_425.
+result_g_424 :- \+result_1_211, result_2_211.
+0.5::f_426.
+result_g_425 :- \+result_1_211, \+result_2_211.
+result_1_212 :- result_1_211, result_then_1_213.
+result_1_212 :- result_g_424, f_426.
+result_2_212 :- result_1_211, result_then_2_213.
+result_2_212 :- result_g_424, \+f_426.
+0.001::result_then_c_214.
+0.5::f_427.
+result_then_1_214 :- \+result_then_c_214, f_427.
+result_then_2_214 :- \+result_then_c_214, \+f_427.
+result_g_426 :- \+result_1_212, result_2_212.
+0.5::f_428.
+result_g_427 :- \+result_1_212, \+result_2_212.
+result_1_213 :- result_1_212, result_then_1_214.
+result_1_213 :- result_g_426, f_428.
+result_2_213 :- result_1_212, result_then_2_214.
+result_2_213 :- result_g_426, \+f_428.
+0.001::result_then_c_215.
+0.5::f_429.
+result_then_1_215 :- \+result_then_c_215, f_429.
+result_then_2_215 :- \+result_then_c_215, \+f_429.
+result_g_428 :- \+result_1_213, result_2_213.
+0.5::f_430.
+result_g_429 :- \+result_1_213, \+result_2_213.
+result_1_214 :- result_1_213, result_then_1_215.
+result_1_214 :- result_g_428, f_430.
+result_2_214 :- result_1_213, result_then_2_215.
+result_2_214 :- result_g_428, \+f_430.
+0.001::result_then_c_216.
+0.5::f_431.
+result_then_1_216 :- \+result_then_c_216, f_431.
+result_then_2_216 :- \+result_then_c_216, \+f_431.
+result_g_430 :- \+result_1_214, result_2_214.
+0.5::f_432.
+result_g_431 :- \+result_1_214, \+result_2_214.
+result_1_215 :- result_1_214, result_then_1_216.
+result_1_215 :- result_g_430, f_432.
+result_2_215 :- result_1_214, result_then_2_216.
+result_2_215 :- result_g_430, \+f_432.
+0.001::result_then_c_217.
+0.5::f_433.
+result_then_1_217 :- \+result_then_c_217, f_433.
+result_then_2_217 :- \+result_then_c_217, \+f_433.
+result_g_432 :- \+result_1_215, result_2_215.
+0.5::f_434.
+result_g_433 :- \+result_1_215, \+result_2_215.
+result_1_216 :- result_1_215, result_then_1_217.
+result_1_216 :- result_g_432, f_434.
+result_2_216 :- result_1_215, result_then_2_217.
+result_2_216 :- result_g_432, \+f_434.
+0.001::result_then_c_218.
+0.5::f_435.
+result_then_1_218 :- \+result_then_c_218, f_435.
+result_then_2_218 :- \+result_then_c_218, \+f_435.
+result_g_434 :- \+result_1_216, result_2_216.
+0.5::f_436.
+result_g_435 :- \+result_1_216, \+result_2_216.
+result_1_217 :- result_1_216, result_then_1_218.
+result_1_217 :- result_g_434, f_436.
+result_2_217 :- result_1_216, result_then_2_218.
+result_2_217 :- result_g_434, \+f_436.
+0.001::result_then_c_219.
+0.5::f_437.
+result_then_1_219 :- \+result_then_c_219, f_437.
+result_then_2_219 :- \+result_then_c_219, \+f_437.
+result_g_436 :- \+result_1_217, result_2_217.
+0.5::f_438.
+result_g_437 :- \+result_1_217, \+result_2_217.
+result_1_218 :- result_1_217, result_then_1_219.
+result_1_218 :- result_g_436, f_438.
+result_2_218 :- result_1_217, result_then_2_219.
+result_2_218 :- result_g_436, \+f_438.
+0.001::result_then_c_220.
+0.5::f_439.
+result_then_1_220 :- \+result_then_c_220, f_439.
+result_then_2_220 :- \+result_then_c_220, \+f_439.
+result_g_438 :- \+result_1_218, result_2_218.
+0.5::f_440.
+result_g_439 :- \+result_1_218, \+result_2_218.
+result_1_219 :- result_1_218, result_then_1_220.
+result_1_219 :- result_g_438, f_440.
+result_2_219 :- result_1_218, result_then_2_220.
+result_2_219 :- result_g_438, \+f_440.
+0.001::result_then_c_221.
+0.5::f_441.
+result_then_1_221 :- \+result_then_c_221, f_441.
+result_then_2_221 :- \+result_then_c_221, \+f_441.
+result_g_440 :- \+result_1_219, result_2_219.
+0.5::f_442.
+result_g_441 :- \+result_1_219, \+result_2_219.
+result_1_220 :- result_1_219, result_then_1_221.
+result_1_220 :- result_g_440, f_442.
+result_2_220 :- result_1_219, result_then_2_221.
+result_2_220 :- result_g_440, \+f_442.
+0.001::result_then_c_222.
+0.5::f_443.
+result_then_1_222 :- \+result_then_c_222, f_443.
+result_then_2_222 :- \+result_then_c_222, \+f_443.
+result_g_442 :- \+result_1_220, result_2_220.
+0.5::f_444.
+result_g_443 :- \+result_1_220, \+result_2_220.
+result_1_221 :- result_1_220, result_then_1_222.
+result_1_221 :- result_g_442, f_444.
+result_2_221 :- result_1_220, result_then_2_222.
+result_2_221 :- result_g_442, \+f_444.
+0.001::result_then_c_223.
+0.5::f_445.
+result_then_1_223 :- \+result_then_c_223, f_445.
+result_then_2_223 :- \+result_then_c_223, \+f_445.
+result_g_444 :- \+result_1_221, result_2_221.
+0.5::f_446.
+result_g_445 :- \+result_1_221, \+result_2_221.
+result_1_222 :- result_1_221, result_then_1_223.
+result_1_222 :- result_g_444, f_446.
+result_2_222 :- result_1_221, result_then_2_223.
+result_2_222 :- result_g_444, \+f_446.
+0.001::result_then_c_224.
+0.5::f_447.
+result_then_1_224 :- \+result_then_c_224, f_447.
+result_then_2_224 :- \+result_then_c_224, \+f_447.
+result_g_446 :- \+result_1_222, result_2_222.
+0.5::f_448.
+result_g_447 :- \+result_1_222, \+result_2_222.
+result_1_223 :- result_1_222, result_then_1_224.
+result_1_223 :- result_g_446, f_448.
+result_2_223 :- result_1_222, result_then_2_224.
+result_2_223 :- result_g_446, \+f_448.
+0.001::result_then_c_225.
+0.5::f_449.
+result_then_1_225 :- \+result_then_c_225, f_449.
+result_then_2_225 :- \+result_then_c_225, \+f_449.
+result_g_448 :- \+result_1_223, result_2_223.
+0.5::f_450.
+result_g_449 :- \+result_1_223, \+result_2_223.
+result_1_224 :- result_1_223, result_then_1_225.
+result_1_224 :- result_g_448, f_450.
+result_2_224 :- result_1_223, result_then_2_225.
+result_2_224 :- result_g_448, \+f_450.
+0.001::result_then_c_226.
+0.5::f_451.
+result_then_1_226 :- \+result_then_c_226, f_451.
+result_then_2_226 :- \+result_then_c_226, \+f_451.
+result_g_450 :- \+result_1_224, result_2_224.
+0.5::f_452.
+result_g_451 :- \+result_1_224, \+result_2_224.
+result_1_225 :- result_1_224, result_then_1_226.
+result_1_225 :- result_g_450, f_452.
+result_2_225 :- result_1_224, result_then_2_226.
+result_2_225 :- result_g_450, \+f_452.
+0.001::result_then_c_227.
+0.5::f_453.
+result_then_1_227 :- \+result_then_c_227, f_453.
+result_then_2_227 :- \+result_then_c_227, \+f_453.
+result_g_452 :- \+result_1_225, result_2_225.
+0.5::f_454.
+result_g_453 :- \+result_1_225, \+result_2_225.
+result_1_226 :- result_1_225, result_then_1_227.
+result_1_226 :- result_g_452, f_454.
+result_2_226 :- result_1_225, result_then_2_227.
+result_2_226 :- result_g_452, \+f_454.
+0.001::result_then_c_228.
+0.5::f_455.
+result_then_1_228 :- \+result_then_c_228, f_455.
+result_then_2_228 :- \+result_then_c_228, \+f_455.
+result_g_454 :- \+result_1_226, result_2_226.
+0.5::f_456.
+result_g_455 :- \+result_1_226, \+result_2_226.
+result_1_227 :- result_1_226, result_then_1_228.
+result_1_227 :- result_g_454, f_456.
+result_2_227 :- result_1_226, result_then_2_228.
+result_2_227 :- result_g_454, \+f_456.
+0.001::result_then_c_229.
+0.5::f_457.
+result_then_1_229 :- \+result_then_c_229, f_457.
+result_then_2_229 :- \+result_then_c_229, \+f_457.
+result_g_456 :- \+result_1_227, result_2_227.
+0.5::f_458.
+result_g_457 :- \+result_1_227, \+result_2_227.
+result_1_228 :- result_1_227, result_then_1_229.
+result_1_228 :- result_g_456, f_458.
+result_2_228 :- result_1_227, result_then_2_229.
+result_2_228 :- result_g_456, \+f_458.
+0.001::result_then_c_230.
+0.5::f_459.
+result_then_1_230 :- \+result_then_c_230, f_459.
+result_then_2_230 :- \+result_then_c_230, \+f_459.
+result_g_458 :- \+result_1_228, result_2_228.
+0.5::f_460.
+result_g_459 :- \+result_1_228, \+result_2_228.
+result_1_229 :- result_1_228, result_then_1_230.
+result_1_229 :- result_g_458, f_460.
+result_2_229 :- result_1_228, result_then_2_230.
+result_2_229 :- result_g_458, \+f_460.
+0.001::result_then_c_231.
+0.5::f_461.
+result_then_1_231 :- \+result_then_c_231, f_461.
+result_then_2_231 :- \+result_then_c_231, \+f_461.
+result_g_460 :- \+result_1_229, result_2_229.
+0.5::f_462.
+result_g_461 :- \+result_1_229, \+result_2_229.
+result_1_230 :- result_1_229, result_then_1_231.
+result_1_230 :- result_g_460, f_462.
+result_2_230 :- result_1_229, result_then_2_231.
+result_2_230 :- result_g_460, \+f_462.
+0.001::result_then_c_232.
+0.5::f_463.
+result_then_1_232 :- \+result_then_c_232, f_463.
+result_then_2_232 :- \+result_then_c_232, \+f_463.
+result_g_462 :- \+result_1_230, result_2_230.
+0.5::f_464.
+result_g_463 :- \+result_1_230, \+result_2_230.
+result_1_231 :- result_1_230, result_then_1_232.
+result_1_231 :- result_g_462, f_464.
+result_2_231 :- result_1_230, result_then_2_232.
+result_2_231 :- result_g_462, \+f_464.
+0.001::result_then_c_233.
+0.5::f_465.
+result_then_1_233 :- \+result_then_c_233, f_465.
+result_then_2_233 :- \+result_then_c_233, \+f_465.
+result_g_464 :- \+result_1_231, result_2_231.
+0.5::f_466.
+result_g_465 :- \+result_1_231, \+result_2_231.
+result_1_232 :- result_1_231, result_then_1_233.
+result_1_232 :- result_g_464, f_466.
+result_2_232 :- result_1_231, result_then_2_233.
+result_2_232 :- result_g_464, \+f_466.
+0.001::result_then_c_234.
+0.5::f_467.
+result_then_1_234 :- \+result_then_c_234, f_467.
+result_then_2_234 :- \+result_then_c_234, \+f_467.
+result_g_466 :- \+result_1_232, result_2_232.
+0.5::f_468.
+result_g_467 :- \+result_1_232, \+result_2_232.
+result_1_233 :- result_1_232, result_then_1_234.
+result_1_233 :- result_g_466, f_468.
+result_2_233 :- result_1_232, result_then_2_234.
+result_2_233 :- result_g_466, \+f_468.
+0.001::result_then_c_235.
+0.5::f_469.
+result_then_1_235 :- \+result_then_c_235, f_469.
+result_then_2_235 :- \+result_then_c_235, \+f_469.
+result_g_468 :- \+result_1_233, result_2_233.
+0.5::f_470.
+result_g_469 :- \+result_1_233, \+result_2_233.
+result_1_234 :- result_1_233, result_then_1_235.
+result_1_234 :- result_g_468, f_470.
+result_2_234 :- result_1_233, result_then_2_235.
+result_2_234 :- result_g_468, \+f_470.
+0.001::result_then_c_236.
+0.5::f_471.
+result_then_1_236 :- \+result_then_c_236, f_471.
+result_then_2_236 :- \+result_then_c_236, \+f_471.
+result_g_470 :- \+result_1_234, result_2_234.
+0.5::f_472.
+result_g_471 :- \+result_1_234, \+result_2_234.
+result_1_235 :- result_1_234, result_then_1_236.
+result_1_235 :- result_g_470, f_472.
+result_2_235 :- result_1_234, result_then_2_236.
+result_2_235 :- result_g_470, \+f_472.
+0.001::result_then_c_237.
+0.5::f_473.
+result_then_1_237 :- \+result_then_c_237, f_473.
+result_then_2_237 :- \+result_then_c_237, \+f_473.
+result_g_472 :- \+result_1_235, result_2_235.
+0.5::f_474.
+result_g_473 :- \+result_1_235, \+result_2_235.
+result_1_236 :- result_1_235, result_then_1_237.
+result_1_236 :- result_g_472, f_474.
+result_2_236 :- result_1_235, result_then_2_237.
+result_2_236 :- result_g_472, \+f_474.
+0.001::result_then_c_238.
+0.5::f_475.
+result_then_1_238 :- \+result_then_c_238, f_475.
+result_then_2_238 :- \+result_then_c_238, \+f_475.
+result_g_474 :- \+result_1_236, result_2_236.
+0.5::f_476.
+result_g_475 :- \+result_1_236, \+result_2_236.
+result_1_237 :- result_1_236, result_then_1_238.
+result_1_237 :- result_g_474, f_476.
+result_2_237 :- result_1_236, result_then_2_238.
+result_2_237 :- result_g_474, \+f_476.
+0.001::result_then_c_239.
+0.5::f_477.
+result_then_1_239 :- \+result_then_c_239, f_477.
+result_then_2_239 :- \+result_then_c_239, \+f_477.
+result_g_476 :- \+result_1_237, result_2_237.
+0.5::f_478.
+result_g_477 :- \+result_1_237, \+result_2_237.
+result_1_238 :- result_1_237, result_then_1_239.
+result_1_238 :- result_g_476, f_478.
+result_2_238 :- result_1_237, result_then_2_239.
+result_2_238 :- result_g_476, \+f_478.
+0.001::result_then_c_240.
+0.5::f_479.
+result_then_1_240 :- \+result_then_c_240, f_479.
+result_then_2_240 :- \+result_then_c_240, \+f_479.
+result_g_478 :- \+result_1_238, result_2_238.
+0.5::f_480.
+result_g_479 :- \+result_1_238, \+result_2_238.
+result_1_239 :- result_1_238, result_then_1_240.
+result_1_239 :- result_g_478, f_480.
+result_2_239 :- result_1_238, result_then_2_240.
+result_2_239 :- result_g_478, \+f_480.
+0.001::result_then_c_241.
+0.5::f_481.
+result_then_1_241 :- \+result_then_c_241, f_481.
+result_then_2_241 :- \+result_then_c_241, \+f_481.
+result_g_480 :- \+result_1_239, result_2_239.
+0.5::f_482.
+result_g_481 :- \+result_1_239, \+result_2_239.
+result_1_240 :- result_1_239, result_then_1_241.
+result_1_240 :- result_g_480, f_482.
+result_2_240 :- result_1_239, result_then_2_241.
+result_2_240 :- result_g_480, \+f_482.
+0.001::result_then_c_242.
+0.5::f_483.
+result_then_1_242 :- \+result_then_c_242, f_483.
+result_then_2_242 :- \+result_then_c_242, \+f_483.
+result_g_482 :- \+result_1_240, result_2_240.
+0.5::f_484.
+result_g_483 :- \+result_1_240, \+result_2_240.
+result_1_241 :- result_1_240, result_then_1_242.
+result_1_241 :- result_g_482, f_484.
+result_2_241 :- result_1_240, result_then_2_242.
+result_2_241 :- result_g_482, \+f_484.
+0.001::result_then_c_243.
+0.5::f_485.
+result_then_1_243 :- \+result_then_c_243, f_485.
+result_then_2_243 :- \+result_then_c_243, \+f_485.
+result_g_484 :- \+result_1_241, result_2_241.
+0.5::f_486.
+result_g_485 :- \+result_1_241, \+result_2_241.
+result_1_242 :- result_1_241, result_then_1_243.
+result_1_242 :- result_g_484, f_486.
+result_2_242 :- result_1_241, result_then_2_243.
+result_2_242 :- result_g_484, \+f_486.
+0.001::result_then_c_244.
+0.5::f_487.
+result_then_1_244 :- \+result_then_c_244, f_487.
+result_then_2_244 :- \+result_then_c_244, \+f_487.
+result_g_486 :- \+result_1_242, result_2_242.
+0.5::f_488.
+result_g_487 :- \+result_1_242, \+result_2_242.
+result_1_243 :- result_1_242, result_then_1_244.
+result_1_243 :- result_g_486, f_488.
+result_2_243 :- result_1_242, result_then_2_244.
+result_2_243 :- result_g_486, \+f_488.
+0.001::result_then_c_245.
+0.5::f_489.
+result_then_1_245 :- \+result_then_c_245, f_489.
+result_then_2_245 :- \+result_then_c_245, \+f_489.
+result_g_488 :- \+result_1_243, result_2_243.
+0.5::f_490.
+result_g_489 :- \+result_1_243, \+result_2_243.
+result_1_244 :- result_1_243, result_then_1_245.
+result_1_244 :- result_g_488, f_490.
+result_2_244 :- result_1_243, result_then_2_245.
+result_2_244 :- result_g_488, \+f_490.
+0.001::result_then_c_246.
+0.5::f_491.
+result_then_1_246 :- \+result_then_c_246, f_491.
+result_then_2_246 :- \+result_then_c_246, \+f_491.
+result_g_490 :- \+result_1_244, result_2_244.
+0.5::f_492.
+result_g_491 :- \+result_1_244, \+result_2_244.
+result_1_245 :- result_1_244, result_then_1_246.
+result_1_245 :- result_g_490, f_492.
+result_2_245 :- result_1_244, result_then_2_246.
+result_2_245 :- result_g_490, \+f_492.
+0.001::result_then_c_247.
+0.5::f_493.
+result_then_1_247 :- \+result_then_c_247, f_493.
+result_then_2_247 :- \+result_then_c_247, \+f_493.
+result_g_492 :- \+result_1_245, result_2_245.
+0.5::f_494.
+result_g_493 :- \+result_1_245, \+result_2_245.
+result_1_246 :- result_1_245, result_then_1_247.
+result_1_246 :- result_g_492, f_494.
+result_2_246 :- result_1_245, result_then_2_247.
+result_2_246 :- result_g_492, \+f_494.
+0.001::result_then_c_248.
+0.5::f_495.
+result_then_1_248 :- \+result_then_c_248, f_495.
+result_then_2_248 :- \+result_then_c_248, \+f_495.
+result_g_494 :- \+result_1_246, result_2_246.
+0.5::f_496.
+result_g_495 :- \+result_1_246, \+result_2_246.
+result_1_247 :- result_1_246, result_then_1_248.
+result_1_247 :- result_g_494, f_496.
+result_2_247 :- result_1_246, result_then_2_248.
+result_2_247 :- result_g_494, \+f_496.
+0.001::result_then_c_249.
+0.5::f_497.
+result_then_1_249 :- \+result_then_c_249, f_497.
+result_then_2_249 :- \+result_then_c_249, \+f_497.
+result_g_496 :- \+result_1_247, result_2_247.
+0.5::f_498.
+result_g_497 :- \+result_1_247, \+result_2_247.
+result_1_248 :- result_1_247, result_then_1_249.
+result_1_248 :- result_g_496, f_498.
+result_2_248 :- result_1_247, result_then_2_249.
+result_2_248 :- result_g_496, \+f_498.
+0.001::result_then_c_250.
+0.5::f_499.
+result_then_1_250 :- \+result_then_c_250, f_499.
+result_then_2_250 :- \+result_then_c_250, \+f_499.
+result_g_498 :- \+result_1_248, result_2_248.
+0.5::f_500.
+result_g_499 :- \+result_1_248, \+result_2_248.
+result_1_249 :- result_1_248, result_then_1_250.
+result_1_249 :- result_g_498, f_500.
+result_2_249 :- result_1_248, result_then_2_250.
+result_2_249 :- result_g_498, \+f_500.
+0.001::result_then_c_251.
+0.5::f_501.
+result_then_1_251 :- \+result_then_c_251, f_501.
+result_then_2_251 :- \+result_then_c_251, \+f_501.
+result_g_500 :- \+result_1_249, result_2_249.
+0.5::f_502.
+result_g_501 :- \+result_1_249, \+result_2_249.
+result_1_250 :- result_1_249, result_then_1_251.
+result_1_250 :- result_g_500, f_502.
+result_2_250 :- result_1_249, result_then_2_251.
+result_2_250 :- result_g_500, \+f_502.
+0.001::result_then_c_252.
+0.5::f_503.
+result_then_1_252 :- \+result_then_c_252, f_503.
+result_then_2_252 :- \+result_then_c_252, \+f_503.
+result_g_502 :- \+result_1_250, result_2_250.
+0.5::f_504.
+result_g_503 :- \+result_1_250, \+result_2_250.
+result_1_251 :- result_1_250, result_then_1_252.
+result_1_251 :- result_g_502, f_504.
+result_2_251 :- result_1_250, result_then_2_252.
+result_2_251 :- result_g_502, \+f_504.
+0.001::result_then_c_253.
+0.5::f_505.
+result_then_1_253 :- \+result_then_c_253, f_505.
+result_then_2_253 :- \+result_then_c_253, \+f_505.
+result_g_504 :- \+result_1_251, result_2_251.
+0.5::f_506.
+result_g_505 :- \+result_1_251, \+result_2_251.
+result_1_252 :- result_1_251, result_then_1_253.
+result_1_252 :- result_g_504, f_506.
+result_2_252 :- result_1_251, result_then_2_253.
+result_2_252 :- result_g_504, \+f_506.
+0.001::result_then_c_254.
+0.5::f_507.
+result_then_1_254 :- \+result_then_c_254, f_507.
+result_then_2_254 :- \+result_then_c_254, \+f_507.
+result_g_506 :- \+result_1_252, result_2_252.
+0.5::f_508.
+result_g_507 :- \+result_1_252, \+result_2_252.
+result_1_253 :- result_1_252, result_then_1_254.
+result_1_253 :- result_g_506, f_508.
+result_2_253 :- result_1_252, result_then_2_254.
+result_2_253 :- result_g_506, \+f_508.
+0.001::result_then_c_255.
+0.5::f_509.
+result_then_1_255 :- \+result_then_c_255, f_509.
+result_then_2_255 :- \+result_then_c_255, \+f_509.
+result_g_508 :- \+result_1_253, result_2_253.
+0.5::f_510.
+result_g_509 :- \+result_1_253, \+result_2_253.
+result_1_254 :- result_1_253, result_then_1_255.
+result_1_254 :- result_g_508, f_510.
+result_2_254 :- result_1_253, result_then_2_255.
+result_2_254 :- result_g_508, \+f_510.
+0.001::result_then_c_256.
+0.5::f_511.
+result_then_1_256 :- \+result_then_c_256, f_511.
+result_then_2_256 :- \+result_then_c_256, \+f_511.
+result_g_510 :- \+result_1_254, result_2_254.
+0.5::f_512.
+result_g_511 :- \+result_1_254, \+result_2_254.
+result_1_255 :- result_1_254, result_then_1_256.
+result_1_255 :- result_g_510, f_512.
+result_2_255 :- result_1_254, result_then_2_256.
+result_2_255 :- result_g_510, \+f_512.
+0.001::result_then_c_257.
+0.5::f_513.
+result_then_1_257 :- \+result_then_c_257, f_513.
+result_then_2_257 :- \+result_then_c_257, \+f_513.
+result_g_512 :- \+result_1_255, result_2_255.
+0.5::f_514.
+result_g_513 :- \+result_1_255, \+result_2_255.
+result_1_256 :- result_1_255, result_then_1_257.
+result_1_256 :- result_g_512, f_514.
+result_2_256 :- result_1_255, result_then_2_257.
+result_2_256 :- result_g_512, \+f_514.
+0.001::result_then_c_258.
+0.5::f_515.
+result_then_1_258 :- \+result_then_c_258, f_515.
+result_then_2_258 :- \+result_then_c_258, \+f_515.
+result_g_514 :- \+result_1_256, result_2_256.
+0.5::f_516.
+result_g_515 :- \+result_1_256, \+result_2_256.
+result_1_257 :- result_1_256, result_then_1_258.
+result_1_257 :- result_g_514, f_516.
+result_2_257 :- result_1_256, result_then_2_258.
+result_2_257 :- result_g_514, \+f_516.
+0.001::result_then_c_259.
+0.5::f_517.
+result_then_1_259 :- \+result_then_c_259, f_517.
+result_then_2_259 :- \+result_then_c_259, \+f_517.
+result_g_516 :- \+result_1_257, result_2_257.
+0.5::f_518.
+result_g_517 :- \+result_1_257, \+result_2_257.
+result_1_258 :- result_1_257, result_then_1_259.
+result_1_258 :- result_g_516, f_518.
+result_2_258 :- result_1_257, result_then_2_259.
+result_2_258 :- result_g_516, \+f_518.
+0.001::result_then_c_260.
+0.5::f_519.
+result_then_1_260 :- \+result_then_c_260, f_519.
+result_then_2_260 :- \+result_then_c_260, \+f_519.
+result_g_518 :- \+result_1_258, result_2_258.
+0.5::f_520.
+result_g_519 :- \+result_1_258, \+result_2_258.
+result_1_259 :- result_1_258, result_then_1_260.
+result_1_259 :- result_g_518, f_520.
+result_2_259 :- result_1_258, result_then_2_260.
+result_2_259 :- result_g_518, \+f_520.
+0.001::result_then_c_261.
+0.5::f_521.
+result_then_1_261 :- \+result_then_c_261, f_521.
+result_then_2_261 :- \+result_then_c_261, \+f_521.
+result_g_520 :- \+result_1_259, result_2_259.
+0.5::f_522.
+result_g_521 :- \+result_1_259, \+result_2_259.
+result_1_260 :- result_1_259, result_then_1_261.
+result_1_260 :- result_g_520, f_522.
+result_2_260 :- result_1_259, result_then_2_261.
+result_2_260 :- result_g_520, \+f_522.
+0.001::result_then_c_262.
+0.5::f_523.
+result_then_1_262 :- \+result_then_c_262, f_523.
+result_then_2_262 :- \+result_then_c_262, \+f_523.
+result_g_522 :- \+result_1_260, result_2_260.
+0.5::f_524.
+result_g_523 :- \+result_1_260, \+result_2_260.
+result_1_261 :- result_1_260, result_then_1_262.
+result_1_261 :- result_g_522, f_524.
+result_2_261 :- result_1_260, result_then_2_262.
+result_2_261 :- result_g_522, \+f_524.
+0.001::result_then_c_263.
+0.5::f_525.
+result_then_1_263 :- \+result_then_c_263, f_525.
+result_then_2_263 :- \+result_then_c_263, \+f_525.
+result_g_524 :- \+result_1_261, result_2_261.
+0.5::f_526.
+result_g_525 :- \+result_1_261, \+result_2_261.
+result_1_262 :- result_1_261, result_then_1_263.
+result_1_262 :- result_g_524, f_526.
+result_2_262 :- result_1_261, result_then_2_263.
+result_2_262 :- result_g_524, \+f_526.
+0.001::result_then_c_264.
+0.5::f_527.
+result_then_1_264 :- \+result_then_c_264, f_527.
+result_then_2_264 :- \+result_then_c_264, \+f_527.
+result_g_526 :- \+result_1_262, result_2_262.
+0.5::f_528.
+result_g_527 :- \+result_1_262, \+result_2_262.
+result_1_263 :- result_1_262, result_then_1_264.
+result_1_263 :- result_g_526, f_528.
+result_2_263 :- result_1_262, result_then_2_264.
+result_2_263 :- result_g_526, \+f_528.
+0.001::result_then_c_265.
+0.5::f_529.
+result_then_1_265 :- \+result_then_c_265, f_529.
+result_then_2_265 :- \+result_then_c_265, \+f_529.
+result_g_528 :- \+result_1_263, result_2_263.
+0.5::f_530.
+result_g_529 :- \+result_1_263, \+result_2_263.
+result_1_264 :- result_1_263, result_then_1_265.
+result_1_264 :- result_g_528, f_530.
+result_2_264 :- result_1_263, result_then_2_265.
+result_2_264 :- result_g_528, \+f_530.
+0.001::result_then_c_266.
+0.5::f_531.
+result_then_1_266 :- \+result_then_c_266, f_531.
+result_then_2_266 :- \+result_then_c_266, \+f_531.
+result_g_530 :- \+result_1_264, result_2_264.
+0.5::f_532.
+result_g_531 :- \+result_1_264, \+result_2_264.
+result_1_265 :- result_1_264, result_then_1_266.
+result_1_265 :- result_g_530, f_532.
+result_2_265 :- result_1_264, result_then_2_266.
+result_2_265 :- result_g_530, \+f_532.
+0.001::result_then_c_267.
+0.5::f_533.
+result_then_1_267 :- \+result_then_c_267, f_533.
+result_then_2_267 :- \+result_then_c_267, \+f_533.
+result_g_532 :- \+result_1_265, result_2_265.
+0.5::f_534.
+result_g_533 :- \+result_1_265, \+result_2_265.
+result_1_266 :- result_1_265, result_then_1_267.
+result_1_266 :- result_g_532, f_534.
+result_2_266 :- result_1_265, result_then_2_267.
+result_2_266 :- result_g_532, \+f_534.
+0.001::result_then_c_268.
+0.5::f_535.
+result_then_1_268 :- \+result_then_c_268, f_535.
+result_then_2_268 :- \+result_then_c_268, \+f_535.
+result_g_534 :- \+result_1_266, result_2_266.
+0.5::f_536.
+result_g_535 :- \+result_1_266, \+result_2_266.
+result_1_267 :- result_1_266, result_then_1_268.
+result_1_267 :- result_g_534, f_536.
+result_2_267 :- result_1_266, result_then_2_268.
+result_2_267 :- result_g_534, \+f_536.
+0.001::result_then_c_269.
+0.5::f_537.
+result_then_1_269 :- \+result_then_c_269, f_537.
+result_then_2_269 :- \+result_then_c_269, \+f_537.
+result_g_536 :- \+result_1_267, result_2_267.
+0.5::f_538.
+result_g_537 :- \+result_1_267, \+result_2_267.
+result_1_268 :- result_1_267, result_then_1_269.
+result_1_268 :- result_g_536, f_538.
+result_2_268 :- result_1_267, result_then_2_269.
+result_2_268 :- result_g_536, \+f_538.
+0.001::result_then_c_270.
+0.5::f_539.
+result_then_1_270 :- \+result_then_c_270, f_539.
+result_then_2_270 :- \+result_then_c_270, \+f_539.
+result_g_538 :- \+result_1_268, result_2_268.
+0.5::f_540.
+result_g_539 :- \+result_1_268, \+result_2_268.
+result_1_269 :- result_1_268, result_then_1_270.
+result_1_269 :- result_g_538, f_540.
+result_2_269 :- result_1_268, result_then_2_270.
+result_2_269 :- result_g_538, \+f_540.
+0.001::result_then_c_271.
+0.5::f_541.
+result_then_1_271 :- \+result_then_c_271, f_541.
+result_then_2_271 :- \+result_then_c_271, \+f_541.
+result_g_540 :- \+result_1_269, result_2_269.
+0.5::f_542.
+result_g_541 :- \+result_1_269, \+result_2_269.
+result_1_270 :- result_1_269, result_then_1_271.
+result_1_270 :- result_g_540, f_542.
+result_2_270 :- result_1_269, result_then_2_271.
+result_2_270 :- result_g_540, \+f_542.
+0.001::result_then_c_272.
+0.5::f_543.
+result_then_1_272 :- \+result_then_c_272, f_543.
+result_then_2_272 :- \+result_then_c_272, \+f_543.
+result_g_542 :- \+result_1_270, result_2_270.
+0.5::f_544.
+result_g_543 :- \+result_1_270, \+result_2_270.
+result_1_271 :- result_1_270, result_then_1_272.
+result_1_271 :- result_g_542, f_544.
+result_2_271 :- result_1_270, result_then_2_272.
+result_2_271 :- result_g_542, \+f_544.
+0.001::result_then_c_273.
+0.5::f_545.
+result_then_1_273 :- \+result_then_c_273, f_545.
+result_then_2_273 :- \+result_then_c_273, \+f_545.
+result_g_544 :- \+result_1_271, result_2_271.
+0.5::f_546.
+result_g_545 :- \+result_1_271, \+result_2_271.
+result_1_272 :- result_1_271, result_then_1_273.
+result_1_272 :- result_g_544, f_546.
+result_2_272 :- result_1_271, result_then_2_273.
+result_2_272 :- result_g_544, \+f_546.
+0.001::result_then_c_274.
+0.5::f_547.
+result_then_1_274 :- \+result_then_c_274, f_547.
+result_then_2_274 :- \+result_then_c_274, \+f_547.
+result_g_546 :- \+result_1_272, result_2_272.
+0.5::f_548.
+result_g_547 :- \+result_1_272, \+result_2_272.
+result_1_273 :- result_1_272, result_then_1_274.
+result_1_273 :- result_g_546, f_548.
+result_2_273 :- result_1_272, result_then_2_274.
+result_2_273 :- result_g_546, \+f_548.
+0.001::result_then_c_275.
+0.5::f_549.
+result_then_1_275 :- \+result_then_c_275, f_549.
+result_then_2_275 :- \+result_then_c_275, \+f_549.
+result_g_548 :- \+result_1_273, result_2_273.
+0.5::f_550.
+result_g_549 :- \+result_1_273, \+result_2_273.
+result_1_274 :- result_1_273, result_then_1_275.
+result_1_274 :- result_g_548, f_550.
+result_2_274 :- result_1_273, result_then_2_275.
+result_2_274 :- result_g_548, \+f_550.
+0.001::result_then_c_276.
+0.5::f_551.
+result_then_1_276 :- \+result_then_c_276, f_551.
+result_then_2_276 :- \+result_then_c_276, \+f_551.
+result_g_550 :- \+result_1_274, result_2_274.
+0.5::f_552.
+result_g_551 :- \+result_1_274, \+result_2_274.
+result_1_275 :- result_1_274, result_then_1_276.
+result_1_275 :- result_g_550, f_552.
+result_2_275 :- result_1_274, result_then_2_276.
+result_2_275 :- result_g_550, \+f_552.
+0.001::result_then_c_277.
+0.5::f_553.
+result_then_1_277 :- \+result_then_c_277, f_553.
+result_then_2_277 :- \+result_then_c_277, \+f_553.
+result_g_552 :- \+result_1_275, result_2_275.
+0.5::f_554.
+result_g_553 :- \+result_1_275, \+result_2_275.
+result_1_276 :- result_1_275, result_then_1_277.
+result_1_276 :- result_g_552, f_554.
+result_2_276 :- result_1_275, result_then_2_277.
+result_2_276 :- result_g_552, \+f_554.
+0.001::result_then_c_278.
+0.5::f_555.
+result_then_1_278 :- \+result_then_c_278, f_555.
+result_then_2_278 :- \+result_then_c_278, \+f_555.
+result_g_554 :- \+result_1_276, result_2_276.
+0.5::f_556.
+result_g_555 :- \+result_1_276, \+result_2_276.
+result_1_277 :- result_1_276, result_then_1_278.
+result_1_277 :- result_g_554, f_556.
+result_2_277 :- result_1_276, result_then_2_278.
+result_2_277 :- result_g_554, \+f_556.
+0.001::result_then_c_279.
+0.5::f_557.
+result_then_1_279 :- \+result_then_c_279, f_557.
+result_then_2_279 :- \+result_then_c_279, \+f_557.
+result_g_556 :- \+result_1_277, result_2_277.
+0.5::f_558.
+result_g_557 :- \+result_1_277, \+result_2_277.
+result_1_278 :- result_1_277, result_then_1_279.
+result_1_278 :- result_g_556, f_558.
+result_2_278 :- result_1_277, result_then_2_279.
+result_2_278 :- result_g_556, \+f_558.
+0.001::result_then_c_280.
+0.5::f_559.
+result_then_1_280 :- \+result_then_c_280, f_559.
+result_then_2_280 :- \+result_then_c_280, \+f_559.
+result_g_558 :- \+result_1_278, result_2_278.
+0.5::f_560.
+result_g_559 :- \+result_1_278, \+result_2_278.
+result_1_279 :- result_1_278, result_then_1_280.
+result_1_279 :- result_g_558, f_560.
+result_2_279 :- result_1_278, result_then_2_280.
+result_2_279 :- result_g_558, \+f_560.
+0.001::result_then_c_281.
+0.5::f_561.
+result_then_1_281 :- \+result_then_c_281, f_561.
+result_then_2_281 :- \+result_then_c_281, \+f_561.
+result_g_560 :- \+result_1_279, result_2_279.
+0.5::f_562.
+result_g_561 :- \+result_1_279, \+result_2_279.
+result_1_280 :- result_1_279, result_then_1_281.
+result_1_280 :- result_g_560, f_562.
+result_2_280 :- result_1_279, result_then_2_281.
+result_2_280 :- result_g_560, \+f_562.
+0.001::result_then_c_282.
+0.5::f_563.
+result_then_1_282 :- \+result_then_c_282, f_563.
+result_then_2_282 :- \+result_then_c_282, \+f_563.
+result_g_562 :- \+result_1_280, result_2_280.
+0.5::f_564.
+result_g_563 :- \+result_1_280, \+result_2_280.
+result_1_281 :- result_1_280, result_then_1_282.
+result_1_281 :- result_g_562, f_564.
+result_2_281 :- result_1_280, result_then_2_282.
+result_2_281 :- result_g_562, \+f_564.
+0.001::result_then_c_283.
+0.5::f_565.
+result_then_1_283 :- \+result_then_c_283, f_565.
+result_then_2_283 :- \+result_then_c_283, \+f_565.
+result_g_564 :- \+result_1_281, result_2_281.
+0.5::f_566.
+result_g_565 :- \+result_1_281, \+result_2_281.
+result_1_282 :- result_1_281, result_then_1_283.
+result_1_282 :- result_g_564, f_566.
+result_2_282 :- result_1_281, result_then_2_283.
+result_2_282 :- result_g_564, \+f_566.
+0.001::result_then_c_284.
+0.5::f_567.
+result_then_1_284 :- \+result_then_c_284, f_567.
+result_then_2_284 :- \+result_then_c_284, \+f_567.
+result_g_566 :- \+result_1_282, result_2_282.
+0.5::f_568.
+result_g_567 :- \+result_1_282, \+result_2_282.
+result_1_283 :- result_1_282, result_then_1_284.
+result_1_283 :- result_g_566, f_568.
+result_2_283 :- result_1_282, result_then_2_284.
+result_2_283 :- result_g_566, \+f_568.
+0.001::result_then_c_285.
+0.5::f_569.
+result_then_1_285 :- \+result_then_c_285, f_569.
+result_then_2_285 :- \+result_then_c_285, \+f_569.
+result_g_568 :- \+result_1_283, result_2_283.
+0.5::f_570.
+result_g_569 :- \+result_1_283, \+result_2_283.
+result_1_284 :- result_1_283, result_then_1_285.
+result_1_284 :- result_g_568, f_570.
+result_2_284 :- result_1_283, result_then_2_285.
+result_2_284 :- result_g_568, \+f_570.
+0.001::result_then_c_286.
+0.5::f_571.
+result_then_1_286 :- \+result_then_c_286, f_571.
+result_then_2_286 :- \+result_then_c_286, \+f_571.
+result_g_570 :- \+result_1_284, result_2_284.
+0.5::f_572.
+result_g_571 :- \+result_1_284, \+result_2_284.
+result_1_285 :- result_1_284, result_then_1_286.
+result_1_285 :- result_g_570, f_572.
+result_2_285 :- result_1_284, result_then_2_286.
+result_2_285 :- result_g_570, \+f_572.
+0.001::result_then_c_287.
+0.5::f_573.
+result_then_1_287 :- \+result_then_c_287, f_573.
+result_then_2_287 :- \+result_then_c_287, \+f_573.
+result_g_572 :- \+result_1_285, result_2_285.
+0.5::f_574.
+result_g_573 :- \+result_1_285, \+result_2_285.
+result_1_286 :- result_1_285, result_then_1_287.
+result_1_286 :- result_g_572, f_574.
+result_2_286 :- result_1_285, result_then_2_287.
+result_2_286 :- result_g_572, \+f_574.
+0.001::result_then_c_288.
+0.5::f_575.
+result_then_1_288 :- \+result_then_c_288, f_575.
+result_then_2_288 :- \+result_then_c_288, \+f_575.
+result_g_574 :- \+result_1_286, result_2_286.
+0.5::f_576.
+result_g_575 :- \+result_1_286, \+result_2_286.
+result_1_287 :- result_1_286, result_then_1_288.
+result_1_287 :- result_g_574, f_576.
+result_2_287 :- result_1_286, result_then_2_288.
+result_2_287 :- result_g_574, \+f_576.
+0.001::result_then_c_289.
+0.5::f_577.
+result_then_1_289 :- \+result_then_c_289, f_577.
+result_then_2_289 :- \+result_then_c_289, \+f_577.
+result_g_576 :- \+result_1_287, result_2_287.
+0.5::f_578.
+result_g_577 :- \+result_1_287, \+result_2_287.
+result_1_288 :- result_1_287, result_then_1_289.
+result_1_288 :- result_g_576, f_578.
+result_2_288 :- result_1_287, result_then_2_289.
+result_2_288 :- result_g_576, \+f_578.
+0.001::result_then_c_290.
+0.5::f_579.
+result_then_1_290 :- \+result_then_c_290, f_579.
+result_then_2_290 :- \+result_then_c_290, \+f_579.
+result_g_578 :- \+result_1_288, result_2_288.
+0.5::f_580.
+result_g_579 :- \+result_1_288, \+result_2_288.
+result_1_289 :- result_1_288, result_then_1_290.
+result_1_289 :- result_g_578, f_580.
+result_2_289 :- result_1_288, result_then_2_290.
+result_2_289 :- result_g_578, \+f_580.
+0.001::result_then_c_291.
+0.5::f_581.
+result_then_1_291 :- \+result_then_c_291, f_581.
+result_then_2_291 :- \+result_then_c_291, \+f_581.
+result_g_580 :- \+result_1_289, result_2_289.
+0.5::f_582.
+result_g_581 :- \+result_1_289, \+result_2_289.
+result_1_290 :- result_1_289, result_then_1_291.
+result_1_290 :- result_g_580, f_582.
+result_2_290 :- result_1_289, result_then_2_291.
+result_2_290 :- result_g_580, \+f_582.
+0.001::result_then_c_292.
+0.5::f_583.
+result_then_1_292 :- \+result_then_c_292, f_583.
+result_then_2_292 :- \+result_then_c_292, \+f_583.
+result_g_582 :- \+result_1_290, result_2_290.
+0.5::f_584.
+result_g_583 :- \+result_1_290, \+result_2_290.
+result_1_291 :- result_1_290, result_then_1_292.
+result_1_291 :- result_g_582, f_584.
+result_2_291 :- result_1_290, result_then_2_292.
+result_2_291 :- result_g_582, \+f_584.
+0.001::result_then_c_293.
+0.5::f_585.
+result_then_1_293 :- \+result_then_c_293, f_585.
+result_then_2_293 :- \+result_then_c_293, \+f_585.
+result_g_584 :- \+result_1_291, result_2_291.
+0.5::f_586.
+result_g_585 :- \+result_1_291, \+result_2_291.
+result_1_292 :- result_1_291, result_then_1_293.
+result_1_292 :- result_g_584, f_586.
+result_2_292 :- result_1_291, result_then_2_293.
+result_2_292 :- result_g_584, \+f_586.
+0.001::result_then_c_294.
+0.5::f_587.
+result_then_1_294 :- \+result_then_c_294, f_587.
+result_then_2_294 :- \+result_then_c_294, \+f_587.
+result_g_586 :- \+result_1_292, result_2_292.
+0.5::f_588.
+result_g_587 :- \+result_1_292, \+result_2_292.
+result_1_293 :- result_1_292, result_then_1_294.
+result_1_293 :- result_g_586, f_588.
+result_2_293 :- result_1_292, result_then_2_294.
+result_2_293 :- result_g_586, \+f_588.
+0.001::result_then_c_295.
+0.5::f_589.
+result_then_1_295 :- \+result_then_c_295, f_589.
+result_then_2_295 :- \+result_then_c_295, \+f_589.
+result_g_588 :- \+result_1_293, result_2_293.
+0.5::f_590.
+result_g_589 :- \+result_1_293, \+result_2_293.
+result_1_294 :- result_1_293, result_then_1_295.
+result_1_294 :- result_g_588, f_590.
+result_2_294 :- result_1_293, result_then_2_295.
+result_2_294 :- result_g_588, \+f_590.
+0.001::result_then_c_296.
+0.5::f_591.
+result_then_1_296 :- \+result_then_c_296, f_591.
+result_then_2_296 :- \+result_then_c_296, \+f_591.
+result_g_590 :- \+result_1_294, result_2_294.
+0.5::f_592.
+result_g_591 :- \+result_1_294, \+result_2_294.
+result_1_295 :- result_1_294, result_then_1_296.
+result_1_295 :- result_g_590, f_592.
+result_2_295 :- result_1_294, result_then_2_296.
+result_2_295 :- result_g_590, \+f_592.
+0.001::result_then_c_297.
+0.5::f_593.
+result_then_1_297 :- \+result_then_c_297, f_593.
+result_then_2_297 :- \+result_then_c_297, \+f_593.
+result_g_592 :- \+result_1_295, result_2_295.
+0.5::f_594.
+result_g_593 :- \+result_1_295, \+result_2_295.
+result_1_296 :- result_1_295, result_then_1_297.
+result_1_296 :- result_g_592, f_594.
+result_2_296 :- result_1_295, result_then_2_297.
+result_2_296 :- result_g_592, \+f_594.
+0.001::result_then_c_298.
+0.5::f_595.
+result_then_1_298 :- \+result_then_c_298, f_595.
+result_then_2_298 :- \+result_then_c_298, \+f_595.
+result_g_594 :- \+result_1_296, result_2_296.
+0.5::f_596.
+result_g_595 :- \+result_1_296, \+result_2_296.
+result_1_297 :- result_1_296, result_then_1_298.
+result_1_297 :- result_g_594, f_596.
+result_2_297 :- result_1_296, result_then_2_298.
+result_2_297 :- result_g_594, \+f_596.
+0.001::result_then_c_299.
+0.5::f_597.
+result_then_1_299 :- \+result_then_c_299, f_597.
+result_then_2_299 :- \+result_then_c_299, \+f_597.
+result_g_596 :- \+result_1_297, result_2_297.
+0.5::f_598.
+result_g_597 :- \+result_1_297, \+result_2_297.
+result_1_298 :- result_1_297, result_then_1_299.
+result_1_298 :- result_g_596, f_598.
+result_2_298 :- result_1_297, result_then_2_299.
+result_2_298 :- result_g_596, \+f_598.
+0.001::result_then_c_300.
+0.5::f_599.
+result_then_1_300 :- \+result_then_c_300, f_599.
+result_then_2_300 :- \+result_then_c_300, \+f_599.
+result_g_598 :- \+result_1_298, result_2_298.
+0.5::f_600.
+result_g_599 :- \+result_1_298, \+result_2_298.
+result_1_299 :- result_1_298, result_then_1_300.
+result_1_299 :- result_g_598, f_600.
+result_2_299 :- result_1_298, result_then_2_300.
+result_2_299 :- result_g_598, \+f_600.
+0.001::result_then_c_301.
+0.5::f_601.
+result_then_1_301 :- \+result_then_c_301, f_601.
+result_then_2_301 :- \+result_then_c_301, \+f_601.
+result_g_600 :- \+result_1_299, result_2_299.
+0.5::f_602.
+result_g_601 :- \+result_1_299, \+result_2_299.
+result_1_300 :- result_1_299, result_then_1_301.
+result_1_300 :- result_g_600, f_602.
+result_2_300 :- result_1_299, result_then_2_301.
+result_2_300 :- result_g_600, \+f_602.
+0.001::result_then_c_302.
+0.5::f_603.
+result_then_1_302 :- \+result_then_c_302, f_603.
+result_then_2_302 :- \+result_then_c_302, \+f_603.
+result_g_602 :- \+result_1_300, result_2_300.
+0.5::f_604.
+result_g_603 :- \+result_1_300, \+result_2_300.
+result_1_301 :- result_1_300, result_then_1_302.
+result_1_301 :- result_g_602, f_604.
+result_2_301 :- result_1_300, result_then_2_302.
+result_2_301 :- result_g_602, \+f_604.
+0.001::result_then_c_303.
+0.5::f_605.
+result_then_1_303 :- \+result_then_c_303, f_605.
+result_then_2_303 :- \+result_then_c_303, \+f_605.
+result_g_604 :- \+result_1_301, result_2_301.
+0.5::f_606.
+result_g_605 :- \+result_1_301, \+result_2_301.
+result_1_302 :- result_1_301, result_then_1_303.
+result_1_302 :- result_g_604, f_606.
+result_2_302 :- result_1_301, result_then_2_303.
+result_2_302 :- result_g_604, \+f_606.
+0.001::result_then_c_304.
+0.5::f_607.
+result_then_1_304 :- \+result_then_c_304, f_607.
+result_then_2_304 :- \+result_then_c_304, \+f_607.
+result_g_606 :- \+result_1_302, result_2_302.
+0.5::f_608.
+result_g_607 :- \+result_1_302, \+result_2_302.
+result_1_303 :- result_1_302, result_then_1_304.
+result_1_303 :- result_g_606, f_608.
+result_2_303 :- result_1_302, result_then_2_304.
+result_2_303 :- result_g_606, \+f_608.
+0.001::result_then_c_305.
+0.5::f_609.
+result_then_1_305 :- \+result_then_c_305, f_609.
+result_then_2_305 :- \+result_then_c_305, \+f_609.
+result_g_608 :- \+result_1_303, result_2_303.
+0.5::f_610.
+result_g_609 :- \+result_1_303, \+result_2_303.
+result_1_304 :- result_1_303, result_then_1_305.
+result_1_304 :- result_g_608, f_610.
+result_2_304 :- result_1_303, result_then_2_305.
+result_2_304 :- result_g_608, \+f_610.
+0.001::result_then_c_306.
+0.5::f_611.
+result_then_1_306 :- \+result_then_c_306, f_611.
+result_then_2_306 :- \+result_then_c_306, \+f_611.
+result_g_610 :- \+result_1_304, result_2_304.
+0.5::f_612.
+result_g_611 :- \+result_1_304, \+result_2_304.
+result_1_305 :- result_1_304, result_then_1_306.
+result_1_305 :- result_g_610, f_612.
+result_2_305 :- result_1_304, result_then_2_306.
+result_2_305 :- result_g_610, \+f_612.
+0.001::result_then_c_307.
+0.5::f_613.
+result_then_1_307 :- \+result_then_c_307, f_613.
+result_then_2_307 :- \+result_then_c_307, \+f_613.
+result_g_612 :- \+result_1_305, result_2_305.
+0.5::f_614.
+result_g_613 :- \+result_1_305, \+result_2_305.
+result_1_306 :- result_1_305, result_then_1_307.
+result_1_306 :- result_g_612, f_614.
+result_2_306 :- result_1_305, result_then_2_307.
+result_2_306 :- result_g_612, \+f_614.
+0.001::result_then_c_308.
+0.5::f_615.
+result_then_1_308 :- \+result_then_c_308, f_615.
+result_then_2_308 :- \+result_then_c_308, \+f_615.
+result_g_614 :- \+result_1_306, result_2_306.
+0.5::f_616.
+result_g_615 :- \+result_1_306, \+result_2_306.
+result_1_307 :- result_1_306, result_then_1_308.
+result_1_307 :- result_g_614, f_616.
+result_2_307 :- result_1_306, result_then_2_308.
+result_2_307 :- result_g_614, \+f_616.
+0.001::result_then_c_309.
+0.5::f_617.
+result_then_1_309 :- \+result_then_c_309, f_617.
+result_then_2_309 :- \+result_then_c_309, \+f_617.
+result_g_616 :- \+result_1_307, result_2_307.
+0.5::f_618.
+result_g_617 :- \+result_1_307, \+result_2_307.
+result_1_308 :- result_1_307, result_then_1_309.
+result_1_308 :- result_g_616, f_618.
+result_2_308 :- result_1_307, result_then_2_309.
+result_2_308 :- result_g_616, \+f_618.
+0.001::result_then_c_310.
+0.5::f_619.
+result_then_1_310 :- \+result_then_c_310, f_619.
+result_then_2_310 :- \+result_then_c_310, \+f_619.
+result_g_618 :- \+result_1_308, result_2_308.
+0.5::f_620.
+result_g_619 :- \+result_1_308, \+result_2_308.
+result_1_309 :- result_1_308, result_then_1_310.
+result_1_309 :- result_g_618, f_620.
+result_2_309 :- result_1_308, result_then_2_310.
+result_2_309 :- result_g_618, \+f_620.
+0.001::result_then_c_311.
+0.5::f_621.
+result_then_1_311 :- \+result_then_c_311, f_621.
+result_then_2_311 :- \+result_then_c_311, \+f_621.
+result_g_620 :- \+result_1_309, result_2_309.
+0.5::f_622.
+result_g_621 :- \+result_1_309, \+result_2_309.
+result_1_310 :- result_1_309, result_then_1_311.
+result_1_310 :- result_g_620, f_622.
+result_2_310 :- result_1_309, result_then_2_311.
+result_2_310 :- result_g_620, \+f_622.
+0.001::result_then_c_312.
+0.5::f_623.
+result_then_1_312 :- \+result_then_c_312, f_623.
+result_then_2_312 :- \+result_then_c_312, \+f_623.
+result_g_622 :- \+result_1_310, result_2_310.
+0.5::f_624.
+result_g_623 :- \+result_1_310, \+result_2_310.
+result_1_311 :- result_1_310, result_then_1_312.
+result_1_311 :- result_g_622, f_624.
+result_2_311 :- result_1_310, result_then_2_312.
+result_2_311 :- result_g_622, \+f_624.
+0.001::result_then_c_313.
+0.5::f_625.
+result_then_1_313 :- \+result_then_c_313, f_625.
+result_then_2_313 :- \+result_then_c_313, \+f_625.
+result_g_624 :- \+result_1_311, result_2_311.
+0.5::f_626.
+result_g_625 :- \+result_1_311, \+result_2_311.
+result_1_312 :- result_1_311, result_then_1_313.
+result_1_312 :- result_g_624, f_626.
+result_2_312 :- result_1_311, result_then_2_313.
+result_2_312 :- result_g_624, \+f_626.
+0.001::result_then_c_314.
+0.5::f_627.
+result_then_1_314 :- \+result_then_c_314, f_627.
+result_then_2_314 :- \+result_then_c_314, \+f_627.
+result_g_626 :- \+result_1_312, result_2_312.
+0.5::f_628.
+result_g_627 :- \+result_1_312, \+result_2_312.
+result_1_313 :- result_1_312, result_then_1_314.
+result_1_313 :- result_g_626, f_628.
+result_2_313 :- result_1_312, result_then_2_314.
+result_2_313 :- result_g_626, \+f_628.
+0.001::result_then_c_315.
+0.5::f_629.
+result_then_1_315 :- \+result_then_c_315, f_629.
+result_then_2_315 :- \+result_then_c_315, \+f_629.
+result_g_628 :- \+result_1_313, result_2_313.
+0.5::f_630.
+result_g_629 :- \+result_1_313, \+result_2_313.
+result_1_314 :- result_1_313, result_then_1_315.
+result_1_314 :- result_g_628, f_630.
+result_2_314 :- result_1_313, result_then_2_315.
+result_2_314 :- result_g_628, \+f_630.
+0.001::result_then_c_316.
+0.5::f_631.
+result_then_1_316 :- \+result_then_c_316, f_631.
+result_then_2_316 :- \+result_then_c_316, \+f_631.
+result_g_630 :- \+result_1_314, result_2_314.
+0.5::f_632.
+result_g_631 :- \+result_1_314, \+result_2_314.
+result_1_315 :- result_1_314, result_then_1_316.
+result_1_315 :- result_g_630, f_632.
+result_2_315 :- result_1_314, result_then_2_316.
+result_2_315 :- result_g_630, \+f_632.
+0.001::result_then_c_317.
+0.5::f_633.
+result_then_1_317 :- \+result_then_c_317, f_633.
+result_then_2_317 :- \+result_then_c_317, \+f_633.
+result_g_632 :- \+result_1_315, result_2_315.
+0.5::f_634.
+result_g_633 :- \+result_1_315, \+result_2_315.
+result_1_316 :- result_1_315, result_then_1_317.
+result_1_316 :- result_g_632, f_634.
+result_2_316 :- result_1_315, result_then_2_317.
+result_2_316 :- result_g_632, \+f_634.
+0.001::result_then_c_318.
+0.5::f_635.
+result_then_1_318 :- \+result_then_c_318, f_635.
+result_then_2_318 :- \+result_then_c_318, \+f_635.
+result_g_634 :- \+result_1_316, result_2_316.
+0.5::f_636.
+result_g_635 :- \+result_1_316, \+result_2_316.
+result_1_317 :- result_1_316, result_then_1_318.
+result_1_317 :- result_g_634, f_636.
+result_2_317 :- result_1_316, result_then_2_318.
+result_2_317 :- result_g_634, \+f_636.
+0.001::result_then_c_319.
+0.5::f_637.
+result_then_1_319 :- \+result_then_c_319, f_637.
+result_then_2_319 :- \+result_then_c_319, \+f_637.
+result_g_636 :- \+result_1_317, result_2_317.
+0.5::f_638.
+result_g_637 :- \+result_1_317, \+result_2_317.
+result_1_318 :- result_1_317, result_then_1_319.
+result_1_318 :- result_g_636, f_638.
+result_2_318 :- result_1_317, result_then_2_319.
+result_2_318 :- result_g_636, \+f_638.
+0.001::result_then_c_320.
+0.5::f_639.
+result_then_1_320 :- \+result_then_c_320, f_639.
+result_then_2_320 :- \+result_then_c_320, \+f_639.
+result_g_638 :- \+result_1_318, result_2_318.
+0.5::f_640.
+result_g_639 :- \+result_1_318, \+result_2_318.
+result_1_319 :- result_1_318, result_then_1_320.
+result_1_319 :- result_g_638, f_640.
+result_2_319 :- result_1_318, result_then_2_320.
+result_2_319 :- result_g_638, \+f_640.
+0.001::result_then_c_321.
+0.5::f_641.
+result_then_1_321 :- \+result_then_c_321, f_641.
+result_then_2_321 :- \+result_then_c_321, \+f_641.
+result_g_640 :- \+result_1_319, result_2_319.
+0.5::f_642.
+result_g_641 :- \+result_1_319, \+result_2_319.
+result_1_320 :- result_1_319, result_then_1_321.
+result_1_320 :- result_g_640, f_642.
+result_2_320 :- result_1_319, result_then_2_321.
+result_2_320 :- result_g_640, \+f_642.
+0.001::result_then_c_322.
+0.5::f_643.
+result_then_1_322 :- \+result_then_c_322, f_643.
+result_then_2_322 :- \+result_then_c_322, \+f_643.
+result_g_642 :- \+result_1_320, result_2_320.
+0.5::f_644.
+result_g_643 :- \+result_1_320, \+result_2_320.
+result_1_321 :- result_1_320, result_then_1_322.
+result_1_321 :- result_g_642, f_644.
+result_2_321 :- result_1_320, result_then_2_322.
+result_2_321 :- result_g_642, \+f_644.
+0.001::result_then_c_323.
+0.5::f_645.
+result_then_1_323 :- \+result_then_c_323, f_645.
+result_then_2_323 :- \+result_then_c_323, \+f_645.
+result_g_644 :- \+result_1_321, result_2_321.
+0.5::f_646.
+result_g_645 :- \+result_1_321, \+result_2_321.
+result_1_322 :- result_1_321, result_then_1_323.
+result_1_322 :- result_g_644, f_646.
+result_2_322 :- result_1_321, result_then_2_323.
+result_2_322 :- result_g_644, \+f_646.
+0.001::result_then_c_324.
+0.5::f_647.
+result_then_1_324 :- \+result_then_c_324, f_647.
+result_then_2_324 :- \+result_then_c_324, \+f_647.
+result_g_646 :- \+result_1_322, result_2_322.
+0.5::f_648.
+result_g_647 :- \+result_1_322, \+result_2_322.
+result_1_323 :- result_1_322, result_then_1_324.
+result_1_323 :- result_g_646, f_648.
+result_2_323 :- result_1_322, result_then_2_324.
+result_2_323 :- result_g_646, \+f_648.
+0.001::result_then_c_325.
+0.5::f_649.
+result_then_1_325 :- \+result_then_c_325, f_649.
+result_then_2_325 :- \+result_then_c_325, \+f_649.
+result_g_648 :- \+result_1_323, result_2_323.
+0.5::f_650.
+result_g_649 :- \+result_1_323, \+result_2_323.
+result_1_324 :- result_1_323, result_then_1_325.
+result_1_324 :- result_g_648, f_650.
+result_2_324 :- result_1_323, result_then_2_325.
+result_2_324 :- result_g_648, \+f_650.
+0.001::result_then_c_326.
+0.5::f_651.
+result_then_1_326 :- \+result_then_c_326, f_651.
+result_then_2_326 :- \+result_then_c_326, \+f_651.
+result_g_650 :- \+result_1_324, result_2_324.
+0.5::f_652.
+result_g_651 :- \+result_1_324, \+result_2_324.
+result_1_325 :- result_1_324, result_then_1_326.
+result_1_325 :- result_g_650, f_652.
+result_2_325 :- result_1_324, result_then_2_326.
+result_2_325 :- result_g_650, \+f_652.
+0.001::result_then_c_327.
+0.5::f_653.
+result_then_1_327 :- \+result_then_c_327, f_653.
+result_then_2_327 :- \+result_then_c_327, \+f_653.
+result_g_652 :- \+result_1_325, result_2_325.
+0.5::f_654.
+result_g_653 :- \+result_1_325, \+result_2_325.
+result_1_326 :- result_1_325, result_then_1_327.
+result_1_326 :- result_g_652, f_654.
+result_2_326 :- result_1_325, result_then_2_327.
+result_2_326 :- result_g_652, \+f_654.
+0.001::result_then_c_328.
+0.5::f_655.
+result_then_1_328 :- \+result_then_c_328, f_655.
+result_then_2_328 :- \+result_then_c_328, \+f_655.
+result_g_654 :- \+result_1_326, result_2_326.
+0.5::f_656.
+result_g_655 :- \+result_1_326, \+result_2_326.
+result_1_327 :- result_1_326, result_then_1_328.
+result_1_327 :- result_g_654, f_656.
+result_2_327 :- result_1_326, result_then_2_328.
+result_2_327 :- result_g_654, \+f_656.
+0.001::result_then_c_329.
+0.5::f_657.
+result_then_1_329 :- \+result_then_c_329, f_657.
+result_then_2_329 :- \+result_then_c_329, \+f_657.
+result_g_656 :- \+result_1_327, result_2_327.
+0.5::f_658.
+result_g_657 :- \+result_1_327, \+result_2_327.
+result_1_328 :- result_1_327, result_then_1_329.
+result_1_328 :- result_g_656, f_658.
+result_2_328 :- result_1_327, result_then_2_329.
+result_2_328 :- result_g_656, \+f_658.
+0.001::result_then_c_330.
+0.5::f_659.
+result_then_1_330 :- \+result_then_c_330, f_659.
+result_then_2_330 :- \+result_then_c_330, \+f_659.
+result_g_658 :- \+result_1_328, result_2_328.
+0.5::f_660.
+result_g_659 :- \+result_1_328, \+result_2_328.
+result_1_329 :- result_1_328, result_then_1_330.
+result_1_329 :- result_g_658, f_660.
+result_2_329 :- result_1_328, result_then_2_330.
+result_2_329 :- result_g_658, \+f_660.
+0.001::result_then_c_331.
+0.5::f_661.
+result_then_1_331 :- \+result_then_c_331, f_661.
+result_then_2_331 :- \+result_then_c_331, \+f_661.
+result_g_660 :- \+result_1_329, result_2_329.
+0.5::f_662.
+result_g_661 :- \+result_1_329, \+result_2_329.
+result_1_330 :- result_1_329, result_then_1_331.
+result_1_330 :- result_g_660, f_662.
+result_2_330 :- result_1_329, result_then_2_331.
+result_2_330 :- result_g_660, \+f_662.
+0.001::result_then_c_332.
+0.5::f_663.
+result_then_1_332 :- \+result_then_c_332, f_663.
+result_then_2_332 :- \+result_then_c_332, \+f_663.
+result_g_662 :- \+result_1_330, result_2_330.
+0.5::f_664.
+result_g_663 :- \+result_1_330, \+result_2_330.
+result_1_331 :- result_1_330, result_then_1_332.
+result_1_331 :- result_g_662, f_664.
+result_2_331 :- result_1_330, result_then_2_332.
+result_2_331 :- result_g_662, \+f_664.
+0.001::result_then_c_333.
+0.5::f_665.
+result_then_1_333 :- \+result_then_c_333, f_665.
+result_then_2_333 :- \+result_then_c_333, \+f_665.
+result_g_664 :- \+result_1_331, result_2_331.
+0.5::f_666.
+result_g_665 :- \+result_1_331, \+result_2_331.
+result_1_332 :- result_1_331, result_then_1_333.
+result_1_332 :- result_g_664, f_666.
+result_2_332 :- result_1_331, result_then_2_333.
+result_2_332 :- result_g_664, \+f_666.
+0.001::result_then_c_334.
+0.5::f_667.
+result_then_1_334 :- \+result_then_c_334, f_667.
+result_then_2_334 :- \+result_then_c_334, \+f_667.
+result_g_666 :- \+result_1_332, result_2_332.
+0.5::f_668.
+result_g_667 :- \+result_1_332, \+result_2_332.
+result_1_333 :- result_1_332, result_then_1_334.
+result_1_333 :- result_g_666, f_668.
+result_2_333 :- result_1_332, result_then_2_334.
+result_2_333 :- result_g_666, \+f_668.
+0.001::result_then_c_335.
+0.5::f_669.
+result_then_1_335 :- \+result_then_c_335, f_669.
+result_then_2_335 :- \+result_then_c_335, \+f_669.
+result_g_668 :- \+result_1_333, result_2_333.
+0.5::f_670.
+result_g_669 :- \+result_1_333, \+result_2_333.
+result_1_334 :- result_1_333, result_then_1_335.
+result_1_334 :- result_g_668, f_670.
+result_2_334 :- result_1_333, result_then_2_335.
+result_2_334 :- result_g_668, \+f_670.
+0.001::result_then_c_336.
+0.5::f_671.
+result_then_1_336 :- \+result_then_c_336, f_671.
+result_then_2_336 :- \+result_then_c_336, \+f_671.
+result_g_670 :- \+result_1_334, result_2_334.
+0.5::f_672.
+result_g_671 :- \+result_1_334, \+result_2_334.
+result_1_335 :- result_1_334, result_then_1_336.
+result_1_335 :- result_g_670, f_672.
+result_2_335 :- result_1_334, result_then_2_336.
+result_2_335 :- result_g_670, \+f_672.
+0.001::result_then_c_337.
+0.5::f_673.
+result_then_1_337 :- \+result_then_c_337, f_673.
+result_then_2_337 :- \+result_then_c_337, \+f_673.
+result_g_672 :- \+result_1_335, result_2_335.
+0.5::f_674.
+result_g_673 :- \+result_1_335, \+result_2_335.
+result_1_336 :- result_1_335, result_then_1_337.
+result_1_336 :- result_g_672, f_674.
+result_2_336 :- result_1_335, result_then_2_337.
+result_2_336 :- result_g_672, \+f_674.
+0.001::result_then_c_338.
+0.5::f_675.
+result_then_1_338 :- \+result_then_c_338, f_675.
+result_then_2_338 :- \+result_then_c_338, \+f_675.
+result_g_674 :- \+result_1_336, result_2_336.
+0.5::f_676.
+result_g_675 :- \+result_1_336, \+result_2_336.
+result_1_337 :- result_1_336, result_then_1_338.
+result_1_337 :- result_g_674, f_676.
+result_2_337 :- result_1_336, result_then_2_338.
+result_2_337 :- result_g_674, \+f_676.
+0.001::result_then_c_339.
+0.5::f_677.
+result_then_1_339 :- \+result_then_c_339, f_677.
+result_then_2_339 :- \+result_then_c_339, \+f_677.
+result_g_676 :- \+result_1_337, result_2_337.
+0.5::f_678.
+result_g_677 :- \+result_1_337, \+result_2_337.
+result_1_338 :- result_1_337, result_then_1_339.
+result_1_338 :- result_g_676, f_678.
+result_2_338 :- result_1_337, result_then_2_339.
+result_2_338 :- result_g_676, \+f_678.
+0.001::result_then_c_340.
+0.5::f_679.
+result_then_1_340 :- \+result_then_c_340, f_679.
+result_then_2_340 :- \+result_then_c_340, \+f_679.
+result_g_678 :- \+result_1_338, result_2_338.
+0.5::f_680.
+result_g_679 :- \+result_1_338, \+result_2_338.
+result_1_339 :- result_1_338, result_then_1_340.
+result_1_339 :- result_g_678, f_680.
+result_2_339 :- result_1_338, result_then_2_340.
+result_2_339 :- result_g_678, \+f_680.
+0.001::result_then_c_341.
+0.5::f_681.
+result_then_1_341 :- \+result_then_c_341, f_681.
+result_then_2_341 :- \+result_then_c_341, \+f_681.
+result_g_680 :- \+result_1_339, result_2_339.
+0.5::f_682.
+result_g_681 :- \+result_1_339, \+result_2_339.
+result_1_340 :- result_1_339, result_then_1_341.
+result_1_340 :- result_g_680, f_682.
+result_2_340 :- result_1_339, result_then_2_341.
+result_2_340 :- result_g_680, \+f_682.
+0.001::result_then_c_342.
+0.5::f_683.
+result_then_1_342 :- \+result_then_c_342, f_683.
+result_then_2_342 :- \+result_then_c_342, \+f_683.
+result_g_682 :- \+result_1_340, result_2_340.
+0.5::f_684.
+result_g_683 :- \+result_1_340, \+result_2_340.
+result_1_341 :- result_1_340, result_then_1_342.
+result_1_341 :- result_g_682, f_684.
+result_2_341 :- result_1_340, result_then_2_342.
+result_2_341 :- result_g_682, \+f_684.
+0.001::result_then_c_343.
+0.5::f_685.
+result_then_1_343 :- \+result_then_c_343, f_685.
+result_then_2_343 :- \+result_then_c_343, \+f_685.
+result_g_684 :- \+result_1_341, result_2_341.
+0.5::f_686.
+result_g_685 :- \+result_1_341, \+result_2_341.
+result_1_342 :- result_1_341, result_then_1_343.
+result_1_342 :- result_g_684, f_686.
+result_2_342 :- result_1_341, result_then_2_343.
+result_2_342 :- result_g_684, \+f_686.
+0.001::result_then_c_344.
+0.5::f_687.
+result_then_1_344 :- \+result_then_c_344, f_687.
+result_then_2_344 :- \+result_then_c_344, \+f_687.
+result_g_686 :- \+result_1_342, result_2_342.
+0.5::f_688.
+result_g_687 :- \+result_1_342, \+result_2_342.
+result_1_343 :- result_1_342, result_then_1_344.
+result_1_343 :- result_g_686, f_688.
+result_2_343 :- result_1_342, result_then_2_344.
+result_2_343 :- result_g_686, \+f_688.
+0.001::result_then_c_345.
+0.5::f_689.
+result_then_1_345 :- \+result_then_c_345, f_689.
+result_then_2_345 :- \+result_then_c_345, \+f_689.
+result_g_688 :- \+result_1_343, result_2_343.
+0.5::f_690.
+result_g_689 :- \+result_1_343, \+result_2_343.
+result_1_344 :- result_1_343, result_then_1_345.
+result_1_344 :- result_g_688, f_690.
+result_2_344 :- result_1_343, result_then_2_345.
+result_2_344 :- result_g_688, \+f_690.
+0.001::result_then_c_346.
+0.5::f_691.
+result_then_1_346 :- \+result_then_c_346, f_691.
+result_then_2_346 :- \+result_then_c_346, \+f_691.
+result_g_690 :- \+result_1_344, result_2_344.
+0.5::f_692.
+result_g_691 :- \+result_1_344, \+result_2_344.
+result_1_345 :- result_1_344, result_then_1_346.
+result_1_345 :- result_g_690, f_692.
+result_2_345 :- result_1_344, result_then_2_346.
+result_2_345 :- result_g_690, \+f_692.
+0.001::result_then_c_347.
+0.5::f_693.
+result_then_1_347 :- \+result_then_c_347, f_693.
+result_then_2_347 :- \+result_then_c_347, \+f_693.
+result_g_692 :- \+result_1_345, result_2_345.
+0.5::f_694.
+result_g_693 :- \+result_1_345, \+result_2_345.
+result_1_346 :- result_1_345, result_then_1_347.
+result_1_346 :- result_g_692, f_694.
+result_2_346 :- result_1_345, result_then_2_347.
+result_2_346 :- result_g_692, \+f_694.
+0.001::result_then_c_348.
+0.5::f_695.
+result_then_1_348 :- \+result_then_c_348, f_695.
+result_then_2_348 :- \+result_then_c_348, \+f_695.
+result_g_694 :- \+result_1_346, result_2_346.
+0.5::f_696.
+result_g_695 :- \+result_1_346, \+result_2_346.
+result_1_347 :- result_1_346, result_then_1_348.
+result_1_347 :- result_g_694, f_696.
+result_2_347 :- result_1_346, result_then_2_348.
+result_2_347 :- result_g_694, \+f_696.
+0.001::result_then_c_349.
+0.5::f_697.
+result_then_1_349 :- \+result_then_c_349, f_697.
+result_then_2_349 :- \+result_then_c_349, \+f_697.
+result_g_696 :- \+result_1_347, result_2_347.
+0.5::f_698.
+result_g_697 :- \+result_1_347, \+result_2_347.
+result_1_348 :- result_1_347, result_then_1_349.
+result_1_348 :- result_g_696, f_698.
+result_2_348 :- result_1_347, result_then_2_349.
+result_2_348 :- result_g_696, \+f_698.
+0.001::result_then_c_350.
+0.5::f_699.
+result_then_1_350 :- \+result_then_c_350, f_699.
+result_then_2_350 :- \+result_then_c_350, \+f_699.
+result_g_698 :- \+result_1_348, result_2_348.
+0.5::f_700.
+result_g_699 :- \+result_1_348, \+result_2_348.
+result_1_349 :- result_1_348, result_then_1_350.
+result_1_349 :- result_g_698, f_700.
+result_2_349 :- result_1_348, result_then_2_350.
+result_2_349 :- result_g_698, \+f_700.
+0.001::result_then_c_351.
+0.5::f_701.
+result_then_1_351 :- \+result_then_c_351, f_701.
+result_then_2_351 :- \+result_then_c_351, \+f_701.
+result_g_700 :- \+result_1_349, result_2_349.
+0.5::f_702.
+result_g_701 :- \+result_1_349, \+result_2_349.
+result_1_350 :- result_1_349, result_then_1_351.
+result_1_350 :- result_g_700, f_702.
+result_2_350 :- result_1_349, result_then_2_351.
+result_2_350 :- result_g_700, \+f_702.
+0.001::result_then_c_352.
+0.5::f_703.
+result_then_1_352 :- \+result_then_c_352, f_703.
+result_then_2_352 :- \+result_then_c_352, \+f_703.
+result_g_702 :- \+result_1_350, result_2_350.
+0.5::f_704.
+result_g_703 :- \+result_1_350, \+result_2_350.
+result_1_351 :- result_1_350, result_then_1_352.
+result_1_351 :- result_g_702, f_704.
+result_2_351 :- result_1_350, result_then_2_352.
+result_2_351 :- result_g_702, \+f_704.
+0.001::result_then_c_353.
+0.5::f_705.
+result_then_1_353 :- \+result_then_c_353, f_705.
+result_then_2_353 :- \+result_then_c_353, \+f_705.
+result_g_704 :- \+result_1_351, result_2_351.
+0.5::f_706.
+result_g_705 :- \+result_1_351, \+result_2_351.
+result_1_352 :- result_1_351, result_then_1_353.
+result_1_352 :- result_g_704, f_706.
+result_2_352 :- result_1_351, result_then_2_353.
+result_2_352 :- result_g_704, \+f_706.
+0.001::result_then_c_354.
+0.5::f_707.
+result_then_1_354 :- \+result_then_c_354, f_707.
+result_then_2_354 :- \+result_then_c_354, \+f_707.
+result_g_706 :- \+result_1_352, result_2_352.
+0.5::f_708.
+result_g_707 :- \+result_1_352, \+result_2_352.
+result_1_353 :- result_1_352, result_then_1_354.
+result_1_353 :- result_g_706, f_708.
+result_2_353 :- result_1_352, result_then_2_354.
+result_2_353 :- result_g_706, \+f_708.
+0.001::result_then_c_355.
+0.5::f_709.
+result_then_1_355 :- \+result_then_c_355, f_709.
+result_then_2_355 :- \+result_then_c_355, \+f_709.
+result_g_708 :- \+result_1_353, result_2_353.
+0.5::f_710.
+result_g_709 :- \+result_1_353, \+result_2_353.
+result_1_354 :- result_1_353, result_then_1_355.
+result_1_354 :- result_g_708, f_710.
+result_2_354 :- result_1_353, result_then_2_355.
+result_2_354 :- result_g_708, \+f_710.
+0.001::result_then_c_356.
+0.5::f_711.
+result_then_1_356 :- \+result_then_c_356, f_711.
+result_then_2_356 :- \+result_then_c_356, \+f_711.
+result_g_710 :- \+result_1_354, result_2_354.
+0.5::f_712.
+result_g_711 :- \+result_1_354, \+result_2_354.
+result_1_355 :- result_1_354, result_then_1_356.
+result_1_355 :- result_g_710, f_712.
+result_2_355 :- result_1_354, result_then_2_356.
+result_2_355 :- result_g_710, \+f_712.
+0.001::result_then_c_357.
+0.5::f_713.
+result_then_1_357 :- \+result_then_c_357, f_713.
+result_then_2_357 :- \+result_then_c_357, \+f_713.
+result_g_712 :- \+result_1_355, result_2_355.
+0.5::f_714.
+result_g_713 :- \+result_1_355, \+result_2_355.
+result_1_356 :- result_1_355, result_then_1_357.
+result_1_356 :- result_g_712, f_714.
+result_2_356 :- result_1_355, result_then_2_357.
+result_2_356 :- result_g_712, \+f_714.
+0.001::result_then_c_358.
+0.5::f_715.
+result_then_1_358 :- \+result_then_c_358, f_715.
+result_then_2_358 :- \+result_then_c_358, \+f_715.
+result_g_714 :- \+result_1_356, result_2_356.
+0.5::f_716.
+result_g_715 :- \+result_1_356, \+result_2_356.
+result_1_357 :- result_1_356, result_then_1_358.
+result_1_357 :- result_g_714, f_716.
+result_2_357 :- result_1_356, result_then_2_358.
+result_2_357 :- result_g_714, \+f_716.
+0.001::result_then_c_359.
+0.5::f_717.
+result_then_1_359 :- \+result_then_c_359, f_717.
+result_then_2_359 :- \+result_then_c_359, \+f_717.
+result_g_716 :- \+result_1_357, result_2_357.
+0.5::f_718.
+result_g_717 :- \+result_1_357, \+result_2_357.
+result_1_358 :- result_1_357, result_then_1_359.
+result_1_358 :- result_g_716, f_718.
+result_2_358 :- result_1_357, result_then_2_359.
+result_2_358 :- result_g_716, \+f_718.
+0.001::result_then_c_360.
+0.5::f_719.
+result_then_1_360 :- \+result_then_c_360, f_719.
+result_then_2_360 :- \+result_then_c_360, \+f_719.
+result_g_718 :- \+result_1_358, result_2_358.
+0.5::f_720.
+result_g_719 :- \+result_1_358, \+result_2_358.
+result_1_359 :- result_1_358, result_then_1_360.
+result_1_359 :- result_g_718, f_720.
+result_2_359 :- result_1_358, result_then_2_360.
+result_2_359 :- result_g_718, \+f_720.
+0.001::result_then_c_361.
+0.5::f_721.
+result_then_1_361 :- \+result_then_c_361, f_721.
+result_then_2_361 :- \+result_then_c_361, \+f_721.
+result_g_720 :- \+result_1_359, result_2_359.
+0.5::f_722.
+result_g_721 :- \+result_1_359, \+result_2_359.
+result_1_360 :- result_1_359, result_then_1_361.
+result_1_360 :- result_g_720, f_722.
+result_2_360 :- result_1_359, result_then_2_361.
+result_2_360 :- result_g_720, \+f_722.
+0.001::result_then_c_362.
+0.5::f_723.
+result_then_1_362 :- \+result_then_c_362, f_723.
+result_then_2_362 :- \+result_then_c_362, \+f_723.
+result_g_722 :- \+result_1_360, result_2_360.
+0.5::f_724.
+result_g_723 :- \+result_1_360, \+result_2_360.
+result_1_361 :- result_1_360, result_then_1_362.
+result_1_361 :- result_g_722, f_724.
+result_2_361 :- result_1_360, result_then_2_362.
+result_2_361 :- result_g_722, \+f_724.
+0.001::result_then_c_363.
+0.5::f_725.
+result_then_1_363 :- \+result_then_c_363, f_725.
+result_then_2_363 :- \+result_then_c_363, \+f_725.
+result_g_724 :- \+result_1_361, result_2_361.
+0.5::f_726.
+result_g_725 :- \+result_1_361, \+result_2_361.
+result_1_362 :- result_1_361, result_then_1_363.
+result_1_362 :- result_g_724, f_726.
+result_2_362 :- result_1_361, result_then_2_363.
+result_2_362 :- result_g_724, \+f_726.
+0.001::result_then_c_364.
+0.5::f_727.
+result_then_1_364 :- \+result_then_c_364, f_727.
+result_then_2_364 :- \+result_then_c_364, \+f_727.
+result_g_726 :- \+result_1_362, result_2_362.
+0.5::f_728.
+result_g_727 :- \+result_1_362, \+result_2_362.
+result_1_363 :- result_1_362, result_then_1_364.
+result_1_363 :- result_g_726, f_728.
+result_2_363 :- result_1_362, result_then_2_364.
+result_2_363 :- result_g_726, \+f_728.
+0.001::result_then_c_365.
+0.5::f_729.
+result_then_1_365 :- \+result_then_c_365, f_729.
+result_then_2_365 :- \+result_then_c_365, \+f_729.
+result_g_728 :- \+result_1_363, result_2_363.
+0.5::f_730.
+result_g_729 :- \+result_1_363, \+result_2_363.
+result_1_364 :- result_1_363, result_then_1_365.
+result_1_364 :- result_g_728, f_730.
+result_2_364 :- result_1_363, result_then_2_365.
+result_2_364 :- result_g_728, \+f_730.
+0.001::result_then_c_366.
+0.5::f_731.
+result_then_1_366 :- \+result_then_c_366, f_731.
+result_then_2_366 :- \+result_then_c_366, \+f_731.
+result_g_730 :- \+result_1_364, result_2_364.
+0.5::f_732.
+result_g_731 :- \+result_1_364, \+result_2_364.
+result_1_365 :- result_1_364, result_then_1_366.
+result_1_365 :- result_g_730, f_732.
+result_2_365 :- result_1_364, result_then_2_366.
+result_2_365 :- result_g_730, \+f_732.
+0.001::result_then_c_367.
+0.5::f_733.
+result_then_1_367 :- \+result_then_c_367, f_733.
+result_then_2_367 :- \+result_then_c_367, \+f_733.
+result_g_732 :- \+result_1_365, result_2_365.
+0.5::f_734.
+result_g_733 :- \+result_1_365, \+result_2_365.
+result_1_366 :- result_1_365, result_then_1_367.
+result_1_366 :- result_g_732, f_734.
+result_2_366 :- result_1_365, result_then_2_367.
+result_2_366 :- result_g_732, \+f_734.
+0.001::result_then_c_368.
+0.5::f_735.
+result_then_1_368 :- \+result_then_c_368, f_735.
+result_then_2_368 :- \+result_then_c_368, \+f_735.
+result_g_734 :- \+result_1_366, result_2_366.
+0.5::f_736.
+result_g_735 :- \+result_1_366, \+result_2_366.
+result_1_367 :- result_1_366, result_then_1_368.
+result_1_367 :- result_g_734, f_736.
+result_2_367 :- result_1_366, result_then_2_368.
+result_2_367 :- result_g_734, \+f_736.
+0.001::result_then_c_369.
+0.5::f_737.
+result_then_1_369 :- \+result_then_c_369, f_737.
+result_then_2_369 :- \+result_then_c_369, \+f_737.
+result_g_736 :- \+result_1_367, result_2_367.
+0.5::f_738.
+result_g_737 :- \+result_1_367, \+result_2_367.
+result_1_368 :- result_1_367, result_then_1_369.
+result_1_368 :- result_g_736, f_738.
+result_2_368 :- result_1_367, result_then_2_369.
+result_2_368 :- result_g_736, \+f_738.
+0.001::result_then_c_370.
+0.5::f_739.
+result_then_1_370 :- \+result_then_c_370, f_739.
+result_then_2_370 :- \+result_then_c_370, \+f_739.
+result_g_738 :- \+result_1_368, result_2_368.
+0.5::f_740.
+result_g_739 :- \+result_1_368, \+result_2_368.
+result_1_369 :- result_1_368, result_then_1_370.
+result_1_369 :- result_g_738, f_740.
+result_2_369 :- result_1_368, result_then_2_370.
+result_2_369 :- result_g_738, \+f_740.
+0.001::result_then_c_371.
+0.5::f_741.
+result_then_1_371 :- \+result_then_c_371, f_741.
+result_then_2_371 :- \+result_then_c_371, \+f_741.
+result_g_740 :- \+result_1_369, result_2_369.
+0.5::f_742.
+result_g_741 :- \+result_1_369, \+result_2_369.
+result_1_370 :- result_1_369, result_then_1_371.
+result_1_370 :- result_g_740, f_742.
+result_2_370 :- result_1_369, result_then_2_371.
+result_2_370 :- result_g_740, \+f_742.
+0.001::result_then_c_372.
+0.5::f_743.
+result_then_1_372 :- \+result_then_c_372, f_743.
+result_then_2_372 :- \+result_then_c_372, \+f_743.
+result_g_742 :- \+result_1_370, result_2_370.
+0.5::f_744.
+result_g_743 :- \+result_1_370, \+result_2_370.
+result_1_371 :- result_1_370, result_then_1_372.
+result_1_371 :- result_g_742, f_744.
+result_2_371 :- result_1_370, result_then_2_372.
+result_2_371 :- result_g_742, \+f_744.
+0.001::result_then_c_373.
+0.5::f_745.
+result_then_1_373 :- \+result_then_c_373, f_745.
+result_then_2_373 :- \+result_then_c_373, \+f_745.
+result_g_744 :- \+result_1_371, result_2_371.
+0.5::f_746.
+result_g_745 :- \+result_1_371, \+result_2_371.
+result_1_372 :- result_1_371, result_then_1_373.
+result_1_372 :- result_g_744, f_746.
+result_2_372 :- result_1_371, result_then_2_373.
+result_2_372 :- result_g_744, \+f_746.
+0.001::result_then_c_374.
+0.5::f_747.
+result_then_1_374 :- \+result_then_c_374, f_747.
+result_then_2_374 :- \+result_then_c_374, \+f_747.
+result_g_746 :- \+result_1_372, result_2_372.
+0.5::f_748.
+result_g_747 :- \+result_1_372, \+result_2_372.
+result_1_373 :- result_1_372, result_then_1_374.
+result_1_373 :- result_g_746, f_748.
+result_2_373 :- result_1_372, result_then_2_374.
+result_2_373 :- result_g_746, \+f_748.
+0.001::result_then_c_375.
+0.5::f_749.
+result_then_1_375 :- \+result_then_c_375, f_749.
+result_then_2_375 :- \+result_then_c_375, \+f_749.
+result_g_748 :- \+result_1_373, result_2_373.
+0.5::f_750.
+result_g_749 :- \+result_1_373, \+result_2_373.
+result_1_374 :- result_1_373, result_then_1_375.
+result_1_374 :- result_g_748, f_750.
+result_2_374 :- result_1_373, result_then_2_375.
+result_2_374 :- result_g_748, \+f_750.
+0.001::result_then_c_376.
+0.5::f_751.
+result_then_1_376 :- \+result_then_c_376, f_751.
+result_then_2_376 :- \+result_then_c_376, \+f_751.
+result_g_750 :- \+result_1_374, result_2_374.
+0.5::f_752.
+result_g_751 :- \+result_1_374, \+result_2_374.
+result_1_375 :- result_1_374, result_then_1_376.
+result_1_375 :- result_g_750, f_752.
+result_2_375 :- result_1_374, result_then_2_376.
+result_2_375 :- result_g_750, \+f_752.
+0.001::result_then_c_377.
+0.5::f_753.
+result_then_1_377 :- \+result_then_c_377, f_753.
+result_then_2_377 :- \+result_then_c_377, \+f_753.
+result_g_752 :- \+result_1_375, result_2_375.
+0.5::f_754.
+result_g_753 :- \+result_1_375, \+result_2_375.
+result_1_376 :- result_1_375, result_then_1_377.
+result_1_376 :- result_g_752, f_754.
+result_2_376 :- result_1_375, result_then_2_377.
+result_2_376 :- result_g_752, \+f_754.
+0.001::result_then_c_378.
+0.5::f_755.
+result_then_1_378 :- \+result_then_c_378, f_755.
+result_then_2_378 :- \+result_then_c_378, \+f_755.
+result_g_754 :- \+result_1_376, result_2_376.
+0.5::f_756.
+result_g_755 :- \+result_1_376, \+result_2_376.
+result_1_377 :- result_1_376, result_then_1_378.
+result_1_377 :- result_g_754, f_756.
+result_2_377 :- result_1_376, result_then_2_378.
+result_2_377 :- result_g_754, \+f_756.
+0.001::result_then_c_379.
+0.5::f_757.
+result_then_1_379 :- \+result_then_c_379, f_757.
+result_then_2_379 :- \+result_then_c_379, \+f_757.
+result_g_756 :- \+result_1_377, result_2_377.
+0.5::f_758.
+result_g_757 :- \+result_1_377, \+result_2_377.
+result_1_378 :- result_1_377, result_then_1_379.
+result_1_378 :- result_g_756, f_758.
+result_2_378 :- result_1_377, result_then_2_379.
+result_2_378 :- result_g_756, \+f_758.
+0.001::result_then_c_380.
+0.5::f_759.
+result_then_1_380 :- \+result_then_c_380, f_759.
+result_then_2_380 :- \+result_then_c_380, \+f_759.
+result_g_758 :- \+result_1_378, result_2_378.
+0.5::f_760.
+result_g_759 :- \+result_1_378, \+result_2_378.
+result_1_379 :- result_1_378, result_then_1_380.
+result_1_379 :- result_g_758, f_760.
+result_2_379 :- result_1_378, result_then_2_380.
+result_2_379 :- result_g_758, \+f_760.
+0.001::result_then_c_381.
+0.5::f_761.
+result_then_1_381 :- \+result_then_c_381, f_761.
+result_then_2_381 :- \+result_then_c_381, \+f_761.
+result_g_760 :- \+result_1_379, result_2_379.
+0.5::f_762.
+result_g_761 :- \+result_1_379, \+result_2_379.
+result_1_380 :- result_1_379, result_then_1_381.
+result_1_380 :- result_g_760, f_762.
+result_2_380 :- result_1_379, result_then_2_381.
+result_2_380 :- result_g_760, \+f_762.
+0.001::result_then_c_382.
+0.5::f_763.
+result_then_1_382 :- \+result_then_c_382, f_763.
+result_then_2_382 :- \+result_then_c_382, \+f_763.
+result_g_762 :- \+result_1_380, result_2_380.
+0.5::f_764.
+result_g_763 :- \+result_1_380, \+result_2_380.
+result_1_381 :- result_1_380, result_then_1_382.
+result_1_381 :- result_g_762, f_764.
+result_2_381 :- result_1_380, result_then_2_382.
+result_2_381 :- result_g_762, \+f_764.
+0.001::result_then_c_383.
+0.5::f_765.
+result_then_1_383 :- \+result_then_c_383, f_765.
+result_then_2_383 :- \+result_then_c_383, \+f_765.
+result_g_764 :- \+result_1_381, result_2_381.
+0.5::f_766.
+result_g_765 :- \+result_1_381, \+result_2_381.
+result_1_382 :- result_1_381, result_then_1_383.
+result_1_382 :- result_g_764, f_766.
+result_2_382 :- result_1_381, result_then_2_383.
+result_2_382 :- result_g_764, \+f_766.
+0.001::result_then_c_384.
+0.5::f_767.
+result_then_1_384 :- \+result_then_c_384, f_767.
+result_then_2_384 :- \+result_then_c_384, \+f_767.
+result_g_766 :- \+result_1_382, result_2_382.
+0.5::f_768.
+result_g_767 :- \+result_1_382, \+result_2_382.
+result_1_383 :- result_1_382, result_then_1_384.
+result_1_383 :- result_g_766, f_768.
+result_2_383 :- result_1_382, result_then_2_384.
+result_2_383 :- result_g_766, \+f_768.
+0.001::result_then_c_385.
+0.5::f_769.
+result_then_1_385 :- \+result_then_c_385, f_769.
+result_then_2_385 :- \+result_then_c_385, \+f_769.
+result_g_768 :- \+result_1_383, result_2_383.
+0.5::f_770.
+result_g_769 :- \+result_1_383, \+result_2_383.
+result_1_384 :- result_1_383, result_then_1_385.
+result_1_384 :- result_g_768, f_770.
+result_2_384 :- result_1_383, result_then_2_385.
+result_2_384 :- result_g_768, \+f_770.
+0.001::result_then_c_386.
+0.5::f_771.
+result_then_1_386 :- \+result_then_c_386, f_771.
+result_then_2_386 :- \+result_then_c_386, \+f_771.
+result_g_770 :- \+result_1_384, result_2_384.
+0.5::f_772.
+result_g_771 :- \+result_1_384, \+result_2_384.
+result_1_385 :- result_1_384, result_then_1_386.
+result_1_385 :- result_g_770, f_772.
+result_2_385 :- result_1_384, result_then_2_386.
+result_2_385 :- result_g_770, \+f_772.
+0.001::result_then_c_387.
+0.5::f_773.
+result_then_1_387 :- \+result_then_c_387, f_773.
+result_then_2_387 :- \+result_then_c_387, \+f_773.
+result_g_772 :- \+result_1_385, result_2_385.
+0.5::f_774.
+result_g_773 :- \+result_1_385, \+result_2_385.
+result_1_386 :- result_1_385, result_then_1_387.
+result_1_386 :- result_g_772, f_774.
+result_2_386 :- result_1_385, result_then_2_387.
+result_2_386 :- result_g_772, \+f_774.
+0.001::result_then_c_388.
+0.5::f_775.
+result_then_1_388 :- \+result_then_c_388, f_775.
+result_then_2_388 :- \+result_then_c_388, \+f_775.
+result_g_774 :- \+result_1_386, result_2_386.
+0.5::f_776.
+result_g_775 :- \+result_1_386, \+result_2_386.
+result_1_387 :- result_1_386, result_then_1_388.
+result_1_387 :- result_g_774, f_776.
+result_2_387 :- result_1_386, result_then_2_388.
+result_2_387 :- result_g_774, \+f_776.
+0.001::result_then_c_389.
+0.5::f_777.
+result_then_1_389 :- \+result_then_c_389, f_777.
+result_then_2_389 :- \+result_then_c_389, \+f_777.
+result_g_776 :- \+result_1_387, result_2_387.
+0.5::f_778.
+result_g_777 :- \+result_1_387, \+result_2_387.
+result_1_388 :- result_1_387, result_then_1_389.
+result_1_388 :- result_g_776, f_778.
+result_2_388 :- result_1_387, result_then_2_389.
+result_2_388 :- result_g_776, \+f_778.
+0.001::result_then_c_390.
+0.5::f_779.
+result_then_1_390 :- \+result_then_c_390, f_779.
+result_then_2_390 :- \+result_then_c_390, \+f_779.
+result_g_778 :- \+result_1_388, result_2_388.
+0.5::f_780.
+result_g_779 :- \+result_1_388, \+result_2_388.
+result_1_389 :- result_1_388, result_then_1_390.
+result_1_389 :- result_g_778, f_780.
+result_2_389 :- result_1_388, result_then_2_390.
+result_2_389 :- result_g_778, \+f_780.
+0.001::result_then_c_391.
+0.5::f_781.
+result_then_1_391 :- \+result_then_c_391, f_781.
+result_then_2_391 :- \+result_then_c_391, \+f_781.
+result_g_780 :- \+result_1_389, result_2_389.
+0.5::f_782.
+result_g_781 :- \+result_1_389, \+result_2_389.
+result_1_390 :- result_1_389, result_then_1_391.
+result_1_390 :- result_g_780, f_782.
+result_2_390 :- result_1_389, result_then_2_391.
+result_2_390 :- result_g_780, \+f_782.
+0.001::result_then_c_392.
+0.5::f_783.
+result_then_1_392 :- \+result_then_c_392, f_783.
+result_then_2_392 :- \+result_then_c_392, \+f_783.
+result_g_782 :- \+result_1_390, result_2_390.
+0.5::f_784.
+result_g_783 :- \+result_1_390, \+result_2_390.
+result_1_391 :- result_1_390, result_then_1_392.
+result_1_391 :- result_g_782, f_784.
+result_2_391 :- result_1_390, result_then_2_392.
+result_2_391 :- result_g_782, \+f_784.
+0.001::result_then_c_393.
+0.5::f_785.
+result_then_1_393 :- \+result_then_c_393, f_785.
+result_then_2_393 :- \+result_then_c_393, \+f_785.
+result_g_784 :- \+result_1_391, result_2_391.
+0.5::f_786.
+result_g_785 :- \+result_1_391, \+result_2_391.
+result_1_392 :- result_1_391, result_then_1_393.
+result_1_392 :- result_g_784, f_786.
+result_2_392 :- result_1_391, result_then_2_393.
+result_2_392 :- result_g_784, \+f_786.
+0.001::result_then_c_394.
+0.5::f_787.
+result_then_1_394 :- \+result_then_c_394, f_787.
+result_then_2_394 :- \+result_then_c_394, \+f_787.
+result_g_786 :- \+result_1_392, result_2_392.
+0.5::f_788.
+result_g_787 :- \+result_1_392, \+result_2_392.
+result_1_393 :- result_1_392, result_then_1_394.
+result_1_393 :- result_g_786, f_788.
+result_2_393 :- result_1_392, result_then_2_394.
+result_2_393 :- result_g_786, \+f_788.
+0.001::result_then_c_395.
+0.5::f_789.
+result_then_1_395 :- \+result_then_c_395, f_789.
+result_then_2_395 :- \+result_then_c_395, \+f_789.
+result_g_788 :- \+result_1_393, result_2_393.
+0.5::f_790.
+result_g_789 :- \+result_1_393, \+result_2_393.
+result_1_394 :- result_1_393, result_then_1_395.
+result_1_394 :- result_g_788, f_790.
+result_2_394 :- result_1_393, result_then_2_395.
+result_2_394 :- result_g_788, \+f_790.
+0.001::result_then_c_396.
+0.5::f_791.
+result_then_1_396 :- \+result_then_c_396, f_791.
+result_then_2_396 :- \+result_then_c_396, \+f_791.
+result_g_790 :- \+result_1_394, result_2_394.
+0.5::f_792.
+result_g_791 :- \+result_1_394, \+result_2_394.
+result_1_395 :- result_1_394, result_then_1_396.
+result_1_395 :- result_g_790, f_792.
+result_2_395 :- result_1_394, result_then_2_396.
+result_2_395 :- result_g_790, \+f_792.
+0.001::result_then_c_397.
+0.5::f_793.
+result_then_1_397 :- \+result_then_c_397, f_793.
+result_then_2_397 :- \+result_then_c_397, \+f_793.
+result_g_792 :- \+result_1_395, result_2_395.
+0.5::f_794.
+result_g_793 :- \+result_1_395, \+result_2_395.
+result_1_396 :- result_1_395, result_then_1_397.
+result_1_396 :- result_g_792, f_794.
+result_2_396 :- result_1_395, result_then_2_397.
+result_2_396 :- result_g_792, \+f_794.
+0.001::result_then_c_398.
+0.5::f_795.
+result_then_1_398 :- \+result_then_c_398, f_795.
+result_then_2_398 :- \+result_then_c_398, \+f_795.
+result_g_794 :- \+result_1_396, result_2_396.
+0.5::f_796.
+result_g_795 :- \+result_1_396, \+result_2_396.
+result_1_397 :- result_1_396, result_then_1_398.
+result_1_397 :- result_g_794, f_796.
+result_2_397 :- result_1_396, result_then_2_398.
+result_2_397 :- result_g_794, \+f_796.
+0.001::result_then_c_399.
+0.5::f_797.
+result_then_1_399 :- \+result_then_c_399, f_797.
+result_then_2_399 :- \+result_then_c_399, \+f_797.
+result_g_796 :- \+result_1_397, result_2_397.
+0.5::f_798.
+result_g_797 :- \+result_1_397, \+result_2_397.
+result_1_398 :- result_1_397, result_then_1_399.
+result_1_398 :- result_g_796, f_798.
+result_2_398 :- result_1_397, result_then_2_399.
+result_2_398 :- result_g_796, \+f_798.
+query(result_1_398).
+query(result_2_398).

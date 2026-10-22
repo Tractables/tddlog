@@ -1911,6 +1911,22 @@ reads the circuit Alea.jl builds. The Dice programs with loops are
 natural to it: `dice2problog.py` writes a loop as recursion over a step
 index, as a ProbLog user writes one, and tddlog's grounder unrolls it.
 
+The ProbLog family is scored on the dice suite's 21 scaled loops in the
+form of the ProbLog program on which it does better, so that no system
+loses answers to the form chosen for it: ProbLog's d-DNNF, PITA and
+aspmc ran on both forms, the recursion and the loops unrolled step by
+step, in the same lanes of one job (three repetitions, tddlog on the
+recursion beside them), and each system takes the form on
+which it answers more of the loops, on a tie the one with the smaller
+total time, for the whole suite. ProbLog is scored on the unrolled form
+(15 answered against 10 on the recursion), aspmc on the unrolled form
+(16 on each, 3412 s against 3949 s) and PITA on the recursion (10 on
+each, 6739 s against 6752 s); tddlog stays on the recursion. An
+answer that differs from tddlog's by more than 1e-6 counts as
+unanswered. The unrolled form is attempted only, as the translation
+does the unrolling for the system. Each loop's page shows both forms
+and which systems are scored on each.
+
 The first row that matches an instance's system, suite and name (a
 regular expression the name starts with) classifies it; a system's
 variants (`alea-process`, `roulette-process`) take their stem's rows.
@@ -1950,6 +1966,7 @@ which are Dice.jl programs ported to Alea.jl.
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | attempted | Dice programs of the ground program (ground2net.py) |
 | alea | ppl | `pluck_` | natural | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
 | tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | attempted | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
+| problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | attempted | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | natural | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
 | tddlog, problog, pita, aspmc | roulette | all | natural | the paper's model written as a ProbLog program (gen_roulette.py) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | natural | a loop-free Dice program translated line for line by dice2problog.py |

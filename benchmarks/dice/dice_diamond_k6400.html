@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#dice">The Dice paper&#x27;s programs</a></p>
     <h1>dice_diamond_k6400</h1>
-    <p class="lede">The programs and Bayesian networks of the Dice paper (Holtzen, Van den Broeck and Millstein, OOPSLA 2020), a network as one Dice program per queried variable, and its loop programs scaled up. tddlog runs them translated to ProbLog, Alea.jl translated to Julia, Roulette translated to Racket. 300 s a run (600 s on the loop programs). Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Geni, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them. Made by <code>dice2problog.py dice_diamond_k6400.dice</code>.</p>
+    <p class="lede">The programs and Bayesian networks of the Dice paper (Holtzen, Van den Broeck and Millstein, OOPSLA 2020), a network as one Dice program per queried variable, and its loop programs scaled up. tddlog runs them translated to ProbLog, Alea.jl translated to Julia, Roulette translated to Racket. 300 s a run (600 s on the loop programs). Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. ProbLog, Geni, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them. Made by <code>dice2problog.py dice_diamond_k6400.dice</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.34</td><td class="num">40.5</td><td class="num">49.0</td><td class="num">0.19</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="an answer off the reference by more than 1e-6">wrong</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">218</td><td class="num">0.21</td><td class="num">7.8</td><td class="num">21.8</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">277</td><td class="num">258</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. &gt;600: the time limit ran out. wrong: an answer off the reference by more than 1e-6. error: the system stopped with an error. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.34</td><td class="num">40.5</td><td class="num">49.0</td><td class="num">0.19</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="an answer off the reference by more than 1e-6">wrong</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the system stopped with an error">error</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num">91.7</td><td class="num">0.21</td><td class="num">7.8</td><td class="num">21.8</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">277</td><td class="num">258</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; memory: out of memory. wrong: an answer off the reference by more than 1e-6. error: the system stopped with an error. &gt;600: the time limit ran out. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -64,12 +64,13 @@ iterate(diamond, true, 6400)
 </div>
 <div class="panel" id="p1">
 <p class="readers"><b>A translation of the original into ProbLog; the line under each file names the script that wrote it.</b></p>
-<p class="readers">Read by tddlog, ProbLog -k ddnnf.</p>
+<p class="readers">Read by tddlog, PITA, ProbLog -k ddnnf, aspmc.</p>
+<p class="readers">aspmc reads this ProbLog program as it stands, through its ProbLog front end; it has no translation of its own.</p>
 <dl class="cmds">
 <dt>tddlog</dt><dd><code>tddlog --stats --precision 17 --vtree auto dice_diamond_k6400.pl</code></dd>
 <dt>ProbLog -k ddnnf</dt><dd><code>problog -k ddnnf dice_diamond_k6400.pl</code></dd>
 </dl>
-<div class="file"><div class="fhead"><code class="fname">dice_diamond_k6400.pl</code><span>356 bytes</span><span class="sha" title="SHA-256">sha256 74e8f4a67376a386b33d2cd63c40a0db9ec2a9549670748c856aafb5219c7984</span></div><p class="made">Written by <code>dice2problog.py dice_diamond_k6400.dice</code>.</p><pre>diamond(0).
+<div class="file"><div class="fhead"><code class="fname">dice_diamond_k6400.pl</code><span>356 bytes</span><span class="sha" title="SHA-256">sha256 74e8f4a67376a386b33d2cd63c40a0db9ec2a9549670748c856aafb5219c7984</span></div><p class="made">The loop as recursion over a step index, written by <code>dice2problog.py dice_diamond_k6400.dice</code>. Scored on this form: tddlog, PITA.</p><pre>diamond(0).
 step(0).
 step(T1) :- step(T), T &lt; 6399, T1 is T + 1.
 0.5::route(T) :- step(T).
@@ -83,6 +84,7 @@ diamond(T1) :- step(T), T1 is T + 1, result_1(T).
 result_2 :- diamond(6400).
 query(result_2).
 </pre></div>
+<div class="file"><div class="fhead"><code class="fname">dice_diamond_k6400.pl</code><span>1 268 631 bytes, 44 799 lines</span><span class="sha" title="SHA-256">sha256 68228d555d0722e9339f2b747dedf01fd3a2b4712d83d41031d9bf23e6a9b49f</span></div><p class="made">The loop unrolled step by step, as <code>dice2problog.py</code> wrote it before it wrote loops as recursion. ProbLog, PITA and aspmc ran on both forms in the same lanes, and each is scored on the form where it answers more of the loops, on a tie in less total time. Scored on this form: aspmc, ProbLog -k ddnnf.</p><p class="note"><a href="../files/68228d555d0722e9339f.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/68228d555d0722e9339f.txt"></pre></div>
 </div>
 <div class="panel" id="p2">
 <p class="readers"><b>A translation of the original into Alea.jl; the line under each file names the script that wrote it.</b></p>
@@ -358,7 +360,6 @@ label &quot;done&quot; = pc=4;
 <h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>49.0</td><td>40.5</td><td>0.07</td><td></td><td>2.0e-13 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>49.0</td><td>40.5</td><td>0.07</td><td></td><td>2.0e-13 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>50.9</td><td>42.3</td><td>0.07</td><td></td><td>2.0e-13 at most</td><td></td></tr></tbody></table></div>
 <h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.19</td><td>1.6e-14 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>0.19</td><td>1.6e-14 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>0.19</td><td>1.6e-14 at most</td><td></td></tr></tbody></table></div>
 <h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>30.2</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>memory allocation of 3221225472 bytes failed</pre></details></td></tr><tr><td>2</td><td>error</td><td>30.1</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>memory allocation of 3221225472 bytes failed</pre></details></td></tr><tr><td>3</td><td>error</td><td>31.2</td><td></td><td></td><td></td><td></td></tr><tr class="err"><td></td><td colspan="6"><details><summary>the error</summary><pre>memory allocation of 3221225472 bytes failed</pre></details></td></tr></tbody></table></div>
-<h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
 <h3>noDice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>1.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 786432 bytes failed
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>2</td><td>error</td><td>1.4</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 786432 bytes failed
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr><tr><td>3</td><td>error</td><td>1.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 786432 bytes failed
@@ -393,10 +394,8 @@ fatal runtime error: stack overflow, aborting</pre></details></td></tr></tbody><
 <p class="note">A later run, in lanes of its own, of Pluck.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.34</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr></tbody></table></div>
 <h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
-<p class="note">A later run, in lanes of its own, of PITA, aspmc.</p>
+<p class="note">A later run, in lanes of its own, of .</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.34</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.34</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.35</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr></tbody></table></div>
-<h3>PITA (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
-<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>218</td><td>2.4e-14 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>218</td><td>2.4e-14 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>218</td><td>2.4e-14 at most</td><td></td></tr></tbody></table></div>
 <p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.34</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr></tbody></table></div>
 <h3>Ace auto (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.8</td><td>the reference</td><td>route tabularCompilation; circuit nodes 278 904; circuit edges 404 210</td></tr></tbody></table></div>
@@ -408,6 +407,101 @@ fatal runtime error: stack overflow, aborting</pre></details></td></tr></tbody><
 <h3>libDAI (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>258</td><td>1.6e-14 at most</td><td>inference s 255.6687492</td></tr></tbody></table></div>
 <h3>TensorInference.jl greedy (later run)</h3><p class="note">Reads the network&#x27;s UAI file and its observations, the file Merlin reads; its time includes Julia&#x27;s compilation and the search for a contraction order.</p><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>TensorInference.jl treesa (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<p class="note">A later run, in lanes of its own, of ProbLog -k ddnnf, PITA, aspmc.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.34</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.34</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.35</td><td>2.4e-14 at most</td><td>largest formula, pairs 70 395; final formula, pairs 10; variables 19 200; ground atoms 32 001; ground rules 25 601; vtree families:0 (from auto: 1 attempts, 0.003s discarded)</td></tr></tbody></table></div>
+<h3>ProbLog -k ddnnf (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>10.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 145, in _break_cycles
+    newnode = target.add_atom(
+  File &quot;formula.py&quot;, line 658, in add_atom
+    probability != self.WEIGHT_NEUTRAL
+  File &quot;logic.py&quot;, line 941, in __eq__
+    return str(self) == str(other)
+  File &quot;logic.py&quot;, line 914, in __str__
+    return str(self.functor)
+RecursionError: maximum recursion depth exceeded</pre></details></td></tr><tr><td>2</td><td>error</td><td>10.5</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 145, in _break_cycles
+    newnode = target.add_atom(
+  File &quot;formula.py&quot;, line 658, in add_atom
+    probability != self.WEIGHT_NEUTRAL
+  File &quot;logic.py&quot;, line 941, in __eq__
+    return str(self) == str(other)
+  File &quot;logic.py&quot;, line 914, in __str__
+    return str(self.functor)
+RecursionError: maximum recursion depth exceeded</pre></details></td></tr><tr><td>3</td><td>error</td><td>10.1</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 153, in _break_cycles
+    children = [
+  File &quot;cycles.py&quot;, line 154, in &lt;listcomp&gt;
+    _break_cycles(
+  File &quot;cycles.py&quot;, line 145, in _break_cycles
+    newnode = target.add_atom(
+  File &quot;formula.py&quot;, line 658, in add_atom
+    probability != self.WEIGHT_NEUTRAL
+  File &quot;logic.py&quot;, line 941, in __eq__
+    return str(self) == str(other)
+  File &quot;logic.py&quot;, line 914, in __str__
+    return str(self.functor)
+RecursionError: maximum recursion depth exceeded</pre></details></td></tr></tbody></table></div>
+<h3>PITA (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
+<h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>91.7</td><td>2.4e-14 at most</td><td></td></tr><tr><td>2</td><td>answered</td><td>96.8</td><td>2.4e-14 at most</td><td></td></tr><tr><td>3</td><td>answered</td><td>90.0</td><td>2.4e-14 at most</td><td></td></tr></tbody></table></div>
 </section>
 <section class="card">
   <h2>The answers</h2>
