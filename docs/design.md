@@ -170,7 +170,10 @@ steps 6 to 9 are skipped.
    that the body reads only as the result of an `is` binds nothing: the
    rule is copied under the pattern without it, whose demand is projected
    from the bound one (`'$m_s_bf'(K) :- '$m_s_bb'(K,S)`), so that a sum is
-   not ground once per demanded value.
+   not ground once per demanded value. A program whose recursive strata
+   all have rising levels (below) is not rewritten but grounded level by
+   level: the demand of a loop over a time index runs down the levels
+   (`T0 is T - 1`) and makes the whole chain one stratum without levels.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in
@@ -180,6 +183,29 @@ steps 6 to 9 are skipped.
    an impossible atom is dropped as true; one inside its own stratum
    (negation through recursion) is kept for the compiler's well-founded
    fixpoint.
+
+   A recursive stratum has rising levels where the last argument of each
+   of its predicates is a level that no rule lowers: every literal of the
+   stratum is read at its head's level (the same variable, or constant
+   levels h >= b) or below it (`H is B + c`, c >= 1), and some below it,
+   an XY-stratification (Zaniolo, Arni and Ong, DOOD 1993). Within a
+   level, the components of the graph of the literals read at their
+   head's level rank the predicates. A program with variables whose
+   recursive strata all have rising levels grounds each of them key by
+   key, (level, rank) in order (`evaluate_by_levels`): a rule instance
+   whose head is at a later key waits for it, and a rank whose predicates
+   read each other at their own level takes semi-naive rounds within its
+   key. A key's atoms are then complete before a rule reads them at a
+   later key, so a negated atom of an earlier key is resolved where it is
+   read, and the gates of an acyclic key's atoms are built in one
+   and-inverter graph over those of the keys before (`aig.rs`'s
+   `Pruner`), whose sweep proves some of them constant: the rules
+   grounded after pass over an atom proved false and drop one proved true
+   from their bodies. On a loop written as recursion over its steps
+   (Dice's `iterate` through `scripts/dice2problog.py`) the dead branches
+   of each step are never grounded: dice_pmc1 is 1 506 atoms once
+   simplified, against 8 350 unrolled, and 3.2 G instructions against
+   3.8 G; the 27 loop programs 166 G against 219 G unrolled.
 5. **Simplify** (`simplify.rs`): propagate certain atoms; merge each atom
    the grounder introduced into another atom with the same rule bodies
    (atoms the program writes wait for the exclusive sets, below); restrict to
@@ -227,9 +253,12 @@ steps 6 to 9 are skipped.
    exclusive set of such atoms of several predicates as a whole, the
    branches of a choice. A set of one predicate's values stays: they are a
    network variable (bn_munin's copies of a variable cost `auto` twice the
-   work inlined). A loop that Dice's `iterate` unrolls names each step's
-   intermediate values this way: diamond keeps one atom a step of four,
-   its work at 1 600 steps 3.98 M units to 1.23 M.
+   work inlined). A loop unrolled step by step names each step's
+   intermediate values this way: the Dice paper's diamond, unrolled, keeps
+   one atom a step of four, its work at 1 600 steps 3.98 M units to
+   1.23 M. Written as recursion over a step index, as `dice2problog.py`
+   writes Dice's `iterate`, they are a recursive predicate's atoms and
+   stay.
 
    Then **equal gates** (`aig::reduce`). The acyclic derived atoms with
    rules, the gates, are built in dependency order into an and-inverter
@@ -257,11 +286,12 @@ steps 6 to 9 are skipped.
    cones, each node's clauses given once, with a limit of conflicts a
    call and of steps a program (`STEPS_PER_LITERAL` a body literal). A
    model that tells two apart is simulated with the others as a word of
-   its own, which splits the candidates; once 16 words are simulated and
-   64 more such models found, simulation splits no more and the search
-   stops (bb_weekend_w30 made 7 762 calls and proved nothing, a second of
-   its ground time). A proved gate is merged into the
-   earlier one, read through a negated literal where it is the
+   its own, which splits the candidates; the search stops when 64 such
+   models come with no gate proved among them (bb_weekend_w30 made 7 762
+   calls and proved nothing, a second of its ground time), and while
+   calls still prove it goes on within its steps, past 16 words no
+   longer simulating them. A proved gate is merged
+   into the earlier one, read through a negated literal where it is the
    complement, or keeps an empty body or none where it is constant; a
    later gate alone in its predicate built as its node is merged the
    same way.
@@ -742,9 +772,17 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   above the graph's lower bound, and min-fill charged less than the
   search's hard cutoff (twice its budget; past it the search's own
   eliminations stop part way), and by eliminating the groups in numbering order where that is narrower
-  (a grid's anti-diagonals); the layout with the least
-  `Interfaces::layout_cost` is kept. `families:0` lays out the min-fill
-  decompositions alone. Within a block (`nest`) the copies every row reads
+  (a grid's anti-diagonals). The first numbering is also decomposed by
+  min-fill weighted by the groups' values (`weighted_min_fill`: a fill
+  edge weighs the product of its ends' values), where the values differ,
+  and, where the portfolio runs and the cheapest layout of both numberings pays for
+  it (`anneal_budget`: a unit of work for every 8 pairs of its cost, up
+  to twice an elimination's budget, and at least 32 moves a vertex), by
+  simulated annealing over the elimination order (`annealed`), from the
+  better of the two min-fills by their states, the sum over the
+  eliminations of the product of the clique's values. The layout with the
+  least `Interfaces::layout_cost` is kept. `families:0` lays out the
+  min-fill decompositions alone. Within a block (`nest`) the copies every row reads
   go at the bottom, the rows split into parts by shared facts, and where
   every head reads a part's facts under one context, as a row's switches,
   those facts go in a balanced tree beside the copies. The layout cost
@@ -906,7 +944,17 @@ only after its compile, evidence and all queries complete; the first
 complete trial answers.
 
 **The `program` trials.** A right-linear vtree over the facts in the order
-the program states them, as an OBDD reads them (Vtrees). It comes first
+the program states them, as an OBDD reads them (Vtrees). `program` reads
+the program ground with its views in place (`Kind::ground_options`;
+`auto` keeps the grounding before its views are inlined and finishes it
+again for them, `Programs::of`): a view inlined into its readers moves
+its facts to them, and a grid's boundary chains, views over facts, are
+then read by every later row. On geni_link_16 the widest cut grows from
+17 atoms to 30, the naming finds 21 cuts in place of 67, and the compile
+reaches a formula of 113 M pairs in place of 3 022. `program:fanin`,
+whose order comes from the rules, reads the inlined program, which
+serves it better (the circuits it wins took a third longer with the
+views in place). It comes first
 where the grounder inlined views (Grounding: atoms of one rule read once),
 the gates of a circuit built gate by gate, and last elsewhere: first on
 every program, it costs the networks and grids, which have no views, 3 to
@@ -940,8 +988,8 @@ rule reads a fact within the range of one of its derived literals) and
 on which it gets under way (the pass, run on the program as ground with
 an eighth of its budgets, `TEST_BUDGET`, makes a quarter as many atoms as
 the program has derived ones, `TEST_MADE`), is
-ground again with its views in place and rewritten for `decision`
-(`decision_trial` in `src/solve/`). Where that conditioning makes at least
+rewritten for `decision` from the program ground with its views in place,
+which `program` takes too (`decision_trial` in `src/solve/`). Where that conditioning makes at least
 as many atoms as the program has derived ones, the rewrite is a trial of
 its own, before the others, and shares its program with none of them; it
 takes its turns with the weight of a families trial, and the program is
@@ -1184,12 +1232,29 @@ have spent 300 and more (GeNI's links and weather networks) or never
 finish (Dice's simpleCaesar). Their formulas need not reach the watch,
 which grows with the target.
 
-**Refusals.** An operation refused memory, by the allocator or tididi's
-byte budget, or one that outgrows tididi's 32-bit indices, retires its
-trial (`Trial::retire`): a later attempt would resume at the same
-operation with larger bounds and no less memory held. What the trial
-built is freed, and the run goes on with the other trials; it fails with
-the refusal once none is left. The compile and query phases copy a
+**Refusals.** Memory goes to the trial that has spent the most. An
+operation refused memory, by the allocator or tididi's byte budget,
+while other trials hold what their attempts built, frees that
+(`Trial::release`) where the refused trial has spent more work than each
+of them, once a trial: each of them begins its phase again at its next
+turn, with its layout, target, watch and work spent, and the refused
+trial resumes at its next turn. Refused otherwise (again, behind a
+trial that has spent as much, while no other trial holds anything, or
+past tididi's 32-bit indices), the trial is retired (`Trial::retire`): a
+later attempt would resume at the same operation with larger bounds and
+no more memory to take. What it built is freed, and the run goes on with
+the other trials; it fails with the refusal once none is left. So a
+refusal discards less work than the refused trial has spent from each
+other trial, and once. Freed for whichever trial was refused, the others
+paid for an early refusal of a cheap trial: on bb_spacex_w17 `program`,
+freed for `families:0`, did its 2 G units again (195 s against 124), and
+on geni_link_18 `families` took the others' formulas twice and still did
+not fit. On geni_router_24 in 30 GB of address space `families` was
+refused at the last step of its query phase while `program`,
+`program:fanin`, `closed` and `families:0` held their stopped compiles,
+and the run failed after 472 s; alone it peaks at 22.6 GB. On
+spacex_w19 in 33 GB `closed` and then `program` were refused beside
+each other's formulas, where `program` alone answers in 113 s. The compile and query phases copy a
 formula they keep wherever an operation would consume it, through
 tididi's fallible copy (`TddBackend::copy`), so a copy the allocator
 cannot serve is a refusal too: `Tdd`'s `Clone` would abort the process.

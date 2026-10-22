@@ -60,16 +60,25 @@ impl fmt::Display for Strategy {
 }
 
 impl Kind {
-    /// The grounder's `options` for a run under this layout. `decision`
-    /// reads the program with its views in place, and [`ground::guarded`]
-    /// inlines them after the conditioning: a view inlined into its reader
-    /// puts the facts it decides between in the reader's bodies beside the
-    /// fact that selects it, and the decisions lose which comes first (the
-    /// weekend circuit at 12 bits and 1 024 pieces: 360 facts outside the
-    /// tree, a vtree 360 deep against 26, and a compile out of 16 GB).
+    /// The grounder's `options` for a run under this layout. The layouts
+    /// that read the program's text order, `program` and `decision`, read
+    /// the program with its views in place ([`GroundOptions::views`]): a
+    /// view inlined into a reader moves the view's facts to the reader.
+    /// `decision` then loses which of the facts a reader decides between
+    /// comes first (the weekend circuit at 12 bits and 1 024 pieces: 360
+    /// facts outside the tree, a vtree 360 deep against 26, and a compile
+    /// out of 16 GB; [`ground::guarded`] inlines them after the
+    /// conditioning). `program`'s cuts widen: a grid's boundary chains,
+    /// views over facts, are read by every later row, and the widest cut
+    /// of geni_link_16 grows from 17 to 30 atoms, so that the naming finds
+    /// 21 cuts in place of 67 and the compile a formula of 113 M pairs in
+    /// place of 3 022 (`vtree::naming`). `program:fanin` reads its order
+    /// off the rules, and the inlined program serves it better: with the
+    /// views in place the circuits it wins took 2 901 s against 2 184
+    /// (bb_pi_w18 4.4 times as long).
     pub(crate) fn ground_options(self, options: GroundOptions) -> GroundOptions {
         match self {
-            Kind::Decision => GroundOptions {
+            Kind::Decision | Kind::Program { fan_in: false } => GroundOptions {
                 views: false,
                 ..options
             },

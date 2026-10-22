@@ -355,8 +355,14 @@ fn the_check_under_auto_splits_as_under_a_layout_and_runs_as_solve_ground() {
                 assert_eq!(plain, None, "{bounds:?}");
                 let laid = laid
                     .expect("BY_HAND's families:0 trial is auto's first, and the check builds it");
-                let with =
-                    auto::run(ground.clone(), Projection::default(), Some(laid), None).unwrap();
+                let with = auto::run(
+                    ground.clone(),
+                    Projection::default(),
+                    Some(laid),
+                    None,
+                    None,
+                )
+                .unwrap();
                 let without = solve_ground(ground.clone(), &Options::default()).unwrap();
                 assert_eq!(with.results, without.results, "{bounds:?}");
                 assert_eq!(

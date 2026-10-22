@@ -103,9 +103,9 @@ the program as its authors wrote it and as each system was given it.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-- **66× faster than ProbLog** (76× where both answer), **107× faster
-  than PITA** and **199× faster than aspmc**.
-- tddlog answers 302 of the 307 programs, ProbLog 236.
+- **49× faster than ProbLog** (71× where both answer), **79× faster
+  than PITA** and **146× faster than aspmc**.
+- tddlog answers 303 of the 307 programs, ProbLog 236.
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
 
@@ -116,13 +116,13 @@ the program as its authors wrote it and as each system was given it.
        alt="Networks answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-- **8.6× faster than Ace** (37× where both answer) and **7.1× faster
-  than Merlin** (8.2×). Against TensorInference.jl, libDAI, pyAgrum and
-  pgmpy, 7.9× to 12× faster.
-- tddlog answers 600 of the 652 networks, TensorInference.jl 459,
+- **11× faster than Ace** (49× where both answer) and **9.1× faster
+  than Merlin** (8.8×). Against TensorInference.jl, libDAI, pyAgrum and
+  pgmpy, 10× to 15× faster.
+- tddlog answers 604 of the 652 networks, TensorInference.jl 459,
   libDAI 452 and Merlin 443.
-- Where tddlog loses: 19 partition functions of the UAI 2022 final set,
-  18 of them protein networks, run out of time or memory.
+- Where tddlog loses: 15 partition functions of the UAI 2022 final set,
+  14 of them protein networks, run out of time or memory.
   TensorInference.jl answers each in 45 to 85 s.
 
 ### Probabilistic programs
@@ -132,16 +132,16 @@ the program as its authors wrote it and as each system was given it.
        alt="Probabilistic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-- **7.9× faster than Alea.jl**, **12× faster than Roulette** and **13×
-  faster than Dice**, and 18× to 29× faster than Geni, Genfer, noDice,
+- **8.8× faster than Alea.jl**, **14× faster than Roulette** and **16×
+  faster than Dice**, and 22× to 34× faster than Geni, Genfer, noDice,
   SPPL, Pluck and Psi.
-- **7.8× faster than Storm** and **13× faster than PRISM**, the
+- **9.4× faster than Storm** and **15× faster than PRISM**, the
   probabilistic model checkers.
-- tddlog answers 218 of the 232 programs, Storm 176 and Alea.jl 168.
-- Where others win: PRISM and Storm answer Geni's larger router
-  networks, where tddlog runs out of memory, by value iteration over
-  decision diagrams in double precision; their exact engines time out
-  from 18 to 20 routers. Dice, PRISM and Geni answer `link_16`.
+- tddlog answers 222 of the 232 programs, Storm 176 and Alea.jl 175.
+- Where others win: PRISM and Storm answer Geni's three largest router
+  networks, which tddlog does not, by value iteration over decision
+  diagrams in double precision; their exact engines time out from 18 to
+  20 routers.
 
 ### Bit-blasted circuits
 
@@ -170,19 +170,23 @@ given the circuit.
 </p>
 
 - ProvSQL is fast on the easy TPC-H queries, its own benchmarks, and
-  faster than tddlog on 117 of them.
-- tddlog answers more of the hard ones, 205 of the 208 against
-  ProvSQL's 196, and is **16× faster in total** (1.4× where both
+  faster than tddlog on 107 of them.
+- tddlog answers more of the hard ones, 206 of the 208 against
+  ProvSQL's 196, and is **10× faster in total** (1.3× where both
   answer).
 
 ### Setup
 
-The release run, tddlog 0.1.0 against ProbLog 2.3.0, PITA, aspmc, Ace
+The release run compared tddlog with ProbLog 2.3.0, PITA, aspmc, Ace
 3.0, Merlin 1.7.0, pyAgrum 3.2.1, pgmpy 1.1.2, libDAI 0.3.2,
 TensorInference.jl 0.6.3, ProvSQL 1.13.0, Dice, Alea.jl, Roulette and
 the further systems, on lab and cloud machines. A suite's systems ran in
 the same job, side by side in parallel lanes, so times compare within a
-suite. The references are ProbLog, Ace, Merlin and Alea.jl where they
+suite. tddlog's rows come from a rerun of its current version on the
+same machines, with the same memory per run; the suites that had run on
+cloud machines were rerun in full on lab machines, every system side by
+side. The bit-blasted circuits' rerun is still running, and their rows
+are the release run's until it is in. The references are ProbLog, Ace, Merlin and Alea.jl where they
 answer, Ganak's exact model count, and exact solvers written for this
 repository. [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) on the `baselines` branch has the machines,
 versions and every table; the

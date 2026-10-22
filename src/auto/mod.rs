@@ -29,9 +29,17 @@
 //! The trial resumes where it stopped: finished components survive a
 //! stopped compile, and completed evidence conjunctions and query answers
 //! a stopped query phase. The first trial
-//! to finish answers. A trial whose operation is refused memory is
-//! retired, and the run goes on with the others ([`Trial::retire`]); a
-//! trial with no other left runs without bounds ([`attempt`]).
+//! to finish answers. Memory goes to the trial that has spent the most:
+//! refused it while other trials hold what their attempts built, and
+//! having spent more work than each of them, a trial takes it, once: what
+//! they hold is freed, each of them to begin its phase again at its next
+//! turn ([`Trial::release`]), and the refused trial resumes at its next
+//! turn. Refused otherwise (again, behind a trial that has spent as much,
+//! while no other trial holds anything, or past tididi's 32-bit indices),
+//! it is retired, and the run goes on with the others ([`Trial::retire`]).
+//! So a refusal discards less work than the refused trial has spent, from
+//! each other trial, and once a trial. A trial with no other left runs
+//! without bounds ([`attempt`]).
 //!
 //! So the run spends on each other trial at most its weight's share of
 //! twice the winner's work, times two to the doublings by which the
@@ -105,8 +113,9 @@ pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
 
 /// `auto` on `original`, as grounded, its trials the [`candidates`], each
 /// compiling its layout's rewrite of its program ([`Programs::of`]:
-/// `original`, eliminated once for all of them, [`Kind::eliminated`], or
-/// `conditioned`, `original` conditioned on its guards,
+/// `original`, `written`, `original` ground with its views in place, each
+/// eliminated once for all of them, [`Kind::eliminated`], or
+/// `conditioned`, `written` conditioned on its guards,
 /// `solve::decision_trial`); the `families:0` trial takes `laid`, its
 /// program and layout built from `original` by [`families`], as its own,
 /// and where `conditioned` [`decides`], `decision` is the first trial.
@@ -115,6 +124,7 @@ pub(crate) fn run(
     projection: Projection,
     laid: Option<Box<Prepared>>,
     conditioned: Option<GroundProgram>,
+    written: Option<GroundProgram>,
 ) -> Result<Run, Error> {
     let mut trials = candidates(&original);
     let decision = conditioned.as_ref().is_some_and(|c| decides(c, &original));
@@ -124,6 +134,7 @@ pub(crate) fn run(
     run_within(
         Programs {
             ground: original,
+            written,
             conditioned,
             decision,
         },
@@ -158,12 +169,14 @@ pub(crate) fn derived_unmerged(ground: &GroundProgram) -> usize {
 }
 
 /// The programs `auto`'s trials rewrite: the program as ground, written
-/// without its linear recursion, and the program conditioned on its
-/// guards, where `auto` finishes it again and the conditioning records
-/// decisions (`solve::decision_trial`), and whether `decision` is a trial
+/// without its linear recursion; the program ground with its views in
+/// place, where the grounding inlined any or `decision` may be a trial
+/// (`solve::decision_trial`); the program conditioned on its guards, where
+/// the conditioning records decisions; and whether `decision` is a trial
 /// on it ([`decides`]).
 struct Programs {
     ground: GroundProgram,
+    written: Option<GroundProgram>,
     conditioned: Option<GroundProgram>,
     decision: bool,
 }
@@ -176,8 +189,10 @@ impl Programs {
     /// the same in both programs, and `closed` and `td` search theirs on
     /// the program they get (`dynamic`, whose layout the text does not set
     /// either, is a trial only where nothing is left to order, and never
-    /// beside a conditioned program). The others rewrite the program as
-    /// ground. `program:fanin`
+    /// beside a conditioned program). `program` and `program:fanin` rewrite
+    /// the program with its views in place otherwise
+    /// ([`Kind::ground_options`]), and the others the program as ground.
+    /// `program:fanin`
     /// reads its order off the rules, a walk through the atoms they read,
     /// and the conditioning rewrites what they read: a test of a number's
     /// bits becomes the cube of the flips on its path, so the walk no
@@ -202,8 +217,9 @@ impl Programs {
                 Kind::Program { fan_in: false } | Kind::Closed | Kind::Td
             )
         };
-        match &self.conditioned {
-            Some(program) if conditioned => program,
+        match (&self.conditioned, &self.written) {
+            (Some(program), _) if conditioned => program,
+            (_, Some(program)) if kind == (Kind::Program { fan_in: false }) => program,
             _ => &self.ground,
         }
     }
@@ -398,6 +414,7 @@ fn run_within(
     let start = Instant::now();
     let programs = Programs {
         ground: Kind::eliminated(programs.ground),
+        written: programs.written.map(Kind::eliminated),
         ..programs
     };
     let mut trials: Vec<_> = trials.into_iter().map(Trial::new).collect();
@@ -522,6 +539,37 @@ fn run_within(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
             {
+                // Memory refused goes to the trial refused it where it has
+                // spent more than each trial that holds any, once: what
+                // they built is freed, and it resumes at its next turn.
+                let others: Vec<usize> = (0..trials.len())
+                    .filter(|&j| j != i && trials[j].holds())
+                    .collect();
+                let leads = others.iter().all(|&j| trials[j].spent < trials[i].spent);
+                if e == tididi::OperationError::OverBudget
+                    && !others.is_empty()
+                    && leads
+                    && !trials[i].freed_for
+                {
+                    trials[i].freed_for = true;
+                    let freed: Vec<String> = others
+                        .iter()
+                        .map(|&j| {
+                            trials[j].release();
+                            format!("{} ({} units)", trials[j].kind, trials[j].spent)
+                        })
+                        .collect();
+                    ledger.notes.push(format!(
+                        "released: {} for {} indicators={} ({} units), refused memory under a watch of {} pairs",
+                        freed.join(", "),
+                        trials[i].kind,
+                        trials[i].kind.indicators_name(),
+                        trials[i].spent,
+                        bounds.pairs
+                    ));
+                    continue;
+                }
+                let t = &mut trials[i];
                 ledger.notes.push(format!(
                     "retired: {} indicators={} under a watch of {} pairs: {e}",
                     t.kind,

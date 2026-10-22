@@ -5,6 +5,7 @@
 //! instantiation is recorded as a ground rule. A negative literal over a lower
 //! stratum is kept when its atom is possible and dropped (as true) otherwise.
 
+use std::collections::BTreeMap;
 use std::fmt;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -194,26 +195,48 @@ impl Relation {
     }
 
     /// The tuples among `s..e` that may have value `v` at each position
-    /// `pos` of `bound`, in tuple order: those of the shortest posting list
-    /// among `bound`, or all of `s..e` where nothing is bound. The caller
+    /// `pos` of `bound`, and one of the values `vals` at each position of
+    /// `among`, in tuple order: those of the shortest posting list among
+    /// `bound`, or of the fewest posting lists of one position of `among`
+    /// together, or all of `s..e` where neither is fewer. The caller
     /// checks the other positions. A posting list is in tuple order, so the
     /// range is a slice of it.
     fn candidates(
         &mut self,
         arity: usize,
         bound: &[(usize, Val)],
+        among: &[(usize, &[Val])],
         (s, e): (usize, usize),
     ) -> Vec<usize> {
-        if bound.is_empty() {
+        if bound.is_empty() && among.is_empty() {
             return (s..e).collect();
         }
         self.ensure_index(arity);
-        let list = bound
+        let index = &self.index;
+        let posting = |pos: usize, v: &Val| {
+            let list = index[pos].get(v).map_or(&[][..], |l| &l[..]);
+            &list[list.partition_point(|&t| t < s)..list.partition_point(|&t| t < e)]
+        };
+        let one = bound
             .iter()
-            .map(|(pos, v)| self.index[*pos].get(v).map_or(&[][..], |l| &l[..]))
-            .min_by_key(|l| l.len())
-            .expect("a bound argument");
-        list[list.partition_point(|&t| t < s)..list.partition_point(|&t| t < e)].to_vec()
+            .map(|(pos, v)| posting(*pos, v))
+            .min_by_key(|l| l.len());
+        let union = among
+            .iter()
+            .map(|&(pos, vals)| {
+                let lists: Vec<&[usize]> = vals.iter().map(|v| posting(pos, v)).collect();
+                (lists.iter().map(|l| l.len()).sum::<usize>(), lists)
+            })
+            .min_by_key(|(n, _)| *n);
+        match (one, union) {
+            (Some(list), u) if u.as_ref().is_none_or(|(n, _)| list.len() <= *n) => list.to_vec(),
+            (_, Some((n, lists))) if n < e - s => {
+                let mut ts: Vec<usize> = lists.concat();
+                ts.sort_unstable();
+                ts
+            }
+            _ => (s..e).collect(),
+        }
     }
 }
 
@@ -270,6 +293,37 @@ struct Grounder<'a> {
     /// T1 is T + 1, o(T)` asks `o(T+1)` of every `o(T)` it is asked,
     /// `step(T)` coming after the call.
     demands: usize,
+    /// The values that grounding level by level proved, by atom
+    /// ([`evaluate_by_levels`]).
+    fixed: Vec<Option<bool>>,
+    /// The stratum being grounded level by level.
+    by_level: Option<ByLevel>,
+}
+
+/// A level and a rank within it: the place of an atom of a stratum
+/// grounded level by level.
+type Key = (i64, u32);
+
+/// A rule instance: its head's predicate and arguments, and its body.
+type Instance = (PredId, Vec<Val>, Vec<GLit>);
+
+/// The state of a stratum grounded level by level.
+struct ByLevel {
+    rank: FxHashMap<PredId, u32>,
+    /// The last key completed, and the key being grounded.
+    done: Option<Key>,
+    current: Key,
+    /// The rule instances whose heads are at later keys.
+    deferred: BTreeMap<Key, Vec<Instance>>,
+}
+
+/// The level of an atom whose last argument is `v`: an integer, the
+/// lowest level for any other value.
+fn level_of(v: Option<&Val>) -> i64 {
+    match v {
+        Some(Val::Int(i)) => *i,
+        _ => i64::MIN,
+    }
 }
 
 impl<'a> Grounder<'a> {
@@ -357,6 +411,34 @@ impl<'a> Grounder<'a> {
 
     fn lookup_atom(&self, pred: PredId, args: &[Val]) -> Option<AtomId> {
         self.rels[pred as usize].get(args)
+    }
+
+    fn fixed(&self, id: AtomId) -> Option<bool> {
+        self.fixed.get(id as usize).copied().flatten()
+    }
+
+    /// The key of an atom of the stratum grounded level by level.
+    fn key_of(&self, id: AtomId) -> Option<Key> {
+        let (p, args) = &self.atoms[id as usize];
+        let r = *self.by_level.as_ref()?.rank.get(p)?;
+        Some((level_of(args.last()), r))
+    }
+
+    /// Whether the atom of `p` that `args` names under `subst` is complete
+    /// in the stratum grounded level by level: its key is done.
+    fn complete(&self, p: PredId, args: &[Arg], subst: &[Option<Val>]) -> bool {
+        let Some(b) = &self.by_level else {
+            return false;
+        };
+        let Some(&r) = b.rank.get(&p) else {
+            return false;
+        };
+        let level = match args.last() {
+            Some(Arg::Var(v)) => subst[*v as usize],
+            Some(Arg::Val(v)) => Some(*v),
+            None => None,
+        };
+        b.done.is_some_and(|d| (level_of(level.as_ref()), r) <= d)
     }
 
     fn display_atom(&self, id: AtomId) -> Atom {
@@ -543,6 +625,24 @@ pub(crate) fn ground_normalized(
     norm: &NormProgram,
     bound: Option<usize>,
 ) -> Result<GroundProgram, GroundError> {
+    Ok(ground_with(norm, bound, false)?.expect("grounded"))
+}
+
+/// The ground program of `norm` with each recursive stratum grounded level
+/// by level ([`evaluate_by_levels`]), where every one has rising levels
+/// ([`levels`]) and there is one; `None` otherwise.
+pub(crate) fn ground_by_levels(
+    norm: &NormProgram,
+    bound: Option<usize>,
+) -> Result<Option<GroundProgram>, GroundError> {
+    ground_with(norm, bound, true)
+}
+
+fn ground_with(
+    norm: &NormProgram,
+    bound: Option<usize>,
+    by_levels: bool,
+) -> Result<Option<GroundProgram>, GroundError> {
     // Every switch is a predicate, most of the predicates of a network.
     let preds = norm.switches.len() + 64;
     let mut g = Grounder {
@@ -561,6 +661,8 @@ pub(crate) fn ground_normalized(
         size: 0,
         bound: bound.unwrap_or(usize::MAX),
         demands: 0,
+        fixed: Vec::new(),
+        by_level: None,
     };
     for (&(ref name, arity), &p) in &norm.switches {
         g.pred(name, arity, Some(p));
@@ -586,7 +688,26 @@ pub(crate) fn ground_normalized(
     }
 
     let strata = stratify(&g);
-    for stratum in &strata {
+    // The levels of each recursive stratum, where every one has them.
+    let mut levelled: Vec<Option<Levels>> = Vec::new();
+    if by_levels {
+        for s in &strata {
+            if !recursive(&g, s) {
+                levelled.push(None);
+                continue;
+            }
+            let Some(lv) = levels(&g, s) else {
+                return Ok(None);
+            };
+            levelled.push(Some(lv));
+        }
+        if levelled.iter().all(Option::is_none) {
+            return Ok(None);
+        }
+    }
+    let mut pruner = by_levels.then(super::aig::Pruner::new);
+    let mut keys = 0;
+    for (k, stratum) in strata.iter().enumerate() {
         // A stratum without rules derives nothing: every switch predicate
         // is one, a hundred thousand of them on bn_barley.
         if stratum
@@ -596,12 +717,28 @@ pub(crate) fn ground_normalized(
             continue;
         }
         g.current_stratum = stratum.iter().copied().collect();
-        evaluate_stratum(&mut g, stratum);
+        match (levelled.get_mut(k).and_then(Option::take), &mut pruner) {
+            (Some(lv), Some(pruner)) => keys += evaluate_by_levels(&mut g, stratum, lv, pruner),
+            _ => evaluate_stratum(&mut g, stratum),
+        }
         if g.over() {
             return Err(GroundError::OverBound);
         }
     }
     g.current_stratum.clear();
+    // The rules of an atom proved false go, and those of an atom proved
+    // true, which keeps one empty body.
+    let fixed = std::mem::take(&mut g.fixed);
+    if !fixed.is_empty() {
+        let value = |a: AtomId| fixed.get(a as usize).copied().flatten();
+        g.ground_rules.retain(|r| value(r.head).is_none());
+    }
+    for (a, v) in fixed.iter().enumerate() {
+        if *v == Some(true) {
+            g.ground_rules
+                .push(GroundRule::new(a as AtomId, Vec::new()));
+        }
+    }
 
     // Assemble the output.
     let mut gp = GroundProgram::default();
@@ -614,6 +751,8 @@ pub(crate) fn ground_normalized(
         });
     }
     gp.rules = std::mem::take(&mut g.ground_rules);
+    gp.stats.levels = keys;
+    gp.stats.constants = fixed.iter().filter(|v| v.is_some()).count();
 
     for (q, positive) in &norm.queries {
         for (atom, id) in resolve_atom_pattern(&mut g, q) {
@@ -650,7 +789,7 @@ pub(crate) fn ground_normalized(
             gp.evidence.push((atom, id, *v));
         }
     }
-    Ok(gp)
+    Ok(Some(gp))
 }
 
 /// Ground instances of a possibly non-ground query/evidence atom among the
@@ -708,60 +847,356 @@ fn resolve_atom_pattern(g: &mut Grounder, a: &Atom) -> Vec<(Atom, Option<AtomId>
 }
 
 /// Semi-naive evaluation of one stratum (a set of mutually recursive predicates).
+///
+/// Round 0 grounds every rule against the relations as they are (the
+/// stratum's own empty, but for its facts); then [`rounds`] over the
+/// tuples each round adds.
 fn evaluate_stratum(g: &mut Grounder, stratum: &[PredId]) {
-    let in_stratum: FxHashSet<PredId> = stratum.iter().copied().collect();
-    let rule_ids: Vec<usize> = stratum
-        .iter()
-        .flat_map(|p| g.preds[*p as usize].rules.clone())
-        .collect();
-
-    // delta[p] = tuple indices of pred p derived in the previous round.
-    let mut delta: FxHashMap<PredId, (usize, usize)> = FxHashMap::default(); // range in rel.tuples
-    // Round 0: all rules with the full (initially empty for this stratum,
-    // except facts) relations. We simply run every rule with no delta
-    // restriction, then iterate with deltas.
-    let mut start: FxHashMap<PredId, usize> = FxHashMap::default();
-    for &p in stratum {
-        start.insert(p, g.rels[p as usize].tuples.len());
+    let rule_ids = rules_of(g, stratum);
+    let slot: FxHashMap<PredId, usize> = stratum.iter().enumerate().map(|(s, &p)| (p, s)).collect();
+    // reads[s]: the rules, as places in `rule_ids`, and the literals in
+    // which the stratum's predicate `s` is read positively.
+    let mut reads: Vec<Vec<(usize, usize)>> = vec![Vec::new(); stratum.len()];
+    for (k, &r) in rule_ids.iter().enumerate() {
+        for (i, l) in g.rules[r].body.iter().enumerate() {
+            if let ILit::Pos(p, _) = l
+                && let Some(&s) = slot.get(p)
+            {
+                reads[s].push((k, i));
+            }
+        }
     }
+    let mut from = lens(g, stratum);
     for &r in &rule_ids {
         eval_rule(g, r, None);
     }
-    loop {
-        if g.over() {
-            return;
-        }
-        delta.clear();
-        let mut any = false;
-        for &p in stratum {
-            let s = start[&p];
+    rounds(g, &rule_ids, stratum, &mut from, |s, due| {
+        due.extend_from_slice(&reads[s])
+    });
+}
+
+/// The rules of the predicates of `stratum`.
+fn rules_of(g: &Grounder, stratum: &[PredId]) -> Vec<usize> {
+    stratum
+        .iter()
+        .flat_map(|p| g.preds[*p as usize].rules.iter().copied())
+        .collect()
+}
+
+/// The number of tuples of each predicate of `preds`.
+fn lens(g: &Grounder, preds: &[PredId]) -> Vec<usize> {
+    preds
+        .iter()
+        .map(|&p| g.rels[p as usize].tuples.len())
+        .collect()
+}
+
+/// Rounds of semi-naive evaluation over `group` until one derives
+/// nothing. Each grounds the rules again against the tuples the round
+/// before added (those since `from` in the first), a rule once per
+/// positive literal of `group` whose predicate gained tuples, in the order
+/// of the rules and their literals. `reads(s, due)` adds the rules, as
+/// places in `rule_ids`, and the literals that read `group[s]`: a round
+/// visits those, not every rule. A chain over a time index takes a round
+/// per step where it is one stratum, as the magic rewrite's demand makes
+/// it (pmc1's step, 1 400 rules, for each of 75 steps a few dozen rounds
+/// deep).
+fn rounds(
+    g: &mut Grounder,
+    rule_ids: &[usize],
+    group: &[PredId],
+    from: &mut [usize],
+    reads: impl Fn(usize, &mut Vec<(usize, usize)>),
+) {
+    let mut delta: Vec<(usize, usize)> = vec![(0, 0); group.len()];
+    let mut lits: Vec<(usize, usize)> = Vec::new();
+    let mut due: Vec<(usize, usize, usize)> = Vec::new();
+    while !g.over() {
+        due.clear();
+        for (s, &p) in group.iter().enumerate() {
             let e = g.rels[p as usize].tuples.len();
-            if e > s {
-                any = true;
+            delta[s] = (from[s], e);
+            if e > from[s] {
+                lits.clear();
+                reads(s, &mut lits);
+                due.extend(lits.iter().map(|&(k, i)| (k, i, s)));
             }
-            delta.insert(p, (s, e));
-            start.insert(p, e);
+            from[s] = e;
         }
-        if !any {
+        if due.is_empty() {
             break;
         }
-        for &r in &rule_ids {
-            let body_len = g.rules[r].body.len();
-            for i in 0..body_len {
-                let uses_delta = match &g.rules[r].body[i] {
-                    ILit::Pos(p, _) => in_stratum.contains(p) && delta[p].1 > delta[p].0,
-                    _ => false,
+        due.sort_unstable();
+        for &(k, i, s) in &due {
+            eval_rule(g, rule_ids[k], Some((i, delta[s])));
+        }
+    }
+}
+
+/// Whether a rule of `stratum` reads a predicate of it.
+fn recursive(g: &Grounder, stratum: &[PredId]) -> bool {
+    stratum.iter().any(|&p| {
+        g.preds[p as usize].rules.iter().any(|&r| {
+            g.rules[r]
+                .body
+                .iter()
+                .any(|l| matches!(l, ILit::Pos(q, _) | ILit::Neg(q, _) if stratum.contains(q)))
+        })
+    })
+}
+
+/// The levels of a recursive stratum, an XY-stratification (Zaniolo, Arni
+/// and Ong, DOOD 1993): the last argument of each of its predicates is a
+/// level that no rule lowers. Each literal of the stratum is read at its
+/// head's level (the same variable, or constant levels h >= b) or below it
+/// (`H is B + c`, c >= 1), and some literal below it. Within a level the
+/// components of the graph of the literals read at their head's level rank
+/// the predicates, the lower ranks read by the higher. Grounded in the
+/// order of their keys (level, rank), a key's atoms are complete when it
+/// is done: no later key derives one.
+struct Levels {
+    rank: FxHashMap<PredId, u32>,
+    /// Each rank's predicates, and whether they read each other at their
+    /// own level.
+    groups: Vec<Vec<PredId>>,
+    cyclic: Vec<bool>,
+    /// How far below its head's level each literal of the stratum is read,
+    /// by rule and literal.
+    offset: FxHashMap<(usize, usize), i64>,
+}
+
+fn levels(g: &Grounder, stratum: &[PredId]) -> Option<Levels> {
+    let local: FxHashMap<PredId, usize> =
+        stratum.iter().enumerate().map(|(s, &p)| (p, s)).collect();
+    if stratum
+        .iter()
+        .any(|&p| g.preds[p as usize].arity == 0 || g.preds[p as usize].control)
+    {
+        return None;
+    }
+    let mut deps: Vec<Vec<usize>> = vec![Vec::new(); stratum.len()];
+    let mut self_loop = vec![false; stratum.len()];
+    let mut offset = FxHashMap::default();
+    for &p in stratum {
+        let h = local[&p];
+        for &r in &g.preds[p as usize].rules {
+            let rule = &g.rules[r];
+            for (i, l) in rule.body.iter().enumerate() {
+                let (ILit::Pos(q, args) | ILit::Neg(q, args)) = l else {
+                    continue;
                 };
-                if uses_delta {
-                    let p = match &g.rules[r].body[i] {
-                        ILit::Pos(p, _) => *p,
-                        _ => unreachable!(),
-                    };
-                    eval_rule(g, r, Some((i, delta[&p])));
+                let Some(&b) = local.get(q) else { continue };
+                let off = match (rule.head.1.last(), args.last()) {
+                    (Some(Arg::Var(vh)), Some(Arg::Var(vb))) if vh == vb => 0,
+                    (Some(Arg::Var(vh)), Some(Arg::Var(vb))) => step_of(&rule.body, *vh, *vb)?,
+                    (Some(Arg::Val(Val::Int(h))), Some(Arg::Val(Val::Int(b)))) if h >= b => h - b,
+                    _ => return None,
+                };
+                offset.insert((r, i), off);
+                if off == 0 {
+                    deps[h].push(b);
+                    self_loop[h] |= h == b;
                 }
             }
         }
     }
+    if !offset.values().any(|&o| o > 0) {
+        return None;
+    }
+    let (mut rank, mut groups, mut cyclic) = (FxHashMap::default(), Vec::new(), Vec::new());
+    super::deps::tarjan(
+        stratum.len(),
+        0..stratum.len(),
+        |v, (k, _)| {
+            let w = *deps[v].get(*k)?;
+            *k += 1;
+            Some(w)
+        },
+        |comp| {
+            for &s in comp {
+                rank.insert(stratum[s], groups.len() as u32);
+            }
+            cyclic.push(comp.len() > 1 || self_loop[comp[0]]);
+            groups.push(comp.iter().map(|&s| stratum[s]).collect::<Vec<_>>());
+        },
+    );
+    Some(Levels {
+        rank,
+        groups,
+        cyclic,
+        offset,
+    })
+}
+
+/// c where `body` holds `vh is vb + c` or `vh is c + vb`, c >= 1.
+fn step_of(body: &[ILit], vh: u32, vb: u32) -> Option<i64> {
+    body.iter().find_map(|l| match l {
+        ILit::Is(Arg::Var(v), IExpr::Bin(ArithOp::Add, a, b)) if *v == vh => match (&**a, &**b) {
+            (IExpr::Arg(Arg::Var(x)), IExpr::Arg(Arg::Val(Val::Int(c))))
+            | (IExpr::Arg(Arg::Val(Val::Int(c))), IExpr::Arg(Arg::Var(x)))
+                if *x == vb && *c >= 1 =>
+            {
+                Some(*c)
+            }
+            _ => None,
+        },
+        _ => None,
+    })
+}
+
+/// The literals that read each predicate positively, at a constant level
+/// or at any, as places (rule, literal).
+type Reads = FxHashMap<(PredId, Option<i64>), Vec<(usize, usize)>>;
+
+/// The literals of `reads` that read `p` at `level`: those at any level
+/// and those at that constant level.
+fn read_at(reads: &Reads, p: PredId, level: i64) -> impl Iterator<Item = (usize, usize)> + '_ {
+    [None, Some(level)]
+        .into_iter()
+        .flat_map(move |at| reads.get(&(p, at)).into_iter().flatten().copied())
+}
+
+/// Grounds a stratum with levels key by key, in their order. A rule
+/// instance whose head is at a later key waits for it in
+/// [`ByLevel::deferred`], and a cyclic group reads its own key's atoms in
+/// [`rounds`], so that a key's atoms are complete before a rule reads them
+/// at a later key. As each acyclic key completes, `pruner` builds its
+/// atoms' gates over those of the keys before, in one and-inverter graph,
+/// and its sweep proves some of them constant: the readers grounded after
+/// pass over an atom proved false and drop one proved true from their
+/// bodies, which on a loop over a time index leaves the steps' dead
+/// branches ungrounded. A cyclic key's atoms are inputs of the graph.
+/// Returns the number of keys.
+fn evaluate_by_levels(
+    g: &mut Grounder,
+    stratum: &[PredId],
+    lv: Levels,
+    pruner: &mut super::aig::Pruner,
+) -> usize {
+    let rule_ids = rules_of(g, stratum);
+    // The rules, as places in `rule_ids`, and the literals that read each
+    // predicate positively: within, at their heads' keys, and later, at
+    // later keys.
+    let (mut within, mut later) = (Reads::default(), Reads::default());
+    for (k, &r) in rule_ids.iter().enumerate() {
+        let hr = lv.rank[&g.rules[r].head.0];
+        for (i, l) in g.rules[r].body.iter().enumerate() {
+            if let ILit::Pos(q, args) = l
+                && let Some(&qr) = lv.rank.get(q)
+            {
+                let at = match args.last() {
+                    Some(Arg::Val(Val::Int(c))) => Some(*c),
+                    _ => None,
+                };
+                let reads = if lv.offset[&(r, i)] == 0 && qr == hr {
+                    &mut within
+                } else {
+                    &mut later
+                };
+                reads.entry((*q, at)).or_default().push((k, i));
+            }
+        }
+    }
+    g.by_level = Some(ByLevel {
+        rank: lv.rank,
+        done: None,
+        current: (i64::MIN, u32::MAX),
+        deferred: BTreeMap::new(),
+    });
+    // Round 0 defers every head to its key.
+    for &r in &rule_ids {
+        eval_rule(g, r, None);
+    }
+    let mut keys = 0;
+    while !g.over() {
+        let b = g.by_level.as_mut().expect("grounding by levels");
+        let Some((key, instances)) = b.deferred.pop_first() else {
+            break;
+        };
+        b.current = key;
+        keys += 1;
+        let (group, cyclic) = (&lv.groups[key.1 as usize], lv.cyclic[key.1 as usize]);
+        let start = lens(g, group);
+        let r0 = g.ground_rules.len();
+        for (p, args, body) in instances {
+            emit(g, key, p, args, body);
+        }
+        if cyclic {
+            let mut from = start.clone();
+            rounds(g, &rule_ids, group, &mut from, |s, due| {
+                due.extend(read_at(&within, group[s], key.0))
+            });
+        }
+        g.by_level.as_mut().expect("grounding by levels").done = Some(key);
+        let atoms: Vec<AtomId> = group
+            .iter()
+            .zip(&start)
+            .flat_map(|(&p, &s)| g.rels[p as usize].ids[s..].to_vec())
+            .collect();
+        if cyclic {
+            for a in atoms {
+                pruner.input(a);
+            }
+        } else {
+            let mut bodies: FxHashMap<AtomId, Vec<&[GLit]>> = FxHashMap::default();
+            for r in &g.ground_rules[r0..] {
+                bodies.entry(r.head).or_default().push(&r.body);
+            }
+            // An atom of the stratum read but never derived is false: its
+            // key is done.
+            let absent = |x: AtomId| {
+                let (q, a) = &g.atoms[x as usize];
+                g.key_of(x).is_some() && g.rels[*q as usize].get(a).is_none()
+            };
+            let values: Vec<(AtomId, bool)> = atoms
+                .iter()
+                .filter_map(|&a| {
+                    let b = bodies.get(&a).map_or(&[][..], |b| &b[..]);
+                    pruner.gate(a, b, &absent).map(|v| (a, v))
+                })
+                .collect();
+            for (a, v) in values {
+                if g.fixed.len() <= a as usize {
+                    g.fixed.resize(a as usize + 1, None);
+                }
+                g.fixed[a as usize] = Some(v);
+            }
+        }
+        for (s, &p) in group.iter().enumerate() {
+            let e = g.rels[p as usize].tuples.len();
+            if e > start[s] {
+                for (k, i) in read_at(&later, p, key.0).collect::<Vec<_>>() {
+                    eval_rule(g, rule_ids[k], Some((i, (start[s], e))));
+                }
+            }
+        }
+    }
+    g.by_level = None;
+    keys
+}
+
+/// The rule instance `p(args) :- body` deferred to `key`, now grounded: a
+/// negated atom of a key before, read before its key was done, is
+/// resolved.
+fn emit(g: &mut Grounder, key: Key, p: PredId, args: Vec<Val>, body: Vec<GLit>) {
+    let mut lits = Vec::with_capacity(body.len());
+    for l in body {
+        if let GLit::Neg(x) = l
+            && g.key_of(x).is_some_and(|k| k < key)
+        {
+            let (q, a) = &g.atoms[x as usize];
+            match (g.rels[*q as usize].get(a).is_some(), g.fixed(x)) {
+                (false, _) | (true, Some(false)) => continue,
+                (true, Some(true)) => return,
+                (true, None) => {}
+            }
+        }
+        lits.push(l);
+    }
+    let (head, _) = g.atom_id(p, args);
+    lits.sort_unstable();
+    lits.dedup();
+    g.keep_rule(GroundRule::new(head, lits));
 }
 
 /// Evaluate rule `r`. With `delta = Some((i, range))`, body literal `i` ranges
@@ -831,7 +1266,7 @@ fn narrow(g: &mut Grounder, rule: &IRule, i: usize, (s, e): (usize, usize)) -> b
         })
         .collect();
     let arity = g.preds[*p as usize].arity;
-    let candidates = g.rels[*p as usize].candidates(arity, &bound, (s, e));
+    let candidates = g.rels[*p as usize].candidates(arity, &bound, &[], (s, e));
     let narrow = &mut g.narrow;
     narrow.from = adds.map_or(0, |m| m + 1);
     narrow.to = i;
@@ -915,6 +1350,20 @@ fn ground_body(
     }
     if i == rule.body.len() {
         let head_args = resolve(&rule.head.1, subst);
+        if let Some(b) = &mut g.by_level
+            && let Some(&r) = b.rank.get(&rule.head.0)
+        {
+            let key = (level_of(head_args.last()), r);
+            if key != b.current {
+                debug_assert!(b.done.is_none_or(|d| key > d), "a head at a key done");
+                b.deferred.entry(key).or_default().push((
+                    rule.head.0,
+                    head_args,
+                    body_atoms.clone(),
+                ));
+                return;
+            }
+        }
         let (head, new) = g.atom_id(rule.head.0, head_args);
         if g.preds[rule.head.0 as usize].control {
             g.demands += new as usize;
@@ -944,7 +1393,11 @@ fn ground_body(
                 let Some(id) = with_resolved(args, subst, |vals| g.lookup_atom(p, vals)) else {
                     return;
                 };
-                if g.preds[p as usize].control {
+                let fixed = g.fixed(id);
+                if fixed == Some(false) {
+                    return;
+                }
+                if g.preds[p as usize].control || fixed == Some(true) {
                     ground_body(g, rule, i + 1, delta, subst, body_atoms);
                 } else {
                     body_atoms.push(GLit::Pos(id));
@@ -967,12 +1420,6 @@ fn ground_body(
                     Arg::Var(v) => subst[*v as usize].map(|val| (pos, val)),
                 })
                 .collect();
-            let arity = g.preds[p as usize].arity;
-            let candidates = {
-                let rel = &mut g.rels[p as usize];
-                let range = range.unwrap_or((0, rel.tuples.len()));
-                rel.candidates(arity, &bound_pos, range)
-            };
             // The variables this literal binds, unbound again after each
             // candidate.
             let free: Vec<u32> = args
@@ -995,6 +1442,29 @@ fn ground_body(
                     .collect()
             } else {
                 Vec::new()
+            };
+            // The tuples with those values alone, read from the posting
+            // lists of the values: the walk passes over the others, and
+            // walking all of them each round made a chain over a time index
+            // quadratic in its length (ladder's 6 400 steps: 6 s), the
+            // index's relation recursive through the magic rewrite's
+            // demand.
+            let among: Vec<(usize, &[Val])> = narrowed
+                .iter()
+                .map(|&k| {
+                    let (x, vals) = &g.narrow.vars[k];
+                    let pos = args
+                        .iter()
+                        .position(|a| matches!(a, Arg::Var(y) if y == x))
+                        .expect("a variable the literal binds");
+                    (pos, &vals[..])
+                })
+                .collect();
+            let arity = g.preds[p as usize].arity;
+            let candidates = {
+                let rel = &mut g.rels[p as usize];
+                let range = range.unwrap_or((0, rel.tuples.len()));
+                rel.candidates(arity, &bound_pos, &among, range)
             };
             for t in candidates {
                 let rel = &g.rels[p as usize];
@@ -1021,11 +1491,13 @@ fn ground_body(
                         subst[*x as usize].is_some_and(|v| vals.binary_search(&v).is_ok())
                     });
                 }
-                if ok {
-                    if control {
+                let id = rel.ids[t];
+                let fixed = g.fixed(id);
+                if ok && fixed != Some(false) {
+                    if control || fixed == Some(true) {
                         ground_body(g, rule, i + 1, delta, subst, body_atoms);
                     } else {
-                        body_atoms.push(GLit::Pos(rel.ids[t]));
+                        body_atoms.push(GLit::Pos(id));
                         ground_body(g, rule, i + 1, delta, subst, body_atoms);
                         body_atoms.pop();
                     }
@@ -1036,7 +1508,7 @@ fn ground_body(
             }
         }
         ILit::Neg(p, args) => {
-            if g.current_stratum.contains(p) {
+            if g.current_stratum.contains(p) && !g.complete(*p, args, subst) {
                 // Same recursive component: possibility unknown yet.
                 let id = g.placeholder_atom(*p, resolve(args, subst));
                 body_atoms.push(GLit::Neg(id));
@@ -1045,6 +1517,10 @@ fn ground_body(
                 return;
             }
             match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
+                Some(id) if g.fixed(id) == Some(true) => {}
+                Some(id) if g.fixed(id) == Some(false) => {
+                    ground_body(g, rule, i + 1, delta, subst, body_atoms)
+                }
                 // Possible atom: keep the negative literal.
                 Some(id) => {
                     body_atoms.push(GLit::Neg(id));

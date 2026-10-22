@@ -295,9 +295,17 @@ pub struct GroundStats {
     /// The predicates, as `name/arity`, whose right-linear recursion was
     /// grounded from its bound end (`linear`).
     pub from_bound_end: Vec<String>,
+    /// How many keys (level, rank) the grounder completed, where it
+    /// grounded the recursive strata level by level, and how many atoms
+    /// it proved constant as their keys completed (`engine`).
+    pub levels: usize,
+    pub constants: usize,
     /// How many views the grounder replaced by their bodies in their
     /// readers (`inline`).
     pub inlined: usize,
+    /// How many of the atoms inlined were of a recursive predicate, a
+    /// chain (`inline`).
+    pub chained: usize,
     /// How many derived atoms the grounder merged, after the views, into an
     /// earlier atom with the same rules or proved equal in function
     /// (`aig::reduce`).

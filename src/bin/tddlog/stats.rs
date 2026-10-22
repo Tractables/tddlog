@@ -208,6 +208,12 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.from_bound_end.join(", ")
         ));
     }
+    if g.stats.levels > 0 {
+        line.push_str(&format!(
+            "; grounded level by level, {} keys, {} atoms proved constant",
+            g.stats.levels, g.stats.constants
+        ));
+    }
     if g.stats.noisy_or > 0 {
         line.push_str(&format!(
             "; {} tables written as noisy-ors",
@@ -216,6 +222,9 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
     }
     if g.stats.inlined > 0 {
         line.push_str(&format!("; {} views inlined", g.stats.inlined));
+    }
+    if g.stats.chained > 0 {
+        line.push_str(&format!("; {} atoms of chains inlined", g.stats.chained));
     }
     if g.stats.merged > 0 {
         line.push_str(&format!(

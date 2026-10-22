@@ -170,19 +170,23 @@ fn solve_split(
     let start = Instant::now();
     let ground_options = options.ground_options();
     // `auto` keeps the program as simplified before its views are
-    // inlined for its `decision` trial, which takes it with its views in
-    // place.
+    // inlined for its order layouts, which take it with its views in
+    // place ([`Kind::ground_options`]).
     let keep = match options.strategy {
-        Strategy::Auto => auto::DECISION_DERIVED,
+        Strategy::Auto => 0,
         Strategy::Trial(_) => usize::MAX,
     };
     let (ground, kept) = ground::ground_keeping(&program, &ground_options, keep)?;
     progress(Progress::Grounded {
         seconds: start.elapsed().as_secs_f64(),
     });
-    // Its time is counted as the first part's rewrite's.
+    // Its time is counted as the first part's rewrite's. It differs from
+    // `ground` where the grounding inlined any atom, a view's or a chain's.
     let start = Instant::now();
-    let decision = decision_trial(kept, &ground_options, &ground);
+    let mut written = kept
+        .filter(|_| ground.stats.inlined + ground.stats.chained > 0 || auto::may_decide(&ground))
+        .map(|kept| ground::finish_kept(kept, &Kind::Decision.ground_options(ground_options)));
+    let decision = decision_trial(written.as_ref(), &ground);
     let decided_seconds = start.elapsed().as_secs_f64();
     let decides = decision
         .as_ref()
@@ -205,8 +209,10 @@ fn solve_split(
     let (parts, places, mut laid) = match answering {
         Answering::Split(split) => {
             progress(Progress::Note(split.note));
-            // The conditioned program is the whole program's.
+            // The conditioned and the written programs are the whole
+            // program's.
             conditioned = None;
+            written = None;
             (split.parts, split.queries, None)
         }
         Answering::Whole(laid) => {
@@ -231,7 +237,13 @@ fn solve_split(
         let mut run = match options.strategy {
             Strategy::Auto => {
                 progress(Progress::Compiling(&part));
-                auto::run(part, projection, laid.take(), conditioned.take())?
+                auto::run(
+                    part,
+                    projection,
+                    laid.take(),
+                    conditioned.take(),
+                    written.take(),
+                )?
             }
             Strategy::Trial(kind) => {
                 let prepared = kind.prepare(part)?;
@@ -312,7 +324,7 @@ fn parsed(source: &str, options: &Options) -> Result<Program, Error> {
 pub fn solve_ground(ground: GroundProgram, options: &Options) -> Result<Run, Error> {
     let (projection, first_pairs) = options.checked()?;
     match options.strategy {
-        Strategy::Auto => auto::run(ground, projection, None, None),
+        Strategy::Auto => auto::run(ground, projection, None, None, None),
         Strategy::Trial(kind) => run_prepared(kind.prepare(ground)?, kind, projection, first_pairs),
     }
 }
@@ -449,26 +461,22 @@ struct DecisionTrial {
 
 /// The program that `auto`'s `decision` trial compiles beside `ground`,
 /// or, where `decision` is no trial, that `program`, `closed` and `td`
-/// compile in its place (`auto::Programs`): `kept`, `ground`'s grounding
-/// as simplified before its views were inlined
-/// ([`ground::ground_keeping`]), finished again under `options` (`auto`'s)
-/// with its views in place and rewritten for `decision`
-/// ([`Kind::ground_options`], [`Kind::rewrite`]), where `ground` is large
-/// and the conditioning on guards applies to it and gets under way there
-/// (`auto::may_decide`), and kept where the conditioning recorded
-/// decisions; `None` where the program is not finished again. `closed`
-/// takes less work on it: bb_altermu2_w11 2.29 G units against 14.4 G.
-/// The full weekend circuit of the bit-blasting paper (98 303 flips) runs
-/// out of memory under every other layout of the program as ground and
-/// compiles under `decision` in 533 M work units.
+/// compile in its place (`auto::Programs`): `written`, `ground` as ground
+/// with its views in place ([`ground::ground_keeping`],
+/// [`Kind::ground_options`]), rewritten for `decision` ([`Kind::rewrite`]),
+/// where `ground` is large and the conditioning on guards applies to it
+/// and gets under way there (`auto::may_decide`), and kept where the
+/// conditioning recorded decisions; `None` where the program is not
+/// rewritten. `closed` takes less work on it: bb_altermu2_w11 2.29 G units
+/// against 14.4 G. The full weekend circuit of the bit-blasting paper
+/// (98 303 flips) runs out of memory under every other layout of the
+/// program as ground and compiles under `decision` in 533 M work units.
 fn decision_trial(
-    kept: Option<ground::Simplified>,
-    options: &GroundOptions,
+    written: Option<&GroundProgram>,
     ground: &GroundProgram,
 ) -> Option<DecisionTrial> {
-    let kept = kept.filter(|_| auto::may_decide(ground))?;
-    let again = ground::finish_kept(kept, &Kind::Decision.ground_options(*options));
-    let decided = Kind::Decision.rewrite(again);
+    let written = written.filter(|_| auto::may_decide(ground))?;
+    let decided = Kind::Decision.rewrite(written.clone());
     let guarded = decided.stats.guarded;
     let program = decided.stats.decisions.is_some().then_some(decided);
     Some(DecisionTrial { guarded, program })

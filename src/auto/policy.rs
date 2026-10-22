@@ -255,7 +255,11 @@ pub(super) fn families_weighted(lead: Kind, laid: Option<&Trial>) -> bool {
 /// follow it. In the timed runs of the circuits, GeNI's networks and
 /// Roulette's programs, all built with views, `td` won none, and its
 /// turns took a fifth of the time the losing trials spent on the
-/// circuits of a second or more.
+/// circuits of a second or more. The atoms of chains inlined (recursive
+/// predicates, `stats.chained`) are no views here: a chain is a loop
+/// written as recursion, as Roulette's hmm conjoins its outcomes, not a
+/// circuit's gate (hmm-filtering-joint-900 in 0.80 G instructions, 1.45 G
+/// with its chain counted, `program` first).
 ///
 /// Where the program is a CNF over its facts and there are several units
 /// ([`shape::clauses_over_facts`]: every derived atom a copy of a fact or

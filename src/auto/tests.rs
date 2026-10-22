@@ -18,6 +18,7 @@ fn run_with_watch(
     run_within(
         Programs {
             ground: original,
+            written: None,
             conditioned: None,
             decision: false,
         },
@@ -42,6 +43,7 @@ fn run_in_memory(
     run_within(
         Programs {
             ground: original,
+            written: None,
             conditioned: None,
             decision: false,
         },
@@ -261,6 +263,7 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     for decision in [false, true] {
         let programs = Programs {
             ground: as_ground.clone(),
+            written: None,
             conditioned: Some(conditioned.clone()),
             decision,
         };
@@ -283,6 +286,28 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
         assert_eq!(is_conditioned(Kind::Decision), decision);
         let (a, b) = (Trial::new(program), Trial::new(fan_in));
         assert_eq!(same_rewrite(&a, &b, &programs), decision);
+    }
+    // The program with its views in place goes to `program` and
+    // `program:fanin`, where the conditioned program does not.
+    let written = ground("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q).");
+    for decision in [false, true] {
+        let programs = Programs {
+            ground: as_ground.clone(),
+            written: Some(written.clone()),
+            conditioned: Some(conditioned.clone()),
+            decision,
+        };
+        let is_written = |kind: Kind| {
+            std::ptr::eq(
+                programs.of(kind),
+                programs.written.as_ref().expect("written"),
+            )
+        };
+        assert_eq!(is_written(program), decision, "decision {decision}");
+        assert!(!is_written(fan_in), "decision {decision}");
+        for kind in [laid, Kind::Closed, Kind::Td, Kind::Decision] {
+            assert!(!is_written(kind), "{kind} decision {decision}");
+        }
     }
 }
 
@@ -643,6 +668,7 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
 fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
     let programs = Programs {
         ground: ground::without_linear_recursion(gp.clone()),
+        written: None,
         conditioned: None,
         decision: false,
     };
@@ -946,6 +972,7 @@ fn a_searched_layout_that_would_not_search_is_not_built() {
     .unwrap();
     let programs = Programs {
         ground: ground::without_linear_recursion(gp),
+        written: None,
         conditioned: None,
         decision: false,
     };
@@ -1403,6 +1430,121 @@ fn a_trial_refused_memory_is_retired_and_the_next_answers() {
 }
 
 #[test]
+fn a_trial_refused_memory_takes_what_the_others_hold() {
+    // `closed` goes first and stops at its first targets, holding what it
+    // built; `families:0`, refused memory in its query phase (as above),
+    // takes it: `closed`'s formulas are freed rather than `families:0`
+    // retired, and `families:0` resumes at its next turn and answers
+    // (geni_router_24, where `families` was refused at its last step while
+    // four stopped trials held their formulas).
+    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+    let trials = vec![Kind::Closed, Kind::Families { search: false }];
+    let run = run_within(
+        Programs {
+            ground: gp,
+            written: None,
+            conditioned: None,
+            decision: false,
+        },
+        trials,
+        Projection::default(),
+        Watch {
+            first_pairs: 1,
+            memory_bytes: Some(6 << 10),
+            ..Watch::default()
+        },
+        None,
+    )
+    .unwrap();
+    let notes = &run.vtree_notes;
+    assert!(
+        notes.iter().any(|n| n.starts_with("released: closed (")
+            && n.contains(" for families:0 indicators=all ("))
+            && !notes.iter().any(|n| n.starts_with("retired: ")),
+        "{notes:#?}"
+    );
+    assert_eq!(run.kind, Kind::Families { search: false });
+    let answers = run.results.unwrap();
+    assert!(
+        (answers[0].probability - 0.0).abs() < 1e-9 && (answers[1].probability - 0.29).abs() < 1e-9,
+        "{answers:?}"
+    );
+}
+
+#[test]
+fn memory_goes_to_the_trial_that_has_spent_the_most_once() {
+    // Where no trial fits the budget, the memory others hold is freed for
+    // a refused trial only where it has spent more work than each of them,
+    // and once: refused again, or behind a trial that has spent as much,
+    // it is retired, and the run fails with the refusal. So a refusal
+    // discards less work than the refused trial has spent, and the trials
+    // cannot free each other for ever. At 3 KiB, `program` and `closed`
+    // are freed for `families:0`, retired at its next refusal, and
+    // `closed` for `program` (on bb_spacex_w17, freed for `families:0`,
+    // which had spent less, `program` did its 2 G units again).
+    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+    let failed = run_within(
+        Programs {
+            ground: gp,
+            written: None,
+            conditioned: None,
+            decision: false,
+        },
+        vec![
+            Kind::Program { fan_in: false },
+            Kind::Closed,
+            Kind::Families { search: false },
+        ],
+        Projection::default(),
+        Watch {
+            first_pairs: 1,
+            memory_bytes: Some(3 << 10),
+            ..Watch::default()
+        },
+        None,
+    );
+    assert!(refused(&failed));
+    let Err(Error::Trials { notes, .. }) = failed else {
+        unreachable!()
+    };
+    let units = |s: &str| -> Vec<u64> {
+        s.split(" units)")
+            .filter_map(|p| p.rsplit('(').next()?.parse().ok())
+            .collect()
+    };
+    let released: Vec<&String> = notes
+        .iter()
+        .filter(|n| n.starts_with("released: "))
+        .collect();
+    assert!(released.len() >= 2, "{notes:#?}");
+    for note in &released {
+        let (freed, refused) = note.split_once(" for ").unwrap();
+        let (freed, refused) = (units(freed), units(refused));
+        assert!(
+            !freed.is_empty() && refused.len() == 1 && freed.iter().all(|&f| f < refused[0]),
+            "{notes:#?}"
+        );
+    }
+    for trial in [
+        "families:0 indicators=all",
+        "closed indicators=off",
+        "program indicators=off",
+    ] {
+        let freed = released
+            .iter()
+            .filter(|n| n.contains(&format!(" for {trial} (")))
+            .count();
+        assert!(freed <= 1, "{notes:#?}");
+        assert!(
+            notes
+                .iter()
+                .any(|n| n.starts_with(&format!("retired: {trial} "))),
+            "{notes:#?}"
+        );
+    }
+}
+
+#[test]
 fn closed_follows_dynamic_where_nothing_to_order_has_no_recursion() {
     // One component of acyclic atoms merged by the facts they share,
     // as gh20 is. A byte budget per operation that the min-fill vtree
@@ -1609,7 +1751,7 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
         crate::ground::ground(&crate::syntax::parse_program(source).unwrap(), &options).unwrap();
     let gp = crate::indicators::introduce(&gp);
     assert!(!gp.encoding.is_empty());
-    let run = run(gp, Projection::default(), None, None).unwrap();
+    let run = run(gp, Projection::default(), None, None, None).unwrap();
     assert!(!run.ground.encoding.is_empty());
     let answers = run.results.unwrap();
     assert!(

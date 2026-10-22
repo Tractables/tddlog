@@ -189,7 +189,9 @@ def queries(text):
 # suite (test/Test.ml, commented out there) gives 1023/2048 and 31/64,
 # which tddlog gives too (and `exact` on pmc2); Dice prints all zeros on
 # caesar-iter and simpleCaesar, whose evidence is below Dice 1.0's cutoff
-# of 1e-6 and below the smallest double.
+# of 1e-6 and below the smallest double. A loop's state takes the values of
+# a fixpoint over its step, which may hold more than the last step's: the
+# counter's n2(7) has no row in Dice's table, probability 0.
 DICE = {
     'arith': [('w(0)', 0.321428571429), ('w(1)', 0.353571428571), ('w(2)', 0.325), ('w(3)', 0.0)],
     'compare': [('result_1', 0.112676056338), ('result_2_1(0)', 0.131455399061), ('result_2_1(1)', 0.112676056338),
@@ -208,12 +210,12 @@ DICE = {
                   ('result(9)', 0.000977039570103), ('result(10)', 0.000488519785051)],
     'counter': [('n2(0)', 0.118949715135), ('n2(1)', 0.305870696061), ('n2(2)', 0.327718602923),
                 ('n2(3)', 0.187267773099), ('n2(4)', 0.0601932127818), ('n2(5)', 0.0),
-                ('n2(6)', 0.0), ('result_2_6', 0.247460985881)],
+                ('n2(6)', 0.0), ('n2(7)', 0.0), ('result_2_2', 0.247460985881)],
     'recursion': [('result_else_1', 0.125)],
     'caesar-recur': [('key(0)', 0.0036496350365), ('key(1)', 0.0583941605839), ('key(2)', 0.934306569343),
                      ('key(3)', 0.0036496350365)],
-    'diamond': [('result_199', 0.995012354812)],
-    'ladder': [('result_1_98', 0.475370841777), ('result_2_98', 0.475370841777)],
+    'diamond': [('result_2', 0.995012354812)],
+    'ladder': [('result_1_1', 0.475370841777), ('result_2_1', 0.475370841777)],
 }
 
 # program -> its translation's queries with answers computed by hand,
@@ -260,7 +262,7 @@ class DiceTests(unittest.TestCase):
     @unittest.skipUnless(data.is_dir(), 'data/dice is on the baselines branch')
     def test_the_baseline_programs_translate(self):
         for path in sorted(data.glob('*.dice')):
-            if path.stem in ('pmc1', 'digitRecognition'):
+            if path.stem == 'digitRecognition':
                 continue
             with self.subTest(name=path.stem):
                 text = dice2problog.translate(path.read_text())
