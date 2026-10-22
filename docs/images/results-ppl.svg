@@ -1825,6 +1825,148 @@ L 368.564375 199.512958
 " clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #882255; stroke-width: 1.9; stroke-linecap: square"/>
    </g>
    <g id="line2d_33">
+    <path d="M 55.364375 279.077969 
+L 168.465019 279.077969 
+L 168.465019 278.095685 
+L 176.706883 278.095685 
+L 176.706883 277.113401 
+L 176.917389 277.113401 
+L 176.996037 275.148832 
+L 177.048382 275.148832 
+L 177.048382 274.166548 
+L 177.533583 274.166548 
+L 177.533583 273.184264 
+L 177.645364 273.184264 
+L 177.645364 272.20198 
+L 178.097807 272.20198 
+L 178.097807 271.219696 
+L 178.519897 271.219696 
+L 178.553468 269.255128 
+L 180.548676 269.255128 
+L 180.548676 268.272844 
+L 181.509373 268.272844 
+L 181.610365 266.308276 
+L 182.522912 266.308276 
+L 182.522912 265.325992 
+L 182.636442 265.325992 
+L 182.636442 264.343707 
+L 182.749644 264.343707 
+L 182.749644 263.361423 
+L 188.114284 263.361423 
+L 188.114284 262.379139 
+L 190.268043 262.379139 
+L 190.268043 261.396855 
+L 190.921683 261.396855 
+L 190.921683 260.414571 
+L 191.690704 260.414571 
+L 191.690704 259.432287 
+L 192.096331 259.432287 
+L 192.096331 258.450003 
+L 193.265542 258.450003 
+L 193.265542 257.467719 
+L 193.603888 257.467719 
+L 193.603888 256.485435 
+L 195.536695 256.485435 
+L 195.536695 255.503151 
+L 195.915285 255.503151 
+L 195.915285 254.520867 
+L 196.129989 254.520867 
+L 196.129989 253.538582 
+L 196.756584 253.538582 
+L 196.756584 252.556298 
+L 197.688339 252.556298 
+L 197.693483 250.59173 
+L 197.98555 250.59173 
+L 198.005964 248.627162 
+L 198.112964 248.627162 
+L 198.112964 247.644878 
+L 198.265316 247.644878 
+L 198.265316 246.662594 
+L 199.468147 246.662594 
+L 199.536897 244.698026 
+L 203.098596 244.698026 
+L 203.098596 243.715742 
+L 205.068383 243.715742 
+L 205.068383 242.733458 
+L 206.272135 242.733458 
+L 206.272135 241.751173 
+L 207.105787 241.751173 
+L 207.105787 240.768889 
+L 207.540044 240.768889 
+L 207.540044 239.786605 
+L 208.534946 239.786605 
+L 208.534946 238.804321 
+L 208.818488 238.804321 
+L 208.818488 237.822037 
+L 209.111514 237.822037 
+L 209.111514 236.839753 
+L 209.770462 236.839753 
+L 209.770462 235.857469 
+L 211.15817 235.857469 
+L 211.205531 233.892901 
+L 212.076876 233.892901 
+L 212.076876 232.910617 
+L 212.754642 232.910617 
+L 212.835051 230.946048 
+L 212.925749 230.946048 
+L 212.925749 229.963764 
+L 213.379557 229.963764 
+L 213.379557 228.98148 
+L 213.527377 228.98148 
+L 213.554817 227.016912 
+L 214.509974 227.016912 
+L 214.509974 226.034628 
+L 214.713554 226.034628 
+L 214.713554 225.052344 
+L 214.926012 225.052344 
+L 214.926012 224.07006 
+L 219.39204 224.07006 
+L 219.39204 223.087776 
+L 220.420968 223.087776 
+L 220.420968 222.105492 
+L 220.8871 222.105492 
+L 220.8871 221.123208 
+L 221.875158 221.123208 
+L 221.875158 220.140924 
+L 225.258612 220.140924 
+L 225.258612 219.158639 
+L 227.826479 219.158639 
+L 227.826479 218.176355 
+L 230.705598 218.176355 
+L 230.705598 217.194071 
+L 237.717085 217.194071 
+L 237.717085 216.211787 
+L 241.663565 216.211787 
+L 241.663565 215.229503 
+L 243.147661 215.229503 
+L 243.147661 214.247219 
+L 247.13271 214.247219 
+L 247.13271 213.264935 
+L 251.565947 213.264935 
+L 251.565947 212.282651 
+L 255.136337 212.282651 
+L 255.136337 211.300367 
+L 255.727607 211.300367 
+L 255.727607 210.318083 
+L 259.479252 210.318083 
+L 259.479252 209.335799 
+L 262.426546 209.335799 
+L 262.426546 208.353514 
+L 264.762823 208.353514 
+L 264.762823 207.37123 
+L 274.203489 207.37123 
+L 274.203489 206.388946 
+L 276.428385 206.388946 
+L 276.428385 205.406662 
+L 287.647459 205.406662 
+L 287.647459 204.424378 
+L 291.881657 204.424378 
+L 291.881657 203.442094 
+L 368.564375 203.442094 
+L 368.564375 203.442094 
+" clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #7f7f7f; stroke-width: 1.9; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_34">
     <path d="M 55.364375 247.644878 
 L 55.364375 278.095685 
 L 55.364375 247.644878 
@@ -1898,9 +2040,9 @@ L 350.904209 215.229503
 L 350.904209 214.247219 
 L 368.564375 214.247219 
 L 368.564375 214.247219 
-" clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #7f7f7f; stroke-width: 1.9; stroke-linecap: square"/>
+" clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #222222; stroke-width: 1.9; stroke-linecap: square"/>
    </g>
-   <g id="line2d_34">
+   <g id="line2d_35">
     <path d="M 55.364375 255.503151 
 L 55.364375 255.503151 
 L 55.364375 278.095685 
@@ -2024,9 +2166,9 @@ L 354.471135 221.123208
 L 354.471135 220.140924 
 L 368.564375 220.140924 
 L 368.564375 220.140924 
-" clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #222222; stroke-width: 1.9; stroke-linecap: square"/>
+" clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #117733; stroke-width: 1.9; stroke-linecap: square"/>
    </g>
-   <g id="line2d_35">
+   <g id="line2d_36">
     <path d="M 55.364375 279.077969 
 L 95.361493 279.077969 
 L 95.361493 278.095685 
@@ -2118,94 +2260,6 @@ L 368.161733 236.839753
 L 368.161733 235.857469 
 L 368.564375 235.857469 
 L 368.564375 235.857469 
-" clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke: #117733; stroke-width: 1.9; stroke-linecap: square"/>
-   </g>
-   <g id="line2d_36">
-    <path d="M 55.364375 279.077969 
-L 168.465019 279.077969 
-L 168.465019 278.095685 
-L 176.706883 278.095685 
-L 176.706883 277.113401 
-L 176.917389 277.113401 
-L 176.917389 276.131116 
-L 176.996037 276.131116 
-L 176.996037 275.148832 
-L 177.048382 275.148832 
-L 177.048382 274.166548 
-L 177.533583 274.166548 
-L 177.533583 273.184264 
-L 177.645364 273.184264 
-L 177.645364 272.20198 
-L 178.097807 272.20198 
-L 178.097807 271.219696 
-L 178.519897 271.219696 
-L 178.519897 270.237412 
-L 178.553468 270.237412 
-L 178.553468 269.255128 
-L 180.548676 269.255128 
-L 180.548676 268.272844 
-L 181.509373 268.272844 
-L 181.509373 267.29056 
-L 181.610365 267.29056 
-L 181.610365 266.308276 
-L 182.522912 266.308276 
-L 182.522912 265.325992 
-L 182.636442 265.325992 
-L 182.636442 264.343707 
-L 182.749644 264.343707 
-L 182.749644 263.361423 
-L 188.114284 263.361423 
-L 188.114284 262.379139 
-L 190.268043 262.379139 
-L 190.268043 261.396855 
-L 190.921683 261.396855 
-L 190.921683 260.414571 
-L 191.690704 260.414571 
-L 191.690704 259.432287 
-L 193.265542 259.432287 
-L 193.265542 258.450003 
-L 193.603888 258.450003 
-L 193.603888 257.467719 
-L 195.915285 257.467719 
-L 195.915285 256.485435 
-L 196.129989 256.485435 
-L 196.129989 255.503151 
-L 196.756584 255.503151 
-L 196.756584 254.520867 
-L 197.693483 254.520867 
-L 197.693483 253.538582 
-L 198.112964 253.538582 
-L 198.112964 252.556298 
-L 198.265316 252.556298 
-L 198.265316 251.574014 
-L 199.468147 251.574014 
-L 199.468147 250.59173 
-L 199.536897 250.59173 
-L 199.536897 249.609446 
-L 203.098596 249.609446 
-L 203.098596 248.627162 
-L 205.068383 248.627162 
-L 205.068383 247.644878 
-L 207.105787 247.644878 
-L 207.105787 246.662594 
-L 208.534946 246.662594 
-L 208.534946 245.68031 
-L 208.818488 245.68031 
-L 208.818488 244.698026 
-L 209.111514 244.698026 
-L 209.111514 243.715742 
-L 213.379557 243.715742 
-L 213.379557 242.733458 
-L 213.527377 242.733458 
-L 213.527377 241.751173 
-L 237.717085 241.751173 
-L 237.717085 240.768889 
-L 241.663565 240.768889 
-L 241.663565 239.786605 
-L 259.479252 239.786605 
-L 259.479252 238.804321 
-L 368.564375 238.804321 
-L 368.564375 238.804321 
 " clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke-dasharray: 7.6,3.8; stroke-dashoffset: 0; stroke: #d55e00; stroke-width: 1.9"/>
    </g>
    <g id="line2d_37">
@@ -3036,37 +3090,37 @@ L 357.764375 486.257969
    <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="404.83125" transform="rotate(-0, 631.364375, 404.83125)">24 h</text>
   </g>
   <g id="text_67">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="421.75125" transform="rotate(-0, 364.964375, 421.75125)">Genfer</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="421.75125" transform="rotate(-0, 364.964375, 421.75125)">Pluck</text>
   </g>
   <g id="text_68">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="421.75125" transform="rotate(-0, 541.364375, 421.75125)">66</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="421.75125" transform="rotate(-0, 541.364375, 421.75125)">77</text>
   </g>
   <g id="text_69">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="421.75125" transform="rotate(-0, 631.364375, 421.75125)">27 h</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="421.75125" transform="rotate(-0, 631.364375, 421.75125)">25 h</text>
   </g>
   <g id="text_70">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="438.67125" transform="rotate(-0, 364.964375, 438.67125)">noDice</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="438.67125" transform="rotate(-0, 364.964375, 438.67125)">Genfer</text>
   </g>
   <g id="text_71">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="438.67125" transform="rotate(-0, 541.364375, 438.67125)">60</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="438.67125" transform="rotate(-0, 541.364375, 438.67125)">66</text>
   </g>
   <g id="text_72">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="438.67125" transform="rotate(-0, 631.364375, 438.67125)">28 h</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="438.67125" transform="rotate(-0, 631.364375, 438.67125)">27 h</text>
   </g>
   <g id="text_73">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="455.59125" transform="rotate(-0, 364.964375, 455.59125)">SPPL</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="455.59125" transform="rotate(-0, 364.964375, 455.59125)">noDice</text>
   </g>
   <g id="text_74">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="455.59125" transform="rotate(-0, 541.364375, 455.59125)">44</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="455.59125" transform="rotate(-0, 541.364375, 455.59125)">60</text>
   </g>
   <g id="text_75">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="455.59125" transform="rotate(-0, 631.364375, 455.59125)">30 h</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="455.59125" transform="rotate(-0, 631.364375, 455.59125)">28 h</text>
   </g>
   <g id="text_76">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="472.51125" transform="rotate(-0, 364.964375, 472.51125)">Pluck</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="472.51125" transform="rotate(-0, 364.964375, 472.51125)">SPPL</text>
   </g>
   <g id="text_77">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="472.51125" transform="rotate(-0, 541.364375, 472.51125)">41</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="541.364375" y="472.51125" transform="rotate(-0, 541.364375, 472.51125)">44</text>
   </g>
   <g id="text_78">
    <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="631.364375" y="472.51125" transform="rotate(-0, 631.364375, 472.51125)">30 h</text>

@@ -116,7 +116,7 @@ the program as its authors wrote it and as each system was given it.
        alt="Networks answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-- **8.6× faster than Ace** (38× where both answer) and **7.1× faster
+- **8.6× faster than Ace** (37× where both answer) and **7.1× faster
   than Merlin** (8.2×). Against TensorInference.jl, libDAI, pyAgrum and
   pgmpy, 7.9× to 12× faster.
 - tddlog answers 600 of the 652 networks, TensorInference.jl 459,
@@ -133,7 +133,7 @@ the program as its authors wrote it and as each system was given it.
 </p>
 
 - **7.9× faster than Alea.jl**, **12× faster than Roulette** and **13×
-  faster than Dice**, and 18× to 28× faster than Geni, Genfer, noDice,
+  faster than Dice**, and 18× to 29× faster than Geni, Genfer, noDice,
   SPPL, Pluck and Psi.
 - **7.8× faster than Storm** and **13× faster than PRISM**, the
   probabilistic model checkers.
@@ -172,7 +172,7 @@ given the circuit.
 - ProvSQL is fast on the easy TPC-H queries, its own benchmarks, and
   faster than tddlog on 117 of them.
 - tddlog answers more of the hard ones, 205 of the 208 against
-  ProvSQL's 196, and is **16× faster in total** (1.3× where both
+  ProvSQL's 196, and is **16× faster in total** (1.4× where both
   answer).
 
 ### Setup
