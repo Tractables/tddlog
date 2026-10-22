@@ -15,7 +15,7 @@
   <div>
     <p class="crumbs"><a href="../../">Results</a> › <a href="../../#ppl">Probabilistic programs: Dice, Alea.jl, Roulette and further systems</a> › <a href="../index.html#ppl">Alea.jl&#x27;s and noDice&#x27;s programs</a></p>
     <h1>nodice_3sat-0</h1>
-    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them, each beside tddlog: their times compare with that run&#x27;s tddlog, not with the other columns, and the comparisons below use it. Made by <code>dice2problog.py data/nodice/3sat-0.dice</code>.</p>
+    <p class="lede">Cao et al.&#x27;s integer arithmetic programs (UAI 2023), Pluck&#x27;s sequence models (PLDI 2025) and noDice&#x27;s purely probabilistic programs (OOPSLA 2026). Alea.jl runs an Alea.jl program itself; tddlog and Dice run the Boolean circuit Alea.jl builds for it, and Roulette that circuit&#x27;s Dice program translated to Racket. The noDice programs are Dice programs, translated, and Roulette runs them translated to Racket. 600 s a run. Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran too, each on the programs it takes (its own paper&#x27;s, the Dice programs, the ProbLog programs or the networks); a system&#x27;s time is its process&#x27;s, start-up included. Roulette, Roulette&#x27;s process, Geni, noDice, Psi, Genfer, SPPL, Pluck, PITA, aspmc, Storm, PRISM, Ace, Merlin, pyAgrum, pgmpy, libDAI and TensorInference.jl ran in a later run, on other machines, on the instances the release run did not give them. Made by <code>dice2problog.py data/nodice/3sat-0.dice</code>.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
@@ -27,7 +27,7 @@
 </header>
 <section class="card">
   <h2>In the table</h2>
-  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.45</td><td class="num">0.93</td><td class="num">9.4</td><td class="num">8.4</td><td class="num">2.8</td><td class="num">3.2</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">24.3</td><td class="num">16.6</td><td class="num">2.7</td><td class="num">21.0</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. zero: every answer printed as 0 where the reference&#x27;s are positive. memory: out of memory. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
+  <div class="tscroll"><table class="times"><thead><tr><th class="num">tddlog</th><th class="num">Alea.jl</th><th class="num">Alea.jl&#x27;s process</th><th class="num">Dice</th><th class="num">Roulette</th><th class="num">Roulette&#x27;s process</th><th class="num">ProbLog</th><th class="num">Geni</th><th class="num">noDice</th><th class="num">Psi</th><th class="num">Genfer</th><th class="num">SPPL</th><th class="num">Pluck</th><th class="num">PITA</th><th class="num">aspmc</th><th class="num">Storm</th><th class="num">PRISM</th><th class="num">Ace</th><th class="num">Merlin</th><th class="num">pyAgrum</th><th class="num">pgmpy</th><th class="num">libDAI</th><th class="num">TensorInference.jl</th></tr></thead><tbody><tr><td class="num">0.44</td><td class="num">1.1</td><td class="num">10.2</td><td class="num">9.6</td><td class="num">2.7</td><td class="num">3.1</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="every answer printed as 0 where the reference&#x27;s are positive">zero</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="out of memory">memory</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num">24.3</td><td class="num">16.6</td><td class="num">2.7</td><td class="num">21.0</td><td class="num fail" title="the time limit ran out">&gt;600</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="not run: the system had failed on a smaller size of the same program">skipped</td><td class="num fail" title="out of memory">memory</td></tr></tbody></table></div><p class="note">Seconds, a time limit of 600 s; &gt;600: the time limit ran out. zero: every answer printed as 0 where the reference&#x27;s are positive. memory: out of memory. skipped: not run: the system had failed on a smaller size of the same program. A process time is the whole process&#x27;s, with the language&#x27;s start and compilation; the other time of the same system leaves them out, as its paper times it. A time is the median of the repetitions below, a failed one counted as infinite. A system run in several forms (ProbLog&#x27;s knowledge compilers, Ace&#x27;s routes) has the time of its fastest form.</p>
 </section>
 <section class="card">
   <h2>The programs</h2>
@@ -2025,40 +2025,288 @@ label &quot;done&quot; = pc=48;
 </section>
 <section class="card">
   <h2>Every run</h2>
-  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
-<h3>tddlog (auto+onehot)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
-<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>10.0</td><td>1.6</td><td>0.36</td><td></td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>9.4</td><td>1.3</td><td>0.35</td><td></td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>9.3</td><td>1.3</td><td>0.35</td><td></td><td></td><td></td></tr></tbody></table></div>
-<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>8.5</td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>8.4</td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>8.4</td><td></td><td></td></tr></tbody></table></div>
-<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.2</td><td>2.8</td><td></td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>3.3</td><td>2.9</td><td></td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>2.9</td><td>2.5</td><td></td><td></td><td></td></tr></tbody></table></div>
+  <h3>tddlog</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.59</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>tddlog (auto+onehot)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>2</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr><tr><td>3</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>Alea.jl</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>warm s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>10.2</td><td>1.6</td><td>0.35</td><td></td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>10.4</td><td>1.4</td><td>0.35</td><td></td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>9.7</td><td>1.4</td><td>0.35</td><td></td><td></td><td></td></tr></tbody></table></div>
+<h3>Dice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>9.6</td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>10.8</td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>9.6</td><td></td><td></td></tr></tbody></table></div>
+<h3>Roulette</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>in-process s</th><th>compilation s</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>3.1</td><td>2.7</td><td></td><td></td><td></td></tr><tr><td>2</td><td>answered</td><td>3.3</td><td>2.8</td><td></td><td></td><td></td></tr><tr><td>3</td><td>answered</td><td>3.0</td><td>2.6</td><td></td><td></td><td></td></tr></tbody></table></div>
 <h3>ProbLog -k ddnnf</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>300</td><td></td><td></td></tr></tbody></table></div>
-<h3>noDice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>31.0</td><td></td><td></td></tr><tr><td>2</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>30.8</td><td></td><td></td></tr><tr><td>3</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>30.8</td><td></td><td></td></tr></tbody></table></div>
-<h3>Psi</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>445</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed
-----------------</pre></details></td></tr><tr><td>2</td><td>error</td><td>444</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed
-----------------</pre></details></td></tr><tr><td>3</td><td>error</td><td>444</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed
-----------------</pre></details></td></tr></tbody></table></div>
-<p class="note">A later run, in lanes of its own, of Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse: their times compare with that run's tddlog, shown with them.</p>
-<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.45</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<h3>noDice</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>28.3</td><td></td><td></td></tr><tr><td>2</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>31.3</td><td></td><td></td></tr><tr><td>3</td><td><span title="every answer printed as 0 where the reference&#x27;s are positive">zero</span></td><td>29.1</td><td></td><td></td></tr></tbody></table></div>
+<h3>Psi</h3><p class="note">Psi answers the Dice programs exactly, one run per component of the program&#x27;s value, the times added. On its own linear regression it answers the posterior means of the continuous model, E(a) and E(b), which the circuit&#x27;s bit queries do not have, so there is nothing to compare them with.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>496</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed
+----------------
+??:? [0x55e25469a4f6]
+??:? [0x55e25469a172]
+??:? [0x55e2546c2066]
+??:? [0x55e2546a243c]
+??:? [0x55e25469916d]
+??:? [0x55e2546c26bb]
+??:? [0x55e2546b9712]
+??:? [0x55e2546b8a00]
+??:? [0x55e2546b8ce9]
+??:? [0x55e2546b537e]
+??:? [0x55e2546b7b32]
+??:? [0x55e2546996db]
+??:? [0x55e2546a67f8]
+??:? [0x55e25446d4e0]
+??:? [0x55e25446d1c9]
+??:? [0x55e25446ccbb]
+??:? [0x55e254482b88]
+??:? [0x55e25451b809]
+??:? [0x55e25446cf99]
+??:? [0x55e25446d3ec]
+??:? [0x55e25446d3bb]
+??:? [0x55e25446cf5d]
+??:? [0x55e2544cc0c1]
+??:? [0x55e2544c82b6]
+??:? [0x55e2544c748b]
+??:? [0x55e2544cb337]
+??:? [0x55e25446cf99]
+??:? [0x55e25446d3ec]
+??:? [0x55e25446d3bb]
+??:? [0x55e25446cf5d]
+??:? [0x55e2544c6e74]
+??:? [0x55e2544c6e9f]
+??:? [0x55e25451b829]
+??:? [0x55e25446cf01]
+??:? [0x55e2544c6ddd]
+??:? [0x55e2544cb359]
+??:? [0x55e25446cf99]
+??:? [0x55e25446d3ec]
+??:? [0x55e25446d3bb]
+??:? [0x55e25446cf5d]
+??:? [0x55e2544c6e74]
+??:? [0x55e2544cca99]
+??:? [0x55e25451b829]
+??:? [0x55e25446cf99]
+??:? [0x55e25446d3ec]
+??:? [0x55e25446d3bb]
+??:? [0x55e25446cf5d]
+??:? [0x55e2544cc9c4]
+??:? [0x55e2544a1206]
+??:? [0x55e2544a17f5]
+??:? [0x55e25451b809]
+??:? [0x55e25446ceee]
+??:? [0x55e254466ab7]
+??:? [0x55e25449f203]
+??:? [0x55e25449ed50]
+??:? [0x55e2544fa555]
+??:? [0x55e2544faedc]
+??:? [0x55e2544fb306]
+??:? [0x55e2544fa5da]
+??:? [0x55e2544faedc]
+??:? [0x55e2544fb516]
+??:? [0x55e25460d40f]
+??:? [0x55e254615220]
+??:? [0x55e25446ea69]
+??:? [0x55e25446ee2c]
+??:? [0x55e25446edfb]
+??:? [0x55e25446ea2d]
+??:? [0x55e25461517b]
+??:? [0x55e254613af5]
+??:? [0x55e254607731]
+??:? [0x55e2546073bb]
+??:? [0x55e25451c646]
+??:? [0x55e2546175d0]
+??:? [0x55e2546177ba]
+??:? [0x55e2546a210c]
+??:? [0x55e2546a2006]
+??:? [0x55e2546a1e5c]
+??:? [0x146e44696d8f]
+??:? __libc_start_main [0x146e44696e3f]
+??:? [0x55e25445dae4]</pre></details></td></tr><tr><td>2</td><td>error</td><td>509</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed
+----------------
+??:? [0x55b28580d4f6]
+??:? [0x55b28580d172]
+??:? [0x55b285835066]
+??:? [0x55b28581543c]
+??:? [0x55b28580c16d]
+??:? [0x55b2858356bb]
+??:? [0x55b28582c712]
+??:? [0x55b28582ba00]
+??:? [0x55b28582bce9]
+??:? [0x55b28582837e]
+??:? [0x55b28582ab32]
+??:? [0x55b28580c6db]
+??:? [0x55b2858173c4]
+??:? [0x55b285817502]
+??:? [0x55b2855e010a]
+??:? [0x55b2855dfbe5]
+??:? [0x55b285641364]
+??:? [0x55b2856474c0]
+??:? [0x55b2855dff99]
+??:? [0x55b2855e03ec]
+??:? [0x55b2855e03bb]
+??:? [0x55b2855dff5d]
+??:? [0x55b2856473f7]
+??:? [0x55b2856474fb]
+??:? [0x55b285639fa6]
+??:? [0x55b285639d7c]
+??:? [0x55b28563fa99]
+??:? [0x55b28568e829]
+??:? [0x55b2855dfeee]
+??:? [0x55b28563f9c4]
+??:? [0x55b28563f626]
+??:? [0x55b28563b3ba]
+??:? [0x55b28563a48b]
+??:? [0x55b28563e337]
+??:? [0x55b2855dff99]
+??:? [0x55b2855e03ec]
+??:? [0x55b2855e03bb]
+??:? [0x55b2855dff5d]
+??:? [0x55b285639e74]
+??:? [0x55b285639e9f]
+??:? [0x55b28568e829]
+??:? [0x55b2855dff01]
+??:? [0x55b285639ddd]
+??:? [0x55b28563e359]
+??:? [0x55b2855dff99]
+??:? [0x55b2855e03ec]
+??:? [0x55b2855e03bb]
+??:? [0x55b2855dff5d]
+??:? [0x55b285639e74]
+??:? [0x55b28563fa99]
+??:? [0x55b28568e829]
+??:? [0x55b2855dff99]
+??:? [0x55b2855e03ec]
+??:? [0x55b2855e03bb]
+??:? [0x55b2855dff5d]
+??:? [0x55b28563f9c4]
+??:? [0x55b285614206]
+??:? [0x55b2856147f5]
+??:? [0x55b28568e809]
+??:? [0x55b2855dfeee]
+??:? [0x55b2855d9ab7]
+??:? [0x55b285612203]
+??:? [0x55b285611d50]
+??:? [0x55b28566d555]
+??:? [0x55b28566dedc]
+??:? [0x55b28566e306]
+??:? [0x55b28566d5da]
+??:? [0x55b28566dedc]
+??:? [0x55b28566e516]
+??:? [0x55b28578040f]
+??:? [0x55b285788220]
+??:? [0x55b2855e1a69]
+??:? [0x55b2855e1e2c]
+??:? [0x55b2855e1dfb]
+??:? [0x55b2855e1a2d]
+??:? [0x55b28578817b]
+??:? [0x55b285786af5]
+??:? [0x55b28577a731]
+??:? [0x55b28577a3bb]
+??:? [0x55b28568f646]
+??:? [0x55b28578a5d0]
+??:? [0x55b28578a7ba]
+??:? [0x55b28581510c]
+??:? [0x55b285815006]
+??:? [0x55b285814e5c]
+??:? [0x1522942e0d8f]
+??:? __libc_start_main [0x1522942e0e3f]
+??:? [0x55b2855d0ae4]</pre></details></td></tr><tr><td>3</td><td>error</td><td>508</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed
+----------------
+??:? [0x5586503fd4f6]
+??:? [0x5586503fd172]
+??:? [0x558650425066]
+??:? [0x55865040543c]
+??:? [0x5586503fc16d]
+??:? [0x5586504256bb]
+??:? [0x55865041c712]
+??:? [0x55865041ba00]
+??:? [0x55865041bce9]
+??:? [0x55865041837e]
+??:? [0x55865041ab32]
+??:? [0x5586503fc6db]
+??:? [0x5586504073c4]
+??:? [0x558650407502]
+??:? [0x5586501d010a]
+??:? [0x5586501cfbe5]
+??:? [0x5586501e5b88]
+??:? [0x55865027e809]
+??:? [0x5586501cff99]
+??:? [0x5586501d03ec]
+??:? [0x5586501d03bb]
+??:? [0x5586501cff5d]
+??:? [0x55865022f0c1]
+??:? [0x55865022b2b6]
+??:? [0x55865022a48b]
+??:? [0x55865022e337]
+??:? [0x5586501cff99]
+??:? [0x5586501d03ec]
+??:? [0x5586501d03bb]
+??:? [0x5586501cff5d]
+??:? [0x558650229e74]
+??:? [0x558650229e9f]
+??:? [0x55865027e829]
+??:? [0x5586501cff01]
+??:? [0x558650229ddd]
+??:? [0x55865022e359]
+??:? [0x5586501cff99]
+??:? [0x5586501d03ec]
+??:? [0x5586501d03bb]
+??:? [0x5586501cff5d]
+??:? [0x558650229e74]
+??:? [0x55865022fa99]
+??:? [0x55865027e829]
+??:? [0x5586501cff99]
+??:? [0x5586501d03ec]
+??:? [0x5586501d03bb]
+??:? [0x5586501cff5d]
+??:? [0x55865022f9c4]
+??:? [0x558650204206]
+??:? [0x5586502047f5]
+??:? [0x55865027e809]
+??:? [0x5586501cfeee]
+??:? [0x5586501c9ab7]
+??:? [0x558650202203]
+??:? [0x558650201d50]
+??:? [0x55865025d555]
+??:? [0x55865025dedc]
+??:? [0x55865025e306]
+??:? [0x55865025d5da]
+??:? [0x55865025dedc]
+??:? [0x55865025e516]
+??:? [0x55865037040f]
+??:? [0x558650378220]
+??:? [0x5586501d1a69]
+??:? [0x5586501d1e2c]
+??:? [0x5586501d1dfb]
+??:? [0x5586501d1a2d]
+??:? [0x55865037817b]
+??:? [0x558650376af5]
+??:? [0x55865036a731]
+??:? [0x55865036a3bb]
+??:? [0x55865027f646]
+??:? [0x55865037a5d0]
+??:? [0x55865037a7ba]
+??:? [0x55865040510c]
+??:? [0x558650405006]
+??:? [0x558650404e5c]
+??:? [0x14d0b6e41d8f]
+??:? __libc_start_main [0x14d0b6e41e3f]
+??:? [0x5586501c0ae4]</pre></details></td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Storm dd, Storm exact, Storm sparse, PRISM hybrid, PRISM sparse.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
 <h3>Storm dd (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>21.0</td><td></td><td></td></tr></tbody></table></div>
 <h3>Storm exact (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>290</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>GNU MP: Cannot allocate memory (size=8)</pre></details></td></tr></tbody></table></div>
 <h3>Storm sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PRISM hybrid (later run)</h3><p class="note">On the weather factory the model is Rubicon&#x27;s PRISM model, not the program: the same Markov chain. On the other programs it is the Markov chain dice2prism.py writes of the Dice program, a model per component of its value. The time includes the JVM&#x27;s start.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PRISM sparse (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
-<p class="note">A later run, in lanes of its own, of ProbLog -k ddnnf: their times compare with that run's tddlog, shown with them.</p>
-<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.79</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of ProbLog -k ddnnf.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
 <h3>ProbLog -k ddnnf (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>462</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>terminate called after throwing an instance of &#x27;std::bad_alloc&#x27;
   what():  std::bad_alloc</pre></details></td></tr></tbody></table></div>
-<p class="note">A later run, in lanes of its own, of Geni, Genfer, SPPL, PITA, aspmc: their times compare with that run's tddlog, shown with them.</p>
-<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.66</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Geni, Genfer, SPPL, PITA, aspmc.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
 <h3>Geni (later run)</h3><p class="note">Geni computes in single precision and prints seven decimals, so differences of up to 5e-8 from the reference are its print precision.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>Genfer (later run)</h3><p class="note">Genfer answers its own program: the Dice programs of its comparison in exact rationals, the population model in floating point (its masses summed over the bits of the circuit).</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>error</td><td>77.6</td><td></td><td></td></tr><tr class="err"><td></td><td colspan="4"><details><summary>the error</summary><pre>memory allocation of 8589934592 bytes failed
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</pre></details></td></tr></tbody></table></div>
 <h3>SPPL (later run)</h3><p class="note">SPPL answers the continuous model, with normal emissions as densities; the circuit rounds them to a grid, so the differences from the reference are that discretization.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>timeout</td><td>600</td><td></td><td></td></tr></tbody></table></div>
 <h3>PITA (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>16.6</td><td></td><td></td></tr></tbody></table></div>
 <h3>aspmc (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>2.7</td><td></td><td></td></tr></tbody></table></div>
-<p class="note">A later run, in lanes of its own, of Pluck: their times compare with that run's tddlog, shown with them.</p>
-<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.78</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
+<p class="note">A later run, in lanes of its own, of Pluck.</p>
+<h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
 <h3>Pluck (later run)</h3><p class="note">The time is the whole process&#x27;s, with Julia loading Pluck; the in-process time leaves it out.</p><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>24.3</td><td></td><td>in-process s 22.598</td></tr></tbody></table></div>
-<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa: their times compare with that run's tddlog, shown with them.</p>
+<p class="note">A later run, in lanes of its own, of Ace auto, Ace forceC2d, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl greedy, TensorInference.jl treesa.</p>
 <h3>tddlog (later run)</h3><div class="tscroll"><table class="runs"><thead><tr><th>repetition</th><th>status</th><th>seconds</th><th>from the reference</th><th>sizes</th></tr></thead><tbody><tr><td>1</td><td>answered</td><td>0.44</td><td></td><td>largest formula, pairs 99 258; final formula, pairs 0; variables 40; ground atoms 155; ground rules 345; vtree dynamic:minfill (from auto: 1 attempts, 0.000s discarded)</td></tr></tbody></table></div>
 <h3>Ace auto (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>
 <h3>Ace forceC2d (later run)</h3><p class="note">Not run in any repetition: not run: the system had failed on a smaller size of the same program.</p>

@@ -919,7 +919,8 @@ mod dice {
                 ("n2(4)", 0.0601932127818),
                 ("n2(5)", 0.0),
                 ("n2(6)", 0.0),
-                ("result_2_6", 0.247460985881),
+                ("n2(7)", 0.0),
+                ("result_2_2", 0.247460985881),
             ],
         );
     }
@@ -944,26 +945,11 @@ mod dice {
         );
     }
 
-    /// The diamond network of the Dice paper, 100 steps. A step's
-    /// branches `s2` and `s3`, an exclusive set of two predicates, and the
-    /// value `result_2i` of the one, each of one rule and read once, are
-    /// inlined into the next state (src/ground/inline.rs).
+    /// The diamond network of the Dice paper, 100 steps, a loop over the
+    /// step index.
     #[test]
     fn diamond() {
-        check(
-            "../tests/dice/diamond.pl",
-            &[("result_199", 0.995012354812)],
-        );
-        let source = std::fs::read_to_string("tests/dice/diamond.pl").unwrap();
-        let ground = common::ground(&source, Rows::Classes, false);
-        let names: Vec<String> = ground.atoms.iter().map(|a| a.to_string()).collect();
-        assert!(
-            !names
-                .iter()
-                .any(|a| a.starts_with("s2_") || a.starts_with("s3_") || a == "result_198"),
-            "{names:?}"
-        );
-        assert!(names.iter().any(|a| a == "result_197"), "{names:?}");
+        check("../tests/dice/diamond.pl", &[("result_2", 0.995012354812)]);
     }
 
     /// The ladder network of the Dice paper, 100 steps.
@@ -972,8 +958,8 @@ mod dice {
         check(
             "../tests/dice/ladder.pl",
             &[
-                ("result_1_98", 0.475370841777),
-                ("result_2_98", 0.475370841777),
+                ("result_1_1", 0.475370841777),
+                ("result_2_1", 0.475370841777),
             ],
         );
     }

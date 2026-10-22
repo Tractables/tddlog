@@ -24,11 +24,15 @@
 //! candidates they tell apart. The search stops once its steps (clause
 //! literals written and the solver's propagation steps) pass
 //! [`STEPS_PER_LITERAL`] per body literal of the program, plus
-//! [`STEPS_FLOOR`], or once [`MAX_WORDS`] words are simulated and
-//! [`PATTERNS`] more counterexamples found: simulation then splits no more
-//! candidates, and the calls after would mostly tell apart what it could
-//! not (bb_weekend_w30: 7 762 calls, none proved, a second of the ground
-//! time). What it proved by then stands.
+//! [`STEPS_FLOOR`], or once [`PATTERNS`] counterexamples are found with no
+//! candidate proved among them: the calls after would mostly tell apart
+//! what simulation could not (bb_weekend_w30: 7 762 calls, none proved, a
+//! second of the ground time; Roulette's hmm at 900 steps, 461 calls and
+//! 4.7 M steps, none proved, against 64 calls). Where the calls still
+//! prove, the search goes on within its steps, the counterexamples no
+//! longer simulated once [`MAX_WORDS`] words are (dice_pmc1 written as
+//! recursion: 1 088 gates proved where the search stopped at 770, 3 256
+//! atoms left of 9 220). What it proved by then stands.
 //!
 //! The atoms of a cyclic component are inputs here, so gates proved equal
 //! are equal however those atoms come out, and the facts are free,
@@ -221,6 +225,8 @@ struct Sweep {
     pending: Vec<Vec<(usize, bool)>>,
     /// Steps left.
     budget: u64,
+    /// The candidates proved when the counterexamples pending began.
+    proved_before: u64,
     stats: SweepStats,
     /// The solver, over the clauses of the nodes encoded so far and what
     /// the calls proved; each node's positive literal there, [`NONE`]
@@ -242,6 +248,7 @@ impl Sweep {
             candidates: Vec::new(),
             pending: Vec::new(),
             budget: STEPS_FLOOR + STEPS_PER_LITERAL * literals,
+            proved_before: 0,
             stats: SweepStats::default(),
             solver: Solver::new(0),
             var: Vec::new(),
@@ -390,19 +397,24 @@ impl Sweep {
         Some(self.var[root] ^ (l & 1))
     }
 
-    /// Keeps a counterexample, and simulates the ones kept as a word of
-    /// their own once there are [`PATTERNS`] of them, which splits the
-    /// classes; stops the search where [`MAX_WORDS`] are simulated.
+    /// Keeps a counterexample, and once there are [`PATTERNS`] of them stops
+    /// the search where no candidate was proved since the last were, and
+    /// otherwise simulates them as a word of their own, which splits the
+    /// classes, or drops them where [`MAX_WORDS`] are simulated.
     fn counterexample(&mut self, g: &mut Graph, pattern: Vec<(usize, bool)>) {
         self.pending.push(pattern);
         if self.pending.len() < PATTERNS {
             return;
         }
-        if g.sim.len() >= MAX_WORDS {
+        let pending = std::mem::take(&mut self.pending);
+        let before = std::mem::replace(&mut self.proved_before, self.stats.proved);
+        if before == self.stats.proved {
             self.budget = 0;
             return;
         }
-        let pending = std::mem::take(&mut self.pending);
+        if g.sim.len() >= MAX_WORDS {
+            return;
+        }
         g.add_word(&pending);
         self.classes.clear();
         for &c in &self.candidates {
@@ -420,12 +432,14 @@ impl Sweep {
 /// A gate built as the node of an earlier gate is that gate's copy, its
 /// rules the same bodies over equal gates: structural hashing, so that a
 /// circuit's gate is compiled once and read by the readers of all its
-/// copies. Alea.jl's circuits repeat gates: of pi's 6 635 at 12 bits,
+/// copies. So is a gate built as the node of an input after a gate that
+/// was: the first gate stays, and the copies are merged into it. Alea.jl's circuits repeat gates: of pi's 6 635 at 12 bits,
 /// 4 941 are copies, and hold three quarters of the pairs a compile
 /// builds (a fourth of the work after the merge in `program`'s order).
 ///
-/// A gate alone in its predicate and in no exclusive set, as a circuit's
-/// gates are, may also be proved equal in function to an earlier such
+/// A gate alone in its predicate or of a recursive predicate, and in no
+/// exclusive set, as a circuit's gates and a loop's steps are, may also be
+/// proved equal in function to an earlier such
 /// gate or fact, or its complement, or a constant (the sweep); it is then
 /// merged into it, read through a negated literal where it is the
 /// complement, or keeps an empty body or none where it is a constant.
@@ -441,7 +455,11 @@ impl Sweep {
 /// atoms and the members of exclusive sets of several atoms: merged into
 /// a switch fact or another value, uwcse4's values and
 /// dice_digitRecognition's took the tables' structure apart (twice the
-/// work and more). The gates are simulated over the rules first
+/// work and more). It takes those of a recursive predicate, a chain's
+/// steps where a loop is written as recursion over a time index: one
+/// predicate holds a value at every step, as the unrolled loop's gates
+/// hold one each (dice_pmc1: 28 658 atoms to 11 272, a tenth of the
+/// compile work). The gates are simulated over the rules first
 /// ([`may_merge`]), and the graph is built only where a gate that may be
 /// merged away has a signature in common with another atom or a constant.
 /// Returns whether atoms were merged away; their rules are dropped and
@@ -477,7 +495,8 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
         return false;
     }
     // The atoms the sweep takes: alone in their predicates (a fact by its
-    // signature) and in no exclusive set of several atoms.
+    // signature) or of a recursive predicate, and in no exclusive set of
+    // several atoms.
     let swept: Vec<bool> = {
         let mut facts_of: FxHashMap<(&str, usize), usize> = FxHashMap::default();
         for (a, kind) in gp.kinds.iter().enumerate() {
@@ -485,12 +504,13 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
                 *facts_of.entry(gp.atoms[a].signature()).or_default() += 1;
             }
         }
+        let recursive = deps::recursive_predicates(gp);
         (0..n)
             .map(|a| {
                 !in_set[a]
                     && match structure.predicate_of[a] {
                         usize::MAX => facts_of.get(&gp.atoms[a].signature()) == Some(&1),
-                        p => structure.atoms_of[p] == 1,
+                        p => structure.atoms_of[p] == 1 || recursive[a],
                     }
             })
             .collect()
@@ -502,9 +522,15 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
         Sweep::new(&g, literals)
     });
     // Each atom's literal in the graph, built when first read; the atom
-    // literal each node stands for, its first gate's or input's.
+    // literal each node stands for, its first gate's or input's; and its
+    // first gate's, where that is not the first atom: a bit that a switch
+    // sets and every step after carries unchanged is that switch's literal,
+    // which the gates are not merged into, and each step's copy of the bit
+    // is merged into the first (dice_pmc2 written as recursion: 854 of its
+    // 915 gates left were such copies).
     let mut lit: Vec<Lit> = vec![NO; n];
     let mut owner: Vec<Option<GLit>> = vec![None];
+    let mut first_gate: Vec<Option<GLit>> = vec![None];
     // The literal each node is proved equal to, [`NO`] where none: a
     // later gate built as the node is merged as the gate the sweep merged,
     // where the sweep takes it.
@@ -542,6 +568,7 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
         }
         let mut l = g.and_all(&mut terms) ^ 1;
         owner.resize(g.fanins.len(), None);
+        first_gate.resize(g.fanins.len(), None);
         proved.resize(g.fanins.len(), NO);
         if proved[node(l)] != NO && swept[a as usize] {
             l = proved[node(l)] ^ (l & 1);
@@ -557,14 +584,16 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
             let structural = if node(l) == 0 {
                 (l == FALSE || swept[a as usize]).then_some(Err(l == TRUE))
             } else {
-                // A copy of an earlier gate is merged whatever it is;
-                // its complement, or an input, only where the sweep would
+                // A copy of an earlier gate is merged whatever it is,
+                // also where an input stands for the node; its
+                // complement, or an input, only where the sweep would
                 // merge them.
                 as_atom(l, &owner)
                     .filter(|o| {
                         (o.is_positive() && gate[o.atom() as usize])
                             || (swept[a as usize] && swept[o.atom() as usize])
                     })
+                    .or_else(|| as_atom(l, &first_gate).filter(|o| o.is_positive()))
                     .map(Ok)
             };
             let equal = structural.or_else(|| {
@@ -594,6 +623,9 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
             if let Some(sweep) = sweep.as_mut().filter(|_| swept[a as usize]) {
                 sweep.add(&g, node(l));
             }
+        }
+        if node(l) != 0 && first_gate[node(l)].is_none() {
+            first_gate[node(l)] = Some(GLit::new(a, l & 1 == 0));
         }
     }
     if let Some(sweep) = sweep {
@@ -714,4 +746,98 @@ fn rewrite(gp: &mut GroundProgram, into: &[GLit], fixed: &[Option<bool>]) {
         rules.insert((r.head, key))
     });
     propagate_certain(gp);
+}
+
+/// The constants of the gates of a recursive stratum's atoms, built and
+/// swept as the grounder completes them level by level
+/// ([`super::engine`]'s `evaluate_by_levels`): the sweep proves a gate
+/// constant over the complete atoms before it, which its readers then
+/// need not be grounded on. One graph and one sweep serve the grounding,
+/// its budget growing with the literals of the gates built.
+pub(super) struct Pruner {
+    g: Graph,
+    sweep: Sweep,
+    /// Each atom's literal in the graph, [`NO`] where it has none yet.
+    lit: Vec<Lit>,
+    /// The nodes the sweep has as candidates.
+    added: FxHashSet<usize>,
+}
+
+impl Pruner {
+    pub(super) fn new() -> Self {
+        let g = Graph::new(WORDS);
+        let sweep = Sweep::new(&g, 0);
+        Pruner {
+            g,
+            sweep,
+            lit: Vec::new(),
+            added: FxHashSet::default(),
+        }
+    }
+
+    fn slot(&mut self, a: AtomId) -> &mut Lit {
+        let a = a as usize;
+        if a >= self.lit.len() {
+            self.lit.resize(a + 1, NO);
+        }
+        &mut self.lit[a]
+    }
+
+    /// Atom `a` an input of its own.
+    pub(super) fn input(&mut self, a: AtomId) {
+        let i = self.g.input();
+        self.sweep.add(&self.g, node(i));
+        *self.slot(a) = i;
+    }
+
+    /// The literal of atom `x` read in a body: its own, false where
+    /// `absent` says it can have none (a complete atom never derived), a
+    /// new input otherwise.
+    fn read(&mut self, x: AtomId, absent: &impl Fn(AtomId) -> bool) -> Lit {
+        let l = *self.slot(x);
+        if l != NO {
+            return l;
+        }
+        let l = if absent(x) {
+            FALSE
+        } else {
+            let i = self.g.input();
+            self.sweep.add(&self.g, node(i));
+            i
+        };
+        *self.slot(x) = l;
+        l
+    }
+
+    /// The gate of atom `a`, whose rules are `bodies`, all complete; its
+    /// value where it is proved constant.
+    pub(super) fn gate(
+        &mut self,
+        a: AtomId,
+        bodies: &[&[GLit]],
+        absent: &impl Fn(AtomId) -> bool,
+    ) -> Option<bool> {
+        let mut terms = Vec::with_capacity(bodies.len());
+        let mut literals = 0u64;
+        for body in bodies {
+            let mut lits: Vec<Lit> = Vec::with_capacity(body.len());
+            for l in body.iter() {
+                let x = self.read(l.atom(), absent);
+                lits.push(x ^ Lit::from(!l.is_positive()));
+            }
+            literals += body.len() as u64;
+            terms.push(self.g.and_all(&mut lits) ^ 1);
+        }
+        self.sweep.budget += STEPS_PER_LITERAL * literals;
+        let mut l = self.g.and_all(&mut terms) ^ 1;
+        if node(l) != 0 {
+            if let Some(t) = self.sweep.find(&mut self.g, l) {
+                l = t;
+            } else if self.added.insert(node(l)) {
+                self.sweep.add(&self.g, node(l));
+            }
+        }
+        *self.slot(a) = l;
+        (node(l) == 0).then_some(l == TRUE)
+    }
 }

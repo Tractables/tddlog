@@ -22,8 +22,14 @@ only the values the guard allows (under a disjunction, the values either
 side allows): a constant where it allows one, and the bits on which the
 values agree are constants, so a loop over a guarded-command step
 (pmc1.dice) carries the values its state reaches rather than every value
-of its type. Operations on the same operands are made once. Functions are inlined at each call; `iterate(f, init, k)`
-applies f k times by inlining, as Dice does. A function that calls itself is inlined up to the
+of its type. Operations on the same operands are made once. Functions are inlined at each call. A loop
+`iterate(f, init, k)` is written as a ProbLog user writes one, recursion
+over a step index that the grounder unrolls: f's body once, its atoms
+indexed by the step T (`step(T)`, 0 to k - 1), each flip a probabilistic
+fact of its step, and the state before step T the atoms s(T) of the
+state's Booleans and bits, s(0) the initial state's and s(T + 1) the
+body's at step T; the body's observations hold at every step, `failed`
+where one does not and the evidence that it is false (see `iterate`). A function that calls itself is inlined up to the
 recursion limit (Dice's default, 10): a call past it is unreachable, an
 observation of false on its path, and returns its declared type's default.
 The program's return value is queried: every value of an integer (the
@@ -279,8 +285,15 @@ class Parser:
 
 
 # Values: ('b', literal) with literal 'atom', '\\+atom', 'true' or 'false';
-# an Int; ('t', left, right) a tuple.
+# an Int; ('t', left, right) a tuple. In a loop's body an atom of the step
+# is `name(T)` (STEP), and the state after step k `name(k)`.
 TRUE, FALSE = ('b', 'true'), ('b', 'false')
+STEP = '(T)'
+
+
+def at_step(lit):
+    """Whether a literal is of the step of a loop's body."""
+    return lit.endswith(STEP)
 
 
 class Int:
@@ -319,6 +332,31 @@ SUPPORT_PAIRS = 1 << 16
 def shape(value):
     """'b', 'i' or 't'."""
     return 'i' if isinstance(value, Int) else value[0]
+
+
+def flat(value):
+    """A value's Booleans and integers, depth first."""
+    return flat(value[1]) + flat(value[2]) if shape(value) == 't' else [value]
+
+
+def flat_names(value, base):
+    """A name for each of flat(value): base, and base_1 and base_2 for a
+    tuple's components."""
+    return flat_names(value[1], base + '_1') + flat_names(value[2], base + '_2') if shape(value) == 't' else [base]
+
+
+def rebuild(value, parts):
+    """A value of value's shape from the list flat(value) would give."""
+    parts = iter(parts)
+
+    def build(v):
+        return ('t', build(v[1]), build(v[2])) if shape(v) == 't' else next(parts)
+    return build(value)
+
+
+def bits_of(part):
+    """The literals of a Boolean or an integer."""
+    return part.bits if isinstance(part, Int) else [part[1]]
 
 
 COMPARE = {'==': lambda a, b: a == b, '!=': lambda a, b: a != b, '<': lambda a, b: a < b,
@@ -377,6 +415,12 @@ class Translator:
         self.active = {}
         self.memos = {}
         self.taken = set()
+        # In a loop's body: the step predicate, the body's observations and
+        # its flips; the loops' step literals.
+        self.loop = None
+        self.observed = []
+        self.flips = set()
+        self.steps = set()
 
     def fresh(self, base):
         """A new atom name from `base`: base, base_1, base_2, ..., the first
@@ -395,6 +439,18 @@ class Translator:
         body = [b for b in body if b != 'true']
         if 'false' in body:
             return
+        # A loop's rule reads the step's atoms first and their negations
+        # after them, as a ProbLog programmer writes it: the grounder then
+        # binds the step from the atoms the round before added. A rule to
+        # the next step (its head at T1) reads `step(T), T1 is T + 1` first,
+        # so that a top-down grounder (ProbLog's) calls the step's atoms
+        # with T bound; an atom called at an unbound step can reach its own
+        # negation, which ProbLog stops at as a negative cycle.
+        if not head.endswith('(T1)'):
+            first = [b for b in body if at_step(b) and not b.startswith('\\+') and b not in self.steps]
+            body = first + [b for b in body if b not in first]
+        if at_step(head) and not any(at_step(b) and not b.startswith('\\+') for b in body):
+            body = [self.loop + STEP] + body      # the step binds T
         self.lines.append(f'{head} :- {", ".join(body)}.' if body else f'{head}.')
 
     def live(self, bodies):
@@ -422,6 +478,8 @@ class Translator:
         live = self.live(bodies)
         if isinstance(live, str):
             return live
+        if self.loop and any(at_step(b) for body in live for b in body):
+            head += STEP
         for body in live:
             self.rule(head, body)
         return head
@@ -440,6 +498,10 @@ class Translator:
 
     def flip(self, p, name):
         a = self.fresh(name)
+        if self.loop:
+            self.lines.append(f'{p!r}::{a}{STEP} :- {self.loop}{STEP}.')
+            self.flips.add(a + STEP)
+            return a + STEP
         self.lines.append(f'{p!r}::{a}.')
         return a
 
@@ -646,8 +708,9 @@ class Translator:
             return self.binary(e[1], self.eval(e[2], env, path, name), self.eval(e[3], env, path, name), name)
         if kind == 'observe':
             c = self.literal(self.eval(e[1], env, path, name), name)
-            a = self.fresh('obs')
-            # Holds when the branch is not taken or the condition is true.
+            # Holds when the branch is not taken or the condition is true;
+            # in a loop's body, at each step.
+            a = self.fresh('obs') + (STEP if self.loop else '')
             self.rule(a, path + [c])
             for i, p in enumerate(path):
                 self.rule(a, path[:i] + [self.neg(p)])
@@ -655,7 +718,7 @@ class Translator:
                 if c == 'false':
                     self.lines.append('evidence(false_observation, true).')
                 return TRUE
-            self.evidence.append(a)
+            (self.observed if self.loop else self.evidence).append(a)
             return TRUE
         if kind == 'if':
             # A chain `if c0 then e0 else if c1 then e1 ... else en` is taken
@@ -689,11 +752,112 @@ class Translator:
             args = [self.eval(x, env, path, f'{e[1]}_{p}') for p, x in zip(params, e[2])]
             return self.call(e[1], args, path, name)
         if kind == 'iterate':
-            v = self.eval(e[2], env, path, name)
-            for _ in range(e[3]):
-                v = self.call(e[1], [v], path, name)
-            return v
+            return self.iterate(e[1], self.eval(e[2], env, path, name), e[3], path, name)
         raise ValueError(f'unknown expression {kind}')
+
+    def iterate(self, fname, init, k, path, name):
+        """`iterate(fname, init, k)` as recursion over a step index, which
+        the grounder unrolls: fname's body once, under `step(T)` for T from
+        0 to k - 1, its flips probabilistic facts of the step and its atoms
+        of the step where they read one (`name(T)`). Each literal of the
+        state (a Boolean, a bit of an integer) is an atom s of its own,
+        s(0) the initial state's literal and s(T1), T1 = T + 1, the body's
+        at step T, and the value is the state at k; a literal the step
+        keeps (the body returns the initial state's literal where the
+        state holds it, as the key of caesar-iter) is no atom but itself.
+        Which literals are kept, and the values the state's integers take
+        (for the comparisons and the conditions that they decide), are a
+        fixpoint over the step: the initial state's, and what the body
+        makes of them, until no evaluation of the body adds to them (the
+        evaluations before the last are undone). The step's observations
+        hold at every step: `failed` holds where one does not at some
+        step, and the evidence is that it is false."""
+        if k == 0:
+            return init
+        if self.loop:
+            raise NotImplementedError('iterate inside a loop')
+        start = flat(init)
+        kept = [[True] * len(bits_of(p)) for p in start]
+        values = [p.support if isinstance(p, Int) else None for p in start]
+        state = [[None] * len(bits_of(p)) for p in start]
+        bases = flat_names(init, fname)
+        hints = list(bases)
+        loop = None
+
+        def at(i, index):
+            """Part i of the state at `index` (STEP, or the last step)."""
+            p = start[i]
+            if all(kept[i]):
+                return p
+            ls = [lit if kept[i][j] else f'{state[i][j]}{index}' for j, lit in enumerate(bits_of(p))]
+            return Int(p.width, ls, values[i], hint=hints[i]) if isinstance(p, Int) else ('b', ls[0])
+
+        while True:
+            for i, p in enumerate(start):
+                for j in range(len(state[i])):
+                    if not kept[i][j] and state[i][j] is None:
+                        state[i][j] = self.fresh(bases[i] if shape(p) == 'b' else f'{bases[i]}_b{j}')
+            loop = loop or self.fresh('step')
+            self.steps.add(loop + STEP)
+            mark = self.mark()
+            ends = self.body(fname, rebuild(init, [at(i, STEP) for i in range(len(start))]), path, name, loop)
+            self.undo(mark)
+            grew = False
+            for i, (p, q) in enumerate(zip(start, ends)):
+                for j, (a, b) in enumerate(zip(bits_of(p), bits_of(q))):
+                    if kept[i][j] and a != b:
+                        kept[i][j], grew = False, True
+                if isinstance(p, Int) and values[i] is not None:
+                    more = None if q.support is None else sorted(set(values[i]) | set(q.support))
+                    if more != values[i]:
+                        values[i], grew = more, True
+            if not grew:
+                break
+        for i, p in enumerate(start):
+            for j, lit in enumerate(bits_of(p)):
+                if not kept[i][j]:
+                    self.rule(f'{state[i][j]}(0)', [lit])
+        self.lines.append(f'{loop}(0).')
+        if k > 1:
+            self.lines.append(f'{loop}(T1) :- {loop}(T), T < {k - 1}, T1 is T + 1.')
+        ends = self.body(fname, rebuild(init, [at(i, STEP) for i in range(len(start))]), path, name, loop)
+        after = [f'{loop}(T)', 'T1 is T + 1']
+        for i, q in enumerate(ends):
+            if isinstance(q, Int):
+                hints[i] = q.name or q.hint or hints[i]
+            for j, lit in enumerate(bits_of(q)):
+                if not kept[i][j]:
+                    self.rule(f'{state[i][j]}(T1)', after + [lit])
+        if self.observed:
+            failed = self.fresh('failed')
+            for o in self.observed:
+                self.rule(failed, [f'{loop}(T)', self.neg(o)])
+            self.evidence.append(self.neg(failed))
+        return rebuild(init, [at(i, f'({k})') for i in range(len(start))])
+
+    def body(self, fname, state, path, name, loop):
+        """The parts of fname(state) as a loop's step: its atoms of the
+        step, its observations in `observed`."""
+        self.loop, self.observed = loop, []
+        try:
+            out = self.call(fname, [state], path, name)
+        finally:
+            self.loop = None
+        ends = flat(out)
+        if len(ends) != len(flat(state)) or any(shape(p) != shape(q) or (isinstance(p, Int) and p.mod != q.mod)
+                                                for p, q in zip(flat(state), ends)):
+            raise TypeError(f'{fname}: the loop step returns a value of another type than its state')
+        return ends
+
+    def mark(self):
+        return (len(self.lines), len(self.evidence), dict(self.counter), set(self.taken), dict(self.memos),
+                set(self.flips))
+
+    def undo(self, mark):
+        """Back to what the translation was at `mark`."""
+        lines, evidence, self.counter, self.taken, self.memos, self.flips = mark
+        del self.lines[lines:]
+        del self.evidence[evidence:]
 
     def binary(self, op, l, r, name):
         if op in ('/', '%', '::'):
@@ -879,9 +1043,11 @@ class Translator:
                     self.rule(atom, [b if k >> i & 1 else self.neg(b) for i, b in enumerate(v.bits)])
                 self.lines.append(f'query({atom}).')
         elif v[0] == 'b':
-            if v[1] in ('true', 'false'):
+            if v[1] in ('true', 'false') or v[1].endswith(')'):
+                # A constant, or an atom of a loop's last step: an atom of
+                # its own, as a Boolean's query has no argument.
                 name = self.fresh(name)
-                self.lines.append(f'{name} :- {v[1]}.' if v[1] == 'true' else f'{name} :- fail.')
+                self.lines.append(f'{name} :- {"fail" if v[1] == "false" else v[1]}.')
                 self.lines.append(f'query({name}).')
             else:
                 self.lines.append(f'query({v[1]}).')
@@ -895,7 +1061,7 @@ class Translator:
             self.funs[name] = (params, ret, fbody, calls(fbody, name))
         result = self.eval(body, {}, [], 'result')
         for a in self.evidence:
-            self.lines.append(f'evidence({a}, true).')
+            self.lines.append(f'evidence({self.neg(a)}, false).' if a.startswith('\\+') else f'evidence({a}, true).')
         self.queries(result, 'result')
         return '\n'.join(self.lines) + '\n'
 
@@ -936,9 +1102,9 @@ def deep(fn, *args):
 
 
 def translate(text):
-    """The translation of a Dice program. Loops unroll and the families'
-    atoms are made on first read, which recurses as deep as the loop is
-    long: it runs on a thread with a large stack."""
+    """The translation of a Dice program. Its evaluation recurses as deep
+    as its chains of lets and ifs: it runs on a thread with a large
+    stack."""
     return deep(lambda: Translator().translate(text))
 
 

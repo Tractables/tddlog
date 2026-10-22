@@ -706,7 +706,9 @@ Its grammar reads a probability as `1`, `1.0...` or `0.` and digits, not
 in exponent notation, in which the network programs write a small one
 (`1e-05`): on the UAI MAR set the parser refused 95 of the 120 networks'
 programs, nearly all for it. bench.py writes such a probability out in positional
-notation, the same double (`aspmc_numbers`). It still rejects some
+notation, the same double (`aspmc_numbers`). The grammar has no `is`
+either, which the Dice loops' step rules use (`T1 is T + 1`): bench.py
+writes it as clingo's `=` (`aspmc_is`). It still rejects some
 programs with a parser error (bn_insurance); check the coverage on the
 installation a run uses.
 
@@ -1905,8 +1907,9 @@ bit-blasting, no blow-up); a system's own instances are natural to it.
 An instance the system is given otherwise is **attempted** only.
 tddlog's input is classified the same way: it only attempts the
 bit-blasted and integer programs (`bb_`, `arith_`, `pluck_`), where it
-reads the circuit Alea.jl builds, and the Dice programs with loops,
-which `dice2problog.py` unrolls.
+reads the circuit Alea.jl builds. The Dice programs with loops are
+natural to it: `dice2problog.py` writes a loop as recursion over a step
+index, as a ProbLog user writes one, and tddlog's grounder unrolls it.
 
 The first row that matches an instance's system, suite and name (a
 regular expression the name starts with) classifies it; a system's
@@ -1947,7 +1950,7 @@ which are Dice.jl programs ported to Alea.jl.
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | attempted | Dice programs of the ground program (ground2net.py) |
 | alea | ppl | `pluck_` | natural | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
 | tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | attempted | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
-| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | attempted | dice2problog.py unrolls the program's loops and bit-blasts its integers |
+| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | natural | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
 | tddlog, problog, pita, aspmc | roulette | all | natural | the paper's model written as a ProbLog program (gen_roulette.py) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | natural | a loop-free Dice program translated line for line by dice2problog.py |
 | storm, prism | geni | `geni_weather_` | natural | Rubicon's PRISM model of the weather factory (CAV 2021) |

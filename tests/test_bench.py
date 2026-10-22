@@ -744,6 +744,13 @@ class AspmcTests(unittest.TestCase):
                 self.assertEqual(f.read(), written)
             self.assertEqual(result['answers'], {'c': 5.25e-12})
 
+    def test_is_is_written_as_clingos_equality(self):
+        program = ('step(0).\nstep(T1) :- step(T), T < 9, T1 is T + 1.\n'
+                   'd(T1) :- step(T), T1 is T+1, r(T).\nquery(this(is)).\n')
+        written = ('step(0).\nstep(T1) :- step(T), T < 9, T1 = T + 1.\n'
+                   'd(T1) :- step(T), T1 = T+1, r(T).\nquery(this(is)).\n')
+        self.assertEqual(bench.aspmc_is(program), written)
+
     def test_a_ground_query_aspmc_leaves_out_answers_0(self):
         program = '0.5::a.\nb :- a, c.\nquery(a).\nquery(b).\nquery(r(X)).\nquery(p(X)) :- a.\n'
         with tempfile.TemporaryDirectory() as d:

@@ -3,10 +3,12 @@
 //! its own atoms, the merged components ([`components`]) that the
 //! component order of `closed`, the exclusive sets and `auto` read, and the
 //! depth-first fan-in walk ([`fan_in`]) that orders `program:fanin`'s
-//! facts and `decision`'s spines. Every strongly connected component the
-//! grounder finds, of predicates (`engine`'s strata), atoms or literals
-//! (`inline`, the conditioning's equal facts), comes from one walk
-//! ([`tarjan`]).
+//! facts and `decision`'s spines, and the predicates that depend on
+//! themselves ([`recursive_predicates`]), which the inlining and the sweep
+//! read. Every strongly connected component the grounder finds, of
+//! predicates (`engine`'s strata, the recursive predicates), atoms or
+//! literals (`inline`, the conditioning's equal facts), comes from one
+//! walk ([`tarjan`]).
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -169,6 +171,47 @@ pub(crate) fn strongly_connected(n: usize, edges: &[(usize, usize)]) -> Vec<usiz
         },
     );
     component
+}
+
+/// For each atom, whether its predicate (name and arity) depends on itself
+/// through the rules of `gp`, directly or through other predicates.
+pub(crate) fn recursive_predicates(gp: &GroundProgram) -> Vec<bool> {
+    let mut index: FxHashMap<(&str, usize), usize> = FxHashMap::default();
+    let predicate: Vec<usize> = gp
+        .atoms
+        .iter()
+        .map(|atom| {
+            let next = index.len();
+            *index.entry(atom.signature()).or_insert(next)
+        })
+        .collect();
+    let mut edges: Vec<(usize, usize)> = Vec::new();
+    for r in &gp.rules {
+        for l in &r.body {
+            if matches!(gp.kinds[l.atom() as usize], AtomKind::Derived) {
+                edges.push((predicate[r.head as usize], predicate[l.atom() as usize]));
+            }
+        }
+    }
+    edges.sort_unstable();
+    edges.dedup();
+    let component = strongly_connected(index.len(), &edges);
+    let mut size = vec![0usize; index.len()];
+    for &c in &component {
+        if c != usize::MAX {
+            size[c] += 1;
+        }
+    }
+    let mut recursive: Vec<bool> = component
+        .iter()
+        .map(|&c| c != usize::MAX && size[c] > 1)
+        .collect();
+    for &(u, v) in &edges {
+        if u == v {
+            recursive[u] = true;
+        }
+    }
+    predicate.iter().map(|&p| recursive[p]).collect()
 }
 
 /// A component is cyclic if it has more than one atom or a self-loop.

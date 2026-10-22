@@ -66,6 +66,26 @@ use td::{TdFold, metered, min_fill_forest, td_forest};
 /// same vtree.
 const TD_SEED: u64 = 0;
 
+/// A small deterministic generator (xorshift64*), for the searches over
+/// orders (`order`'s and `graph::annealed`), seeded so that a layout is the
+/// same from run to run.
+struct Rng(u64);
+
+impl Rng {
+    fn next(&mut self) -> u64 {
+        self.0 ^= self.0 >> 12;
+        self.0 ^= self.0 << 25;
+        self.0 ^= self.0 >> 27;
+        self.0.wrapping_mul(0x2545_F491_4F6C_DD1D)
+    }
+    fn below(&mut self, n: usize) -> usize {
+        (self.next() % n as u64) as usize
+    }
+    fn unit(&mut self) -> f64 {
+        (self.next() >> 11) as f64 / (1u64 << 53) as f64
+    }
+}
+
 /// A layout: how to build the vtree. Each is a trial `auto` runs
 /// ([`crate::Strategy`]), under the name its `Display` prints.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

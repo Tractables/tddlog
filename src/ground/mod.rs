@@ -260,14 +260,25 @@ fn ground_norm(
     // below is what the magic rewrite would give it: the rewrite would only
     // add the demand rules and a guard to every rule for the grounder to
     // evaluate. On bn_munin that was about three times the rules.
-    let magic = !magic::is_ground(norm);
-    let gp = match if magic { magic::rewrite(norm) } else { None } {
-        Some(magic) => match engine::ground_normalized(&magic, bound) {
-            Ok(gp) => gp,
-            Err(GroundError::OverBound) => return Err(GroundError::OverBound),
-            Err(_) => engine::ground_normalized(norm, bound)?,
-        },
-        None => engine::ground_normalized(norm, bound)?,
+    // A program whose recursive strata all have rising levels, a loop over
+    // a time index, is grounded level by level and not rewritten: its
+    // demand runs down the levels (`T0 is T - 1`) and makes a chain one
+    // stratum without them ([`engine::ground_by_levels`]). Where that
+    // grounding fails (past the bound, or a rule that only the demand
+    // makes safe), the rewrite is tried.
+    let gp = if magic::is_ground(norm) {
+        engine::ground_normalized(norm, bound)?
+    } else if let Some(gp) = engine::ground_by_levels(norm, bound).ok().flatten() {
+        gp
+    } else {
+        match magic::rewrite(norm) {
+            Some(magic) => match engine::ground_normalized(&magic, bound) {
+                Ok(gp) => gp,
+                Err(GroundError::OverBound) => return Err(GroundError::OverBound),
+                Err(_) => engine::ground_normalized(norm, bound)?,
+            },
+            None => engine::ground_normalized(norm, bound)?,
+        }
     };
     let size = gp.size();
     let (gp, kept) = finish_keeping(gp, opts, keep);
@@ -403,9 +414,7 @@ fn conditioned_on_structure(
     inline: bool,
 ) -> (Conditioned, Count) {
     if inline {
-        let inlined = inline::views(gp, &structure);
-        if inlined > 0 {
-            gp.stats.inlined += inlined;
+        if inline::views(gp, &structure) > 0 {
             structure = Structure::of(gp);
         }
         // Not on a program conditioned on its guards (`guarded`): the
@@ -572,5 +581,21 @@ mod tests {
             let (_, none) = ground_keeping(&program, &first, usize::MAX).expect("grounds");
             assert!(none.is_none());
         }
+    }
+
+    /// A loop over a time index written as recursion is grounded level by
+    /// level, which proves atoms constant as their levels complete
+    /// (tests/regress/levels.pl, against ProbLog); a recursion with no
+    /// rising level is not.
+    #[test]
+    fn a_rising_level_is_grounded_level_by_level() {
+        let opts = GroundOptions::default();
+        let source = include_str!("../../tests/regress/levels.pl");
+        let program = crate::syntax::parse_program(source).expect("parses");
+        let gp = ground(&program, &opts).expect("grounds");
+        assert!(gp.stats.levels > 0 && gp.stats.constants > 0);
+        let source = include_str!("../../examples/linear_path.pl");
+        let program = crate::syntax::parse_program(source).expect("parses");
+        assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
     }
 }

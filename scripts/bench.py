@@ -2133,15 +2133,25 @@ def aspmc_numbers(text):
     return ASPMC_EXPONENT.sub(lambda m: format(decimal.Decimal(m.group(1)), 'f'), text)
 
 
+# aspmc's grammar has no `is`: its grounder, clingo, binds a variable to an
+# integer expression with `=` (the Dice loops' step rules, `T1 is T + 1`).
+ASPMC_IS = re.compile(r'(?<![\w])([A-Z_]\w*)\s+is\s+')
+
+
+def aspmc_is(text):
+    """The ProbLog program `text` with each `V is E` written `V = E`."""
+    return ASPMC_IS.sub(r'\1 = ', text)
+
+
 def run_aspmc(args, name, path):
     """aspmc on the ProbLog program, with its evidence asked as queries
-    (`aspmc_conditioned`) where it has any and its probabilities in the
-    notation it reads (`aspmc_numbers`). It writes `out.cnf` and the
-    decomposer's scratch into the working directory, so each instance gets
-    one of its own. A ground query it does not print, an atom its grounder
-    removed, answers 1 where the program states it as a fact (`bench_pe :-
-    true.`, P(e) where nothing is observed) and 0 otherwise, as no rule
-    derives it."""
+    (`aspmc_conditioned`) where it has any, and its probabilities and `is`
+    in the notation it reads (`aspmc_numbers`, `aspmc_is`). It writes
+    `out.cnf` and the decomposer's scratch into the working directory, so
+    each instance gets one of its own. A ground query it does not print, an
+    atom its grounder removed, answers 1 where the program states it as a
+    fact (`bench_pe :- true.`, P(e) where nothing is observed) and 0
+    otherwise, as no rule derives it."""
     from lpad2problog import split_clauses, strip_comments
     d = os.path.join(args.dir, 'aspmc-' + name)
     os.makedirs(d, exist_ok=True)
@@ -2156,7 +2166,7 @@ def run_aspmc(args, name, path):
         conditioned = aspmc_conditioned(text)
     except ValueError as e:
         return {'status': 'error', 'seconds': 0.0, 'error': str(e)}
-    program = aspmc_numbers(text if conditioned is None else conditioned)
+    program = aspmc_is(aspmc_numbers(text if conditioned is None else conditioned))
     if program != text:
         path = os.path.join(d, name + '.pl')
         with open(path, 'w') as f:

@@ -105,12 +105,19 @@ fn common(adjacent: &[FxHashSet<u32>], a: u32, b: u32) -> impl Iterator<Item = u
     small.iter().copied().filter(move |w| large.contains(w))
 }
 
-/// The graph a min-fill elimination runs on: the neighbours of each vertex
-/// and how many edges join two of them, the triangles through it, so that
-/// a vertex's fill, the pairs of its neighbours not yet adjacent, is read
-/// off its degree and that count rather than recounted.
+/// The graph a min-fill elimination runs on, its vertices weighted: the
+/// neighbours of each vertex, the weight of the pairs of them and that of
+/// the edges joining two of them, the triangles through it, so that a
+/// vertex's fill, the weight of the pairs of its neighbours not yet
+/// adjacent, is read off the two rather than recounted. A pair's or an
+/// edge's weight is the product of its ends'; at weight one each, the
+/// pairs are the degree's and the triangles are counted.
 struct FillGraph {
     adjacent: Vec<FxHashSet<u32>>,
+    weight: Vec<u64>,
+    /// The weight of each vertex's neighbours, and of the pairs of them.
+    around: Vec<u64>,
+    pairs: Vec<u64>,
     triangles: Vec<u64>,
     /// The elimination at which a vertex was last touched, so that it is
     /// reported once.
@@ -122,9 +129,12 @@ struct FillGraph {
 }
 
 impl FillGraph {
-    /// The graph, with its triangles counted, or `None` where counting them
-    /// takes more than `max_work` units.
-    fn new(num_vertices: usize, edges: &[(u32, u32)], max_work: u64) -> Option<Self> {
+    /// The graph whose vertex `v` weighs `weight[v]`, with its triangles
+    /// counted, or `None` where counting them takes more than `max_work`
+    /// units. The weights are summed and multiplied exactly: those of a
+    /// vertex's neighbours must sum to less than 2^32.
+    fn new(edges: &[(u32, u32)], weight: &[u64], max_work: u64) -> Option<Self> {
+        let num_vertices = weight.len();
         let mut adjacent: Vec<FxHashSet<u32>> = vec![FxHashSet::default(); num_vertices];
         for &(u, v) in edges {
             if u != v && adjacent[u as usize].insert(v) {
@@ -132,8 +142,21 @@ impl FillGraph {
             }
         }
         let work = 2 * edges.len() as u64;
+        let (around, pairs) = adjacent
+            .iter()
+            .map(|set| {
+                let (sum, squares) = set.iter().fold((0u64, 0u64), |(s, q), &u| {
+                    let w = weight[u as usize];
+                    (s + w, q + w * w)
+                });
+                (sum, (sum * sum - squares) / 2)
+            })
+            .unzip();
         let mut graph = FillGraph {
             adjacent,
+            weight: weight.to_vec(),
+            around,
+            pairs,
             triangles: vec![0; num_vertices],
             touched_at: vec![u32::MAX; num_vertices],
             eliminations: 0,
@@ -148,9 +171,11 @@ impl FillGraph {
                         graph.adjacent[w as usize].len(),
                     );
                     graph.work += a.min(b) as u64;
-                    let common = common(&graph.adjacent, u, w).count() as u64;
-                    graph.triangles[u as usize] += common;
-                    graph.triangles[w as usize] += common;
+                    let common: u64 = common(&graph.adjacent, u, w)
+                        .map(|c| graph.weight[c as usize])
+                        .sum();
+                    graph.triangles[u as usize] += graph.weight[w as usize] * common;
+                    graph.triangles[w as usize] += graph.weight[u as usize] * common;
                 }
             }
             if graph.work > max_work {
@@ -166,10 +191,9 @@ impl FillGraph {
     /// The vertex's score: its fill, its degree and its number, the least
     /// going first.
     fn score(&self, v: u32) -> (u64, u32, u32) {
-        let degree = self.adjacent[v as usize].len() as u64;
         (
-            degree * degree.saturating_sub(1) / 2 - self.triangles[v as usize],
-            degree as u32,
+            self.pairs[v as usize] - self.triangles[v as usize],
+            self.adjacent[v as usize].len() as u32,
             v,
         )
     }
@@ -180,8 +204,8 @@ impl FillGraph {
     /// neighbours, whose degree and triangles change, and the common
     /// neighbours of the two ends of a fill edge, whose triangles do. No
     /// other vertex's neighbours or the edges among them change. The pairs
-    /// of neighbours are searched for the missing edges only until `fill`
-    /// of them are found, and not at all where `v` is simplicial.
+    /// of neighbours are searched for the missing edges only until edges
+    /// of weight `fill` are found, and not at all where `v` is simplicial.
     ///
     /// False, with the graph left part way, where the work done reaches
     /// more than `max_work` units before `v` is gone.
@@ -211,7 +235,8 @@ impl FillGraph {
                 if self.adjacent[a as usize].contains(&b) {
                     continue;
                 }
-                missing -= 1;
+                let (wa, wb) = (self.weight[a as usize], self.weight[b as usize]);
+                missing -= wa * wb;
                 let (da, db) = (
                     self.adjacent[a as usize].len(),
                     self.adjacent[b as usize].len(),
@@ -221,26 +246,34 @@ impl FillGraph {
                 // through it, which goes with it below.
                 let mut closed = 0u64;
                 for w in common(&self.adjacent, a, b) {
-                    closed += 1;
-                    self.triangles[w as usize] += 1;
+                    closed += self.weight[w as usize];
+                    self.triangles[w as usize] += wa * wb;
                     if w != v && self.touched_at[w as usize] != self.eliminations {
                         self.touched_at[w as usize] = self.eliminations;
                         touched.push(w);
                     }
                 }
-                self.triangles[a as usize] += closed;
-                self.triangles[b as usize] += closed;
+                self.triangles[a as usize] += wb * closed;
+                self.triangles[b as usize] += wa * closed;
+                self.pairs[a as usize] += wb * self.around[a as usize];
+                self.pairs[b as usize] += wa * self.around[b as usize];
+                self.around[a as usize] += wb;
+                self.around[b as usize] += wa;
                 self.adjacent[a as usize].insert(b);
                 self.adjacent[b as usize].insert(a);
             }
         }
-        // With the neighbourhood a clique, each neighbour loses `v` and the
-        // triangles through `v` and each of the others.
-        let others = neighbours.len().saturating_sub(1) as u64;
+        // With the neighbourhood a clique, each neighbour loses `v`, the
+        // pairs of `v` and each of its other neighbours, and the triangles
+        // through `v` and each of the other neighbours of `v`.
+        let wv = self.weight[v as usize];
+        let around_v = self.around[v as usize];
         self.work += neighbours.len() as u64;
         for &a in neighbours.iter() {
             self.adjacent[a as usize].remove(&v);
-            self.triangles[a as usize] -= others;
+            self.around[a as usize] -= wv;
+            self.pairs[a as usize] -= wv * self.around[a as usize];
+            self.triangles[a as usize] -= wv * (around_v - self.weight[a as usize]);
             if self.touched_at[a as usize] != self.eliminations {
                 self.touched_at[a as usize] = self.eliminations;
                 touched.push(a);
@@ -350,11 +383,7 @@ pub(super) fn min_fill_elimination(
 /// compiling the program costs that tells programs whose widths differ
 /// by a few vertices apart. Zero for a program without atoms.
 pub(crate) fn min_fill_weight(gp: &GroundProgram) -> f64 {
-    let elimination = min_fill_cliques(gp.num_atoms(), &interaction_edges(gp));
-    elimination
-        .clique_sizes()
-        .fold(f64::NEG_INFINITY, |w, k| log2_add(w, k as f64))
-        .max(0.0)
+    min_fill_cliques(gp.num_atoms(), &interaction_edges(gp)).states(&vec![1.0; gp.num_atoms()])
 }
 
 /// log2(2^a + 2^b), exact where either is far below the other.
@@ -406,14 +435,29 @@ pub(super) struct Elimination {
 }
 
 impl Elimination {
-    /// The size of each vertex's clique when it goes, the vertex included,
-    /// in the order.
-    fn clique_sizes(&self) -> impl Iterator<Item = usize> + '_ {
+    /// log2 of the states of the elimination's cliques summed, a clique's
+    /// the product of its vertices' and vertex `v` taking `2^bits[v]`:
+    /// the entries variable elimination over the graph's variables would
+    /// build in tables. The vertices the elimination left are one clique
+    /// with each of those after it, in the order. At least 0, and 0 for a
+    /// graph without vertices.
+    pub(super) fn states(&self, bits: &[f64]) -> f64 {
         let n = self.order.len();
-        self.at_elimination
+        let exact = self.at_elimination.len();
+        let mut rest = vec![0.0; n - exact];
+        for i in (exact..n).rev() {
+            rest[i - exact] =
+                bits[self.order[i] as usize] + rest.get(i + 1 - exact).copied().unwrap_or(0.0);
+        }
+        self.order
             .iter()
-            .map(|around| around.len() + 1)
-            .chain((self.at_elimination.len()..n).map(move |i| n - i))
+            .zip(&self.at_elimination)
+            .map(|(&v, around)| {
+                bits[v as usize] + around.iter().map(|&u| bits[u as usize]).sum::<f64>()
+            })
+            .chain(rest)
+            .fold(f64::NEG_INFINITY, log2_add)
+            .max(0.0)
     }
 
     /// The tree decomposition of `graph`, the graph eliminated, that the
@@ -454,7 +498,19 @@ impl Elimination {
 /// goatd's meter; past twice [`ELIMINATION_BUDGET_UNITS`] it stops, and
 /// the vertices left go as one clique, in the order of their numbers.
 pub(super) fn min_fill_cliques(num_vertices: usize, edges: &[(u32, u32)]) -> Elimination {
-    min_fill_within(num_vertices, edges, 2 * ELIMINATION_BUDGET_UNITS)
+    min_fill_within(edges, &vec![1; num_vertices], 2 * ELIMINATION_BUDGET_UNITS)
+}
+
+/// [`min_fill_cliques`] on the graph whose vertex `v` weighs `weight[v]`:
+/// a vertex's fill is the weight of the edges eliminating it adds, an
+/// edge's the product of its ends' weights. Where a vertex is a variable
+/// and its weight the values it takes, the fill is the entries of the
+/// tables the edges would add between the variables. Counting each edge
+/// as one, min-fill eliminates a variable of 2 values as early as one of
+/// 81, and so a network whose variables take from 2 values to 81 (the
+/// proteins of the UAI 2022 PR set) as if they all took the same.
+pub(super) fn weighted_min_fill(edges: &[(u32, u32)], weight: &[u64]) -> Elimination {
+    min_fill_within(edges, weight, 2 * ELIMINATION_BUDGET_UNITS)
 }
 
 /// The elimination of the vertices of the graph whose edges are `edges`
@@ -507,13 +563,14 @@ pub(super) fn eliminated_in_order(
     })
 }
 
-/// [`min_fill_cliques`], stopped past `max_work` units.
-fn min_fill_within(num_vertices: usize, edges: &[(u32, u32)], max_work: u64) -> Elimination {
+/// [`weighted_min_fill`], stopped past `max_work` units.
+fn min_fill_within(edges: &[(u32, u32)], weight: &[u64], max_work: u64) -> Elimination {
+    let num_vertices = weight.len();
     let mut order = Vec::with_capacity(num_vertices);
     let mut at_elimination: Vec<Vec<u32>> = Vec::with_capacity(num_vertices);
     let mut eliminated = vec![false; num_vertices];
     let mut work = 0;
-    if let Some(mut graph) = FillGraph::new(num_vertices, edges, max_work) {
+    if let Some(mut graph) = FillGraph::new(edges, weight, max_work) {
         let mut heap: BinaryHeap<Reverse<(u64, u32, u32)>> = (0..num_vertices as u32)
             .map(|v| Reverse(graph.score(v)))
             .collect();
@@ -540,6 +597,191 @@ fn min_fill_within(num_vertices: usize, edges: &[(u32, u32)], max_work: u64) -> 
     Elimination {
         order,
         at_elimination,
+    }
+}
+
+/// Vertices beyond which [`annealed`] does not search: it holds the graph
+/// as a matrix of bits.
+pub(super) const ANNEAL_MAX_VERTICES: usize = 4096;
+/// Moves [`annealed`] tries at most, and the temperature schedule of its
+/// annealing, in bits of the log2 states: a move that adds `d` bits is
+/// taken with odds `e^(-d/t)`, `t` falling geometrically from the first to
+/// the last over the moves the budget pays for.
+const ANNEAL_MAX_MOVES: usize = 100_000;
+const ANNEAL_T_START: f64 = 1.0;
+const ANNEAL_T_END: f64 = 0.02;
+/// How far a move takes a vertex most of the time ([`ANNEAL_NEAR`] of the
+/// moves); the others take it anywhere. An elimination improves by
+/// reordering a few neighbouring vertices at a time.
+const ANNEAL_REACH: usize = 8;
+const ANNEAL_NEAR: f64 = 0.7;
+/// Moves per vertex the budget must pay for, at the start's evaluation,
+/// for the search to run: fewer leave the walk hot near where it started.
+/// On the UAI PR sets' proteins (300 to 500 groups) the budget pays for
+/// a hundred moves a vertex or more and finds layouts up to 25 times
+/// cheaper; on their grids and rus networks (over 1000 groups) it paid for
+/// 5 to 20 and found no cheaper layout in 2 to 3 s.
+const ANNEAL_MIN_MOVES_PER_VERTEX: u64 = 32;
+/// The pairs of a layout's estimate for each unit [`annealed`] may spend
+/// on it: the search is paid for by what it can save, so a cheap layout
+/// is not searched.
+const ANNEAL_PAIRS_PER_UNIT: f64 = 8.0;
+
+/// The budget [`annealed`] gets on a graph of `num_vertices` vertices and
+/// `num_edges` edges whose layout is estimated at `pairs`: a unit for each
+/// [`ANNEAL_PAIRS_PER_UNIT`] pairs, up to twice [`ELIMINATION_BUDGET_UNITS`],
+/// what an elimination spends before it gives up. `None` where the search
+/// does not run: past [`ANNEAL_MAX_VERTICES`] vertices, or where the
+/// budget does not pay for [`ANNEAL_MIN_MOVES_PER_VERTEX`] moves a vertex
+/// at the least an evaluation costs, a word for each vertex and edge and
+/// one more for each vertex.
+pub(super) fn anneal_budget(num_vertices: usize, num_edges: usize, pairs: f64) -> Option<u64> {
+    if !(2..=ANNEAL_MAX_VERTICES).contains(&num_vertices) {
+        return None;
+    }
+    let budget = ((pairs / ANNEAL_PAIRS_PER_UNIT) as u64).min(2 * ELIMINATION_BUDGET_UNITS);
+    let words = num_vertices.div_ceil(64) as u64;
+    let evaluation = words * (2 * num_vertices + num_edges) as u64;
+    (budget >= ANNEAL_MIN_MOVES_PER_VERTEX * num_vertices as u64 * evaluation).then_some(budget)
+}
+
+/// The elimination order `start` of the graph whose vertex `v` takes
+/// `2^bits[v]` states, improved by simulated annealing on its states
+/// ([`Elimination::states`]): a move takes one vertex to another place in
+/// the order, and is taken where its states are lower or with the
+/// annealing's odds. `None` where the graph has more than
+/// [`ANNEAL_MAX_VERTICES`] vertices, where `budget` units do not pay for
+/// [`ANNEAL_MIN_MOVES_PER_VERTEX`] moves a vertex, or where no order
+/// beats `start`. The work, a word of the matrix read or written per unit,
+/// is charged to goatd's meter and stops at `budget`; the generator is
+/// seeded, so the result does not depend on the machine.
+pub(super) fn annealed(
+    edges: &[(u32, u32)],
+    bits: &[f64],
+    start: &[u32],
+    budget: u64,
+) -> Option<Vec<u32>> {
+    let n = start.len();
+    if !(2..=ANNEAL_MAX_VERTICES).contains(&n) {
+        return None;
+    }
+    let words = n.div_ceil(64);
+    let mut matrix = vec![0u64; n * words];
+    for &(u, v) in edges {
+        if u != v {
+            matrix[u as usize * words + v as usize / 64] |= 1 << (v % 64);
+            matrix[v as usize * words + u as usize / 64] |= 1 << (u % 64);
+        }
+    }
+    let mut eval = Evaluation {
+        matrix,
+        scratch: vec![0; n * words],
+        row: vec![0; words],
+        around: Vec::new(),
+        words,
+        work: 0,
+    };
+    let mut order = start.to_vec();
+    let mut cost = eval.states(bits, &order, f64::INFINITY)?;
+    // The moves the budget pays for at the start's evaluation; a move that
+    // is not taken stops part way, and costs less.
+    let planned = ANNEAL_MAX_MOVES.min((budget / eval.work.max(1)) as usize);
+    if (planned as u64) < ANNEAL_MIN_MOVES_PER_VERTEX * n as u64 {
+        goatd::meter::charge(eval.work);
+        return None;
+    }
+    let start_cost = cost;
+    let mut best = order.clone();
+    let mut best_cost = cost;
+    let mut rng = super::Rng(0x9E37_79B9_7F4A_7C15);
+    let mut moves = 0;
+    while moves < planned && eval.work < budget {
+        moves += 1;
+        let t =
+            ANNEAL_T_START * (ANNEAL_T_END / ANNEAL_T_START).powf(moves as f64 / planned as f64);
+        let i = rng.below(n);
+        let reach = if rng.unit() < ANNEAL_NEAR {
+            ANNEAL_REACH
+        } else {
+            n
+        };
+        let (lo, hi) = (i.saturating_sub(reach), (i + reach).min(n - 1));
+        let j = lo + rng.below(hi - lo + 1);
+        if j == i {
+            continue;
+        }
+        let rotate = |order: &mut [u32], forward: bool| match (i < j, forward) {
+            (true, true) | (false, false) => order[i.min(j)..=i.max(j)].rotate_left(1),
+            _ => order[i.min(j)..=i.max(j)].rotate_right(1),
+        };
+        // Taken where its states are under the current ones plus t times
+        // the log of a uniform draw's inverse: the annealing's odds, with
+        // which the evaluation can stop as soon as it passes them.
+        let limit = cost - t * rng.unit().max(f64::MIN_POSITIVE).ln();
+        rotate(&mut order, true);
+        match eval.states(bits, &order, limit) {
+            Some(c) => {
+                cost = c;
+                if c < best_cost {
+                    best_cost = c;
+                    best.copy_from_slice(&order);
+                }
+            }
+            None => rotate(&mut order, false),
+        }
+    }
+    goatd::meter::charge(eval.work);
+    (best_cost < start_cost).then_some(best)
+}
+
+/// [`annealed`]'s evaluation of an order: the graph as a matrix of bits,
+/// a row a vertex, and the buffers an elimination works in.
+struct Evaluation {
+    matrix: Vec<u64>,
+    scratch: Vec<u64>,
+    row: Vec<u64>,
+    around: Vec<u32>,
+    words: usize,
+    work: u64,
+}
+
+impl Evaluation {
+    /// The states of eliminating in `order` ([`Elimination::states`]), or
+    /// `None` as soon as they pass `limit`.
+    fn states(&mut self, bits: &[f64], order: &[u32], limit: f64) -> Option<f64> {
+        let words = self.words;
+        self.scratch.copy_from_slice(&self.matrix);
+        self.work += self.scratch.len() as u64;
+        let mut total = f64::NEG_INFINITY;
+        for &v in order {
+            let at = v as usize * words;
+            self.row.copy_from_slice(&self.scratch[at..at + words]);
+            self.around.clear();
+            for (w, &x) in self.row.iter().enumerate() {
+                let mut x = x;
+                while x != 0 {
+                    self.around.push((w * 64) as u32 + x.trailing_zeros());
+                    x &= x - 1;
+                }
+            }
+            let clique =
+                bits[v as usize] + self.around.iter().map(|&u| bits[u as usize]).sum::<f64>();
+            total = log2_add(total, clique);
+            self.work += (words * (self.around.len() + 1)) as u64;
+            if total > limit {
+                return None;
+            }
+            // The neighbours become a clique, and `v` leaves the graph.
+            for &u in &self.around {
+                let at_u = u as usize * words;
+                for (w, &x) in self.row.iter().enumerate() {
+                    self.scratch[at_u + w] |= x;
+                }
+                self.scratch[at_u + u as usize / 64] &= !(1 << (u % 64));
+                self.scratch[at_u + v as usize / 64] &= !(1 << (v % 64));
+            }
+        }
+        Some(total.max(0.0))
     }
 }
 
@@ -652,18 +894,22 @@ mod tests {
                     }
                 }
             }
-            let whole = min_fill_within(n, &edges, u64::MAX);
+            let whole = min_fill_within(&edges, &vec![1; n], u64::MAX);
             assert_eq!(whole.at_elimination.len(), n);
             let graph = goatd::Graph::new(n as u32, edges.clone());
             for max_work in [0, 10, 50, 100, 200, 400, 800] {
-                let cut = min_fill_within(n, &edges, max_work);
+                let cut = min_fill_within(&edges, &vec![1; n], max_work);
                 let exact = cut.at_elimination.len();
                 assert_eq!(cut.order[..exact], whole.order[..exact]);
                 assert_eq!(cut.at_elimination, whole.at_elimination[..exact]);
                 let mut sorted = cut.order[exact..].to_vec();
                 sorted.sort_unstable();
                 assert_eq!(sorted, cut.order[exact..]);
-                assert_eq!(cut.clique_sizes().count(), n);
+                // The rest as one clique holds at least what eliminating
+                // it would: the i-th vertex left has at most the others
+                // after it as neighbours.
+                let ones = vec![1.0; n];
+                assert!(cut.states(&ones) >= whole.states(&ones));
                 let td = cut.decomposition(&graph).expect("a decomposition");
                 td.validate(&graph).expect("a valid decomposition");
                 if exact < n {
@@ -693,6 +939,94 @@ mod tests {
         assert_eq!(td.treewidth(), 7);
     }
 
+    /// A graph's edges and its vertices' weights.
+    type WeightedGraph = (Vec<(u32, u32)>, Vec<u64>);
+
+    /// Random graphs of up to `max_n` vertices, about 40% of the pairs
+    /// joined, each vertex weighing from 1 to 6.
+    fn random_weighted_graphs(count: usize, max_n: u64) -> Vec<WeightedGraph> {
+        let mut seed = 0x9e37_79b9_7f4a_7c15u64;
+        let mut next = move || {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed
+        };
+        (0..count)
+            .map(|_| {
+                let n = 2 + (next() % max_n) as u32;
+                let mut edges = Vec::new();
+                for u in 0..n {
+                    for v in u + 1..n {
+                        if next() % 10 < 4 {
+                            edges.push((u, v));
+                        }
+                    }
+                }
+                let weight = (0..n).map(|_| 1 + next() % 6).collect();
+                (edges, weight)
+            })
+            .collect()
+    }
+
+    /// At equal weights, weighted min-fill is min-fill; where the weights
+    /// differ, it fills in the edges between the light vertices first. On
+    /// the cycle 0-1-2-3 whose odd vertices weigh 81, min-fill takes 0
+    /// first, joining the heavy pair, and weighted min-fill takes 1.
+    #[test]
+    fn weighted_min_fill_at_equal_weights_is_min_fill() {
+        for (edges, weight) in random_weighted_graphs(40, 30) {
+            let n = weight.len();
+            let plain = min_fill_cliques(n, &edges);
+            let equal = weighted_min_fill(&edges, &vec![3; n]);
+            assert_eq!(plain.order, equal.order);
+        }
+        let cycle = [(0, 1), (1, 2), (2, 3), (0, 3)];
+        assert_eq!(min_fill_cliques(4, &cycle).order[0], 0);
+        assert_eq!(weighted_min_fill(&cycle, &[2, 81, 2, 81]).order[0], 1);
+    }
+
+    /// The annealing returns an order of the same vertices whose states
+    /// are below the start's, and its elimination decomposes the graph;
+    /// a budget that does not pay for the moves it needs runs no search.
+    #[test]
+    fn annealing_lowers_the_states_of_an_order() {
+        let mut improved = 0;
+        for (edges, weight) in random_weighted_graphs(30, 40) {
+            let n = weight.len();
+            let bits: Vec<f64> = weight.iter().map(|&w| (w as f64).log2()).collect();
+            let start: Vec<u32> = (0..n as u32).collect();
+            let start_states = eliminated_in_order(&edges, start.clone(), usize::MAX, u64::MAX)
+                .unwrap()
+                .states(&bits);
+            assert!(annealed(&edges, &bits, &start, 10).is_none());
+            let Some(order) = annealed(&edges, &bits, &start, 1 << 22) else {
+                continue;
+            };
+            improved += 1;
+            let mut sorted = order.clone();
+            sorted.sort_unstable();
+            assert_eq!(sorted, start);
+            let elimination = eliminated_in_order(&edges, order, usize::MAX, u64::MAX).unwrap();
+            assert!(elimination.states(&bits) < start_states);
+            let graph = goatd::Graph::new(n as u32, edges.clone());
+            let td = elimination.decomposition(&graph).expect("a decomposition");
+            td.validate(&graph).expect("a valid decomposition");
+        }
+        assert!(improved > 10, "{improved}");
+    }
+
+    /// The annealing's budget grows with the layout's pairs, and is none
+    /// where it does not pay for its moves or the graph is past the
+    /// matrix's size.
+    #[test]
+    fn the_annealing_budget_pays_for_its_moves() {
+        assert_eq!(anneal_budget(100, 300, 1e3), None);
+        let budget = anneal_budget(100, 300, 1e12).expect("a large layout is searched");
+        assert!(budget <= 2 * ELIMINATION_BUDGET_UNITS);
+        assert_eq!(anneal_budget(ANNEAL_MAX_VERTICES + 1, 0, 1e30), None);
+    }
+
     #[test]
     fn min_fill_takes_the_simplicial_vertices_first() {
         // A path: every elimination but the last two adds no fill, and the
@@ -707,7 +1041,8 @@ mod tests {
 
     /// Every vertex goes with the least fill, then degree, then number, of
     /// the vertices left, counted afresh on the graph as eliminated so far,
-    /// and its parent is the first of its neighbours then to go after it.
+    /// and its parent is the first of its neighbours then to go after it;
+    /// on weighted vertices the fill is weighted.
     #[test]
     fn min_fill_takes_the_least_score_at_every_step() {
         let mut seed = 0x9e37_79b9_7f4a_7c15u64;
@@ -733,16 +1068,27 @@ mod tests {
                 edges.push(e);
                 edges.push((e.0, e.0));
             }
-            check_least_score(n, &edges);
+            check_least_score(&edges, &vec![1; n]);
+            // Weighted, the fill is the weight of the pairs missing.
+            let weight: Vec<u64> = (0..n).map(|_| 1 + next() % 81).collect();
+            check_least_score(&edges, &weight);
         }
         // A star with chords between some of its leaves and a pendant path.
         let mut edges: Vec<(u32, u32)> = (1..40).map(|leaf| (0, leaf)).collect();
         edges.extend([(1, 2), (2, 3), (5, 9), (9, 11), (11, 5), (39, 40), (40, 41)]);
-        check_least_score(42, &edges);
+        check_least_score(&edges, &[1; 42]);
     }
 
-    fn check_least_score(n: usize, edges: &[(u32, u32)]) {
-        let (order, parent) = min_fill_elimination(n, edges);
+    /// At weight one, [`min_fill_elimination`]'s order, which is
+    /// [`weighted_min_fill`]'s, and its parents are checked too.
+    fn check_least_score(edges: &[(u32, u32)], weight: &[u64]) {
+        let n = weight.len();
+        let order = weighted_min_fill(edges, weight).order;
+        let parent = weight.iter().all(|&w| w == 1).then(|| {
+            let (plain, parent) = min_fill_elimination(n, edges);
+            assert_eq!(plain, order);
+            parent
+        });
         let mut adjacent = vec![vec![false; n]; n];
         for &(u, v) in edges {
             if u != v {
@@ -764,8 +1110,14 @@ mod tests {
                 let fill = around
                     .iter()
                     .enumerate()
-                    .map(|(i, &a)| around[i + 1..].iter().filter(|&&b| !adjacent[a][b]).count())
-                    .sum::<usize>();
+                    .map(|(i, &a)| {
+                        around[i + 1..]
+                            .iter()
+                            .filter(|&&b| !adjacent[a][b])
+                            .map(|&b| weight[a] * weight[b])
+                            .sum::<u64>()
+                    })
+                    .sum::<u64>();
                 (fill, around.len(), u)
             };
             let least = (0..n)
@@ -780,7 +1132,9 @@ mod tests {
                 .copied()
                 .min_by_key(|&u| position[u])
                 .map_or(u32::MAX, |u| u as u32);
-            assert_eq!(parent[v as usize], first, "{edges:?}");
+            if let Some(parent) = &parent {
+                assert_eq!(parent[v as usize], first, "{edges:?}");
+            }
             for &a in &around {
                 for &b in &around {
                     adjacent[a][b] |= a != b;

@@ -41,6 +41,9 @@ pub(super) struct Trial {
     pub(super) querying: bool,
     pub(super) evaluation: Evaluation,
     pub(super) disabled: bool,
+    /// Whether the others' memory has been freed for it, which happens at
+    /// most once a run ([`super::run`]).
+    pub(super) freed_for: bool,
 }
 
 impl Trial {
@@ -61,6 +64,7 @@ impl Trial {
             querying: false,
             evaluation: Evaluation::default(),
             disabled: false,
+            freed_for: false,
         }
     }
 
@@ -193,21 +197,37 @@ impl Trial {
         (self.target.max(1) as f64).log2() + self.ahead() - (self.weight as f64).log2()
     }
 
-    /// Ends the trial for the run, where an operation of its attempt was
-    /// refused memory or outgrew tididi's 32-bit indices: an attempt in a
-    /// later turn resumes at that operation with larger bounds and no less
-    /// held, so the run goes on with the other trials, and fails with the
-    /// refusal once none is left (on latin5 and gnb30 `families:0` is
-    /// refused memory and `closed` finishes). What the trial built is freed,
-    /// and so is the scratch its engine kept; the layout stays, so that a
-    /// later trial with the same one is not tried ([`super::prepare`]).
-    pub(super) fn retire(&mut self) {
-        self.disabled = true;
+    /// Whether its attempts left anything built: the formulas of its phase,
+    /// or the vtree its engine kept between attempts.
+    pub(super) fn holds(&self) -> bool {
+        self.kept.is_some() || self.evaluation.is_compiled() || self.evaluation.progress().is_some()
+    }
+
+    /// Frees what its attempts built, and the scratch its engine kept: its
+    /// next attempt begins its phase again, on its layout, with the target,
+    /// the watch and the work spent it has (`super::run_within`, where
+    /// another trial is refused memory). The layout stays, so that a later
+    /// trial with the same one is not tried ([`super::prepare`]).
+    pub(super) fn release(&mut self) {
         self.evaluation = Evaluation::default();
         self.kept = None;
+        self.progress.clear();
+        self.querying = false;
         if let Some(layout) = self.built.as_mut() {
             layout.vtree =
                 Arc::new(tididi::Vtree::clone(&layout.vtree).with_context(Arc::default()));
         }
+    }
+
+    /// Ends the trial for the run, where an operation of its attempt was
+    /// refused memory while no other trial held any, or outgrew tididi's
+    /// 32-bit indices: an attempt in a later turn would resume at that
+    /// operation with larger bounds and no less held, so the run goes on
+    /// with the other trials, and fails with the refusal once none is left
+    /// (on latin5 and gnb30 `families:0` is refused memory and `closed`
+    /// finishes). What the trial built is freed ([`Self::release`]).
+    pub(super) fn retire(&mut self) {
+        self.release();
+        self.disabled = true;
     }
 }

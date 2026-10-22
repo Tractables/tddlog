@@ -42,6 +42,8 @@ use rustc_hash::FxHashMap;
 
 use crate::ground::{AtomId, AtomKind, GroundProgram, RulesByHead, deps};
 
+use super::Rng;
+
 /// Components beyond which the search is skipped.
 pub(crate) const MAX_UNITS: usize = 4000;
 /// Facts beyond which the search is skipped.
@@ -370,24 +372,6 @@ struct Scratch {
     /// with. One buffer reused, not one allocation per scored component per
     /// move.
     touched: Vec<usize>,
-}
-
-/// A small deterministic generator (xorshift64*).
-struct Rng(u64);
-
-impl Rng {
-    fn next(&mut self) -> u64 {
-        self.0 ^= self.0 >> 12;
-        self.0 ^= self.0 << 25;
-        self.0 ^= self.0 >> 27;
-        self.0.wrapping_mul(0x2545_F491_4F6C_DD1D)
-    }
-    fn below(&mut self, n: usize) -> usize {
-        (self.next() % n as u64) as usize
-    }
-    fn unit(&mut self) -> f64 {
-        (self.next() >> 11) as f64 / (1u64 << 53) as f64
-    }
 }
 
 /// The components of `sccs` (in a dependency order) reordered by the
