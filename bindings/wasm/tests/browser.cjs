@@ -26,6 +26,7 @@ const shots = process.argv[3] ? path.resolve(process.argv[3]) : null;
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
   ".wasm": "application/wasm", ".pl": "text/plain", ".json": "application/json",
+  ".svg": "image/svg+xml",
 };
 
 // The site as GitHub Pages serves it: a directory's index.html at its path.
@@ -184,6 +185,8 @@ async function noSidewaysScroll(page, what) {
     const checked = new Set();
     for (const at of ["", "guide/", "results/"]) {
       await page.goto(`${base}${at}`);
+      assert.ok(await page.$eval(".site-logo", (img) => img.complete && img.naturalWidth > 0),
+        `${at || "the playground"}: the project logo loads`);
       if (at === "results/") await page.waitForSelector("section.family svg.cactus path.line");
       const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => a.href));
       for (const href of hrefs) {

@@ -75,6 +75,9 @@ if [ -n "$stamp" ]; then
       sed -i -E "s#(href|src)=\"((\.\./)*(styles\.css|theme\.js|bench\.css|bench\.js))\"#\1=\"\2?v=$stamp\"#" {} +
   fi
 fi
+# The same logo is added to the static pages and the benchmark pages fetched
+# from the baselines branch, without modifying their archived contents.
+python3 "$here/brand.py" "$out" "$stamp"
 # GitHub Pages serves the files as they are, without Jekyll.
 touch "$out/.nojekyll"
 echo "site.sh: assembled $out ($(du -sh "$out" | cut -f1))"

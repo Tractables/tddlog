@@ -3,12 +3,14 @@ README, then the reference read from the docstrings of the installed
 package."""
 
 import tddlog
+from pathlib import Path
 
 project = "tddlog for Python"
 release = tddlog.__version__
 extensions = ["myst_parser", "sphinx.ext.autodoc"]
 html_theme = "furo"
 html_title = "tddlog for Python"
+html_logo = str(Path(__file__).resolve().parents[3] / "docs/logo.svg")
 # The site's links to its pages, as the other pages list them, in a bar
 # above the page (this page's name not a link, the text small enough for a
 # phone's width), and its colours.
