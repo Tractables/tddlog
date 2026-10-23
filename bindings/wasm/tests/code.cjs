@@ -1,13 +1,16 @@
-// The guide's syntax highlighting: every code block names a language
-// code.js knows, highlighting keeps each block's text as it is, and the
-// tokens that matter get their classes. `node --test tests/code.cjs`.
+// The pages' text, without a browser: the guide's syntax highlighting
+// (every code block names a language code.js knows, highlighting keeps each
+// block's text as it is, and the tokens that matter get their classes), the
+// guide's programs against the repository's files, and the site's
+// navigation, the same on every page. `node --test tests/code.cjs`.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
 const code = require("../code.js");
 
-const guide = fs.readFileSync(path.join(__dirname, "../guide/index.html"), "utf8");
+const page = (file) => fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+const guide = page("guide/index.html");
 
 function decode(html) {
   return html.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
@@ -24,12 +27,45 @@ function spans(html, cls) {
 
 test("every code block of the guide names a known language and keeps its text", () => {
   assert.doesNotMatch(guide, /<pre>/, "a code block without data-lang");
-  const blocks = [...guide.matchAll(/<pre data-lang="([a-z]+)">([\s\S]*?)<\/pre>/g)];
+  const blocks = [...guide.matchAll(/<pre data-lang="([a-z]+)"[^>]*>([\s\S]*?)<\/pre>/g)];
   assert.ok(blocks.length >= 20, `${blocks.length} code blocks`);
   for (const [, lang, body] of blocks) {
     assert.ok(code.languages.includes(lang), `the language ${lang}`);
     const source = decode(body);
     assert.equal(text(code.highlight(lang, source)), source, `a ${lang} block's text`);
+  }
+});
+
+// A worked example shows its whole program, marked data-file, as the
+// repository has it after the comment at its top.
+test("every program the guide shows whole is its file in the repository", () => {
+  const blocks = [...guide.matchAll(/<pre data-lang="problog" data-file="([^"]+)">([\s\S]*?)<\/pre>/g)];
+  assert.ok(blocks.length >= 6, `${blocks.length} programs`);
+  for (const [, file, body] of blocks) {
+    const lines = fs.readFileSync(path.join(__dirname, "../../..", file), "utf8").split("\n");
+    while (lines.length > 0 && lines[0].startsWith("%")) lines.shift();
+    assert.equal(decode(body), lines.join("\n").trimEnd(), file);
+    assert.ok(guide.includes(`<a href="https://github.com/Tractables/tddlog/blob/main/${file}"><code>${file}</code></a>`),
+      `the guide links ${file}`);
+  }
+});
+
+// Each page's links to the site's pages: the same, in the same order, the
+// page's own marked as the current one.
+test("every page has the site's navigation, its own page marked", () => {
+  const names = ["Playground", "Guide", "Results", "API", "Python", "C", "GitHub"];
+  for (const [file, current] of [["index.html", "Playground"], ["guide/index.html", "Guide"], ["results/index.html", "Results"]]) {
+    const nav = page(file).match(/<nav class="site-nav" aria-label="Site">([\s\S]*?)<\/nav>/);
+    assert.ok(nav, `${file}: the navigation`);
+    const links = [...nav[1].matchAll(/<a href="([^"]+)"( aria-current="page")?>([^<]+)<\/a>/g)];
+    assert.deepEqual(links.map((l) => l[3]), names, `${file}: the navigation's links`);
+    assert.deepEqual(links.filter((l) => l[2]).map((l) => l[3]), [current], `${file}: the current page`);
+    const up = file.includes("/") ? "../" : "";
+    const where = { Playground: up || "./", Guide: `${up}guide/`, Results: `${up}results/`, API: `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
+    for (const [, href, , name] of links) {
+      const expected = name === current ? "./" : where[name] ?? "https://github.com/Tractables/tddlog";
+      assert.equal(href, expected, `${file}: ${name}`);
+    }
   }
 });
 

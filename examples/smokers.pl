@@ -1,4 +1,7 @@
-% Social network example (Fierens et al. 2015).
+% Social network example (Fierens et al. 2015): a person smokes from
+% stress or because a friend who smokes influences them, and a smoker may
+% have asthma. Probabilistic rules, and positive recursion through the
+% cycles of the friendships. Run with `tddlog examples/smokers.pl`.
 0.3::stress(X) :- person(X).
 0.2::influences(X,Y) :- person(X), person(Y).
 person(p1). person(p2). person(p3).

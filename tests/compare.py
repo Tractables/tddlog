@@ -12,7 +12,10 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TDDLOG = os.path.join(ROOT, 'target', 'release', 'tddlog')
-PROBLOG = os.path.join(ROOT, 'tmp', 'venv', 'bin', 'problog')
+# ProbLog: $PROBLOG, else a virtualenv in the checkout's tmp/venv, else the
+# one on PATH (pip install problog).
+VENV_PROBLOG = os.path.join(ROOT, 'tmp', 'venv', 'bin', 'problog')
+PROBLOG = os.environ.get('PROBLOG') or (VENV_PROBLOG if os.path.exists(VENV_PROBLOG) else 'problog')
 
 
 def parse(out):

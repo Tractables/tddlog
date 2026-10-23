@@ -1,24 +1,22 @@
-//! ProbLog inference by Tp-compilation into Tree Decision Diagrams.
+//! Exact probabilistic inference by compilation into tree decision diagrams.
 //!
-//! Pipeline: [`syntax`] parses a Datalog-restricted ProbLog program;
-//! [`ground`] produces the relevant ground program; [`indicators`] can
-//! rewrite it to read derived atoms through variables of their own;
-//! [`vtree`] chooses a vtree over the probabilistic facts, `closed` with
-//! the component order `vtree::order` searches; [`tp`] compiles every derived
-//! atom to a TDD by a fixpoint of the compiled immediate-consequence
-//! operator; [`query`] counts the queries against the evidence, with the
-//! weighted counts of [`eval`]. [`solve`] does all of it, under a
-//! [`Strategy`]: `auto`, the default, runs trials of rewrites and layouts
-//! under bounds that double until one finishes (`src/auto/`); a [`Kind`]
-//! is one layout and what else it decides (`src/strategy.rs`).
+//! tddlog computes exact probabilities for probabilistic logic programs in
+//! the Datalog fragment of ProbLog, for Bayesian and Markov networks, and
+//! for discrete probabilistic programs. It grounds a program, compiles it
+//! bottom up into tree decision diagrams (TDDs) with the
+//! [tididi](https://github.com/Tractables/tididi) library, and counts each
+//! query on the diagrams. The same solver is a command-line tool, and runs
+//! from [Python](https://tractables.github.io/tddlog/python/),
+//! [C](https://tractables.github.io/tddlog/c/) and
+//! [the browser](https://tractables.github.io/tddlog/).
 //!
-//! # Use as a library
+//! # A first program
 //!
-//! [`solve`] takes a program's text and [`Options`] and returns a
-//! [`Solution`]: the answers to the program's queries, in their order, and
-//! `P(e)`, the probability of the evidence, where it was asked for. Its
-//! third argument receives what `--stats` prints as the run goes, which a
-//! caller may ignore.
+//! [`solve`] takes a program's text and [`Options`], the command line's
+//! options, and returns a [`Solution`]: the answers to the program's
+//! queries, in their order, and `P(e)`, the probability of the evidence,
+//! where it was asked for. Its third argument receives what `--stats`
+//! prints as the run goes, which a caller may ignore.
 //!
 //! ```
 //! let program = "
@@ -45,6 +43,43 @@
 //! assert!((evidence.to_f64() - 0.196).abs() < 1e-12);
 //! # Ok::<(), tddlog::Error>(())
 //! ```
+//!
+//! # Worked examples
+//!
+//! The [guide](https://tractables.github.io/tddlog/guide/) describes the
+//! language tddlog reads and works through these programs, each in the
+//! repository's [`examples/`](https://github.com/Tractables/tddlog/tree/main/examples)
+//! and open in the playground:
+//!
+//! 1. [A Bayesian network with evidence](https://tractables.github.io/tddlog/guide/#bayesian-network):
+//!    the asia network, each row of its tables an annotated disjunction.
+//! 2. [Reachability in a graph with cycles](https://tractables.github.io/tddlog/guide/#reachability):
+//!    the probability of a path, defined by recursion.
+//! 3. [Integers in binary](https://tractables.github.io/tddlog/guide/#binary-integers):
+//!    two random integers added bit by bit, as Dice compiles them.
+//! 4. [Negation through recursion](https://tractables.github.io/tddlog/guide/#negation):
+//!    the winning positions of a game, under the well-founded semantics.
+//!
+//! Two programs in `examples/` call this crate: `solve.rs` answers a
+//! program file as the command line does and reports which of `auto`'s
+//! trials answered, and `sprinkler.rs` writes a Bayesian network as a
+//! program from Rust data and checks its posteriors against a sum over its
+//! worlds (`cargo run --release --example sprinkler`).
+//!
+//! # How it works
+//!
+//! [`syntax`] parses a program; [`ground`] grounds the part of it that the
+//! queries and the evidence depend on, and simplifies it; [`indicators`]
+//! can rewrite it so that derived atoms are read through variables of
+//! their own; [`vtree`] lays out the diagrams' variables; [`tp`] compiles
+//! every derived atom to a TDD by a fixpoint of the immediate-consequence
+//! operator, one strongly connected component at a time; and [`query`]
+//! conjoins the evidence and counts each query against it, with the
+//! weighted counts of [`eval`]. [`solve`] runs them under a [`Strategy`]:
+//! `auto`, the default, runs trials of layouts ([`Kind`]) under bounds
+//! that double until one finishes.
+//! [docs/design.md](https://github.com/Tractables/tddlog/blob/main/docs/design.md)
+//! describes each stage.
 
 mod auto;
 mod cubes;

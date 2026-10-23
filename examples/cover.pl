@@ -4,6 +4,8 @@
 % u's rows all hold one distribution and cover every value of a and b:
 % its class atom is certain, u has no parents left and b is read by
 % nothing.
+% Run with `tddlog examples/cover.pl`; `tddlog --ground examples/cover.pl`
+% prints the program the grounder writes.
 0.3::a(1); 0.7::a(2).
 0.4::b(1); 0.6::b(2).
 0.2::u(1); 0.8::u(2) :- a(1), b(1).

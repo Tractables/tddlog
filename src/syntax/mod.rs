@@ -1,10 +1,13 @@
-//! The source language: a Datalog subset of ProbLog.
+//! The source language: a Datalog fragment of ProbLog.
 //!
-//! Supported: constants (atoms, quoted strings, integers), variables, `p::fact.`,
-//! annotated disjunctions `p1::a; p2::b :- body.`, rules with negation as failure
-//! (`\+`), comparison builtins and `is` with integer arithmetic in bodies, and
-//! the `query/1` and `evidence/1,2` directives. No function symbols, lists or
-//! cuts.
+//! Supported: constants (atoms, quoted strings, integers) and variables;
+//! probabilistic facts `p::a.` and rules `p::h :- body.`; annotated
+//! disjunctions `p1::a; p2::b :- body.`; negative heads `\+h :- body.`;
+//! disjunctions and parentheses in bodies; negation as failure (`\+` or
+//! `not`); comparisons and `is` with integer arithmetic (`/`, which divides
+//! in floating point in ProbLog, is refused); `query/1`, query patterns
+//! `query(p(X)) :- body.`, and `evidence/1,2`. No function symbols, lists,
+//! cut or `findall`. docs/design.md, "Language", gives the details.
 
 mod lexer;
 mod parser;

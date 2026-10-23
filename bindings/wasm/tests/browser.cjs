@@ -1,6 +1,7 @@
 // The assembled site in headless Chromium: every example's answers on the
 // page against the ProbLog column beside them, P(evidence), an edited program
 // through the address, an error, Cancel, the theme, the guide's links, the
+// pages' links within the site, the
 // results page (each kind of problems' plot, drawing the kind's systems over
 // all of its instances with their answers and total times, and every
 // suite's; the hover layer, the table), the API, Python and C pages, and no
@@ -177,6 +178,24 @@ async function noSidewaysScroll(page, what) {
     const within = links.filter((h) => h.startsWith("#"));
     for (const h of within) assert.ok(await page.$(h), `the guide's link ${h} has no target`);
     console.log(`ok the guide: ${tried.length} links to examples, ${within.length} within the page`);
+
+    // Every link from the playground, the guide and the results page to a
+    // file of the site leads to one.
+    const checked = new Set();
+    for (const at of ["", "guide/", "results/"]) {
+      await page.goto(`${base}${at}`);
+      if (at === "results/") await page.waitForSelector("section.family svg.cactus path.line");
+      const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => a.href));
+      for (const href of hrefs) {
+        const url = new URL(href);
+        url.hash = "";
+        if (!url.href.startsWith(base) || url.search !== "" || checked.has(url.href)) continue;
+        checked.add(url.href);
+        const response = await context.request.get(url.href);
+        assert.equal(response.status(), 200, `${at || "the playground"}: the link to ${url.href}`);
+      }
+    }
+    console.log(`ok ${checked.size} links within the site`);
     }
 
     // The results page: a plot a family, a line a system; another suite's
@@ -307,6 +326,12 @@ async function noSidewaysScroll(page, what) {
           const response = await shot.goto(`${base}${binding}/`);
           assert.equal(response.status(), 200, `the ${binding} page`);
           assert.match(await shot.title(), new RegExp(`^${title}`));
+          const bar = await shot.$$eval(".announcement a", (anchors) => anchors.map((a) => a.textContent));
+          assert.deepEqual(bar, ["Playground", "Guide", "Results", "API", "Python", "C", "GitHub"].filter((n) => n !== title.split(" ").pop()),
+            `the ${binding} page's links to the site`);
+          const [barWidth, barRoom] = await shot.$eval(".announcement", (bar) => [bar.scrollWidth, bar.clientWidth]);
+          assert.ok(barWidth <= barRoom, `the ${binding} page's links, ${barWidth} px in ${barRoom}, ${colorScheme}, ${width} px`);
+          if (shots) await shot.screenshot({ path: path.join(shots, `${binding}-${colorScheme}-${width}.png`) });
         }
         }
         await view.close();

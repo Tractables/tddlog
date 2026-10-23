@@ -1,5 +1,7 @@
 % The asia network (examples/asia.net) written by scripts/gen_bn.py
 % --query all --evidence 2 --seed 3: both leaves observed in a forward sample.
+% Run with `tddlog examples/bn_asia_evidence.pl`; the guide works through
+% it: https://tractables.github.io/tddlog/guide/#bayesian-network
 0.01::asia(yes); 0.99::asia(no).
 0.05::tub(yes); 0.95::tub(no) :- asia(yes).
 0.01::tub(yes); 0.99::tub(no) :- asia(no).

@@ -1,16 +1,22 @@
 //! Tp-compilation: the immediate-consequence operator on parameterized
 //! interpretations, with a TDD per ground atom.
 //!
-//! For a stratified ground program the compiled fixpoint assigns each derived
-//! atom `a` a Boolean formula `λ_a` over the probabilistic facts such that the
-//! weighted model count of `λ_a` is `P(a)` (Vlasselaer et al. 2015/2016).
+//! The compiled fixpoint assigns each derived atom `a` a Boolean formula
+//! `λ_a` over the probabilistic facts such that the weighted model count of
+//! `λ_a` is `P(a)` (Vlasselaer et al. 2015/2016). The formula is stored as
+//! its negation, the dual (`Formulation::Dual`), but for an acyclic atom of
+//! one rule, stored as its body's conjunction; `dynamic` stores `λ_a`
+//! itself (`Formulation::Primal`).
 //!
-//! The ground positive dependency graph is split into strongly connected
-//! components processed in topological order. An acyclic component needs a
-//! single application of the operator; a cyclic one is iterated to a fixpoint,
-//! which the canonical form of minimized TDDs detects exactly. A negative
-//! literal always refers to a component that has already converged, so its
-//! formula is the negation of that atom's final formula.
+//! The derived atoms' strongly connected components (`ground::deps`) are
+//! compiled in dependency order (`compile`), each, where the strategy
+//! projects, on the vtree projected to its ancestor cone (`cone`). An
+//! acyclic component needs a single application of the operator; a cyclic
+//! one is iterated to a fixpoint, which the canonical form of minimized
+//! TDDs detects exactly. A negative literal on a lower component reads
+//! that atom's final formula; a component that negates its own atoms is
+//! compiled to its well-founded model (`aft`). docs/design.md,
+//! "Compilation", gives the reasons.
 
 mod aft;
 pub(crate) mod backend;

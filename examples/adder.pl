@@ -5,6 +5,8 @@
 % a comparison with a constant reads the sum's bits. The evidence says the
 % sum is even; the queries ask for the sum's other bits and for the sum
 % being 8 or more, which is its bit 3.
+% Run with `tddlog --evidence-probability examples/adder.pl`; the guide
+% works through it: https://tractables.github.io/tddlog/guide/#binary-integers
 bit(0). bit(1). bit(2).
 0.7::x(0). 0.3::x(1). 0.8::x(2).
 0.4::y(0). 0.6::y(1). 0.2::y(2).

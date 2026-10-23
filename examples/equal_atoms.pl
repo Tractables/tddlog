@@ -3,6 +3,8 @@
 % wherever Y is not 1, and grounding merges each chain atom into its path
 % atom. A queried atom is not merged away: p1 and q1 have the same bodies
 % and both stay, so t is false in every world.
+% Run with `tddlog examples/equal_atoms.pl`; `tddlog --ground examples/equal_atoms.pl`
+% prints the program the grounder writes.
 0.6::edge(1,2). 0.5::edge(2,3). 0.4::edge(3,1). 0.7::edge(3,4).
 0.3::edge(2,4). 0.5::edge(4,5).
 path(X,Y) :- edge(X,Y).

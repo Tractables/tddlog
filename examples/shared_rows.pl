@@ -2,6 +2,8 @@
 % exclude each other through the values of their parents, and the rows of
 % y through x and \+x; the rows of z read two independent facts. d's first
 % row has four equal parameters.
+% Run with `tddlog examples/shared_rows.pl`; `tddlog --ground examples/shared_rows.pl`
+% prints the program the grounder writes.
 0.2::a(1); 0.3::a(2); 0.5::a(3).
 0.1::b(1); 0.2::b(2); 0.7::b(3) :- a(1).
 0.2::b(1); 0.1::b(2); 0.7::b(3) :- a(2).

@@ -1,5 +1,6 @@
 % A query's formula next to evidence it does not read: no rule above w's
 % facts reads them but w's own, and d reads neither w nor the evidence.
+% Run with `tddlog examples/query_beside_evidence.pl`.
 0.2::a(1); 0.3::a(2); 0.5::a(3).
 0.6::b(t); 0.4::b(f).
 0.1::c(x); 0.3::c(y); 0.6::c(z) :- a(3), b(t).

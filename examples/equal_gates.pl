@@ -5,6 +5,8 @@
 % merged into s's. The grounder merges each gate with an earlier gate's
 % rules into it, so that each is compiled once (src/ground/aig.rs,
 % `reduce`); a queried or observed gate stays.
+% Run with `tddlog examples/equal_gates.pl`; `tddlog --ground examples/equal_gates.pl`
+% prints the program the grounder writes.
 0.3::x0. 0.6::x1. 0.7::y0. 0.2::y1. 0.5::z.
 
 % s = x + y: bits s0 and s1, carry out s2.

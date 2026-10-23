@@ -1,5 +1,7 @@
 % A table large enough for the indicator rewrite to split on a parent:
 % c has nine rows over a and b, three values each; d reads c and is observed.
+% Run with `tddlog --vtree families examples/bn_split.pl`, the layout that
+% reads the program through the indicator rewrite.
 0.2::a(x); 0.5::a(y); 0.3::a(z).
 0.6::b(x); 0.1::b(y); 0.3::b(z).
 0.1::c(p); 0.3::c(q); 0.6::c(r) :- a(x), b(x).

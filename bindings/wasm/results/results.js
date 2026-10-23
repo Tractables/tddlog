@@ -451,8 +451,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       throw failure;
     })));
     // The benchmark pages (benchmarks/, from the baselines branch), where
-    // the site has them.
+    // the site has them, and a link to their index under the contents.
     const pages = await load("benchmarks/index.json").catch(() => null);
+    if (pages !== null) {
+      toc.after(element("p", { class: "note", id: "pages" }, "Each instance in a suite's table links to its own page: ",
+        "its programs in every language a system read, and every run. ",
+        element("a", { href: "benchmarks/" }, "All the benchmark pages"), "."));
+    }
     const families = parts.filter(Boolean).flatMap((p) => p.families);
     const names = Object.assign({}, ...parts.filter(Boolean).map((p) => p.names));
     const kinds = parts.filter(Boolean).flatMap((p) => p.kinds).sort((a, b) => a.order - b.order);

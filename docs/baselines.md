@@ -146,7 +146,7 @@ live in comments, in three forms:
 3. Expected errors: `% ERROR <ExceptionClassName>`, e.g.
    `InconsistentEvidenceError`.
 
-`tests/it/problog_suite.rs` and `scripts/problog_suite.py` (default `--dir`
+`tests/it/problog_suite.rs` and `tests/problog_suite.py` (default `--dir`
 the clone's `test/`) run tddlog on them. The upstream suite itself:
 `cd tmp/baselines/problog-src && ../../venv/bin/python -m pytest
 problog/test/test_system.py -q` (111 tests, 1643 subtests).

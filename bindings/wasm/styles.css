@@ -135,7 +135,8 @@ code {
   padding: 0.1em 0.3em;
 }
 
-/* The links to the rest of the site, and the theme. */
+/* The links to the site's pages, the same on every page, the one on show
+   (or the part of the site it is in) underlined; and the theme. */
 .site-nav {
   display: flex;
   flex: none;
@@ -147,6 +148,13 @@ code {
 
 .site-nav a { text-decoration: none; font-weight: 500; }
 .site-nav a:hover { text-decoration: underline; }
+.site-nav a[aria-current] {
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.35em;
+}
 
 .card {
   background: var(--card);
