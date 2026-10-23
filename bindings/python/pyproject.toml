@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "tddlog"
-description = "Exact probabilities for ProbLog programs, by compilation into tree decision diagrams."
+description = "Exact probabilistic inference by compilation into tree decision diagrams"
 readme = "README.md"
 authors = [{ name = "Guy Van den Broeck" }]
 # The extension is built against the stable ABI of CPython 3.10, so one wheel

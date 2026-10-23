@@ -162,8 +162,8 @@ fn solve(
 // `pymodule` expands this function into a Rust module of the same name, so it
 // cannot be called `tddlog` without shadowing the crate being wrapped. `name`
 // is what Python imports and what the initialisation symbol is built from.
-/// Exact probabilities for ProbLog programs, by compilation into tree
-/// decision diagrams.
+/// Exact probabilistic inference by compilation into tree decision
+/// diagrams.
 #[pymodule]
 #[pyo3(name = "tddlog")]
 fn python_module(module: &Bound<'_, PyModule>) -> PyResult<()> {

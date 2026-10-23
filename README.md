@@ -256,6 +256,11 @@ tddlog has no paper yet: cite the software, as [CITATION.cff](CITATION.cff)
 describes it (GitHub's "Cite this repository"). TDDs were introduced in
 [*A Canonical Generalization of OBDD*](https://arxiv.org/abs/2604.05537).
 
+## Acknowledgements
+
+This material is based upon work supported by the Defense Advanced Research
+Projects Agency (DARPA) under Agreement No. HR0011269E224.
+
 ## License
 
 Apache-2.0 ([LICENSE](LICENSE)). The copies of third-party programs in
