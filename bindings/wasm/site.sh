@@ -57,7 +57,7 @@ if [ -n "$benchmarks" ]; then
 fi
 test -f "$api/tddlog/index.html"
 cp -r "$api" "$out/api"
-printf '<!doctype html>\n<meta charset="utf-8">\n<meta http-equiv="refresh" content="0; url=tddlog/index.html">\n' > "$out/api/index.html"
+printf '<!doctype html>\n<meta charset="utf-8">\n<title>tddlog API documentation</title>\n<meta http-equiv="refresh" content="0; url=tddlog/index.html">\n<a href="tddlog/index.html">The API documentation</a>\n' > "$out/api/index.html"
 test -f "$python/index.html"
 cp -r "$python" "$out/python"
 test -f "$c/index.html"

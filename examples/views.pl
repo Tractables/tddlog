@@ -10,6 +10,8 @@
 % `reach` is recursive, and `many` is read once by a rule of six other
 % literals, where its twelve bodies would take six copies each: all of
 % these stay.
+% Run with `tddlog examples/views.pl`; `tddlog --ground examples/views.pl`
+% prints the program the grounder writes.
 0.4::order(1,a). 0.7::order(2,a). 0.5::order(3,b). 0.6::order(4,c).
 0.3::item(1,1). 0.8::item(1,2). 0.5::item(2,1). 0.6::item(2,2). 0.2::item(3,1). 0.9::item(3,2). 0.4::item(3,3).
 0.6::customer(a). 0.5::customer(b). 0.7::customer(c).

@@ -271,7 +271,7 @@ fn negative_cycle_that_is_not_two_valued_is_rejected() {
     }
 }
 
-/// Regressions found by the differential fuzzer (`scripts/fuzz_problog.py`),
+/// Regressions found by the differential fuzzer (`tests/fuzz_problog.py`),
 /// and the programs of `auto`'s.
 mod regress {
     use super::*;
@@ -1607,5 +1607,19 @@ fn cover() {
         if head == "y" || head == "z2" {
             assert!(!r.body.is_empty(), "{head} is not certain");
         }
+    }
+}
+
+/// examples/README.md, the index a reader finds the examples by, links
+/// every file in `examples/`.
+#[test]
+fn the_index_lists_every_example() {
+    let index = std::fs::read_to_string("examples/README.md").unwrap();
+    for entry in std::fs::read_dir("examples").unwrap() {
+        let name = entry.unwrap().file_name().into_string().unwrap();
+        assert!(
+            name == "README.md" || index.contains(&format!("[{name}]({name})")),
+            "examples/README.md does not list {name}"
+        );
     }
 }

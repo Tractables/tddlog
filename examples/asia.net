@@ -6,6 +6,9 @@
 % cancer and of bronchitis; either is tuberculosis or lung cancer; a
 % positive X-ray follows either, dyspnoea either or bronchitis. Hugin
 % format, as scripts/gen_bn.py reads it.
+% Write it as a program with `python3 scripts/gen_bn.py examples/asia.net
+% > asia.pl`, then run `tddlog asia.pl`; examples/bn_asia_evidence.pl is
+% one such program, with evidence.
 net
 {
 }

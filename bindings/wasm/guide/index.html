@@ -23,6 +23,7 @@
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../">Playground</a>
+    <a href="./" aria-current="page">Guide</a>
     <a href="../results/">Results</a>
     <a href="../api/">API</a>
     <a href="../python/">Python</a>
@@ -37,11 +38,17 @@
   <ol>
     <li><a href="#getting-started">Getting started</a></li>
     <li><a href="#language">The language</a></li>
-    <li><a href="#examples">Worked examples</a>:
-      <a href="#bayesian-network">a Bayesian network with evidence</a>,
-      <a href="#reachability">reachability in a graph with cycles</a>,
-      <a href="#binary-integers">integers in binary</a>,
-      <a href="#negation">negation through recursion</a></li>
+    <li><a href="#examples">Worked examples</a>
+      <ol>
+        <li><a href="#bayesian-network">A Bayesian network with
+        evidence</a>: a table per variable, and P(e)</li>
+        <li><a href="#reachability">Reachability in a graph with
+        cycles</a>: recursion through cycles</li>
+        <li><a href="#binary-integers">Integers in binary</a>: numbers
+        as bits, added by a circuit</li>
+        <li><a href="#negation">Negation through recursion</a>: a game,
+        gear wheels, and a program with no distribution</li>
+      </ol></li>
     <li><a href="#command-line">The command line</a></li>
     <li><a href="#networks">Networks and Dice programs</a></li>
     <li><a href="#library">From Rust, Python and C</a></li>
@@ -59,7 +66,8 @@
   <ul>
     <li>In the browser: the <a href="../">playground</a> runs tddlog in
     the tab, built for WebAssembly. Nothing is installed.</li>
-    <li>From Python: <code>pip install tddlog</code>, then
+    <li>From Python: build the package from a checkout, as the
+    <a href="../python/">Python page</a> shows, then
     <code>tddlog.solve(program)</code>
     (<a href="#library">below</a>).</li>
     <li>From a source checkout, with Rust 1.88 or newer and a C++ compiler
@@ -72,9 +80,9 @@ cargo build --release</pre></li>
   </ul>
 
   <h3>A first program</h3>
-  <p><code>examples/alarm.pl</code> is the alarm example of Fierens et al.
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/alarm.pl"><code>examples/alarm.pl</code></a> is the alarm example of Fierens et al.
   (2015):</p>
-<pre data-lang="problog">0.1::burglary.
+<pre data-lang="problog" data-file="examples/alarm.pl">0.1::burglary.
 0.2::earthquake.
 0.7::hears_alarm(john).
 0.4::hears_alarm(mary).
@@ -209,24 +217,25 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
 parse error: line 1: lists are not supported (`[`)</pre>
   <p>Of ProbLog 2.3's 109 system tests, tddlog passes 47, reports as
   errors the 7 that ProbLog expects to fail, and reports the other 55 as
-  unsupported (<code>scripts/problog_suite.py</code>).</p>
+  unsupported (<a href="https://github.com/Tractables/tddlog/blob/main/tests/problog_suite.py"><code>tests/problog_suite.py</code></a>).</p>
 </section>
 
 <section class="card prose" id="examples">
   <h2>Worked examples</h2>
-  <p>Each program is in the repository's <code>examples/</code>, and
-  <code>tests/it/examples.rs</code> checks its answers under several vtree
+  <p>Each program is in the repository's
+  <a href="https://github.com/Tractables/tddlog/tree/main/examples"><code>examples/</code></a>, and
+  <a href="https://github.com/Tractables/tddlog/blob/main/tests/it/examples.rs"><code>tests/it/examples.rs</code></a> checks its answers under several vtree
   strategies.</p>
 
   <h3 id="bayesian-network">A Bayesian network with evidence</h3>
-  <p><code>examples/bn_asia_evidence.pl</code> is the asia network of
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/bn_asia_evidence.pl"><code>examples/bn_asia_evidence.pl</code></a> is the asia network of
   Lauritzen and Spiegelhalter (1988), which relates a visit to Asia,
   smoking, tuberculosis, lung cancer and bronchitis to an x-ray and to
   dyspnoea. Each variable's table is one annotated disjunction per row of
   its parents' values; <code>either</code>, which holds where the patient
   has tuberculosis or lung cancer, is a deterministic node, written as
   rules:</p>
-<pre data-lang="problog">0.01::asia(yes); 0.99::asia(no).
+<pre data-lang="problog" data-file="examples/bn_asia_evidence.pl">0.01::asia(yes); 0.99::asia(no).
 0.05::tub(yes); 0.95::tub(no) :- asia(yes).
 0.01::tub(yes); 0.99::tub(no) :- asia(no).
 0.5::smoke(yes); 0.5::smoke(no).
@@ -284,10 +293,10 @@ P(e):   3.961994e-2     log10 -1.402086</pre>
   playground</a>.</p>
 
   <h3 id="reachability">Reachability in a graph with cycles</h3>
-  <p><code>examples/cycle_graph.pl</code> asks how likely a path is from
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/cycle_graph.pl"><code>examples/cycle_graph.pl</code></a> asks how likely a path is from
   node 1 to each other node of a graph of seven nodes whose fourteen edges
   are each present with their own probability:</p>
-<pre data-lang="problog">0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
+<pre data-lang="problog" data-file="examples/cycle_graph.pl">0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
 0.3::edge(5,3). 0.6::edge(5,6). 0.5::edge(6,4). 0.4::edge(2,6). 0.3::edge(6,1).
 0.5::edge(4,7). 0.6::edge(7,2). 0.4::edge(7,5). 0.7::edge(1,5).
 path(X,Y) :- edge(X,Y).
@@ -321,9 +330,9 @@ path(1,7):      0.199812</pre>
   an integer into its bits, each a random choice of its own, so that a
   number from 0 to 7 costs three choices rather than one per value, and
   arithmetic becomes circuits over the bits. The same program can be
-  written in ProbLog. <code>examples/adder.pl</code> adds two numbers with
+  written in ProbLog. <a href="https://github.com/Tractables/tddlog/blob/main/examples/adder.pl"><code>examples/adder.pl</code></a> adds two numbers with
   a ripple-carry adder:</p>
-<pre data-lang="problog">bit(0). bit(1). bit(2).
+<pre data-lang="problog" data-file="examples/adder.pl">bit(0). bit(1). bit(2).
 0.7::x(0). 0.3::x(1). 0.8::x(2).
 0.4::y(0). 0.6::y(1). 0.2::y(2).
 
@@ -365,10 +374,10 @@ P(e):   4.600000e-1     log10 -0.337242</pre>
   playground</a>.</p>
 
   <h3 id="negation">Negation through recursion</h3>
-  <p>In <code>examples/win.pl</code>, a position of a game is won if some
+  <p>In <a href="https://github.com/Tractables/tddlog/blob/main/examples/win.pl"><code>examples/win.pl</code></a>, a position of a game is won if some
   move leads from it to a position that is not won. Each move is present
   with probability 0.5:</p>
-<pre data-lang="problog">0.5::move(1,2). 0.5::move(1,3). 0.5::move(2,3). 0.5::move(3,4).
+<pre data-lang="problog" data-file="examples/win.pl">0.5::move(1,2). 0.5::move(1,3). 0.5::move(2,3). 0.5::move(3,4).
 win(X) :- move(X,Y), \+ win(Y).
 query(win(1)).
 query(win(2)).
@@ -401,12 +410,12 @@ query(win(3)).</pre>
   <p class="try"><a href="../?example=win">Open it in the
   playground</a>.</p>
 
-  <p>In <code>examples/gearwheels.pl</code> (Bogaerts and Van den Broeck,
+  <p>In <a href="https://github.com/Tractables/tddlog/blob/main/examples/gearwheels.pl"><code>examples/gearwheels.pl</code></a> (Bogaerts and Van den Broeck,
   2015, Example 4.13), two gear wheels turn each other, so each one's
   turning is defined through the other's, and a button toggles each wheel
   from time 0 to time 1. <code>turns1</code> depends on its own negation,
   so the program is not stratified:</p>
-<pre data-lang="problog">0.3::button1(0).
+<pre data-lang="problog" data-file="examples/gearwheels.pl">0.3::button1(0).
 0.6::button2(0).
 turns1(0) :- turns2(0).
 turns2(0) :- turns1(0).
@@ -431,7 +440,7 @@ turns2(1):      0.720000</pre>
   playground</a>.</p>
 
   <p>Where the well-founded model leaves an atom undefined, the program
-  has no distribution. In <code>examples/unsound.pl</code>, from the same
+  has no distribution. In <a href="https://github.com/Tractables/tddlog/blob/main/examples/unsound.pl"><code>examples/unsound.pl</code></a>, from the same
   paper, <code>a :- \+b.</code> and <code>b :- \+a.</code> leave both
   undefined in every world, and tddlog stops with exit status 1:</p>
 <pre data-lang="shell">$ ./target/release/tddlog examples/unsound.pl
@@ -483,7 +492,7 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 
 <section class="card prose" id="networks">
   <h2>Networks and Dice programs</h2>
-  <p><code>scripts/gen_bn.py</code> writes a discrete network as a ground
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/gen_bn.py"><code>scripts/gen_bn.py</code></a> writes a discrete network as a ground
   program, as in the asia example: a Bayesian network in BIF, Hugin
   (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
   the UAI format, and a Markov network in the UAI format, each factor an
@@ -546,9 +555,8 @@ solution = tddlog.solve(open("examples/alarm.pl").read(), evidence_probability=T
 for query, probability in solution.answers.items():
     print(f"{query}: {probability:.6f}")
 print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
-  <p><code>pip install tddlog</code> installs a wheel for CPython 3.10 or
-  later on Linux x86-64, macOS arm64 and Windows x86-64, and elsewhere
-  builds from source. <code>solve</code> takes the
+  <p>The package is not on PyPI yet: it builds from a checkout, with
+  Python 3.10 or later. <code>solve</code> takes the
   options as keywords (<code>vtree</code>,
   <code>evidence_probability</code>, <code>queries</code>), and an error
   is an exception of its own: <code>tddlog.ParseError</code>,
@@ -597,17 +605,15 @@ tddlog_solution_free(solution);</pre>
   <a href="https://github.com/Tractables/tididi">tididi</a> library.
   <a href="https://github.com/Tractables/tddlog/blob/main/docs/design.md">docs/design.md</a>
   describes each stage and the decisions behind it, and the
-  <a href="../results/">results page</a> compares tddlog with ProbLog,
-  PITA, aspmc, Ace, Merlin, Dice, Alea.jl and Roulette on their
-  benchmarks.</p>
+  <a href="../results/">results page</a> compares tddlog with the other
+  exact systems on their benchmarks.</p>
 </section>
 
 <footer>
   tddlog is open source under the Apache-2.0 license:
   <a href="https://github.com/Tractables/tddlog">repository</a> ·
-  <a href="../">playground</a> ·
-  <a href="../results/">results</a> ·
-  <a href="../api/">API</a>
+  <a href="https://github.com/Tractables/tididi">tididi</a>, the TDD library ·
+  <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions
 </footer>
 
 </main>

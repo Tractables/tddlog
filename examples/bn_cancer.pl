@@ -1,5 +1,6 @@
 % The cancer network (examples/cancer.net) written by scripts/gen_bn.py:
 % one annotated disjunction per CPT row, the leaf marginals queried.
+% Run with `tddlog examples/bn_cancer.pl`.
 0.9::pollution(low); 0.1::pollution(high).
 0.3::smoker(true); 0.7::smoker(false).
 0.03::cancer(true); 0.97::cancer(false) :- pollution(low), smoker(true).

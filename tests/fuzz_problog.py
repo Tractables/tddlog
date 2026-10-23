@@ -19,11 +19,11 @@ recursion. A run reports how many programs agreed, disagreed, produced an
 error on either side, or timed out.
 
 usage:
-  scripts/fuzz_problog.py --seeds 300 [--jobs 8] [--start 0]
-  scripts/fuzz_problog.py --only 15,53,237   # re-run specific seeds
-  scripts/fuzz_problog.py --seeds 2000 --deep
-  scripts/fuzz_problog.py --replay tmp/fuzz/fail_17.pl
-  scripts/fuzz_problog.py --show 17          # print program for one seed
+  tests/fuzz_problog.py --seeds 300 [--jobs 8] [--start 0]
+  tests/fuzz_problog.py --only 15,53,237   # re-run specific seeds
+  tests/fuzz_problog.py --seeds 2000 --deep
+  tests/fuzz_problog.py --replay tmp/fuzz/fail_17.pl
+  tests/fuzz_problog.py --show 17          # print program for one seed
 
 Disagreements are written to tmp/fuzz/fail_<seed>.pl, with a clause-level
 minimisation (greedy delta debugging that keeps the disagreement class) in
@@ -48,10 +48,10 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
+from compare import PROBLOG, TDDLOG
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-TDDLOG = os.path.join(ROOT, 'target', 'release', 'tddlog')
-PROBLOG = os.path.join(ROOT, 'tmp', 'venv', 'bin', 'problog')
 OUTDIR = os.path.join(ROOT, 'tmp', 'fuzz')
 WORKDIR = os.path.join(OUTDIR, 'work')
 

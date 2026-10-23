@@ -20,14 +20,11 @@
     bottom-up into tree decision diagrams with the
     <a href="https://github.com/Tractables/tididi">tididi</a> library, and
     gives each query's exact probability. It runs in this tab and nothing is
-    uploaded. The same solver is a Rust crate with a command-line tool; the
-    code is <a href="https://github.com/Tractables/tddlog">on GitHub</a>, and
-    the <a href="guide/">guide</a>, the <a href="results/">results</a>
-    against ProbLog, Ace, Merlin, Dice, Alea.jl and the other systems, the
-    <a href="api/">API documentation</a> and the <a href="python/">Python</a>
-    and <a href="c/">C</a> bindings' pages are on this site.</p>
+    uploaded. The same solver runs from the command line, Rust, Python and
+    C, as the <a href="guide/">guide</a> shows.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
+    <a href="./" aria-current="page">Playground</a>
     <a href="guide/">Guide</a>
     <a href="results/">Results</a>
     <a href="api/">API</a>
@@ -40,12 +37,15 @@
 
 <section class="card glance" id="glance" hidden>
   <div id="glance-stats" class="stats"></div>
-  <p class="note">From the release run, against Ace and Merlin on Bayesian
-  and Markov networks, ProbLog, PITA and aspmc on logic programs, and Dice,
-  Alea.jl and Roulette on the programs of their papers, every answer of
-  tddlog's checked against a reference: <a href="results/">the plots, the
-  tables and the findings</a>.</p>
+  <p class="note">From the release run against the exact systems people
+  use for each kind of problem (ProbLog, Ace, Merlin, Dice, Alea.jl and
+  more), every answer of tddlog's checked against a reference:
+  <a href="results/">the plots, the tables and the findings</a>.</p>
 </section>
+
+<noscript><p class="card note">The playground runs tddlog in this tab and
+needs JavaScript. The <a href="guide/">guide</a> shows the same programs
+and their answers.</p></noscript>
 
 <section class="card">
   <div class="examples">
@@ -100,11 +100,6 @@
 <footer>
   tddlog is open source under the Apache-2.0 license:
   <a href="https://github.com/Tractables/tddlog">repository</a> ·
-  <a href="guide/">guide</a> ·
-  <a href="results/">results</a> ·
-  <a href="api/">API</a> ·
-  <a href="python/">Python</a> ·
-  <a href="c/">C</a> ·
   <a href="https://github.com/Tractables/tididi">tididi</a>, the TDD library ·
   <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions
 </footer>

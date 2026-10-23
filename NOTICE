@@ -14,11 +14,5 @@ data, under their own terms:
   written out from their publications (Lauritzen and Spiegelhalter, 1988;
   Korb and Nicholson, 2004), under the Apache License 2.0 with the rest.
 
-The benchmarks' other Bayesian networks, of the bnlearn repository
-(https://www.bnlearn.com/bnrepository/), are not in the repository, as no
-license for redistributing them is established: data/fetch.txt names
-where each is downloaded (ProbLog's copies, and bnlearn for munin1 to
-munin4) and its SHA-256.
-
 Each directory's README gives the source and commit of its files. The
 repository's baselines branch holds further copies, listed in its NOTICE.

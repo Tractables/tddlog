@@ -6,6 +6,8 @@
 % independent facts, which can hold together: no two of them are a class.
 % d's five rows fall into two classes but read one parent each, h, which a
 % split on h reads a row at a time: d stays as it is.
+% Run with `tddlog examples/row_classes.pl`; `tddlog --ground examples/row_classes.pl`
+% prints the program the grounder writes.
 0.2::a(1); 0.3::a(2); 0.5::a(3).
 0.6::b(t); 0.4::b(f).
 0.1::c(x); 0.3::c(y); 0.6::c(z) :- a(1), b(t).

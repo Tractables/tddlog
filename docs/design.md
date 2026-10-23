@@ -1,62 +1,144 @@
 # Design
 
-tddlog answers ProbLog queries by Tp-compilation (Vlasselaer et al.) into
-structural tree decision diagrams (TDDs, the tididi library). This page
-describes the default path, one section per stage: what the stage does,
-why, and where the code is. The constants named here are documented with
-their reasons in the source. Results are in [benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md),
-on the baselines branch; the papers behind the stages are in [papers/](papers/). Sizes in pairs,
-nodes and engine work units are machine independent.
+This page is for people who change tddlog. It follows one program through
+the pipeline, then describes each stage in the order it runs: what it
+does, why, and where the code is. The cases measured behind the stages'
+rules are at the end, in [Measured cases](#measured-cases), under the
+same headings.
 
-## Pipeline
+To use tddlog, start with the [README](../README.md) and the
+[guide](https://tractables.github.io/tddlog/guide/). tddlog answers
+ProbLog queries by Tp-compilation (Vlasselaer et al.) into the structural
+tree decision diagrams (TDDs) of
+[tididi](https://github.com/Tractables/tididi), whose
+[data model](https://tractables.github.io/tididi/tididi/guide/model/index.html)
+explains vtrees, levels, nodes and pairs. [papers/](papers/) has notes on
+the papers the stages come from: [Tp-compilation](papers/tp-compilation.md)
+(the compile, negation through recursion), [Fierens et
+al.](papers/fierens-tplp15.md) (ProbLog's semantics, the relevant ground
+program, the weights) and [flip-hoisting](papers/cheng-probprog21.md)
+(switch sharing). The constants named here are documented with their
+reasons in the source. Sizes in pairs, nodes and engine work units are
+machine independent. The results are in
+[benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md),
+on the baselines branch.
 
-`solve` (`src/solve/`) runs the stages for the binary and for a library
-caller alike, under `Options`; `solve_ground` runs a program already
-ground, whole. A `Strategy` (`src/strategy.rs`) is `auto` or one layout,
-a `vtree::Kind`, which fixes the grounder's options, the rewrite, the
-formulation and the projection besides its vtree.
+## How a program is answered
 
-1. **Parse** (`src/syntax`) a Datalog fragment of ProbLog.
-2. **Ground** (`src/ground`): magic sets, right-linear recursion from its
-   bound end, stratified bottom-up grounding, simplification, views,
-   exclusive sets, choices read under exclusive contexts, row classes,
-   switch sharing, certain atoms by cover, conditioning on what the
-   evidence implies (with a SAT search for the backbone of its clauses, and
-   the gates among them), dropping evidence no query depends on, and, in a
-   CNF over facts, dropping the clauses the others imply and eliminating
-   by resolution the facts of probability one half outside an independent
-   support. A table-shaped program (a Bayesian
-   network, one annotated disjunction per row) skips the steps up to
-   simplification.
-   `tddlog --ground` prints the result as a ProbLog program, and under a
-   strategy other than `auto` the program that layout compiles (steps 3
-   and 4). Where the
-   queries' own parts of the program are estimated much smaller than it,
-   the queries are split into groups, each run on its part from step 3 on
-   (`src/solve/split.rs`).
-3. **Write linear recursion without recursion** (`src/ground/eliminate.rs`,
-   `ground::without_linear_recursion`) and finish the acyclic result again.
-   Every layout compiles the rewrite (`Kind::eliminated`, the first step
-   of `Kind::rewrite`); `auto` chooses its trials from the program as
-   grounded and writes it once for all of them.
-4. **Choose a layout** (`src/auto/`): `auto` tries, in order, a few
-   layouts (`vtree::Kind`), each with the program as it rewrites it
-   (`Kind::rewrite`: through every indicator, `src/indicators/`, for
-   `families`, through none for the others), each through compilation,
-   evidence and queries, in turns under bounds in pairs and work that
-   double each turn. The first trial to finish answers. Any other `--vtree` strategy
-   is one layout run once without bounds (`Strategy::Trial`).
-5. **Compile** (`src/tp`): each derived atom's formula over the facts, by
-   strongly connected components in dependency order, as the negation of
-   the atom (the dual) but for an atom of one rule, stored as its body's
-   conjunction, each component on a vtree projected to its ancestor
-   cone.
-6. **Evidence and queries** (`src/query/`, `src/eval/`): the evidence
-   factors conjoined bottom up along the vtree; each literal query read off
-   the evidence formula by one backward pass, other queries counted against
-   it in dense tables.
+Take `examples/alarm.pl` (Fierens et al. 2015, Example 1):
 
-The modules, in `src/`:
+```prolog
+0.1::burglary.
+0.2::earthquake.
+0.7::hears_alarm(john).
+0.4::hears_alarm(mary).
+alarm :- burglary.
+alarm :- earthquake.
+calls(X) :- alarm, hears_alarm(X).
+evidence(calls(john), true).
+query(burglary).
+query(earthquake).
+query(calls(mary)).
+```
+
+The four *probabilistic facts* are independent: a choice of their values
+is a *world*, whose probability is the product of the facts'. Every other
+atom is *derived*: in each world it holds where the rules derive it (the
+well-founded model of the world). `P(q | e)` is the probability of the
+worlds where the query `q` and the evidence `e` hold over that of the
+worlds where `e` holds, and tddlog computes both as weighted model counts
+of TDDs. `solve` (`src/solve/`) runs six stages, for the binary and for a
+library caller alike.
+
+1. **Parse** (`src/syntax`). The text becomes a `Program`: its clauses,
+   queries and evidence.
+2. **Ground** (`src/ground`). The grounder writes the *ground program*:
+   rules without variables over the atoms the queries and the evidence
+   depend on, simplified by the passes listed under
+   [Grounding](#grounding-srcground). `tddlog --ground` prints it as a
+   ProbLog program, and under a strategy other than `auto` the program
+   that layout compiles (after stages 3 and 4):
+
+   ```text
+   $ tddlog --ground examples/alarm.pl
+   0.1::burglary.
+   0.2::earthquake.
+   0.4::hears_alarm(mary).
+   alarm :- burglary.
+   alarm :- earthquake.
+   calls(mary) :- hears_alarm(mary).
+   evidence(alarm,true).
+   query(burglary).
+   query(earthquake).
+   query(calls(mary)).
+   ```
+
+   The evidence `calls(john)` holds exactly where `alarm` and
+   `hears_alarm(john)` do, so the conditioning on the evidence (step 9)
+   fixes both: `hears_alarm(john)` becomes certain, its 0.7 a factor of
+   `P(q, e)` and `P(e)` alike that the ground program's `weight` keeps;
+   `alarm` is observed in place of `calls(john)`; and `calls(mary)` reads
+   `alarm` as true. An annotated disjunction would have become a chain of
+   *switches*, facts that choose one of its heads (step 1). A table-shaped
+   program (a Bayesian network, one annotated disjunction per row) skips
+   the steps up to simplification. Where the queries' own parts of the
+   program are estimated much smaller than it, the queries are split into
+   groups, each run on its part from stage 3 on
+   ([Queries in groups](#queries-in-groups-srcsolvesplitrs-split_check)).
+3. **Rewrite.** Linear recursion is written without recursion
+   (`src/ground/eliminate.rs`, `ground::without_linear_recursion`) and the
+   acyclic result finished again. Every layout compiles the rewrite
+   (`Kind::eliminated`, the first step of `Kind::rewrite`); `auto` chooses
+   its trials from the program as grounded and writes it once for all of
+   them. A layout may then read derived atoms through *indicators*
+   (`src/indicators/`): each atom another part of the program reads is
+   read there through a fact of its own, a *copy*, tied to the atom by a
+   *link* the program observes. alarm.pl has no recursion, and the layout
+   that answers it reads no indicators.
+4. **Choose a layout** (`src/vtree/`, `src/auto/`). The TDDs' variables are
+   the facts (and the copies), and a *vtree*, a binary tree whose leaves
+   are those variables, shapes every diagram: one function can take a few
+   pairs on one vtree and millions on another. A *layout*, a `vtree::Kind`,
+   builds a vtree for the program. `auto`, the default `Strategy`, tries a
+   few layouts in order, each a *trial* with the program as it rewrites it
+   (`Kind::rewrite`: through every indicator for `families`, through none
+   for the others), each through compilation, evidence and queries, in
+   turns under bounds in pairs and work that double each turn. The first
+   trial to finish answers. Any other `--vtree` strategy is one layout run
+   once without bounds (`Strategy::Trial`). On alarm.pl `auto`'s first
+   trial, `td`, finishes in its first attempt.
+5. **Compile** (`src/tp`). Each derived atom gets a *formula*, a TDD over
+   the facts that holds in exactly the worlds where the atom does, by
+   Tp-compilation: the rules applied to diagrams rather than to truth
+   values. The atoms go by strongly connected components in dependency
+   order, and a cyclic component is iterated until no formula changes.
+   Here `alarm` is `burglary ∨ earthquake` and `calls(mary)` is
+   `hears_alarm(mary)`. A formula is stored as the negation of the atom's
+   (the *dual*), `¬burglary ∧ ¬earthquake` for `alarm`, but for an atom of
+   one rule, stored as its body's conjunction. Each component compiles on
+   the vtree projected to its ancestor cone.
+6. **Evidence and queries** (`src/query/`, `src/eval/`). The evidence
+   factors, here `alarm`'s formula, are conjoined bottom up along the
+   vtree. A query on a variable of the evidence formula (`burglary`,
+   `earthquake`) is a literal of it, and one backward pass counts them
+   all; any other (`calls(mary)`) is counted against the evidence in dense
+   tables. A fact weighs `p` true and `1 − p` false, so `P(burglary | e)
+   = WMC(burglary ∧ e) / WMC(e) = 0.1 / 0.28 = 0.357143`, and `P(e)` is
+   `0.28 × 0.7 = 0.196`, with the 0.7 the conditioning took out.
+
+The size of a diagram is counted in *pairs*: a TDD node at a vtree node is
+a list of (left, right) pairs, a child on each side. tididi's engine
+counts the work of its operations in *work units*. Every bound tddlog
+sets is in pairs or work, never in seconds, so a run takes the same
+decisions on every machine. `tddlog --stats` prints what each stage did.
+
+## Where the code is
+
+`solve` runs the stages under `Options`; `solve_ground` runs a program
+already ground, whole. A `Strategy` (`src/strategy.rs`) is `auto` or one
+layout, a `vtree::Kind`, which fixes the grounder's options, the rewrite,
+the formulation and the projection besides its vtree. The modules, in
+`src/`:
 
 | module | what it holds |
 |---|---|
@@ -83,20 +165,26 @@ name.
 
 ## Language (`src/syntax`)
 
-Constants, integers, variables; probabilistic facts `p::a.`; probabilistic
-rules `p::h :- b.`; annotated disjunctions `p1::h1; p2::h2 :- b.`; negative
-heads `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading); body disjunctions
-`;` and parentheses (split into clauses that share one switch group);
-negation as failure `\+`/`not`; comparisons `= \= == \== < > =< >=` and
-`is` with integer arithmetic on bound terms (`//` rounds down and `mod`
-takes the divisor's sign, as in ProbLog; `/`, which divides in floating
-point there, is refused); `query/1` (also
-`query(\+a)`), `query(pattern) :- body.`, `evidence/1,2`. No function
-symbols, lists, cut, `findall` or non-ground atoms. Rules must be range
-restricted; a body is reordered so that binding literals come first
-(`ground/schedule.rs`, shared by the grounder and the magic rewrite).
-Predicate names and constants are `Name`s, an `Arc<str>` shared from the
-lexer on, one per distinct spelling.
+The parser reads a Datalog fragment of ProbLog:
+
+- constants, integers and variables;
+- probabilistic facts `p::a.`, probabilistic rules `p::h :- b.`,
+  annotated disjunctions `p1::h1; p2::h2 :- b.`, and negative heads
+  `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
+- body disjunctions `;` and parentheses, split into clauses that share
+  one switch group;
+- negation as failure, `\+` or `not`;
+- comparisons `= \= == \== < > =< >=`, and `is` with integer arithmetic
+  on bound terms: `//` rounds down and `mod` takes the divisor's sign, as
+  in ProbLog; `/`, which divides in floating point there, is refused;
+- `query/1` (also `query(\+a)`), `query(pattern) :- body.`, and
+  `evidence/1,2`.
+
+There are no function symbols, lists, cut, `findall` or non-ground atoms.
+Rules must be range restricted; a body is reordered so that binding
+literals come first (`ground/schedule.rs`, shared by the grounder and the
+magic rewrite). Predicate names and constants are `Name`s, an `Arc<str>`
+shared from the lexer on, one per distinct spelling.
 
 ## Grounding (`src/ground`)
 
@@ -104,22 +192,43 @@ The grounder makes a `GroundProgram` (`program.rs`): atoms, ground rules,
 the facts' weights, the queries and the evidence, with `weight`, the
 factor that steps 9 and 11 and `td`'s separator copies take out of
 `P(q, e)` and `P(e)` alike, and `stats`, what each step did, which
-`--stats` prints. Steps 0 to 4 are the front end. `finish` runs steps 5
-to 11, after the front end and again after each layout rewrite (step 12,
-`decision`'s guards, `td`'s separator copies); where unit propagation
-settles the evidence without the exclusive sets (`condition::settle`),
-steps 6 to 9 are skipped.
+`--stats` prints. The ground program prints as ProbLog that ProbLog
+accepts (`tddlog --ground`), which is how grounding is checked apart from
+compilation.
+
+Steps 0 to 4 are the front end. `finish` runs steps 5 to 11, after the
+front end and again after each layout rewrite (step 12, `decision`'s
+guards, `td`'s separator copies); where unit propagation settles the
+evidence without the exclusive sets (`condition::settle`), steps 6 to 9
+are skipped. Several steps have a program in `examples/` that shows them.
+
+| step | files | what it does |
+|---|---|---|
+| 0 | `table.rs`, `noisy_or.rs` | grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
+| 1 | `normalize.rs`, `chain.rs` | annotated disjunctions and probabilistic rules to switches and rules; transitive closures to linear steps |
+| 2 | `linear.rs` | right-linear recursion grounded from its bound end |
+| 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
+| 4 | `engine.rs` | stratified semi-naive bottom-up grounding |
+| 5 | `simplify.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables |
+| 6 | `exclusive.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; views; equal gates; choices read under exclusive contexts |
+| 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
+| 8 | `cover.rs` | atoms certain by cover |
+| 9 | `condition.rs`, `preprocess/backbone.rs`, `renormalize.rs` | conditioning on the evidence: unit propagation, backbones, gates, renormalized rows |
+| 10 | `detach.rs` | evidence no query depends on dropped |
+| 11 | `preprocess/` | in a CNF over facts: implied clauses dropped, defined facts eliminated |
+| 12 | `eliminate.rs` | linear recursion without recursion, after the grounder |
 
 0. **Table-shaped programs** (`table.rs`). A program whose clauses each
    have ground heads of one predicate and a body of positive ground atoms,
    with ground queries and evidence, no query patterns and no cycle among
    its predicates, is a Bayesian network written one annotated disjunction
-   per row (`scripts/gen_bn.py`). What steps 1 to 4 make of it is known
-   from the rows, so `table::ground_rows` builds that output directly, the
-   same atoms in the same order, and simplification onward is shared
-   (`finish`). The shape (`Shape`) is decided before anything is built; any
-   other program takes the generic steps. Equality with the generic
-   grounding is tested on the table-shaped examples.
+   per row (`scripts/gen_bn.py`; `examples/bn_cancer.pl`). What steps 1 to
+   4 make of it is known from the rows, so `table::ground_rows` builds
+   that output directly, the same atoms in the same order, and
+   simplification onward is shared (`finish`). The shape (`Shape`) is
+   decided before anything is built; any other program takes the generic
+   steps. Equality with the generic grounding is tested on the
+   table-shaped examples.
 
    **Noisy-or tables** (`noisy_or.rs`) are then written as noisy-ors, from
    the same shape. A table of two values over parents of two values whose
@@ -129,9 +238,9 @@ steps 6 to 9 are skipped.
    `(1-q_i)::x(b) :- y_i(a_i).`, where nothing reads, asks or observes
    `x(c)` once the readers taken are written so too, and an observed table
    only with its parents (the conditioning reads a table's clauses, not a
-   noisy-or's). A chain of such tables is then a chain of views that inline
-   (step 6) into one rule per cause. The program written is not built: its
-   shape is made from the source's (`Shape::rewritten`).
+   noisy-or's). A chain of such tables is then a chain of views that
+   inline (step 6) into one rule per cause. The program written is not
+   built: its shape is made from the source's (`Shape::rewritten`).
 1. **Normalize** (`normalize.rs`). Each probabilistic clause
    `p1::h1;...;pn::hn :- body` with clause variables V becomes rules
    `hi :- body, swi(V), \+sw1(V), ..., \+sw_{i-1}(V)`. With `S_i` the
@@ -141,6 +250,7 @@ steps 6 to 9 are skipped.
    mass left keeps its mass. Switch predicates have no rules; their
    ground atoms are the random variables. A value that takes all the mass
    left has no switch, and a head of probability zero none either.
+
    **Transitive closures** (`chain.rs`). A predicate `p/2` whose rules are
    exits that do not read it and the chain rule `p(X,Y) :- p(X,Z),
    p(Z,Y)` holds the transitive closure of its exits' relation in every
@@ -150,11 +260,12 @@ steps 6 to 9 are skipped.
    binds its second argument and some use leaves the first unbound, so
    that step 2 finds the bound end and step 12 writes the recursion
    without recursion (Zhang, Yu and Troy, TODS 1990).
-2. **Right-linear recursion from the bound end** (`linear.rs`). A
-   predicate whose recursion is right-linear and whose every other use
-   binds the remaining positions to constants is also rewritten to chains
-   from those ends (`$r_p`; Naughton, Ramakrishnan, Sagiv and Ullman, VLDB
-   1989). Both programs are ground and the one with fewer rules plus body
+2. **Right-linear recursion from the bound end** (`linear.rs`;
+   `examples/linear_path.pl`, `examples/linear_target.pl`). A predicate
+   whose recursion is right-linear and whose every other use binds the
+   remaining positions to constants is also rewritten to chains from those
+   ends (`$r_p`; Naughton, Ramakrishnan, Sagiv and Ullman, VLDB 1989).
+   Both programs are ground and the one with fewer rules plus body
    literals is kept. As written, `path(1,Y)` over a right-recursive `path`
    grounds `path(X,Y)` for every `X` on a path to some `Y`, one recursive
    component per target. A predicate whose rules have no variables is
@@ -179,12 +290,12 @@ steps 6 to 9 are skipped.
    with every switch assumed true, which yields exactly the atoms true in
    some world. Every instantiation is a ground rule. A literal with bound
    arguments, the delta's included, takes its candidate tuples from a
-   per-position index of its relation. A negative literal on
-   an impossible atom is dropped as true; one inside its own stratum
-   (negation through recursion) is kept for the compiler's well-founded
-   fixpoint.
+   per-position index of its relation. A negative literal on an impossible
+   atom is dropped as true; one inside its own stratum (negation through
+   recursion) is kept for the compiler's well-founded fixpoint
+   (`examples/win.pl` shows both).
 
-   A recursive stratum has rising levels where the last argument of each
+   A recursive stratum has *rising levels* where the last argument of each
    of its predicates is a level that no rule lowers: every literal of the
    stratum is read at its head's level (the same variable, or constant
    levels h >= b) or below it (`H is B + c`, c >= 1), and some below it,
@@ -203,77 +314,73 @@ steps 6 to 9 are skipped.
    grounded after pass over an atom proved false and drop one proved true
    from their bodies. On a loop written as recursion over its steps
    (Dice's `iterate` through `scripts/dice2problog.py`) the dead branches
-   of each step are never grounded: dice_pmc1 is 1 506 atoms once
-   simplified, against 8 350 unrolled, and 3.2 G instructions against
-   3.8 G; the 27 loop programs 166 G against 219 G unrolled.
+   of each step are never grounded, and the program grounds fewer atoms
+   than the loop unrolled.
 5. **Simplify** (`simplify.rs`): propagate certain atoms; merge each atom
    the grounder introduced into another atom with the same rule bodies
-   (atoms the program writes wait for the exclusive sets, below); restrict to
-   what the queries and evidence depend on; read `a :- sw` as the variable
-   `a`. Where every atom that reads a fact has that fact alone as its one
-   rule, the first of them becomes the fact and the others are read as it,
-   to a fixpoint: an undirected edge `conn(a,b) :- edge(a,b)`,
-   `conn(b,a) :- edge(a,b)` is one variable.
+   (atoms the program writes wait for the exclusive sets, below;
+   `examples/equal_atoms.pl`); restrict to what the queries and evidence
+   depend on; read `a :- sw` as the variable `a`. Where every atom that
+   reads a fact has that fact alone as its one rule, the first of them
+   becomes the fact and the others are read as it, to a fixpoint: an
+   undirected edge `conn(a,b) :- edge(a,b)`, `conn(b,a) :- edge(a,b)` is
+   one variable.
 6. **Exclusive sets** (`exclusive.rs`). Two derived atoms are exclusive
    when every pair of their rules has clashing bodies. The sets are the
    values of a network variable; row classes, the cover, the indicators
    and the families layout read them. Where the cover leaves the program as
    it is, the grounder keeps them with it, with the rules by head, the
    derived components and the units (`GroundProgram::structure`), for the
-   indicators and `auto`'s `nothing_to_order` to read. An atom is compared
-   only with the sets that no body of its rules rules out: a set rules out
-   the bodies of its atoms' rules and those that do not clash with one of
-   them. A body here leaves out the facts that no other rule reads, which
-   clash with nothing, so that the rules of atoms that differ in such facts
-   alone, as a choice read through a fact per exclusive context, stand for
-   each other; without it caesar-iter's 3000 letters were compared pairwise.
-   Nor is an atom compared with every set of a key that holds two or
-   more: an atom joins a set only where each of its rules clashes with the
-   first rule of the set's first atom, so such a key's sets are listed by
-   the literals that clash with that rule, and an atom is compared with the
-   sets listed under the literals of one of its rules, the one with the
-   fewest. Without it the bits of
-   caesar-iter in binary, two sets a step under one key, were each compared
-   with every set before them.
+   indicators and `auto`'s `nothing_to_order` to read.
 
-   Then **views** (`inline.rs`). A derived atom that no query or evidence
-   names, of a predicate that does not depend on itself, in no exclusive
-   set, read only positively, and whose rules read facts alone, is replaced
-   in its readers by its rules' bodies where it is read once or has one
-   rule, and the literals that adds are at most twice those of its rules
-   and its readers (`GROWTH`). The atoms go in dependency order, so a view
-   over views reads facts alone in its turn. Tp-compilation gives every
-   derived atom a formula and the reader one negated term per body on the
-   reader's scope, where a structural TDD keeps a node at every level; a
-   query written through views paid for each view's term on its whole
-   scope. The atoms of a recursive predicate stay even where the ground
-   program is acyclic: a path in a directed grid is a part that the paths
-   into its first node share. An atom of one rule read once is replaced
-   by its body whatever the body reads, which copies nothing; so is an
-   exclusive set of such atoms of several predicates as a whole, the
-   branches of a choice. A set of one predicate's values stays: they are a
-   network variable (bn_munin's copies of a variable cost `auto` twice the
-   work inlined). A loop unrolled step by step names each step's
-   intermediate values this way: the Dice paper's diamond, unrolled, keeps
-   one atom a step of four, its work at 1 600 steps 3.98 M units to
-   1.23 M. Written as recursion over a step index, as `dice2problog.py`
-   writes Dice's `iterate`, they are a recursive predicate's atoms and
-   stay.
+   Two rules keep the comparisons few. An atom is compared only with the
+   sets that no body of its rules rules out: a set rules out the bodies of
+   its atoms' rules and those that do not clash with one of them. A body
+   here leaves out the facts that no other rule reads, which clash with
+   nothing, so that the rules of atoms that differ in such facts alone, as
+   a choice read through a fact per exclusive context, stand for each
+   other. Nor is an atom compared with every set of a key that holds two
+   or more: an atom joins a set only where each of its rules clashes with
+   the first rule of the set's first atom, so such a key's sets are listed
+   by the literals that clash with that rule, and an atom is compared with
+   the sets listed under the literals of one of its rules, the one with
+   the fewest.
 
-   Then **equal gates** (`aig::reduce`). The acyclic derived atoms with
-   rules, the gates, are built in dependency order into an and-inverter
-   graph: each the OR of its bodies, each body the AND of its literals,
-   from two-input ANDs with complemented edges, hashed on creation, the
+   Then **views** (`inline.rs`; `examples/views.pl`). A derived atom that
+   no query or evidence names, of a predicate that does not depend on
+   itself, in no exclusive set, read only positively, and whose rules read
+   facts alone, is replaced in its readers by its rules' bodies where it
+   is read once or has one rule, and the literals that adds are at most
+   twice those of its rules and its readers (`GROWTH`). The atoms go in
+   dependency order, so a view over views reads facts alone in its turn.
+   Tp-compilation gives every derived atom a formula and the reader one
+   negated term per body on the reader's scope, where a structural TDD
+   keeps a node at every level; a query written through views paid for
+   each view's term on its whole scope. The atoms of a recursive predicate
+   stay even where the ground program is acyclic: a path in a directed
+   grid is a part that the paths into its first node share. An atom of one
+   rule read once is replaced by its body whatever the body reads, which
+   copies nothing; so is an exclusive set of such atoms of several
+   predicates as a whole, the branches of a choice. A set of one
+   predicate's values stays: they are a network variable, whose copies
+   inlined cost more work than the variable. A loop unrolled step by step
+   names each step's intermediate values this way: the Dice paper's
+   diamond, unrolled, keeps one atom a step of four. Written as recursion
+   over a step index, as `dice2problog.py` writes Dice's `iterate`, they
+   are a recursive predicate's atoms and stay.
+
+   Then **equal gates** (`aig::reduce`; `examples/equal_gates.pl`,
+   `examples/equal_functions.pl`). The acyclic derived atoms with rules,
+   the *gates*, are built in dependency order into an and-inverter graph:
+   each the OR of its bodies, each body the AND of its literals, from
+   two-input ANDs with complemented edges, hashed on creation, the
    literals of a body and the bodies of a gate sorted. The inputs are the
    facts and the atoms of cyclic components; a derived atom without
    rules is false. A gate built as an earlier gate's node, the same
    bodies over equal gates, is merged into it: its rules go and its
    readers read the earlier atom, so a gate is compiled once however
    often the program writes it (structural hashing). Alea.jl writes a
-   gate again wherever its program computes a value again: of pi's
-   6 635 gates at 12 bits, 4 941 merge, which held three quarters of the
-   pairs the gates' formulas hold, and the compile's work falls to a
-   fourth.
+   gate again wherever its program computes a value again.
 
    A gate alone in its predicate may also compute an earlier such gate's
    function, or a fact's, by other structure, or the complement of one,
@@ -287,41 +394,32 @@ steps 6 to 9 are skipped.
    call and of steps a program (`STEPS_PER_LITERAL` a body literal). A
    model that tells two apart is simulated with the others as a word of
    its own, which splits the candidates; the search stops when 64 such
-   models come with no gate proved among them (bb_weekend_w30 made 7 762
-   calls and proved nothing, a second of its ground time), and while
-   calls still prove it goes on within its steps, past 16 words no
-   longer simulating them. A proved gate is merged
-   into the earlier one, read through a negated literal where it is the
-   complement, or keeps an empty body or none where it is constant; a
-   later gate alone in its predicate built as its node is merged the
-   same way.
-   conjugate_gaussians_w19 loses 306 of its 1 334 gates and half its
-   compile work, pi_w16 1 417 of 3 093.
+   models come with no gate proved among them, and while calls still
+   prove it goes on within its steps, past 16 words no longer simulating
+   them. A proved gate is merged into the earlier one, read through a
+   negated literal where it is the complement, or keeps an empty body or
+   none where it is constant; a later gate alone in its predicate built as
+   its node is merged the same way.
 
    A body that then reads an atom both ways is dropped, and so is a rule
    its head already has. An atom a query or the evidence names is not
    merged away, nor a value of an exclusive set of a predicate with
-   several atoms, a network variable's (merged into another variable's
-   value, bn_hailfinder's `scnrelplfcst(b)` split its variable and grew
-   the families layout's largest formula tenfold). Only atoms alone in
-   their predicates and in no exclusive set of several atoms are merged
-   into a complement, a fact or a constant: merged into a switch fact or
-   another value, uwcse4's values and dice_digitRecognition's took the
-   tables' structure apart (twice the work and more). The survivors keep
+   several atoms, a network variable's: merged into another variable's
+   value, it splits its variable. Only atoms alone in their predicates and
+   in no exclusive set of several atoms are merged into a complement, a
+   fact or a constant: merged into a switch fact or another value, a
+   table's values take the table's structure apart. The survivors keep
    their rules, over the atoms merged into. A program conditioned on its
    guards (`decision`'s, finished again) is not merged: the conditioning
    put each gate under the decisions that select it, and which of two
-   equal gates survives decides whether `decision` compiles
-   (bb_altermu2_w11: 181 M work units with the later gate kept, out of
-   8 GB with the earlier one, 27 000 atoms before it). The graph is built
-   only where a gate that may be merged away has a constant's values or
-   another atom's, or their complement, on the four words simulated over
-   the rules first (`may_merge`): a Bayesian network's gates are all its
-   variables' values, and the graph took a fourth of bn_diabetes's ground
-   time to find nothing.
+   equal gates survives decides whether `decision` compiles. The graph is
+   built only where a gate that may be merged away has a constant's values
+   or another atom's, or their complement, on the four words simulated
+   over the rules first (`may_merge`): a Bayesian network's gates are all
+   its variables' values, where the graph would find nothing.
 
    Then **choices read under exclusive contexts** (`contexts.rs`). A
-   choice is a table whose atoms each have one rule over facts only the
+   *choice* is a table whose atoms each have one rule over facts only the
    table reads: an annotated disjunction without a body, normalized to a
    chain of switches. Where every rule that reads an atom of a choice
    reads one, positively, and the rest of every two such bodies clash
@@ -333,24 +431,23 @@ steps 6 to 9 are skipped.
    else reads, so the fact has the same effect. A choice is read so where
    it saves at least as many literals as it adds facts. Dice's `iterate`
    writes a step that draws a value and observes a function of it and a
-   state as such a choice read under each value of the state:
-   simpleCaesar at 1 000 steps, 32 letters, goes from 3.87 M pairs to
-   161 k, since a step under one key is one fact, not the chain of
-   switches before its letter, and switch sharing then makes the facts of
-   one probability one. The exclusive sets are found again after it.
-7. **Row classes** (`classes.rs`). The rows of a table that hold one
-   distribution read it through a class atom, one rule per row, and the
-   table's rules for the class read it and the switches of its first row.
-   A table is rewritten where it has fewer than half as many classes as
-   rows (`CLASS_GAIN`) and some class has switches. Tables of one parent
-   are left alone, since a split on the parent already reads them a row at
-   a time. A table whose rows lie on long spines (*Bodies of facts alone*,
-   under Compilation) is rewritten too, with up to `MOST_SELECTORS` classes
-   and one per row if need be (`SPINE_ROWS`, `OWN_VALUE_FROM`): a class
-   atom then selects its rows, and the table over the classes is split on
-   them, its parts side by side. A noisy-or over facts is left alone: its
-   class atoms would be copies of the facts and split one component into
-   many.
+   state as such a choice read under each value of the state: a step
+   under one key is then one fact, not the chain of switches before its
+   letter, and switch sharing then makes the facts of one probability
+   one. The exclusive sets are found again after it.
+7. **Row classes** (`classes.rs`; `examples/row_classes.pl`). The rows of
+   a table that hold one distribution read it through a class atom, one
+   rule per row, and the table's rules for the class read it and the
+   switches of its first row. A table is rewritten where it has fewer than
+   half as many classes as rows (`CLASS_GAIN`) and some class has
+   switches. Tables of one parent are left alone, since a split on the
+   parent already reads them a row at a time. A table whose rows lie on
+   long spines (*Bodies of facts alone*, under Compilation) is rewritten
+   too, with up to `MOST_SELECTORS` classes and one per row if need be
+   (`SPINE_ROWS`, `OWN_VALUE_FROM`): a class atom then selects its rows,
+   and the table over the classes is split on them, its parts side by
+   side. A noisy-or over facts is left alone: its class atoms would be
+   copies of the facts and split one component into many.
 
    Then **switch sharing** (`share.rs`, local flip-hoisting, Theorem 1 of
    Cheng et al.): in a table whose rows exclude each other, the k-th switch
@@ -360,27 +457,29 @@ steps 6 to 9 are skipped.
    (`MIN_MERGED`), and, where the parent reads no fact, at least two rules
    per row in the parent (`MIN_RULES_PER_ROW`). A shared fact read in two
    parts of a split table keeps them on a spine instead of side by side,
-   so elsewhere sharing costs more than it saves.
-8. **Certain by cover** (`cover.rs`). A derived atom whose rule bodies
-   together are valid is certain and leaves the bodies that read it.
-   Validity is decided by merging bodies equal but for one literal, those
-   literals being an exhaustive set. A table whose rows all hold one
-   distribution then loses its parents, as ProbLog would read such a CPT.
-9. **Conditioning on the evidence** (`condition.rs`, on the propagation
-   of `propagation.rs`). Unit propagation
-   over the completion, seeded by the evidence and the certain atoms, with
-   each exclusive set read as at most one true atom and each exhaustive one
-   (from the cover) as exactly one. A fact it fixes becomes certain, its
-   weight a factor of `P(q, e)` and `P(e)` alike, which
-   `GroundProgram::weight` keeps for `--evidence-probability`. A derived atom
-   it fixes is observed and read as its value by every rule, which keeps
-   each world's model where no derived atom depends on itself; a cyclic
-   program is left alone. A derived atom it makes false whose rule has two
-   open literals on facts (directly, or through an atom with one live rule)
-   is a clause, and the facts of a strongly connected component of the
-   clauses' implications become copies `g :- f` or `g :- \+f` of one,
-   whose weight takes theirs (`Propagation::equal_facts`). This is what
-   Ace gets from compiling with its evidence and c2d's unit resolution.
+   so elsewhere sharing costs more than it saves. Rows that can hold
+   together keep switches of their own (`examples/shared_rows.pl`).
+8. **Certain by cover** (`cover.rs`; `examples/cover.pl`). A derived atom
+   whose rule bodies together are valid is certain and leaves the bodies
+   that read it. Validity is decided by merging bodies equal but for one
+   literal, those literals being an exhaustive set. A table whose rows all
+   hold one distribution then loses its parents, as ProbLog would read
+   such a CPT.
+9. **Conditioning on the evidence** (`condition.rs`, on the propagation of
+   `propagation.rs`). Unit propagation over the completion, seeded by the
+   evidence and the certain atoms, with each exclusive set read as at most
+   one true atom and each exhaustive one (from the cover) as exactly one.
+   A fact it fixes becomes certain, its weight a factor of `P(q, e)` and
+   `P(e)` alike, which `GroundProgram::weight` keeps for
+   `--evidence-probability`. A derived atom it fixes is observed and read
+   as its value by every rule, which keeps each world's model where no
+   derived atom depends on itself; a cyclic program is left alone. A
+   derived atom it makes false whose rule has two open literals on facts
+   (directly, or through an atom with one live rule) is a clause, and the
+   facts of a strongly connected component of the clauses' implications
+   become copies `g :- f` or `g :- \+f` of one, whose weight takes theirs
+   (`Propagation::equal_facts`). This is what Ace gets from compiling with
+   its evidence and c2d's unit resolution.
 
    Before the copies, a **SAT search** (`backbone.rs`, on the CDCL solver
    of `sat.rs`) reads the clauses the propagation leaves over facts, one
@@ -428,23 +527,19 @@ steps 6 to 9 are skipped.
    the masses' rules go on one of the table's own false heads, which stays
    observed false, in place of an atom of their own: each row's false
    heads merged into one, in the table's own unit. Read through an atom
-   of their own, the masses of a table over a set read in binary do not
-   compile in memory: bn_mildew_ev's `dm_4`, 210 rows over the 100 values
-   of `dm_3`, once a stronger propagation rules out most of `dm_4`'s
-   values; with `dm_3` read through a copy
-   per value they compile. Elsewhere the atom of their own compiles
-   smaller. A row that
-   keeps a head the propagation made true, an observed value, is not
-   renormalized: the head's observation carries the row's evidence, and
-   with the mass's constraint beside it an observed child of two sets
-   read in binary (tests/it/binary.rs) does not compile in memory. In a
-   table whose contexts exclude each other pairwise and read no set in
-   binary, a row that keeps that one head `h` becomes `h :- context, t`,
-   `t` a fact of weight `θ_h` shared by the rows of one `θ_h`, since `h`
-   holds where the context does through that row alone; elsewhere the
-   row stays as it is. The renormalization pays on Ace's networks, whose
-   zeros make values false (munin1's work 0.45 of what it was without
-   it); `GroundOptions::renormalize` turns it off.
+   of their own, the masses of a table over a set read in binary can
+   exceed memory where a copy per value of the set compiles; elsewhere the
+   atom of their own compiles smaller. A row that keeps a head the
+   propagation made true, an observed value, is not renormalized: the
+   head's observation carries the row's evidence, and with the mass's
+   constraint beside it an observed child of two sets read in binary
+   (tests/it/binary.rs) does not compile in memory. In a table whose
+   contexts exclude each other pairwise and read no set in binary, a row
+   that keeps that one head `h` becomes `h :- context, t`, `t` a fact of
+   weight `θ_h` shared by the rows of one `θ_h`, since `h` holds where the
+   context does through that row alone; elsewhere the row stays as it is.
+   The renormalization pays on Ace's networks, whose zeros make values
+   false; `GroundOptions::renormalize` turns it off.
 10. **Dropping detached evidence** (`detach.rs`). The components of the
     graph of rule heads and body atoms share no fact, so the count of a
     component holding observations and no query is a factor of `P(q, e)`
@@ -456,69 +551,68 @@ steps 6 to 9 are skipped.
     observations, and the relevance pass its rules; one with none found
     within `VISITS_PER_LITERAL` keeps them. A cyclic program is left alone.
 11. **Defined facts** (`defined.rs`, `implied.rs`, `support.rs`), where
-    the program is then a CNF over its facts (`ground::shape::clauses_over_facts`:
-    every derived atom a copy of a fact or an atom observed false that
-    nothing reads). First the clauses of four literals or more that the
-    others imply leave, the longest first, each found where `F \ C ∧ ¬C`
-    has no model: by unit propagation first, then by a search of at most
-    100 conflicts on those propagation keeps, under a budget of
-    propagation steps, with guards on a window of clauses at a time. The
-    models do not change, and the primal graph loses the cliques of long
-    clauses (three implied clauses of 36 literals held `td`'s width on
-    one instance at 41; without them it is 23; on another the search
-    finds what propagation does not, and takes it from 41 to 16). A
-    clause is tried only where it joins two variables that no clause
-    known to stay joins (those of three literals or fewer, and those found
-    not implied): one that leaves the primal graph as it is stays, since
-    an implied clause can help the compile (dropping them whatever they
-    join lost an instance).
-    An independent support of its clauses, by Arjun's backward search on
-    Padoa's theorem (Soos and Meel, ICCAD 2022) on the solver of `sat.rs`:
-    the CNF twice, `F(x) ∧ F(x')`, with an equality `x_i = x'_i` guarded
-    by an assumption per candidate, and a candidate `y` leaves the support
-    where `y ∧ \+y'` has no model with the others' equalities assumed.
-    The candidates are the facts of probability one half that no query
-    reads, tried in Arjun's order, the fewest occurrences of the rarer sign
-    first; the other facts stay in the support. A candidate outside it is a
-    function of the facts in it, and is eliminated by resolution where its
-    resolvents leave a minor of the primal graph: every pair of facts a
-    resolvent joins that no clause joined has one fact in common, into which
-    the eliminated one is contracted, so that the treewidth does not grow
-    (bounded by the count of clauses instead, as SatELite does, the
-    eliminations took `td`'s width on one CNF from 19 to 37). Each model
-    of `∃y F` extends to one of `F`, whose `y` weighs one half, so
-    `Σ_y ½ F(x, y) R(x) = ½ (∃y F)(x) R(x)` for any `R` that does not read
-    `y`, and the half goes to `GroundProgram::weight`. The gates step 9 takes
-    are the syntactic case; a gate it leaves because another clause reads it
-    can go here. The resolvents and clauses that the others imply then
-    leave as before the search. The clauses that stay keep their atoms;
-    each resolvent is an atom `$resolvent(k)` observed false. `auto` then
-    chooses its trials and vtrees on the program with fewer facts and
-    clauses.
-12. **Linear recursion without recursion** (`eliminate.rs`), after the
-    grounder, through `without_linear_recursion`. A recursive component
-    whose rules each read at most one of its atoms, positively, is
-    reachability: a node per atom and a source `s`, an edge `b → h`
-    labelled `L` for a rule `h :- b, L`, and `s → h` for a rule that reads
-    no atom of the component; `h` holds exactly when a path from `s` to
-    `h` has every label true. Eliminating node `k` adds `label(i → k) ∧
-    label(k → j)` to `label(i → j)` (Floyd and Warshall, one world at a
-    time), and then `v_k ⇔ A(k) ∨ ⋁_{j after k} v_j ∧ L(j, k)`: each atom
-    reads only atoms eliminated after it, so the program is acyclic, and
-    the atoms keep their names (a label of several bodies becomes an atom
-    `$e(n)`). The order is greedy on fill, the atoms read outside the
-    component last; past `MAX_PRODUCTS` label products the rest stays
-    recursive. Steps 5 and 8 to 11 then run again. This is Gaussian
-    elimination for the algebraic path problem (Tarjan, JACM 1981) used
-    as cycle breaking, for linear positive recursion only: unlike
-    Janhunen's translation of normal programs (ECAI 2004) it adds no rank
-    variables, and unlike ProbLog 2's proof-based cycle breaking no
-    per-context copies. It is faster than the compile's Tp iteration on the
-    same program on the random graphs and grids, which the iteration can
-    run out of memory on (g30_100).
+    the program is then a CNF over its facts
+    (`ground::shape::clauses_over_facts`: every derived atom a copy of a
+    fact or an atom observed false that nothing reads).
 
-The ground program prints as ProbLog that ProbLog accepts, which is how
-grounding is checked apart from compilation.
+    First the clauses of four literals or more that the others imply
+    leave, the longest first, each found where `F \ C ∧ ¬C` has no model:
+    by unit propagation first, then by a search of at most 100 conflicts
+    on those propagation keeps, under a budget of propagation steps, with
+    guards on a window of clauses at a time. The models do not change, and
+    the primal graph loses the cliques of long clauses, which can hold
+    `td`'s width far above the rest's. A clause is tried only where it
+    joins two variables that no clause known to stay joins (those of three
+    literals or fewer, and those found not implied): one that leaves the
+    primal graph as it is stays, since an implied clause can help the
+    compile.
+
+    Then an independent support of its clauses, by Arjun's backward search
+    on Padoa's theorem (Soos and Meel, ICCAD 2022) on the solver of
+    `sat.rs`: the CNF twice, `F(x) ∧ F(x')`, with an equality
+    `x_i = x'_i` guarded by an assumption per candidate, and a candidate
+    `y` leaves the support where `y ∧ \+y'` has no model with the others'
+    equalities assumed. The candidates are the facts of probability one
+    half that no query reads, tried in Arjun's order, the fewest
+    occurrences of the rarer sign first; the other facts stay in the
+    support. A candidate outside it is a function of the facts in it, and
+    is eliminated by resolution where its resolvents leave a minor of the
+    primal graph: every pair of facts a resolvent joins that no clause
+    joined has one fact in common, into which the eliminated one is
+    contracted, so that the treewidth does not grow (a bound on the count
+    of clauses, as SatELite's, lets it grow). Each model of `∃y F` extends
+    to one of `F`, whose `y` weighs one half, so
+    `Σ_y ½ F(x, y) R(x) = ½ (∃y F)(x) R(x)` for any `R` that does not read
+    `y`, and the half goes to `GroundProgram::weight`. The gates step 9
+    takes are the syntactic case; a gate it leaves because another clause
+    reads it can go here. The resolvents and clauses that the others imply
+    then leave as before the search. The clauses that stay keep their
+    atoms; each resolvent is an atom `$resolvent(k)` observed false.
+    `auto` then chooses its trials and vtrees on the program with fewer
+    facts and clauses.
+12. **Linear recursion without recursion** (`eliminate.rs`;
+    `examples/cycle_graph.pl`), after the grounder, through
+    `without_linear_recursion`. A recursive component whose rules each
+    read at most one of its atoms, positively, is reachability: a node per
+    atom and a source `s`, an edge `b → h` labelled `L` for a rule
+    `h :- b, L`, and `s → h` for a rule that reads no atom of the
+    component; `h` holds exactly when a path from `s` to `h` has every
+    label true. Eliminating node `k` adds `label(i → k) ∧ label(k → j)` to
+    `label(i → j)` (Floyd and Warshall, one world at a time), and then
+    `v_k ⇔ A(k) ∨ ⋁_{j after k} v_j ∧ L(j, k)`: each atom reads only atoms
+    eliminated after it, so the program is acyclic, and the atoms keep
+    their names (a label of several bodies becomes an atom `$e(n)`). The
+    order is greedy on fill, the atoms read outside the component last;
+    past `MAX_PRODUCTS` label products the rest stays recursive. Steps 5
+    and 8 to 11 then run again. This is Gaussian elimination for the
+    algebraic path problem (Tarjan, JACM 1981) used as cycle breaking, for
+    linear positive recursion only: unlike Janhunen's translation of
+    normal programs (ECAI 2004) it adds no rank variables, and unlike
+    ProbLog 2's proof-based cycle breaking no per-context copies. It is
+    faster than the compile's Tp iteration on the same program on the
+    random graphs and grids, which the iteration can run out of memory on.
+    `tddlog --ground --vtree closed examples/cycle_graph.pl` prints the
+    acyclic program.
 
 ## Queries in groups (`src/solve/split.rs`, `split_check`)
 
@@ -574,6 +668,7 @@ d_{k,u} :- \+v_{k,u}, \+k.
 which the program observes true. In each world of the facts the links
 admit one value of the copies, the atoms' values, so the count of
 `q ∧ e ∧ ⋀d` is `P(q ∧ e)` and the query ratio is unchanged.
+`examples/bn_split.pl` shows a split table (below).
 
 - **Units** are the merged components of `ground::deps::components`,
   joined again where they hold atoms of one exclusive set. A rule that
@@ -666,28 +761,23 @@ function they leave outside. Two consequences decide the strategies.
 **Direction.** Over a right-linear vtree, the level under leaves
 `x_i..x_n` has one node per cofactor with those fixed, so a right-linear
 TDD over an order is the quasi-reduced OBDD over the reversed order. A
-formula compiled bottom up wants its leaves in reverse dependency order
-(on the sachs `akt` marginal 2.1 k pairs; the forward order does not
-finish). At a vtree node whose facts are read by atoms that also read
-atoms decided outside it, a class is a function from the outside values to
-the inside ones, doubly exponential in the atoms read across the cut the
-wrong way (McMillan's bound for BDDs of circuits, read at every vtree
-node). A tree decomposition of the undirected interaction graph does not
-see the direction (on bn_child one formula reaches 31 M pairs under such a
-vtree, 6.9 k under a dependency order). So `td` and `dynamic`'s start are
-right-linear over an order, `closed` branches only where no subtree has
-inputs, and `families` branches over a program whose indicators give each
-group its inputs as leaves of its own. Where every rule reads facts alone,
-or copies of facts (`reads_facts_alone`), no formula composes a derived
-atom and no class reads an atom decided outside its node: there `td` and
-`dynamic`'s start are the decomposition folded.
+formula compiled bottom up wants its leaves in reverse dependency order;
+the forward order can be far larger. At a vtree node whose facts are read
+by atoms that also read atoms decided outside it, a class is a function
+from the outside values to the inside ones, doubly exponential in the
+atoms read across the cut the wrong way (McMillan's bound for BDDs of
+circuits, read at every vtree node). A tree decomposition of the
+undirected interaction graph does not see the direction. So `td` and
+`dynamic`'s start are right-linear over an order, `closed` branches only
+where no subtree has inputs, and `families` branches over a program whose
+indicators give each group its inputs as leaves of its own. Where every
+rule reads facts alone, or copies of facts (`reads_facts_alone`), no
+formula composes a derived atom and no class reads an atom decided outside
+its node: there `td` and `dynamic`'s start are the decomposition folded.
 
 **TDDs are not SDDs.** An SDD needs only the primes at a vtree node to be
-disjoint; a TDD partitions both sides of every node. ProbLog's ground
-formula for uwcse4 under PySDD's own vtree is a TDD with about as many
-nodes as the SDD has elements and 56 times the pairs; a right-linear vtree
-over the reverse compile order gives 13 k pairs. A vtree that suits an SDD
-does not suit a TDD.
+disjoint; a TDD partitions both sides of every node. A vtree that suits an
+SDD does not suit a TDD.
 
 **Tree decompositions** come from goatd, a single-threaded
 tree-decomposition library (a dependency): min-fill and min-degree
@@ -703,92 +793,95 @@ graph's degree.
 
 The layouts (`Kind`, `build`), each a trial of `auto`:
 
-- **`td`** (`td_forest`, `fold`): a tree decomposition of
-  the interaction graph, the facts read off it into a right-linear order:
-  each fact at the topmost bag holding it, a bag's facts after its
-  subtrees', rooted at the bag holding the last-consumed fact. The bushy
-  fold the decomposition argues for does not compile uwcse4, uwcse6 or
-  bn_child in minutes, where the right-linear order takes about a second.
+- **`td`** (`td_forest`, `fold`): a tree decomposition of the interaction
+  graph, the facts read off it into a right-linear order: each fact at the
+  topmost bag holding it, a bag's facts after its subtrees', rooted at the
+  bag holding the last-consumed fact. Where rules read derived atoms, the
+  bushy fold the decomposition argues for compiles far slower than the
+  right-linear order.
   Where every rule reads facts alone, or copies of facts, the fold is the
   vtree (`td_layout`): a node's classes then follow the facts its subtree
   shares with the rest, at most a bag, where a cut of the right-linear
-  order holds every fact alive on a root path. There the fold also copies
-  separator facts (`separators.rs`, `ground/fact_copies.rs`), and the
-  program `td` compiles is the one with the copies (`Prepared::lay_out`;
-  `tddlog --ground --vtree td` prints it). The atoms that cross a unit of
-  the fold (a bag's subtree, or a join of some of its children) read the
-  facts outside it, its separator, and the evidence's level at the unit's
-  root holds a node per function of the separator that an assignment of
-  the unit leaves, which can be many more than the separator's points. A
-  copy of a separator fact, of probability one half, laid atop the unit,
-  is read in the fact's place by the crossing atoms and tied to the fact
-  by two clauses observed false, whose weight `P(e)` takes back out; the
-  unit's root level then holds at most a node per point of the copies.
-  The rule (`CopyRule::ON`) copies a unit where the facts its crossing
-  atoms read inside it, and the parts of their rules outside it, are each
-  at least twice its separator, and where the unit holds at most four
-  times as many facts as the separator: copying every unit lost instances
-  of circuits' weighted CNFs that the rule answers. The decomposition is a min-degree
-  elimination where that reaches the graph's lower bound on the width
-  (`minor_min_width`), else a min-fill one where that does, and only then
-  goatd's portfolio (`portfolio_to_bound`), whose floor of work a small
-  program would otherwise pay, under a budget that scales with the graph
-  between `MIN_TD_BUDGET_UNITS` and `MAX_TD_BUDGET_UNITS`, seed 0; the
-  narrowest is kept. The two eliminations share goatd's reductions of the
-  graph (`goatd::elimination::Prepared`). Min-degree, the cheapest, goes
-  first, and where it does not finish within `ELIMINATION_BUDGET_UNITS`
-  the vertices it left are one bag, not a decomposition: `td` cannot help,
+  order holds every fact alive on a root path.
+
+  There the fold also copies separator facts (`separators.rs`,
+  `ground/fact_copies.rs`), and the program `td` compiles is the one with
+  the copies (`Prepared::lay_out`; `tddlog --ground --vtree td` prints
+  it). The atoms that cross a unit of the fold (a bag's subtree, or a join
+  of some of its children) read the facts outside it, its separator, and
+  the evidence's level at the unit's root holds a node per function of
+  the separator that an assignment of the unit leaves, which can be many
+  more than the separator's points. A copy of a separator fact, of
+  probability one half, laid atop the unit, is read in the fact's place by
+  the crossing atoms and tied to the fact by two clauses observed false,
+  whose weight `P(e)` takes back out; the unit's root level then holds at
+  most a node per point of the copies. The rule (`CopyRule::ON`) copies a
+  unit where the facts its crossing atoms read inside it, and the parts of
+  their rules outside it, are each at least twice its separator, and where
+  the unit holds at most four times as many facts as the separator:
+  copying every unit lost instances of circuits' weighted CNFs that the
+  rule answers.
+
+  The decomposition is a min-degree elimination where that reaches the
+  graph's lower bound on the width (`minor_min_width`), else a min-fill
+  one where that does, and only then goatd's portfolio
+  (`portfolio_to_bound`), whose floor of work a small program would
+  otherwise pay, under a budget that scales with the graph between
+  `MIN_TD_BUDGET_UNITS` and `MAX_TD_BUDGET_UNITS`, seed 0; the narrowest
+  is kept. The two eliminations share goatd's reductions of the graph
+  (`goatd::elimination::Prepared`). Min-degree, the cheapest, goes first,
+  and where it does not finish within `ELIMINATION_BUDGET_UNITS` the
+  vertices it left are one bag, not a decomposition: `td` cannot help,
   `build` returns an error, and `auto` disables the trial. The portfolio
   runs only where its hard cutoff, twice its budget, is more than the
   reductions and min-degree charged; below that its own eliminations stop
-  part way and leave their vertices in one bag (1.3 M atoms wide on
-  Roulette's caesar at 20 000 steps, where min-degree finished at width
-  14).
+  part way and leave their vertices in one bag.
 - **`closed`** (`closed_forest`): components in the order of a local
   search on a size proxy (`src/vtree/order.rs`: simulated annealing over
   dependency orders, components sharing switches merged first; skipped
   where 64 facts or fewer bound every formula, and where its budget of
   steps pays for fewer than four moves per component), each component a
   block with its new facts on a right-linear spine above a balanced join
-  of the blocks it reads. Blocks that share nothing and are read by one component
-  are siblings, the only place the tree branches. A join whose rules pair
-  up the blocks' atoms one to one (UW-CSE's
+  of the blocks it reads. Blocks that share nothing and are read by one
+  component are siblings, the only place the tree branches. A join whose
+  rules pair up the blocks' atoms one to one (UW-CSE's
   `advised_by(S,P), student_nb_publications(S,_)`) is not taken.
 - **`families`** and **`families:0`** (`families_forest`, `nest`): for a
-  program rewritten with indicators. A family is a formula the query phase
-  conjoins (a link, a derived query or evidence atom); groups are families
-  merged by the facts and copies they share. A fact that the rules of two
-  atoms or more read positively, a *hub*, merges no families where its
-  readers are apart without it; the hubs one rule reads together are a
-  group of facts alone. A group whose rows fall into `MIN_BRANCHES` or more
-  branches, rows that share neither a fact nor a group they read, is a
-  chain of its branches, each placed with the groups it reads, so that a
-  disjunction over independent parts does not make them one clique. The
-  moral graph of the groups is decomposed and each group's block goes in
-  the highest bag holding it with its parents. Within a bag the items are
-  joined pairwise by the fewest values left open, then the fewest leaves.
+  program rewritten with indicators. A *family* is a formula the query
+  phase conjoins (a link, a derived query or evidence atom); *groups* are
+  families merged by the facts and copies they share. A fact that the
+  rules of two atoms or more read positively, a *hub*, merges no families
+  where its readers are apart without it; the hubs one rule reads together
+  are a group of facts alone. A group whose rows fall into `MIN_BRANCHES`
+  or more branches, rows that share neither a fact nor a group they read,
+  is a chain of its branches, each placed with the groups it reads, so
+  that a disjunction over independent parts does not make them one
+  clique. The moral graph of the groups is decomposed and each group's
+  block goes in the highest bag holding it with its parents. Within a bag
+  the items are joined pairwise by the fewest values left open, then the
+  fewest leaves.
+
   Each of two group numberings is decomposed by min-fill, by goatd's
-  portfolio where min-fill's width is `FAMILIES_SEARCH_FROM_WIDTH` or more,
-  above the graph's lower bound, and min-fill charged less than the
+  portfolio where min-fill's width is `FAMILIES_SEARCH_FROM_WIDTH` or
+  more, above the graph's lower bound, and min-fill charged less than the
   search's hard cutoff (twice its budget; past it the search's own
-  eliminations stop part way), and by eliminating the groups in numbering order where that is narrower
-  (a grid's anti-diagonals). The first numbering is also decomposed by
-  min-fill weighted by the groups' values (`weighted_min_fill`: a fill
-  edge weighs the product of its ends' values), where the values differ,
-  and, where the portfolio runs and the cheapest layout of both numberings pays for
-  it (`anneal_budget`: a unit of work for every 8 pairs of its cost, up
-  to twice an elimination's budget, and at least 32 moves a vertex), by
-  simulated annealing over the elimination order (`annealed`), from the
-  better of the two min-fills by their states, the sum over the
-  eliminations of the product of the clique's values. The layout with the
-  least `Interfaces::layout_cost` is kept. `families:0` lays out the
-  min-fill decompositions alone. Within a block (`nest`) the copies every row reads
-  go at the bottom, the rows split into parts by shared facts, and where
-  every head reads a part's facts under one context, as a row's switches,
-  those facts go in a balanced tree beside the copies. The layout cost
-  doubles as an estimate of the evidence's pairs (`Estimate`, within 0.85
-  to 1.8 times on the grids, uwcse and bn_link, over it on the other
-  networks), which `auto` reads.
+  eliminations stop part way), and by eliminating the groups in numbering
+  order where that is narrower (a grid's anti-diagonals). The first
+  numbering is also decomposed by min-fill weighted by the groups' values
+  (`weighted_min_fill`: a fill edge weighs the product of its ends'
+  values), where the values differ, and, where the portfolio runs and the
+  cheapest layout of both numberings pays for it (`anneal_budget`: a unit
+  of work for every 8 pairs of its cost, up to twice an elimination's
+  budget, and at least 32 moves a vertex), by simulated annealing over the
+  elimination order (`annealed`), from the better of the two min-fills by
+  their states, the sum over the eliminations of the product of the
+  clique's values. The layout with the least `Interfaces::layout_cost` is
+  kept. `families:0` lays out the min-fill decompositions alone. Within a
+  block (`nest`) the copies every row reads go at the bottom, the rows
+  split into parts by shared facts, and where every head reads a part's
+  facts under one context, as a row's switches, those facts go in a
+  balanced tree beside the copies. The layout cost doubles as an estimate
+  of the evidence's pairs (`Estimate`), which `auto` reads.
 - **`dynamic`**, or `dynamic:minfill` (`facts_by_minfill`,
   `Compilation::dynamic`, tididi `Engine::pool_search`): right-linear over
   a pre-order of the min-fill elimination tree of the interaction graph (a
@@ -819,23 +912,16 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   after the first move. A stopped compile resumes inside a cyclic
   component at the update that stopped.
 - **`program`** (`auto`'s first trial where views were inlined, its last
-  elsewhere): right-linear over the facts in the
-  reverse of the order the program states them. A right-linear vtree over
-  x1 .. xn is read as an OBDD reading xn first, so the diagram reads the
-  facts in program order. A bit-blasted circuit exported with its flips
-  in creation order (Alea's) is then laid out in the variable order its
-  BDD package built it in. On the bit-blasting benchmarks this is the one
-  layout that compiles trueskill (largest formula 63.6 M pairs, against
-  3.4 M nodes in the package's own diagram for the evidence and query);
-  forward program order and every other `auto` trial run out of memory
-  there. On weekend scaled down to 256 pieces it is the one layout that
-  finishes (131 k pairs at most; `td`, `dynamic` and `families:0` run out
-  of memory), though the largest formula grows with the square of the
-  pieces, and the full program, at 4096, runs out of memory under it.
-  On programs with something to order it is `auto`'s first trial where
-  the grounder inlined views, which the exported circuits all have and
-  the networks, grids and graphs do not, and its last elsewhere, where
-  it takes its share of the work until another trial wins.
+  elsewhere): right-linear over the facts in the reverse of the order the
+  program states them. A right-linear vtree over x1 .. xn is read as an
+  OBDD reading xn first, so the diagram reads the facts in program order.
+  A bit-blasted circuit exported with its flips in creation order
+  (Alea's) is then laid out in the variable order its BDD package built it
+  in, and on some circuits this is the one layout that compiles. On
+  programs with something to order it is `auto`'s first trial where the
+  grounder inlined views, which the exported circuits all have and the
+  networks, grids and graphs do not, and its last elsewhere, where it
+  takes its share of the work until another trial wins.
 
   Where the order has narrow cuts, `program` and `program:fanin` name the
   derived atoms that cross them (`vtree/naming.rs`). The width of the
@@ -849,11 +935,8 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   cuts being the units, and each segment's copies are laid out at its
   start, before its facts. A formula then holds its own segment's facts
   and the copies at its start, and the evidence holds the links, the
-  history, once. On GeNI's weather the cut is the day's frontier, the 11
-  state bits and the goal of 42 facts a day: nine days take 174 M work
-  units against 24 204 M without names, and the 12 by 12 link grid 254 M
-  against 2 984 M.
-
+  history, once. On a Markov chain such as GeNI's weather the cut is the
+  day's frontier, the 11 state bits and the goal of 42 facts a day.
 - **`program:fanin`** (`auto`'s second trial where views were inlined,
   absent elsewhere): right-linear as `program`, over the facts in the
   fan-in order of BDD variable ordering (Malik, Wang, Brayton and
@@ -869,63 +952,64 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   puts the bits of the operands a gate combines side by side, an adder's
   or a comparator's bit by bit, and those of an operand that several
   operations read beside each of the others' (conjugate_gaussians adds μ
-  to two noises; a single walk on from the first sum put the second
-  noise after both). On conjugate_gaussians_w21 the compile takes 78 M
-  units of work under `program:fanin` against 7.2 G under `program`; on
-  addFun_sum at 19 bits the largest formula is 58 k pairs and the
-  compile 43 M units, against 50 M pairs and 4.0 G units. The walk loses
-  where the file states the facts in the order of a model's time:
-  pluck_hmm compiles in 1 286 pairs under `program` and runs out of
-  memory (25 GB) under the walk, and so do both trueskills (Alea's at 8
-  bits and hybit's); pluck_pcfg compiles in 60 s under `program` and not
-  in 600 s under the walk. On GeNI's 12 by 12 grid of link failures the
-  walk takes 0.66 G units of work, `program` 0.11 G. Since neither order
-  wins everywhere, `auto` tries both where views were inlined. Every atom
-  comes after the atoms it reads, which the names along the order need
-  (above): an atom that reads one this walk placed after its anchor and
-  one an earlier walk placed before it moves to right after the last atom
-  it reads. The grounder sorts each ground body by atom id, so the walk
-  reads a rule's atoms in the order they were made rather than as the
-  rule writes them.
-
-- **`decision`** (`src/vtree/decision.rs`): the tree of the decisions
-  the conditioning on guards read facts in (`ground::Decisions`, `auto`'s
+  to two noises; a single walk on from the first sum put the second noise
+  after both). The walk loses where the file states the facts in the
+  order of a model's time (a hidden Markov model, trueskill, a grammar, a
+  grid of link failures). Since neither order wins everywhere, `auto`
+  tries both where views were inlined. Every atom comes after the atoms
+  it reads, which the names along the order need (above): an atom that
+  reads one this walk placed after its anchor and one an earlier walk
+  placed before it moves to right after the last atom it reads. The
+  grounder sorts each ground body by atom id, so the walk reads a rule's
+  atoms in the order they were made rather than as the rule writes them.
+- **`decision`** (`src/vtree/decision.rs`): the tree of the decisions the
+  conditioning on guards read facts in (`ground::Decisions`, `auto`'s
   `decision` trial, below), each fact above the facts it decides between,
   with the facts the decisions leave out right-linear below the root's
   right, in the fan-in order of the shallowest roots first
   (`deps::fan_in`, above): a data point's facts then stay together on the
-  spine, where deepest first put altermu2_w11's 40 data points' noises
-  beside the mean at every bit, and its query phase took 1.52 G units of
-  work against 247 M. A program the grounder read no fact of as a guard
-  has no such tree, and the layout fails. The layout names two kinds of
-  atoms, each read through a variable of its own tied to it by an
-  observed link, as `program`'s names are: each context of the tree that
-  a rule body holds the cube of, and the contexts above it, `c_S :- c_S',
-  l`, its name at the top of its subtree, read in place of the cube; and
-  the atoms of the tree that atoms reading facts outside it read (the
-  bits a mux tree selects), their names above the lowest node holding
-  their cones. Without the context names an if-then-else over two values
-  in disjoint subtrees holds their product, `4^k` pairs for a mux tree
-  over `k` selector bits. The names of the tree's atoms above each node
-  are a cut, which settling keeps or composes away (below); the contexts
-  keep their names. Where nothing outside the tree reads it, nothing is
-  named: the names are then variables the compile holds apart until the
-  evidence conjoins their links. Alea.jl's caesar is such a program, its
-  key and letters trees of decisions that only their sums read, and the
-  contexts' names alone took caesar_huge's compile from 0.47 G to 5.36 G
-  units.
+  spine, where deepest first put the data points' noises beside the mean
+  at every bit. A program the grounder read no fact of as a guard has no
+  such tree, and the layout fails.
 
-`ground::shape::nothing_to_order` holds where the derived atoms are one component,
-or one recursive component reads at least half the facts (a reachability
-relation grounded from its source). There no indicator cuts anything the
-component's diagram does not hold, and no component order matters.
+  The layout names two kinds of atoms, each read through a variable of its
+  own tied to it by an observed link, as `program`'s names are: each
+  context of the tree that a rule body holds the cube of, and the contexts
+  above it, `c_S :- c_S', l`, its name at the top of its subtree, read in
+  place of the cube; and the atoms of the tree that atoms reading facts
+  outside it read (the bits a mux tree selects), their names above the
+  lowest node holding their cones. Without the context names an
+  if-then-else over two values in disjoint subtrees holds their product,
+  `4^k` pairs for a mux tree over `k` selector bits. The names of the
+  tree's atoms above each node are a cut, which settling keeps or composes
+  away (below); the contexts keep their names. Where nothing outside the
+  tree reads it, nothing is named: the names are then variables the
+  compile holds apart until the evidence conjoins their links. Alea.jl's
+  caesar is such a program, its key and letters trees of decisions that
+  only their sums read.
+
+`ground::shape::nothing_to_order` holds where the derived atoms are one
+merged component, or one recursive component reads at least half the
+facts (a reachability relation grounded from its source). There no
+indicator cuts anything the component's diagram does not hold, and no
+component order matters.
 
 ## `auto` (`src/auto/`)
 
-A trial is a layout, a `vtree::Kind`, compiled on the program as that
-layout rewrites it (`Kind::rewrite`): `families` and `families:0` read it
-through indicators, the others do not. A program gets these trials
-(`candidates`), in order:
+`auto` does not choose a layout ahead of the compile: it runs a few as
+trials and keeps the first that finishes. A trial is a layout, a
+`vtree::Kind`, compiled on the program as that layout rewrites it
+(`Kind::rewrite`): `families` and `families:0` read it through
+indicators, the others do not. The trials take turns: each turn lets one
+trial's compile or query phase go on until it has spent a target of
+engine work or would complete a formula larger than a watch in pairs, and
+a trial's target doubles once it has spent it. A trial wins only after
+its compile, evidence and all queries complete; the first complete trial
+answers. This section gives which trials a program gets, the two trials
+that rewrite the program further (`program`'s and `decision`'s), how the
+turns go, and what happens when memory runs out.
+
+A program gets these trials (`candidates`), in order:
 
 | program | trials |
 |---|---|
@@ -939,9 +1023,7 @@ The CNF over facts is the conditioning's (Grounding, step 9). `closed`
 comes before `families:0` where the program has `FEW_FACTS` facts or
 fewer and `DERIVED_PER_FACT` derived atoms per fact or more (the families
 rewrite then copies many atoms per fact for a trial that `closed`
-beats). A trial with indicators ties tables by clauses. A trial wins
-only after its compile, evidence and all queries complete; the first
-complete trial answers.
+beats). A trial with indicators ties tables by clauses.
 
 **The `program` trials.** A right-linear vtree over the facts in the order
 the program states them, as an OBDD reads them (Vtrees). `program` reads
@@ -949,37 +1031,25 @@ the program ground with its views in place (`Kind::ground_options`;
 `auto` keeps the grounding before its views are inlined and finishes it
 again for them, `Programs::of`): a view inlined into its readers moves
 its facts to them, and a grid's boundary chains, views over facts, are
-then read by every later row. On geni_link_16 the widest cut grows from
-17 atoms to 30, the naming finds 21 cuts in place of 67, and the compile
-reaches a formula of 113 M pairs in place of 3 022. `program:fanin`,
-whose order comes from the rules, reads the inlined program, which
-serves it better (the circuits it wins took a third longer with the
-views in place). It comes first
-where the grounder inlined views (Grounding: atoms of one rule read once),
-the gates of a circuit built gate by gate, and last elsewhere: first on
-every program, it costs the networks and grids, which have no views, 3 to
-60 times. Where it comes first, `program:fanin`, the facts in the order
-the gates read them, comes second. A front end that bit-blasts a
+then read by every later row, which widens the cuts and leaves fewer of
+them to name. `program:fanin`, whose order comes from the rules, reads
+the inlined program, which serves it better. `program` comes first where
+the grounder inlined views (Grounding: atoms of one rule read once), the
+gates of a circuit built gate by gate, and last elsewhere: first on every
+program, it costs the networks and grids, which have no views, several
+times their time. Where it comes first, `program:fanin`, the facts in the
+order the gates read them, comes second. A front end that bit-blasts a
 program states the bits of each variable together and the variables in
 the source's order, the order Alea and Dice hand CUDD and their own
 diagrams. On circuits whose every other layout runs out of memory it may
-be small: pluck_hmm (199 flips, 346 gates) compiles in 1 286 pairs,
-pluck_pcfg in 1.1 M, Dice's triangle_large in 29 M and trueskill in
-64 M. Of these `program:fanin` compiles triangle_large alone (9.2 M
-pairs), and it compiles Alea's adders in a hundredth of `program`'s work
-(Vtrees). Over the 157 bit-blasted circuits that both finished, `auto`
-with the walk in place of `program`'s order took 0.895 of `auto`'s time
-in geometric mean and answered 15 programs more and one fewer. Their
-layouts cost nothing to build; as the last trial `program` has its turn
-after the others, and as the first the two and the trial after them
-start with short turns (`LEAD_SHARE`, Turns). Where they come first,
-`td` is no trial: its order comes from a decomposition of the undirected
-interaction graph, which does not see the gates' direction (Vtrees,
-direction), where the two orders the program states and `closed`'s
-search over dependency orders follow it. In the timed runs of the
-circuits, GeNI's networks and Roulette's programs, all built with views,
-`td` won none, and its turns took a fifth of what the losing trials
-spent on the circuits of a second or more.
+be small, and `program:fanin` compiles Alea's adders in a hundredth of
+`program`'s work (Vtrees). Their layouts cost nothing to build; as the
+last trial `program` has its turn after the others, and as the first the
+two and the trial after them start with short turns (`LEAD_SHARE`,
+Turns). Where they come first, `td` is no trial: its order comes from a
+decomposition of the undirected interaction graph, which does not see the
+gates' direction (Vtrees, direction), where the two orders the program
+states and `closed`'s search over dependency orders follow it.
 
 **The `decision` trial.** A program answered whole with at least
 `DECISION_DERIVED` (4 096) derived atoms, to which the conditioning on
@@ -987,24 +1057,21 @@ guards applies as ground (`may_decide`: acyclic, no pairs rules, and a
 rule reads a fact within the range of one of its derived literals) and
 on which it gets under way (the pass, run on the program as ground with
 an eighth of its budgets, `TEST_BUDGET`, makes a quarter as many atoms as
-the program has derived ones, `TEST_MADE`), is
-rewritten for `decision` from the program ground with its views in place,
-which `program` takes too (`decision_trial` in `src/solve/`). Where that conditioning makes at least
-as many atoms as the program has derived ones, the rewrite is a trial of
-its own, before the others, and shares its program with none of them; it
-takes its turns with the weight of a families trial, and the program is
-answered whole, without the split check, which would build the
-`families:0` trial's layout first. The full weekend circuit of the
-bit-blasting paper runs out of memory under every other trial and compiles
-under `decision`; its conditioning makes 578 k atoms for 160 k derived.
-The arithmetic circuits make fewer than they have,
-and their `decision` compile is worse than the other trials' or runs out
-of memory. Without the test, Roulette's ladder of 3 000 rungs was ground
-again for no trial at 48 s and 13 GB, its pass copying cubes that held
-the other column's facts; the pass is also charged for the cube
-literals it copies, at most `COPIED` (1 024) per literal of the program.
-`--stats` prints a `decision:` line wherever the program was ground
-again.
+the program has derived ones, `TEST_MADE`), is rewritten for `decision`
+from the program ground with its views in place, which `program` takes
+too (`decision_trial` in `src/solve/`). Where that conditioning makes at
+least as many atoms as the program has derived ones, the rewrite is a
+trial of its own, before the others, and shares its program with none of
+them; it takes its turns with the weight of a families trial, and the
+program is answered whole, without the split check, which would build the
+`families:0` trial's layout first. A circuit that compiles under
+`decision` alone makes many more atoms than it has derived ones; the
+arithmetic circuits make fewer than they have, and their `decision`
+compile is worse than the other trials' or runs out of memory. The test
+keeps a program from being ground again for no trial, and the pass is
+also charged for the cube literals it copies, at most `COPIED` (1 024)
+per literal of the program. `--stats` prints a `decision:` line wherever
+the program was ground again.
 
 Where the conditioning records decisions, the conditioned program goes
 to `decision` where it is a trial, and to the trials whose layout the
@@ -1013,28 +1080,15 @@ one the program states its facts in, and `closed` and `td`, which search
 theirs on the program they get. The other trials compile the program as
 ground (`auto::Programs`; a `--vtree` layout compiles the program as
 ground). `closed` and `program` take less work on the conditioned
-program at about the same sizes: on bb_altermu2_w11 `closed` 2.29 G
-units against 14.4 G. Under `auto` this takes
-bb_normal_mixture_theta_w9, which `closed` wins, to 0.66 of the time it
-takes on the program as ground and mu2_w7, which `program` wins, to 0.83.
-`program:fanin` reads its order off the rules, a walk
-through the atoms they read, and the conditioning rewrites what they
-read: a test of a number's bits becomes the cube of the flips on its
-path, so the walk no longer meets each number's flips together. On
-addFun_max_w17 the order it reads off the conditioned program takes 29
-times the recursive calls, in CUDD's model, of the order it reads off
-the program as ground, and under `auto` every order trial on the
-conditioned program ran out of memory. `families:0`
-takes more work on the conditioned program, its indicators on every atom
-the conditioning made: on bb_normal_mixture_mu2_w7 1.07 G units over its
-turns against 133 M.
-Beside `decision` the order layouts compile the program as ground. On
-the conditioned program they get further and hold their diagrams between
-turns: at 25 GB a process they starve bb_coinBias_w16's `decision` of
-memory in its query phase, and the run runs out of time at 600 s where
-beside the order layouts on the program as ground `decision` answers in
-286 s. That gives up bb_altermu2_w11, which `program` wins on the
-conditioned program in 0.32 to 0.38 of the time.
+program at about the same sizes. `program:fanin` reads its order off the
+rules, a walk through the atoms they read, and the conditioning rewrites
+what they read: a test of a number's bits becomes the cube of the flips
+on its path, so the walk no longer meets each number's flips together.
+`families:0` takes more work on the conditioned program, its indicators
+on every atom the conditioning made. Beside `decision` the order layouts
+compile the program as ground: on the conditioned program they get
+further and hold their diagrams between turns, which takes the memory
+`decision`'s query phase needs.
 
 The conditioning on guards (`src/ground/guards.rs`, `ground::guarded`):
 a rule `h :- f, x` reads `x` only where the fact `f` holds, so it may read
@@ -1058,63 +1112,47 @@ guards gives the `decision` layout (`ground::Decisions`).
 `families:0`'s place (below), 1 otherwise. Where `program` leads,
 `families:0` and `decision` hold it only where `families:0`'s rewrite
 ties tables by clauses (`families_weighted`), which reads the rewrite
-alone: the layout waits for `families:0`'s first attempt (dice_pmc1,
-which `program` answers in 0.3 s, has one of width 345 that takes 3.8 s
-to build). On the circuits that `program` leads, layouts over the
-families estimated at up to 1e14 pairs took the weight's share for
-nothing (pi_w12 8 s to 57). Each trial also has a target, the engine work
+alone, so the layout waits for `families:0`'s first attempt. Weighted
+otherwise, on the circuits that `program` leads, layouts over the
+families took the weight's share for nothing. Each trial also has a target, the engine work
 it may have spent by the end of its turn, at first its weight times
 `FIRST_PAIRS` times `WORK_PER_PAIR` (2^28) units. Each attempt goes to
 the trial whose target is least for its weight, the first in the
 candidates' order on a tie, so the trials take their first turns in
 order and later ones in proportion to their weights. The attempt may
 spend the target less what the trial has spent; once the trial has spent
-its target, the target doubles. It may complete formulas of up to its
-watch in pairs: a sixteenth of the target (`WORK_PER_HELD_PAIR`),
-`FIRST_PAIRS` at least, or more where a formula past the watch stopped
-an earlier attempt, since under a smaller watch it would build the
-formula again and be stopped again. Such a stop raises the watch, by
-powers of two, until it holds the formula (`Trial::hold`), and leaves
-the target alone, so the trial goes on where it is still the least: a
-formula's pairs need not follow its work (objectdetection_13's
-`families:0` completes 2^30 pairs on 1.15 G units), and a watch tied to
-the target gave the other trials three turns there. An operation in
-flight may output twice the watch in nodes, and a raw conjunction
-sixteen times it in pairs. Where `program` goes first, it,
+its target, the target doubles.
+
+An attempt may complete formulas of up to its watch in pairs: a sixteenth
+of the target (`WORK_PER_HELD_PAIR`), `FIRST_PAIRS` at least, or more
+where a formula past the watch stopped an earlier attempt, since under a
+smaller watch it would build the formula again and be stopped again. Such
+a stop raises the watch, by powers of two, until it holds the formula
+(`Trial::hold`), and leaves the target alone, so the trial goes on where
+it is still the least: a formula's pairs need not follow its work, and a
+watch tied to the target would give the other trials turns for nothing.
+An operation in flight may output twice the watch in nodes, and a raw
+conjunction sixteen times it in pairs. Where `program` goes first, it,
 `program:fanin` and the trial after them start at a 256th of their first
 targets (`LEAD_SHARE`): the circuits whose views were inlined are won by
-one of the three. The trial left
-alone runs without bounds (`attempt`). Every bound is in pairs or work,
-never seconds, so the winner is the same on every machine.
+one of the three. The trial left alone runs without bounds (`attempt`).
+Every bound is in pairs or work, never seconds, so the winner is the same
+on every machine. At equal shares the run spends on each other trial
+about its weight's share of twice the winner's work, which costs most
+where a late winner shares the run with trials that keep going.
 
-At equal shares the run spends on each other trial about its weight's
-share of twice the winner's work. That costs most where a late winner shares the run
-with trials that keep going: against the rounds this rule replaced,
-whose size stops ended a trial's round, Alea's arith_book (won by
-`closed`, third in order, at 0.6 G units of 4.4 G spent) went from 16 s
-to 47 s, GeNI's router_18 from 3.7 s to 7.4 (`program` and `closed` run
-on past size stops before the searched layout's turn), and Pluck's
-pcfg, which `program` wins after 9 G units, past 600 s from 479 (in
-56 GB, against the 1.7 GB of `program` alone). Over the three benchmark
-sets the two take about the same time (0.84, 1.03 and 1.00 of the
-rounds' time by suite).
-
-**Turns by projected finish.** After each attempt that leaves a trial
-in a phase, the trial records, at the attempt's target, the share of the
-phase it has finished: in its compile, its components; in its query
-phase, its steps, which are the evidence walk's joins (each makes one
-formula of two, so the walk makes one of the observed factors in one
-fewer) and then the queries answered. The records of its compile are
-dropped as its query phase starts, but for the target of the last, at
-which the query phase had finished none of its steps: the phase began
-since, so its first record measures it over at least a doubling. Where
-they were all dropped, a trial that finished its compile in a turn had
-no projection at the next, and counted as far out as any: on
-trueskill_w10 `program` stopped with its compile done and two of its
-four query steps, then the four other trials took a turn each, 90 s,
-before the second it needed. The share it finished over the last
-doubling of its target projects the doublings it still needs,
-(1 − f)/Δf, and so the work at which it finishes the phase
+**Turns by projected finish.** After each attempt that leaves a trial in a
+phase, the trial records, at the attempt's target, the share of the phase
+it has finished: in its compile, its components; in its query phase, its
+steps, which are the evidence walk's joins (each makes one formula of
+two, so the walk makes one of the observed factors in one fewer) and then
+the queries answered. The records of its compile are dropped as its query
+phase starts, but for the target of the last, at which the query phase
+had finished none of its steps: the phase began since, so its first
+record measures it over at least a doubling, and a trial that finished
+its compile in a turn has a projection at the next. The share it
+finished over the last doubling of its target projects the doublings it
+still needs, (1 − f)/Δf, and so the work at which it finishes the phase
 (`Trial::projected`). A trial that has not yet doubled its target in its
 phase makes no projection, and one that finished no step over its last
 doubling is projected never to finish. The records are by target rather
@@ -1129,108 +1167,69 @@ is projected to finish within the next turn, to `PROJECTED_DOUBLINGS`
 three. Without projections the trials take equal shares for their
 weights, as the doubling has them; a trial projected to finish soon
 takes its turns ahead of the others, up to three doublings ahead. The
-projections of a compile hold that far and no further. Over the
-circuits, in two timed runs of the finishing turns this rule replaces
-(below), a trial in its compile projected to finish within one doubling did so 70% of the time;
-one projected one to two doublings out finished within two 71 to 80%,
-three to four out within three 62 to 70%, four to six out within four
-49 to 55%; one projected past six doublings, or making no projection,
-finished within four 16 to 43% of the time. The chance of finishing in
-the next doubling per unit of work spent on it, by which a turn is
-worth giving, so falls about as 2^−e with the doublings e a trial is
-projected out, down to that of a trial with no projection at about
-three to five doublings, and is flat past it. The bound is also what a
-wrong projection costs: no trial goes more than three doublings ahead
-of another by its projection, so the run spends at most eight times
-what equal shares spend, and a trial that does not finish where it was
-projected to measures a slower pace over that doubling and falls back.
-The finishing turns this rule replaces (twice the weight for a turn
-where the trial was projected to finish within it) are the rule with
-one doubling, a projection within it counted as none. On the logged
-curves of the circuits of 0.5 s and more in the two runs, replayed
-under each rule, the three doublings took 0.79 to 0.87 of the finishing
-turns' time by set of circuits; four and five doublings gained little
-more, and lost more where a projection was wrong
-(trueskill_w8, whose `program` stalls at a few components a doubling
-and then finishes).
+projections of a compile hold that far and no further: the chance that a
+trial finishes in its next doubling falls with the doublings it is
+projected out, down to that of a trial with no projection at about three
+to five doublings. The bound is also what a wrong projection costs: no
+trial goes more than three doublings ahead of another by its projection,
+so the run spends at most eight times what equal shares spend, and a
+trial that does not finish where it was projected to measures a slower
+pace over that doubling and falls back.
 
-The projections of a query phase hold less well: projected to finish
-within one doubling, a query phase did so 22% of the time. The walk's
-last joins, at the root, are its largest, so a trial stopped near the
-end of its walk has many joins over its last doubling and few left:
-GeNI's weather_h400, whose `program` stops 0.2 G units short of its
-walk's end at its target of 2^31, is projected at 2^31.0 and takes its
-next turn ahead of the others', where at equal shares every other trial
-took a turn first, 9 G units in all. A query phase is measured only once
-it has run: where a trial projected to finish its compile goes ahead,
-the query phase that follows runs within that turn whatever its length
-(addFun_max_w17's `program`, whose seventeen queries take 0.14 G units
-each). A projection is counted from the target to three doublings past
-it, and one further out counts as none: given its weight however far
-out, a trial in its compile at a few components per doubling would go
-ahead of a winner that has reached its query phase (GeNI's weather,
-`normal_mixture_theta_w9`).
+The projections of a query phase hold less well. The walk's last joins,
+at the root, are its largest, so a trial stopped near the end of its walk
+has many joins over its last doubling and few left. A query phase is
+measured only once it has run: where a trial projected to finish its
+compile goes ahead, the query phase that follows runs within that turn
+whatever its length. A projection is counted from the target to three
+doublings past it, and one further out counts as none: given its weight
+however far out, a trial in its compile at a few components per doubling
+would go ahead of a winner that has reached its query phase.
 
-**Turns that end on their projection.** Within a turn, a trial's
-compile reads its projection at the end of each component
-(`tp::Horizon`): the work the trial has spent times all the components
-for each one finished. Where that is past `PROJECTED_DOUBLINGS` (three)
-doublings of its target, the turn cannot finish the compile, and it ends
-there as one that spent its target: the target doubles, and the other
-trials take their turns before it goes on. A stop between components
-loses nothing that the next attempt builds again. The projection is read
-once the trial has spent the work of its first watch, 2^24 units, about
-a tenth of a second: before it the components done are too few to
-project from. This projection is linear in the work, where the one
-between turns is by doublings: early in a compile whose components cost
-about alike the share finished per doubling grows, and by doublings the
-circuits `decision` wins were projected dozens of doublings out at 2^24
-units (GPA_w31 at 6.8% of its components, 2.8% over the last doubling).
-The linear one held them within 2^31.4 at their first turn's target of
-2^31, and SPPL's markov chains, whose `decision` finishes two components
-per doubling of work (the separated flag decides between every step's
-emission trees), at 2^34.3 to 2^38.7 at 2^24.9 units: their first turn
-of 2^31 units, 15 to 17 s, ends after 0.2 s.
+**Turns that end on their projection.** Within a turn, a trial's compile
+reads its projection at the end of each component (`tp::Horizon`): the
+work the trial has spent times all the components for each one finished.
+Where that is past `PROJECTED_DOUBLINGS` (three) doublings of its target,
+the turn cannot finish the compile, and it ends there as one that spent
+its target: the target doubles, and the other trials take their turns
+before it goes on. A stop between components loses nothing that the next
+attempt builds again. The projection is read once the trial has spent
+the work of its first watch, 2^24 units, about a tenth of a second:
+before it the components done are too few to project from. This
+projection is linear in the work, where the one between turns is by
+doublings: early in a compile whose components cost about alike the
+share finished per doubling grows, so that by doublings such a compile
+is projected dozens of doublings out, where the linear projection holds
+it close to its finish.
 
 **The searched layout.** The searched `families` layout is weighed
-against `families:0`'s once in a run, when it is built
-(`weigh_searched`): where it is estimated `SEARCHED_GAP` (4) times
-smaller, its trial moves just before `families:0` with the weight, at
-the first target of that weight, and has the next attempt, and
-`families:0` loses its weight, the bet now being on the searched layout;
-otherwise `families:0` goes on, and the searched trial weighs 1.
-Estimated about as large, the searched layout makes no bet of its own:
-on GeNI's weather_n7 and n8, where `program` wins, its first attempt at
-weight 8 spent 2.1 G units. GeNI's link_12, at a gap of 4.15, is won by
-the searched layout at its weight, and by `program` in 27 s otherwise.
-It is built at its own turn, after `closed`'s and `td`'s first (GeNI's
-geni_router_24, where it is estimated 88 times smaller and `families:0`
-at its weight otherwise spent 4.3 G units beside it before it was
-refused memory), or sooner where `families:0`'s layout is estimated past
-what its turn may hold and its rewrite ties tables by clauses (a
-Bayesian network's rows, `ties_tables_by_clauses`): after the attempt of
-`families:0` that spends what the search charges (`search_charge`:
-goatd's search units over `SEARCH_UNITS_PER_WORK`). So `families:0` may
-still finish for less than the search costs, as in renting until the
-rent paid equals the price, and on bn_munin1 the searched layout wins
-before `closed` and `td` spend their turns. An attempt that would spend
-past twice the charge stops at the charge (`search_rent`); otherwise
-rent is paid in whole attempts, so that it is at most twice the price:
-an attempt stopped at the charge loses the operation under way, and the
-rest of its turn may not hold it again (mastermind's one query operation
-of 6.9e7 units, against a charge of 2e8 met halfway through a turn). The
-relational programs with as large estimates (cora500, uwcse10) tie no
-table by clauses and are won by `closed` or `td`.
+against `families:0`'s once in a run, when it is built (`weigh_searched`):
+where it is estimated `SEARCHED_GAP` (4) times smaller, its trial moves
+just before `families:0` with the weight, at the first target of that
+weight, and has the next attempt, and `families:0` loses its weight, the
+bet now being on the searched layout; otherwise `families:0` goes on, and
+the searched trial weighs 1. Estimated about as large, the searched
+layout makes no bet of its own. It is built at its own turn, after
+`closed`'s and `td`'s first, or sooner where `families:0`'s layout is
+estimated past what its turn may hold and its rewrite ties tables by
+clauses (a Bayesian network's rows, `ties_tables_by_clauses`): after the
+attempt of `families:0` that spends what the search charges
+(`search_charge`: goatd's search units over `SEARCH_UNITS_PER_WORK`). So
+`families:0` may still finish for less than the search costs, as in
+renting until the rent paid equals the price. An attempt that would
+spend past twice the charge stops at the charge (`search_rent`);
+otherwise rent is paid in whole attempts, so that it is at most twice the
+price: an attempt stopped at the charge loses the operation under way,
+and the rest of its turn may not hold it again. The relational programs
+with as large estimates (cora500, uwcse10) tie no table by clauses and
+are won by `closed` or `td`.
 
 **Outgrown estimates.** A families trial that has spent more than
 `WORK_PER_ESTIMATED_PAIR` (64) units of work for each pair of its
 layout's estimate loses its weight, tested after each attempt: the
-weight bets on the estimate. Alone, the families trials that win have
-spent at most 7 units a pair on the networks and up to 150 on small
-programs they finish in their first turn (mnist_sum96); those that lose
-have spent 300 and more (GeNI's links and weather networks) or never
-finish (Dice's simpleCaesar). Their formulas need not reach the watch,
-which grows with the target.
+weight bets on the estimate, and the families trials that win spend far
+fewer units a pair than those that lose. Their formulas need not reach
+the watch, which grows with the target.
 
 **Refusals.** Memory goes to the trial that has spent the most. An
 operation refused memory, by the allocator or tididi's byte budget,
@@ -1245,17 +1244,9 @@ later attempt would resume at the same operation with larger bounds and
 no more memory to take. What it built is freed, and the run goes on with
 the other trials; it fails with the refusal once none is left. So a
 refusal discards less work than the refused trial has spent from each
-other trial, and once. Freed for whichever trial was refused, the others
-paid for an early refusal of a cheap trial: on bb_spacex_w17 `program`,
-freed for `families:0`, did its 2 G units again (195 s against 124), and
-on geni_link_18 `families` took the others' formulas twice and still did
-not fit. On geni_router_24 in 30 GB of address space `families` was
-refused at the last step of its query phase while `program`,
-`program:fanin`, `closed` and `families:0` held their stopped compiles,
-and the run failed after 472 s; alone it peaks at 22.6 GB. On
-spacex_w19 in 33 GB `closed` and then `program` were refused beside
-each other's formulas, where `program` alone answers in 113 s. The compile and query phases copy a
-formula they keep wherever an operation would consume it, through
+other trial, and once: freed for whichever trial was refused, the others
+paid for an early refusal of a cheap trial. The compile and query phases
+copy a formula they keep wherever an operation would consume it, through
 tididi's fallible copy (`TddBackend::copy`), so a copy the allocator
 cannot serve is a refusal too: `Tdd`'s `Clone` would abort the process.
 
@@ -1308,6 +1299,8 @@ split into SCCs (`ground/deps.rs`) and compiled in dependency order
 literals AND formulas of derived body atoms)`; a negative derived literal
 reads the finished formula of a lower component. An acyclic component
 takes one application; a cyclic one is iterated until no formula changes.
+[papers/tp-compilation.md](papers/tp-compilation.md) gives the operator
+and its fixpoint as the papers state them.
 
 **Worklist** (`Worklist`). A round takes the atoms whose bodies changed in
 reverse postorder of the component's dependency graph, and a reader ranked
@@ -1328,18 +1321,16 @@ so, only a negative read negates it, once, into the same cache. A body of
 one derived literal reads the literal of the other sign as stored or
 cached rather than negating the literal's formula. On a bit-blasted
 circuit, two thirds of whose atoms are gates of one rule, the two cut the
-negations by almost three quarters (the HyBit weekend, 724 k to 265 k,
-and its compile work from 836 M units to 533 M). A read is a copy of the
-stored or cached formula, since the operations consume their operands.
-In a run without a watch (a single layout, or `auto`'s trial left
-alone) the last read of a formula, in the last component that reads it,
-takes it and its cached negation instead (`last_reads`): the reads are
-counted per body of that component's rules, and a read for several
-bodies at once (a factored literal) counts for each. On Geni's weather
-factory, whose formulas have many readers, that is a third of the pairs
-copied; the copies for the earlier readers remain. The primal is the
-default under `dynamic` (`Kind::formulation`), where the search ends on
-smaller vtrees; it applies `λ_a' = λ_a ∨ ¬⋀_r ¬body_r` as
+negations by almost three quarters. A read is a copy of the stored or
+cached formula, since the operations consume their operands. In a run
+without a watch (a single layout, or `auto`'s trial left alone) the last
+read of a formula, in the last component that reads it, takes it and its
+cached negation instead (`last_reads`): the reads are counted per body of
+that component's rules, and a read for several bodies at once (a factored
+literal) counts for each; the copies for the earlier readers remain.
+
+The primal is the default under `dynamic` (`Kind::formulation`), where the
+search ends on smaller vtrees; it applies `λ_a' = λ_a ∨ ¬⋀_r ¬body_r` as
 `¬(¬λ_a ∧ ⋀_r ¬body_r)`, keeping the conjunction as `¬λ_a'` for the next
 update. tididi's overlay `or` would disjoin the bodies without negation;
 the compile does not use it, since the work clock charges it below its
@@ -1398,26 +1389,25 @@ cost and it is slower on the graphs.
 few facts of a program of thousands is nearly all padding: cora500's
 largest formula is 16 186 pairs for a function of 13 of its 2 216 facts,
 and 101 pairs on a vtree over those 13. Each component compiles on the
-global vtree projected to its ancestor cone, scopes shared by cone
-while a formula on one lives (`ScopeTable`, which the query phase uses
-too), formulas moved up with `embed` (a copy, no apply). The `Projector`
+global vtree projected to its ancestor cone, scopes shared by cone while
+a formula on one lives (`ScopeTable`, which the query phase uses too),
+formulas moved up with `embed` (a copy, no apply). The `Projector`
 (`projector.rs`) projects in time proportional to the variable set, from
 lowest common ancestors in a range-minimum table over pre-order depths. A
 component whose cone holds `DEFAULT_MAX_CONE` (half) of the facts or more
 keeps the global vtree; cones grow along dependencies, so no formula is
-embedded downwards. A cone over-approximates the support, and in a
-bit-blasted circuit by far: a gate the evidence fixed or a term that
-cancels leaves its readers' cones holding thousands of facts nothing
-depends on (weekend_w30's scopes held 11.1 M variables in all, the facts
-and supports its components read 7.2 M). So a finished component whose
-scope holds `NARROW_FROM` (1024) variables or more, and whose formulas
-depend on half of them or fewer, has its formulas moved onto the scope
-of their support (`Compilation::narrow`, `TddBackend::restrict`, the
-inverse of the embed), and its cone becomes that support
-(`Cones::narrow`). Narrowing every scope that could be made smaller
-lost: the support walk and the restrict copy each formula, and a
-narrowed component's vtree is one its readers no longer share
-(addFun_max_w17 36 s to 114 s).
+embedded downwards.
+
+A cone over-approximates the support, and in a bit-blasted circuit by
+far: a gate the evidence fixed or a term that cancels leaves its readers'
+cones holding thousands of facts nothing depends on. So a finished
+component whose scope holds `NARROW_FROM` (1024) variables or more, and
+whose formulas depend on half of them or fewer, has its formulas moved
+onto the scope of their support (`Compilation::narrow`,
+`TddBackend::restrict`, the inverse of the embed), and its cone becomes
+that support (`Cones::narrow`). Narrowing every scope that could be made
+smaller lost: the support walk and the restrict copy each formula, and a
+narrowed component's vtree is one its readers no longer share.
 
 **Minimization** (`backend.rs`, `TddBackend::minimize`). tididi's full
 reduction prunes unreachable pairs before contracting twins, and the prune
@@ -1431,19 +1421,14 @@ round: its joins are pruned but not contracted between full plans
 fully reduced off the schedule where that costs less than the join it
 precedes: the last result of a given-up batch's chain, and a batch's
 product that holds fewer pairs than its target. The twins a prune leaves
-multiply in the join with the target and in every join after it
-(normal_mixture_theta under `closed`: a batch's product pruned to
-475 745 pairs where the same factors' product minimized held 37 188, and
-the target's join 17.8 M pairs against 5.5 M); a full reduction costs as
-much as its result is large, and a product larger than its target is
-reduced on the schedule (GeNI's weather_h400 under `program`: a product
-of 202 M pairs, its target 23 M, minimized in full to 200 pairs fewer
-for 143 M units of work). A formula an atom settles on
-(`Reduce::Settled`) is always fully reduced, since it is measured,
-stored and bounded. Between
-the clauses of one conjunction only inner twins are contracted
-(`Reduce::Contract`). Answers do not depend on it: a contracted diagram is
-count-correct, and `equivalent` minimizes its operands itself.
+multiply in the join with the target and in every join after it; a full
+reduction costs as much as its result is large, and a product larger than
+its target is reduced on the schedule. A formula an atom settles on
+(`Reduce::Settled`) is always fully reduced, since it is measured, stored
+and bounded. Between the clauses of one conjunction only inner twins are
+contracted (`Reduce::Contract`). Answers do not depend on it: a
+contracted diagram is count-correct, and `equivalent` minimizes its
+operands itself.
 
 **Negations by source** (`NegationSource`). Every negation is counted by
 source: `Lambda`, `Term` and `Disjunction` (the two of a factored term),
@@ -1461,56 +1446,50 @@ lower frozen, until nothing changes. If lower and upper agree, the program
 is two-valued in every world; otherwise compilation stops naming an atom
 undefined in some world. ProbLog rejects every such program syntactically;
 tddlog accepts the sound ones, e.g. `a :- \+b. b :- \+a. a :- f. b :- \+f.`
-(`examples/negcycle_sound.pl`).
+(`examples/negcycle_sound.pl`). `examples/gearwheels.pl` needs the
+unfoundedness step, and `examples/unsound.pl` is refused.
 
 **Settling the names** (`settle.rs`). Between the compile and the
 queries, `program`'s cuts are settled one by one in the order's
 direction, from the diagrams, and so are `decision`'s, the names above
-each node of its tree, up the tree. Named, the evidence holds the
-joint `J` of the cut's links, built on the scope over them. Expanded,
-each formula whose diagram depends on the cut's copies is conjoined
-with the links it reads and the copies are summed out (`∃x (G ∧ (x ⇔ F)) = G[x := F]`, one `and_exists`
-per group of links, the groups built on the links' scope and shared by
-the readers that read the same links), and the links leave the
-evidence. The readers that are not queries grow
-from `R` pairs to `K`, and the cut keeps its names where `J < K − R`:
-the joint is weighed first, up to `4·L` for links of `L` pairs, and
-where it is that small the readers are composed only until they gain
-more than it; otherwise they are composed up to a gain of `4·(L + R)`,
-and the joint then up to their gain. The queries are
-settled after them, against the evidence `E` the other readers leave: a
-query's count walks every pair of its nodes against the evidence's at
-each level, so its names pay where `R·(E + J) < (R + L)·E`, that is where
-`J < L·E/R`. On a Markov chain each day's readers are the next day's
-links and would carry two days' joint composed: the weather keeps all
-its cuts, and so do the link grids (31 of 31 at side 12). Where the
-readers compress what they read, as the bits of a sum or a coupon
-collector's counts do, the cut is expanded: 20 of addFun_max_w17's 26
-cuts, which takes it from 12 210 M work units with every name kept to
-7 502 M (11 597 M without names). A cut's links may read its own
-copies (a split table's tie to the part before, an atom that reads a
-clause table's value through the table's first reader's copy): a reader
-is composed with the links it reads and those they read in turn, each
-link before the links of the copies it reads. A reader composed with
-links that read a later cut's copies joins that cut's readers. A cut
-whose link a tie stands on (`tp/tie.rs`) keeps its names. Settling
-spends at most the compile's work units, and the cuts it does not reach
-keep their names. Expanding a cut whose joint holds more than `4·L`
-pairs is not charged to that budget: kept, the cut's names would hold
-the joint in the evidence, and the work composes formulas the compile
-would have built without them. Charged, the genes programs' cuts spent
-the budget before settling reached the cuts at the root of `decision`'s
-tree, and genes5_w21's evidence held 94 M pairs of their joints (93 k
-with them expanded). Under `auto` that work is not charged to the
-trial's turn: the run's stop moves later by what settling spends
-(`TddBackend::stop_later`), so that it never takes the trial into
-another round, where every other trial spends a
-turn too (weather by factories at 13: 3.9 G work units against 7.1 G
-with settling charged, every cut keeping its names). Over 178
-programs of the timed suites (GeNI, the standard and large sets, lit,
-indicators, noDice, TPC-H), names and settling take `auto` to 0.591
-of the time without them, and answer 17 programs that `auto` without
-them does not answer in 600 s.
+each node of its tree, up the tree. Named, the evidence holds the joint
+`J` of the cut's links, built on the scope over them. Expanded, each
+formula whose diagram depends on the cut's copies is conjoined with the
+links it reads and the copies are summed out
+(`∃x (G ∧ (x ⇔ F)) = G[x := F]`, one `and_exists` per group of links, the
+groups built on the links' scope and shared by the readers that read the
+same links), and the links leave the evidence. The readers that are not
+queries grow from `R` pairs to `K`, and the cut keeps its names where
+`J < K − R`: the joint is weighed first, up to `4·L` for links of `L`
+pairs, and where it is that small the readers are composed only until
+they gain more than it; otherwise they are composed up to a gain of
+`4·(L + R)`, and the joint then up to their gain. The queries are settled
+after them, against the evidence `E` the other readers leave: a query's
+count walks every pair of its nodes against the evidence's at each level,
+so its names pay where `R·(E + J) < (R + L)·E`, that is where
+`J < L·E/R`.
+
+On a Markov chain each day's readers are the next day's links and would
+carry two days' joint composed, so the weather and the link grids keep
+their cuts. Where the readers compress what they read, as the bits of a
+sum or a coupon collector's counts do, the cut is expanded. A cut's links
+may read its own copies (a split table's tie to the part before, an atom
+that reads a clause table's value through the table's first reader's
+copy): a reader is composed with the links it reads and those they read
+in turn, each link before the links of the copies it reads. A reader
+composed with links that read a later cut's copies joins that cut's
+readers. A cut whose link a tie stands on (`tp/tie.rs`) keeps its names.
+
+Settling spends at most the compile's work units, and the cuts it does
+not reach keep their names. Expanding a cut whose joint holds more than
+`4·L` pairs is not charged to that budget: kept, the cut's names would
+hold the joint in the evidence, and the work composes formulas the
+compile would have built without them. Charged, it spent the budget
+before settling reached the cuts at the root of `decision`'s tree. Under
+`auto` that work is not charged to the trial's turn: the run's stop moves
+later by what settling spends (`TddBackend::stop_later`), so that it
+never takes the trial into another round, where every other trial spends
+a turn too.
 
 ## Evidence and queries (`src/query/`, `src/eval/`)
 
@@ -1528,8 +1507,8 @@ do not cost the square of the evidence's size, and every result is
 reduced on the walk's schedule (Minimization, above). Each pair is
 brought together on the union of the two scopes, or on the scope over
 all of a node's factors where those hold at most `SHARED_UP_TO`
-variables. The walk's conjunctions take tididi's sparse
-route at a lower density than the compile's (`QUERY_ROUTE`).
+variables. The walk's conjunctions take tididi's sparse route at a lower
+density than the compile's (`QUERY_ROUTE`).
 
 - **Put-offs.** Where a node's items other than the largest total under
   1/`PUT_OFF_BELOW` of the largest, charged `LEVEL_PAIRS` pairs per node of
@@ -1580,16 +1559,16 @@ came out as 2.6e-14. There the stored formula is negated and counted
 (`eval::complement`), in the query phase and where the compile counts a
 query's formula it drops.
 
-**Templates** (`src/tp/template.rs`). A leaf is a derived atom that no
-rule reads and nothing observes, and a fact is private where only leaves'
-rules read it. Where every rule of a query leaf `y` has one private
-literal, a positive `t`, and the rules of another query leaf `x` are those
-of `y` with each `t` taken by a cube `C_t` of private literals, the cubes
-of distinct `t` over distinct facts, `x` is answered by `y`'s formula
-counted with each `t` at `P(C_t)`, and its own formula is not built
-(`ForQueries::templates`). The values of a table's leaf variable have this
-shape: value `i` of a row is `¬s_0 ∧ … ∧ ¬s_i-1 ∧ s_i` over the row's own
-switches.
+**Templates** (`src/tp/template.rs`). A *leaf* is a derived atom that no
+rule reads and nothing observes, and a fact is *private* where only
+leaves' rules read it. Where every rule of a query leaf `y` has one
+private literal, a positive `t`, and the rules of another query leaf `x`
+are those of `y` with each `t` taken by a cube `C_t` of private literals,
+the cubes of distinct `t` over distinct facts, `x` is answered by `y`'s
+formula counted with each `t` at `P(C_t)`, and its own formula is not
+built (`ForQueries::templates`). The values of a table's leaf variable
+have this shape: value `i` of a row is `¬s_0 ∧ … ∧ ¬s_i-1 ∧ s_i` over the
+row's own switches.
 
 **Counts** (`src/eval/`). A count is taken in `f64` and, where that is
 not exact, in `eval::Count`s, a float with an exponent of its own in
@@ -1597,24 +1576,27 @@ steps of 2^256; an answer is the ratio of two counts. A thousand
 observations have a probability below the least positive `f64`. One
 generic implementation over `eval::Value` serves both types: the passes
 up and down of `eval::count`, `conjunction_count`'s tables and the
-engine's evaluation (`eval::Weighing`). Each level, column and table notes
-the least nonzero and the largest of its values (`eval::Range`; a grid's
-plan notes them where it stores each value for the last time), and a
-product of two such sets is exact when the product of their least values
-is a normal float and neither largest is infinite. Where it would not be,
-the passes keep the operands under a power of two per level and per column
-(`Scaled`), exact on normal floats: each operand centred on one, and both
-moved down where their products could overflow (`eval::capping`). The test
-takes the products of the operands' extremes, which no pair need take: a
-level whose own values span a few hundred powers of two can read children
-that span a thousand each. A level or column that fails it is exact as
-computed where its values are all `2^-960` or more (`eval::exact_as_computed`):
-a product that leaves the normal floats is off by under `2^-1075`, and a
-sum of fewer than `2^63` of them by under one rounding of such a value; a
-zero is exact only where no product could round to zero. A level whose
-values come out smaller is moved up and computed again (`eval::raising`).
-A level or column still not exact is computed in `Count`s from its operands
-and kept in floats under a power of its own where its values fit
+engine's evaluation (`eval::Weighing`).
+
+Each level, column and table notes the least nonzero and the largest of
+its values (`eval::Range`; a grid's plan notes them where it stores each
+value for the last time), and a product of two such sets is exact when
+the product of their least values is a normal float and neither largest
+is infinite. Where it would not be, the passes keep the operands under a
+power of two per level and per column (`Scaled`), exact on normal floats:
+each operand centred on one, and both moved down where their products
+could overflow (`eval::capping`). The test takes the products of the
+operands' extremes, which no pair need take: a level whose own values
+span a few hundred powers of two can read children that span a thousand
+each. A level or column that fails it is exact as computed where its
+values are all `2^-960` or more (`eval::exact_as_computed`): a product
+that leaves the normal floats is off by under `2^-1075`, and a sum of
+fewer than `2^63` of them by under one rounding of such a value; a zero
+is exact only where no product could round to zero. A level whose values
+come out smaller is moved up and computed again (`eval::raising`).
+
+A level or column still not exact is computed in `Count`s from its
+operands and kept in floats under a power of its own where its values fit
 (`Counted::recount_level`, `eval::fitted`); a column of the pass down that
 does not fit is kept in `Count`s (`Down::wide`), each value normalized, and
 read so by the columns under it. A count up still not exact goes on in
@@ -1654,9 +1636,9 @@ binary grounds with it off under the option. The line is
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
 `0` and `-inf`, none `1` and `0`. gen_bn.py's program for a Markov network
 states `log10 Z - log10 P(e)` on its first line, which turns the line into
-the UAI PR task. `--no-queries` drops the queries
-before grounding (`syntax::Program::without_queries`), so the program is
-ground for its evidence alone and the `P(e)` line is all the run prints.
+the UAI PR task. `--no-queries` drops the queries before grounding
+(`syntax::Program::without_queries`), so the program is ground for its
+evidence alone and the `P(e)` line is all the run prints.
 tests/it/evidence_probability.rs checks `P(e)` against ProbLog's under every
 strategy.
 
@@ -1673,36 +1655,33 @@ is reused rather than given back to the kernel and faulted in again. By
 default jemalloc splits a kept extent only for a request of at least a
 64th of its size; freed blocks join into extents of gigabytes, the
 smaller requests after them took fresh pages, and with no limit on the
-address space the kept pages grew without bound (coinBias_w16 past
-200 GB). Kept free pages count against a limit on the address space as
-live ones do, and jemalloc joins the small pieces among them only when it
-gives them back, so a request jemalloc refuses is made again once after a
-purge of every arena (`purge`): a trial `auto` retired leaves its memory
-to the trials that follow. With jemalloc's default, blocks of 8 MiB and
-more come from an arena of their own, whose free address space no other
-request can take; with one arena, triangle_large answers at 16 GB, where
-it was refused.
+address space the kept pages grew without bound. Kept free pages count
+against a limit on the address space as live ones do, and jemalloc joins
+the small pieces among them only when it gives them back, so a request
+jemalloc refuses is made again once after a purge of every arena
+(`purge`): a trial `auto` retired leaves its memory to the trials that
+follow. With jemalloc's default, blocks of 8 MiB and more come from an
+arena of their own, whose free address space no other request can take.
 
 Huge pages go on once the process has asked for `HUGE_FROM` (16 MB), and
 off for good where the kernel stalls (`kernel_stalls`, looked at every
 `HUGE_FROM` bytes asked for): where it has taken more than a tenth of a
 second of system time and more than a nanosecond for each byte of the
-process's peak resident set. Supplying memory costs the kernel about
-0.1 ns a byte in huge pages and 0.5 ns in small ones. Where free memory
-is fragmented, as with several large runs side by side, a fault in an
-advised mapping compacts memory at once (the `madvise` defrag setting),
-the compaction fails, the fault takes a small page after all, and the run
-pays 1.4 to 10 ns a byte. The binary leaves the `Solution`, which holds
-the parsed and normalized programs and the last run, to the process's
-exit rather than free it (`std::mem::forget`).
+process's peak resident set, several times what supplying memory costs it
+in either page size. Where free memory is fragmented, as with several
+large runs side by side, a fault in an advised mapping compacts memory at
+once (the `madvise` defrag setting), the compaction fails, and the fault
+takes a small page after all. The binary leaves the `Solution`, which
+holds the parsed and normalized programs and the last run, to the
+process's exit rather than free it (`std::mem::forget`).
 
 ## The browser build (`bindings/wasm`)
 
 The playground at tractables.github.io/tddlog runs the library in the
-browser. `bindings/wasm` is a crate of its own that calls `tddlog::solve` and
-writes the answers, `P(e)` and what each part's run did as JSON; nothing
-else of the library is wrapped, and the page's examples are programs the
-repository tests against ProbLog. It is built for
+browser. `bindings/wasm` is a crate of its own that calls `tddlog::solve`
+and writes the answers, `P(e)` and what each part's run did as JSON;
+nothing else of the library is wrapped, and the page's examples are
+programs the repository tests against ProbLog. It is built for
 `wasm32-unknown-emscripten`, as goatd's page is, because goatd's vendored
 FlowCutter is C++ that throws and catches: Emscripten compiles it with its
 libc++ and links it with the Rust code, whose standard library has a clock
@@ -1735,18 +1714,19 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   `dynamic` and `families`, and the literature families in `tests/lit/`;
   `tests/it/problog_suite.rs` runs the ProbLog system tests copied into
   `tests/problog/` under `auto`, `closed`, `dynamic`, `program` and
-  `families`. The other modules
-  of `tests/it/` check a mechanism each against an exact sum, enumeration
-  or ProbLog: indicators, binary reads, the clause memo, table models,
-  ties, templates, switch sharing, projection, the layouts (`layouts/`),
-  the or-route, negation counts, the evidence walk, the query and dense
-  counts, implicit levels, counts beyond a float's range (`underflow`),
-  `P(e)` (`evidence_probability`), the command line (`cli`), and
-  regressions (`tests/regress/`). Queries in groups are
-  tested in `src/solve/tests.rs`; `src/tp/tests/` compiles every example
-  with a dynamic search after every step, checks formulas dropped as they
-  die, resumes stopped cyclic components, and checks the primal's update
-  in a cyclic component against enumeration.
+  `families`. The other modules of `tests/it/` check a mechanism each
+  against an exact sum, enumeration or ProbLog: indicators, binary reads,
+  the clause memo, table models, ties, templates, switch sharing,
+  projection, the layouts (`layouts/`), the or-route, negation counts,
+  the evidence walk, the query and dense counts, implicit levels, counts
+  beyond a float's range (`underflow`), `P(e)` (`evidence_probability`),
+  the command line (`cli`, which also checks this page's walk through
+  `examples/alarm.pl` against the binary), and regressions
+  (`tests/regress/`). Queries in groups are tested in
+  `src/solve/tests.rs`; `src/tp/tests/` compiles every example with a
+  dynamic search after every step, checks formulas dropped as they die,
+  resumes stopped cyclic components, and checks the primal's update in a
+  cyclic component against enumeration.
 - The Python tests (`tests/test_*.py`) check the scripts: generators,
   translators and exact references.
 - `bindings/wasm/tests/examples.cjs` runs the playground's examples
@@ -1756,10 +1736,10 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   `bindings/c/tests/answers.c` (CMake's test, run by
   `bindings/c/check.py`) check 14 of the ProbLog system tests under five
   strategies, the errors, and `P(e)` by hand.
-- `scripts/problog_suite.py` runs all of ProbLog's system tests through
+- `tests/problog_suite.py` runs all of ProbLog's system tests through
   the binary and classifies pass, fail, unsupported and expected error.
-- `scripts/compare.py` diffs one program's probabilities against
-  ProbLog's; `scripts/fuzz_problog.py` diffs random programs in the
+- `tests/compare.py` diffs one program's probabilities against
+  ProbLog's; `tests/fuzz_problog.py` diffs random programs in the
   supported fragment against ProbLog.
 - `scripts/bn_exact.py` (on the baselines branch) answers a generated
   network by clique-tree calibration with ProbLog's semantics, the
@@ -1768,3 +1748,261 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   benchmark families against the baselines and checks every answer
   against ProbLog or the exact references
   ([benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md)).
+
+## Measured cases
+
+The cases behind the rules above, by section, for weighing a change to a
+rule. The names are benchmark instances of the results page. Sizes in
+pairs and work units are machine independent; seconds and gigabytes
+compare only within the run they come from.
+
+### Grounding
+
+- **Step 4, rising levels.** A loop written as recursion over its steps
+  grounds no dead branch: dice_pmc1 is 1 506 atoms once simplified,
+  against 8 350 unrolled, and 3.2 G instructions against 3.8 G; the 27
+  loop programs 166 G against 219 G unrolled.
+- **Step 6, exclusive sets.** Without the facts no other rule reads left
+  out of a body, caesar-iter's 3000 letters were compared pairwise.
+  Without a key's sets listed by the literals that clash with its first
+  rule, the bits of caesar-iter in binary, two sets a step under one key,
+  were each compared with every set before them.
+- **Views.** bn_munin's copies of a variable cost `auto` twice the work
+  inlined. The Dice paper's diamond, unrolled, keeps one atom a step of
+  four, its work at 1 600 steps 3.98 M units to 1.23 M.
+- **Equal gates.** Of pi's 6 635 gates at 12 bits, 4 941 merge by
+  structural hashing, which held three quarters of the pairs the gates'
+  formulas hold, and the compile's work falls to a fourth. Before the
+  sweep stopped at 64 models with no gate proved, bb_weekend_w30 made
+  7 762 calls and proved nothing, a second of its ground time. The sweep
+  takes 306 of conjugate_gaussians_w19's 1 334 gates and half its compile
+  work, and 1 417 of pi_w16's 3 093. Merged into another variable's
+  value, bn_hailfinder's `scnrelplfcst(b)` split its variable and grew the
+  families layout's largest formula tenfold. Merged into a switch fact or
+  another value, uwcse4's values and dice_digitRecognition's took the
+  tables' structure apart (twice the work and more). Merged in a program
+  conditioned on its guards, bb_altermu2_w11 takes 181 M work units with
+  the later gate kept, and runs out of 8 GB with the earlier one, 27 000
+  atoms before it. Built without `may_merge`, the graph took a fourth of
+  bn_diabetes's ground time to find nothing.
+- **Choices under exclusive contexts.** simpleCaesar at 1 000 steps, 32
+  letters, goes from 3.87 M pairs to 161 k.
+- **Renormalization.** bn_mildew_ev's `dm_4`, 210 rows over the 100 values
+  of `dm_3`, does not compile in memory with its masses read through an
+  atom of their own, once a stronger propagation rules out most of
+  `dm_4`'s values; with `dm_3` read through a copy per value it compiles.
+  On Ace's networks munin1's work is 0.45 of what it was without the
+  renormalization.
+- **Step 11, defined facts.** Three implied clauses of 36 literals held
+  `td`'s width on one instance at 41; without them it is 23. On another
+  the search finds what propagation does not, and takes it from 41 to 16.
+  Dropping implied clauses whatever they join lost an instance. Bounded by
+  the count of clauses instead, as SatELite does, the eliminations took
+  `td`'s width on one CNF from 19 to 37.
+- **Step 12.** The compile's Tp iteration runs out of memory on g30_100.
+
+### Vtrees
+
+- **Direction.** On the sachs `akt` marginal the reverse dependency order
+  gives 2.1 k pairs; the forward order does not finish. On bn_child one
+  formula reaches 31 M pairs under a tree decomposition's vtree, 6.9 k
+  under a dependency order.
+- **TDDs are not SDDs.** ProbLog's ground formula for uwcse4 under PySDD's
+  own vtree is a TDD with about as many nodes as the SDD has elements and
+  56 times the pairs; a right-linear vtree over the reverse compile order
+  gives 13 k pairs.
+- **`td`.** The bushy fold does not compile uwcse4, uwcse6 or bn_child in
+  minutes, where the right-linear order takes about a second. Below its
+  hard cutoff the portfolio's eliminations left 1.3 M atoms in one bag on
+  Roulette's caesar at 20 000 steps, where min-degree finished at width
+  14.
+- **`families`.** The layout cost estimates the evidence's pairs within
+  0.85 to 1.8 times on the grids, uwcse and bn_link, and over it on the
+  other networks.
+- **`program`.** On the bit-blasting benchmarks it is the one layout that
+  compiles trueskill (largest formula 63.6 M pairs, against 3.4 M nodes
+  in the package's own diagram for the evidence and query); forward
+  program order and every other `auto` trial run out of memory there. On
+  weekend scaled down to 256 pieces it is the one layout that finishes
+  (131 k pairs at most; `td`, `dynamic` and `families:0` run out of
+  memory), though the largest formula grows with the square of the
+  pieces, and the full program, at 4096, runs out of memory under it.
+  With names at its narrow cuts, nine days of GeNI's weather take 174 M
+  work units against 24 204 M without, and the 12 by 12 link grid 254 M
+  against 2 984 M.
+- **`program:fanin`.** On conjugate_gaussians_w21 the compile takes 78 M
+  units of work under `program:fanin` against 7.2 G under `program`; on
+  addFun_sum at 19 bits the largest formula is 58 k pairs and the compile
+  43 M units, against 50 M pairs and 4.0 G units. Where the file states
+  the facts in the order of a model's time, pluck_hmm compiles in 1 286
+  pairs under `program` and runs out of memory (25 GB) under the walk,
+  and so do both trueskills (Alea's at 8 bits and hybit's); pluck_pcfg
+  compiles in 60 s under `program` and not in 600 s under the walk. On
+  GeNI's 12 by 12 grid of link failures the walk takes 0.66 G units of
+  work, `program` 0.11 G.
+- **`decision`.** With the roots deepest first, altermu2_w11's 40 data
+  points' noises lay beside the mean at every bit, and its query phase
+  took 1.52 G units of work against 247 M. On caesar_huge, where nothing
+  outside the tree reads it, the contexts' names alone took the compile
+  from 0.47 G to 5.36 G units.
+
+### `auto`
+
+- **The `program` trials.** On geni_link_16 the inlined views take the
+  widest cut from 17 atoms to 30 and the cuts the naming finds from 67 to
+  21, and the compile reaches a formula of 113 M pairs in place of 3 022.
+  The circuits `program:fanin` wins took a third longer with the views in
+  place. First on every program, `program` costs the networks and grids 3
+  to 60 times. On circuits whose every other layout runs out of memory
+  `program` may be small: pluck_hmm (199 flips, 346 gates) compiles in
+  1 286 pairs, pluck_pcfg in 1.1 M, Dice's triangle_large in 29 M and
+  trueskill in 64 M; of these `program:fanin` compiles triangle_large
+  alone (9.2 M pairs). Over the 157 bit-blasted circuits that both
+  finished, `auto` with the walk in place of `program`'s order took 0.895
+  of `auto`'s time in geometric mean and answered 15 programs more and
+  one fewer. In the timed runs of the circuits, GeNI's networks and
+  Roulette's programs, all built with views, `td` won none, and its turns
+  took a fifth of what the losing trials spent on the circuits of a
+  second or more.
+- **The `decision` trial.** The full weekend circuit of the bit-blasting
+  paper runs out of memory under every other trial and compiles under
+  `decision`; its conditioning makes 578 k atoms for 160 k derived.
+  Without the test, Roulette's ladder of 3 000 rungs was ground again for
+  no trial at 48 s and 13 GB, its pass copying cubes that held the other
+  column's facts.
+- **The conditioned program.** On bb_altermu2_w11 `closed` takes 2.29 G
+  units on it against 14.4 G on the program as ground. Under `auto` it
+  takes bb_normal_mixture_theta_w9, which `closed` wins, to 0.66 of the
+  time it takes on the program as ground and mu2_w7, which `program`
+  wins, to 0.83. On addFun_max_w17 the order `program:fanin` reads off the
+  conditioned program takes 29 times the recursive calls, in CUDD's
+  model, of the order it reads off the program as ground, and under
+  `auto` every order trial on the conditioned program ran out of memory.
+  `families:0` takes 1.07 G units over its turns on bb_normal_mixture_mu2_w7
+  conditioned against 133 M. With the order layouts on the conditioned
+  program beside `decision`, at 25 GB a process they starve
+  bb_coinBias_w16's `decision` of memory in its query phase, and the run
+  runs out of time at 600 s, where beside the order layouts on the
+  program as ground `decision` answers in 286 s. That gives up
+  bb_altermu2_w11, which `program` wins on the conditioned program in
+  0.32 to 0.38 of the time.
+- **Turns.** dice_pmc1, which `program` answers in 0.3 s, has a
+  `families:0` layout of width 345 that takes 3.8 s to build. On the
+  circuits that `program` leads, layouts over the families estimated at
+  up to 1e14 pairs took the weight's share for nothing (pi_w12 8 s to
+  57). objectdetection_13's `families:0` completes 2^30 pairs on 1.15 G
+  units, and a watch tied to the target gave the other trials three turns
+  there. Against the rounds the doubling targets replaced, whose size
+  stops ended a trial's round, Alea's arith_book (won by `closed`, third
+  in order, at 0.6 G units of 4.4 G spent) went from 16 s to 47 s, GeNI's
+  router_18 from 3.7 s to 7.4 (`program` and `closed` run on past size
+  stops before the searched layout's turn), and Pluck's pcfg, which
+  `program` wins after 9 G units, past 600 s from 479 (in 56 GB, against
+  the 1.7 GB of `program` alone). Over the three benchmark sets the two
+  take about the same time (0.84, 1.03 and 1.00 of the rounds' time by
+  suite).
+- **Turns by projected finish.** With every compile record dropped as the
+  query phase starts, trueskill_w10's `program` stopped with its compile
+  done and two of its four query steps, then the four other trials took
+  a turn each, 90 s, before the second it needed. Over the circuits, in
+  two timed runs of the finishing turns this rule replaces, a trial in
+  its compile projected to finish within one doubling did so 70% of the
+  time; one projected one to two doublings out finished within two 71 to
+  80%, three to four out within three 62 to 70%, four to six out within
+  four 49 to 55%; one projected past six doublings, or making no
+  projection, finished within four 16 to 43% of the time. The chance of
+  finishing in the next doubling per unit of work spent on it, by which a
+  turn is worth giving, so falls about as 2^−e with the doublings e a
+  trial is projected out, down to that of a trial with no projection at
+  about three to five doublings, and is flat past it. The finishing turns
+  (twice the weight for a turn where the trial was projected to finish
+  within it) are the rule with one doubling, a projection within it
+  counted as none. On the logged curves of the circuits of 0.5 s and more
+  in the two runs, replayed under each rule, the three doublings took
+  0.79 to 0.87 of the finishing turns' time by set of circuits; four and
+  five doublings gained little more, and lost more where a projection was
+  wrong (trueskill_w8, whose `program` stalls at a few components a
+  doubling and then finishes). Projected to finish within one doubling, a
+  query phase did so 22% of the time. GeNI's weather_h400, whose
+  `program` stops 0.2 G units short of its walk's end at its target of
+  2^31, is projected at 2^31.0 and takes its next turn ahead of the
+  others', where at equal shares every other trial took a turn first, 9 G
+  units in all. addFun_max_w17's `program` runs its seventeen queries, of
+  0.14 G units each, within the turn its compile was projected to finish
+  in. On GeNI's weather and normal_mixture_theta_w9, a trial in its
+  compile at a few components per doubling would, given its weight
+  however far out, go ahead of a winner that has reached its query
+  phase.
+- **Turns that end on their projection.** By doublings, the circuits
+  `decision` wins were projected dozens of doublings out at 2^24 units
+  (GPA_w31 at 6.8% of its components, 2.8% over the last doubling). The
+  linear projection held them within 2^31.4 at their first turn's target
+  of 2^31, and SPPL's markov chains, whose `decision` finishes two
+  components per doubling of work (the separated flag decides between
+  every step's emission trees), at 2^34.3 to 2^38.7 at 2^24.9 units:
+  their first turn of 2^31 units, 15 to 17 s, ends after 0.2 s.
+- **The searched layout.** On GeNI's weather_n7 and n8, which `program`
+  wins, a searched layout estimated about as large that bet at weight 8
+  spent 2.1 G units in its first attempt. GeNI's link_12, at a gap of
+  4.15, is won by the searched layout at its weight, and by `program` in
+  27 s otherwise. On geni_router_24 the searched layout is estimated 88
+  times smaller, and `families:0` at its weight otherwise spent 4.3 G
+  units beside it before it was refused memory. On bn_munin1 the searched
+  layout wins before `closed` and `td` spend their turns. mastermind's one
+  query operation takes 6.9e7 units, against a charge of 2e8 met halfway
+  through a turn: stopped at the charge, the rest of the turn would not
+  hold it again.
+- **Outgrown estimates.** Alone, the families trials that win have spent
+  at most 7 units a pair on the networks and up to 150 on small programs
+  they finish in their first turn (mnist_sum96); those that lose have
+  spent 300 and more (GeNI's links and weather networks) or never finish
+  (Dice's simpleCaesar).
+- **Refusals.** Freed for whichever trial was refused, the others paid
+  for an early refusal of a cheap trial: on bb_spacex_w17 `program`,
+  freed for `families:0`, did its 2 G units again (195 s against 124),
+  and on geni_link_18 `families` took the others' formulas twice and still
+  did not fit. On geni_router_24 in 30 GB of address space `families` was
+  refused at the last step of its query phase while `program`,
+  `program:fanin`, `closed` and `families:0` held their stopped compiles,
+  and the run failed after 472 s; alone it peaks at 22.6 GB. On
+  spacex_w19 in 33 GB `closed` and then `program` were refused beside
+  each other's formulas, where `program` alone answers in 113 s.
+
+### Compilation
+
+- **Formulation.** On the HyBit weekend, storing gates of one rule as
+  their conjunction and reading the other sign as stored cut the
+  negations from 724 k to 265 k, and the compile work from 836 M units to
+  533 M. On Geni's weather factory, whose formulas have many readers, the
+  last reads take a third of the pairs copied.
+- **Projection.** weekend_w30's scopes held 11.1 M variables in all, the
+  facts and supports its components read 7.2 M. Narrowing every scope
+  that could be made smaller took addFun_max_w17 from 36 s to 114 s.
+- **Minimization.** normal_mixture_theta under `closed`: a batch's product
+  pruned to 475 745 pairs where the same factors' product minimized held
+  37 188, and the target's join 17.8 M pairs against 5.5 M. GeNI's
+  weather_h400 under `program`: a product of 202 M pairs, its target 23 M,
+  minimized in full to 200 pairs fewer for 143 M units of work.
+- **Settling the names.** The weather keeps all its cuts, and so do the
+  link grids (31 of 31 at side 12). 20 of addFun_max_w17's 26 cuts are
+  expanded, which takes it from 12 210 M work units with every name kept
+  to 7 502 M (11 597 M without names). With the expansion of a large
+  joint charged to the budget, the genes programs' cuts spent it before
+  settling reached the cuts at the root of `decision`'s tree, and
+  genes5_w21's evidence held 94 M pairs of their joints (93 k with them
+  expanded). Weather by factories at 13 takes 3.9 G work units against
+  7.1 G with settling charged to the turn, every cut keeping its names.
+  Over 178 programs of the timed suites (GeNI, the standard and large
+  sets, lit, indicators, noDice, TPC-H), names and settling take `auto` to
+  0.591 of the time without them, and answer 17 programs that `auto`
+  without them does not answer in 600 s.
+
+### Allocator
+
+- With jemalloc's default extent fit and no limit on the address space,
+  coinBias_w16's kept pages grew past 200 GB. With one arena,
+  triangle_large answers at 16 GB, where it was refused with blocks of
+  8 MiB and more in an arena of their own.
+- Supplying memory costs the kernel about 0.1 ns a byte in huge pages and
+  0.5 ns in small ones. Where a fault in an advised mapping compacts
+  memory and the compaction fails, the run pays 1.4 to 10 ns a byte.

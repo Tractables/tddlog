@@ -1,18 +1,20 @@
 # tddlog
 
 <p align="center">
+  <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
+     src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://tractables.github.io/tddlog/"><img
      src="https://img.shields.io/badge/run-in%20the%20browser-blue" alt="Run in the browser"></a>
   <a href="https://tractables.github.io/tddlog/guide/"><img
-     src="https://img.shields.io/badge/guide-worked%20examples-blue" alt="Guide"></a>
-  <a href="https://pypi.org/project/tddlog/"><img
-     src="https://img.shields.io/pypi/v/tddlog.svg" alt="PyPI"></a>
-  <a href="https://github.com/Tractables/tddlog/releases/latest"><img
-     src="https://img.shields.io/github/v/release/Tractables/tddlog" alt="GitHub release"></a>
-  <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
-     src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+     src="https://img.shields.io/badge/docs-guide-blue" alt="Guide"></a>
   <a href="https://tractables.github.io/tddlog/api/tddlog/"><img
-     src="https://img.shields.io/badge/docs-API-blue" alt="API documentation"></a>
+     src="https://img.shields.io/badge/docs-Rust-blue" alt="Rust API"></a>
+  <a href="https://tractables.github.io/tddlog/python/"><img
+     src="https://img.shields.io/badge/docs-Python-blue" alt="Python API"></a>
+  <a href="https://tractables.github.io/tddlog/c/"><img
+     src="https://img.shields.io/badge/docs-C-blue" alt="C API"></a>
+  <a href="https://tractables.github.io/tddlog/results/"><img
+     src="https://img.shields.io/badge/results-benchmarks-blue" alt="Benchmark results"></a>
 </p>
 
 **Exact probabilistic inference by compilation into tree decision diagrams.**
@@ -31,14 +33,22 @@ and it [runs in the browser](https://tractables.github.io/tddlog/).
        alt="Total time of tddlog and of each other exact inference system over the same instances, by kind of problem">
 </p>
 
+## Install
+
+- **Command line:** `cargo install --git https://github.com/Tractables/tddlog tddlog`.
+- **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
+  `[dependencies]`. See the [Rust API].
+- **Python:** build the package from a checkout. See the
+  [Python README](bindings/python/README.md).
+- **C and C++:** build the CMake package from a checkout. See the
+  [C README](bindings/c/README.md).
+- **Browser:** the [playground] runs tddlog in the tab, with nothing to install.
+
+A build from source needs Rust 1.88 or newer and a C++ compiler (gcc 12
+or newer, or a recent clang) for the tree-decomposition solver that goatd
+vendors.
+
 ## Getting started
-
-Install the command-line tool with Cargo, or the Python package with pip:
-
-```sh
-cargo install --git https://github.com/Tractables/tddlog tddlog
-pip install tddlog
-```
 
 A program states probabilistic facts, rules, evidence and queries.
 This is `examples/alarm.pl`:
@@ -66,9 +76,37 @@ earthquake:     0.714286
 calls(mary):    0.400000
 ```
 
-The [guide](https://tractables.github.io/tddlog/guide/) walks through the
-language and the options with worked examples, and the
-[playground](https://tractables.github.io/tddlog/) runs them in the browser.
+Each probabilistic fact `p::f` holds with probability p, independently
+of the others, and the rules derive the other atoms. The alarm goes off
+with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
+0.28 × 0.7 = 0.196, and P(burglary | John calls) = 0.1 × 0.7 / 0.196 =
+0.357143.
+
+The [guide] describes the language and the command line, with worked
+examples that open in the [playground]:
+
+- **Probabilistic logic programs** in the Datalog fragment of ProbLog:
+  probabilistic facts and rules, annotated disjunctions, negation as
+  failure, comparisons and integer arithmetic. The [reachability example]
+  queries paths in a graph with cycles, and the [negation example] the
+  winning positions of a game defined by negation through recursion.
+  Function symbols, lists, cut and `findall` are not supported.
+  `scripts/lpad2problog.py` converts LPADs written for cplint and PITA.
+- **Bayesian and Markov networks** in the BIF, Hugin, GeNIe and UAI
+  formats, which `scripts/gen_bn.py` writes as programs whose answers are
+  the marginals given the evidence: the [Bayesian network example].
+- **Discrete probabilistic programs**, with integers in bits as Dice and
+  Alea.jl compile them: the [binary integers example] adds two random
+  integers, and `scripts/dice2problog.py` translates Dice programs into
+  ProbLog.
+
+[examples/](examples/) lists every example program by what it shows.
+
+As a library, [`tddlog::solve`] takes a program's text and the command
+line's options and returns the answers, and the
+[Python](bindings/python/README.md) (`tddlog.solve(program).answers`),
+[C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)
+bindings wrap the same call.
 
 ## Performance
 
@@ -194,51 +232,6 @@ versions and every table; the
 [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
 has the code that runs each system and the copies of their programs.
 
-## Using tddlog
-
-**The language** is the Datalog fragment of ProbLog: probabilistic facts
-and rules, annotated disjunctions, negation as failure (also through
-recursion), comparisons and integer arithmetic, `query/1` and
-`evidence/1,2`. Function symbols, lists, cut and `findall` are not
-supported.
-
-**The command line** is `tddlog [options] program.pl`.
-`--evidence-probability` also prints the probability of the evidence,
-`--ground` prints the relevant ground program, `--stats` reports the
-compilation, and `--vtree` chooses how the diagrams order the program's
-variables (the default, `auto`, tries several layouts under growing
-budgets). `tddlog --help` lists every option.
-
-**Bayesian and Markov networks** in the BIF, Hugin, GeNIe and UAI formats
-become programs through `scripts/gen_bn.py`; the answers are the
-marginals given the evidence:
-
-```
-python3 scripts/gen_bn.py tests/regress/markov.uai --evid tests/regress/markov.uai.evid > markov.pl
-./target/release/tddlog markov.pl
-x0(v_0):        0.181818
-x0(v_1):        0.818182
-x1(v_0):        0.151515
-x1(v_1):        0.848485
-```
-
-**As a library**, `tddlog::solve` takes a program's text and the command
-line's options:
-
-```rust
-let options = tddlog::Options { evidence_probability: true, ..tddlog::Options::default() };
-let solution = tddlog::solve(program, &options, &mut |_| {})?;
-for answer in solution.answers.as_deref().unwrap_or_default() {
-    println!("{answer}: {}", answer.probability);
-}
-```
-
-The same call is wrapped for [Python](bindings/python/README.md)
-(`tddlog.solve(program).answers`), [C](bindings/c/README.md) and
-[WebAssembly](bindings/wasm/README.md). The
-[API documentation](https://tractables.github.io/tddlog/api/tddlog/)
-covers the rest.
-
 ## How it works
 
 tddlog grounds the part of the program the queries and evidence depend
@@ -252,42 +245,29 @@ evidence is conjoined bottom up along the vtree and each query is
 counted against it. [docs/design.md](docs/design.md) describes each
 stage.
 
-## Building from source
-
-tddlog needs Rust 1.88 or newer and a C++ compiler (gcc 12 or newer, or a
-recent clang) for goatd's vendored solver:
-
-```
-git clone https://github.com/Tractables/tddlog
-cd tddlog
-cargo build --release
-./target/release/tddlog examples/alarm.pl
-burglary:       0.357143
-earthquake:     0.714286
-calls(mary):    0.400000
-```
-
-`cargo test` checks tddlog against ProbLog's answers on its examples and
-on ProbLog's own system tests. [CONTRIBUTING.md](CONTRIBUTING.md) lists
+From a checkout, `cargo build --release` builds `target/release/tddlog`,
+and `cargo test` checks it against ProbLog's answers on the examples and
+on ProbLog's own system tests. [CONTRIBUTING.md](.github/CONTRIBUTING.md) lists
 the checks a change runs.
 
 ## Citing
 
-tddlog has no accompanying paper yet, so cite the software:
-
-```bibtex
-@misc{tddlog,
-  author       = {Van den Broeck, Guy},
-  title        = {tddlog: Exact Probabilistic Inference by Compilation into Tree Decision Diagrams},
-  year         = {2026},
-  howpublished = {\url{https://github.com/Tractables/tddlog}},
-  note         = {Rust library and command-line tool, version 0.1.0}
-}
-```
+tddlog has no paper yet: cite the software, as [CITATION.cff](CITATION.cff)
+describes it (GitHub's "Cite this repository"). TDDs were introduced in
+[*A Canonical Generalization of OBDD*](https://arxiv.org/abs/2604.05537).
 
 ## License
 
-Apache-2.0 ([LICENSE](LICENSE)). The copies of third-party programs and
-data in `tests/problog` and `data/` keep their own licenses
-([NOTICE](NOTICE)); the components compiled into the binaries are listed
-in [THIRD-PARTY.md](THIRD-PARTY.md).
+Apache-2.0 ([LICENSE](LICENSE)). The copies of third-party programs in
+`tests/problog` and `tests/dice` keep their own licenses
+([NOTICE](NOTICE)); [THIRD-PARTY.md](THIRD-PARTY.md) lists the components
+compiled into the binaries.
+
+[guide]: https://tractables.github.io/tddlog/guide/
+[playground]: https://tractables.github.io/tddlog/
+[Rust API]: https://tractables.github.io/tddlog/api/tddlog/
+[reachability example]: https://tractables.github.io/tddlog/guide/#reachability
+[negation example]: https://tractables.github.io/tddlog/guide/#negation
+[Bayesian network example]: https://tractables.github.io/tddlog/guide/#bayesian-network
+[binary integers example]: https://tractables.github.io/tddlog/guide/#binary-integers
+[`tddlog::solve`]: https://tractables.github.io/tddlog/api/tddlog/fn.solve.html

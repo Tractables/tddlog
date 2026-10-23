@@ -1,6 +1,7 @@
 //! The command line: the answer lines, `--precision`, `--ground`,
-//! `--evidence-probability`, and the option errors, which exit with status
-//! 2 before the program is read.
+//! `--evidence-probability`, the option errors, which exit with status 2
+//! before the program is read, and the walk through `examples/alarm.pl` in
+//! docs/design.md.
 use std::process::{Command, Output};
 
 fn tddlog(args: &[&str]) -> Output {
@@ -407,4 +408,33 @@ fn bad_and_inert_options_exit_with_status_two() {
         assert!(stderr.contains(message), "{args:?}: {stderr}");
         assert!(out.stdout.is_empty(), "{args:?}");
     }
+}
+
+#[test]
+fn the_design_pages_walk_through_alarm_matches_the_binary() {
+    // docs/design.md, "How a program is answered", prints the ground
+    // program of examples/alarm.pl and says which trial answers it.
+    let page = std::fs::read_to_string("docs/design.md").unwrap();
+    let command = "$ tddlog --ground examples/alarm.pl";
+    let start = page.find(command).expect("the page shows the command") + command.len();
+    let end = start + page[start..].find("```").expect("the block closes");
+    let shown: String = page[start..end]
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(|line| format!("{line}\n"))
+        .collect();
+    let out = tddlog(&["--ground", "examples/alarm.pl"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out), shown);
+
+    let out = tddlog(&["--stats", "--evidence-probability", "examples/alarm.pl"]);
+    let stats = String::from_utf8_lossy(&out.stderr);
+    assert!(stats.contains("vtree td (from auto: 1 attempts"), "{stats}");
+    assert!(stdout(&out).starts_with("burglary:\t0.357143\n"));
+    assert!(
+        stdout(&out).contains("P(e):\t1.960000e-1\t"),
+        "{}",
+        stdout(&out)
+    );
 }

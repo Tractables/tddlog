@@ -1,19 +1,20 @@
 name: Wheels
 
-# Builds the Python extension in bindings/python for Linux x86-64, macOS
-# arm64 and Windows x86-64, runs the Python tests against each wheel, and uploads the wheels and
-# the source distribution as run artifacts. On a version tag it also publishes
-# them to PyPI.
+# Builds the Python extension in bindings/python for Linux (x86-64, ARM64),
+# macOS (ARM64, x86-64) and Windows x86-64, runs the Python tests against each
+# wheel, and uploads the wheels and the source distribution as run artifacts.
+# When a GitHub release is published it builds them from the release tag and
+# publishes them to PyPI; a run by hand only builds and tests.
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
   pull_request:
     # The bindings build the solver from this checkout, so a change to the
     # solver can break them and has to run these jobs.
     paths:
       - "bindings/python/**"
-      - "bindings/check-versions.sh"
+      - ".github/scripts/check_release.py"
       - "src/**"
       - "tests/problog/**"
       - "Cargo.toml"
@@ -32,10 +33,10 @@ jobs:
   versions:
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+      TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || '' }}
     steps:
       - uses: actions/checkout@v5
-      - run: bindings/check-versions.sh "$TAG"
+      - run: python3 .github/scripts/check_release.py --release-tag "$TAG"
 
   wheels:
     needs: versions
@@ -50,8 +51,15 @@ jobs:
             # is built against, and maturin runs auditwheel over the result.
             container: quay.io/pypa/manylinux_2_28_x86_64
             python: /opt/python/cp310-cp310/bin/python
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            container: quay.io/pypa/manylinux_2_28_aarch64
+            python: /opt/python/cp310-cp310/bin/python
           - os: macos-latest
             target: aarch64-apple-darwin
+            python: python
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
             python: python
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -92,15 +100,15 @@ jobs:
       - name: Install maturin
         run: $PYTHON -m pip install --disable-pip-version-check "maturin==$MATURIN_VERSION"
 
-      # Once, on Linux: neither depends on the platform, and the other two
+      # Once, on Linux x86-64: neither depends on the platform, and the other
       # runners are here to build and test the wheel.
       - name: Check formatting
-        if: matrix.container != ''
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         working-directory: bindings/python
         run: cargo fmt --check
 
       - name: Lint
-        if: matrix.container != ''
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         working-directory: bindings/python
         env:
           PYO3_PYTHON: ${{ matrix.python }}
@@ -139,7 +147,7 @@ jobs:
           name: wheel-${{ matrix.target }}
           path: bindings/python/dist/*.whl
 
-  # A wheel exists only for the three platforms above. The source distribution
+  # A wheel exists only for the five platforms above. The source distribution
   # is what pip falls back to everywhere else, and building it needs a Rust
   # toolchain and a C++20 compiler, which the README says.
   sdist:
@@ -177,14 +185,14 @@ jobs:
           name: sdist
           path: bindings/python/dist/*.tar.gz
 
-  # Only for a version tag, and only once every wheel has been built and
+  # Only for a published release, and only once every wheel has been built and
   # tested. Trusted publishing means GitHub proves this workflow's identity to
   # PyPI with a short-lived token, so no API token is stored in the
   # repository; the `pypi` environment is where a required reviewer goes,
   # since an upload can be yanked but never withdrawn.
   publish:
     needs: [wheels, sdist]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

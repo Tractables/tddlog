@@ -1,25 +1,26 @@
 name: C bindings
 
-# Builds the C library in bindings/c on Linux x86-64, macOS arm64 and Windows
-# x86-64, checks the committed header, runs the C tests, builds and runs the
-# example against the installed CMake and pkg-config package and against the
-# static library, and packages the header, both libraries and the notices into
-# an archive. On Windows the CMake package and the pkg-config file are not
-# built or tested (see the step that skips them), and the example and the
-# tests are compiled with cl.exe directly.
-# On a version tag it attaches the archive to the GitHub release. The
-# packaging runs on every trigger, so it is proven working before a tag
+# Builds the C library in bindings/c on Linux (x86-64, ARM64), macOS (ARM64,
+# x86-64) and Windows x86-64, checks the committed header, runs the C tests,
+# builds and runs the example against the installed CMake and pkg-config
+# package and against the static library, and packages the header, both
+# libraries and the notices into an archive. On Windows the CMake package and
+# the pkg-config file are not built or tested (see the step that skips them),
+# and the example and the tests are compiled with cl.exe directly.
+# When a GitHub release is published it attaches the archives to it. The
+# packaging runs on every trigger, so it is proven working before a release
 # needs it.
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to (re)build the archive for and attach it to
+        description: Existing release tag to build the archives for and attach them to
         required: false
         type: string
 
@@ -27,37 +28,23 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  c-bindings:
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        # `target` is not passed to cargo, since the runner's default
-        # toolchain already builds for it; it only names the archive.
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: macos-latest
-            target: aarch64-apple-darwin
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
+  # Before anything is built: the archive tag, and one version across the
+  # crate and the bindings, which a release tag must name. A pull request's
+  # ref name has a slash in it, which breaks a directory name below, so
+  # "dev" stands in for anything that is not a release tag. The dispatch
+  # input reaches the script through the environment rather than `${{ }}`,
+  # which would paste it into the shell.
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      is-release: ${{ steps.tag.outputs.is-release }}
     steps:
-      # A tag input checks out that tag, so a re-run rebuilds and re-attaches
-      # the archive for a release that already exists.
       - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.tag || '' }}
-
-      # A pull request's ref name has a slash in it, which breaks a directory
-      # name below, so "dev" stands in for anything that is not a release
-      # tag. The dispatch input reaches the script through the environment
-      # rather than `${{ }}`, which would paste it into the shell.
       - name: Determine the archive tag
+        id: tag
         env:
           INPUT_TAG: ${{ inputs.tag }}
         run: |
@@ -68,20 +55,58 @@ jobs:
           else
             tag=dev; is_release=false
           fi
-          echo "TAG=$tag" >> "$GITHUB_ENV"
-          echo "IS_RELEASE=$is_release" >> "$GITHUB_ENV"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "is-release=$is_release" >> "$GITHUB_OUTPUT"
+      - name: Check the release metadata
+        env:
+          TAG: ${{ steps.tag.outputs.is-release == 'true' && steps.tag.outputs.tag || '' }}
+        run: python3 .github/scripts/check_release.py --release-tag "$TAG"
 
-      - name: Check the versions
-        run: |
-          if [ "$IS_RELEASE" = true ]; then
-            bindings/check-versions.sh "$TAG"
-          else
-            bindings/check-versions.sh
-          fi
+  c-bindings:
+    needs: versions
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # `target` is not passed to cargo, since the runner's default
+        # toolchain already builds for it; it only names the archive.
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ needs.versions.outputs.tag }}
+      IS_RELEASE: ${{ needs.versions.outputs.is-release }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # A tag input checks out that tag, so a run by hand builds and attaches
+      # the archives a published release lacks.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || '' }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+
+      # check.py needs CMake and pkg-config, which the ARM64 image may lack.
+      - name: Install CMake and pkg-config
+        if: runner.os == 'Linux'
+        run: |
+          if ! command -v cmake || ! command -v pkg-config; then
+            sudo apt-get update && sudo apt-get install -y cmake pkg-config
+          fi
 
       # The header against cbindgen's, the CMake build and its tests (the
       # answers of a dozen ProbLog system tests, and the example), the
@@ -165,24 +190,21 @@ jobs:
         working-directory: bindings/c
         run: cargo clippy --release -- -D warnings
 
-      # LICENSE, NOTICE and THIRD-PARTY.md travel inside the archive: goatd's
-      # vendored solvers are BSD-2-Clause and MIT, and their notices have to
-      # accompany the libraries they are compiled into.
-      # NATIVE-STATIC-LIBS.txt records the system libraries the static
-      # archive needs at link time, which differ per platform.
+      # The archive is the installation check.py tested from another prefix:
+      # the header in include/, the shared library, the CMake package and the
+      # pkg-config file in lib/, and LICENSE, NOTICE and THIRD-PARTY.md in
+      # share/licenses/tddlog (goatd's vendored solvers are BSD-2-Clause and
+      # MIT, and their notices have to accompany the libraries they are
+      # compiled into). The static library goes beside the shared one, and
+      # NATIVE-STATIC-LIBS.txt records the system libraries it needs at link
+      # time, which differ per platform.
       - name: Package the archive (Linux, macOS)
         if: runner.os != 'Windows'
         run: |
           set -eux
-          out=bindings/c/target/release
           name="tddlog-c-$TAG-${{ matrix.target }}"
-          mkdir "$name"
-          cp bindings/c/include/tddlog.h LICENSE NOTICE THIRD-PARTY.md "$name"
-          case "${{ runner.os }}" in
-            macOS) cp "$out/libtddlog_c.dylib" "$name" ;;
-            *) cp "$out/libtddlog_c.so" "$name" ;;
-          esac
-          cp "$out/libtddlog_c.a" "$name"
+          cp -R bindings/c/build/package "$name"
+          cp bindings/c/target/release/libtddlog_c.a "$name/lib/"
           {
             echo "System libraries needed when linking libtddlog_c.a statically,"
             echo "from 'cargo rustc --release -- --print native-static-libs':"
@@ -219,10 +241,11 @@ jobs:
             tddlog-c-*.tar.gz*
             tddlog-c-*.zip*
 
-      # `--clobber` so re-running a job replaces its assets instead of
-      # failing on the leftovers of the previous attempt.
+      # No --clobber: an archive attached to a published release, and the
+      # checksum people verify it against, are never replaced. To rebuild one,
+      # delete it from the release and run this workflow with the tag.
       - name: Attach to the release
         if: env.IS_RELEASE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" tddlog-c-"$TAG"-${{ matrix.target }}.* --clobber
+        run: gh release upload "$TAG" tddlog-c-"$TAG"-${{ matrix.target }}.*

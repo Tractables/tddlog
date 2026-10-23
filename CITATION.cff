@@ -3,7 +3,7 @@
 # describes the software itself; `preferred-citation` redirects citations
 # to one once it is written.
 cff-version: 1.2.0
-title: "tddlog: ProbLog inference by Tp-compilation into Tree Decision Diagrams"
+title: "tddlog: Exact Probabilistic Inference by Compilation into Tree Decision Diagrams"
 message: "If you use this software, please cite it as below."
 type: software
 authors:
@@ -11,16 +11,19 @@ authors:
     given-names: "Guy"
     affiliation: "Computer Science Department, University of California, Los Angeles"
 abstract: >-
-  Exact marginal probabilities for probabilistic logic programs in the
-  Datalog fragment of ProbLog, and for Bayesian and Markov networks
-  written as programs. The program is compiled by Tp-compilation into
-  tree decision diagrams with the tididi library, and the queries are
-  counted on the diagrams.
+  Exact probabilities for probabilistic logic programs in the Datalog
+  fragment of ProbLog, for Bayesian and Markov networks, and for discrete
+  probabilistic programs. A program is ground, compiled bottom up by
+  Tp-compilation into tree decision diagrams with the tididi library,
+  and its queries are counted on the diagrams. A Rust library and
+  command-line tool, with Python, C and WebAssembly bindings.
 keywords:
   - probabilistic logic programming
   - ProbLog
+  - probabilistic programming
+  - Bayesian networks
   - knowledge compilation
-  - decision diagram
+  - decision diagrams
   - weighted model counting
 license: Apache-2.0
 repository-code: "https://github.com/Tractables/tddlog"

@@ -9,6 +9,8 @@
 % s's (src/ground/aig.rs, `reduce`).
 % n0 is the complement of s0 and is read as its negation, and k and
 % differ are false only in function. A queried or observed gate stays.
+% Run with `tddlog examples/equal_functions.pl`; `tddlog --ground examples/equal_functions.pl`
+% prints the program the grounder writes.
 0.3::x0. 0.6::x1. 0.7::y0. 0.2::y1. 0.4::c. 0.5::z.
 
 % s = x + y + c: bits s0 and s1, carry out s2.

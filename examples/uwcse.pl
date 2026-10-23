@@ -1,8 +1,9 @@
 % UW-CSE (cplint uwcse3s example, Meert, Struyf, Blockeel ILP 2009): a course, a
 % professor and two students; annotated disjunctions and negation, acyclic.
-% The formula of taught_by aggregates over the students; with four or more
-% no static vtree keeps it under the portfolio's first watch and the
-% portfolio has to refine (see the uwcse tests and the uwcse benchmark family).
+% The formula of taught_by aggregates over the students, so it grows with
+% them: with four (tests/it/examples.rs, `uwcse_four_students`) the
+% program has 120 facts and the query's formula under `closed` is about
+% 36 k pairs. Run with `tddlog examples/uwcse.pl`.
 course(c1).
 student(s1).
 student(s2).
