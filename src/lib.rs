@@ -81,6 +81,8 @@
 //! [docs/design.md](https://github.com/Tractables/tddlog/blob/main/docs/design.md)
 //! describes each stage.
 
+#![doc(html_logo_url = "https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg")]
+
 mod auto;
 mod cubes;
 mod disjoint;

@@ -1,6 +1,9 @@
 # tddlog for C and C++
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
+       alt="tddlog" width="340">
+  <br>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/c-bindings.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/c-bindings.yml/badge.svg"
      alt="C bindings"></a>
