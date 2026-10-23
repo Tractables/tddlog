@@ -1,5 +1,5 @@
-/* tddlog: exact probabilities for ProbLog programs, by compilation into tree
- * decision diagrams.
+/* tddlog: exact probabilistic inference by compilation into tree decision
+ * diagrams.
  *
  * Copyright the tddlog authors. Licensed under the Apache License, Version 2.0.
  *

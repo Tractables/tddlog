@@ -140,3 +140,8 @@ tests against ProbLog's answers under several vtree strategies.
 script runs, and committed. `check.py` fails where the committed copy has
 drifted; after changing `src/lib.rs`, run
 `python bindings/c/check.py --write-header`.
+
+## Acknowledgements
+
+This material is based upon work supported by the Defense Advanced Research
+Projects Agency (DARPA) under Agreement No. HR0011269E224.

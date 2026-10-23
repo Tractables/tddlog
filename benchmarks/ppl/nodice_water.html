@@ -20,7 +20,10 @@
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
     <a href="../../../guide/">Guide</a>
-    <a href="../../">Results</a>
+    <a href="../../../results/" aria-current="true">Results</a>
+    <a href="../../../api/">API</a>
+    <a href="../../../python/">Python</a>
+    <a href="../../../c/">C</a>
     <a href="https://github.com/Tractables/tddlog">GitHub</a>
     <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
   </nav>
@@ -98,7 +101,11 @@
 </dl>
 <p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
 <div class="file"><div class="fhead"><code class="fname">nodice_water.dtmc0.prism</code><span>1 801 192 bytes</span><span class="sha" title="SHA-256">sha256 2aff45f7c63ae5f5962b264a3f35a0a1841b5da42ddfd8479283430a990f4500</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><p class="note"><a href="../files/2aff45f7c63ae5f5962b.txt">the first 65 293 bytes</a> (shown here when JavaScript runs). The file is larger than the site keeps; the command above writes it again, and its SHA-256 checks the copy.</p><pre class="lazy" data-src="../files/2aff45f7c63ae5f5962b.txt"></pre></div>
-<div class="file"><div class="fhead"><code class="fname">nodice_water.dtmc0.props</code><span>124 bytes</span><span class="sha" title="SHA-256">sha256 5ba75d35c2923cdc14631d9f14088436fb869fe26b4229df734ba574ddde0221</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository as Roulette&#x27;s artifact (Zenodo 10.5281/zenodo.15253254) has it, for which no licence to redistribute is established, downloaded from <a href="https://doi.org/10.5281/zenodo.15253254">https://doi.org/10.5281/zenodo.15253254</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">nodice_water.dtmc0.props</code><span>124 bytes</span><span class="sha" title="SHA-256">sha256 5ba75d35c2923cdc14631d9f14088436fb869fe26b4229df734ba574ddde0221</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v0&quot;: P=? [F (&quot;done&quot; &amp; x0=0)];
+&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x0=1)];
+&quot;v2&quot;: P=? [F (&quot;done&quot; &amp; x0=2)];
+&quot;v3&quot;: P=? [F (&quot;done&quot; &amp; x0=3)];
+</pre></div>
 </div>
 </div>
 </section>

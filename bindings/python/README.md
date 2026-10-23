@@ -97,3 +97,8 @@ python -m pytest bindings/python/tests
 
 `maturin build --release --manifest-path bindings/python/Cargo.toml`
 builds a wheel instead.
+
+## Acknowledgements
+
+This material is based upon work supported by the Defense Advanced Research
+Projects Agency (DARPA) under Agreement No. HR0011269E224.

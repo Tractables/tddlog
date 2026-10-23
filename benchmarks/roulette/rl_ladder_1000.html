@@ -20,7 +20,10 @@
   <nav class="site-nav" aria-label="Site">
     <a href="../../../">Playground</a>
     <a href="../../../guide/">Guide</a>
-    <a href="../../">Results</a>
+    <a href="../../../results/" aria-current="true">Results</a>
+    <a href="../../../api/">API</a>
+    <a href="../../../python/">Python</a>
+    <a href="../../../c/">C</a>
     <a href="https://github.com/Tractables/tddlog">GitHub</a>
     <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
   </nav>
@@ -125,7 +128,11 @@
 </dl>
 <p class="readers">A discrete-time Markov chain in the PRISM language, which Storm and PRISM read: Rubicon&#x27;s model of the weather factory, or the chain dice2prism.py writes of a Dice program, with its properties.</p>
 <div class="file"><div class="fhead"><code class="fname">rl_ladder_1000.dtmc0.prism</code><span>448 302 bytes</span><span class="sha" title="SHA-256">sha256 f6d3033d5c8711fd2cd8143b6ca8657bf62ea4c88ea1e38eb7fef08f71c81f03</span></div><p class="made">Written by <code>dice2prism.py</code> from the Dice program when Storm or PRISM runs: component 0 of the program's value as a Markov chain, one checker run each, built once for all the properties of the file beside it.</p><p class="note"><a href="../files/f6d3033d5c8711fd2cd8.txt">the whole file</a> (shown here when JavaScript runs).</p><pre class="lazy" data-src="../files/f6d3033d5c8711fd2cd8.txt"></pre></div>
-<div class="file"><div class="fhead"><code class="fname">rl_ladder_1000.dtmc0.props</code><span>124 bytes</span><span class="sha" title="SHA-256">sha256 93c93dabb9603905aa66c195f874e1cb7a65c547efeb78ebdef650ddee32efd5</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><p class="note">Not shown: the programs of this benchmark are written from a network of the bnlearn repository, for which no licence to redistribute is established, downloaded from <a href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>. The line above says how the file is made from it, and its SHA-256 checks a copy.</p></div>
+<div class="file"><div class="fhead"><code class="fname">rl_ladder_1000.dtmc0.props</code><span>124 bytes</span><span class="sha" title="SHA-256">sha256 93c93dabb9603905aa66c195f874e1cb7a65c547efeb78ebdef650ddee32efd5</span></div><p class="made">Written by <code>dice2prism.py</code> with the chain of component 0: the probability of the end (where the program observes) and of the end with each value, whose quotients are the answer.</p><pre>&quot;v0&quot;: P=? [F (&quot;done&quot; &amp; x3=0)];
+&quot;v1&quot;: P=? [F (&quot;done&quot; &amp; x3=1)];
+&quot;v2&quot;: P=? [F (&quot;done&quot; &amp; x3=2)];
+&quot;v3&quot;: P=? [F (&quot;done&quot; &amp; x3=3)];
+</pre></div>
 </div>
 </div>
 </section>
