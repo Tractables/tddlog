@@ -1,5 +1,10 @@
 # tddlog: the baselines branch
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
+       alt="tddlog" width="340">
+</p>
+
 This branch is tddlog's main branch plus the code and programs that
 reproduce the comparisons published in main's
 [README](https://github.com/Tractables/tddlog#results) and in
