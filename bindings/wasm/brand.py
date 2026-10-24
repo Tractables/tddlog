@@ -13,7 +13,6 @@ def brand(site, stamp=""):
     source = Path(__file__).resolve().parents[2] / "docs/logo.svg"
     shutil.copyfile(source, site / "logo.svg")
     pages = [site / "index.html", site / "guide/index.html", site / "results/index.html"]
-    pages.extend(sorted((site / "results/benchmarks").rglob("*.html")))
     for page in pages:
         root = Path(os.path.relpath(site, page.parent)).as_posix()
         logo = f"{root}/logo.svg" + (f"?v={stamp}" if stamp else "")

@@ -12,15 +12,17 @@
 #   /results/   the release run's results (results/): the page, its script
 #               and the data it reads, suites.json and ppl.json, which the
 #               generator of README.md's results and the baselines branch's
-#               docs/benchmarks.md
-#               writes
+#               docs/benchmarks.md writes
 #   /results/benchmarks/
-#               a page per benchmark of the results' tables, with its
-#               programs in every language a system read and every run:
-#               BENCHMARKS, where given, the benchmarks/ directory of the
-#               baselines branch (the pages show the baselines' programs,
-#               which main does not hold); without it the results page
-#               links to none
+#               the data the results page shows for each family of
+#               benchmarks: its programs in every language a system read,
+#               every run and the answers. BENCHMARKS, where given, is the
+#               benchmarks/ directory of the baselines branch (it holds the
+#               baselines' programs, which main does not); without it the
+#               results page shows the plots and times alone
+#   /404.html   the page for an address the site does not have, which sends
+#               a link to a benchmark's former page to its view of the
+#               results page
 #   /api/       the API documentation: API is rustdoc's output directory,
 #               target/doc after `cargo doc --no-deps --lib` at the root
 #   /python/    the Python package's page: PYTHON is Sphinx's output for
@@ -46,7 +48,7 @@ rm -rf "$out"
 mkdir -p "$out/examples" "$out/guide" "$out/results"
 out=$(cd "$out" && pwd)
 cd "$here"
-cp index.html styles.css theme.js code.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
+cp index.html 404.html styles.css theme.js code.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
 node -e 'for (const e of require("./examples.js").tddlogExamples) console.log(e.file)' |
   while read -r file; do cp "../../$file" "$out/examples/"; done
 cp guide/index.html "$out/guide/"
@@ -69,14 +71,9 @@ if [ -n "$stamp" ]; then
   done
   test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 5
   test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 3
-  test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 3
-  if [ -n "$benchmarks" ]; then
-    find "$out/results/benchmarks" -name '*.html' -exec \
-      sed -i -E "s#(href|src)=\"((\.\./)*(styles\.css|theme\.js|bench\.css|bench\.js))\"#\1=\"\2?v=$stamp\"#" {} +
-  fi
+  test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 4
 fi
-# The same logo is added to the static pages and the benchmark pages fetched
-# from the baselines branch, without modifying their archived contents.
+# The logo heads the playground, the guide and the results page.
 python3 "$here/brand.py" "$out" "$stamp"
 # GitHub Pages serves the files as they are, without Jekyll.
 touch "$out/.nojekyll"

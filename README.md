@@ -131,11 +131,10 @@ cactus plots count the instances each system answers within each time
 limit, and the scatter plots put tddlog's time against the fastest other
 system's, instance by instance. The
 [results page](https://tractables.github.io/tddlog/results/) has every
-instance and time,
+instance and time, and for each benchmark the program as its authors
+wrote it, as each system was given it, and every run;
 [docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md)
-how each system was given each suite and what it was not given, and each
-[benchmark's page](https://tractables.github.io/tddlog/results/benchmarks/)
-the program as its authors wrote it and as each system was given it.
+says how each system was given each suite and what it was not given.
 
 ### Probabilistic logic programs
 
