@@ -30,9 +30,10 @@ const AUTO_BYTES = 1024 * 1024;
 const AUTO_SECONDS = 2;
 
 // The host keeps the page's files in caches for a while, so the workflow
-// stamps the references in index.html with the commit (app.js?v=<sha>), and
-// the stamp goes on to every file the page loads: a new page never runs with
-// an older file a browser still holds. Opened by hand there is no stamp.
+// stamps the references in index.html with a hash of the files the pages load
+// (app.js?v=<hash>), and the stamp goes on to every file the page loads: a
+// new page never runs with an older file a browser still holds. Opened by
+// hand there is no stamp.
 const stamp = typeof document === "undefined" || document.currentScript === null
   ? ""
   : new URL(document.currentScript.src).search;
