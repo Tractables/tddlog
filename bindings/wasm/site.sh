@@ -37,10 +37,13 @@
 #   /c/         the C library's page: C is Sphinx's output for
 #               bindings/c/docs
 #
-# STAMP, where given (the workflow passes the commit), is appended to the
-# pages' references to their scripts and styles (app.js?v=STAMP), and the
-# playground and the results page pass it on to every file they load, so
-# that a browser never runs a new page with older files it holds.
+# STAMP, where given, is appended to the pages' references to their scripts
+# and styles (app.js?v=STAMP), and the playground and the results page pass
+# it on to every file they load, so that a browser never runs a new page
+# with older files it holds. STAMP `hash`, which the workflow passes, stands
+# for a hash of every file the pages load (all but the pages and the
+# documentation): a deploy that changes none of them keeps the stamp, and a
+# browser keeps the files it holds, the module among them.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 out=$1
@@ -77,6 +80,10 @@ cp -r "$python" "$out/python"
 test -f "$c/index.html"
 cp -r "$c" "$out/c"
 
+if [ "$stamp" = hash ]; then
+  stamp=$(cd "$out" && find . -type f ! -name '*.html' ! -path './api/*' ! -path './python/*' ! -path './c/*' -print0 |
+    LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-12)
+fi
 if [ -n "$stamp" ]; then
   for page in "$out/index.html" "$out/guide/index.html" "$out/results/index.html" "$out/404.html"; do
     sed -i -E "s#(href|src)=\"((\.\./)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js))\"#\1=\"\2?v=$stamp\"#" "$page"
