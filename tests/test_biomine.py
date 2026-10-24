@@ -16,8 +16,9 @@ import unittest
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-lit = root / 'tests' / 'lit'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
+lit = SOURCE / 'tests' / 'lit'
 import reliability_exact  # noqa: E402
 
 GRAPH = lit / 'biomine_toy.bmg'

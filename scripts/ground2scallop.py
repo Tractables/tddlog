@@ -21,6 +21,7 @@ at the top, `// query q<i> <atom>`, which is how the harness maps them back.
 import re
 import sys
 
+import source_tree  # noqa: F401  (the source tree's converters)
 from lpad2problog import split_clauses, split_top, strip_comments
 from problog2pita import split_neck
 

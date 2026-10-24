@@ -46,7 +46,8 @@ matplotlib.use('svg')
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import FixedLocator, NullLocator  # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from source_tree import SOURCE  # noqa: E402  (the README's tree: its results and images)
 FLOOR = 0.2  # seconds: a time under it counts as it, and a plot's time axis starts here
 PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
@@ -65,7 +66,7 @@ def load():
     order."""
     names, suites, kinds = {}, {}, []
     for f in ('suites.json', 'ppl.json'):
-        data = json.load(open(os.path.join(ROOT, 'bindings', 'wasm', 'results', f)))
+        data = json.load(open(os.path.join(SOURCE, 'bindings', 'wasm', 'results', f)))
         names.update(data['names'])
         for fam in data['families']:
             for s in fam['suites']:
@@ -442,7 +443,7 @@ def within(rs, systems, limits=(1, 2, 10)):
 
 def main():
     args = [a for a in sys.argv[1:] if a != '--png']
-    out = args[0] if args else os.path.join(ROOT, 'docs', 'images')
+    out = args[0] if args else os.path.join(SOURCE, 'docs', 'images')
     os.makedirs(out, exist_ok=True)
     names, suites, kinds = load()
     limits = {k: s['limit'] for k, s in suites.items()}

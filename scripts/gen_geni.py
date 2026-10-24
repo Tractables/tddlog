@@ -54,6 +54,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import source_tree  # noqa: E402,F401  (the source tree's converters)
 from dice2problog import translate  # noqa: E402
 
 HEADER = '% gen_geni.py'

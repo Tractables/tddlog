@@ -7,6 +7,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import source_tree  # noqa: E402,F401  (the source tree's converters)
 import lpad2problog  # noqa: E402
 
 name = sys.argv[1]

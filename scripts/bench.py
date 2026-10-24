@@ -147,6 +147,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
+import source_tree  # noqa: E402  (the source tree: its converters, examples and program)
 import gen_bn  # noqa: E402
 import ground2scallop  # noqa: E402
 import problog2pita  # noqa: E402
@@ -188,7 +189,7 @@ BN = ['cancer', 'earthquake', 'asia', 'survey', 'sachs', 'child', 'insurance', '
 
 
 def bn_source(net):
-    return os.path.join(ROOT, 'examples' if net in ('asia', 'cancer') else os.path.join('data', 'bn'), f'{net}.net')
+    return os.path.join(source_tree.SOURCE / 'examples' if net in ('asia', 'cancer') else os.path.join(ROOT, 'data', 'bn'), f'{net}.net')
 
 
 for net in BN:
@@ -689,7 +690,7 @@ def gen(args):
             subprocess.run(alea_command(args, 'export', gargs[1:], os.path.abspath(os.path.join(args.dir, name))),
                            check=True, stdout=subprocess.DEVNULL)
             continue
-        cmd = [sys.executable, os.path.join(HERE, gargs[0])] + gargs[1:]
+        cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if gargs[0] == 'gen_bn.py':
             # The observations, for Ace, which reads the network file, and
             # the network as a UAI file with its observations, for Merlin
@@ -1176,7 +1177,7 @@ def dice_source(args, name):
         out = os.path.join(args.dir, f'{name}.dice')
         if out not in DICE_WRITTEN:   # once a run, though every system asks (an instance's runs share a lane)
             with open(out, 'w') as f:
-                f.write(subprocess.run([sys.executable, os.path.join(HERE, 'gen_bn.py'), *gargs[1:], '--format', 'dice'],
+                f.write(subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), *gargs[1:], '--format', 'dice'],
                                        capture_output=True, text=True, check=True).stdout)
             DICE_WRITTEN.add(out)
         return out
@@ -1497,7 +1498,7 @@ def translation(args, script, argv):
     """(the output of `script ARGV`, None) bounded by the timeout, or (None,
     the record of its failure)."""
     try:
-        t = subprocess.run([sys.executable, os.path.join(HERE, script), *argv], capture_output=True, text=True,
+        t = subprocess.run([sys.executable, str(source_tree.script(script)), *argv], capture_output=True, text=True,
                            timeout=args.timeout)
     except subprocess.TimeoutExpired:
         return None, {'status': 'error', 'seconds': 0, 'error': f'{script}: no translation within {args.timeout:g} s'}
@@ -3424,7 +3425,7 @@ def run_job(args, spec, systems, out, lock, names):
                 script, *rest = EXACT[spec[name][1][0]][1](path)
                 if args.pr:
                     rest.append('--evidence-probability')   # the uai suite's, bn_exact.py
-                r = timed([sys.executable, os.path.join(HERE, script)] + rest, args.timeout)
+                r = timed([sys.executable, str(source_tree.script(script))] + rest, args.timeout)
             else:
                 if system == 'tddlog':
                     binary = args.tddlog_binary.get(variant, args.tddlog)
@@ -3741,7 +3742,7 @@ def main():
     r = sub.add_parser('run')
     r.add_argument('--dir', default=os.path.join(ROOT, 'bench'))
     r.add_argument('--out', default='results.jsonl')
-    r.add_argument('--tddlog', default=os.path.join(ROOT, 'target', 'release', 'tddlog'))
+    r.add_argument('--tddlog', default=str(source_tree.BINARY))
     r.add_argument('--problog', default=os.path.join(ROOT, 'tmp', 'venv', 'bin', 'problog'))
     r.add_argument('--strategies', default='auto', type=lambda s: s.split(',') if s else [])
     r.add_argument('--tddlog-arm', action='append', default=[], metavar='STRATEGY=PATH',

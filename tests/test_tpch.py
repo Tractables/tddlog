@@ -19,8 +19,9 @@ import unittest
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-lit = root / 'tests' / 'lit'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
+lit = SOURCE / 'tests' / 'lit'
 import tpch_exact  # noqa: E402
 
 ARGS = ['0.0004', '--queries', 'q2,q3,q4,q6,q7,q10,q11,q12,q14,q15,q17', '--seed', '4']

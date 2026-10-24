@@ -16,10 +16,13 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 import unittest
 
 root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / 'scripts'))
+from source_tree import SOURCE  # noqa: E402
 script = root / 'scripts' / 'alea_bench.jl'
 programs = Path(__file__).resolve().parent / 'alea'
 ALEA = os.environ.get('TDDLOG_ALEA', '')
@@ -159,7 +162,7 @@ class AleaBenchTests(unittest.TestCase):
             # tests/it/examples.rs reads.
             julia('export', programs / f'{name}.jl', Path(d, 'again'))
             self.assertEqual(Path(d, 'again.pl').read_text(), text)
-            self.assertEqual((programs / f'{name}.pl').read_text(), text)
+            self.assertEqual((SOURCE / 'tests' / 'alea' / f'{name}.pl').read_text(), text)
         return answers, values, expectations
 
     def test_booleans_and_worlds_of_a_number(self):

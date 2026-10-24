@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / 'scripts'))
+import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gen_bn  # noqa: E402
 import ground2net  # noqa: E402

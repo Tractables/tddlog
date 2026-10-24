@@ -18,6 +18,7 @@ from types import SimpleNamespace
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
 import tpch2provsql  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('bench', scripts / 'bench.py')
@@ -64,7 +65,7 @@ class TranslateTests(unittest.TestCase):
         self.assertIsNone(ev)
 
     def test_the_views_program_defines_views_before_their_readers(self):
-        text = (root / 'tests' / 'lit' / 'tpch_views.pl').read_text()
+        text = (SOURCE / 'tests' / 'lit' / 'tpch_views.pl').read_text()
         sql, qs, _ = tpch2provsql.translate(text)
         views = re.findall(r'CREATE VIEW (\w+) AS (.*);', sql)
         seen = set(re.findall(r'CREATE TABLE (\w+)', sql))
@@ -89,7 +90,7 @@ class TranslateTests(unittest.TestCase):
     def test_the_lit_programs_translate(self):
         for name in ('pdb.pl', 'noisyor.pl'):
             with self.subTest(name=name):
-                text = (root / 'tests' / 'lit' / name).read_text()
+                text = (SOURCE / 'tests' / 'lit' / name).read_text()
                 sql, qs, ev = tpch2provsql.translate(text)
                 self.assertEqual([q for q, _ in qs], [q.replace(' ', '') for q in
                                                       re.findall(r'^query\((.*)\)\.', text, re.M)])
@@ -112,7 +113,7 @@ class AnswerTests(unittest.TestCase):
             self.assertAlmostEqual(r['answers'][q], p, places=9, msg=q)
 
     def check_tpch(self, program):
-        path = root / 'tests' / 'lit' / program
+        path = SOURCE / 'tests' / 'lit' / program
         ref = subprocess.run([sys.executable, str(scripts / 'tpch_exact.py'), str(path), '--precision', '17'],
                              capture_output=True, text=True, check=True).stdout
         self.check(path, {q.rstrip(':'): float(p) for q, p in (line.split('\t') for line in ref.splitlines())})
@@ -129,11 +130,11 @@ class AnswerTests(unittest.TestCase):
         self.check_tpch('tpch_views.pl')
 
     def test_probabilistic_databases(self):
-        self.check_lit('pdb', root / 'tests' / 'lit' / 'pdb.pl')
-        self.check_lit('pdb', root / 'tests' / 'regress' / 'pdb40.pl')
+        self.check_lit('pdb', SOURCE / 'tests' / 'lit' / 'pdb.pl')
+        self.check_lit('pdb', SOURCE / 'tests' / 'regress' / 'pdb40.pl')
 
     def test_a_noisy_or_network_under_evidence(self):
-        self.check_lit('noisyor', root / 'tests' / 'lit' / 'noisyor.pl')
+        self.check_lit('noisyor', SOURCE / 'tests' / 'lit' / 'noisyor.pl')
 
     def test_evidence_by_hand(self):
         # f(f) needs x and c(x,f): P(e) = 0.15 (1 - 0.6 * 0.5) = 0.105;

@@ -1,6 +1,9 @@
 # tddlog in the browser
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
+       alt="tddlog" width="340">
+  <br>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/pages.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/pages.yml/badge.svg"
      alt="Site"></a>
@@ -120,3 +123,9 @@ Pages. It stamps the references in the pages with the commit
 (`app.js?v=<sha>`), and the playground passes the stamp on to the worker,
 the module and the example programs, so a new page never runs with an
 older file a browser still holds.
+
+## Logo
+
+`docs/logo.svg` is the project logo. Site assembly copies it to the site root
+and adds it to the playground, guide, results and benchmark pages with the
+page's cache stamp. The binding documentation and Rust API use the same SVG.

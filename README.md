@@ -34,8 +34,9 @@ README this file replaces here.
   bit-blasting artifact's Stan, WebPPL and Psi programs), `data/geni`,
   `data/nodice` and `data/roulette`. Each directory's README gives the
   source, commit and license; NOTICE lists them.
-- `benchmarks/`: a page for each benchmark of the results page
-  (`results/benchmarks/` on the site): the files each system read, as
+- `benchmarks/`: the results page's data on each benchmark
+  (`results/benchmarks/` on the site), a JSON file per family of
+  instances: the files each system read, as
   `bench.py` wrote and handed them (a file larger than 1 MB by its first
   64 kB, with its size and SHA-256), how each was made, the command each
   system ran, and every repetition's time, answers and sizes. The files

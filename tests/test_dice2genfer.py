@@ -22,6 +22,7 @@ root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
 data = root / 'data'
 sys.path.insert(0, str(scripts))
+import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
 import dice2genfer  # noqa: E402

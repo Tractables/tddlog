@@ -15,6 +15,7 @@ from unittest.mock import mock_open, patch
 
 scripts = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
 spec = importlib.util.spec_from_file_location('bench', scripts / 'bench.py')
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
@@ -170,7 +171,7 @@ class PplTests(unittest.TestCase):
     def test_a_network_with_observations_runs_a_program_per_queried_variable(self):
         # asia with half its leaves observed: one program for each other
         # leaf, which observes the evidence, its rows the queries' answers.
-        asia = str(Path(__file__).resolve().parents[1] / 'examples' / 'asia.net')
+        asia = str(SOURCE / 'examples' / 'asia.net')
         spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
         with tempfile.TemporaryDirectory() as d:
             program = Path(d, 'asia_ev.pl')
@@ -437,7 +438,7 @@ class RouletteTests(unittest.TestCase):
         return r, timed.call_args[0][0]
 
     def test_the_answers_are_keyed_by_the_queries(self):
-        path = str(Path(__file__).parent / 'roulette' / 'network-2.pl')
+        path = str(SOURCE / 'tests' / 'roulette' / 'network-2.pl')
         out = ('cpu time: 60 real time: 61 gc time: 3\nroulette_q other(#t) 0.0\n'
                'roulette_q m(2,15) 0.98\nroulette_q m(2,16) 0.01\n')
         r, cmd = self.run_roulette('rl_network_10', path, out)
@@ -449,7 +450,7 @@ class RouletteTests(unittest.TestCase):
                          (0.98, 0.01, 0.0))
         self.assertEqual(r['stats'], {'inproc_seconds': 0.061, 'other': {'other(#t)': 0.0}})
         # hmm.rkt prints its one answer on its last line.
-        path = str(Path(__file__).parent / 'roulette' / 'hmm-smoothing-joint-4.pl')
+        path = str(SOURCE / 'tests' / 'roulette' / 'hmm-smoothing-joint-4.pl')
         r, cmd = self.run_roulette('rl_hmm_smoothing_joint_100', path, 'cpu time: 5 real time: 5 gc time: 0\n0.25\n')
         self.assertEqual(r['answers'], {'q': 0.25})
         # A network's values are named as gen_bn.py names them.
@@ -458,7 +459,7 @@ class RouletteTests(unittest.TestCase):
             path.write_text('query(cbodd_12_45(v_0_5)).\nquery(cbodd_12_45(v_1)).\n')
             r, _ = self.run_roulette('rl_bn_water', str(path), 'roulette_v 0.5 0.75\nroulette_v 1 0.25\n')
         self.assertEqual(r['answers'], {'cbodd_12_45(v_0_5)': 0.75, 'cbodd_12_45(v_1)': 0.25})
-        r, _ = self.run_roulette('rl_hmm_smoothing_joint_100', str(Path(__file__).parent / 'roulette' /
+        r, _ = self.run_roulette('rl_hmm_smoothing_joint_100', str(SOURCE / 'tests' / 'roulette' /
                                                                     'hmm-smoothing-joint-4.pl'), 'error: x\n')
         self.assertEqual(r['status'], 'error')
 
@@ -936,7 +937,7 @@ class AceTests(unittest.TestCase):
         """Ace's posteriors keyed as the program's queries, against
         bn_exact.py on the program gen_bn.py writes for the same evidence."""
         import bn_exact
-        network = bench.gen_bn.parse(str(scripts.parent / 'examples' / 'asia.net'))
+        network = bench.gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
         program = bench.gen_bn.to_problog(network, 'all', [('smoke', 'yes'), ('xray', 'yes')])
         rows, values, evidence, qs = bn_exact.parse(program)
         states, tables = bn_exact.factors(rows, values)
@@ -1163,7 +1164,7 @@ class MerlinTests(unittest.TestCase):
     def test_a_run_answers_the_programs_queries(self):
         """tests/regress/markov.uai: Merlin's marginals to six decimals
         against the program's by enumeration."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         calls = []
 
         def timed(cmd, timeout, cwd=None, env=None):
@@ -1187,7 +1188,7 @@ class MerlinTests(unittest.TestCase):
     def test_a_network_tool_reads_the_query_variables_from_a_file(self):
         """The UAI drivers' query variables go in a file (`@FILE`): on the
         largest networks the list is longer than one argument may be."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         calls = []
 
         def timed(cmd, timeout, cwd=None, env=None):
@@ -1226,7 +1227,7 @@ class MerlinTests(unittest.TestCase):
         markov.pl (no evidence but the factors'): tddlog's P(e) line
         (65/192) and the clique tree's, run for real, plus the program's
         offset (log10 960), and Merlin's PR file, each log10 325."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         calls = []
         real = bench.timed
         tddlog_out = f'P(e):\t3.385416666666667e-1\tlog10 {bench.math.log10(65 / 192)!r}\n'
@@ -1293,7 +1294,7 @@ class MerlinTests(unittest.TestCase):
         beside the program (`gen_bn.py --cnf`), and `run --pr --ganak`
         counts it: tests/regress/markov.uai with markov.uai.evid, Z = 165.
         Ganak answers Z alone, so it needs --pr."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         calls = []
 
         def timed(cmd, timeout, cwd=None, env=None):
@@ -1328,7 +1329,7 @@ class MerlinTests(unittest.TestCase):
         """gen writes a UAI network's CNF only with --cnf, which a suite
         without UAI networks refuses, and a counter refuses a network
         whose CNF was not written."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         with scratch_dir('uai-nocnf-') as d:
             args = SimpleNamespace(suite='uai', only=['uai_markov'], families=[], uai_benchmarks=str(regress), dir=d, cnf=False)
             with redirect_stdout(io.StringIO()):
@@ -1349,7 +1350,7 @@ class MerlinTests(unittest.TestCase):
         for potts.uai, its colour symmetry broken. `run --pr` takes Z from
         them, log10(225/2) by the clique tree run for real. Another suite
         refuses --pr."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         real = bench.timed
 
         def timed(cmd, timeout, cwd=None, env=None):
@@ -1386,7 +1387,7 @@ class MerlinTests(unittest.TestCase):
         and log10 Z from its log10 line. Refused without --pr, without
         FlowCutter beside the binary, without an address-space limit, and
         for a budget sharpSAT-TD does not take or that fills the timeout."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         calls = []
 
         def timed(cmd, timeout, cwd=None, env=None):
@@ -1534,7 +1535,7 @@ class ReferenceCheckTests(unittest.TestCase):
         digits, twice too large, or as zero, and its marginals as the clique
         tree's."""
         import bn_exact
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         real = bench.timed
         with scratch_dir('uai-check-') as d:
             selection = dict(suite='uai', only=['uai_markov'], families=[], uai_benchmarks=str(regress), dir=d,

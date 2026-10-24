@@ -20,6 +20,7 @@ root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
 data = root / 'data' / 'dice'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
 import dice2alea  # noqa: E402
@@ -289,7 +290,7 @@ class NetworkTests(unittest.TestCase):
         for net in ['cancer', 'asia', 'traffic']:
             with self.subTest(net=net):
                 network = gen_bn.parse_net(TRAFFIC) if net == 'traffic' else \
-                    gen_bn.parse(str(root / 'examples' / f'{net}.net'))
+                    gen_bn.parse(str(SOURCE / 'examples' / f'{net}.net'))
                 text = gen_bn.to_dice(network, 'leaves')
                 program = gen_bn.to_problog(network, 'leaves')
                 predicates = list(dict.fromkeys(q.split('(')[0] for q in reference.queries(program)))
@@ -299,7 +300,7 @@ class NetworkTests(unittest.TestCase):
                 self.assertEqual(check(script), [])
 
     def test_one_queried_variable_is_returned_alone(self):
-        network = gen_bn.parse(str(root / 'examples' / 'cancer.net'))
+        network = gen_bn.parse(str(SOURCE / 'examples' / 'cancer.net'))
         self.assertEqual(gen_bn.to_dice(network, 'Cancer').strip().splitlines()[-1], 'CANCER')
 
 

@@ -37,6 +37,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import source_tree  # noqa: E402,F401  (the source tree's converters)
 from dice2problog import Parser, bits_for, calls, deep, discrete_probs, tokenize  # noqa: E402
 
 BOOL = ('bool',)

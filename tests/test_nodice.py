@@ -9,6 +9,7 @@ import unittest
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / 'scripts'))
+import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(root / 'tests'))
 import dice2problog  # noqa: E402
 from test_dice2problog import answers, exact, queries  # noqa: E402

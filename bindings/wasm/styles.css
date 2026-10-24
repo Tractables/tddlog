@@ -107,6 +107,9 @@ header {
   header { flex-direction: column-reverse; }
 }
 
+.site-brand { display: inline-block; margin-bottom: 0.6rem; }
+.site-logo { display: block; width: 12rem; max-width: 100%; height: auto; }
+
 h1 {
   margin: 0 0 0.35rem;
   font-size: 1.35rem;

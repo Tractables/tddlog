@@ -20,6 +20,7 @@ import unittest
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
 sys.path.insert(0, str(scripts))
+import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(root / 'tests'))
 import bench  # noqa: E402
 import dice2problog  # noqa: E402

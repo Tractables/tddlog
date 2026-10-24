@@ -10,6 +10,7 @@ release = re.search(r'^version = "([^"]+)"', manifest, re.MULTILINE).group(1)
 extensions = ["myst_parser"]
 html_theme = "furo"
 html_title = "tddlog for C"
+html_logo = str(Path(__file__).resolve().parents[3] / "docs/logo.svg")
 # The site's links to its pages, as the other pages list them, in a bar
 # above the page (this page's name not a link, the text small enough for a
 # phone's width), and its colours.

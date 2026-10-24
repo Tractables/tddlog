@@ -37,6 +37,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import source_tree  # noqa: E402,F401  (the source tree's converters)
 from dice2problog import (Parser, bits_for, calls, deep,  # noqa: E402
                           discrete_probs, tokenize)
 from dice_ir import refuse  # noqa: E402

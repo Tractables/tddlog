@@ -22,6 +22,7 @@ root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
 data = root / 'data'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
 import dice2problog  # noqa: E402
@@ -80,7 +81,7 @@ class Dice2RouletteTests(unittest.TestCase):
                 self.assertIn('(define pmfs', code)
 
     def test_a_network_translates(self):
-        text = subprocess.run([sys.executable, str(scripts / 'gen_bn.py'), str(root / 'examples' / 'asia.net'),
+        text = subprocess.run([sys.executable, str(SOURCE / 'scripts' / 'gen_bn.py'), str(SOURCE / 'examples' / 'asia.net'),
                                '--query', 'leaves', '--format', 'dice'], capture_output=True, text=True,
                               check=True).stdout
         code = translate(text)

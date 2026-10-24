@@ -20,8 +20,9 @@ import unittest.mock
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-regress = root / 'tests' / 'regress'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
+regress = SOURCE / 'tests' / 'regress'
 sys.path.insert(0, str(root / 'tests'))
 import bench  # noqa: E402
 from test_gen_bn import brute_force_z  # noqa: E402

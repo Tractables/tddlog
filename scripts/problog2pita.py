@@ -20,6 +20,7 @@ import re
 import sys
 from fractions import Fraction
 
+import source_tree  # noqa: F401  (the source tree's converters)
 from lpad2problog import split_clauses, split_top, strip_comments
 
 

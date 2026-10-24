@@ -17,8 +17,9 @@ import unittest
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-programs = root / 'tests' / 'roulette'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
+programs = SOURCE / 'tests' / 'roulette'
 sys.path.insert(0, str(root / 'tests'))
 import gen_roulette  # noqa: E402
 from test_dice2problog import exact  # noqa: E402
@@ -144,7 +145,7 @@ class GenRouletteTests(unittest.TestCase):
             self.assertTrue(f.readline().startswith(gen_roulette.HEADER))
         for args in (['diamond', '3', '--reference', '--dice', 'x.dice'], ['diamond', '0'], ['diamond'],
                      ['--reference-of', str(programs / 'diamond-3.pl'), 'diamond', '3'],
-                     ['--reference-of', str(root / 'tests' / 'dice' / 'diamond.pl')]):
+                     ['--reference-of', str(SOURCE / 'tests' / 'dice' / 'diamond.pl')]):
             out = run(*args)
             self.assertNotEqual(out.returncode, 0, args)
             self.assertFalse(Path('x.dice').exists())

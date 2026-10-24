@@ -19,6 +19,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import source_tree  # noqa: E402,F401  (the source tree's converters)
 from lpad2problog import convert_clause, split_clauses, split_top, strip_comments  # noqa: E402
 
 ap = argparse.ArgumentParser()

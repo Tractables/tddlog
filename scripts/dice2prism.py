@@ -72,6 +72,7 @@ from decimal import Decimal, localcontext
 from fractions import Fraction
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import source_tree  # noqa: E402,F401  (the source tree's converters)
 from dice2problog import bits_for  # noqa: E402
 from dice_ir import BOOL, Const, Lower, Var, deep, leaves, lower, prune, refuse, size  # noqa: E402
 

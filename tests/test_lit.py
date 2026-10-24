@@ -12,8 +12,9 @@ import unittest
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-lit = root / 'tests' / 'lit'
 sys.path.insert(0, str(scripts))
+from source_tree import SOURCE  # noqa: E402
+lit = SOURCE / 'tests' / 'lit'
 import lit_exact  # noqa: E402
 
 # program -> (family, generator arguments, ProbLog's answers, one query at a

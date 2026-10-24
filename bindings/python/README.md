@@ -1,6 +1,9 @@
 # tddlog for Python
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
+       alt="tddlog" width="340">
+  <br>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://tractables.github.io/tddlog/python/"><img
