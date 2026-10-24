@@ -21,7 +21,7 @@ html_css_files = ["site.css"]
 # The site's links to its pages, as the other pages list them, in a bar
 # above the page (this page's name not a link; on a phone's width the bar
 # wraps between links), and its colours.
-SITE = [("Playground", "../"), ("Guide", "../guide/"), ("Results", "../results/"), ("API", "../api/"),
+SITE = [("Playground", "../"), ("Guide", "../guide/"), ("Results", "../results/"), ("Rust API", "../api/"),
         ("Python", None), ("C", "../c/"), ("GitHub", "https://github.com/Tractables/tddlog")]
 LINKS = [f'<a href="{href}">{name}</a>' if href else f"<b>{name}</b>" for name, href in SITE]
 html_theme_options = {

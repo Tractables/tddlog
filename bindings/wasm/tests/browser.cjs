@@ -474,7 +474,7 @@ async function noSidewaysScroll(page, what) {
           assert.equal(response.status(), 200, `the ${binding} page`);
           assert.match(await shot.title(), new RegExp(`^${title}`));
           const bar = await shot.$$eval(".announcement a", (anchors) => anchors.map((a) => a.textContent));
-          assert.deepEqual(bar, ["Playground", "Guide", "Results", "API", "Python", "C", "GitHub"].filter((n) => n !== title.split(" ").pop()),
+          assert.deepEqual(bar, ["Playground", "Guide", "Results", "Rust API", "Python", "C", "GitHub"].filter((n) => n !== title.split(" ").pop()),
             `the ${binding} page's links to the site`);
           const [barWidth, barRoom, barHeight, barHeightRoom] = await shot.$eval(".announcement",
             (bar) => [bar.scrollWidth, bar.clientWidth, bar.scrollHeight, bar.clientHeight]);
