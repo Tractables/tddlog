@@ -1,14 +1,22 @@
 // The assembled site in headless Chromium: every example's answers on the
-// page against the ProbLog column beside them, P(evidence), an edited program
-// through the address, an error, Cancel, the theme, the guide's links, the
-// pages' links within the site, the
+// page against the ProbLog column beside them, P(evidence), the editor's
+// colours under its text (the same text, laid out alike, following the
+// scroll; plain for a long program and under forced colours), an edited
+// program through the address (none for a program too long for it), an
+// error and its line, Cancel and Escape, a long table, a file opened,
+// dropped and downloaded, the answers copied, a benchmark of the results
+// opened through #bench= (its answers against the release run's reference;
+// a held, a partial, a slow and a malformed one; a gzipped text with a
+// header above the file, and one that does not match), the theme, the
+// guide's links, the pages' links within the site, the
 // results page (the overview; each kind of problems' plot, drawing the
 // kind's systems over all of its instances with their answers and total
 // times; each suite's plot and tddlog against each system; the hover layer,
 // the table; where the site has the benchmarks' data, a family's times,
 // programs and runs, and a link to a benchmark's former page), the API,
 // Python and C pages, and no sideways scrolling at a desktop's width or a
-// phone's.
+// phone's; on a phone the editor on the first screen; the code's colours'
+// contrast in both themes.
 //
 //   node tests/browser.cjs <site> [<directory for screenshots>]
 //
@@ -20,6 +28,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
+const zlib = require("node:zlib");
 const { chromium } = require("playwright");
 const { tddlogExamples } = require("../examples.js");
 
@@ -29,7 +38,7 @@ const shots = process.argv[3] ? path.resolve(process.argv[3]) : null;
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
   ".wasm": "application/wasm", ".pl": "text/plain", ".json": "application/json",
-  ".svg": "image/svg+xml",
+  ".svg": "image/svg+xml", ".txt": "text/plain", ".gz": "application/gzip",
 };
 
 // The site as GitHub Pages serves it: a directory's index.html at its path,
@@ -52,26 +61,97 @@ function serve(root) {
 }
 
 // Until the run on show is over and its answers have `first` as their first
-// query (or the result is an error, where `first` is null).
+// query (any, where `first` is undefined; or the result is an error, where
+// `first` is null).
 function answered(page, first) {
   return page.waitForFunction((first) => {
     if (document.body.classList.contains("busy")) return false;
     const status = document.getElementById("status").textContent;
-    if (first === null) return status === "failed" && document.querySelector("#answers .failed") !== null;
-    if (status !== "ready") return false;
+    if (first === null) return status.startsWith("failed") && document.querySelector("#answers .failed") !== null;
+    if (!status.startsWith("done")) return false;
     const cell = document.querySelector("#answers td.query");
-    return cell !== null && cell.textContent === first;
+    return first === undefined || (cell !== null && cell.textContent === first);
   }, first, { timeout: 60000 });
 }
 
-// The table on show: each row's query, tddlog's answer and ProbLog's.
+// The table on show: each row's query, tddlog's answer and the reference's.
 function rows(page) {
   return page.$$eval("#answers tbody tr", (trs) => trs.map((tr) => [...tr.querySelectorAll("td.query, td.p")].map((td) => td.textContent)));
 }
 
+// Until the page has drawn twice: after an input, the colours are painted.
+function frame(page) {
+  return page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+
+// A long program put in the editor at once, as a paste: fill inserts it as
+// typed text, which for thousands of lines takes Chromium longer than the
+// test waits.
+function paste(page, text) {
+  return page.$eval("#program", (editor, text) => {
+    editor.value = text;
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+  }, text);
+}
+
+// The editor's text and the colours' under it.
+function layers(page) {
+  return page.evaluate(() => [document.getElementById("program").value, document.getElementById("program-hl").textContent]);
+}
+
+// No sideways scrolling; where there is, the first elements that stick out
+// (outside any box that clips them) say why.
 async function noSidewaysScroll(page, what) {
-  const [scroll, width] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
-  assert.ok(scroll <= width, `${what}: the page is ${scroll} px wide in a window of ${width}`);
+  const [scroll, width, out] = await page.evaluate(() => {
+    const clipped = (e) => {
+      for (let p = e.parentElement; p !== null; p = p.parentElement) if (getComputedStyle(p).overflowX !== "visible") return true;
+      return false;
+    };
+    const out = [...document.body.querySelectorAll("*")]
+      .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 0.5 && !clipped(e)).slice(0, 3)
+      .map((e) => `${e.tagName.toLowerCase()}${e.id ? `#${e.id}` : ""}${typeof e.className === "string" && e.className ? `.${e.className.replace(/ /g, ".")}` : ""} to ${e.getBoundingClientRect().right}`);
+    return [document.documentElement.scrollWidth, window.innerWidth, out];
+  });
+  assert.ok(scroll <= width, `${what}: the page is ${scroll} px wide in a window of ${width} (${out.join(", ")})`);
+}
+
+// The benchmarks of the results the playground can open, where the site
+// has their data: for each instance, the one .pl file tddlog read, whether
+// the site keeps it whole and its text, and tddlog's time in the release
+// run.
+function benchmarksOf(root) {
+  const dir = path.join(root, "results", "benchmarks");
+  if (!fs.existsSync(path.join(dir, "index.json"))) return [];
+  const index = JSON.parse(fs.readFileSync(path.join(dir, "index.json"), "utf8"));
+  const native = new Map();
+  for (const file of ["suites.json", "ppl.json"].map((f) => path.join(root, "results", f)).filter((f) => fs.existsSync(f))) {
+    for (const s of JSON.parse(fs.readFileSync(file, "utf8")).families.flatMap((f) => f.suites)) {
+      const own = s.systems.indexOf("tddlog") + 1;
+      for (const row of s.instances) native.set(`${s.key}/${row[0]}`, own === 0 ? undefined : row[own]);
+    }
+  }
+  const out = [];
+  for (const [suite, fams] of Object.entries(index.suites)) {
+    for (const f of fams) {
+      const famFile = path.join(dir, suite, `${f.key}.json`);
+      const fam = JSON.parse(fs.readFileSync(famFile, "utf8"));
+      for (const inst of fam.instances) {
+        const files = (inst.tabs ?? []).filter((t) => t.readers.includes("tddlog")).flatMap((t) => t.files.filter((x) => x.name.endsWith(".pl")));
+        if (files.length !== 1) continue;
+        const [file] = files;
+        const inline = fam.texts[file.sha];
+        const readable = !file.held && !file.part && (inline !== undefined || Boolean(file.src));
+        const text = () => {
+          if (inline !== undefined) return inline;
+          const raw = fs.readFileSync(path.join(dir, file.src));
+          return (file.src.endsWith(".gz") ? zlib.gunzipSync(raw) : raw).toString("utf8");
+        };
+        out.push({ suite, family: f.key, name: inst.name, path: `${suite}/${f.key}/${inst.name}`, famFile, file, readable, text,
+          inline: inline !== undefined, native: native.get(`${suite}/${inst.name}`), reference: Boolean(inst.answers?.ref) });
+      }
+    }
+  }
+  return out;
 }
 
 (async () => {
@@ -82,21 +162,23 @@ async function noSidewaysScroll(page, what) {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const errors = [];
   try {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, permissions: ["clipboard-read", "clipboard-write"] });
     const page = await context.newPage();
     page.on("pageerror", (error) => errors.push(String(error)));
 
     if (!only) {
     // The page opens on the first example and runs it, with the release
-    // run's results at a glance above it.
+    // run's results at a glance under it.
     await page.goto(base);
     await answered(page, tddlogExamples[0].problog[0][0]);
     await page.waitForSelector("#glance:not([hidden])");
     const glance = (await page.textContent("#glance-stats")).replace(/(\d),(?=\d)/g, "$1").replace(/\s+/g, " ");
     assert.match(glance, /\d+ instances in the release run \d+ answered by tddlog \d+ answered by tddlog alone/, glance);
+    assert.equal(await page.$("[aria-live]"), null, "only the status is announced");
 
     // Every example: tddlog's answers agree with ProbLog's to the digits
-    // shown, in the program's order.
+    // shown, in the program's order; its button is pressed, and the
+    // program's colours lie under its text.
     for (const [i, example] of tddlogExamples.entries()) {
       await page.click(`#examples button[data-example="${i}"]`);
       await answered(page, example.problog[0][0]);
@@ -104,12 +186,18 @@ async function noSidewaysScroll(page, what) {
       assert.deepEqual(shown.map(([query]) => query), example.problog.map(([query]) => query), `${example.key}: the queries`);
       for (const [query, tddlog, problog] of shown) assert.equal(tddlog, problog, `${example.key}: ${query}`);
       assert.match(page.url(), new RegExp(`example=${example.key}`), `${example.key}: the address`);
+      const pressed = await page.$$eval("#examples button", (bs) => bs.map((b) => b.getAttribute("aria-pressed")));
+      assert.deepEqual(pressed, tddlogExamples.map((_, j) => String(j === i)), `${example.key}: its button pressed`);
+      const [text, shade] = await layers(page);
+      assert.equal(shade, text + "\n", `${example.key}: the colours' text`);
       console.log(`ok ${example.key}: ${shown.length} answers on the page agree with ProbLog's`);
     }
 
-    // P(evidence), with ProbLog's beside it.
+    // P(evidence), with ProbLog's beside it; the alarm's tokens in colour.
     await page.click('#examples button[data-example="0"]');
     await answered(page, tddlogExamples[0].problog[0][0]);
+    const tokens = await page.$$eval("#program-hl span", (spans) => spans.map((s) => `${s.className} ${s.textContent}`));
+    for (const token of ["t-kw query", "t-num 0.1", "t-op ::", "t-op :-", "t-var X"]) assert.ok(tokens.includes(token), `the alarm's ${token}`);
     await page.check("#evidence");
     await page.click("#run");
     await page.waitForSelector("#answers .evidence");
@@ -117,11 +205,16 @@ async function noSidewaysScroll(page, what) {
     const evidence = await page.$$eval("#answers .evidence b", (bs) => bs.map((b) => b.textContent));
     assert.equal(evidence[0], evidence[2], `P(e) ${evidence.join(" ")}`);
     assert.match(page.url(), /evidence=1/);
+    assert.match(await page.textContent("#summary"), /in the browser/);
     console.log(`ok P(evidence) ${evidence[0]}`);
 
-    // An edited program runs, goes in the address, and comes back from it.
+    // An edited program is painted in the next frame, runs, goes in the
+    // address, and comes back from it.
     const program = "0.3::a.\n0.6::b.\nc :- a, \\+b.\nquery(c).\n";
     await page.fill("#program", program);
+    await frame(page);
+    assert.deepEqual(await layers(page), [program, program + "\n"], "the colours after an edit");
+    assert.equal(await page.getAttribute('#examples button[data-example="0"]', "aria-pressed"), "false");
     await page.click("#run");
     await answered(page, "c");
     assert.deepEqual(await rows(page), [["c", "0.120000"]]);
@@ -136,13 +229,20 @@ async function noSidewaysScroll(page, what) {
     await again.close();
     console.log("ok an edited program through the address");
 
-    // An error is shown as one, and the solver answers after it.
-    await page.fill("#program", "0.5::a query(a).");
+    // An error is shown as one, a parse error's line is marked and the
+    // caret put there, and the solver answers after it.
+    const broken = "0.3::a.\n0.6::b.\nc :- a b.\nquery(c).\n";
+    await page.fill("#program", broken);
     await page.click("#run");
     await answered(page, null);
-    assert.match(await page.textContent("#answers .failed"), /^parse error: /);
+    assert.match(await page.textContent("#answers .failed"), /^parse error: line 3: /);
+    assert.match(await page.textContent("#status"), /^failed: parse error: line 3: /);
+    const marked = await page.evaluate(() => [document.getElementById("program").selectionStart, document.querySelector("#program-hl .error-line")?.style.top]);
+    assert.deepEqual(marked, ["0.3::a.\n0.6::b.\n".length, "3em"], "the error's line");
     await page.selectOption("#strategy", "decision");
     await page.fill("#program", "0.5::a. query(a).");
+    await frame(page);
+    assert.equal(await page.$("#program-hl .error-line"), null, "the mark goes with an edit");
     await page.click("#run");
     await answered(page, null);
     assert.match(await page.textContent("#answers .failed"), /no fact of this program as a guard/);
@@ -151,7 +251,7 @@ async function noSidewaysScroll(page, what) {
     await answered(page, "a");
     console.log("ok errors");
 
-    // Cancel ends the run's worker, and a new one answers.
+    // Cancel, and Escape, end the run's worker, and a new one answers.
     await page.evaluate(() => {
       document.getElementById("run").click();
       document.getElementById("cancel").click();
@@ -159,9 +259,230 @@ async function noSidewaysScroll(page, what) {
     assert.match(await page.textContent("#status"), /stopped|ready/);
     await page.click("#run");
     await answered(page, "a");
-    console.log("ok Cancel");
+    await page.evaluate(() => {
+      document.getElementById("run").click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+    assert.match(await page.textContent("#status"), /^stopped/);
+    await page.click("#run");
+    await answered(page, "a");
+    console.log("ok Cancel and Escape");
+
+    // The colours lie under the text: both layers lay it out alike, and the
+    // colours follow the textarea to either end of a long, wide program
+    // (its last line the longest).
+    const style = await page.evaluate(() => {
+      const props = ["fontFamily", "fontSize", "lineHeight", "fontVariantLigatures", "fontKerning", "letterSpacing", "wordSpacing", "tabSize", "whiteSpace",
+        "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth"];
+      const of = (id) => { const s = getComputedStyle(document.getElementById(id)); return Object.fromEntries(props.map((p) => [p, s[p]])); };
+      return [of("program"), of("program-hl")];
+    });
+    assert.deepEqual(style[1], style[0], "the colours' layout is the textarea's");
+    const wide = Array.from({ length: 120 }, (_, i) => `0.5::p${i}(${"x".repeat(i === 119 ? 400 : 5)}).`).join("\n");
+    await page.fill("#program", wide);
+    await frame(page);
+    const ends = [];
+    for (const end of [false, true]) {
+      ends.push(await page.evaluate(async (end) => {
+        const editor = document.getElementById("program");
+        editor.scrollLeft = end ? editor.scrollWidth : 0;
+        editor.scrollTop = end ? editor.scrollHeight : 0;
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const shade = document.getElementById("program-hl");
+        const s = getComputedStyle(editor);
+        const box = editor.getBoundingClientRect();
+        const left = box.left + editor.clientLeft + parseFloat(s.paddingLeft);
+        const top = box.top + editor.clientTop + parseFloat(s.paddingTop);
+        const right = box.left + editor.clientLeft + editor.clientWidth;
+        const bottom = box.top + editor.clientTop + editor.clientHeight - parseFloat(s.paddingBottom);
+        const texts = [];
+        for (const walk = document.createTreeWalker(shade, NodeFilter.SHOW_TEXT); walk.nextNode();) texts.push(walk.currentNode);
+        const char = (node, i) => {
+          const range = document.createRange();
+          range.setStart(node, i);
+          range.setEnd(node, i + 1);
+          const r = range.getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+        };
+        const last = texts[texts.length - 1];
+        return { transform: shade.style.transform, scroll: [editor.scrollLeft, editor.scrollTop], left, top, right, bottom,
+          padRight: parseFloat(s.paddingRight), first: char(texts[0], 0), last: char(last, last.length - 2) };
+      }, end));
+    }
+    for (const at of ends) assert.equal(at.transform, `translate(${-at.scroll[0]}px, ${-at.scroll[1]}px)`, "the colours follow the scroll");
+    const [start, finish] = ends;
+    assert.ok(finish.scroll[0] > 0 && finish.scroll[1] > 0, `scrolled to ${finish.scroll}`);
+    assert.ok(Math.abs(start.first.left - start.left) <= 1, `the first character at ${start.first.left}, the text from ${start.left}`);
+    const leading = start.first.top - start.top;
+    assert.ok(finish.last.right <= finish.right + 1 && finish.last.right >= finish.right - finish.padRight - 3,
+      `the last character ends at ${finish.last.right}, the scroll at ${finish.right}`);
+    assert.ok(Math.abs(finish.bottom - finish.last.bottom - leading) <= 1.5,
+      `the last line ends at ${finish.last.bottom}, the scroll at ${finish.bottom} less ${leading}`);
+    await page.emulateMedia({ forcedColors: "active" });
+    const forced = await page.evaluate(() => [getComputedStyle(document.getElementById("program-hl")).display,
+      getComputedStyle(document.getElementById("program")).webkitTextFillColor]);
+    assert.equal(forced[0], "none", "no colours under forced colours");
+    assert.notEqual(forced[1], "rgba(0, 0, 0, 0)", "the text under forced colours");
+    await page.emulateMedia({ forcedColors: "none" });
+    console.log("ok the colours under the text, to both ends of a long, wide program");
+
+    // A program too long to colour is shown plain, and one too long for the
+    // address leaves it, Download taking the link's place.
+    let seed = 7;
+    const random = () => (seed = (seed * 48271) % 2147483647).toString(36);
+    const long = Array.from({ length: 15000 }, () => `0.5::f${random()}${random()}.`).join("\n");
+    await paste(page, long);
+    await frame(page);
+    const plain = await page.evaluate(() => [document.querySelector(".editor").classList.contains("plain"),
+      getComputedStyle(document.getElementById("program")).webkitTextFillColor]);
+    assert.equal(plain[0], true, `a program of ${long.length} characters is plain`);
+    assert.notEqual(plain[1], "rgba(0, 0, 0, 0)", "a plain program's text");
+    await page.waitForSelector("#too-long:not([hidden])");
+    assert.doesNotMatch(page.url(), /#/, "no program in the address");
+    assert.equal(await page.isHidden("#link"), true);
+    console.log("ok a long program: plain, and not in the address");
+
+    // A long table shows 500 rows and all on asking; the answers copy as
+    // tab-separated text.
+    await page.uncheck("#evidence");
+    const many = Array.from({ length: 600 }, (_, i) => `0.5::a(${i}). query(a(${i})).`).join("\n");
+    await paste(page, many);
+    await page.click("#run");
+    await answered(page, "a(0)");
+    assert.equal((await page.$$("#answers tbody tr")).length, 500);
+    await page.click("#answers button.all");
+    assert.equal((await page.$$("#answers tbody tr")).length, 600);
+    await page.click("#copy");
+    const tsv = (await page.evaluate(() => navigator.clipboard.readText())).split("\n");
+    assert.deepEqual(tsv.slice(0, 2), ["query\tprobability", "a(0)\t0.500000"]);
+    assert.equal(tsv.length, 602);
+    console.log("ok a long table, and the answers copied");
+
+    // A file opened, or dropped on the editor, comes in whole; Download
+    // saves the program under its name.
+    const mine = "0.2::m.\nquery(m). % é\n";
+    await page.setInputFiles("#file", { name: "mine.pl", mimeType: "text/plain", buffer: Buffer.from(mine) });
+    await page.waitForFunction((mine) => document.getElementById("program").value === mine, mine);
+    const [download] = await Promise.all([page.waitForEvent("download"), page.click("#download")]);
+    assert.equal(download.suggestedFilename(), "mine.pl");
+    assert.equal(fs.readFileSync(await download.path(), "utf8"), mine);
+    await page.evaluate(() => {
+      const files = new DataTransfer();
+      files.items.add(new File(["0.1::d.\nquery(d).\n"], "dropped.pl", { type: "text/plain" }));
+      document.getElementById("program").dispatchEvent(new DragEvent("drop", { dataTransfer: files, bubbles: true, cancelable: true }));
+    });
+    await page.waitForFunction(() => document.getElementById("program").value === "0.1::d.\nquery(d).\n");
+    console.log("ok a file opened, dropped and downloaded");
+
+    // A benchmark of the results opens through #bench=SUITE/FAMILY/INSTANCE,
+    // where the site has their data: the program tddlog was given, run where
+    // it is short and was quick natively, its answers agreeing with the
+    // release run's reference; again after a reload. A held or partial file,
+    // a slow benchmark and a malformed or unknown address open nothing to
+    // run, and say why.
+    const benches = benchmarksOf(site);
+    // A page's address changed only after the # does not load it again.
+    const visit = async (p, address) => {
+      await p.goto("about:blank");
+      await p.goto(`${base}${address}`);
+    };
+    if (benches.length > 0) {
+      const quick = (b) => b.readable && b.file.bytes <= 1024 * 1024 && typeof b.native === "number" && b.native <= 2;
+      const whole = benches.find((b) => b.path === "std/grid/grid4" && quick(b) && b.reference && b.inline)
+        ?? benches.find((b) => quick(b) && b.reference && b.inline);
+      assert.ok(whole, "a benchmark to open");
+      const opened = async (p, bench) => {
+        await visit(p, `#bench=${bench.path}`);
+        await answered(p);
+        const shown = await rows(p);
+        const referenced = shown.filter(([, , reference]) => reference !== "");
+        assert.ok(referenced.length > 0, `${bench.path}: answers with a reference`);
+        for (const [query, tddlog, reference] of referenced) assert.equal(tddlog, reference, `${bench.path}: ${query}`);
+        return shown;
+      };
+      const text = whole.text();
+      const shown = await opened(page, whole);
+      assert.equal(await page.inputValue("#program"), text);
+      const opening = `${whole.name} from ${whole.suite}/${whole.family}: `;
+      assert.ok((await page.textContent("#source")).startsWith(`${opening}the program tddlog was given`), await page.textContent("#source"));
+      assert.equal(await page.getAttribute("#source a", "href"), `results/#/${whole.path}`);
+      assert.ok(page.url().endsWith(`#bench=${whole.path}`), page.url());
+      await page.reload();
+      await answered(page);
+      assert.deepEqual(await rows(page), shown, `${whole.path}: again after a reload`);
+      console.log(`ok ${whole.path} in the playground: ${shown.length} answers agree with the reference`);
+
+      const fetched = benches.filter((b) => quick(b) && b.reference && !b.inline).sort((a, b) => a.file.bytes - b.file.bytes)[0];
+      if (fetched) {
+        await opened(page, fetched);
+        console.log(`ok ${fetched.path}, its text a file of its own`);
+      }
+
+      // A gzipped text, with a header above the file, opens; a text that is
+      // not the file does not.
+      const family = JSON.parse(fs.readFileSync(whole.famFile, "utf8"));
+      const routed = async (body) => {
+        const p = await context.newPage();
+        p.on("pageerror", (error) => errors.push(String(error)));
+        await p.route(`**/results/benchmarks/${whole.suite}/${whole.family}.json*`, (route) => {
+          const fam = structuredClone(family);
+          const file = fam.instances.find((i) => i.name === whole.name).tabs.find((t) => t.readers.includes("tddlog")).files.find((f) => f.sha === whole.file.sha);
+          delete fam.texts[file.sha];
+          file.src = "files/routed.txt.gz";
+          return route.fulfill({ json: fam });
+        });
+        await p.route("**/results/benchmarks/files/routed.txt.gz", (route) => route.fulfill({ body: zlib.gzipSync(body), contentType: "application/gzip" }));
+        return p;
+      };
+      const header = "% A header the site puts above the file: not part of it.\n";
+      const gz = await routed(header + text);
+      await opened(gz, whole);
+      assert.equal(await gz.inputValue("#program"), header + text);
+      await gz.close();
+      const wrong = await routed(text.replace(/\d/, (d) => String((Number(d) + 1) % 10)));
+      await visit(wrong, `#bench=${whole.path}`);
+      await wrong.waitForFunction(() => /does not match/.test(document.getElementById("source").textContent));
+      await wrong.close();
+      console.log("ok a gzipped text with a header opens, a text that is not the file does not");
+
+      // Nothing to run: the note says why, with a link to the results.
+      const refused = async (address, said) => {
+        await visit(page, `#bench=${address}`);
+        await page.waitForFunction(() => {
+          const note = document.getElementById("source");
+          return !note.hidden && !note.textContent.endsWith("loading.") && document.getElementById("status").textContent === "ready";
+        });
+        const note = await page.textContent("#source");
+        assert.match(note, said, address);
+        assert.doesNotMatch(note, /the program tddlog was given/, address);
+        assert.match(await page.getAttribute("#source a:last-of-type", "href"), /^results\//, `${address}: a link to the results`);
+        assert.equal(await page.inputValue("#program"), "", `${address}: nothing to run`);
+        await page.waitForTimeout(300);
+        assert.equal(await page.textContent("#answers"), "Press Run.", `${address}: no run`);
+      };
+      const named = (b) => new RegExp(`^${b.name.replace(/\./g, "\\.")} from ${b.suite}/${b.family}: `);
+      const held = benches.find((b) => b.file.held);
+      if (held) await refused(held.path, named(held));
+      const part = benches.find((b) => b.file.part && !b.file.held);
+      if (part) await refused(part.path, /keeps the first [\d,]+ of its [\d,]+ bytes/);
+      await refused("../x", /^The address names no benchmark/);
+      await refused("std/grid/..", /^The address names no benchmark/);
+      await refused(`${whole.suite}/${whole.family}/nothing`, /no such benchmark/);
+      const slow = benches.find((b) => b.readable && !quick(b));
+      if (slow) {
+        await visit(page, `#bench=${slow.path}`);
+        await page.waitForFunction(() => /Press Run to try it here\.$/.test(document.getElementById("source").textContent)
+          && document.getElementById("status").textContent === "ready");
+        await page.waitForTimeout(300);
+        assert.equal(await page.textContent("#answers"), "Press Run.", `${slow.path}: no run`);
+        assert.equal(await page.inputValue("#program"), slow.text(), `${slow.path}: its program`);
+      }
+      console.log(`ok refused: ${[held?.path, part?.path, "../x", "std/grid/.."].filter(Boolean).join(", ")}; not run as it opens: ${slow?.path ?? "none"}`);
+    }
 
     // The theme button switches the palette and keeps the choice.
+    await visit(page, "");
+    await answered(page, tddlogExamples[0].problog[0][0]);
     const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     const before = await background();
     await page.click("#theme");
@@ -377,6 +698,49 @@ async function noSidewaysScroll(page, what) {
         await answered(shot, "asia(yes)");
         await noSidewaysScroll(shot, `${colorScheme}, ${width} px`);
         if (shots) await shot.screenshot({ path: path.join(shots, `page-${colorScheme}-${width}.png`), fullPage: true });
+        // The code's colours, the muted text and the examples' buttons
+        // read against their backgrounds (WCAG AA, 4.5:1).
+        const contrast = await shot.evaluate(() => {
+          const luminance = (color) => {
+            const [r, g, b] = color.match(/[\d.]+/g).slice(0, 3).map((v) => {
+              const c = Number(v) / 255;
+              return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+            });
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          };
+          const ratio = (a, b) => {
+            const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+            return (hi + 0.05) / (lo + 0.05);
+          };
+          const code = getComputedStyle(document.querySelector(".editor")).backgroundColor;
+          const out = {};
+          for (const cls of ["com", "str", "num", "kw", "op", "var", "fn", "typ"]) {
+            const span = document.createElement("span");
+            span.className = `t-${cls}`;
+            document.getElementById("program-hl").append(span);
+            out[`t-${cls}`] = ratio(getComputedStyle(span).color, code);
+            span.remove();
+          }
+          out.muted = ratio(getComputedStyle(document.querySelector(".hint")).color, code);
+          const chip = getComputedStyle(document.querySelector('#examples button[aria-pressed="false"]'));
+          out.example = ratio(chip.color, chip.backgroundColor);
+          return out;
+        });
+        for (const [what, r] of Object.entries(contrast)) assert.ok(r >= 4.5, `${colorScheme}: ${what} at ${r.toFixed(2)}:1`);
+        // On a phone the examples are one row, and the editor is on the
+        // first screen.
+        if (width < 600) {
+          const [rows, top] = await shot.evaluate(() => [new Set([...document.querySelectorAll("#examples button")].map((b) => b.offsetTop)).size,
+            document.querySelector(".editor").getBoundingClientRect().top + scrollY]);
+          assert.equal(rows, 1, `${colorScheme}: the examples in one row`);
+          assert.ok(top < 844, `${colorScheme}: the editor ${top} px down`);
+        }
+        // The editor, a selection in it, in each theme.
+        if (shots) {
+          await shot.evaluate(() => document.getElementById("program").setSelectionRange(250, 420));
+          await shot.focus("#program");
+          await shot.locator(".editor").screenshot({ path: path.join(shots, `editor-${colorScheme}-${width}.png`) });
+        }
         await shot.goto(`${base}guide/`);
         await noSidewaysScroll(shot, `the guide, ${colorScheme}, ${width} px`);
         assert.equal(await shot.title(), "tddlog guide");

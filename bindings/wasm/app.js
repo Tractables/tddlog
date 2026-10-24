@@ -1,7 +1,7 @@
 "use strict";
 
-// The page: the examples, the address bar, the worker the solver runs in,
-// and the result.
+// The page: the examples, a benchmark of the results, the address bar, the
+// editor, the worker the solver runs in, and the result.
 
 // A line on each strategy under the menu, from the command line's --help.
 const STRATEGY_NOTES = {
@@ -15,6 +15,19 @@ const STRATEGY_NOTES = {
   "program:fanin": "Right-linear in the fan-in order of the rules from the queries and evidence, interleaved over them.",
   decision: "The tree of the decisions the grounder read facts as guards in, its contexts and the atoms read outside it named; fails for a program with none.",
 };
+
+// A program whose code in the address would be longer than this goes in no
+// address; Download saves it instead.
+const ADDRESS_MOST = 64 * 1024;
+// A program longer than this is shown without colours, which would slow
+// down typing in it.
+const PLAIN_ABOVE = 256 * 1024;
+// The answers shown before "Show all".
+const ROWS_SHOWN = 500;
+// A benchmark of the results runs as it opens where its program is at most
+// AUTO_BYTES long and tddlog answered it natively within AUTO_SECONDS.
+const AUTO_BYTES = 1024 * 1024;
+const AUTO_SECONDS = 2;
 
 // The host keeps the page's files in caches for a while, so the workflow
 // stamps the references in index.html with the commit (app.js?v=<sha>), and
@@ -72,7 +85,7 @@ function escapeHtml(text) {
 const count = (n) => n.toLocaleString("en-US");
 
 function duration(seconds) {
-  if (seconds < 0.001) return "&lt;1 ms";
+  if (seconds < 0.001) return "<1 ms";
   if (seconds < 1) return `${Math.round(seconds * 1000)} ms`;
   return `${seconds.toFixed(2)} s`;
 }
@@ -83,21 +96,64 @@ const stat = (figure, word) => `<span class="stat"><b>${figure}</b> ${word}</spa
 
 // The figures of a result: the queries, the layout that answered, the
 // largest formula of the run, and the time the call took in this browser.
+// The guide says what a layout and a pair are.
 function summarise(result, elapsed) {
   const parts = result.parts;
   const largest = Math.max(0, ...parts.map((p) => Math.max(p.largestPairs, p.queryPairs)));
   const layouts = [...new Set(parts.map((p) => p.trial))].join(", ");
   let out = "";
   if (result.answers !== null) out += stat(count(result.answers.length), result.answers.length === 1 ? "query" : "queries");
-  if (layouts) out += stat(escapeHtml(layouts), "layout");
-  if (parts.length > 0) out += stat(count(largest), "pairs at most");
-  out += stat(duration(elapsed / 1000), "");
+  if (layouts) out += stat(escapeHtml(layouts), '<a href="guide/#terms">layout</a>');
+  if (parts.length > 0) out += stat(count(largest), '<a href="guide/#terms">pairs</a> at most');
+  out += stat(escapeHtml(duration(elapsed / 1000)), "in the browser");
   return out;
 }
 
-// The answers as a table, each with its probability as a bar, and ProbLog's
-// where the program is an example as the page loaded it.
-function answersHtml(result, digits, example) {
+// The line the status announces when a run ends.
+function said(result, elapsed) {
+  if (result.error !== undefined) return `failed: ${result.error.split("\n")[0]}`;
+  const time = duration(elapsed / 1000);
+  if (result.answers === null) return `done in ${time}: the evidence is inconsistent`;
+  const n = result.answers.length;
+  return `done in ${time}: ${n === 0 ? "no query" : `${count(n)} ${n === 1 ? "answer" : "answers"}`}`;
+}
+
+// The answers beside an example's: ProbLog's.
+function exampleReference(example) {
+  return {
+    column: "ProbLog",
+    caption: "ProbLog: ProbLog 2.3.0's answers (-k sdd, one query at a time), as the repository's tests record them.",
+    values: new Map(example.problog),
+    evidence: { probability: example.evidence, log10: Math.log10(example.evidence) },
+  };
+}
+
+// The answers beside a benchmark's: the release run's reference where it
+// has one, else tddlog's own there, from the command line. A log10 Z row is
+// the logarithm of P(evidence).
+function benchReference(answers) {
+  if (!answers) return null;
+  const at = answers.cols.indexOf(answers.ref ? "reference" : "tddlog");
+  if (at === -1) return null;
+  const values = new Map();
+  let evidence = null;
+  for (const [query, ...cells] of answers.rows) {
+    const value = cells[at] === "" ? NaN : Number(cells[at]);
+    if (!Number.isFinite(value)) continue;
+    if (answers.log10z) evidence = { probability: 10 ** value, log10: value };
+    else values.set(query, value);
+  }
+  return answers.ref
+    ? { column: "Reference", caption: `Reference: ${answers.ref}, in the release run.`, values, evidence }
+    : { column: "Command line", caption: "Command line: tddlog's answers in the release run.", values, evidence };
+}
+
+// The answers as a table, each with its probability as a bar, and beside
+// them the `reference` where the program has one: null, or { column,
+// caption, values (a Map from each query to its probability), evidence (a
+// P(evidence) as tddlog gives it, or null) }. The first ROWS_SHOWN rows
+// unless `all`.
+function answersHtml(result, digits, reference, all = false) {
   if (result.error !== undefined) return `<pre class="failed">${escapeHtml(result.error)}</pre>`;
   let out = "";
   if (result.answers === null) {
@@ -105,29 +161,36 @@ function answersHtml(result, digits, example) {
   } else if (result.answers.length === 0) {
     out += '<p class="note">The program asks no query.</p>';
   } else {
-    const reference = example === null ? null : new Map(example.problog);
+    const shown = all ? result.answers : result.answers.slice(0, ROWS_SHOWN);
     out += '<table><thead><tr><th>Query</th><th class="p">Probability</th><th></th>';
-    if (reference !== null) out += '<th class="p" title="ProbLog 2.3.0, as the repository\'s tests record it">ProbLog</th>';
+    if (reference !== null) out += `<th class="p">${escapeHtml(reference.column)}</th>`;
     out += "</tr></thead><tbody>";
-    for (const { query, probability } of result.answers) {
+    for (const { query, probability } of shown) {
       const width = Math.max(0, Math.min(1, probability)) * 100;
       out += `<tr><td class="query">${escapeHtml(query)}</td>`;
       out += `<td class="p" title="${probability}">${tddlogRuntime.probability(probability, digits)}</td>`;
       out += `<td class="bar"><i class="${width === 0 ? "zero" : ""}" style="width:${width}%"></i></td>`;
       if (reference !== null) {
-        const p = reference.get(query);
+        const p = reference.values.get(query);
         out += `<td class="p reference">${p === undefined ? "" : tddlogRuntime.probability(p, digits)}</td>`;
       }
       out += "</tr>";
     }
     out += "</tbody></table>";
+    if (shown.length < result.answers.length) {
+      out += `<p><button type="button" class="all">Show all ${count(result.answers.length)}</button></p>`;
+    }
   }
   if (result.evidence !== null) {
     const e = tddlogRuntime.evidence(result.evidence, digits);
     let line = `P(evidence) <b>${e.scientific}</b>, log10 <b>${e.log10}</b>`;
-    if (example !== null) line += `; ProbLog <b>${example.evidence.toExponential(digits)}</b>`;
+    if (reference?.evidence) {
+      const r = tddlogRuntime.evidence(reference.evidence, digits);
+      line += `; ${escapeHtml(reference.column)} <b>${r.scientific}</b>, log10 <b>${r.log10}</b>`;
+    }
     out += `<p class="evidence">${line}</p>`;
   }
+  if (reference !== null) out += `<p class="note">${escapeHtml(reference.caption)}</p>`;
   return out;
 }
 
@@ -163,7 +226,7 @@ function workHtml(result, strategy) {
       ["Vtree", `over ${count(p.leaves)} ${p.leaves === 1 ? "variable" : "variables"}`],
       ["Compile", `${count(p.components)} components (${count(p.cyclic)} cyclic); largest formula ${count(p.largestPairs)} pairs, ${count(p.finalPairs)} at the end`],
       ["Evidence and queries", `evidence ${count(p.evidencePairs)} pairs; largest formula ${count(p.queryPairs)} pairs`],
-      ["Time", stages.join(", ")],
+      ["Time", escapeHtml(stages.join(", "))],
     ]);
   });
   if (result.notes.length > 0) {
@@ -172,11 +235,134 @@ function workHtml(result, strategy) {
   return out;
 }
 
+// ------------------------------------------------------ a benchmark's program
+
+// The suite, family and instance an address names
+// (#bench=SUITE/FAMILY/INSTANCE), each of letters, digits, _, . and - and
+// not starting with . or -; else null.
+function benchPath(value) {
+  const parts = String(value).split("/");
+  return parts.length === 3 && parts.every((p) => /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/.test(p)) ? parts : null;
+}
+
+// The file tddlog read of an instance of the results: the one .pl file of
+// the tab tddlog is a reader of. Else why there is none to open.
+function tddlogFile(instance) {
+  const files = (instance.tabs ?? []).filter((tab) => tab.readers.includes("tddlog"))
+    .flatMap((tab) => tab.files.filter((file) => file.name.endsWith(".pl")).map((file) => ({ tab, file })));
+  if (files.length === 1) return files[0];
+  return {
+    refused: files.length === 0
+      ? "the results do not show the program tddlog was given."
+      : `the results show ${files.length} forms of the program; its results say which one tddlog was scored on.`,
+  };
+}
+
+// Why a benchmark does not run as it opens, or "" where it does. `native`
+// is tddlog's time in the release run, why it has none ("timeout", ...), or
+// undefined where the records do not have it.
+function holdBack(bytes, native) {
+  const why = [];
+  if (bytes > AUTO_BYTES) why.push(`The program is ${(bytes / (1024 * 1024)).toFixed(1)} MB.`);
+  if (typeof native === "string") why.push(`tddlog did not answer it natively in the release run (${native}).`);
+  else if (typeof native !== "number") why.push("The release run has no time of tddlog's for it.");
+  else if (native > AUTO_SECONDS) why.push(`tddlog took ${duration(native)} natively in the release run; the browser is slower and has 4 GB at most.`);
+  return why.length === 0 ? "" : `${why.join(" ")} Press Run to try it here.`;
+}
+
+// tddlog's record of an instance in the release run: its seconds, why it
+// has none, or undefined where `records` (the results' suites) lack it.
+function nativeRun(records, suite, instance) {
+  const s = records.flatMap((r) => r.families.flatMap((f) => f.suites)).find((x) => x.key === suite);
+  const row = s?.instances.find(([name]) => name === instance);
+  const own = s === undefined ? -1 : s.systems.indexOf("tddlog");
+  return row === undefined || own === -1 ? undefined : row[own + 1];
+}
+
+// The text of a file the site keeps on its own, gzipped where its name ends
+// in .gz.
+async function keptText(src) {
+  const response = await fetch(`results/benchmarks/${src}`);
+  if (!response.ok) throw new Error(`${src}: ${response.status}`);
+  if (!src.endsWith(".gz")) return response.text();
+  return new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).text();
+}
+
+// Whether a text ends with the file the results name, by its size and
+// SHA-256: the site may put a header above a file (a licence's).
+async function holdsFile(text, file) {
+  const bytes = new TextEncoder().encode(text);
+  if (bytes.length < file.bytes) return false;
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes.subarray(bytes.length - file.bytes)));
+  return Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("") === file.sha;
+}
+
+// The program tddlog was given for an instance in the release run, with the
+// answers that go beside it, or why the page cannot run it (`refused`, HTML:
+// a held file's reason comes from the results).
+async function benchmark([suite, family, instance]) {
+  const response = await fetch(`results/benchmarks/${suite}/${family}.json${stamp}`);
+  if (response.status === 404) return { refused: "the results have no such benchmark." };
+  if (!response.ok) throw new Error(`${suite}/${family}.json: ${response.status}`);
+  const fam = await response.json();
+  const inst = fam.instances.find((i) => i.name === instance);
+  if (inst === undefined) return { refused: "the results have no such benchmark." };
+  const chosen = tddlogFile(inst);
+  if (chosen.refused) return chosen;
+  const { tab, file } = chosen;
+  if (file.held) return { refused: file.held };
+  if (file.part) {
+    return { refused: `the site keeps the first ${count(file.part)} of its ${count(file.bytes)} bytes, which do not run on their own.` };
+  }
+  if (fam.texts[file.sha] === undefined && !file.src) return { refused: "the results do not keep its text." };
+  const text = fam.texts[file.sha] ?? await keptText(file.src);
+  if (!(await holdsFile(text, file))) return { refused: "the text the site keeps does not match the file's SHA-256." };
+  return { tab, file, text, reference: benchReference(inst.answers), log10z: inst.answers?.log10z === true };
+}
+
+// ------------------------------------------------------- the results at a glance
+
+// The release run's records, which the results page reads (results/): each
+// suite's instances, with each system's time or why it has none. Loaded
+// once, for the glance and for a benchmark's time.
+let recordsLoaded = null;
+function records() {
+  const load = async (file) => {
+    const response = await fetch(`results/${file}${stamp}`);
+    if (!response.ok) throw new Error(`${file}: ${response.status}`);
+    return response.json();
+  };
+  recordsLoaded ??= Promise.all(["suites.json", "ppl.json"].map((file) => load(file).catch(() => null)))
+    .then((parts) => parts.filter(Boolean));
+  return recordsLoaded;
+}
+
+// The release run's instances, those tddlog answers and those it alone
+// answers.
+async function glance() {
+  let all = 0, answered = 0, alone = 0;
+  for (const suite of (await records()).flatMap((p) => p.families.flatMap((f) => f.suites))) {
+    const own = suite.systems.indexOf("tddlog");
+    for (const [, ...times] of suite.instances) {
+      all += 1;
+      if (typeof times[own] !== "number") continue;
+      answered += 1;
+      if (times.every((t, i) => i === own || typeof t !== "number")) alone += 1;
+    }
+  }
+  if (all === 0) return;
+  document.getElementById("glance-stats").innerHTML = stat(count(all), "instances in the release run")
+    + stat(count(answered), "answered by tddlog") + stat(count(alone), "answered by tddlog alone");
+  document.getElementById("glance").hidden = false;
+}
+
 // --------------------------------------------------------------- the page
 
 if (typeof document !== "undefined") {
   const element = (id) => document.getElementById(id);
   const editor = element("program");
+  const shade = element("program-hl");
+  const sourceNote = element("source");
 
   // The strategies, auto first.
   for (const name of tddlogRuntime.strategies) {
@@ -190,21 +376,84 @@ if (typeof document !== "undefined") {
   };
   element("strategy").addEventListener("change", showStrategy);
 
+  // ------------------------------------------------------------ the editor
+
+  // The program in colours: the textarea's text is transparent, and the
+  // same text in code.js's colours lies under it, moved as it scrolls. A
+  // long program is shown plain. A parse error's line is marked under it.
+  let errorLine = 0;
+  function follow() {
+    shade.style.transform = `translate(${-editor.scrollLeft}px, ${-editor.scrollTop}px)`;
+  }
+  function paint() {
+    const plain = editor.value.length > PLAIN_ABOVE;
+    editor.parentElement.classList.toggle("plain", plain);
+    // The newline keeps a last empty line, where the caret can be, as tall
+    // in the colours as in the textarea.
+    let html = plain ? "" : tddlogCode.highlight("problog", editor.value) + "\n";
+    if (html && errorLine > 0) html = `<span class="error-line" style="top:${(errorLine - 1) * 1.5}em"></span>` + html;
+    shade.innerHTML = html;
+    follow();
+  }
+  let painting = 0;
+  editor.addEventListener("scroll", follow, { passive: true });
+
   // A button per example; the one whose program is in the editor, unedited,
-  // is marked, and its ProbLog answers go beside tddlog's.
+  // is pressed.
   const examples = element("examples");
   tddlogExamples.forEach(({ name }, i) => {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.textContent = name;
     chip.dataset.example = i;
+    chip.setAttribute("aria-pressed", "false");
     examples.append(chip);
   });
-  let chosen = -1;
-  const markExample = (i) => {
-    chosen = i;
-    for (const chip of examples.children) chip.classList.toggle("chosen", chip.dataset.example === String(i));
-  };
+
+  // Where the program in the editor comes from while it is unedited: an
+  // example ({ example: its index }) or a benchmark of the results
+  // ({ bench: SUITE/FAMILY/INSTANCE }), each with the answers that go
+  // beside tddlog's (`reference`); null for a program of the reader's own.
+  let source = null;
+  // The name Download gives the program: the file it came from.
+  let fileName = "program.pl";
+  function choose(from) {
+    source = from;
+    for (const chip of examples.children) {
+      chip.setAttribute("aria-pressed", String(from?.example === Number(chip.dataset.example)));
+    }
+  }
+
+  // Every program the editor shows comes through here.
+  function setProgram(text, from, name) {
+    editor.value = text;
+    editor.scrollTop = 0;
+    editor.scrollLeft = 0;
+    errorLine = 0;
+    paint();
+    choose(from);
+    fileName = name;
+  }
+
+  // Where a benchmark came from, or why it did not open (HTML).
+  function showSource(html) {
+    sourceNote.innerHTML = html;
+    sourceNote.hidden = html === "";
+  }
+
+  // A parse error names its line ("parse error: line 3: ..."), which is
+  // marked, scrolled to, and the caret put at its start, while the editor
+  // holds the program that ran.
+  function markError(error, program) {
+    const at = /^parse error: line (\d+):/.exec(error ?? "");
+    if (at === null || editor.value !== program) return;
+    errorLine = Number(at[1]);
+    paint();
+    const start = editor.value.split("\n", errorLine - 1).join("\n").length + (errorLine > 1 ? 1 : 0);
+    editor.setSelectionRange(start, start);
+    const height = parseFloat(getComputedStyle(editor).lineHeight);
+    editor.scrollTop = Math.max(0, (errorLine - 1) * height - editor.clientHeight / 3);
+  }
 
   // Choosing an example runs it once the solver is there: the point of the
   // buttons is to see what comes out.
@@ -217,12 +466,13 @@ if (typeof document !== "undefined") {
       if (!response.ok) throw new Error(`${response.status}`);
       text = await response.text();
     } catch (failure) {
-      element("status").textContent = `the example did not load: ${failure}`;
+      status(`the example did not load: ${failure}`);
       return;
     }
     if (ticket !== loading) return;
-    editor.value = text;
-    markExample(i);
+    const example = tddlogExamples[i];
+    setProgram(text, { example: i, reference: exampleReference(example) }, tddlogExamplePath(example).split("/").pop());
+    showSource("");
     requestRun();
   }
   examples.addEventListener("click", (event) => {
@@ -230,10 +480,82 @@ if (typeof document !== "undefined") {
     if (chip !== null) loadExample(Number(chip.dataset.example));
   });
 
-  // Once edited, the text is no longer the example it started from.
+  // A benchmark of the results (#bench=SUITE/FAMILY/INSTANCE, the results
+  // page's "Open in the playground"): the program tddlog was given in the
+  // release run, run as it opens where that is quick, with the release
+  // run's answers beside tddlog's. A file the site does not show whole
+  // opens nothing, and the note says why.
+  async function openBench(value) {
+    const ticket = ++loading;
+    const path = benchPath(value);
+    const back = path === null ? "results/" : `results/#/${path.join("/")}`;
+    const name = path === null ? "" : `<b>${escapeHtml(path[2])}</b> from ${escapeHtml(`${path[0]}/${path[1]}`)}: `;
+    setProgram("", null, "program.pl");
+    showSource(`${name}loading.`);
+    let bench, native;
+    try {
+      bench = path === null ? { refused: "The address names no benchmark (#bench=SUITE/FAMILY/INSTANCE)." } : await benchmark(path);
+      if (!bench.refused) native = nativeRun(await records(), path[0], path[2]);
+    } catch (failure) {
+      bench = { refused: escapeHtml(`it did not load (${failure.message}).`) };
+    }
+    if (ticket !== loading) return;
+    if (bench.refused) {
+      showSource(`${name}${bench.refused} <a href="${back}">${path === null ? "The results" : "Its results"}</a>.`);
+      return;
+    }
+    setProgram(bench.text, { bench: path.join("/"), reference: bench.reference }, bench.file.name);
+    if (bench.log10z) element("evidence").checked = true;
+    const wait = holdBack(bench.file.bytes, native);
+    showSource(`${name}the program tddlog was given in the release run (${escapeHtml(bench.tab.lang)}, ${count(bench.file.bytes)} bytes). `
+      + `<a href="${back}">Back to its results</a>.${wait ? ` ${escapeHtml(wait)}` : ""}`);
+    if (!wait) requestRun();
+  }
+
+  // A file opened or dropped on the editor.
+  async function openFile(file) {
+    const ticket = ++loading;
+    const text = await file.text();
+    if (ticket !== loading) return;
+    setProgram(text, null, file.name);
+    showSource("");
+    saveSoon();
+  }
+  element("open").addEventListener("click", () => element("file").click());
+  element("file").addEventListener("change", () => {
+    const [file] = element("file").files;
+    if (file !== undefined) openFile(file);
+    element("file").value = "";
+  });
+  editor.parentElement.addEventListener("dragover", (event) => {
+    if (event.dataTransfer.types.includes("Files")) event.preventDefault();
+  });
+  editor.parentElement.addEventListener("drop", (event) => {
+    const [file] = event.dataTransfer.files;
+    if (file === undefined) return;
+    event.preventDefault();
+    openFile(file);
+  });
+  element("download").addEventListener("click", () => {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([editor.value], { type: "text/plain" }));
+    link.download = fileName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  });
+
+  // Once edited, the text is no longer the example or benchmark it started
+  // from; the address follows the edits a second after the last.
   editor.addEventListener("input", () => {
     loading++;
-    markExample(-1);
+    if (source?.bench !== undefined) sourceNote.append(" Edited since.");
+    if (source !== null) choose(null);
+    errorLine = 0;
+    painting ||= requestAnimationFrame(() => {
+      painting = 0;
+      paint();
+    });
+    saveSoon();
   });
   editor.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
@@ -241,31 +563,61 @@ if (typeof document !== "undefined") {
       requestRun();
     }
   });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && running) cancel();
+  });
+
+  // ----------------------------------------------------------- the address
 
   // The address carries the choices, so a result can be linked to:
-  // ?example=<key>&strategy=<s>&evidence=1&digits=<n>, and an edited program
-  // after #program=. It is read once when the page opens and written at
-  // every run.
+  // ?example=<key>&strategy=<s>&evidence=1&digits=<n>, an unedited benchmark
+  // after #bench=, and an edited program after #program=. It is read once
+  // when the page opens, and written at every run and after edits.
   function readAddress() {
     const params = new URLSearchParams(location.search);
     const strategy = params.get("strategy");
     if (tddlogRuntime.strategies.includes(strategy)) element("strategy").value = strategy;
     element("evidence").checked = params.get("evidence") === "1";
     if (params.get("digits") !== null) element("digits").value = params.get("digits");
-    const program = new URLSearchParams(location.hash.slice(1)).get("program");
-    return { example: tddlogExamples.findIndex(({ key }) => key === params.get("example")), program };
+    const hash = new URLSearchParams(location.hash.slice(1));
+    return {
+      example: tddlogExamples.findIndex(({ key }) => key === params.get("example")),
+      program: hash.get("program"),
+      bench: hash.get("bench"),
+    };
   }
+  // A write waits for the program's code; a later write takes its place.
+  let addressing = 0;
   async function writeAddress(settings) {
+    const ticket = ++addressing;
     const params = new URLSearchParams();
-    if (chosen !== -1) params.set("example", tddlogExamples[chosen].key);
+    if (source?.example !== undefined) params.set("example", tddlogExamples[source.example].key);
     if (settings.strategy !== "auto") params.set("strategy", settings.strategy);
     if (settings.evidence) params.set("evidence", "1");
     if (settings.digits !== 6) params.set("digits", String(settings.digits));
     const query = params.toString();
     let hash = "";
-    if (chosen === -1) hash = "#program=" + (await encodeProgram(settings.program));
+    if (source?.bench !== undefined) hash = `#bench=${source.bench}`;
+    else if (source === null) {
+      const code = await encodeProgram(settings.program);
+      if (ticket !== addressing) return;
+      if (code.length <= ADDRESS_MOST) hash = `#program=${code}`;
+    }
+    const tooLong = source === null && hash === "";
     history.replaceState(null, "", location.pathname + (query ? `?${query}` : "") + hash);
-    element("link").hidden = false;
+    element("link").hidden = tooLong;
+    element("too-long").hidden = !tooLong;
+  }
+  let saving = 0;
+  function saveSoon() {
+    clearTimeout(saving);
+    saving = setTimeout(() => {
+      try {
+        writeAddress(settings());
+      } catch (failure) {
+        // digits out of range: the run says so
+      }
+    }, 1000);
   }
   function flash(button, text) {
     const label = button.textContent;
@@ -274,15 +626,22 @@ if (typeof document !== "undefined") {
       button.textContent = label;
     }, 1500);
   }
-  element("link").addEventListener("click", () => {
-    navigator.clipboard.writeText(location.href).then(
-      () => flash(element("link"), "Copied"),
-      () => flash(element("link"), "Not copied"),
-    );
+  function copy(button, text) {
+    navigator.clipboard.writeText(text).then(() => flash(button, "Copied"), () => flash(button, "Not copied"));
+  }
+  element("link").addEventListener("click", () => copy(element("link"), location.href));
+  // The answers on show as tab-separated text, as the page writes them.
+  element("copy").addEventListener("click", () => {
+    const { result, settings: { digits } } = shown;
+    const lines = [["query", "probability"], ...(result.answers ?? []).map(({ query, probability }) => [query, tddlogRuntime.probability(probability, digits)])];
+    if (result.evidence !== null) lines.push(["P(evidence)", tddlogRuntime.evidence(result.evidence, digits).scientific]);
+    copy(element("copy"), lines.map((line) => line.join("\t")).join("\n") + "\n");
   });
 
+  // ------------------------------------------------------------ the solver
+
   // The solver runs in a worker, so the page stays live during a run, the
-  // status can count the seconds, and a run can be stopped: Cancel ends the
+  // clock can count the seconds, and a run can be stopped: Cancel ends the
   // worker and starts another, which takes a moment to load the module. A
   // run asked for before the worker is ready, or while another runs, starts
   // once the worker is.
@@ -291,9 +650,20 @@ if (typeof document !== "undefined") {
   let running = false;
   let runWhenReady = false;
   let ticking = 0;
+  // The results at a glance load once the solver is ready, when the page
+  // is idle.
+  let glanced = false;
   // The settings of the run on show, and its result, which a change of
-  // digits writes again.
+  // digits or "Show all" writes again.
   let shown = null;
+  let allRows = false;
+
+  // The status is announced: one line at a time, and the clock beside it
+  // is not.
+  const status = (text) => {
+    element("status").textContent = text;
+    element("clock").textContent = "";
+  };
 
   function startSolver() {
     ready = false;
@@ -304,7 +674,11 @@ if (typeof document !== "undefined") {
       if (data.ready === true) {
         ready = true;
         element("run").disabled = false;
-        if (!running) element("status").textContent = "ready";
+        if (!running) status("ready");
+        if (!glanced) {
+          glanced = true;
+          (window.requestIdleCallback ?? setTimeout)(() => glance().catch(() => {}));
+        }
         if (runWhenReady) {
           runWhenReady = false;
           run();
@@ -317,7 +691,7 @@ if (typeof document !== "undefined") {
         const settings = shown === null ? null : shown.settings;
         stop();
         show({ error: data.failure, groundSeconds: 0, compiling: null, notes: [], parts: [], answers: null, evidence: null }, 0, settings);
-        element("status").textContent = "failed; loading the solver again";
+        status("failed; loading the solver again");
       } else {
         finish(data.result, data.elapsed);
       }
@@ -332,7 +706,7 @@ if (typeof document !== "undefined") {
     settle();
     element("run").disabled = true;
     console.error("The solver did not load", message);
-    element("status").textContent = "the solver did not load; reload the page to retry";
+    status("the solver did not load; reload the page to retry");
   }
 
   function requestRun() {
@@ -352,6 +726,12 @@ if (typeof document !== "undefined") {
     startSolver();
   }
 
+  function cancel() {
+    if (!running) return;
+    stop();
+    status("stopped; loading the solver");
+  }
+
   function settle() {
     running = false;
     clearInterval(ticking);
@@ -366,7 +746,7 @@ if (typeof document !== "undefined") {
       strategy: element("strategy").value,
       evidence: element("evidence").checked,
       digits: tddlogRuntime.digits(element("digits").value),
-      example: chosen === -1 ? null : tddlogExamples[chosen],
+      reference: source === null ? null : source.reference,
     };
   }
 
@@ -375,16 +755,18 @@ if (typeof document !== "undefined") {
     try {
       chosenSettings = settings();
     } catch (failure) {
-      element("status").textContent = failure.message;
+      status(failure.message);
       return;
     }
+    clearTimeout(saving);
     writeAddress(chosenSettings);
     running = true;
+    allRows = false;
     shown = { settings: chosenSettings, result: null, elapsed: 0 };
     const started = performance.now();
-    element("status").textContent = "running";
+    status("running");
     ticking = setInterval(() => {
-      element("status").textContent = `running, ${Math.round((performance.now() - started) / 1000)} s`;
+      element("clock").textContent = `${Math.round((performance.now() - started) / 1000)} s`;
     }, 1000);
     element("run").hidden = true;
     element("cancel").hidden = false;
@@ -394,20 +776,17 @@ if (typeof document !== "undefined") {
   }
 
   element("run").addEventListener("click", requestRun);
-  element("cancel").addEventListener("click", () => {
-    if (!running) return;
-    stop();
-    element("status").textContent = "stopped; loading the solver";
-  });
+  element("cancel").addEventListener("click", cancel);
 
   function show(result, elapsed, chosenSettings) {
     shown = { settings: chosenSettings, result, elapsed };
     const digits = chosenSettings === null ? 6 : chosenSettings.digits;
     const strategy = chosenSettings === null ? "auto" : chosenSettings.strategy;
-    const example = chosenSettings === null ? null : chosenSettings.example;
+    const reference = chosenSettings === null ? null : chosenSettings.reference;
     element("summary").innerHTML = result.error === undefined ? summarise(result, elapsed) : "";
-    element("answers").innerHTML = answersHtml(result, digits, example);
+    element("answers").innerHTML = answersHtml(result, digits, reference, allRows);
     element("work").innerHTML = workHtml(result, strategy);
+    element("copy").hidden = chosenSettings === null || result.error !== undefined || (!result.answers?.length && result.evidence === null);
     const trials = result.parts.flatMap((p) => p.trials);
     element("trials").hidden = trials.length === 0;
     element("trial-notes").textContent = trials.join("\n");
@@ -416,8 +795,15 @@ if (typeof document !== "undefined") {
   function finish(result, elapsed) {
     settle();
     show(result, elapsed, shown.settings);
-    element("status").textContent = result.error === undefined ? "ready" : "failed";
+    markError(result.error, shown.settings.program);
+    status(said(result, elapsed));
   }
+
+  element("answers").addEventListener("click", (event) => {
+    if (event.target.closest("button.all") === null) return;
+    allRows = true;
+    show(shown.result, shown.elapsed, shown.settings);
+  });
 
   // Digits change how the answers on show are written, not the answers.
   element("digits").addEventListener("input", () => {
@@ -426,22 +812,21 @@ if (typeof document !== "undefined") {
       const digits = tddlogRuntime.digits(element("digits").value);
       show(shown.result, shown.elapsed, { ...shown.settings, digits });
     } catch (failure) {
-      element("status").textContent = failure.message;
+      status(failure.message);
     }
   });
 
-  // The results at a glance load beside the solver; without them the
-  // card stays hidden.
-  glance().catch(() => {});
-  // The page opens on the program in the address, else the example it
-  // names, else the first.
+  // The page opens on the benchmark or the program in the address, else the
+  // example it names, else the first.
   startSolver();
   const opening = readAddress();
   showStrategy();
-  if (opening.program !== null) {
+  if (opening.bench !== null) {
+    openBench(opening.bench);
+  } else if (opening.program !== null) {
     decodeProgram(opening.program).then(
       (text) => {
-        editor.value = text;
+        setProgram(text, null, "program.pl");
         requestRun();
       },
       () => loadExample(0),
@@ -451,34 +836,9 @@ if (typeof document !== "undefined") {
   }
 }
 
-// ------------------------------------------------------- the results at a glance
-
-// The release run's instances, those tddlog answers and those it alone
-// answers, from the records the results page reads (results/). A record
-// is an instance's name and each system's time, or why it has none.
-async function glance() {
-  const load = async (file) => {
-    const response = await fetch(`results/${file}${stamp}`);
-    if (!response.ok) throw new Error(`${file}: ${response.status}`);
-    return response.json();
-  };
-  const parts = (await Promise.all(["suites.json", "ppl.json"].map((file) => load(file).catch(() => null)))).filter(Boolean);
-  let all = 0, answered = 0, alone = 0;
-  for (const suite of parts.flatMap((p) => p.families.flatMap((f) => f.suites))) {
-    const own = suite.systems.indexOf("tddlog");
-    for (const [, ...times] of suite.instances) {
-      all += 1;
-      if (typeof times[own] !== "number") continue;
-      answered += 1;
-      if (times.every((t, i) => i === own || typeof t !== "number")) alone += 1;
-    }
-  }
-  if (all === 0) return;
-  document.getElementById("glance-stats").innerHTML = stat(count(all), "instances in the release run")
-    + stat(count(answered), "answered by tddlog") + stat(count(alone), "answered by tddlog alone");
-  document.getElementById("glance").hidden = false;
-}
-
 if (typeof module !== "undefined") {
-  module.exports = { encodeProgram, decodeProgram, answersHtml, workHtml, summarise, escapeHtml };
+  module.exports = {
+    encodeProgram, decodeProgram, answersHtml, workHtml, summarise, said, escapeHtml,
+    exampleReference, benchReference, benchPath, tddlogFile, holdBack, nativeRun, holdsFile,
+  };
 }

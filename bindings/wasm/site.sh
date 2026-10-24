@@ -69,7 +69,7 @@ if [ -n "$stamp" ]; then
   for page in "$out/index.html" "$out/guide/index.html" "$out/results/index.html"; do
     sed -i -E "s#(href|src)=\"((\.\./)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js))\"#\1=\"\2?v=$stamp\"#" "$page"
   done
-  test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 5
+  test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 6
   test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 3
   test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 4
 fi

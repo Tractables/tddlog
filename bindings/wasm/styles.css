@@ -9,22 +9,24 @@
   --card: #ffffff;
   --line: #e0e0d9;
   --ink: #1d1f21;
-  --muted: #6c7075;
+  --muted: #5f6368;
   --accent: #2070a8;
   --accent-fill: #dbe9f6;
+  --accent-ink: #1a5d8c;
   --amber: #d99a2b;
   --amber-fill: #fbeed0;
   --code: #f2f2ed;
   --bad: #b3261e;
   /* Syntax highlighting (code.js): comments, strings, numbers, keywords
-     and operators, variables, called names, types and the prompt. */
-  --t-com: #6c7075;
+     and operators, variables, called names, types and the prompt; each,
+     and --muted, at least 4.5:1 on --code (tests/browser.cjs checks). */
+  --t-com: #5f6368;
   --t-str: #2a7a3b;
   --t-num: #a35200;
   --t-kw: #8a3ab9;
-  --t-var: #9a6700;
+  --t-var: #8a5c00;
   --t-fn: #2070a8;
-  --t-typ: #0e7c86;
+  --t-typ: #0b6e77;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -38,6 +40,7 @@
     --muted: #9aa1a9;
     --accent: #6fb3e6;
     --accent-fill: #1e3448;
+    --accent-ink: #6fb3e6;
     --amber: #e8a830;
     --amber-fill: #46381a;
     --code: #15181b;
@@ -61,6 +64,7 @@
   --muted: #9aa1a9;
   --accent: #6fb3e6;
   --accent-fill: #1e3448;
+  --accent-ink: #6fb3e6;
   --amber: #e8a830;
   --amber-fill: #46381a;
   --code: #15181b;
@@ -185,7 +189,7 @@ label {
 }
 
 /* The examples are the way in for most readers, so they come first and look
-   like something to press. */
+   like something to press; the one in the editor is pressed. */
 .examples {
   display: flex;
   flex-wrap: wrap;
@@ -195,28 +199,39 @@ label {
 }
 
 .examples .lead { font-size: 14px; font-weight: 500; }
-#examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.examples #examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
-#examples button {
+.examples #examples button {
   width: auto;
   padding: 0.3rem 0.75rem;
   border-color: transparent;
   border-radius: 999px;
   background: var(--accent-fill);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-size: 13px;
 }
 
-#examples button:hover:not(:disabled) {
+.examples #examples button:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--card);
   color: var(--accent);
 }
 
-#examples button.chosen, #examples button.chosen:hover:not(:disabled) {
+.examples #examples button[aria-pressed="true"], .examples #examples button[aria-pressed="true"]:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--card);
+}
+
+/* Where a benchmark of the results came from, or why it did not open. */
+.source {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 5px 5px 0;
+  background: var(--code);
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
 textarea, select, input {
@@ -229,21 +244,96 @@ textarea, select, input {
   font: 15px/1.4 var(--sans);
 }
 
-textarea {
+/* The editor: the program's text in the textarea is transparent, and the
+   same text in colours lies under it in a pre that app.js moves as the
+   textarea scrolls. The two lay the text out alike, character for
+   character: the same font, size, line height, padding, border width, tabs
+   and spacing, and no wrapping. A long program, or forced colours, shows
+   the textarea's own text. */
+.editor {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--code);
+}
+
+.editor textarea, .editor pre {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font: 13px/1.5 var(--mono);
+  font-variant-ligatures: none;
+  font-kerning: none;
+  letter-spacing: 0;
+  word-spacing: 0;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.editor textarea {
+  position: relative;
+  z-index: 1;
   display: block;
   height: 22rem;
   resize: vertical;
-  font: 13px/1.5 var(--mono);
-  background: var(--code);
-  tab-size: 4;
-  white-space: pre;
   overflow: auto;
+  border-color: var(--line);
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--ink);
 }
 
-textarea:focus, select:focus, input:focus, button:focus-visible, summary:focus-visible {
+.editor textarea::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+.editor pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  max-height: none;
+  overflow: visible;
+  background: none;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+/* Upright, so that a comment's characters are as wide as the textarea's. */
+.editor pre .t-com { font-style: normal; }
+
+/* The line a parse error names, under its text. */
+.editor .error-line {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  height: 1.5em;
+  margin-top: 0.45rem;
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+}
+
+.editor.plain textarea { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+.editor.plain pre { display: none; }
+
+/* WebKit on iOS insets a textarea's text by 3px on each side. */
+@supports (-webkit-touch-callout: none) {
+  .editor pre { padding-left: calc(0.55rem + 3px); padding-right: calc(0.55rem + 3px); }
+}
+
+@media (forced-colors: active) {
+  .editor pre { display: none; }
+  .editor textarea { color: CanvasText; -webkit-text-fill-color: CanvasText; }
+}
+
+.editor:focus-within, select:focus, input:focus, button:focus-visible, summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+.editor textarea:focus { outline: none; }
 
 .controls { display: grid; gap: 0.75rem; align-content: start; }
 .field { margin: 0; }
@@ -282,24 +372,41 @@ button:hover:not(:disabled) { background: var(--card); color: var(--accent); }
 body.busy, body.busy :not(#cancel) { cursor: progress; }
 button:disabled { opacity: 0.45; cursor: default; }
 
-/* The small buttons that sit in a line of text. */
-#theme, #link {
+/* The small buttons that sit in a line of text; those under the editor
+   and "Show all" quieter. */
+#theme, #link, #copy, .tools button, #answers button.all {
   width: auto;
   padding: 0.1rem 0.6rem;
   font-size: 12px;
 }
 
-#status, .note, .hint {
+.tools button, #answers button.all { background: var(--card); color: var(--accent); }
+.tools button:hover:not(:disabled), #answers button.all:hover { background: var(--accent); color: var(--card); }
+
+.status, .note, .hint {
   margin: 0;
   font-size: 13px;
   color: var(--muted);
 }
 
-.program-input .hint { margin-top: 0.4rem; }
+/* The hint, and the buttons to open and save a program, under the editor. */
+.under {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.under .hint { flex: 1 1 22rem; }
+.tools { display: flex; flex: none; gap: 0.4rem; }
+#clock { font-variant-numeric: tabular-nums; }
 #strategy-note { margin-top: 0.3rem; }
 
 .result-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 0.6rem;
   margin-bottom: 0.9rem;
@@ -343,6 +450,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 
 #answers { min-width: 0; overflow-x: auto; }
+#answers .note:not(:first-child) { margin-top: 0.6rem; }
 
 .failed {
   margin: 0;
@@ -455,6 +563,29 @@ pre {
 footer {
   font-size: 13px;
   color: var(--muted);
+}
+
+/* The playground on a phone: the lede one sentence, the examples one row
+   that scrolls sideways, fading at its edge, so that the editor comes on
+   the first screen; and 16px text in the fields, which iOS otherwise
+   zooms into. */
+@media (max-width: 52rem) {
+  .lede .aside { display: none; }
+  .examples { display: block; }
+  .examples #examples {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    margin: 0.4rem -1.1rem 0;
+    padding: 3px 2.5rem 3px 1.1rem;
+    scroll-padding-left: 1.1rem;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+  }
+  .examples #examples::-webkit-scrollbar { display: none; }
+  .examples #examples button { flex: none; white-space: nowrap; scroll-snap-align: start; }
+  .io select, .io input, .editor textarea, .editor pre { font-size: 16px; }
 }
 
 /* The guide's page: one column of prose, a card per part. */

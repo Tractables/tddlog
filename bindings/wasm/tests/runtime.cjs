@@ -118,12 +118,83 @@ test("the answers are escaped, and ProbLog's sit beside an example's", () => {
     evidence: { probability: 0.5, log10: Math.log10(0.5) },
     groundSeconds: 0.001, compiling: null, notes: ["note & more"], parts: [],
   };
-  const example = { problog: [["a(<b>)", 0.25]], evidence: 0.5 };
-  const html = page.answersHtml(result, 4, example);
+  const reference = page.exampleReference({ problog: [["a(<b>)", 0.25]], evidence: 0.5 });
+  const html = page.answersHtml(result, 4, reference);
   assert.match(html, /a\(&lt;b&gt;\)/);
-  assert.match(html, /<th class="p"[^>]*>ProbLog<\/th>/);
-  assert.match(html, /P\(evidence\) <b>5\.0000e-1<\/b>/);
+  assert.match(html, /<th class="p">ProbLog<\/th>/);
+  assert.match(html, /<td class="p reference">0\.2500<\/td>/);
+  assert.match(html, /P\(evidence\) <b>5\.0000e-1<\/b>, log10 <b>-0\.3010<\/b>; ProbLog <b>5\.0000e-1<\/b>/);
+  assert.match(html, /<p class="note">ProbLog: ProbLog 2\.3\.0&#39;s answers/, "the reference's caption, visible");
   assert.doesNotMatch(page.answersHtml(result, 4, null), /ProbLog/);
   assert.match(page.answersHtml({ ...result, error: "parse error: <x>" }, 4, null), /parse error: &lt;x&gt;/);
   assert.match(page.workHtml(result, "auto"), /note &amp; more/);
+  assert.equal(page.said(result, 110), "done in 110 ms: 2 answers");
+  assert.equal(page.said({ ...result, error: "parse error: line 3: x\nmore" }, 0), "failed: parse error: line 3: x");
+  assert.match(page.summarise({ ...result, parts: [] }, 0.5), /&lt;1 ms<\/b> in the browser/);
+});
+
+test("a long table shows its first 500 rows, and all on asking", () => {
+  const answers = Array.from({ length: 600 }, (_, i) => ({ query: `a(${i})`, probability: 0.5 }));
+  const result = { answers, evidence: null, groundSeconds: 0, compiling: null, notes: [], parts: [] };
+  const rows = (html) => html.match(/<tr><td class="query">/g).length;
+  assert.equal(rows(page.answersHtml(result, 6, null)), 500);
+  assert.match(page.answersHtml(result, 6, null), /<button type="button" class="all">Show all 600<\/button>/);
+  assert.equal(rows(page.answersHtml(result, 6, null, true)), 600);
+  assert.doesNotMatch(page.answersHtml(result, 6, null, true), /Show all/);
+});
+
+test("an address names a benchmark by three plain names", () => {
+  assert.deepEqual(page.benchPath("std/grid/grid4"), ["std", "grid", "grid4"]);
+  assert.deepEqual(page.benchPath("uai_pr/csp/uai_CSP_12.1-x"), ["uai_pr", "csp", "uai_CSP_12.1-x"]);
+  for (const bad of ["../x", "std/grid", "std/grid/grid4/x", "std/../grid4", "std/grid/..", "std/grid/.x", "std/gr id/x", "std/grid/%2e", "", "std//x"]) {
+    assert.equal(page.benchPath(bad), null, bad);
+  }
+});
+
+test("a benchmark's program: the one .pl file tddlog read, and the answers beside it", () => {
+  const file = (name, more = {}) => ({ name, bytes: 10, sha: "0", ...more });
+  const tab = (readers, ...files) => ({ lang: "ProbLog", readers, files });
+  const one = tab(["tddlog", "ProbLog -k sdd"], file("g.pl"));
+  assert.equal(page.tddlogFile({ tabs: [tab(["PITA"], file("g.lpad.pl")), one] }).file.name, "g.pl");
+  assert.match(page.tddlogFile({ tabs: [tab(["Dice"], file("g.dice"))] }).refused, /do not show the program tddlog was given/);
+  assert.match(page.tddlogFile({}).refused, /do not show/);
+  assert.match(page.tddlogFile({ tabs: [tab(["tddlog"], file("g.pl"), file("g.pl"))] }).refused, /2 forms/);
+
+  const ref = page.benchReference({ cols: ["reference", "tddlog", "PITA"], ref: "ProbLog -k ddnnf",
+    rows: [["p", "0.1676566", "0.1676565957", ""], ["q", "nan", "0.5", "0.5"], ["r", "", "1", "1"]] });
+  assert.equal(ref.column, "Reference");
+  assert.equal(ref.caption, "Reference: ProbLog -k ddnnf, in the release run.");
+  assert.deepEqual([...ref.values], [["p", 0.1676566]]);
+  assert.equal(ref.evidence, null);
+  const own = page.benchReference({ cols: ["tddlog", "Ace Xlog"], ref: null, log10z: true, rows: [["log10 Z", "-1.041392685", "-1.04"]] });
+  assert.equal(own.column, "Command line");
+  assert.deepEqual(own.values, new Map());
+  assert.equal(own.evidence.log10, -1.041392685);
+  assert.equal(page.benchReference({ cols: ["Alea.jl"], ref: null, rows: [] }), null);
+  assert.equal(page.benchReference(undefined), null);
+});
+
+test("a benchmark runs as it opens where it is short and tddlog was quick natively", () => {
+  const records = [{ families: [{ suites: [{ key: "std", systems: ["ace", "tddlog"], instances: [["grid4", 0.1, 0.02], ["grid9", 1, "timeout"], ["grid5", 1, null]] }] }] }];
+  assert.equal(page.nativeRun(records, "std", "grid4"), 0.02);
+  assert.equal(page.nativeRun(records, "std", "grid9"), "timeout");
+  assert.equal(page.nativeRun(records, "std", "nothing"), undefined);
+  assert.equal(page.nativeRun(records, "other", "grid4"), undefined);
+  assert.equal(page.holdBack(650, 0.02), "");
+  assert.equal(page.holdBack(650, 2), "");
+  assert.match(page.holdBack(650, 14.2), /^tddlog took 14\.20 s natively in the release run; the browser is slower and has 4 GB at most\. Press Run/);
+  assert.match(page.holdBack(650, "timeout"), /did not answer it natively in the release run \(timeout\)\. Press Run/);
+  assert.match(page.holdBack(650, null), /no time of tddlog's for it/);
+  assert.match(page.holdBack(2 * 1024 * 1024, 0.5), /^The program is 2\.0 MB\. Press Run/);
+});
+
+test("a benchmark's text is its file, by size and SHA-256, after any header", async () => {
+  const program = "0.5::a.\nquery(a). % é\n";
+  const bytes = new TextEncoder().encode(program);
+  const sha = Buffer.from(await crypto.subtle.digest("SHA-256", bytes)).toString("hex");
+  const file = { bytes: bytes.length, sha };
+  assert.equal(await page.holdsFile(program, file), true);
+  assert.equal(await page.holdsFile("% A licence's header.\n" + program, file), true);
+  assert.equal(await page.holdsFile(program.replace("0.5", "0.6"), file), false);
+  assert.equal(await page.holdsFile(program.slice(1), file), false);
 });

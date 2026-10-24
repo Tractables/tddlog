@@ -32,19 +32,26 @@ command line), P(e) (`--evidence-probability`) and the digits shown
 (`--precision`) are settings. Under the answers the page says what tddlog
 did: the layout that answered (for `auto`, the trial that won and how
 many compilations it took), the size of the ground program, the largest
-formulas in pairs, and the time of each stage. The address carries the
-example, the settings and an edited program (after `#program=`), so a
-result can be linked to.
+formulas in pairs, and the time of each stage. The editor colours the
+program as the guide does; a file can be opened in it or dropped on it,
+and Download saves the program. The address carries the example, the
+settings and an edited program (after `#program=`, where its code is at
+most 64 KB), so a result can be linked to. `#bench=SUITE/FAMILY/INSTANCE`
+(the results page's "Open in the playground") opens the program tddlog
+was given for an instance of the release run, with that run's answers
+beside tddlog's, and runs it where it is at most 1 MB and tddlog answered
+it natively within 2 s.
 
 ## The site
 
-The playground is `index.html`, `styles.css`, `theme.js`, `app.js`,
-`worker.js`, `runtime.js` and `examples.js` beside the Emscripten build
-and the example programs: no framework, no bundler, nothing fetched from
-anywhere else. It follows `main`. The guide (`guide/`) and the results
-(`results/`) are pages of their own with the same styles; the guide's
-examples open in the playground through `?example=<key>`, and the browser
-test checks that each key it links to is one of `examples.js`.
+The playground is `index.html`, `styles.css`, `theme.js`, `code.js`,
+`app.js`, `worker.js`, `runtime.js` and `examples.js` beside the
+Emscripten build and the example programs: no framework, no bundler,
+nothing fetched from anywhere else. It follows `main`. The guide
+(`guide/`) and the results (`results/`) are pages of their own with the
+same styles; the guide's examples open in the playground through
+`?example=<key>`, and the browser test checks that each key it links to
+is one of `examples.js`.
 
 The results page shows the release run against every exact system that
 accepts a suite's programs, one view at a time, named by the address's
