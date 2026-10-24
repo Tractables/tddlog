@@ -873,7 +873,8 @@ impl Compilation {
     /// last search, and no more than the components left are likely to take
     /// ([`Dynamic::budget`]); what it spends past the budget, the compile
     /// spends before the next search runs, so searching costs at most twice
-    /// what the compile does, plus the last search's excess. A budget that
+    /// what the compile does, plus the last search's excess, unless the
+    /// formulas double again meanwhile. A budget that
     /// stopped searches part way made each compile's outcome depend on
     /// where they stopped: moving it by 2% made single programs several
     /// times slower or faster. Rotations change how a formula is
@@ -1837,7 +1838,7 @@ struct Dynamic {
     /// runs, left g30_100 unfinished).
     resumed: bool,
     /// The work the last search spent past its budget, which the compile
-    /// spends before the next search.
+    /// spends before the next search unless the formulas outgrow it.
     debt: u64,
 }
 
@@ -1845,10 +1846,16 @@ impl Dynamic {
     /// Whether a search is due at work clock `now` with the formulas at
     /// `live` pairs: once they have doubled since the last, and once the
     /// compile has spent, since the last search ended, what that search
-    /// spent past its budget; at once in a run that resumes a stopped
-    /// compile, whose clock starts afresh.
+    /// spent past its budget, or the formulas have doubled again; at once
+    /// in a run that resumes a stopped compile, whose clock starts afresh.
+    /// Waiting out the excess past a second doubling let the formulas
+    /// grow on the old vtree to a hundred times the pairs the search was
+    /// due at.
     fn due(&self, now: u64, live: usize) -> bool {
-        live >= self.next_at && (self.resumed || now - self.since.unwrap_or(now) >= self.debt)
+        live >= self.next_at
+            && (self.resumed
+                || now - self.since.unwrap_or(now) >= self.debt
+                || live >= self.next_at.saturating_mul(2))
     }
 
     /// The work the search due at work clock `now` spends before it owes

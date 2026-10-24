@@ -176,8 +176,9 @@ fn a_search_spends_no_more_than_the_components_left_take() {
 }
 
 /// A search that spent past its budget holds the next until the compile
-/// has spent the excess since it ended, however much the formulas grew; a
-/// run that resumes a stopped compile, on a fresh clock, does not wait.
+/// has spent the excess since it ended, or until the formulas have doubled
+/// again past where the next was due; a run that resumes a stopped
+/// compile, on a fresh clock, does not wait.
 #[test]
 fn a_search_past_its_budget_waits_for_the_compile_to_spend_the_excess() {
     let mut dynamic = Dynamic {
@@ -188,7 +189,8 @@ fn a_search_past_its_budget_waits_for_the_compile_to_spend_the_excess() {
         debt: 300,
     };
     assert!(!dynamic.due(800, 1999));
-    assert!(!dynamic.due(699, 1_000_000));
+    assert!(!dynamic.due(699, 3999));
+    assert!(dynamic.due(699, 4000));
     assert!(dynamic.due(700, 2000));
     dynamic.resumed = true;
     assert!(dynamic.due(10, 2000));
