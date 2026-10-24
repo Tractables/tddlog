@@ -38,7 +38,7 @@ and it [runs in the browser](https://tractables.github.io/tddlog/).
 
 ## Install
 
-- **Command line:** `cargo install --git https://github.com/Tractables/tddlog tddlog`.
+- **Command line:** `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`.
 - **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
   `[dependencies]`. See the [Rust API].
 - **Python:** build the package from a checkout. See the
