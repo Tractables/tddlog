@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tddlog results</title>
-<meta name="description" content="tddlog's release run against ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, ProvSQL, Dice, Alea.jl, Roulette and further program systems: each kind of problem, each suite and each benchmark, with its programs in every language and every run.">
+<meta name="description" content="tddlog's release run against the systems people use for logic programs, Bayesian and Markov networks, probabilistic databases and probabilistic programs: each kind of problem, each suite and each benchmark, with its runs and, where they were captured, its programs.">
 <script src="../theme.js"></script>
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -16,13 +16,8 @@
   <div>
     <h1>tddlog results</h1>
     <p class="lede">The release run of tddlog <span id="version"></span>
-    against the systems people use for each kind of problem: ProbLog, PITA
-    and aspmc on logic programs, Ace, Merlin, pyAgrum, pgmpy, libDAI and
-    TensorInference.jl on Bayesian and Markov networks, ProvSQL on
-    probabilistic databases, and Dice, Alea.jl, Roulette, Geni, noDice, Psi,
-    Genfer, SPPL, Pluck, Storm and PRISM on probabilistic programs. Each
-    benchmark shows its program in every language it was given in, and
-    every run.</p>
+    against the systems people use for each kind of problem, with each
+    benchmark's runs and, where they were captured, its programs.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../">Playground</a>
@@ -39,18 +34,21 @@
 <div class="shell">
   <aside id="rail" aria-label="Browse the results">
     <button id="browse" class="plain" type="button" aria-expanded="false" aria-controls="tree">Browse the results</button>
-    <input id="search" type="search" placeholder="Find an instance" aria-label="Find an instance by its name" autocomplete="off">
-    <div id="found"></div>
+    <input id="search" type="search" placeholder="Find a suite, system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
+      autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="found-list" aria-expanded="false">
+    <div id="found"><p id="found-n" class="n" aria-live="polite"></p><ul id="found-list" role="listbox" aria-label="Found"></ul></div>
     <nav id="tree" aria-label="Kinds, suites and families"></nav>
   </aside>
   <div id="view">
     <p class="note">Loading the results…</p>
     <noscript><p class="note">The plots and tables of this page need
-    JavaScript; the same results are in docs/benchmarks.md on the baselines branch.</p></noscript>
+    JavaScript; the same results are in
+    <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>
+    on the baselines branch.</p></noscript>
   </div>
 </div>
 
-<aside id="drawer" hidden aria-label="A system's runs of an instance"></aside>
+<div id="drawer" role="dialog" aria-labelledby="drawer-title" hidden></div>
 
 <footer>
   tddlog is open source under the Apache-2.0 license:

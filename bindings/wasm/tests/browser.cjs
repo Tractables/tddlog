@@ -4,9 +4,13 @@
 // pages' links within the site, the
 // results page (the overview; each kind of problems' plot, drawing the
 // kind's systems over all of its instances with their answers and total
-// times; each suite's plot and tddlog against each system; the hover layer,
-// the table; where the site has the benchmarks' data, a family's times,
-// programs and runs, and a link to a benchmark's former page), the API,
+// times; each suite's plot and tddlog against each system; the hover layer
+// and the keyboard's, the lines in colour, the table and its sorting, an
+// address of nothing; where the site has the benchmarks' data, a family's
+// times, programs and runs, the systems whose files were not captured, the
+// link to the playground, the drawer's address, a gzipped file, the search,
+// and a link to a benchmark's former page; the systems' colours, and a
+// board on a phone), the API,
 // Python and C pages, and no sideways scrolling at a desktop's width or a
 // phone's.
 //
@@ -20,6 +24,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
+const zlib = require("node:zlib");
 const { chromium } = require("playwright");
 const { tddlogExamples } = require("../examples.js");
 
@@ -29,7 +34,7 @@ const shots = process.argv[3] ? path.resolve(process.argv[3]) : null;
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
   ".wasm": "application/wasm", ".pl": "text/plain", ".json": "application/json",
-  ".svg": "image/svg+xml",
+  ".svg": "image/svg+xml", ".gz": "application/gzip",
 };
 
 // The site as GitHub Pages serves it: a directory's index.html at its path,
@@ -67,6 +72,17 @@ function answered(page, first) {
 // The table on show: each row's query, tddlog's answer and ProbLog's.
 function rows(page) {
   return page.$$eval("#answers tbody tr", (trs) => trs.map((tr) => [...tr.querySelectorAll("td.query, td.p")].map((td) => td.textContent)));
+}
+
+// The contrast of two colours #rrggbb, as WCAG defines it.
+function contrast(a, b) {
+  const luminance = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
 }
 
 async function noSidewaysScroll(page, what) {
@@ -215,16 +231,23 @@ async function noSidewaysScroll(page, what) {
     // answer counted at its suite's limit and a time under 0.2 s at 0.2 s,
     // as the README's legends write it; its axis goes to all N, from 0.2 s;
     // under it, one line for each system that was not given some of the
-    // instances. A suite's view (#/SUITE) plots the suite's systems, its
-    // legend "answers k of N", and tddlog against each system given some of
-    // the same instances.
+    // instances, and the README's sentences on where tddlog is slower where
+    // the data has them. A suite's view (#/SUITE) plots the suite's systems,
+    // its legend "answers k of N" in the same order, and tddlog against each
+    // system given some of the same instances. A plot of more than five
+    // lines draws tddlog's and the three that answer the most in colour.
     const data = ["suites.json", "ppl.json"].map((file) => path.join(site, "results", file))
       .filter((file) => fs.existsSync(file)).map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
     const kinds = data.flatMap((d) => d.kinds).sort((a, b) => a.order - b.order);
     const bySuite = new Map(data.flatMap((d) => d.families.flatMap((f) => f.suites)).map((s) => [s.key, s]));
+    const names = Object.assign({}, ...data.map((d) => d.names));
     const number = (v) => typeof v === "number";
+    const count = (n) => n.toLocaleString("en");
     const duration = (t) => (t >= 36000 ? `${(t / 3600).toFixed(0)} h` : t >= 3600 ? `${(t / 3600).toFixed(1)} h`
       : t >= 60 ? `${(t / 60).toFixed(0)} min` : t >= 10 ? `${t.toFixed(0)} s` : `${t.toFixed(1)} s`);
+    // A plot's lines in its legend's order: tddlog's, then by their answers.
+    const byAnswers = (systems, answers) => [...systems].sort((a, b) => (b === "tddlog") - (a === "tddlog") || answers(b) - answers(a));
+    const coloured = (order) => order.slice(0, order.length > 5 ? 4 : order.length);
     // The view an address names, once it is drawn: `ready` within it.
     const visit = async (hash, ready) => {
       await page.evaluate((h) => { location.hash = h; }, hash);
@@ -235,6 +258,7 @@ async function noSidewaysScroll(page, what) {
       instances: Number(f.dataset.instances),
       lines: [...f.querySelectorAll("svg.cactus path.line")].map((p) => p.dataset.key),
       legend: [...f.querySelectorAll(".legend .n")].map((s) => s.textContent.replace(/\s/g, "")),
+      coloured: [...f.querySelectorAll('.legend button[aria-pressed="true"]')].map((b) => b.dataset.system),
       axis: f.querySelector("svg.cactus").textContent.replace(/\s/g, ""),
     }));
     await page.goto(`${base}results/`);
@@ -253,7 +277,7 @@ async function noSidewaysScroll(page, what) {
       const scored = rows.filter((r) => k.systems.some((x) => number(r.v[x])));
       const total = (x) => scored.reduce((t, r) => t + (number(r.v[x]) ? Math.max(r.v[x], 0.2) : r.limit), 0);
       assert.equal(k.systems[0], "tddlog", `${what}: tddlog first in the data`);
-      const order = ["tddlog", ...k.systems.slice(1).sort((a, b) => answers(b) - answers(a))];
+      const order = byAnswers(k.systems, answers);
       for (const x of order) {
         assert.equal(k.answers[x], answers(x), `${what}: ${x}'s answers in the data`);
         assert.ok(Math.abs(k.total[x] - total(x)) < 0.01, `${what}: ${x}'s total time in the data, ${k.total[x]} against ${total(x)}`);
@@ -264,13 +288,15 @@ async function noSidewaysScroll(page, what) {
       assert.equal(fig.instances, rows.length, `${what}: its instances`);
       assert.deepEqual(fig.systems, order, `${what}: its systems, tddlog first and then by their answers`);
       assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
-      assert.deepEqual(fig.legend, order.map((x) => `answers${answers(x)}of${rows.length},total${duration(k.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
-      assert.ok(fig.axis.includes(`all${rows.length}instances`), `${what}: its axis`);
+      assert.deepEqual(fig.legend, order.map((x) => `answers${count(answers(x))}of${count(rows.length)},total${duration(k.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
+      assert.deepEqual(fig.coloured, coloured(order), `${what}: its lines in colour`);
+      assert.ok(fig.axis.includes(`all${count(rows.length)}instances`), `${what}: its axis`);
       assert.match(fig.axis, /≤0\.2/, `${what}: the time axis starts at 0.2 s`);
       const missing = order.filter((x) => rows.some((r) => r.v[x] === undefined || r.v[x] === null)).length;
       assert.equal((await page.$$("#view ul.cannot li")).length, missing, `${what}: the systems not given some of its instances`);
-      const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[1].textContent.trim()));
+      const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[1].textContent.trim().replace(/,/g, "")));
       assert.deepEqual(board.map(Number).sort((a, b) => b - a), order.map(answers).sort((a, b) => b - a), `${what}: its systems' answers`);
+      assert.equal((await page.$$("#view ul.losses li")).length, k.losses?.length ?? 0, `${what}: where tddlog is slower`);
       assert.equal(await page.title(), `${k.title} · tddlog results`);
     }
     assert.ok(kinds.length >= 2, `${kinds.length} kinds`);
@@ -283,16 +309,24 @@ async function noSidewaysScroll(page, what) {
       assert.deepEqual(fig.systems, s.systems, `${what}: its systems`);
       assert.deepEqual([...fig.lines].sort(), [...s.systems].sort(), `${what}: its lines`);
       // An answer counts within the suite's limit, as the plot draws it.
-      const answers = s.systems.map((x, i) => s.instances.filter((row) => number(row[i + 1]) && row[i + 1] <= s.limit * 1.001).length);
-      assert.deepEqual(fig.legend, answers.map((a) => `answers${a}of${s.instances.length}`), `${what}: its legend`);
+      const within = (x) => {
+        const i = s.systems.indexOf(x) + 1;
+        return s.instances.filter((row) => number(row[i]) && row[i] <= s.limit * 1.001).length;
+      };
+      const order = byAnswers(s.systems, within);
+      assert.deepEqual(fig.legend, order.map((x) => `answers${count(within(x))}of${count(s.instances.length)}`), `${what}: its legend`);
+      assert.deepEqual(fig.coloured, coloured(order), `${what}: its lines in colour`);
       const me = s.systems.indexOf("tddlog") + 1;
       const others = me === 0 ? [] : s.systems.filter((x, i) => x !== "tddlog"
         && s.instances.some((row) => row[me] !== null && row[i + 1] !== null));
       assert.equal((await page.$$("#view table.h2h tbody tr:not(.words)")).length, others.length, `${what}: tddlog against each system`);
+      assert.equal(await page.title(), `${s.title} · tddlog results`);
     }
     console.log(`ok ${bySuite.size} suites: each one's systems, and tddlog against each`);
 
-    // A suite's plot: the time under the pointer; its table sorts by a column.
+    // A suite's plot: the time under the pointer, and the time the arrow
+    // keys choose; a grey line's name colours it; its table sorts by a
+    // column, by the keyboard too, and again the other way.
     const [first] = bySuite.keys();
     await visit(`#/${first}`, "figure.plot svg.cactus rect.hit");
     const area = await page.$("#view svg.cactus rect.hit");
@@ -300,28 +334,80 @@ async function noSidewaysScroll(page, what) {
     const hit = await area.boundingBox();
     await page.mouse.move(hit.x + hit.width / 2, hit.y + hit.height / 2);
     assert.match(await page.textContent("#view .tip"), /^within [0-9.]+ s/);
+    await page.mouse.move(0, 0);
+    await page.focus("#view svg.cactus");
+    await page.keyboard.press("Home");
+    assert.match(await page.textContent("#view .tip"), /^within 0\.20 s/, "the keyboard's time limit");
     await page.click("#view details.instances summary");
-    await page.click('#view table.times th[data-col="1"]');
-    assert.equal(await page.getAttribute('#view table.times th[data-col="1"]', "aria-sort"), "ascending");
+    const sortBy = '#view table.times th[data-col="1"]';
+    await page.click(`${sortBy} button`);
+    assert.equal(await page.getAttribute(sortBy, "aria-sort"), "ascending");
+    await page.focus(`${sortBy} button`);
+    await page.keyboard.press("Enter");
+    assert.equal(await page.getAttribute(sortBy, "aria-sort"), "descending");
+    const sorted = await page.$$eval("#view table.times tbody tr", (trs) => trs.map((tr) => tr.cells[1].textContent)
+      .filter((t) => /^[0-9.]+$/.test(t)).map(Number));
+    assert.ok(sorted.every((t, i) => i === 0 || sorted[i - 1] >= t), `${first}: the times sorted the other way`);
+    const many = [...bySuite.values()].find((s) => s.systems.length > 5);
+    if (many) {
+      await visit(`#/${many.key}`, "figure.plot svg.cactus path.line");
+      const grey = await page.getAttribute('#view .legend button[aria-pressed="false"]', "data-system");
+      assert.ok(await page.$(`#view svg.cactus path.line.grey[data-key="${grey}"]`), `${many.key}: ${grey}'s line grey`);
+      await page.click(`#view .legend button[data-system="${grey}"]`);
+      await page.waitForSelector(`#view .legend button[data-system="${grey}"][aria-pressed="true"]`);
+      assert.equal(await page.$(`#view svg.cactus path.line.grey[data-key="${grey}"]`), null, `${many.key}: ${grey}'s line in colour`);
+      await page.click("#view figure.plot button.every");
+      assert.equal(await page.$$eval('#view .legend button[aria-pressed="false"]', (bs) => bs.length), 0, `${many.key}: every line in colour`);
+    }
     // The former page's address of a family of suites, #networks.
     const old = data.flatMap((d) => d.families).find((f) => kinds.some((k) => k.key === f.key));
     if (old) {
       await page.evaluate((h) => { location.hash = h; }, old.key);
       await page.waitForSelector(`#view[data-route="#/kind/${old.key}"] figure.plot`);
     }
-    console.log(`ok the results page's plot and table: ${first}`);
+    // An address that names nothing of the results says so.
+    await visit("#/no-such-suite", "h2");
+    assert.equal(await page.textContent("#view h2"), "Not found");
+    assert.equal(await page.title(), "Not found · tddlog results");
+    console.log(`ok the results page's plot and table: ${first}${many ? `, ${many.key}'s colours` : ""}; an address of nothing`);
+
+    // The README's sentences on where tddlog is slower, on a kind's page:
+    // given to a kind that has none in the data.
+    const plain = kinds.find((k) => !k.losses?.length);
+    if (plain) {
+      const routed = await context.newPage();
+      routed.on("pageerror", (error) => errors.push(String(error)));
+      const file = data[0].kinds.some((k) => k.key === plain.key) ? "suites.json" : "ppl.json";
+      await routed.route((url) => url.pathname === `/results/${file}`, async (route) => {
+        const response = await route.fetch();
+        const json = await response.json();
+        json.kinds.find((k) => k.key === plain.key).losses = ["Another system is faster on **these** instances."];
+        await route.fulfill({ response, json });
+      });
+      await routed.goto(`${base}results/#/kind/${plain.key}`);
+      await routed.waitForSelector("#view ul.losses li");
+      assert.equal(await routed.textContent("#view ul.losses li"), "Another system is faster on these instances.");
+      await routed.close();
+      console.log(`ok ${plain.key}: where tddlog is slower, where the data says`);
+    }
 
     // The benchmarks' data, where the site has it: every suite's families
     // hold its instances, each once, and each family's file its instances,
     // and each program's text (in the family's file, or a file of its own)
     // or why it is not shown. A family's view: its times, an instance's
-    // programs, a system's runs in the drawer; a link to a benchmark's former
-    // page leads to its view.
+    // programs, the systems whose files were not captured named, a link to
+    // open the program tddlog read in the playground (or why it cannot), a
+    // system's runs in the drawer, which the address names; a file of its
+    // own, gzipped, and saved under its name; the search; a link to a
+    // benchmark's former page leads to its view.
     const benchmarks = path.join(site, "results", "benchmarks");
     let family = null;
     if (fs.existsSync(path.join(benchmarks, "index.json"))) {
       const index = JSON.parse(fs.readFileSync(path.join(benchmarks, "index.json"), "utf8"));
+      const readsAs = (name) => (reader) => reader === name || reader.startsWith(`${name} `);
+      const hashOf = (x) => `#/${x.suite}/${encodeURIComponent(x.key)}/${encodeURIComponent(x.name)}`;
       let nf = 0, nfiles = 0;
+      let unseen = null, tried = null, kept = null, inline = null;
       for (const [suite, fams] of Object.entries(index.suites)) {
         const s = bySuite.get(suite);
         assert.ok(s, `benchmarks/index.json: the suite ${suite} is in the results' data`);
@@ -330,37 +416,141 @@ async function noSidewaysScroll(page, what) {
           const fam = JSON.parse(fs.readFileSync(path.join(benchmarks, suite, `${f.key}.json`), "utf8"));
           assert.deepEqual(fam.instances.map((i) => i.name), f.instances, `${suite}/${f.key}: its instances`);
           for (const inst of fam.instances) {
-            for (const t of inst.tabs ?? []) {
-              for (const file of t.files) {
+            const at = { suite, key: f.key, name: inst.name };
+            for (const [ti, t] of (inst.tabs ?? []).entries()) {
+              for (const [fi, file] of t.files.entries()) {
                 if (file.src) assert.ok(fs.existsSync(path.join(benchmarks, file.src)), `${suite}/${inst.name}: ${file.src}`);
                 else if (!file.held && !file.archive) assert.ok(file.sha in fam.texts, `${suite}/${inst.name}: the text of ${file.name}`);
+                if (!inline && (ti || fi) && !file.src && file.sha in fam.texts && fam.texts[file.sha].length > 0) {
+                  inline = { ...at, ti, fi, file: file.name, text: fam.texts[file.sha] };
+                }
                 nfiles++;
               }
             }
-            if (inst.tabs && (family === null || (suite === "geni" && family.suite !== "geni"))) {
-              family = { suite, key: f.key, name: inst.name, tabs: inst.tabs.length };
-            }
+            if (!inst.tabs) continue;
+            if (family === null || (suite === "geni" && family.suite !== "geni")) family = { ...at, tabs: inst.tabs.length, inst };
+            const readers = inst.tabs.flatMap((t) => t.readers);
+            const ran = [...new Set((inst.runs ?? []).map((r) => names[r.system] ?? r.system))];
+            if (!unseen && ran.some((n) => !readers.some(readsAs(n)))) unseen = { ...at, inst };
+            const pl = inst.tabs.find((t) => t.readers.includes("tddlog"))?.files.filter((file) => file.name.endsWith(".pl")) ?? [];
+            if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = at;
+            if (pl.length === 1 && (pl[0].held || pl[0].part) && !kept) kept = at;
           }
           nf++;
         }
       }
       assert.ok(family, "an instance with its programs");
-      const hash = `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`;
+      const hash = hashOf(family);
       await visit(hash, "#programs table.given");
+      assert.equal(await page.title(), `${family.name} · ${family.suite}/${family.key} · tddlog results`);
       assert.equal((await page.$$("#programs table.given tbody tr")).length, family.tabs, `${family.name}: a row a language`);
       await page.waitForFunction(() => {
         const pane = document.querySelector("#programs .pane");
         return pane !== null && !pane.textContent.includes("Loading");
       });
       assert.ok(await page.$("#programs .pane .lines pre.src, #programs .pane p.held, #programs .pane p.note"), `${family.name}: the file on show`);
+
+      // Every system that ran an instance reads one of its languages, or is
+      // named as one whose files were not captured.
+      for (const x of [family, unseen].filter(Boolean)) {
+        await visit(hashOf(x), "#programs table.given");
+        const readers = await page.$$eval("#programs table.given .chip", (chips) => chips.map((c) => c.textContent));
+        const said = await page.$eval("#programs", (p) => p.querySelector("p.uncaptured")?.textContent ?? "");
+        for (const n of new Set((x.inst.runs ?? []).map((r) => names[r.system] ?? r.system))) {
+          assert.ok(readers.some(readsAs(n)) || said.includes(n), `${x.name}: ${n} ran it, and neither reads a language of it nor is named as not captured`);
+        }
+      }
+
+      // A system's runs in a drawer the address names: it closes going back
+      // and opens again going forward, closes on Escape, and when another
+      // view is chosen.
+      await visit(hash, "#programs table.given");
       await page.click("#view table.grid tbody tr.on td button");
       await page.waitForSelector("#drawer:not([hidden]) h4");
       assert.ok((await page.textContent("#drawer h3")).length > 0, "the drawer names its system");
+      assert.match(page.url(), /\/runs\/[^/]+$/, "the drawer's address");
+      await page.evaluate(() => history.back());
+      await page.waitForSelector("#drawer", { state: "hidden" });
+      await page.evaluate(() => history.forward());
+      await page.waitForSelector("#drawer:not([hidden]) h4");
       await page.keyboard.press("Escape");
       await page.waitForSelector("#drawer", { state: "hidden" });
+      assert.doesNotMatch(page.url(), /\/runs\//);
+      await page.click("#view table.grid tbody tr.on td button");
+      await page.waitForSelector("#drawer:not([hidden]) h4");
+      await page.click("#view .crumbs a >> nth=-1");
+      await page.waitForSelector(`#view[data-route="#/${family.suite}"]`);
+      await page.waitForSelector("#drawer", { state: "hidden" });
+
+      // The program tddlog read opens in the playground, from the instance's
+      // view and from tddlog's runs; a file the site holds back or keeps in
+      // part says why it does not.
+      if (tried) {
+        await visit(hashOf(tried), "#programs table.given");
+        const link = `../#bench=${[tried.suite, tried.key, tried.name].map(encodeURIComponent).join("/")}`;
+        assert.equal(await page.getAttribute("#programs p.try a", "href"), link, `${tried.name}: the link to the playground`);
+        await page.click(`#view button[data-runs="${tried.suite}/${tried.name}/tddlog"]`);
+        await page.waitForSelector("#drawer:not([hidden]) h4");
+        assert.equal(await page.getAttribute("#drawer p.try a", "href"), link, `${tried.name}: the link in tddlog's runs`);
+        // A file it reads: shown in the view, the drawer closed.
+        await page.click("#drawer .files button.file");
+        await page.waitForSelector("#drawer", { state: "hidden" });
+        assert.ok(await page.$("#programs button.file.on"), `${tried.name}: the file tddlog reads on show`);
+      }
+      if (kept) {
+        await visit(hashOf(kept), "#programs table.given");
+        const notes = await page.$$eval("#programs p.note", (ps) => ps.map((p) => p.textContent));
+        assert.ok(notes.some((t) => t.startsWith("Not in the playground")), `${kept.name}: why the playground cannot open it`);
+        assert.equal(await page.$("#programs p.try"), null);
+      }
+
+      // A file of its own, gzipped (files/….txt.gz, as the data writes a
+      // large one): the page inflates it, the address names it
+      // (…/tab/T/F), and Save hands the reader its text under its name.
+      if (inline) {
+        const gz = await context.newPage();
+        gz.on("pageerror", (error) => errors.push(String(error)));
+        await gz.route((url) => url.pathname === `/results/benchmarks/${inline.suite}/${inline.key}.json`, async (route) => {
+          const response = await route.fetch();
+          const json = await response.json();
+          const file = json.instances.find((i) => i.name === inline.name).tabs[inline.ti].files[inline.fi];
+          file.src = "files/test.txt.gz";
+          delete json.texts[file.sha];
+          await route.fulfill({ response, json });
+        });
+        await gz.route((url) => url.pathname === "/results/benchmarks/files/test.txt.gz", (route) =>
+          route.fulfill({ status: 200, contentType: "application/gzip", body: zlib.gzipSync(inline.text) }));
+        const at = `${hashOf(inline)}/tab/${inline.ti}${inline.fi ? `/${inline.fi}` : ""}`;
+        await gz.goto(`${base}results/${at}`);
+        await gz.waitForSelector(`#programs button.file.on[data-file="${inline.ti}:${inline.fi}"]`);
+        await gz.waitForSelector("#programs .pane pre.src");
+        assert.equal(await gz.$eval("#programs .pane pre.src", (pre) => pre.textContent.split("\n")[0]), inline.text.split("\n")[0],
+          `${inline.name}: ${inline.file}, inflated`);
+        assert.equal(new URL(gz.url()).hash, at, `${inline.name}: the address of ${inline.file}`);
+        const [download] = await Promise.all([gz.waitForEvent("download"), gz.click("#programs .pane button.save")]);
+        assert.equal(download.suggestedFilename(), inline.file.split("/").pop());
+        assert.equal(fs.readFileSync(await download.path(), "utf8"), inline.text, `${inline.name}: ${inline.file}, saved`);
+        await gz.close();
+      }
+
+      // The search finds an instance by its name; the arrow keys and Enter
+      // choose it.
+      await visit("#/", ".kind-card");
+      await page.fill("#search", family.name);
+      await page.waitForSelector("#found-list [role=option]");
+      assert.equal(await page.getAttribute("#search", "aria-expanded"), "true");
+      const option = await page.$$eval("#found-list [role=option]", (os, [name, title]) =>
+        os.findIndex((o) => o.firstChild.textContent === name && o.lastChild.textContent === title), [family.name, bySuite.get(family.suite).title]);
+      assert.ok(option >= 0, `the search finds ${family.name}`);
+      for (let i = 0; i <= option; i++) await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await page.waitForSelector(`#view[data-route="${hash}"] #programs`);
+
       await page.goto(`${base}results/benchmarks/${family.suite}/${encodeURIComponent(family.name)}.html`);
       await page.waitForSelector(`#view[data-route="${hash}"] #programs table.given`);
-      console.log(`ok the benchmarks' data: ${nf} families, ${nfiles} files; ${family.suite}/${family.name}'s view and runs`);
+      console.log(`ok the benchmarks' data: ${nf} families, ${nfiles} files; ${family.suite}/${family.name}'s view, runs and search`
+        + `${unseen ? `; ${unseen.name}'s files not captured` : ""}${tried ? `; ${tried.name} to the playground` : ""}`
+        + `${kept ? `; ${kept.name} held back` : ""}${inline ? `; ${inline.file} gzipped` : ""}`);
     }
     await context.close();
 
@@ -382,14 +572,42 @@ async function noSidewaysScroll(page, what) {
         assert.equal(await shot.title(), "tddlog guide");
         if (shots) await shot.screenshot({ path: path.join(shots, `guide-${colorScheme}-${width}.png`), fullPage: true });
         }
-        // The results: the overview, a kind, a suite, and a family with a
-        // system's runs open beside it.
+        // The results: the overview, a kind, a kind of many systems, a suite,
+        // and a family with a system's runs open beside it. Each system's
+        // colour has a contrast of 3:1 or more with the page and the card; on
+        // a phone a board's rows stack, each value in the window and named by
+        // its column.
+        const crowded = kinds.find((k) => k.systems.length > 5) ?? kinds[0];
         const views = [["results", "", ".kind-card"], ["results-kind", `#/kind/${kinds[0].key}`, "figure.plot svg.cactus path.line"],
+          ["results-many", `#/kind/${crowded.key}`, "figure.plot svg.cactus path.line"],
           ["results-suite", `#/${first}`, "figure.plot svg.cactus path.line"]];
         if (family) views.push(["results-family", `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`, "#programs table.given"]);
         for (const [name, hash, ready] of views) {
           await shot.goto(`${base}results/${hash}`);
           await shot.waitForSelector(`#view[data-route="${hash || "#/"}"] ${ready}`);
+          if (name === "results") {
+            const keys = [...new Set(Object.keys(names).map((key) => key.replace(/-process$/, "")))];
+            const colours = await shot.evaluate((keys) => {
+              const style = getComputedStyle(document.documentElement);
+              const get = (name) => style.getPropertyValue(name).trim();
+              return { page: get("--bg"), card: get("--card"), systems: keys.map((key) => [key, get(`--s-${key}`)]) };
+            }, keys);
+            for (const [key, colour] of colours.systems) {
+              assert.match(colour, /^#[0-9a-f]{6}$/i, `${key} has a colour of its own, ${colorScheme}`);
+              for (const on of [colours.page, colours.card]) {
+                assert.ok(contrast(colour, on) >= 3, `${key}'s ${colour} on ${on}: ${contrast(colour, on).toFixed(2)}:1, ${colorScheme}`);
+              }
+            }
+          }
+          if (name === "results-kind" && width < 600) {
+            const cells = await shot.$$eval("#view table.board.stack tbody tr:first-child td", (tds) => tds.filter((td) => td.textContent.trim() !== "")
+              .map((td) => [td.getBoundingClientRect().right, getComputedStyle(td, "::before").content]));
+            assert.ok(cells.length >= 2, `a kind's board on a phone: ${cells.length} values`);
+            for (const [right, label] of cells) {
+              assert.ok(right <= width, `a kind's board on a phone: a value ends at ${right} px`);
+              assert.match(label, /:/, "a kind's board on a phone: each value named");
+            }
+          }
           if (name === "results-family") {
             await shot.click("#view table.grid tbody tr.on td button");
             await shot.waitForSelector("#drawer:not([hidden]) h4");
