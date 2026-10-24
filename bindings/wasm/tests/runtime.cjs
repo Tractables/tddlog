@@ -165,7 +165,16 @@ test("a benchmark's program: the one .pl file tddlog read, and the answers besid
   assert.equal(ref.column, "Reference");
   assert.equal(ref.caption, "Reference: ProbLog -k ddnnf, in the release run.");
   assert.deepEqual([...ref.values], [["p", 0.1676566]]);
+  assert.deepEqual([...ref.written], [["p", 7]]);
   assert.equal(ref.evidence, null);
+  // The reference has no more digits than its cell: a value under 1e-4 the
+  // results write with six significant digits
+  const small = page.benchReference({ cols: ["reference", "tddlog"], ref: "the generator's dynamic program",
+    rows: [["m", "3.63114e-05", "3.63114e-05"], ["n", "0.5", "0.5"], ["o", "0.0001234567891", "0.0001234567891"]] });
+  const result = { answers: [{ query: "m", probability: 3.6311437e-5 }, { query: "n", probability: 0.5 }, { query: "o", probability: 0.0001234567891 }],
+    evidence: null, groundSeconds: 0.001, compiling: null, notes: [], parts: [] };
+  const cells = [...page.answersHtml(result, 6, small).matchAll(/<td class="p reference">([^<]*)<\/td>/g)].map((m) => m[1]);
+  assert.deepEqual(cells, ["3.63114e-5", "0.5", "0.000123"]);
   const own = page.benchReference({ cols: ["tddlog", "Ace Xlog"], ref: null, log10z: true, rows: [["log10 Z", "-1.041392685", "-1.04"]] });
   assert.equal(own.column, "Command line");
   assert.deepEqual(own.values, new Map());

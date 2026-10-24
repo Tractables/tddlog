@@ -83,6 +83,24 @@ function rows(page) {
   return page.$$eval("#answers tbody tr", (trs) => trs.map((tr) => [...tr.querySelectorAll("td.query, td.p")].map((td) => td.textContent)));
 }
 
+// Each row's query, tddlog's answer as the page holds it (its cell's
+// title) and the reference's cell.
+function unrounded(page) {
+  return page.$$eval("#answers tbody tr", (trs) => trs.map((tr) => {
+    const [query, answer, reference] = tr.querySelectorAll("td.query, td.p");
+    return [query.textContent, Number(answer.title), reference?.textContent ?? ""];
+  }));
+}
+
+// A probability with as many digits after the point as `cell` has, in its
+// notation.
+function writtenAs(p, cell) {
+  const [mantissa, exponent] = cell.split("e");
+  const point = mantissa.indexOf(".");
+  const digits = point === -1 ? 0 : mantissa.length - point - 1;
+  return exponent === undefined ? p.toFixed(digits) : p.toExponential(digits);
+}
+
 // Until the page has drawn twice: after an input, the colours are painted.
 function frame(page) {
   return page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -410,9 +428,10 @@ function benchmarksOf(root) {
         await visit(p, `#bench=${bench.path}`);
         await answered(p);
         const shown = await rows(p);
-        const referenced = shown.filter(([, , reference]) => reference !== "");
+        // the reference has no more digits than the results wrote it with
+        const referenced = (await unrounded(p)).filter(([, , reference]) => reference !== "");
         assert.ok(referenced.length > 0, `${bench.path}: answers with a reference`);
-        for (const [query, tddlog, reference] of referenced) assert.equal(tddlog, reference, `${bench.path}: ${query}`);
+        for (const [query, tddlog, reference] of referenced) assert.equal(writtenAs(tddlog, reference), reference, `${bench.path}: ${query}`);
         return shown;
       };
       const text = whole.text();

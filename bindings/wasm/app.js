@@ -129,6 +129,17 @@ function exampleReference(example) {
   };
 }
 
+// The digits after the point a cell of the results' answers was written
+// with (in scientific notation, its mantissa's), where the cell is in the
+// notation the page writes its value in (tddlogRuntime.probability); else
+// undefined.
+function writtenDigits(cell, value) {
+  const [mantissa, exponent] = cell.toLowerCase().split("e");
+  if ((exponent !== undefined) !== (value > 0 && value < 1e-4)) return undefined;
+  const point = mantissa.indexOf(".");
+  return point === -1 ? 0 : mantissa.length - point - 1;
+}
+
 // The answers beside a benchmark's: the release run's reference where it
 // has one, else tddlog's own there, from the command line. A log10 Z row is
 // the logarithm of P(evidence).
@@ -137,21 +148,27 @@ function benchReference(answers) {
   const at = answers.cols.indexOf(answers.ref ? "reference" : "tddlog");
   if (at === -1) return null;
   const values = new Map();
+  const written = new Map();
   let evidence = null;
   for (const [query, ...cells] of answers.rows) {
     const value = cells[at] === "" ? NaN : Number(cells[at]);
     if (!Number.isFinite(value)) continue;
     if (answers.log10z) evidence = { probability: 10 ** value, log10: value };
-    else values.set(query, value);
+    else {
+      values.set(query, value);
+      written.set(query, writtenDigits(cells[at], value));
+    }
   }
   return answers.ref
-    ? { column: "Reference", caption: `Reference: ${answers.ref}, in the release run.`, values, evidence }
-    : { column: "Command line", caption: "Command line: tddlog's answers in the release run.", values, evidence };
+    ? { column: "Reference", caption: `Reference: ${answers.ref}, in the release run.`, values, written, evidence }
+    : { column: "Command line", caption: "Command line: tddlog's answers in the release run.", values, written, evidence };
 }
 
 // The answers as a table, each with its probability as a bar, and beside
 // them the `reference` where the program has one: null, or { column,
-// caption, values (a Map from each query to its probability), evidence (a
+// caption, values (a Map from each query to its probability), written
+// (where given, a Map from a query to the digits after the point its value
+// was written with, which the column does not exceed), evidence (a
 // P(evidence) as tddlog gives it, or null) }. The first ROWS_SHOWN rows
 // unless `all`.
 function answersHtml(result, digits, reference, all = false) {
@@ -173,7 +190,8 @@ function answersHtml(result, digits, reference, all = false) {
       out += `<td class="bar"><i class="${width === 0 ? "zero" : ""}" style="width:${width}%"></i></td>`;
       if (reference !== null) {
         const p = reference.values.get(query);
-        out += `<td class="p reference">${p === undefined ? "" : tddlogRuntime.probability(p, digits)}</td>`;
+        const written = reference.written?.get(query);
+        out += `<td class="p reference">${p === undefined ? "" : tddlogRuntime.probability(p, written === undefined ? digits : Math.min(digits, written))}</td>`;
       }
       out += "</tr>";
     }
