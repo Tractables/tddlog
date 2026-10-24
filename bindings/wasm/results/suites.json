@@ -1407,7 +1407,8 @@
     "problog":47248.182,
     "pita":76620.531,
     "aspmc":141759.554
-   }
+   },
+   "losses":[]
   },
   {
    "key":"networks",
@@ -1441,7 +1442,8 @@
     "problog":189147.695,
     "pita":168197.202,
     "aspmc":169529.896
-   }
+   },
+   "losses":["Where tddlog loses: 15 partition functions of the UAI 2022 final set, 14 of them protein networks, run out of time or memory. TensorInference.jl answers each in 45 to 85 s."]
   },
   {
    "key":"databases",
@@ -1465,7 +1467,8 @@
     "problog":35158.217,
     "pita":65531.297,
     "aspmc":122372.723
-   }
+   },
+   "losses":["ProvSQL is fast on the easy TPC-H queries, its own benchmarks, and faster than tddlog on 107 of them."]
   }
  ]
 }
