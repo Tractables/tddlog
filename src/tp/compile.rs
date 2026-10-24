@@ -866,19 +866,19 @@ impl Compilation {
     /// after each component, and after each round of a cyclic one. The first
     /// search runs once the atoms' formulas hold `first_pairs` live pairs
     /// ([`DYNAMIC_FIRST_PAIRS`] for the `dynamic` strategies), and each
-    /// later one once they have doubled since the last, over every formula
-    /// and cached positive at once
-    /// ([`TddBackend::restructure`]), and may spend as much work as the compile
-    /// did since the last one, and no more than the components left are
-    /// likely to take ([`Dynamic::budget`]); the first search of a run that resumes a
-    /// stopped compile may spend what the run's limits allow. After two
-    /// searches that each shrink the formulas by less than a tenth, the
-    /// next waits until the formulas hold [`DYNAMIC_REGROWTH`] times the
-    /// pairs the last one left, and one more weak search stops it again.
-    /// Rotations change how a formula is represented, not its function, so
-    /// versions, worklists and the fixpoint test are untouched. The rules
-    /// are the ones under which CUDD's sifting paid on the random graphs:
-    /// reorder when the tables double, stop when it stops paying.
+    /// later one once they have doubled since the last, as CUDD reorders
+    /// when its tables double, over every formula and cached positive at
+    /// once ([`TddBackend::restructure`]). A search sweeps until a sweep
+    /// keeps no move. Its budget is the work the compile spent since the
+    /// last search, and no more than the components left are likely to take
+    /// ([`Dynamic::budget`]); what it spends past the budget, the compile
+    /// spends before the next search runs, so searching costs at most twice
+    /// what the compile does, plus the last search's excess. A budget that
+    /// stopped searches part way made each compile's outcome depend on
+    /// where they stopped: moving it by 2% made single programs several
+    /// times slower or faster. Rotations change how a formula is
+    /// represented, not its function, so versions, worklists and the
+    /// fixpoint test are untouched.
     ///
     /// # Panics
     ///
@@ -896,8 +896,7 @@ impl Compilation {
             next_at: first_pairs,
             since: None,
             resumed: false,
-            weak: 0,
-            left: 0,
+            debt: 0,
         });
         self.stats.search = Some(SearchStats::default());
         self
@@ -1776,7 +1775,7 @@ impl Compilation {
         };
         let now = backend.work_units();
         dynamic.since.get_or_insert(now);
-        if !dynamic.due(self.fixpoint.live) {
+        if !dynamic.due(now, self.fixpoint.live) {
             return Ok(());
         }
         // The cached polarities are dropped rather than moved: they would
@@ -1786,10 +1785,8 @@ impl Compilation {
         // A loop the watch refused is not among the formulas it moves.
         self.memo.get_mut().forget_refused();
         let mut members = self.fixpoint.formulas.formulas_mut();
-        let found = backend.restructure(
-            &mut members,
-            dynamic.budget(now, self.next, self.sccs.len() - self.next),
-        );
+        let budget = dynamic.budget(now, self.next, self.sccs.len() - self.next);
+        let found = backend.restructure(&mut members);
         drop(members);
         // A search that fails part way has still moved every formula onto
         // the vtree the backend now holds.
@@ -1803,9 +1800,8 @@ impl Compilation {
         self.fixpoint.live = self.fixpoint.sizes.iter().sum();
         let found = found?;
         let weak = found.pairs_after * 10 > found.pairs_before * 9;
-        dynamic.weak += usize::from(weak);
+        dynamic.debt = found.work_units.saturating_sub(budget);
         dynamic.next_at = (2 * self.fixpoint.live).max(dynamic.first_pairs);
-        dynamic.left = self.fixpoint.live;
         dynamic.since = Some(backend.work_units());
         dynamic.resumed = false;
         let stats = self.stats.search.get_or_insert_with(SearchStats::default);
@@ -1824,14 +1820,6 @@ impl Compilation {
 /// `dynamic` strategies; CUDD's first reordering is at 4004 nodes.
 pub(crate) const DYNAMIC_FIRST_PAIRS: usize = 4096;
 
-/// How many times the pairs the last search left the formulas must grow
-/// before a search runs again after two weak ones. A weak search on small
-/// formulas says little about the vtree the compile needs once they grow:
-/// on g22_70 written without its recursion both weak searches came early,
-/// and with no search after them the formulas grew more than tenfold past
-/// what a search at sixteen times kept them to.
-const DYNAMIC_REGROWTH: usize = 16;
-
 /// The state of [`Compilation::dynamic`]'s search between steps.
 struct Dynamic {
     /// Live pairs below which no search runs.
@@ -1844,40 +1832,33 @@ struct Dynamic {
     since: Option<u64>,
     /// Whether this run resumes a stopped compile and has not searched
     /// yet. Each run is on a fresh work clock, so `since` is from an
-    /// earlier one; the search spends what the run's limits allow (a budget
-    /// of the work since, summed over the runs, left g30_100 unfinished).
+    /// earlier one; its first search has the budget the run's limits
+    /// allow and owes nothing (a budget of the work since, summed over the
+    /// runs, left g30_100 unfinished).
     resumed: bool,
-    /// Searches that shrank their formulas by less than a tenth.
-    weak: usize,
-    /// Live pairs the last search left.
-    left: usize,
+    /// The work the last search spent past its budget, which the compile
+    /// spends before the next search.
+    debt: u64,
 }
 
 impl Dynamic {
-    /// Whether a search is due with the formulas at `live` pairs: once they
-    /// have doubled since the last, and after two weak searches once they
-    /// hold [`DYNAMIC_REGROWTH`] times what it left, which leaves one weak
-    /// search to stop the next.
-    fn due(&mut self, live: usize) -> bool {
-        if live < self.next_at {
-            return false;
-        }
-        if self.weak >= 2 {
-            if live < self.left.saturating_mul(DYNAMIC_REGROWTH) {
-                return false;
-            }
-            self.weak = 1;
-        }
-        true
+    /// Whether a search is due at work clock `now` with the formulas at
+    /// `live` pairs: once they have doubled since the last, and once the
+    /// compile has spent, since the last search ended, what that search
+    /// spent past its budget; at once in a run that resumes a stopped
+    /// compile, whose clock starts afresh.
+    fn due(&self, now: u64, live: usize) -> bool {
+        live >= self.next_at && (self.resumed || now - self.since.unwrap_or(now) >= self.debt)
     }
 
-    /// The work the search due at work clock `now` may spend, with `done`
-    /// components finished and `left` to go: what the compile spent since
-    /// the last search, and no more than the compile is likely to spend
-    /// after it, its work so far per finished component times the
-    /// components left. A search pays only over the steps after it: on
-    /// g30_100 a search two components before the end spent several times
-    /// what the rest of the compile took.
+    /// The work the search due at work clock `now` spends before it owes
+    /// the excess, with `done` components finished and `left` to go: what
+    /// the compile spent since the last search, and no more than the
+    /// compile is likely to spend after it, its work so far per finished
+    /// component times the components left. A search pays only over the
+    /// steps after it, so one near the end owes more and holds off the
+    /// next for longer: on g30_100 a search two components before the end
+    /// spent several times what the rest of the compile took.
     fn budget(&self, now: u64, done: usize, left: usize) -> u64 {
         match self.since {
             Some(since) if !self.resumed => {

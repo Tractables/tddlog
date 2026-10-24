@@ -1028,22 +1028,20 @@ impl TddBackend<'_> {
         self.engine.limits().work_units()
     }
 
-    /// Search for a global vtree on which `members` are smaller, spending
-    /// at most `work` units. The members must be every live formula on the
-    /// global scope; they keep their functions, and afterwards
+    /// Search for a global vtree on which `members` are smaller, sweeping
+    /// until a sweep keeps no move. The members must be every live formula
+    /// on the global scope; they keep their functions, and afterwards
     /// [`TddBackend::global`] is the scope they live on.
     pub(crate) fn restructure(
         &self,
         members: &mut [&mut Tdd],
-        work: u64,
     ) -> Result<PoolSearchStats, CompileError> {
-        // As many sweeps as keep a move: the search ends at the first sweep
-        // that keeps nothing, or on its budget. The library's default of
-        // four stops the searches of the random graphs while they still
-        // gain.
+        // No sweep or work limit: the library's default of four sweeps stops
+        // the searches of the random graphs while they still gain, and the
+        // compile's schedule, not a budget, bounds what searching costs.
         let config = PoolSearchConfig {
             max_sweeps: usize::MAX,
-            max_work_units: work,
+            max_work_units: u64::MAX,
             ..PoolSearchConfig::default()
         };
         // A search that stops part way keeps the moves it made: the members

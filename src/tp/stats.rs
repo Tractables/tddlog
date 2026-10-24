@@ -71,8 +71,7 @@ pub(super) enum Op {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SearchStats {
     pub searches: usize,
-    /// Searches that shrank their formulas by less than a tenth; the second
-    /// ends the searching.
+    /// Searches that shrank their formulas by less than a tenth.
     pub weak: usize,
     pub probes: usize,
     pub accepts: usize,
