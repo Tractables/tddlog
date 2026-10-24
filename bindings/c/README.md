@@ -20,7 +20,7 @@ Bayesian networks and discrete probabilistic programs written in ProbLog,
 by compiling them into tree decision diagrams. This library exposes the
 same Rust implementation as the
 [command line and Rust crate](https://github.com/Tractables/tddlog) and
-the [Python package](https://github.com/Tractables/tddlog/blob/main/bindings/python/README.md)
+the [Python package](https://tractables.github.io/tddlog/python/)
 through a C interface: a program goes in as text, with the command
 line's options, and the probabilities of its queries come out through an
 opaque solution handle.

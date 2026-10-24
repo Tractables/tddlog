@@ -1,0 +1,9 @@
+/* The site's links above the page wrap between links on a phone's width,
+   and the bar grows to hold them (Furo fixes its height to one line). */
+.announcement {
+  height: auto;
+  min-height: var(--header-height);
+}
+.announcement-content {
+  white-space: normal;
+}

@@ -521,6 +521,70 @@ function benchmarksOf(root) {
     for (const h of within) assert.ok(await page.$(h), `the guide's link ${h} has no target`);
     console.log(`ok the guide: ${tried.length} links to examples, ${within.length} within the page`);
 
+    // The guide's headings each link to themselves; the terms the
+    // playground and the results page use are there to link to; the
+    // install line is the README's; and at a desktop's width the contents
+    // stay in view beside the text.
+    const headings = await page.$$eval(".guide-text :is(h2, h3, h4)", (hs) => hs.map((h) => {
+      const a = h.querySelector("a.anchor");
+      return [h.textContent, a && a.getAttribute("href"), h.id || h.parentElement.id];
+    }));
+    for (const [text, href, id] of headings) assert.equal(href, `#${id}`, `the guide's heading ${text}: its link to itself`);
+    for (const term of ["vtree", "pairs", "layout", "trial", "component", "part"]) {
+      assert.ok(await page.$(`dt#term-${term}`), `the guide's terms: ${term}`);
+    }
+    const install = "cargo install --locked --git https://github.com/Tractables/tddlog tddlog";
+    assert.ok((await page.textContent("#getting-started")).includes(install), "the guide's install line");
+    assert.ok(fs.readFileSync(path.join(__dirname, "../../../README.md"), "utf8").includes(install), "the README's install line");
+    assert.equal(await page.$eval("nav.contents", (n) => getComputedStyle(n).position), "sticky");
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const top = await page.$eval("nav.contents", (n) => n.getBoundingClientRect().top);
+    assert.ok(top >= 0 && top < 100, `the guide's contents at the end of the text: ${top} px from the top`);
+    console.log(`ok the guide: ${headings.length} headings with links, the terms, the install line, the contents in view`);
+
+    // The page for an address the site does not have: a 404, with the
+    // site's styles, logo and links, whose links lead to the site's pages.
+    const guideBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const missing = await page.goto(`${base}no/such/page`);
+    assert.equal(missing.status(), 404);
+    assert.equal(await page.title(), "tddlog: not found");
+    assert.ok(await page.$eval(".site-logo", (img) => img.complete && img.naturalWidth > 0), "the not-found page: the logo");
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), guideBackground, "the not-found page: the site's styles");
+    const away = await page.$$eval("main a[href]", (anchors) => anchors.map((a) => a.href).filter((h) => h.startsWith(location.origin)));
+    for (const href of new Set(away)) {
+      assert.equal((await context.request.get(href)).status(), 200, `the not-found page: the link to ${href}`);
+    }
+    console.log(`ok the not-found page: ${new Set(away).size} links within the site`);
+
+    // Each page's head: the icon, and for a page of its own what a shared
+    // link to it shows; the picture is 1200 by 630. The sitemap's pages are
+    // the site's.
+    for (const at of ["", "guide/", "results/"]) {
+      await page.goto(`${base}${at}`);
+      const meta = await page.evaluate(() => {
+        const get = (selector, name) => document.querySelector(selector)?.getAttribute(name) ?? null;
+        return {
+          icon: document.querySelector('link[rel="icon"]')?.href ?? null,
+          title: get('meta[property="og:title"]', "content"), description: get('meta[property="og:description"]', "content"),
+          image: get('meta[property="og:image"]', "content"), url: get('meta[property="og:url"]', "content"),
+          canonical: get('link[rel="canonical"]', "href"), card: get('meta[name="twitter:card"]', "content"),
+        };
+      });
+      const what = at || "the playground";
+      assert.ok(meta.icon && (await context.request.get(meta.icon)).status() === 200, `${what}: the icon`);
+      assert.ok(meta.title && meta.description, `${what}: the title and description a shared link shows`);
+      assert.equal(meta.url, `https://tractables.github.io/tddlog/${at}`, `${what}: its address`);
+      assert.equal(meta.canonical, meta.url, `${what}: its canonical address`);
+      assert.equal(meta.image, "https://tractables.github.io/tddlog/social.png", `${what}: the picture a shared link shows`);
+      assert.equal(meta.card, "summary_large_image", `${what}: the card a shared link shows`);
+    }
+    const social = fs.readFileSync(path.join(site, "social.png"));
+    assert.deepEqual([social.readUInt32BE(16), social.readUInt32BE(20)], [1200, 630], "social.png is 1200 by 630");
+    const sitemap = [...fs.readFileSync(path.join(site, "sitemap.xml"), "utf8").matchAll(/<loc>https:\/\/tractables\.github\.io\/tddlog\/([^<]*)<\/loc>/g)].map((m) => m[1]);
+    assert.ok(sitemap.length >= 5, `the sitemap lists ${sitemap.length} pages`);
+    for (const address of sitemap) assert.equal((await context.request.get(`${base}${address}`)).status(), 200, `the sitemap's page ${address}`);
+    console.log(`ok the pages' icon and shared-link tags; the sitemap's ${sitemap.length} pages`);
+
     // Every link from the playground, the guide and the results page to a
     // file of the site leads to one.
     const checked = new Set();
@@ -982,16 +1046,39 @@ function benchmarksOf(root) {
         if (!only) {
         const api = await shot.goto(`${base}api/tddlog/index.html`);
         assert.equal(api.status(), 200, "the API documentation");
-        for (const [binding, title] of [["python", "tddlog for Python"], ["c", "tddlog for C"]]) {
+        // The Python and C pages: the site's links above each page, a
+        // description, and the binding's other pages in the sidebar.
+        const docs = [["python", "tddlog for Python", [["examples.html", "Examples"], ["reference.html", "Reference"]]],
+          ["c", "tddlog for C", [["example.html", "The example"], ["header.html", "The header"]]]];
+        for (const [binding, title, pages] of docs) {
           const response = await shot.goto(`${base}${binding}/`);
           assert.equal(response.status(), 200, `the ${binding} page`);
           assert.match(await shot.title(), new RegExp(`^${title}`));
           const bar = await shot.$$eval(".announcement a", (anchors) => anchors.map((a) => a.textContent));
-          assert.deepEqual(bar, ["Playground", "Guide", "Results", "API", "Python", "C", "GitHub"].filter((n) => n !== title.split(" ").pop()),
+          assert.deepEqual(bar, ["Playground", "Guide", "Results", "Rust API", "Python", "C", "GitHub"].filter((n) => n !== title.split(" ").pop()),
             `the ${binding} page's links to the site`);
-          const [barWidth, barRoom] = await shot.$eval(".announcement", (bar) => [bar.scrollWidth, bar.clientWidth]);
-          assert.ok(barWidth <= barRoom, `the ${binding} page's links, ${barWidth} px in ${barRoom}, ${colorScheme}, ${width} px`);
+          const [barWidth, barRoom, barHeight, barHeightRoom] = await shot.$eval(".announcement",
+            (bar) => [bar.scrollWidth, bar.clientWidth, bar.scrollHeight, bar.clientHeight]);
+          assert.ok(barWidth <= barRoom && barHeight <= barHeightRoom,
+            `the ${binding} page's links, ${barWidth} by ${barHeight} px in ${barRoom} by ${barHeightRoom}, ${colorScheme}, ${width} px`);
+          const sidebar = await shot.$$eval(".sidebar-tree a", (anchors) => anchors.map((a) => [a.getAttribute("href"), a.textContent.trim()]));
+          assert.deepEqual(sidebar, pages, `the ${binding} page's sidebar`);
           if (shots) await shot.screenshot({ path: path.join(shots, `${binding}-${colorScheme}-${width}.png`) });
+          if (colorScheme !== "light" || width !== 1280) continue;
+          for (const [file] of [["index.html"], ...pages]) {
+            await shot.goto(`${base}${binding}/${file}`);
+            assert.ok(await shot.$eval('meta[name="description"]', (m) => m.content.length > 40), `${binding}/${file}: its description`);
+            assert.ok(await shot.$('link[rel~="icon"]'), `${binding}/${file}: its icon`);
+          }
+          // The theme chosen on the site's other pages is this page's, and
+          // one chosen here is theirs.
+          await shot.evaluate(() => localStorage.setItem("tddlog-theme", "dark"));
+          await shot.goto(`${base}${binding}/`);
+          assert.equal(await shot.$eval("body", (b) => b.dataset.theme), "dark", `the ${binding} page takes the site's theme`);
+          await shot.locator(".theme-toggle:visible").first().click();
+          const [theme, kept] = await shot.evaluate(() => [document.body.dataset.theme, localStorage.getItem("tddlog-theme")]);
+          assert.equal(kept, theme === "auto" ? null : theme, `the ${binding} page hands its theme, ${theme}, to the site`);
+          await shot.evaluate(() => localStorage.clear());
         }
         }
         await view.close();

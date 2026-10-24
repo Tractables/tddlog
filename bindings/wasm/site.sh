@@ -23,6 +23,13 @@
 #   /404.html   the page for an address the site does not have, which sends
 #               a link to a benchmark's former page to its view of the
 #               results page
+#   /logo.svg, /favicon.svg, /social.png
+#               the project logo (docs/logo.svg), which brand.py puts above
+#               the pages' headings; the pages' icon, the logo's first
+#               letters in a square; and the picture a shared link to a
+#               page shows
+#   /sitemap.xml
+#               the site's pages, for search engines
 #   /api/       the API documentation: API is rustdoc's output directory,
 #               target/doc after `cargo doc --no-deps --lib` at the root
 #   /python/    the Python package's page: PYTHON is Sphinx's output for
@@ -30,10 +37,13 @@
 #   /c/         the C library's page: C is Sphinx's output for
 #               bindings/c/docs
 #
-# STAMP, where given (the workflow passes the commit), is appended to the
-# pages' references to their scripts and styles (app.js?v=STAMP), and the
-# playground and the results page pass it on to every file they load, so
-# that a browser never runs a new page with older files it holds.
+# STAMP, where given, is appended to the pages' references to their scripts
+# and styles (app.js?v=STAMP), and the playground and the results page pass
+# it on to every file they load, so that a browser never runs a new page
+# with older files it holds. STAMP `hash`, which the workflow passes, stands
+# for a hash of every file the pages load (all but the pages and the
+# documentation): a deploy that changes none of them keeps the stamp, and a
+# browser keeps the files it holds, the module among them.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 out=$1
@@ -51,6 +61,11 @@ cd "$here"
 cp index.html 404.html styles.css theme.js code.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
 node -e 'for (const e of require("./examples.js").tddlogExamples) console.log(e.file)' |
   while read -r file; do cp "../../$file" "$out/examples/"; done
+cp sitemap.xml social.png ../../docs/logo.svg "$out/"
+# The icon is the logo's first letters, the rule's :- and "td", framed
+# square; the frame is the logo's own, so a new logo needs a new crop.
+sed 's/viewBox="-65 -45 720 365"/viewBox="-40 44 235 235"/' ../../docs/logo.svg > "$out/favicon.svg"
+grep -q 'viewBox="-40 44 235 235"' "$out/favicon.svg"
 cp guide/index.html "$out/guide/"
 cp results/index.html results/results.js results/suites.json results/ppl.json "$out/results/"
 if [ -n "$benchmarks" ]; then
@@ -65,15 +80,21 @@ cp -r "$python" "$out/python"
 test -f "$c/index.html"
 cp -r "$c" "$out/c"
 
+if [ "$stamp" = hash ]; then
+  stamp=$(cd "$out" && find . -type f ! -name '*.html' ! -path './api/*' ! -path './python/*' ! -path './c/*' -print0 |
+    LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-12)
+fi
 if [ -n "$stamp" ]; then
-  for page in "$out/index.html" "$out/guide/index.html" "$out/results/index.html"; do
+  for page in "$out/index.html" "$out/guide/index.html" "$out/results/index.html" "$out/404.html"; do
     sed -i -E "s#(href|src)=\"((\.\./)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js))\"#\1=\"\2?v=$stamp\"#" "$page"
   done
   test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 6
   test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 3
   test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 4
+  test "$(grep -c "?v=$stamp\"" "$out/404.html")" = 2
 fi
-# The logo heads the playground, the guide and the results page.
+# The logo heads the pages, and their heads get the icon and what a shared
+# link shows.
 python3 "$here/brand.py" "$out" "$stamp"
 # GitHub Pages serves the files as they are, without Jekyll.
 touch "$out/.nojekyll"

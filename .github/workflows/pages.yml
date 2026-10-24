@@ -99,8 +99,22 @@ jobs:
             echo "BENCHMARKS=$RUNNER_TEMP/baselines/benchmarks" >> "$GITHUB_ENV"
           fi
 
+      # The pages' references carry a hash of the files they load
+      # (site.sh's STAMP), so that a browser keeps the files a deploy did
+      # not change.
       - name: Assemble the site
-        run: bindings/wasm/site.sh site target/doc target/python-docs target/c-docs "${GITHUB_SHA::8}" "${BENCHMARKS:-}"
+        run: bindings/wasm/site.sh site target/doc target/python-docs target/c-docs hash "${BENCHMARKS:-}"
+
+      # GitHub Pages publishes a site of 1 GB at most; the build stops well
+      # before a deploy would fail.
+      - name: Check the site's size
+        run: |
+          size=$(du -sb site | cut -f1)
+          echo "The site is $((size / 1000000)) MB."
+          if [ "$size" -gt 900000000 ]; then
+            echo "::error::The site is $((size / 1000000)) MB, over the 900 MB this workflow allows (GitHub Pages publishes 1 GB at most)."
+            exit 1
+          fi
 
       - name: Test the browser runtime
         run: node --test bindings/wasm/tests/runtime.cjs bindings/wasm/tests/code.cjs

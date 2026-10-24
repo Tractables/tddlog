@@ -597,7 +597,35 @@ footer {
 .prose dt { margin-top: 0.7rem; }
 .prose dd { margin: 0.2rem 0 0 1.4rem; }
 .prose .try { margin-top: 0.4rem; font-weight: 500; }
+.prose h4 { margin: 1.2rem 0 0.3rem; font-size: 0.95rem; font-weight: 600; }
 .contents ol { margin: 0; padding-left: 1.4rem; }
+
+/* A heading's link to itself (the guide's script adds it), shown where the
+   pointer or the focus is, and faintly on a screen without a pointer. */
+.prose .anchor { color: var(--muted); font-weight: 400; text-decoration: none; opacity: 0; }
+.prose :is(h2, h3, h4):hover .anchor, .prose .anchor:focus-visible { opacity: 1; }
+@media (hover: none) { .prose .anchor { opacity: 0.6; } }
+/* A term another page links to stands out. */
+.prose dt:target { background: var(--accent-fill); border-radius: 3px; }
+
+/* The guide's contents beside its text once there is room for both,
+   staying in view as the text scrolls, its glosses left out. */
+@media (min-width: 72rem) {
+  .guide-columns {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 46rem);
+    gap: 0 1.5rem;
+    align-items: start;
+  }
+  .guide-columns > .contents {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    font-size: 14px;
+  }
+  .guide-columns > .contents .gloss { display: none; }
+}
 
 /* The results page. Each system has a colour of its own, the same in every
    plot; the light and the dark steps each have a contrast of 3:1 or more

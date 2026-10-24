@@ -82,6 +82,7 @@
 //! describes each stage.
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg")]
+#![doc(html_favicon_url = "https://tractables.github.io/tddlog/favicon.svg")]
 
 mod auto;
 mod cubes;
