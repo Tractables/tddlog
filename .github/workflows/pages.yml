@@ -87,10 +87,10 @@ jobs:
           python -m sphinx -W --keep-going -b html -d target/docs-cache/python bindings/python/docs target/python-docs
           python -m sphinx -W --keep-going -b html -d target/docs-cache/c bindings/c/docs target/c-docs
 
-      # The benchmark pages show the baselines' programs, so they are on the
-      # baselines branch (benchmarks/), not on main; the results page links
-      # to them where the branch has them.
-      - name: Fetch the benchmark pages
+      # The benchmarks' data holds the baselines' programs, so it is on the
+      # baselines branch (benchmarks/), not on main; the results page shows
+      # each benchmark's programs and runs where the branch has them.
+      - name: Fetch the benchmarks' data
         run: |
           set -eux
           if git fetch --depth 1 origin baselines && git cat-file -e FETCH_HEAD:benchmarks/index.json; then

@@ -2,15 +2,18 @@
 // page against the ProbLog column beside them, P(evidence), an edited program
 // through the address, an error, Cancel, the theme, the guide's links, the
 // pages' links within the site, the
-// results page (each kind of problems' plot, drawing the kind's systems over
-// all of its instances with their answers and total times, and every
-// suite's; the hover layer, the table), the API, Python and C pages, and no
-// sideways scrolling at a desktop's width or a phone's.
+// results page (the overview; each kind of problems' plot, drawing the
+// kind's systems over all of its instances with their answers and total
+// times; each suite's plot and tddlog against each system; the hover layer,
+// the table; where the site has the benchmarks' data, a family's times,
+// programs and runs, and a link to a benchmark's former page), the API,
+// Python and C pages, and no sideways scrolling at a desktop's width or a
+// phone's.
 //
 //   node tests/browser.cjs <site> [<directory for screenshots>]
 //
 // RESULTS_ONLY=1 tests the results page alone (a site of that page, its
-// styles and theme.js).
+// styles, theme.js and code.js, and 404.html).
 //
 // with Playwright and its Chromium installed (README.md).
 const assert = require("node:assert/strict");
@@ -29,15 +32,17 @@ const TYPES = {
   ".svg": "image/svg+xml",
 };
 
-// The site as GitHub Pages serves it: a directory's index.html at its path.
+// The site as GitHub Pages serves it: a directory's index.html at its path,
+// and 404.html for an address it does not have.
 function serve(root) {
   const server = http.createServer((request, response) => {
     let file = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
     if (file.endsWith("/")) file += "index.html";
     const full = path.join(root, file);
     if (!full.startsWith(root) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) {
-      response.writeHead(404);
-      response.end();
+      const missing = path.join(root, "404.html");
+      response.writeHead(404, fs.existsSync(missing) ? { "content-type": "text/html" } : {});
+      response.end(fs.existsSync(missing) ? fs.readFileSync(missing) : undefined);
       return;
     }
     response.writeHead(200, { "content-type": TYPES[path.extname(full)] ?? "application/octet-stream" });
@@ -187,7 +192,7 @@ async function noSidewaysScroll(page, what) {
       await page.goto(`${base}${at}`);
       assert.ok(await page.$eval(".site-logo", (img) => img.complete && img.naturalWidth > 0),
         `${at || "the playground"}: the project logo loads`);
-      if (at === "results/") await page.waitForSelector("section.family svg.cactus path.line");
+      if (at === "results/") await page.waitForSelector("#view .kind-card");
       const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => a.href));
       for (const href of hrefs) {
         const url = new URL(href);
@@ -201,24 +206,18 @@ async function noSidewaysScroll(page, what) {
     console.log(`ok ${checked.size} links within the site`);
     }
 
-    // The results page: a plot a family, a line a system; another suite's
-    // plot on its button; the time under the pointer; the table sorts.
-    await page.goto(`${base}results/`);
-    await page.waitForSelector("section.family svg.cactus path.line");
-    const families = await page.$$eval("section.family", (sections) => sections.map((s) => [s.id, s.querySelectorAll("svg.cactus path.line").length]));
-    assert.ok(families.length >= 2, `the results' families: ${JSON.stringify(families)}`);
-    for (const [id, lines] of families) assert.ok(lines >= 2, `${id}: ${lines} lines`);
-    // A family's tabs: its kinds of problems (the data's kinds whose suites
-    // are the family's, in the README's order), the first shown, then its
-    // suites. A kind's plot draws the kind's systems over all of its
-    // instances, tddlog first and then by the instances they answer; its
-    // legend gives "answers k of N, total T" for each, k the system's
-    // answers in the kind's suites and T its total time over the instances
-    // some system of the kind answers, a run that does not answer counted at
-    // its suite's limit and a time under 0.2 s at 0.2 s, as the README's
-    // legends write it; its axis goes to all N, from 0.2 s; under it, one
-    // line for each system that was not given some of the instances. A
-    // suite's plot draws the suite's systems, its legend "answers k of N".
+    // The results page. The overview: a card a kind of problems, in the
+    // README's order. A kind's view (#/kind/KEY) plots the kind's systems
+    // over all of its instances, tddlog first and then by the instances
+    // they answer; its legend gives "answers k of N, total T" for each, k
+    // the system's answers in the kind's suites and T its total time over
+    // the instances some system of the kind answers, a run that does not
+    // answer counted at its suite's limit and a time under 0.2 s at 0.2 s,
+    // as the README's legends write it; its axis goes to all N, from 0.2 s;
+    // under it, one line for each system that was not given some of the
+    // instances. A suite's view (#/SUITE) plots the suite's systems, its
+    // legend "answers k of N", and tddlog against each system given some of
+    // the same instances.
     const data = ["suites.json", "ppl.json"].map((file) => path.join(site, "results", file))
       .filter((file) => fs.existsSync(file)).map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
     const kinds = data.flatMap((d) => d.kinds).sort((a, b) => a.order - b.order);
@@ -226,77 +225,143 @@ async function noSidewaysScroll(page, what) {
     const number = (v) => typeof v === "number";
     const duration = (t) => (t >= 36000 ? `${(t / 3600).toFixed(0)} h` : t >= 3600 ? `${(t / 3600).toFixed(1)} h`
       : t >= 60 ? `${(t / 60).toFixed(0)} min` : t >= 10 ? `${t.toFixed(0)} s` : `${t.toFixed(1)} s`);
-    const shown = (selector) => page.$eval(`${selector} figure.plot`, (f) => ({
+    // The view an address names, once it is drawn: `ready` within it.
+    const visit = async (hash, ready) => {
+      await page.evaluate((h) => { location.hash = h; }, hash);
+      await page.waitForSelector(`#view[data-route="${hash}"] ${ready}`);
+    };
+    const shown = () => page.$eval("#view figure.plot", (f) => ({
       systems: f.dataset.systems.split(" ").filter(Boolean),
       instances: Number(f.dataset.instances),
       lines: [...f.querySelectorAll("svg.cactus path.line")].map((p) => p.dataset.key),
       legend: [...f.querySelectorAll(".legend .n")].map((s) => s.textContent.replace(/\s/g, "")),
       axis: f.querySelector("svg.cactus").textContent.replace(/\s/g, ""),
     }));
-    let drawn = 0;
-    for (const f of data.flatMap((d) => d.families)) {
-      const mine = kinds.filter((k) => k.suites.every((key) => f.suites.some((s) => s.key === key)));
-      const tabs = await page.$$eval(`#${f.key} .tabs button`, (bs) => bs.map((b) => [b.dataset.kind ? `kind ${b.dataset.kind}` : `suite ${b.dataset.suite}`, b.getAttribute("aria-pressed")]));
-      assert.deepEqual(tabs.map(([t]) => t), [...mine.map((k) => `kind ${k.key}`), ...f.suites.map((s) => `suite ${s.key}`)], `${f.key}: its tabs`);
-      assert.equal(tabs[0][1], "true", `${f.key}: its first tab is shown`);
-      for (const k of mine) {
-        const what = `${f.key}, the kind ${k.key}`;
-        await page.click(`#${f.key} .tabs button[data-kind="${k.key}"]`);
-        const rows = k.suites.flatMap((key) => {
-          const s = bySuite.get(key);
-          return s.instances.map((row) => ({ limit: s.limit, v: Object.fromEntries(s.systems.map((x, i) => [x, row[i + 1]])) }));
-        });
-        const answers = (x) => rows.filter((r) => number(r.v[x])).length;
-        const scored = rows.filter((r) => k.systems.some((x) => number(r.v[x])));
-        const total = (x) => scored.reduce((t, r) => t + (number(r.v[x]) ? Math.max(r.v[x], 0.2) : r.limit), 0);
-        assert.equal(k.systems[0], "tddlog", `${what}: tddlog first in the data`);
-        const order = ["tddlog", ...k.systems.slice(1).sort((a, b) => answers(b) - answers(a))];
-        for (const x of order) {
-          assert.equal(k.answers[x], answers(x), `${what}: ${x}'s answers in the data`);
-          assert.ok(Math.abs(k.total[x] - total(x)) < 0.01, `${what}: ${x}'s total time in the data, ${k.total[x]} against ${total(x)}`);
-        }
-        assert.equal(k.instances, rows.length, `${what}: its instances in the data`);
-        assert.equal(k.scored, scored.length, `${what}: the instances some system answers`);
-        const fig = await shown(`#${f.key}`);
-        assert.equal(fig.instances, rows.length, `${what}: its instances`);
-        assert.deepEqual(fig.systems, order, `${what}: its systems, tddlog first and then by their answers`);
-        assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
-        assert.deepEqual(fig.legend, order.map((x) => `answers${answers(x)}of${rows.length},total${duration(k.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
-        assert.ok(fig.axis.includes(`all${rows.length}instances`), `${what}: its axis`);
-        assert.match(fig.axis, /≤0\.2/, `${what}: the time axis starts at 0.2 s`);
-        const missing = order.filter((x) => rows.some((r) => r.v[x] === undefined || r.v[x] === null)).length;
-        assert.equal((await page.$$(`#${f.key} ul.cannot li`)).length, missing, `${what}: the systems not given some of its instances`);
-        drawn++;
+    await page.goto(`${base}results/`);
+    await page.waitForSelector("#view .kind-card");
+    assert.equal(await page.title(), "tddlog results");
+    const cards = await page.$$eval("#view .kinds > a", (as) => as.map((a) => [a.getAttribute("href"), a.querySelector("h3").textContent]));
+    assert.deepEqual(cards, kinds.map((k) => [`#/kind/${k.key}`, k.title]), "the overview: a card a kind");
+    for (const k of kinds) {
+      const what = `the kind ${k.key}`;
+      await visit(`#/kind/${k.key}`, "figure.plot svg.cactus path.line");
+      const rows = k.suites.flatMap((key) => {
+        const s = bySuite.get(key);
+        return s.instances.map((row) => ({ limit: s.limit, v: Object.fromEntries(s.systems.map((x, i) => [x, row[i + 1]])) }));
+      });
+      const answers = (x) => rows.filter((r) => number(r.v[x])).length;
+      const scored = rows.filter((r) => k.systems.some((x) => number(r.v[x])));
+      const total = (x) => scored.reduce((t, r) => t + (number(r.v[x]) ? Math.max(r.v[x], 0.2) : r.limit), 0);
+      assert.equal(k.systems[0], "tddlog", `${what}: tddlog first in the data`);
+      const order = ["tddlog", ...k.systems.slice(1).sort((a, b) => answers(b) - answers(a))];
+      for (const x of order) {
+        assert.equal(k.answers[x], answers(x), `${what}: ${x}'s answers in the data`);
+        assert.ok(Math.abs(k.total[x] - total(x)) < 0.01, `${what}: ${x}'s total time in the data, ${k.total[x]} against ${total(x)}`);
       }
-      for (const s of f.suites) {
-        const what = `${f.key}, the suite ${s.key}`;
-        await page.click(`#${f.key} .tabs button[data-suite="${s.key}"]`);
-        const fig = await shown(`#${f.key}`);
-        assert.equal(fig.instances, s.instances.length, `${what}: its instances`);
-        assert.deepEqual(fig.systems, s.systems, `${what}: its systems`);
-        assert.deepEqual([...fig.lines].sort(), [...s.systems].sort(), `${what}: its lines`);
-        // An answer counts within the suite's limit, as the plot draws it.
-        const answers = s.systems.map((x, i) => s.instances.filter((row) => number(row[i + 1]) && row[i + 1] <= s.limit * 1.001).length);
-        assert.deepEqual(fig.legend, answers.map((a) => `answers${a}of${s.instances.length}`), `${what}: its legend`);
-      }
+      assert.equal(k.instances, rows.length, `${what}: its instances in the data`);
+      assert.equal(k.scored, scored.length, `${what}: the instances some system answers`);
+      const fig = await shown();
+      assert.equal(fig.instances, rows.length, `${what}: its instances`);
+      assert.deepEqual(fig.systems, order, `${what}: its systems, tddlog first and then by their answers`);
+      assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
+      assert.deepEqual(fig.legend, order.map((x) => `answers${answers(x)}of${rows.length},total${duration(k.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
+      assert.ok(fig.axis.includes(`all${rows.length}instances`), `${what}: its axis`);
+      assert.match(fig.axis, /≤0\.2/, `${what}: the time axis starts at 0.2 s`);
+      const missing = order.filter((x) => rows.some((r) => r.v[x] === undefined || r.v[x] === null)).length;
+      assert.equal((await page.$$("#view ul.cannot li")).length, missing, `${what}: the systems not given some of its instances`);
+      const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[1].textContent.trim()));
+      assert.deepEqual(board.map(Number).sort((a, b) => b - a), order.map(answers).sort((a, b) => b - a), `${what}: its systems' answers`);
+      assert.equal(await page.title(), `${k.title} · tddlog results`);
     }
-    assert.equal(drawn, kinds.length, "every kind is a tab of its family");
-    assert.ok(drawn >= 2, `${drawn} kinds`);
+    assert.ok(kinds.length >= 2, `${kinds.length} kinds`);
     console.log(`ok the kinds ${kinds.map((k) => `${k.key} ${k.instances}`).join(", ")}: every system of a kind over all of its instances, its answers and total time`);
+    for (const s of bySuite.values()) {
+      const what = `the suite ${s.key}`;
+      await visit(`#/${s.key}`, "figure.plot svg.cactus path.line");
+      const fig = await shown();
+      assert.equal(fig.instances, s.instances.length, `${what}: its instances`);
+      assert.deepEqual(fig.systems, s.systems, `${what}: its systems`);
+      assert.deepEqual([...fig.lines].sort(), [...s.systems].sort(), `${what}: its lines`);
+      // An answer counts within the suite's limit, as the plot draws it.
+      const answers = s.systems.map((x, i) => s.instances.filter((row) => number(row[i + 1]) && row[i + 1] <= s.limit * 1.001).length);
+      assert.deepEqual(fig.legend, answers.map((a) => `answers${a}of${s.instances.length}`), `${what}: its legend`);
+      const me = s.systems.indexOf("tddlog") + 1;
+      const others = me === 0 ? [] : s.systems.filter((x, i) => x !== "tddlog"
+        && s.instances.some((row) => row[me] !== null && row[i + 1] !== null));
+      assert.equal((await page.$$("#view table.h2h tbody tr:not(.words)")).length, others.length, `${what}: tddlog against each system`);
+    }
+    console.log(`ok ${bySuite.size} suites: each one's systems, and tddlog against each`);
 
-    const second = await page.$("section.family .tabs button[data-suite]");
-    const key = await second.getAttribute("data-suite");
-    await second.click();
-    assert.equal(await second.getAttribute("aria-pressed"), "true");
-    const area = await page.$("section.family svg.cactus rect.hit");
+    // A suite's plot: the time under the pointer; its table sorts by a column.
+    const [first] = bySuite.keys();
+    await visit(`#/${first}`, "figure.plot svg.cactus rect.hit");
+    const area = await page.$("#view svg.cactus rect.hit");
     await area.scrollIntoViewIfNeeded();
     const hit = await area.boundingBox();
     await page.mouse.move(hit.x + hit.width / 2, hit.y + hit.height / 2);
-    assert.match(await page.textContent("section.family .tip"), /^within [0-9.]+ s/);
-    await page.click("section.family details.instances summary");
-    await page.click('section.family table.times th[data-col="1"]');
-    assert.equal(await page.getAttribute('section.family table.times th[data-col="1"]', "aria-sort"), "ascending");
-    console.log(`ok the results page: ${families.map(([id, n]) => `${id} ${n} lines`).join(", ")}; ${key}`);
+    assert.match(await page.textContent("#view .tip"), /^within [0-9.]+ s/);
+    await page.click("#view details.instances summary");
+    await page.click('#view table.times th[data-col="1"]');
+    assert.equal(await page.getAttribute('#view table.times th[data-col="1"]', "aria-sort"), "ascending");
+    // The former page's address of a family of suites, #networks.
+    const old = data.flatMap((d) => d.families).find((f) => kinds.some((k) => k.key === f.key));
+    if (old) {
+      await page.evaluate((h) => { location.hash = h; }, old.key);
+      await page.waitForSelector(`#view[data-route="#/kind/${old.key}"] figure.plot`);
+    }
+    console.log(`ok the results page's plot and table: ${first}`);
+
+    // The benchmarks' data, where the site has it: every suite's families
+    // hold its instances, each once, and each family's file its instances,
+    // and each program's text (in the family's file, or a file of its own)
+    // or why it is not shown. A family's view: its times, an instance's
+    // programs, a system's runs in the drawer; a link to a benchmark's former
+    // page leads to its view.
+    const benchmarks = path.join(site, "results", "benchmarks");
+    let family = null;
+    if (fs.existsSync(path.join(benchmarks, "index.json"))) {
+      const index = JSON.parse(fs.readFileSync(path.join(benchmarks, "index.json"), "utf8"));
+      let nf = 0, nfiles = 0;
+      for (const [suite, fams] of Object.entries(index.suites)) {
+        const s = bySuite.get(suite);
+        assert.ok(s, `benchmarks/index.json: the suite ${suite} is in the results' data`);
+        assert.deepEqual(fams.flatMap((f) => f.instances).sort(), s.instances.map((row) => row[0]).sort(), `${suite}: its families hold its instances`);
+        for (const f of fams) {
+          const fam = JSON.parse(fs.readFileSync(path.join(benchmarks, suite, `${f.key}.json`), "utf8"));
+          assert.deepEqual(fam.instances.map((i) => i.name), f.instances, `${suite}/${f.key}: its instances`);
+          for (const inst of fam.instances) {
+            for (const t of inst.tabs ?? []) {
+              for (const file of t.files) {
+                if (file.src) assert.ok(fs.existsSync(path.join(benchmarks, file.src)), `${suite}/${inst.name}: ${file.src}`);
+                else if (!file.held && !file.archive) assert.ok(file.sha in fam.texts, `${suite}/${inst.name}: the text of ${file.name}`);
+                nfiles++;
+              }
+            }
+            if (inst.tabs && (family === null || (suite === "geni" && family.suite !== "geni"))) {
+              family = { suite, key: f.key, name: inst.name, tabs: inst.tabs.length };
+            }
+          }
+          nf++;
+        }
+      }
+      assert.ok(family, "an instance with its programs");
+      const hash = `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`;
+      await visit(hash, "#programs table.given");
+      assert.equal((await page.$$("#programs table.given tbody tr")).length, family.tabs, `${family.name}: a row a language`);
+      await page.waitForFunction(() => {
+        const pane = document.querySelector("#programs .pane");
+        return pane !== null && !pane.textContent.includes("Loading");
+      });
+      assert.ok(await page.$("#programs .pane .lines pre.src, #programs .pane p.held, #programs .pane p.note"), `${family.name}: the file on show`);
+      await page.click("#view table.grid tbody tr.on td button");
+      await page.waitForSelector("#drawer:not([hidden]) h4");
+      assert.ok((await page.textContent("#drawer h3")).length > 0, "the drawer names its system");
+      await page.keyboard.press("Escape");
+      await page.waitForSelector("#drawer", { state: "hidden" });
+      await page.goto(`${base}results/benchmarks/${family.suite}/${encodeURIComponent(family.name)}.html`);
+      await page.waitForSelector(`#view[data-route="${hash}"] #programs table.given`);
+      console.log(`ok the benchmarks' data: ${nf} families, ${nfiles} files; ${family.suite}/${family.name}'s view and runs`);
+    }
     await context.close();
 
     // Both themes at a desktop's width and a phone's: nothing scrolls
@@ -317,11 +382,22 @@ async function noSidewaysScroll(page, what) {
         assert.equal(await shot.title(), "tddlog guide");
         if (shots) await shot.screenshot({ path: path.join(shots, `guide-${colorScheme}-${width}.png`), fullPage: true });
         }
-        await shot.goto(`${base}results/`);
-        await shot.waitForSelector("section.family svg.cactus path.line");
-        await noSidewaysScroll(shot, `the results, ${colorScheme}, ${width} px`);
-        assert.equal(await shot.title(), "tddlog results");
-        if (shots) await shot.screenshot({ path: path.join(shots, `results-${colorScheme}-${width}.png`), fullPage: true });
+        // The results: the overview, a kind, a suite, and a family with a
+        // system's runs open beside it.
+        const views = [["results", "", ".kind-card"], ["results-kind", `#/kind/${kinds[0].key}`, "figure.plot svg.cactus path.line"],
+          ["results-suite", `#/${first}`, "figure.plot svg.cactus path.line"]];
+        if (family) views.push(["results-family", `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`, "#programs table.given"]);
+        for (const [name, hash, ready] of views) {
+          await shot.goto(`${base}results/${hash}`);
+          await shot.waitForSelector(`#view[data-route="${hash || "#/"}"] ${ready}`);
+          if (name === "results-family") {
+            await shot.click("#view table.grid tbody tr.on td button");
+            await shot.waitForSelector("#drawer:not([hidden]) h4");
+          }
+          await noSidewaysScroll(shot, `${name}, ${colorScheme}, ${width} px`);
+          assert.match(await shot.title(), /tddlog results$/);
+          if (shots) await shot.screenshot({ path: path.join(shots, `${name}-${colorScheme}-${width}.png`), fullPage: true });
+        }
         if (!only) {
         const api = await shot.goto(`${base}api/tddlog/index.html`);
         assert.equal(api.status(), 200, "the API documentation");

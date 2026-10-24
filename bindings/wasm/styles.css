@@ -595,83 +595,158 @@ footer {
 .s-prism-sparse { --s: var(--s-prism-sparse); }
 .s-prism-hybrid { --s: var(--s-prism-hybrid); }
 
-.overview .note { max-width: 52rem; margin-top: 0.8rem; }
-.stats { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; }
-.toc { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; margin-top: 0.8rem; font-size: 14px; font-weight: 500; }
-.toc a { text-decoration: none; }
-.toc a:hover { text-decoration: underline; }
+/* The results page: a rail to browse its kinds, suites and families beside
+   one view, and a system's runs of an instance in a drawer at the right.
+   Its buttons are the plain kind, not the playground's. */
+body.results main { max-width: 100rem; }
+body.results header { margin-bottom: 1rem; }
+.results button { width: auto; font: inherit; }
+.results h2 { margin: 0.3rem 0 0.4rem; font-size: 1.3rem; line-height: 1.25; text-wrap: balance; }
+.results h3 { margin: 1.8rem 0 0.5rem; font-size: 1rem; font-weight: 600; }
+.results h4 { margin: 1.2rem 0 0.3rem; font-size: 13px; font-weight: 600; }
+.results .lede { max-width: 72ch; }
+.results .note { max-width: 80ch; margin-top: 0.5rem; }
+.results p { margin: 0.5rem 0; }
+.muted { color: var(--muted); }
 
-.family h2 { font-size: 1.15rem; }
-.family h3 { margin: 0 0 0.4rem; font-size: 14px; font-weight: 600; }
-.family h3.more {
-  margin: 1.4rem 0 0.6rem;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.family .intro, .family .about { max-width: 52rem; }
-.family .about { margin: 0 0 0.8rem; color: var(--muted); font-size: 14px; }
-
-/* The findings, a card a suite. */
-.findings {
+.shell {
   display: grid;
-  gap: 0.8rem;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  grid-template-columns: 16rem minmax(0, 1fr);
+  gap: 0 2rem;
+  margin-bottom: 2.5rem;
+  border-top: 1px solid var(--line);
 }
 
-.finding {
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.8rem 0.9rem;
+#rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 1rem 0.75rem 1.5rem 0;
+  border-right: 1px solid var(--line);
   font-size: 14px;
-  overflow-wrap: anywhere;
 }
 
-.finding p { margin: 0 0 0.5rem; }
+#rail input { padding: 0.35rem 0.5rem; font-size: 14px; }
+#browse { display: none; }
+#view { min-width: 0; padding-top: 1rem; }
+
+#found p { margin: 0.5rem 0 0.2rem; }
+#found ul, .tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+#found li a { display: flex; flex-direction: column; padding: 0.2rem 0.5rem; border-radius: 5px; text-decoration: none; }
+#found li a:hover { background: var(--accent-fill); }
+#found code { background: none; padding: 0; overflow-wrap: anywhere; }
+#found .n, .tree .n { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 400; }
+
+.tree { margin-top: 0.8rem; display: grid; gap: 1px; }
+.tree ul { margin: 1px 0 0.4rem 0.75rem; display: grid; gap: 1px; }
+.tree a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tree a .n { margin-left: auto; }
+.tree > li > a { font-weight: 600; }
+.tree a:hover { background: var(--accent-fill); }
+.tree a[aria-current] { background: var(--accent-fill); color: var(--accent); font-weight: 600; }
+
+/* A family's dot: tddlog answers all of its instances, some, or none. */
+i.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+i.dot.all { background: var(--accent); }
+i.dot.some { background: var(--amber); }
+
+.crumbs { display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 13px; color: var(--muted); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+.chip {
+  padding: 0.05rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.badge { display: inline-block; margin-left: 0.4rem; padding: 0 0.4rem; border-radius: 4px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0; text-transform: none; background: var(--code); color: var(--muted); border: 1px solid var(--line); }
+.badge.orig { background: var(--accent-fill); color: var(--accent); border-color: transparent; }
+
+details.more { margin: 0.2rem 0 0; }
+details.more summary { color: var(--accent); }
 
 button.plain {
   width: auto;
   padding: 0.15rem 0.6rem;
-  border-color: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 5px;
   background: var(--card);
   color: var(--accent);
   font-size: 12px;
 }
 
-button.plain:hover:not(:disabled) { border-color: var(--accent); }
+button.plain:hover:not(:disabled) { border-color: var(--accent); background: var(--card); }
 
-/* The suites of a family, as buttons that stay pressed. */
-.tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0; scroll-margin-top: 1rem; }
+/* The overview: a card a kind, each with tddlog's answers and the most of
+   another system's, and the totals. */
+.stats { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; margin: 0.4rem 0 0.8rem; }
+.kinds { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); margin-top: 0.8rem; }
+.kinds > a { color: inherit; text-decoration: none; }
+.kind-card { height: 100%; padding: 1rem 1.1rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+.kinds > a:hover .kind-card { border-color: var(--accent); }
+.kind-card h3 { margin: 0; color: var(--accent); }
+.kind-card .n { margin: 0.1rem 0 0.7rem; color: var(--muted); font-size: 13px; }
+.kind-card .total { margin: 0.7rem 0 0; font-size: 13px; color: var(--muted); }
+.kind-card .total b { color: var(--ink); }
 
-.tabs button {
-  width: auto;
-  padding: 0.3rem 0.75rem;
-  border-color: transparent;
-  border-radius: 999px;
-  background: var(--accent-fill);
-  color: var(--accent);
-  font-size: 13px;
+.meter { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; margin: 0.3rem 0; font-size: 13px; }
+.meter .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meter .k { font-variant-numeric: tabular-nums; color: var(--muted); }
+.meter.mine .who { font-weight: 600; }
+.meter .bar, table.board .bar {
+  position: relative;
+  display: inline-block;
+  height: 0.5rem;
+  border-radius: 4px;
+  background: var(--code);
+  vertical-align: middle;
 }
+.meter .bar { width: 100%; }
+table.board .bar { width: 9rem; margin-right: 0.4rem; }
+.meter .bar i, table.board .bar i { position: absolute; inset: 0 auto 0 0; height: auto; border-radius: 4px; background: var(--muted); opacity: 0.55; }
+.meter.mine .bar i, table.board tr.mine .bar i { background: var(--accent); opacity: 1; }
 
-.tabs button:hover:not(:disabled) { border-color: var(--accent); background: var(--card); color: var(--accent); }
-.tabs button[aria-pressed="true"], .tabs button[aria-pressed="true"]:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--card);
-}
+details.how { max-width: 80ch; margin-top: 2rem; }
+details.how p { font-size: 14px; }
 
-/* A suite: its plot, and its findings beside it once there is room; a plot
-   without findings takes the width. */
-.view { display: grid; gap: 0.5rem 1.5rem; }
+/* A kind's and a suite's tables of systems. */
+.results .tscroll { max-height: 36rem; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--card); }
+table.board { font-size: 13px; }
+table.board th, table.board td { padding: 0.35rem 0.7rem; white-space: nowrap; }
+table.board tbody th { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 500; vertical-align: middle; }
+table.board tbody th i.sw { margin-right: 0.5rem; vertical-align: middle; }
+.results .tscroll.whole { max-height: none; }
+table.board .num { text-align: right; font-variant-numeric: tabular-nums; }
+table.board tr.mine th, table.board tr.mine td { font-weight: 600; }
+table.board thead th { position: sticky; top: 0; background: var(--card); }
+table.h2h td.ratio { font-weight: 600; }
+table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
+table.h2h tr.words p { max-width: 80ch; }
+.finding-text { max-width: 80ch; font-size: 14px; }
 
-@media (min-width: 64rem) {
-  .view { grid-template-columns: minmax(0, 2.2fr) minmax(17rem, 1fr); }
-}
+.findings { display: grid; gap: 0.6rem; }
+.finding { margin: 0; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font-size: 14px; }
+.finding summary { color: var(--ink); font-size: 14px; font-weight: 600; }
+.finding p { max-width: 80ch; }
+details.setup { margin-top: 2rem; }
+details.setup dl { margin-top: 0.8rem; font-size: 14px; }
+details.setup dd { max-width: 80ch; }
 
-.view > :only-child { grid-column: 1 / -1; }
-.view aside.finding { align-self: start; }
+/* A plot and its legend. Each system has its colour in every plot. */
 figure.plot { margin: 0 0 0.5rem; min-width: 0; }
 .plot .box { position: relative; }
 
@@ -731,17 +806,13 @@ svg.cactus { display: block; max-width: 100%; touch-action: pan-y; }
 .tip[hidden] { display: none; }
 .tip span { display: flex; align-items: center; gap: 0.4rem; }
 
-/* Every instance's times, in a box that scrolls rather than the page. */
-details.instances { margin-top: 0.6rem; }
-.instances .check { margin: 0.7rem 0 0.5rem; }
+/* The systems that were not given some of the instances of a plot. */
+ul.cannot { margin: 0.6rem 0 0; padding-left: 1.2rem; max-width: 80ch; color: var(--muted); font-size: 13px; }
+ul.cannot li { margin: 0.2rem 0; }
 
-.tscroll {
-  max-height: 34rem;
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
+/* Every instance's times of a suite, sortable. */
+details.instances { margin-top: 2rem; }
+details.instances .check { margin: 0.7rem 0 0.5rem; }
 table.times { font-size: 13px; }
 table.times th, table.times td { padding: 0.25rem 0.6rem; white-space: nowrap; }
 table.times thead th { position: sticky; top: 0; background: var(--card); cursor: pointer; }
@@ -751,11 +822,149 @@ table.times .num { text-align: right; }
 table.times td.best { font-weight: 700; color: var(--accent); }
 table.times td.fail { color: var(--muted); }
 table.hide-quick tr.quick { display: none; }
-.instances .note { margin-top: 0.5rem; }
 
-details.setup dl { margin-top: 0.8rem; font-size: 14px; }
-details.setup dd { max-width: 52rem; }
+/* A grid of instances, or of families, by systems: a system's name upright
+   in its column's head, tddlog's column framed; a time shaded by its place
+   between 0.2 s and the limit; a cell of a system not given the instance
+   hatched. */
+table.grid { width: auto; font-size: 12px; }
+table.grid th, table.grid td { border: 1px solid var(--line); }
+table.grid thead th { position: sticky; top: 0; z-index: 2; padding: 0.4rem 0.15rem; vertical-align: bottom; background: var(--card); text-transform: none; letter-spacing: 0; }
+table.grid thead th:first-child { left: 0; z-index: 3; padding: 0.4rem 0.6rem; vertical-align: bottom; }
+table.grid thead th.sys span { display: inline-block; max-height: 9rem; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; }
+table.grid thead th.mine { color: var(--accent); font-weight: 700; }
+table.grid tbody th { position: sticky; left: 0; z-index: 1; padding: 0.25rem 0.6rem; background: var(--card); white-space: nowrap;
+  font: 500 12px/1.4 var(--mono); text-transform: none; letter-spacing: 0; color: var(--ink); }
+table.grid tbody th .n { color: var(--muted); font-family: var(--sans); }
+table.grid tbody tr.on th { background: var(--accent-fill); }
+table.grid td { min-width: 3.2rem; height: 1.9rem; padding: 0; text-align: center; font-family: var(--mono); }
+table.grid td.mine { border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+table.grid td.none { background: repeating-linear-gradient(135deg, transparent 0 4px, var(--line) 4px 5px); }
+table.grid td button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0.2rem 0.2rem;
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in oklab, var(--amber) calc(var(--p, 0) * 62%), var(--card));
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+table.grid td button:hover:not(:disabled) { outline: 2px solid var(--accent); outline-offset: -2px; background: color-mix(in oklab, var(--amber) calc(var(--p, 0) * 62%), var(--card)); color: var(--ink); }
+table.grid td.best button { font-weight: 700; box-shadow: inset 0 -3px 0 var(--accent); }
+table.grid td.fail button, table.grid td.fail button:hover:not(:disabled) { background: var(--code); color: var(--muted); }
+table.grid td.bad button, table.grid td.bad button:hover:not(:disabled) { background: color-mix(in oklab, var(--bad) 16%, var(--card)); color: var(--bad); }
+table.grid.counts td:not(.none) { padding: 0.2rem; background: color-mix(in oklab, var(--accent) calc(var(--p, 0) * 40%), var(--card)); }
 
-/* The systems that were not given some of the problems of a plot. */
-ul.cannot { margin: 0.6rem 0 0; padding-left: 1.2rem; max-width: 52rem; color: var(--muted); font-size: 13px; }
-ul.cannot li { margin: 0.2rem 0; }
+.key { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1rem; margin: 0.5rem 0 0; font-size: 12px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 0.3rem; }
+i.heat { display: inline-block; width: 1.8rem; height: 0.85rem; border: 1px solid var(--line); background: var(--card); }
+i.heat.hi { background: color-mix(in oklab, var(--amber) 62%, var(--card)); }
+.times-box > button.plain { margin-top: 0.5rem; }
+
+/* An instance's programs: the instance, the languages and their files, and
+   the file on show, beside the original where asked. */
+.pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; margin: 0.4rem 0; }
+.pick select { width: auto; max-width: 100%; padding: 0.25rem 0.4rem; font: 13px var(--mono); }
+.pick code.inst { background: none; padding: 0; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--card); }
+.seg a { padding: 0.15rem 0.6rem; border-right: 1px solid var(--line); color: var(--ink); font: 12px/1.6 var(--mono); text-decoration: none; }
+.seg a:last-child { border-right: 0; }
+.seg a:hover { background: var(--accent-fill); }
+.seg a[aria-current] { background: var(--accent); color: var(--card); }
+
+table.given { font-size: 13px; }
+table.given th, table.given td { padding: 0.45rem 0.7rem; vertical-align: top; }
+table.given tbody th { white-space: nowrap; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ink); border-bottom: 1px solid var(--line); }
+.files { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+button.file {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--ink);
+  font: 12px/1.5 var(--mono);
+  text-align: left;
+}
+button.file small { margin-left: 0.4rem; color: var(--muted); font-family: var(--sans); }
+button.file:hover:not(:disabled) { border-color: var(--accent); background: var(--card); color: var(--ink); }
+button.file.on, button.file.on:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-fill); }
+
+.viewer { margin-top: 0.9rem; }
+.tab-says { max-width: 90ch; font-size: 14px; }
+.tab-says p { margin: 0.3rem 0; }
+dl.cmds { margin: 0.4rem 0 0.6rem; font-size: 12px; }
+dl.cmds code { overflow-wrap: anywhere; line-height: 1.5; }
+.viewer > label.check { margin: 0.4rem 0 0.6rem; }
+.panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; }
+.panes.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.pane { min-width: 0; }
+.fhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.9rem; padding: 0.45rem 0.7rem; border: 1px solid var(--line);
+  border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--card); font-size: 12px; color: var(--muted); }
+.fhead code.fname { padding: 0; background: none; color: var(--ink); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.fhead .sha { font-family: var(--mono); font-size: 11px; overflow-wrap: anywhere; }
+.pane p.made, .pane p.held { margin: 0; padding: 0.45rem 0.7rem; border: 1px solid var(--line); border-bottom: 0; background: var(--card); font-size: 13px; color: var(--muted); }
+.pane p.held { border-bottom: 1px solid var(--line); border-radius: 0 0 8px 8px; background: var(--code); color: var(--ink); }
+.pane .code > .note { padding: 0.45rem 0.7rem; margin: 0; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px; background: var(--card); max-width: none; }
+.pane .code > .note:first-child { border-top: 1px solid var(--line); }
+.lines { display: flex; max-height: 32rem; overflow: auto; border: 1px solid var(--line); background: var(--code); }
+.pane .code > .lines:last-child { border-radius: 0 0 8px 8px; }
+.lines pre { margin: 0; max-height: none; overflow: visible; border: 0; border-radius: 0; background: none; font: 12.5px/1.5 var(--mono); }
+.lines pre.gutter { position: sticky; left: 0; flex: none; padding: 0.5rem 0.6rem 0.5rem 0.7rem; text-align: right; color: var(--muted); opacity: 0.7;
+  background: var(--code); border-right: 1px solid var(--line); user-select: none; }
+.lines pre.src { flex: 1 0 auto; padding: 0.5rem 0.8rem; }
+
+details.answers { margin-top: 1.8rem; }
+details.answers > summary { color: var(--ink); font-size: 1rem; font-weight: 600; }
+details.answers .tscroll { margin-top: 0.6rem; }
+details.answers tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-spacing: 0; color: var(--ink); white-space: nowrap; }
+
+/* A system's runs of an instance, beside the view. */
+#drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  width: min(36rem, 100vw);
+  overflow-y: auto;
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) calc(1.5rem + env(safe-area-inset-bottom, 0px)) 1.25rem;
+  background: var(--card);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.14);
+  font-size: 14px;
+}
+#drawer[hidden] { display: none; }
+#drawer h3 { margin: 0.2rem 0 0.3rem; font-size: 1.15rem; }
+#drawer .close { position: absolute; top: calc(0.8rem + env(safe-area-inset-top, 0px)); right: max(0.8rem, env(safe-area-inset-right, 0px)); }
+#drawer > p.muted { margin: 0; padding-right: 4rem; overflow-wrap: anywhere; }
+code.cmd { display: block; margin: 0.3rem 0; padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 6px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+details.run { margin-top: 0.6rem; padding: 0.5rem 0.7rem; border: 1px solid var(--line); border-radius: 6px; }
+details.run > summary { color: var(--ink); font-size: 13px; }
+details.run .tscroll { margin-top: 0.4rem; }
+table.runs { font-size: 12px; }
+table.runs th, table.runs td { padding: 0.2rem 0.5rem; text-align: left; vertical-align: top; white-space: nowrap; }
+table.runs td.sizes { min-width: 14rem; white-space: normal; color: var(--muted); }
+table.runs tr.err td { white-space: normal; }
+table.runs tr.err pre { margin: 0.2rem 0; max-height: 12rem; background: color-mix(in oklab, var(--bad) 10%, var(--card)); }
+
+@media (max-width: 52rem) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  #rail { position: static; max-height: none; padding: 0.75rem 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  #browse { display: inline-block; margin-bottom: 0.5rem; }
+  #rail #tree { display: none; }
+  #rail.open #tree { display: block; }
+  .panes.two { grid-template-columns: minmax(0, 1fr); }
+  table.board .bar { width: 4rem; }
+  .meter { grid-template-columns: 7.5rem minmax(0, 1fr) auto; }
+  table.given thead { display: none; }
+  table.given tr { display: grid; }
+  table.given tbody th, table.given td { display: block; border-bottom: 0; padding-bottom: 0.2rem; }
+  table.given tr > :last-child { padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tree a, table.grid td button { transition: background-color 0.12s; }
+}

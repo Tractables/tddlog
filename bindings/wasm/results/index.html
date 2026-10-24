@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tddlog results</title>
-<meta name="description" content="tddlog's release run against ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, ProvSQL, Dice, Alea.jl, Roulette and further program systems: every suite as plots and a table of times.">
+<meta name="description" content="tddlog's release run against ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, ProvSQL, Dice, Alea.jl, Roulette and further program systems: each kind of problem, each suite and each benchmark, with its programs in every language and every run.">
 <script src="../theme.js"></script>
 <link rel="stylesheet" href="../styles.css">
 </head>
-<body>
+<body class="results">
 
 <main>
 
@@ -20,11 +20,9 @@
     and aspmc on logic programs, Ace, Merlin, pyAgrum, pgmpy, libDAI and
     TensorInference.jl on Bayesian and Markov networks, ProvSQL on
     probabilistic databases, and Dice, Alea.jl, Roulette, Geni, noDice, Psi,
-    Genfer, SPPL, Pluck, Storm and PRISM on probabilistic programs.
-    Each system ran single-threaded, in the same job and the same lanes of
-    one machine as the systems it is compared with, and every answer of
-    tddlog's is checked against a reference. Where another system is faster,
-    the findings say so.</p>
+    Genfer, SPPL, Pluck, Storm and PRISM on probabilistic programs. Each
+    benchmark shows its program in every language it was given in, and
+    every run.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="../">Playground</a>
@@ -38,41 +36,21 @@
   </nav>
 </header>
 
-<section class="card overview">
-  <div id="stats" class="stats"></div>
-  <nav id="toc" class="toc" aria-label="Families of suites"></nav>
-  <p class="note">A plot counts the instances each system answers within a
-  time limit, on a log scale from 0.2 s to the suite's limit: a line further
-  up and to the left is better, and a run that takes less than 0.2 s counts
-  at 0.2 s, since differences of a few milliseconds of start-up are not
-  compared. A family's first plots are its kinds of problems, as in the
-  README. A kind is one set of instances, the programs naturally written in
-  the languages of that kind, and its systems are those whose language is
-  of that kind, with ProbLog, PITA and aspmc on every kind: tddlog reads
-  ProbLog, and they are given the program tddlog reads. The bit-blasted
-  circuits are a kind of their own: Alea.jl compiles each of these
-  programs, written in Alea.jl, to a circuit, and every other system is
-  given that circuit, an intermediate representation rather than the
-  program as written. Every system of a kind is tried on all of its
-  instances, and an instance a system does not answer counts as
-  unanswered, whatever the reason: out of time or memory, a wrong answer,
-  a program the system cannot express, or one it was not given. The
-  legend gives each system's answers and its total time over the instances
-  that some system of the kind answers, a run that does not answer counted
-  at its suite's time limit and a time under 0.2 s at 0.2 s; the README
-  gives beside it the totals over the instances both tddlog and the other
-  system answer. A suite's plot draws the systems that were given its
-  instances. The findings compare tddlog with another system on the
-  instances both answer: where each is faster, by how much, and their
-  total times over those instances. An instance that both finish in under
-  0.2 s counts neither as a win nor as a loss. The numbers come from the
-  same records as the README's and
-  <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>'s.</p>
-  <noscript><p class="note">The plots and tables of this page need
-  JavaScript; the same results are in docs/benchmarks.md on the baselines branch.</p></noscript>
-</section>
+<div class="shell">
+  <aside id="rail" aria-label="Browse the results">
+    <button id="browse" class="plain" type="button" aria-expanded="false" aria-controls="tree">Browse the results</button>
+    <input id="search" type="search" placeholder="Find an instance" aria-label="Find an instance by its name" autocomplete="off">
+    <div id="found"></div>
+    <nav id="tree" aria-label="Kinds, suites and families"></nav>
+  </aside>
+  <div id="view">
+    <p class="note">Loading the results…</p>
+    <noscript><p class="note">The plots and tables of this page need
+    JavaScript; the same results are in docs/benchmarks.md on the baselines branch.</p></noscript>
+  </div>
+</div>
 
-<div id="families"></div>
+<aside id="drawer" hidden aria-label="A system's runs of an instance"></aside>
 
 <footer>
   tddlog is open source under the Apache-2.0 license:
@@ -84,6 +62,7 @@
 
 </main>
 
+<script src="../code.js"></script>
 <script src="results.js"></script>
 
 </body>

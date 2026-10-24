@@ -47,15 +47,23 @@ examples open in the playground through `?example=<key>`, and the browser
 test checks that each key it links to is one of `examples.js`.
 
 The results page shows the release run against every exact system that
-accepts a suite's programs: for each kind of problem, the instances each
-system answers within a time limit and its total time, as the README's
-figures; then for each suite a plot, the findings and a table of every
-instance's times. `results/results.js` draws it from `suites.json` (the
-networks and the logic programs) and `ppl.json` (the programs of Dice,
-Alea.jl, Roulette and Geni). Both are generated from the release run's
-records, as the README's results and the baselines branch's
-docs/benchmarks.md are, so the three change together; they are not
-edited by hand.
+accepts a suite's programs, one view at a time, named by the address's
+hash and browsed from a rail beside it: an overview of the kinds of
+problems; for each kind, the instances each system answers within a time
+limit and its total time, as the README's figures; for each suite a plot,
+tddlog against each system, the findings, its families and a table of
+every instance's times; and for each family of instances their times,
+each instance's programs in every language a system was given, its
+answers, and every run of a system in a drawer beside the view.
+`results/results.js` draws it from `suites.json` (the networks and the
+logic programs) and `ppl.json` (the programs of Dice, Alea.jl, Roulette
+and Geni), and from `benchmarks/`, a JSON file per family, where the site
+has it. All are generated from the release run's records, as the README's
+results and the baselines branch's docs/benchmarks.md are, so they change
+together; they are not edited by hand. `benchmarks/` holds the
+baselines' programs, so it is on the baselines branch, which the Pages
+workflow fetches it from. `404.html` sends a link to a benchmark's former
+page (`results/benchmarks/SUITE/NAME.html`) to its view.
 
 ## Memory
 
@@ -127,5 +135,5 @@ older file a browser still holds.
 ## Logo
 
 `docs/logo.svg` is the project logo. Site assembly copies it to the site root
-and adds it to the playground, guide, results and benchmark pages with the
-page's cache stamp. The binding documentation and Rust API use the same SVG.
+and adds it to the playground, guide and results pages with the page's
+cache stamp. The binding documentation and Rust API use the same SVG.
