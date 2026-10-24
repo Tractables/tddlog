@@ -18,7 +18,7 @@ tddlog computes exact probabilities for ProbLog programs, and for
 Bayesian networks and discrete probabilistic programs written in ProbLog,
 by compiling them into tree decision diagrams. This package calls the same Rust implementation as the
 [command line and Rust crate](https://github.com/Tractables/tddlog) and
-the [C library](https://github.com/Tractables/tddlog/blob/main/bindings/c/README.md).
+the [C library](https://tractables.github.io/tddlog/c/).
 
 ## Install
 
@@ -78,7 +78,7 @@ program tddlog cannot answer raises `tddlog.ParseError`,
 prints. `solve` releases the interpreter lock, so threads can solve
 several programs at once.
 
-The [API reference](https://tractables.github.io/tddlog/python/#reference)
+The [API reference](https://tractables.github.io/tddlog/python/reference.html)
 documents each function and exception, `examples/` holds this program
 and one built from Python data, and the
 [guide](https://tractables.github.io/tddlog/guide/) describes the

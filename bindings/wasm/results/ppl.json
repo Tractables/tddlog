@@ -743,7 +743,8 @@
     "problog":89720.95,
     "pita":87941.156,
     "aspmc":65291.359
-   }
+   },
+   "losses":["Where others win: PRISM and Storm answer Geni's three largest router networks, which tddlog does not, by value iteration over decision diagrams in double precision; their exact engines time out from 18 to 20 routers."]
   },
   {
    "key":"circuits",
@@ -787,7 +788,8 @@
     "problog":102079.831,
     "pita":95260.301,
     "aspmc":96794.881
-   }
+   },
+   "losses":["Where others win: Alea.jl on 65 circuits, six of which tddlog does not answer, and Roulette on 34; Genfer on the population models, which it answers in milliseconds; Psi on two linear regressions it solves symbolically."]
   }
  ]
 }

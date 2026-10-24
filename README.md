@@ -40,9 +40,14 @@ README this file replaces here.
   `bench.py` wrote and handed them (a file larger than 1 MB by its first
   64 kB, with its size and SHA-256), how each was made, the command each
   system ran, and every repetition's time, answers and sizes. The files
-  of a benchmark written from data the repository does not ship (Ace's
-  and Biomine's archives, the UAI sets, the bnlearn networks) are shown
-  by their size, SHA-256 and where the data is downloaded.
+  of a benchmark written from data the repository does not ship and whose
+  licence to redistribute is not established (the UAI sets, the bnlearn
+  networks) are shown by their size, SHA-256 and where the data is
+  downloaded. Those written from data licensed for academic or
+  non-commercial research use (Ace's and Biomine's archives) are shown,
+  each with a header in its comment syntax that names the data, its
+  licence and its URL and is not part of the file the systems read (a
+  format without comments says so on the line above the file).
 - `docs/baselines.md`: how to install each baseline and how `bench.py`
   runs it, cited below by section.
 - The tests of the above: `tests/test_bench.py`, `test_alea_bench.py`,

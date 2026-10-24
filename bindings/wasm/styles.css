@@ -9,22 +9,24 @@
   --card: #ffffff;
   --line: #e0e0d9;
   --ink: #1d1f21;
-  --muted: #6c7075;
+  --muted: #5f6368;
   --accent: #2070a8;
   --accent-fill: #dbe9f6;
+  --accent-ink: #1a5d8c;
   --amber: #d99a2b;
   --amber-fill: #fbeed0;
   --code: #f2f2ed;
   --bad: #b3261e;
   /* Syntax highlighting (code.js): comments, strings, numbers, keywords
-     and operators, variables, called names, types and the prompt. */
-  --t-com: #6c7075;
+     and operators, variables, called names, types and the prompt; each,
+     and --muted, at least 4.5:1 on --code (tests/browser.cjs checks). */
+  --t-com: #5f6368;
   --t-str: #2a7a3b;
   --t-num: #a35200;
   --t-kw: #8a3ab9;
-  --t-var: #9a6700;
+  --t-var: #8a5c00;
   --t-fn: #2070a8;
-  --t-typ: #0e7c86;
+  --t-typ: #0b6e77;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -38,6 +40,7 @@
     --muted: #9aa1a9;
     --accent: #6fb3e6;
     --accent-fill: #1e3448;
+    --accent-ink: #6fb3e6;
     --amber: #e8a830;
     --amber-fill: #46381a;
     --code: #15181b;
@@ -61,6 +64,7 @@
   --muted: #9aa1a9;
   --accent: #6fb3e6;
   --accent-fill: #1e3448;
+  --accent-ink: #6fb3e6;
   --amber: #e8a830;
   --amber-fill: #46381a;
   --code: #15181b;
@@ -185,7 +189,7 @@ label {
 }
 
 /* The examples are the way in for most readers, so they come first and look
-   like something to press. */
+   like something to press; the one in the editor is pressed. */
 .examples {
   display: flex;
   flex-wrap: wrap;
@@ -195,28 +199,39 @@ label {
 }
 
 .examples .lead { font-size: 14px; font-weight: 500; }
-#examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.examples #examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
-#examples button {
+.examples #examples button {
   width: auto;
   padding: 0.3rem 0.75rem;
   border-color: transparent;
   border-radius: 999px;
   background: var(--accent-fill);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-size: 13px;
 }
 
-#examples button:hover:not(:disabled) {
+.examples #examples button:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--card);
   color: var(--accent);
 }
 
-#examples button.chosen, #examples button.chosen:hover:not(:disabled) {
+.examples #examples button[aria-pressed="true"], .examples #examples button[aria-pressed="true"]:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--card);
+}
+
+/* Where a benchmark of the results came from, or why it did not open. */
+.source {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 5px 5px 0;
+  background: var(--code);
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
 textarea, select, input {
@@ -229,21 +244,96 @@ textarea, select, input {
   font: 15px/1.4 var(--sans);
 }
 
-textarea {
+/* The editor: the program's text in the textarea is transparent, and the
+   same text in colours lies under it in a pre that app.js moves as the
+   textarea scrolls. The two lay the text out alike, character for
+   character: the same font, size, line height, padding, border width, tabs
+   and spacing, and no wrapping. A long program, or forced colours, shows
+   the textarea's own text. */
+.editor {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--code);
+}
+
+.editor textarea, .editor pre {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font: 13px/1.5 var(--mono);
+  font-variant-ligatures: none;
+  font-kerning: none;
+  letter-spacing: 0;
+  word-spacing: 0;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.editor textarea {
+  position: relative;
+  z-index: 1;
   display: block;
   height: 22rem;
   resize: vertical;
-  font: 13px/1.5 var(--mono);
-  background: var(--code);
-  tab-size: 4;
-  white-space: pre;
   overflow: auto;
+  border-color: var(--line);
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--ink);
 }
 
-textarea:focus, select:focus, input:focus, button:focus-visible, summary:focus-visible {
+.editor textarea::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+.editor pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  max-height: none;
+  overflow: visible;
+  background: none;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+/* Upright, so that a comment's characters are as wide as the textarea's. */
+.editor pre .t-com { font-style: normal; }
+
+/* The line a parse error names, under its text. */
+.editor .error-line {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  height: 1.5em;
+  margin-top: 0.45rem;
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+}
+
+.editor.plain textarea { color: var(--ink); -webkit-text-fill-color: var(--ink); }
+.editor.plain pre { display: none; }
+
+/* WebKit on iOS insets a textarea's text by 3px on each side. */
+@supports (-webkit-touch-callout: none) {
+  .editor pre { padding-left: calc(0.55rem + 3px); padding-right: calc(0.55rem + 3px); }
+}
+
+@media (forced-colors: active) {
+  .editor pre { display: none; }
+  .editor textarea { color: CanvasText; -webkit-text-fill-color: CanvasText; }
+}
+
+.editor:focus-within, select:focus, input:focus, button:focus-visible, summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+.editor textarea:focus { outline: none; }
 
 .controls { display: grid; gap: 0.75rem; align-content: start; }
 .field { margin: 0; }
@@ -282,24 +372,41 @@ button:hover:not(:disabled) { background: var(--card); color: var(--accent); }
 body.busy, body.busy :not(#cancel) { cursor: progress; }
 button:disabled { opacity: 0.45; cursor: default; }
 
-/* The small buttons that sit in a line of text. */
-#theme, #link {
+/* The small buttons that sit in a line of text; those under the editor
+   and "Show all" quieter. */
+#theme, #link, #copy, .tools button, #answers button.all {
   width: auto;
   padding: 0.1rem 0.6rem;
   font-size: 12px;
 }
 
-#status, .note, .hint {
+.tools button, #answers button.all { background: var(--card); color: var(--accent); }
+.tools button:hover:not(:disabled), #answers button.all:hover { background: var(--accent); color: var(--card); }
+
+.status, .note, .hint {
   margin: 0;
   font-size: 13px;
   color: var(--muted);
 }
 
-.program-input .hint { margin-top: 0.4rem; }
+/* The hint, and the buttons to open and save a program, under the editor. */
+.under {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.under .hint { flex: 1 1 22rem; }
+.tools { display: flex; flex: none; gap: 0.4rem; }
+#clock { font-variant-numeric: tabular-nums; }
 #strategy-note { margin-top: 0.3rem; }
 
 .result-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 0.6rem;
   margin-bottom: 0.9rem;
@@ -343,6 +450,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 
 #answers { min-width: 0; overflow-x: auto; }
+#answers .note:not(:first-child) { margin-top: 0.6rem; }
 
 .failed {
   margin: 0;
@@ -457,6 +565,29 @@ footer {
   color: var(--muted);
 }
 
+/* The playground on a phone: the lede one sentence, the examples one row
+   that scrolls sideways, fading at its edge, so that the editor comes on
+   the first screen; and 16px text in the fields, which iOS otherwise
+   zooms into. */
+@media (max-width: 52rem) {
+  .lede .aside { display: none; }
+  .examples { display: block; }
+  .examples #examples {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    margin: 0.4rem -1.1rem 0;
+    padding: 3px 2.5rem 3px 1.1rem;
+    scroll-padding-left: 1.1rem;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+  }
+  .examples #examples::-webkit-scrollbar { display: none; }
+  .examples #examples button { flex: none; white-space: nowrap; scroll-snap-align: start; }
+  .io select, .io input, .editor textarea, .editor pre { font-size: 16px; }
+}
+
 /* The guide's page: one column of prose, a card per part. */
 .prose { max-width: 46rem; }
 .prose h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
@@ -466,43 +597,66 @@ footer {
 .prose dt { margin-top: 0.7rem; }
 .prose dd { margin: 0.2rem 0 0 1.4rem; }
 .prose .try { margin-top: 0.4rem; font-weight: 500; }
+.prose h4 { margin: 1.2rem 0 0.3rem; font-size: 0.95rem; font-weight: 600; }
 .contents ol { margin: 0; padding-left: 1.4rem; }
 
+/* A heading's link to itself (the guide's script adds it), shown where the
+   pointer or the focus is, and faintly on a screen without a pointer. */
+.prose .anchor { color: var(--muted); font-weight: 400; text-decoration: none; opacity: 0; }
+.prose :is(h2, h3, h4):hover .anchor, .prose .anchor:focus-visible { opacity: 1; }
+@media (hover: none) { .prose .anchor { opacity: 0.6; } }
+/* A term another page links to stands out. */
+.prose dt:target { background: var(--accent-fill); border-radius: 3px; }
+
+/* The guide's contents beside its text once there is room for both,
+   staying in view as the text scrolls, its glosses left out. */
+@media (min-width: 72rem) {
+  .guide-columns {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 46rem);
+    gap: 0 1.5rem;
+    align-items: start;
+  }
+  .guide-columns > .contents {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    font-size: 14px;
+  }
+  .guide-columns > .contents .gloss { display: none; }
+}
+
 /* The results page. Each system has a colour of its own, the same in every
-   plot; the light and the dark steps are each checked for contrast against
-   the card they are drawn on and for telling neighbours apart under colour
-   blindness. Roulette's olive and Pluck's navy keep apart from aspmc's
-   green and libDAI's teal, which they meet in the plot of every problem.
-   Psi (grey), Storm (teal) and PRISM (brown) share plots with tddlog,
-   Dice and noDice, and keep apart from their blue, purple and yellow. */
+   plot; the light and the dark steps each have a contrast of 3:1 or more
+   with the page and the card they are drawn on. A kind has more systems
+   than there are colours that stay apart under colour blindness, so a plot
+   of more than five lines draws tddlog's and the three that answer the most
+   in colour and the others grey until the reader colours them, and every
+   line is named in the legend and at its end (results.js). */
 :root {
   --s-tddlog: #2070a8;
-  --s-ace: #eb6834;
-  --s-merlin: #1baf7a;
-  --s-problog: #eda100;
-  --s-pita: #e87ba4;
+  --s-ace: #df6331;
+  --s-merlin: #189a6b;
+  --s-problog: #b67c00;
+  --s-pita: #c86a8d;
   --s-aspmc: #008300;
   --s-dice: #6250d6;
   --s-alea: #e34948;
   --s-roulette: #6b8e23;
   --s-agrum: #7a4fb3;
-  --s-pgmpy: #b0842a;
-  --s-libdai: #2f8f6e;
+  --s-pgmpy: #7d6b4f;
+  --s-libdai: #1d6b55;
   --s-tensorinference: #a8324f;
   --s-provsql: #5a6b78;
   --s-geni: #b02a6b;
-  --s-nodice: #9a7b0a;
+  --s-nodice: #8e6cc9;
   --s-psi: #4d4d4d;
   --s-genfer: #c0392b;
-  --s-sppl: #7a5230;
+  --s-sppl: #8a3f8f;
   --s-pluck: #1f3a93;
-  --s-storm-sparse: #00838f;
   --s-storm: #00838f;
-  --s-storm-exact: #4fb3bb;
-  --s-storm-dd: #005a62;
-  --s-prism-sparse: #8c564b;
   --s-prism: #8c564b;
-  --s-prism-hybrid: #b88a80;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -517,23 +671,18 @@ footer {
     --s-dice: #9085e9;
     --s-alea: #e66767;
     --s-agrum: #a58be0;
-    --s-pgmpy: #d9b45e;
+    --s-pgmpy: #c2ae8f;
     --s-libdai: #6fd2ad;
     --s-tensorinference: #e47f98;
     --s-provsql: #9fb0bd;
     --s-geni: #ee7fb0;
-    --s-nodice: #e6c453;
+    --s-nodice: #c4b5fd;
     --s-psi: #bdbdbd;
     --s-genfer: #f08a7c;
-    --s-sppl: #c9a07a;
+    --s-sppl: #b86fb8;
     --s-pluck: #8fa8f0;
-    --s-storm-sparse: #4fc3cf;
     --s-storm: #4fc3cf;
-    --s-storm-exact: #9ee0e6;
-    --s-storm-dd: #2a95a0;
-    --s-prism-sparse: #d2a679;
     --s-prism: #d2a679;
-    --s-prism-hybrid: #e8cba8;
   }
 }
 
@@ -548,23 +697,18 @@ footer {
   --s-dice: #9085e9;
   --s-alea: #e66767;
   --s-agrum: #a58be0;
-  --s-pgmpy: #d9b45e;
+  --s-pgmpy: #c2ae8f;
   --s-libdai: #6fd2ad;
   --s-tensorinference: #e47f98;
   --s-provsql: #9fb0bd;
   --s-geni: #ee7fb0;
-  --s-nodice: #e6c453;
+  --s-nodice: #c4b5fd;
   --s-psi: #bdbdbd;
   --s-genfer: #f08a7c;
-  --s-sppl: #c9a07a;
+  --s-sppl: #b86fb8;
   --s-pluck: #8fa8f0;
-  --s-storm-sparse: #4fc3cf;
   --s-storm: #4fc3cf;
-  --s-storm-exact: #9ee0e6;
-  --s-storm-dd: #2a95a0;
-  --s-prism-sparse: #d2a679;
   --s-prism: #d2a679;
-  --s-prism-hybrid: #e8cba8;
 }
 
 .s-tddlog { --s: var(--s-tddlog); }
@@ -589,11 +733,6 @@ footer {
 .s-pluck { --s: var(--s-pluck); }
 .s-storm { --s: var(--s-storm); }
 .s-prism { --s: var(--s-prism); }
-.s-storm-sparse { --s: var(--s-storm-sparse); }
-.s-storm-exact { --s: var(--s-storm-exact); }
-.s-storm-dd { --s: var(--s-storm-dd); }
-.s-prism-sparse { --s: var(--s-prism-sparse); }
-.s-prism-hybrid { --s: var(--s-prism-hybrid); }
 
 /* The results page: a rail to browse its kinds, suites and families beside
    one view, and a system's runs of an instance in a drawer at the right.
@@ -601,6 +740,17 @@ footer {
 body.results main { max-width: 100rem; }
 body.results header { margin-bottom: 1rem; }
 .results button { width: auto; font: inherit; }
+/* A button that reads as the text it is: a sortable header, a legend's name. */
+.results button.bare, .results button.bare:hover:not(:disabled) {
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
 .results h2 { margin: 0.3rem 0 0.4rem; font-size: 1.3rem; line-height: 1.25; text-wrap: balance; }
 .results h3 { margin: 1.8rem 0 0.5rem; font-size: 1rem; font-weight: 600; }
 .results h4 { margin: 1.2rem 0 0.3rem; font-size: 13px; font-weight: 600; }
@@ -633,10 +783,11 @@ body.results header { margin-bottom: 1rem; }
 #view { min-width: 0; padding-top: 1rem; }
 
 #found p { margin: 0.5rem 0 0.2rem; }
+#found p:empty { display: none; }
 #found ul, .tree, .tree ul { list-style: none; margin: 0; padding: 0; }
-#found li a { display: flex; flex-direction: column; padding: 0.2rem 0.5rem; border-radius: 5px; text-decoration: none; }
-#found li a:hover { background: var(--accent-fill); }
-#found code { background: none; padding: 0; overflow-wrap: anywhere; }
+#found li { display: flex; flex-direction: column; padding: 0.2rem 0.5rem; border-radius: 5px; color: var(--accent); cursor: pointer; overflow-wrap: anywhere; }
+#found li:hover, #found li[aria-selected="true"] { background: var(--accent-fill); }
+#found li[aria-selected="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
 #found .n, .tree .n { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 400; }
 
 .tree { margin-top: 0.8rem; display: grid; gap: 1px; }
@@ -671,6 +822,8 @@ i.dot.some { background: var(--amber); }
   font-size: 12px;
   white-space: nowrap;
 }
+/* The reference, which no system's run reads. */
+.chip.ref { border-style: dashed; white-space: normal; }
 
 .badge { display: inline-block; margin-left: 0.4rem; padding: 0 0.4rem; border-radius: 4px; font-size: 11px; font-weight: 600;
   letter-spacing: 0; text-transform: none; background: var(--code); color: var(--muted); border: 1px solid var(--line); }
@@ -723,8 +876,21 @@ table.board .bar { width: 9rem; margin-right: 0.4rem; }
 details.how { max-width: 80ch; margin-top: 2rem; }
 details.how p { font-size: 14px; }
 
-/* A kind's and a suite's tables of systems. */
+/* A kind's and a suite's tables of systems. A table scrolls in its box, with
+   a shade at the right edge while more of it is to the right. */
 .results .tscroll { max-height: 36rem; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--card); }
+.edge { position: relative; }
+.edge.more::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 1.5rem;
+  border-radius: 0 6px 6px 0;
+  background: linear-gradient(to right, transparent, color-mix(in oklab, var(--ink) 14%, transparent));
+  pointer-events: none;
+}
 table.board { font-size: 13px; }
 table.board th, table.board td { padding: 0.35rem 0.7rem; white-space: nowrap; }
 table.board tbody th { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 500; vertical-align: middle; }
@@ -737,6 +903,8 @@ table.h2h td.ratio { font-weight: 600; }
 table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
 table.h2h tr.words p { max-width: 80ch; }
 .finding-text { max-width: 80ch; font-size: 14px; }
+ul.losses { max-width: 80ch; margin: 0; padding-left: 1.2rem; font-size: 14px; }
+ul.losses li { margin: 0.3rem 0; }
 
 .findings { display: grid; gap: 0.6rem; }
 .finding { margin: 0; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font-size: 14px; }
@@ -760,8 +928,13 @@ figure.plot { margin: 0 0 0.5rem; min-width: 0; }
   font-size: 13px;
 }
 
-.legend li { display: flex; align-items: center; gap: 0.4rem; cursor: default; }
+.legend button { display: flex; align-items: center; gap: 0.4rem; }
+.legend button[aria-pressed="false"] > span:not(.n) { color: var(--muted); }
 .legend .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+/* A line's number at its end in a narrow plot. */
+.legend .no { display: inline-grid; place-items: center; min-width: 1.15rem; height: 1.15rem; border-radius: 50%; background: var(--code);
+  font-size: 11px; font-variant-numeric: tabular-nums; }
+.plot button.every { margin: -0.2rem 0 0.6rem; }
 
 /* A line's sample: solid, or dashed for a process's time. */
 i.sw {
@@ -773,8 +946,11 @@ i.sw {
 }
 
 i.sw.dashed { border-top-style: dashed; }
+i.sw.grey { border-top-color: var(--grey-line); }
+.results { --grey-line: color-mix(in oklab, var(--muted) 45%, var(--card)); }
 
 svg.cactus { display: block; max-width: 100%; touch-action: pan-y; }
+svg.cactus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cactus text { font: 11px var(--sans); fill: var(--muted); }
 .cactus text.label { font-size: 12px; }
 .cactus text.end { fill: var(--ink); font-size: 12px; }
@@ -784,7 +960,10 @@ svg.cactus { display: block; max-width: 100%; touch-action: pan-y; }
 .cactus .line { fill: none; stroke: var(--s, var(--muted)); stroke-width: 2; stroke-linejoin: round; }
 .cactus .line.mine { stroke-width: 3; }
 .cactus .line.dashed { stroke-dasharray: 6 4; }
+.cactus .line.grey { stroke: var(--grey-line); stroke-width: 1.5; }
+.cactus text.end.grey { fill: var(--muted); }
 .cactus .dim { opacity: 0.2; }
+.cactus .line.hl { stroke: var(--s); stroke-width: 3; }
 .cactus .cross { stroke: var(--muted); stroke-width: 1; }
 .cactus .hit { fill: transparent; cursor: crosshair; }
 
@@ -815,9 +994,14 @@ details.instances { margin-top: 2rem; }
 details.instances .check { margin: 0.7rem 0 0.5rem; }
 table.times { font-size: 13px; }
 table.times th, table.times td { padding: 0.25rem 0.6rem; white-space: nowrap; }
-table.times thead th { position: sticky; top: 0; background: var(--card); cursor: pointer; }
+table.times thead th { position: sticky; top: 0; z-index: 2; background: var(--card); }
 table.times thead th[aria-sort] { color: var(--accent); }
+table.times thead th[aria-sort="ascending"] button::after { content: " ↑"; }
+table.times thead th[aria-sort="descending"] button::after { content: " ↓"; }
 table.times tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-spacing: 0; color: var(--ink); border-bottom: 1px solid var(--line); }
+/* The instance's column stays while the systems' scroll by. */
+table.times thead th:first-child { left: 0; z-index: 3; }
+table.times tbody th { position: sticky; left: 0; z-index: 1; background: var(--card); }
 table.times .num { text-align: right; }
 table.times td.best { font-weight: 700; color: var(--accent); }
 table.times td.fail { color: var(--muted); }
@@ -918,7 +1102,9 @@ dl.cmds code { overflow-wrap: anywhere; line-height: 1.5; }
 
 details.answers { margin-top: 1.8rem; }
 details.answers > summary { color: var(--ink); font-size: 1rem; font-weight: 600; }
-details.answers .tscroll { margin-top: 0.6rem; }
+details.answers .edge { margin-top: 0.6rem; }
+p.try { font-size: 14px; }
+p.try a { font-weight: 600; }
 details.answers tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-spacing: 0; color: var(--ink); white-space: nowrap; }
 
 /* A system's runs of an instance, beside the view. */
@@ -943,10 +1129,12 @@ details.answers tbody th { font: 12px/1.4 var(--mono); text-transform: none; let
 code.cmd { display: block; margin: 0.3rem 0; padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 6px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 details.run { margin-top: 0.6rem; padding: 0.5rem 0.7rem; border: 1px solid var(--line); border-radius: 6px; }
 details.run > summary { color: var(--ink); font-size: 13px; }
-details.run .tscroll { margin-top: 0.4rem; }
+details.run .edge { margin-top: 0.4rem; }
 table.runs { font-size: 12px; }
 table.runs th, table.runs td { padding: 0.2rem 0.5rem; text-align: left; vertical-align: top; white-space: nowrap; }
-table.runs td.sizes { min-width: 14rem; white-space: normal; color: var(--muted); }
+/* A run's sizes, a long line, under the other columns of its row. */
+table.runs tr:has(+ tr.sizes) td { border-bottom: 0; }
+table.runs tr.sizes td { padding-top: 0; white-space: normal; overflow-wrap: anywhere; color: var(--muted); }
 table.runs tr.err td { white-space: normal; }
 table.runs tr.err pre { margin: 0.2rem 0; max-height: 12rem; background: color-mix(in oklab, var(--bad) 10%, var(--card)); }
 
@@ -963,6 +1151,20 @@ table.runs tr.err pre { margin: 0.2rem 0; max-height: 12rem; background: color-m
   table.given tr { display: grid; }
   table.given tbody th, table.given td { display: block; border-bottom: 0; padding-bottom: 0.2rem; }
   table.given tr > :last-child { padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
+}
+
+/* On a phone a board's rows stack: a system's name over its values, each
+   named by its column. */
+@media (max-width: 40rem) {
+  table.stack, table.stack tbody { display: block; }
+  table.stack thead { display: none; }
+  table.stack tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 1rem; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--line); }
+  table.stack tr[hidden] { display: none; }
+  table.stack tbody th, table.stack td { display: block; padding: 0; border: 0; white-space: normal; text-align: left; }
+  table.stack tbody th { flex-basis: 100%; }
+  table.stack td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font-weight: 400; }
+  table.stack td:empty { display: none; }
+  table.stack tr.words td { flex-basis: 100%; background: none; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

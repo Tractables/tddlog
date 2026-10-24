@@ -16,18 +16,18 @@
   <div>
     <h1>tddlog: exact probabilistic inference</h1>
     <p class="lede">Pick an example or write a program in the Datalog
-    fragment of ProbLog, and press Run: tddlog grounds it, compiles it
-    bottom-up into tree decision diagrams with the
-    <a href="https://github.com/Tractables/tididi">tididi</a> library, and
-    gives each query's exact probability. It runs in this tab and nothing is
-    uploaded. The same solver runs from the command line, Rust, Python and
-    C, as the <a href="guide/">guide</a> shows.</p>
+    fragment of ProbLog, and press Run: tddlog gives each query's exact
+    probability, here in this tab.<span class="aside"> It grounds the
+    program and compiles it bottom-up into tree decision diagrams with the
+    <a href="https://github.com/Tractables/tididi">tididi</a> library;
+    nothing is uploaded. The same solver runs from the command line, Rust,
+    Python and C, as the <a href="guide/">guide</a> shows.</span></p>
   </div>
   <nav class="site-nav" aria-label="Site">
     <a href="./" aria-current="page">Playground</a>
     <a href="guide/">Guide</a>
     <a href="results/">Results</a>
-    <a href="api/">API</a>
+    <a href="api/">Rust API</a>
     <a href="python/">Python</a>
     <a href="c/">C</a>
     <a href="https://github.com/Tractables/tddlog">GitHub</a>
@@ -35,30 +35,34 @@
   </nav>
 </header>
 
-<section class="card glance" id="glance" hidden>
-  <div id="glance-stats" class="stats"></div>
-  <p class="note">From the release run against the exact systems people
-  use for each kind of problem (ProbLog, Ace, Merlin, Dice, Alea.jl and
-  more), every answer of tddlog's checked against a reference:
-  <a href="results/">the plots, the tables and the findings</a>.</p>
-</section>
-
 <noscript><p class="card note">The playground runs tddlog in this tab and
 needs JavaScript. The <a href="guide/">guide</a> shows the same programs
 and their answers.</p></noscript>
 
 <section class="card">
   <div class="examples">
-    <span class="lead">Try an example</span>
-    <div id="examples"></div>
+    <span class="lead" id="examples-lead">Try an example</span>
+    <div id="examples" role="group" aria-labelledby="examples-lead"></div>
   </div>
+  <p id="source" class="source" hidden></p>
   <div class="io">
     <div class="program-input">
       <label for="program">Program</label>
-      <textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
-      <p class="hint">Ctrl+Enter runs the program. <code>query/1</code> asks
-      for a probability, <code>evidence/1,2</code> conditions on an
-      observation.</p>
+      <div class="editor">
+        <pre id="program-hl" aria-hidden="true"></pre>
+        <textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="program-hint"></textarea>
+      </div>
+      <div class="under">
+        <p class="hint" id="program-hint">Ctrl+Enter (⌘+Enter on a Mac) runs
+        the program, and Escape stops it. <code>query/1</code> asks for a
+        probability, <code>evidence/1,2</code> conditions on an observation.
+        A file dropped on the editor opens in it.</p>
+        <div class="tools">
+          <button id="open" type="button">Open a file</button>
+          <button id="download" type="button">Download</button>
+          <input id="file" type="file" accept=".pl,.lp,.txt,text/plain" hidden>
+        </div>
+      </div>
     </div>
 
     <div class="controls">
@@ -74,15 +78,18 @@ and their answers.</p></noscript>
       <label class="check"><input id="evidence" type="checkbox"> P(evidence)</label>
       <button id="run" disabled>Run</button>
       <button id="cancel" type="button" hidden>Cancel</button>
-      <p id="status" role="status">loading the solver</p>
+      <p class="status"><span id="status" role="status">loading the solver</span> <span id="clock"></span></p>
     </div>
   </div>
 </section>
 
-<section class="card" aria-live="polite">
+<section class="card">
   <div class="result-head">
     <h2>Answers</h2>
     <button id="link" type="button" hidden>Copy link</button>
+    <button id="copy" type="button" hidden>Copy answers</button>
+    <p id="too-long" class="note" hidden>The program is too long for a
+    link; Download saves it.</p>
   </div>
   <div id="summary"></div>
 
@@ -97,6 +104,14 @@ and their answers.</p></noscript>
   </details>
 </section>
 
+<section class="card glance" id="glance" hidden>
+  <div id="glance-stats" class="stats"></div>
+  <p class="note">From the release run against the exact systems people
+  use for each kind of problem (ProbLog, Ace, Merlin, Dice, Alea.jl and
+  more), every answer of tddlog's checked against a reference:
+  <a href="results/">the plots, the tables and the findings</a>.</p>
+</section>
+
 <footer>
   tddlog is open source under the Apache-2.0 license:
   <a href="https://github.com/Tractables/tddlog">repository</a> ·
@@ -108,6 +123,7 @@ and their answers.</p></noscript>
 
 <script src="runtime.js"></script>
 <script src="examples.js"></script>
+<script src="code.js"></script>
 <script src="app.js"></script>
 
 </body>

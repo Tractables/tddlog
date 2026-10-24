@@ -53,7 +53,7 @@ test("every program the guide shows whole is its file in the repository", () => 
 // Each page's links to the site's pages: the same, in the same order, the
 // page's own marked as the current one.
 test("every page has the site's navigation, its own page marked", () => {
-  const names = ["Playground", "Guide", "Results", "API", "Python", "C", "GitHub"];
+  const names = ["Playground", "Guide", "Results", "Rust API", "Python", "C", "GitHub"];
   for (const [file, current] of [["index.html", "Playground"], ["guide/index.html", "Guide"], ["results/index.html", "Results"]]) {
     const nav = page(file).match(/<nav class="site-nav" aria-label="Site">([\s\S]*?)<\/nav>/);
     assert.ok(nav, `${file}: the navigation`);
@@ -61,7 +61,7 @@ test("every page has the site's navigation, its own page marked", () => {
     assert.deepEqual(links.map((l) => l[3]), names, `${file}: the navigation's links`);
     assert.deepEqual(links.filter((l) => l[2]).map((l) => l[3]), [current], `${file}: the current page`);
     const up = file.includes("/") ? "../" : "";
-    const where = { Playground: up || "./", Guide: `${up}guide/`, Results: `${up}results/`, API: `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
+    const where = { Playground: up || "./", Guide: `${up}guide/`, Results: `${up}results/`, "Rust API": `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
     for (const [, href, , name] of links) {
       const expected = name === current ? "./" : where[name] ?? "https://github.com/Tractables/tddlog";
       assert.equal(href, expected, `${file}: ${name}`);
