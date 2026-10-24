@@ -822,8 +822,6 @@ i.dot.some { background: var(--amber); }
   font-size: 12px;
   white-space: nowrap;
 }
-/* The reference, which no system's run reads. */
-.chip.ref { border-style: dashed; white-space: normal; }
 
 .badge { display: inline-block; margin-left: 0.4rem; padding: 0 0.4rem; border-radius: 4px; font-size: 11px; font-weight: 600;
   letter-spacing: 0; text-transform: none; background: var(--code); color: var(--muted); border: 1px solid var(--line); }
@@ -1048,8 +1046,9 @@ i.heat { display: inline-block; width: 1.8rem; height: 0.85rem; border: 1px soli
 i.heat.hi { background: color-mix(in oklab, var(--amber) 62%, var(--card)); }
 .times-box > button.plain { margin-top: 0.5rem; }
 
-/* An instance's programs: the instance, the languages and their files, and
-   the file on show, beside the original where asked. */
+/* An instance's programs: the instance, the menu of the programs each system
+   read, a program's files, and the file on show, beside the original where
+   asked. */
 .pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; margin: 0.4rem 0; }
 .pick select { width: auto; max-width: 100%; padding: 0.25rem 0.4rem; font: 13px var(--mono); }
 .pick code.inst { background: none; padding: 0; color: var(--muted); }
@@ -1059,9 +1058,6 @@ i.heat.hi { background: color-mix(in oklab, var(--amber) 62%, var(--card)); }
 .seg a:hover { background: var(--accent-fill); }
 .seg a[aria-current] { background: var(--accent); color: var(--card); }
 
-table.given { font-size: 13px; }
-table.given th, table.given td { padding: 0.45rem 0.7rem; vertical-align: top; }
-table.given tbody th { white-space: nowrap; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ink); border-bottom: 1px solid var(--line); }
 .files { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 button.file {
   padding: 0.1rem 0.45rem;
@@ -1079,9 +1075,14 @@ button.file.on, button.file.on:hover:not(:disabled) { border-color: var(--accent
 .viewer { margin-top: 0.9rem; }
 .tab-says { max-width: 90ch; font-size: 14px; }
 .tab-says p { margin: 0.3rem 0; }
-dl.cmds { margin: 0.4rem 0 0.6rem; font-size: 12px; }
+/* A translation's warning that it may make the comparison unfair. */
+.tab-says p.unfair { color: var(--bad); font-weight: 600; }
+details.cmds { margin: 0.3rem 0 0.6rem; }
+details.cmds summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.viewer > .files { margin: 0.2rem 0 0.6rem; }
+.pick select.version { font-family: var(--sans); }
+dl.cmds { margin: 0.4rem 0 0.2rem; font-size: 12px; }
 dl.cmds code { overflow-wrap: anywhere; line-height: 1.5; }
-.viewer > label.check { margin: 0.4rem 0 0.6rem; }
 .panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; }
 .panes.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .pane { min-width: 0; }
@@ -1147,10 +1148,6 @@ table.runs tr.err pre { margin: 0.2rem 0; max-height: 12rem; background: color-m
   .panes.two { grid-template-columns: minmax(0, 1fr); }
   table.board .bar { width: 4rem; }
   .meter { grid-template-columns: 7.5rem minmax(0, 1fr) auto; }
-  table.given thead { display: none; }
-  table.given tr { display: grid; }
-  table.given tbody th, table.given td { display: block; border-bottom: 0; padding-bottom: 0.2rem; }
-  table.given tr > :last-child { padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
 }
 
 /* On a phone a board's rows stack: a system's name over its values, each

@@ -28,7 +28,8 @@ A total time is over the kind's instances that some system answers, the
 same instances for every system of the kind: a run that does not answer
 counts as its suite's time limit, a lower bound on the time it would
 take, and a time under 0.2 s counts as 0.2 s. Beside it, the totals over
-the instances both answer. The plots' time axes start at 0.2 s, shorter
+the instances both answer. The cactus plots' time axes are linear, from 0
+to the time limit; the scatter plots' are logarithmic from 0.2 s, shorter
 runs drawn at 0.2 s. Alea.jl's and Roulette's times are their in-process
 times, without their language's start-up (the page's process times are
 left out). Needs matplotlib."""
@@ -48,7 +49,7 @@ from matplotlib.ticker import FixedLocator, NullLocator  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from source_tree import SOURCE  # noqa: E402  (the README's tree: its results and images)
-FLOOR = 0.2  # seconds: a time under it counts as it, and a plot's time axis starts here
+FLOOR = 0.2  # seconds: a time under it counts as it, and a scatter plot's axes start here
 PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
 
@@ -155,6 +156,14 @@ def log_axis(ax, axis, ticks, labels):
     getattr(ax, f'set_{axis}ticklabels')(labels)
 
 
+def linear_ticks(hi, room=5):
+    """Ticks from 0 every 1, 2 or 5 times a power of ten, at most `room`
+    of them, and one at hi."""
+    unit = 10 ** math.floor(math.log10(hi / room))
+    every = next(m * unit for m in (1, 2, 5, 10) if hi / (m * unit) <= room)
+    return [k * every for k in range(int((hi - every / 2) // every) + 1)] + [hi]
+
+
 def colours(systems):
     """{system: (colour, line style)}: tddlog's colour, then the palette's in
     the order of systems; past the palette's end its colours again, dashed."""
@@ -182,16 +191,18 @@ def cactus(ax, systems, title, rs, hi, c, col):
     for s in systems:
         ts = sorted(clamp(r[2][s]) for r in rs if r[2].get(s) is not None)
         solved[s] = len(ts)
-        xs = [FLOOR] + ts + [hi]
-        ys = [sum(t <= FLOOR for t in ts)] + list(range(1, len(ts) + 1)) + [len(ts)]
+        xs = [0] + ts + [hi]
+        ys = [0] + list(range(1, len(ts) + 1)) + [len(ts)]
         lead = s == 'tddlog'
         ax.step(xs, ys, where='post', color=col[s][0], ls=col[s][1], lw=3.2 if lead else 1.9,
                 zorder=10 if lead else 5)
     ax.axhline(n, color=c['muted'], lw=0.9, ls=(0, (2, 3)), zorder=1)
-    ax.text(FLOOR * 1.1, n * 1.01, f'all {n}', va='bottom', ha='left', color=c['muted'], fontsize=11)
-    ticks = [FLOOR] + [t for t in (1, 10, 100) if t < hi * 0.6] + [hi]
-    log_axis(ax, 'x', ticks, [f'≤{t:g}' if t == FLOOR else f'{t:g}' for t in ticks])
-    ax.set_xlim(FLOOR, hi)
+    ax.text(hi * 0.01, n * 1.01, f'all {n}', va='bottom', ha='left', color=c['muted'], fontsize=11)
+    ticks = linear_ticks(hi)
+    ax.xaxis.set_major_locator(FixedLocator(ticks))
+    ax.xaxis.set_minor_locator(NullLocator())
+    ax.set_xticklabels([f'{t:g}' for t in ticks])
+    ax.set_xlim(0, hi)
     ax.set_ylim(0, n * 1.09)
     ax.grid(True, color=c['grid'], lw=0.7)
     ax.set_axisbelow(True)

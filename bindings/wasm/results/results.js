@@ -218,8 +218,8 @@ function linesOf(suite) {
     .sort((a, b) => (b.key === "tddlog") - (a.key === "tddlog") || b.times.length - a.times.length);
 }
 
-// The instances each system answers within a time limit, the limit on a log
-// scale from 0.2 s to the suite's; a line further up and to the left is
+// The instances each system answers within a time limit, the limit on a
+// linear scale from 0 to the suite's; a line further up and to the left is
 // better. Drawn at the width of its box; the lines not `coloured` grey and
 // under the others. Each line is named at its end, by its system where there
 // is room, else by its number in the legend (the coloured lines only).
@@ -235,16 +235,22 @@ function cactus(box, suite, names, series, coloured) {
   // The end labels' room: the longest at 7 px a character.
   const left = 46, right = narrow ? 30 : Math.max(128, 16 + 7 * Math.max(0, ...ends.map((end) => end.text.length))), top = 22, bottom = 46;
   const x0 = left, x1 = width - right, y0 = top, y1 = height - bottom;
-  const lx = (t) => x0 + (Math.log10(Math.min(Math.max(t, FLOOR), hi)) - Math.log10(FLOOR)) / (Math.log10(hi) - Math.log10(FLOOR)) * (x1 - x0);
+  const lx = (t) => x0 + Math.min(Math.max(t, FLOOR), hi) / hi * (x1 - x0);
   const ly = (k) => y1 - (k / n) * (y1 - y0);
 
   const plot = svg("svg", { class: "cactus", width, height, viewBox: `0 0 ${width} ${height}`, role: "img", tabindex: "0",
     "aria-label": `${suite.title}: instances each system answers within a time limit; the arrow keys move the limit` });
-  const ticks = [FLOOR, 1, 10, 100, 1000].filter((t) => t < hi * 0.75).concat([hi]);
+  // a tick every 1, 2 or 5 times a power of ten, about five of them, and one at the limit
+  const room = narrow ? 4 : 6;
+  const unit = 10 ** Math.floor(Math.log10(hi / room));
+  const every = [1, 2, 5, 10].map((m) => m * unit).find((s) => hi / s <= room);
+  const ticks = [];
+  for (let t = 0; t < hi - every / 2; t += every) ticks.push(t);
+  ticks.push(hi);
   for (const t of ticks) {
-    const x = lx(t);
+    const x = x0 + t / hi * (x1 - x0);
     plot.append(svg("line", { class: "grid", x1: x, y1: y0, x2: x, y2: y1 }));
-    plot.append(svg("text", { class: "tick", x, y: y1 + 16, "text-anchor": "middle" }, t === FLOOR ? `≤${FLOOR}` : String(t)));
+    plot.append(svg("text", { class: "tick", x, y: y1 + 16, "text-anchor": "middle" }, String(t)));
   }
   const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500];
   const step = steps.find((s) => n / s <= (narrow ? 5 : 8)) ?? 1000;
@@ -259,7 +265,7 @@ function cactus(box, suite, names, series, coloured) {
   plot.append(svg("line", { class: "axis", x1: x0, y1: y1, x2: x1, y2: y1 }));
   plot.append(svg("line", { class: "axis", x1: x0, y1: y0, x2: x0, y2: y1 }));
   plot.append(svg("text", { class: "label", x: (x0 + x1) / 2, y: height - 8, "text-anchor": "middle" },
-    "time limit per instance, seconds (log scale)"));
+    "time limit per instance, seconds"));
   plot.append(svg("text", { class: "label", transform: `translate(13 ${(y0 + y1) / 2}) rotate(-90)`, "text-anchor": "middle" },
     "instances answered"));
 
@@ -267,9 +273,9 @@ function cactus(box, suite, names, series, coloured) {
   // drawn on top.
   const order = [...series].sort((a, b) => coloured.has(a.key) - coloured.has(b.key) || (a.key === "tddlog") - (b.key === "tddlog"));
   for (const { key, times } of order) {
-    let k = times.filter((t) => t <= FLOOR).length;
-    let d = `M${x0},${ly(k)}`;
-    for (const t of times.slice(k)) {
+    let k = 0;
+    let d = `M${x0},${ly(0)}`;
+    for (const t of times) {
       d += `H${lx(t).toFixed(1)}V${ly(++k).toFixed(1)}`;
     }
     d += `H${x1}`;
@@ -299,7 +305,8 @@ function cactus(box, suite, names, series, coloured) {
   let cx = null;
   const at = (x) => {
     cx = Math.min(Math.max(x, x0), x1);
-    const t = Math.pow(10, Math.log10(FLOOR) + (cx - x0) / (x1 - x0) * (Math.log10(hi) - Math.log10(FLOOR)));
+    // a time under 0.2 s counts as 0.2 s
+    const t = Math.max(FLOOR, (cx - x0) / (x1 - x0) * hi);
     cross.setAttribute("x1", cx);
     cross.setAttribute("x2", cx);
     cross.setAttribute("visibility", "visible");
@@ -522,7 +529,7 @@ function parse(hash) {
   const route = { view: "family", suite, family: family.key, instance: instance ?? family.instances[0] };
   const m = parts.slice(named ? 2 : 3).join("/").match(/^(?:tab\/(\d+)(?:\/(\d+))?)?(?:(?:^|\/)runs\/([^/]+))?$/);
   if (!m || (m[3] !== undefined && !data.suites.get(suite).systems.includes(m[3]))) return missing;
-  if (Number(m[1]) || Number(m[2])) route.file = [Number(m[1]), Number(m[2] ?? 0)];
+  if (m[1] !== undefined) route.file = [Number(m[1]), Number(m[2] ?? 0)];
   if (m[3] !== undefined) route.runs = m[3];
   return route;
 }
@@ -613,7 +620,7 @@ function meter(name, k, n, mine) {
 // How the plots and totals are read, under every overview.
 function how() {
   return element("details", { class: "how" }, element("summary", {}, "How to read these results"),
-    element("p", {}, "A plot counts the instances each system answers within a time limit, on a log scale from 0.2 s to "
+    element("p", {}, "A plot counts the instances each system answers within a time limit, on a linear scale from 0 to "
       + "the suite's limit: a line further up and to the left is better, and a run that takes less than 0.2 s counts at "
       + "0.2 s, since differences of a few milliseconds of start-up are not compared. Where a plot has more than five "
       + "lines, tddlog's and the three that answer the most are in colour; a name in the legend colours its line."),
@@ -980,10 +987,10 @@ function timesGrid(s, f, rows, short, route) {
   return box;
 }
 
-// The systems that ran an instance but read none of its files on show:
-// their files were not captured.
+// The systems that ran an instance but read none of its files on show, nor
+// translated any: their files were not captured.
 function uncaptured(inst) {
-  const readers = (inst.tabs ?? []).flatMap((t) => t.readers);
+  const readers = (inst.tabs ?? []).flatMap((t) => [...t.readers, ...(t.translations ?? []).map(([who]) => who)]);
   return [...new Set((inst.runs ?? []).map((r) => data.names[r.system] ?? r.system))]
     .filter((name) => !readers.some(readsAs(name)));
 }
@@ -1001,9 +1008,41 @@ function playground(s, f, inst) {
     "Open in the playground"), element("span", { class: "muted" }, ` the ${tab.lang} program tddlog read, ${size(file.bytes)}`));
 }
 
-// An instance of a family: its programs (a tab per language, the files each
-// system read, and one file shown, beside the original where asked), then
-// its answers. `route` names the file to show.
+// The systems that read a tab, each once: a form's label ("ProbLog -k sdd")
+// under its system's name, an arm of tddlog's ("tddlog (auto+onehot)") as it
+// is, and the reference apart.
+function readersOf(tab) {
+  const names = Object.values(data.names);
+  const name = (r) => (r.endsWith(")") ? r : names.find((n) => readsAs(n)(r)) ?? r);
+  return [...new Set(tab.readers.filter((r) => r !== "reference").map(name))];
+}
+
+// The file an instance's view shows first: the program tddlog read (its
+// ProbLog file, where its tab has others), else the original.
+function firstFile(inst) {
+  const ti = inst.tabs.findIndex((t) => t.readers.some(readsAs("tddlog")));
+  if (ti < 0) return [0, 0];
+  return [ti, Math.max(0, inst.tabs[ti].files.findIndex((file) => /\.pl$/.test(file.name)))];
+}
+
+// The address's part for a file of an instance: none for the one shown first.
+function fileRoute(inst, ti, fi) {
+  const [t, f] = firstFile(inst);
+  return ti === t && fi === f ? undefined : [ti, fi];
+}
+
+// A tab in the menu: its language, and who reads it.
+function versionLabel(tab) {
+  const who = readersOf(tab);
+  const what = who.length ? `read by ${and(who)}` : tab.translations?.length ? "an intermediate step, read by no system" : "read by no system";
+  return `${tab.lang}${tab.original ? ", the original" : ""}: ${what}`;
+}
+
+const UNFAIR = "Note: this is an automatic translation from the original program, which might have performance "
+  + "implications that make the comparison unfair.";
+
+// An instance of a family: its programs (the one tddlog read, and a menu of
+// every other system's), then its answers. `route` names the file to show.
 let compare = false;
 function instanceView(s, f, fam, route, short) {
   const inst = fam.instances.find((i) => i.name === route.instance) ?? fam.instances[0];
@@ -1023,34 +1062,18 @@ function instanceView(s, f, fam, route, short) {
   if (!inst.tabs) {
     out.push(note("The programs of this instance were not captured."));
   } else {
-    out.push(note("The files each system below was handed, byte for byte: written by the release's scripts at "
-      + "the run's commit and captured by running the benchmark driver's own code with no system started. The first is the "
-      + "original program; each other language's is a translation of it, and says which script wrote it."));
+    out.push(note("The files each system was handed, byte for byte, as the benchmark driver's own code writes them at the run's commit. "
+      + "The program tddlog read comes first; the menu shows the original and each other system's."));
     const unseen = uncaptured(inst);
     if (unseen.length) {
       out.push(element("p", { class: "note uncaptured" }, `Not shown: the files that ${and(unseen)} ${unseen.length === 1 ? "was" : "were"} given, `
         + `which were not captured when ${unseen.length === 1 ? "it" : "they"} ran.`));
     }
     const view = element("div", { class: "viewer" });
-    const tabs = scroller(element("table", { class: "given" },
-      element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "language"), element("th", { scope: "col" }, "files"),
-        element("th", { scope: "col" }, "read by"))),
-      element("tbody", {}, ...inst.tabs.map((tab, ti) => element("tr", {},
-        element("th", { scope: "row" }, tab.lang, element("span", { class: `badge${tab.original ? " orig" : ""}` }, tab.original ? "original" : "translation")),
-        element("td", {}, element("div", { class: "files" }, ...tab.files.map((file, fi) => element("button", { type: "button", class: "file", "data-file": `${ti}:${fi}`,
-          onclick: () => {
-            showFile(view, fam, inst, ti, fi);
-            remember({ file: ti || fi ? [ti, fi] : undefined });
-          } }, file.name.split("/").pop(), element("small", {}, size(file.bytes)))))),
-        element("td", {}, element("div", { class: "chips" }, ...tab.readers.map((r) => (r === "reference"
-          ? element("span", { class: "chip ref" }, inst.answers?.ref ? `the reference: ${inst.answers.ref}` : "the reference")
-          : element("span", { class: "chip" }, r))))))))), "whole");
-    out.push(tabs, view);
-    const [ti, fi] = route.file ?? [0, 0];
-    queueMicrotask(() => {
-      showFile(view, fam, inst, ti, fi);
-      if (route.file) document.querySelector("#programs button.file.on")?.scrollIntoView({ block: "center" });
-    });
+    out.push(view);
+    // a file the address names later, without drawing the view again
+    view.show = (file) => showFile(view, fam, inst, ...(file ?? firstFile(inst)));
+    queueMicrotask(() => view.show(route.file));
   }
   if (inst.answers) out.push(answers(inst.answers));
   return out.filter(Boolean);
@@ -1062,29 +1085,53 @@ function size(bytes) {
   return `${(bytes / (1 << 20)).toFixed(1)} MB`;
 }
 
-// A file of an instance (tab ti, file fi; the first where it has none
-// such), with what its tab says, the commands that read it, and the
-// original beside it where asked.
+// A file of an instance (tab ti, file fi; the first shown where it has none
+// such): the menu of the instance's programs, what the file's tab says, its
+// commands, the tab's other files, and the file, beside the original where
+// asked.
 function showFile(view, fam, inst, ti, fi) {
-  if (!inst.tabs[ti]?.files[fi]) [ti, fi] = [0, 0];
+  if (!inst.tabs[ti]?.files[fi]) [ti, fi] = firstFile(inst);
   const tab = inst.tabs[ti];
   const file = tab.files[fi];
-  for (const b of view.parentElement.querySelectorAll("button.file")) b.classList.toggle("on", b.dataset.file === `${ti}:${fi}`);
-  const head = element("div", { class: "tab-says" }, element("p", {}, element("b", {}, tab.says)),
-    ...tab.notes.map((n) => element("p", {}, n)));
-  if (tab.cmds.length) {
+  view.dataset.file = `${ti}:${fi}`;
+  const open = (t, k) => {
+    showFile(view, fam, inst, t, k);
+    remember({ file: fileRoute(inst, t, k) });
+  };
+  const first = firstFile(inst)[0];
+  const order = [first, ...inst.tabs.keys()].filter((t, k, all) => all.indexOf(t) === k);
+  const menu = element("select", { class: "version", "aria-label": "The program as a system read it", onchange: (e) => {
+    const t = Number(e.target.value);
+    open(t, t === first ? firstFile(inst)[1] : 0);
+  } },
+    ...order.map((t) => element("option", { value: t, selected: t === ti }, versionLabel(inst.tabs[t]))));
+  const canCompare = !tab.original && inst.tabs[0].original;
+  const toggle = element("label", { class: "check" }, element("input", { type: "checkbox", checked: compare && canCompare, disabled: !canCompare,
+    onchange: (e) => { compare = e.target.checked; showFile(view, fam, inst, ti, fi); } }), " Beside the original");
+  const head = element("div", { class: "tab-says" });
+  if (tab.translated && readersOf(tab).length) head.append(element("p", { class: "unfair" }, UNFAIR));
+  head.append(element("p", {}, tab.says), ...tab.notes.map((n) => element("p", {}, n)));
+  if (tab.readers.includes("reference")) head.append(element("p", {}, `The reference answers${inst.answers?.ref ? `, ${inst.answers.ref},` : ""} are computed from it.`));
+  // the readers' commands, then the steps of a system's job that translate
+  // these files into another tab's, which that system then reads
+  const steps = [...new Map((tab.translations ?? []).map(([who, cmd]) => [cmd, who])).entries()];
+  const more = Object.values(tab.more).reduce((a, b) => a + b, 0);
+  if (tab.cmds.length + steps.length) {
     const dl = element("dl", { class: "cmds" });
     for (const [who, cmd] of tab.cmds) dl.append(element("dt", {}, who), element("dd", {}, element("code", {}, cmd)));
     for (const [who, n] of Object.entries(tab.more)) dl.append(element("dt", {}), element("dd", {}, `${who}: and ${n} more commands of the same form`));
-    head.append(dl);
+    for (const [cmd, who] of steps) dl.append(element("dt", {}, `for ${who}`), element("dd", {}, element("code", {}, cmd)));
+    head.append(element("details", { class: "cmds" }, element("summary", {}, `The commands that read it (${count(tab.cmds.length + more + steps.length)})`), dl));
   }
-  const canCompare = ti > 0 && inst.tabs[0].original;
-  const toggle = element("label", { class: "check" }, element("input", { type: "checkbox", checked: compare && canCompare, disabled: !canCompare,
-    onchange: (e) => { compare = e.target.checked; showFile(view, fam, inst, ti, fi); } }), " Beside the original");
+  const files = tab.files.length > 1
+    ? element("div", { class: "files", role: "group", "aria-label": "Files" }, ...tab.files.map((other, k) => element("button", {
+      type: "button", class: `file${k === fi ? " on" : ""}`, "data-file": `${ti}:${k}`, "aria-pressed": String(k === fi), onclick: () => open(ti, k) },
+    other.name.split("/").pop(), element("small", {}, size(other.bytes)))))
+    : null;
   const panes = element("div", { class: `panes${compare && canCompare ? " two" : ""}` });
   if (compare && canCompare) panes.append(pane(fam, inst.tabs[0].files[0]));
   panes.append(pane(fam, file));
-  view.replaceChildren(head, toggle, panes);
+  view.replaceChildren(...[element("div", { class: "pick" }, element("span", { class: "muted" }, "program"), menu, toggle), head, files, panes].filter(Boolean));
 }
 
 // A file's text: in its family's data, or a file of its own, gzipped where
@@ -1225,15 +1272,17 @@ async function runs(route) {
   if (inst?.notes?.[rec]) about.push(inst.notes[rec]);
   if (about.length) parts.push(note(about.join(" ")));
   const name0 = data.names[rec] ?? data.names[key];
-  const cmds = (inst?.tabs ?? []).flatMap((t) => t.cmds).filter(([who]) => readsAs(name0)(who));
+  // its job's commands: the translations it reads first, then its own
+  const cmds = [...new Map((inst?.tabs ?? []).flatMap((t) => [...(t.translations ?? []), ...t.cmds])
+    .filter(([who]) => readsAs(name0)(who)).map(([who, cmd]) => [cmd, who])).keys()].map((cmd) => [name0, cmd]);
   if (cmds.length) parts.push(element("h4", {}, "Commands"), ...cmds.map(([, cmd]) => element("code", { class: "cmd" }, cmd)));
   const read = (inst?.tabs ?? []).flatMap((t, ti) => (t.readers.some(readsAs(name0)) ? t.files.map((file, fi) => [t, file, ti, fi]) : []));
   if (read.length) {
     parts.push(element("h4", {}, "Reads"), element("div", { class: "files" }, ...read.map(([t, file, ti, fi]) => element("button", { type: "button", class: "file",
       onclick: () => {
         // the focus goes on to the file shown, not back to the time
-        opener = document.querySelector(`#programs button.file[data-file="${ti}:${fi}"]`);
-        go({ ...now, runs: undefined, file: ti || fi ? [ti, fi] : undefined });
+        opener = document.querySelector("#programs select.version");
+        go({ ...now, runs: undefined, file: fileRoute(inst, ti, fi) });
       } }, file.name.split("/").pop(), element("small", {}, t.lang)))));
   } else if (mine.length) {
     parts.push(note(`The command and the files ${name0} was given were not captured.`));
@@ -1471,11 +1520,10 @@ function show(again = false) {
     const t = title(route);
     document.title = t === null ? "tddlog results" : `${t} · tddlog results`;
   } else if (route.view === "family" && String(route.file ?? "") !== String(before.file ?? "")) {
-    const [ti, fi] = route.file ?? [0, 0];
-    const button = document.querySelector(`#programs button.file[data-file="${ti}:${fi}"]`);
-    if (button) {
-      button.click();
-      button.scrollIntoView({ block: "center" });
+    const viewer = document.querySelector("#programs .viewer");
+    if (viewer?.show) {
+      viewer.show(route.file);
+      viewer.scrollIntoView({ block: "start" });
     }
   }
   if (route.runs) runs(route);

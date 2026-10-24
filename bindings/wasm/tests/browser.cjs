@@ -663,6 +663,7 @@ function benchmarksOf(root) {
       legend: [...f.querySelectorAll(".legend .n")].map((s) => s.textContent.replace(/\s/g, "")),
       coloured: [...f.querySelectorAll('.legend button[aria-pressed="true"]')].map((b) => b.dataset.system),
       axis: f.querySelector("svg.cactus").textContent.replace(/\s/g, ""),
+      time: [...f.querySelectorAll('svg.cactus text.tick[text-anchor="middle"]')].map((t) => [Number(t.getAttribute("x")), Number(t.textContent)]),
     }));
     await page.goto(`${base}results/`);
     await page.waitForSelector("#view .kind-card");
@@ -694,7 +695,10 @@ function benchmarksOf(root) {
       assert.deepEqual(fig.legend, order.map((x) => `answers${count(answers(x))}of${count(rows.length)},total${duration(k.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
       assert.deepEqual(fig.coloured, coloured(order), `${what}: its lines in colour`);
       assert.ok(fig.axis.includes(`all${count(rows.length)}instances`), `${what}: its axis`);
-      assert.match(fig.axis, /≤0\.2/, `${what}: the time axis starts at 0.2 s`);
+      const [[xa, ta], ...later] = fig.time;
+      const [xb, tb] = later.at(-1);
+      assert.equal(ta, 0, `${what}: the time axis starts at 0`);
+      for (const [x, t] of later) assert.ok(Math.abs((x - xa) / (xb - xa) - t / tb) < 0.01, `${what}: the time axis is linear`);
       const missing = order.filter((x) => rows.some((r) => r.v[x] === undefined || r.v[x] === null)).length;
       assert.equal((await page.$$("#view ul.cannot li")).length, missing, `${what}: the systems not given some of its instances`);
       const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[1].textContent.trim().replace(/,/g, "")));
@@ -844,30 +848,48 @@ function benchmarksOf(root) {
       }
       assert.ok(family, "an instance with its programs");
       const hash = hashOf(family);
-      await visit(hash, "#programs table.given");
+      await visit(hash, "#programs select.version");
       assert.equal(await page.title(), `${family.name} · ${family.suite}/${family.key} · tddlog results`);
-      assert.equal((await page.$$("#programs table.given tbody tr")).length, family.tabs, `${family.name}: a row a language`);
+      assert.equal((await page.$$("#programs select.version option")).length, family.tabs, `${family.name}: an entry a language`);
+      // The program tddlog read shows first; a translation another system
+      // read warns that it may make the comparison unfair, the original does not.
+      const mine = family.inst.tabs.findIndex((t) => t.readers.includes("tddlog"));
+      assert.equal(await page.$eval("#programs select.version", (s) => Number(s.value)), Math.max(mine, 0), `${family.name}: tddlog's program first`);
+      const warned = family.inst.tabs.findIndex((t, ti) => ti !== Math.max(mine, 0) && t.translated && t.readers.some((r) => r !== "reference"));
+      if (warned >= 0 && family.inst.tabs[0].original) {
+        await page.selectOption("#programs select.version", String(warned));
+        await page.waitForSelector(`#programs .viewer[data-file="${warned}:0"] p.unfair`);
+        assert.match(page.url(), new RegExp(`/tab/${warned}$`), `${family.name}: the address names the program`);
+        await page.selectOption("#programs select.version", "0");
+        await page.waitForSelector('#programs .viewer[data-file^="0:"]');
+        assert.equal(await page.$("#programs p.unfair"), null, `${family.name}: the original is not a translation`);
+      }
       await page.waitForFunction(() => {
         const pane = document.querySelector("#programs .pane");
         return pane !== null && !pane.textContent.includes("Loading");
       });
       assert.ok(await page.$("#programs .pane .lines pre.src, #programs .pane p.held, #programs .pane p.note"), `${family.name}: the file on show`);
 
-      // Every system that ran an instance reads one of its languages, or is
-      // named as one whose files were not captured.
+      // Every system that ran an instance reads one of its languages, ran a
+      // translation of one, or is named as one whose files were not
+      // captured.
       for (const x of [family, unseen].filter(Boolean)) {
-        await visit(hashOf(x), "#programs table.given");
-        const readers = await page.$$eval("#programs table.given .chip", (chips) => chips.map((c) => c.textContent));
+        await visit(hashOf(x), "#programs select.version");
+        // each entry of the menu names its readers after "read by"
+        const readers = (await page.$$eval("#programs select.version option", (os) => os.map((o) => o.textContent)))
+          .flatMap((o) => o.split(": read by ")[1]?.split(/, | and /) ?? []);
+        const translated = x.inst.tabs.flatMap((t) => (t.translations ?? []).map(([who]) => who));
         const said = await page.$eval("#programs", (p) => p.querySelector("p.uncaptured")?.textContent ?? "");
         for (const n of new Set((x.inst.runs ?? []).map((r) => names[r.system] ?? r.system))) {
-          assert.ok(readers.some(readsAs(n)) || said.includes(n), `${x.name}: ${n} ran it, and neither reads a language of it nor is named as not captured`);
+          assert.ok(readers.some(readsAs(n)) || translated.some(readsAs(n)) || said.includes(n),
+            `${x.name}: ${n} ran it, and neither reads a language of it, translates one nor is named as not captured`);
         }
       }
 
       // A system's runs in a drawer the address names: it closes going back
       // and opens again going forward, closes on Escape, and when another
       // view is chosen.
-      await visit(hash, "#programs table.given");
+      await visit(hash, "#programs select.version");
       await page.click("#view table.grid tbody tr.on td button");
       await page.waitForSelector("#drawer:not([hidden]) h4");
       assert.ok((await page.textContent("#drawer h3")).length > 0, "the drawer names its system");
@@ -889,19 +911,20 @@ function benchmarksOf(root) {
       // view and from tddlog's runs; a file the site holds back or keeps in
       // part says why it does not.
       if (tried) {
-        await visit(hashOf(tried), "#programs table.given");
+        await visit(hashOf(tried), "#programs select.version");
         const link = `../#bench=${[tried.suite, tried.key, tried.name].map(encodeURIComponent).join("/")}`;
         assert.equal(await page.getAttribute("#programs p.try a", "href"), link, `${tried.name}: the link to the playground`);
         await page.click(`#view button[data-runs="${tried.suite}/${tried.name}/tddlog"]`);
         await page.waitForSelector("#drawer:not([hidden]) h4");
         assert.equal(await page.getAttribute("#drawer p.try a", "href"), link, `${tried.name}: the link in tddlog's runs`);
         // A file it reads: shown in the view, the drawer closed.
+        const read = await page.$eval("#drawer .files button.file", (b) => b.firstChild.textContent);
         await page.click("#drawer .files button.file");
         await page.waitForSelector("#drawer", { state: "hidden" });
-        assert.ok(await page.$("#programs button.file.on"), `${tried.name}: the file tddlog reads on show`);
+        assert.ok((await page.textContent("#programs .pane code.fname")).endsWith(read), `${tried.name}: the file tddlog reads on show`);
       }
       if (kept) {
-        await visit(hashOf(kept), "#programs table.given");
+        await visit(hashOf(kept), "#programs select.version");
         const notes = await page.$$eval("#programs p.note", (ps) => ps.map((p) => p.textContent));
         assert.ok(notes.some((t) => t.startsWith("Not in the playground")), `${kept.name}: why the playground cannot open it`);
         assert.equal(await page.$("#programs p.try"), null);
@@ -925,7 +948,7 @@ function benchmarksOf(root) {
           route.fulfill({ status: 200, contentType: "application/gzip", body: zlib.gzipSync(inline.text) }));
         const at = `${hashOf(inline)}/tab/${inline.ti}${inline.fi ? `/${inline.fi}` : ""}`;
         await gz.goto(`${base}results/${at}`);
-        await gz.waitForSelector(`#programs button.file.on[data-file="${inline.ti}:${inline.fi}"]`);
+        await gz.waitForSelector(`#programs .viewer[data-file="${inline.ti}:${inline.fi}"]`);
         await gz.waitForSelector("#programs .pane pre.src");
         assert.equal(await gz.$eval("#programs .pane pre.src", (pre) => pre.textContent.split("\n")[0]), inline.text.split("\n")[0],
           `${inline.name}: ${inline.file}, inflated`);
@@ -950,7 +973,7 @@ function benchmarksOf(root) {
       await page.waitForSelector(`#view[data-route="${hash}"] #programs`);
 
       await page.goto(`${base}results/benchmarks/${family.suite}/${encodeURIComponent(family.name)}.html`);
-      await page.waitForSelector(`#view[data-route="${hash}"] #programs table.given`);
+      await page.waitForSelector(`#view[data-route="${hash}"] #programs select.version`);
       console.log(`ok the benchmarks' data: ${nf} families, ${nfiles} files; ${family.suite}/${family.name}'s view, runs and search`
         + `${unseen ? `; ${unseen.name}'s files not captured` : ""}${tried ? `; ${tried.name} to the playground` : ""}`
         + `${kept ? `; ${kept.name} held back` : ""}${inline ? `; ${inline.file} gzipped` : ""}`);
@@ -1027,7 +1050,7 @@ function benchmarksOf(root) {
         const views = [["results", "", ".kind-card"], ["results-kind", `#/kind/${kinds[0].key}`, "figure.plot svg.cactus path.line"],
           ["results-many", `#/kind/${crowded.key}`, "figure.plot svg.cactus path.line"],
           ["results-suite", `#/${first}`, "figure.plot svg.cactus path.line"]];
-        if (family) views.push(["results-family", `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`, "#programs table.given"]);
+        if (family) views.push(["results-family", `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`, "#programs select.version"]);
         for (const [name, hash, ready] of views) {
           await shot.goto(`${base}results/${hash}`);
           await shot.waitForSelector(`#view[data-route="${hash || "#/"}"] ${ready}`);
