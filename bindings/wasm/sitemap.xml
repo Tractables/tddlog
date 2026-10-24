@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The site's pages, for search engines; the browser test checks that each
+     one is there. The results page's views of kinds, suites and benchmarks
+     are addresses within the page (#/...), not pages of their own. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://tractables.github.io/tddlog/</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/guide/</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/results/</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/api/tddlog/</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/python/</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/python/examples.html</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/python/reference.html</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/c/</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/c/example.html</loc></url>
+  <url><loc>https://tractables.github.io/tddlog/c/header.html</loc></url>
+</urlset>
