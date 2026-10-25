@@ -281,11 +281,12 @@ the literature suite's pdb family.
 
 bnlearn's networks, Ace's, the large networks, the noisy-or networks,
 the networks of the Dice, Roulette and noDice papers, and the UAI 2022
-networks whose factors are conditional probability tables.
+networks whose factors are conditional probability tables, the Promedus
+diagnosis and or_chain networks among them.
 
-- tddlog answers **207 of 207** in 1 min. The best other system,
-  Ace, answers 195 in 1.8 h, and the virtual best of all other
-  systems 203 in 39 min.
+- tddlog answers **288 of 288** in 2 min. The best other system,
+  Ace, answers 266 in 3.2 h, and the virtual best of all other
+  systems 283 in 1.2 h.
 
 ### Markov networks
 
@@ -296,13 +297,11 @@ networks whose factors are conditional probability tables.
 
 The other UAI 2022 networks, whose factors are not conditional
 probability tables over an acyclic graph: object detection,
-segmentation and grid networks, protein networks, random networks, and
-the Promedus diagnosis networks, in whose files two factors end in the
-same variable.
+segmentation and grid networks, protein networks and random networks.
 
-- tddlog answers **296 of 344** in 4.7 h. The best other system,
-  TensorInference.jl, answers 267 in 11 h, and the virtual best of all other
-  systems 278 in 7.2 h.
+- tddlog answers **215 of 263** in 4.7 h. The best other system,
+  TensorInference.jl, answers 187 in 9.1 h, and the virtual best of all other
+  systems 198 in 6.6 h.
 - Where others win: 15 partition functions of the UAI 2022 final set,
   14 of them protein networks, run out of time or memory.
   TensorInference.jl answers each in 45 to 85 s.
