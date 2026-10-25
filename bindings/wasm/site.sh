@@ -10,7 +10,8 @@
 #               the repository keeps them
 #   /guide/     the guide (guide/index.html, its code highlighted by code.js)
 #   /results/   the release run's results (results/): the page, its script
-#               and the data it reads, suites.json and ppl.json, which the
+#               and the data it reads, suites.json, ppl.json and
+#               categories.json (the results by type of program), which the
 #               generator of README.md's results and the baselines branch's
 #               docs/benchmarks.md writes
 #   /results/benchmarks/
@@ -67,7 +68,7 @@ cp sitemap.xml social.png ../../docs/logo.svg "$out/"
 sed 's/viewBox="-65 -45 720 365"/viewBox="-40 44 235 235"/' ../../docs/logo.svg > "$out/favicon.svg"
 grep -q 'viewBox="-40 44 235 235"' "$out/favicon.svg"
 cp guide/index.html "$out/guide/"
-cp results/index.html results/results.js results/suites.json results/ppl.json "$out/results/"
+cp results/index.html results/results.js results/suites.json results/ppl.json results/categories.json "$out/results/"
 if [ -n "$benchmarks" ]; then
   test -f "$benchmarks/index.json"
   cp -r "$benchmarks" "$out/results/benchmarks"

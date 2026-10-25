@@ -628,119 +628,127 @@ footer {
 }
 
 /* The results page. Each system has a colour of its own, the same in every
-   plot; the light and the dark steps each have a contrast of 3:1 or more
-   with the page and the card they are drawn on. A kind has more systems
-   than there are colours that stay apart under colour blindness, so a plot
-   of more than five lines draws tddlog's and the three that answer the most
-   in colour and the others grey until the reader colours them, and every
-   line is named in the legend and at its end (results.js). */
+   plot and in the README's figures (scripts/readme_figures.py): a shade of
+   its family's hue (logic programming orange, graphical models blue,
+   probabilistic programming violet and magenta, model checking green,
+   databases ochre), and tddlog teal. The light and the dark steps each have
+   a contrast of 3:1 or more with the page and the card they are drawn on.
+   The shades of a family are told apart by their lines too (--d, a dash
+   pattern; --sws, the legend sample's), and every line is named in the
+   legend and at its end (results.js). */
 :root {
-  --s-tddlog: #2070a8;
-  --s-ace: #df6331;
-  --s-merlin: #189a6b;
-  --s-problog: #b67c00;
-  --s-pita: #c86a8d;
-  --s-aspmc: #008300;
-  --s-dice: #6250d6;
-  --s-alea: #e34948;
-  --s-roulette: #6b8e23;
-  --s-agrum: #7a4fb3;
-  --s-pgmpy: #7d6b4f;
-  --s-libdai: #1d6b55;
-  --s-tensorinference: #a8324f;
-  --s-provsql: #5a6b78;
-  --s-geni: #b02a6b;
-  --s-nodice: #8e6cc9;
-  --s-psi: #4d4d4d;
-  --s-genfer: #c0392b;
-  --s-sppl: #8a3f8f;
-  --s-pluck: #1f3a93;
-  --s-storm: #00838f;
-  --s-prism: #8c564b;
+  --s-tddlog: #0d6670;
+  --s-problog: #b35c00;
+  --s-pita: #7f3f00;
+  --s-aspmc: #c4720f;
+  --s-ace: #1f5fa8;
+  --s-merlin: #3b7dd8;
+  --s-agrum: #173f73;
+  --s-pgmpy: #6186d2;
+  --s-libdai: #2c4f9e;
+  --s-tensorinference: #4f6fd0;
+  --s-dice: #6a3fc0;
+  --s-alea: #a8327a;
+  --s-roulette: #8f5fd6;
+  --s-nodice: #4b2a8f;
+  --s-psi: #c0508f;
+  --s-genfer: #7b2c5c;
+  --s-sppl: #9b6fd0;
+  --s-geni: #d0569f;
+  --s-pluck: #5c3a9e;
+  --s-storm: #1a7f37;
+  --s-prism: #3f9a50;
+  --s-provsql: #8a6a12;
   --slower: #c2410c;
   --good: #1a7f37;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --s-tddlog: #3987e5;
-    --s-ace: #d95926;
-    --s-merlin: #199e70;
-    --s-problog: #c98500;
-    --s-pita: #d55181;
-    --s-aspmc: #3fb950;
-    --s-roulette: #a6cf4f;
-    --s-dice: #9085e9;
-    --s-alea: #e66767;
-    --s-agrum: #a58be0;
-    --s-pgmpy: #c2ae8f;
-    --s-libdai: #6fd2ad;
-    --s-tensorinference: #e47f98;
-    --s-provsql: #9fb0bd;
-    --s-geni: #ee7fb0;
-    --s-nodice: #c4b5fd;
-    --s-psi: #bdbdbd;
-    --s-genfer: #f08a7c;
-    --s-sppl: #b86fb8;
-    --s-pluck: #8fa8f0;
-    --s-storm: #4fc3cf;
-    --s-prism: #d2a679;
+    --s-tddlog: #3fb8c4;
+    --s-problog: #e08a2e;
+    --s-pita: #c8742a;
+    --s-aspmc: #f2b066;
+    --s-ace: #5b9be8;
+    --s-merlin: #8cbcf2;
+    --s-agrum: #4a7fd0;
+    --s-pgmpy: #b0cdf7;
+    --s-libdai: #6f8ee0;
+    --s-tensorinference: #9aa8ff;
+    --s-dice: #a58be8;
+    --s-alea: #e070b0;
+    --s-roulette: #c8b0f7;
+    --s-nodice: #8a6ad8;
+    --s-psi: #f2a0cc;
+    --s-genfer: #c86a9e;
+    --s-sppl: #dcc8fa;
+    --s-geni: #f7b0d6;
+    --s-pluck: #9c80e6;
+    --s-storm: #3fb950;
+    --s-prism: #86dc96;
+    --s-provsql: #d2b04a;
     --slower: #f0883e;
     --good: #3fb950;
   }
 }
 
 :root[data-theme="dark"] {
-  --s-tddlog: #3987e5;
-  --s-ace: #d95926;
-  --s-merlin: #199e70;
-  --s-problog: #c98500;
-  --s-pita: #d55181;
-  --s-aspmc: #3fb950;
-  --s-roulette: #a6cf4f;
-  --s-dice: #9085e9;
-  --s-alea: #e66767;
-  --s-agrum: #a58be0;
-  --s-pgmpy: #c2ae8f;
-  --s-libdai: #6fd2ad;
-  --s-tensorinference: #e47f98;
-  --s-provsql: #9fb0bd;
-  --s-geni: #ee7fb0;
-  --s-nodice: #c4b5fd;
-  --s-psi: #bdbdbd;
-  --s-genfer: #f08a7c;
-  --s-sppl: #b86fb8;
-  --s-pluck: #8fa8f0;
-  --s-storm: #4fc3cf;
-  --s-prism: #d2a679;
+  --s-tddlog: #3fb8c4;
+  --s-problog: #e08a2e;
+  --s-pita: #c8742a;
+  --s-aspmc: #f2b066;
+  --s-ace: #5b9be8;
+  --s-merlin: #8cbcf2;
+  --s-agrum: #4a7fd0;
+  --s-pgmpy: #b0cdf7;
+  --s-libdai: #6f8ee0;
+  --s-tensorinference: #9aa8ff;
+  --s-dice: #a58be8;
+  --s-alea: #e070b0;
+  --s-roulette: #c8b0f7;
+  --s-nodice: #8a6ad8;
+  --s-psi: #f2a0cc;
+  --s-genfer: #c86a9e;
+  --s-sppl: #dcc8fa;
+  --s-geni: #f7b0d6;
+  --s-pluck: #9c80e6;
+  --s-storm: #3fb950;
+  --s-prism: #86dc96;
+  --s-provsql: #d2b04a;
   --slower: #f0883e;
   --good: #3fb950;
 }
 
 .s-tddlog { --s: var(--s-tddlog); }
-.s-ace { --s: var(--s-ace); }
-.s-merlin { --s: var(--s-merlin); }
 .s-problog { --s: var(--s-problog); }
-.s-pita { --s: var(--s-pita); }
-.s-aspmc { --s: var(--s-aspmc); }
-.s-dice { --s: var(--s-dice); }
+.s-pita { --s: var(--s-pita); --d: 6 3; --sws: dashed; }
+.s-aspmc { --s: var(--s-aspmc); --d: 1.5 2.5; --sws: dotted; }
+.s-ace { --s: var(--s-ace); }
+.s-merlin { --s: var(--s-merlin); --d: 6 3; --sws: dashed; }
+.s-agrum { --s: var(--s-agrum); --d: 1.5 2.5; --sws: dotted; }
+.s-pgmpy { --s: var(--s-pgmpy); }
+.s-libdai { --s: var(--s-libdai); --d: 7 3 2 3; --sws: dashed; }
+.s-tensorinference { --s: var(--s-tensorinference); --d: 6 3; --sws: dashed; }
+.s-dice { --s: var(--s-dice); --d: 6 3; --sws: dashed; }
 .s-alea { --s: var(--s-alea); }
 .s-roulette { --s: var(--s-roulette); }
-.s-agrum { --s: var(--s-agrum); }
-.s-pgmpy { --s: var(--s-pgmpy); }
-.s-libdai { --s: var(--s-libdai); }
-.s-tensorinference { --s: var(--s-tensorinference); }
-.s-provsql { --s: var(--s-provsql); }
-.s-geni { --s: var(--s-geni); }
-.s-nodice { --s: var(--s-nodice); }
-.s-psi { --s: var(--s-psi); }
-.s-genfer { --s: var(--s-genfer); }
-.s-sppl { --s: var(--s-sppl); }
-.s-pluck { --s: var(--s-pluck); }
+.s-nodice { --s: var(--s-nodice); --d: 1.5 2.5; --sws: dotted; }
+.s-psi { --s: var(--s-psi); --d: 7 3 2 3; --sws: dashed; }
+.s-genfer { --s: var(--s-genfer); --d: 6 3; --sws: dashed; }
+.s-sppl { --s: var(--s-sppl); --d: 1.5 2.5; --sws: dotted; }
+.s-geni { --s: var(--s-geni); --d: 1.5 2.5; --sws: dotted; }
+.s-pluck { --s: var(--s-pluck); --d: 7 3 2 3; --sws: dashed; }
 .s-storm { --s: var(--s-storm); }
-.s-prism { --s: var(--s-prism); }
+.s-prism { --s: var(--s-prism); --d: 6 3; --sws: dashed; }
+.s-provsql { --s: var(--s-provsql); }
+/* A family's colour, its first system's: the overview's dots. */
+.f-logic { --s: var(--s-problog); }
+.f-graphical { --s: var(--s-ace); }
+.f-ppl { --s: var(--s-dice); }
+.f-checking { --s: var(--s-storm); }
+.f-databases { --s: var(--s-provsql); }
 
-/* The results page: a rail to browse its kinds, suites and families beside
+/* The results page: a rail to browse its categories, suites and families beside
    one view, and a system's runs of an instance in a drawer at the right.
    Its buttons are the plain kind, not the playground's. */
 body.results main { max-width: 100rem; }
@@ -879,7 +887,7 @@ svg.overview { display: block; max-width: 100%; }
 .overview .mine text.name, .overview .mine text.answers { font-weight: 600; fill: var(--accent-ink); }
 .overview .span { stroke: var(--grey-line); stroke-width: 3; stroke-linecap: round; }
 .overview circle.me { fill: var(--s-tddlog); }
-.overview circle.you { fill: var(--muted); }
+.overview circle.you { fill: var(--s, var(--muted)); }
 .overview text.t.me { fill: var(--accent-ink); }
 .overview text.t.you, .overview text.both { fill: var(--muted); }
 .overview text.ratio { font-size: 13px; font-weight: 700; fill: var(--accent-ink); }
@@ -962,6 +970,39 @@ table.h2h tr.words p { max-width: 80ch; }
 .finding-text { max-width: 80ch; font-size: 14px; }
 ul.losses { max-width: 80ch; margin: 0; padding-left: 1.2rem; font-size: 14px; }
 ul.losses li { margin: 0.3rem 0; }
+/* A category's headline, and its filters: a source, or a system's own
+   benchmarks, in one row of chips above the tables and plots they narrow. */
+p.headline { margin: 0.2rem 0 0.6rem; font-size: 14px; }
+nav.filters { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.4rem 0 0.8rem; }
+nav.filters a {
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+nav.filters a:hover { border-color: var(--accent); }
+nav.filters a[aria-current] { border-color: var(--accent); background: var(--accent-fill); font-weight: 600; }
+nav.filters a .n { margin-left: 0.35rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+h3.own-head { margin-top: 2rem; }
+table.board.own td.about { white-space: normal; min-width: 18rem; max-width: 40rem; }
+/* A solver's page: its name and line's sample, its plot in each category
+   (two to a row where they fit), how it was given the instances, and its
+   version, settings and paper. */
+h2.solver { display: flex; align-items: center; gap: 0.6rem; }
+.cat-figs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0.5rem 1.5rem; }
+.cat-figs section h3 { margin: 0.6rem 0 0; font-size: 1rem; }
+table.board.how-given td.about { white-space: normal; min-width: 12rem; max-width: 36rem; }
+div.facts dl { margin: 0.4rem 0 0; font-size: 14px; }
+div.facts dd { max-width: 80ch; }
+/* The rail's two groups: the types of programs, then the solvers. */
+.tree li.group { margin: 0.9rem 0 0.15rem; padding: 0 0.5rem; color: var(--muted); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase; }
+.tree > li.solver > a { font-weight: 400; }
+.tree li.solver i.sw { width: 0.9rem; }
 
 .findings { display: grid; gap: 0.6rem; }
 .finding { margin: 0; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font-size: 14px; }
@@ -999,7 +1040,7 @@ i.sw {
   flex: none;
   width: 1.4rem;
   height: 0;
-  border-top: 3px solid var(--s);
+  border-top: 3px var(--sws, solid) var(--s);
 }
 
 i.sw.dashed { border-top-style: dashed; }
@@ -1021,7 +1062,7 @@ svg.cactus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .cactus .grid { stroke: var(--line); stroke-width: 1; }
 .cactus .grid.all { stroke-dasharray: 3 3; }
 .cactus .axis { stroke: var(--muted); stroke-width: 1; }
-.cactus .line { fill: none; stroke: var(--s, var(--muted)); stroke-width: 2; stroke-linejoin: round; }
+.cactus .line { fill: none; stroke: var(--s, var(--muted)); stroke-width: 2; stroke-dasharray: var(--d, none); stroke-linejoin: round; }
 .cactus .line.mine { stroke-width: 3; }
 .cactus .line.dashed { stroke-dasharray: 6 4; }
 .cactus .line.grey { stroke: var(--grey-line); stroke-width: 1.5; }

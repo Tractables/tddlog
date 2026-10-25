@@ -30,7 +30,7 @@
   {
    "key":"networks",
    "title":"Bayesian and Markov networks",
-   "intro":"Networks against the tools people use for them: Ace 3.0, which compiles a network into an arithmetic circuit, and Merlin 1.7.0's bucket-tree elimination (`-a bte`, and `-t PR` for the partition function), and the other exact network tools: pyAgrum (junction tree), pgmpy (variable elimination), libDAI (junction tree) and TensorInference.jl (tensor network contraction; of its two contraction orders, `treesa` and `greedy`, the faster is shown). On the standard suite's networks, Ace's networks, the large networks and the UAI networks ProbLog, PITA and aspmc ran too. The exact systems that read Dice programs, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck, ran on the standard suite's networks, Ace's networks, the large networks and the UAI networks, each network as the Dice program of `scripts/gen_bn.py`, in a later run. tddlog reads a network as a ProbLog program, one annotated disjunction per row of a table.",
+   "intro":"Networks against the tools people use for them: Ace 3.0, which compiles a network into an arithmetic circuit, and Merlin 1.7.0's bucket-tree elimination (`-a bte`, and `-t PR` for the partition function), and the other exact network tools: pyAgrum (junction tree), pgmpy (variable elimination), libDAI (junction tree) and TensorInference.jl (tensor network contraction; of its two contraction orders, `treesa` and `greedy`, the faster is shown). On the standard suite's networks, Ace's networks, the large networks and the UAI networks ProbLog, PITA and aspmc ran too. The exact systems that read Dice programs, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck, ran on the standard suite's networks, Ace's networks, the large networks and the UAI networks, each network as the Dice program of `scripts/gen_bn.py`. tddlog reads a network as a ProbLog program, one annotated disjunction per row of a table.",
    "cards":[
     {
      "suite":"std_bn",
@@ -72,7 +72,7 @@
     {
      "key":"std_bn",
      "title":"Standard suite: networks",
-     "about":"34 Bayesian networks of the bnlearn repository, with and without evidence, one annotated disjunction per row of a table, every leaf queried; 300 s a run. aspmc, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"34 Bayesian networks of the bnlearn repository, with and without evidence, one annotated disjunction per row of a table, every leaf queried; 300 s a run.",
      "limit":300,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -131,7 +131,7 @@
     {
      "key":"ace",
      "title":"Ace's networks",
-     "about":"The 46 networks of Ace's benchmarks (Chavira and Darwiche), each with one of the archive's evidence sets; 600 s a run. ProbLog, PITA, aspmc, Ace, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"The 46 networks of Ace's benchmarks (Chavira and Darwiche), each with one of the archive's evidence sets; 600 s a run.",
      "limit":600,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -205,7 +205,7 @@
     {
      "key":"large",
      "title":"Large networks",
-     "about":"barley, diabetes, mildew and munin1 to munin4, with and without evidence, the large networks of the flip-hoisting evaluation (Cheng et al., 2021); 600 s a run. ProbLog, PITA, aspmc, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"barley, diabetes, mildew and munin1 to munin4, with and without evidence, the large networks of the flip-hoisting evaluation (Cheng et al., 2021); 600 s a run.",
      "limit":600,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -246,7 +246,7 @@
     {
      "key":"uai",
      "title":"UAI 2022: marginals",
-     "about":"The 120 Markov and Bayesian networks of the UAI 2022 competition's MAR tuning set, each with its evidence; every marginal given the evidence; 300 s a run. aspmc, Ace, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"The 120 Markov and Bayesian networks of the UAI 2022 competition's MAR tuning set, each with its evidence; every marginal given the evidence; 300 s a run.",
      "limit":300,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -392,7 +392,7 @@
     {
      "key":"uaipr",
      "title":"UAI 2022: partition function, final set",
-     "about":"The 197 networks of the UAI 2022 competition's final PR set: tddlog prints the probability of the evidence alone (`--evidence-probability --no-queries`) and Merlin and the other network tools run their partition function tasks; 300 s a run. ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl and the Dice family ran in a later run.",
+     "about":"The 197 networks of the UAI 2022 competition's final PR set: tddlog prints the probability of the evidence alone (`--evidence-probability --no-queries`) and Merlin and the other network tools run their partition function tasks; 300 s a run.",
      "limit":300,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni"],
      "instances":[
@@ -619,7 +619,7 @@
     {
      "key":"uaitpr",
      "title":"UAI 2022: partition function, tuning set",
-     "about":"The 121 networks of the UAI 2022 competition's PR tuning set: tddlog prints the probability of the evidence alone (`--evidence-probability --no-queries`) and Merlin and the other network tools run their partition function tasks; 300 s a run. ProbLog, PITA, aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl and the Dice family ran in a later run.",
+     "about":"The 121 networks of the UAI 2022 competition's PR tuning set: tddlog prints the probability of the evidence alone (`--evidence-probability --no-queries`) and Merlin and the other network tools run their partition function tasks; 300 s a run.",
      "limit":300,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni"],
      "instances":[
@@ -770,7 +770,7 @@
     {
      "key":"uai_pr",
      "title":"UAI 2022: partition function of the MAR set",
-     "about":"The 120 networks of the UAI 2022 competition's MAR tuning set: tddlog prints the probability of the evidence alone (`--evidence-probability --no-queries`) and Merlin and the other network tools run their partition function tasks; 300 s a run. aspmc, Ace and the Dice family ran in a later run.",
+     "about":"The 120 networks of the UAI 2022 competition's MAR tuning set: tddlog prints the probability of the evidence alone (`--evidence-probability --no-queries`) and Merlin and the other network tools run their partition function tasks; 300 s a run.",
      "limit":300,
      "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni"],
      "instances":[
@@ -912,7 +912,7 @@
     }
    ],
    "setup":[
-    ["Machine","Five jobs on four lab machines (36 physical cores and 503 GB; 20 physical cores and 503 GB; 16 physical cores and 251 GB; 16 physical cores and 125 GB), 2026-10-19 to 2026-10-21: every baseline of a suite in the same job, each run single-threaded and pinned to a physical core of its own, side by side in lanes; Ace in 12 wide lanes of 88 GB, half of it its Java heap, and tddlog alone in a later job for each, on the same machine, in the same lanes, with the same limits and repetitions (2026-10-22) but the final PR set's in 17 lanes rather than 34, with the same 29 GB a process. The further systems of a later job (the suites' notes say which) ran in its own lanes."],
+    ["Machine","Five jobs on four lab machines (36 physical cores and 503 GB; 20 physical cores and 503 GB; 16 physical cores and 251 GB; 16 physical cores and 125 GB), 2026-10-19 to 2026-10-21: every baseline of a suite in the same job, each run single-threaded and pinned to a physical core of its own, side by side in lanes; Ace in 12 wide lanes of 88 GB, half of it its Java heap, and tddlog alone in a later job for each, on the same machine, in the same lanes, with the same limits and repetitions (2026-10-22) but the final PR set's in 17 lanes rather than 34, with the same 29 GB a process. Each comparison pairs a baseline with tddlog run on the same machine in the same lanes."],
     ["Times","Wall time of the whole process, parsing and grounding included. A system's fastest variant is the one shown: ProbLog's d-DNNF, SDD or forward SDD compilation; Ace's default route or c2d forced. Alea.jl's and Roulette's own times leave out the start-up and compilation of Julia and Racket, as on the page of the Dice family's suites; their processes' wall times are columns of their own."],
     ["Versions","tddlog 0.1.0 with its default strategy (`auto`), linked statically (tididi c7c0c5d6, goatd e592d1e). Ace 3.0, Merlin 1.7.0, pyAgrum 3.2.1, pgmpy 1.1.2, libDAI 0.3.2, TensorInference.jl, ProbLog 2.3.0, PITA (cplint) and aspmc with sharpSAT-TD. Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck as on the page of the Dice family's suites."],
     ["Answers","Every answer of tddlog's, and of each other system, is compared with a reference: the clique tree ([`scripts/bn_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/bn_exact.py)), Ace or Merlin. The largest absolute differences: 4.3e-15 on Ace's networks, 4.9e-11 on the large networks, 9.1e-14 on the 111 UAI networks the clique tree answers (the other five agree with Merlin's six printed digits); no other system answers Grids_15, Grids_16, Grids_17 and Grids_18. For the partition function tddlog's log10 Z agrees with every other exact answer there is: Merlin's, the clique tree's, or a weighted model count of the network. The other network tools' answers against the same references: pyAgrum 229 marginal runs to 2.0e-7 and 235 partition functions to 2.1e-7 in log10; pgmpy 143 marginal runs to 4.7e-9 and 214 partition functions to 2.2e-7 in log10; libDAI 238 marginal runs to 5.0e-7 and 262 partition functions to 2.2e-7 in log10; TensorInference.jl 368 marginal runs to 5.0e-7 and 394 partition functions to 2.2e-7 in log10 (the tools print six digits, as Merlin does). A baseline's answer off the reference by more than 1e-6 counts as a failure (wrong)."]
@@ -922,7 +922,7 @@
   {
    "key":"programs",
    "title":"Probabilistic logic programs",
-   "intro":"Programs in ProbLog's language against ProbLog 2.3.0 (d-DNNF, SDD and forward SDD compilation), PITA's BDDs and aspmc with sharpSAT-TD, and, on TPC-H and the literature suite's pdb and noisy-or, ProvSQL 1.13.0, a PostgreSQL extension that tracks provenance and picks its method for the probability. Scallop's top-k proofs ran too; they are approximate, so their times are in the tables of [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) and not here. On the standard suite, the literature suite, TPC-H and Biomine, Ace, Merlin, the other network tools and the exact systems that read Dice programs, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck, ran on the network and the Dice program that [`scripts/ground2net.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/ground2net.py) writes of a program's ground program, in a later run.",
+   "intro":"Programs in ProbLog's language against ProbLog 2.3.0 (d-DNNF, SDD and forward SDD compilation), PITA's BDDs and aspmc with sharpSAT-TD, and, on TPC-H and the literature suite's pdb and noisy-or, ProvSQL 1.13.0, a PostgreSQL extension that tracks provenance and picks its method for the probability. Scallop's top-k proofs ran too; they are approximate, so their times are in the tables of [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) and not here. On the standard suite, the literature suite, TPC-H and Biomine, Ace, Merlin, the other network tools and the exact systems that read Dice programs, Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck, ran on the network and the Dice program that [`scripts/ground2net.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/ground2net.py) writes of a program's ground program.",
    "cards":[
     {
      "suite":"std",
@@ -949,7 +949,7 @@
     {
      "key":"std",
      "title":"Standard suite: programs",
-     "about":"50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper's programs translated to ProbLog; 300 s a run. aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"50 programs: random graphs, grids, smokers, UW-CSE, Cora citation matching, blood types and the Dice paper's programs translated to ProbLog; 300 s a run.",
      "limit":300,
      "systems":["tddlog","problog","pita","aspmc","ace","merlin","agrum","pgmpy","libdai","tensorinference","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -1030,7 +1030,7 @@
     {
      "key":"lit",
      "title":"Literature suite",
-     "about":"39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. ProvSQL ran on the two tuple-independent families, pdb and noisy-or (the others are recursive or have annotated disjunctions), in a later run on another machine. aspmc, Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"39 programs of six families from published evaluations (mnist_sum, pedigree, sickness, noisy-or, mastermind, pdb), each grown on a random structure from a seed; 300 s a run. ProvSQL ran on the two tuple-independent families, pdb and noisy-or (the others are recursive or have annotated disjunctions).",
      "limit":300,
      "systems":["tddlog","problog","pita","aspmc","provsql","ace","merlin","agrum","pgmpy","libdai","tensorinference","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -1101,7 +1101,7 @@
     {
      "key":"tpch",
      "title":"TPC-H",
-     "about":"The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"The TPC-H queries as Boolean queries over a tuple-independent database, at scale factors 0.001 to 0.1, flat and through views (208 instances); 600 s a run.",
      "limit":600,
      "systems":["tddlog","problog","pita","aspmc","provsql","ace","merlin","agrum","pgmpy","libdai","tensorinference","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -1339,7 +1339,7 @@
     {
      "key":"biomine",
      "title":"Biomine",
-     "about":"The probability that each of four genes is connected to Alzheimer disease in the human Biomine network, over the union of the K most probable paths, for ten values of K up to 64; 600 s a run. Ace, Merlin, pyAgrum, pgmpy, libDAI, TensorInference.jl, Storm, PRISM and the Dice family ran in a later run.",
+     "about":"The probability that each of four genes is connected to Alzheimer disease in the human Biomine network, over the union of the K most probable paths, for ten values of K up to 64; 600 s a run.",
      "limit":600,
      "systems":["tddlog","problog","pita","aspmc","ace","merlin","agrum","pgmpy","libdai","tensorinference","dice","alea","alea-process","roulette","roulette-process","nodice","psi","genfer","sppl","geni","pluck","storm","prism"],
      "instances":[
@@ -1378,97 +1378,12 @@
     }
    ],
    "setup":[
-    ["Machine","Three jobs on two lab machines (36 and 20 physical cores, 503 GB each), 2026-10-19 to 2026-10-20: every baseline of a suite in the same job, each run single-threaded and pinned to a physical core of its own, side by side in lanes; Ace in 12 wide lanes of 88 GB, half of it its Java heap, and tddlog alone in a later job for each, on the same machine, in the same lanes, with the same limits and repetitions (2026-10-22) but the final PR set's in 17 lanes rather than 34, with the same 29 GB a process. The further systems of a later job (the suites' notes say which) ran in its own lanes."],
+    ["Machine","Three jobs on two lab machines (36 and 20 physical cores, 503 GB each), 2026-10-19 to 2026-10-20: every baseline of a suite in the same job, each run single-threaded and pinned to a physical core of its own, side by side in lanes; Ace in 12 wide lanes of 88 GB, half of it its Java heap, and tddlog alone in a later job for each, on the same machine, in the same lanes, with the same limits and repetitions (2026-10-22) but the final PR set's in 17 lanes rather than 34, with the same 29 GB a process. Each comparison pairs a baseline with tddlog run on the same machine in the same lanes."],
     ["Times","Wall time of the whole process, parsing and grounding included. A system's fastest variant is the one shown: ProbLog's d-DNNF, SDD or forward SDD compilation; Ace's default route or c2d forced. Alea.jl's and Roulette's own times leave out the start-up and compilation of Julia and Racket, as on the page of the Dice family's suites; their processes' wall times are columns of their own."],
     ["Versions","tddlog 0.1.0 with its default strategy (`auto`), linked statically (tididi c7c0c5d6, goatd e592d1e). ProbLog 2.3.0, PITA (cplint) and aspmc with sharpSAT-TD; ProvSQL 1.13.0 on PostgreSQL 16.4. Ace 3.0, Merlin 1.7.0, pyAgrum 3.2.1, pgmpy 1.1.2, libDAI 0.3.2 and TensorInference.jl. Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck as on the page of the Dice family's suites."],
     ["Answers","Every answer of tddlog's is compared with a reference: ProbLog's, or an exact solver written for the suite ([`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py), [`scripts/tpch_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/tpch_exact.py), [`scripts/reliability_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/reliability_exact.py)). The largest absolute differences: 4.9e-9 on the standard suite (ProbLog prints eight digits), 2.7e-13 on the literature suite, 1.0e-14 on TPC-H, 3.4e-12 on Biomine; ProvSQL's answers differ from the reference's by at most 1.0e-12 on TPC-H and by at most 8.9e-16 on pdb and noisy-or. The random graphs and grids no exact system finishes agree with estimates from sampled graphs ([`scripts/sample_paths.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/sample_paths.py)). A baseline's answer off the reference by more than 1e-6 counts as a failure (wrong)."]
    ],
    "docs":"https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md"
-  }
- ],
- "kinds":[
-  {
-   "key":"programs",
-   "title":"Probabilistic logic programs",
-   "noun":"programs",
-   "order":0,
-   "suites":["std","lit","tpch","biomine"],
-   "instances":307,
-   "systems":["tddlog","problog","pita","aspmc"],
-   "scored":303,
-   "answers":{
-    "tddlog":303,
-    "problog":236,
-    "pita":173,
-    "aspmc":45
-   },
-   "total":{
-    "tddlog":970.959,
-    "problog":47248.182,
-    "pita":76620.531,
-    "aspmc":141759.554
-   },
-   "losses":[]
-  },
-  {
-   "key":"networks",
-   "title":"Bayesian and Markov networks",
-   "noun":"networks",
-   "order":1,
-   "suites":["std_bn","ace","large","uai","uaipr","uaitpr","uai_pr"],
-   "instances":652,
-   "systems":["tddlog","ace","merlin","agrum","pgmpy","libdai","tensorinference","problog","pita","aspmc"],
-   "scored":619,
-   "answers":{
-    "tddlog":604,
-    "ace":392,
-    "merlin":443,
-    "agrum":415,
-    "pgmpy":315,
-    "libdai":452,
-    "tensorinference":459,
-    "problog":41,
-    "pita":119,
-    "aspmc":131
-   },
-   "total":{
-    "tddlog":7333.629,
-    "ace":79935.419,
-    "merlin":66703.258,
-    "agrum":76272.122,
-    "pgmpy":111334.093,
-    "libdai":74270.598,
-    "tensorinference":83445.289,
-    "problog":189147.695,
-    "pita":168197.202,
-    "aspmc":169529.896
-   },
-   "losses":["Where tddlog loses: 15 partition functions of the UAI 2022 final set, 14 of them protein networks, run out of time or memory. TensorInference.jl answers each in 45 to 85 s."]
-  },
-  {
-   "key":"databases",
-   "title":"Probabilistic databases",
-   "noun":"queries",
-   "order":4,
-   "suites":["tpch"],
-   "instances":208,
-   "systems":["tddlog","provsql","problog","pita","aspmc"],
-   "scored":206,
-   "answers":{
-    "tddlog":206,
-    "provsql":196,
-    "problog":172,
-    "pita":105,
-    "aspmc":3
-   },
-   "total":{
-    "tddlog":632.951,
-    "provsql":6380.934,
-    "problog":35158.217,
-    "pita":65531.297,
-    "aspmc":122372.723
-   },
-   "losses":["ProvSQL is fast on the easy TPC-H queries, its own benchmarks, and faster than tddlog on 107 of them."]
   }
  ]
 }

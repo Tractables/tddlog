@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="720.627125pt" height="1468.606875pt" viewBox="0 0 720.627125 1468.606875" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="693.153281pt" height="1048.425469pt" viewBox="0 0 693.153281 1048.425469" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
@@ -20,65 +20,65 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 1468.606875 
-L 720.627125 1468.606875 
-L 720.627125 0 
+   <path d="M 0 1048.425469 
+L 693.153281 1048.425469 
+L 693.153281 0 
 L 0 0 
 z
 " style="fill: #ffffff"/>
   </g>
   <g id="axes_1">
    <g id="patch_2">
-    <path d="M 174.474 1395.166875 
-L 559.674 1395.166875 
-L 559.674 73.246875 
-L 174.474 73.246875 
+    <path d="M 224.586875 974.985469 
+L 627.786875 974.985469 
+L 627.786875 69.225469 
+L 224.586875 69.225469 
 z
 " style="fill: #ffffff"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
      <g id="line2d_1">
-      <path d="M 225.45355 1395.166875 
-L 225.45355 73.246875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
+      <path d="M 260.576456 974.985469 
+L 260.576456 69.225469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
      </g>
      <g id="line2d_2"/>
      <g id="text_1">
-      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="225.45355" y="1409.905078" transform="rotate(-0, 225.45355, 1409.905078)">10 min</text>
+      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="260.576456" y="989.723672" transform="rotate(-0, 260.576456, 989.723672)">1 min</text>
      </g>
     </g>
     <g id="xtick_2">
      <g id="line2d_3">
-      <path d="M 312.850751 1395.166875 
-L 312.850751 73.246875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
+      <path d="M 358.120651 974.985469 
+L 358.120651 69.225469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
      </g>
      <g id="line2d_4"/>
      <g id="text_2">
-      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="312.850751" y="1409.905078" transform="rotate(-0, 312.850751, 1409.905078)">1 h</text>
+      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="358.120651" y="989.723672" transform="rotate(-0, 358.120651, 989.723672)">10 min</text>
      </g>
     </g>
     <g id="xtick_3">
      <g id="line2d_5">
-      <path d="M 425.16465 1395.166875 
-L 425.16465 73.246875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
+      <path d="M 434.024789 974.985469 
+L 434.024789 69.225469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
      </g>
      <g id="line2d_6"/>
      <g id="text_3">
-      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="425.16465" y="1409.905078" transform="rotate(-0, 425.16465, 1409.905078)">10 h</text>
+      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="434.024789" y="989.723672" transform="rotate(-0, 434.024789, 989.723672)">1 h</text>
      </g>
     </g>
     <g id="xtick_4">
      <g id="line2d_7">
-      <path d="M 537.478549 1395.166875 
-L 537.478549 73.246875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
+      <path d="M 531.568984 974.985469 
+L 531.568984 69.225469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 0.7; stroke-linecap: square"/>
      </g>
      <g id="line2d_8"/>
      <g id="text_4">
-      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="537.478549" y="1409.905078" transform="rotate(-0, 537.478549, 1409.905078)">100 h</text>
+      <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="531.568984" y="989.723672" transform="rotate(-0, 531.568984, 989.723672)">10 h</text>
      </g>
     </g>
    </g>
@@ -86,530 +86,330 @@ L 537.478549 73.246875
     <g id="ytick_1">
      <g id="line2d_9"/>
      <g id="text_5">
-      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="114.525937" transform="rotate(-0, 118.474, 114.525937)">tddlog</text>
+      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="110.504531" transform="rotate(-0, 168.586875, 110.504531)">tddlog</text>
      </g>
     </g>
     <g id="ytick_2">
      <g id="line2d_10"/>
      <g id="text_6">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="139.005937" transform="rotate(-0, 118.474, 139.005937)">aspmc</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="134.984531" transform="rotate(-0, 168.586875, 134.984531)">Probabilistic programming</text>
      </g>
     </g>
     <g id="ytick_3">
      <g id="line2d_11"/>
      <g id="text_7">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="163.485937" transform="rotate(-0, 118.474, 163.485937)">PITA</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="159.464531" transform="rotate(-0, 168.586875, 159.464531)">Logic programming</text>
      </g>
     </g>
     <g id="ytick_4">
      <g id="line2d_12"/>
      <g id="text_8">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="187.965937" transform="rotate(-0, 118.474, 187.965937)">ProbLog</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="183.944531" transform="rotate(-0, 168.586875, 183.944531)">Graphical models</text>
      </g>
     </g>
     <g id="ytick_5">
      <g id="line2d_13"/>
      <g id="text_9">
-      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="236.925937" transform="rotate(-0, 118.474, 236.925937)">tddlog</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="208.424531" transform="rotate(-0, 168.586875, 208.424531)">Model checking</text>
      </g>
     </g>
     <g id="ytick_6">
      <g id="line2d_14"/>
      <g id="text_10">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="261.405937" transform="rotate(-0, 118.474, 261.405937)">ProbLog</text>
+      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="257.384531" transform="rotate(-0, 168.586875, 257.384531)">tddlog</text>
      </g>
     </g>
     <g id="ytick_7">
      <g id="line2d_15"/>
      <g id="text_11">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="285.885937" transform="rotate(-0, 118.474, 285.885937)">aspmc</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="281.864531" transform="rotate(-0, 168.586875, 281.864531)">Databases</text>
      </g>
     </g>
     <g id="ytick_8">
      <g id="line2d_16"/>
      <g id="text_12">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="310.365937" transform="rotate(-0, 118.474, 310.365937)">PITA</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="306.344531" transform="rotate(-0, 168.586875, 306.344531)">Graphical models</text>
      </g>
     </g>
     <g id="ytick_9">
      <g id="line2d_17"/>
      <g id="text_13">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="334.845937" transform="rotate(-0, 118.474, 334.845937)">pgmpy</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="330.824531" transform="rotate(-0, 168.586875, 330.824531)">Logic programming</text>
      </g>
     </g>
     <g id="ytick_10">
      <g id="line2d_18"/>
      <g id="text_14">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="359.325937" transform="rotate(-0, 118.474, 359.325937)">TensorInference.jl</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="355.304531" transform="rotate(-0, 168.586875, 355.304531)">Model checking</text>
      </g>
     </g>
     <g id="ytick_11">
      <g id="line2d_19"/>
      <g id="text_15">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="383.805937" transform="rotate(-0, 118.474, 383.805937)">Ace</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="379.784531" transform="rotate(-0, 168.586875, 379.784531)">Probabilistic programming</text>
      </g>
     </g>
     <g id="ytick_12">
      <g id="line2d_20"/>
      <g id="text_16">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="408.285937" transform="rotate(-0, 118.474, 408.285937)">pyAgrum</text>
+      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="428.744531" transform="rotate(-0, 168.586875, 428.744531)">tddlog</text>
      </g>
     </g>
     <g id="ytick_13">
      <g id="line2d_21"/>
      <g id="text_17">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="432.765937" transform="rotate(-0, 118.474, 432.765937)">libDAI</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="453.224531" transform="rotate(-0, 168.586875, 453.224531)">Graphical models</text>
      </g>
     </g>
     <g id="ytick_14">
      <g id="line2d_22"/>
      <g id="text_18">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="457.245937" transform="rotate(-0, 118.474, 457.245937)">Merlin</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="477.704531" transform="rotate(-0, 168.586875, 477.704531)">Logic programming</text>
      </g>
     </g>
     <g id="ytick_15">
      <g id="line2d_23"/>
      <g id="text_19">
-      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="506.205937" transform="rotate(-0, 118.474, 506.205937)">tddlog</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="502.184531" transform="rotate(-0, 168.586875, 502.184531)">Probabilistic programming</text>
      </g>
     </g>
     <g id="ytick_16">
      <g id="line2d_24"/>
      <g id="text_20">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="530.685937" transform="rotate(-0, 118.474, 530.685937)">Psi</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="526.664531" transform="rotate(-0, 168.586875, 526.664531)">Model checking</text>
      </g>
     </g>
     <g id="ytick_17">
      <g id="line2d_25"/>
      <g id="text_21">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="555.165937" transform="rotate(-0, 118.474, 555.165937)">SPPL</text>
+      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="575.624531" transform="rotate(-0, 168.586875, 575.624531)">tddlog</text>
      </g>
     </g>
     <g id="ytick_18">
      <g id="line2d_26"/>
      <g id="text_22">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="579.645937" transform="rotate(-0, 118.474, 579.645937)">noDice</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="600.104531" transform="rotate(-0, 168.586875, 600.104531)">Graphical models</text>
      </g>
     </g>
     <g id="ytick_19">
      <g id="line2d_27"/>
      <g id="text_23">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="604.125937" transform="rotate(-0, 118.474, 604.125937)">Genfer</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="624.584531" transform="rotate(-0, 168.586875, 624.584531)">Logic programming</text>
      </g>
     </g>
     <g id="ytick_20">
      <g id="line2d_28"/>
      <g id="text_24">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="628.605937" transform="rotate(-0, 118.474, 628.605937)">ProbLog</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="649.064531" transform="rotate(-0, 168.586875, 649.064531)">Probabilistic programming</text>
      </g>
     </g>
     <g id="ytick_21">
      <g id="line2d_29"/>
      <g id="text_25">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="653.085937" transform="rotate(-0, 118.474, 653.085937)">Pluck</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="673.544531" transform="rotate(-0, 168.586875, 673.544531)">Model checking</text>
      </g>
     </g>
     <g id="ytick_22">
      <g id="line2d_30"/>
      <g id="text_26">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="677.565937" transform="rotate(-0, 118.474, 677.565937)">PITA</text>
+      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="722.504531" transform="rotate(-0, 168.586875, 722.504531)">tddlog</text>
      </g>
     </g>
     <g id="ytick_23">
      <g id="line2d_31"/>
      <g id="text_27">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="702.045937" transform="rotate(-0, 118.474, 702.045937)">Geni</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="746.984531" transform="rotate(-0, 168.586875, 746.984531)">Probabilistic programming</text>
      </g>
     </g>
     <g id="ytick_24">
      <g id="line2d_32"/>
      <g id="text_28">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="726.525937" transform="rotate(-0, 118.474, 726.525937)">aspmc</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="771.464531" transform="rotate(-0, 168.586875, 771.464531)">Model checking</text>
      </g>
     </g>
     <g id="ytick_25">
      <g id="line2d_33"/>
      <g id="text_29">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="751.005937" transform="rotate(-0, 118.474, 751.005937)">Dice</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="795.944531" transform="rotate(-0, 168.586875, 795.944531)">Graphical models</text>
      </g>
     </g>
     <g id="ytick_26">
      <g id="line2d_34"/>
      <g id="text_30">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="775.485937" transform="rotate(-0, 118.474, 775.485937)">PRISM</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="820.424531" transform="rotate(-0, 168.586875, 820.424531)">Logic programming</text>
      </g>
     </g>
     <g id="ytick_27">
      <g id="line2d_35"/>
      <g id="text_31">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="799.965937" transform="rotate(-0, 118.474, 799.965937)">Roulette</text>
+      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="869.384531" transform="rotate(-0, 168.586875, 869.384531)">tddlog</text>
      </g>
     </g>
     <g id="ytick_28">
      <g id="line2d_36"/>
      <g id="text_32">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="824.445937" transform="rotate(-0, 118.474, 824.445937)">Storm</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="893.864531" transform="rotate(-0, 168.586875, 893.864531)">Probabilistic programming</text>
      </g>
     </g>
     <g id="ytick_29">
      <g id="line2d_37"/>
      <g id="text_33">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="848.925937" transform="rotate(-0, 118.474, 848.925937)">Alea.jl</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="918.344531" transform="rotate(-0, 168.586875, 918.344531)">Graphical models</text>
      </g>
     </g>
     <g id="ytick_30">
      <g id="line2d_38"/>
      <g id="text_34">
-      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="897.885937" transform="rotate(-0, 118.474, 897.885937)">tddlog</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="942.824531" transform="rotate(-0, 168.586875, 942.824531)">Logic programming</text>
      </g>
     </g>
     <g id="ytick_31">
      <g id="line2d_39"/>
      <g id="text_35">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="922.365937" transform="rotate(-0, 118.474, 922.365937)">Geni</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="168.586875" y="967.304531" transform="rotate(-0, 168.586875, 967.304531)">Model checking</text>
      </g>
     </g>
-    <g id="ytick_32">
-     <g id="line2d_40"/>
-     <g id="text_36">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="946.845937" transform="rotate(-0, 118.474, 946.845937)">SPPL</text>
-     </g>
-    </g>
-    <g id="ytick_33">
-     <g id="line2d_41"/>
-     <g id="text_37">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="971.325937" transform="rotate(-0, 118.474, 971.325937)">Psi</text>
-     </g>
-    </g>
-    <g id="ytick_34">
-     <g id="line2d_42"/>
-     <g id="text_38">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="995.805937" transform="rotate(-0, 118.474, 995.805937)">noDice</text>
-     </g>
-    </g>
-    <g id="ytick_35">
-     <g id="line2d_43"/>
-     <g id="text_39">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1020.285937" transform="rotate(-0, 118.474, 1020.285937)">Genfer</text>
-     </g>
-    </g>
-    <g id="ytick_36">
-     <g id="line2d_44"/>
-     <g id="text_40">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1044.765937" transform="rotate(-0, 118.474, 1044.765937)">PRISM</text>
-     </g>
-    </g>
-    <g id="ytick_37">
-     <g id="line2d_45"/>
-     <g id="text_41">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1069.245937" transform="rotate(-0, 118.474, 1069.245937)">Dice</text>
-     </g>
-    </g>
-    <g id="ytick_38">
-     <g id="line2d_46"/>
-     <g id="text_42">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1093.725937" transform="rotate(-0, 118.474, 1093.725937)">Storm</text>
-     </g>
-    </g>
-    <g id="ytick_39">
-     <g id="line2d_47"/>
-     <g id="text_43">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1118.205937" transform="rotate(-0, 118.474, 1118.205937)">ProbLog</text>
-     </g>
-    </g>
-    <g id="ytick_40">
-     <g id="line2d_48"/>
-     <g id="text_44">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1142.685937" transform="rotate(-0, 118.474, 1142.685937)">Pluck</text>
-     </g>
-    </g>
-    <g id="ytick_41">
-     <g id="line2d_49"/>
-     <g id="text_45">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1167.165937" transform="rotate(-0, 118.474, 1167.165937)">aspmc</text>
-     </g>
-    </g>
-    <g id="ytick_42">
-     <g id="line2d_50"/>
-     <g id="text_46">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1191.645937" transform="rotate(-0, 118.474, 1191.645937)">PITA</text>
-     </g>
-    </g>
-    <g id="ytick_43">
-     <g id="line2d_51"/>
-     <g id="text_47">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1216.125937" transform="rotate(-0, 118.474, 1216.125937)">Roulette</text>
-     </g>
-    </g>
-    <g id="ytick_44">
-     <g id="line2d_52"/>
-     <g id="text_48">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1240.605937" transform="rotate(-0, 118.474, 1240.605937)">Alea.jl</text>
-     </g>
-    </g>
-    <g id="ytick_45">
-     <g id="line2d_53"/>
-     <g id="text_49">
-      <text style="fill: #0d6670; font: 700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1289.565937" transform="rotate(-0, 118.474, 1289.565937)">tddlog</text>
-     </g>
-    </g>
-    <g id="ytick_46">
-     <g id="line2d_54"/>
-     <g id="text_50">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1314.045937" transform="rotate(-0, 118.474, 1314.045937)">aspmc</text>
-     </g>
-    </g>
-    <g id="ytick_47">
-     <g id="line2d_55"/>
-     <g id="text_51">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1338.525937" transform="rotate(-0, 118.474, 1338.525937)">PITA</text>
-     </g>
-    </g>
-    <g id="ytick_48">
-     <g id="line2d_56"/>
-     <g id="text_52">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1363.005937" transform="rotate(-0, 118.474, 1363.005937)">ProbLog</text>
-     </g>
-    </g>
-    <g id="ytick_49">
-     <g id="line2d_57"/>
-     <g id="text_53">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="118.474" y="1387.485937" transform="rotate(-0, 118.474, 1387.485937)">ProvSQL</text>
-     </g>
-    </g>
+   </g>
+   <g id="line2d_40">
+    <path d="M 376.87475 130.425469 
+L 475.763557 130.425469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_41">
+    <path d="M 376.87475 154.905469 
+L 481.26484 154.905469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_42">
+    <path d="M 376.87475 179.385469 
+L 485.386981 179.385469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_43">
+    <path d="M 376.87475 203.865469 
+L 498.823659 203.865469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_44">
+    <path d="M 405.452653 277.305469 
+L 465.578141 277.305469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_45">
+    <path d="M 405.452653 301.785469 
+L 494.20826 301.785469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_46">
+    <path d="M 405.452653 326.265469 
+L 531.113707 326.265469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_47">
+    <path d="M 405.452653 350.745469 
+L 558.324003 350.745469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_48">
+    <path d="M 405.452653 375.225469 
+L 562.493976 375.225469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_49">
+    <path d="M 271.127284 448.665469 
+L 433.85938 448.665469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_50">
+    <path d="M 271.127284 473.145469 
+L 537.737244 473.145469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_51">
+    <path d="M 271.127284 497.625469 
+L 541.404986 497.625469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_52">
+    <path d="M 271.127284 522.105469 
+L 556.032233 522.105469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_53">
+    <path d="M 499.582832 595.545469 
+L 519.418037 595.545469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_54">
+    <path d="M 499.582832 620.025469 
+L 570.554636 620.025469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_55">
+    <path d="M 499.582832 644.505469 
+L 575.827807 644.505469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_56">
+    <path d="M 499.582832 668.985469 
+L 576.080799 668.985469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_57">
+    <path d="M 467.577274 742.425469 
+L 513.274058 742.425469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_58">
-    <path d="M 248.93273 134.446875 
-L 492.01948 134.446875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 467.577274 766.905469 
+L 532.702117 766.905469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_59">
-    <path d="M 248.93273 158.926875 
-L 462.0084 158.926875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 467.577274 791.385469 
+L 538.478594 791.385469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_60">
-    <path d="M 248.93273 183.406875 
-L 438.426967 183.406875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 467.577274 815.865469 
+L 548.099014 815.865469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_61">
-    <path d="M 347.557592 256.846875 
-L 506.086652 256.846875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 509.915309 889.305469 
+L 543.347754 889.305469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_62">
-    <path d="M 347.557592 281.326875 
-L 500.745591 281.326875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 509.915309 913.785469 
+L 570.999938 913.785469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_63">
-    <path d="M 347.557592 305.806875 
-L 500.360632 305.806875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 509.915309 938.265469 
+L 571.272318 938.265469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_64">
-    <path d="M 347.557592 330.286875 
-L 480.235038 330.286875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+    <path d="M 509.915309 962.745469 
+L 581.246466 962.745469 
+" clip-path="url(#p68797de79d)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
-   <g id="line2d_65">
-    <path d="M 347.557592 354.766875 
-L 466.170378 354.766875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   <g id="text_36">
+    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="39.402875" y="84.865859" transform="rotate(-0, 39.402875, 84.865859)">Probabilistic logic programs, 80 programs</text>
    </g>
-   <g id="line2d_66">
-    <path d="M 347.557592 379.246875 
-L 464.074313 379.246875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   <g id="text_37">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="365.760237" y="109.11875" transform="rotate(-0, 365.760237, 109.11875)">16 min</text>
    </g>
-   <g id="line2d_67">
-    <path d="M 347.557592 403.726875 
-L 461.786094 403.726875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
+   <g id="text_38">
+    <text style="fill: #1f2328; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="108.980781" transform="rotate(-0, 215.946875, 108.980781)">78</text>
    </g>
-   <g id="line2d_68">
-    <path d="M 347.557592 428.206875 
-L 460.488991 428.206875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_69">
-    <path d="M 347.557592 452.686875 
-L 455.247315 452.686875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_70">
-    <path d="M 314.917582 526.126875 
-L 486.287694 526.126875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_71">
-    <path d="M 314.917582 550.606875 
-L 480.014319 550.606875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_72">
-    <path d="M 314.917582 575.086875 
-L 475.22946 575.086875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_73">
-    <path d="M 314.917582 599.566875 
-L 473.476808 599.566875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_74">
-    <path d="M 314.917582 624.046875 
-L 469.707372 624.046875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_75">
-    <path d="M 314.917582 648.526875 
-L 469.241767 648.526875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_76">
-    <path d="M 314.917582 673.006875 
-L 468.730051 673.006875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_77">
-    <path d="M 314.917582 697.486875 
-L 465.038852 697.486875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_78">
-    <path d="M 314.917582 721.966875 
-L 454.203769 721.966875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_79">
-    <path d="M 314.917582 746.446875 
-L 450.152337 746.446875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_80">
-    <path d="M 314.917582 770.926875 
-L 447.448893 770.926875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_81">
-    <path d="M 314.917582 795.406875 
-L 444.656141 795.406875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_82">
-    <path d="M 314.917582 819.886875 
-L 424.392955 819.886875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_83">
-    <path d="M 314.917582 844.366875 
-L 420.860155 844.366875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_84">
-    <path d="M 373.930273 917.806875 
-L 486.038226 917.806875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_85">
-    <path d="M 373.930273 942.286875 
-L 485.972081 942.286875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_86">
-    <path d="M 373.930273 966.766875 
-L 485.56943 966.766875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_87">
-    <path d="M 373.930273 991.246875 
-L 484.594274 991.246875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_88">
-    <path d="M 373.930273 1015.726875 
-L 484.135126 1015.726875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_89">
-    <path d="M 373.930273 1040.206875 
-L 482.682009 1040.206875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_90">
-    <path d="M 373.930273 1064.686875 
-L 482.416198 1064.686875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_91">
-    <path d="M 373.930273 1089.166875 
-L 478.779126 1089.166875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_92">
-    <path d="M 373.930273 1113.646875 
-L 476.002126 1113.646875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_93">
-    <path d="M 373.930273 1138.126875 
-L 475.068184 1138.126875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_94">
-    <path d="M 373.930273 1162.606875 
-L 473.409073 1162.606875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_95">
-    <path d="M 373.930273 1187.086875 
-L 472.629565 1187.086875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_96">
-    <path d="M 373.930273 1211.566875 
-L 458.814252 1211.566875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_97">
-    <path d="M 373.930273 1236.046875 
-L 442.399329 1236.046875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_98">
-    <path d="M 228.061348 1309.486875 
-L 484.846248 1309.486875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_99">
-    <path d="M 228.061348 1333.966875 
-L 454.382691 1333.966875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_100">
-    <path d="M 228.061348 1358.446875 
-L 424.010551 1358.446875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="line2d_101">
-    <path d="M 228.061348 1382.926875 
-L 340.769937 1382.926875 
-" clip-path="url(#pb3376d3742)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
-   </g>
-   <g id="text_54">
-    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="10.8" y="88.887266" transform="rotate(-0, 10.8, 88.887266)">Probabilistic logic programs, 307</text>
-   </g>
-   <g id="text_55">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="236.135308" y="113.140156" transform="rotate(-0, 236.135308, 113.140156)">16 min</text>
-   </g>
-   <g id="text_56">
-    <text style="fill: #0d6670; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="113.002187" transform="rotate(-0, 165.834, 113.002187)">303</text>
+   <g id="text_39">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="133.874687" transform="rotate(-0, 645.786875, 133.874687)">10×</text>
    </g>
    <g id="PathCollection_1">
     <defs>
-     <path id="m188dd5f83e" d="M 0 4 
+     <path id="meb2f8559d9" d="M 0 4 
 C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
 C 3.578535 2.078319 4 1.060812 4 0 
 C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
@@ -621,927 +421,457 @@ C -2.078319 3.578535 -1.060812 4 0 4
 z
 "/>
     </defs>
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="492.01948" y="134.446875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#meb2f8559d9" x="475.763557" y="130.425469" style="fill: #6a3fc0"/>
     </g>
    </g>
-   <g id="text_57">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="236.135308" y="137.620156" transform="rotate(-0, 236.135308, 137.620156)">16 min</text>
+   <g id="text_40">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="486.87807" y="133.59875" transform="rotate(-0, 486.87807, 133.59875)">2.7 h</text>
    </g>
-   <g id="text_58">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="504.816902" y="137.620156" transform="rotate(-0, 504.816902, 137.620156)">39 h</text>
+   <g id="text_41">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="133.460781" transform="rotate(-0, 215.946875, 133.460781)">55</text>
    </g>
-   <g id="text_59">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="137.896094" transform="rotate(-0, 577.674, 137.896094)">146×</text>
-   </g>
-   <g id="text_60">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="137.482187" transform="rotate(-0, 640.314, 137.482187)">117×</text>
-   </g>
-   <g id="text_61">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="137.482187" transform="rotate(-0, 165.834, 137.482187)">45</text>
+   <g id="text_42">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="158.354687" transform="rotate(-0, 645.786875, 158.354687)">12×</text>
    </g>
    <g id="PathCollection_2">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="462.0084" y="158.926875" style="fill: #6e7781"/>
+    <defs>
+     <path id="m95494cac81" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+"/>
+    </defs>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m95494cac81" x="481.26484" y="154.905469" style="fill: #b35c00"/>
     </g>
    </g>
-   <g id="text_62">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="236.135308" y="162.100156" transform="rotate(-0, 236.135308, 162.100156)">16 min</text>
+   <g id="text_43">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="492.379353" y="158.07875" transform="rotate(-0, 492.379353, 158.07875)">3.0 h</text>
    </g>
-   <g id="text_63">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="474.805822" y="162.100156" transform="rotate(-0, 474.805822, 162.100156)">21 h</text>
+   <g id="text_44">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="157.940781" transform="rotate(-0, 215.946875, 157.940781)">51</text>
    </g>
-   <g id="text_64">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="162.376094" transform="rotate(-0, 577.674, 162.376094)">79×</text>
-   </g>
-   <g id="text_65">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="161.962187" transform="rotate(-0, 640.314, 161.962187)">102×</text>
-   </g>
-   <g id="text_66">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="161.962187" transform="rotate(-0, 165.834, 161.962187)">173</text>
+   <g id="text_45">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="182.834687" transform="rotate(-0, 645.786875, 182.834687)">13×</text>
    </g>
    <g id="PathCollection_3">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="438.426967" y="183.406875" style="fill: #6e7781"/>
+    <defs>
+     <path id="maf5f3d1714" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+"/>
+    </defs>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#maf5f3d1714" x="485.386981" y="179.385469" style="fill: #1f5fa8"/>
+    </g>
+   </g>
+   <g id="text_46">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="496.501493" y="182.55875" transform="rotate(-0, 496.501493, 182.55875)">3.4 h</text>
+   </g>
+   <g id="text_47">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="182.420781" transform="rotate(-0, 215.946875, 182.420781)">49</text>
+   </g>
+   <g id="text_48">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="207.314687" transform="rotate(-0, 645.786875, 207.314687)">18×</text>
+   </g>
+   <g id="PathCollection_4">
+    <defs>
+     <path id="m5213ce7af2" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+"/>
+    </defs>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m5213ce7af2" x="498.823659" y="203.865469" style="fill: #1a7f37"/>
+    </g>
+   </g>
+   <g id="text_49">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="509.938171" y="207.03875" transform="rotate(-0, 509.938171, 207.03875)">4.6 h</text>
+   </g>
+   <g id="text_50">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="206.900781" transform="rotate(-0, 215.946875, 206.900781)">36</text>
+   </g>
+   <g id="text_51">
+    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="39.402875" y="231.794687" transform="rotate(-0, 39.402875, 231.794687)">Probabilistic database queries, 213 queries</text>
+   </g>
+   <g id="text_52">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="394.33814" y="255.99875" transform="rotate(-0, 394.33814, 255.99875)">31 min</text>
+   </g>
+   <g id="text_53">
+    <text style="fill: #1f2328; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="255.860781" transform="rotate(-0, 215.946875, 255.860781)">211</text>
+   </g>
+   <g id="text_54">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="280.754687" transform="rotate(-0, 645.786875, 280.754687)">4.1×</text>
+   </g>
+   <g id="PathCollection_5">
+    <defs>
+     <path id="mdd033c1a76" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+"/>
+    </defs>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#mdd033c1a76" x="465.578141" y="277.305469" style="fill: #8a6a12"/>
+    </g>
+   </g>
+   <g id="text_55">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="476.692654" y="280.47875" transform="rotate(-0, 476.692654, 280.47875)">2.1 h</text>
+   </g>
+   <g id="text_56">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="280.340781" transform="rotate(-0, 215.946875, 280.340781)">201</text>
+   </g>
+   <g id="text_57">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="305.234687" transform="rotate(-0, 645.786875, 305.234687)">8.1×</text>
+   </g>
+   <g id="PathCollection_6">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#maf5f3d1714" x="494.20826" y="301.785469" style="fill: #1f5fa8"/>
+    </g>
+   </g>
+   <g id="text_58">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="505.322773" y="304.95875" transform="rotate(-0, 505.322773, 304.95875)">4.1 h</text>
+   </g>
+   <g id="text_59">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="304.820781" transform="rotate(-0, 215.946875, 304.820781)">195</text>
+   </g>
+   <g id="text_60">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="329.714687" transform="rotate(-0, 645.786875, 329.714687)">19×</text>
+   </g>
+   <g id="PathCollection_7">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m95494cac81" x="531.113707" y="326.265469" style="fill: #b35c00"/>
+    </g>
+   </g>
+   <g id="text_61">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="542.22822" y="329.43875" transform="rotate(-0, 542.22822, 329.43875)">9.9 h</text>
+   </g>
+   <g id="text_62">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="329.300781" transform="rotate(-0, 215.946875, 329.300781)">177</text>
+   </g>
+   <g id="text_63">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="354.194687" transform="rotate(-0, 645.786875, 354.194687)">37×</text>
+   </g>
+   <g id="PathCollection_8">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m5213ce7af2" x="558.324003" y="350.745469" style="fill: #1a7f37"/>
+    </g>
+   </g>
+   <g id="text_64">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="569.438515" y="353.91875" transform="rotate(-0, 569.438515, 353.91875)">19 h</text>
+   </g>
+   <g id="text_65">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="353.780781" transform="rotate(-0, 215.946875, 353.780781)">108</text>
+   </g>
+   <g id="text_66">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="378.674687" transform="rotate(-0, 645.786875, 378.674687)">41×</text>
+   </g>
+   <g id="PathCollection_9">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#meb2f8559d9" x="562.493976" y="375.225469" style="fill: #6a3fc0"/>
     </g>
    </g>
    <g id="text_67">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="236.135308" y="186.580156" transform="rotate(-0, 236.135308, 186.580156)">16 min</text>
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="573.608489" y="378.39875" transform="rotate(-0, 573.608489, 378.39875)">21 h</text>
    </g>
    <g id="text_68">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="451.224389" y="186.580156" transform="rotate(-0, 451.224389, 186.580156)">13 h</text>
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="378.260781" transform="rotate(-0, 215.946875, 378.260781)">88</text>
    </g>
    <g id="text_69">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="186.856094" transform="rotate(-0, 577.674, 186.856094)">49×</text>
+    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="39.402875" y="403.105859" transform="rotate(-0, 39.402875, 403.105859)">Bayesian networks, 207 networks</text>
    </g>
    <g id="text_70">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="186.442187" transform="rotate(-0, 640.314, 186.442187)">71×</text>
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="260.012771" y="427.35875" transform="rotate(-0, 260.012771, 427.35875)">1 min</text>
    </g>
    <g id="text_71">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="186.442187" transform="rotate(-0, 165.834, 186.442187)">236</text>
+    <text style="fill: #1f2328; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="427.220781" transform="rotate(-0, 215.946875, 427.220781)">207</text>
    </g>
    <g id="text_72">
-    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="10.8" y="211.287266" transform="rotate(-0, 10.8, 211.287266)">Bayesian and Markov networks, 652</text>
-   </g>
-   <g id="text_73">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="235.540156" transform="rotate(-0, 334.760169, 235.540156)">2.0 h</text>
-   </g>
-   <g id="text_74">
-    <text style="fill: #0d6670; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="235.402187" transform="rotate(-0, 165.834, 235.402187)">604</text>
-   </g>
-   <g id="PathCollection_4">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="506.086652" y="256.846875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_75">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="260.020156" transform="rotate(-0, 334.760169, 260.020156)">2.0 h</text>
-   </g>
-   <g id="text_76">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="518.884074" y="260.020156" transform="rotate(-0, 518.884074, 260.020156)">53 h</text>
-   </g>
-   <g id="text_77">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="260.296094" transform="rotate(-0, 577.674, 260.296094)">26×</text>
-   </g>
-   <g id="text_78">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="259.882187" transform="rotate(-0, 640.314, 259.882187)">52×</text>
-   </g>
-   <g id="text_79">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="259.882187" transform="rotate(-0, 165.834, 259.882187)">41</text>
-   </g>
-   <g id="PathCollection_5">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="500.745591" y="281.326875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_80">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="284.500156" transform="rotate(-0, 334.760169, 284.500156)">2.0 h</text>
-   </g>
-   <g id="text_81">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="513.543013" y="284.500156" transform="rotate(-0, 513.543013, 284.500156)">47 h</text>
-   </g>
-   <g id="text_82">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="284.776094" transform="rotate(-0, 577.674, 284.776094)">23×</text>
-   </g>
-   <g id="text_83">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="284.362187" transform="rotate(-0, 640.314, 284.362187)">167×</text>
-   </g>
-   <g id="text_84">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="284.362187" transform="rotate(-0, 165.834, 284.362187)">131</text>
-   </g>
-   <g id="PathCollection_6">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="500.360632" y="305.806875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_85">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="308.980156" transform="rotate(-0, 334.760169, 308.980156)">2.0 h</text>
-   </g>
-   <g id="text_86">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="513.158054" y="308.980156" transform="rotate(-0, 513.158054, 308.980156)">47 h</text>
-   </g>
-   <g id="text_87">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="309.256094" transform="rotate(-0, 577.674, 309.256094)">23×</text>
-   </g>
-   <g id="text_88">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="308.842187" transform="rotate(-0, 640.314, 308.842187)">164×</text>
-   </g>
-   <g id="text_89">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="308.842187" transform="rotate(-0, 165.834, 308.842187)">119</text>
-   </g>
-   <g id="PathCollection_7">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="480.235038" y="330.286875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_90">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="333.460156" transform="rotate(-0, 334.760169, 333.460156)">2.0 h</text>
-   </g>
-   <g id="text_91">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="493.03246" y="333.460156" transform="rotate(-0, 493.03246, 333.460156)">31 h</text>
-   </g>
-   <g id="text_92">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="333.736094" transform="rotate(-0, 577.674, 333.736094)">15×</text>
-   </g>
-   <g id="text_93">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="333.322187" transform="rotate(-0, 640.314, 333.322187)">12×</text>
-   </g>
-   <g id="text_94">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="333.322187" transform="rotate(-0, 165.834, 333.322187)">315</text>
-   </g>
-   <g id="PathCollection_8">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="466.170378" y="354.766875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_95">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="357.940156" transform="rotate(-0, 334.760169, 357.940156)">2.0 h</text>
-   </g>
-   <g id="text_96">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="478.967801" y="357.940156" transform="rotate(-0, 478.967801, 357.940156)">23 h</text>
-   </g>
-   <g id="text_97">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="358.216094" transform="rotate(-0, 577.674, 358.216094)">11×</text>
-   </g>
-   <g id="text_98">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="357.802187" transform="rotate(-0, 640.314, 357.802187)">28×</text>
-   </g>
-   <g id="text_99">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="357.802187" transform="rotate(-0, 165.834, 357.802187)">459</text>
-   </g>
-   <g id="PathCollection_9">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="464.074313" y="379.246875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_100">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="382.420156" transform="rotate(-0, 334.760169, 382.420156)">2.0 h</text>
-   </g>
-   <g id="text_101">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="476.871735" y="382.420156" transform="rotate(-0, 476.871735, 382.420156)">22 h</text>
-   </g>
-   <g id="text_102">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="382.696094" transform="rotate(-0, 577.674, 382.696094)">11×</text>
-   </g>
-   <g id="text_103">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="382.282187" transform="rotate(-0, 640.314, 382.282187)">49×</text>
-   </g>
-   <g id="text_104">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="382.282187" transform="rotate(-0, 165.834, 382.282187)">392</text>
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="452.114687" transform="rotate(-0, 645.786875, 452.114687)">47×</text>
    </g>
    <g id="PathCollection_10">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="461.786094" y="403.726875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#maf5f3d1714" x="433.85938" y="448.665469" style="fill: #1f5fa8"/>
     </g>
    </g>
-   <g id="text_105">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="406.900156" transform="rotate(-0, 334.760169, 406.900156)">2.0 h</text>
+   <g id="text_73">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="444.973893" y="451.83875" transform="rotate(-0, 444.973893, 451.83875)">60 min</text>
    </g>
-   <g id="text_106">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="474.583516" y="406.900156" transform="rotate(-0, 474.583516, 406.900156)">21 h</text>
+   <g id="text_74">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="451.700781" transform="rotate(-0, 215.946875, 451.700781)">201</text>
    </g>
-   <g id="text_107">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="407.176094" transform="rotate(-0, 577.674, 407.176094)">10×</text>
-   </g>
-   <g id="text_108">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="406.762187" transform="rotate(-0, 640.314, 406.762187)">10×</text>
-   </g>
-   <g id="text_109">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="406.762187" transform="rotate(-0, 165.834, 406.762187)">415</text>
+   <g id="text_75">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="476.594687" transform="rotate(-0, 645.786875, 476.594687)">541×</text>
    </g>
    <g id="PathCollection_11">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="460.488991" y="428.206875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m95494cac81" x="537.737244" y="473.145469" style="fill: #b35c00"/>
     </g>
    </g>
-   <g id="text_110">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="431.380156" transform="rotate(-0, 334.760169, 431.380156)">2.0 h</text>
+   <g id="text_76">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="548.851756" y="476.31875" transform="rotate(-0, 548.851756, 476.31875)">12 h</text>
    </g>
-   <g id="text_111">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="473.286413" y="431.380156" transform="rotate(-0, 473.286413, 431.380156)">21 h</text>
+   <g id="text_77">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="476.180781" transform="rotate(-0, 215.946875, 476.180781)">138</text>
    </g>
-   <g id="text_112">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="431.656094" transform="rotate(-0, 577.674, 431.656094)">10×</text>
-   </g>
-   <g id="text_113">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="431.242187" transform="rotate(-0, 640.314, 431.242187)">21×</text>
-   </g>
-   <g id="text_114">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="431.242187" transform="rotate(-0, 165.834, 431.242187)">452</text>
+   <g id="text_78">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="501.074687" transform="rotate(-0, 645.786875, 501.074687)">590×</text>
    </g>
    <g id="PathCollection_12">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="455.247315" y="452.686875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#meb2f8559d9" x="541.404986" y="497.625469" style="fill: #6a3fc0"/>
     </g>
    </g>
-   <g id="text_115">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="334.760169" y="455.860156" transform="rotate(-0, 334.760169, 455.860156)">2.0 h</text>
+   <g id="text_79">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="552.519499" y="500.79875" transform="rotate(-0, 552.519499, 500.79875)">13 h</text>
    </g>
-   <g id="text_116">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="468.044737" y="455.860156" transform="rotate(-0, 468.044737, 455.860156)">19 h</text>
+   <g id="text_80">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="500.660781" transform="rotate(-0, 215.946875, 500.660781)">90</text>
    </g>
-   <g id="text_117">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="456.136094" transform="rotate(-0, 577.674, 456.136094)">9.1×</text>
-   </g>
-   <g id="text_118">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="455.722187" transform="rotate(-0, 640.314, 455.722187)">8.8×</text>
-   </g>
-   <g id="text_119">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="455.722187" transform="rotate(-0, 165.834, 455.722187)">443</text>
-   </g>
-   <g id="text_120">
-    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="10.8" y="480.567266" transform="rotate(-0, 10.8, 480.567266)">Probabilistic programs, 232</text>
-   </g>
-   <g id="text_121">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="504.820156" transform="rotate(-0, 302.120159, 504.820156)">1.0 h</text>
-   </g>
-   <g id="text_122">
-    <text style="fill: #0d6670; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="504.682187" transform="rotate(-0, 165.834, 504.682187)">222</text>
+   <g id="text_81">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="525.554687" transform="rotate(-0, 645.786875, 525.554687)">833×</text>
    </g>
    <g id="PathCollection_13">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="486.287694" y="526.126875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m5213ce7af2" x="556.032233" y="522.105469" style="fill: #1a7f37"/>
     </g>
    </g>
-   <g id="text_123">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="529.300156" transform="rotate(-0, 302.120159, 529.300156)">1.0 h</text>
+   <g id="text_82">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="567.146745" y="525.27875" transform="rotate(-0, 567.146745, 525.27875)">18 h</text>
    </g>
-   <g id="text_124">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="499.085116" y="529.300156" transform="rotate(-0, 499.085116, 529.300156)">35 h</text>
+   <g id="text_83">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="525.140781" transform="rotate(-0, 215.946875, 525.140781)">52</text>
    </g>
-   <g id="text_125">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="529.576094" transform="rotate(-0, 577.674, 529.576094)">34×</text>
+   <g id="text_84">
+    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="39.402875" y="550.034687" transform="rotate(-0, 39.402875, 550.034687)">Markov networks, 344 networks</text>
    </g>
-   <g id="text_126">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="529.162187" transform="rotate(-0, 640.314, 529.162187)">201×</text>
+   <g id="text_85">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="488.468319" y="574.23875" transform="rotate(-0, 488.468319, 574.23875)">4.7 h</text>
    </g>
-   <g id="text_127">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="529.162187" transform="rotate(-0, 165.834, 529.162187)">16</text>
+   <g id="text_86">
+    <text style="fill: #1f2328; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="574.100781" transform="rotate(-0, 215.946875, 574.100781)">296</text>
+   </g>
+   <g id="text_87">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="598.994687" transform="rotate(-0, 645.786875, 598.994687)">1.6×</text>
    </g>
    <g id="PathCollection_14">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="480.014319" y="550.606875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#maf5f3d1714" x="519.418037" y="595.545469" style="fill: #1f5fa8"/>
     </g>
    </g>
-   <g id="text_128">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="553.780156" transform="rotate(-0, 302.120159, 553.780156)">1.0 h</text>
+   <g id="text_88">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="530.53255" y="598.71875" transform="rotate(-0, 530.53255, 598.71875)">7.5 h</text>
    </g>
-   <g id="text_129">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="492.811741" y="553.780156" transform="rotate(-0, 492.811741, 553.780156)">31 h</text>
+   <g id="text_89">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="598.580781" transform="rotate(-0, 215.946875, 598.580781)">278</text>
    </g>
-   <g id="text_130">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="554.056094" transform="rotate(-0, 577.674, 554.056094)">30×</text>
-   </g>
-   <g id="text_131">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="553.642187" transform="rotate(-0, 640.314, 553.642187)">233×</text>
-   </g>
-   <g id="text_132">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="553.642187" transform="rotate(-0, 165.834, 553.642187)">44</text>
+   <g id="text_90">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="623.474687" transform="rotate(-0, 645.786875, 623.474687)">5.3×</text>
    </g>
    <g id="PathCollection_15">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="475.22946" y="575.086875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m95494cac81" x="570.554636" y="620.025469" style="fill: #b35c00"/>
     </g>
    </g>
-   <g id="text_133">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="578.260156" transform="rotate(-0, 302.120159, 578.260156)">1.0 h</text>
+   <g id="text_91">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="581.669148" y="623.19875" transform="rotate(-0, 581.669148, 623.19875)">25 h</text>
    </g>
-   <g id="text_134">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="488.026882" y="578.260156" transform="rotate(-0, 488.026882, 578.260156)">28 h</text>
+   <g id="text_92">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="623.060781" transform="rotate(-0, 215.946875, 623.060781)">54</text>
    </g>
-   <g id="text_135">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="578.536094" transform="rotate(-0, 577.674, 578.536094)">27×</text>
-   </g>
-   <g id="text_136">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="578.122187" transform="rotate(-0, 640.314, 578.122187)">103×</text>
-   </g>
-   <g id="text_137">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="578.122187" transform="rotate(-0, 165.834, 578.122187)">61</text>
+   <g id="text_93">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="647.954687" transform="rotate(-0, 645.786875, 647.954687)">6.0×</text>
    </g>
    <g id="PathCollection_16">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="473.476808" y="599.566875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#meb2f8559d9" x="575.827807" y="644.505469" style="fill: #6a3fc0"/>
     </g>
    </g>
-   <g id="text_138">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="602.740156" transform="rotate(-0, 302.120159, 602.740156)">1.0 h</text>
+   <g id="text_94">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="586.942319" y="647.67875" transform="rotate(-0, 586.942319, 647.67875)">28 h</text>
    </g>
-   <g id="text_139">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="486.27423" y="602.740156" transform="rotate(-0, 486.27423, 602.740156)">27 h</text>
+   <g id="text_95">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="647.540781" transform="rotate(-0, 215.946875, 647.540781)">4</text>
    </g>
-   <g id="text_140">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="603.016094" transform="rotate(-0, 577.674, 603.016094)">26×</text>
-   </g>
-   <g id="text_141">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="602.602187" transform="rotate(-0, 640.314, 602.602187)">71×</text>
-   </g>
-   <g id="text_142">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="602.602187" transform="rotate(-0, 165.834, 602.602187)">66</text>
+   <g id="text_96">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="672.434687" transform="rotate(-0, 645.786875, 672.434687)">6.1×</text>
    </g>
    <g id="PathCollection_17">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="469.707372" y="624.046875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m5213ce7af2" x="576.080799" y="668.985469" style="fill: #1a7f37"/>
     </g>
    </g>
-   <g id="text_143">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="627.220156" transform="rotate(-0, 302.120159, 627.220156)">1.0 h</text>
+   <g id="text_97">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="587.195312" y="672.15875" transform="rotate(-0, 587.195312, 672.15875)">29 h</text>
    </g>
-   <g id="text_144">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="482.504794" y="627.220156" transform="rotate(-0, 482.504794, 627.220156)">25 h</text>
+   <g id="text_98">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="672.020781" transform="rotate(-0, 215.946875, 672.020781)">1</text>
    </g>
-   <g id="text_145">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="627.496094" transform="rotate(-0, 577.674, 627.496094)">24×</text>
+   <g id="text_99">
+    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="39.402875" y="696.865859" transform="rotate(-0, 39.402875, 696.865859)">Probabilistic functional programs, 201 programs</text>
    </g>
-   <g id="text_146">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="627.082187" transform="rotate(-0, 640.314, 627.082187)">122×</text>
+   <g id="text_100">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="456.462761" y="721.11875" transform="rotate(-0, 456.462761, 721.11875)">2.2 h</text>
    </g>
-   <g id="text_147">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="627.082187" transform="rotate(-0, 165.834, 627.082187)">80</text>
+   <g id="text_101">
+    <text style="fill: #1f2328; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="720.980781" transform="rotate(-0, 215.946875, 720.980781)">191</text>
+   </g>
+   <g id="text_102">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="745.874687" transform="rotate(-0, 645.786875, 745.874687)">2.9×</text>
    </g>
    <g id="PathCollection_18">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="469.241767" y="648.526875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#meb2f8559d9" x="513.274058" y="742.425469" style="fill: #6a3fc0"/>
     </g>
    </g>
-   <g id="text_148">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="651.700156" transform="rotate(-0, 302.120159, 651.700156)">1.0 h</text>
+   <g id="text_103">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="524.388571" y="745.59875" transform="rotate(-0, 524.388571, 745.59875)">6.5 h</text>
    </g>
-   <g id="text_149">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="482.039189" y="651.700156" transform="rotate(-0, 482.039189, 651.700156)">25 h</text>
+   <g id="text_104">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="745.460781" transform="rotate(-0, 215.946875, 745.460781)">170</text>
    </g>
-   <g id="text_150">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="651.976094" transform="rotate(-0, 577.674, 651.976094)">24×</text>
-   </g>
-   <g id="text_151">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="651.562187" transform="rotate(-0, 640.314, 651.562187)">7.8×</text>
-   </g>
-   <g id="text_152">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="651.562187" transform="rotate(-0, 165.834, 651.562187)">79</text>
+   <g id="text_105">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="770.354687" transform="rotate(-0, 645.786875, 770.354687)">4.7×</text>
    </g>
    <g id="PathCollection_19">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="468.730051" y="673.006875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m5213ce7af2" x="532.702117" y="766.905469" style="fill: #1a7f37"/>
     </g>
    </g>
-   <g id="text_153">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="676.180156" transform="rotate(-0, 302.120159, 676.180156)">1.0 h</text>
+   <g id="text_106">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="543.816629" y="770.07875" transform="rotate(-0, 543.816629, 770.07875)">10 h</text>
    </g>
-   <g id="text_154">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="481.527473" y="676.180156" transform="rotate(-0, 481.527473, 676.180156)">24 h</text>
+   <g id="text_107">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="769.940781" transform="rotate(-0, 215.946875, 769.940781)">149</text>
    </g>
-   <g id="text_155">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="676.456094" transform="rotate(-0, 577.674, 676.456094)">23×</text>
-   </g>
-   <g id="text_156">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="676.042187" transform="rotate(-0, 640.314, 676.042187)">35×</text>
-   </g>
-   <g id="text_157">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="676.042187" transform="rotate(-0, 165.834, 676.042187)">83</text>
+   <g id="text_108">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="794.834687" transform="rotate(-0, 645.786875, 794.834687)">5.3×</text>
    </g>
    <g id="PathCollection_20">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="465.038852" y="697.486875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#maf5f3d1714" x="538.478594" y="791.385469" style="fill: #1f5fa8"/>
     </g>
    </g>
-   <g id="text_158">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="700.660156" transform="rotate(-0, 302.120159, 700.660156)">1.0 h</text>
+   <g id="text_109">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="549.593106" y="794.55875" transform="rotate(-0, 549.593106, 794.55875)">12 h</text>
    </g>
-   <g id="text_159">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="477.836274" y="700.660156" transform="rotate(-0, 477.836274, 700.660156)">23 h</text>
+   <g id="text_110">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="794.420781" transform="rotate(-0, 215.946875, 794.420781)">142</text>
    </g>
-   <g id="text_160">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="700.936094" transform="rotate(-0, 577.674, 700.936094)">22×</text>
-   </g>
-   <g id="text_161">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="700.522187" transform="rotate(-0, 640.314, 700.522187)">8.9×</text>
-   </g>
-   <g id="text_162">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="700.522187" transform="rotate(-0, 165.834, 700.522187)">93</text>
+   <g id="text_111">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="819.314687" transform="rotate(-0, 645.786875, 819.314687)">6.7×</text>
    </g>
    <g id="PathCollection_21">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="454.203769" y="721.966875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m95494cac81" x="548.099014" y="815.865469" style="fill: #b35c00"/>
     </g>
    </g>
-   <g id="text_163">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="725.140156" transform="rotate(-0, 302.120159, 725.140156)">1.0 h</text>
+   <g id="text_112">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="559.213527" y="819.03875" transform="rotate(-0, 559.213527, 819.03875)">15 h</text>
    </g>
-   <g id="text_164">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="467.001191" y="725.140156" transform="rotate(-0, 467.001191, 725.140156)">18 h</text>
+   <g id="text_113">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="818.900781" transform="rotate(-0, 215.946875, 818.900781)">123</text>
    </g>
-   <g id="text_165">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="725.416094" transform="rotate(-0, 577.674, 725.416094)">17×</text>
+   <g id="text_114">
+    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="39.402875" y="843.745859" transform="rotate(-0, 39.402875, 843.745859)">Bit-blasted programs, 224 programs</text>
    </g>
-   <g id="text_166">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="725.002187" transform="rotate(-0, 640.314, 725.002187)">58×</text>
+   <g id="text_115">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="498.800797" y="867.99875" transform="rotate(-0, 498.800797, 867.99875)">6.0 h</text>
    </g>
-   <g id="text_167">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="725.002187" transform="rotate(-0, 165.834, 725.002187)">129</text>
+   <g id="text_116">
+    <text style="fill: #1f2328; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="867.860781" transform="rotate(-0, 215.946875, 867.860781)">201</text>
+   </g>
+   <g id="text_117">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="892.754687" transform="rotate(-0, 645.786875, 892.754687)">2.2×</text>
    </g>
    <g id="PathCollection_22">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="450.152337" y="746.446875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#meb2f8559d9" x="543.347754" y="889.305469" style="fill: #6a3fc0"/>
     </g>
    </g>
-   <g id="text_168">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="749.620156" transform="rotate(-0, 302.120159, 749.620156)">1.0 h</text>
+   <g id="text_118">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="554.462267" y="892.47875" transform="rotate(-0, 554.462267, 892.47875)">13 h</text>
    </g>
-   <g id="text_169">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="462.949759" y="749.620156" transform="rotate(-0, 462.949759, 749.620156)">17 h</text>
+   <g id="text_119">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="892.340781" transform="rotate(-0, 215.946875, 892.340781)">156</text>
    </g>
-   <g id="text_170">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="749.896094" transform="rotate(-0, 577.674, 749.896094)">16×</text>
-   </g>
-   <g id="text_171">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="749.482187" transform="rotate(-0, 640.314, 749.482187)">15×</text>
-   </g>
-   <g id="text_172">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="749.482187" transform="rotate(-0, 165.834, 749.482187)">136</text>
+   <g id="text_120">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="917.234687" transform="rotate(-0, 645.786875, 917.234687)">4.2×</text>
    </g>
    <g id="PathCollection_23">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="447.448893" y="770.926875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#maf5f3d1714" x="570.999938" y="913.785469" style="fill: #1f5fa8"/>
     </g>
    </g>
-   <g id="text_173">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="774.100156" transform="rotate(-0, 302.120159, 774.100156)">1.0 h</text>
+   <g id="text_121">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="582.11445" y="916.95875" transform="rotate(-0, 582.11445, 916.95875)">25 h</text>
    </g>
-   <g id="text_174">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="460.246315" y="774.100156" transform="rotate(-0, 460.246315, 774.100156)">16 h</text>
+   <g id="text_122">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="916.820781" transform="rotate(-0, 215.946875, 916.820781)">81</text>
    </g>
-   <g id="text_175">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="774.376094" transform="rotate(-0, 577.674, 774.376094)">15×</text>
-   </g>
-   <g id="text_176">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="773.962187" transform="rotate(-0, 640.314, 773.962187)">8.3×</text>
-   </g>
-   <g id="text_177">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="773.962187" transform="rotate(-0, 165.834, 773.962187)">137</text>
+   <g id="text_123">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="941.714687" transform="rotate(-0, 645.786875, 941.714687)">4.3×</text>
    </g>
    <g id="PathCollection_24">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="444.656141" y="795.406875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m95494cac81" x="571.272318" y="938.265469" style="fill: #b35c00"/>
     </g>
    </g>
-   <g id="text_178">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="798.580156" transform="rotate(-0, 302.120159, 798.580156)">1.0 h</text>
+   <g id="text_124">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="582.38683" y="941.43875" transform="rotate(-0, 582.38683, 941.43875)">26 h</text>
    </g>
-   <g id="text_179">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="457.453563" y="798.580156" transform="rotate(-0, 457.453563, 798.580156)">15 h</text>
+   <g id="text_125">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="941.300781" transform="rotate(-0, 215.946875, 941.300781)">82</text>
    </g>
-   <g id="text_180">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="798.856094" transform="rotate(-0, 577.674, 798.856094)">14×</text>
-   </g>
-   <g id="text_181">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="798.442187" transform="rotate(-0, 640.314, 798.442187)">6.6×</text>
-   </g>
-   <g id="text_182">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="798.442187" transform="rotate(-0, 165.834, 798.442187)">138</text>
+   <g id="text_126">
+    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="645.786875" y="966.194687" transform="rotate(-0, 645.786875, 966.194687)">5.4×</text>
    </g>
    <g id="PathCollection_25">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="424.392955" y="819.886875" style="fill: #6e7781"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#m5213ce7af2" x="581.246466" y="962.745469" style="fill: #1a7f37"/>
     </g>
    </g>
-   <g id="text_183">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="823.060156" transform="rotate(-0, 302.120159, 823.060156)">1.0 h</text>
+   <g id="text_127">
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="592.360979" y="965.91875" transform="rotate(-0, 592.360979, 965.91875)">32 h</text>
    </g>
-   <g id="text_184">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="437.190378" y="823.060156" transform="rotate(-0, 437.190378, 823.060156)">9.8 h</text>
+   <g id="text_128">
+    <text style="fill: #1f2328; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="965.780781" transform="rotate(-0, 215.946875, 965.780781)">35</text>
    </g>
-   <g id="text_185">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="823.336094" transform="rotate(-0, 577.674, 823.336094)">9.4×</text>
+   <g id="text_129">
+    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.946875" y="58.297812" transform="rotate(-0, 215.946875, 58.297812)">answers</text>
    </g>
-   <g id="text_186">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="822.922187" transform="rotate(-0, 640.314, 822.922187)">8.5×</text>
-   </g>
-   <g id="text_187">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="822.922187" transform="rotate(-0, 165.834, 822.922187)">176</text>
+   <g id="text_130">
+    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(645.786875 46.816047)">tddlog</text>
+    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(645.786875 58.297812)">faster</text>
    </g>
    <g id="PathCollection_26">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="420.860155" y="844.366875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_188">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="302.120159" y="847.540156" transform="rotate(-0, 302.120159, 847.540156)">1.0 h</text>
-   </g>
-   <g id="text_189">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="433.657577" y="847.540156" transform="rotate(-0, 433.657577, 847.540156)">9.2 h</text>
-   </g>
-   <g id="text_190">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="847.816094" transform="rotate(-0, 577.674, 847.816094)">8.8×</text>
-   </g>
-   <g id="text_191">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="847.402187" transform="rotate(-0, 640.314, 847.402187)">5.7×</text>
-   </g>
-   <g id="text_192">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="847.402187" transform="rotate(-0, 165.834, 847.402187)">175</text>
-   </g>
-   <g id="text_193">
-    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="10.8" y="872.296094" transform="rotate(-0, 10.8, 872.296094)">Bit-blasted circuits, 224</text>
-   </g>
-   <g id="text_194">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="896.500156" transform="rotate(-0, 361.132851, 896.500156)">3.5 h</text>
-   </g>
-   <g id="text_195">
-    <text style="fill: #0d6670; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="896.362187" transform="rotate(-0, 165.834, 896.362187)">201</text>
-   </g>
-   <g id="PathCollection_27">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="486.038226" y="917.806875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_196">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="920.980156" transform="rotate(-0, 361.132851, 920.980156)">3.5 h</text>
-   </g>
-   <g id="text_197">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="498.835648" y="920.980156" transform="rotate(-0, 498.835648, 920.980156)">35 h</text>
-   </g>
-   <g id="text_198">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="921.256094" transform="rotate(-0, 577.674, 921.256094)">10.0×</text>
-   </g>
-   <g id="text_199">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="920.842187" transform="rotate(-0, 165.834, 920.842187)">0</text>
-   </g>
-   <g id="PathCollection_28">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="485.972081" y="942.286875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_200">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="945.460156" transform="rotate(-0, 361.132851, 945.460156)">3.5 h</text>
-   </g>
-   <g id="text_201">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="498.769503" y="945.460156" transform="rotate(-0, 498.769503, 945.460156)">35 h</text>
-   </g>
-   <g id="text_202">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="945.736094" transform="rotate(-0, 577.674, 945.736094)">9.9×</text>
-   </g>
-   <g id="text_203">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="945.322187" transform="rotate(-0, 640.314, 945.322187)">2150×</text>
-   </g>
-   <g id="text_204">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="945.322187" transform="rotate(-0, 165.834, 945.322187)">1</text>
-   </g>
-   <g id="PathCollection_29">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="485.56943" y="966.766875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_205">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="969.940156" transform="rotate(-0, 361.132851, 969.940156)">3.5 h</text>
-   </g>
-   <g id="text_206">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="498.366852" y="969.940156" transform="rotate(-0, 498.366852, 969.940156)">35 h</text>
-   </g>
-   <g id="text_207">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="970.216094" transform="rotate(-0, 577.674, 970.216094)">9.9×</text>
-   </g>
-   <g id="text_208">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="969.802187" transform="rotate(-0, 165.834, 969.802187)">2</text>
-   </g>
-   <g id="PathCollection_30">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="484.594274" y="991.246875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_209">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="994.420156" transform="rotate(-0, 361.132851, 994.420156)">3.5 h</text>
-   </g>
-   <g id="text_210">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="497.391696" y="994.420156" transform="rotate(-0, 497.391696, 994.420156)">34 h</text>
-   </g>
-   <g id="text_211">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="994.696094" transform="rotate(-0, 577.674, 994.696094)">9.7×</text>
-   </g>
-   <g id="text_212">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="994.282187" transform="rotate(-0, 640.314, 994.282187)">136×</text>
-   </g>
-   <g id="text_213">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="994.282187" transform="rotate(-0, 165.834, 994.282187)">7</text>
-   </g>
-   <g id="PathCollection_31">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="484.135126" y="1015.726875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_214">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1018.900156" transform="rotate(-0, 361.132851, 1018.900156)">3.5 h</text>
-   </g>
-   <g id="text_215">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="496.932549" y="1018.900156" transform="rotate(-0, 496.932549, 1018.900156)">34 h</text>
-   </g>
-   <g id="text_216">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1019.176094" transform="rotate(-0, 577.674, 1019.176094)">9.6×</text>
-   </g>
-   <g id="text_217">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1018.762187" transform="rotate(-0, 640.314, 1018.762187)">129× slower</text>
-   </g>
-   <g id="text_218">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1018.762187" transform="rotate(-0, 165.834, 1018.762187)">8</text>
-   </g>
-   <g id="PathCollection_32">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="482.682009" y="1040.206875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_219">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1043.380156" transform="rotate(-0, 361.132851, 1043.380156)">3.5 h</text>
-   </g>
-   <g id="text_220">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="495.479431" y="1043.380156" transform="rotate(-0, 495.479431, 1043.380156)">33 h</text>
-   </g>
-   <g id="text_221">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1043.656094" transform="rotate(-0, 577.674, 1043.656094)">9.3×</text>
-   </g>
-   <g id="text_222">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1043.242187" transform="rotate(-0, 640.314, 1043.242187)">359×</text>
-   </g>
-   <g id="text_223">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1043.242187" transform="rotate(-0, 165.834, 1043.242187)">21</text>
-   </g>
-   <g id="PathCollection_33">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="482.416198" y="1064.686875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_224">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1067.860156" transform="rotate(-0, 361.132851, 1067.860156)">3.5 h</text>
-   </g>
-   <g id="text_225">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="495.21362" y="1067.860156" transform="rotate(-0, 495.21362, 1067.860156)">32 h</text>
-   </g>
-   <g id="text_226">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1068.136094" transform="rotate(-0, 577.674, 1068.136094)">9.2×</text>
-   </g>
-   <g id="text_227">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1067.722187" transform="rotate(-0, 640.314, 1067.722187)">6.7×</text>
-   </g>
-   <g id="text_228">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1067.722187" transform="rotate(-0, 165.834, 1067.722187)">19</text>
-   </g>
-   <g id="PathCollection_34">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="478.779126" y="1089.166875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_229">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1092.340156" transform="rotate(-0, 361.132851, 1092.340156)">3.5 h</text>
-   </g>
-   <g id="text_230">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="491.576548" y="1092.340156" transform="rotate(-0, 491.576548, 1092.340156)">30 h</text>
-   </g>
-   <g id="text_231">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1092.616094" transform="rotate(-0, 577.674, 1092.616094)">8.6×</text>
-   </g>
-   <g id="text_232">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1092.202187" transform="rotate(-0, 640.314, 1092.202187)">124×</text>
-   </g>
-   <g id="text_233">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1092.202187" transform="rotate(-0, 165.834, 1092.202187)">33</text>
-   </g>
-   <g id="PathCollection_35">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="476.002126" y="1113.646875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_234">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1116.820156" transform="rotate(-0, 361.132851, 1116.820156)">3.5 h</text>
-   </g>
-   <g id="text_235">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="488.799548" y="1116.820156" transform="rotate(-0, 488.799548, 1116.820156)">28 h</text>
-   </g>
-   <g id="text_236">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1117.096094" transform="rotate(-0, 577.674, 1117.096094)">8.1×</text>
-   </g>
-   <g id="text_237">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1116.682187" transform="rotate(-0, 640.314, 1116.682187)">11×</text>
-   </g>
-   <g id="text_238">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1116.682187" transform="rotate(-0, 165.834, 1116.682187)">42</text>
-   </g>
-   <g id="PathCollection_36">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="475.068184" y="1138.126875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_239">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1141.300156" transform="rotate(-0, 361.132851, 1141.300156)">3.5 h</text>
-   </g>
-   <g id="text_240">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="487.865606" y="1141.300156" transform="rotate(-0, 487.865606, 1141.300156)">28 h</text>
-   </g>
-   <g id="text_241">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1141.576094" transform="rotate(-0, 577.674, 1141.576094)">8.0×</text>
-   </g>
-   <g id="text_242">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1141.162187" transform="rotate(-0, 640.314, 1141.162187)">8.1×</text>
-   </g>
-   <g id="text_243">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1141.162187" transform="rotate(-0, 165.834, 1141.162187)">47</text>
-   </g>
-   <g id="PathCollection_37">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="473.409073" y="1162.606875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_244">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1165.780156" transform="rotate(-0, 361.132851, 1165.780156)">3.5 h</text>
-   </g>
-   <g id="text_245">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="486.206495" y="1165.780156" transform="rotate(-0, 486.206495, 1165.780156)">27 h</text>
-   </g>
-   <g id="text_246">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1166.056094" transform="rotate(-0, 577.674, 1166.056094)">7.7×</text>
-   </g>
-   <g id="text_247">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1165.642187" transform="rotate(-0, 640.314, 1165.642187)">74×</text>
-   </g>
-   <g id="text_248">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1165.642187" transform="rotate(-0, 165.834, 1165.642187)">58</text>
-   </g>
-   <g id="PathCollection_38">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="472.629565" y="1187.086875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_249">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1190.260156" transform="rotate(-0, 361.132851, 1190.260156)">3.5 h</text>
-   </g>
-   <g id="text_250">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="485.426987" y="1190.260156" transform="rotate(-0, 485.426987, 1190.260156)">26 h</text>
-   </g>
-   <g id="text_251">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1190.536094" transform="rotate(-0, 577.674, 1190.536094)">7.6×</text>
-   </g>
-   <g id="text_252">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1190.122187" transform="rotate(-0, 640.314, 1190.122187)">27×</text>
-   </g>
-   <g id="text_253">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1190.122187" transform="rotate(-0, 165.834, 1190.122187)">61</text>
-   </g>
-   <g id="PathCollection_39">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="458.814252" y="1211.566875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_254">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1214.740156" transform="rotate(-0, 361.132851, 1214.740156)">3.5 h</text>
-   </g>
-   <g id="text_255">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="471.611674" y="1214.740156" transform="rotate(-0, 471.611674, 1214.740156)">20 h</text>
-   </g>
-   <g id="text_256">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1215.016094" transform="rotate(-0, 577.674, 1215.016094)">5.7×</text>
-   </g>
-   <g id="text_257">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1214.602187" transform="rotate(-0, 640.314, 1214.602187)">3.5×</text>
-   </g>
-   <g id="text_258">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1214.602187" transform="rotate(-0, 165.834, 1214.602187)">97</text>
-   </g>
-   <g id="PathCollection_40">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="442.399329" y="1236.046875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_259">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="361.132851" y="1239.220156" transform="rotate(-0, 361.132851, 1239.220156)">3.5 h</text>
-   </g>
-   <g id="text_260">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="455.196751" y="1239.220156" transform="rotate(-0, 455.196751, 1239.220156)">14 h</text>
-   </g>
-   <g id="text_261">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1239.496094" transform="rotate(-0, 577.674, 1239.496094)">4.1×</text>
-   </g>
-   <g id="text_262">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1239.082187" transform="rotate(-0, 640.314, 1239.082187)">1.7×</text>
-   </g>
-   <g id="text_263">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1239.082187" transform="rotate(-0, 165.834, 1239.082187)">135</text>
-   </g>
-   <g id="text_264">
-    <text style="fill: #1f2328; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="10.8" y="1263.976094" transform="rotate(-0, 10.8, 1263.976094)">Probabilistic databases, 208</text>
-   </g>
-   <g id="text_265">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.263926" y="1288.180156" transform="rotate(-0, 215.263926, 1288.180156)">11 min</text>
-   </g>
-   <g id="text_266">
-    <text style="fill: #0d6670; font: 700 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1288.042187" transform="rotate(-0, 165.834, 1288.042187)">206</text>
-   </g>
-   <g id="PathCollection_41">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="484.846248" y="1309.486875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_267">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.263926" y="1312.660156" transform="rotate(-0, 215.263926, 1312.660156)">11 min</text>
-   </g>
-   <g id="text_268">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="497.64367" y="1312.660156" transform="rotate(-0, 497.64367, 1312.660156)">34 h</text>
-   </g>
-   <g id="text_269">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1312.936094" transform="rotate(-0, 577.674, 1312.936094)">193×</text>
-   </g>
-   <g id="text_270">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1312.522187" transform="rotate(-0, 640.314, 1312.522187)">843×</text>
-   </g>
-   <g id="text_271">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1312.522187" transform="rotate(-0, 165.834, 1312.522187)">3</text>
-   </g>
-   <g id="PathCollection_42">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="454.382691" y="1333.966875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_272">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.263926" y="1337.140156" transform="rotate(-0, 215.263926, 1337.140156)">11 min</text>
-   </g>
-   <g id="text_273">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="467.180113" y="1337.140156" transform="rotate(-0, 467.180113, 1337.140156)">18 h</text>
-   </g>
-   <g id="text_274">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1337.416094" transform="rotate(-0, 577.674, 1337.416094)">104×</text>
-   </g>
-   <g id="text_275">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1337.002187" transform="rotate(-0, 640.314, 1337.002187)">122×</text>
-   </g>
-   <g id="text_276">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1337.002187" transform="rotate(-0, 165.834, 1337.002187)">105</text>
-   </g>
-   <g id="PathCollection_43">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="424.010551" y="1358.446875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_277">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.263926" y="1361.620156" transform="rotate(-0, 215.263926, 1361.620156)">11 min</text>
-   </g>
-   <g id="text_278">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="436.807973" y="1361.620156" transform="rotate(-0, 436.807973, 1361.620156)">9.8 h</text>
-   </g>
-   <g id="text_279">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1361.896094" transform="rotate(-0, 577.674, 1361.896094)">56×</text>
-   </g>
-   <g id="text_280">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1361.482187" transform="rotate(-0, 640.314, 1361.482187)">74×</text>
-   </g>
-   <g id="text_281">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1361.482187" transform="rotate(-0, 165.834, 1361.482187)">172</text>
-   </g>
-   <g id="PathCollection_44">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#m188dd5f83e" x="340.769937" y="1382.926875" style="fill: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_282">
-    <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="215.263926" y="1386.100156" transform="rotate(-0, 215.263926, 1386.100156)">11 min</text>
-   </g>
-   <g id="text_283">
-    <text style="fill: #6e7781; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="353.567359" y="1386.100156" transform="rotate(-0, 353.567359, 1386.100156)">1.8 h</text>
-   </g>
-   <g id="text_284">
-    <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="577.674" y="1386.376094" transform="rotate(-0, 577.674, 1386.376094)">10×</text>
-   </g>
-   <g id="text_285">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="640.314" y="1385.962187" transform="rotate(-0, 640.314, 1385.962187)">1.3×</text>
-   </g>
-   <g id="text_286">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="1385.962187" transform="rotate(-0, 165.834, 1385.962187)">196</text>
-   </g>
-   <g id="text_287">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="165.834" y="62.319219" transform="rotate(-0, 165.834, 62.319219)">answers</text>
-   </g>
-   <g id="text_288">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(577.674 50.837453)">tddlog</text>
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(577.674 62.319219)">faster</text>
-   </g>
-   <g id="text_289">
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(640.314 50.837453)">both</text>
-    <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(640.314 62.319219)">answer</text>
-   </g>
-   <g id="PathCollection_45">
     <defs>
      <path id="me4205052fd" d="M 0 4 
 C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
@@ -1555,308 +885,49 @@ C -2.078319 3.578535 -1.060812 4 0 4
 z
 "/>
     </defs>
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="248.93273" y="109.966875" style="fill: #0d6670"/>
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#me4205052fd" x="376.87475" y="105.945469" style="fill: #0d6670"/>
     </g>
    </g>
-   <g id="PathCollection_46">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="248.93273" y="134.446875" style="fill: #0d6670"/>
+   <g id="PathCollection_27">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#me4205052fd" x="405.452653" y="252.825469" style="fill: #0d6670"/>
     </g>
    </g>
-   <g id="PathCollection_47">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="248.93273" y="158.926875" style="fill: #0d6670"/>
+   <g id="PathCollection_28">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#me4205052fd" x="271.127284" y="424.185469" style="fill: #0d6670"/>
     </g>
    </g>
-   <g id="PathCollection_48">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="248.93273" y="183.406875" style="fill: #0d6670"/>
+   <g id="PathCollection_29">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#me4205052fd" x="499.582832" y="571.065469" style="fill: #0d6670"/>
     </g>
    </g>
-   <g id="PathCollection_49">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="232.366875" style="fill: #0d6670"/>
+   <g id="PathCollection_30">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#me4205052fd" x="467.577274" y="717.945469" style="fill: #0d6670"/>
     </g>
    </g>
-   <g id="PathCollection_50">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="256.846875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_51">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="281.326875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_52">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="305.806875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_53">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="330.286875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_54">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="354.766875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_55">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="379.246875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_56">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="403.726875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_57">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="428.206875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_58">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="347.557592" y="452.686875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_59">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="501.646875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_60">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="526.126875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_61">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="550.606875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_62">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="575.086875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_63">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="599.566875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_64">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="624.046875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_65">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="648.526875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_66">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="673.006875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_67">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="697.486875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_68">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="721.966875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_69">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="746.446875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_70">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="770.926875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_71">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="795.406875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_72">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="819.886875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_73">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="314.917582" y="844.366875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_74">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="893.326875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_75">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="917.806875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_76">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="942.286875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_77">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="966.766875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_78">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="991.246875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_79">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1015.726875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_80">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1040.206875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_81">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1064.686875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_82">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1089.166875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_83">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1113.646875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_84">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1138.126875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_85">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1162.606875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_86">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1187.086875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_87">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1211.566875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_88">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="373.930273" y="1236.046875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_89">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="228.061348" y="1285.006875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_90">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="228.061348" y="1309.486875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_91">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="228.061348" y="1333.966875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_92">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="228.061348" y="1358.446875" style="fill: #0d6670"/>
-    </g>
-   </g>
-   <g id="PathCollection_93">
-    <g clip-path="url(#pb3376d3742)">
-     <use xlink:href="#me4205052fd" x="228.061348" y="1382.926875" style="fill: #0d6670"/>
+   <g id="PathCollection_31">
+    <g clip-path="url(#p68797de79d)">
+     <use xlink:href="#me4205052fd" x="509.915309" y="864.825469" style="fill: #0d6670"/>
     </g>
    </g>
   </g>
-  <g id="text_290">
-   <text style="fill: #1f2328; font: 700 13.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="12.9348" y="25.079297" transform="rotate(-0, 12.9348, 25.079297)">Total time, every system on the same instances</text>
+  <g id="text_131">
+   <text style="fill: #1f2328; font: 700 13.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="41.447675" y="21.057891" transform="rotate(-0, 41.447675, 21.057891)">Total time over every instance of a category</text>
   </g>
-  <g id="text_291">
-   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(12.9348 1416.759832)">Each kind’s instances are the programs written in its languages, and every system was given all of them. Total</text>
-   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(12.9348 1429.714289)">time over the instances some system answers: a run that does not answer (out of time or memory, failed, or a</text>
-   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(12.9348 1442.668746)">program the system cannot express) counts as its time limit (300 or 600 s), a time under 0.2 s as 0.2 s. Beside</text>
-   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(12.9348 1455.623203)">it, the same over the instances both answer.</text>
-  </g>
-  <g id="legend_1">
-   <g id="line2d_102">
-    <defs>
-     <path id="md5bd950d2e" d="M 0 4 
-C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
-C 3.578535 2.078319 4 1.060812 4 0 
-C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
-C 2.078319 -3.578535 1.060812 -4 0 -4 
-C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
-C -3.578535 -2.078319 -4 -1.060812 -4 0 
-C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
-C -2.078319 3.578535 -1.060812 4 0 4 
-z
-" style="stroke: #0d6670"/>
-    </defs>
-    <g>
-     <use xlink:href="#md5bd950d2e" x="478.76775" y="20.518125" style="fill: #0d6670; stroke: #0d6670"/>
-    </g>
-   </g>
-   <g id="text_292">
-    <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="493.16775" y="24.718125" transform="rotate(-0, 493.16775, 24.718125)">tddlog</text>
-   </g>
-   <g id="line2d_103">
-    <defs>
-     <path id="m3b386b0184" d="M 0 4 
-C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
-C 3.578535 2.078319 4 1.060812 4 0 
-C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
-C 2.078319 -3.578535 1.060812 -4 0 -4 
-C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
-C -3.578535 -2.078319 -4 -1.060812 -4 0 
-C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
-C -2.078319 3.578535 -1.060812 4 0 4 
-z
-" style="stroke: #6e7781"/>
-    </defs>
-    <g>
-     <use xlink:href="#m3b386b0184" x="557.80275" y="20.518125" style="fill: #6e7781; stroke: #6e7781"/>
-    </g>
-   </g>
-   <g id="text_293">
-    <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="572.20275" y="24.718125" transform="rotate(-0, 572.20275, 24.718125)">the other system</text>
-   </g>
+  <g id="text_132">
+   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(41.447675 996.578426)">Each instance counts in one category, whatever language its source was written in. A family’s line is its</text>
+   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(41.447675 1009.532883)">virtual best: the fastest of its systems on each instance. Total time over all of a category’s instances: a run</text>
+   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(41.447675 1022.48734)">that does not answer (out of time or memory, failed, a program the system cannot express, or not given) counts</text>
+   <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(41.447675 1035.441797)">as its time limit, a time under 0.2 s as 0.2 s.</text>
   </g>
  </g>
  <defs>
-  <clipPath id="pb3376d3742">
-   <rect x="174.474" y="73.246875" width="385.2" height="1321.92"/>
+  <clipPath id="p68797de79d">
+   <rect x="224.586875" y="69.225469" width="403.2" height="905.76"/>
   </clipPath>
  </defs>
 </svg>
