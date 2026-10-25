@@ -44,7 +44,7 @@ const FAILURES = {
   memout: [() => "memory", "out of memory (the address space a run gets, or the Java heap)"],
   error: [() => "error", "the system stopped with an error"],
   unsupported: [() => "n/a", "the system cannot express the program: a translator refuses what its target language lacks (lists, division and recursion in a Dice program's translation; negation through recursion, or more than two million conjunctions, in a ground program's network), as aspmc's harness refuses an observation with a body"],
-  skipped: [() => "skipped", "not run: the system had failed on a smaller size of the same program"],
+  skipped: [() => "skipped", "not run: the system had run out of time or memory on a smaller size of the same program"],
   wrong: [() => "wrong", "an answer off the reference by more than 1e-6"],
   zero: [() => "zero", "every answer printed as 0 where the reference's are positive"],
   underflow: [() => "underflow", "every answer printed as 0 where the probability of the evidence is below the smallest double"],
@@ -1915,7 +1915,10 @@ function rail(route) {
       const ul = element("ul");
       for (const key of c.suites) {
         const s = data.suites.get(key);
-        const sl = element("li", {}, link({ view: "suite", suite: key }, s.title, element("span", { class: "n" }, count(s.instances.length))));
+        // the suite's instances in this category, of all it holds
+        const n = c.perSuite.get(key);
+        const sl = element("li", {}, link({ view: "suite", suite: key }, s.title, element("span",
+          { class: "n", title: n === s.instances.length ? null : `${count(n)} of the suite's ${count(s.instances.length)} instances are of this type` }, count(n))));
         if (route.view === "suite" && route.suite === key) sl.firstChild.setAttribute("aria-current", "page");
         const fams = familiesOf(key);
         if (key === route.suite && fams) {
