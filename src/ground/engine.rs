@@ -24,6 +24,8 @@ pub enum GroundError {
     /// The grounding outgrew the size it was allowed (`ground_normalized`),
     /// which only a grounding weighed against another is given.
     OverBound,
+    /// The allocator refused the memory the grounding grew by.
+    OutOfMemory,
 }
 
 impl fmt::Display for GroundError {
@@ -32,6 +34,7 @@ impl fmt::Display for GroundError {
             GroundError::Unsupported(s) => write!(f, "unsupported: {s}"),
             GroundError::Unsafe(s) => write!(f, "unsafe rule: {s}"),
             GroundError::OverBound => f.write_str("the grounding outgrew its bound"),
+            GroundError::OutOfMemory => f.write_str("the grounding ran out of memory"),
         }
     }
 }
@@ -287,6 +290,10 @@ struct Grounder<'a> {
     /// the size past which the grounding is given up.
     size: usize,
     bound: usize,
+    /// Whether the allocator refused a block the atoms or the rules grew
+    /// by ([`Grounder::room`]), which gives the grounding up as the bound
+    /// does.
+    refused: bool,
     /// The control atoms derived, which the bound limits too: they are
     /// never emitted, and a demand that no rule's size follows can grow
     /// without end. Grounded from the bound end, `o(T1) :- step(T),
@@ -329,16 +336,29 @@ fn level_of(v: Option<&Val>) -> i64 {
 impl<'a> Grounder<'a> {
     /// Adds `rule` unless it is kept already.
     fn keep_rule(&mut self, rule: GroundRule) {
-        if self.kept.keep(&self.ground_rules, &rule) {
+        if self.room(|g| g.ground_rules.try_reserve(1).is_ok())
+            && self.kept.keep(&self.ground_rules, &rule)
+        {
             self.size += 1 + rule.body.len();
             self.ground_rules.push(rule);
         }
     }
 
     /// Whether the rules kept so far, or the control atoms, are past the
-    /// bound.
+    /// bound, or the allocator refused the grounding more memory.
     fn over(&self) -> bool {
-        self.size > self.bound || self.demands > self.bound
+        self.refused || self.size > self.bound || self.demands > self.bound
+    }
+
+    /// Whether `reserve` made room for one more of the vectors and tables
+    /// the grounding grows by, the atoms and the rules, which double as
+    /// they grow; where the allocator refuses a block, the grounding is
+    /// given up ([`GroundError::OutOfMemory`]) rather than aborted, as a
+    /// diagram operation is refused. A taint analysis of PSouffle's grew
+    /// its atoms to 2 GiB and aborted there (taint_video_game, under 12 GB).
+    fn room(&mut self, reserve: impl FnOnce(&mut Self) -> bool) -> bool {
+        self.refused = self.refused || !reserve(self);
+        !self.refused
     }
 
     /// A known predicate, and whether it is a switch.
@@ -377,6 +397,18 @@ impl<'a> Grounder<'a> {
         if let Some(id) = self.rels[pred as usize].get(&args) {
             return (id, false);
         }
+        // Past a refused block the grounding is given up, and nothing it
+        // keeps reads the id (`keep_rule`, `over`).
+        let keyed = !args.is_empty();
+        if !self.room(|g| {
+            let rel = &mut g.rels[pred as usize];
+            g.atoms.try_reserve(1).is_ok()
+                && rel.tuples.try_reserve(1).is_ok()
+                && rel.ids.try_reserve(1).is_ok()
+                && (!keyed || rel.set.try_reserve(1).is_ok())
+        }) {
+            return (AtomId::MAX, false);
+        }
         let rel = &mut self.rels[pred as usize];
         let id = match rel.placeholders.remove(&args) {
             Some(id) => id,
@@ -402,6 +434,12 @@ impl<'a> Grounder<'a> {
         }
         if let Some(&id) = self.rels[pred as usize].placeholders.get(&args) {
             return id;
+        }
+        if !self.room(|g| {
+            g.atoms.try_reserve(1).is_ok()
+                && g.rels[pred as usize].placeholders.try_reserve(1).is_ok()
+        }) {
+            return AtomId::MAX;
         }
         let id = self.atoms.len() as AtomId;
         self.atoms.push((pred, args.clone()));
@@ -660,6 +698,7 @@ fn ground_with(
         narrow: Narrow::default(),
         size: 0,
         bound: bound.unwrap_or(usize::MAX),
+        refused: false,
         demands: 0,
         fixed: Vec::new(),
         by_level: None,
@@ -722,7 +761,11 @@ fn ground_with(
             _ => evaluate_stratum(&mut g, stratum),
         }
         if g.over() {
-            return Err(GroundError::OverBound);
+            return Err(if g.refused {
+                GroundError::OutOfMemory
+            } else {
+                GroundError::OverBound
+            });
         }
     }
     g.current_stratum.clear();
@@ -742,7 +785,11 @@ fn ground_with(
 
     // Assemble the output.
     let mut gp = GroundProgram::default();
-    for id in 0..g.atoms.len() as AtomId {
+    let n = g.atoms.len();
+    if gp.atoms.try_reserve_exact(n).is_err() || gp.kinds.try_reserve_exact(n).is_err() {
+        return Err(GroundError::OutOfMemory);
+    }
+    for id in 0..n as AtomId {
         gp.atoms.push(g.display_atom(id));
         let (p, _) = &g.atoms[id as usize];
         gp.kinds.push(match g.preds[*p as usize].switch {

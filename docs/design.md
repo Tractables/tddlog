@@ -293,7 +293,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    per-position index of its relation. A negative literal on an impossible
    atom is dropped as true; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint
-   (`examples/win.pl` shows both).
+   (`examples/win.pl` shows both). The atoms and the rules grow through
+   fallible reservations: where the allocator refuses one, the grounding
+   is given up with `GroundError::OutOfMemory`, as a diagram operation is
+   refused, rather than aborted.
 
    A recursive stratum has *rising levels* where the last argument of each
    of its predicates is a level that no rule lowers: every literal of the

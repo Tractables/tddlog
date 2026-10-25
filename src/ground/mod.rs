@@ -268,13 +268,16 @@ fn ground_norm(
     // makes safe), the rewrite is tried.
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
-    } else if let Some(gp) = engine::ground_by_levels(norm, bound).ok().flatten() {
+    } else if let Some(gp) = match engine::ground_by_levels(norm, bound) {
+        Err(GroundError::OutOfMemory) => return Err(GroundError::OutOfMemory),
+        levelled => levelled.ok().flatten(),
+    } {
         gp
     } else {
         match magic::rewrite(norm) {
             Some(magic) => match engine::ground_normalized(&magic, bound) {
                 Ok(gp) => gp,
-                Err(GroundError::OverBound) => return Err(GroundError::OverBound),
+                Err(e @ (GroundError::OverBound | GroundError::OutOfMemory)) => return Err(e),
                 Err(_) => engine::ground_normalized(norm, bound)?,
             },
             None => engine::ground_normalized(norm, bound)?,
