@@ -497,6 +497,52 @@ class RouletteTests(unittest.TestCase):
         self.assertEqual(bench.EXACT['gen_roulette.py'][1]('x.pl'), ['gen_roulette.py', '--reference-of', 'x.pl'])
 
 
+class SkipTests(unittest.TestCase):
+    """A system skips the larger sizes of a program once it ran out of time
+    or memory on a smaller one, and nothing else."""
+
+    def test_series(self):
+        series = bench.series
+        self.assertEqual(series('grid', 'grid10'), 'grid')
+        self.assertEqual(series('bb_GPA', 'bb_GPA_w19'), 'bb_GPA')
+        self.assertEqual(series('arith', 'arith_gcd_small'), 'arith_gcd')
+        self.assertEqual(series('nodice', 'nodice_coupon2-12-obs'), 'nodice_coupon2')
+        self.assertEqual(series('dice_scaled', 'dice_ladder_k400'), 'dice_ladder')
+        for family, name in [('arith', 'arith_book'), ('nodice', 'nodice_alarm'), ('hybit', 'hybit_pi'),
+                             ('dice', 'dice_alarm'), ('bn', 'bn_asia'), ('bnev', 'bn_asia_ev'), ('bn', 'rl_bn_alarm'),
+                             ('aceblockmap', 'ace_blockmap_05_01'), ('uaipromedus', 'uai_promedus_30')]:
+            self.assertIsNone(series(family, name), name)
+
+    def test_ran_out(self):
+        self.assertTrue(bench.ran_out({'status': 'timeout', 'seconds': 1}))
+        self.assertTrue(bench.ran_out({'status': 'error', 'error': "terminate called after 'std::bad_alloc'"}))
+        self.assertTrue(bench.ran_out({'status': 'error', 'error': 'memory allocation of 8 bytes failed'}))
+        self.assertFalse(bench.ran_out({'status': 'error', 'error': 'parse error: line 1'}))
+        self.assertFalse(bench.ran_out({'status': 'unsupported', 'error': 'no translation'}))
+        self.assertFalse(bench.ran_out({'status': 'ok', 'seconds': 1}))
+
+    def test_only_a_smaller_size_out_of_time_or_memory_skips(self):
+        args = SimpleNamespace(suite='standard', only=['grid4', 'grid5', 'grid6', 's6', 's10', 'bn_cancer', 'bn_asia'],
+                               families=[], strategies=['auto'], kbs=[], pita='', aspmc='', scallop='', dice='',
+                               dir='bench', out='results.jsonl', tddlog='tddlog', timeout=1, no_skip=False,
+                               exact=False, ace='', merlin='', ganak='', pr=False, cnf=False)
+        fails = {'grid4': {'status': 'timeout', 'seconds': 1}, 'bn_cancer': {'status': 'timeout', 'seconds': 1},
+                 's6': {'status': 'error', 'seconds': 0.1, 'error': 'parse error: line 1', 'returncode': 1}}
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            ok = {'status': 'ok', 'seconds': 0.1, 'stdout': 'q:\t0.5\n', 'stderr': ''}
+            return dict(fails.get(Path(cmd[-1]).stem, ok))
+        with patch('builtins.open', mock_open()) as output, patch.object(bench, 'timed', timed), \
+                patch.object(bench, 'queries', return_value=['q']), redirect_stdout(io.StringIO()):
+            bench.run(args)
+        records = [bench.json.loads(c.args[0]) for c in output().write.call_args_list]
+        # the grid's larger sizes after its timeout; the smokers after an error, and
+        # the networks, are no sizes of a program that ran out
+        self.assertEqual({r['instance']: r['status'] for r in records},
+                         {'grid4': 'timeout', 'grid5': 'skipped', 'grid6': 'skipped', 's6': 'error', 's10': 'ok',
+                          'bn_cancer': 'timeout', 'bn_asia': 'ok'})
+
+
 class RotateTests(unittest.TestCase):
     def test_rotations_put_each_system_in_each_place(self):
         systems = [('tddlog', 'auto'), ('dice', 'bdd'), ('alea', 'cudd')]

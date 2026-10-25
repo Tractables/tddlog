@@ -29,13 +29,15 @@ file data/fetch.txt lists, checks its SHA-256 and writes it in place, and
 `gen` stops, naming `fetch`, where one is missing. `run` executes every (instance, system) pair once, single-threaded,
 and appends one JSON line per run: wall seconds, exit status, the answers,
 and for tddlog the largest formula size and operation counts from
-`--stats`. Once a system times out or fails on an instance, the larger
-instances of that family are skipped for it (`-` in the table), unless
-`--no-skip` is given. Without `--cpus` the runs go one after another;
-`--cpus` runs them in parallel lanes, one per CPU listed, every command of
-a lane pinned to its CPU with `taskset`. A family's instances run in one
-lane in order of size, so a timeout skips the larger ones as it does in a
-sequential run; under `--no-skip` each instance is a job of its own. The
+`--stats`. Once a system runs out of time or memory on one size of a
+program (`series`), its larger sizes are skipped for it (`-` in the
+table), unless `--no-skip` is given; a failure of another kind, and a
+network or another program, skips nothing. Without `--cpus` the runs go
+one after another; `--cpus` runs them in parallel lanes, one per CPU
+listed, every command of a lane pinned to its CPU with `taskset`. A
+program's sizes run in one lane in order of size, so that a skip is as in
+a sequential run, and every other instance (every instance under
+`--no-skip`) is a job of its own. The
 systems of an instance run back to back in its lane, in the order given,
 or under `--rotate R` in that order rotated by a checksum of the
 instance's name plus R: runs with R = 0 to n - 1 put each of n systems in
@@ -293,7 +295,8 @@ ALEA_BENCH = os.path.join(HERE, 'alea_bench.jl')
 # conjugate Gaussians of Figure 5 by their precision. A program is a
 # family, `bb_NAME`, its instances `bb_NAME_wW` by W, the width of its
 # numbers in bits (Table 2's column `Bit`), or `bb_genes_tT` by T,
-# smallest first, so that a system that fails on one skips the larger.
+# smallest first, so that a system that runs out of time or memory on one
+# skips the larger.
 # The instance's generator arguments end in the `--set NAME=VALUE` that
 # alea_bench.jl runs the program with.
 BB_PRECISION = {  # program: (its precision constant, the paper's value, width less precision)
@@ -602,6 +605,36 @@ def instances(args):
         raise SystemExit('unknown instances: ' + ', '.join(sorted(unknown)))
     return {n: entry for n, entry in spec.items()
             if (not args.families or entry[0] in args.families) and (not args.only or n in args.only)}
+
+
+# The families of different programs, each with the pattern that matches the
+# sizes of a program among them (its group names the program; the sizes are
+# listed smallest first): Alea.jl's arithmetic programs, noDice's coupon
+# collector, and bench_one.py's scaled Dice loops.
+COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None,
+               'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_coupon2)-\d+-obs',
+               'dice_scaled': r'(dice_.+)_k\d+'}
+
+
+def series(family, name):
+    """The program of which instance `name` of `family` is one size, or None:
+    a network (the families of bnlearn's, Ace's and the UAI sets' networks
+    hold different networks) or a program of one size in a family of
+    different programs (COLLECTIONS). Every other family is one program at
+    sizes listed smallest first."""
+    if family in ('bn', 'bnev', 'bnint') or family.startswith(('ace', 'uai')):
+        return None
+    if family in COLLECTIONS:
+        m = COLLECTIONS[family] and re.fullmatch(COLLECTIONS[family], name)
+        return m.group(1) if m else None
+    return family
+
+
+def ran_out(r):
+    """Whether a run ran out of time or memory: a timeout, or an error that
+    names an allocation (as the results page reads a failure)."""
+    return r['status'] == 'timeout' or \
+        (r['status'] == 'error' and re.search(r'bad_alloc|memory|alloc', str(r.get('error')), re.I) is not None)
 
 
 def has_cnf(entry):
@@ -3295,13 +3328,14 @@ def run(args):
         raise SystemExit(f'--cpus {",".join(map(str, cpus))}: a CPU listed twice')
     if cpus and not shutil.which('taskset'):
         raise SystemExit('--cpus pins the lanes with taskset, and there is none on the PATH')
-    # Instances of a family are listed by size. Once a system times out or
-    # fails on one, the larger ones of that family are skipped rather than
-    # waited out; the family is then a job of one lane.
-    families = {}
+    # A program's sizes are listed smallest first. Once a system runs out of
+    # time or memory on one, the larger ones are skipped rather than waited
+    # out; the sizes are then a job of one lane, every other instance a job
+    # of its own.
+    jobs = {}
     for name in names:
-        families.setdefault(spec[name][0], []).append(name)
-    jobs = [[name] for name in names] if args.no_skip else list(families.values())
+        jobs.setdefault((not args.no_skip and series(spec[name][0], name)) or (name,), []).append(name)
+    jobs = list(jobs.values())
     lanes = cpus or [None]
     free = list(lanes)
     lock = threading.Lock()
@@ -3337,8 +3371,8 @@ def system_order(systems, name, rotate):
 
 
 def run_job(args, spec, systems, out, lock, names):
-    """Runs `systems` on `names`, instances of one family in order of size,
-    and appends the records to `out` under `lock`. On the suites of
+    """Runs `systems` on `names`, one instance or a program's sizes in order
+    of size, and appends the records to `out` under `lock`. On the suites of
     CHECKED_SUITES a baseline's record is written once every system has run
     on the instance, checked against the reference
     (`check_against_reference`)."""
@@ -3360,6 +3394,7 @@ def run_job(args, spec, systems, out, lock, names):
         path = os.path.join(args.dir, name + '.pl')
         pe = pe_program(path, os.path.join(args.dir, name + '.pe.pl')) \
             if args.pr and any(s in PE_SYSTEMS for s, _ in systems) else None
+        program = series(spec[name][0], name)
         done, held = {}, []
         for system, variant in system_order(systems, name, getattr(args, 'rotate', None)):
             if system == 'exact' and EXACT.get(spec[name][1][0], ('',))[0] != variant:
@@ -3377,12 +3412,12 @@ def run_job(args, spec, systems, out, lock, names):
                 continue
             if system in PROGRAM_SYSTEMS and not PROGRAM_SYSTEMS[system]['accepts'](args, name):
                 continue
-            if (system, variant, spec[name][0]) in dead:
+            if (system, variant, program) in dead:
                 rec = {'instance': name, 'family': spec[name][0], 'system': system,
                        'variant': variant, 'status': 'skipped', 'seconds': 0}
                 with lock:
                     out.write(json.dumps(rec) + '\n')
-                    print(f"{name:10} {system}:{variant:10} skipped (timed out on a smaller instance)")
+                    print(f"{name:10} {system}:{variant:10} skipped (ran out of time or memory on a smaller size)")
                 continue
             src = pe if pe and system in PE_SYSTEMS else path
             # the systems given the instance through its ground program
@@ -3490,10 +3525,10 @@ def run_job(args, spec, systems, out, lock, names):
                     m = re.search(r'^(?:parse|grounding|vtree|indicator|compilation) error: .*', r['error'], re.M | re.S)
                     if m:
                         rec['error'] = m.group(0)
-            # a program the system's language cannot express says nothing of
-            # the family's larger ones
-            if r['status'] not in ('ok', 'unsupported') and not args.no_skip:
-                dead.add((system, variant, spec[name][0]))
+            # out of time or memory on one size of a program: its larger sizes
+            # are skipped; another failure says nothing of them
+            if program and ran_out(r) and not args.no_skip:
+                dead.add((system, variant, program))
             done[(system, variant)] = rec
             if checked and system not in ('tddlog', 'exact') and rec['status'] == 'ok':
                 held.append(rec)
@@ -3830,12 +3865,14 @@ def main():
                        'tmp/roulette-benchmarks')
         p.add_argument('--families', default='', type=lambda s: s.split(',') if s else [])
         p.add_argument('--only', default='', type=lambda s: s.split(',') if s else [])
-    r.add_argument('--no-skip', action='store_true', help='run every instance even after a timeout in the family')
+    r.add_argument('--no-skip', action='store_true',
+                   help='run every size of a program even after a smaller one ran out of time or memory')
     r.add_argument('--rotate', type=int, default=None, help="rotate the systems' order on each instance by a "
                    "checksum of its name plus R (repetition R of a timed run)")
     r.add_argument('--cpus', default='', type=lambda s: [int(c) for c in s.split(',')] if s else [],
-                   help='run in parallel lanes, one per CPU listed, each command pinned to its lane\'s CPU with '
-                   'taskset; a family is a job of one lane, or under --no-skip each instance')
+                   help="run in parallel lanes, one per CPU listed, each command pinned to its lane's CPU with "
+                   "taskset; a program's sizes are a job of one lane, every other instance (every instance "
+                   "under --no-skip) a job of its own")
     r.add_argument('--exact', action='store_true',
                    help="the exact reference where an instance has one: bn_exact.py's clique-tree answers on the "
                    "networks, lit_exact.py's on the literature families, tpch_exact.py's on the tpch suite, "

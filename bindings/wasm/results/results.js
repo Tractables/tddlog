@@ -10,8 +10,8 @@
 // answers.
 //
 // The page is one view at a time, named by the address's hash:
-//   #/                       the kinds of problems, each system's answers and total time
-//   #/kind/KIND              a kind: its plot, its systems' totals, its suites
+//   #/                       the README's figures: each kind's total times, cactus and scatter plots
+//   #/kind/KIND[/SYSTEM]     a kind: its systems' totals, its plots (tddlog against SYSTEM), its suites
 //   #/SUITE                  a suite: its plot, tddlog against each system, its families
 //   #/SUITE/FAMILY[/NAME]    a family: its instances' times, and an instance's programs and answers
 //   #/SUITE/@NAME            the family of the instance NAME
@@ -23,7 +23,8 @@
 // figures): each kind's systems over all of its instances, with each
 // system's answers and total time, which the results pipeline writes; the
 // page does not choose a kind's instances or systems, nor compute its
-// totals.
+// totals. It computes, as the README's figures do, the totals over the
+// instances tddlog and another system both answer, and the scatter plots.
 
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
 // data, as the playground's does to its files.
@@ -43,8 +44,9 @@ const FAILURES = {
   zero: [() => "zero", "every answer printed as 0 where the reference's are positive"],
   underflow: [() => "underflow", "every answer printed as 0 where the probability of the evidence is below the smallest double"],
 };
-// A failure that is a verdict on the answers, not a run that stopped.
-const VERDICTS = new Set(["wrong", "zero", "underflow"]);
+// A time in a table is shaded by how many times slower it is than its
+// instance's fastest, up to this many.
+const SLOWEST = 100;
 
 // The most lines of a file the page shows; the whole file can be saved.
 const SHOWN_LINES = 2000;
@@ -157,6 +159,35 @@ const answered = (value) => typeof value === "number";
 const base = (key) => key.replace(/-process$/, "");
 const dashed = (key) => key.endsWith("-process");
 
+// An instance's fastest answer of its records `values` (a process's time
+// left out by the caller), at least 0.2 s, as every comparison counts it;
+// null where none answers.
+function fastestOf(values) {
+  const ts = values.filter(answered);
+  return ts.length ? Math.max(FLOOR, Math.min(...ts)) : null;
+}
+
+// How a record reads beside its instance's fastest answer: "best", the
+// fastest (every answer under 0.2 s ties for it); "slow", with `p` from 0 to
+// 1 as it takes up to SLOWEST times the fastest's time; "fail", no answer;
+// "na", a program the system cannot express. `slower` is how many times the
+// fastest's time it takes, for a cell's title.
+function rated(v, fastest) {
+  if (!answered(v)) return { cls: v === "unsupported" ? "na" : "fail", p: 0 };
+  const r = Math.max(v, FLOOR) / fastest;
+  if (r <= 1) return { cls: "best", p: 0 };
+  return { cls: "slow", p: Math.min(1, Math.log(r) / Math.log(SLOWEST)), slower: times(Math.max(v, FLOOR), fastest) };
+}
+
+// The key to a table's shades; `na` where a system cannot express some
+// instance.
+function shades(na) {
+  return [element("span", {}, element("i", { class: "heat best" }), `the fastest (under ${FLOOR} s, a tie)`),
+    element("span", {}, element("i", { class: "heat slow" }), `slower, up to ${SLOWEST}× the fastest's time`),
+    element("span", {}, element("i", { class: "heat fail" }), "no answer"),
+    na ? element("span", {}, element("i", { class: "heat na" }), "cannot express it") : null].filter(Boolean);
+}
+
 // A system's sample of line: in its colour, dashed for a process's time, or
 // grey where its line in a plot is.
 function swatch(key, grey = false) {
@@ -226,7 +257,7 @@ function linesOf(suite) {
 // Returns whether the plot is narrow.
 function cactus(box, suite, names, series, coloured) {
   const width = Math.max(280, Math.floor(box.clientWidth));
-  const narrow = width < 560;
+  const narrow = width < 480;
   const height = narrow ? 300 : Math.max(380, series.length * 14 + 22 + 46);
   const n = suite.instances.length;
   const hi = suite.limit;
@@ -368,26 +399,43 @@ function legend(series, names, n, figure, total, coloured, narrow, recolour) {
   return list;
 }
 
+// draw(), again whenever box changes width.
+function onWidth(box, draw) {
+  let last = 0;
+  new ResizeObserver(() => {
+    const w = box.clientWidth;
+    if (w === 0 || w === last) return;
+    last = w;
+    draw();
+  }).observe(box);
+}
+
 // A plot with its legend, drawn again when its box changes width or a line
 // is coloured or greyed. Where there are more than five lines, tddlog's and
-// the three that answer the most are in colour and the others grey until
-// asked for. The figure names the systems it draws and the number of its
-// instances; a kind's legend gives each system's total time too
-// (suite.total).
-function plotted(suite, names) {
+// the three that answer the most are in colour, and `also`'s, and the others
+// grey until asked for. The figure names the systems it draws and the
+// number of its instances; a kind's legend gives each system's total time
+// too (suite.total). A `bare` plot has no legend where its lines are named
+// at their ends, nor a button to colour them all.
+function plotted(suite, names, { also, bare } = {}) {
   const series = linesOf(suite);
   const top = series.slice(0, series.length > 5 ? 4 : series.length).map((s) => s.key);
+  if (also && !top.includes(also)) top.push(also);
   let coloured = new Set(top);
   const figure = element("figure", { class: "plot", "data-systems": suite.systems.join(" "),
     "data-instances": String(suite.instances.length) });
   const box = element("div", { class: "box" });
-  const every = series.length > top.length ? element("button", { type: "button", class: "plain every", onclick: () => {
+  const every = series.length > top.length && !bare ? element("button", { type: "button", class: "plain every", onclick: () => {
     coloured = new Set(coloured.size === series.length ? top : series.map((s) => s.key));
     draw();
   } }) : null;
   figure.append(box);
   const draw = () => {
     const narrow = cactus(box, suite, names, series, coloured);
+    if (bare && !narrow) {
+      figure.querySelector(".legend")?.remove();
+      return;
+    }
     const focused = figure.contains(document.activeElement) ? document.activeElement.closest(".legend button")?.dataset.system : undefined;
     const fresh = legend(series, names, suite.instances.length, figure, suite.total, coloured, narrow, (key) => {
       coloured = new Set(coloured);
@@ -401,19 +449,263 @@ function plotted(suite, names) {
     if (every) every.textContent = coloured.size === series.length ? "Colour tddlog's and the top three lines only" : `Colour all ${series.length} lines`;
     if (focused) fresh.querySelector(`button[data-system="${CSS.escape(focused)}"]`)?.focus();
   };
-  let last = 0;
-  new ResizeObserver(() => {
-    const w = box.clientWidth;
-    if (w === 0 || w === last) return;
-    last = w;
-    draw();
-  }).observe(box);
+  onWidth(box, draw);
   return figure;
+}
+
+// ------------------------------------------------------------- the README's figures
+
+// A kind's instances as the README's figures read them: each with its
+// suite, its suite's time limit and each of the kind's systems' time, null
+// where the system does not answer it or was not given it.
+function kindRows(k) {
+  return k.suites.flatMap((key) => {
+    const s = data.suites.get(key);
+    return s.instances.map((row) => ({ suite: key, name: row[0], limit: s.limit, t: Object.fromEntries(k.systems.map((x) => {
+      const i = s.systems.indexOf(x);
+      return [x, i >= 0 && answered(row[i + 1]) ? row[i + 1] : null];
+    })) }));
+  });
+}
+
+// A run's cost in a total: its time, at least 0.2 s, or its suite's limit
+// where it does not answer.
+const cost = (r, x) => (r.t[x] === null ? r.limit : Math.max(r.t[x], FLOOR));
+
+// How many times less time tddlog takes than another system: 49×, 1.7×,
+// or 1.3× slower.
+function multiple(mine, theirs) {
+  return theirs >= mine ? times(theirs, mine) : `${times(mine, theirs)} slower`;
+}
+
+// tddlog against each other system of a kind, as the README's overview has
+// it: each one's total time over the kind's instances that some system
+// answers (the data's), and over those both answer; the fastest first.
+function versus(k, rows) {
+  const both = (x) => rows.filter((r) => r.t.tddlog !== null && r.t[x] !== null);
+  const sum = (rs, x) => rs.reduce((t, r) => t + cost(r, x), 0);
+  return k.systems.filter((x) => x !== "tddlog").map((x) => {
+    const b = both(x);
+    return { key: x, answers: k.answers[x], mine: k.total.tddlog, theirs: k.total[x], both: b.length,
+      bothMine: sum(b, "tddlog"), bothTheirs: sum(b, x) };
+  }).sort((a, b) => b.theirs - a.theirs);
+}
+
+// The README's overview: for each kind, each system's total time beside
+// tddlog's over the same instances, on one time axis, and how many times
+// less time tddlog takes, over all of them and where both answer. A kind's
+// title opens the kind; a system's row opens the kind with tddlog's times
+// against that system's.
+function overview() {
+  const groups = data.kinds.map((k) => ({ k, rows: versus(k, kindRows(k)) }));
+  const box = element("div", { class: "box" });
+  const figure = element("figure", { class: "overview" }, box,
+    element("figcaption", { class: "note" }, `The release run of tddlog ${data.version}. A run that does not answer (out of time `
+      + "or memory, a wrong answer, or a program the system cannot express) counts as its time limit, "
+      + `${[...new Set([...data.suites.values()].map((s) => s.limit))].sort((a, b) => a - b).join(" or ")} s, and a time under ${FLOOR} s as ${FLOOR} s. A kind or a system opens its details.`));
+  onWidth(box, () => drawOverview(box, groups));
+  return figure;
+}
+
+function drawOverview(box, groups) {
+  const width = Math.max(300, Math.floor(box.clientWidth));
+  const narrow = width < 640;
+  const row = 23, head = 32, top = 46, bottom = 30;
+  const nameRight = narrow ? 112 : 150, answersRight = nameRight + 38;
+  const ratio = width - (narrow ? 56 : 150), bothX = ratio + 68;
+  const x0 = answersRight + 14, x1 = ratio - (narrow ? 10 : 18);
+  const all = groups.flatMap((g) => g.rows.flatMap((r) => [r.mine, r.theirs]));
+  const lo = Math.min(...all) / 3, hi = Math.max(...all) * 3;
+  const lx = (t) => x0 + Math.log(t / lo) / Math.log(hi / lo) * (x1 - x0);
+  const height = top + groups.reduce((h, g) => h + head + row * (g.rows.length + 1), 0) + bottom;
+  const plot = svg("svg", { class: "overview", width, height, viewBox: `0 0 ${width} ${height}`, role: "group",
+    "aria-label": "Total time of tddlog and of each other system over the same instances, by kind of problem" });
+  const ticks = [];
+  for (const tick of [[1, "1 s"], [10, "10 s"], [60, "1 min"], [600, "10 min"], [3600, "1 h"], [36000, "10 h"], [360000, "100 h"]]) {
+    // each at least 44 px from the one before, so that their names do not touch
+    if (tick[0] < lo || tick[0] > hi || (ticks.length && lx(tick[0]) - lx(ticks.at(-1)[0]) < 44)) continue;
+    ticks.push(tick);
+  }
+  for (const [t, label] of ticks) {
+    plot.append(svg("line", { class: "grid", x1: lx(t), y1: top - 6, x2: lx(t), y2: height - bottom + 4 }));
+    for (const y of [top - 12, height - 10]) plot.append(svg("text", { class: "tick", x: lx(t), y, "text-anchor": "middle" }, label));
+  }
+  plot.append(svg("text", { class: "col", x: answersRight, y: top - 12, "text-anchor": "end" }, "answers"));
+  // the ratios' headings, in two lines
+  const heading = (x, ...lines) => plot.append(...lines.map((text, i) => svg("text", { class: "col", x, y: top - 12 - 13 * (lines.length - 1 - i) }, text)));
+  heading(ratio, "tddlog", "faster");
+  if (!narrow) heading(bothX, "both", "answer");
+  let y = top;
+  // A row: the system's name and answers, its dots and their times, and the
+  // whole row a link.
+  const line = (href, label, cls, name, answers, ...marks) => {
+    const a = svg("a", { href, class: `row ${cls}`, "aria-label": label });
+    a.append(svg("title", {}, label), svg("rect", { class: "hit", x: 0, y, width, height: row }),
+      svg("text", { class: "name", x: nameRight, y: y + row / 2 + 4, "text-anchor": "end" }, name),
+      svg("text", { class: "answers", x: answersRight, y: y + row / 2 + 4, "text-anchor": "end" }, count(answers)), ...marks);
+    plot.append(a);
+    y += row;
+  };
+  const at = (t, cls, side) => {
+    const x = lx(t), cy = y + row / 2;
+    const marks = [svg("circle", { class: cls, cx: x, cy, r: 5 })];
+    if (!narrow && side) {
+      marks.push(svg("text", { class: `t ${cls}`, x: x + side * 9, y: cy + 4, "text-anchor": side < 0 ? "end" : "start" }, duration(t)));
+    }
+    return marks;
+  };
+  for (const { k, rows } of groups) {
+    const kind = svg("a", { href: href({ view: "kind", kind: k.key }), class: "kind" });
+    kind.append(svg("text", { x: 0, y: y + head - 9 }, `${k.title}, ${count(k.instances)}`));
+    plot.append(kind);
+    y += head;
+    const mine = k.total.tddlog;
+    line(href({ view: "kind", kind: k.key }), `tddlog: ${count(k.answers.tddlog)} of ${count(k.instances)} ${k.noun} answered, ${duration(mine)} in total`,
+      "mine", "tddlog", k.answers.tddlog, ...at(mine, "me", -1));
+    for (const r of rows) {
+      const name = data.names[r.key];
+      const faster = multiple(r.mine, r.theirs);
+      const where = r.both ? `; where both answer (${count(r.both)}), ${duration(r.bothTheirs)} against ${duration(r.bothMine)}, ${multiple(r.bothMine, r.bothTheirs)}` : "";
+      const [left, right] = r.mine <= r.theirs ? [-1, 1] : [1, -1];
+      line(href({ view: "kind", kind: k.key, vs: r.key }),
+        `${name}: ${count(r.answers)} of ${count(k.instances)} answered, ${duration(r.theirs)} in total against tddlog's ${duration(r.mine)}, tddlog ${faster}${where}`,
+        "other", name, r.answers,
+        svg("line", { class: "span", x1: lx(r.mine), y1: y + row / 2, x2: lx(r.theirs), y2: y + row / 2 }),
+        ...at(r.theirs, "you", right), ...at(r.mine, "me", left),
+        svg("text", { class: `ratio${r.theirs >= r.mine ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 }, faster),
+        r.both && !narrow ? svg("text", { class: "both", x: bothX, y: y + row / 2 + 4 }, multiple(r.bothMine, r.bothTheirs)) : null);
+    }
+  }
+  box.replaceChildren(plot);
+}
+
+// tddlog's time against the fastest other system's (or `vs`'s), instance by
+// instance, as the README's scatter plots draw it: on log axes from 0.2 s,
+// a run that does not answer at "fail", the instances both answer in under
+// 0.2 s and those neither answers left out. A dot under the diagonal is an
+// instance tddlog answers faster; a dot opens its instance. With `choose`,
+// a menu picks the other system.
+function scatter(k, rows, vs, choose) {
+  const box = element("div", { class: "box" });
+  const head = element("p", { class: "sc-head" });
+  const foot = element("p", { class: "note" });
+  const figure = element("figure", { class: "scatter" });
+  if (choose) {
+    const others = versus(k, rows).map((r) => r.key).sort((a, b) => k.answers[b] - k.answers[a]);
+    const menu = element("select", { class: "vs", "aria-label": "The system tddlog's times are set against",
+      onchange: () => go({ ...now, vs: menu.value || undefined }) },
+      element("option", { value: "" }, "the fastest other system"), ...others.map((x) => element("option", { value: x }, data.names[x])));
+    menu.value = vs ?? "";
+    figure.append(element("label", { class: "pick" }, "tddlog against ", menu));
+  }
+  figure.append(head, box, foot);
+  const limit = Math.max(...k.suites.map((key) => data.suites.get(key).limit));
+  const others = vs ? [vs] : k.systems.filter((x) => x !== "tddlog");
+  const fail = 10 ** (Math.log10(limit) + 0.32);
+  const points = [];
+  let fast = 0, neither = 0;
+  for (const r of rows) {
+    let best = null;
+    for (const x of others) if (r.t[x] !== null && (best === null || r.t[x] < r.t[best])) best = x;
+    const mine = r.t.tddlog, theirs = best === null ? null : r.t[best];
+    if (mine === null && theirs === null) neither++;
+    else if (mine !== null && theirs !== null && Math.max(mine, theirs) < FLOOR) fast++;
+    else {
+      const x = theirs === null ? fail : Math.max(theirs, FLOOR), y = mine === null ? fail : Math.max(mine, FLOOR);
+      points.push({ r, best, x, y, cls: y < x ? "win" : y > x ? "loss" : "tie" });
+    }
+  }
+  const wins = points.filter((p) => p.cls === "win").length, losses = points.filter((p) => p.cls === "loss").length;
+  figure.dataset.faster = String(wins);
+  figure.dataset.slower = String(losses);
+  head.replaceChildren(element("b", { class: "win" }, `tddlog faster on ${count(wins)}`), element("b", { class: "loss" }, `slower on ${count(losses)}`));
+  const against = vs ? data.names[vs] : "the fastest other system";
+  const left = [fast ? `${plural(fast, "instance")} both answer in under ${FLOOR} s` : "", neither ? `${count(neither)} neither answers` : ""].filter(Boolean);
+  foot.replaceChildren(`A dot is an instance: tddlog's time against ${against}'s; it opens the instance.${left.length ? ` Not drawn: ${and(left)}.` : ""}`);
+  onWidth(box, () => drawScatter(box, points, limit, fail, vs));
+  return figure;
+}
+
+function drawScatter(box, points, limit, fail, vs) {
+  const who = vs ? data.names[vs] : "the fastest other system";
+  const side = Math.min(400, Math.max(260, Math.floor(box.clientWidth)));
+  const left = 48, bottom = 42, top = 6, right = 8;
+  const x0 = left, x1 = side - right, y0 = top, w = x1 - x0;
+  const lim = [FLOOR / 1.15, fail * 1.3];
+  const scale = (v) => Math.log(v / lim[0]) / Math.log(lim[1] / lim[0]) * w;
+  const px = (v) => x0 + scale(v), py = (v) => y0 + w - scale(v);
+  const height = y0 + w + bottom;
+  const plot = svg("svg", { class: "scatter", width: side, height, viewBox: `0 0 ${side} ${height}`, role: "img",
+    "aria-label": `tddlog's time against ${who}'s, an instance a dot` });
+  const edge = 10 ** (Math.log10(limit) + 0.14);
+  plot.append(svg("rect", { class: "band", x: px(edge), y: y0, width: x1 - px(edge), height: w }),
+    svg("rect", { class: "band", x: x0, y: y0, width: w, height: py(edge) - y0 }));
+  const ticks = [FLOOR, ...[1, 10, 100].filter((t) => t < limit / 2), fail];
+  ticks.forEach((t, i) => {
+    const label = i === 0 ? `≤${FLOOR}` : i === ticks.length - 1 ? "fail" : String(t);
+    plot.append(svg("line", { class: "grid", x1: px(t), y1: y0, x2: px(t), y2: y0 + w }),
+      svg("line", { class: "grid", x1: x0, y1: py(t), x2: x1, y2: py(t) }),
+      svg("text", { class: "tick", x: px(t), y: y0 + w + 15, "text-anchor": "middle" }, label),
+      svg("text", { class: "tick", x: x0 - 5, y: py(t) + 4, "text-anchor": "end" }, label));
+  });
+  plot.append(svg("line", { class: "diag", x1: px(lim[0]), y1: py(lim[0]), x2: px(lim[1]), y2: py(lim[1]) }));
+  for (const m of [10, 100]) {
+    plot.append(svg("line", { class: "diag dashed", x1: px(lim[0] * m), y1: py(lim[0]), x2: px(lim[1]), y2: py(lim[1] / m) }));
+    const t = limit / 4;
+    plot.append(svg("text", { class: "tick", x: px(t), y: py(t / m) - 4, "text-anchor": "middle", transform: `rotate(-45 ${px(t)} ${py(t / m) - 4})` }, `${m}×`));
+  }
+  plot.append(svg("text", { class: "label", x: x0 + w / 2, y: height - 6, "text-anchor": "middle" }, `${vs ? who : "fastest other system"} (s)`),
+    svg("text", { class: "label", transform: `translate(12 ${y0 + w / 2}) rotate(-90)`, "text-anchor": "middle" }, "tddlog (s)"));
+  for (const p of points) plot.append(svg("circle", { class: `dot ${p.cls}`, cx: px(p.x), cy: py(p.y), r: 3.5 }));
+  // The hover layer: the dot nearest the pointer, ringed, its instance and
+  // both times beside it; a click opens the instance.
+  const ring = svg("circle", { class: "ring", r: 6, visibility: "hidden" });
+  plot.append(ring);
+  const tip = element("div", { class: "tip", hidden: true, "aria-live": "polite" });
+  let near = null;
+  const time = (t) => (t === null ? "no answer" : `${seconds(t)} s`);
+  const pointer = (event) => {
+    const at = plot.getBoundingClientRect();
+    const mx = event.clientX - at.left, my = event.clientY - at.top;
+    near = null;
+    let d = 144;
+    for (const p of points) {
+      const e = (px(p.x) - mx) ** 2 + (py(p.y) - my) ** 2;
+      if (e < d) [d, near] = [e, p];
+    }
+    plot.style.cursor = near ? "pointer" : "";
+    if (!near) {
+      ring.setAttribute("visibility", "hidden");
+      tip.hidden = true;
+      return;
+    }
+    ring.setAttribute("cx", px(near.x));
+    ring.setAttribute("cy", py(near.y));
+    ring.setAttribute("visibility", "visible");
+    tip.replaceChildren(element("b", {}, near.r.name), element("span", {}, data.suites.get(near.r.suite).title),
+      element("span", {}, `tddlog: ${time(near.r.t.tddlog)}`),
+      element("span", {}, near.best !== null ? `${data.names[near.best]}: ${time(near.r.t[near.best])}` : vs ? `${who}: no answer` : "no other system answers"));
+    tip.hidden = false;
+    const tx = px(near.x) + 12 + tip.offsetWidth > side ? px(near.x) - 12 - tip.offsetWidth : px(near.x) + 12;
+    tip.style.left = `${Math.max(0, tx)}px`;
+    tip.style.top = `${Math.max(0, py(near.y) - 10)}px`;
+  };
+  plot.addEventListener("pointermove", pointer);
+  plot.addEventListener("pointerleave", () => {
+    ring.setAttribute("visibility", "hidden");
+    tip.hidden = true;
+  });
+  plot.addEventListener("click", (event) => {
+    pointer(event);
+    if (near) location.hash = `#/${near.r.suite}/@${encodeURIComponent(near.r.name)}`;
+  });
+  box.replaceChildren(plot, tip);
 }
 
 // ------------------------------------------------------------- the data
 
 const data = {
+  version: "",      // tddlog's version in the release run
   names: {},        // a system's key: its name
   kinds: [],        // the data's kinds, in the README's order, each with `file`, the data's file that holds it
   suites: new Map(),   // a suite's key: the suite, with `home`, the data's family that holds it, and `file`
@@ -515,7 +807,11 @@ function parse(hash) {
     }
   });
   const missing = { view: "missing", what: parts.join("/") };
-  if (parts[0] === "kind") return parts.length === 2 && data.kinds.some((k) => k.key === parts[1]) ? { view: "kind", kind: parts[1] } : missing;
+  if (parts[0] === "kind") {
+    const k = data.kinds.find((x) => x.key === parts[1]);
+    if (!k || parts.length > 3 || (parts.length === 3 && (parts[2] === "tddlog" || !k.systems.includes(parts[2])))) return missing;
+    return { view: "kind", kind: k.key, vs: parts[2] };
+  }
   const suite = parts[0];
   if (!data.suites.has(suite)) return missing;
   if (parts.length === 1) return { view: "suite", suite };
@@ -536,7 +832,7 @@ function parse(hash) {
 
 function href(route) {
   switch (route.view) {
-    case "kind": return `#/kind/${route.kind}`;
+    case "kind": return `#/kind/${route.kind}${route.vs ? `/${encodeURIComponent(route.vs)}` : ""}`;
     case "suite": return `#/${route.suite}`;
     case "family": {
       let out = `#/${route.suite}/${encodeURIComponent(route.family)}${route.instance ? `/${encodeURIComponent(route.instance)}` : ""}`;
@@ -549,8 +845,9 @@ function href(route) {
   }
 }
 
-// A view without what is open in it: the file on show and the drawer.
-const pageOf = (route) => ({ ...route, file: undefined, runs: undefined });
+// A view without what is open in it: the file on show, the drawer, and the
+// system a kind's times are set against.
+const pageOf = (route) => ({ ...route, file: undefined, runs: undefined, vs: undefined });
 
 function link(route, ...children) {
   return element("a", { href: href(route) }, ...children);
@@ -576,45 +873,23 @@ function crumbs(...items) {
 
 // ------------------------------------------------------------- the views
 
+// The overview: the README's figures, each part a link to its details: the
+// total times of every kind's systems, then for each kind its cactus plot
+// beside tddlog's times against the fastest other system's.
 function home() {
-  const instances = [...data.suites.values()].reduce((n, s) => n + s.instances.length, 0);
-  const others = new Set([...data.suites.values()].flatMap((s) => s.systems).map(base));
-  others.delete("tddlog");
-  const out = [
-    element("div", { class: "stats" },
-      ...[[count(instances), "instances"], [count(data.suites.size), "suites"], [count(others.size), "other systems"]]
-        .map(([b, what]) => element("span", { class: "stat" }, element("b", {}, b), what))),
-    element("h2", {}, "Kinds of problems"),
-    element("p", { class: "lede" }, "Each kind is one set of instances, with every system of the kind tried on all of them. ",
-      "Total time counts a run that does not answer at its time limit and a time under 0.2 s as 0.2 s."),
-  ];
-  const grid = element("div", { class: "kinds" });
+  const out = [element("div", { class: "fig-head" }, element("h2", {}, "Total time, every system on the same instances"),
+    element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "the other system")),
+  overview()];
   for (const k of data.kinds) {
-    const fastest = Object.keys(k.total).filter((x) => x !== "tddlog").sort((a, b) => k.total[a] - k.total[b])[0];
-    const most = Math.max(...Object.keys(k.answers).filter((x) => x !== "tddlog").map((x) => k.answers[x]));
-    const best = Object.keys(k.answers).find((x) => x !== "tddlog" && k.answers[x] === most);
-    const less = k.total.tddlog <= k.total[fastest];
-    grid.append(link({ view: "kind", kind: k.key },
-      element("article", { class: "kind-card" },
-        element("h3", {}, k.title),
-        element("p", { class: "n" }, `${plural(k.instances, k.noun.replace(/s$/, ""), k.noun)}, ${plural(k.systems.length - 1, "other system")}; `
-          + "the answers of tddlog and of the other system that answers the most:"),
-        meter("tddlog", k.answers.tddlog, k.instances, true),
-        meter(data.names[best], most, k.instances, false),
-        element("p", { class: "total" },
-          element("b", {}, less ? `${times(k.total[fastest], k.total.tddlog)} less time` : `${times(k.total.tddlog, k.total[fastest])} more time`),
-          ` than the fastest other system, ${data.names[fastest]}: ${duration(k.total.tddlog)} against ${duration(k.total[fastest])}`))));
+    const to = { view: "kind", kind: k.key };
+    out.push(element("section", { class: "kind-figs" },
+      element("div", { class: "fig-head" }, element("h3", {}, link(to, k.title)),
+        element("span", { class: "n" }, `${count(k.instances)} ${k.noun}, ${plural(k.systems.length - 1, "other system")}`),
+        link(to, "Every system and suite")),
+      element("div", { class: "pair" }, plotted(kinded(k), data.names, { bare: true }), scatter(k, kindRows(k)))));
   }
-  out.push(grid, how(), raw(...new Set(data.kinds.map((k) => k.file))));
+  out.push(how(), raw(...new Set(data.kinds.map((k) => k.file))));
   return out;
-}
-
-// A system's answers out of n, as a bar.
-function meter(name, k, n, mine) {
-  return element("div", { class: `meter${mine ? " mine" : ""}` },
-    element("span", { class: "who" }, name),
-    element("span", { class: "bar", role: "img", "aria-label": `${name}: ${count(k)} of ${count(n)}` }, element("i", { style: `width:${(100 * k / n).toFixed(1)}%` })),
-    element("span", { class: "k" }, `${count(k)}/${count(n)}`));
 }
 
 // How the plots and totals are read, under every overview.
@@ -639,13 +914,14 @@ function how() {
       element("a", { href: "https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md" }, "docs/benchmarks.md"), "'s."));
 }
 
-// A kind's systems by their answers, then their total time, against tddlog.
-function scoreboard(k) {
+// A kind's systems by their answers, then their total time, against tddlog;
+// a system's name opens tddlog's times against its, `vs`'s row marked.
+function scoreboard(k, vs) {
   const order = Object.keys(k.answers).sort((a, b) => k.answers[b] - k.answers[a] || k.total[a] - k.total[b]);
   const body = element("tbody");
   for (const x of order) {
-    body.append(element("tr", { class: x === "tddlog" ? "mine" : null },
-      element("th", { scope: "row" }, swatch(x), data.names[x]),
+    body.append(element("tr", { class: x === "tddlog" ? "mine" : x === vs ? "vs" : null },
+      element("th", { scope: "row" }, swatch(x), x === "tddlog" ? data.names[x] : link({ view: "kind", kind: k.key, vs: x }, data.names[x])),
       element("td", {}, element("span", { class: "bar" }, element("i", { style: `width:${(100 * k.answers[x] / k.instances).toFixed(1)}%` })),
         ` ${count(k.answers[x])}`),
       element("td", { class: "num" }, duration(k.total[x])),
@@ -679,8 +955,9 @@ function kindView(route) {
   const own = family.suites[0].key === k.suites[0];
   const out = [crumbs(["Results", { view: "home" }], [k.title]), element("h2", {}, k.title)];
   if (own && family.intro) out.push(brief(family.intro, "lede"));
-  out.push(element("h3", {}, "Each system's answers and total time"), scoreboard(k),
-    element("h3", {}, "Instances answered within each time limit"), plotted(whole, data.names),
+  out.push(element("h3", {}, "Each system's answers and total time"), scoreboard(k, route.vs),
+    element("h3", { id: "figures" }, "Instances answered within each time limit, and tddlog's times against another system's"),
+    element("div", { class: "pair" }, plotted(whole, data.names, { also: route.vs }), scatter(k, kindRows(k), route.vs, true)),
     note(whole.about), cannot(whole));
   // Each suite: tddlog's answers, and the most of another system of the kind.
   const body = element("tbody");
@@ -817,12 +1094,6 @@ function headToHead(s, rows, paras) {
 // its family.
 function table(suite) {
   const cols = suite.systems;
-  // An instance's fastest answer, where it takes 0.2 s or more.
-  const fastest = (row) => {
-    const ts = cols.map((key, i) => (dashed(key) ? null : row[i + 1])).filter(answered);
-    const t = ts.length ? Math.min(...ts) : null;
-    return t !== null && t >= FLOOR ? t : null;
-  };
   const quick = (row) => {
     const ran = row.slice(1).filter((v) => v !== null && v !== "skipped");
     return ran.length > 0 && ran.every((v) => answered(v) && v < FLOOR);
@@ -833,22 +1104,26 @@ function table(suite) {
   const body = element("tbody");
   const seen = new Set();
   const rowOf = (row) => {
-    const best = fastest(row);
+    const fastest = fastestOf(cols.map((key, i) => (dashed(key) ? null : row[i + 1])));
     const family = familyOf(suite.key, row[0]);
     const tr = element("tr", {}, element("th", { scope: "row" },
       family ? link({ view: "family", suite: suite.key, family: family.key, instance: row[0] }, row[0]) : row[0]));
     if (quick(row)) tr.className = "quick";
     cols.forEach((key, i) => {
       const v = row[i + 1];
-      let td;
-      if (answered(v)) td = element("td", { class: `num${v === best && !dashed(key) ? " best" : ""}` }, seconds(v));
-      else if (v === null) td = element("td", { class: "num none", title: "not given" }, "");
+      if (v === null) {
+        tr.append(element("td", { class: "num none", title: "not given" }, ""));
+        return;
+      }
+      const { cls, p, slower } = rated(v, fastest);
+      let text, title;
+      if (answered(v)) [text, title] = [seconds(v), slower ? `${slower} the fastest's time` : null];
       else {
         seen.add(v);
-        const [text, meaning] = FAILURES[v] ?? [() => v, v];
-        td = element("td", { class: "num fail", title: meaning }, text(suite.limit));
+        const [t, meaning] = FAILURES[v] ?? [() => v, v];
+        [text, title] = [t(suite.limit), meaning];
       }
-      tr.append(td);
+      tr.append(element("td", { class: `num ${cls}`, style: p ? `--p:${p.toFixed(3)}` : null, title }, text));
     });
     return tr;
   };
@@ -882,8 +1157,8 @@ function table(suite) {
     parts.push(element("label", { class: "check" }, hide,
       ` Hide the ${count(nquick)} instances every system that ran finishes in under ${FLOOR} s`));
   }
-  parts.push(scroller(grid));
-  const notes = [`Seconds; an instance's fastest answer in bold, where it takes ${FLOOR} s or more. A header sorts by its column, and again the other way.`];
+  parts.push(scroller(grid), element("p", { class: "key" }, ...shades(seen.has("unsupported"))));
+  const notes = ["Seconds. A header sorts by its column, and again the other way."];
   if (familiesOf(suite.key)) notes.push("An instance's name opens its family: its times, every run and the programs the systems were given.");
   for (const status of Object.keys(FAILURES)) {
     if (!seen.has(status)) continue;
@@ -942,8 +1217,7 @@ function timesGrid(s, f, rows, short, route) {
   const seen = new Set();
   for (const name of f.instances) {
     const row = rows.get(name);
-    const ts = cols.filter((x) => !dashed(x)).map((x) => row[column(s, x)]).filter(answered);
-    const best = ts.length && Math.min(...ts) >= FLOOR ? Math.min(...ts) : null;
+    const fastest = fastestOf(cols.filter((x) => !dashed(x)).map((x) => row[column(s, x)]));
     const tr = element("tr", { class: name === route.instance ? "on" : null },
       element("th", { scope: "row" }, link({ ...pageOf(route), instance: name }, short.get(name))));
     for (const x of cols) {
@@ -953,28 +1227,25 @@ function timesGrid(s, f, rows, short, route) {
         tr.append(element("td", { class: `none ${mine}`, title: `${data.names[x]}: not given` }));
         continue;
       }
-      let text, title, cls = mine, p = 0;
+      const { cls, p, slower } = rated(v, fastest);
+      let text, title;
       if (answered(v)) {
         text = seconds(v);
-        title = `${data.names[x]}: ${v} s`;
-        p = Math.max(0, Math.log(Math.max(v, FLOOR) / FLOOR) / Math.log(s.limit / FLOOR));
-        if (v === best && !dashed(x)) cls += " best";
+        title = `${data.names[x]}: ${v} s${slower ? `, ${slower} the fastest's time` : ""}`;
       } else {
         seen.add(v);
         const [t, meaning] = FAILURES[v] ?? [() => v, v];
         text = t(s.limit);
         title = `${data.names[x]}: ${meaning}`;
-        cls += VERDICTS.has(v) || v === "error" ? " bad" : " fail";
       }
       // The same instance's runs keep its file on show; another's show its first.
-      tr.append(element("td", { class: cls.trim() }, element("button", { type: "button", style: `--p:${p.toFixed(3)}`, title,
+      tr.append(element("td", { class: `${cls} ${mine}`.trim() }, element("button", { type: "button", style: `--p:${p.toFixed(3)}`, title,
         "data-runs": `${s.key}/${name}/${x}`,
         onclick: () => go({ ...now, instance: name, file: name === now.instance ? now.file : undefined, runs: x }) }, text)));
     }
     body.append(tr);
   }
-  const key = [element("span", {}, element("i", { class: "heat lo" }), `${FLOOR} s`), element("span", {}, element("i", { class: "heat hi" }), `${s.limit} s`),
-    element("span", {}, `underlined: the fastest, from ${FLOOR} s`)];
+  const key = shades(seen.has("unsupported"));
   for (const v of Object.keys(FAILURES)) if (seen.has(v)) key.push(element("span", {}, `${FAILURES[v][0](s.limit)}: ${FAILURES[v][1].split(":")[0]}`));
   key.push(element("span", {}, "a time opens its runs"));
   const hidden = s.systems.length - given.length;
@@ -1002,9 +1273,9 @@ function playground(s, f, inst) {
   const pl = tab?.files.filter((file) => /\.pl$/.test(file.name)) ?? [];
   if (pl.length !== 1) return null;
   const [file] = pl;
-  if (file.held) return note("Not in the playground: the site does not show this program (below, why).");
-  if (file.part) return note(`Not in the playground: the site keeps the first ${size(file.part)} of this ${size(file.bytes)} program.`);
-  return element("p", { class: "try" }, element("a", { href: `../#bench=${[s.key, f.key, inst.name].map(encodeURIComponent).join("/")}` },
+  if (file.held) return element("span", { class: "no-try" }, "Not in the playground: the site does not show this program; its file says why.");
+  if (file.part) return element("span", { class: "no-try" }, `Not in the playground: the site keeps the first ${size(file.part)} of this ${size(file.bytes)} program.`);
+  return element("span", { class: "try" }, element("a", { href: `../#bench=${[s.key, f.key, inst.name].map(encodeURIComponent).join("/")}` },
     "Open in the playground"), element("span", { class: "muted" }, ` the ${tab.lang} program tddlog read, ${size(file.bytes)}`));
 }
 
@@ -1017,12 +1288,20 @@ function readersOf(tab) {
   return [...new Set(tab.readers.filter((r) => r !== "reference").map(name))];
 }
 
+// A tab's files in the order shown: the evidence (an .inst or .evid file)
+// after the model it observes.
+function shownFiles(tab) {
+  const observed = (k) => /\.(inst|evid)$/.test(tab.files[k].name);
+  return [...tab.files.keys()].sort((a, b) => observed(a) - observed(b));
+}
+
 // The file an instance's view shows first: the program tddlog read (its
-// ProbLog file, where its tab has others), else the original.
+// ProbLog file, where its tab has others), else the original's first.
 function firstFile(inst) {
   const ti = inst.tabs.findIndex((t) => t.readers.some(readsAs("tddlog")));
-  if (ti < 0) return [0, 0];
-  return [ti, Math.max(0, inst.tabs[ti].files.findIndex((file) => /\.pl$/.test(file.name)))];
+  if (ti < 0) return [0, shownFiles(inst.tabs[0])[0]];
+  const pl = inst.tabs[ti].files.findIndex((file) => /\.pl$/.test(file.name));
+  return [ti, pl < 0 ? shownFiles(inst.tabs[ti])[0] : pl];
 }
 
 // The address's part for a file of an instance: none for the one shown first.
@@ -1057,18 +1336,11 @@ function instanceView(s, f, fam, route, short) {
         return a;
       }));
   out.push(element("h3", {}, "Programs"), element("div", { class: "pick" }, element("span", { class: "muted" }, "instance"), pick,
-    element("code", { class: "inst" }, inst.name)), playground(s, f, inst));
-  if (inst.gen) out.push(markup("p", inst.gen, { class: "note" }));
+    element("code", { class: "inst" }, inst.name), playground(s, f, inst)));
   if (!inst.tabs) {
+    if (inst.gen) out.push(markup("p", inst.gen, { class: "note" }));
     out.push(note("The programs of this instance were not captured."));
   } else {
-    out.push(note("The files each system was handed, byte for byte, as the benchmark driver's own code writes them at the run's commit. "
-      + "The program tddlog read comes first; the menu shows the original and each other system's."));
-    const unseen = uncaptured(inst);
-    if (unseen.length) {
-      out.push(element("p", { class: "note uncaptured" }, `Not shown: the files that ${and(unseen)} ${unseen.length === 1 ? "was" : "were"} given, `
-        + `which were not captured when ${unseen.length === 1 ? "it" : "they"} ran.`));
-    }
     const view = element("div", { class: "viewer" });
     out.push(view);
     // a file the address names later, without drawing the view again
@@ -1086,52 +1358,94 @@ function size(bytes) {
 }
 
 // A file of an instance (tab ti, file fi; the first shown where it has none
-// such): the menu of the instance's programs, what the file's tab says, its
-// commands, the tab's other files, and the file, beside the original where
-// asked.
+// such): the menu of the instance's programs, what its tab says and the
+// commands that read it, folded, and the tab's files, beside the original's
+// where asked.
+let about = false;
 function showFile(view, fam, inst, ti, fi) {
   if (!inst.tabs[ti]?.files[fi]) [ti, fi] = firstFile(inst);
   const tab = inst.tabs[ti];
-  const file = tab.files[fi];
   view.dataset.file = `${ti}:${fi}`;
   const open = (t, k) => {
     showFile(view, fam, inst, t, k);
     remember({ file: fileRoute(inst, t, k) });
   };
-  const first = firstFile(inst)[0];
+  const [first, mine] = firstFile(inst);
   const order = [first, ...inst.tabs.keys()].filter((t, k, all) => all.indexOf(t) === k);
   const menu = element("select", { class: "version", "aria-label": "The program as a system read it", onchange: (e) => {
     const t = Number(e.target.value);
-    open(t, t === first ? firstFile(inst)[1] : 0);
+    open(t, t === first ? mine : shownFiles(inst.tabs[t])[0]);
   } },
     ...order.map((t) => element("option", { value: t, selected: t === ti }, versionLabel(inst.tabs[t]))));
   const canCompare = !tab.original && inst.tabs[0].original;
-  const toggle = element("label", { class: "check" }, element("input", { type: "checkbox", checked: compare && canCompare, disabled: !canCompare,
+  const two = compare && canCompare;
+  const toggle = element("label", { class: "check" }, element("input", { type: "checkbox", checked: two, disabled: !canCompare,
     onchange: (e) => { compare = e.target.checked; showFile(view, fam, inst, ti, fi); } }), " Beside the original");
-  const head = element("div", { class: "tab-says" });
-  if (tab.translated && readersOf(tab).length) head.append(element("p", { class: "unfair" }, UNFAIR));
-  head.append(element("p", {}, tab.says), ...tab.notes.map((n) => element("p", {}, n)));
-  if (tab.readers.includes("reference")) head.append(element("p", {}, `The reference answers${inst.answers?.ref ? `, ${inst.answers.ref},` : ""} are computed from it.`));
+  const panes = element("div", { class: `panes${two ? " two" : ""}` });
+  if (two) {
+    // the original's files, chosen in its own pane
+    const original = (k) => filePane(fam, inst.tabs[0], k, (j) => {
+      const next = original(j);
+      panes.firstChild.replaceWith(next);
+      return next;
+    }, element("p", { class: "cap" }, `The original, ${inst.tabs[0].lang}`));
+    panes.append(original(shownFiles(inst.tabs[0])[0]));
+  }
+  const cap = tab.translated && readersOf(tab).length ? element("p", { class: "unfair" }, UNFAIR)
+    : two ? element("p", { class: "cap" }, tab.lang) : null;
+  panes.append(filePane(fam, tab, fi, (k) => {
+    open(ti, k);
+    return view.querySelector(".panes > .pane:last-child");
+  }, cap));
+  view.replaceChildren(element("div", { class: "pick" }, element("span", { class: "muted" }, "program"), menu, toggle), aboutFiles(inst, tab), panes);
+}
+
+// What an instance's files are, how its tab was made and the commands that
+// read it, folded under one line.
+function aboutFiles(inst, tab) {
+  const parts = [element("p", {}, "The files each system was handed, byte for byte, as the benchmark driver's own code writes them at the run's commit. "
+    + "The program tddlog read comes first; the menu shows the original and each other system's.")];
+  if (inst.gen) parts.push(markup("p", inst.gen));
+  parts.push(element("p", {}, tab.says), ...tab.notes.map((n) => element("p", {}, n)));
+  if (tab.readers.includes("reference")) parts.push(element("p", {}, `The reference answers${inst.answers?.ref ? `, ${inst.answers.ref},` : ""} are computed from it.`));
+  const unseen = uncaptured(inst);
+  if (unseen.length) {
+    parts.push(element("p", { class: "uncaptured" }, `Not shown: the files that ${and(unseen)} ${unseen.length === 1 ? "was" : "were"} given, `
+      + `which were not captured when ${unseen.length === 1 ? "it" : "they"} ran.`));
+  }
   // the readers' commands, then the steps of a system's job that translate
   // these files into another tab's, which that system then reads
   const steps = [...new Map((tab.translations ?? []).map(([who, cmd]) => [cmd, who])).entries()];
-  const more = Object.values(tab.more).reduce((a, b) => a + b, 0);
-  if (tab.cmds.length + steps.length) {
+  const n = tab.cmds.length + Object.values(tab.more).reduce((a, b) => a + b, 0) + steps.length;
+  if (n) {
     const dl = element("dl", { class: "cmds" });
     for (const [who, cmd] of tab.cmds) dl.append(element("dt", {}, who), element("dd", {}, element("code", {}, cmd)));
-    for (const [who, n] of Object.entries(tab.more)) dl.append(element("dt", {}), element("dd", {}, `${who}: and ${n} more commands of the same form`));
+    for (const [who, k] of Object.entries(tab.more)) dl.append(element("dt", {}), element("dd", {}, `${who}: and ${k} more commands of the same form`));
     for (const [cmd, who] of steps) dl.append(element("dt", {}, `for ${who}`), element("dd", {}, element("code", {}, cmd)));
-    head.append(element("details", { class: "cmds" }, element("summary", {}, `The commands that read it (${count(tab.cmds.length + more + steps.length)})`), dl));
+    parts.push(element("h4", {}, `The commands that read it (${count(n)})`), dl);
   }
-  const files = tab.files.length > 1
-    ? element("div", { class: "files", role: "group", "aria-label": "Files" }, ...tab.files.map((other, k) => element("button", {
-      type: "button", class: `file${k === fi ? " on" : ""}`, "data-file": `${ti}:${k}`, "aria-pressed": String(k === fi), onclick: () => open(ti, k) },
-    other.name.split("/").pop(), element("small", {}, size(other.bytes)))))
-    : null;
-  const panes = element("div", { class: `panes${compare && canCompare ? " two" : ""}` });
-  if (compare && canCompare) panes.append(pane(fam, inst.tabs[0].files[0]));
-  panes.append(pane(fam, file));
-  view.replaceChildren(...[element("div", { class: "pick" }, element("span", { class: "muted" }, "program"), menu, toggle), head, files, panes].filter(Boolean));
+  return element("details", { class: "about", open: about, ontoggle: (e) => { about = e.target.open; } },
+    element("summary", {}, n ? "About these files and the commands that read them" : "About these files"), ...parts);
+}
+
+// A tab's file fi in a pane: a line above it where given (the warning on a
+// translation), the tab's files as tabs where it has several, and the file.
+// pick(k) shows the tab's file k and returns its pane.
+function filePane(fam, tab, fi, pick, cap) {
+  const box = element("div", { class: "pane" }, cap);
+  if (tab.files.length > 1) {
+    const choose = (k) => pick(k)?.querySelector('[role="tab"][aria-selected="true"]')?.focus();
+    const ks = shownFiles(tab);
+    const strip = element("div", { class: "ftabs", role: "tablist", "aria-label": "Files", onkeydown: (e) => {
+      const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (!step) return;
+      e.preventDefault();
+      choose(ks[(ks.indexOf(fi) + step + ks.length) % ks.length]);
+    } }, ...ks.map((k) => element("button", { type: "button", role: "tab", "aria-selected": String(k === fi), tabindex: k === fi ? "0" : "-1",
+      "data-file": k, onclick: () => k !== fi && choose(k) }, tab.files[k].name.split("/").pop(), element("small", {}, size(tab.files[k].bytes)))));
+    box.append(strip);
+  }
+  return fileIn(box, fam, tab.files[fi]);
 }
 
 // A file's text: in its family's data, or a file of its own, gzipped where
@@ -1153,11 +1467,11 @@ function saveText(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-// A file: its name, size and SHA-256, how it was made and any other line
-// the data gives above it, and its text (or why it is not shown); a long
-// file's first SHOWN_LINES lines, and the text the site keeps to save.
-function pane(fam, file) {
-  const box = element("div", { class: "pane" });
+// A file, into its pane: its name, size and SHA-256, how it was made and
+// any other line the data gives above it, and its text (or why it is not
+// shown); a long file's first SHOWN_LINES lines, and the text the site
+// keeps to save.
+function fileIn(box, fam, file) {
   box.append(element("div", { class: "fhead" }, element("code", { class: "fname" }, file.name),
     element("span", {}, `${count(file.bytes)} bytes${file.lines !== undefined ? `, ${count(file.lines)} lines` : ""}`),
     element("span", { class: "sha", title: "SHA-256" }, `sha256 ${file.sha}`)));
@@ -1287,7 +1601,8 @@ async function runs(route) {
   } else if (mine.length) {
     parts.push(note(`The command and the files ${name0} was given were not captured.`));
   }
-  if (rec === "tddlog" && inst) parts.push(playground(s, f, inst));
+  const tryIt = rec === "tddlog" && inst ? playground(s, f, inst) : null;
+  if (tryIt) parts.push(element("p", {}, tryIt));
   // the runs, the latest first; the same outcome of the same form folded
   const shown = [];
   const folded = new Map();
@@ -1404,7 +1719,7 @@ function hits(text) {
       for (const f of familiesOf(s.key) ?? []) add(f.title, f.key, `family, ${s.title}`, { view: "family", suite: s.key, family: f.key });
     }
     for (const k of data.kinds) {
-      for (const x of k.systems) add(data.names[x], x, `system, ${k.title}`, { view: "kind", kind: k.key });
+      for (const x of k.systems) add(data.names[x], x, `system, ${k.title}`, { view: "kind", kind: k.key, vs: x === "tddlog" ? undefined : x });
     }
     for (const s of data.suites.values()) {
       for (const [name] of s.instances) {
@@ -1513,12 +1828,19 @@ function show(again = false) {
     const parts = route.view === "kind" ? kindView(route) : route.view === "suite" ? suiteView(route)
       : route.view === "family" ? familyView(route, view) : route.view === "missing" ? missing(route) : home();
     view.replaceChildren(...parts);
-    // A family's view starts at its top, and another instance of it keeps the place.
+    // A family's view starts at its top, and another instance of it keeps the
+    // place; a kind's times set against a system start at its plots.
     const family = route.view === "family" ? `${route.suite}/${route.family}` : null;
-    if (!again && (family === null || family !== show.family)) window.scrollTo({ top: 0 });
+    if (route.view === "kind" && route.vs) document.getElementById("figures").scrollIntoView();
+    else if (!again && (family === null || family !== show.family)) window.scrollTo({ top: 0 });
     show.family = family;
     const t = title(route);
     document.title = t === null ? "tddlog results" : `${t} · tddlog results`;
+  } else if (route.view === "kind" && route.vs !== before.vs) {
+    // the same kind against another system: drawn again in place
+    const menu = document.activeElement?.matches("select.vs");
+    view.replaceChildren(...kindView(route));
+    if (menu) view.querySelector("select.vs").focus();
   } else if (route.view === "family" && String(route.file ?? "") !== String(before.file ?? "")) {
     const viewer = document.querySelector("#programs .viewer");
     if (viewer?.show) {
@@ -1552,7 +1874,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     for (const k of data.kinds) {
       for (const key of k.suites) if (!data.suites.has(key)) throw new Error(`the kind ${k.key} has no suite ${key}`);
     }
-    document.getElementById("version").textContent = suites.version;
+    data.version = suites.version;
     window.addEventListener("hashchange", () => show());
     const input = document.getElementById("search");
     input.addEventListener("input", () => search(input.value));
