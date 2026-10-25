@@ -588,8 +588,11 @@ mod tests {
 
     /// A loop over a time index written as recursion is grounded level by
     /// level, which proves atoms constant as their levels complete
-    /// (tests/regress/levels.pl, against ProbLog); a recursion with no
-    /// rising level is not.
+    /// (tests/regress/levels.pl, against ProbLog), and one whose level
+    /// rises through a successor relation given by its facts
+    /// (tests/regress/levels_successor.pl, by hand); a recursion with no
+    /// rising level is not, nor one whose relation has a clause that does
+    /// not rise.
     #[test]
     fn a_rising_level_is_grounded_level_by_level() {
         let opts = GroundOptions::default();
@@ -597,6 +600,12 @@ mod tests {
         let program = crate::syntax::parse_program(source).expect("parses");
         let gp = ground(&program, &opts).expect("grounds");
         assert!(gp.stats.levels > 0 && gp.stats.constants > 0);
+        let source = include_str!("../../tests/regress/levels_successor.pl");
+        let program = crate::syntax::parse_program(source).expect("parses");
+        assert!(ground(&program, &opts).expect("grounds").stats.levels > 0);
+        let flat = format!("{source}\nnext(4,4).");
+        let program = crate::syntax::parse_program(&flat).expect("parses");
+        assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
         let source = include_str!("../../examples/linear_path.pl");
         let program = crate::syntax::parse_program(source).expect("parses");
         assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);

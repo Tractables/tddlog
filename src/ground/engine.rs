@@ -1035,7 +1035,9 @@ fn levels(g: &Grounder, stratum: &[PredId]) -> Option<Levels> {
                 let Some(&b) = local.get(q) else { continue };
                 let off = match (rule.head.1.last(), args.last()) {
                     (Some(Arg::Var(vh)), Some(Arg::Var(vb))) if vh == vb => 0,
-                    (Some(Arg::Var(vh)), Some(Arg::Var(vb))) => step_of(&rule.body, *vh, *vb)?,
+                    (Some(Arg::Var(vh)), Some(Arg::Var(vb))) => {
+                        step_of(g, &local, &rule.body, *vh, *vb)?
+                    }
                     (Some(Arg::Val(Val::Int(h))), Some(Arg::Val(Val::Int(b)))) if h >= b => h - b,
                     _ => return None,
                 };
@@ -1075,9 +1077,33 @@ fn levels(g: &Grounder, stratum: &[PredId]) -> Option<Levels> {
     })
 }
 
-/// c where `body` holds `vh is vb + c` or `vh is c + vb`, c >= 1.
-fn step_of(body: &[ILit], vh: u32, vb: u32) -> Option<i64> {
+/// c >= 1 where `body` sets `vh` c or more above `vb`: `vh is vb + c` or
+/// `vh is c + vb`, or a literal of a predicate outside the stratum (in
+/// `local`) whose clauses all rise by c or more from `vb`'s argument to
+/// `vh`'s, a successor relation given by its facts, as `next(T, T1)` in
+/// the event calculus's `holds(F, T1) :- next(T, T1), holds(F, T), ...`.
+fn step_of(
+    g: &Grounder,
+    local: &FxHashMap<PredId, usize>,
+    body: &[ILit],
+    vh: u32,
+    vb: u32,
+) -> Option<i64> {
+    let rises = |q: PredId, args: &[Arg]| {
+        let at = |v| args.iter().position(|a| matches!(a, Arg::Var(x) if *x == v));
+        let (b, h) = (at(vb)?, at(vh)?);
+        g.preds[q as usize]
+            .rules
+            .iter()
+            .map(|&r| match (&g.rules[r].head.1[b], &g.rules[r].head.1[h]) {
+                (Arg::Val(Val::Int(b)), Arg::Val(Val::Int(h))) if h - b >= 1 => Some(h - b),
+                _ => None,
+            })
+            .try_fold(i64::MAX, |m, c| Some(m.min(c?)))
+            .filter(|&c| c < i64::MAX)
+    };
     body.iter().find_map(|l| match l {
+        ILit::Pos(q, args) if !local.contains_key(q) => rises(*q, args),
         ILit::Is(Arg::Var(v), IExpr::Bin(ArithOp::Add, a, b)) if *v == vh => match (&**a, &**b) {
             (IExpr::Arg(Arg::Var(x)), IExpr::Arg(Arg::Val(Val::Int(c))))
             | (IExpr::Arg(Arg::Val(Val::Int(c))), IExpr::Arg(Arg::Var(x)))

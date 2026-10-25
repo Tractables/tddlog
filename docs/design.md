@@ -301,7 +301,9 @@ are skipped. Several steps have a program in `examples/` that shows them.
    A recursive stratum has *rising levels* where the last argument of each
    of its predicates is a level that no rule lowers: every literal of the
    stratum is read at its head's level (the same variable, or constant
-   levels h >= b) or below it (`H is B + c`, c >= 1), and some below it,
+   levels h >= b) or below it (`H is B + c`, c >= 1, or a literal of a
+   relation outside the stratum whose clauses all rise from B to H, as
+   `next(B, H)` given by its facts), and some below it,
    an XY-stratification (Zaniolo, Arni and Ong, DOOD 1993). Within a
    level, the components of the graph of the literals read at their
    head's level rank the predicates. A program with variables whose
