@@ -611,8 +611,9 @@ function benchmarksOf(root) {
       await page.goto(`${base}${at}`);
       assert.ok(await page.$eval(".site-logo", (img) => img.complete && img.naturalWidth > 0),
         `${at || "the playground"}: the project logo loads`);
-      if (at === "results/") await page.waitForSelector("#view .kind-card");
-      const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => a.href));
+      if (at === "results/") await page.waitForSelector("#view figure.overview svg");
+      // an SVG link's href is an SVGAnimatedString
+      const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => (typeof a.href === "string" ? a.href : new URL(a.href.baseVal, location.href).href)));
       for (const href of hrefs) {
         const url = new URL(href);
         url.hash = "";
@@ -625,8 +626,8 @@ function benchmarksOf(root) {
     console.log(`ok ${checked.size} links within the site`);
     }
 
-    // The results page. The overview: a card a kind of problems, in the
-    // README's order. A kind's view (#/kind/KEY) plots the kind's systems
+    // The results page. The overview (below) draws the README's figures, in
+    // the README's order. A kind's view (#/kind/KEY) plots the kind's systems
     // over all of its instances, tddlog first and then by the instances
     // they answer; its legend gives "answers k of N, total T" for each, k
     // the system's answers in the kind's suites and T its total time over
@@ -635,7 +636,8 @@ function benchmarksOf(root) {
     // as the README's legends write it; its axis goes to all N, from 0.2 s;
     // under it, one line for each system that was not given some of the
     // instances, and the README's sentences on where tddlog is slower where
-    // the data has them. A suite's view (#/SUITE) plots the suite's systems,
+    // the data has them; beside it, tddlog's times against the fastest other
+    // system's, instance by instance. A suite's view (#/SUITE) plots the suite's systems,
     // its legend "answers k of N" in the same order, and tddlog against each
     // system given some of the same instances. A plot of more than five
     // lines draws tddlog's and the three that answer the most in colour.
@@ -665,14 +667,11 @@ function benchmarksOf(root) {
       axis: f.querySelector("svg.cactus").textContent.replace(/\s/g, ""),
       time: [...f.querySelectorAll('svg.cactus text.tick[text-anchor="middle"]')].map((t) => [Number(t.getAttribute("x")), Number(t.textContent)]),
     }));
-    await page.goto(`${base}results/`);
-    await page.waitForSelector("#view .kind-card");
-    assert.equal(await page.title(), "tddlog results");
-    const cards = await page.$$eval("#view .kinds > a", (as) => as.map((a) => [a.getAttribute("href"), a.querySelector("h3").textContent]));
-    assert.deepEqual(cards, kinds.map((k) => [`#/kind/${k.key}`, k.title]), "the overview: a card a kind");
-    for (const k of kinds) {
-      const what = `the kind ${k.key}`;
-      await visit(`#/kind/${k.key}`, "figure.plot svg.cactus path.line");
+    // A kind's instances, each with its suite's limit and every system's
+    // record; each system's answers and its total time over the instances
+    // some system of the kind answers, a run that does not answer counted at
+    // its suite's limit and a time under 0.2 s at 0.2 s.
+    const numbers = (k) => {
       const rows = k.suites.flatMap((key) => {
         const s = bySuite.get(key);
         return s.instances.map((row) => ({ limit: s.limit, v: Object.fromEntries(s.systems.map((x, i) => [x, row[i + 1]])) }));
@@ -680,6 +679,58 @@ function benchmarksOf(root) {
       const answers = (x) => rows.filter((r) => number(r.v[x])).length;
       const scored = rows.filter((r) => k.systems.some((x) => number(r.v[x])));
       const total = (x) => scored.reduce((t, r) => t + (number(r.v[x]) ? Math.max(r.v[x], 0.2) : r.limit), 0);
+      return { rows, answers, scored, total };
+    };
+    // How many times less time tddlog takes, as the README writes it.
+    const ratio = (a, b) => `${a / b >= 10 ? (a / b).toFixed(0) : (a / b).toFixed(1)}×`;
+    const multiple = (mine, theirs) => (theirs >= mine ? ratio(theirs, mine) : `${ratio(mine, theirs)} slower`);
+    // A scatter plot's dots under and over the diagonal: tddlog's time
+    // against the fastest of `others`, the instances both answer in under
+    // 0.2 s and those neither answers left out.
+    const sides = (rows, others) => {
+      let faster = 0, slower = 0;
+      for (const r of rows) {
+        const theirs = others.filter((x) => number(r.v[x])).map((x) => r.v[x]);
+        const t = number(r.v.tddlog) ? r.v.tddlog : null, b = theirs.length ? Math.min(...theirs) : null;
+        if ((t === null && b === null) || (t !== null && b !== null && Math.max(t, b) < 0.2)) continue;
+        const x = b === null ? Infinity : Math.max(b, 0.2), y = t === null ? Infinity : Math.max(t, 0.2);
+        if (y < x) faster++;
+        else if (y > x) slower++;
+      }
+      return [String(faster), String(slower)];
+    };
+    // The overview: the README's figures. For each kind, a link to it with
+    // its instances, tddlog's row, and a row a system, slowest first, that
+    // opens the kind with tddlog against it: its answers, how many times
+    // less time tddlog takes over the instances some system answers and
+    // over those both answer. Then each kind's cactus plot of its systems
+    // and its scatter plot of tddlog against the fastest other system.
+    await page.goto(`${base}results/`);
+    await page.waitForSelector("#view figure.overview svg a.row");
+    assert.equal(await page.title(), "tddlog results");
+    const heads = await page.$$eval("#view svg.overview a.kind", (as) => as.map((a) => [a.getAttribute("href"), a.textContent]));
+    assert.deepEqual(heads, kinds.map((k) => [`#/kind/${k.key}`, `${k.title}, ${count(k.instances)}`]), "the overview: a kind a group");
+    const overviewRows = await page.$$eval("#view svg.overview a.row.other", (as) => as.map((a) => [a.getAttribute("href"),
+      ...["name", "answers", "ratio", "both"].map((c) => a.querySelector(`text.${c}`)?.textContent ?? "")]));
+    assert.deepEqual(overviewRows, kinds.flatMap((k) => {
+      const { rows, answers, total } = numbers(k);
+      return k.systems.filter((x) => x !== "tddlog").sort((a, b) => total(b) - total(a)).map((x) => {
+        const both = rows.filter((r) => number(r.v.tddlog) && number(r.v[x]));
+        const sum = (y) => both.reduce((t, r) => t + Math.max(r.v[y], 0.2), 0);
+        return [`#/kind/${k.key}/${x}`, names[x], count(answers(x)), multiple(total("tddlog"), total(x)), both.length ? multiple(sum("tddlog"), sum(x)) : ""];
+      });
+    }), "the overview: each system's answers and how many times less time tddlog takes");
+    const sections = await page.$$eval("#view section.kind-figs", (ss) => ss.map((s) => [s.querySelector("h3 a").getAttribute("href"),
+      s.querySelector("figure.plot").dataset.systems, s.querySelector("figure.scatter").dataset.faster, s.querySelector("figure.scatter").dataset.slower]));
+    assert.deepEqual(sections, kinds.map((k) => {
+      const { rows, answers } = numbers(k);
+      return [`#/kind/${k.key}`, byAnswers(k.systems, answers).join(" "), ...sides(rows, k.systems.filter((x) => x !== "tddlog"))];
+    }), "the overview: each kind's cactus plot of its systems and its scatter plot");
+    console.log(`ok the overview: ${overviewRows.length} systems' total times against tddlog's, and each kind's plots`);
+    for (const k of kinds) {
+      const what = `the kind ${k.key}`;
+      await visit(`#/kind/${k.key}`, "figure.plot svg.cactus path.line");
+      const { rows, answers, scored, total } = numbers(k);
       assert.equal(k.systems[0], "tddlog", `${what}: tddlog first in the data`);
       const order = byAnswers(k.systems, answers);
       for (const x of order) {
@@ -704,10 +755,37 @@ function benchmarksOf(root) {
       const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[1].textContent.trim().replace(/,/g, "")));
       assert.deepEqual(board.map(Number).sort((a, b) => b - a), order.map(answers).sort((a, b) => b - a), `${what}: its systems' answers`);
       assert.equal((await page.$$("#view ul.losses li")).length, k.losses?.length ?? 0, `${what}: where tddlog is slower`);
+      assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
+        sides(rows, k.systems.filter((x) => x !== "tddlog")), `${what}: tddlog against the fastest other system`);
       assert.equal(await page.title(), `${k.title} · tddlog results`);
     }
     assert.ok(kinds.length >= 2, `${kinds.length} kinds`);
     console.log(`ok the kinds ${kinds.map((k) => `${k.key} ${k.instances}`).join(", ")}: every system of a kind over all of its instances, its answers and total time`);
+    // A kind's times set against one system, from its row in the overview:
+    // the address names it, the menu holds it, its line is in colour, its
+    // row is marked and the scatter plot sets tddlog against it alone; the
+    // menu sets them against the fastest other system again, in place.
+    {
+      const k = kinds.find((x) => x.systems.length > 5) ?? kinds[0];
+      const { rows, answers } = numbers(k);
+      const x = byAnswers(k.systems, answers).at(-1);
+      await page.goto(`${base}results/`);
+      await page.waitForSelector("#view figure.overview svg a.row");
+      await page.click(`#view svg.overview a.row[href="#/kind/${k.key}/${x}"]`);
+      await page.waitForFunction((x) => document.querySelector("#view select.vs")?.value === x, x);
+      assert.equal(new URL(page.url()).hash, `#/kind/${k.key}/${x}`, `tddlog against ${x}: the address`);
+      const vs = await page.$eval("#view", (v) => ({ marked: v.querySelector("table.board tr.vs th").textContent,
+        coloured: [...v.querySelectorAll('figure.plot .legend button[aria-pressed="true"]')].map((b) => b.dataset.system),
+        sides: [v.querySelector("figure.scatter").dataset.faster, v.querySelector("figure.scatter").dataset.slower] }));
+      assert.equal(vs.marked, names[x], `tddlog against ${x}: its row marked`);
+      assert.ok(vs.coloured.includes(x), `tddlog against ${x}: its line in colour`);
+      assert.deepEqual(vs.sides, sides(rows, [x]), `tddlog against ${x}: the scatter plot`);
+      await page.selectOption("#view select.vs", "");
+      await page.waitForFunction((h) => location.hash === h && document.querySelector("#view select.vs")?.value === "", `#/kind/${k.key}`);
+      assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
+        sides(rows, k.systems.filter((y) => y !== "tddlog")), "tddlog against the fastest other system again");
+      console.log(`ok tddlog against ${x} on ${k.key}, from the overview and back`);
+    }
     for (const s of bySuite.values()) {
       const what = `the suite ${s.key}`;
       await visit(`#/${s.key}`, "figure.plot svg.cactus path.line");
@@ -755,6 +833,20 @@ function benchmarksOf(root) {
     const sorted = await page.$$eval("#view table.times tbody tr", (trs) => trs.map((tr) => tr.cells[1].textContent)
       .filter((t) => /^[0-9.]+$/.test(t)).map(Number));
     assert.ok(sorted.every((t, i) => i === 0 || sorted[i - 1] >= t), `${first}: the times sorted the other way`);
+    // Each time against its instance's fastest answer, at least 0.2 s, a
+    // process's time left out: the fastest "best" (green), a slower one
+    // "slow" (shaded towards red), no answer "fail" (the deepest red), a program the
+    // system cannot express "na", a system not given the instance "none".
+    const cells = await page.$$eval("#view table.times tbody tr", (trs) => Object.fromEntries(trs.map((tr) =>
+      [tr.cells[0].textContent, [...tr.cells].slice(1).map((td) => td.className.replace(/\bnum\b/, "").trim())])));
+    for (const row of bySuite.get(first).instances) {
+      const ts = bySuite.get(first).systems.map((x, i) => (x.endsWith("-process") ? null : row[i + 1])).filter(number);
+      const fastest = ts.length ? Math.max(0.2, Math.min(...ts)) : null;
+      const want = row.slice(1).map((v) => (v === null ? "none" : !number(v) ? (v === "unsupported" ? "na" : "fail")
+        : Math.max(v, 0.2) <= fastest ? "best" : "slow"));
+      assert.deepEqual(cells[row[0]], want, `${first}/${row[0]}: each time against the instance's fastest`);
+    }
+    console.log(`ok ${first}: each time against its instance's fastest`);
     const many = [...bySuite.values()].find((s) => s.systems.length > 5);
     if (many) {
       await visit(`#/${many.key}`, "figure.plot svg.cactus path.line");
@@ -814,7 +906,8 @@ function benchmarksOf(root) {
       const readsAs = (name) => (reader) => reader === name || reader.startsWith(`${name} `);
       const hashOf = (x) => `#/${x.suite}/${encodeURIComponent(x.key)}/${encodeURIComponent(x.name)}`;
       let nf = 0, nfiles = 0;
-      let unseen = null, tried = null, kept = null, inline = null;
+      let unseen = null, tried = null, kept = null, inline = null, multi = null;
+      const observed = (name) => /\.(inst|evid)$/.test(name);
       for (const [suite, fams] of Object.entries(index.suites)) {
         const s = bySuite.get(suite);
         assert.ok(s, `benchmarks/index.json: the suite ${suite} is in the results' data`);
@@ -839,6 +932,10 @@ function benchmarksOf(root) {
             const readers = inst.tabs.flatMap((t) => t.readers);
             const ran = [...new Set((inst.runs ?? []).map((r) => names[r.system] ?? r.system))];
             if (!unseen && ran.some((n) => !readers.some(readsAs(n)))) unseen = { ...at, inst };
+            // a tab whose data lists its evidence before the model it observes
+            const ti = inst.tabs.findIndex((t) => !t.readers.some(readsAs("tddlog")) && t.files.length > 1
+              && observed(t.files[0].name) && t.files.some((x) => !observed(x.name)));
+            if (!multi && ti >= 0) multi = { ...at, ti, inst };
             const pl = inst.tabs.find((t) => t.readers.includes("tddlog"))?.files.filter((file) => file.name.endsWith(".pl")) ?? [];
             if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = at;
             if (pl.length === 1 && (pl[0].held || pl[0].part) && !kept) kept = at;
@@ -858,8 +955,15 @@ function benchmarksOf(root) {
       const warned = family.inst.tabs.findIndex((t, ti) => ti !== Math.max(mine, 0) && t.translated && t.readers.some((r) => r !== "reference"));
       if (warned >= 0 && family.inst.tabs[0].original) {
         await page.selectOption("#programs select.version", String(warned));
-        await page.waitForSelector(`#programs .viewer[data-file="${warned}:0"] p.unfair`);
-        assert.match(page.url(), new RegExp(`/tab/${warned}$`), `${family.name}: the address names the program`);
+        await page.waitForSelector(`#programs .viewer[data-file^="${warned}:"] .pane p.unfair`);
+        assert.match(page.url(), new RegExp(`/tab/${warned}(/\\d+)?$`), `${family.name}: the address names the program`);
+        // beside the original, the warning is on the translation's pane alone
+        await page.click("#programs .viewer label.check input");
+        await page.waitForSelector("#programs .panes.two");
+        assert.deepEqual(await page.$$eval("#programs .panes > .pane", (ps) => ps.map((p) => p.querySelector(":scope > p.unfair") !== null)),
+          [false, true], `${family.name}: the warning above the translation, not the original`);
+        await page.click("#programs .viewer label.check input");
+        await page.waitForSelector("#programs .panes:not(.two)");
         await page.selectOption("#programs select.version", "0");
         await page.waitForSelector('#programs .viewer[data-file^="0:"]');
         assert.equal(await page.$("#programs p.unfair"), null, `${family.name}: the original is not a translation`);
@@ -884,6 +988,23 @@ function benchmarksOf(root) {
           assert.ok(readers.some(readsAs(n)) || translated.some(readsAs(n)) || said.includes(n),
             `${x.name}: ${n} ran it, and neither reads a language of it, translates one nor is named as not captured`);
         }
+      }
+
+      // A tab's files are tabs on its pane, the model before its evidence;
+      // the arrow keys go from one to the next, and the address names it.
+      if (multi) {
+        await visit(hashOf(multi), "#programs select.version");
+        await page.selectOption("#programs select.version", String(multi.ti));
+        const files = multi.inst.tabs[multi.ti].files;
+        const order = [...files.keys()].sort((a, b) => observed(files[a].name) - observed(files[b].name));
+        await page.waitForSelector(`#programs .viewer[data-file="${multi.ti}:${order[0]}"]`);
+        assert.deepEqual(await page.$$eval("#programs .pane [role=tab]", (bs) => bs.map((b) => b.firstChild.textContent)),
+          order.map((k) => files[k].name.split("/").pop()), `${multi.name}: the files' tabs, the evidence last`);
+        await page.focus('#programs .pane [role=tab][aria-selected="true"]');
+        await page.keyboard.press("ArrowRight");
+        await page.waitForSelector(`#programs .viewer[data-file="${multi.ti}:${order[1]}"]`);
+        assert.match(page.url(), new RegExp(`/tab/${multi.ti}${order[1] ? `/${order[1]}` : ""}$`), `${multi.name}: the address names the file`);
+        assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-selected")), "true", `${multi.name}: the focus stays on the tabs`);
       }
 
       // A system's runs in a drawer the address names: it closes going back
@@ -913,10 +1034,10 @@ function benchmarksOf(root) {
       if (tried) {
         await visit(hashOf(tried), "#programs select.version");
         const link = `../#bench=${[tried.suite, tried.key, tried.name].map(encodeURIComponent).join("/")}`;
-        assert.equal(await page.getAttribute("#programs p.try a", "href"), link, `${tried.name}: the link to the playground`);
+        assert.equal(await page.getAttribute("#programs .pick .try a", "href"), link, `${tried.name}: the link to the playground`);
         await page.click(`#view button[data-runs="${tried.suite}/${tried.name}/tddlog"]`);
         await page.waitForSelector("#drawer:not([hidden]) h4");
-        assert.equal(await page.getAttribute("#drawer p.try a", "href"), link, `${tried.name}: the link in tddlog's runs`);
+        assert.equal(await page.getAttribute("#drawer .try a", "href"), link, `${tried.name}: the link in tddlog's runs`);
         // A file it reads: shown in the view, the drawer closed.
         const read = await page.$eval("#drawer .files button.file", (b) => b.firstChild.textContent);
         await page.click("#drawer .files button.file");
@@ -925,9 +1046,8 @@ function benchmarksOf(root) {
       }
       if (kept) {
         await visit(hashOf(kept), "#programs select.version");
-        const notes = await page.$$eval("#programs p.note", (ps) => ps.map((p) => p.textContent));
-        assert.ok(notes.some((t) => t.startsWith("Not in the playground")), `${kept.name}: why the playground cannot open it`);
-        assert.equal(await page.$("#programs p.try"), null);
+        assert.match(await page.textContent("#programs .pick .no-try"), /^Not in the playground/, `${kept.name}: why the playground cannot open it`);
+        assert.equal(await page.$("#programs .try"), null);
       }
 
       // A file of its own, gzipped (files/….txt.gz, as the data writes a
@@ -961,7 +1081,7 @@ function benchmarksOf(root) {
 
       // The search finds an instance by its name; the arrow keys and Enter
       // choose it.
-      await visit("#/", ".kind-card");
+      await visit("#/", "figure.overview svg");
       await page.fill("#search", family.name);
       await page.waitForSelector("#found-list [role=option]");
       assert.equal(await page.getAttribute("#search", "aria-expanded"), "true");
@@ -976,7 +1096,7 @@ function benchmarksOf(root) {
       await page.waitForSelector(`#view[data-route="${hash}"] #programs select.version`);
       console.log(`ok the benchmarks' data: ${nf} families, ${nfiles} files; ${family.suite}/${family.name}'s view, runs and search`
         + `${unseen ? `; ${unseen.name}'s files not captured` : ""}${tried ? `; ${tried.name} to the playground` : ""}`
-        + `${kept ? `; ${kept.name} held back` : ""}${inline ? `; ${inline.file} gzipped` : ""}`);
+        + `${kept ? `; ${kept.name} held back` : ""}${inline ? `; ${inline.file} gzipped` : ""}${multi ? `; ${multi.name}'s files as tabs` : ""}`);
     }
     await context.close();
 
@@ -1047,7 +1167,7 @@ function benchmarksOf(root) {
         // a phone a board's rows stack, each value in the window and named by
         // its column.
         const crowded = kinds.find((k) => k.systems.length > 5) ?? kinds[0];
-        const views = [["results", "", ".kind-card"], ["results-kind", `#/kind/${kinds[0].key}`, "figure.plot svg.cactus path.line"],
+        const views = [["results", "", "figure.overview svg"], ["results-kind", `#/kind/${kinds[0].key}`, "figure.plot svg.cactus path.line"],
           ["results-many", `#/kind/${crowded.key}`, "figure.plot svg.cactus path.line"],
           ["results-suite", `#/${first}`, "figure.plot svg.cactus path.line"]];
         if (family) views.push(["results-family", `#/${family.suite}/${encodeURIComponent(family.key)}/${encodeURIComponent(family.name)}`, "#programs select.version"]);

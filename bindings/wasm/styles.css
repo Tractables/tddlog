@@ -657,6 +657,8 @@ footer {
   --s-pluck: #1f3a93;
   --s-storm: #00838f;
   --s-prism: #8c564b;
+  --slower: #c2410c;
+  --good: #1a7f37;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -683,6 +685,8 @@ footer {
     --s-pluck: #8fa8f0;
     --s-storm: #4fc3cf;
     --s-prism: #d2a679;
+    --slower: #f0883e;
+    --good: #3fb950;
   }
 }
 
@@ -709,6 +713,8 @@ footer {
   --s-pluck: #8fa8f0;
   --s-storm: #4fc3cf;
   --s-prism: #d2a679;
+  --slower: #f0883e;
+  --good: #3fb950;
 }
 
 .s-tddlog { --s: var(--s-tddlog); }
@@ -738,7 +744,12 @@ footer {
    one view, and a system's runs of an instance in a drawer at the right.
    Its buttons are the plain kind, not the playground's. */
 body.results main { max-width: 100rem; }
-body.results header { margin-bottom: 1rem; }
+/* The results page's header: the logo, small, beside the site's links; the
+   heading is for screen readers. */
+body.results header { align-items: center; margin-bottom: 0.5rem; }
+body.results .site-brand { margin-bottom: 0; }
+body.results .site-logo { width: 8.5rem; }
+.unseen { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .results button { width: auto; font: inherit; }
 /* A button that reads as the text it is: a sortable header, a legend's name. */
 .results button.bare, .results button.bare:hover:not(:disabled) {
@@ -842,34 +853,81 @@ button.plain {
 
 button.plain:hover:not(:disabled) { border-color: var(--accent); background: var(--card); }
 
-/* The overview: a card a kind, each with tddlog's answers and the most of
-   another system's, and the totals. */
-.stats { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; margin: 0.4rem 0 0.8rem; }
-.kinds { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); margin-top: 0.8rem; }
-.kinds > a { color: inherit; text-decoration: none; }
-.kind-card { height: 100%; padding: 1rem 1.1rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
-.kinds > a:hover .kind-card { border-color: var(--accent); }
-.kind-card h3 { margin: 0; color: var(--accent); }
-.kind-card .n { margin: 0.1rem 0 0.7rem; color: var(--muted); font-size: 13px; }
-.kind-card .total { margin: 0.7rem 0 0; font-size: 13px; color: var(--muted); }
-.kind-card .total b { color: var(--ink); }
+/* The overview: the README's figures. Each figure's title, then the figure:
+   every kind's total times, then each kind's cactus plot beside its scatter
+   plot of tddlog's times against another system's. */
+.fig-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 1rem; }
+.fig-head .n { color: var(--muted); font-size: 13px; }
+.fig-head > a:last-child { margin-left: auto; font-size: 13px; }
+.dots { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--muted); font-size: 13px; }
+.dots i { width: 10px; height: 10px; margin-left: 0.5rem; border-radius: 50%; }
+.dots i.me { background: var(--s-tddlog); }
+.dots i.you { background: var(--muted); }
 
-.meter { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; margin: 0.3rem 0; font-size: 13px; }
-.meter .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.meter .k { font-variant-numeric: tabular-nums; color: var(--muted); }
-.meter.mine .who { font-weight: 600; }
-.meter .bar, table.board .bar {
+figure.overview { margin: 0.3rem 0 0; }
+figure.overview figcaption { font-size: 13px; }
+svg.overview { display: block; max-width: 100%; }
+.overview text { font: 12px var(--sans); fill: var(--ink); }
+.overview text.tick, .overview text.col { font-size: 11px; fill: var(--muted); }
+.overview .grid { stroke: var(--line); }
+.overview a.kind text { font-size: 13px; font-weight: 600; fill: var(--accent); }
+.overview a.kind:hover text, .overview a.kind:focus-visible text { text-decoration: underline; }
+.overview .hit { fill: transparent; }
+.overview a.row:hover .hit, .overview a.row:focus-visible .hit { fill: var(--accent-fill); }
+.overview a:focus { outline: none; }
+.overview text.answers { fill: var(--muted); font-variant-numeric: tabular-nums; }
+.overview .mine text.name, .overview .mine text.answers { font-weight: 600; fill: var(--accent-ink); }
+.overview .span { stroke: var(--grey-line); stroke-width: 3; stroke-linecap: round; }
+.overview circle.me { fill: var(--s-tddlog); }
+.overview circle.you { fill: var(--muted); }
+.overview text.t.me { fill: var(--accent-ink); }
+.overview text.t.you, .overview text.both { fill: var(--muted); }
+.overview text.ratio { font-size: 13px; font-weight: 700; fill: var(--accent-ink); }
+.overview text.ratio.slower { fill: var(--muted); }
+
+section.kind-figs { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+section.kind-figs h3 { margin: 0; font-size: 1.1rem; }
+section.kind-figs h3 a { color: var(--ink); text-decoration: none; }
+section.kind-figs h3 a:hover { color: var(--accent); text-decoration: underline; }
+#view { container-type: inline-size; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 22.5rem); gap: 1rem 1.5rem; align-items: start; margin-top: 0.6rem; }
+@container (max-width: 52rem) {
+  .pair { grid-template-columns: minmax(0, 1fr); }
+}
+
+figure.scatter { margin: 0; min-width: 0; }
+.scatter .box { position: relative; }
+.sc-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 1rem; max-width: 22.5rem; margin: 0 0 0.2rem; font-size: 13px; }
+.sc-head .win { color: var(--accent-ink); }
+.sc-head .loss { color: var(--slower); }
+figure.scatter .note { max-width: 22.5rem; font-size: 12px; }
+figure.scatter .pick { margin: 0 0 0.4rem; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+figure.scatter .pick select { font-family: var(--sans); }
+svg.scatter { display: block; max-width: 100%; touch-action: pan-y; }
+.scatter text { font: 11px var(--sans); fill: var(--muted); }
+.scatter text.label { font-size: 12px; }
+.scatter .grid { stroke: var(--line); }
+.scatter .band { fill: var(--line); opacity: 0.6; }
+.scatter .diag { stroke: var(--muted); stroke-width: 1; }
+.scatter .diag.dashed { stroke-dasharray: 3 3; }
+.scatter .dot { opacity: 0.75; }
+.scatter .dot.win { fill: var(--s-tddlog); }
+.scatter .dot.loss { fill: var(--slower); }
+.scatter .dot.tie { fill: var(--muted); }
+.scatter .ring { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+
+table.board .bar {
   position: relative;
   display: inline-block;
+  width: 9rem;
   height: 0.5rem;
+  margin-right: 0.4rem;
   border-radius: 4px;
   background: var(--code);
   vertical-align: middle;
 }
-.meter .bar { width: 100%; }
-table.board .bar { width: 9rem; margin-right: 0.4rem; }
-.meter .bar i, table.board .bar i { position: absolute; inset: 0 auto 0 0; height: auto; border-radius: 4px; background: var(--muted); opacity: 0.55; }
-.meter.mine .bar i, table.board tr.mine .bar i { background: var(--accent); opacity: 1; }
+table.board .bar i { position: absolute; inset: 0 auto 0 0; height: auto; border-radius: 4px; background: var(--muted); opacity: 0.55; }
+table.board tr.mine .bar i { background: var(--accent); opacity: 1; }
 
 details.how { max-width: 80ch; margin-top: 2rem; }
 details.how p { font-size: 14px; }
@@ -896,6 +954,7 @@ table.board tbody th i.sw { margin-right: 0.5rem; vertical-align: middle; }
 .results .tscroll.whole { max-height: none; }
 table.board .num { text-align: right; font-variant-numeric: tabular-nums; }
 table.board tr.mine th, table.board tr.mine td { font-weight: 600; }
+table.board tr.vs th, table.board tr.vs td { background: var(--accent-fill); }
 table.board thead th { position: sticky; top: 0; background: var(--card); }
 table.h2h td.ratio { font-weight: 600; }
 table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
@@ -945,7 +1004,14 @@ i.sw {
 
 i.sw.dashed { border-top-style: dashed; }
 i.sw.grey { border-top-color: var(--grey-line); }
-.results { --grey-line: color-mix(in oklab, var(--muted) 45%, var(--card)); }
+.results {
+  --grey-line: color-mix(in oklab, var(--muted) 45%, var(--card));
+  /* a time's cell where it is its instance's fastest, and where the system
+     does not answer; a slower time's shade is mixed on its cell, where
+     results.js sets --p */
+  --best-fill: color-mix(in oklab, var(--good) 24%, var(--card));
+  --fail-fill: color-mix(in oklab, var(--bad) 40%, var(--card));
+}
 
 svg.cactus { display: block; max-width: 100%; touch-action: pan-y; }
 svg.cactus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -1001,14 +1067,17 @@ table.times tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-
 table.times thead th:first-child { left: 0; z-index: 3; }
 table.times tbody th { position: sticky; left: 0; z-index: 1; background: var(--card); }
 table.times .num { text-align: right; }
-table.times td.best { font-weight: 700; color: var(--accent); }
-table.times td.fail { color: var(--muted); }
+table.times td.best { font-weight: 700; background: var(--best-fill); }
+table.times td.slow { background: color-mix(in oklab, var(--bad) calc(var(--p, 0) * 28%), var(--card)); }
+table.times td.fail { background: var(--fail-fill); }
+table.times td.na { color: var(--muted); }
 table.hide-quick tr.quick { display: none; }
 
 /* A grid of instances, or of families, by systems: a system's name upright
-   in its column's head, tddlog's column framed; a time shaded by its place
-   between 0.2 s and the limit; a cell of a system not given the instance
-   hatched. */
+   in its column's head, tddlog's column framed; a time green where it is
+   its instance's fastest, else shaded towards red as it takes up to 100
+   times the fastest's time (results.js sets --p), and the deepest red where
+   the system does not answer; a cell of a system not given the instance hatched. */
 table.grid { width: auto; font-size: 12px; }
 table.grid th, table.grid td { border: 1px solid var(--line); }
 table.grid thead th { position: sticky; top: 0; z-index: 2; padding: 0.4rem 0.15rem; vertical-align: bottom; background: var(--card); text-transform: none; letter-spacing: 0; }
@@ -1029,21 +1098,27 @@ table.grid td button {
   padding: 0.2rem 0.2rem;
   border: 0;
   border-radius: 0;
-  background: color-mix(in oklab, var(--amber) calc(var(--p, 0) * 62%), var(--card));
-  color: var(--ink);
+  --cell: var(--card);
+  --cell-ink: var(--ink);
+  background: var(--cell);
+  color: var(--cell-ink);
   font: inherit;
   cursor: pointer;
 }
-table.grid td button:hover:not(:disabled) { outline: 2px solid var(--accent); outline-offset: -2px; background: color-mix(in oklab, var(--amber) calc(var(--p, 0) * 62%), var(--card)); color: var(--ink); }
-table.grid td.best button { font-weight: 700; box-shadow: inset 0 -3px 0 var(--accent); }
-table.grid td.fail button, table.grid td.fail button:hover:not(:disabled) { background: var(--code); color: var(--muted); }
-table.grid td.bad button, table.grid td.bad button:hover:not(:disabled) { background: color-mix(in oklab, var(--bad) 16%, var(--card)); color: var(--bad); }
+table.grid td button:hover:not(:disabled) { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--cell); color: var(--cell-ink); }
+table.grid td.best button { --cell: var(--best-fill); font-weight: 700; }
+table.grid td.slow button { --cell: color-mix(in oklab, var(--bad) calc(var(--p, 0) * 28%), var(--card)); }
+table.grid td.fail button { --cell: var(--fail-fill); }
+table.grid td.na button { --cell: var(--code); --cell-ink: var(--muted); }
 table.grid.counts td:not(.none) { padding: 0.2rem; background: color-mix(in oklab, var(--accent) calc(var(--p, 0) * 40%), var(--card)); }
 
 .key { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1rem; margin: 0.5rem 0 0; font-size: 12px; color: var(--muted); }
 .key span { display: inline-flex; align-items: center; gap: 0.3rem; }
 i.heat { display: inline-block; width: 1.8rem; height: 0.85rem; border: 1px solid var(--line); background: var(--card); }
-i.heat.hi { background: color-mix(in oklab, var(--amber) 62%, var(--card)); }
+i.heat.best { background: var(--best-fill); }
+i.heat.slow { background: linear-gradient(to right, var(--card), color-mix(in oklab, var(--bad) 28%, var(--card))); }
+i.heat.fail { background: var(--fail-fill); }
+i.heat.na { background: var(--code); }
 .times-box > button.plain { margin-top: 0.5rem; }
 
 /* An instance's programs: the instance, the menu of the programs each system
@@ -1072,14 +1147,38 @@ button.file small { margin-left: 0.4rem; color: var(--muted); font-family: var(-
 button.file:hover:not(:disabled) { border-color: var(--accent); background: var(--card); color: var(--ink); }
 button.file.on, button.file.on:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-fill); }
 
-.viewer { margin-top: 0.9rem; }
-.tab-says { max-width: 90ch; font-size: 14px; }
-.tab-says p { margin: 0.3rem 0; }
-/* A translation's warning that it may make the comparison unfair. */
-.tab-says p.unfair { color: var(--bad); font-weight: 600; }
-details.cmds { margin: 0.3rem 0 0.6rem; }
-details.cmds summary { cursor: pointer; font-size: 13px; color: var(--muted); }
-.viewer > .files { margin: 0.2rem 0 0.6rem; }
+.pick .try, .pick .no-try { margin-left: auto; font-size: 13px; }
+.pick .try a { font-weight: 600; }
+.pick .no-try { color: var(--muted); }
+.viewer { margin-top: 0.6rem; }
+details.about { max-width: 90ch; margin: 0 0 0.6rem; font-size: 13px; }
+details.about > summary { cursor: pointer; color: var(--muted); }
+details.about p { margin: 0.35rem 0; }
+details.about h4 { margin: 0.6rem 0 0; font-size: 13px; }
+/* A line above a pane: what it shows beside the other, or, on a
+   translation, the warning that it may make the comparison unfair. */
+.pane > p.cap, .pane > p.unfair { margin: 0; padding: 0.4rem 0.7rem; border: 1px solid var(--line); border-bottom: 0; font-size: 13px; }
+.pane > p.cap { background: var(--card); color: var(--muted); font-weight: 600; }
+.pane > p.unfair { background: color-mix(in oklab, var(--bad) 9%, var(--card)); color: var(--bad); font-weight: 600; }
+/* A tab's files, as tabs on the pane. */
+.ftabs { display: flex; overflow-x: auto; border: 1px solid var(--line); border-bottom: 0; background: var(--code); }
+.ftabs button {
+  flex: none;
+  width: auto;
+  padding: 0.35rem 0.75rem;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font: 12px/1.5 var(--mono);
+  white-space: nowrap;
+}
+.ftabs button small { margin-left: 0.45rem; font-family: var(--sans); opacity: 0.8; }
+.ftabs button:hover:not(:disabled) { background: var(--accent-fill); color: var(--ink); }
+.ftabs button[aria-selected="true"], .ftabs button[aria-selected="true"]:hover:not(:disabled) {
+  background: var(--card); color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+.pane > :first-child { border-top-left-radius: 8px; border-top-right-radius: 8px; }
 .pick select.version { font-family: var(--sans); }
 dl.cmds { margin: 0.4rem 0 0.2rem; font-size: 12px; }
 dl.cmds code { overflow-wrap: anywhere; line-height: 1.5; }
@@ -1087,7 +1186,7 @@ dl.cmds code { overflow-wrap: anywhere; line-height: 1.5; }
 .panes.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .pane { min-width: 0; }
 .fhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.9rem; padding: 0.45rem 0.7rem; border: 1px solid var(--line);
-  border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--card); font-size: 12px; color: var(--muted); }
+  border-bottom: 0; background: var(--card); font-size: 12px; color: var(--muted); }
 .fhead code.fname { padding: 0; background: none; color: var(--ink); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .fhead .sha { font-family: var(--mono); font-size: 11px; overflow-wrap: anywhere; }
 .pane p.made, .pane p.held { margin: 0; padding: 0.45rem 0.7rem; border: 1px solid var(--line); border-bottom: 0; background: var(--card); font-size: 13px; color: var(--muted); }
@@ -1104,8 +1203,8 @@ dl.cmds code { overflow-wrap: anywhere; line-height: 1.5; }
 details.answers { margin-top: 1.8rem; }
 details.answers > summary { color: var(--ink); font-size: 1rem; font-weight: 600; }
 details.answers .edge { margin-top: 0.6rem; }
-p.try { font-size: 14px; }
-p.try a { font-weight: 600; }
+#drawer .try { font-size: 14px; }
+#drawer .try a { font-weight: 600; }
 details.answers tbody th { font: 12px/1.4 var(--mono); text-transform: none; letter-spacing: 0; color: var(--ink); white-space: nowrap; }
 
 /* A system's runs of an instance, beside the view. */
@@ -1147,7 +1246,6 @@ table.runs tr.err pre { margin: 0.2rem 0; max-height: 12rem; background: color-m
   #rail.open #tree { display: block; }
   .panes.two { grid-template-columns: minmax(0, 1fr); }
   table.board .bar { width: 4rem; }
-  .meter { grid-template-columns: 7.5rem minmax(0, 1fr) auto; }
 }
 
 /* On a phone a board's rows stack: a system's name over its values, each
