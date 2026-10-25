@@ -60,10 +60,11 @@ def brand(site, stamp=""):
                 f'<img class="site-logo" src="{html.escape(f"{root}/logo.svg{version}", quote=True)}" '
                 'alt="tddlog" width="720" height="365"></a>\n    ')
         content = path.read_text(encoding="utf-8")
-        if "<h1>" not in content or "</head>" not in content or 'class="site-brand"' in content:
+        heading = re.compile(r"<h1(?=[\s>])")
+        if not heading.search(content) or "</head>" not in content or 'class="site-brand"' in content:
             raise ValueError(f"{path}: expected an unbranded page with a head and a heading")
         content = content.replace("</head>", head(page, content, root, version) + "</head>", 1)
-        path.write_text(content.replace("<h1>", mark + "<h1>", 1), encoding="utf-8")
+        path.write_text(heading.sub(lambda m: mark + m.group(0), content, count=1), encoding="utf-8")
 
 
 if __name__ == "__main__":
