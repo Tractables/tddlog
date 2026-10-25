@@ -652,13 +652,16 @@ def normalized(probs, where):
     # is left to no value as written; over one, it is an error. A shortfall
     # below 10⁻⁹, the grounder's own tolerance for a row's last value, is
     # left as written, so that rows that sum to one but for binary rounding
-    # keep their numbers.
+    # keep their numbers. An excess below 10⁻⁹ is binary rounding too, of
+    # the products and complements a ground network's tables are computed
+    # with (rows that sum to 1.00000000000000027), and is rescaled.
     total = math.fsum(probs)
     exact, slack = rounding_slack(probs)
     if abs(exact - 1) >= slack:
-        if exact > 1:
+        if exact > 1 + Decimal('1e-9'):
             sys.exit(f'{where}: probabilities sum to {exact}')
-        return probs
+        if exact < 1:
+            return probs
     if total > 1 or total < 1 - 1e-9:
         probs = [p / total for p in probs]   # rounding in the file
     return probs

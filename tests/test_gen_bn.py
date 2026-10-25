@@ -178,6 +178,14 @@ class RowTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.001'):
             gen_bn.normalized([0.9, 0.101], 'x')
 
+    def test_an_excess_of_binary_rounding_is_rescaled(self):
+        # Two doubles that sum to 1.0000000000000003 in the decimals they
+        # mean, more than the slack of their own digits allows.
+        row = [0.3, 0.7000000000000003]
+        self.assertAlmostEqual(math.fsum(gen_bn.normalized(row, 'x')), 1.0, places=15)
+        with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.000000002'):
+            gen_bn.normalized([0.3, 0.700000002], 'x')
+
     def test_a_row_that_sums_to_one_keeps_its_numbers(self):
         self.assertEqual(gen_bn.normalized([0.2, 0.8], 'x'), [0.2, 0.8])
         self.assertEqual(gen_bn.normalized([1, 0], 'x'), [1, 0])
