@@ -33,7 +33,7 @@ mod separator_copies;
 mod share;
 mod shared_operand;
 mod table_models;
-mod terms;
 mod templates;
+mod terms;
 mod ties;
 mod underflow;

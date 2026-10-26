@@ -204,11 +204,19 @@ impl ArithFn {
         // infinity, the modulo taking the divisor's sign.
         let floor_div = |x: i64, y: i64| {
             let (q, r) = (x.checked_div(y)?, x.checked_rem(y)?);
-            Some(if r != 0 && (r < 0) != (y < 0) { q - 1 } else { q })
+            Some(if r != 0 && (r < 0) != (y < 0) {
+                q - 1
+            } else {
+                q
+            })
         };
         let floor_mod = |x: i64, y: i64| {
             let r = x.checked_rem(y)?;
-            Some(if r != 0 && (r < 0) != (y < 0) { r + y } else { r })
+            Some(if r != 0 && (r < 0) != (y < 0) {
+                r + y
+            } else {
+                r
+            })
         };
         let to_int = |x: f64| (x.is_finite() && x.abs() < 9.2e18).then_some(I(x as i64));
         match (self, args) {
@@ -1286,7 +1294,9 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         }
         Builtin::Between => match (vals[0], vals[1], vals[2]) {
             (Some(Val::Int(lo)), Some(Val::Int(hi)), Some(x)) => match x {
-                Val::Int(x) if lo <= x && x <= hi => one(vec![Val::Int(lo), Val::Int(hi), Val::Int(x)]),
+                Val::Int(x) if lo <= x && x <= hi => {
+                    one(vec![Val::Int(lo), Val::Int(hi), Val::Int(x)])
+                }
                 _ => Vec::new(),
             },
             _ => Vec::new(),
@@ -1360,7 +1370,10 @@ fn proof(g: &mut Grounder, id: AtomId) -> Result<Proof, String> {
             ));
         }
         None if !pred.counted => {
-            return Err(format!("the proofs of {} are not counted", g.display_atom(id)));
+            return Err(format!(
+                "the proofs of {} are not counted",
+                g.display_atom(id)
+            ));
         }
         None => {
             let derivations = g.derivations.remove(&id).unwrap_or_default();
@@ -1512,9 +1525,7 @@ fn ground_with(
     for clause in &norm.rules {
         let head = &clause.heads[0].atom;
         let counted = !norm.counted.is_empty()
-            && norm
-                .counted
-                .contains(&(head.name.clone(), head.args.len()));
+            && norm.counted.contains(&(head.name.clone(), head.args.len()));
         let r = compile_rule(&mut g, clause, counted)?;
         let h = r.head.0;
         g.preds[h as usize].rules.push(g.rules.len());
@@ -1714,7 +1725,10 @@ fn matches<'t>(g: &Grounder, pat: &'t Term, v: Val, binding: &mut FxHashMap<&'t 
             };
             let key = &g.terms.keys[id as usize];
             key.len() == 1 + c.args.len()
-                && g.syms.ids.get(&c.name).is_some_and(|&n| key[0] == Val::Sym(n))
+                && g.syms
+                    .ids
+                    .get(&c.name)
+                    .is_some_and(|&n| key[0] == Val::Sym(n))
                 && c.args
                     .iter()
                     .zip(&key[1..])
@@ -2617,10 +2631,11 @@ fn ground_body(
             }
             let sols = solutions(g, *b, &vals);
             if *negated {
-                if !sols
-                    .iter()
-                    .any(|s| args.iter().zip(s).all(|(a, v)| arg_val(a, subst) == Some(*v)))
-                {
+                if !sols.iter().any(|s| {
+                    args.iter()
+                        .zip(s)
+                        .all(|(a, v)| arg_val(a, subst) == Some(*v))
+                }) {
                     ground_body(g, rule, i + 1, delta, subst, body_atoms);
                 }
                 return;

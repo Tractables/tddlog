@@ -546,7 +546,12 @@ fn write_float(f: &mut fmt::Formatter<'_>, x: f64) -> fmt::Result {
         if !rest.is_empty() {
             write!(f, ".{rest}")?;
         }
-        return write!(f, "e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.unsigned_abs());
+        return write!(
+            f,
+            "e{}{:02}",
+            if exp < 0 { '-' } else { '+' },
+            exp.unsigned_abs()
+        );
     }
     if exp < 0 {
         f.write_str("0.")?;
@@ -1367,11 +1372,20 @@ mod tests {
         assert_eq!(list.to_string(), "[a, b | X]");
         assert_eq!(Term::Const(NIL.into()).to_string(), "[]");
         let (two, three, four) = (Term::Int(2), Term::Int(3), Term::Int(4));
-        let sum = c("+", vec![c("*", vec![two.clone(), three.clone()]), four.clone()]);
+        let sum = c(
+            "+",
+            vec![c("*", vec![two.clone(), three.clone()]), four.clone()],
+        );
         assert_eq!(sum.to_string(), "2*3+4");
-        let prod = c("*", vec![two.clone(), c("+", vec![three.clone(), four.clone()])]);
+        let prod = c(
+            "*",
+            vec![two.clone(), c("+", vec![three.clone(), four.clone()])],
+        );
         assert_eq!(prod.to_string(), "2*(3+4)");
-        let right = c("-", vec![two.clone(), c("-", vec![three.clone(), four.clone()])]);
+        let right = c(
+            "-",
+            vec![two.clone(), c("-", vec![three.clone(), four.clone()])],
+        );
         assert_eq!(right.to_string(), "2-(3-4)");
         let left = c("-", vec![c("-", vec![two.clone(), three]), four]);
         assert_eq!(left.to_string(), "2-3-4");
@@ -1406,7 +1420,13 @@ mod tests {
         assert_eq!(or(&a, &or(&b, &d)).to_string(), "a; b; d");
         assert_eq!(c("f", vec![or(&a, &b)]).to_string(), "f(a; b)");
         assert_eq!(c("f", vec![and(&a, &b)]).to_string(), "f((a, b))");
-        let items = list(vec![and(&Term::Int(1), &list(vec![Term::Int(1)], Term::Const(NIL.into())))], Term::Const(NIL.into()));
+        let items = list(
+            vec![and(
+                &Term::Int(1),
+                &list(vec![Term::Int(1)], Term::Const(NIL.into())),
+            )],
+            Term::Const(NIL.into()),
+        );
         assert_eq!(items.to_string(), "[(1, [1])]");
         // `\+` and `:-` in functor form, an operator below 1000 in an
         // argument without parentheses.

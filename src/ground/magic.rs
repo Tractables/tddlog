@@ -111,9 +111,7 @@ fn usable(rule: &Clause, adornment: &Adornment) -> Option<Adornment> {
     let mentioned = |v: &String| rule.body.iter().any(|l| literal_vars(l).contains(v));
     let keeps = |i: usize, t: &Term| match t {
         Term::Var(v) => {
-            read(v)
-                || !mentioned(v)
-                || head.args.iter().enumerate().any(|(j, u)| j != i && u == t)
+            read(v) || !mentioned(v) || head.args.iter().enumerate().any(|(j, u)| j != i && u == t)
         }
         _ => true,
     };

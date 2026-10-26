@@ -77,10 +77,10 @@ pub(crate) mod shape;
 mod share;
 mod simplify;
 mod steps;
-pub(crate) mod terms;
 pub(crate) mod structure;
 mod table;
 pub(crate) mod tables;
+pub(crate) mod terms;
 
 pub use aig::SweepStats;
 pub use condition::{Backbones, Conditioned};
@@ -284,7 +284,9 @@ fn ground_norm(
             Some(magic) => match engine::ground_normalized(&magic, bound) {
                 Ok(gp) => gp,
                 Err(
-                    e @ (GroundError::OverBound | GroundError::OutOfMemory | GroundError::Refused(_)),
+                    e @ (GroundError::OverBound
+                    | GroundError::OutOfMemory
+                    | GroundError::Refused(_)),
                 ) => return Err(e),
                 Err(_) => engine::ground_normalized(norm, bound)?,
             },

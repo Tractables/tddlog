@@ -3,8 +3,8 @@
 
 use super::lexer::{LexError, Lexer, Op, Spanned, Tok, kw};
 use super::{
-    Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice, Literal, NIL,
-    Name, Program, QueryRule, Term, infix_op, prefix_op,
+    Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice, Literal, NIL, Name,
+    Program, QueryRule, Term, infix_op, prefix_op,
 };
 use std::fmt;
 
@@ -876,10 +876,9 @@ impl PTerm {
     /// A compound's name and arguments.
     fn into_compound(self) -> Option<(Name, Vec<PTerm>)> {
         match self {
-            PTerm::Atom(n, args) => Some((
-                n,
-                Vec::from(args).into_iter().map(PTerm::Term).collect(),
-            )),
+            PTerm::Atom(n, args) => {
+                Some((n, Vec::from(args).into_iter().map(PTerm::Term).collect()))
+            }
             PTerm::Term(Term::Compound(c)) => Some((
                 c.name.clone(),
                 c.args.iter().cloned().map(PTerm::Term).collect(),
