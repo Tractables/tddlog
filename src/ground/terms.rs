@@ -54,7 +54,9 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
     let compound = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
     let lowers = |l: &Literal| match l {
         Literal::Pos(a) | Literal::Neg(a) => {
-            a.args.iter().any(compound) || Builtin::of(&a.name, a.args.len()).is_some()
+            a.args.iter().any(compound)
+                || Builtin::of(&a.name, a.args.len()).is_some()
+                || unevaluated(&a.name, a.args.len())
         }
         Literal::Cmp(op, a, b) => {
             !op.arithmetic() && (matches!(a, Term::Compound(_)) || matches!(b, Term::Compound(_)))
@@ -110,6 +112,61 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
 fn builtin(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> Option<Builtin> {
     let (name, arity) = a.signature();
     Builtin::of(name, arity).filter(|_| !defined.contains(&(name, arity)))
+}
+
+/// Whether `name/arity` is one of ProbLog's built-ins or of its
+/// library(lists) that tddlog does not evaluate.
+fn unevaluated(name: &str, arity: usize) -> bool {
+    matches!(
+        (name, arity),
+        ("call" | "call_nc" | "try_call", 1..=9)
+            | ("nl", 0)
+            | (
+                "once" | "callable" | "atom" | "atomic" | "compound" | "float" | "integer"
+                    | "number" | "var" | "nonvar" | "ground" | "is_list" | "is_set" | "rational"
+                    | "simple" | "primitive" | "dbreference" | "unknown" | "possible"
+                    | "cmd_args" | "consult" | "use_module" | "unzip",
+                1
+            )
+            | (
+                "=.." | "succ" | "forall" | "atom_number" | "clause" | "subquery" | "module"
+                    | "numbervars" | "varnumbers" | "subsumes_term" | "subsumes_chk"
+                    | "create_scope" | "call_in_scope" | "find_scope" | "nocache" | "use_module"
+                    | "append" | "flatten" | "groupby" | "head" | "list_to_set" | "max_member"
+                    | "min_member" | "permutation" | "prefix" | "proper_length" | "same_length"
+                    | "subset" | "memberchk_search",
+                2
+            )
+            | (
+                "arg" | "functor" | "plus" | "compare" | "all" | "all_or_none" | "numbervars"
+                    | "sample_uniform1" | "clause" | "subquery" | "subquery_in_scope" | "delete"
+                    | "flatten" | "intersection" | "make_list" | "max_member" | "min_member"
+                    | "nextto" | "numlist" | "select" | "selectchk" | "subtract" | "union" | "unzip"
+                    | "zip" | "max_list" | "min_list" | "reverse" | "sum_list",
+                3
+            )
+            | (
+                "subquery_in_scope" | "select" | "selectchk" | "select_uniform"
+                    | "select_weighted" | "groupby",
+                4
+            )
+            | ("subquery" | "select_weighted" | "sub_list", 5)
+            | ("subquery_in_scope" | "sub_list" | "sw", 6)
+    )
+}
+
+/// Refuses a call of one of ProbLog's built-ins that tddlog does not
+/// evaluate (call/1, plus/3, select/3, ...), where the program defines no
+/// predicate of its name and arity: tddlog would read it as a predicate
+/// without clauses, false, where ProbLog evaluates it.
+fn evaluated(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> Result<(), GroundError> {
+    let (name, arity) = a.signature();
+    if unevaluated(name, arity) && !defined.contains(&(name, arity)) {
+        return Err(GroundError::Unsupported(format!(
+            "{name}/{arity} is a built-in of ProbLog's that tddlog does not evaluate, in {a}"
+        )));
+    }
+    Ok(())
 }
 
 struct Lowering<'a, 'p> {
@@ -251,6 +308,9 @@ impl Lowering<'_, '_> {
             })
             .collect();
         for (i, l) in body.into_iter().enumerate() {
+            if let Literal::Pos(a) | Literal::Neg(a) = &l {
+                evaluated(a, self.defined)?;
+            }
             match l {
                 Literal::Pos(a) => match builtin(&a, self.defined) {
                     Some(b) => {
