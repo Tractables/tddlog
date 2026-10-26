@@ -186,6 +186,56 @@ fn a_left_corner_parser_over_its_derivation_so_far() {
 }
 
 #[test]
+fn a_formula_of_symbols_read_from_lists_and_evaluated() {
+    // DeepProbLog's handwritten formulas (HWF), its parse/2 written for
+    // each of its two modes, the result bound (parse) and free (value),
+    // in place of var/1 and ground/1; the classifiers' distributions are
+    // annotated disjunctions. Each sequence of symbols has one parse:
+    // 2+3 = 5; 2*3 and 3+3 = 6; 2*0, 3*0 and 3-3 = 0; 2-3 = -1;
+    // 2/3 within 1e-4 of 0.6667; 2/0 and 3/0 have none.
+    let (n2, n3) = (0.6, 0.4);
+    let (plus, minus, times, div) = (0.4, 0.1, 0.3, 0.2);
+    let (m3, m0) = (0.7, 0.3);
+    assert_answers(
+        "0.6::detect_number(i1, 2); 0.4::detect_number(i1, 3).
+         0.4::detect_operator(i2, +); 0.1::detect_operator(i2, -);
+             0.3::detect_operator(i2, *); 0.2::detect_operator(i2, /).
+         0.7::detect_number(i3, 3); 0.3::detect_number(i3, 0).
+         detect_all([N], [N2]) :- detect_number(N, N2).
+         detect_all([N, O|T], [N2, O2|T2]) :- detect_number(N, N2), detect_operator(O, O2),
+             detect_all(T, T2).
+         almost_equal(X, Y) :- abs(X - Y) < 0.0001.
+         expression(Images, Result) :- detect_all(Images, Symbols), parse(Symbols, Result).
+         parse([N], R) :- almost_equal(N, R).
+         parse([N1, +|T], R) :- value(T, R2), almost_equal(N1 + R2, R).
+         parse([N1, -|T], R) :- value([-1, *|T], R2), almost_equal(N1 + R2, R).
+         parse([N1, *, N2|T], R) :- N3 is N1 * N2, parse([N3|T], R).
+         parse([N1, /, N2|T], R) :- N2 \\== 0, N3 is N1 / N2, parse([N3|T], R).
+         value([N], R) :- R is float(N).
+         value([N1, +|T], R) :- value(T, R2), R is float(N1 + R2).
+         value([N1, -|T], R) :- value([-1, *|T], R2), R is float(N1 + R2).
+         value([N1, *, N2|T], R) :- N3 is N1 * N2, value([N3|T], R).
+         value([N1, /, N2|T], R) :- N2 \\== 0, N3 is N1 / N2, value([N3|T], R).
+         query(expression([i1, i2, i3], 5)). query(expression([i1, i2, i3], 6)).
+         query(expression([i1, i2, i3], 0)). query(expression([i1, i2, i3], -1)).
+         query(expression([i1, i2, i3], 0.6667)).",
+        &[
+            ("expression([i1, i2, i3],5)", n2 * plus * m3),
+            (
+                "expression([i1, i2, i3],6)",
+                n2 * times * m3 + n3 * plus * m3,
+            ),
+            (
+                "expression([i1, i2, i3],0)",
+                (n2 + n3) * times * m0 + n3 * minus * m3,
+            ),
+            ("expression([i1, i2, i3],-1)", n2 * minus * m3),
+            ("expression([i1, i2, i3],0.6667)", n2 * div * m3),
+        ],
+    );
+}
+
+#[test]
 fn findall_results_feed_probabilistic_rules() {
     // spend(S): the cost of the items other than the one bought.
     assert_answers(

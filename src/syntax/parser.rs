@@ -716,6 +716,17 @@ impl<'a> Parser<'a> {
         if let Some(t) = self.flat_term() {
             return Ok((PTerm::Term(t), 0));
         }
+        // An operator standing alone as an argument or an item of a list
+        // is the atom of its name, as in ProbLog: `[+, -, *, /]`.
+        if let Tok::Op(op) = self.peek()
+            && matches!(
+                self.peek2(),
+                Tok::Comma | Tok::RParen | Tok::RBracket | Tok::Bar
+            )
+        {
+            self.bump();
+            return Ok((PTerm::Term(Term::Const(self.lexer.intern(op.text()))), 0));
+        }
         let (name, p) = match self.peek() {
             Tok::Name(kw::NOT) | Tok::Naf => ("\\+", 900),
             Tok::Op(op @ (Op::Minus | Op::Plus | Op::Backslash)) => {
@@ -989,6 +1000,12 @@ mod tests {
         assert_eq!(fa.goal.len(), 2);
         assert!(!fa.interleaved);
         assert!(parse_program(":- use_module(library(apply)).\n").is_err());
+        // An operator alone is an atom; before a term, a prefix operator.
+        let p =
+            parse_program("ops([+, -, *, /]). p([N, +|T], -, - X) :- q(N, T, X, /).\n").unwrap();
+        assert_eq!(p.clauses[0].heads[0].atom.to_string(), "ops([+, -, *, /])");
+        assert_eq!(p.clauses[1].heads[0].atom.to_string(), "p([N, + | T],-,-X)");
+        assert_eq!(p.clauses[1].body[0].to_string(), "q(N,T,X,/)");
     }
 
     #[test]
