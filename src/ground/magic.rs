@@ -16,7 +16,9 @@
 //! the original model, and every atom the queries depend on is derived. A
 //! rule that cannot use some of a pattern's bindings, a head variable its
 //! body reads only as the value of an `is`, is copied under the pattern
-//! without them instead, whose magic predicate the first one's feeds.
+//! without them instead, whose magic predicate the first one's feeds. A
+//! predicate that the rewrite finds demanded both with every argument
+//! free and with some bound is demanded free only, in a second rewrite.
 //!
 //! Magic predicates only control grounding: the grounder drops them from the
 //! ground rules it emits (see `NormProgram::control`). Their truth in the
@@ -31,12 +33,15 @@
 use super::normalize::NormProgram;
 use super::schedule::{literal_vars, schedule_body};
 use crate::syntax::{Atom, Clause, Literal, Name, Term};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub(crate) const MAGIC_PREFIX: &str = "$m";
 
 /// Binding pattern: one flag per argument, `true` = bound.
 type Adornment = Vec<bool>;
+
+/// The predicates, by name and arity, and the patterns they are demanded in.
+type Demands = FxHashSet<(Name, usize, Adornment)>;
 
 /// `$m_<name>_<pattern>`, written into one string of its size rather
 /// than formatted.
@@ -139,7 +144,44 @@ pub(super) fn ground_clause(c: &Clause) -> bool {
 /// Rewrite `norm`. Returns the rewritten program, or `None` if some rule
 /// cannot be scheduled even with the head bindings (then the plain program
 /// will report the same problem with a better message).
+///
+/// A predicate demanded with every argument free derives every atom it
+/// can, and a demand of it with some bound grounds its rules again for
+/// each call, with a tuple of its magic predicate per call. Where the rules
+/// of such a demand read the predicate's own atoms before the bound head
+/// argument (`rand(Y) :- rand(X), assign(Y, X)` asked for `rand(c)`), a
+/// call of `assign` follows for every pair: on PSouffle's side-channel
+/// analyses, 17 million tuples of the magic predicates of `assign` and the
+/// relations it reads, where the program has 50 atoms that matter. A
+/// predicate demanded both free and with some argument bound is therefore
+/// rewritten again with every demand of it read as its free demand.
 pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
+    let (out, done) = demand(norm, &FxHashSet::default())?;
+    // Whether each predicate is demanded free, and with some argument bound.
+    let mut patterns: FxHashMap<(&Name, usize), (bool, bool)> = FxHashMap::default();
+    for (name, arity, adornment) in &done {
+        let (free, bound) = patterns.entry((name, *arity)).or_default();
+        if adornment.iter().any(|b| *b) {
+            *bound = true;
+        } else {
+            *free = true;
+        }
+    }
+    let free: FxHashSet<(Name, usize)> = patterns
+        .into_iter()
+        .filter(|(_, (free, bound))| *free && *bound)
+        .map(|((name, arity), _)| (name.clone(), arity))
+        .collect();
+    if free.is_empty() {
+        return Some(out);
+    }
+    demand(norm, &free).map(|(out, _)| out)
+}
+
+/// The rewrite of `norm` ([`rewrite`]), in which a demand of a predicate of
+/// `free` with some argument bound is its demand with none, and the
+/// predicates and patterns it demands.
+fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormProgram, Demands)> {
     let rules_of = norm.rules_by_sig();
     let is_switch = |a: &Atom| norm.switches.contains_key(&(a.name.clone(), a.args.len()));
     // An atom of a predicate with rules, which a demand reaches.
@@ -153,13 +195,20 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
         ..Default::default()
     };
     let mut control: FxHashSet<(Name, usize)> = FxHashSet::default();
-    let mut done: FxHashSet<(Name, usize, Adornment)> = FxHashSet::default();
+    let mut done = Demands::default();
     let mut work: Vec<(Atom, Adornment)> = Vec::new();
+    let adorn = |atom: &Atom, bound: &FxHashSet<String>| {
+        if free.contains(&(atom.name.clone(), atom.args.len())) {
+            vec![false; atom.args.len()]
+        } else {
+            adornment_of(atom, bound)
+        }
+    };
 
     // Seeds: query and evidence atoms, with constants bound; query-rule
     // drivers with nothing bound.
     let seed = |atom: &Atom, out: &mut NormProgram, work: &mut Vec<(Atom, Adornment)>| {
-        let adornment = adornment_of(atom, &FxHashSet::default());
+        let adornment = adorn(atom, &FxHashSet::default());
         let m = magic_atom(atom, &adornment);
         out.rules.push(Clause::rule(m, vec![], u32::MAX));
         work.push((atom.clone(), adornment));
@@ -178,7 +227,7 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
         let bound: FxHashSet<String> = literal_vars(&Literal::Pos(driver.clone()))
             .into_iter()
             .collect();
-        let sub = adornment_of(pattern, &bound);
+        let sub = adorn(pattern, &bound);
         out.rules.push(Clause::rule(
             magic_atom(pattern, &sub),
             vec![Literal::Pos(driver.clone())],
@@ -244,7 +293,7 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
                 if let Some(a) = body_atom
                     && derived(a)
                 {
-                    let sub = adornment_of(a, &bound_so_far);
+                    let sub = adorn(a, &bound_so_far);
                     let m = magic_atom(a, &sub);
                     let mut body = Vec::with_capacity(1 + prefix.len());
                     body.push(guard.clone());
@@ -276,7 +325,7 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
         }
     }
     out.control = control;
-    Some(out)
+    Some((out, done))
 }
 
 #[cfg(test)]
@@ -303,6 +352,38 @@ mod tests {
             "{text:?}"
         );
         assert!(m.control.contains(&("$m_w_b".into(), 1)));
+    }
+
+    /// A predicate asked with its argument free, whose rule reads its own
+    /// atoms before the bound head argument, is demanded free only: its
+    /// demand under a bound argument would call `a` for every pair of a
+    /// bound head and an atom of `r`.
+    #[test]
+    fn a_predicate_demanded_free_is_demanded_free_only() {
+        let p = parse_program(
+            "0.5::r(1).\na(2,1).\na(3,2).\nb(4,3).\n\
+             r(Y) :- r(X), a(Y,X).\ns(Z) :- b(Z,X), r(X).\nquery(r(_)).\nquery(s(_)).\n",
+        )
+        .unwrap();
+        let n = normalize(&p).unwrap();
+        let m = rewrite(&n).unwrap();
+        let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
+        assert!(
+            !text
+                .iter()
+                .any(|t| t.contains("$m_r_b") || t.contains("$m_a_bb")),
+            "{text:?}"
+        );
+        assert!(
+            text.iter()
+                .any(|t| t.starts_with("'$m_r_f' :- '$m_s_f', b(Z,X)")),
+            "{text:?}"
+        );
+        assert!(
+            text.iter()
+                .any(|t| t.starts_with("r(Y) :- '$m_r_f', r(X), a(Y,X)")),
+            "{text:?}"
+        );
     }
 
     /// A demand that binds an argument the body reads only as the value of

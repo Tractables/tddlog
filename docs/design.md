@@ -350,7 +350,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    that the body reads only as the result of an `is` binds nothing: the
    rule is copied under the pattern without it, whose demand is projected
    from the bound one (`'$m_s_bf'(K) :- '$m_s_bb'(K,S)`), so that a sum is
-   not ground once per demanded value. A program whose recursive strata
+   not ground once per demanded value. A predicate demanded both with
+   every argument free and with some bound is demanded free only, in a
+   second rewrite: its free demand derives every atom a bound one would,
+   and a bound demand whose rule reads the predicate's own atoms before
+   the bound argument (`r(Y) :- r(X), a(Y, X)`) calls `a` for every pair
+   of a bound `Y` and an atom of `r`. A program whose recursive strata
    all have rising levels (below) is not rewritten but grounded level by
    level: the demand of a loop over a time index runs down the levels
    (`T0 is T - 1`) and makes the whole chain one stratum without levels.
