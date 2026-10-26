@@ -37,7 +37,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::engine::GroundError;
 use crate::syntax::{
-    Atom, Builtin, Clause, CmpOp, Collect, Compound, Findall, Literal, Name, Program, Term,
+    Atom, Builtin, CONS, Clause, CmpOp, Collect, Compound, Findall, Literal, Name, Program, Term,
 };
 
 /// The prefix of the auxiliary predicates of findalls.
@@ -73,7 +73,11 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
     };
     // A query or an observation of a built-in tddlog does not evaluate.
     let asked = || {
-        let facts = program.queries.iter().chain(&program.evidence).map(|(a, _)| a);
+        let facts = program
+            .queries
+            .iter()
+            .chain(&program.evidence)
+            .map(|(a, _)| a);
         facts.chain(program.query_rules.iter().map(|r| &r.pattern))
     };
     if asked().any(|a| unevaluated(&a.name, a.args.len())) {
@@ -83,9 +87,11 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
         }
     }
     if !program.clauses.iter().any(|c| {
-        c.heads.iter().any(|h| h.atom.args.iter().any(compound))
-            || c.body.iter().any(lowers)
-    }) && !program.query_rules.iter().any(|r| r.body.iter().any(lowers))
+        c.heads.iter().any(|h| h.atom.args.iter().any(compound)) || c.body.iter().any(lowers)
+    }) && !program
+        .query_rules
+        .iter()
+        .any(|r| r.body.iter().any(lowers))
     {
         return Ok((Cow::Borrowed(program), FxHashSet::default()));
     }
@@ -98,6 +104,7 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
         cone_roots: Vec::new(),
     };
     let mut lowered = program.clone();
+    spread(&mut lowered);
     // The clauses in order, each followed by the auxiliary clauses of its
     // findalls.
     let mut work: Vec<Clause> = std::mem::take(&mut lowered.clauses);
@@ -136,32 +143,102 @@ fn unevaluated(name: &str, arity: usize) -> bool {
         ("call" | "call_nc" | "try_call", 1..=9)
             | ("nl", 0)
             | (
-                "once" | "callable" | "atom" | "atomic" | "compound" | "float" | "integer"
-                    | "number" | "var" | "nonvar" | "ground" | "is_list" | "is_set" | "rational"
-                    | "simple" | "primitive" | "dbreference" | "unknown" | "possible"
-                    | "cmd_args" | "consult" | "use_module" | "unzip",
+                "once"
+                    | "callable"
+                    | "atom"
+                    | "atomic"
+                    | "compound"
+                    | "float"
+                    | "integer"
+                    | "number"
+                    | "var"
+                    | "nonvar"
+                    | "ground"
+                    | "is_list"
+                    | "is_set"
+                    | "rational"
+                    | "simple"
+                    | "primitive"
+                    | "dbreference"
+                    | "unknown"
+                    | "possible"
+                    | "cmd_args"
+                    | "consult"
+                    | "use_module"
+                    | "unzip",
                 1
             )
             | (
-                "=.." | "succ" | "forall" | "atom_number" | "clause" | "subquery" | "module"
-                    | "numbervars" | "varnumbers" | "subsumes_term" | "subsumes_chk"
-                    | "create_scope" | "call_in_scope" | "find_scope" | "nocache" | "use_module"
-                    | "append" | "flatten" | "groupby" | "head" | "list_to_set" | "max_member"
-                    | "min_member" | "permutation" | "prefix" | "proper_length" | "same_length"
-                    | "subset" | "memberchk_search",
+                "=.."
+                    | "succ"
+                    | "forall"
+                    | "atom_number"
+                    | "clause"
+                    | "subquery"
+                    | "module"
+                    | "numbervars"
+                    | "varnumbers"
+                    | "subsumes_term"
+                    | "subsumes_chk"
+                    | "create_scope"
+                    | "call_in_scope"
+                    | "find_scope"
+                    | "nocache"
+                    | "use_module"
+                    | "append"
+                    | "flatten"
+                    | "groupby"
+                    | "head"
+                    | "list_to_set"
+                    | "max_member"
+                    | "min_member"
+                    | "permutation"
+                    | "prefix"
+                    | "proper_length"
+                    | "same_length"
+                    | "subset"
+                    | "memberchk_search",
                 2
             )
             | (
-                "arg" | "functor" | "plus" | "compare" | "all" | "all_or_none" | "numbervars"
-                    | "sample_uniform1" | "clause" | "subquery" | "subquery_in_scope" | "delete"
-                    | "flatten" | "intersection" | "make_list" | "max_member" | "min_member"
-                    | "nextto" | "numlist" | "select" | "selectchk" | "subtract" | "union" | "unzip"
-                    | "zip" | "max_list" | "min_list" | "reverse" | "sum_list",
+                "arg"
+                    | "functor"
+                    | "plus"
+                    | "compare"
+                    | "all"
+                    | "all_or_none"
+                    | "numbervars"
+                    | "sample_uniform1"
+                    | "clause"
+                    | "subquery"
+                    | "subquery_in_scope"
+                    | "delete"
+                    | "flatten"
+                    | "intersection"
+                    | "make_list"
+                    | "max_member"
+                    | "min_member"
+                    | "nextto"
+                    | "numlist"
+                    | "select"
+                    | "selectchk"
+                    | "subtract"
+                    | "union"
+                    | "unzip"
+                    | "zip"
+                    | "max_list"
+                    | "min_list"
+                    | "reverse"
+                    | "sum_list",
                 3
             )
             | (
-                "subquery_in_scope" | "select" | "selectchk" | "select_uniform"
-                    | "select_weighted" | "groupby",
+                "subquery_in_scope"
+                    | "select"
+                    | "selectchk"
+                    | "select_uniform"
+                    | "select_weighted"
+                    | "groupby",
                 4
             )
             | ("subquery" | "select_weighted" | "sub_list", 5)
@@ -181,6 +258,146 @@ fn evaluated(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> Result<(), GroundE
         )));
     }
     Ok(())
+}
+
+/// Spreads each argument of a predicate that is, in every head and every
+/// call, a compound of one name and arity other than a list cell into the
+/// compound's arguments: `s(L, c(N, NN))` is read as `s(L, N, NN)`. A
+/// demand then binds the parts its call binds, a count passed in where
+/// another is passed out, which a demand of the whole compound does not, so
+/// the predicate is ground for the counts its calls give, as ProbLog's
+/// resolution reaches them, rather than for every count. A predicate that
+/// is asked keeps its arguments, as does one whose spread arity names
+/// another predicate or a built-in. Repeated while a spread argument holds
+/// another such compound.
+fn spread(program: &mut Program) {
+    loop {
+        let plan = spread_plan(program);
+        if plan.is_empty() {
+            return;
+        }
+        let respread = |a: &mut Atom| {
+            if let Some(widths) = plan.get(&(a.name.clone(), a.args.len())) {
+                let mut args = Vec::with_capacity(a.args.len());
+                for (t, width) in a.args.iter().zip(widths) {
+                    match (width, t.as_compound()) {
+                        (Some(_), Some((_, parts))) => args.extend(parts.iter().cloned()),
+                        _ => args.push(t.clone()),
+                    }
+                }
+                *a = Atom::new(a.name.clone(), args);
+            }
+        };
+        for c in &mut program.clauses {
+            for h in &mut c.heads {
+                respread(&mut h.atom);
+            }
+            calls_mut(&mut c.body, &respread);
+        }
+        for r in &mut program.query_rules {
+            calls_mut(&mut r.body, &respread);
+        }
+    }
+}
+
+/// The predicates [`spread`] spreads, each with the arity of the compound
+/// at each argument it spreads (`None` at one it keeps).
+fn spread_plan(program: &Program) -> FxHashMap<Pred, Vec<Option<usize>>> {
+    // Per predicate, per argument: the name and arity of the compound every
+    // occurrence so far has there, `None` once one differs.
+    let mut shapes: FxHashMap<Pred, Vec<Option<(Name, usize)>>> = FxHashMap::default();
+    let mut note = |a: &Atom| {
+        let shape = |t: &Term| {
+            t.as_compound()
+                .filter(|(name, _)| name.as_ref() != CONS)
+                .map(|(name, parts)| (name.clone(), parts.len()))
+        };
+        let seen = shapes
+            .entry((a.name.clone(), a.args.len()))
+            .or_insert_with(|| a.args.iter().map(shape).collect());
+        for (s, t) in seen.iter_mut().zip(a.args.iter()) {
+            if s.is_some() && *s != shape(t) {
+                *s = None;
+            }
+        }
+    };
+    let mut headed = FxHashSet::default();
+    for c in &program.clauses {
+        for h in &c.heads {
+            note(&h.atom);
+            headed.insert((h.atom.name.clone(), h.atom.args.len()));
+        }
+        calls(&c.body, &mut note);
+    }
+    for r in &program.query_rules {
+        calls(&r.body, &mut note);
+    }
+    let asked: FxHashSet<Pred> = program
+        .queries
+        .iter()
+        .chain(&program.evidence)
+        .map(|(a, _)| a)
+        .chain(program.query_rules.iter().map(|r| &r.pattern))
+        .map(|a| (a.name.clone(), a.args.len()))
+        .collect();
+    let mut taken: FxHashSet<Pred> = shapes
+        .keys()
+        .cloned()
+        .chain(asked.iter().cloned())
+        .collect();
+    let mut preds: Vec<&Pred> = shapes.keys().collect();
+    preds.sort();
+    let mut plan = FxHashMap::default();
+    for pred in preds {
+        let at = &shapes[pred];
+        if !headed.contains(pred) || asked.contains(pred) || at.iter().all(Option::is_none) {
+            continue;
+        }
+        let arity = at.iter().map(|s| s.as_ref().map_or(1, |(_, k)| *k)).sum();
+        let (name, old) = pred;
+        if arity != *old
+            && (Builtin::of(name, arity).is_some()
+                || unevaluated(name, arity)
+                || !taken.insert((name.clone(), arity)))
+        {
+            continue;
+        }
+        plan.insert(
+            pred.clone(),
+            at.iter().map(|s| s.as_ref().map(|(_, k)| *k)).collect(),
+        );
+    }
+    plan
+}
+
+/// Each atom `body` calls, in findalls' goals too.
+fn calls(body: &[Literal], f: &mut impl FnMut(&Atom)) {
+    for l in body {
+        match l {
+            Literal::Pos(a) | Literal::Neg(a) => f(a),
+            Literal::Findall(fa) => {
+                for conj in &fa.goal {
+                    calls(conj, f);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// [`calls`], each atom changed by `f`.
+fn calls_mut(body: &mut [Literal], f: &impl Fn(&mut Atom)) {
+    for l in body {
+        match l {
+            Literal::Pos(a) | Literal::Neg(a) => f(a),
+            Literal::Findall(fa) => {
+                for conj in &mut fa.goal {
+                    calls_mut(conj, f);
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 struct Lowering<'a, 'p> {
@@ -236,7 +453,10 @@ impl Lowering<'_, '_> {
     /// false where it cannot hold.
     fn unify(&mut self, a: &Term, b: &Term, out: &mut Vec<Literal>) -> bool {
         match (a.as_compound(), b.as_compound()) {
-            _ if a.is_ground() && b.is_ground() && (a.as_compound().is_some() || b.as_compound().is_some()) => {
+            _ if a.is_ground()
+                && b.is_ground()
+                && (a.as_compound().is_some() || b.as_compound().is_some()) =>
+            {
                 a == b
             }
             (Some((f, xs)), Some((g, ys))) => {
@@ -245,7 +465,11 @@ impl Lowering<'_, '_> {
                     && xs.iter().zip(ys).all(|(x, y)| self.unify(x, y, out))
             }
             (None, Some(_)) | (Some(_), None) => {
-                let (flat, c) = if a.as_compound().is_none() { (a, b) } else { (b, a) };
+                let (flat, c) = if a.as_compound().is_none() {
+                    (a, b)
+                } else {
+                    (b, a)
+                };
                 if !flat.is_var() {
                     return false;
                 }
@@ -276,7 +500,11 @@ impl Lowering<'_, '_> {
 
     /// `clause` lowered, with the auxiliary clauses of its findalls pushed
     /// on `work`; `None` where it cannot hold.
-    fn clause(&mut self, mut clause: Clause, work: &mut Vec<Clause>) -> Result<Option<Clause>, GroundError> {
+    fn clause(
+        &mut self,
+        mut clause: Clause,
+        work: &mut Vec<Clause>,
+    ) -> Result<Option<Clause>, GroundError> {
         // The heads' compounds are taken apart before the body, under a
         // demand that binds them, and built after it otherwise: the
         // schedule places each unification where it can run.
@@ -328,7 +556,8 @@ impl Lowering<'_, '_> {
             match l {
                 Literal::Pos(a) => match builtin(&a, self.defined) {
                     Some(b) => {
-                        let args: Vec<Term> = a.args.iter().map(|t| self.flatten(t, &mut out)).collect();
+                        let args: Vec<Term> =
+                            a.args.iter().map(|t| self.flatten(t, &mut out)).collect();
                         out.push(Literal::Builtin(b, args, false));
                     }
                     None => {
@@ -362,8 +591,8 @@ impl Lowering<'_, '_> {
                     let after: Vec<String> = vars[i + 1..n].iter().flatten().cloned().collect();
                     let mut collect = self.findall(*fa, &before, &after, work)?;
                     // A result pattern is matched against the list after it.
-                    let pattern = matches!(collect.result, Term::Compound(_))
-                        && !collect.result.is_ground();
+                    let pattern =
+                        matches!(collect.result, Term::Compound(_)) && !collect.result.is_ground();
                     let result = if pattern {
                         std::mem::replace(&mut collect.result, self.var())
                     } else {
@@ -453,7 +682,9 @@ impl Lowering<'_, '_> {
                 .iter()
                 .find(|v| !vs.contains(v) && !shared.contains(v))
             {
-                return refuse(format!("the template's {v} is not bound by every alternative"));
+                return refuse(format!(
+                    "the template's {v} is not bound by every alternative"
+                ));
             }
             // A variable of another alternative is no variable of this one.
             let mut body = alt;
@@ -542,7 +773,10 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
             "findall over a recursive goal: {name}/{arity} is recursive or reads the findall's own clause"
         )));
     }
-    let cone: FxHashSet<Pred> = (0..n).filter(|&p| reached[p]).map(|p| names[p].clone()).collect();
+    let cone: FxHashSet<Pred> = (0..n)
+        .filter(|&p| reached[p])
+        .map(|p| names[p].clone())
+        .collect();
     let mut next = program.clauses.iter().map(|c| c.group).max().unwrap_or(0) + 1;
     for c in &mut program.clauses {
         let sig = (c.heads[0].atom.name.clone(), c.heads[0].atom.args.len());

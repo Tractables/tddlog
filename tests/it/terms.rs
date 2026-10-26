@@ -105,6 +105,31 @@ fn the_guides_example_of_terms_and_lists() {
 }
 
 #[test]
+fn a_count_threaded_through_a_compound_grounds_for_the_counts_its_calls_give() {
+    // A grammar S -> a (0.5) | S S (0.5) whose k-th expansion of S, in the
+    // order of the derivation, chooses with rule(k, _): c(N, NN) passes the
+    // count in and out. A demand of s(L, c(0, _)) binds the count only once
+    // c(N, NN) is read as two arguments. Each parse tree of a word is a
+    // sequence of choices of its own, so the trees are exclusive:
+    // P(a) = 0.5, P(aa) = 0.5^3, P(aaa) = 0.5 (P(a) P(aa) + P(aa) P(a)).
+    assert_answers(
+        "0.5::rule(N, a); 0.5::rule(N, ss).
+         s([a], c(N, NN)) :- rule(N, a), NN is N + 1.
+         s(L, c(N, NN)) :- rule(N, ss), N1 is N + 1, split(L, L1, L2),
+             s(L1, c(N1, N2)), s(L2, c(N2, NN)).
+         split([A, B | C], [A], [B | C]).
+         split([A, B | C], [A | D], E) :- split([B | C], D, E).
+         word(L) :- s(L, c(0, _)).
+         query(word([a])). query(word([a, a])). query(word([a, a, a])).",
+        &[
+            ("word([a])", 0.5),
+            ("word([a, a])", 0.125),
+            ("word([a, a, a])", 0.0625),
+        ],
+    );
+}
+
+#[test]
 fn findall_results_feed_probabilistic_rules() {
     // spend(S): the cost of the items other than the one bought.
     assert_answers(
