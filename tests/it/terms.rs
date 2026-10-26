@@ -277,6 +277,9 @@ fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
         "s(X) :- plus(1, 2, X). query(s(_)).",
         "t(L) :- select(a, [a, b], L). query(t(_)).",
         "u :- findall(X, (member(X, [1, 2]), integer(X)), _). query(u).",
+        // Asked directly, as ProbLog's append.pl and clause_pred.pl ask.
+        "query(append([[1], [2]], [1, 2])).",
+        "a :- b(X). query(clause(a, b(Y))).",
     ] {
         let e = refusal(source);
         assert!(e.contains("does not evaluate"), "{source}: {e}");

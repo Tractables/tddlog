@@ -64,6 +64,24 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
         Literal::Findall(_) | Literal::Builtin(..) | Literal::Collect(_) => true,
         Literal::Is(..) => false,
     };
+    let defined = || -> FxHashSet<(&str, usize)> {
+        program
+            .clauses
+            .iter()
+            .flat_map(|c| c.heads.iter().map(|h| h.atom.signature()))
+            .collect()
+    };
+    // A query or an observation of a built-in tddlog does not evaluate.
+    let asked = || {
+        let facts = program.queries.iter().chain(&program.evidence).map(|(a, _)| a);
+        facts.chain(program.query_rules.iter().map(|r| &r.pattern))
+    };
+    if asked().any(|a| unevaluated(&a.name, a.args.len())) {
+        let defined = defined();
+        for a in asked() {
+            evaluated(a, &defined)?;
+        }
+    }
     if !program.clauses.iter().any(|c| {
         c.heads.iter().any(|h| h.atom.args.iter().any(compound))
             || c.body.iter().any(lowers)
@@ -71,11 +89,7 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
     {
         return Ok((Cow::Borrowed(program), FxHashSet::default()));
     }
-    let defined: FxHashSet<(&str, usize)> = program
-        .clauses
-        .iter()
-        .flat_map(|c| c.heads.iter().map(|h| h.atom.signature()))
-        .collect();
+    let defined = defined();
     let mut l = Lowering {
         defined: &defined,
         fresh: 0,
