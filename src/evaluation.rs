@@ -16,7 +16,10 @@ pub(crate) type Answers = (Option<Vec<QueryResult>>, query::QuerySizes);
 /// components finished, or the evidence conjunctions and answers
 /// completed, and the next call goes on from there. A run of one layout
 /// makes one call without a watch (`crate::solve`), `auto` one per attempt
-/// of a trial (`src/auto/`).
+/// of a trial (`src/auto/`), without a watch only for a trial left alone,
+/// which an error retires. A call without a watch is the last: the last
+/// reads of the formulas in its compile and its evidence walk take them
+/// rather than copying them, and it cannot go on after an error.
 #[derive(Default)]
 pub(crate) struct Evaluation {
     /// The compile under way, between its start and its finish.
@@ -147,10 +150,13 @@ impl Evaluation {
             tp::settle(gp, backend, self.compiled.as_mut().unwrap())?;
         }
         let _later = backend.stop_later(self.settled_work() - settled);
-        let compiled = self.compiled.as_ref().unwrap();
+        let compiled = self.compiled.as_mut().unwrap();
         let query = self
             .query
             .get_or_insert_with(|| query::QueryEvaluation::new(gp, backend, compiled));
+        if watch.is_none() {
+            query.take_last_reads(gp, compiled);
+        }
         query.run(gp, backend, compiled, watch)
     }
 

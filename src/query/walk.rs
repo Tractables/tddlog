@@ -157,9 +157,9 @@ use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use tididi::OperationError;
 use tididi::limits::{StopAt, StopRules};
 use tididi::vtree::{VarId, VtreeIdx};
+use tididi::{OperationError, Tdd};
 
 use super::{Formula, PendingFormula, QuerySizes};
 use crate::ground::AtomId;
@@ -359,6 +359,10 @@ impl Union {
 pub(super) struct EvidenceWalk {
     observed: Vec<(AtomId, bool)>,
     next_observed: usize,
+    /// The stored formulas of observed atoms taken from the compile, by
+    /// the place in `observed` of the read that consumes each
+    /// ([`EvidenceWalk::take_last_reads`]).
+    taken: FxHashMap<usize, Tdd>,
     at: Vec<Vec<usize>>,
     built: Vec<Option<Built>>,
     nodes: Vec<VtreeIdx>,
@@ -432,6 +436,7 @@ impl EvidenceWalk {
             done: observed.is_empty(),
             observed,
             next_observed: 0,
+            taken: FxHashMap::default(),
             at: vec![Vec::new(); tree.num_nodes()],
             built: (0..tree.num_nodes()).map(|_| None).collect(),
             nodes: tree.bottomup().collect(),
@@ -469,6 +474,32 @@ impl EvidenceWalk {
             #[cfg(test)]
             give_up_batches: false,
         }
+    }
+
+    /// Takes from `compiled` the stored formula of each atom observed from
+    /// here on, for its last read in `observed` to negate or embed in place
+    /// of a copy, but for the atoms of ties and those `read_after` names,
+    /// whose formulas are read after the walk or by a tie
+    /// ([`crate::tp::tie`]). A read that fails may have consumed its
+    /// formula, and the walk cannot go on after an error.
+    pub(super) fn take_last_reads(
+        &mut self,
+        compiled: &mut Compiled,
+        read_after: impl Fn(AtomId) -> bool,
+    ) -> bool {
+        let mut last: FxHashMap<AtomId, usize> = FxHashMap::default();
+        for (i, &(a, _)) in self.observed.iter().enumerate().skip(self.next_observed) {
+            last.insert(a, i);
+        }
+        for (a, i) in last {
+            if compiled.for_queries.ties.contains_key(&a) || read_after(a) {
+                continue;
+            }
+            if let Some(f) = compiled.formulas.take(a as usize) {
+                self.taken.insert(i, f);
+            }
+        }
+        !self.taken.is_empty()
     }
 
     /// The joins finished, and all the walk makes: one fewer than the
@@ -934,15 +965,21 @@ impl EvidenceWalk {
                     (own, tie.node(backend), formula, pairs)
                 }
                 None => {
-                    let own = own_scope(a)?;
+                    // A formula taken lives on its atom's scope, which
+                    // `own_scope` gives an atom with a stored formula.
+                    let taken = self.taken.remove(&self.next_observed);
+                    let own = match taken {
+                        Some(_) => compiled.scope_of(a).clone(),
+                        None => own_scope(a)?,
+                    };
                     let node = backend.lowest_over(&own);
-                    let formula = compiled.literal_formula(
-                        backend,
-                        &own,
-                        a,
-                        value,
-                        (&mut sizes.negations, NegationSource::Evidence),
-                    )?;
+                    let negations = (&mut sizes.negations, NegationSource::Evidence);
+                    let formula = match taken {
+                        Some(f) => {
+                            compiled.taken_literal_formula(backend, &own, a, f, value, negations)?
+                        }
+                        None => compiled.literal_formula(backend, &own, a, value, negations)?,
+                    };
                     let pairs = backend.size(&formula);
                     (own, node, formula, pairs)
                 }

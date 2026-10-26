@@ -97,7 +97,7 @@ impl Formulas {
     }
 
     /// Take `a`'s formula, leaving none, without giving `a` an entry.
-    fn take(&mut self, a: usize) -> Option<Tdd> {
+    pub(crate) fn take(&mut self, a: usize) -> Option<Tdd> {
         match self.at[a] {
             0 => None,
             i => self.held[i as usize - 1].take(),
@@ -163,17 +163,16 @@ impl Compiled {
     ) -> Result<Tdd, CompileError> {
         match &self.formulas[a as usize] {
             Some(f) => {
-                // Negate on the atom's own scope, which is the smaller one,
-                // and embed the result: a function that does not depend on
-                // the free variables has a complement that does not either.
-                let own = self.scope_of(a);
                 if self.stored_positive(a) == positive {
-                    backend.embed_ref(f, own, scope)
+                    backend.embed_ref(f, self.scope_of(a), scope)
                 } else {
-                    backend.embed(
-                        negations.negate(backend, source, backend.copy(f)?)?,
-                        own,
+                    self.taken_literal_formula(
+                        backend,
                         scope,
+                        a,
+                        backend.copy(f)?,
+                        positive,
+                        (negations, source),
                     )
                 }
             }
@@ -189,6 +188,29 @@ impl Compiled {
                 )
             }
         }
+    }
+
+    /// [`literal_formula`](Self::literal_formula) of derived atom `a` from
+    /// `f`, its stored formula taken from [`Compiled::formulas`] or a copy
+    /// of it: `f` itself or its negation, embedded onto `scope`.
+    pub(crate) fn taken_literal_formula(
+        &self,
+        backend: &TddBackend,
+        scope: &VtreeScope,
+        a: AtomId,
+        f: Tdd,
+        positive: bool,
+        (negations, source): (&mut Negations, NegationSource),
+    ) -> Result<Tdd, CompileError> {
+        // Negate on the atom's own scope, which is the smaller one, and
+        // embed the result: a function that does not depend on the free
+        // variables has a complement that does not either.
+        let f = if self.stored_positive(a) == positive {
+            f
+        } else {
+            negations.negate(backend, source, f)?
+        };
+        backend.embed(f, self.scope_of(a), scope)
     }
 }
 

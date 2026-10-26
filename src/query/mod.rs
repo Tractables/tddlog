@@ -8,7 +8,7 @@
 
 mod walk;
 
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
 use std::time::Instant;
 
@@ -143,7 +143,8 @@ pub(crate) fn query_probabilities(
 const MULTIPLY_ADDS_PER_UNIT: u64 = 8;
 
 /// State belongs to one immutable ground program, compilation and vtree.
-/// The engine may change between calls, but these three inputs must not.
+/// The engine may change between calls, but these three inputs must not,
+/// other than by the formulas the phase takes ([`Self::take_last_reads`]).
 pub(crate) struct QueryEvaluation {
     weights: Probabilities,
     scopes: RefCell<ScopeTable>,
@@ -159,6 +160,11 @@ pub(crate) struct QueryEvaluation {
     queries: usize,
     pending_query: Option<PendingQuery>,
     sizes: QuerySizes,
+    /// Whether the walk holds formulas taken from the compile, and whether
+    /// a run failed since, which may have consumed one: the phase cannot
+    /// go on then.
+    took: bool,
+    spent: bool,
 }
 
 impl QueryEvaluation {
@@ -203,6 +209,8 @@ impl QueryEvaluation {
             out: Vec::new(),
             queries: gp.queries.len(),
             pending_query: None,
+            took: false,
+            spent: false,
             sizes: QuerySizes {
                 recounts: compiled.for_queries.recounts,
                 negations: settled.negations,
@@ -237,9 +245,52 @@ impl QueryEvaluation {
         self.mass.unwrap_or(Count::ONE)
     }
 
+    /// Hands the evidence walk the stored formulas of the atoms it reads
+    /// last ([`EvidenceWalk::take_last_reads`]), to negate or embed rather
+    /// than copy: of each atom observed that no query reads, as itself or
+    /// through a template, and no tie stands on. For the phase's last run
+    /// only, as one without a watch is ([`crate::evaluation::Evaluation`]):
+    /// after an error, there is none.
+    pub(crate) fn take_last_reads(&mut self, gp: &GroundProgram, compiled: &mut Compiled) {
+        let for_queries = &compiled.for_queries;
+        let mut read_after: FxHashSet<AtomId> =
+            for_queries.ties.values().map(|t| t.reference).collect();
+        for &(_, q, _) in &gp.queries {
+            if let Some(q) = q {
+                read_after.insert(q);
+                read_after.extend(for_queries.templates.get(&q).map(|t| t.atom));
+            }
+        }
+        self.took |= self
+            .walk
+            .take_last_reads(compiled, |a| read_after.contains(&a));
+    }
+
     /// A completed result is consumed by the caller; do not run again after
-    /// success. On an error, completed conjunctions and answers are retained.
+    /// success. On an error, completed conjunctions and answers are
+    /// retained, unless the walk took formulas ([`Self::take_last_reads`]).
+    ///
+    /// # Panics
+    ///
+    /// When a run failed after the walk took formulas.
     pub(crate) fn run(
+        &mut self,
+        gp: &GroundProgram,
+        backend: &TddBackend,
+        compiled: &Compiled,
+        watch: Option<usize>,
+    ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
+        assert!(
+            !self.spent,
+            "a query phase that failed after taking formulas cannot go on"
+        );
+        let result = self.answer(gp, backend, compiled, watch);
+        self.spent = self.took && result.is_err();
+        result
+    }
+
+    /// [`Self::run`] but for its check.
+    fn answer(
         &mut self,
         gp: &GroundProgram,
         backend: &TddBackend,
@@ -473,13 +524,11 @@ impl QueryEvaluation {
                                     .is_none_or(|p| p.positive != polarity)
                                 {
                                     sizes.products += 1;
-                                    let (f, scope) = match stored {
-                                        Some(f) if compiled.stored_positive(*a) == polarity => {
-                                            (backend.copy(f)?, compiled.scope_of(*a).clone())
-                                        }
+                                    let formula = match stored {
+                                        Some(_) if compiled.stored_positive(*a) == polarity => None,
                                         _ => {
                                             let scope = own_scope(*a)?;
-                                            (
+                                            Some((
                                                 compiled.literal_formula(
                                                     backend,
                                                     &scope,
@@ -488,16 +537,21 @@ impl QueryEvaluation {
                                                     (&mut sizes.negations, NegationSource::Query),
                                                 )?,
                                                 scope,
-                                            )
+                                            ))
                                         }
                                     };
                                     *pending_query = Some(PendingQuery {
-                                        formula: (f, scope),
+                                        formula,
                                         positive: polarity,
                                     });
                                 }
-                                let pending = pending_query.as_mut().unwrap();
-                                let (f, scope) = &pending.formula;
+                                let (f, scope) = match &pending_query.as_ref().unwrap().formula {
+                                    Some((f, scope)) => (f, scope),
+                                    None => (
+                                        stored.expect("the stored polarity's formula is stored"),
+                                        compiled.scope_of(*a),
+                                    ),
+                                };
                                 sizes.record(backend.size(f), watch)?;
                                 crate::eval::mass(
                                     backend.engine,
@@ -709,10 +763,11 @@ struct PendingFormula {
     reduced: bool,
 }
 
-/// A query's formula built and kept across a size stop, and the polarity of
-/// the literal it is the formula of.
+/// A query's formula kept across a size stop, and the polarity of the
+/// literal it is the formula of: the formula built, or `None` for the
+/// atom's stored formula, read in place.
 struct PendingQuery {
-    formula: Formula,
+    formula: Option<Formula>,
     positive: bool,
 }
 
@@ -975,6 +1030,98 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// The source of the tests of the walk's taken formulas: `g` observed
+    /// false and `k` true, neither queried, and `h4` observed and queried.
+    const TAKEN_SOURCE: &str = "0.5::f(0). 0.5::f(1). 0.5::f(2). 0.5::f(3).
+        0.5::f(4). 0.5::f(5). 0.5::f(6). 0.5::f(7).
+        h0 :- f(0),f(1). h2 :- f(2),f(3). h4 :- f(4). h4 :- f(5). h6 :- f(6),f(7).
+        g :- f(0),f(3). k :- f(1). k :- f(2).
+        q :- h0,h6. evidence(g,false). evidence(k,true). evidence(h4,true).
+        query(h0). query(h2). query(h4). query(h6). query(q). query(\\+q).";
+
+    #[test]
+    fn the_walk_takes_the_formulas_it_reads_last() {
+        let gp = ground(TAKEN_SOURCE);
+        let id = |name: &str| gp.atoms.iter().position(|a| a.to_string() == name).unwrap();
+        for form in [Formulation::Primal, Formulation::Dual] {
+            for projection in [Projection::Off, Projection::default()] {
+                let (
+                    crate::vtree::Layout {
+                        vtree: tree, order, ..
+                    },
+                    _,
+                ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed)
+                    .unwrap();
+                // The answers and the negations, and which of g, k and h4
+                // keep their stored formulas, with and without the take.
+                let run = |take: bool| {
+                    tree.context().run(|engine| {
+                        let backend = TddBackend::new(engine, tree.clone());
+                        let mut compiled = compile(
+                            &gp,
+                            fact_variables(&gp, &order),
+                            form,
+                            &backend,
+                            projection,
+                            None,
+                        )
+                        .unwrap();
+                        let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+                        if take {
+                            state.take_last_reads(&gp, &mut compiled);
+                        }
+                        let held = ["g", "k", "h4"].map(|x| compiled.formulas[id(x)].is_some());
+                        let (answers, sizes) = state.run(&gp, &backend, &compiled, None).unwrap();
+                        (answers.unwrap(), sizes.negations, held)
+                    })
+                };
+                let (copied, taken) = (run(false), run(true));
+                assert_eq!(copied.0, taken.0);
+                assert_eq!(copied.1, taken.1);
+                assert_eq!(copied.2, [true; 3]);
+                assert_eq!(taken.2, [false, false, true], "{form:?} {projection:?}");
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot go on")]
+    fn a_walk_that_took_formulas_does_not_go_on_after_an_error() {
+        let gp = ground(TAKEN_SOURCE);
+        let (
+            crate::vtree::Layout {
+                vtree: tree, order, ..
+            },
+            _,
+        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
+        tree.context().run(|engine| {
+            let backend = TddBackend::new(engine, tree.clone());
+            let mut compiled = compile(
+                &gp,
+                fact_variables(&gp, &order),
+                Formulation::Dual,
+                &backend,
+                Projection::default(),
+                None,
+            )
+            .unwrap();
+            let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            state.take_last_reads(&gp, &mut compiled);
+            {
+                let limit = LimitConfig::none().with_stop_rules(StopRules {
+                    unconditional: Some(StopAt::WorkUnits(engine.limits().work_units() + 1)),
+                    after_pairs: None,
+                });
+                let _guard = engine.limits().scope(limit);
+                assert!(matches!(
+                    state.run(&gp, &backend, &compiled, None),
+                    Err(CompileError::Tdd(OperationError::Stopped))
+                ));
+            }
+            let _ = state.run(&gp, &backend, &compiled, None);
+        });
     }
 
     #[test]
