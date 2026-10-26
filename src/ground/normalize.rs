@@ -57,6 +57,9 @@ pub(crate) struct NormProgram {
     /// Control predicates (magic sets): evaluated during grounding, never
     /// emitted into ground rules.
     pub(crate) control: FxHashSet<(Name, usize)>,
+    /// The predicates findalls read, whose derivations the grounder
+    /// counts ([`super::terms`]).
+    pub(crate) counted: FxHashSet<(Name, usize)>,
 }
 
 /// A predicate, `(name, arity)`, the name borrowed from the program.
@@ -78,36 +81,14 @@ impl NormProgram {
 
 /// Variables of a clause in order of first occurrence.
 fn clause_vars(heads: &[HeadChoice], body: &[Literal]) -> Vec<Term> {
-    let mut vars: Vec<Term> = Vec::new();
+    let mut vars: Vec<String> = Vec::new();
     for h in heads {
-        for t in &h.atom.args {
-            if t.is_var() && !vars.contains(t) {
-                vars.push(t.clone());
-            }
-        }
+        h.atom.vars_into(&mut vars);
     }
     for l in body {
-        match l {
-            Literal::Pos(a) | Literal::Neg(a) => {
-                for t in &a.args {
-                    if t.is_var() && !vars.contains(t) {
-                        vars.push(t.clone());
-                    }
-                }
-            }
-            Literal::Cmp(_, a, b) => {
-                a.vars(&mut vars);
-                b.vars(&mut vars);
-            }
-            Literal::Is(v, e) => {
-                if !vars.contains(v) {
-                    vars.push(v.clone());
-                }
-                e.vars(&mut vars);
-            }
-        }
+        l.vars_into(&mut vars);
     }
-    vars
+    vars.into_iter().map(Term::Var).collect()
 }
 
 pub(crate) fn normalize(program: &Program) -> Result<NormProgram, GroundError> {
@@ -204,12 +185,16 @@ pub(crate) fn normalize(program: &Program) -> Result<NormProgram, GroundError> {
     }
 
     for (k, qr) in program.query_rules.iter().enumerate() {
-        let mut vars: Vec<Term> = Vec::new();
-        for t in &qr.pattern.args {
-            if t.is_var() && !vars.contains(t) {
-                vars.push(t.clone());
-            }
+        // The pattern's variables that the body binds: the others stay
+        // variables of the queries, as ProbLog's findall1.pl has one.
+        let mut vars: Vec<String> = Vec::new();
+        qr.pattern.vars_into(&mut vars);
+        let mut bound: Vec<String> = Vec::new();
+        for l in &qr.body {
+            l.vars_into(&mut bound);
         }
+        vars.retain(|v| bound.contains(v));
+        let vars: Vec<Term> = vars.into_iter().map(Term::Var).collect();
         let driver = Atom::new(format!("$query{k}"), vars);
         out.rules
             .push(Clause::rule(driver.clone(), qr.body.clone(), u32::MAX));

@@ -1,6 +1,6 @@
 //! Tokenizer for the Prolog-like surface syntax.
 
-use super::{Args, Name, Term};
+use super::{Args, F64, Name, Term};
 use std::fmt;
 
 /// A name's place in the lexer's table ([`Lexer::name`]). A token carries
@@ -17,19 +17,15 @@ pub(crate) mod kw {
     pub(crate) const EVIDENCE: NameId = 1;
     pub(crate) const T: NameId = 2;
     pub(crate) const NOT: NameId = 3;
-    pub(crate) const TRUE: NameId = 4;
-    pub(crate) const FAIL: NameId = 5;
-    pub(crate) const FALSE: NameId = 6;
-    pub(crate) const IS: NameId = 7;
-    pub(crate) const MOD: NameId = 8;
+    pub(crate) const IS: NameId = 4;
+    pub(crate) const MOD: NameId = 5;
+    pub(crate) const REM: NameId = 6;
+    pub(crate) const XOR: NameId = 7;
     /// The names, each at its place.
-    pub(super) const ALL: [&str; 9] = [
-        "query", "evidence", "t", "not", "true", "fail", "false", "is", "mod",
-    ];
+    pub(super) const ALL: [&str; 8] = ["query", "evidence", "t", "not", "is", "mod", "rem", "xor"];
 }
 
-/// An operator: a comparison `= \= \== == < > =< >=` or an arithmetic
-/// `+ - * /`. `=:=` reads as `=` and `=\=` as `\=`.
+/// An operator written with symbols: a comparison or an arithmetic one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Op {
     Eq,
@@ -40,10 +36,24 @@ pub(crate) enum Op {
     Le,
     Gt,
     Ge,
+    ArithEq,
+    ArithNe,
+    TermLt,
+    TermLe,
+    TermGt,
+    TermGe,
     Plus,
     Minus,
     Star,
     Slash,
+    IntDiv,
+    Pow,
+    Caret,
+    BitAnd,
+    BitOr,
+    Shl,
+    Shr,
+    Backslash,
 }
 
 impl Op {
@@ -57,10 +67,24 @@ impl Op {
             Op::Le => "=<",
             Op::Gt => ">",
             Op::Ge => ">=",
+            Op::ArithEq => "=:=",
+            Op::ArithNe => "=\\=",
+            Op::TermLt => "@<",
+            Op::TermLe => "@=<",
+            Op::TermGt => "@>",
+            Op::TermGe => "@>=",
             Op::Plus => "+",
             Op::Minus => "-",
             Op::Star => "*",
             Op::Slash => "/",
+            Op::IntDiv => "//",
+            Op::Pow => "**",
+            Op::Caret => "^",
+            Op::BitAnd => "/\\",
+            Op::BitOr => "\\/",
+            Op::Shl => "<<",
+            Op::Shr => ">>",
+            Op::Backslash => "\\",
         }
     }
 }
@@ -76,6 +100,10 @@ pub(crate) enum Tok<'a> {
     /// `(`
     LParen,
     RParen,
+    /// `[`, `]` and `|`, of a list.
+    LBracket,
+    RBracket,
+    Bar,
     Comma,
     Semi,
     /// `.` terminating a clause
@@ -113,6 +141,9 @@ impl fmt::Display for Shown<'_, '_> {
             Tok::Float(x) => write!(f, "number `{x}`"),
             Tok::LParen => f.write_str("`(`"),
             Tok::RParen => f.write_str("`)`"),
+            Tok::LBracket => f.write_str("`[`"),
+            Tok::RBracket => f.write_str("`]`"),
+            Tok::Bar => f.write_str("`|`"),
             Tok::Comma => f.write_str("`,`"),
             Tok::Semi => f.write_str("`;`"),
             Tok::Dot => f.write_str("`.`"),
@@ -327,6 +358,13 @@ impl<'a> Lexer<'a> {
         &self.names[id as usize]
     }
 
+    /// The name of text `s`, shared with the names the source spells so:
+    /// an operator's or a list's, which the parser names.
+    pub(crate) fn intern(&mut self, s: &str) -> Name {
+        let id = self.place(s.as_bytes());
+        self.names[id as usize].clone()
+    }
+
     /// `tok` as error messages name it.
     pub(crate) fn show<'t>(&self, tok: Tok<'t>) -> Shown<'_, 't> {
         Shown {
@@ -433,7 +471,7 @@ impl<'a> Lexer<'a> {
     /// The parser's fast path for the arguments of an atom, the common
     /// compound: called with the scan past the compound's `(`, it reads
     /// the arguments and the `)` here, where each argument is a flat term,
-    /// a name, a variable or an integer, as the parser's flat terms read
+    /// a name, a variable or a number, as the parser's flat terms read
     /// them (`_` a fresh variable `_G<n>`, `n` counted in `anon`): one held
     /// in place, and more gathered on `terms` and moved from there. Where a
     /// token is of another kind, `None`, and the scan, `terms` and `anon`
@@ -455,8 +493,10 @@ impl<'a> Lexer<'a> {
                 }
                 Tok::Var(v) => Term::Var(v.to_owned()),
                 Tok::Int(i) => Term::Int(i),
+                Tok::Float(x) => Term::Float(F64::rounded(x)),
                 Tok::Op(Op::Minus) => match self.scan() {
                     Tok::Int(i) => Term::Int(-i),
+                    Tok::Float(x) => Term::Float(F64::rounded(-x)),
                     _ => break,
                 },
                 _ => break,
@@ -741,8 +781,18 @@ impl<'a> Lexer<'a> {
                     (b'=', Some(b'='), _) => (Tok::Op(Op::Identical), 2),
                     (b'=', Some(b'<'), _) => (Tok::Op(Op::Le), 2),
                     (b'>', Some(b'='), _) => (Tok::Op(Op::Ge), 2),
-                    (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::Eq), 3),
-                    (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::Ne), 3),
+                    (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::ArithEq), 3),
+                    (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::ArithNe), 3),
+                    (b'@', Some(b'='), Some(b'<')) => (Tok::Op(Op::TermLe), 3),
+                    (b'@', Some(b'>'), Some(b'=')) => (Tok::Op(Op::TermGe), 3),
+                    (b'@', Some(b'<'), _) => (Tok::Op(Op::TermLt), 2),
+                    (b'@', Some(b'>'), _) => (Tok::Op(Op::TermGt), 2),
+                    (b'<', Some(b'<'), _) => (Tok::Op(Op::Shl), 2),
+                    (b'>', Some(b'>'), _) => (Tok::Op(Op::Shr), 2),
+                    (b'/', Some(b'/'), _) => (Tok::Op(Op::IntDiv), 2),
+                    (b'/', Some(b'\\'), _) => (Tok::Op(Op::BitAnd), 2),
+                    (b'\\', Some(b'/'), _) => (Tok::Op(Op::BitOr), 2),
+                    (b'*', Some(b'*'), _) => (Tok::Op(Op::Pow), 2),
                     (b'=', _, _) => (Tok::Op(Op::Eq), 1),
                     (b'<', _, _) => (Tok::Op(Op::Lt), 1),
                     (b'>', _, _) => (Tok::Op(Op::Gt), 1),
@@ -750,11 +800,11 @@ impl<'a> Lexer<'a> {
                     (b'-', _, _) => (Tok::Op(Op::Minus), 1),
                     (b'*', _, _) => (Tok::Op(Op::Star), 1),
                     (b'/', _, _) => (Tok::Op(Op::Slash), 1),
-                    (b'[' | b']' | b'|', _, _) => {
-                        return Some(
-                            self.fail(line, format!("lists are not supported (`{}`)", c as char)),
-                        );
-                    }
+                    (b'^', _, _) => (Tok::Op(Op::Caret), 1),
+                    (b'\\', _, _) => (Tok::Op(Op::Backslash), 1),
+                    (b'[', _, _) => (Tok::LBracket, 1),
+                    (b']', _, _) => (Tok::RBracket, 1),
+                    (b'|', _, _) => (Tok::Bar, 1),
                     _ => {
                         return Some(
                             self.fail(line, format!("unexpected character `{}`", c as char)),

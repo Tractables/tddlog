@@ -77,7 +77,8 @@ fn adornment_of(atom: &Atom, bound: &FxHashSet<String>) -> Adornment {
         .iter()
         .map(|t| match t {
             Term::Var(v) => bound.contains(v),
-            _ => true,
+            // A query's pattern is bound where it is ground.
+            t => t.is_ground(),
         })
         .collect()
 }
@@ -99,14 +100,21 @@ fn usable(rule: &Clause, adornment: &Adornment) -> Option<Adornment> {
         rule.body.iter().any(|l| match l {
             Literal::Is(Term::Var(w), e) if w == v => {
                 let mut vs = Vec::new();
-                e.vars(&mut vs);
-                vs.iter().any(|t| matches!(t, Term::Var(x) if x == v))
+                e.vars_into(&mut vs);
+                vs.contains(v)
             }
             other => literal_vars(other).contains(v),
         })
     };
+    // A variable the body does not mention at all, as the `_` of
+    // `walk([], _, _)`, only the demand binds.
+    let mentioned = |v: &String| rule.body.iter().any(|l| literal_vars(l).contains(v));
     let keeps = |i: usize, t: &Term| match t {
-        Term::Var(v) => read(v) || head.args.iter().enumerate().any(|(j, u)| j != i && u == t),
+        Term::Var(v) => {
+            read(v)
+                || !mentioned(v)
+                || head.args.iter().enumerate().any(|(j, u)| j != i && u == t)
+        }
         _ => true,
     };
     // A head of constants, as a tuple's, keeps all: asked first, without
@@ -192,6 +200,7 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
         queries: norm.queries.clone(),
         evidence: norm.evidence.clone(),
         query_drivers: norm.query_drivers.clone(),
+        counted: norm.counted.clone(),
         ..Default::default()
     };
     let mut control: FxHashSet<(Name, usize)> = FxHashSet::default();
@@ -286,8 +295,15 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
             // in the body, the literals copied only into a magic rule.
             let mut prefix: Vec<usize> = Vec::new();
             for (&i, lit) in ordered.iter().map(|i| (i, &rule.body[*i])) {
+                // A findall demands its goal's solutions for the values of
+                // the variables it shares.
+                let read;
                 let body_atom = match lit {
                     Literal::Pos(a) | Literal::Neg(a) => Some(a),
+                    Literal::Collect(c) => {
+                        read = c.pattern();
+                        Some(&read)
+                    }
                     _ => None,
                 };
                 if let Some(a) = body_atom
@@ -316,7 +332,13 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
             }
             let mut body = Vec::with_capacity(1 + ordered.len());
             body.push(guard);
-            body.extend(ordered.iter().map(|&i| rule.body[i].clone()));
+            // A counted rule keeps its literals in the order of the source,
+            // by which its derivations are ordered.
+            if norm.counted.contains(&(head.name.clone(), head.args.len())) {
+                body.extend(rule.body.iter().cloned());
+            } else {
+                body.extend(ordered.iter().map(|&i| rule.body[i].clone()));
+            }
             out.rules.push(Clause {
                 heads: rule.heads.clone(),
                 body,
@@ -343,12 +365,12 @@ mod tests {
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(text.contains(&"'$m_w_b'(3).".to_string()), "{text:?}");
         assert!(
-            text.contains(&"'$m_w_b'(P) :- '$m_w_b'(T), T>0, P is (T - 1).".to_string()),
+            text.contains(&"'$m_w_b'(P) :- '$m_w_b'(T), T>0, P is T-1.".to_string()),
             "{text:?}"
         );
         assert!(
             text.iter()
-                .any(|t| t.starts_with("w(T) :- '$m_w_b'(T), T>0, P is (T - 1),")),
+                .any(|t| t.starts_with("w(T) :- '$m_w_b'(T), T>0, P is T-1,")),
             "{text:?}"
         );
         assert!(m.control.contains(&("$m_w_b".into(), 1)));

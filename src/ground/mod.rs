@@ -77,6 +77,7 @@ pub(crate) mod shape;
 mod share;
 mod simplify;
 mod steps;
+pub(crate) mod terms;
 pub(crate) mod structure;
 mod table;
 pub(crate) mod tables;
@@ -185,6 +186,10 @@ pub(crate) fn ground_keeping(
     opts: &GroundOptions,
     keep: usize,
 ) -> Result<(GroundProgram, Option<Simplified>), GroundError> {
+    // Compound terms, list predicates and findalls are written as the
+    // Datalog the rest reads, with three built-in literals ([`terms`]).
+    let (program, counted) = terms::lower(program)?;
+    let program: &Program = &program;
     // A table-shaped program, a Bayesian network as one annotated
     // disjunction per row, is ground as written and its grounding is known
     // without the generic steps ([`table`]). Its noisy-or tables are first
@@ -212,7 +217,8 @@ pub(crate) fn ground_keeping(
         };
         return Ok(finish_keeping(gp, opts, keep));
     }
-    let norm = normalize::normalize(program)?;
+    let mut norm = normalize::normalize(program)?;
+    norm.counted = counted;
     // A transitive closure written with the chain rule holds what its linear
     // form holds in every world, and the linear form is what the bound-end
     // rewrite below and the compile's elimination of linear recursion take.
@@ -269,7 +275,7 @@ fn ground_norm(
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
     } else if let Some(gp) = match engine::ground_by_levels(norm, bound) {
-        Err(GroundError::OutOfMemory) => return Err(GroundError::OutOfMemory),
+        Err(e @ (GroundError::OutOfMemory | GroundError::Refused(_))) => return Err(e),
         levelled => levelled.ok().flatten(),
     } {
         gp
@@ -277,7 +283,9 @@ fn ground_norm(
         match magic::rewrite(norm) {
             Some(magic) => match engine::ground_normalized(&magic, bound) {
                 Ok(gp) => gp,
-                Err(e @ (GroundError::OverBound | GroundError::OutOfMemory)) => return Err(e),
+                Err(
+                    e @ (GroundError::OverBound | GroundError::OutOfMemory | GroundError::Refused(_)),
+                ) => return Err(e),
                 Err(_) => engine::ground_normalized(norm, bound)?,
             },
             None => engine::ground_normalized(norm, bound)?,

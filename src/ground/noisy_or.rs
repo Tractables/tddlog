@@ -457,6 +457,7 @@ mod tests {
             query_rules: Vec::new(),
             queries: program.queries.clone(),
             evidence: program.evidence.clone(),
+            interleaved: Vec::new(),
         };
         let rows = ground_rows(&p)
             .unwrap_or_else(|| panic!("the rewritten program is table-shaped:\n{p}"));

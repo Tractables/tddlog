@@ -4,47 +4,86 @@
 //! Positive atoms over predicates with rules bind their variables and stay in
 //! source order. Every other literal is placed as early as its variables allow:
 //! a switch atom (probabilistic fact) when its arguments are bound, a negative
-//! literal or comparison when all its variables are bound, `X = t` with exactly
-//! one unbound plain-variable side (it binds that side), `V is E` when `E` is
-//! bound (it binds `V`). Used by the grounder and by the magic-set rewrite, so
-//! both see the same sideways information passing.
+//! literal or comparison when all its variables are bound, `X = t` with one
+//! side an unbound variable and the other bound (it binds the variable), `V =
+//! f(A1,...,An)` with `V` bound (it binds the `Ai`), `V is E` when `E` is bound
+//! (it binds `V`), a list predicate when the arguments it reads are bound (it
+//! binds the others), a findall when the variables it shares with the clause
+//! are bound (it binds its result). Used by the grounder and by the magic-set
+//! rewrite, so both see the same sideways information passing.
 
-use crate::syntax::{CmpOp, Expr, Literal, Term};
+use crate::syntax::{CmpOp, Literal, Term};
 use rustc_hash::FxHashSet;
 
-fn expr_vars(e: &Expr, out: &mut Vec<String>) {
-    let mut vs = Vec::new();
-    e.vars(&mut vs);
-    for v in vs {
-        if let Term::Var(name) = v {
-            out.push(name);
-        }
-    }
-}
-
-/// Variables of a literal.
+/// Variables of a literal, each once, in order of first occurrence.
 pub(crate) fn literal_vars(l: &Literal) -> Vec<String> {
     let mut out = Vec::new();
     match l {
+        // An atom's arguments, the common literal, are flat but in a
+        // pattern: read without the walk of a term.
         Literal::Pos(a) | Literal::Neg(a) => {
             for t in &a.args {
-                if let Term::Var(v) = t {
-                    out.push(v.clone());
+                match t {
+                    Term::Var(v) => {
+                        if !out.contains(v) {
+                            out.push(v.clone());
+                        }
+                    }
+                    Term::Compound(_) => t.vars_into(&mut out),
+                    _ => {}
                 }
             }
         }
-        Literal::Cmp(_, a, b) => {
-            expr_vars(a, &mut out);
-            expr_vars(b, &mut out);
-        }
-        Literal::Is(v, e) => {
-            if let Term::Var(name) = v {
-                out.push(name.clone());
-            }
-            expr_vars(e, &mut out);
-        }
+        other => other.vars_into(&mut out),
     }
     out
+}
+
+/// Whether every variable of `t` is in `bound`.
+fn bound_term(t: &Term, bound: &FxHashSet<String>) -> bool {
+    match t {
+        Term::Var(v) => bound.contains(v),
+        Term::Compound(_) => {
+            let mut vs = Vec::new();
+            t.vars_into(&mut vs);
+            vs.iter().all(|v| bound.contains(v))
+        }
+        _ => true,
+    }
+}
+
+/// Whether `l`, pending, can be evaluated with `bound` bound; if so, the
+/// variables it binds are added to `bound`. `unbound` holds the variables of
+/// `l` not in `bound`.
+fn ready(l: &Literal, unbound: &[String], bound: &mut FxHashSet<String>) -> bool {
+    let bind_all = |bound: &mut FxHashSet<String>| {
+        bound.extend(unbound.iter().cloned());
+        true
+    };
+    match l {
+        _ if unbound.is_empty() => true,
+        Literal::Cmp(CmpOp::Eq, a, b) => {
+            let free = |t: &Term| matches!(t, Term::Var(v) if !bound.contains(v));
+            if (free(a) && bound_term(b, bound)) || (free(b) && bound_term(a, bound)) {
+                // `X = t` with `t` bound binds `X`.
+                bind_all(bound)
+            } else if (bound_term(a, bound) && matches!(b, Term::Compound(_)))
+                || (bound_term(b, bound) && matches!(a, Term::Compound(_)))
+            {
+                // `V = f(A..)` with `V` bound takes `V` apart.
+                bind_all(bound)
+            } else {
+                false
+            }
+        }
+        Literal::Is(v, e) => bound_term(e, bound) && v.is_var() && bind_all(bound),
+        Literal::Builtin(b, args, false) => {
+            let flags: Vec<bool> = args.iter().map(|t| bound_term(t, bound)).collect();
+            b.runs(&flags) && bind_all(bound)
+        }
+        Literal::Collect(c) => c.shared.iter().all(|t| bound_term(t, bound)) && bind_all(bound),
+        _ => false,
+    }
 }
 
 /// Schedule `body` starting from `bound` variables. `binds` says of the
@@ -68,42 +107,11 @@ pub(crate) fn schedule_body(
             let mut i = 0;
             while i < pending.len() {
                 let l = &body[pending[i]];
-                let unbound: Vec<String> = {
-                    let mut u: Vec<String> = literal_vars(l)
-                        .into_iter()
-                        .filter(|v| !bound.contains(v))
-                        .collect();
-                    u.dedup();
-                    u
-                };
-                let ready = match l {
-                    Literal::Cmp(CmpOp::Eq, a, b) => {
-                        let plain_unbound =
-                            |e: &Expr| matches!(e, Expr::Term(Term::Var(v)) if !bound.contains(v));
-                        if unbound.is_empty() {
-                            true
-                        } else if unbound.len() == 1 && (plain_unbound(a) || plain_unbound(b)) {
-                            bound.insert(unbound[0].clone());
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    Literal::Is(v, e) => {
-                        let mut ev = Vec::new();
-                        expr_vars(e, &mut ev);
-                        if ev.iter().all(|x| bound.contains(x)) {
-                            if let Term::Var(name) = v {
-                                bound.insert(name.clone());
-                            }
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    _ => unbound.is_empty(),
-                };
-                if ready {
+                let unbound: Vec<String> = literal_vars(l)
+                    .into_iter()
+                    .filter(|v| !bound.contains(v))
+                    .collect();
+                if ready(l, &unbound, bound) {
                     out.push(pending.remove(i));
                     progressed = true;
                 } else {

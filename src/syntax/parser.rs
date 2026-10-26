@@ -1,8 +1,10 @@
-//! Recursive-descent parser producing a [`Program`].
+//! Recursive-descent parser producing a [`Program`], with an operator
+//! precedence parser for terms.
 
 use super::lexer::{LexError, Lexer, Op, Spanned, Tok, kw};
 use super::{
-    Args, ArithOp, Atom, Clause, CmpOp, Expr, HeadChoice, Literal, Name, Program, QueryRule, Term,
+    Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice, Literal, NIL,
+    Name, Program, QueryRule, Term, infix_op, prefix_op,
 };
 use std::fmt;
 
@@ -105,7 +107,7 @@ pub fn parse_program(src: &str) -> Result<Program, ParseError> {
 enum Body {
     /// A conjunction of literals, in order; `true` the empty one.
     Lits(Vec<Literal>),
-    /// Two or more conjuncts, in order, not all conjunctions of literals.
+    /// Two or more conjuncts, in order.
     And(Vec<Body>),
     Or(Box<Body>, Box<Body>),
 }
@@ -151,6 +153,34 @@ impl Body {
                 xs
             }
         }
+    }
+
+    /// Whether a disjunction comes after another literal of a conjunction,
+    /// where the alternatives [`Body::dnf`] lists are not in the order in
+    /// which resolution tries them ([`Program::interleaved`]).
+    fn interleaved(&self) -> bool {
+        match self {
+            Body::Lits(_) => false,
+            Body::Or(a, b) => a.interleaved() || b.interleaved(),
+            Body::And(cs) => cs.iter().enumerate().any(|(k, c)| {
+                c.interleaved()
+                    || (!matches!(c, Body::Lits(_))
+                        && cs[..k]
+                            .iter()
+                            .any(|d| !matches!(d, Body::Lits(l) if l.is_empty())))
+            }),
+        }
+    }
+}
+
+/// Whether a literal named `name` of `arity` arguments is read other than
+/// as an atom: a comparison, `is`, a negation, an operator, `findall/3`.
+fn special(name: &str, arity: usize) -> bool {
+    match arity {
+        1 => name == "not" || prefix_op(name).is_some(),
+        2 => infix_op(name).is_some(),
+        3 => name == "findall",
+        _ => false,
     }
 }
 
@@ -221,14 +251,11 @@ impl<'a> Parser<'a> {
             ))
         }
     }
-    fn is_op(&self, op: Op) -> bool {
-        self.peek() == Tok::Op(op)
-    }
 
     fn clause(&mut self, prog: &mut Program) -> Result<(), ParseError> {
         if self.at(Tok::Neck) {
             self.bump();
-            let t = self.pterm()?;
+            let t = self.term(1200)?;
             self.expect(Tok::Dot)?;
             let Some((name, args)) = t.into_compound() else {
                 return self.err("unsupported directive");
@@ -288,6 +315,9 @@ impl<'a> Parser<'a> {
             // The heads go to the last alternative, and copies to the
             // others.
             body => {
+                if body.interleaved() {
+                    prog.interleaved.push(group);
+                }
                 let alts = body.dnf();
                 let last = alts.len() - 1;
                 let mut heads = heads;
@@ -331,12 +361,24 @@ impl<'a> Parser<'a> {
                 let t = self.args.pop().expect("an argument");
                 let (a, pol) = self.signed_atom(t, "evidence")?;
                 let v = match value {
-                    PTerm::Const(s) if &*s == "true" => true,
-                    PTerm::Const(s) if &*s == "false" => false,
+                    PTerm::Term(Term::Const(s)) if &*s == "true" => true,
+                    PTerm::Term(Term::Const(s)) if &*s == "false" => false,
                     _ => return self.err("evidence/2 expects true or false"),
                 };
                 prog.evidence.push((a, pol == v));
                 Ok(())
+            }
+            // The list predicates are built in ([`super::Builtin`]).
+            ("use_module", 1) => {
+                let t = self.args.pop().expect("an argument").into_term();
+                match t.as_compound() {
+                    Some((library, [Term::Const(lists)]))
+                        if &**library == "library" && &**lists == "lists" =>
+                    {
+                        Ok(())
+                    }
+                    _ => self.err(format!("unsupported directive use_module({t})")),
+                }
             }
             _ => self.err(format!("unsupported directive {name}/{arity}")),
         }
@@ -344,7 +386,7 @@ impl<'a> Parser<'a> {
 
     /// An atom or `\+ atom`, as `(atom, positive)`.
     fn signed_atom(&self, t: PTerm, what: &str) -> Result<(Atom, bool), ParseError> {
-        let negated = matches!(t.functor(), Some((n, 1)) if &**n == "\\+" || &**n == "not");
+        let negated = matches!(t.functor(), Some((n, 1)) if n == "\\+" || n == "not");
         let (t, pos) = if negated {
             let (_, mut args) = t.into_compound().expect("a compound");
             (args.pop().unwrap(), false)
@@ -395,7 +437,7 @@ impl<'a> Parser<'a> {
             }
             (Tok::Name(kw::T), Tok::LParen) => {
                 let save = self.mark();
-                let _ = self.pterm()?;
+                let _ = self.term(999)?;
                 if self.at(Tok::DoubleColon) {
                     return self.err("learnable probabilities t(...) are not supported");
                 }
@@ -482,16 +524,19 @@ impl<'a> Parser<'a> {
     /// [`Parser::lits`].
     fn unit(&mut self) -> Result<Option<Body>, ParseError> {
         if self.at(Tok::LParen) {
-            // Either a parenthesised body or a parenthesised expression in a
-            // comparison. Try the body reading first; a comparison operator
-            // after the closing paren means it was an expression.
+            // Either a parenthesised body or a parenthesised term in a
+            // comparison. Try the body reading first; an operator after the
+            // closing paren means it was a term.
             let save = self.mark();
             self.bump();
             if let Ok(b) = self.body()
                 && self.at(Tok::RParen)
             {
                 self.bump();
-                if !matches!(self.peek(), Tok::Op(_) | Tok::Name(kw::IS)) {
+                if self
+                    .infix_at()
+                    .is_none_or(|(name, ..)| name == "," || name == ";")
+                {
                     return Ok(Some(b));
                 }
             }
@@ -503,95 +548,104 @@ impl<'a> Parser<'a> {
     }
 
     fn literal(&mut self) -> Result<Literal, ParseError> {
-        if matches!(self.peek(), Tok::Naf | Tok::Name(kw::NOT)) {
-            self.bump();
-            let paren = self.at(Tok::LParen);
-            if paren {
-                self.bump();
+        let t = self.term(999)?;
+        self.literal_of(t)
+    }
+
+    /// The literal a term written as a goal is.
+    fn literal_of(&self, t: PTerm) -> Result<Literal, ParseError> {
+        let (name, mut args) = match t {
+            PTerm::Atom(name, args) if !special(&name, args.len()) => {
+                return Ok(Literal::Pos(Atom { name, args }));
             }
-            let a = self.atom()?;
-            if paren {
-                if self.at(Tok::Comma) || self.at(Tok::Semi) {
-                    return self.err(
-                        "negation of a compound goal is not supported; define a predicate for it",
-                    );
-                }
-                self.expect(Tok::RParen)?;
-            }
-            return Ok(Literal::Neg(a));
-        }
-        if self.peek() == Tok::Name(kw::TRUE) && !self.at2(Tok::LParen) {
-            self.bump();
-            return Ok(Literal::Cmp(
-                CmpOp::Eq,
-                Expr::Term(Term::Int(0)),
-                Expr::Term(Term::Int(0)),
-            ));
-        }
-        if matches!(self.peek(), Tok::Name(kw::FAIL | kw::FALSE)) && !self.at2(Tok::LParen) {
-            self.bump();
-            return Ok(Literal::Cmp(
-                CmpOp::Ne,
-                Expr::Term(Term::Int(0)),
-                Expr::Term(Term::Int(0)),
-            ));
-        }
-        // `Expr op Expr`, `Var is Expr`, or an atom.
-        let lhs = if let Tok::Name(_) = self.peek() {
-            let t = self.pterm()?;
-            let followed_by_op = matches!(self.peek(), Tok::Op(_) | Tok::Name(kw::IS | kw::MOD));
-            if !followed_by_op {
-                let line = self.line();
-                return t.into_atom().map(Literal::Pos).ok_or_else(|| ParseError {
-                    line,
-                    msg: "expected a literal".into(),
+            PTerm::Atom(name, args) => (name, Vec::from(args)),
+            PTerm::Term(Term::Compound(c)) => (c.name.clone(), c.args.to_vec()),
+            PTerm::Term(Term::Const(c)) => {
+                return Ok(match &*c {
+                    "true" => Literal::Cmp(CmpOp::Eq, Term::Int(0), Term::Int(0)),
+                    "fail" | "false" => Literal::Cmp(CmpOp::Ne, Term::Int(0), Term::Int(0)),
+                    _ => Literal::Pos(Atom::new(c, Args::default())),
                 });
             }
-            let line = self.line();
-            let first = t.into_term().map(Expr::Term).ok_or_else(|| ParseError {
-                line,
-                msg: "function symbols are not supported in expressions".into(),
-            })?;
-            self.arith_low(Some(first))?
-        } else {
-            self.arith_low(None)?
+            PTerm::Term(other) => return self.err(format!("expected a literal, found {other}")),
         };
-        if self.peek() == Tok::Name(kw::IS) {
-            self.bump();
-            let rhs = self.arith_low(None)?;
-            let v = match lhs {
-                Expr::Term(t) => t,
-                _ => return self.err("left side of `is` must be a variable or number"),
-            };
-            return Ok(Literal::Is(v, rhs));
-        }
-        if let Tok::Op(op) = self.peek() {
-            let op = match op {
-                Op::Eq => CmpOp::Eq,
-                Op::Ne => CmpOp::Ne,
-                Op::Identical => CmpOp::Identical,
-                Op::NotIdentical => CmpOp::NotIdentical,
-                Op::Lt => CmpOp::Lt,
-                Op::Le => CmpOp::Le,
-                Op::Gt => CmpOp::Gt,
-                Op::Ge => CmpOp::Ge,
-                Op::Plus | Op::Minus | Op::Star | Op::Slash => {
-                    return self.err(format!("unexpected operator {}", op.text()));
-                }
-            };
-            self.bump();
-            let rhs = self.arith_low(None)?;
-            return Ok(Literal::Cmp(op, lhs, rhs));
-        }
-        match lhs {
-            Expr::Term(t) => self.err(format!("expected a literal, found {t}")),
-            _ => self.err("expected a literal, found an arithmetic expression"),
+        match (&*name, args.len()) {
+            ("is", 2) => {
+                let e = args.pop().expect("two arguments");
+                let v = args.pop().expect("two arguments");
+                Ok(Literal::Is(v, e))
+            }
+            (op, 2) if CmpOp::of(op).is_some() => {
+                let b = args.pop().expect("two arguments");
+                let a = args.pop().expect("two arguments");
+                Ok(Literal::Cmp(CmpOp::of(op).expect("a comparison"), a, b))
+            }
+            ("\\+" | "not", 1) => self.negation(args.pop().expect("an argument")),
+            ("findall", 3) => {
+                let result = args.pop().expect("three arguments");
+                let goal = self.goal(args.pop().expect("three arguments"))?;
+                let template = args.pop().expect("three arguments");
+                let interleaved = goal.interleaved();
+                Ok(Literal::Findall(Box::new(Findall {
+                    template,
+                    goal: goal.dnf(),
+                    result,
+                    interleaved,
+                })))
+            }
+            ("->", 2) => self.err("if-then-else is not supported"),
+            (",", 2) | (";", 2) => self.err("expected a literal, found a conjunction"),
+            (op, n) if special(op, n) => {
+                let t = Compound::term(name.clone(), args);
+                self.err(format!("expected a literal, found {t}"))
+            }
+            _ => Ok(Literal::Pos(Atom::new(name, args))),
         }
     }
 
-    /// Parse an atom in body position (for `\+`).
+    /// The literal `\+ t`.
+    fn negation(&self, t: Term) -> Result<Literal, ParseError> {
+        const COMPOUND: &str =
+            "negation of a negation or a compound goal is not supported; define a predicate for it";
+        if matches!(t.as_compound(), Some((n, [_, _])) if matches!(&**n, "," | ";")) {
+            return self.err(COMPOUND);
+        }
+        match self.literal_of(PTerm::Term(t))? {
+            Literal::Pos(a) => Ok(Literal::Neg(a)),
+            Literal::Cmp(op, a, b) => Ok(Literal::Cmp(op.negated(), a, b)),
+            Literal::Is(..) => self.err("negation of `is` is not supported"),
+            Literal::Findall(_) => self.err("negation of findall/3 is not supported"),
+            _ => self.err(COMPOUND),
+        }
+    }
+
+    /// The body a goal term is: conjunctions and disjunctions of literals.
+    fn goal(&self, t: Term) -> Result<Body, ParseError> {
+        match t.as_compound() {
+            Some((name, [a, b])) if &**name == "," => {
+                let mut conjuncts = Vec::new();
+                for part in [a, b] {
+                    match self.goal(part.clone())? {
+                        Body::And(cs) => conjuncts.extend(cs),
+                        other => conjuncts.push(other),
+                    }
+                }
+                Ok(Body::And(conjuncts))
+            }
+            Some((name, [a, b])) if &**name == ";" => Ok(Body::Or(
+                Box::new(self.goal(a.clone())?),
+                Box::new(self.goal(b.clone())?),
+            )),
+            _ if matches!(t, Term::Var(_) | Term::Int(_) | Term::Float(_)) => {
+                self.err(format!("a goal must be an atom, found {t}"))
+            }
+            _ => Ok(Body::Lits(vec![self.literal_of(PTerm::Term(t))?])),
+        }
+    }
+
+    /// Parse an atom: a head, or the atom of a query or of evidence.
     fn atom(&mut self) -> Result<Atom, ParseError> {
-        let t = self.pterm()?;
+        let t = self.term(999)?;
         let line = self.line();
         t.into_atom().ok_or_else(|| ParseError {
             line,
@@ -599,92 +653,48 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn arith_low(&mut self, first: Option<Expr>) -> Result<Expr, ParseError> {
-        let mut e = self.arith_high(first)?;
-        loop {
-            let op = if self.is_op(Op::Plus) {
-                ArithOp::Add
-            } else if self.is_op(Op::Minus) {
-                ArithOp::Sub
-            } else {
-                break;
-            };
-            self.bump();
-            let rhs = self.arith_high(None)?;
-            e = Expr::Bin(op, Box::new(e), Box::new(rhs));
-        }
-        Ok(e)
-    }
-
-    fn arith_high(&mut self, first: Option<Expr>) -> Result<Expr, ParseError> {
-        let mut e = match first {
-            Some(e) => e,
-            None => self.arith_unary()?,
+    /// The infix operator at hand: its name, priority and grouping. A
+    /// comma and a semicolon are operators inside a term in parentheses,
+    /// above the priority of an argument or a literal.
+    fn infix_at(&self) -> Option<(&'static str, u16, Assoc)> {
+        let name = match self.peek() {
+            Tok::Op(op) => op.text(),
+            Tok::Name(kw::IS) => "is",
+            Tok::Name(kw::MOD) => "mod",
+            Tok::Name(kw::REM) => "rem",
+            Tok::Name(kw::XOR) => "xor",
+            Tok::Comma => ",",
+            Tok::Semi => ";",
+            _ => return None,
         };
-        loop {
-            let op = if self.is_op(Op::Star) {
-                ArithOp::Mul
-            } else if self.is_op(Op::Slash) {
-                // `//` lexes as two `/` tokens. ProbLog's `/` divides in
-                // floating point (`X is 4 / 2` binds 2.0, which is not 2).
-                if self.peek2() != Tok::Op(Op::Slash) {
-                    return self.err("`/` divides in floating point, which tddlog does not; `//` divides integers");
-                }
-                self.bump();
-                ArithOp::Div
-            } else if self.peek() == Tok::Name(kw::MOD) {
-                ArithOp::Mod
-            } else {
+        let (p, assoc) = infix_op(name)?;
+        Some((name, p, assoc))
+    }
+
+    /// A term of priority up to `max`: a primary term followed by infix
+    /// operators, each argument read at the priority its operator allows.
+    fn term(&mut self, max: u16) -> Result<PTerm, ParseError> {
+        let (mut left, mut priority) = self.primary()?;
+        while let Some((name, p, assoc)) = self.infix_at() {
+            let left_max = if assoc == Assoc::Yfx { p } else { p - 1 };
+            if p > max || priority > left_max {
                 break;
-            };
+            }
             self.bump();
-            let rhs = self.arith_unary()?;
-            e = Expr::Bin(op, Box::new(e), Box::new(rhs));
+            let right = self.term(if assoc == Assoc::Xfy { p } else { p - 1 })?;
+            let name = self.lexer.intern(name);
+            left = PTerm::Term(Compound::term(
+                name,
+                vec![left.into_term(), right.into_term()],
+            ));
+            priority = p;
         }
-        Ok(e)
+        Ok(left)
     }
 
-    fn arith_unary(&mut self) -> Result<Expr, ParseError> {
-        if self.is_op(Op::Minus) {
-            self.bump();
-            let e = self.arith_unary()?;
-            return Ok(match e {
-                Expr::Term(Term::Int(i)) => Expr::Term(Term::Int(-i)),
-                other => Expr::Neg(Box::new(other)),
-            });
-        }
-        if self.is_op(Op::Plus) {
-            self.bump();
-            return self.arith_unary();
-        }
-        match self.peek() {
-            Tok::LParen => {
-                self.bump();
-                let e = self.arith_low(None)?;
-                self.expect(Tok::RParen)?;
-                Ok(e)
-            }
-            Tok::Int(i) => {
-                self.bump();
-                Ok(Expr::Term(Term::Int(i)))
-            }
-            Tok::Float(x) => self.err(format!(
-                "floating point numbers are not supported in expressions ({x})"
-            )),
-            Tok::Var(_) | Tok::Name(_) => {
-                let t = self.pterm()?;
-                let line = self.line();
-                t.into_term().map(Expr::Term).ok_or_else(|| ParseError {
-                    line,
-                    msg: "function symbols are not supported in expressions".into(),
-                })
-            }
-            other => self.err(format!("unexpected {}", self.lexer.show(other))),
-        }
-    }
-
-    /// A possibly compound term.
-    fn pterm(&mut self) -> Result<PTerm, ParseError> {
+    /// A term without an infix operator at its top, and its priority: a
+    /// prefix operator's, 0 for any other.
+    fn primary(&mut self) -> Result<(PTerm, u16), ParseError> {
         if let Tok::Name(id) = self.peek()
             && self.at2(Tok::LParen)
         {
@@ -695,54 +705,91 @@ impl<'a> Parser<'a> {
             let args = self.lexer.flat_arguments(&mut self.terms, &mut self.anon);
             self.bump();
             self.bump();
-            return match args {
-                Some(args) => Ok(PTerm::Atom(n, args)),
-                None => self.arguments(n),
-            };
+            return Ok((
+                match args {
+                    Some(args) => PTerm::Atom(n, args),
+                    None => self.arguments(n)?,
+                },
+                0,
+            ));
         }
         if let Some(t) = self.flat_term() {
-            return Ok(t.into());
+            return Ok((PTerm::Term(t), 0));
         }
-        match self.bump() {
-            Tok::Float(x) => self.err(format!("floating point constants are not supported ({x})")),
-            Tok::Op(Op::Minus) => {
-                // `-` and an integer is one, which `flat_term` takes.
-                let other = self.bump();
-                self.err(format!("unexpected {} after `-`", self.lexer.show(other)))
-            }
-            Tok::Naf => {
-                let start = self.args.len();
-                let inner = self.pterm()?;
-                self.args.push(inner);
-                Ok(self.compound("\\+".into(), start))
+        let (name, p) = match self.peek() {
+            Tok::Name(kw::NOT) | Tok::Naf => ("\\+", 900),
+            Tok::Op(op @ (Op::Minus | Op::Plus | Op::Backslash)) => {
+                (op.text(), prefix_op(op.text()).expect("a prefix operator"))
             }
             Tok::LParen => {
-                let t = self.pterm()?;
+                self.bump();
+                let t = self.term(1200)?;
                 self.expect(Tok::RParen)?;
-                Ok(t)
+                return Ok((t, 0));
             }
-            other => self.err(format!("unexpected {}", self.lexer.show(other))),
-        }
+            Tok::LBracket => return Ok((self.list()?, 0)),
+            other => return self.err(format!("unexpected {}", self.lexer.show(other))),
+        };
+        self.bump();
+        let arg = self.term(p)?.into_term();
+        let name = self.lexer.intern(name);
+        Ok((PTerm::Term(Compound::term(name, vec![arg])), p))
     }
 
-    /// The flat term at hand, if it is one, taken: an integer, a negative
-    /// one, a variable (`_` a fresh one), or a name not followed by `(`.
-    /// Inlined, as it is called per argument.
+    /// A list, `[` at hand: `[]`, `[a, b]` or `[a, b | T]`.
+    fn list(&mut self) -> Result<PTerm, ParseError> {
+        self.bump();
+        let nil = Term::Const(self.lexer.intern(NIL));
+        if self.at(Tok::RBracket) {
+            self.bump();
+            return Ok(PTerm::Term(nil));
+        }
+        let mut items = vec![self.term(999)?.into_term()];
+        while self.at(Tok::Comma) {
+            self.bump();
+            items.push(self.term(999)?.into_term());
+        }
+        let tail = if self.at(Tok::Bar) {
+            self.bump();
+            self.term(999)?.into_term()
+        } else {
+            nil
+        };
+        self.expect(Tok::RBracket)?;
+        let cons = self.lexer.intern(CONS);
+        Ok(PTerm::Term(items.into_iter().rev().fold(tail, |t, x| {
+            Compound::term(cons.clone(), vec![x, t])
+        })))
+    }
+
+    /// The flat term at hand, if it is one, taken: a number, a negative
+    /// one, a variable (`_` a fresh one), or a name not followed by `(`
+    /// (`not` before a term is the prefix operator). Inlined, as it is
+    /// called per argument.
     #[inline(always)]
     fn flat_term(&mut self) -> Option<Term> {
         let t = match (self.peek(), self.peek2()) {
             (Tok::Int(i), _) => Term::Int(i),
+            (Tok::Float(x), _) => Term::Float(F64::rounded(x)),
             (Tok::Var("_"), _) => {
                 self.anon += 1;
                 Term::Var(format!("_G{}", self.anon))
             }
             (Tok::Var(v), _) => Term::Var(v.to_owned()),
+            (
+                Tok::Name(kw::NOT),
+                Tok::Name(_) | Tok::Var(_) | Tok::LParen | Tok::LBracket | Tok::Naf,
+            ) => return None,
             (Tok::Name(id), _) if !self.at2(Tok::LParen) => {
                 Term::Const(self.lexer.name(id).clone())
             }
             (Tok::Op(Op::Minus), Tok::Int(i)) => {
                 self.bump();
                 Term::Int(-i)
+            }
+            (Tok::Op(Op::Minus), Tok::Float(x)) => {
+                self.bump();
+                Term::Float(F64::rounded(-x))
             }
             _ => return None,
         };
@@ -751,9 +798,8 @@ impl<'a> Parser<'a> {
     }
 
     /// The compound of `name`, its `(` read, over the arguments up to its
-    /// `)`: allowing `\+ x` inside `evidence(..)`. The arguments of an
-    /// atom are read in the lexer ([`Lexer::flat_arguments`]), those of
-    /// any other compound here.
+    /// `)`. The arguments of an atom are read in the lexer
+    /// ([`Lexer::flat_arguments`]), those of any other compound here.
     fn arguments(&mut self, name: Name) -> Result<PTerm, ParseError> {
         let start = self.args.len();
         self.argument_list()?;
@@ -763,11 +809,11 @@ impl<'a> Parser<'a> {
     /// The arguments of a compound, its `(` read, up to and past its `)`,
     /// onto [`Parser::args`].
     fn argument_list(&mut self) -> Result<(), ParseError> {
-        let arg = self.pterm()?;
+        let arg = self.term(999)?;
         self.args.push(arg);
         while self.at(Tok::Comma) {
             self.bump();
-            let arg = self.pterm()?;
+            let arg = self.term(999)?;
             self.args.push(arg);
         }
         self.expect(Tok::RParen)
@@ -781,76 +827,64 @@ impl<'a> Parser<'a> {
                 name,
                 self.args
                     .drain(start..)
-                    .map(|t| t.into_term().expect("a flat term"))
+                    .map(PTerm::into_term)
                     .collect::<Args>(),
             )
         } else {
-            PTerm::Compound(name, self.args.split_off(start))
+            let args = self.args.drain(start..).map(PTerm::into_term).collect();
+            PTerm::Term(Compound::term(name, args))
         }
     }
 }
 
-/// Parser-internal term that still allows compounds, so `query(p(X))` parses.
+/// A term as the parser reads it: a compound with flat arguments, the
+/// common one, as an atom's name and arguments, read as an atom without a
+/// compound made for it.
 #[derive(Clone, Debug)]
 enum PTerm {
-    Const(Name),
-    Int(i64),
-    Var(String),
-    /// A compound with flat arguments, the atom's own.
+    Term(Term),
     Atom(Name, Args),
-    /// A compound with a compound among its arguments.
-    Compound(Name, Vec<PTerm>),
-}
-
-impl From<Term> for PTerm {
-    fn from(t: Term) -> PTerm {
-        match t {
-            Term::Const(c) => PTerm::Const(c),
-            Term::Int(i) => PTerm::Int(i),
-            Term::Var(v) => PTerm::Var(v),
-        }
-    }
 }
 
 impl PTerm {
     fn is_flat(&self) -> bool {
-        matches!(self, PTerm::Const(_) | PTerm::Int(_) | PTerm::Var(_))
+        matches!(self, PTerm::Term(t) if !matches!(t, Term::Compound(_)))
     }
-    fn into_term(self) -> Option<Term> {
+    fn into_term(self) -> Term {
         match self {
-            PTerm::Const(c) => Some(Term::Const(c)),
-            PTerm::Int(i) => Some(Term::Int(i)),
-            PTerm::Var(v) => Some(Term::Var(v)),
-            PTerm::Atom(..) | PTerm::Compound(..) => None,
+            PTerm::Term(t) => t,
+            PTerm::Atom(name, args) => Compound::term(name, args.into()),
         }
     }
-    /// An atom: a constant or a compound with flat arguments.
+    /// An atom: a constant or a compound.
     fn into_atom(self) -> Option<Atom> {
         match self {
-            PTerm::Const(c) => Some(Atom {
-                name: c,
-                args: Args::default(),
-            }),
             PTerm::Atom(name, args) => Some(Atom { name, args }),
-            _ => None,
+            PTerm::Term(Term::Const(c)) => Some(Atom::new(c, Args::default())),
+            PTerm::Term(Term::Compound(c)) => Some(Atom::new(c.name.clone(), c.args.to_vec())),
+            PTerm::Term(_) => None,
         }
     }
     /// A compound's name and arity.
-    fn functor(&self) -> Option<(&Name, usize)> {
+    fn functor(&self) -> Option<(&str, usize)> {
         match self {
             PTerm::Atom(n, args) => Some((n, args.len())),
-            PTerm::Compound(n, args) => Some((n, args.len())),
-            _ => None,
+            PTerm::Term(Term::Compound(c)) => Some((&c.name, c.args.len())),
+            PTerm::Term(_) => None,
         }
     }
     /// A compound's name and arguments.
     fn into_compound(self) -> Option<(Name, Vec<PTerm>)> {
         match self {
-            PTerm::Atom(n, args) => {
-                Some((n, Vec::from(args).into_iter().map(PTerm::from).collect()))
-            }
-            PTerm::Compound(n, args) => Some((n, args)),
-            _ => None,
+            PTerm::Atom(n, args) => Some((
+                n,
+                Vec::from(args).into_iter().map(PTerm::Term).collect(),
+            )),
+            PTerm::Term(Term::Compound(c)) => Some((
+                c.name.clone(),
+                c.args.iter().cloned().map(PTerm::Term).collect(),
+            )),
+            PTerm::Term(_) => None,
         }
     }
 }
@@ -909,25 +943,53 @@ mod tests {
         assert_eq!(p.clauses[0].body.len(), 2);
         assert_eq!(p.clauses[1].body.len(), 1);
         assert_eq!(p.clauses[4].body.len(), 3);
+        assert!(p.interleaved.is_empty());
+        let p = parse_program("a :- b, (c ; d).\ne :- (c ; d), b.\n").unwrap();
+        assert_eq!(p.interleaved, vec![0]);
     }
 
     #[test]
     fn arithmetic_and_alt_neck() {
-        let p =
-            parse_program("1/3::a <- true.\np(X) :- q(Y), X is Y*2+1, X > -3, X =:= 7.\n").unwrap();
+        let p = parse_program(
+            "1/3::a <- true.\np(X) :- q(Y), X is Y*2+1, X > -3, X =:= 7, Z is 2 ** -1 / 4.\n",
+        )
+        .unwrap();
         assert!((p.clauses[0].heads[0].prob.unwrap() - 1.0 / 3.0).abs() < 1e-12);
         let c = &p.clauses[1];
-        assert_eq!(c.body.len(), 4);
-        assert_eq!(c.body[1].to_string(), "X is ((Y * 2) + 1)");
+        assert_eq!(c.body.len(), 5);
+        assert_eq!(c.body[1].to_string(), "X is Y*2+1");
         assert_eq!(c.body[2].to_string(), "X>-3");
+        assert!(matches!(c.body[3], Literal::Cmp(CmpOp::ArithEq, _, _)));
+        assert_eq!(c.body[4].to_string(), "Z is 2**-1/4");
+        let p = parse_program("p(X) :- X is (1 + 2) * 3 - 4 - 5 mod 2.\n").unwrap();
+        assert_eq!(p.clauses[0].body[0].to_string(), "X is (1+2)*3-4-5 mod 2");
     }
 
     #[test]
-    fn refuses_float_division() {
-        // ProbLog's `/` binds 2.0 for 4 / 2, which is not 2.
-        let e = parse_program("p(X) :- q(Y), X is Y / 2.\n").unwrap_err();
-        assert!(e.msg.contains("`//`"), "{e}");
-        assert!(parse_program("p(X) :- q(Y), X is Y // 2.\n").is_ok());
+    fn terms_lists_and_floats() {
+        let p = parse_program(
+            "s([the, X | T], 0.5, -1.5e3, f(g(X), [])) :- T = [a|[b]], Y = T - 1, \\+ Y = a.\n",
+        )
+        .unwrap();
+        let c = &p.clauses[0];
+        assert_eq!(
+            c.heads[0].atom.to_string(),
+            "s([the, X | T],0.5,-1500.0,f(g(X),[]))"
+        );
+        assert_eq!(c.body[0].to_string(), "T=[a, b]");
+        assert_eq!(c.body[1].to_string(), "Y=T-1");
+        assert!(matches!(c.body[2], Literal::Cmp(CmpOp::Ne, _, _)));
+        let p = parse_program(
+            ":- use_module(library(lists)).\nq :- findall(X-Y, (p(X), r(X, Y) ; s(X, Y)), L), length(L, N).\n",
+        )
+        .unwrap();
+        let Literal::Findall(fa) = &p.clauses[0].body[0] else {
+            panic!("a findall");
+        };
+        assert_eq!(fa.template.to_string(), "X-Y");
+        assert_eq!(fa.goal.len(), 2);
+        assert!(!fa.interleaved);
+        assert!(parse_program(":- use_module(library(apply)).\n").is_err());
     }
 
     #[test]
@@ -953,11 +1015,6 @@ mod tests {
     }
 
     #[test]
-    fn rejects_function_symbols() {
-        assert!(parse_program("p(f(X)).").is_err());
-    }
-
-    #[test]
     fn quoted_atoms_and_anonymous_vars() {
         let p = parse_program("p('Hello World', _, _, \"x\").").unwrap();
         let a = &p.clauses[0].heads[0].atom;
@@ -978,17 +1035,22 @@ mod tests {
         assert_eq!(p.queries[0].0.to_string(), "p(_G1,-2,b)");
         assert_eq!(p.evidence[0].0.to_string(), "q(_G1,0,_G2)");
         assert!(!p.evidence[0].1);
+        let p = parse_program("p(a, f(_), _).\n").unwrap();
+        assert_eq!(p.clauses[0].heads[0].atom.to_string(), "p(a,f(_G1),_G2)");
     }
 
     #[test]
     fn atom_arguments_read_in_the_lexer() {
         // The arguments the lexer reads: names, quoted ones, variables,
-        // `_`, integers and negative ones, with blanks, comments and lines
+        // `_`, numbers and negative ones, with blanks, comments and lines
         // between them, in heads, bodies and queries.
-        let src = "p(a, 'B c', X, _, 3, - 4, -5, _) :- q(_, a), \\+ r(b,\n  % c\n  X).\nquery(s(1)).\n0.5::t(x); 0.5::u(y, z).\n";
+        let src = "p(a, 'B c', X, _, 3, - 4, -5, _, 0.5) :- q(_, a), \\+ r(b,\n  % c\n  X).\nquery(s(1)).\n0.5::t(x); 0.5::u(y, z).\n";
         let p = parse_program(src).unwrap();
         let c = &p.clauses[0];
-        assert_eq!(c.heads[0].atom.to_string(), "p(a,'B c',X,_G1,3,-4,-5,_G2)");
+        assert_eq!(
+            c.heads[0].atom.to_string(),
+            "p(a,'B c',X,_G1,3,-4,-5,_G2,0.5)"
+        );
         assert_eq!(c.body[0].to_string(), "q(_G3,a)");
         assert_eq!(c.body[1].to_string(), "\\+r(b,X)");
         assert_eq!(p.queries[0].0.to_string(), "s(1)");
@@ -1008,19 +1070,21 @@ mod tests {
         // parser reads the tokens the lexer gave back, with its errors on
         // their lines.
         let err = |src: &str| parse_program(src).unwrap_err().to_string();
-        assert_eq!(err("p(a, f(b))."), "line 1: expected an atom");
         assert_eq!(
             err("p(a,\n\n b c)."),
             "line 3: expected `)`, found name `c`"
         );
-        assert_eq!(
-            err("p(a, 1.5)."),
-            "line 1: floating point constants are not supported (1.5)"
-        );
-        assert_eq!(err("p(a, - b)."), "line 1: unexpected name `b` after `-`");
         assert_eq!(err("p(a,\n $)."), "line 2: unexpected character `$`");
         assert_eq!(err("p(a, b"), "line 1: expected `)`, found end of input");
-        assert_eq!(err("foo(_) :- bar(_, g(_))."), "line 1: expected a literal");
+        assert_eq!(err("foo :- 3."), "line 1: expected a literal, found 3");
+        assert_eq!(
+            err("foo :- X + 1."),
+            "line 1: expected a literal, found X+1"
+        );
+        assert_eq!(
+            err("foo :- \\+ (a, b)."),
+            "line 1: negation of a negation or a compound goal is not supported; define a predicate for it"
+        );
         // A compound argument, `\+` and an atom named `not` inside query/1
         // and evidence/2, read with the anonymous variables in order.
         let p = parse_program("evidence(\\+ e(_, 1), true).\nquery(not(q(_))).\n").unwrap();
@@ -1028,6 +1092,8 @@ mod tests {
         assert!(!p.evidence[0].1);
         assert_eq!(p.queries[0].0.to_string(), "q(_G1)");
         assert!(!p.queries[0].1);
+        let p = parse_program("p(a, - b).\n").unwrap();
+        assert_eq!(p.clauses[0].heads[0].atom.to_string(), "p(a,-b)");
     }
 
     #[test]
@@ -1038,10 +1104,6 @@ mod tests {
         assert_eq!(err("p :- q.\nq $ r.\n"), "line 2: unexpected character `$`");
         assert_eq!(err("p.\n'open"), "line 2: unterminated quoted atom");
         assert_eq!(err("p :- (q, $)."), "line 1: unexpected character `$`");
-        assert_eq!(
-            err("p :- q([a|T])."),
-            "line 1: lists are not supported (`[`)"
-        );
         // A parse error before it.
         assert_eq!(
             err("a :- b c.\nd $.\n"),

@@ -65,7 +65,7 @@
 
 <section class="card prose" id="getting-started">
   <h2>Getting started</h2>
-  <p>tddlog reads a probabilistic logic program in the Datalog fragment of
+  <p>tddlog reads a probabilistic logic program written in
   ProbLog and prints the probability of each of its queries given its
   evidence. The answers are exact: tddlog compiles the program into tree
   decision diagrams and counts the queries on them.</p>
@@ -140,10 +140,10 @@ P(e):   1.960000e-1     log10 -0.707744</pre>
 
 <section class="card prose" id="language">
   <h2>The language</h2>
-  <p>tddlog reads the Datalog fragment of ProbLog: atoms whose arguments
-  are constants, integers and variables. A program for tddlog is a program
-  ProbLog reads too, and the repository's tests check tddlog's answers
-  against ProbLog's.</p>
+  <p>tddlog reads ProbLog without cut: atoms whose arguments are
+  constants, numbers, variables and compound terms, lists among them. A
+  program for tddlog is a program ProbLog reads too, and the repository's
+  tests check tddlog's answers against ProbLog's.</p>
 
   <h3 id="facts-and-rules">Facts and rules</h3>
 <pre data-lang="problog">edge(1,2).                           % a fact
@@ -190,15 +190,42 @@ c :- not(a).
 <pre data-lang="problog">n(1). n(2). n(3).
 0.5::x(N) :- n(N).
 s(S) :- x(A), x(B), A &lt; B, S is A + B.</pre>
-  <p><code>is</code> evaluates integer arithmetic: <code>+</code>,
-  <code>-</code>, <code>*</code>, <code>//</code> and <code>mod</code>.
-  The comparisons are <code>=</code>, <code>\=</code>, <code>==</code>,
-  <code>\==</code>, <code>&lt;</code>, <code>&gt;</code>,
-  <code>=&lt;</code> and <code>&gt;=</code>. tddlog grounds a program
-  before it compiles it, so the variables of an arithmetic expression or a
-  comparison must be bound by a positive atom of the body; tddlog orders a
-  body so that the atoms that bind come first. Floating-point arithmetic is
-  not supported.</p>
+  <p><code>is</code> evaluates arithmetic as ProbLog does, which is as
+  Python does: <code>+</code>, <code>-</code>, <code>*</code>,
+  <code>/</code> (in floating point: <code>X is 4 / 2</code> binds
+  <code>2.0</code>), <code>//</code> (rounded down), <code>mod</code>,
+  <code>**</code>, <code>abs</code>, <code>min</code>, <code>max</code>
+  and the like. The arithmetic comparisons <code>&lt;</code>,
+  <code>&gt;</code>, <code>=&lt;</code>, <code>&gt;=</code>,
+  <code>=:=</code> and <code>=\=</code> evaluate both sides;
+  <code>=</code> and <code>\=</code> unify terms, and <code>==</code>,
+  <code>\==</code>, <code>@&lt;</code> and the like compare them in
+  ProbLog's standard order. tddlog grounds a program before it compiles
+  it, so the variables of an arithmetic expression or a comparison must be
+  bound by a positive atom of the body; tddlog orders a body so that the
+  atoms that bind come first.</p>
+
+  <h3 id="terms-and-lists">Terms, lists and findall</h3>
+<pre data-lang="problog">0.4::item(a). 0.7::item(b). 0.5::item(c).
+cost(a, 3). cost(b, 4). cost(c, 5).
+first_two :- nth1(1, [a, b, c], X), nth1(2, [a, b, c], Y), item(X), item(Y).
+total(S) :- findall(C, cost(_, C), L), sum_list(L, S).
+query(first_two).
+query(total(_)).</pre>
+  <p>Arguments may be compound terms, <code>f(X, g(Y))</code>, and lists,
+  <code>[a, b | T]</code>; <code>N1 = N - 1</code> binds
+  <code>N1</code> to the term <code>N - 1</code>, which <code>is</code>
+  evaluates. The list predicates of ProbLog's library are built in:
+  <code>member/2</code>, <code>memberchk/2</code>, <code>append/3</code>,
+  <code>length/2</code>, <code>nth0/3</code>, <code>nth1/3</code>,
+  <code>last/2</code>, <code>reverse/2</code>, <code>sum_list/2</code>,
+  <code>max_list/2</code>, <code>min_list/2</code>, <code>sort/2</code>
+  and <code>between/3</code>, unless the program defines its own.
+  <code>findall/3</code> collects the solutions of a deterministic goal in
+  ProbLog's order, and its list may then be counted, summed or sorted
+  under probabilistic facts, as <code>total</code> above. tddlog grounds
+  the program to one without terms, which it compiles as any other: a
+  term is a value of the grounding.</p>
 
   <h3 id="evidence-and-queries">Evidence and queries</h3>
 <pre data-lang="problog">evidence(calls(john), true).
@@ -216,19 +243,23 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
 
   <h3 id="not-read">What tddlog does not read</h3>
   <ul>
-    <li>function symbols (<code>a(f(1))</code>), lists, strings and
-    floating-point arithmetic;</li>
-    <li>cut, <code>findall</code> and the other built-ins beyond arithmetic
-    and comparison, and directives such as <code>use_module</code>;</li>
+    <li>strings, cut, if-then-else and the built-ins beyond arithmetic,
+    comparison, the list predicates and <code>findall/3</code>;</li>
+    <li>a <code>findall/3</code> over a probabilistic goal, whose answer
+    in ProbLog is a distribution over lists, over a recursive goal, or
+    with a solution that has two proofs, which ProbLog lists twice;</li>
+    <li>a grounding that does not end, as
+    <code>nat(s(X)) :- nat(X).</code> asked for every
+    <code>nat(X)</code>;</li>
     <li>facts with variables (<code>p(X).</code>) and rules that are not
     range restricted: each variable of a head, of a negated literal and of
     a comparison must occur in a positive atom of the body, though a query
-    can bind a head's variables.</li>
+    or a call can bind a head's variables.</li>
   </ul>
   <p>Each of these stops tddlog with a message and exit status 1, as
   in</p>
-<pre data-lang="shell">$ tddlog lists.pl
-parse error: line 1: lists are not supported (`[`)</pre>
+<pre data-lang="shell">$ tddlog choice.pl
+parse error: line 1: if-then-else is not supported</pre>
   <p>Of ProbLog 2.3's 109 system tests, tddlog passes 47, reports as
   errors the 7 that ProbLog expects to fail, and reports the other 55 as
   unsupported (<a href="https://github.com/Tractables/tddlog/blob/main/tests/problog_suite.py"><code>tests/problog_suite.py</code></a>).</p>

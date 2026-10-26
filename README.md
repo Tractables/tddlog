@@ -88,12 +88,14 @@ with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
 The [guide] describes the language and the command line, with worked
 examples that open in the [playground]:
 
-- **Probabilistic logic programs** in the Datalog fragment of ProbLog:
-  probabilistic facts and rules, annotated disjunctions, negation as
-  failure, comparisons and integer arithmetic. The [reachability example]
+- **Probabilistic logic programs** in ProbLog: probabilistic facts and
+  rules, annotated disjunctions, negation as failure, comparisons and
+  arithmetic, function symbols and lists with ProbLog's list predicates,
+  and `findall` over deterministic goals. The [reachability example]
   queries paths in a graph with cycles, and the [negation example] the
   winning positions of a game defined by negation through recursion.
-  Function symbols, lists, cut and `findall` are not supported.
+  Cut, if-then-else and `findall` over a probabilistic goal are not
+  supported.
   `scripts/lpad2problog.py` converts LPADs written for cplint and PITA.
 - **Bayesian and Markov networks** in the BIF, Hugin, GeNIe and UAI
   formats, which tddlog reads as programs whose answers are the marginals

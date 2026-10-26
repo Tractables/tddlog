@@ -151,7 +151,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns; `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `table.rs`, `noisy_or.rs`, `normalize.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding`, `clause_links`, the binary reads (`Bits`), `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
@@ -167,26 +167,50 @@ name.
 
 ## Language (`src/syntax`)
 
-The parser reads a Datalog fragment of ProbLog:
+The parser reads ProbLog without cut:
 
-- constants, integers and variables;
+- constants, integers, floats, variables and compound terms, lists
+  `[a, b | T]` among them, with ProbLog's operators (`N - 1` is the term
+  `-(N,1)`);
 - probabilistic facts `p::a.`, probabilistic rules `p::h :- b.`,
   annotated disjunctions `p1::h1; p2::h2 :- b.`, and negative heads
   `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
 - body disjunctions `;` and parentheses, split into clauses that share
   one switch group;
 - negation as failure, `\+` or `not`;
-- comparisons `= \= == \== < > =< >=`, and `is` with integer arithmetic
-  on bound terms: `//` rounds down and `mod` takes the divisor's sign, as
-  in ProbLog; `/`, which divides in floating point there, is refused;
+- unification `=` and `\=`, the comparisons of terms `== \== @< @> @=<
+  @>=` in ProbLog's standard order, the arithmetic comparisons `< > =< >=
+  =:= =\=`, and `is` with ProbLog's arithmetic, which is Python's: `//`
+  rounds down, `mod` takes the divisor's sign, `/` divides in floating
+  point, and a float a term holds is rounded to 15 decimal places, as
+  ProbLog's constants round theirs;
+- the list predicates of ProbLog's library, built in: member/2,
+  memberchk/2, append/3, length/2, nth0/3, nth1/3, last/2, reverse/2,
+  sum_list/2, max_list/2, min_list/2, sort/2 and between/3, in ProbLog's
+  modes and order of solutions;
+- `findall/3` over a deterministic goal that is not recursive, its
+  solutions in ProbLog's order;
 - `query/1` (also `query(\+a)`), `query(pattern) :- body.`, and
   `evidence/1,2`.
 
-There are no function symbols, lists, cut, `findall` or non-ground atoms.
-Rules must be range restricted; a body is reordered so that binding
-literals come first (`ground/schedule.rs`, shared by the grounder and the
-magic rewrite). Predicate names and constants are `Name`s, an `Arc<str>`
-shared from the lexer on, one per distinct spelling.
+There are no cut, if-then-else or strings. The grounder lowers the rest
+to the Datalog the passes after it read (`ground/terms.rs`, before
+normalization): a compound with variables in a clause becomes a variable
+and a unification with one functor in the body, which builds the term
+where its arguments are bound and takes it apart where the term is; the
+goal of a findall becomes an auxiliary predicate whose tuples are its
+solutions. A ground compound is a value: the engine interns each one
+once, and the ground program's atoms hold them as arguments, so that
+nothing after grounding sees a term's structure and the compile does not
+change. A grounding that builds terms deeper than 10 000 does not end and
+is refused (rule 3), as is a findall whose answer ProbLog gives otherwise
+than tddlog could: over a probabilistic goal, which is a distribution over
+lists, or where a solution has two proofs, which ProbLog lists twice.
+Rules must be range restricted, but for variables a demand binds; a body
+is reordered so that binding literals come first (`ground/schedule.rs`,
+shared by the grounder and the magic rewrite). Predicate names and
+constants are `Name`s, an `Arc<str>` shared from the lexer on, one per
+distinct spelling.
 
 ## Network files (`src/network`)
 
@@ -273,7 +297,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 
 | step | files | what it does |
 |---|---|---|
-| 0 | `table.rs`, `noisy_or.rs` | grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
+| 0 | `terms.rs`, `table.rs`, `noisy_or.rs` | compound terms, lists and findall lowered to Datalog with built-in literals; grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
 | 1 | `normalize.rs`, `chain.rs` | annotated disjunctions and probabilistic rules to switches and rules; transitive closures to linear steps |
 | 2 | `linear.rs` | right-linear recursion grounded from its bound end |
 | 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
