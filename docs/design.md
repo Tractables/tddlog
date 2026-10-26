@@ -171,7 +171,7 @@ The parser reads ProbLog without cut:
 
 - constants, integers, floats, variables and compound terms, lists
   `[a, b | T]` among them, with ProbLog's operators (`N - 1` is the term
-  `-(N,1)`);
+  `-(N,1)`, and an operator alone is an atom, as in `[+, -]`);
 - probabilistic facts `p::a.`, probabilistic rules `p::h :- b.`,
   annotated disjunctions `p1::h1; p2::h2 :- b.`, and negative heads
   `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
