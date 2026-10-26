@@ -130,6 +130,62 @@ fn a_count_threaded_through_a_compound_grounds_for_the_counts_its_calls_give() {
 }
 
 #[test]
+fn a_negation_with_variables_of_its_own_holds_where_no_instance_does() {
+    // \+ p(X, _) holds where p(X, Y) holds for no Y: for a, neither of
+    // p's two facts, 0.5 * 0.6; for b, always.
+    assert_answers(
+        "0.5::p(a, 1). 0.4::p(a, 2). q(a). q(b).
+         r(X) :- q(X), \\+ p(X, _).
+         query(r(a)). query(r(b)).",
+        &[("r(a)", 0.5 * 0.6), ("r(b)", 1.0)],
+    );
+}
+
+#[test]
+fn a_left_corner_parser_over_its_derivation_so_far() {
+    // cplint's plcg.pl (Sato, Kameya and Kurihara 2008) for S -> S S | a |
+    // b: every choice is indexed by the derivation so far, and the third
+    // clause of lc_call/6 and the second of attach_or_project/3 negate an
+    // atom with variables of their own. A parse of n words chooses its n
+    // words (0.5 each) and attach or project at each of its 2n - 1 rules
+    // (0.5 each), and the parses, Catalan(n - 1) of them, are exclusive:
+    // P(w) = Catalan(n - 1) / 2^(3n - 1).
+    assert_answers(
+        "plc(Ws) :- g_call(['S'], Ws, [], [], _Der).
+         g_call([], L, L, Der, Der).
+         g_call([G|R], [G|L], L2, Der0, Der) :- terminal(G), g_call(R, L, L2, Der0, Der).
+         g_call([G|R], [Wd|L], L2, Der0, Der) :- \\+ terminal(G), first(G, Der0, Wd),
+             lc_call(G, Wd, L, L1, [first(G, Wd)|Der0], Der1), g_call(R, L1, L2, Der1, Der).
+         lc_call(G, B, L, L1, Der0, Der) :- lc(G, B, Der0, rule(G, [B|RHS2])),
+             attach_or_project(G, Der0, attach),
+             g_call(RHS2, L, L1, [lc(G, B, rule(G, [B|RHS2])), attach|Der0], Der).
+         lc_call(G, B, L, L2, Der0, Der) :- lc(G, B, Der0, rule(A, [B|RHS2])),
+             attach_or_project(G, Der0, project),
+             g_call(RHS2, L, L1, [lc(G, B, rule(A, [B|RHS2])), project|Der0], Der1),
+             lc_call(G, A, L1, L2, Der1, Der).
+         lc_call(G, B, L, L2, Der0, Der) :- \\+ lc(G, B, Der0, rule(G, [B|_])),
+             lc(G, B, Der0, rule(A, [B|RHS2])),
+             g_call(RHS2, L, L1, [lc(G, B, rule(A, [B|RHS2]))|Der0], Der1),
+             lc_call(G, A, L1, L2, Der1, Der).
+         attach_or_project(A, Der, Op) :- lc(A, A, Der, _), attach(A, Der, Op).
+         attach_or_project(A, Der, attach) :- \\+ lc(A, A, Der, _).
+         lc('S', 'S', _Der, rule('S', ['S', 'S'])).
+         lc('S', a, _Der, rule('S', [a])).
+         lc('S', b, _Der, rule('S', [b])).
+         0.5::first('S', Der, a); 0.5::first('S', Der, b).
+         0.5::attach('S', Der, attach); 0.5::attach('S', Der, project).
+         terminal(a). terminal(b).
+         query(plc([a])). query(plc([a, b])). query(plc([b, a, a])). query(plc([a, b, b, a])).",
+        &[
+            ("plc([a])", 0.25),
+            ("plc([a, b])", 1.0 / 32.0),
+            ("plc([b, a, a])", 2.0 / 256.0),
+            ("plc([a, b, b, a])", 5.0 / 2048.0),
+        ],
+    );
+}
+
+#[test]
 fn findall_results_feed_probabilistic_rules() {
     // spend(S): the cost of the items other than the one bought.
     assert_answers(

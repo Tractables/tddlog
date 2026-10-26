@@ -254,7 +254,9 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
     <li>facts with variables (<code>p(X).</code>) and rules that are not
     range restricted: each variable of a head, of a negated literal and of
     a comparison must occur in a positive atom of the body, though a query
-    or a call can bind a head's variables.</li>
+    or a call can bind a head's variables, and a variable that only a
+    negated atom has is read as ProbLog reads it (<code>\+ p(X, _)</code>:
+    no <code>p(X, Y)</code> for any <code>Y</code>).</li>
   </ul>
   <p>Each of these stops tddlog with a message and exit status 1, as
   in</p>

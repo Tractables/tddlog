@@ -19,7 +19,11 @@
 //!   variables: the variables it shares with the clause, the value of `T`
 //!   and its other variables, a clause per alternative of `G`; and a
 //!   [`Collect`] that lists the template values of the tuples with the
-//!   shared variables' values.
+//!   shared variables' values;
+//! - a negated atom with variables of its own, which no other literal and
+//!   no head reads (`\+ p(X, _)`, true where `p(X, Y)` holds for no `Y`),
+//!   becomes the negation of an auxiliary predicate `'$nt<k>'` over its
+//!   other variables, defined by the atom.
 //!
 //! The predicates a findall reads, its cone, are counted: the engine lists
 //! the solutions in the order of resolution from their derivations, and
@@ -42,6 +46,10 @@ use crate::syntax::{
 
 /// The prefix of the auxiliary predicates of findalls.
 pub(crate) const FINDALL_PREFIX: &str = "$fa";
+
+/// The prefix of the auxiliary predicates of negations with variables of
+/// their own.
+const NEGATION_PREFIX: &str = "$nt";
 
 /// A predicate, `(name, arity)`.
 pub(crate) type Pred = (Name, usize);
@@ -87,11 +95,13 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
         }
     }
     if !program.clauses.iter().any(|c| {
-        c.heads.iter().any(|h| h.atom.args.iter().any(compound)) || c.body.iter().any(lowers)
+        c.heads.iter().any(|h| h.atom.args.iter().any(compound))
+            || c.body.iter().any(lowers)
+            || projects(c.heads.iter().map(|h| &h.atom), &c.body)
     }) && !program
         .query_rules
         .iter()
-        .any(|r| r.body.iter().any(lowers))
+        .any(|r| r.body.iter().any(lowers) || projects(std::iter::once(&r.pattern), &r.body))
     {
         return Ok((Cow::Borrowed(program), FxHashSet::default()));
     }
@@ -113,6 +123,7 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
     let mut query_rules = Vec::with_capacity(lowered.query_rules.len());
     for mut r in std::mem::take(&mut lowered.query_rules) {
         let mut extra = Vec::new();
+        l.project(&mut r.body, &atom_vars([&r.pattern]), &mut extra);
         let Some(body) = l.body(std::mem::take(&mut r.body), &[], &mut extra)? else {
             continue;
         };
@@ -498,13 +509,42 @@ impl Lowering<'_, '_> {
         Atom::new(a.name, args)
     }
 
-    /// `clause` lowered, with the auxiliary clauses of its findalls pushed
-    /// on `work`; `None` where it cannot hold.
+    /// Each negated atom of `body` with variables of its own, read by no
+    /// other literal and not in `outside`, replaced by the negation of an
+    /// auxiliary predicate over its other variables, whose clause, the atom,
+    /// is pushed on `work`: ProbLog calls the atom with those variables
+    /// unbound, and the grounder reads a negation whose variables are bound.
+    fn project(&mut self, body: &mut [Literal], outside: &[String], work: &mut Vec<Clause>) {
+        for i in 0..body.len() {
+            let own = locals(body, i, outside);
+            let Literal::Neg(a) = &mut body[i] else {
+                continue;
+            };
+            if own.is_empty() {
+                continue;
+            }
+            let mut vs = Vec::new();
+            a.vars_into(&mut vs);
+            vs.retain(|v| !own.contains(v));
+            self.aux += 1;
+            let head = Atom::new(
+                format!("{NEGATION_PREFIX}{}", self.aux),
+                vs.into_iter().map(Term::Var).collect::<Vec<_>>(),
+            );
+            let atom = std::mem::replace(a, head.clone());
+            work.push(Clause::rule(head, vec![Literal::Pos(atom)], u32::MAX));
+        }
+    }
+
+    /// `clause` lowered, with the auxiliary clauses of its findalls and
+    /// negations pushed on `work`; `None` where it cannot hold.
     fn clause(
         &mut self,
         mut clause: Clause,
         work: &mut Vec<Clause>,
     ) -> Result<Option<Clause>, GroundError> {
+        let outside = atom_vars(clause.heads.iter().map(|h| &h.atom));
+        self.project(&mut clause.body, &outside, work);
         // The heads' compounds are taken apart before the body, under a
         // demand that binds them, and built after it otherwise: the
         // schedule places each unification where it can run.
@@ -797,6 +837,47 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
         }
     }
     Ok(cone)
+}
+
+/// The variables of `atoms`.
+fn atom_vars<'a>(atoms: impl IntoIterator<Item = &'a Atom>) -> Vec<String> {
+    let mut vs = Vec::new();
+    for a in atoms {
+        a.vars_into(&mut vs);
+    }
+    vs
+}
+
+/// The variables of `body[i]`, where it is a negated atom, that neither
+/// `outside` nor another literal of `body` reads.
+fn locals(body: &[Literal], i: usize, outside: &[String]) -> Vec<String> {
+    let mut vs = Vec::new();
+    if let Literal::Neg(a) = &body[i] {
+        a.vars_into(&mut vs);
+    }
+    if vs.is_empty() {
+        return vs;
+    }
+    let mut elsewhere = outside.to_vec();
+    for (j, l) in body.iter().enumerate() {
+        if j != i {
+            l.vars_into(&mut elsewhere);
+        }
+    }
+    vs.retain(|v| !elsewhere.contains(v));
+    vs
+}
+
+/// Whether a negated atom of `body` has variables of its own, which
+/// neither `heads` nor another literal reads ([`Lowering::project`]).
+fn projects<'a>(heads: impl IntoIterator<Item = &'a Atom>, body: &[Literal]) -> bool {
+    let negated =
+        |l: &Literal| matches!(l, Literal::Neg(a) if a.args.iter().any(|t| !t.is_ground()));
+    if !body.iter().any(negated) {
+        return false;
+    }
+    let outside = atom_vars(heads);
+    (0..body.len()).any(|i| !locals(body, i, &outside).is_empty())
 }
 
 /// The variables `l` binds where it holds, added to `out`: a findall's are

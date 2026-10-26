@@ -177,7 +177,8 @@ The parser reads ProbLog without cut:
   `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
 - body disjunctions `;` and parentheses, split into clauses that share
   one switch group;
-- negation as failure, `\+` or `not`;
+- negation as failure, `\+` or `not`, also of an atom with variables
+  of its own (`\+ p(X, _)`: no `p(X, Y)` for any `Y`);
 - unification `=` and `\=`, the comparisons of terms `== \== @< @> @=<
   @>=` in ProbLog's standard order, the arithmetic comparisons `< > =< >=
   =:= =\=`, and `is` with ProbLog's arithmetic, which is Python's: `//`
@@ -202,10 +203,12 @@ argument that is a compound of one name and arity in every head and call
 of its predicate is read as the compound's arguments, so that a demand
 binds the parts a call binds (a count passed in, another passed out); the
 goal of a findall becomes an auxiliary predicate whose tuples are its
-solutions. A ground compound is a value: the engine interns each one
-once, and the ground program's atoms hold them as arguments, so that
-nothing after grounding sees a term's structure and the compile does not
-change. A grounding that builds terms deeper than 10 000 does not end and
+solutions, and a negated atom with variables that nothing else in its
+clause reads becomes the negation of an auxiliary predicate over its
+other variables, defined by the atom. A ground compound is a value: the
+engine interns each one once, and the ground program's atoms hold them
+as arguments, so that nothing after grounding sees a term's structure
+and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
 is refused, as is a findall whose answer ProbLog gives otherwise
 than tddlog could: over a probabilistic goal, which is a distribution over
 lists, or where a solution has two proofs, which ProbLog lists twice.
