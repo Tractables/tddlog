@@ -197,13 +197,16 @@ There are no cut, if-then-else or strings. The grounder lowers the rest
 to the Datalog the passes after it read (`ground/terms.rs`, before
 normalization): a compound with variables in a clause becomes a variable
 and a unification with one functor in the body, which builds the term
-where its arguments are bound and takes it apart where the term is; the
+where its arguments are bound and takes it apart where the term is; an
+argument that is a compound of one name and arity in every head and call
+of its predicate is read as the compound's arguments, so that a demand
+binds the parts a call binds (a count passed in, another passed out); the
 goal of a findall becomes an auxiliary predicate whose tuples are its
 solutions. A ground compound is a value: the engine interns each one
 once, and the ground program's atoms hold them as arguments, so that
 nothing after grounding sees a term's structure and the compile does not
 change. A grounding that builds terms deeper than 10 000 does not end and
-is refused (rule 3), as is a findall whose answer ProbLog gives otherwise
+is refused, as is a findall whose answer ProbLog gives otherwise
 than tddlog could: over a probabilistic goal, which is a distribution over
 lists, or where a solution has two proofs, which ProbLog lists twice.
 Rules must be range restricted, but for variables a demand binds; a body
