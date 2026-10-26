@@ -1069,7 +1069,7 @@ function benchmarksOf(root) {
 
       // Every system that ran an instance reads one of its languages, ran a
       // translation of one, or is named as one whose files were not
-      // captured.
+      // captured, unless its grounding failed and it was handed no file.
       for (const x of [family, unseen].filter(Boolean)) {
         await visit(hashOf(x), "#programs select.version");
         // each entry of the menu names its readers after "read by"
@@ -1077,7 +1077,7 @@ function benchmarksOf(root) {
           .flatMap((o) => o.split(": read by ")[1]?.split(/, | and /) ?? []);
         const translated = x.inst.tabs.flatMap((t) => (t.translations ?? []).map(([who]) => who));
         const said = await page.$eval("#programs", (p) => p.querySelector("p.uncaptured")?.textContent ?? "");
-        for (const n of new Set((x.inst.runs ?? []).map((r) => names[r.system] ?? r.system))) {
+        for (const n of new Set((x.inst.runs ?? []).filter((r) => !r.ungrounded).map((r) => names[r.system] ?? r.system))) {
           assert.ok(readers.some(readsAs(n)) || translated.some(readsAs(n)) || said.includes(n),
             `${x.name}: ${n} ran it, and neither reads a language of it, translates one nor is named as not captured`);
         }

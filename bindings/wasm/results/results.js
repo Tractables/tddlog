@@ -1496,10 +1496,11 @@ function timesGrid(s, f, rows, short, route) {
 }
 
 // The systems that ran an instance but read none of its files on show, nor
-// translated any: their files were not captured.
+// translated any: their files were not captured. A run whose grounding
+// failed (`ungrounded`) was handed no file.
 function uncaptured(inst) {
   const readers = (inst.tabs ?? []).flatMap((t) => [...t.readers, ...(t.translations ?? []).map(([who]) => who)]);
-  return [...new Set((inst.runs ?? []).map((r) => data.names[r.system] ?? r.system))]
+  return [...new Set((inst.runs ?? []).filter((r) => !r.ungrounded).map((r) => data.names[r.system] ?? r.system))]
     .filter((name) => !readers.some(readsAs(name)));
 }
 
@@ -1835,7 +1836,7 @@ async function runs(route) {
         opener = document.querySelector("#programs select.version");
         go({ ...now, runs: undefined, file: fileRoute(inst, ti, fi) });
       } }, file.name.split("/").pop(), element("small", {}, t.lang)))));
-  } else if (mine.length) {
+  } else if (mine.some((r) => !r.ungrounded)) {
     parts.push(note(`The command and the files ${name0} was given were not captured.`));
   }
   const tryIt = rec === "tddlog" && inst ? playground(s, f, inst) : null;
