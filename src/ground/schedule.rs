@@ -24,11 +24,7 @@ pub(crate) fn literal_vars(l: &Literal) -> Vec<String> {
         Literal::Pos(a) | Literal::Neg(a) => {
             for t in &a.args {
                 match t {
-                    Term::Var(v) => {
-                        if !out.contains(v) {
-                            out.push(v.clone());
-                        }
-                    }
+                    Term::Var(v) if !out.contains(v) => out.push(v.clone()),
                     Term::Compound(_) => t.vars_into(&mut out),
                     _ => {}
                 }

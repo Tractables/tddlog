@@ -267,11 +267,7 @@ impl Term {
         let mut stack = vec![self];
         while let Some(t) = stack.pop() {
             match t {
-                Term::Var(v) => {
-                    if !out.contains(v) {
-                        out.push(v.clone());
-                    }
-                }
+                Term::Var(v) if !out.contains(v) => out.push(v.clone()),
                 Term::Compound(c) if !c.ground => stack.extend(c.args.iter().rev()),
                 _ => {}
             }
