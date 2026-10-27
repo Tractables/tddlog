@@ -364,7 +364,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    its switch's weights or a certain one, without a switch or a rule per
    fact, and two facts of one tuple make it true where either is. A
    database's tables are such facts: TPC-H's line items at scale factor
-   0.1 are 600 000 of them.
+   0.1 are 600 000 of them. A fact's atom keeps its arguments in its
+   tuple alone, and the ground program has only the atoms of facts that
+   a rule, a query or the evidence names: a query reads few of a
+   table's tuples.
 
    **Arguments no clause reads** (`unread.rs`). An argument that every
    clause of a predicate leaves as a variable the clause mentions nowhere

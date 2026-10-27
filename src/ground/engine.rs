@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
+use std::hash::BuildHasher;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -392,10 +393,15 @@ struct Relation {
     tuples: Vec<Vec<Val>>,
     /// The atom of each tuple.
     ids: Vec<AtomId>,
-    /// Derived (possible) atoms, but for a relation of arity zero, whose
-    /// one tuple is `ids[0]` once derived ([`Relation::get`]): every
-    /// switch of a ground program is one, and needs no table allocated.
-    set: FxHashMap<Vec<Val>, AtomId>,
+    /// The tuples by the hash of their values ([`Relation::hash`]), but
+    /// for a relation of arity zero, whose one tuple is `ids[0]` once
+    /// derived ([`Relation::get`]): every switch of a ground program is
+    /// one, and needs no table allocated. `by_hash` holds the last tuple
+    /// of each hash, and `same_hash` before each tuple the one of its hash
+    /// before it, or [`Relation::NONE`]. A table of tuples by their values
+    /// held a copy of each: a gigabyte for TPC-H's six million line items.
+    by_hash: FxHashMap<u64, u32>,
+    same_hash: Vec<u32>,
     /// Atoms named by a negative literal inside their own recursive
     /// component before it is known whether they are possible. Promoted to
     /// `set` if derived; otherwise they end up as derived atoms without rules,
@@ -410,13 +416,51 @@ struct Relation {
 }
 
 impl Relation {
+    /// No tuple, in [`Relation::same_hash`].
+    const NONE: u32 = u32::MAX;
+
+    /// The hash under which a tuple of `args` is kept.
+    fn hash(args: &[Val]) -> u64 {
+        rustc_hash::FxBuildHasher.hash_one(args)
+    }
+
     /// The atom of a derived tuple.
     fn get(&self, args: &[Val]) -> Option<AtomId> {
+        self.find(Self::hash(args), args)
+    }
+
+    /// The atom of a derived tuple whose hash is `h`.
+    fn find(&self, h: u64, args: &[Val]) -> Option<AtomId> {
         if args.is_empty() {
-            self.ids.first().copied()
-        } else {
-            self.set.get(args).copied()
+            return self.ids.first().copied();
         }
+        let mut t = *self.by_hash.get(&h)?;
+        while t != Self::NONE {
+            if self.tuples[t as usize] == args {
+                return Some(self.ids[t as usize]);
+            }
+            t = self.same_hash[t as usize];
+        }
+        None
+    }
+
+    /// Room for `n` more tuples, kept by their hash where `keyed`.
+    fn reserve(&mut self, n: usize, keyed: bool) -> bool {
+        self.tuples.try_reserve(n).is_ok()
+            && self.ids.try_reserve(n).is_ok()
+            && (!keyed
+                || self.same_hash.try_reserve(n).is_ok() && self.by_hash.try_reserve(n).is_ok())
+    }
+
+    /// Adds the tuple `args`, whose hash is `h`, as atom `id`.
+    fn push(&mut self, h: u64, args: Vec<Val>, id: AtomId) {
+        if !args.is_empty() {
+            let t = self.tuples.len() as u32;
+            let before = self.by_hash.insert(h, t);
+            self.same_hash.push(before.unwrap_or(Self::NONE));
+        }
+        self.tuples.push(args);
+        self.ids.push(id);
     }
 
     /// Indexes the tuples not yet indexed at position `pos`.
@@ -532,7 +576,7 @@ struct Grounder<'a> {
     /// Under a demand, the atoms of [`Facts`] no rule has read yet, by
     /// atom, those read, in the order of their first reads, and where
     /// each round of evaluation began among them
-    /// ([`number_facts_as_read`]).
+    /// ([`facts_as_read`]).
     unread: Vec<bool>,
     read: Vec<AtomId>,
     read_rounds: Vec<usize>,
@@ -813,36 +857,36 @@ impl<'a> Grounder<'a> {
     }
 
     fn atom_id(&mut self, pred: PredId, args: Vec<Val>) -> (AtomId, bool) {
-        if let Some(id) = self.rels[pred as usize].get(&args) {
+        let h = Relation::hash(&args);
+        if let Some(id) = self.rels[pred as usize].find(h, &args) {
             return (id, false);
         }
         // Past a refused block the grounding is given up, and nothing it
         // keeps reads the id (`keep_rule`, `over`).
         let keyed = !args.is_empty();
-        if !self.room(|g| {
-            let rel = &mut g.rels[pred as usize];
-            g.atoms.try_reserve(1).is_ok()
-                && rel.tuples.try_reserve(1).is_ok()
-                && rel.ids.try_reserve(1).is_ok()
-                && (!keyed || rel.set.try_reserve(1).is_ok())
-        }) {
+        if !self.room(|g| g.atoms.try_reserve(1).is_ok() && g.rels[pred as usize].reserve(1, keyed)) {
             return (AtomId::MAX, false);
         }
         let rel = &mut self.rels[pred as usize];
-        let id = match rel.placeholders.remove(&args) {
+        let placeholder = match rel.placeholders.is_empty() {
+            true => None,
+            false => rel.placeholders.remove(&args),
+        };
+        let id = match placeholder {
             Some(id) => id,
             None => {
                 let id = self.atoms.len() as AtomId;
-                self.atoms.push((pred, args.clone()));
+                // The atom of a fact keeps its arguments in its tuple alone
+                // ([`Grounder::args`]).
+                let kept = match self.preds[pred as usize].facts {
+                    Some(_) => Vec::new(),
+                    None => args.clone(),
+                };
+                self.atoms.push((pred, kept));
                 id
             }
         };
-        let rel = &mut self.rels[pred as usize];
-        if !args.is_empty() {
-            rel.set.insert(args.clone(), id);
-        }
-        rel.tuples.push(args);
-        rel.ids.push(id);
+        self.rels[pred as usize].push(h, args, id);
         (id, true)
     }
 
@@ -875,7 +919,7 @@ impl<'a> Grounder<'a> {
     }
 
     /// Marks a round of evaluation begun among the first reads of facts
-    /// under a demand ([`number_facts_as_read`]).
+    /// under a demand ([`facts_as_read`]).
     fn new_round(&mut self) {
         if !self.unread.is_empty() {
             self.read_rounds.push(self.read.len());
@@ -912,11 +956,28 @@ impl<'a> Grounder<'a> {
         b.done.is_some_and(|d| (level_of(level.as_ref()), r) <= d)
     }
 
-    fn display_atom(&self, id: AtomId) -> Atom {
+    /// The arguments of atom `id`: those of its tuple for a fact, whose
+    /// atom keeps no copy of them, the atoms of a predicate's facts being
+    /// numbered as its tuples ([`load`]).
+    fn args(&self, id: AtomId) -> &[Val] {
         let (p, args) = &self.atoms[id as usize];
+        if self.preds[*p as usize].facts.is_none() {
+            return args;
+        }
+        let rel = &self.rels[*p as usize];
+        let t = (id - rel.ids[0]) as usize;
+        debug_assert_eq!(rel.ids[t], id, "the atoms of facts are numbered as their tuples");
+        &rel.tuples[t]
+    }
+
+    fn display_atom(&self, id: AtomId) -> Atom {
+        let p = self.atoms[id as usize].0;
         Atom::new(
-            self.preds[*p as usize].name.clone(),
-            args.iter().map(|&v| self.term_of(v)).collect::<Args>(),
+            self.preds[p as usize].name.clone(),
+            self.args(id)
+                .iter()
+                .map(|&v| self.term_of(v))
+                .collect::<Args>(),
         )
     }
 }
@@ -1660,30 +1721,11 @@ fn ground_with(
         }
     }
 
-    // Assemble the output.
-    let mut gp = GroundProgram::default();
-    let n = g.atoms.len();
-    if gp.atoms.try_reserve_exact(n).is_err() || gp.kinds.try_reserve_exact(n).is_err() {
-        return Err(GroundError::OutOfMemory);
-    }
-    for id in 0..n as AtomId {
-        gp.atoms.push(g.display_atom(id));
-        let (p, _) = &g.atoms[id as usize];
-        // A fact's weights, those of its own or its switch predicate's.
-        let weights = g.weights.get(id as usize).copied().flatten();
-        let weights = weights.or(g.preds[*p as usize].switch);
-        gp.kinds.push(match weights {
-            Some(q) => AtomKind::Fact(q),
-            None => AtomKind::Derived,
-        });
-    }
-    gp.rules = std::mem::take(&mut g.ground_rules);
-    gp.stats.levels = keys;
-    gp.stats.constants = fixed.iter().filter(|v| v.is_some()).count();
-
+    // The queries and the evidence, as the grounding numbered their atoms.
+    let mut queries = Vec::new();
     for (q, positive) in &norm.queries {
         for (atom, id) in resolve_atom_pattern(&mut g, q) {
-            gp.queries.push((atom, id, *positive));
+            queries.push((atom, id, *positive));
         }
     }
     for (driver, pattern, positive) in &norm.query_drivers {
@@ -1699,41 +1741,112 @@ fn ground_with(
                     .collect::<Args>(),
             );
             for (atom, id) in resolve_atom_pattern(&mut g, &q) {
-                gp.queries.push((atom, id, *positive));
+                queries.push((atom, id, *positive));
             }
         }
     }
-    // The driver atoms themselves are not part of the output program.
-    let drivers: FxHashSet<Name> = norm
-        .query_drivers
-        .iter()
-        .map(|(d, _, _)| d.name.clone())
-        .collect();
-    gp.rules
-        .retain(|r| !drivers.contains(&gp.atoms[r.head as usize].name));
+    let mut evidence = Vec::new();
     for (e, v) in &norm.evidence {
         for (atom, id) in resolve_atom_pattern(&mut g, e) {
-            gp.evidence.push((atom, id, *v));
+            evidence.push((atom, id, *v));
         }
     }
-    if !norm.control.is_empty() {
-        number_facts_as_read(&g, &mut gp);
+    // The driver atoms themselves are not part of the output program.
+    let drivers: FxHashSet<&str> = norm
+        .query_drivers
+        .iter()
+        .map(|(d, _, _)| &*d.name)
+        .collect();
+    if !drivers.is_empty() {
+        let name = |a: AtomId| &**g.preds[g.atoms[a as usize].0 as usize].name;
+        g.ground_rules.retain(|r| !drivers.contains(name(r.head)));
+    }
+
+    // Assemble the output: the atoms in the order made, those of facts
+    // under a demand as it read them ([`facts_as_read`]). Of a fact's
+    // atoms, only those a rule, a query or the evidence names: no other
+    // reads them, and a database's are mostly read by none (a query of
+    // TPC-H reads a fiftieth of its six million line items).
+    let n = g.atoms.len();
+    let mut named: Vec<bool> = g
+        .atoms
+        .iter()
+        .map(|(p, _)| g.preds[*p as usize].facts.is_none())
+        .collect();
+    for r in &g.ground_rules {
+        named[r.head as usize] = true;
+        for l in &r.body {
+            named[l.atom() as usize] = true;
+        }
+    }
+    for (_, id, _) in queries.iter().chain(&evidence) {
+        if let Some(a) = id {
+            named[*a as usize] = true;
+        }
+    }
+    let order: Vec<AtomId> = match norm.control.is_empty() {
+        true => (0..n as AtomId).collect(),
+        false => facts_as_read(&g),
+    };
+    let order: Vec<AtomId> = order.into_iter().filter(|&a| named[a as usize]).collect();
+    let mut gp = GroundProgram::default();
+    let m = order.len();
+    if gp.atoms.try_reserve_exact(m).is_err() || gp.kinds.try_reserve_exact(m).is_err() {
+        return Err(GroundError::OutOfMemory);
+    }
+    for &id in &order {
+        gp.atoms.push(g.display_atom(id));
+        let (p, _) = &g.atoms[id as usize];
+        // A fact's weights, those of its own or its switch predicate's.
+        let weights = g.weights.get(id as usize).copied().flatten();
+        let weights = weights.or(g.preds[*p as usize].switch);
+        gp.kinds.push(match weights {
+            Some(q) => AtomKind::Fact(q),
+            None => AtomKind::Derived,
+        });
+    }
+    gp.rules = std::mem::take(&mut g.ground_rules);
+    gp.queries = queries;
+    gp.evidence = evidence;
+    gp.stats.levels = keys;
+    gp.stats.constants = fixed.iter().filter(|v| v.is_some()).count();
+    if m < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
+        let mut new = vec![AtomId::MAX; n];
+        for (i, &a) in order.iter().enumerate() {
+            new[a as usize] = i as AtomId;
+        }
+        let new = |a: AtomId| new[a as usize];
+        let sorted = order.is_sorted();
+        for r in &mut gp.rules {
+            r.head = new(r.head);
+            for l in &mut r.body {
+                *l = GLit::new(new(l.atom()), l.is_positive());
+            }
+            // Bodies in the order of their atoms, as the grounder writes
+            // them.
+            if !sorted {
+                r.body.sort_unstable();
+            }
+        }
+        for (_, id, _) in gp.queries.iter_mut().chain(&mut gp.evidence) {
+            *id = id.map(new);
+        }
     }
     Ok(Some(gp))
 }
 
-/// Numbers the atoms of [`Facts`] of a program under a demand
-/// ([`super::magic`]) as the demand reaches them: by the round of
-/// evaluation that first read them ([`ground_body`]), those one round
-/// reads in the order of their facts, in the places their loading took,
-/// and those no rule reads after. A predicate of facts is loaded whole, in
-/// the order of its facts, where a demand made the atoms of the facts it
-/// reached in a round, in their order, round after round: a search from
-/// the queries. The vtree heuristics read the numbering, and a random
-/// graph of 80 edges written by their sources compiled four times slower
-/// in the facts' order.
-fn number_facts_as_read(g: &Grounder, gp: &mut GroundProgram) {
-    let n = gp.atoms.len();
+/// The atoms of a program under a demand ([`super::magic`]) in the order
+/// of the ground program: in the order made, but those of [`Facts`] as the
+/// demand reaches them, by the round of evaluation that first read them
+/// ([`ground_body`]), those one round reads in the order of their facts,
+/// in the places their loading took, and those no rule reads after. A
+/// predicate of facts is loaded whole, in the order of its facts, where a
+/// demand made the atoms of the facts it reached in a round, in their
+/// order, round after round: a search from the queries. The vtree
+/// heuristics read the numbering, and a random graph of 80 edges written
+/// by their sources compiled four times slower in the facts' order.
+fn facts_as_read(g: &Grounder) -> Vec<AtomId> {
+    let n = g.atoms.len();
     let of_facts = |a: usize| g.preds[g.atoms[a].0 as usize].facts.is_some();
     let places: Vec<AtomId> = (0..n)
         .filter(|&a| of_facts(a))
@@ -1746,18 +1859,11 @@ fn number_facts_as_read(g: &Grounder, gp: &mut GroundProgram) {
     }
     let unread = |a: &&AtomId| g.unread.get(**a as usize).is_some_and(|&u| u);
     read.extend(places.iter().filter(unread));
-    if read == places {
-        return;
-    }
     let mut order: Vec<AtomId> = (0..n as AtomId).collect();
     for (&place, &a) in places.iter().zip(&read) {
         order[place as usize] = a;
     }
-    super::simplify::renumber(gp, &order);
-    // Bodies in the order of their atoms, as the grounder writes them.
-    for r in &mut gp.rules {
-        r.body.sort_unstable();
-    }
+    order
 }
 
 /// Ground instances of a possibly non-ground query/evidence atom among the
@@ -1835,7 +1941,8 @@ fn substitute(t: &Term, binding: &FxHashMap<&Term, &Term>) -> Term {
 /// its fact's rule would make it. A tuple given twice is true where either
 /// of its facts is, as ProbLog reads two facts of one atom: the weights of
 /// its falsity multiply. Under a demand (`demanded`), each atom is unread
-/// until a rule reads it ([`number_facts_as_read`]).
+/// until a rule reads it ([`facts_as_read`]). An atom no rule, query or
+/// evidence names is left out of the ground program ([`ground_with`]).
 fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
     // Room for every tuple at once: a table of millions doubles its
     // vectors and rehashes its keys a score of times otherwise.
@@ -1846,9 +1953,7 @@ fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
             && g.weights
                 .try_reserve(g.atoms.len() + n - g.weights.len())
                 .is_ok()
-            && rel.tuples.try_reserve(n).is_ok()
-            && rel.ids.try_reserve(n).is_ok()
-            && (f.arity == 0 || rel.set.try_reserve(n).is_ok())
+            && rel.reserve(n, f.arity > 0)
     }) {
         return;
     }
