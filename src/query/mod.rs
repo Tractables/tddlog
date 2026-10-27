@@ -19,8 +19,7 @@ use tididi::vtree::{VarId, VtreeIdx};
 use crate::eval::{Count, Counted, Counts, Probabilities, Value};
 use crate::ground::{AtomId, GroundProgram};
 use crate::tp::{
-    CompileError, Compiled, Formula, NegationSource, Negations, Projection, ScopeTable, TddBackend,
-    VtreeScope,
+    CompileError, Compiled, Formula, NegationSource, Negations, ScopeTable, TddBackend, VtreeScope,
 };
 use walk::EvidenceWalk;
 
@@ -314,13 +313,13 @@ impl QueryEvaluation {
             Some(vars) => global_weights.restrict(vars),
         };
         // The variables an atom's formula may mention: its component's scope for
-        // a derived atom, the fact itself for a fact. `None` is the whole
+        // a derived atom, the fact itself for a fact, whatever the projection
+        // (a literal on the whole program costs a level per variable to build
+        // and to count, for each query of a fact). `None` is the whole
         // program, which absorbs everything.
         let atom_vars = |a: AtomId| -> Option<Vec<VarId>> {
             if compiled.formulas[a as usize].is_some() {
                 compiled.scope_of(a).vars().map(<[VarId]>::to_vec)
-            } else if compiled.projection == Projection::Off {
-                None
             } else {
                 compiled.var_of[a as usize].map(|v| vec![v])
             }
@@ -783,7 +782,7 @@ const QUERY_ROUTE: SparseRoute = SparseRoute {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tp::{Formulation, compile, fact_variables};
+    use crate::tp::{Formulation, Projection, compile, fact_variables};
     use crate::{GroundOptions, vtree::Kind};
     use tididi::OperationError;
     use tididi::limits::{LimitConfig, StopAt, StopRules};
