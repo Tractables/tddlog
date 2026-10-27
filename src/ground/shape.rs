@@ -80,7 +80,7 @@ pub(crate) fn reads_facts_alone(gp: &GroundProgram) -> bool {
 /// (each variable a fact, each clause j a rule `violated(j)` observed
 /// false) is such a program, the copies the conditioning's. An atom
 /// observed true is not a clause: a factor of a Markov network written as
-/// `scripts/gen_bn.py` writes one, observed true, is a table over its rows'
+/// the network reader writes one, observed true, is a table over its rows'
 /// switches.
 pub(crate) fn clauses_over_facts(gp: &GroundProgram) -> bool {
     let copy = copies(gp);

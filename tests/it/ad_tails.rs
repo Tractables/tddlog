@@ -7,7 +7,7 @@
 //! switch of a head of nearly all of the remaining mass was zero, and the
 //! heads after it were lost; so were heads after the remaining mass fell
 //! under 1e-12. The answers against hand-computed ones, and on Markov
-//! networks written as gen_bn.py writes them, whose priors hold values of
+//! networks written as tddlog reads them, whose priors hold values of
 //! mass under 2^-53 that their factors make count, against enumeration.
 
 use crate::common;
@@ -93,7 +93,7 @@ fn a_tail_after_a_head_of_nearly_all_the_mass() {
     }
 }
 
-/// gen_bn.py's prior of a variable whose second value weighs 1e-40 of its
+/// A network's prior of a variable whose second value weighs 1e-40 of its
 /// first, and a factor that makes it 1e50 times likelier: the tail holds
 /// all but 1e-10 of the partition function, `1e-40 + 1e-50`. The old
 /// switches dropped it: `x(v_1)` had probability zero and P(e) was 1e-50.
@@ -231,7 +231,7 @@ fn exact_zeros_still_go() {
     }
 }
 
-/// A Markov network of `n` binary variables as gen_bn.py writes one: each
+/// A Markov network of `n` binary variables as tddlog reads one: each
 /// variable's prior an annotated disjunction over its two values, and
 /// each factor an atom `f<k>(ok)`, observed, with a rule per row of its
 /// table, the row's entry over the table's largest its probability. Some

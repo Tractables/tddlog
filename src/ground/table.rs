@@ -1,5 +1,5 @@
 //! Table-shaped programs: a Bayesian network written as one annotated
-//! disjunction per row of a table (`scripts/gen_bn.py`),
+//! disjunction per row of a table (`tddlog --program` of a network),
 //!
 //! ```text
 //! p1::x(v1); ...; pk::x(vk) :- y1(u1), ..., ym(um).

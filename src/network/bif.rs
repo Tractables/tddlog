@@ -1,8 +1,8 @@
 //! The Bayesian Interchange Format: `variable X { type discrete [ 2 ] {
 //! a, b }; }` and `probability ( X | P1, P2 ) { (u1, u2) 0.1, 0.9; ... }`,
 //! a root's row written `table 0.3, 0.7;`. A comment runs from `//` to the
-//! end of the line. Read as `scripts/gen_bn.py`'s regular expressions read
-//! it; a row of the same parents' values twice keeps the first's place and
+//! end of the line. Read as `gen_bn.py`'s regular expressions read it; a
+//! row of the same parents' values twice keeps the first's place and
 //! the second's numbers.
 
 use std::collections::HashMap;

@@ -559,7 +559,7 @@ compilation error: atom a is undefined in the well-founded model of some possibl
   <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
   writes Alea.jl programs as programs it reads.</p>
 
-  <h3 id="networks-gen-bn">Bayesian and Markov networks</h3>
+  <h3 id="network-files">Bayesian and Markov networks</h3>
   <p>tddlog reads a discrete network file as a ground program, as in the
   asia example: a Bayesian network in BIF (<code>.bif</code>), Hugin
   (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
@@ -579,10 +579,11 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   the evidence on a <code>Z:</code> line in place of <code>P(e):</code>,
   and with <code>--no-queries</code> that line alone, the UAI PR task.
   <code>--rescale</code> divides every row by its sum, for a file that
-  writes its tables in percent. <code>--program</code> prints the program;
-  <a href="https://github.com/Tractables/tddlog/blob/main/scripts/gen_bn.py"><code>scripts/gen_bn.py</code></a>
-  writes the same program for other systems, and its docstring has the
-  encoding.</p>
+  writes its tables in percent. <code>--program</code> prints the
+  program, which the benchmarks give the other systems that read ProbLog
+  programs;
+  <a href="https://github.com/Tractables/tddlog/blob/main/docs/design.md#network-files-srcnetwork">Network
+  files</a> in docs/design.md has the encoding.</p>
 
   <h3 id="dice">Dice programs</h3>
   <p>tddlog reads a file with the extension <code>.dice</code> as a Dice

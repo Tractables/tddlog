@@ -217,12 +217,13 @@ evidence or under an intervention is named in a comment of the program
 and on standard error, and left out. A clause the program cannot write
 (a disjunctive head with no probability or with two heads without one, a
 probability that is not a finite number) is refused on its line. The
-reader finds the clauses in the text and writes the program that
-`scripts/lpad2problog.py` wrote before it replaced that script: the
-clauses end at a `.` before white space outside quotes and brackets,
-the names a body calls are its words outside quotes that start with a
-lower-case letter, and the probabilities are written as Python writes a
-float (tests/lpad holds LPADs and the script's programs for them).
+reader finds the clauses in the text and writes the program that the
+Python script it replaced (`lpad2problog.py`, now on the baselines
+branch) wrote: the clauses end at a `.` before white space outside
+quotes and brackets, the names a body calls are its words outside
+quotes that start with a lower-case letter, and the probabilities are
+written as Python writes a float (tests/lpad holds LPADs and the
+script's programs for them).
 
 A file with the extension `.dice` is a Dice program, and `syntax/dice.rs`
 reads it as the ProbLog program its symbolic evaluation writes, which the
@@ -244,9 +245,10 @@ a step index that the grounder unrolls: f's body once, its atoms indexed
 by the step, the state before step `T + 1` the body's at step `T`. The
 program's result is queried, every value of an integer as the
 conjunction of its bits. Lists, `/`, `%`, `nth_bit`, `sample`, `head`,
-`tail` and `length` are refused. The reader writes the program that
-`scripts/dice2problog.py` wrote before it replaced that script, byte for
-byte (tests/dice holds Dice programs and the script's programs for them).
+`tail` and `length` are refused. The reader writes the program that the
+Python script it replaced (`dice2problog.py`, now on the baselines
+branch) wrote, byte for byte (tests/dice holds Dice programs and the
+script's programs for them).
 
 A predicate without clauses is not read as false: a query or an
 observation of one, and a call of one that is not a built-in above in a
@@ -293,19 +295,20 @@ distinct spelling.
 
 ## Network files (`src/network`)
 
-A Bayesian or Markov network file is read as the program
-`scripts/gen_bn.py` writes for it, the text the other systems of the
-benchmarks read, and that text is parsed as any program is: one route,
-whose answers are those of the program. `tests/it/networks.rs` checks the
-reader's text against gen_bn.py's programs line for line, and
-`tests/test_gen_bn.py` that gen_bn.py still writes them. The extension
-names the format: BIF (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`,
-whose `cpt` nodes are tables; another kind of node is refused) and UAI
-(`.uai`). BIF and Hugin are read as gen_bn.py's regular expressions read
-them, GeNIe's XML into a tree (`xml.rs`: the encoding the declaration
-names, comments, entities). A file that is not UTF-8 is read as
-ISO-8859-1, as Ace's water, pigs and mildew are written. A compressed file
-is refused.
+A Bayesian or Markov network file is read as a program, which
+`tddlog --program FILE` prints and the other systems of the benchmarks
+read, and that text is parsed as any program is: one route, whose
+answers are those of the program. The reader replaced a Python script
+(`gen_bn.py`, now on the baselines branch) and writes its programs byte
+for byte; `tests/it/networks.rs` checks the reader's text line for line
+against the script's programs for the files of `tests/networks/`,
+`tests/regress/` and `examples/`. The extension names the format: BIF
+(`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`, whose `cpt` nodes
+are tables; another kind of node is refused) and UAI (`.uai`). BIF and
+Hugin are read as the script's regular expressions read them, GeNIe's
+XML into a tree (`xml.rs`: the encoding the declaration names, comments,
+entities). A file that is not UTF-8 is read as ISO-8859-1, as Ace's
+water, pigs and mildew are written. A compressed file is refused.
 
 Each variable gets one annotated disjunction per row of its table,
 `p1::x(v1); ...; pk::x(vk) :- p1(u1), ..., pm(um).`, in the order of a
@@ -334,7 +337,7 @@ a unit in the most significant digits any entry of the row has
 10000/10001 and 1/10001 to four digits), and the gap of the decimals'
 exact sum is compared with the sum of these. Otherwise a shortfall is the
 table's own, its mass left to no value as in ProbLog, and an excess is an
-error. gen_bn.py decides by the same rule, and the two decide alike on
+error. The script decided by the same rule, and the two decide alike on
 every row of every network of the benchmark suites. `--rescale` divides
 every row by its sum first, for Ace's tables in percent or as weights.
 
@@ -347,8 +350,8 @@ variable `fJ` of one value, observed, whose row for each assignment of the
 factor's scope is its entry over its largest; a constant factor is left
 out. The program's `P(e)` times `10^c`, where `c` sums the base-10
 logarithms of the priors' sums, the factors' largest entries and the
-constants, is the partition function given the evidence: gen_bn.py states
-`c` on the program's first line, and the binary prints `Z:` for such a
+constants, is the partition function given the evidence: the program
+states `c` on its first line, and the binary prints `Z:` for such a
 file where it would print `P(e):` ([The probability of the
 evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
 without observations, a network of Potts tables over pairs of variables of
@@ -391,16 +394,16 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 12 | `eliminate.rs` | linear recursion without recursion, after the grounder |
 
 0. **Table-shaped programs** (`table.rs`). A program whose clauses each
-   have ground heads of one predicate and a body of positive ground atoms,
-   with ground queries and evidence, no query patterns and no cycle among
-   its predicates, is a Bayesian network written one annotated disjunction
-   per row (`scripts/gen_bn.py`; `examples/bn_cancer.pl`). What steps 1 to
-   4 make of it is known from the rows, so `table::ground_rows` builds
-   that output directly, the same atoms in the same order, and
-   simplification onward is shared (`finish`). The shape (`Shape`) is
-   decided before anything is built; any other program takes the generic
-   steps. Equality with the generic grounding is tested on the
-   table-shaped examples.
+   have ground heads of one predicate and a body of positive ground
+   atoms, with ground queries and evidence, no query patterns and no
+   cycle among its predicates, is a Bayesian network written one
+   annotated disjunction per row (`tddlog --program` of a network;
+   `examples/bn_cancer.pl`). What steps 1 to 4 make of it is known from
+   the rows, so `table::ground_rows` builds that output directly, the
+   same atoms in the same order, and simplification onward is shared
+   (`finish`). The shape (`Shape`) is decided before anything is built;
+   any other program takes the generic steps. Equality with the generic
+   grounding is tested on the table-shaped examples.
 
    **Noisy-or tables** (`noisy_or.rs`) are then written as noisy-ors, from
    the same shape. A table of two values over parents of two values whose
@@ -1922,9 +1925,9 @@ exponent of `p` are read off the logarithm. Inconsistent evidence prints
 `0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file the binary
 prints the partition function given the evidence instead,
 `Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
-([Network files](#network-files-srcnetwork)), the UAI PR task. gen_bn.py's
-program for the network states the offset, `log10 Z - log10 P(e)`, on its
-first line. `--no-queries` drops the queries before grounding
+([Network files](#network-files-srcnetwork)), the UAI PR task. The
+program the network is read as states the offset, `log10 Z - log10 P(e)`,
+on its first line. `--no-queries` drops the queries before grounding
 (`syntax::Program::without_queries`), so the program is ground for its
 evidence alone and the `P(e)` line is all the run prints.
 tests/it/evidence_probability.rs checks `P(e)` against ProbLog's under every
@@ -2003,23 +2006,23 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   `tests/it/problog_suite.rs` runs the ProbLog system tests copied into
   `tests/problog/` under `auto`, `closed`, `dynamic`, `program` and
   `families`. The other modules of `tests/it/` check a mechanism each
-  against an exact sum, enumeration or ProbLog: indicators, binary reads,
-  the clause memo, table models, ties, templates, switch sharing,
+  against an exact sum, enumeration or ProbLog: indicators, binary
+  reads, the clause memo, table models, ties, templates, switch sharing,
   projection, the layouts (`layouts/`), the or-route, negation counts,
   the evidence walk, the query and dense counts, implicit levels, counts
   beyond a float's range (`underflow`), `P(e)` (`evidence_probability`),
   the command line (`cli`, which also checks this page's walk through
-  `examples/alarm.pl` against the binary), network files (`networks`: the
-  programs of the files in `tests/networks/`, `tests/regress/` and
-  `examples/` against gen_bn.py's, and the binary's answers and partition
-  functions on them against enumeration and ProbLog), and regressions
-  (`tests/regress/`). Queries in groups are tested in
-  `src/solve/tests.rs`; `src/tp/tests/` compiles every example with a
-  dynamic search after every step, checks formulas dropped as they die,
-  resumes stopped cyclic components, and checks the primal's update in a
-  cyclic component against enumeration.
-- The Python tests (`tests/test_*.py`) check the scripts: generators,
-  translators and exact references.
+  `examples/alarm.pl` against the binary), network files (`networks`:
+  the programs of the files in `tests/networks/`, `tests/regress/` and
+  `examples/` against the programs written for them, and the binary's
+  answers and partition functions on them against enumeration and
+  ProbLog), and regressions (`tests/regress/`). Queries in groups are
+  tested in `src/solve/tests.rs`; `src/tp/tests/` compiles every example
+  with a dynamic search after every step, checks formulas dropped as
+  they die, resumes stopped cyclic components, and checks the primal's
+  update in a cyclic component against enumeration.
+- The Python tests (`tests/test_*.py`) check `scripts/alea2problog.jl`
+  (where Julia is installed) and the release metadata check.
 - `bindings/wasm/tests/examples.cjs` runs the playground's examples
   through the WebAssembly build against ProbLog's answers and `P(e)`, and
   `bindings/wasm/tests/browser.cjs` the page in a headless browser.

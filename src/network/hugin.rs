@@ -3,8 +3,8 @@
 //! first parent outermost and the values of X innermost. A comment runs
 //! from `%` to the end of the line, outside quotes (munin's states include
 //! "<12%"). A node without states, a decision or utility node of an
-//! influence diagram, is not a variable. Read as `scripts/gen_bn.py`'s
-//! regular expressions read it.
+//! influence diagram, is not a variable. Read as `gen_bn.py`'s regular
+//! expressions read it.
 
 use super::Network;
 use super::scan::{fields, names_before_brace, numbers, occurrences, skip_space, space, strip};

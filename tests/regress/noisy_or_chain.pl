@@ -1,4 +1,4 @@
-% Findings as chains of two-parent noisy-or tables, as gen_bn.py writes the
+% Findings as chains of two-parent noisy-or tables, as tddlog reads the
 % UAI 2022 or_chain networks (src/ground/noisy_or.rs). x1 and x2 chain f1
 % over d1, d2 and d3; y1 chains f2 over d4 and d5; f3 is a noisy-or of d5
 % and d6 with a leak, f4 a noisy-or of d6. f1, f2 and f4 are observed

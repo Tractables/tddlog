@@ -50,8 +50,8 @@
 //! `head`, `tail`, `length`, integers of more than 63 bits, and a
 //! `uniform` over more than 2^24 values.
 //!
-//! The program is the one `scripts/dice2problog.py` wrote before this
-//! reader replaced it, byte for byte: its atoms are named in the same
+//! The program is the one the Python script `dice2problog.py` (on the
+//! baselines branch) wrote before this reader replaced it, byte for byte: its atoms are named in the same
 //! order from the same hints, and its probabilities are written as
 //! Python's `repr` writes a float.
 

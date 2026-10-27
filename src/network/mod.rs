@@ -1,9 +1,11 @@
 //! Discrete Bayesian and Markov networks, read as programs.
 //!
-//! A network file is read as the ProbLog program `scripts/gen_bn.py`
-//! writes for it, and that program is what tddlog answers: every variable
-//! `X` with parents `P1..Pm` becomes one annotated disjunction per row of
-//! its conditional table,
+//! A network file is read as a ProbLog program, which `tddlog --program`
+//! prints, and that program is what tddlog answers. It is the program the
+//! benchmarks' Python script `gen_bn.py` (on the baselines branch), which
+//! this reader replaced, wrote, byte for byte: every variable `X` with
+//! parents `P1..Pm` becomes one annotated disjunction per row of its
+//! conditional table,
 //!
 //! ```text
 //! p1::x(v1); ...; pk::x(vk) :- p1(u1), ..., pm(um).

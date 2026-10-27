@@ -1046,8 +1046,9 @@ fn a_grid_answers_round_after_round() {
 #[test]
 fn a_markov_network_answers_round_after_round() {
     // A Markov network over six binary x and six binary y with a factor
-    // on each pair (x_i, y_j), written as gen_bn.py writes one, under a
-    // first round of two pairs: `families:0`'s evidence takes 2048.
+    // on each pair (x_i, y_j), written as the network reader writes one,
+    // under a first round of two pairs: `families:0`'s evidence takes
+    // 2048.
     let n = 6;
     let mut source = String::new();
     for t in 0..2 * n {

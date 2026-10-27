@@ -1,5 +1,5 @@
 % log10 Z - log10 P(e) = 2.9822712330395684
-% gen_bn.py's program for markov.uai, a Markov network over x0 (2 values),
+% `tddlog --program markov.uai`, a Markov network over x0 (2 values),
 % x1 (2) and x2 (3) with factors x0: (1 3); x0,x1: (2 1 1 2);
 % x1,x2: (1 2 3 4 0 1); and x0,x2 constant 5, which is dropped. The
 % marginals by enumeration of the twelve worlds, Z = 65 * 5:

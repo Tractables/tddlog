@@ -1,9 +1,9 @@
 % log10 Z - log10 P(e) = 3.260667536990012
-% gen_bn.py's program for potts.uai with --query none, a Markov network
+% `tddlog --program --no-queries potts.uai`, a Markov network
 % over x0..x4 of three values each, all its factors Potts tables: the
 % colourings x0-x1, x3-x4 and x4-x0 (0 on the diagonal, 1 off it), x1-x2
 % (2, 1), x2-x3 (0.5, 1.5) and x0-x2 (1.25, 0.75). The program breaks the
-% colour symmetry (gen_bn.colour_symmetry): x0 is 0, x2 is 0 or 1 with
+% colour symmetry (src/network/uai.rs): x0 is 0, x2 is 0 or 1 with
 % weights 1 and 2, and given those x1 takes the values used and the next
 % one; the offset holds log10 3 besides. By enumeration of the 243 worlds
 % of potts.uai in exact fractions, Z = 225/2, log10 Z = 2.0511525224473814.

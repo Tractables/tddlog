@@ -1,8 +1,9 @@
 % log10 Z - log10 P(e) = 3.8715729355458786
-% gen_bn.py's program for markov_pr.uai, a Markov network over x0 (2
-% values), x1 (3), x2 (2), x3 (2) and x4 (3): two unary factors on x0, one
-% on x1 with a zero, a factor on x0,x1, one on x1,x2,x3 with a zero, one
-% on x2,x4, one on x3,x4 that is constant 2.5 and one of empty scope, 4.
+% `tddlog --program --evidence markov_pr.uai.evid markov_pr.uai`, a
+% Markov network over x0 (2 values), x1 (3), x2 (2), x3 (2) and x4 (3):
+% two unary factors on x0, one on x1 with a zero, a factor on x0,x1, one
+% on x1,x2,x3 with a zero, one on x2,x4, one on x3,x4 that is constant 2.5
+% and one of empty scope, 4.
 % By enumeration of the 72 worlds in exact fractions, Z = 19947/25 = 797.88,
 % log10 Z = 2.901937578999016.
 % Given x4 = 2 (markov_pr.uai.evid), Z = 11853/40 = 296.325,

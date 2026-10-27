@@ -1,4 +1,4 @@
-% gen_bn.py's program for noisy.xdsl, rows of Ace's pathfinder.xdsl whose doubles
+% `tddlog --program noisy.xdsl`: rows of Ace's pathfinder.xdsl whose doubles
 % carry binary noise (0.00099404 written 0.0009940400000000005): each row is
 % off one by 1e-8, the rounding of its eight decimals, and is divided by its sum.
 0.3::mantle(present); 0.7::mantle(absent).

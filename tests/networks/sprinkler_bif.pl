@@ -1,4 +1,4 @@
-% gen_bn.py's program for sprinkler.bif --query WetGrass: Rain's rows in the
+% `tddlog --program --query WetGrass sprinkler.bif`: Rain's rows in the
 % order the file writes them.
 0.5::cloudy(true); 0.5::cloudy(false).
 0.1::sprinkler(true); 0.9::sprinkler(false) :- cloudy(true).
