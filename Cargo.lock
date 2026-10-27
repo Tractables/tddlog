@@ -110,6 +110,7 @@ dependencies = [
  "goatd",
  "libc",
  "num-rational",
+ "num-traits",
  "rustc-hash",
  "tididi",
  "tikv-jemalloc-sys",

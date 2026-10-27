@@ -423,8 +423,8 @@ P(e):   4.600000e-1     log10 -0.337242</pre>
   probability 0.7 × 0.4 = 0.28, so P(x odd | e) = 0.28 / 0.46 = 0.608696.
   The other answers sum the 64 combinations of the six bits; the test
   checks them against that sum and against ProbLog.
-  <code>scripts/dice2problog.py</code> translates a Dice program into a
-  program like this one (<a href="#networks">below</a>).</p>
+  tddlog reads a Dice program as a program like this one
+  (<a href="#dice">below</a>).</p>
   <p class="try"><a href="../?example=adder&amp;evidence=1">Open it in the
   playground</a>.</p>
 
@@ -553,9 +553,11 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 
 <section class="card prose" id="networks">
   <h2>Networks, Dice, Alea.jl and LPADs</h2>
-  <p>tddlog reads network files itself, and scripts in the repository's
+  <p>tddlog reads network files, Dice programs and LPADs itself, each as
+  a program, which <code>--program</code> prints, and a Julia script in
+  the repository's
   <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
-  write Dice programs, Alea.jl programs and LPADs as programs it reads.</p>
+  writes Alea.jl programs as programs it reads.</p>
 
   <h3 id="networks-gen-bn">Bayesian and Markov networks</h3>
   <p>tddlog reads a discrete network file as a ground program, as in the
@@ -583,12 +585,17 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   encoding.</p>
 
   <h3 id="dice">Dice programs</h3>
-  <p><code>python3 scripts/dice2problog.py program.dice &gt; program.pl</code>
-  translates a Dice program into ProbLog: an integer of w bits becomes w
-  atoms, each <code>flip</code> a probabilistic fact, and the integer
-  operations rules over the bits, as in the adder above.
-  <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a>
-  on the baselines branch holds the Dice paper's programs.</p>
+  <p>tddlog reads a file with the extension <code>.dice</code> as a Dice
+  program (<code>tddlog program.dice</code>), and
+  <code>tddlog --program program.dice</code> prints the program it is
+  read as: an integer of w bits becomes w atoms, each <code>flip</code> a
+  probabilistic fact, and the integer operations rules over the bits, as
+  in the adder above; <code>iterate</code> becomes recursion over a step
+  index, and a recursive function is inlined up to Dice's limit of ten
+  calls. The program's result is queried. Lists, <code>/</code>,
+  <code>%</code>, <code>nth_bit</code> and <code>sample</code> are
+  refused.
+  <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.</p>
 
   <h3 id="alea">Alea.jl programs</h3>
   <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/alea2problog.jl"><code>scripts/alea2problog.jl</code></a>

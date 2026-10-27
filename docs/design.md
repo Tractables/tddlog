@@ -149,8 +149,8 @@ the formulation and the projection besides its vtree. The modules, in
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns; `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
-| `syntax/` | lexer, parser, AST; `lpad.rs`, an LPAD written for cplint read as the program it holds |
-| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text, which `syntax/lpad.rs` writes too |
+| `syntax/` | lexer, parser, AST; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes |
+| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text, which `syntax/lpad.rs` and `syntax/dice.rs` write too |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding`, `clause_links`, the binary reads (`Bits`), `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
@@ -223,6 +223,30 @@ clauses end at a `.` before white space outside quotes and brackets,
 the names a body calls are its words outside quotes that start with a
 lower-case letter, and the probabilities are written as Python writes a
 float (tests/lpad holds LPADs and the script's programs for them).
+
+A file with the extension `.dice` is a Dice program, and `syntax/dice.rs`
+reads it as the ProbLog program its symbolic evaluation writes, which the
+parser then reads and `tddlog --program` prints. Every `let` binds a
+Boolean literal, an integer or a tuple; an integer of type `int(w)` is `w`
+bits, each a literal; a `flip` is a probabilistic fact, and a `discrete`
+or a `uniform` is drawn bit by bit from the most significant, as Dice
+draws it, each bit a flip whose probability is a ratio of exact sums of
+the masses. Boolean operators and conditionals are rules over fresh
+atoms; `+`, `-` and `*` are adders over the bits, `==` a conjunction, `<`
+a comparator. The values an integer can take are tracked where their
+pairs are few, so that a comparison every pair decides is a constant, and
+within a branch of a conditional a variable the guard compares with a
+constant takes only the values the guard allows. An `observe` within a
+branch holds where the branch is not taken. A function is inlined at each
+call, a recursive one up to Dice's limit of ten nested calls, the call
+past it an observation of false. `iterate(f, init, k)` is recursion over
+a step index that the grounder unrolls: f's body once, its atoms indexed
+by the step, the state before step `T + 1` the body's at step `T`. The
+program's result is queried, every value of an integer as the
+conjunction of its bits. Lists, `/`, `%`, `nth_bit`, `sample`, `head`,
+`tail` and `length` are refused. The reader writes the program that
+`scripts/dice2problog.py` wrote before it replaced that script, byte for
+byte (tests/dice holds Dice programs and the script's programs for them).
 
 A predicate without clauses is not read as false: a query or an
 observation of one, and a call of one that is not a built-in above in a
@@ -524,7 +548,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
    `Pruner`), whose sweep proves some of them constant: the rules
    grounded after pass over an atom proved false and drop one proved true
    from their bodies. On a loop written as recursion over its steps
-   (Dice's `iterate` through `scripts/dice2problog.py`) the dead branches
+   (Dice's `iterate` as the Dice reader writes it) the dead branches
    of each step are never grounded, and the program grounds fewer atoms
    than the loop unrolled.
 5. **Simplify** (`simplify.rs`): propagate certain atoms; merge each atom
@@ -577,7 +601,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
    inlined cost more work than the variable. A loop unrolled step by step
    names each step's intermediate values this way: the Dice paper's
    diamond, unrolled, keeps one atom a step of four. Written as recursion
-   over a step index, as `dice2problog.py` writes Dice's `iterate`, they
+   over a step index, as the Dice reader writes Dice's `iterate`, they
    are a recursive predicate's atoms and stay.
 
    Then **equal gates** (`aig::reduce`; `examples/equal_gates.pl`,

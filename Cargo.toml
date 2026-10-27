@@ -23,6 +23,9 @@ rustc-hash = "2"
 # Exact weights for the sum-out's weight store (`src/query/sum_out.rs`), as
 # tididi's `RationalWeights` takes them.
 num-rational = "0.4"
+# The rounding of an exact ratio to a float (`ToPrimitive::to_f64`), as the
+# Dice reader takes a flip's probability from exact sums (`src/syntax/dice.rs`).
+num-traits = "0.2"
 
 # The binary's allocator (`src/bin/tddlog/alloc.rs`), its purge (`mallctl`,
 # from the jemalloc that tikv-jemallocator links), and the switch of its huge

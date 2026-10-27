@@ -115,17 +115,18 @@ which ProbLog also reads, so each reduction can be checked on its own.
 | ProbLog programs | tddlog | function symbols and lists ground to constants, with ProbLog's list predicates and `findall/3` over deterministic goals |
 | Bayesian networks in BIF, Hugin, GeNIe or UAI, with evidence in Ace's `.inst` or UAI's `.evid` | tddlog, by the file's extension | one annotated disjunction per row of each table |
 | Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
-| Dice programs | [`scripts/dice2problog.py`](scripts/dice2problog.py) | each integer as its bits, each operation as rules over them |
+| Dice programs | tddlog, by the extension `.dice` | each integer as its bits, each operation as rules over them, a loop as recursion over a step index |
 | Alea.jl programs (`model()` and `QUERY`) | [`scripts/alea2problog.jl`](scripts/alea2problog.jl), in Julia with Alea.jl | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence |
 | LPADs written for cplint and PITA | tddlog, where the file holds `:- begin_lpad.` | the same clauses in ProbLog's syntax, with the database clauses they call and the file's example queries |
 
 ```text
 $ tddlog examples/asia.net --query leaves
-$ python3 scripts/dice2problog.py tests/dice/arith.dice > arith.pl && tddlog arith.pl
+$ tddlog tests/dice/arith.dice
 ```
 
 `tddlog --program examples/asia.net` prints the program a network is
-read as, and `tddlog --program tests/lpad/coin.cplint.pl` an LPAD's. As a library, [`tddlog::solve`] takes a program's text and the
+read as, `tddlog --program tests/dice/arith.dice` a Dice program's, and
+`tddlog --program tests/lpad/coin.cplint.pl` an LPAD's. As a library, [`tddlog::solve`] takes a program's text and the
 command line's options and returns the answers, and the
 [Python](bindings/python/README.md) (`tddlog.solve(program).answers`),
 [C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)
