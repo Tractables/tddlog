@@ -1034,12 +1034,19 @@ mod lpad {
     }
 }
 
-/// The circuits that the baselines branch's [`scripts/alea_bench.jl`](https://github.com/Tractables/tddlog/blob/baselines/scripts/alea_bench.jl) writes
-/// for its two Alea.jl test programs (tests/alea/*.jl there), with the
-/// answers computed by hand in those programs' comments, which Alea gives
-/// too.
+/// The circuits that scripts/alea2problog.jl writes for the Alea.jl
+/// programs beside them (tests/test_alea2problog.py checks that it does),
+/// with the answers computed by hand in those programs' comments, which
+/// Alea gives too.
 mod alea {
     use super::*;
+
+    /// examples/alea_dice.pl: two dice, the first at least 4; the sum 7
+    /// and the first showing more.
+    #[test]
+    fn dice() {
+        check("alea_dice.pl", &[("q1", 1.0 / 6.0), ("q2", 2.0 / 3.0)]);
+    }
 
     /// A Boolean, and the distribution of a three-bit number over the
     /// worlds of its bits, under an observation.

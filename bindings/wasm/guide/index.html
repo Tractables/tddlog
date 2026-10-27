@@ -54,7 +54,7 @@
         distribution</span></li>
       </ol></li>
     <li><a href="#command-line">The command line</a></li>
-    <li><a href="#networks">Networks, Dice programs and LPADs</a></li>
+    <li><a href="#networks">Networks, Dice, Alea.jl and LPADs</a></li>
     <li><a href="#library">From Rust, Python and C</a></li>
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#terms">Terms</a></li>
@@ -552,11 +552,10 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 </section>
 
 <section class="card prose" id="networks">
-  <h2>Networks, Dice programs and LPADs</h2>
-  <p>tddlog reads network files itself, and two Python 3 scripts in the
-  repository's
+  <h2>Networks, Dice, Alea.jl and LPADs</h2>
+  <p>tddlog reads network files itself, and scripts in the repository's
   <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
-  write Dice programs and LPADs as programs it reads.</p>
+  write Dice programs, Alea.jl programs and LPADs as programs it reads.</p>
 
   <h3 id="networks-gen-bn">Bayesian and Markov networks</h3>
   <p>tddlog reads a discrete network file as a ground program, as in the
@@ -588,7 +587,25 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   translates a Dice program into ProbLog: an integer of w bits becomes w
   atoms, each <code>flip</code> a probabilistic fact, and the integer
   operations rules over the bits, as in the adder above.
-  <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.</p>
+  <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a>
+  on the baselines branch holds the Dice paper's programs.</p>
+
+  <h3 id="alea">Alea.jl programs</h3>
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/alea2problog.jl"><code>scripts/alea2problog.jl</code></a>
+  writes the Boolean circuit that
+  <a href="https://github.com/Tractables/Alea.jl">Alea.jl</a> builds for a
+  program as ProbLog: each flip a probabilistic fact, each gate a rule,
+  each observation evidence. It runs in Julia, with ALEA a checkout of
+  Alea.jl:</p>
+<pre data-lang="shell">julia --project=ALEA scripts/alea2problog.jl examples/alea_dice.jl &gt; alea_dice.pl</pre>
+  <p>The program file defines <code>model()</code>, which returns what an
+  <code>@alea</code> block returns, and <code>QUERY</code>,
+  <code>:pr</code> or <code>:expectation</code>. Each component of the
+  value is queried: a Boolean's probability, under <code>:pr</code> the
+  probability of each world of a number's bits, and under
+  <code>:expectation</code> each bit's probability, of which the
+  expectation is a weighted sum. The script's header names the
+  queries.</p>
 
   <h3 id="lpad">LPADs</h3>
   <p>tddlog reads a logic program with annotated disjunctions (an LPAD)
