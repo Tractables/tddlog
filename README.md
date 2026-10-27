@@ -128,17 +128,19 @@ $ tddlog tests/dice/arith.dice
 `tddlog --program examples/asia.net` prints the program a network is
 read as, `tddlog --program tests/dice/arith.dice` a Dice program's, and
 `tddlog --program tests/lpad/coin.cplint.pl` an LPAD's. As a library, [`tddlog::solve`] takes a program's text and the
-command line's options and returns the answers, and the
-[Python](bindings/python/README.md) (`tddlog.solve(program).answers`),
+command line's options and returns the answers, and [`tddlog::read`]
+reads an input in any of these formats, a network with its evidence
+file, as that program. The
+[Python](bindings/python/README.md) (`tddlog.solve(text, format="dice").answers`),
 [C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)
-bindings wrap the same call; a front end of one's own writes the text,
-as [examples/sprinkler.rs](examples/sprinkler.rs) does from Rust data.
+bindings take the text with its format's name and call both; a front
+end of one's own writes the text, as
+[examples/sprinkler.rs](examples/sprinkler.rs) does from Rust data.
 
 Not yet read: cut, if-then-else, `call/N`, `assert`, strings and
 probabilities computed in a rule's body in ProbLog, and `findall/3` over
 a probabilistic or recursive goal; lists, `/`, `%`, `nth_bit` and
-`sample` in Dice; network files through the bindings, which take a
-program's text (`tddlog --program` writes it).
+`sample` in Dice.
 
 ## Inside the engine
 
@@ -516,3 +518,4 @@ compiled into the binaries.
 [Bayesian network example]: https://tractables.github.io/tddlog/guide/#bayesian-network
 [binary integers example]: https://tractables.github.io/tddlog/guide/#binary-integers
 [`tddlog::solve`]: https://tractables.github.io/tddlog/api/tddlog/fn.solve.html
+[`tddlog::read`]: https://tractables.github.io/tddlog/api/tddlog/fn.read.html

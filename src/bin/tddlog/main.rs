@@ -5,10 +5,11 @@
 mod alloc;
 mod stats;
 
+use std::borrow::Cow;
 use std::process::ExitCode;
 
-use tddlog::network::{self, Evidence, Format, Queries, ReadOptions};
-use tddlog::{Options, Progress, Strategy};
+use tddlog::network::{Evidence, Queries, ReadOptions};
+use tddlog::{Format, Input, Options, Progress, Strategy};
 
 use stats::{ground_line, print_stats};
 
@@ -95,10 +96,8 @@ struct Args {
     evidence_probability: bool,
     no_queries: bool,
     precision: usize,
-    /// The file's format where it is a network; `None` for a program.
-    network: Option<Format>,
-    /// Whether the file is a Dice program.
-    dice: bool,
+    /// The file's format, by its extension.
+    format: Format,
     /// How a network is read: its queries, its evidence file and whether
     /// its rows are rescaled.
     queries: Queries,
@@ -168,9 +167,8 @@ fn parse_args() -> Result<Request, String> {
     if file.ends_with(".gz") {
         return Err(format!("{file} is compressed: gunzip it first"));
     }
-    let network = Format::of_path(&file);
-    let dice = file.ends_with(".dice");
-    if network.is_none() {
+    let format = Format::of_path(&file);
+    if !matches!(format, Format::Network(_)) {
         for (given, option) in [
             (queries.is_some(), "--query"),
             (evidence.is_some(), "--evidence"),
@@ -220,8 +218,7 @@ fn parse_args() -> Result<Request, String> {
         evidence_probability: evidence_probability.is_some(),
         no_queries: no_queries.is_some(),
         precision,
-        network,
-        dice,
+        format,
         queries,
         evidence,
         rescale: rescale.is_some(),
@@ -253,55 +250,72 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let (source, log10_offset) = match read_source(&args) {
-        Ok(Ok(read)) => read,
-        Ok(Err(e)) => {
-            eprintln!("{}: {e}", args.file);
-            return ExitCode::FAILURE;
-        }
+    let (data, evidence) = match read_files(&args) {
+        Ok(files) => files,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    // An LPAD's example queries that its program leaves out are named, and
-    // `--program` prints a network's, a Dice program's or an LPAD's program.
-    let lpad = match (args.network, args.dice) {
-        (None, false) => tddlog::syntax::lpad::read(&source),
-        _ => None,
+    let evidence = match &evidence {
+        Some((path, data)) => match Evidence::of_path(path, data) {
+            Ok(evidence) => Some(evidence),
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        },
+        None => None,
     };
-    let lpad = match lpad.transpose() {
-        Ok(lpad) => lpad,
+    let options = ReadOptions {
+        queries: args.queries.clone(),
+        evidence,
+        rescale: args.rescale,
+    };
+    let input = match tddlog::read(&data, args.format, &options) {
+        Ok(input) => input,
+        Err(e @ tddlog::Error::Options(_)) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
         Err(e) => {
-            eprintln!("{}: parse error: {e}", args.file);
+            eprintln!("{}: {e}", args.file);
             return ExitCode::FAILURE;
         }
     };
-    for note in lpad.iter().flat_map(|l| &l.left_out) {
+    // An LPAD's example queries that its program leaves out are named, and
+    // `--program` prints the program a network, a Dice program or an LPAD
+    // is read as.
+    for note in &input.left_out {
         eprintln!("{}: {note}", args.file);
     }
     if args.program_only {
-        match (&lpad, args.network.is_some() || args.dice) {
-            (Some(lpad), _) => println!("{}", lpad.program),
-            (None, true) => print!("{source}"),
-            (None, false) => {
-                eprintln!(
-                    "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
-                     program (.dice) or an LPAD (a program that holds `:- begin_lpad.`), and {} is \
-                     none of them",
-                    args.file
-                );
-                return ExitCode::from(2);
-            }
-        }
+        let Cow::Owned(program) = &input.program else {
+            eprintln!(
+                "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
+                 program (.dice) or an LPAD (a program that holds `:- begin_lpad.`), and {} is \
+                 none of them",
+                args.file
+            );
+            return ExitCode::from(2);
+        };
+        print!("{program}");
         return ExitCode::SUCCESS;
     }
-    match run(&args, source, log10_offset) {
+    match run(&args, &input) {
         Ok(()) => ExitCode::SUCCESS,
         // Options the library refuses are option errors, as above.
         Err(e @ tddlog::Error::Options(_)) => {
             eprintln!("{e}");
             ExitCode::from(2)
+        }
+        // The line is the program's, which `--program` prints.
+        Err(e @ tddlog::Error::Parse(_)) if matches!(input.program, Cow::Owned(_)) => {
+            eprintln!(
+                "{e} in the program {} is read as (tddlog --program prints it)",
+                args.file
+            );
+            ExitCode::FAILURE
         }
         Err(e) => {
             eprintln!("{e}");
@@ -310,40 +324,20 @@ fn main() -> ExitCode {
     }
 }
 
-/// The program's text, and for a Markov network `log10 Z - log10 P(e)`.
-/// The outer error is a file that cannot be read, the inner one a network
-/// or a Dice program that cannot be read as a program.
+/// The contents of the file and of its evidence file, with the latter's
+/// path; the error is a file that cannot be read.
 #[allow(clippy::type_complexity)]
-fn read_source(args: &Args) -> Result<Result<(String, Option<f64>), String>, String> {
+fn read_files(args: &Args) -> Result<(Vec<u8>, Option<(&str, Vec<u8>)>), String> {
     let read = |path: &str| std::fs::read(path).map_err(|e| format!("cannot read {path}: {e}"));
-    let Some(format) = args.network else {
-        let source = std::fs::read_to_string(&args.file)
-            .map_err(|e| format!("cannot read {}: {e}", args.file))?;
-        if args.dice {
-            return Ok(tddlog::syntax::dice::read(&source)
-                .map(|program| (program, None))
-                .map_err(|e| format!("parse error: {e}")));
-        }
-        return Ok(Ok((source, None)));
-    };
     let data = read(&args.file)?;
     let evidence = match &args.evidence {
-        Some(path) => Some((path, read(path)?)),
+        Some(path) => Some((path.as_str(), read(path)?)),
         None => None,
     };
-    let evidence = match &evidence {
-        Some((path, data)) => Some(Evidence::of_path(path, data)?),
-        None => None,
-    };
-    let options = ReadOptions {
-        queries: args.queries.clone(),
-        evidence,
-        rescale: args.rescale,
-    };
-    Ok(network::read(&data, format, &options).map(|p| (p.program, p.log10_offset)))
+    Ok((data, evidence))
 }
 
-fn run(args: &Args, source: String, log10_offset: Option<f64>) -> Result<(), tddlog::Error> {
+fn run(args: &Args, input: &Input) -> Result<(), tddlog::Error> {
     let options = Options {
         strategy: args.strategy,
         evidence_probability: args.evidence_probability,
@@ -351,7 +345,7 @@ fn run(args: &Args, source: String, log10_offset: Option<f64>) -> Result<(), tdd
         ..Options::default()
     };
     if args.ground_only {
-        print!("{}", tddlog::rewritten(&source, &options)?);
+        print!("{}", tddlog::rewritten(&input.program, &options)?);
         return Ok(());
     }
     let mut ground_secs = 0.0;
@@ -360,7 +354,7 @@ fn run(args: &Args, source: String, log10_offset: Option<f64>) -> Result<(), tdd
     // the program its compile ended on, with `auto`'s indicators) and,
     // under `auto`, the trials so far.
     let mut failed = None;
-    let solved = tddlog::solve(&source, &options, &mut |progress| {
+    let solved = tddlog::solve(&input.program, &options, &mut |progress| {
         if !args.stats {
             return;
         }
@@ -394,20 +388,15 @@ fn run(args: &Args, source: String, log10_offset: Option<f64>) -> Result<(), tdd
         }
     }
     if args.evidence_probability {
-        let p = solution
-            .evidence_probability
+        let (p, log10) = input
+            .evidence_probability(&solution)
             .expect("the grounder kept every observation");
-        let line = match log10_offset {
-            None => magnitude_line("P(e)", p.to_f64(), p.log10(), args.precision),
-            // Z given the evidence is P(e) times 10 to the offset.
-            Some(c) => magnitude_line(
-                "Z",
-                p.to_f64() * 10f64.powf(c),
-                p.log10() + c,
-                args.precision,
-            ),
+        // A Markov network's is its partition function given the evidence.
+        let label = match input.log10_offset {
+            None => "P(e)",
+            Some(_) => "Z",
         };
-        println!("{line}");
+        println!("{}", magnitude_line(label, p, log10, args.precision));
     }
     // The process ends once the answers are out, and what the solution
     // holds is left to the exit rather than freed piece by piece: freeing

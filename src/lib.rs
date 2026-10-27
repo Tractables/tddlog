@@ -69,13 +69,15 @@
 //!
 //! # How it works
 //!
-//! [`syntax`] parses a program, and [`network`] reads a Bayesian or Markov
-//! network file as one; [`ground`] grounds the part of it that the
-//! queries and the evidence depend on, and simplifies it; [`indicators`]
-//! can rewrite it so that derived atoms are read through variables of
-//! their own; [`vtree`] lays out the diagrams' variables; [`tp`] compiles
-//! every derived atom to a TDD by a fixpoint of the immediate-consequence
-//! operator, one strongly connected component at a time; and [`query`]
+//! [`read`] reads an input in any [`Format`] as a program: [`syntax`]
+//! reads an LPAD or a Dice program as one and parses it, and [`network`]
+//! reads a Bayesian or Markov network file as one; [`ground`] grounds the
+//! part of it that the queries and the evidence depend on, and simplifies
+//! it; [`indicators`] can rewrite it so that derived atoms are read
+//! through variables of their own; [`vtree`] lays out the diagrams'
+//! variables; [`tp`] compiles every derived atom to a TDD by a fixpoint of
+//! the immediate-consequence operator, one strongly connected component at
+//! a time; and [`query`]
 //! conjoins the evidence and counts each query against it, with the
 //! weighted counts of [`eval`]. [`solve`] runs them under a [`Strategy`]:
 //! `auto`, the default, runs trials of layouts ([`Kind`]) under bounds
@@ -93,6 +95,7 @@ pub mod eval;
 mod evaluation;
 pub mod ground;
 pub mod indicators;
+mod input;
 mod multisets;
 pub mod network;
 pub mod query;
@@ -105,6 +108,7 @@ pub mod vtree;
 use std::sync::Arc;
 
 pub use ground::{GroundOptions, GroundProgram};
+pub use input::{Format, Input, read};
 pub use query::QueryResult;
 pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground};
 pub use strategy::Strategy;
@@ -160,6 +164,8 @@ pub struct Run {
 #[derive(Debug)]
 pub enum Error {
     Parse(syntax::ParseError),
+    /// A network file that cannot be read as a program ([`network::read`]).
+    Network(String),
     Ground(ground::GroundError),
     Vtree(String),
     /// [`Options`] that ask for nothing, or for what the strategy cannot do.
@@ -179,6 +185,7 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::Parse(e) => write!(f, "parse error: {e}"),
+            Error::Network(e) => f.write_str(e),
             Error::Ground(e) => write!(f, "grounding error: {e}"),
             Error::Vtree(e) => write!(f, "vtree error: {e}"),
             Error::Options(e) => write!(f, "options error: {e}"),

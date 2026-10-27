@@ -24,13 +24,14 @@
 #define TDDLOG_OK 0
 
 /**
- * The arguments broke a documented contract: a null pointer, text that is
- * not UTF-8, an unknown vtree strategy, or options that ask for nothing.
+ * The arguments broke a documented contract: a null pointer, a format or
+ * vtree strategy that is not UTF-8 or is unknown, evidence for a program
+ * that is not a network, or options that ask for nothing.
  */
 #define TDDLOG_ERROR_INVALID_INPUT 1
 
 /**
- * The program is not in the language tddlog reads.
+ * The program is not in the language or the format it is said to be in.
  */
 #define TDDLOG_ERROR_PARSE 2
 
@@ -81,6 +82,20 @@ typedef struct TddlogOptions {
    * line's `--no-queries` does, and needs `evidence_probability`.
    */
   bool queries;
+  /**
+   * What the program's text is, as the command line tells it by the
+   * file's extension: `"problog"` (an LPAD where it holds
+   * `:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+   * (`.net`), `"xdsl"` or `"uai"`, with every variable queried. Null is
+   * `"problog"`.
+   */
+  const char *format;
+  /**
+   * For a network, the NUL-terminated text of its evidence file, as the
+   * command line's `--evidence` reads it: an Ace `.inst` file, or a UAI
+   * `.evid` file for a UAI network. Null for none.
+   */
+  const char *evidence;
 } TddlogOptions;
 
 /**
@@ -110,13 +125,15 @@ const char *tddlog_version(void);
 const char *tddlog_last_error_message(void);
 
 /**
- * The defaults: `"auto"`, the queries answered, no `P(e)`.
+ * The defaults: `"auto"`, the queries answered, no `P(e)`, a ProbLog
+ * program without an evidence file.
  */
 struct TddlogOptions tddlog_options_default(void);
 
 /**
- * Parse, ground, compile and count `program`, a ProbLog program as
- * NUL-terminated UTF-8 text, under `options` (null for the defaults).
+ * Read `program`, NUL-terminated text in `options->format`, then ground,
+ * compile and count it under `options` (null for the defaults). The text
+ * is UTF-8, or for a network ISO-8859-1 too.
  *
  * On `TDDLOG_OK`, `*out` is a solution the caller releases with
  * `tddlog_solution_free`; on any other status `*out` is null.
@@ -124,8 +141,9 @@ struct TddlogOptions tddlog_options_default(void);
  * # Safety
  *
  * `program` must point to a NUL-terminated string, `options` must be null or
- * point to one `TddlogOptions` whose `vtree` is null or a NUL-terminated
- * string, and `out` must point to storage for one pointer.
+ * point to one `TddlogOptions` whose `vtree`, `format` and `evidence` are
+ * each null or a NUL-terminated string, and `out` must point to storage for
+ * one pointer.
  */
 TddlogStatus tddlog_solve(const char *program,
                           const struct TddlogOptions *options,
@@ -188,8 +206,10 @@ double tddlog_solution_probability(const struct TddlogSolution *solution, size_t
  * asked for it: writes it to `*probability` and its base-10 logarithm, exact
  * beyond a double's range, to `*log10_probability`, and returns true. `P(e)`
  * is 1 with no evidence, 0 with inconsistent evidence (its logarithm
- * `-INFINITY`), and 0 too where it is under the least double. Returns false,
- * writing nothing, where it was not asked for. Either output may be null.
+ * `-INFINITY`), and 0 too where it is under the least double; for a Markov
+ * network it is the partition function given the evidence, `Z`. Returns
+ * false, writing nothing, where it was not asked for. Either output may be
+ * null.
  *
  * # Safety
  *

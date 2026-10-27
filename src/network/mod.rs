@@ -139,6 +139,17 @@ pub struct ReadOptions<'a> {
     pub rescale: bool,
 }
 
+/// Every variable queried, no evidence, the rows as written.
+impl Default for ReadOptions<'_> {
+    fn default() -> Self {
+        ReadOptions {
+            queries: Queries::All,
+            evidence: None,
+            rescale: false,
+        }
+    }
+}
+
 /// A network's program.
 #[derive(Clone, Debug)]
 pub struct NetworkProgram {

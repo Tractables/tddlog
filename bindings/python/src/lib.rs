@@ -1,9 +1,9 @@
-//! Python bindings for tddlog: a ProbLog program goes in as text, and the
-//! probabilities of its queries come out.
+//! Python bindings for tddlog: a program goes in as text, in any format
+//! tddlog reads, and the probabilities of its queries come out.
 //!
 //! The options are the command line's, under its names. Nothing in this crate
 //! decides anything about a program: it converts the arguments, calls
-//! `tddlog::solve`, and converts the solution back.
+//! `tddlog::read` and `tddlog::solve`, and converts the solution back.
 
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyValueError};
@@ -21,7 +21,7 @@ create_exception!(
     tddlog,
     ParseError,
     Error,
-    "The program is not in the language tddlog reads."
+    "The program is not in the language or the format it is said to be in."
 );
 create_exception!(
     tddlog,
@@ -46,7 +46,7 @@ fn py_error(error: tddlog::Error) -> PyErr {
     let message = error.to_string();
     match error {
         tddlog::Error::Options(_) => PyValueError::new_err(message),
-        tddlog::Error::Parse(_) => ParseError::new_err(message),
+        tddlog::Error::Parse(_) | tddlog::Error::Network(_) => ParseError::new_err(message),
         tddlog::Error::Ground(_) => GroundingError::new_err(message),
         tddlog::Error::Vtree(_) | tddlog::Error::Compile(_) | tddlog::Error::Trials { .. } => {
             CompilationError::new_err(message)
@@ -61,23 +61,21 @@ pub struct Solution {
     /// Each query's text and probability, in the program's order; `None`
     /// where the evidence is inconsistent.
     answers: Option<Vec<(String, f64)>>,
-    /// `P(e)` and its base-10 logarithm, where asked for.
+    /// `P(e)` of the input and its base-10 logarithm, where asked for.
     evidence: Option<(f64, f64)>,
 }
 
 impl Solution {
-    /// The solution's values, read out of what `tddlog::solve` returned; the
-    /// run that solution holds is freed with it.
-    fn new(solution: tddlog::Solution) -> Self {
+    /// The solution's values, read out of what `tddlog::solve` returned for
+    /// `input`; the run that solution holds is freed with it.
+    fn new(solution: tddlog::Solution, input: &tddlog::Input) -> Self {
         let answers = solution.answers.as_deref().map(|answers| {
             answers
                 .iter()
                 .map(|a| (a.to_string(), a.probability))
                 .collect()
         });
-        let evidence = solution
-            .evidence_probability
-            .map(|p| (p.to_f64(), p.log10()));
+        let evidence = input.evidence_probability(&solution);
         Solution { answers, evidence }
     }
 }
@@ -101,8 +99,10 @@ impl Solution {
 
     /// ``P(e)``, the probability of the evidence: 1.0 with none, 0.0 where
     /// it is inconsistent, and 0.0 too where it is under the least float,
-    /// which ``log10_evidence_probability`` still gives. ``None`` unless
-    /// ``solve`` was called with ``evidence_probability=True``.
+    /// which ``log10_evidence_probability`` still gives. For a UAI
+    /// ``MARKOV`` network, the partition function given the evidence, as
+    /// the command line's ``Z:`` line. ``None`` unless ``solve`` was called
+    /// with ``evidence_probability=True``.
     #[getter]
     fn evidence_probability(&self) -> Option<f64> {
         self.evidence.map(|(p, _)| p)
@@ -125,8 +125,17 @@ impl Solution {
     }
 }
 
-/// Parse, ground, compile and count ``program``, a ProbLog program as
-/// text, and return the answers to its queries.
+/// Read ``program``, text in ``format``, then ground, compile and count
+/// it, and return the answers to its queries.
+///
+/// ``format`` names what the text is, as the command line tells it by the
+/// file's extension: ``"problog"``, the default (an LPAD where it holds
+/// ``:- begin_lpad.``), ``"dice"``, or a network's: ``"bif"``,
+/// ``"hugin"`` (``.net``), ``"xdsl"`` or ``"uai"``. A network's
+/// variables are each queried at every value, and ``evidence`` is the
+/// text of its evidence file, as the command line's ``--evidence`` reads
+/// it: a UAI ``.evid`` file for a UAI network, an Ace ``.inst`` file for
+/// any other.
 ///
 /// ``vtree`` is the command line's ``--vtree``: ``"auto"``, the default, or
 /// one of the layouts it lists. ``evidence_probability=True`` also computes
@@ -134,29 +143,47 @@ impl Solution {
 /// it. ``queries=False`` leaves out the program's queries, as
 /// ``--no-queries`` does, and needs ``evidence_probability=True``.
 ///
-/// An unknown ``vtree``, or options that ask for nothing, raise
-/// ``ValueError``; a program tddlog cannot answer raises a subclass of
-/// ``tddlog.Error``. The interpreter lock is released for the whole run.
+/// An unknown ``format`` or ``vtree``, ``evidence`` for a program that is
+/// not a network, or options that ask for nothing raise ``ValueError``; a
+/// program tddlog cannot answer raises a subclass of ``tddlog.Error``. The
+/// interpreter lock is released for the whole run.
 #[pyfunction]
-#[pyo3(signature = (program, *, vtree = "auto", evidence_probability = false, queries = true))]
+#[pyo3(signature = (program, *, format = "problog", evidence = None, vtree = "auto", evidence_probability = false, queries = true))]
 fn solve(
     py: Python<'_>,
     program: &str,
+    format: &str,
+    evidence: Option<&str>,
     vtree: &str,
     evidence_probability: bool,
     queries: bool,
 ) -> PyResult<Solution> {
+    let format = format
+        .parse::<tddlog::Format>()
+        .map_err(PyValueError::new_err)?;
     let strategy = vtree
         .parse::<tddlog::Strategy>()
         .map_err(PyValueError::new_err)?;
+    let read = tddlog::network::ReadOptions {
+        queries: match queries {
+            true => tddlog::network::Queries::All,
+            false => tddlog::network::Queries::None,
+        },
+        evidence: evidence.map(|e| format.evidence(e.as_bytes())),
+        rescale: false,
+    };
     let options = tddlog::Options {
         strategy,
         evidence_probability,
         queries,
         ..tddlog::Options::default()
     };
-    py.detach(|| tddlog::solve(program, &options, &mut |_| {}).map(Solution::new))
-        .map_err(py_error)
+    py.detach(|| -> Result<Solution, tddlog::Error> {
+        let input = tddlog::read(program.as_bytes(), format, &read)?;
+        let solution = tddlog::solve(&input.program, &options, &mut |_| {})?;
+        Ok(Solution::new(solution, &input))
+    })
+    .map_err(py_error)
 }
 
 // `pymodule` expands this function into a Rust module of the same name, so it

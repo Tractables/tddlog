@@ -15,14 +15,14 @@
 
 **Exact probabilistic inference from C and C++.**
 
-tddlog computes exact probabilities for ProbLog programs, and for
-Bayesian networks and discrete probabilistic programs written in ProbLog,
-by compiling them into tree decision diagrams. This library exposes the
+tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
+programs and Bayesian and Markov networks, by compiling them into tree
+decision diagrams. This library exposes the
 same Rust implementation as the
 [command line and Rust crate](https://github.com/Tractables/tddlog) and
 the [Python package](https://tractables.github.io/tddlog/python/)
-through a C interface: a program goes in as text, with the command
-line's options, and the probabilities of its queries come out through an
+through a C interface: a program goes in as text, in any of these
+formats, with the command line's options, and the probabilities of its queries come out through an
 opaque solution handle.
 
 **The ABI is unstable before 1.0.** Struct layouts, status codes and
@@ -105,10 +105,18 @@ against the probabilities worked out by hand.
   null for `"auto"`), `evidence_probability` (`--evidence-probability`)
   and `queries` (false for `--no-queries`, which needs
   `evidence_probability`). Null options are the defaults.
+- `format` in the options says what the text is, as the command line
+  tells it by the file's extension: `"problog"` or null (an LPAD where it
+  holds `:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+  (`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
+  `evidence` is the text of its evidence file, an Ace `.inst` file or,
+  for a UAI network, a UAI `.evid` file. For a UAI `MARKOV` network,
+  `P(e)` is the partition function given the evidence.
 - `tddlog_solve` returns `TDDLOG_OK` or an error status, and
   `tddlog_last_error_message()` the message the command line prints:
-  `TDDLOG_ERROR_INVALID_INPUT` for a null pointer, text that is not
-  UTF-8, an unknown strategy or options that ask for nothing;
+  `TDDLOG_ERROR_INVALID_INPUT` for a null pointer, an unknown format or
+  strategy, evidence for a program that is not a network, or options
+  that ask for nothing;
   `TDDLOG_ERROR_PARSE`, `TDDLOG_ERROR_GROUND` and `TDDLOG_ERROR_COMPILE`
   for a program tddlog cannot answer; `TDDLOG_ERROR_PANIC` for a bug.
 - The answers are in the order of the program's queries, each as ProbLog
@@ -136,7 +144,8 @@ language, with worked examples that open in the
 CMake, then builds and runs the example against the installed package,
 moved to another prefix, through both CMake and pkg-config (which it
 needs on PATH). `tests/answers.c` checks a dozen of ProbLog's system
-tests against ProbLog's answers under several vtree strategies.
+tests against ProbLog's answers under several vtree strategies, and a
+Dice program and networks read in their formats.
 
 `include/tddlog.h` is generated from `src/lib.rs` by
 [cbindgen](https://github.com/mozilla/cbindgen), which the crate's build

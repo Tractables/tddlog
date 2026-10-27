@@ -557,7 +557,12 @@ compilation error: atom a is undefined in the well-founded model of some possibl
   a program, which <code>--program</code> prints, and a Julia script in
   the repository's
   <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
-  writes Alea.jl programs as programs it reads.</p>
+  writes Alea.jl programs as programs it reads. The command line takes a
+  file's format from its extension; the playground's Format menu and the
+  bindings (<a href="#library">below</a>) take its name:
+  <code>problog</code> (an LPAD among them), <code>dice</code>,
+  <code>bif</code>, <code>hugin</code>, <code>xdsl</code> or
+  <code>uai</code>.</p>
 
   <h3 id="network-files">Bayesian and Markov networks</h3>
   <p>tddlog reads a discrete network file as a ground program, as in the
@@ -583,7 +588,14 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   program, which the benchmarks give the other systems that read ProbLog
   programs;
   <a href="https://github.com/Tractables/tddlog/blob/main/docs/design.md#network-files-srcnetwork">Network
-  files</a> in docs/design.md has the encoding.</p>
+  files</a> in docs/design.md has the encoding. The bindings take the
+  network's text with its format and the evidence file's text, which is
+  read as a UAI <code>.evid</code> file for a UAI network and as an Ace
+  <code>.inst</code> file for any other; they query every variable.</p>
+<pre data-lang="python">solution = tddlog.solve(open("examples/asia.net").read(), format="hugin",
+                        evidence=open("tests/networks/asia_leaves.inst").read())</pre>
+  <p class="try"><a href="../?example=chest">Open the asia network's
+  file in the playground</a>.</p>
 
   <h3 id="dice">Dice programs</h3>
   <p>tddlog reads a file with the extension <code>.dice</code> as a Dice
@@ -596,7 +608,10 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   calls. The program's result is queried. Lists, <code>/</code>,
   <code>%</code>, <code>nth_bit</code> and <code>sample</code> are
   refused.
-  <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.</p>
+  <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.
+  The bindings read a Dice program with the format <code>dice</code>.</p>
+  <p class="try"><a href="../?example=walk&amp;evidence=1">Open a random
+  walk in the playground</a>.</p>
 
   <h3 id="alea">Alea.jl programs</h3>
   <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/alea2problog.jl"><code>scripts/alea2problog.jl</code></a>
@@ -645,7 +660,9 @@ tddlog --program tests/lpad/coin.cplint.pl &gt; coin.pl</pre>
   <h2>From Rust, Python and C</h2>
   <p>Each binding takes the program's text and the command line's options
   and returns the answers in the order of the program's queries, each
-  written as ProbLog prints it.</p>
+  written as ProbLog prints it. An input in another
+  <a href="#networks">format</a> is given as its text with the format's
+  name, and a network's evidence file as its text.</p>
 
   <h3 id="rust">Rust</h3>
   <p>The crate builds from its repository, with a C++ compiler as
@@ -672,7 +689,15 @@ for answer in solution.answers.as_deref().unwrap_or_default() {
 }</pre>
   <p>The <a href="../api/tddlog/">API documentation</a> runs this example
   as a test, and describes <code>Options</code> and
-  <code>Solution</code>.</p>
+  <code>Solution</code>. <code>tddlog::read</code> reads an input in any
+  format as the program <code>solve</code> takes:</p>
+<pre data-lang="rust">let format: tddlog::Format = "hugin".parse()?;
+let (net, inst) = (std::fs::read("examples/asia.net")?, std::fs::read("tests/networks/asia_leaves.inst")?);
+let read = tddlog::network::ReadOptions { evidence: Some(format.evidence(&amp;inst)), ..Default::default() };
+let input = tddlog::read(&amp;net, format, &amp;read)?;
+let solution = tddlog::solve(&amp;input.program, &amp;options, &amp;mut |_| {})?;
+// P(e), or a Markov network's partition function.
+let p = input.evidence_probability(&amp;solution);</pre>
 
   <h3 id="python">Python</h3>
 <pre data-lang="python">import tddlog
@@ -683,8 +708,9 @@ for query, probability in solution.answers.items():
 print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
   <p>The package is not on PyPI yet: it builds from a checkout, with
   Python 3.10 or later. <code>solve</code> takes the
-  options as keywords (<code>vtree</code>,
-  <code>evidence_probability</code>, <code>queries</code>), and an error
+  options as keywords (<code>format</code>, <code>evidence</code>,
+  <code>vtree</code>, <code>evidence_probability</code>,
+  <code>queries</code>), and an error
   is an exception of its own: <code>tddlog.ParseError</code>,
   <code>GroundingError</code> or <code>CompilationError</code>. The
   <a href="../python/">Python page</a> has the rest.</p>
@@ -701,9 +727,11 @@ for (size_t i = 0; i &lt; tddlog_solution_num_answers(solution); i++)
     printf("%s:\t%f\n", tddlog_solution_query(solution, i),
            tddlog_solution_probability(solution, i));
 tddlog_solution_free(solution);</pre>
-  <p>The C library installs with CMake, as a CMake package and a
-  pkg-config file; the <a href="../c/">C page</a> covers building,
-  linking and the header.</p>
+  <p><code>options.format</code> names the input's format (NULL for
+  ProbLog) and <code>options.evidence</code> holds a network's evidence
+  file (NULL for none). The C library installs with CMake, as a CMake
+  package and a pkg-config file; the <a href="../c/">C page</a> covers
+  building, linking and the header.</p>
 </section>
 
 <section class="card prose" id="how-it-works">

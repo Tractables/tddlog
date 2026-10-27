@@ -5,7 +5,8 @@ class Error(Exception):
     GroundingError and CompilationError."""
 
 class ParseError(Error):
-    """The program is not in the language tddlog reads."""
+    """The program is not in the language or the format it is said to be
+    in."""
 
 class GroundingError(Error):
     """The program parses but cannot be ground: an unsupported construct or a
@@ -26,7 +27,8 @@ class Solution:
         program's order; ``None`` where the evidence is inconsistent."""
     @property
     def evidence_probability(self) -> float | None:
-        """P(e); ``None`` unless asked for."""
+        """P(e), for a UAI MARKOV network the partition function given
+        the evidence; ``None`` unless asked for."""
     @property
     def log10_evidence_probability(self) -> float | None:
         """The base-10 logarithm of P(e), exact beyond a float's range;
@@ -35,6 +37,8 @@ class Solution:
 def solve(
     program: str,
     *,
+    format: str = "problog",
+    evidence: str | None = None,
     vtree: str = "auto",
     evidence_probability: bool = False,
     queries: bool = True,

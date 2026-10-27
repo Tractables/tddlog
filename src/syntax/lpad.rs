@@ -1,7 +1,8 @@
 //! LPADs written for cplint and PITA ([`read`]): a source that holds the
 //! directive `:- begin_lpad.` (or cplint's other spelling,
 //! `:- begin_plp.`) is read as the ProbLog program this module writes for
-//! it, which `tddlog --program` prints and the parser then reads.
+//! it, which `tddlog --program` prints and the parser then reads
+//! ([`crate::read`] finds the directive in a ProbLog input).
 //!
 //! The LPAD is the clauses between `:- begin_lpad.` and `:- end_lpad.`.
 //! Its clauses `h1:p1 ; h2:p2 :- body.` are written `p1::h1; p2::h2 :-

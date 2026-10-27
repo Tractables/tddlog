@@ -14,9 +14,9 @@
 
 **Exact probabilistic inference from Python.**
 
-tddlog computes exact probabilities for ProbLog programs, and for
-Bayesian networks and discrete probabilistic programs written in ProbLog,
-by compiling them into tree decision diagrams. This package calls the same Rust implementation as the
+tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
+programs and Bayesian and Markov networks, by compiling them into tree
+decision diagrams. This package calls the same Rust implementation as the
 [command line and Rust crate](https://github.com/Tractables/tddlog) and
 the [C library](https://tractables.github.io/tddlog/c/).
 
@@ -72,7 +72,22 @@ P(e) = 0.196000
 probability given the evidence, in the program's order; it is `None`
 where the evidence is inconsistent. `solve` takes the command line's
 options as keywords: `vtree` (`--vtree`), `evidence_probability`
-(`--evidence-probability`) and `queries` (`False` for `--no-queries`). A
+(`--evidence-probability`) and `queries` (`False` for `--no-queries`).
+`format` says what the text is, as the command line tells it by the
+file's extension: `"problog"`, the default (an LPAD where it holds
+`:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+(`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
+`evidence` is the text of its evidence file, an Ace `.inst` file or, for
+a UAI network, a UAI `.evid` file:
+
+```python
+network = open("examples/asia.net").read()
+observed = open("tests/networks/asia_leaves.inst").read()
+solution = tddlog.solve(network, format="hugin", evidence=observed)
+```
+
+For a UAI `MARKOV` network, `evidence_probability` is the partition
+function given the evidence. A
 program tddlog cannot answer raises `tddlog.ParseError`,
 `GroundingError` or `CompilationError`, with the message the command line
 prints. `solve` releases the interpreter lock, so threads can solve

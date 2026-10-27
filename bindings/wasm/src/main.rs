@@ -1,24 +1,29 @@
-//! tddlog built for the browser: a ProbLog program goes in, its answers and
-//! what the run did come out as JSON.
+//! tddlog built for the browser: a program goes in, in any format tddlog
+//! reads, and its answers and what the run did come out as JSON.
 //!
 //! Emscripten links a program, so `main` has to exist. It does nothing and the
 //! page never runs it; `worker.js` calls [`tddlog_solve_json`] through
-//! `runtime.js`. The run is [`tddlog::solve`], as the command line runs it.
+//! `runtime.js`. The run is [`tddlog::read`] and [`tddlog::solve`], as the
+//! command line runs them.
 
 use std::ffi::{CStr, CString, c_char};
 use std::fmt::Write;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use tddlog::{Options, Progress, Strategy};
+use tddlog::network::ReadOptions;
+use tddlog::{Format, Options, Progress, Strategy};
 
 fn main() {}
 
-/// Answer the queries of the ProbLog program `program` under the vtree
-/// strategy named `strategy` (as `--vtree` takes it; `auto` is the
-/// default), with `P(e)` where `evidence_probability` is 1, and return
-/// the JSON text of the result (`runtime.js` documents its fields), or of
-/// `{"error": ...}` where the program or the options are refused or the
-/// run fails. The caller releases the string with [`tddlog_string_free`].
+/// Answer the queries of `program`, text in the format named `format`
+/// (as `Format` parses it: `problog`, `dice`, `bif`, `hugin`, `xdsl` or
+/// `uai`), a network's with `evidence` the text of its evidence file (null
+/// for none), under the vtree strategy named `strategy` (as `--vtree`
+/// takes it; `auto` is the default), with `P(e)` where
+/// `evidence_probability` is 1, and return the JSON text of the result
+/// (`runtime.js` documents its fields), or of `{"error": ...}` where the
+/// program or the options are refused or the run fails. The caller
+/// releases the string with [`tddlog_string_free`].
 ///
 /// `evidence_probability` is a `u32` so that it crosses the boundary as a
 /// JavaScript number; a value other than 0 or 1 is an error rather than
@@ -26,25 +31,41 @@ fn main() {}
 ///
 /// # Safety
 ///
-/// `program` and `strategy` must point to NUL-terminated strings.
+/// `program`, `format` and `strategy` must point to NUL-terminated
+/// strings, and `evidence` must be null or point to one.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn tddlog_solve_json(
     program: *const c_char,
+    format: *const c_char,
+    evidence: *const c_char,
     strategy: *const c_char,
     evidence_probability: u32,
 ) -> *mut c_char {
-    if program.is_null() || strategy.is_null() {
-        return into_c_string(error_json("no program or no strategy", &Partial::default()));
+    if program.is_null() || format.is_null() || strategy.is_null() {
+        return into_c_string(error_json(
+            "no program, no format or no strategy",
+            &Partial::default(),
+        ));
     }
     // SAFETY: the caller guarantees NUL-terminated strings.
-    let (program, strategy) = unsafe { (CStr::from_ptr(program), CStr::from_ptr(strategy)) };
-    let (Ok(program), Ok(strategy)) = (program.to_str(), strategy.to_str()) else {
-        return into_c_string(error_json("the program is not UTF-8", &Partial::default()));
+    let (program, format, strategy) = unsafe {
+        (
+            CStr::from_ptr(program).to_bytes(),
+            CStr::from_ptr(format),
+            CStr::from_ptr(strategy),
+        )
+    };
+    let evidence = (!evidence.is_null()).then(|| unsafe { CStr::from_ptr(evidence) }.to_bytes());
+    let (Ok(format), Ok(strategy)) = (format.to_str(), strategy.to_str()) else {
+        return into_c_string(error_json(
+            "the format or the strategy is not UTF-8",
+            &Partial::default(),
+        ));
     };
     // A panic reaching Emscripten aborts the module, and every later call on
     // it fails; the panic hook has written the details to the console.
     let json = catch_unwind(AssertUnwindSafe(|| {
-        run(program, strategy, evidence_probability)
+        run(program, format, evidence, strategy, evidence_probability)
     }))
     .unwrap_or_else(|payload| {
         let message = payload
@@ -86,8 +107,18 @@ struct Partial {
     parts: Vec<String>,
 }
 
-fn run(program: &str, strategy: &str, evidence_probability: u32) -> String {
+fn run(
+    program: &[u8],
+    format: &str,
+    evidence: Option<&[u8]>,
+    strategy: &str,
+    evidence_probability: u32,
+) -> String {
     let mut partial = Partial::default();
+    let format: Format = match format.parse() {
+        Ok(f) => f,
+        Err(e) => return error_json(&format!("options error: {e}"), &partial),
+    };
     let strategy: Strategy = match strategy.parse() {
         Ok(s) => s,
         Err(e) => return error_json(&format!("options error: {e}"), &partial),
@@ -102,12 +133,22 @@ fn run(program: &str, strategy: &str, evidence_probability: u32) -> String {
             );
         }
     };
+    let read = ReadOptions {
+        evidence: evidence.map(|e| format.evidence(e)),
+        ..ReadOptions::default()
+    };
+    let input = match tddlog::read(program, format, &read) {
+        Ok(input) => input,
+        Err(e) => return error_json(&e.to_string(), &partial),
+    };
+    // An LPAD's example queries that its program leaves out.
+    partial.notes.extend(input.left_out.iter().cloned());
     let options = Options {
         strategy,
         evidence_probability,
         ..Options::default()
     };
-    let solved = tddlog::solve(program, &options, &mut |progress| match progress {
+    let solved = tddlog::solve(&input.program, &options, &mut |progress| match progress {
         Progress::Grounded { seconds } => partial.ground_seconds = seconds,
         Progress::Note(line) => partial.notes.push(line),
         Progress::Compiling(ground) => partial.compiling = Some(ground_json(ground)),
@@ -142,14 +183,15 @@ fn run(program: &str, strategy: &str, evidence_probability: u32) -> String {
         }
     }
     out.push_str(",\"evidence\":");
-    match solution.evidence_probability {
+    match input.evidence_probability(&solution) {
         None => out.push_str("null"),
-        Some(p) => {
+        Some((p, log10)) => {
             let _ = write!(
                 out,
-                "{{\"probability\":{},\"log10\":{}}}",
-                number(p.to_f64()),
-                number(p.log10())
+                "{{\"probability\":{},\"log10\":{},\"z\":{}}}",
+                number(p),
+                number(log10),
+                input.log10_offset.is_some()
             );
         }
     }
@@ -274,15 +316,46 @@ mod tests {
     use super::*;
 
     fn solve(program: &str, strategy: &str, evidence_probability: u32) -> String {
+        solve_in(
+            program.as_bytes(),
+            "problog",
+            None,
+            strategy,
+            evidence_probability,
+        )
+    }
+
+    fn solve_in(
+        program: &[u8],
+        format: &str,
+        evidence: Option<&[u8]>,
+        strategy: &str,
+        evidence_probability: u32,
+    ) -> String {
         let program = CString::new(program).unwrap();
+        let format = CString::new(format).unwrap();
+        let evidence = evidence.map(|e| CString::new(e).unwrap());
         let strategy = CString::new(strategy).unwrap();
-        // SAFETY: both are NUL-terminated, and the result is freed once read.
+        // SAFETY: each is NUL-terminated or null, and the result is freed
+        // once read.
         unsafe {
-            let out = tddlog_solve_json(program.as_ptr(), strategy.as_ptr(), evidence_probability);
+            let out = tddlog_solve_json(
+                program.as_ptr(),
+                format.as_ptr(),
+                evidence.as_ref().map_or(std::ptr::null(), |e| e.as_ptr()),
+                strategy.as_ptr(),
+                evidence_probability,
+            );
             let text = CStr::from_ptr(out).to_str().unwrap().to_string();
             tddlog_string_free(out);
             text
         }
+    }
+
+    /// A file's bytes: a network file may be ISO-8859-1, as
+    /// tests/networks/sprinkler.xdsl is.
+    fn file(path: &str) -> Vec<u8> {
+        std::fs::read(format!("../../{path}")).unwrap()
     }
 
     #[test]
@@ -301,10 +374,51 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("\"evidence\":{\"probability\":0.196"), "{out}");
+        assert!(out.contains("\"z\":false}"), "{out}");
         let out = solve("0.3::a. query(\\+a).", "auto", 0);
         assert!(
             out.starts_with("{\"answers\":[{\"query\":\"\\\\+a\",\"probability\":0.7"),
             "{out}"
+        );
+    }
+
+    /// A Dice program against Dice's answers, a network with its evidence
+    /// file against ProbLog's, and a Markov network's partition function,
+    /// 165 by enumeration (tests/it/input.rs).
+    #[test]
+    fn other_formats() {
+        let out = solve_in(&file("tests/dice/walk.dice"), "dice", None, "auto", 0);
+        assert!(
+            out.contains("{\"query\":\"x(1)\",\"probability\":0.2455567330"),
+            "{out}"
+        );
+        let out = solve_in(
+            &file("tests/networks/sprinkler.xdsl"),
+            "xdsl",
+            Some(&file("tests/networks/sprinkler.inst")),
+            "auto",
+            0,
+        );
+        assert!(
+            out.contains("{\"query\":\"wetgrass(t)\",\"probability\":0.92"),
+            "{out}"
+        );
+        let out = solve_in(
+            &file("tests/regress/markov.uai"),
+            "uai",
+            Some(&file("tests/regress/markov.uai.evid")),
+            "auto",
+            1,
+        );
+        assert!(out.contains("\"evidence\":{\"probability\":16"), "{out}");
+        assert!(out.contains("\"z\":true}"), "{out}");
+        assert!(
+            solve_in(b"0.5::a. query(a).", "prolog", None, "auto", 0)
+                .starts_with("{\"error\":\"options error: unknown format")
+        );
+        assert!(
+            solve_in(b"0.5::a. query(a).", "problog", Some(b""), "auto", 0)
+                .starts_with("{\"error\":\"options error: an evidence file is for a network")
         );
     }
 
@@ -328,7 +442,9 @@ mod tests {
             1,
         );
         assert!(
-            out.starts_with("{\"answers\":null,\"evidence\":{\"probability\":0.0,\"log10\":null}"),
+            out.starts_with(
+                "{\"answers\":null,\"evidence\":{\"probability\":0.0,\"log10\":null,\"z\":false}"
+            ),
             "{out}"
         );
     }

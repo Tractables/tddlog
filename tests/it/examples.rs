@@ -10,8 +10,10 @@ use tddlog::Projection;
 use tddlog::{Kind, Strategy};
 
 fn check(file: &str, expected: &[(&str, f64)]) {
-    let source = std::fs::read_to_string(format!("examples/{file}")).unwrap();
-    check_text(file, &source, expected);
+    let data = std::fs::read(format!("examples/{file}")).unwrap();
+    let format = tddlog::Format::of_path(file);
+    let input = tddlog::read(&data, format, &Default::default()).unwrap();
+    check_text(file, &input.program, expected);
 }
 
 /// [`check`] on the program `source`; `file` names it.

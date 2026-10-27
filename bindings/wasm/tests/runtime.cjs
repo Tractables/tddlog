@@ -30,7 +30,7 @@ function worker(solver) {
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
-test("the program and the strategy go on the heap and every allocation is freed", async () => {
+test("the program, its format and the strategy go on the heap and every allocation is freed", async () => {
   const freed = [];
   const heap = new Uint8Array(4 * 1024 * 1024);
   let next = 16;
@@ -38,8 +38,10 @@ test("the program and the strategy go on the heap and every allocation is freed"
     HEAPU8: heap,
     _malloc: (n) => { const at = next; next += n; return at; },
     _free: (ptr) => freed.push(ptr),
-    _tddlog_solve_json: (program, strategy, evidence) => {
+    _tddlog_solve_json: (program, format, observed, strategy, evidence) => {
       assert.equal(heap[program], "%".charCodeAt(0));
+      assert.equal(new TextDecoder().decode(heap.subarray(format, format + 5)), "dice\0");
+      assert.equal(observed, 0, "no evidence file");
       assert.equal(new TextDecoder().decode(heap.subarray(strategy, strategy + 6)), "closed");
       assert.equal(evidence, 1);
       return 8;
@@ -52,9 +54,9 @@ test("the program and the strategy go on the heap and every allocation is freed"
   // Objects made in the worker's context have its prototypes, so they are
   // compared as JSON.
   assert.equal(JSON.stringify(messages[0]), '{"ready":true}');
-  context.onmessage({ data: { program: "%" + "x".repeat(3 * 1024 * 1024), strategy: "closed", evidence: true } });
+  context.onmessage({ data: { program: "%" + "x".repeat(3 * 1024 * 1024), strategy: "closed", evidence: true, format: "dice" } });
   assert.equal(JSON.stringify(messages.at(-1).result), '{"answers":[],"evidence":null}', JSON.stringify(messages.at(-1)));
-  assert.equal(freed.length, 3);
+  assert.equal(freed.length, 4);
 });
 
 test("a module that aborts is reported, with the reason it wrote", async () => {
@@ -70,9 +72,9 @@ test("a module that aborts is reported, with the reason it wrote", async () => {
   };
   const { context, messages } = worker(solver);
   await settle();
-  context.onmessage({ data: { program: "0.5::a.", strategy: "auto", evidence: false } });
+  context.onmessage({ data: { program: "0.5::a.", strategy: "auto", evidence: false, format: "problog" } });
   assert.match(messages.at(-1).failure, /ran out of memory\. A page can use at most 4 GB/);
-  assert.equal(freed.length, 2, "both inputs freed");
+  assert.equal(freed.length, 3, "the three inputs freed");
 });
 
 test("load failures are reported to the page", async () => {
@@ -86,6 +88,12 @@ test("load failures are reported to the page", async () => {
     await settle();
     assert.match(messages[0].loadError, /unavailable/);
   }
+});
+
+test("a file's format by its extension, as the command line tells it", () => {
+  const cases = [["a.pl", "problog"], ["a.cplint.pl", "problog"], ["a.dice", "dice"], ["a.bif", "bif"], ["a.BIF", "problog"],
+    ["a.net", "hugin"], ["a.hugin", "hugin"], ["a.xdsl", "xdsl"], ["a.uai", "uai"], ["a.txt", "problog"]];
+  for (const [name, format] of cases) assert.equal(tddlogRuntime.formatOf(name), format, name);
 });
 
 test("evidence must be a boolean, digits an integer from 0 to 17", () => {
