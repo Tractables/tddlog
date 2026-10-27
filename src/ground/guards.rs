@@ -10,9 +10,11 @@
 //! diagram of a branch need not keep their values alive.
 //!
 //! `x` conditioned on the cube `C` of fact literals is computed once per
-//! `x` and `C` restricted to the range of fact numbers `x`'s support lies
-//! in. For each rule of `x`, the cube grows by the fact literals the
-//! rule's literals imply under it, to a fixpoint: a fact literal itself; a
+//! `x` and `C` restricted to the facts `x`'s support may hold ([`Cover`]):
+//! the range of fact numbers the support lies in, less a run of facts
+//! within it that the support does not hold. For each rule of `x`, the
+//! cube grows by the fact literals the rule's literals imply under it, to
+//! a fixpoint: a fact literal itself; a
 //! derived literal's value under the cube where that is a fact literal;
 //! else the literals its definition implies, which are summarized as the
 //! definition is made: every literal of its one body, or, for a negative
@@ -40,7 +42,7 @@
 //! decides nothing; the set of a fact that decides keeps no literal of a
 //! fact that every cube holding it reads under the first, which decides
 //! below it, unless every cube holding the first holds it too. A definition
-//! made for a cube restricted to its range reads its facts under each of
+//! made for a cube restricted to its cover reads its facts under each of
 //! its readers' cubes: its context is the literals that every cube a reader
 //! reads it under holds, with the reader's context. The cube a fact decides
 //! between others under is its reader's with that context; the cube it is
@@ -84,7 +86,7 @@ const GROWTH: usize = 8;
 const SPEND: usize = 64;
 
 /// The most cube literals the pass may copy and look up, per literal of
-/// the program. A cube restricted to an atom's range of fact numbers holds
+/// the program. A cube restricted to an atom's cover ([`Cover`]) holds
 /// every fact of the cube numbered within it, read by the atom or not: on
 /// a Roulette ladder of 3 000 rungs, whose grounding numbers one column's
 /// facts before the other's, each rung's cubes held the other column's
@@ -401,14 +403,121 @@ fn merge(into: &mut Vec<GLit>, a: &[GLit], b: &[GLit]) {
 }
 
 /// A literal of a rule's body, with whether its atom is a fact and the
-/// range of fact numbers the atom's support lies in, `lo > hi` where it
-/// reads no fact.
+/// facts the atom's support may hold.
 #[derive(Clone, Copy)]
 struct BodyLit {
     lit: GLit,
     fact: bool,
+    cover: Cover,
+}
+
+/// The facts an atom's support may hold: those numbered `lo..=end` and
+/// `start..=hi`. `end` is `hi` and `start` above it where nothing is cut
+/// out of the range, and `lo` is above `hi` where the atom reads no fact.
+/// The facts between `end` and `start` are the widest run within the range
+/// that the covers of the atom's rules' literals leave out. Keyed by its
+/// cube restricted to the range alone, a frame would be evaluated again
+/// for each literal of that run its cube holds, to the same value: on the
+/// bit-blasted circuits, two frames in five.
+#[derive(Clone, Copy)]
+struct Cover {
     lo: AtomId,
+    end: AtomId,
+    start: AtomId,
     hi: AtomId,
+}
+
+impl Cover {
+    const NONE: Cover = Cover {
+        lo: AtomId::MAX,
+        end: 0,
+        start: AtomId::MAX,
+        hi: 0,
+    };
+
+    fn fact(a: AtomId) -> Cover {
+        Cover {
+            lo: a,
+            end: a,
+            start: AtomId::MAX,
+            hi: a,
+        }
+    }
+
+    fn intervals(self) -> impl Iterator<Item = (AtomId, AtomId)> {
+        [(self.lo, self.end), (self.start, self.hi)]
+            .into_iter()
+            .filter(|&(lo, hi)| lo <= hi)
+    }
+
+    /// The cover of the facts of `iv`, intervals of fact numbers: their
+    /// range less the widest run of facts between them (the last of the
+    /// widest). `before` holds, per atom, the number of facts numbered
+    /// below it.
+    fn of(iv: &mut [(AtomId, AtomId)], before: &[u32]) -> Cover {
+        iv.sort_unstable();
+        let Some(&(lo, mut end)) = iv.first() else {
+            return Cover::NONE;
+        };
+        let mut cover = Cover {
+            lo,
+            end: AtomId::MAX,
+            start: AtomId::MAX,
+            hi: end,
+        };
+        let mut widest = 0;
+        for &(a, b) in &iv[1..] {
+            let gap = before[a as usize].saturating_sub(before[end as usize]);
+            if gap > 1 && gap >= widest {
+                widest = gap;
+                (cover.end, cover.start) = (end, a);
+            }
+            end = end.max(b);
+        }
+        cover.hi = end;
+        if cover.start == AtomId::MAX {
+            cover.end = end;
+        }
+        cover
+    }
+
+    /// The parts of `cube`, sorted by atom, within the two intervals.
+    fn parts(&self, cube: &[GLit]) -> Parts {
+        let first = part(self.lo, self.end, cube);
+        let second = if self.start > self.hi {
+            first.end..first.end
+        } else {
+            part(self.start, self.hi, cube)
+        };
+        Parts(first, second)
+    }
+}
+
+/// The parts of a cube within the two intervals of a [`Cover`].
+struct Parts(std::ops::Range<usize>, std::ops::Range<usize>);
+
+impl Parts {
+    fn len(&self) -> usize {
+        self.0.len() + self.1.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty() && self.1.is_empty()
+    }
+
+    /// The parts as one range of the cube, where no literal of the cube
+    /// lies between them.
+    fn joined(&self) -> Option<std::ops::Range<usize>> {
+        if self.1.is_empty() {
+            Some(self.0.clone())
+        } else if self.0.is_empty() {
+            Some(self.1.clone())
+        } else if self.0.end == self.1.start {
+            Some(self.0.start..self.1.end)
+        } else {
+            None
+        }
+    }
 }
 
 /// The part of `cube`, sorted by atom, within the fact numbers `lo..=hi`.
@@ -466,11 +575,11 @@ struct Pass<'a> {
     target: usize,
 }
 
-/// The rules of `gp` by head and the range of fact numbers each atom's
-/// support lies in, where the conditioning applies to `gp`: an acyclic
+/// The rules of `gp` by head and the facts each atom's support may hold,
+/// where the conditioning applies to `gp`: an acyclic
 /// program without pairs rules in which a rule reads a fact within the
 /// range of one of its derived literals; `None` where it does not.
-fn applicable(gp: &GroundProgram) -> Option<(RulesByHead, Vec<AtomId>, Vec<AtomId>)> {
+fn applicable(gp: &GroundProgram) -> Option<(RulesByHead, Vec<Cover>)> {
     if gp.rules.iter().any(|r| r.pairs) {
         return None;
     }
@@ -480,29 +589,40 @@ fn applicable(gp: &GroundProgram) -> Option<(RulesByHead, Vec<AtomId>, Vec<AtomI
         return None;
     }
     let n = gp.num_atoms();
-    let (mut lo, mut hi) = (vec![AtomId::MAX; n], vec![0; n]);
+    let mut cover = vec![Cover::NONE; n];
     for (a, _) in gp.facts() {
-        (lo[a as usize], hi[a as usize]) = (a, a);
+        cover[a as usize] = Cover::fact(a);
     }
+    let mut before = Vec::with_capacity(n);
+    let mut facts = 0;
+    for c in &cover {
+        before.push(facts);
+        if c.lo <= c.hi {
+            facts += 1;
+        }
+    }
+    let mut iv = Vec::new();
     for c in &sccs {
         let a = c[0] as usize;
+        iv.clear();
         for &ri in &by_head[a] {
             for l in &gp.rules[ri].body {
-                let b = l.atom() as usize;
-                lo[a] = lo[a].min(lo[b]);
-                hi[a] = hi[a].max(hi[b]);
+                iv.extend(cover[l.atom() as usize].intervals());
             }
         }
+        cover[a] = Cover::of(&mut iv, &before);
     }
     let guarded = |r: &GroundRule| {
         let derived = || r.body.iter().filter(|l| !gp.is_fact(l.atom()));
         r.body.iter().any(|f| {
             gp.is_fact(f.atom())
-                && derived()
-                    .any(|b| (lo[b.atom() as usize]..=hi[b.atom() as usize]).contains(&f.atom()))
+                && derived().any(|b| {
+                    let c = cover[b.atom() as usize];
+                    (c.lo..=c.hi).contains(&f.atom())
+                })
         })
     };
-    gp.rules.iter().any(guarded).then_some((by_head, lo, hi))
+    gp.rules.iter().any(guarded).then_some((by_head, cover))
 }
 
 /// Whether the conditioning on guards applies to `gp` ([`applicable`])
@@ -606,19 +726,15 @@ impl<'a> Pass<'a> {
     /// The pass on `gp` where it applies ([`applicable`]), its budgets on
     /// visits and cube literals divided by `part`.
     fn new(gp: &'a GroundProgram, part: usize) -> Option<Self> {
-        let (by_head, lo, hi) = applicable(gp)?;
+        let (by_head, cover) = applicable(gp)?;
         let size = gp.size();
         let (mut heads, mut starts, mut body) = (vec![0u32], vec![0u32], Vec::new());
         for rules in by_head.iter() {
             for &ri in rules {
-                body.extend(gp.rules[ri].body.iter().map(|&lit| {
-                    let a = lit.atom() as usize;
-                    BodyLit {
-                        lit,
-                        fact: gp.is_fact(lit.atom()),
-                        lo: lo[a],
-                        hi: hi[a],
-                    }
+                body.extend(gp.rules[ri].body.iter().map(|&lit| BodyLit {
+                    lit,
+                    fact: gp.is_fact(lit.atom()),
+                    cover: cover[lit.atom() as usize],
                 }));
                 starts.push(body.len() as u32);
             }
@@ -717,9 +833,9 @@ impl<'a> Pass<'a> {
         done
     }
 
-    /// `b` conditioned on `part`, a cube restricted to `b`'s range
-    /// ([`part`]) and interned as `known` where that is given, or what is
-    /// needed to know it.
+    /// `b` conditioned on `part`, a cube restricted to `b`'s cover
+    /// ([`Cover::parts`]) and interned as `known` where that is given, or
+    /// what is needed to know it.
     fn value(&mut self, b: AtomId, part: &[GLit], known: Option<u32>) -> Result<Val, Need> {
         self.copied += part.len();
         let c = known.unwrap_or_else(|| self.cubes.intern(part));
@@ -780,11 +896,11 @@ impl<'a> Pass<'a> {
                     (j, n0) = (0, f.extra.len());
                     continue;
                 }
-                let BodyLit { lit, fact, lo, hi } = self.body[start + j];
+                let BodyLit { lit, fact, cover } = self.body[start + j];
                 let ok = if fact {
                     f.insert(lit)
                 } else {
-                    let (inner, outer) = (part(lo, hi, &f.base), part(lo, hi, &f.extra));
+                    let (inner, outer) = (cover.parts(&f.base), cover.parts(&f.extra));
                     let n = inner.len() + outer.len();
                     if f.values[j].part == n {
                         // Read under this part before ([`Read`]).
@@ -798,19 +914,23 @@ impl<'a> Pass<'a> {
                             }
                             None => {
                                 // A part as long as the cube, while the cube
-                                // is `cx`, is `cx`; one of `cx` alone is in
-                                // the table of parts.
-                                let (known, cube) = if outer.is_empty() {
-                                    let known = if f.extra.is_empty() && n == f.base.len() {
-                                        f.cx
-                                    } else {
-                                        self.cubes.part(f.cx, inner.clone(), &f.base)
-                                    };
-                                    (Some(known), &f.base[inner])
-                                } else {
-                                    f.part.clear();
-                                    merge(&mut f.part, &f.base[inner], &f.extra[outer]);
-                                    (None, &f.part[..])
+                                // is `cx`, is `cx`; one range of `cx` alone
+                                // is in the table of parts.
+                                let (known, cube) = match inner.joined() {
+                                    Some(inner) if outer.is_empty() => {
+                                        let known = if f.extra.is_empty() && n == f.base.len() {
+                                            f.cx
+                                        } else {
+                                            self.cubes.part(f.cx, inner.clone(), &f.base)
+                                        };
+                                        (Some(known), &f.base[inner])
+                                    }
+                                    _ => {
+                                        f.part.clear();
+                                        merge(&mut f.part, &f.base[inner.0], &f.extra[outer.0]);
+                                        merge(&mut f.part, &f.base[inner.1], &f.extra[outer.1]);
+                                        (None, &f.part[..])
+                                    }
                                 };
                                 match self.value(lit.atom(), cube, known) {
                                     Ok(v) => v,
@@ -1035,7 +1155,7 @@ impl<'a> Pass<'a> {
 
     /// The paths of the definitions that the roots' values reach, each
     /// fact with two cubes. A definition is made once for a cube restricted
-    /// to its range, and the facts it reads are read in each context its
+    /// to its cover, and the facts it reads are read in each context its
     /// readers read it in: its context, the literals that every cube a
     /// reachable reader reads it under holds, with that reader's context (a
     /// piece's slope flip, which an if-then-else of the shared low bits
