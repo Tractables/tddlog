@@ -428,9 +428,20 @@ are skipped. Several steps have a program in `examples/` that shows them.
    deterministic facts, and what such rules derive from them) has made so:
    they add nothing, and a closure of deterministic facts (PSouffle's
    `equal_assign`) would keep a rule for each atom between two of its
-   atoms. A literal with bound
-   arguments, the delta's included, takes its candidate tuples from a
-   per-position index of its relation. A negative literal on an impossible
+   atoms. A semi-naive round walks a rule from the literal that reads
+   the round's new tuples, the rest of the body joined to them
+   (`schedule.rs`'s `Order::From`): in the rule's own order, a round
+   walked every binding of the literals before that one to find the few
+   that meet a new tuple (pcfg24's 368 518 demands in each of 43
+   rounds). It does so where that is expected to walk fewer bindings: the
+   new tuples times the tuples the atom joined next matches for each,
+   against the product of the tuples each atom before that literal in
+   the own order matches, a relation expected to hold as many tuples for
+   a value of an argument as it holds for each of its values there. The
+   own order stays where the next atom is reached only by a value every
+   tuple shares (DeepProbLog's handwritten formulas, whose label is the
+   same in every demand). A literal with bound arguments, the delta's included, takes
+   its candidate tuples from a per-position index of its relation. A negative literal on an impossible
    atom is dropped as true; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint
    (`examples/win.pl` shows both). The atoms and the rules grow through

@@ -7,11 +7,12 @@
 //! tuples with each binding so far, and waits for the first atom that
 //! shares a bound variable: in PSouffle's side-channel analyses,
 //! `share(TO_E, FROM2_E)` after `xor_assign_right(TO, FROM2)` waits for
-//! `equal_assign(FROM2, FROM2_E)`. A switch atom (a probabilistic choice),
-//! positive or negated, comes last, in source order: it binds nothing and rejects no
-//! binding, so earlier it would only make the walk create its atom for
-//! bindings that a later literal rejects, and keep a semi-naive round from
-//! passing over the literals before it (`narrow` in [`super::engine`]).
+//! `equal_assign(FROM2, FROM2_E)`. A semi-naive round of the grounder
+//! starts its join from the atom that reads the round's new tuples, the
+//! others joined after it ([`Order::From`]). A switch atom (a probabilistic
+//! choice), positive or negated, comes last, in source order: it binds
+//! nothing and rejects no binding, so earlier it would only make the walk
+//! create its atom for bindings that a later literal rejects.
 //! Every other literal is placed as early as its variables allow: a negative
 //! literal or comparison when all its variables are bound, `X = t` with one
 //! side an unbound variable and the other bound (it binds the variable), `V =
@@ -92,22 +93,36 @@ fn ready(l: &Literal, unbound: &[String], bound: &mut FxHashSet<String>) -> bool
     }
 }
 
+/// How [`schedule_body`] orders the positive atoms.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Order {
+    /// In the order of the source, as the magic rewrite passes the
+    /// bindings sideways: a demand follows the program's order, which
+    /// ProbLog's resolution follows (`observe(Os) :- start(S), walk(Os, 0,
+    /// S)` asks `walk` with `S` bound, which its clause `walk([], _, _)`
+    /// needs).
+    Source,
+    /// As the grounder joins them: an atom that shares no variable with
+    /// those bound waits for one that does.
+    Join,
+    /// The atom at this position first, then as `Join`: a semi-naive round
+    /// joins the rest of the body to the tuples it adds to that atom's
+    /// relation, rather than walking every binding of the atoms before it
+    /// to find the few that meet a new tuple.
+    From(usize),
+}
+
 /// Schedule `body` starting from `bound` variables. `switch` says of the
 /// atom, positive or negated, at a position of `body` whether its predicate
-/// is a switch (called bound, last). On success returns the order, as
-/// positions in `body`, and updates `bound` with everything the body binds.
-/// On failure gives the position of the stuck literal. With `join`, an atom
-/// that shares no variable with those bound waits for one that does, as
-/// the grounder joins; without, the atoms keep the order of the source, as
-/// the magic rewrite passes the bindings sideways (a demand follows the
-/// program's order, which ProbLog's resolution follows: `observe(Os) :-
-/// start(S), walk(Os, 0, S)` asks `walk` with `S` bound, which its clause
-/// `walk([], _, _)` needs).
+/// is a switch (called bound, last); `order` how the other atoms are
+/// ordered. On success returns the order, as positions in `body`, and
+/// updates `bound` with everything the body binds. On failure gives the
+/// position of the stuck literal.
 pub(crate) fn schedule_body(
     body: &[Literal],
     bound: &mut FxHashSet<String>,
     switch: impl Fn(usize) -> bool,
-    join: bool,
+    order: Order,
 ) -> Result<Vec<usize>, usize> {
     let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && !switch(i);
     let mut pending: Vec<usize> = Vec::with_capacity(body.len());
@@ -145,10 +160,15 @@ pub(crate) fn schedule_body(
             let vars = literal_vars(&body[l]);
             vars.is_empty() || vars.iter().any(|v| bound.contains(v))
         };
-        let k = if !join || bound.is_empty() {
-            0
-        } else {
-            atoms.iter().position(|&l| joins(l)).unwrap_or(0)
+        let first = match order {
+            Order::From(first) => atoms.iter().position(|&l| l == first),
+            _ => None,
+        };
+        let k = match (order, first) {
+            (_, Some(k)) => k,
+            (Order::Source, _) => 0,
+            _ if bound.is_empty() => 0,
+            _ => atoms.iter().position(|&l| joins(l)).unwrap_or(0),
         };
         let l = atoms.remove(k);
         for v in literal_vars(&body[l]) {
@@ -184,14 +204,15 @@ mod tests {
             &p.clauses[0].body,
             &mut FxHashSet::default(),
             |i| matches!(i, 0 | 2),
-            false,
+            Order::Source,
         );
         assert_eq!(order, Ok(vec![1, 4, 3, 0, 2]));
     }
 
     /// An atom that shares no variable with those bound waits for one
     /// that does where the grounder joins them: `c(Y)` after `b(X, Y)`;
-    /// the magic rewrite keeps the order of the source.
+    /// the magic rewrite keeps the order of the source; a round whose new
+    /// tuples are `b`'s joins from `b`.
     #[test]
     fn an_atom_unbound_waits_for_one_that_joins() {
         let p = parse_program("h(X) :- a(X), c(Y), b(X, Y), d(Z).\n").unwrap();
@@ -199,15 +220,22 @@ mod tests {
             &p.clauses[0].body,
             &mut FxHashSet::default(),
             |_| false,
-            true,
+            Order::Join,
         );
         assert_eq!(order, Ok(vec![0, 2, 1, 3]));
         let order = schedule_body(
             &p.clauses[0].body,
             &mut FxHashSet::default(),
             |_| false,
-            false,
+            Order::Source,
         );
         assert_eq!(order, Ok(vec![0, 1, 2, 3]));
+        let order = schedule_body(
+            &p.clauses[0].body,
+            &mut FxHashSet::default(),
+            |_| false,
+            Order::From(2),
+        );
+        assert_eq!(order, Ok(vec![2, 0, 1, 3]));
     }
 }

@@ -35,7 +35,7 @@
 //! program in that case.
 
 use super::normalize::{NormProgram, Sig};
-use super::schedule::{literal_vars, schedule_body};
+use super::schedule::{Order, literal_vars, schedule_body};
 use crate::syntax::{Atom, Clause, Literal, Name, Term};
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -176,7 +176,7 @@ fn given<'a>(
         let mut bound = FxHashSet::default();
         literals
             && !head.negated
-            && schedule_body(&rule.body, &mut bound, |_| false, false).is_ok()
+            && schedule_body(&rule.body, &mut bound, |_| false, Order::Source).is_ok()
             && literal_vars(&Literal::Pos(head.atom.clone()))
                 .iter()
                 .all(|v| bound.contains(v))
@@ -398,7 +398,7 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
                 &rule.body,
                 &mut bound.clone(),
                 |i| matches!(&rule.body[i], Literal::Pos(a) | Literal::Neg(a) if is_switch(a)),
-                false,
+                Order::Source,
             )
             .ok()?;
             // Walk the schedule, emitting magic rules for body atoms with rules.

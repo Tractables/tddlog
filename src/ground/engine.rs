@@ -14,7 +14,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use super::normalize::NormProgram;
-use super::schedule::schedule_body;
+use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{
     Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Literal, NIL, Name, Term, term_cmp,
@@ -352,7 +352,7 @@ struct Counted {
     order: Vec<usize>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 struct IRule {
     head: (PredId, Vec<Arg>),
     /// Body literals, reordered so every negative/comparison literal comes
@@ -430,68 +430,31 @@ impl Relation {
     }
 
     /// The tuples among `s..e` that may have value `v` at each position
-    /// `pos` of `bound`, and one of the values `vals` at each position of
-    /// `among`, in tuple order: those of the shortest posting list among
-    /// `bound`, or of the fewest posting lists of one position of `among`
-    /// together, or all of `s..e` where neither is fewer. The caller
+    /// `pos` of `bound`, in tuple order: those of the shortest posting list
+    /// of `bound`, or all of `s..e` where nothing is bound. The caller
     /// checks the other positions. A posting list is in tuple order, so the
     /// range is a slice of it.
-    ///
-    /// A union costs a lookup per value, so it is looked up only over
-    /// fewer values than the tuples of the list or range it would replace:
-    /// plcg's `lc_call` literal, bound by its derivation, was reached once
-    /// per demand of a round and looked up each of the delta's derivations
-    /// there, a round's time the product of the two.
     fn candidates(
         &mut self,
         arity: usize,
         bound: &[(usize, Val)],
-        among: &[(usize, &[Val])],
         (s, e): (usize, usize),
     ) -> Vec<usize> {
-        if bound.is_empty() && among.is_empty() {
+        if bound.is_empty() {
             return (s..e).collect();
         }
         self.ensure_index(arity);
         let index = &self.index;
-        let posting = |pos: usize, v: &Val| {
-            let list = index[pos].get(v).map_or(&[][..], |l| &l[..]);
-            &list[list.partition_point(|&t| t < s)..list.partition_point(|&t| t < e)]
-        };
-        let one = bound
+        bound
             .iter()
-            .map(|(pos, v)| posting(*pos, v))
-            .min_by_key(|l| l.len());
-        let limit = one.map_or(e - s, |l| l.len());
-        let union = among
-            .iter()
-            .filter(|(_, vals)| vals.len() < limit)
-            .map(|&(pos, vals)| {
-                let lists: Vec<&[usize]> = vals.iter().map(|v| posting(pos, v)).collect();
-                (lists.iter().map(|l| l.len()).sum::<usize>(), lists)
+            .map(|(pos, v)| {
+                let list = index[*pos].get(v).map_or(&[][..], |l| &l[..]);
+                &list[list.partition_point(|&t| t < s)..list.partition_point(|&t| t < e)]
             })
-            .min_by_key(|(n, _)| *n);
-        match (one, union) {
-            (Some(list), u) if u.as_ref().is_none_or(|(n, _)| list.len() <= *n) => list.to_vec(),
-            (_, Some((n, lists))) if n < e - s => {
-                let mut ts: Vec<usize> = lists.concat();
-                ts.sort_unstable();
-                ts
-            }
-            _ => (s..e).collect(),
-        }
+            .min_by_key(|l| l.len())
+            .expect("a bound position")
+            .to_vec()
     }
-}
-
-/// What the delta literal of a rule being grounded admits ([`narrow`]):
-/// the values its tuples in the delta give each of its variables, sorted,
-/// and the body positions `from..to` at which a positive literal passes
-/// over a tuple that binds one of them to another value.
-#[derive(Default)]
-struct Narrow {
-    vars: Vec<(u32, Vec<Val>)>,
-    from: usize,
-    to: usize,
 }
 
 struct Pred<'a> {
@@ -531,7 +494,11 @@ struct Grounder<'a> {
     /// rule being grounded ([`eval_rule`]), rather than allocated per rule.
     known: Vec<Option<(PredId, bool)>>,
     walk: (Vec<Option<Val>>, Vec<GLit>),
-    narrow: Narrow,
+    /// The clauses of the rules, by rule, and each rule as a semi-naive
+    /// round may walk it from one of its atoms ([`from_delta`]), by rule
+    /// and atom.
+    clauses: &'a [Clause],
+    from_delta: FxHashMap<(usize, usize), FromDelta>,
     /// The size of `ground_rules`, a term per head and body literal, and
     /// the size past which the grounding is given up.
     size: usize,
@@ -968,7 +935,7 @@ fn compile_rule<'a>(
         &clause.body,
         &mut bound_names,
         |i| known[i].is_some_and(|(_, switch)| switch),
-        true,
+        Order::Join,
     )
     .map_err(|stuck| {
         GroundError::Unsafe(format!(
@@ -1334,7 +1301,7 @@ fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Val> {
     let candidates = {
         let rel = &mut g.rels[c.aux as usize];
         let all = (0, rel.tuples.len());
-        rel.candidates(arity, &bound, &[], all)
+        rel.candidates(arity, &bound, all)
     };
     let mut found: Vec<(Rc<[u32]>, Val)> = Vec::with_capacity(candidates.len());
     for t in candidates {
@@ -1519,7 +1486,8 @@ fn ground_with(
         current_stratum: FxHashSet::default(),
         known: Vec::new(),
         walk: (Vec::new(), Vec::new()),
-        narrow: Narrow::default(),
+        clauses: &norm.rules,
+        from_delta: FxHashMap::default(),
         size: 0,
         bound: bound.unwrap_or(usize::MAX),
         refused: false,
@@ -2152,117 +2120,186 @@ fn emit(g: &mut Grounder, key: Key, p: PredId, args: Vec<Val>, body: Vec<GLit>) 
 }
 
 /// Evaluate rule `r`. With `delta = Some((i, range))`, body literal `i` ranges
-/// only over tuples in `range` of its relation.
+/// only over tuples in `range` of its relation, and the walk joins the rest
+/// of the body to them where that pays ([`from_delta`], [`from_pays`]).
 fn eval_rule(g: &mut Grounder, r: usize, delta: Option<(usize, (usize, usize))>) {
+    if let Some((i, range)) = delta
+        && i > 0
+    {
+        let variant = match g.from_delta.remove(&(r, i)) {
+            Some(variant) => variant,
+            None => from_delta(g, r, i),
+        };
+        let pays = from_pays(g, &variant, range);
+        if pays {
+            walk_rule(g, &variant.rule, Some((variant.at, range)));
+        }
+        g.from_delta.insert((r, i), variant);
+        if pays {
+            return;
+        }
+    }
     // Grounding a rule adds atoms and ground rules but never rules, so the
     // rule is lent out for the walk and put back.
-    let rule = std::mem::replace(
-        &mut g.rules[r],
-        IRule {
-            head: (0, Vec::new()),
-            body: Vec::new(),
-            num_vars: 0,
-            counted: None,
-        },
-    );
-    if delta.is_none_or(|(i, range)| narrow(g, &rule, i, range)) {
-        if rule.counted.is_some() {
-            g.stamp += 1;
-            g.parts.clear();
-            g.parts.resize(rule.body.len(), Part::None);
-        }
-        let (mut subst, mut body_atoms) = std::mem::take(&mut g.walk);
-        subst.clear();
-        subst.resize(rule.num_vars as usize, None);
-        body_atoms.clear();
-        ground_body(g, &rule, 0, delta, &mut subst, &mut body_atoms);
-        g.walk = (subst, body_atoms);
-        g.narrow.to = 0;
-    }
+    let rule = std::mem::take(&mut g.rules[r]);
+    walk_rule(g, &rule, delta);
     g.rules[r] = rule;
 }
 
-/// Readies `g.narrow` for grounding `rule` with body literal `i` over the
-/// tuples in `range` of its relation; false where that grounds nothing and
-/// changes nothing, the rule then not grounded at all.
-///
-/// Semi-naive grounding walks the body in its order whichever literal
-/// holds the delta, and a literal before it binds its variables to values
-/// no tuple of the delta has: mnist_sum256's `partial(K,S) :- next(J,K),
-/// partial(J,S0), digit(K,D), S is S0+D` with the delta in `digit`, the
-/// ten values of one new digit a round, would walk every sum before it
-/// each round. A positive
-/// literal passes over such a tuple where no literal between it and the
-/// delta's adds an atom, so the rules, atoms and their order are what the
-/// walk would have made.
-fn narrow(g: &mut Grounder, rule: &IRule, i: usize, (s, e): (usize, usize)) -> bool {
-    let ILit::Pos(p, args) = &rule.body[i] else {
-        return true;
+/// Grounds `rule`, its body walked in order, literal `i` of `delta` over
+/// the tuples in its range.
+fn walk_rule(g: &mut Grounder, rule: &IRule, delta: Option<(usize, (usize, usize))>) {
+    if rule.counted.is_some() {
+        g.stamp += 1;
+        g.parts.clear();
+        g.parts.resize(rule.body.len(), Part::None);
+    }
+    let (mut subst, mut body_atoms) = std::mem::take(&mut g.walk);
+    subst.clear();
+    subst.resize(rule.num_vars as usize, None);
+    body_atoms.clear();
+    ground_body(g, rule, 0, delta, &mut subst, &mut body_atoms);
+    g.walk = (subst, body_atoms);
+}
+
+/// A rule as a semi-naive round walks it from one of its atoms
+/// ([`from_delta`]).
+struct FromDelta {
+    rule: IRule,
+    /// The place of the atom in the body.
+    at: usize,
+    /// The positive atoms the rule's own order joins before the atom, and
+    /// their arguments bound there.
+    before: Vec<(PredId, Vec<usize>)>,
+    /// The positive atom joined after it, and its arguments bound there.
+    next: Option<(PredId, Vec<usize>)>,
+}
+
+/// Rule `r` with its body ordered from literal `i`, a positive atom: that
+/// atom first, the others joined to it ([`Order::From`]). A semi-naive
+/// round walks it with the round's new tuples in that atom, so that the
+/// walk starts from them. In the rule's own order the round would walk
+/// every binding of the atoms before it to find the few that meet a new
+/// tuple: pcfg's `state(W, [s|S])` comes after its demand
+/// `'$m_state_bb'(W, [o, m|S])`, and each of pcfg24's 43 rounds walked its
+/// 368 518 demands. The atoms and rules are those of the rule's own order;
+/// the order in which the walk makes them is another.
+fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
+    let clause = &g.clauses[r];
+    let switch = |j: usize| match &clause.body[j] {
+        Literal::Pos(a) | Literal::Neg(a) => g
+            .pred_id(&a.name, a.args.len())
+            .is_some_and(|(_, switch)| switch),
+        _ => false,
     };
-    if i == 0 {
-        return true;
+    let schedule = |order| {
+        schedule_body(&clause.body, &mut FxHashSet::default(), switch, order)
+            .expect("a compiled rule's body is scheduled from any of its atoms")
+    };
+    // The rule's body is compiled in this order ([`compile_rule`]).
+    let own = schedule(Order::Join);
+    let ordered = schedule(Order::From(own[i]));
+    let rule = &g.rules[r];
+    let mut place = vec![0; own.len()];
+    for (k, &c) in own.iter().enumerate() {
+        place[c] = k;
     }
-    // The last literal before the delta's that may add an atom: a negative
-    // literal of the component. A switch, which adds its atom, comes after
-    // every positive literal ([`super::schedule`]).
-    let adds = rule.body[..i]
+    let body: Vec<ILit> = ordered
         .iter()
-        .rposition(|l| matches!(l, ILit::Neg(q, _) if g.current_stratum.contains(q)));
-    // The delta's tuples that may match the literal's constants, not all
-    // of it: on a chain of ground rules each round grounds every rule
-    // against the delta, which round 0 makes the whole chain.
-    let bound: Vec<(usize, Val)> = args
-        .iter()
-        .enumerate()
-        .filter_map(|(pos, a)| match a {
-            Arg::Val(v) => Some((pos, *v)),
-            Arg::Var(_) => None,
-        })
+        .map(|&c| rule.body[place[c]].clone())
         .collect();
-    let arity = g.preds[*p as usize].arity;
-    let candidates = g.rels[*p as usize].candidates(arity, &bound, &[], (s, e));
-    let narrow = &mut g.narrow;
-    narrow.from = adds.map_or(0, |m| m + 1);
-    narrow.to = i;
-    narrow.vars.clear();
-    for a in args {
-        if let Arg::Var(x) = a
-            && !narrow.vars.iter().any(|(y, _)| y == x)
-        {
-            narrow.vars.push((*x, Vec::new()));
-        }
-    }
-    let rel = &g.rels[*p as usize];
-    let mut any = false;
-    for tuple in candidates.iter().map(|&t| &rel.tuples[t]) {
-        if args
+    let counted = rule.counted.as_ref().map(|c| {
+        let mut order: Vec<usize> = (0..ordered.len()).collect();
+        order.sort_by_key(|&k| ordered[k]);
+        Box::new(Counted {
+            group: c.group,
+            order,
+        })
+    });
+    let at = ordered
+        .iter()
+        .position(|&c| c == own[i])
+        .expect("the atom is in the body");
+    // The positive atom at place `k` of `lits`, in the order `order` of
+    // the clause's literals, and its arguments bound by the literals before.
+    let atom_at = |lits: &[ILit], order: &[usize], k: usize| {
+        let ILit::Pos(p, _) = &lits[k] else {
+            return None;
+        };
+        let Literal::Pos(a) = &clause.body[order[k]] else {
+            unreachable!("a positive atom of the rule is one of the clause")
+        };
+        let bound: FxHashSet<String> = order[..k]
             .iter()
-            .zip(tuple)
-            .any(|(a, v)| matches!(a, Arg::Val(c) if c != v))
-        {
-            continue;
+            .flat_map(|&c| literal_vars(&clause.body[c]))
+            .collect();
+        let at_bound = (0..a.args.len())
+            .filter(|&pos| match &a.args[pos] {
+                Term::Var(v) => bound.contains(v),
+                _ => true,
+            })
+            .collect();
+        Some((*p, at_bound))
+    };
+    let before = (0..i)
+        .filter_map(|k| atom_at(&rule.body, &own, k))
+        .collect();
+    let next = (at + 1..body.len()).find_map(|k| atom_at(&body, &ordered, k));
+    FromDelta {
+        rule: IRule {
+            head: rule.head.clone(),
+            body,
+            num_vars: rule.num_vars,
+            counted,
+        },
+        at,
+        before,
+        next,
+    }
+}
+
+/// Whether a round with the new tuples `range` in the atom `v` starts
+/// from walks `v` rather than rule `r` in its own order: where the new
+/// tuples, times the tuples the atom joined next is expected to match for
+/// each, are fewer than the bindings the own order is expected to walk to
+/// reach the atom, the product of the tuples each atom before it is
+/// expected to match. A relation is expected to hold as many tuples for a
+/// value of an argument as it holds for each of the values there, the
+/// fewest over the arguments bound. The walk from the new tuples pays
+/// where it reaches the next atom by a value that few of its tuples share,
+/// pcfg's demand by its whole state, and where the own order reaches the
+/// atom only after a join, as PSouffle's side-channel analyses do after
+/// the demand `'$m_rand_f'`, which binds nothing, through each of
+/// `xor_assign_left(TO, FROM1)`'s tuples. The own order pays where the
+/// walk from the new tuples can reach the next atom by none of its values,
+/// or by one that all share: the label of DeepProbLog's handwritten
+/// formulas, the same in each demand of `parse(Symbols, Label)`, as each
+/// demand of `parse([N1, *, N2|T], R)` meets the new tuple
+/// `parse([N3|T], R)` only through `N3 is N1 * N2`.
+fn from_pays(g: &mut Grounder, v: &FromDelta, (s, e): (usize, usize)) -> bool {
+    let expected = |g: &mut Grounder, p: PredId, bound: &[usize]| {
+        let arity = g.preds[p as usize].arity;
+        let rel = &mut g.rels[p as usize];
+        let n = rel.tuples.len();
+        if bound.is_empty() || n == 0 {
+            return n;
         }
-        any = true;
-        for (a, v) in args.iter().zip(tuple) {
-            if let Arg::Var(x) = a {
-                let (_, vals) = narrow
-                    .vars
-                    .iter_mut()
-                    .find(|(y, _)| y == x)
-                    .expect("each variable listed");
-                vals.push(*v);
-            }
-        }
+        rel.ensure_index(arity);
+        bound
+            .iter()
+            .map(|&pos| n.div_ceil(rel.index[pos].len().max(1)))
+            .min()
+            .unwrap_or(n)
+    };
+    let from = match &v.next {
+        Some((q, bound)) => (e - s).saturating_mul(expected(g, *q, bound)),
+        None => e - s,
+    };
+    let mut own = 1usize;
+    for (p, bound) in &v.before {
+        own = own.saturating_mul(expected(g, *p, bound));
     }
-    if !any && adds.is_none() {
-        narrow.to = 0;
-        return false;
-    }
-    for (_, vals) in &mut narrow.vars {
-        vals.sort_unstable();
-        vals.dedup();
-    }
-    true
+    from < own
 }
 
 fn resolve(args: &[Arg], subst: &[Option<Val>]) -> Vec<Val> {
@@ -2443,41 +2480,11 @@ fn ground_body(
                 })
                 .collect();
             let control = g.preds[p as usize].control;
-            // The variables it binds that the delta's literal reads, with
-            // the values that literal admits ([`narrow`]).
-            let narrowed: Vec<usize> = if (g.narrow.from..g.narrow.to).contains(&i) {
-                g.narrow
-                    .vars
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, (x, _))| free.contains(x))
-                    .map(|(k, _)| k)
-                    .collect()
-            } else {
-                Vec::new()
-            };
-            // The tuples with those values alone, read from the posting
-            // lists of the values: the walk passes over the others, and
-            // walking all of them each round made a chain over a time index
-            // quadratic in its length (ladder's 6 400 steps: 6 s), the
-            // index's relation recursive through the magic rewrite's
-            // demand.
-            let among: Vec<(usize, &[Val])> = narrowed
-                .iter()
-                .map(|&k| {
-                    let (x, vals) = &g.narrow.vars[k];
-                    let pos = args
-                        .iter()
-                        .position(|a| matches!(a, Arg::Var(y) if y == x))
-                        .expect("a variable the literal binds");
-                    (pos, &vals[..])
-                })
-                .collect();
             let arity = g.preds[p as usize].arity;
             let candidates = {
                 let rel = &mut g.rels[p as usize];
                 let range = range.unwrap_or((0, rel.tuples.len()));
-                rel.candidates(arity, &bound_pos, &among, range)
+                rel.candidates(arity, &bound_pos, range)
             };
             for t in candidates {
                 let rel = &g.rels[p as usize];
@@ -2497,12 +2504,6 @@ fn ground_body(
                             Some(_) => {}
                         }
                     }
-                }
-                if ok && !narrowed.is_empty() {
-                    ok = narrowed.iter().all(|&k| {
-                        let (x, vals) = &g.narrow.vars[k];
-                        subst[*x as usize].is_some_and(|v| vals.binary_search(&v).is_ok())
-                    });
                 }
                 let id = rel.ids[t];
                 let fixed = g.fixed(id);
