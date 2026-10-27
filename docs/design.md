@@ -452,7 +452,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    own order stays where the next atom is reached only by a value every
    tuple shares (DeepProbLog's handwritten formulas, whose label is the
    same in every demand). A literal with bound arguments, the delta's included, takes
-   its candidate tuples from a per-position index of its relation. A negative literal on an impossible
+   its candidate tuples from a per-position index of its relation, each
+   position indexed when a join first binds it. A negative literal on an impossible
    atom is dropped as true; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint
    (`examples/win.pl` shows both). The atoms and the rules grow through

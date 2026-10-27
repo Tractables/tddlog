@@ -401,10 +401,12 @@ struct Relation {
     /// `set` if derived; otherwise they end up as derived atoms without rules,
     /// which the simplifier treats as false.
     placeholders: FxHashMap<Vec<Val>, AtomId>,
-    /// `index[pos][val]` = tuple indices with that value at `pos`.
+    /// `index[pos][val]` = tuple indices with that value at `pos`, for each
+    /// position a join has bound, built when it is first bound: a join
+    /// binds few of a wide table's positions (TPC-H's line items have 13).
     index: Vec<FxHashMap<Val, Vec<usize>>>,
-    /// Number of tuples already indexed.
-    indexed: usize,
+    /// Number of tuples already indexed, by position.
+    indexed: Vec<usize>,
 }
 
 impl Relation {
@@ -417,16 +419,19 @@ impl Relation {
         }
     }
 
-    fn ensure_index(&mut self, arity: usize) {
+    /// Indexes the tuples not yet indexed at position `pos`.
+    fn ensure_index(&mut self, arity: usize, pos: usize) {
         if self.index.is_empty() {
             self.index = vec![FxHashMap::default(); arity];
+            self.indexed = vec![0; arity];
         }
-        for t in self.indexed..self.tuples.len() {
-            for (pos, v) in self.tuples[t].iter().enumerate() {
-                self.index[pos].entry(*v).or_default().push(t);
-            }
+        for t in self.indexed[pos]..self.tuples.len() {
+            self.index[pos]
+                .entry(self.tuples[t][pos])
+                .or_default()
+                .push(t);
         }
-        self.indexed = self.tuples.len();
+        self.indexed[pos] = self.tuples.len();
     }
 
     /// The tuples among `s..e` that may have value `v` at each position
@@ -443,7 +448,9 @@ impl Relation {
         if bound.is_empty() {
             return (s..e).collect();
         }
-        self.ensure_index(arity);
+        for &(pos, _) in bound {
+            self.ensure_index(arity, pos);
+        }
         let index = &self.index;
         bound
             .iter()
@@ -1830,6 +1837,21 @@ fn substitute(t: &Term, binding: &FxHashMap<&Term, &Term>) -> Term {
 /// its falsity multiply. Under a demand (`demanded`), each atom is unread
 /// until a rule reads it ([`number_facts_as_read`]).
 fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
+    // Room for every tuple at once: a table of millions doubles its
+    // vectors and rehashes its keys a score of times otherwise.
+    let n = f.probs.len();
+    if !g.room(|g| {
+        let rel = &mut g.rels[p as usize];
+        g.atoms.try_reserve(n).is_ok()
+            && g.weights
+                .try_reserve(g.atoms.len() + n - g.weights.len())
+                .is_ok()
+            && rel.tuples.try_reserve(n).is_ok()
+            && rel.ids.try_reserve(n).is_ok()
+            && (f.arity == 0 || rel.set.try_reserve(n).is_ok())
+    }) {
+        return;
+    }
     for (args, weights) in f.tuples() {
         let vals: Vec<Val> = args.iter().map(|a| g.val(a)).collect();
         let (id, new) = g.atom_id(p, vals);
@@ -2430,7 +2452,9 @@ fn from_pays(g: &mut Grounder, v: &FromDelta, (s, e): (usize, usize)) -> bool {
         if bound.is_empty() || n == 0 {
             return n;
         }
-        rel.ensure_index(arity);
+        for &pos in bound {
+            rel.ensure_index(arity, pos);
+        }
         bound
             .iter()
             .map(|&pos| n.div_ceil(rel.index[pos].len().max(1)))
