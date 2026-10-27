@@ -14,6 +14,8 @@
 //! [`super::schedule`]. The atoms themselves are not renamed, so the copies for
 //! different patterns derive into the same predicate; every atom derived is in
 //! the original model, and every atom the queries depend on is derived. A
+//! predicate whose clauses are all ground facts is not demanded: its facts
+//! are read as they are. A
 //! rule that cannot use some of a pattern's bindings, a head variable its
 //! body reads only as the value of an `is`, is copied under the pattern
 //! without them instead, whose magic predicate the first one's feeds. A
@@ -30,7 +32,7 @@
 //! stratum). The caller checks stratification and falls back to the plain
 //! program in that case.
 
-use super::normalize::NormProgram;
+use super::normalize::{NormProgram, Sig};
 use super::schedule::{literal_vars, schedule_body};
 use crate::syntax::{Atom, Clause, Literal, Name, Term};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -190,8 +192,30 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
 fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormProgram, Demands)> {
     let rules_of = norm.rules_by_sig();
     let is_switch = |a: &Atom| norm.switches.contains_key(&(a.name.clone(), a.args.len()));
-    // An atom of a predicate with rules, which a demand reaches.
-    let derived = |a: &Atom| rules_of.contains_key(&a.signature()) && !is_switch(a);
+    // The predicates whose clauses are all ground facts: their atoms are
+    // the facts, read as they are where a demand reaches them. A demand
+    // would copy each fact under a guard, and the grounder would check the
+    // copies against every new demand: on PSouffle's side-channel
+    // analyses, 83 571 facts against the demands of each of 1 350
+    // semi-naive rounds.
+    let facts: FxHashSet<Sig> = rules_of
+        .iter()
+        .filter(|(_, rules)| {
+            rules.iter().all(|&ri| {
+                let rule = &norm.rules[ri];
+                rule.body.is_empty() && rule.heads.iter().all(|h| h.atom.is_ground())
+            })
+        })
+        .map(|(&sig, _)| sig)
+        .collect();
+    // An atom of a predicate with rules other than facts, which a demand
+    // reaches.
+    let derived = |a: &Atom| {
+        let sig = a.signature();
+        rules_of.contains_key(&sig) && !facts.contains(&sig) && !is_switch(a)
+    };
+    // The fact predicates reached, whose facts are in `out`.
+    let mut read: FxHashSet<(Name, usize)> = FxHashSet::default();
 
     let mut out = NormProgram {
         switches: norm.switches.clone(),
@@ -216,8 +240,10 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
     // drivers with nothing bound.
     let seed = |atom: &Atom, out: &mut NormProgram, work: &mut Vec<(Atom, Adornment)>| {
         let adornment = adorn(atom, &FxHashSet::default());
-        let m = magic_atom(atom, &adornment);
-        out.rules.push(Clause::rule(m, vec![], u32::MAX));
+        if derived(atom) {
+            out.rules
+                .push(Clause::rule(magic_atom(atom, &adornment), vec![], u32::MAX));
+        }
         work.push((atom.clone(), adornment));
     };
     for (q, _) in &norm.queries {
@@ -235,19 +261,28 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
             .into_iter()
             .collect();
         let sub = adorn(pattern, &bound);
-        out.rules.push(Clause::rule(
-            magic_atom(pattern, &sub),
-            vec![Literal::Pos(driver.clone())],
-            u32::MAX,
-        ));
+        if derived(pattern) {
+            out.rules.push(Clause::rule(
+                magic_atom(pattern, &sub),
+                vec![Literal::Pos(driver.clone())],
+                u32::MAX,
+            ));
+        }
         work.push((pattern.clone(), sub));
     }
 
     while let Some((atom, adornment)) = work.pop() {
+        let sig = atom.signature();
+        if facts.contains(&sig) {
+            if read.insert((atom.name.clone(), sig.1)) {
+                out.rules
+                    .extend(rules_of[&sig].iter().map(|&ri| norm.rules[ri].clone()));
+            }
+            continue;
+        }
         if !derived(&atom) {
             continue;
         }
-        let sig = atom.signature();
         if !done.insert((atom.name.clone(), sig.1, adornment.clone())) {
             continue;
         }
@@ -305,16 +340,18 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
                     }
                     _ => None,
                 };
-                if let Some(a) = body_atom
-                    && derived(a)
-                {
-                    let sub = adorn(a, &bound_so_far);
-                    let m = magic_atom(a, &sub);
-                    let mut body = Vec::with_capacity(1 + prefix.len());
-                    body.push(guard.clone());
-                    body.extend(prefix.iter().map(|&j| rule.body[j].clone()));
-                    out.rules.push(Clause::rule(m, body, u32::MAX));
-                    work.push((a.clone(), sub));
+                if let Some(a) = body_atom {
+                    if derived(a) {
+                        let sub = adorn(a, &bound_so_far);
+                        let mut body = Vec::with_capacity(1 + prefix.len());
+                        body.push(guard.clone());
+                        body.extend(prefix.iter().map(|&j| rule.body[j].clone()));
+                        out.rules
+                            .push(Clause::rule(magic_atom(a, &sub), body, u32::MAX));
+                        work.push((a.clone(), sub));
+                    } else if facts.contains(&a.signature()) {
+                        work.push((a.clone(), Vec::new()));
+                    }
                 }
                 // Positive literals and deterministic filters join the prefix;
                 // negative literals do not (they would add negative
@@ -403,6 +440,30 @@ mod tests {
         assert!(
             text.iter()
                 .any(|t| t.starts_with("r(Y) :- '$m_r_f', r(X), a(Y,X)")),
+            "{text:?}"
+        );
+    }
+
+    /// A predicate of ground facts is read as it is, not demanded: its facts
+    /// are in the rewritten program once, unguarded, and only the rules of
+    /// the derived predicates are copied under their demands.
+    #[test]
+    fn facts_are_read_as_they_are() {
+        let p = parse_program(
+            "e(1,2).\ne(2,3).\ne(4,5).\n0.5::p(X,Y) :- e(X,Y).\n\
+             p(X,Z) :- e(X,Y), p(Y,Z).\nquery(p(1,_)).\n",
+        )
+        .unwrap();
+        let n = normalize(&p).unwrap();
+        let m = rewrite(&n).unwrap();
+        let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
+        assert!(!text.iter().any(|t| t.contains("$m_e")), "{text:?}");
+        for fact in ["e(1,2).", "e(2,3).", "e(4,5)."] {
+            assert_eq!(text.iter().filter(|t| *t == fact).count(), 1, "{text:?}");
+        }
+        assert!(
+            text.iter()
+                .any(|t| t.starts_with("p(X,Z) :- '$m_p_bf'(X), e(X,Y), p(Y,Z)")),
             "{text:?}"
         );
     }

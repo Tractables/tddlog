@@ -386,7 +386,11 @@ are skipped. Several steps have a program in `examples/` that shows them.
    second rewrite: its free demand derives every atom a bound one would,
    and a bound demand whose rule reads the predicate's own atoms before
    the bound argument (`r(Y) :- r(X), a(Y, X)`) calls `a` for every pair
-   of a bound `Y` and an atom of `r`. A program whose recursive strata
+   of a bound `Y` and an atom of `r`. A predicate of ground facts alone
+   is not demanded: its facts are read once, rather than copied under a
+   guard and checked against every new demand of a recursive stratum
+   (PSouffle's side-channel analyses: 83 571 facts in each of 1 350
+   rounds). A program whose recursive strata
    all have rising levels (below) is not rewritten but grounded level by
    level: the demand of a loop over a time index runs down the levels
    (`T0 is T - 1`) and makes the whole chain one stratum without levels.
