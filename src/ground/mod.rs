@@ -624,4 +624,27 @@ mod tests {
         let program = crate::syntax::parse_program(source).expect("parses");
         assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
     }
+
+    /// A rule whose body atoms are all true in every world makes its head
+    /// so, and the head's other derivations are not kept: each atom of a
+    /// closure of deterministic facts has one rule
+    /// (tests/regress/certain_closure.pl, by hand).
+    #[test]
+    fn a_closure_of_deterministic_facts_keeps_a_rule_per_atom() {
+        let source = include_str!("../../tests/regress/certain_closure.pl");
+        let program = crate::syntax::parse_program(source).expect("parses");
+        let (lowered, _) = super::terms::lower(&program).expect("lowers");
+        let norm = super::normalize::normalize(&lowered).expect("normalizes");
+        let magic = super::magic::rewrite(&norm).expect("rewrites");
+        let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
+        let eq: Vec<super::AtomId> = gp
+            .rules
+            .iter()
+            .map(|r| r.head)
+            .filter(|&h| &*gp.atoms[h as usize].name == "eq")
+            .collect();
+        let atoms: rustc_hash::FxHashSet<super::AtomId> = eq.iter().copied().collect();
+        assert!(atoms.len() >= 36, "{}", atoms.len());
+        assert_eq!(eq.len(), atoms.len());
+    }
 }

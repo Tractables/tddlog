@@ -1555,12 +1555,19 @@ fn views() {
         "busy(b)",
         "colour(red)",
         "colour(blue)",
-        "reach(1)",
         "many",
     ] {
         assert!(names.iter().any(|a| a == kept), "{kept} stays: {names:?}");
     }
-    assert_eq!(ground.stats.inlined, 12, "{names:?}");
+    // `looped`'s demand grounds `reach` from its bound end
+    // (src/ground/linear.rs), the smaller grounding since the chain's base
+    // case, true in every world, keeps one rule. One atom of the chain
+    // stays, and the views inlined are 14.
+    assert!(
+        names.iter().any(|a| a == "'$r_reach_1'(1,3)"),
+        "reach stays: {names:?}"
+    );
+    assert_eq!(ground.stats.inlined, 14, "{names:?}");
     // The body of `shipped(1)` that reads `item(1,1)` meets its complement
     // in `second_only`'s rule and is dropped.
     let second = names.iter().position(|a| a == "second_only").unwrap() as u32;

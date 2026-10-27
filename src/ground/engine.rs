@@ -549,6 +549,8 @@ struct Grounder<'a> {
     /// The values that grounding level by level proved, by atom
     /// ([`evaluate_by_levels`]).
     fixed: Vec<Option<bool>>,
+    /// The atoms true in every world that a rule derived ([`ground_body`]).
+    certain: Vec<bool>,
     /// The stratum being grounded level by level.
     by_level: Option<ByLevel>,
     /// The ground compound terms, and the symbols `[]` and `'[|]'` once
@@ -884,6 +886,12 @@ impl<'a> Grounder<'a> {
 
     fn fixed(&self, id: AtomId) -> Option<bool> {
         self.fixed.get(id as usize).copied().flatten()
+    }
+
+    /// Whether atom `id` is true in every world by a rule whose body
+    /// atoms are ([`ground_body`]).
+    fn certain(&self, id: AtomId) -> bool {
+        self.certain.get(id as usize).copied().unwrap_or(false)
     }
 
     /// The key of an atom of the stratum grounded level by level.
@@ -1517,6 +1525,7 @@ fn ground_with(
         refused: false,
         demands: 0,
         fixed: Vec::new(),
+        certain: Vec::new(),
         by_level: None,
         terms: Terms::default(),
         lists: None,
@@ -2350,11 +2359,29 @@ fn ground_body(
             g.demands += new as usize;
             return; // control atoms exist only to drive grounding
         }
+        // A rule whose body atoms are all true in every world makes its
+        // head so, and the head's other derivations say nothing: a closure
+        // of deterministic facts, PSouffle's `equal_assign`, derives each
+        // of its atoms once per atom between, and kept a rule for each.
+        let counted = rule.counted.is_some();
+        if !counted && g.certain(head) {
+            return;
+        }
         let mut body = body_atoms.clone();
         body.sort_unstable();
         body.dedup();
         if let Some(c) = &rule.counted {
             derive(g, head, &body, c);
+        }
+        if !counted
+            && body
+                .iter()
+                .all(|l| matches!(*l, GLit::Pos(a) if g.certain(a)))
+        {
+            if g.certain.len() <= head as usize {
+                g.certain.resize(head as usize + 1, false);
+            }
+            g.certain[head as usize] = true;
         }
         g.keep_rule(GroundRule::new(head, body));
         return;

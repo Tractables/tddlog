@@ -423,7 +423,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in
-   some world. Every instantiation is a ground rule. A literal with bound
+   some world. Every instantiation is a ground rule, but for those of a
+   head that a rule whose body atoms are all true in every world (the
+   deterministic facts, and what such rules derive from them) has made so:
+   they add nothing, and a closure of deterministic facts (PSouffle's
+   `equal_assign`) would keep a rule for each atom between two of its
+   atoms. A literal with bound
    arguments, the delta's included, takes its candidate tuples from a
    per-position index of its relation. A negative literal on an impossible
    atom is dropped as true; one inside its own stratum (negation through
