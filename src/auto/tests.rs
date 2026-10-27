@@ -1809,6 +1809,51 @@ fn a_trial_is_projected_from_its_last_doubling() {
 }
 
 #[test]
+fn a_first_turn_is_projected_from_half_its_target() {
+    // The compile passed half its first target, 2^30 units, with 0.35 of
+    // its components and ended the turn with 0.55: 0.2 a doubling, so the
+    // 0.45 left takes 2.25 doublings more.
+    let close = |p: Option<f64>, want: f64| p.is_some_and(|p| (p - want).abs() < 1e-9);
+    let first_turn = |marked| {
+        let mut t = Trial::new(Kind::Closed);
+        t.target = 1 << 31;
+        t.spent = 1 << 31;
+        t.record(false, Some((55, 100)), marked);
+        t
+    };
+    let mut t = first_turn(Some((35, 100)));
+    assert_eq!(t.progress, vec![(1 << 30, 0.35), (1 << 31, 0.55)]);
+    assert!(close(t.projected(), 33.25), "{:?}", t.projected());
+    // Its target doubled, it takes its turns ahead of an unprojected trial
+    // of its weight by 1.75 doublings.
+    t.target = 1 << 32;
+    assert!(close(Some(t.ahead()), 1.25));
+    // Without the mark the first turn projects nothing.
+    assert_eq!(first_turn(None).projected(), None);
+    // A first turn that leaves its compile projected to finish within the
+    // next target projects the compile's end alone, short of the query
+    // phase that turn would run: the trial counts as unprojected.
+    let mut nearly = Trial::new(Kind::Closed);
+    nearly.target = 1 << 31;
+    nearly.spent = 1 << 31;
+    nearly.record(false, Some((99, 100)), Some((60, 100)));
+    nearly.target = 1 << 32;
+    assert!(close(nearly.projected(), 31.0 + 0.01 / 0.39));
+    assert_eq!(nearly.ahead(), PROJECTED_DOUBLINGS);
+    // A later turn's projection within the target counts as before.
+    nearly.spent = 1 << 32;
+    nearly.record(false, Some((999, 1000)), None);
+    nearly.target = 1 << 33;
+    assert_eq!(nearly.ahead(), 0.0);
+    // A turn whose target has a record at half of it keeps that one.
+    t.record(false, Some((75, 100)), Some((60, 100)));
+    assert_eq!(
+        t.progress,
+        vec![(1 << 30, 0.35), (1 << 31, 0.55), (1 << 32, 0.75)]
+    );
+}
+
+#[test]
 fn a_query_phase_is_projected_from_where_it_began() {
     // The compile, recorded at targets of 2^20 and 2^21 units, finishes
     // within the attempt at 2^22, whose query phase is a quarter done.
@@ -1822,7 +1867,7 @@ fn a_query_phase_is_projected_from_where_it_began() {
         ] {
             t.target = target;
             t.spent = target;
-            t.record(compiled, Some(progress));
+            t.record(compiled, Some(progress), None);
         }
         t.evaluation.query_work = query_work;
         t
@@ -1848,14 +1893,14 @@ fn a_query_phase_is_projected_from_where_it_began() {
     let mut t = compile_then_query(1 << 18);
     t.target = 1 << 23;
     t.spent = 1 << 23;
-    t.record(true, Some((1, 2)));
+    t.record(true, Some((1, 2)), None);
     assert!(close(t.projected(), 25.0), "{:?}", t.projected());
     // Where the compile finished in the trial's first attempt, the phase
     // is projected from where it began just the same.
     let mut t = Trial::new(Kind::Program { fan_in: false });
     t.target = 1 << 20;
     t.spent = 1 << 20;
-    t.record(true, Some((1, 4)));
+    t.record(true, Some((1, 4)), None);
     t.evaluation.query_work = 1 << 19;
     assert!(close(t.projected(), 23.0), "{:?}", t.projected());
 }

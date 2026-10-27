@@ -17,7 +17,10 @@
 //! one further out, or none, counts that many, so that without
 //! projections the trials take equal shares for their weights, and a
 //! trial projected to finish soon takes its turns ahead of the others,
-//! by up to that many doublings. The attempt's watch, the largest formula
+//! by up to that many doublings. A compile notes its progress at half
+//! its first turn's target ([`tp::Horizon`]), so that the pace of that
+//! turn's second half projects it where it puts the compile's finish past
+//! the trial's next target ([`Trial::ahead`]). The attempt's watch, the largest formula
 //! it may complete, is a [`policy::WORK_PER_HELD_PAIR`]th of the target in
 //! pairs, or more where a formula past the watch stopped an earlier
 //! attempt: such a stop raises the watch to hold it ([`Trial::hold`]) and
@@ -779,6 +782,7 @@ fn attempt(
             origin: start_work.saturating_sub(t.spent),
             from: b.projected_from,
             limit: b.horizon,
+            mark: t.target / 2,
         });
         let backend = tp::TddBackend::resume(engine, tree.clone(), kept);
         let evaluated = t.evaluation.run(
