@@ -96,8 +96,9 @@ examples that open in the [playground]:
   Function symbols, lists, cut and `findall` are not supported.
   `scripts/lpad2problog.py` converts LPADs written for cplint and PITA.
 - **Bayesian and Markov networks** in the BIF, Hugin, GeNIe and UAI
-  formats, which `scripts/gen_bn.py` writes as programs whose answers are
-  the marginals given the evidence: the [Bayesian network example].
+  formats, which tddlog reads as programs whose answers are the marginals
+  given the evidence, and a Markov network's partition function: the
+  [Bayesian network example].
 - **Discrete probabilistic programs**, with integers in bits as Dice and
   Alea.jl compile them: the [binary integers example] adds two random
   integers, and `scripts/dice2problog.py` translates Dice programs into

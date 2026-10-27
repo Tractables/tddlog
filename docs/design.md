@@ -51,7 +51,8 @@ of TDDs. `solve` (`src/solve/`) runs six stages, for the binary and for a
 library caller alike.
 
 1. **Parse** (`src/syntax`). The text becomes a `Program`: its clauses,
-   queries and evidence.
+   queries and evidence. A network file is read as a program first
+   ([Network files](#network-files-srcnetwork)).
 2. **Ground** (`src/ground`). The grounder writes the *ground program*:
    rules without variables over the atoms the queries and the evidence
    depend on, simplified by the passes listed under
@@ -149,6 +150,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns; `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST |
+| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `table.rs`, `noisy_or.rs`, `normalize.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding`, `clause_links`, the binary reads (`Bits`), `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
@@ -185,6 +187,73 @@ Rules must be range restricted; a body is reordered so that binding
 literals come first (`ground/schedule.rs`, shared by the grounder and the
 magic rewrite). Predicate names and constants are `Name`s, an `Arc<str>`
 shared from the lexer on, one per distinct spelling.
+
+## Network files (`src/network`)
+
+A Bayesian or Markov network file is read as the program
+`scripts/gen_bn.py` writes for it, the text the other systems of the
+benchmarks read, and that text is parsed as any program is: one route,
+whose answers are those of the program. `tests/it/networks.rs` checks the
+reader's text against gen_bn.py's programs line for line, and
+`tests/test_gen_bn.py` that gen_bn.py still writes them. The extension
+names the format: BIF (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`,
+whose `cpt` nodes are tables; another kind of node is refused) and UAI
+(`.uai`). BIF and Hugin are read as gen_bn.py's regular expressions read
+them, GeNIe's XML into a tree (`xml.rs`: the encoding the declaration
+names, comments, entities). A file that is not UTF-8 is read as
+ISO-8859-1, as Ace's water, pigs and mildew are written. A compressed file
+is refused.
+
+Each variable gets one annotated disjunction per row of its table,
+`p1::x(v1); ...; pk::x(vk) :- p1(u1), ..., pm(um).`, in the order of a
+depth-first walk from each variable in turn to its parents. A name is
+lowercased, every other character than a letter, a digit or `_` becomes
+`_`, and `v_` goes before one that does not start with a letter; a clash
+is an error. A zero head is dropped and a row of one certain value is a
+plain rule. The queries (`--query`) are every value of every variable, of
+those without children or of those named, an observed one left out; the
+evidence (`--evidence`) is an Ace `.inst` file or, for a UAI network, a
+`.evid` one; under `--no-queries` the program asks nothing.
+
+**Rows** (`rows.rs`). A row sums to one, and a file's decimals round it.
+A sum within 1e-9 under one (`math.fsum`'s, the exact sum rounded once)
+keeps the row, and a sum within 1e-9 over one divides it: the binary
+rounding of the arithmetic that wrote the file. A sum further from one
+divides the row where the rounding of its decimals explains the gap. Each
+entry is the decimal it means: the shortest of at most 12 significant
+digits within two units in the last place of its double (the file's own
+text for an entry written so; 0.00099404 for the 0.0009940400000000005 of
+Ace's pathfinder.xdsl, whose doubles a program printed in full), and
+otherwise the shortest decimal that reads back as the double. Each entry
+may be off by the larger of half a unit in the row's finest place and half
+a unit in the most significant digits any entry of the row has
+(pathfinder's `0.3333333` three times; `0.9999, 9.999e-05`, which are
+10000/10001 and 1/10001 to four digits), and the gap of the decimals'
+exact sum is compared with the sum of these. Otherwise a shortfall is the
+table's own, its mass left to no value as in ProbLog, and an excess is an
+error. gen_bn.py decides by the same rule, and the two decide alike on
+every row of every network of the benchmark suites. `--rescale` divides
+every row by its sum first, for Ace's tables in percent or as weights.
+
+**Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
+a conditional table of one variable of its scope, one function per
+variable and the child relation acyclic (Promedus, Pedigree), is that
+Bayesian network. In any other, every variable gets a uniform prior times
+its unary factors, normalized, and every other factor `f` becomes a
+variable `fJ` of one value, observed, whose row for each assignment of the
+factor's scope is its entry over its largest; a constant factor is left
+out. The program's `P(e)` times `10^c`, where `c` sums the base-10
+logarithms of the priors' sums, the factors' largest entries and the
+constants, is the partition function given the evidence: gen_bn.py states
+`c` on the program's first line, and the binary prints `Z:` for such a
+file where it would print `P(e):` ([The probability of the
+evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
+without observations, a network of Potts tables over pairs of variables of
+`k` values each (a graph colouring) has its colour symmetry broken: one
+variable of largest degree is fixed, a neighbour takes two values with
+weights 1 and `k - 1`, and a common neighbour the values used so far and
+the next; `Z` is then a `k`-th of the network's, and `c` holds `log10 k`
+besides.
 
 ## Grounding (`src/ground`)
 
@@ -750,10 +819,11 @@ link it stands on. A link of fewer than `TIE_FROM` clauses, or at the
 root, is built. Put where the two readers' copies meet instead, the tie
 would meet the copies below that free of the inputs.
 
-**Network files.** `scripts/gen_bn.py` rescales a CPT row whose gap from
-one the rounding of its entries explains (`0.3333333` three times); a row
-like `0.5, 0.499` is kept, and its missing mass goes to no value as in
-ProbLog. Rows that do not sum to one fall outside the clause encoding.
+**Network files.** A network's row whose gap from one the rounding of its
+entries explains (`0.3333333` three times) is rescaled
+([Network files](#network-files-srcnetwork)); a row like `0.5, 0.499` is
+kept, and its missing mass goes to no value as in ProbLog. Rows that do
+not sum to one fall outside the clause encoding.
 
 ## Vtrees (`src/vtree/`)
 
@@ -1644,9 +1714,12 @@ Dropping detached evidence would leave out factors of `P(e)`, so the
 binary grounds with it off under the option. The line is
 `P(e):<tab>p<tab>log10 l`; below the least normal float the mantissa and
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
-`0` and `-inf`, none `1` and `0`. gen_bn.py's program for a Markov network
-states `log10 Z - log10 P(e)` on its first line, which turns the line into
-the UAI PR task. `--no-queries` drops the queries before grounding
+`0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file the binary
+prints the partition function given the evidence instead,
+`Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
+([Network files](#network-files-srcnetwork)), the UAI PR task. gen_bn.py's
+program for the network states the offset, `log10 Z - log10 P(e)`, on its
+first line. `--no-queries` drops the queries before grounding
 (`syntax::Program::without_queries`), so the program is ground for its
 evidence alone and the `P(e)` line is all the run prints.
 tests/it/evidence_probability.rs checks `P(e)` against ProbLog's under every
@@ -1731,7 +1804,10 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   the evidence walk, the query and dense counts, implicit levels, counts
   beyond a float's range (`underflow`), `P(e)` (`evidence_probability`),
   the command line (`cli`, which also checks this page's walk through
-  `examples/alarm.pl` against the binary), and regressions
+  `examples/alarm.pl` against the binary), network files (`networks`: the
+  programs of the files in `tests/networks/`, `tests/regress/` and
+  `examples/` against gen_bn.py's, and the binary's answers and partition
+  functions on them against enumeration and ProbLog), and regressions
   (`tests/regress/`). Queries in groups are tested in
   `src/solve/tests.rs`; `src/tp/tests/` compiles every example with a
   dynamic search after every step, checks formulas dropped as they die,

@@ -302,8 +302,8 @@ P(e):   3.961994e-2     log10 -1.402086</pre>
   or lung cancer (<code>either</code>) to 0.58; the absence of dyspnoea,
   which either disease makes likely, brings it back to 0.30. The last line
   is the probability of the two observations together.
-  <code>scripts/gen_bn.py</code> writes such programs from the usual
-  network files (<a href="#networks">below</a>).</p>
+  tddlog reads such programs from the usual network files itself
+  (<a href="#networks">below</a>).</p>
   <p class="try"><a href="../?example=asia&amp;evidence=1">Open it in the
   playground</a>.</p>
 
@@ -513,27 +513,35 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 
 <section class="card prose" id="networks">
   <h2>Networks, Dice programs and LPADs</h2>
-  <p>Three Python 3 scripts in the repository's
+  <p>tddlog reads network files itself, and two Python 3 scripts in the
+  repository's
   <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
-  write other formats as programs tddlog reads.</p>
+  write Dice programs and LPADs as programs it reads.</p>
 
   <h3 id="networks-gen-bn">Bayesian and Markov networks</h3>
-  <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/gen_bn.py"><code>scripts/gen_bn.py</code></a> writes a discrete network as a ground
-  program, as in the asia example: a Bayesian network in BIF, Hugin
+  <p>tddlog reads a discrete network file as a ground program, as in the
+  asia example: a Bayesian network in BIF (<code>.bif</code>), Hugin
   (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
-  the UAI format, and a Markov network in the UAI format, each factor an
-  observed atom.</p>
-<pre data-lang="shell">python3 scripts/gen_bn.py examples/asia.net &gt; asia.pl
-python3 scripts/gen_bn.py tests/regress/markov.uai --evid tests/regress/markov.uai.evid &gt; markov.pl
-tddlog markov.pl</pre>
+  the UAI format (<code>.uai</code>), and a Markov network in the UAI
+  format, each factor an observed atom. The file's extension names its
+  format.</p>
+<pre data-lang="shell">tddlog examples/asia.net --query leaves
+tddlog tests/regress/markov.uai --evidence tests/regress/markov.uai.evid --evidence-probability
+tddlog --program examples/asia.net &gt; asia.pl</pre>
   <p>The program queries every value of every unobserved variable
-  (<code>--query</code> narrows that), and its answers are the network's
-  marginals given the evidence. For a Markov network the program's first
-  line is <code>% log10 Z - log10 P(e) = c</code>, and
-  <code>--evidence-probability --no-queries</code> then gives the partition
-  function given the evidence, the UAI PR task: log10 Z = l + c, where l is
-  the logarithm on the <code>P(e)</code> line. The script's docstring has
-  the encoding and its options.</p>
+  (<code>--query leaves</code> those of the variables without children,
+  <code>--query a,b</code> those of the variables named), and its answers
+  are the network's marginals given the evidence, an Ace
+  <code>.inst</code> file or, for a UAI network, a UAI <code>.evid</code>
+  file (<code>--evidence</code>). For a Markov network,
+  <code>--evidence-probability</code> prints the partition function given
+  the evidence on a <code>Z:</code> line in place of <code>P(e):</code>,
+  and with <code>--no-queries</code> that line alone, the UAI PR task.
+  <code>--rescale</code> divides every row by its sum, for a file that
+  writes its tables in percent. <code>--program</code> prints the program;
+  <a href="https://github.com/Tractables/tddlog/blob/main/scripts/gen_bn.py"><code>scripts/gen_bn.py</code></a>
+  writes the same program for other systems, and its docstring has the
+  encoding.</p>
 
   <h3 id="dice">Dice programs</h3>
   <p><code>python3 scripts/dice2problog.py program.dice &gt; program.pl</code>

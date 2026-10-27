@@ -739,5 +739,36 @@ probability ( Cancer | Smoker ) {
             gen_bn.rescaled(gen_bn.parse(zero))
 
 
+class ReaderTests(unittest.TestCase):
+    def test_the_programs_tddlog_reads_networks_as_are_gen_bn_pys(self):
+        """tddlog reads each network file as the program beside it
+        (tests/it/networks.rs, its comments left out), which gen_bn.py
+        wrote: gen_bn.py still writes it."""
+        root = Path(__file__).resolve().parents[1]
+        net, regress, examples = root / 'tests' / 'networks', root / 'tests' / 'regress', root / 'examples'
+        offset = '% log10 Z - log10 P(e) = '
+        for args, program in [
+            ([regress / 'markov.uai'], regress / 'markov.pl'),
+            ([regress / 'markov.uai', '--evid', regress / 'markov.uai.evid'], regress / 'markov_ev.pl'),
+            ([regress / 'markov_pr.uai'], regress / 'markov_pr.pl'),
+            ([regress / 'markov_pr.uai', '--evid', regress / 'markov_pr.uai.evid'], regress / 'markov_pr_ev.pl'),
+            ([regress / 'potts.uai', '--query', 'none'], regress / 'potts.pl'),
+            ([examples / 'cancer.net', '--query', 'leaves'], examples / 'bn_cancer.pl'),
+            ([examples / 'asia.net', '--evidence-file', net / 'asia_leaves.inst'], examples / 'bn_asia_evidence.pl'),
+            ([net / 'sprinkler.bif', '--query', 'WetGrass'], net / 'sprinkler_bif.pl'),
+            ([net / 'sprinkler.xdsl', '--query', 'leaves', '--evidence-file', net / 'sprinkler.inst'],
+             net / 'sprinkler_xdsl.pl'),
+            ([net / 'percent.hugin', '--rescale'], net / 'percent.pl'),
+            ([net / 'chain.uai', '--query', 'leaves'], net / 'chain.pl'),
+            ([net / 'noisy.xdsl'], net / 'noisy.pl'),
+        ]:
+            a = gen_bn.arguments().parse_args([str(x) for x in args])
+            network, off, evidence, _ = gen_bn.model(a)
+            written = gen_bn.offset_line(off) + gen_bn.to_problog(network, a.query, evidence)
+            lines = program.read_text().splitlines()
+            expected = [l for i, l in enumerate(lines) if (i == 0 and l.startswith(offset)) or not l.startswith('%')]
+            self.assertEqual(written.splitlines(), expected, program.name)
+
+
 if __name__ == '__main__':
     unittest.main()

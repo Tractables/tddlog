@@ -1,0 +1,37 @@
+% A Hugin network that writes its tables in percent, as Ace's copies of
+% munin and diabetes do (read with --rescale), in ISO-8859-1 (été).
+net
+{
+    node_size = (80 40);
+    name = "percent";
+}
+
+node Temp
+{
+    label = "Température";
+    position = (100 100);
+    states = ("<12%" "12-20%" ">20%");
+}
+
+node Ice
+{
+    label = "Ice";
+    states = ("yes" "no");
+}
+
+decision Act
+{
+    states = ("go" "stay");
+}
+
+potential ( Temp )
+{
+    data = ( 20 50 30 );	% percent
+}
+
+potential (Ice | Temp)
+{
+    data = (( 90 10 )	%  <12%
+	    ( 25.5 74.5 )
+	    ( 0 100 ));
+}

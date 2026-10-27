@@ -7,15 +7,17 @@ mod stats;
 
 use std::process::ExitCode;
 
-use tddlog::eval::Count;
+use tddlog::network::{self, Evidence, Format, Queries, ReadOptions};
 use tddlog::{Options, Progress, Strategy};
 
 use stats::{ground_line, print_stats};
 
 const USAGE: &str = "\
-usage: tddlog [options] <program.pl>
+usage: tddlog [options] <program.pl | network>
 
-Prints one `atom:<tab>probability` line per query, like ProbLog.
+Prints one `atom:<tab>probability` line per query, like ProbLog. A network
+file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
+read as a program of one annotated disjunction per row of its tables.
 
 options:
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)
@@ -46,12 +48,22 @@ options:
                                         notation and l its base-10 logarithm, exact beyond a
                                         float's range (0 and -inf for inconsistent evidence, 1
                                         and 0 for none); the evidence no query depends on is then
-                                        compiled rather than dropped
+                                        compiled rather than dropped; for a UAI MARKOV network,
+                                        the partition function given the evidence, as `Z:...`
   --no-queries                          leave out the program's queries and print P(e) alone, as
                                         for the partition function: the program is ground for its
                                         evidence alone, and what no observation depends on (in a
                                         Bayesian network, every variable that is not an ancestor
                                         of one) is not compiled; needs --evidence-probability
+  --query <all | leaves | X,Y,...>      for a network: the variables queried, each at every value
+                                        (default: all): every variable, those without children,
+                                        or those named; an observed variable is left out
+  --evidence <file>                     for a network: the observations of an Ace .inst file or,
+                                        for a .uai network, of a UAI .evid file
+  --rescale                             for a network: divide every row of every table by its
+                                        sum, for a file that writes its tables in percent or as
+                                        weights
+  --program                             print the program a network is read as and exit
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error
@@ -80,6 +92,14 @@ struct Args {
     evidence_probability: bool,
     no_queries: bool,
     precision: usize,
+    /// The file's format where it is a network; `None` for a program.
+    network: Option<Format>,
+    /// How a network is read: its queries, its evidence file and whether
+    /// its rows are rescaled.
+    queries: Queries,
+    evidence: Option<String>,
+    rescale: bool,
+    program_only: bool,
 }
 
 fn parse_args() -> Result<Request, String> {
@@ -89,6 +109,7 @@ fn parse_args() -> Result<Request, String> {
     let mut precision = None;
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
+    let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -106,6 +127,16 @@ fn parse_args() -> Result<Request, String> {
                 let digits = v.parse().map_err(|_| format!("bad precision `{v}`"))?;
                 once(&mut precision, digits, option)?;
             }
+            option @ "--query" => {
+                let v = args.next().ok_or("--query needs a value")?;
+                once(&mut queries, v.parse::<Queries>()?, option)?;
+            }
+            option @ "--evidence" => {
+                let v = args.next().ok_or("--evidence needs a file")?;
+                once(&mut evidence, v, option)?;
+            }
+            option @ "--rescale" => once(&mut rescale, (), option)?,
+            option @ "--program" => once(&mut program_only, (), option)?,
             other if other.starts_with('-') => {
                 return Err(format!("unknown option `{other}`\n{USAGE}"));
             }
@@ -129,6 +160,51 @@ fn parse_args() -> Result<Request, String> {
             }
         }
     }
+    if file.ends_with(".gz") {
+        return Err(format!("{file} is compressed: gunzip it first"));
+    }
+    let network = Format::of_path(&file);
+    if network.is_none() {
+        for (given, option) in [
+            (queries.is_some(), "--query"),
+            (evidence.is_some(), "--evidence"),
+            (rescale.is_some(), "--rescale"),
+            (program_only.is_some(), "--program"),
+        ] {
+            if given {
+                return Err(format!(
+                    "{option} is for a network file (.bif, .net, .hugin, .xdsl, .uai), \
+                     and {file} is a program"
+                ));
+            }
+        }
+    }
+    if queries.is_some() && no_queries.is_some() {
+        return Err(
+            "--query chooses the queries and --no-queries leaves them out: one of the two".into(),
+        );
+    }
+    let program_only = program_only.is_some();
+    if program_only {
+        for (given, option) in [
+            (ground_only, "--ground"),
+            (stats, "--stats"),
+            (precision.is_some(), "--precision"),
+            (strategy.is_some(), "--vtree"),
+            (evidence_probability.is_some(), "--evidence-probability"),
+        ] {
+            if given {
+                return Err(format!(
+                    "--program prints the network's program and stops, so {option} would do nothing"
+                ));
+            }
+        }
+    }
+    // Without queries, the network is read as the program for P(e) alone.
+    let queries = match (queries, no_queries.is_some()) {
+        (_, true) => Queries::None,
+        (q, false) => q.unwrap_or(Queries::All),
+    };
     let strategy = strategy.unwrap_or_default();
     let precision = precision.unwrap_or(6);
     Ok(Request::Run(Args {
@@ -139,6 +215,11 @@ fn parse_args() -> Result<Request, String> {
         evidence_probability: evidence_probability.is_some(),
         no_queries: no_queries.is_some(),
         precision,
+        network,
+        queries,
+        evidence,
+        rescale: rescale.is_some(),
+        program_only,
     }))
 }
 
@@ -166,14 +247,22 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let source = match std::fs::read_to_string(&args.file) {
-        Ok(s) => s,
+    let (source, log10_offset) = match read_source(&args) {
+        Ok(Ok(read)) => read,
+        Ok(Err(e)) => {
+            eprintln!("{}: {e}", args.file);
+            return ExitCode::FAILURE;
+        }
         Err(e) => {
-            eprintln!("cannot read {}: {e}", args.file);
+            eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    match run(&args, source) {
+    if args.program_only {
+        print!("{source}");
+        return ExitCode::SUCCESS;
+    }
+    match run(&args, source, log10_offset) {
         Ok(()) => ExitCode::SUCCESS,
         // Options the library refuses are option errors, as above.
         Err(e @ tddlog::Error::Options(_)) => {
@@ -187,7 +276,35 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(args: &Args, source: String) -> Result<(), tddlog::Error> {
+/// The program's text, and for a Markov network `log10 Z - log10 P(e)`.
+/// The outer error is a file that cannot be read, the inner one a network
+/// that cannot be read as a program.
+#[allow(clippy::type_complexity)]
+fn read_source(args: &Args) -> Result<Result<(String, Option<f64>), String>, String> {
+    let read = |path: &str| std::fs::read(path).map_err(|e| format!("cannot read {path}: {e}"));
+    let Some(format) = args.network else {
+        let source = std::fs::read_to_string(&args.file)
+            .map_err(|e| format!("cannot read {}: {e}", args.file))?;
+        return Ok(Ok((source, None)));
+    };
+    let data = read(&args.file)?;
+    let evidence = match &args.evidence {
+        Some(path) => Some((path, read(path)?)),
+        None => None,
+    };
+    let evidence = match &evidence {
+        Some((path, data)) => Some(Evidence::of_path(path, data)?),
+        None => None,
+    };
+    let options = ReadOptions {
+        queries: args.queries.clone(),
+        evidence,
+        rescale: args.rescale,
+    };
+    Ok(network::read(&data, format, &options).map(|p| (p.program, p.log10_offset)))
+}
+
+fn run(args: &Args, source: String, log10_offset: Option<f64>) -> Result<(), tddlog::Error> {
     let options = Options {
         strategy: args.strategy,
         evidence_probability: args.evidence_probability,
@@ -241,7 +358,17 @@ fn run(args: &Args, source: String) -> Result<(), tddlog::Error> {
         let p = solution
             .evidence_probability
             .expect("the grounder kept every observation");
-        println!("{}", evidence_line(p, args.precision));
+        let line = match log10_offset {
+            None => magnitude_line("P(e)", p.to_f64(), p.log10(), args.precision),
+            // Z given the evidence is P(e) times 10 to the offset.
+            Some(c) => magnitude_line(
+                "Z",
+                p.to_f64() * 10f64.powf(c),
+                p.log10() + c,
+                args.precision,
+            ),
+        };
+        println!("{line}");
     }
     // The process ends once the answers are out, and what the solution
     // holds is left to the exit rather than freed piece by piece: freeing
@@ -266,14 +393,15 @@ fn answer_text(p: f64, digits: usize) -> String {
     }
 }
 
-/// The `--evidence-probability` line, `P(e):<tab>p<tab>log10 l`: `P(e)` in
-/// scientific notation and its base-10 logarithm, each with `digits` after
-/// the point. A probability under the least normal float, which a
-/// [`Count`] holds, has its mantissa and exponent read off the logarithm.
-fn evidence_line(p: Count, digits: usize) -> String {
-    let log10 = p.log10();
-    let x = p.to_f64();
-    let scientific = if x.is_normal() || log10 == f64::NEG_INFINITY {
+/// The `--evidence-probability` line, `label:<tab>x<tab>log10 l`: `x`, of
+/// base-10 logarithm `log10`, in scientific notation and its logarithm,
+/// each with `digits` after the point. A number outside a float's normal
+/// range, a `P(e)` that a count holds or a partition function, has its
+/// mantissa and exponent read off the logarithm.
+fn magnitude_line(label: &str, x: f64, log10: f64, digits: usize) -> String {
+    let scientific = if log10 == f64::NEG_INFINITY {
+        format!("{:.digits$e}", 0.0)
+    } else if x.is_normal() {
         format!("{x:.digits$e}")
     } else {
         let mut exponent = log10.floor();
@@ -285,5 +413,5 @@ fn evidence_line(p: Count, digits: usize) -> String {
         }
         format!("{mantissa}e{exponent}")
     };
-    format!("P(e):\t{scientific}\tlog10 {log10:.digits$}")
+    format!("{label}:\t{scientific}\tlog10 {log10:.digits$}")
 }

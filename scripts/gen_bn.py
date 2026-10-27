@@ -12,6 +12,11 @@ row of its conditional probability table,
 so the program is ground and every rule is a CPT row. Zero-probability heads
 are dropped; a row with a single certain value becomes a plain rule.
 
+tddlog reads these network files itself (src/network), as the program this
+script writes: `tddlog --program` prints it, and tests/it/networks.rs and
+tests/test_gen_bn.py check that the two write the same text. This script
+serves the other systems, which read the program, and the Dice format.
+
 Usage: gen_bn.py network.{bif,net,hugin,xdsl,uai}[.gz] [--query all | --query VAR[,VAR...] | --query leaves
                                                           | --query none]
                                    [--evidence K|half [--evidence-from leaves|internal|all] [--seed S]

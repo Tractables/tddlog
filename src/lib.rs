@@ -68,7 +68,8 @@
 //!
 //! # How it works
 //!
-//! [`syntax`] parses a program; [`ground`] grounds the part of it that the
+//! [`syntax`] parses a program, and [`network`] reads a Bayesian or Markov
+//! network file as one; [`ground`] grounds the part of it that the
 //! queries and the evidence depend on, and simplifies it; [`indicators`]
 //! can rewrite it so that derived atoms are read through variables of
 //! their own; [`vtree`] lays out the diagrams' variables; [`tp`] compiles
@@ -92,6 +93,7 @@ mod evaluation;
 pub mod ground;
 pub mod indicators;
 mod multisets;
+pub mod network;
 pub mod query;
 mod solve;
 mod strategy;
