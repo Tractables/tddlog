@@ -192,7 +192,7 @@ static void check_errors(void) {
     const char *message;
   } cases[] = {
       {"0.3::a query(a).", NULL, true, TDDLOG_ERROR_PARSE, "line 1"},
-      {"p(X) :- q(Y). q(1). query(p(1)).", NULL, true, TDDLOG_ERROR_GROUND, "grounding error"},
+      {"p :- X > 1. query(p).", NULL, true, TDDLOG_ERROR_GROUND, "grounding error"},
       {"0.5::e. a :- \\+b. b :- \\+a. query(a).", NULL, true, TDDLOG_ERROR_COMPILE, "well-founded"},
       {"0.3::a. query(a).", "balanced", true, TDDLOG_ERROR_INVALID_INPUT, "unknown vtree strategy"},
       {"0.3::a. query(a).", NULL, false, TDDLOG_ERROR_INVALID_INPUT, "nothing to answer"},

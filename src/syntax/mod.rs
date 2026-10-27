@@ -185,7 +185,7 @@ impl PartialOrd for Compound {
     }
 }
 
-/// An order for maps and sorting, not the standard order ([`term_cmp`]).
+/// An order for maps and sorting, not the standard order (`term_cmp`).
 impl Ord for Compound {
     fn cmp(&self, other: &Self) -> Ordering {
         let (mut a, mut b) = (self, other);

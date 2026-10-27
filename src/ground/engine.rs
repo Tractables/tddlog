@@ -31,11 +31,11 @@ pub enum GroundError {
     OverBound,
     /// The allocator refused the memory the grounding grew by.
     OutOfMemory,
-    /// The grounding built a term deeper than [`MAX_DEPTH`]: it builds ever
+    /// The grounding built a term deeper than `MAX_DEPTH`: it builds ever
     /// deeper terms, as `nat(s(X)) :- nat(X)` does, and would not end.
     Unbounded(String),
     /// A findall that the grounder cannot list as ProbLog does, whichever
-    /// way the program is ground ([`super::terms`]).
+    /// way the program is ground (the grounder's `terms` module).
     Refused(String),
 }
 

@@ -432,3 +432,11 @@ fn a_grounding_that_builds_ever_deeper_terms_is_refused() {
         &[("nat(s(s(0)))", 1.0)],
     );
 }
+
+#[test]
+fn a_variable_the_query_binds_is_bound_and_one_nothing_binds_is_unsafe() {
+    // ProbLog proves `p(1)` from the query down: its `X` is the query's 1.
+    assert_answers("p(X) :- q(Y). q(1). query(p(1)).", &[("p(1)", 1.0)]);
+    let e = refusal("p :- X > 1. query(p).");
+    assert!(e.starts_with("grounding error: unsafe rule"), "{e}");
+}
