@@ -70,6 +70,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::syntax::{Atom, Term};
 
+use super::program::Lists;
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, RulesByHead, deps, simplify};
 
 /// The name of the atoms the pass makes.
@@ -102,7 +103,8 @@ const TEST_MADE: usize = 4;
 /// The most literals a definition's summary keeps of those it implies.
 const SUMMARY: usize = 256;
 
-/// No settled cube of a frame's own: a rule's reads under the frame's cube.
+/// No index: no settled cube of a frame's own, for a rule's reads under
+/// the frame's cube, or no definition of an atom.
 const NONE: u32 = u32::MAX;
 
 /// A vtree read off the cubes the pass read facts under, over the facts
@@ -159,6 +161,26 @@ fn insert(cube: &mut Vec<GLit>, l: GLit) -> bool {
     }
 }
 
+/// `a` with the literals of `b` whose atoms `a` lacks, both sorted by
+/// atom, into `into`: `a` with each literal of `b` added by [`insert`].
+fn union(into: &mut Vec<GLit>, a: &[GLit], b: &[GLit]) {
+    into.clear();
+    let (mut i, mut j) = (0, 0);
+    while i < a.len() && j < b.len() {
+        let (x, y) = (a[i].atom(), b[j].atom());
+        if x <= y {
+            into.push(a[i]);
+            i += 1;
+            j += usize::from(x == y);
+        } else {
+            into.push(b[j]);
+            j += 1;
+        }
+    }
+    into.extend_from_slice(&a[i..]);
+    into.extend_from_slice(&b[j..]);
+}
+
 /// `cube` without the literals that `other`, sorted by atom, does not hold.
 fn meet(cube: &mut Vec<GLit>, other: &[GLit]) {
     cube.retain(|l| {
@@ -168,14 +190,49 @@ fn meet(cube: &mut Vec<GLit>, other: &[GLit]) {
     });
 }
 
+/// The slots of the table of parts of cubes ([`Cubes::part`]), as a power
+/// of two.
+const PART_BITS: u32 = 12;
+
 /// Cubes of fact literals, sorted by atom, each held once.
-#[derive(Default)]
 struct Cubes {
     ids: FxHashMap<Rc<[GLit]>, u32>,
     all: Vec<Rc<[GLit]>>,
+    /// A direct-mapped table of parts of cubes: a cube's number, the start
+    /// and end of a range of it, and the number of that part; a cube of
+    /// `u32::MAX` for none.
+    parts: Vec<(u32, u32, u32, u32)>,
+}
+
+impl Default for Cubes {
+    fn default() -> Self {
+        Cubes {
+            ids: FxHashMap::default(),
+            all: Vec::new(),
+            parts: vec![(u32::MAX, 0, 0, 0); 1 << PART_BITS],
+        }
+    }
 }
 
 impl Cubes {
+    /// The number of `cube[range]`, where `cube` is the cube numbered `c`.
+    /// The atoms a frame reads take the parts of its cube their ranges
+    /// select, the same few for many atoms, and the table answers those
+    /// without hashing the part.
+    fn part(&mut self, c: u32, range: std::ops::Range<usize>, cube: &[GLit]) -> u32 {
+        let (s, e) = (range.start as u32, range.end as u32);
+        let h = (u64::from(c) << 32 ^ u64::from(s) << 16 ^ u64::from(e))
+            .wrapping_mul(0x9E37_79B9_7F4A_7C15);
+        let k = (h >> (64 - PART_BITS)) as usize;
+        let (pc, ps, pe, i) = self.parts[k];
+        if (pc, ps, pe) == (c, s, e) {
+            return i;
+        }
+        let i = self.intern(&cube[range]);
+        self.parts[k] = (c, s, e, i);
+        i
+    }
+
     fn intern(&mut self, c: &[GLit]) -> u32 {
         if let Some(&i) = self.ids.get(c) {
             return i;
@@ -210,12 +267,9 @@ enum Phase {
     /// The rule's cube starts as the frame's.
     Start,
     /// Literal `j` of the rule is next to add what it implies; `n0` is the
-    /// cube's size when the round over the rule's literals began.
+    /// cube's size when the round over the rule's literals began. A frame
+    /// waits for a value only here: the rest of a rule runs at once.
     Imply { j: usize, n0: usize },
-    /// The cube is settled: its new literals start the body.
-    Guard,
-    /// Literal `j` of the rule is next to read conditioned on the cube.
-    Build { j: usize },
 }
 
 /// A derived literal's last read in the rule being built: its value and
@@ -257,6 +311,7 @@ struct Frame {
     values: Vec<Read>,
     body: Vec<GLit>,
     bodies: Vec<Vec<GLit>>,
+    spare: Vec<Vec<GLit>>,
     /// The literals that the rules that add guards to `cx` add, back to
     /// back, each rule's ending at its entry of `ends`: with `cx`, their
     /// settled cubes. These are interned where the frame's value is a
@@ -286,6 +341,7 @@ impl Frame {
             values: Vec::new(),
             body: Vec::new(),
             bodies: Vec::new(),
+            spare: Vec::new(),
             settled: Vec::new(),
             ends: Vec::new(),
             under: NONE,
@@ -302,7 +358,10 @@ impl Frame {
         self.extra.clear();
         self.values.clear();
         self.body.clear();
-        self.bodies.clear();
+        for mut b in self.bodies.drain(..) {
+            b.clear();
+            self.spare.push(b);
+        }
         self.settled.clear();
         self.ends.clear();
         self.guards.clear();
@@ -341,6 +400,27 @@ fn merge(into: &mut Vec<GLit>, a: &[GLit], b: &[GLit]) {
     into.extend_from_slice(&b[j..]);
 }
 
+/// A literal of a rule's body, with whether its atom is a fact and the
+/// range of fact numbers the atom's support lies in, `lo > hi` where it
+/// reads no fact.
+#[derive(Clone, Copy)]
+struct BodyLit {
+    lit: GLit,
+    fact: bool,
+    lo: AtomId,
+    hi: AtomId,
+}
+
+/// The part of `cube`, sorted by atom, within the fact numbers `lo..=hi`.
+fn part(lo: AtomId, hi: AtomId, cube: &[GLit]) -> std::ops::Range<usize> {
+    if lo > hi || cube.is_empty() {
+        return 0..0;
+    }
+    let start = cube.partition_point(|l| l.atom() < lo);
+    let end = start + cube[start..].partition_point(|l| l.atom() <= hi);
+    start..end
+}
+
 /// A value the frame on top needs that is not known yet: an atom under a
 /// cube.
 struct Need(AtomId, u32);
@@ -348,17 +428,21 @@ struct Need(AtomId, u32);
 struct Pass<'a> {
     gp: &'a GroundProgram,
     by_head: RulesByHead,
-    /// The range of fact numbers each atom's support lies in; `lo > hi`
-    /// where it reads no fact.
-    lo: Vec<AtomId>,
-    hi: Vec<AtomId>,
+    /// The rules of `by_head` with their bodies in one place: atom `x`'s
+    /// are `heads[x]..heads[x + 1]`, and rule `r`'s body is
+    /// `body[starts[r]..starts[r + 1]]`.
+    heads: Vec<u32>,
+    starts: Vec<u32>,
+    body: Vec<BodyLit>,
     cubes: Cubes,
     memo: FxHashMap<(AtomId, u32), Val>,
     defs: Vec<Def>,
     /// The bodies of the definitions, each a range of `lits`.
     lits: Vec<GLit>,
     body_ends: Vec<usize>,
-    def_of: FxHashMap<AtomId, u32>,
+    /// Per atom of the output, the definition the pass made for it, or
+    /// [`NONE`].
+    def_of: Vec<u32>,
     by_hash: FxHashMap<u64, Vec<u32>>,
     claimed: Vec<bool>,
     made: usize,
@@ -471,6 +555,11 @@ pub(super) fn condition(gp: &mut GroundProgram) -> Option<()> {
     if !pass.changed && roots_kept {
         return None;
     }
+    // Only the evaluation reads the memo, the definitions by hash and the
+    // rules' bodies: freed here, their memory serves the decisions' lists.
+    pass.memo = FxHashMap::default();
+    pass.by_hash = FxHashMap::default();
+    pass.body = Vec::new();
     let decisions = pass.decisions(&values);
     let Pass {
         defs,
@@ -519,17 +608,34 @@ impl<'a> Pass<'a> {
     fn new(gp: &'a GroundProgram, part: usize) -> Option<Self> {
         let (by_head, lo, hi) = applicable(gp)?;
         let size = gp.size();
+        let (mut heads, mut starts, mut body) = (vec![0u32], vec![0u32], Vec::new());
+        for rules in by_head.iter() {
+            for &ri in rules {
+                body.extend(gp.rules[ri].body.iter().map(|&lit| {
+                    let a = lit.atom() as usize;
+                    BodyLit {
+                        lit,
+                        fact: gp.is_fact(lit.atom()),
+                        lo: lo[a],
+                        hi: hi[a],
+                    }
+                }));
+                starts.push(body.len() as u32);
+            }
+            heads.push((starts.len() - 1) as u32);
+        }
         Some(Pass {
             gp,
             by_head,
-            lo,
-            hi,
+            heads,
+            starts,
+            body,
             cubes: Cubes::default(),
             memo: FxHashMap::default(),
             defs: Vec::new(),
             lits: Vec::new(),
             body_ends: Vec::new(),
-            def_of: FxHashMap::default(),
+            def_of: vec![NONE; gp.num_atoms()],
             by_hash: FxHashMap::default(),
             claimed: vec![false; gp.num_atoms()],
             made: 0,
@@ -544,6 +650,12 @@ impl<'a> Pass<'a> {
             out_budget: GROWTH * size,
             target: usize::MAX,
         })
+    }
+
+    /// The definition the pass made for `a`, an atom of the output, where
+    /// it made one.
+    fn def(&self, a: AtomId) -> Option<u32> {
+        self.def_of.get(a as usize).copied().filter(|&d| d != NONE)
     }
 
     /// Whether `a`, an atom of the program or one the pass made, is a fact.
@@ -605,21 +717,9 @@ impl<'a> Pass<'a> {
         done
     }
 
-    /// The part of `cube` within `b`'s range of fact numbers.
-    fn part(&self, b: AtomId, cube: &[GLit]) -> std::ops::Range<usize> {
-        let (lo, hi) = (self.lo[b as usize], self.hi[b as usize]);
-        if lo > hi {
-            0..0
-        } else {
-            let start = cube.partition_point(|l| l.atom() < lo);
-            let end = cube.partition_point(|l| l.atom() <= hi);
-            start..end
-        }
-    }
-
     /// `b` conditioned on `part`, a cube restricted to `b`'s range
-    /// ([`Pass::part`]) and interned as `known` where that is given, or
-    /// what is needed to know it.
+    /// ([`part`]) and interned as `known` where that is given, or what is
+    /// needed to know it.
     fn value(&mut self, b: AtomId, part: &[GLit], known: Option<u32>) -> Result<Val, Need> {
         self.copied += part.len();
         let c = known.unwrap_or_else(|| self.cubes.intern(part));
@@ -634,7 +734,7 @@ impl<'a> Pass<'a> {
             Val::False => !positive,
             Val::Lit(l) => f.insert(if positive { l } else { l.negated() }),
             Val::Atom(a) => {
-                let Some(&d) = self.def_of.get(&a) else {
+                let Some(d) = self.def(a) else {
                     return true;
                 };
                 let d = &self.defs[d as usize];
@@ -647,129 +747,142 @@ impl<'a> Pass<'a> {
     /// Runs frame `f` on until it has its value, or needs one it lacks;
     /// `given` is the value it last needed, where it has just been found.
     fn advance(&mut self, f: &mut Frame, mut given: Option<Val>) -> Result<Val, Need> {
-        let gp = self.gp;
+        let (first, end) = (
+            self.heads[f.x as usize] as usize,
+            self.heads[f.x as usize + 1] as usize,
+        );
         loop {
-            let Some(&ri) = self.by_head[f.x as usize].get(f.rule) else {
+            let r = first + f.rule;
+            if r >= end {
                 return Ok(self.finish(f));
-            };
-            let body = &gp.rules[ri].body;
-            match f.phase {
+            }
+            let start = self.starts[r] as usize;
+            let len = self.starts[r + 1] as usize - start;
+            let (mut j, mut n0) = match f.phase {
                 Phase::Start => {
                     // The budget counts `cx` as copied, as it was before
                     // the rule's cube held it apart.
                     f.extra.clear();
                     self.copied += f.base.len();
                     f.values.clear();
-                    f.values.resize(body.len(), Read::NONE);
-                    f.phase = Phase::Imply { j: 0, n0: 0 };
+                    f.values.resize(len, Read::NONE);
+                    (0, 0)
                 }
-                Phase::Imply { j, n0 } => {
-                    if j == body.len() {
-                        f.phase = if f.extra.len() == n0 {
-                            Phase::Guard
-                        } else {
-                            Phase::Imply {
-                                j: 0,
-                                n0: f.extra.len(),
+                Phase::Imply { j, n0 } => (j, n0),
+            };
+            // Rounds over the rule's literals, each adding to the cube what
+            // it implies, until a round adds nothing or a literal clashes.
+            let settled = loop {
+                if j == len {
+                    if f.extra.len() == n0 {
+                        break true;
+                    }
+                    (j, n0) = (0, f.extra.len());
+                    continue;
+                }
+                let BodyLit { lit, fact, lo, hi } = self.body[start + j];
+                let ok = if fact {
+                    f.insert(lit)
+                } else {
+                    let (inner, outer) = (part(lo, hi, &f.base), part(lo, hi, &f.extra));
+                    let n = inner.len() + outer.len();
+                    if f.values[j].part == n {
+                        // Read under this part before ([`Read`]).
+                        self.copied += n;
+                        true
+                    } else {
+                        let v = match given.take() {
+                            Some(v) => {
+                                self.copied += n;
+                                v
+                            }
+                            None => {
+                                // A part as long as the cube, while the cube
+                                // is `cx`, is `cx`; one of `cx` alone is in
+                                // the table of parts.
+                                let (known, cube) = if outer.is_empty() {
+                                    let known = if f.extra.is_empty() && n == f.base.len() {
+                                        f.cx
+                                    } else {
+                                        self.cubes.part(f.cx, inner.clone(), &f.base)
+                                    };
+                                    (Some(known), &f.base[inner])
+                                } else {
+                                    f.part.clear();
+                                    merge(&mut f.part, &f.base[inner], &f.extra[outer]);
+                                    (None, &f.part[..])
+                                };
+                                match self.value(lit.atom(), cube, known) {
+                                    Ok(v) => v,
+                                    Err(need) => {
+                                        f.phase = Phase::Imply { j, n0 };
+                                        return Err(need);
+                                    }
+                                }
                             }
                         };
-                        continue;
+                        f.values[j] = Read { val: v, part: n };
+                        self.imply(f, v, lit.is_positive())
                     }
-                    let l = body[j];
-                    let ok = if gp.is_fact(l.atom()) {
-                        f.insert(l)
-                    } else {
-                        let (inner, outer) =
-                            (self.part(l.atom(), &f.base), self.part(l.atom(), &f.extra));
-                        let n = inner.len() + outer.len();
-                        if f.values[j].part == n {
-                            // Read under this part before ([`Read`]).
-                            self.copied += n;
-                            true
-                        } else {
-                            // A part as long as the cube, while the cube is
-                            // `cx`, is `cx`.
-                            let known = (f.extra.is_empty() && n == f.base.len()).then_some(f.cx);
-                            let v = match given.take() {
-                                Some(v) => {
-                                    self.copied += n;
-                                    v
-                                }
-                                None => {
-                                    let part = if outer.is_empty() {
-                                        &f.base[inner]
-                                    } else {
-                                        f.part.clear();
-                                        merge(&mut f.part, &f.base[inner], &f.extra[outer]);
-                                        &f.part[..]
-                                    };
-                                    self.value(l.atom(), part, known)?
-                                }
-                            };
-                            f.values[j] = Read { val: v, part: n };
-                            self.imply(f, v, l.is_positive())
-                        }
-                    };
-                    self.spent += 1;
-                    if ok {
-                        f.phase = Phase::Imply { j: j + 1, n0 };
-                    } else {
-                        f.next_rule();
-                    }
+                };
+                self.spent += 1;
+                if !ok {
+                    break false;
                 }
-                Phase::Guard => {
-                    // The guards are the literals the rule added to `cx`.
-                    f.body.clear();
-                    f.body.extend_from_slice(&f.extra);
-                    self.copied += f.base.len() + f.extra.len();
-                    // A rule that adds no guard reads under `cx`: its cube
-                    // grew by none of its atoms and clashed with none.
-                    f.under = NONE;
-                    if !f.body.is_empty() {
-                        f.under = f.ends.len() as u32;
-                        f.settled.extend_from_slice(&f.extra);
-                        f.ends.push(f.settled.len());
-                        f.guards.extend(f.body.iter().map(|l| (l.atom(), f.under)));
-                    }
-                    f.phase = Phase::Build { j: 0 };
-                }
-                Phase::Build { j } => {
-                    if j == body.len() {
-                        let mut b = std::mem::take(&mut f.body);
-                        b.sort_unstable();
-                        b.dedup();
-                        if b.is_empty() {
-                            return Ok(Val::True);
-                        }
-                        f.bodies.push(b);
-                        f.next_rule();
-                        continue;
-                    }
-                    let l = body[j];
-                    if !gp.is_fact(l.atom()) {
-                        // A fact literal is in the cube, and a derived one
-                        // whose value is a fact literal put it there. The
-                        // round that settled the cube read every derived
-                        // one under it.
-                        let read = f.values[j];
-                        self.copied += read.part;
-                        match (read.val, l.is_positive()) {
-                            (Val::True, false) | (Val::False, true) => {
-                                f.next_rule();
-                                continue;
-                            }
-                            (Val::Atom(a), positive) => {
-                                f.reads.push((a, f.under));
-                                f.body
-                                    .push(if positive { GLit::Pos(a) } else { GLit::Neg(a) })
-                            }
-                            _ => {}
-                        }
-                    }
-                    self.spent += 1;
-                    f.phase = Phase::Build { j: j + 1 };
-                }
+                j += 1;
+            };
+            if !settled {
+                f.next_rule();
+                continue;
             }
+            // The guards are the literals the rule added to `cx`.
+            f.body.clear();
+            f.body.extend_from_slice(&f.extra);
+            self.copied += f.base.len() + f.extra.len();
+            // A rule that adds no guard reads under `cx`: its cube grew by
+            // none of its atoms and clashed with none.
+            f.under = NONE;
+            if !f.body.is_empty() {
+                f.under = f.ends.len() as u32;
+                f.settled.extend_from_slice(&f.extra);
+                f.ends.push(f.settled.len());
+                f.guards.extend(f.body.iter().map(|l| (l.atom(), f.under)));
+            }
+            // The body: the guards, and the atoms of the output that the
+            // derived literals read. A fact literal is in the cube, and a
+            // derived one whose value is a fact literal put it there. The
+            // round that settled the cube read every derived one under it.
+            let mut clash = false;
+            for (j, b) in self.body[start..start + len].iter().enumerate() {
+                if !b.fact {
+                    let read = f.values[j];
+                    self.copied += read.part;
+                    match (read.val, b.lit.is_positive()) {
+                        (Val::True, false) | (Val::False, true) => {
+                            clash = true;
+                            break;
+                        }
+                        (Val::Atom(a), positive) => {
+                            f.reads.push((a, f.under));
+                            f.body
+                                .push(if positive { GLit::Pos(a) } else { GLit::Neg(a) })
+                        }
+                        _ => {}
+                    }
+                }
+                self.spent += 1;
+            }
+            if !clash {
+                let spare = f.spare.pop().unwrap_or_default();
+                let mut b = std::mem::replace(&mut f.body, spare);
+                b.sort_unstable();
+                b.dedup();
+                if b.is_empty() {
+                    return Ok(Val::True);
+                }
+                f.bodies.push(b);
+            }
+            f.next_rule();
         }
     }
 
@@ -793,7 +906,7 @@ impl<'a> Pass<'a> {
         bodies.sort_unstable();
         bodies.dedup();
         let a = self.define(f.x, f.cx, bodies);
-        self.keep_reads(f, self.def_of[&a]);
+        self.keep_reads(f, self.def_of[a as usize]);
         Val::Atom(a)
     }
 
@@ -868,7 +981,10 @@ impl<'a> Pass<'a> {
             pos,
             neg,
         });
-        self.def_of.insert(atom, d);
+        if self.def_of.len() <= atom as usize {
+            self.def_of.resize(atom as usize + 1, NONE);
+        }
+        self.def_of[atom as usize] = d;
         self.by_hash.entry(h).or_default().push(d);
         atom
     }
@@ -881,7 +997,7 @@ impl<'a> Pass<'a> {
         }
         if self.is_fact(l.atom()) {
             into.push(l);
-        } else if let Some(&d) = self.def_of.get(&l.atom()) {
+        } else if let Some(d) = self.def(l.atom()) {
             let d = &self.defs[d as usize];
             into.extend_from_slice(self.cubes.of(if l.is_positive() { d.pos } else { d.neg }));
         }
@@ -937,7 +1053,7 @@ impl<'a> Pass<'a> {
         let mut context: Vec<Option<Vec<GLit>>> = vec![None; nd];
         for v in roots {
             if let Val::Atom(a) = v
-                && let Some(&d) = self.def_of.get(a)
+                && let Some(d) = self.def(*a)
             {
                 context[d as usize] = Some(Vec::new());
             }
@@ -953,13 +1069,11 @@ impl<'a> Pass<'a> {
                 continue;
             };
             for &(a, c) in &reads_of[d] {
-                let Some(&k) = self.def_of.get(&a) else {
+                let Some(k) = self.def(a) else {
                     continue;
                 };
-                let mut ctx = here.clone();
-                for &l in self.cubes.of(c) {
-                    insert(&mut ctx, l);
-                }
+                let mut ctx = Vec::new();
+                union(&mut ctx, &here, self.cubes.of(c));
                 let k = k as usize;
                 context[k] = Some(match context[k].take() {
                     None => ctx,
@@ -985,14 +1099,12 @@ impl<'a> Pass<'a> {
             }
         }
         let cubes = &mut self.cubes;
+        let mut cube = Vec::new();
         let mut with = |c: u32, ctx: &[GLit]| {
             if ctx.is_empty() {
                 return c;
             }
-            let mut cube = cubes.of(c).to_vec();
-            for &l in ctx {
-                insert(&mut cube, l);
-            }
+            union(&mut cube, cubes.of(c), ctx);
             cubes.intern(&cube)
         };
         paths
@@ -1100,14 +1212,17 @@ impl<'a> Pass<'a> {
                 .filter(move |l| l.atom() != f)
         };
         let n = self.gp.num_atoms();
-        let mut holding: Vec<Vec<u32>> = vec![Vec::new(); n];
-        let mut own: Vec<Vec<u32>> = vec![Vec::new(); n];
-        for (k, &(f, c, _)) in paths.iter().enumerate() {
-            own[f as usize].push(k as u32);
-            for l in without(f, c) {
-                holding[l.atom() as usize].push(k as u32);
-            }
-        }
+        let holding = Lists::new(n, || {
+            paths.iter().enumerate().flat_map(move |(k, &(f, c, _))| {
+                without(f, c).map(move |l| (l.atom() as usize, k as u32))
+            })
+        });
+        let own = Lists::new(n, || {
+            paths
+                .iter()
+                .enumerate()
+                .map(|(k, &(f, _, _))| (f as usize, k as u32))
+        });
         // Each fact's node: the literals in more than half of the paths
         // that hold it, by their first cubes, or of its own where none
         // does, by their second. Per fact that the paths hold, the facts
@@ -1119,23 +1234,48 @@ impl<'a> Pass<'a> {
         let index = |l: GLit| 2 * l.atom() as usize + l.is_positive() as usize;
         let (mut counts, mut holds) = (vec![0u32; 2 * n], vec![0u32; n]);
         let mut touched: Vec<GLit> = Vec::new();
+        // The distinct cubes of the paths of `of`, each with how many paths
+        // have it: each guard a rule adds gives a path through the same
+        // cube, and that cube counted once per path cost its length
+        // squared.
+        let mut many = vec![0u32; self.cubes.all.len()];
+        let mut distinct: Vec<u32> = Vec::new();
         let mut facts: Vec<AtomId> = paths.iter().map(|p| p.0).collect();
         facts.dedup();
         for &f in &facts {
             let held = !holding[f as usize].is_empty();
-            let of = if held {
+            let of: &[u32] = if held {
                 &holding[f as usize]
             } else {
                 &own[f as usize]
             };
             for &k in of {
-                let (g, first, second) = paths[k as usize];
+                let (_, first, second) = paths[k as usize];
                 let c = if held { first } else { second };
-                for l in without(g, c).filter(|l| l.atom() != f) {
+                if many[c as usize] == 0 {
+                    distinct.push(c);
+                }
+                many[c as usize] += 1;
+            }
+            for &c in &distinct {
+                let m = many[c as usize];
+                for &l in self.cubes.of(c).iter().filter(|l| l.atom() != f) {
                     if counts[index(l)] == 0 {
                         touched.push(l);
                     }
-                    counts[index(l)] += 1;
+                    counts[index(l)] += m;
+                }
+            }
+            if held {
+                // A path counts its cube without its own fact, whose
+                // literal goes back out here; the fact of a path of `f`'s
+                // own is `f`, which the counts leave out.
+                for &k in of {
+                    let (g, first, _) = paths[k as usize];
+                    let cube = self.cubes.of(first);
+                    if let Ok(i) = cube.binary_search_by_key(&g, |l| l.atom()) {
+                        counts[index(cube[i])] -= 1;
+                    }
                 }
             }
             let mut node: Vec<GLit> = touched
@@ -1148,12 +1288,13 @@ impl<'a> Pass<'a> {
                 counts[index(l)] = 0;
             }
             if held {
-                for &k in of {
-                    for &l in self.cubes.of(paths[k as usize].1) {
+                for &c in &distinct {
+                    let m = many[c as usize];
+                    for &l in self.cubes.of(c) {
                         if holds[l.atom() as usize] == 0 {
                             touched.push(l);
                         }
-                        holds[l.atom() as usize] += 1;
+                        holds[l.atom() as usize] += m;
                     }
                 }
                 let mut always: Vec<AtomId> = touched
@@ -1166,6 +1307,9 @@ impl<'a> Pass<'a> {
                     holds[l.atom() as usize] = 0;
                 }
                 within.insert(f, always);
+            }
+            for c in distinct.drain(..) {
+                many[c as usize] = 0;
             }
             nodes.push((f, node, held));
         }
