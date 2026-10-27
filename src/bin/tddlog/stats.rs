@@ -140,6 +140,12 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
         q.recounts,
         q.grid_pairs
     );
+    if q.summing_joins + q.weighted_joins > 0 {
+        eprintln!(
+            "sum-out: {} joins summed out finished subtrees as they were built, {} other joins carried weights",
+            q.summing_joins, q.weighted_joins
+        );
+    }
     if q.names_kept + q.names_expanded > 0 {
         eprintln!(
             "names: kept at {} cuts, expanded at {}, {} work units",

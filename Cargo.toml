@@ -15,11 +15,14 @@ categories = ["science", "command-line-utilities"]
 
 [dependencies]
 # The TDD library.
-tididi = { git = "https://github.com/Tractables/tididi", rev = "31bd4e470ddba6698f870fb2b27884559dddcce6" }
+tididi = { git = "https://github.com/Tractables/tididi", rev = "8b866f7c2bb21b1b96a016314fc38c0d4081aa75" }
 # Tree decompositions for the structure-aware vtree strategies. Its build.rs
 # compiles a vendored C++ FlowCutter, so building needs a C++ compiler.
 goatd = { git = "https://github.com/Tractables/goatd", rev = "e592d1e2233d4f724c6cb3475a4810d95e0b847a" }
 rustc-hash = "2"
+# Exact weights for the sum-out's weight store (`src/query/sum_out.rs`), as
+# tididi's `RationalWeights` takes them.
+num-rational = "0.4"
 
 # The binary's allocator (`src/bin/tddlog/alloc.rs`), its purge (`mallctl`,
 # from the jemalloc that tikv-jemallocator links), and the switch of its huge

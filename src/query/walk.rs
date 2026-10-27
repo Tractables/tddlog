@@ -161,6 +161,7 @@ use tididi::limits::{StopAt, StopRules};
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
 
+use super::sum_out::SumOut;
 use super::{Formula, PendingFormula, QuerySizes};
 use crate::ground::AtomId;
 use crate::tp::backend::FullSchedule;
@@ -409,6 +410,9 @@ pub(super) struct EvidenceWalk {
     /// products where they hold fewer pairs than their target's slot
     /// (`Some(target)`; see the module documentation).
     in_full: FxHashMap<usize, Option<usize>>,
+    /// Where only the evidence formula's count is wanted, what the joins
+    /// sum out (`super::sum_out`).
+    sum_out: Option<SumOut>,
     pub(super) done: bool,
     /// The joins finished, each of which makes one formula of two: the
     /// walk makes one of the observed factors in one fewer.
@@ -460,6 +464,7 @@ impl EvidenceWalk {
             full_freed: true,
             full_due_on: 0,
             in_full: FxHashMap::default(),
+            sum_out: None,
             completed_joins: 0,
             #[cfg(test)]
             reassociated: 0,
@@ -501,6 +506,17 @@ impl EvidenceWalk {
             }
         }
         !self.taken.is_empty()
+    }
+
+    /// The joins sum out what no later join reads, under the facts'
+    /// weights `w`, where no query reads the evidence formula.
+    pub(super) fn sum_out(
+        &mut self,
+        tree: &tididi::Vtree,
+        w: &crate::eval::Probabilities,
+        from: usize,
+    ) {
+        self.sum_out = Some(SumOut::new(tree, w, from));
     }
 
     /// The joins finished, and all the walk makes: one fewer than the
@@ -985,6 +1001,9 @@ impl EvidenceWalk {
                     (own, node, formula, pairs)
                 }
             };
+            if let Some(so) = &mut self.sum_out {
+                so.observe(self.slots.len(), &own);
+            }
             let id = self.slot(Some((formula, own)), pairs);
             self.at[node.idx()].push(id);
             self.next_observed += 1;
@@ -1120,6 +1139,29 @@ impl EvidenceWalk {
                     // cap's pair floor is for the conjunction: the moves put
                     // no pair in flight, so it cannot stop them.
                     let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
+                    // Where only the evidence's count is wanted, the join
+                    // sums out what no later join reads (`SumOut`); an
+                    // operand that carries the facts' weights makes a
+                    // weighted join.
+                    let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
+                    let pairs = self.slot_pairs[a] + self.slot_pairs[b];
+                    let targets = match &mut self.sum_out {
+                        Some(so) => {
+                            so.begin(a, b);
+                            so.targets(&scope, pairs)
+                        }
+                        None => Vec::new(),
+                    };
+                    let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty())
+                    {
+                        (Some(so), _, false) => {
+                            so.and_marginalizing(backend, fa, first, fb, second, &scope, &targets)
+                        }
+                        (Some(so), true, true) => {
+                            so.and_onto(backend, fa, first, fb, second, &scope)
+                        }
+                        _ => backend.and_onto(fa, first, fb, second, &scope),
+                    };
                     let attempt = match cap {
                         Some(outer) => {
                             let _cap = backend.engine.limits().edit(|c| {
@@ -1128,10 +1170,15 @@ impl EvidenceWalk {
                                     after_pairs: Some((floor, StopAt::WorkUnits(0))),
                                 })
                             });
-                            backend.and_onto(fa, first, fb, second, &scope)
+                            join(fa, fb)
                         }
-                        None => backend.and_onto(fa, first, fb, second, &scope),
+                        None => join(fa, fb),
                     };
+                    if attempt.is_err()
+                        && let Some(so) = &mut self.sum_out
+                    {
+                        so.undo();
+                    }
                     let formula = match attempt {
                         Ok(formula) => formula,
                         Err(refused)
@@ -1249,6 +1296,9 @@ impl EvidenceWalk {
                 }
                 pending.reduced = true;
                 let size = counted.unwrap_or_else(|| backend.size(&pending.formula.0));
+                if let Some(so) = &mut self.sum_out {
+                    so.commit(a, b, out);
+                }
                 self.slots[out] = Some(self.pending.take().unwrap().formula);
                 self.slot_pairs[out] = size;
                 self.shared.remove(&out);
@@ -1269,6 +1319,10 @@ impl EvidenceWalk {
                     continue;
                 }
                 self.done = true;
+                if let Some(so) = &self.sum_out {
+                    sizes.summing_joins = so.summing;
+                    sizes.weighted_joins = so.weighted;
+                }
                 self.built[tree.root().idx()] = None;
                 return Ok(self.slots[main].take());
             };
