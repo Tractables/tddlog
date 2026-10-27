@@ -231,7 +231,8 @@ tddlog's time against the fastest other system's, instance by instance.
 The [results page](https://tractables.github.io/tddlog/results/) has
 every instance and time, each category with every system, a page for
 each system (its version and settings, how it was given each program,
-its plots against tddlog and its paper), and for each benchmark the
+its plots against tddlog on the programs in its own language and on
+those translated for it, and its paper), and for each benchmark the
 program as its authors wrote it, as each system was given it, and every
 run;
 [docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md)
