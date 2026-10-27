@@ -36,7 +36,7 @@ class NoDiceTests(unittest.TestCase):
         # Each returns one Boolean (CouponProb, 3sat) or one variable of
         # its network, whose values are the queries.
         names = sorted(p.stem for p in nodice.glob('*.dice'))
-        self.assertEqual(len(names), 11)
+        self.assertEqual(len(names), 14)
         for name in names:
             with self.subTest(name=name):
                 qs = queries(dice2problog.translate((nodice / f'{name}.dice').read_text()))

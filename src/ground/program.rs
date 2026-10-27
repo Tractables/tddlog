@@ -595,6 +595,24 @@ impl fmt::Display for GroundProgram {
             }
             writeln!(f, ".")?;
         }
+        // A derived atom without rules is false, and so is an impossible
+        // atom a query or the evidence names: `a :- fail.` says so, since
+        // a program that asks for a predicate without clauses is refused.
+        let mut defined = vec![false; self.atoms.len()];
+        for r in &self.rules {
+            defined[r.head as usize] = true;
+        }
+        for (a, kind) in self.kinds.iter().enumerate() {
+            if matches!(kind, AtomKind::Derived) && !defined[a] {
+                writeln!(f, "{} :- fail.", self.atoms[a])?;
+            }
+        }
+        let mut impossible = rustc_hash::FxHashSet::default();
+        for (a, id, _) in self.evidence.iter().chain(&self.queries) {
+            if id.is_none() && impossible.insert(a) {
+                writeln!(f, "{a} :- fail.")?;
+            }
+        }
         for (a, id, v) in &self.evidence {
             let a = id
                 .map(|i| self.atoms[i as usize].clone())

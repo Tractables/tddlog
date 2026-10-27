@@ -36,4 +36,5 @@ mod table_models;
 mod templates;
 mod terms;
 mod ties;
+mod undefined;
 mod underflow;

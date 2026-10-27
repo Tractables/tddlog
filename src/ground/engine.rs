@@ -38,6 +38,9 @@ pub enum GroundError {
     /// A findall that the grounder cannot list as ProbLog does, whichever
     /// way the program is ground (the grounder's `terms` module).
     Refused(String),
+    /// A query, an observation or a call of a predicate that has no
+    /// clauses, which ProbLog refuses too (the grounder's `terms` module).
+    NoClauses(String),
 }
 
 impl fmt::Display for GroundError {
@@ -52,6 +55,7 @@ impl fmt::Display for GroundError {
                 "the grounding does not end: it builds terms deeper than {MAX_DEPTH}, as {s}"
             ),
             GroundError::Refused(s) => write!(f, "unsupported findall: {s}"),
+            GroundError::NoClauses(s) => write!(f, "no clauses for {s}"),
         }
     }
 }
@@ -1774,6 +1778,9 @@ fn ground_with(
             evidence.push((atom, id, *v));
         }
     }
+    if g.refused {
+        return Err(GroundError::OutOfMemory);
+    }
     // The driver atoms themselves are not part of the output program.
     let drivers: FxHashSet<&str> = norm
         .query_drivers
@@ -1890,10 +1897,12 @@ fn facts_as_read(g: &Grounder) -> Vec<AtomId> {
 }
 
 /// Ground instances of a possibly non-ground query/evidence atom among the
-/// possible atoms. A ground atom that is impossible resolves to `None`.
+/// possible atoms. A ground atom that is impossible resolves to `None`. A
+/// ground atom of a switch predicate is one of its independent variables
+/// whether or not a rule read it (`0.5::f(_). query(f(a)).` asks for 0.5).
 fn resolve_atom_pattern(g: &mut Grounder, a: &Atom) -> Vec<(Atom, Option<AtomId>)> {
     // A predicate the program does not mention has no atoms.
-    let Some((p, _)) = g.pred_id(&a.name, a.args.len()) else {
+    let Some((p, switch)) = g.pred_id(&a.name, a.args.len()) else {
         return if a.is_ground() {
             vec![(a.clone(), None)]
         } else {
@@ -1902,7 +1911,11 @@ fn resolve_atom_pattern(g: &mut Grounder, a: &Atom) -> Vec<(Atom, Option<AtomId>
     };
     if a.is_ground() {
         let args: Vec<Val> = a.args.iter().map(|t| g.val(t)).collect();
-        return vec![(a.clone(), g.lookup_atom(p, &args))];
+        let id = match switch {
+            true => Some(g.atom_id(p, &args).0),
+            false => g.lookup_atom(p, &args),
+        };
+        return vec![(a.clone(), id)];
     }
     let mut out = Vec::new();
     let rel = &g.rels[p as usize];

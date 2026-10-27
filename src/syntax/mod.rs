@@ -14,6 +14,7 @@
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
 
 mod lexer;
+pub mod lpad;
 mod parser;
 
 pub use parser::{ParseError, parse_program};

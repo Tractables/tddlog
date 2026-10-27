@@ -149,8 +149,8 @@ the formulation and the projection besides its vtree. The modules, in
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns; `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
-| `syntax/` | lexer, parser, AST |
-| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
+| `syntax/` | lexer, parser, AST; `lpad.rs`, an LPAD written for cplint read as the program it holds |
+| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text, which `syntax/lpad.rs` writes too |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding`, `clause_links`, the binary reads (`Bits`), `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
@@ -194,7 +194,47 @@ The parser reads ProbLog without cut:
 - `query/1` (also `query(\+a)`), `query(pattern) :- body.`, and
   `evidence/1,2`.
 
-There are no cut, if-then-else or strings. The grounder lowers the rest
+There are no cut, if-then-else or strings.
+
+A source that holds the directive `:- begin_lpad.` (or cplint's other
+spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and
+`syntax/lpad.rs` reads it as a ProbLog program, which the parser then
+reads and `tddlog --program` prints. The LPAD is the clauses between
+`:- begin_lpad.` and `:- end_lpad.`: `h1:p1 ; h2:p2 :- b.` becomes
+`p1::h1; p2::h2 :- b.` and `a:p.` becomes `p::a.`, a head without a
+probability taking what the others leave (a probability may be a
+fraction, `1/4`). The clauses outside the markers are cplint's database
+clauses, which the LPAD calls through `db(Goal)` or the goal of a
+built-in such as `findall/3`: those the LPAD's bodies name, and those
+they name in turn, are kept, and `db(Goal)` becomes `Goal`; the rest
+(plots and other programs over the LPAD, in Prolog that tddlog does not
+read) is left out with the directives and goals. The file's example
+queries become queries: `?- prob(Q, P).` is `query(Q).`, and `?- prob(Q,
+E, P).` is `query(Q).` with an `evidence(L).` for each literal `L` of the
+conjunction `E`. A program has one set of evidence, that of the first
+example query not under an intervention `do(L)`; a query under other
+evidence or under an intervention is named in a comment of the program
+and on standard error, and left out. A clause the program cannot write
+(a disjunctive head with no probability or with two heads without one, a
+probability that is not a finite number) is refused on its line. The
+reader finds the clauses in the text and writes the program that
+`scripts/lpad2problog.py` wrote before it replaced that script: the
+clauses end at a `.` before white space outside quotes and brackets,
+the names a body calls are its words outside quotes that start with a
+lower-case letter, and the probabilities are written as Python writes a
+float (tests/lpad holds LPADs and the script's programs for them).
+
+A predicate without clauses is not read as false: a query or an
+observation of one, and a call of one that is not a built-in above in a
+clause the queries and the evidence reach, is refused, as ProbLog refuses
+it ("No clauses found"), so that a misspelt name or a built-in of
+ProbLog's that tddlog does not evaluate (`write/1`, `call/1`) stops the
+run rather than give a wrong probability. ProbLog refuses a call only
+once its resolution reaches it, and answers where the call comes after a
+literal that never holds; tddlog, which checks predicates, refuses that
+program too.
+
+The grounder lowers the rest
 to the Datalog the passes after it read (`ground/terms.rs`, before
 normalization): a compound with variables in a clause becomes a variable
 and a unification with one functor in the body, which builds the term

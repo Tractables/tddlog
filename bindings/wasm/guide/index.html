@@ -248,6 +248,10 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
   <ul>
     <li>strings, cut, if-then-else and the built-ins beyond arithmetic,
     comparison, the list predicates and <code>findall/3</code>;</li>
+    <li>a query, an observation or a call of a predicate that has no
+    clauses, which ProbLog refuses too: a misspelt name stops tddlog
+    rather than read as false, though a call that no query and no
+    observation reaches is left alone;</li>
     <li>a <code>findall/3</code> over a probabilistic goal, whose answer
     in ProbLog is a distribution over lists, over a recursive goal, or
     with a solution that has two proofs, which ProbLog lists twice;</li>
@@ -265,8 +269,8 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
   in</p>
 <pre data-lang="shell">$ tddlog choice.pl
 parse error: line 1: if-then-else is not supported</pre>
-  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 54, reports as
-  errors the 7 that ProbLog expects to fail, and reports the other 48 as
+  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 52, reports as
+  errors the 9 that ProbLog expects to fail, and reports the other 48 as
   unsupported (<a href="https://github.com/Tractables/tddlog/blob/main/tests/problog_suite.py"><code>tests/problog_suite.py</code></a>).</p>
 </section>
 
@@ -587,21 +591,29 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.</p>
 
   <h3 id="lpad">LPADs</h3>
-  <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/lpad2problog.py"><code>scripts/lpad2problog.py</code></a>
-  converts a logic program with annotated disjunctions (an LPAD) written
-  for cplint or PITA into ProbLog:</p>
-<pre data-lang="shell">python3 scripts/lpad2problog.py program.pl &gt; problog.pl</pre>
-  <p>It takes the clauses between <code>:- begin_lpad.</code> and
-  <code>:- end_lpad.</code>, or the whole file where the markers are
-  absent; writes <code>h1:p1 ; h2:p2 :- body.</code> as
+  <p>tddlog reads a logic program with annotated disjunctions (an LPAD)
+  written for cplint or PITA: a file that holds <code>:- begin_lpad.</code>
+  (or <code>:- begin_plp.</code>) is read as the ProbLog program that
+  <code>--program</code> prints.</p>
+<pre data-lang="shell">tddlog tests/lpad/coin.cplint.pl
+tddlog --program tests/lpad/coin.cplint.pl &gt; coin.pl</pre>
+  <p>The LPAD is the clauses between <code>:- begin_lpad.</code> and
+  <code>:- end_lpad.</code>: <code>h1:p1 ; h2:p2 :- body.</code> is read as
   <code>p1::h1; p2::h2 :- body.</code> and <code>a:p.</code> as
   <code>p::a.</code>, a head without a probability taking what the others
-  leave; drops the directives; and turns each query
-  <code>?- prob(Q, P).</code> in the file into <code>query(Q).</code>, and
-  <code>?- prob(Q, E, P).</code> into <code>query(Q).</code> and
-  <code>evidence(E).</code> The rest of the program passes through
-  unchanged, so a program that uses what tddlog does not read still stops
-  tddlog with its message.</p>
+  leave. The clauses outside the markers are cplint's database clauses,
+  which the LPAD calls through <code>db(Goal)</code> or the goal of a
+  built-in such as <code>findall/3</code>: those it calls are kept, and
+  <code>db(Goal)</code> is read as <code>Goal</code>; the rest, such as a
+  program that plots the LPAD's answers, is left out, with the
+  directives. Each query <code>?- prob(Q, P).</code> in the file becomes
+  <code>query(Q).</code>, and <code>?- prob(Q, E, P).</code> becomes
+  <code>query(Q).</code> and an <code>evidence(L).</code> for each literal
+  L of the conjunction E. A program has one set of evidence, that of the
+  file's first query: a query asked under other evidence, or under an
+  intervention <code>do(L)</code>, which ProbLog does not read, is named
+  in a comment and on standard error, and left out. A clause that uses
+  what tddlog does not read stops tddlog with its message.</p>
 </section>
 
 <section class="card prose" id="library">

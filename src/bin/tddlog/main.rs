@@ -17,7 +17,8 @@ usage: tddlog [options] <program.pl | network>
 
 Prints one `atom:<tab>probability` line per query, like ProbLog. A network
 file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
-read as a program of one annotated disjunction per row of its tables.
+read as a program of one annotated disjunction per row of its tables, and
+a program that holds `:- begin_lpad.` as an LPAD written for cplint.
 
 options:
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)
@@ -63,7 +64,8 @@ options:
   --rescale                             for a network: divide every row of every table by its
                                         sum, for a file that writes its tables in percent or as
                                         weights
-  --program                             print the program a network is read as and exit
+  --program                             print the program a network or an LPAD is read as and
+                                        exit
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error
@@ -169,7 +171,6 @@ fn parse_args() -> Result<Request, String> {
             (queries.is_some(), "--query"),
             (evidence.is_some(), "--evidence"),
             (rescale.is_some(), "--rescale"),
-            (program_only.is_some(), "--program"),
         ] {
             if given {
                 return Err(format!(
@@ -195,7 +196,7 @@ fn parse_args() -> Result<Request, String> {
         ] {
             if given {
                 return Err(format!(
-                    "--program prints the network's program and stops, so {option} would do nothing"
+                    "--program prints the program and stops, so {option} would do nothing"
                 ));
             }
         }
@@ -258,8 +259,35 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    // An LPAD's example queries that its program leaves out are named, and
+    // `--program` prints a network's or an LPAD's program.
+    let lpad = match args.network {
+        Some(_) => None,
+        None => tddlog::syntax::lpad::read(&source),
+    };
+    let lpad = match lpad.transpose() {
+        Ok(lpad) => lpad,
+        Err(e) => {
+            eprintln!("{}: parse error: {e}", args.file);
+            return ExitCode::FAILURE;
+        }
+    };
+    for note in lpad.iter().flat_map(|l| &l.left_out) {
+        eprintln!("{}: {note}", args.file);
+    }
     if args.program_only {
-        print!("{source}");
+        match (&lpad, args.network) {
+            (Some(lpad), _) => println!("{}", lpad.program),
+            (None, Some(_)) => print!("{source}"),
+            (None, None) => {
+                eprintln!(
+                    "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai) or an LPAD \
+                     (a program that holds `:- begin_lpad.`), and {} is neither",
+                    args.file
+                );
+                return ExitCode::from(2);
+            }
+        }
         return ExitCode::SUCCESS;
     }
     match run(&args, source, log10_offset) {

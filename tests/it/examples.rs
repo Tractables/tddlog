@@ -981,6 +981,59 @@ mod dice {
     }
 }
 
+/// LPADs as cplint reads them (tests/lpad/NAME.cplint.pl), read by
+/// tddlog's LPAD reader (`tddlog::syntax::lpad`) as the program
+/// scripts/lpad2problog.py wrote for each before the reader replaced it
+/// (tests/lpad/NAME.pl), with cplint's PITA answers, which ProbLog gives
+/// on that program too.
+mod lpad {
+    use super::*;
+
+    #[test]
+    fn each_lpad_is_read_as_the_program_lpad2problog_wrote() {
+        let mut read = 0;
+        for entry in std::fs::read_dir("tests/lpad").unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.to_str().unwrap();
+            let Some(stem) = name.strip_suffix(".cplint.pl") else {
+                continue;
+            };
+            let source = std::fs::read_to_string(&path).unwrap();
+            let lpad = tddlog::syntax::lpad::read(&source)
+                .expect("an LPAD")
+                .unwrap();
+            let written = std::fs::read_to_string(format!("{stem}.pl")).unwrap();
+            assert_eq!(lpad.program + "\n", written, "{name}");
+            read += 1;
+        }
+        assert_eq!(read, 2);
+    }
+
+    /// Annotated disjunctions, a head that takes what the others leave and
+    /// a conjunction of evidence; a query under other evidence left out.
+    #[test]
+    fn coin() {
+        check(
+            "../tests/lpad/coin.cplint.pl",
+            &[("heads(coin)", 0.6), ("tails(coin)", 0.4)],
+        );
+    }
+
+    /// Database clauses outside the LPAD, called through db/1 and in a
+    /// findall's goal.
+    #[test]
+    fn database() {
+        check(
+            "../tests/lpad/database.cplint.pl",
+            &[
+                ("trait(carl)", 0.196),
+                ("sampled(carl)", 0.5),
+                ("big_family", 0.9),
+            ],
+        );
+    }
+}
+
 /// The circuits that the baselines branch's [`scripts/alea_bench.jl`](https://github.com/Tractables/tddlog/blob/baselines/scripts/alea_bench.jl) writes
 /// for its two Alea.jl test programs (tests/alea/*.jl there), with the
 /// answers computed by hand in those programs' comments, which Alea gives

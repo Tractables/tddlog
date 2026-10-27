@@ -401,28 +401,6 @@ fn a_findall_tddlog_cannot_list_as_prolog_does_is_refused() {
 }
 
 #[test]
-fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
-    // Read as predicates without clauses, they would be false.
-    for source in [
-        "q. p :- call(q). query(p).",
-        "s(X) :- plus(1, 2, X). query(s(_)).",
-        "t(L) :- select(a, [a, b], L). query(t(_)).",
-        "u :- findall(X, (member(X, [1, 2]), integer(X)), _). query(u).",
-        // Asked directly, as ProbLog's append.pl and clause_pred.pl ask.
-        "query(append([[1], [2]], [1, 2])).",
-        "a :- b(X). query(clause(a, b(Y))).",
-    ] {
-        let e = refusal(source);
-        assert!(e.contains("does not evaluate"), "{source}: {e}");
-    }
-    // A program's own predicate of that name is its own.
-    assert_answers(
-        "select(X, [X|T], T). t(L) :- select(a, [a, b], L). query(t(_)).",
-        &[("t([b])", 1.0)],
-    );
-}
-
-#[test]
 fn a_grounding_that_builds_ever_deeper_terms_is_refused() {
     let e = refusal("nat(0). nat(s(X)) :- nat(X). query(nat(_)).");
     assert!(e.contains("does not end"), "{e}");

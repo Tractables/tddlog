@@ -1,15 +1,31 @@
 #!/usr/bin/env python3
 """Convert a cplint/PITA LPAD program to ProbLog syntax.
 
+The harness's copy: tddlog reads LPADs itself since this script left the
+source tree (tddlog --program prints the same program); the generators
+(gen_cplint.py, gen_uwcse.py, gen_pedigree.py, uwcse_exact.py) and the
+converters that use its clause splitter import it from here.
+
     lpad2problog.py in.pl > out.pl
 
-Takes the clauses between `:- begin_lpad.` and `:- end_lpad.` (the whole file
-when the markers are absent), rewrites `h1:p1 ; h2:p2 :- body.` to
-`p1::h1; p2::h2 :- body.` and `a:p.` to `p::a.`, drops directives, and turns
-the example queries `?- prob(Q, P).` in the file into `query(Q).` (a
-`prob(Q, E, P)` becomes `query(Q).` and `evidence(E).` when E is one atom).
-Everything else is passed through unchanged, so a program using features
-outside ProbLog's language still fails, downstream and visibly.
+The LPAD is the clauses between `:- begin_lpad.` and `:- end_lpad.` (or
+`begin_plp`/`end_plp`), the whole file when the markers are absent. Its
+clauses `h1:p1 ; h2:p2 :- body.` are written `p1::h1; p2::h2 :- body.`, and
+`a:p.` is written `p::a.`; a head without a probability takes what the
+others leave. The clauses outside the markers are cplint's database
+clauses, plain Prolog, which an LPAD body calls through `db(Goal)` or the
+goal of a built-in such as `findall/3`: those the LPAD's bodies name, and
+those they name in turn, are kept as they are, and `db(Goal)` is written
+`Goal`. The rest (plots, samplers and other programs over the LPAD) is
+left out, as are the directives. The example queries `?- prob(Q, P).` in
+the file become `query(Q).`, and `?- prob(Q, E, P).` becomes `query(Q).`
+and an `evidence(L).` for each literal L of the conjunction E. One
+ProbLog program holds one set of evidence: the queries asked under the
+evidence of the file's first example query are written, and the others
+are named in a comment and on standard error, as is a query under an
+intervention `do(L)`, which ProbLog does not read. Everything else is passed
+through unchanged, so a program using features outside ProbLog's language
+still fails, downstream and visibly.
 """
 import math
 import re
@@ -127,11 +143,62 @@ def main():
     print(convert(open(sys.argv[1]).read()))
 
 
+MARKER = re.compile(r':-\s*(begin|end)_(lpad|plp)\s*$')
+NAME = re.compile(r'\b[a-z]\w*')
+INTERVENTION = re.compile(r'do\s*\(')
+
+
 def convert(text):
     """The ProbLog text of an LPAD program text."""
-    # The example queries sit in `/** <examples> ... */` blocks, so they are
-    # collected from the raw text, before comments go.
-    queries = []
+    raw = strip_comments(text)
+    # (clause, in the LPAD) in the order of the file, directives and goals
+    # left out.
+    clauses = []
+    inside = not any(MARKER.match(c) for c in split_clauses(raw))
+    for c in split_clauses(raw):
+        m = MARKER.match(c)
+        if m:
+            inside = m.group(1) == 'begin'
+        elif not c.startswith((':-', '?-')):
+            clauses.append((without_db(c) if inside else c, inside))
+    # The database clauses the LPAD's bodies name, and those they name.
+    named = set()
+    for c, lpad in clauses:
+        if lpad:
+            named |= mentioned(body(c))
+    kept = [lpad for _, lpad in clauses]
+    grew = True
+    while grew:
+        grew = False
+        for k, (c, lpad) in enumerate(clauses):
+            if not kept[k] and head_name(c) in named:
+                kept[k] = grew = True
+                named |= mentioned(body(c))
+    out = [convert_clause(c) for (c, _), keep in zip(clauses, kept) if keep]
+    # One program holds one set of evidence: that of the first query not
+    # asked under an intervention.
+    asked = list(dict.fromkeys(examples(text)))
+    observed = [e for _, e in asked if not any(INTERVENTION.match(lit) for lit in e)]
+    under = observed[0] if observed else ()
+    out += [f'evidence({lit}).' for lit in under]
+    out += [f'query({q}).' for q, e in asked if e == under]
+    for q, e in asked:
+        if e != under:
+            given = ', '.join(e)
+            goal = f'prob({q}, ({given}), P)' if e else f'prob({q}, P)'
+            why = 'an intervention' if e not in observed else 'other evidence'
+            note = f'left out, asked under {why}: {goal}'
+            out.append(f'% {note}')
+            print(f'lpad2problog.py: {note}', file=sys.stderr)
+    return '\n'.join(out)
+
+
+def examples(text):
+    """The example queries `?- prob(Q, P)` and `?- prob(Q, E, P)` of the
+    text, in its order, each as (Q, the literals of the conjunction E)."""
+    # They sit in `/** <examples> ... */` blocks, so they are read from the
+    # raw text, comments and all.
+    asked = []
     for line in text.splitlines():
         goal = line.strip()
         if not goal.startswith('?-'):
@@ -139,35 +206,43 @@ def convert(text):
         m = re.search(r'\bprob\(', goal)
         if not m:
             continue
-        args = split_top(balanced(goal, m.end()), ',')
+        args = [a.strip() for a in split_top(balanced(goal, m.end()), ',')]
         if len(args) == 2:
-            queries.append(f'query({args[0].strip()}).')
+            asked.append((args[0], ()))
         elif len(args) == 3:
-            queries.append(f'evidence({args[1].strip()}).')
-            queries.append(f'query({args[0].strip()}).')
-    raw = strip_comments(text)
-    clauses = split_clauses(raw)
-    out = []
-    inside = 'begin_lpad' not in raw
-    for c in clauses:
-        cs = c.strip()
-        if cs.startswith('?-'):
-            continue
-        if cs.startswith(':-'):
-            if 'begin_lpad' in cs:
-                inside = True
-            elif 'end_lpad' in cs:
-                inside = False
-            continue
-        if not inside:
-            continue
-        out.append(convert_clause(cs))
-    seen = set()
-    for q in queries:
-        if q not in seen:
-            seen.add(q)
-            out.append(q)
-    return '\n'.join(out)
+            e = tuple(lit.strip() for lit in split_top(unwrapped(args[1]), ','))
+            asked.append((args[0], e))
+    return asked
+
+
+def unwrapped(s):
+    """`s` without the parentheses around the whole of it."""
+    while s.startswith('(') and len(balanced(s, 1)) == len(s) - 2:
+        s = s[1:-1].strip()
+    return s
+
+
+def without_db(clause):
+    """`clause` with each call `db(Goal)` of a database goal written `Goal`."""
+    while (m := re.search(r'\bdb\(', clause)):
+        goal = balanced(clause, m.end())
+        clause = clause[:m.start()] + goal + clause[m.end() + len(goal) + 1:]
+    return clause
+
+
+def body(clause):
+    return clause.split(':-', 1)[1] if ':-' in clause else ''
+
+
+def head_name(clause):
+    m = NAME.match(clause.split(':-', 1)[0].strip())
+    return m.group(0) if m else None
+
+
+def mentioned(text):
+    """The names `text` mentions outside quotes, which hold those of the
+    predicates it calls."""
+    return set(NAME.findall(re.sub(r"'[^']*'|\"[^\"]*\"", '', text)))
 
 
 def balanced(s, start):
