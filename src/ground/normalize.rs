@@ -201,8 +201,11 @@ pub(crate) fn normalize(
     let mut place: FxHashMap<(&str, usize), usize> = FxHashMap::default();
     let mut defined: Vec<Defined> = Vec::new();
     let mut last = None;
+    // The non-ground probabilistic facts, by their predicates' places.
+    let mut open_facts: Vec<(usize, f64)> = Vec::new();
     for c in &program.clauses {
         let is_fact = fact(c).is_some();
+        let open = c.heads.len() == 1 && c.body.is_empty() && !is_fact;
         for h in &c.heads {
             let k = place_of(&h.atom, &mut last, &mut place, &mut defined);
             defined[k].1 += 1;
@@ -210,21 +213,21 @@ pub(crate) fn normalize(
             if h.negated && !negated_preds.contains(&defined[k].0) {
                 negated_preds.push(defined[k].0);
             }
+            if let Some(p) = h.prob
+                && open
+                && !h.negated
+            {
+                open_facts.push((k, p));
+            }
         }
     }
 
     // Non-ground probabilistic facts become switch predicates outright, if the
     // predicate has no other clause.
     let mut fact_switches: FxHashMap<(&str, usize), f64> = FxHashMap::default();
-    for c in &program.clauses {
-        if c.body.is_empty() && c.heads.len() == 1 && !c.heads[0].negated {
-            let h = &c.heads[0];
-            if let Some(p) = h.prob
-                && !h.atom.is_ground()
-                && defined[place[&sig(&h.atom)]].1 == 1
-            {
-                fact_switches.insert(sig(&h.atom), p);
-            }
+    for (k, p) in open_facts {
+        if defined[k].1 == 1 {
+            fact_switches.insert(defined[k].0, p);
         }
     }
     for (&(name, arity), p) in &fact_switches {
