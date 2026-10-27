@@ -5,6 +5,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::time::Instant;
 
 use tididi::Tdd;
+use tididi::restructure::search::PoolRestarts;
 use tididi::vtree::VarId;
 
 use super::clauses::ClauseMemo;
@@ -420,6 +421,21 @@ impl Dying {
     fn after(&self, i: usize) -> &[AtomId] {
         &self.atoms[self.start[i] as usize..self.start[i + 1] as usize]
     }
+
+    /// The reads left of the atoms that die after component `i`.
+    fn reads_after(&self, i: usize) -> Vec<u32> {
+        let left = self.reads_left.borrow();
+        self.after(i).iter().map(|&a| left[a as usize]).collect()
+    }
+
+    /// Sets the reads left of the atoms that die after component `i` to
+    /// `reads`, as [`Dying::reads_after`] read them.
+    fn put_back(&self, i: usize, reads: &[u32]) {
+        let mut left = self.reads_left.borrow_mut();
+        for (&a, &r) in self.after(i).iter().zip(reads) {
+            left[a as usize] = r;
+        }
+    }
 }
 
 /// The scopes of the components under projection, each built as its
@@ -630,6 +646,8 @@ pub(crate) struct Compilation {
     equivalents: FxHashMap<AtomId, (AtomId, AtomId)>,
     /// The rotation search of a dynamic vtree, `None` on a static one.
     dynamic: Option<Dynamic>,
+    /// The formula the guard refused in the round it put back ([`GUARD`]).
+    refused: std::cell::RefCell<Option<Tdd>>,
     dying: Dying,
     /// Whether a run without a watch failed: it may have taken formulas
     /// that the components it did not finish read, and cannot go on.
@@ -849,6 +867,7 @@ impl Compilation {
             memo: std::cell::RefCell::new(ClauseMemo::default()),
             equivalents: FxHashMap::default(),
             dynamic: None,
+            refused: std::cell::RefCell::new(None),
             dying,
             spent: false,
             for_queries: ForQueries {
@@ -869,8 +888,11 @@ impl Compilation {
     /// later one once they have doubled since the last, as CUDD reorders
     /// when its tables double, over every formula and cached positive at
     /// once ([`TddBackend::restructure`]). A search sweeps until a sweep
-    /// keeps no move. Its budget is the work the compile spent since the
-    /// last search, and no more than the components left are likely to take
+    /// keeps no move, then, while a quarter of the components are left,
+    /// restarts once from random moves ([`search_restarts`]), since a
+    /// smaller pool pays only over the components after it. Its budget is
+    /// the work the compile spent since the last search, and no more than
+    /// the components left are likely to take
     /// ([`Dynamic::budget`]); what it spends past the budget, the compile
     /// spends before the next search runs, so searching costs at most twice
     /// what the compile does, plus the last search's excess, unless the
@@ -923,7 +945,8 @@ impl Compilation {
     /// for another run: a cyclic component at the atom update that failed,
     /// with its rounds so far, the others from their start. A run without a watch is the last: the last read of a
     /// formula takes it rather than copying it ([`last_reads`]), so after
-    /// an error there is no other run.
+    /// an error there is no other run. A dynamic compile's rounds run under
+    /// [`GUARD`]'s watch instead, until they take a formula.
     ///
     /// # Panics
     ///
@@ -946,6 +969,12 @@ impl Compilation {
         }
         self.reach = None;
         let result = (|| {
+            // The component the guard last put back, and how often.
+            let mut guarded = (usize::MAX, 0);
+            // The guard's factor: [`GUARD`], raised for the rest of the run
+            // past a formula it refused that the search left larger than the
+            // live formulas together.
+            let mut factor = GUARD;
             while self.next < self.sccs.len() {
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next
@@ -961,13 +990,47 @@ impl Compilation {
                 {
                     self.scopes[self.next] = scope;
                 }
-                let finished = self.round(gp, backend, watch)?;
+                let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
+                // The live pairs the guard's watch is a multiple of, and its
+                // floor.
+                let base = match &self.dynamic {
+                    Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
+                        self.fixpoint.live.max(dynamic.first_pairs),
+                        GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
+                    )),
+                    _ => None,
+                };
+                let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
+                // A round the guard refuses has taken no formula, but has
+                // counted reads down.
+                let reads = guard.map(|_| self.dying.reads_after(self.next));
+                let finished = match self.round(gp, backend, watch, guard) {
+                    Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
+                        guarded = (self.next, tries + 1);
+                        if self.fixpoint.worklist.is_none() {
+                            self.reset(self.next);
+                        }
+                        if let Some(reads) = reads {
+                            self.dying.put_back(self.next, &reads);
+                        }
+                        let refused = self.refused.get_mut().take();
+                        let kept = self.memo.get_mut().take_refused();
+                        let left = self.search(backend, refused.or(kept))?;
+                        if let (Some(left), Some((base, _))) = (left, base)
+                            && left > self.fixpoint.live
+                        {
+                            factor = factor.max(pairs.div_ceil(base.max(1)));
+                        }
+                        continue;
+                    }
+                    r => r?,
+                };
                 if finished {
                     self.next += 1;
                     self.drop_dying(backend, self.next - 1)?;
                     self.narrow(backend, self.next - 1)?;
                 }
-                self.search(backend)?;
+                self.search(backend, None)?;
                 if finished {
                     self.look_ahead(backend)?;
                 }
@@ -1203,6 +1266,7 @@ impl Compilation {
         gp: &GroundProgram,
         backend: &TddBackend,
         watch: Option<usize>,
+        guard: Option<usize>,
     ) -> Result<bool, CompileError> {
         let formulation = self.formulation;
         let by_head = &self.by_head;
@@ -1232,9 +1296,12 @@ impl Compilation {
         //
         // `check` is the watch itself, and hands back the formula it
         // refused, reduced in full, with its pairs, for a caller that keeps
-        // it for the next run (`checked`, [`Factoring::checked`]).
+        // it for the next run (`checked`, [`Factoring::checked`]). The
+        // guard's watch holds until the round takes a formula: the round it
+        // refuses runs again from the formulas it read.
+        let (taken, untaken) = (&self.dying.taken, self.dying.taken.get());
         let check = |mut f: Tdd, pairs: usize| -> Result<Checked<(Tdd, usize)>, CompileError> {
-            match watch {
+            match watch.or(guard.filter(|_| taken.get() == untaken)) {
                 Some(w) if pairs > w => {
                     backend.minimize(&mut f, Reduce::Settled)?;
                     let pairs = backend.size(&f);
@@ -1247,9 +1314,15 @@ impl Compilation {
                 _ => Ok(Ok((f, pairs))),
             }
         };
+        let refused = self.dynamic.is_some().then_some(&self.refused);
         let watched_sized =
             |f: Tdd, pairs: usize, a: AtomId| -> Result<(Tdd, usize), CompileError> {
-                check(f, pairs)?.map_err(|(_, pairs)| CompileError::Oversize { atom: a, pairs })
+                check(f, pairs)?.map_err(|(f, pairs)| {
+                    if let Some(refused) = refused {
+                        refused.replace(Some(f));
+                    }
+                    CompileError::Oversize { atom: a, pairs }
+                })
             };
         let checked = |f: Tdd| -> Result<Checked<Tdd>, CompileError> {
             let pairs = backend.size(&f);
@@ -1473,7 +1546,7 @@ impl Compilation {
                 memo,
                 watched: &watched,
                 checked: &checked,
-                watch,
+                watch: watch.or(guard),
                 count: &count,
                 negate: &negate,
                 term,
@@ -1769,15 +1842,20 @@ impl Compilation {
         Ok(true)
     }
 
-    /// The search of [`Compilation::dynamic`], if it is due.
-    fn search(&mut self, backend: &TddBackend) -> Result<(), CompileError> {
+    /// The search of [`Compilation::dynamic`], if it is due or has the formula
+    /// the guard `refused` among its members, and that formula's pairs after.
+    fn search(
+        &mut self,
+        backend: &TddBackend,
+        mut refused: Option<Tdd>,
+    ) -> Result<Option<usize>, CompileError> {
         let Some(dynamic) = self.dynamic.as_mut() else {
-            return Ok(());
+            return Ok(None);
         };
         let now = backend.work_units();
         dynamic.since.get_or_insert(now);
-        if !dynamic.due(now, self.fixpoint.live) {
-            return Ok(());
+        if refused.is_none() && !dynamic.due(now, self.fixpoint.live) {
+            return Ok(None);
         }
         // The cached polarities are dropped rather than moved: they would
         // double what the search sizes and rotates, and change the vtree
@@ -1786,9 +1864,17 @@ impl Compilation {
         // A loop the watch refused is not among the formulas it moves.
         self.memo.get_mut().forget_refused();
         let mut members = self.fixpoint.formulas.formulas_mut();
+        members.extend(refused.as_mut());
         let budget = dynamic.budget(now, self.next, self.sccs.len() - self.next);
-        let found = backend.restructure(&mut members);
+        let left = self.sccs.len() - self.next;
+        let restarts = if 4 * left >= self.sccs.len() {
+            search_restarts()
+        } else {
+            PoolRestarts::default()
+        };
+        let found = backend.restructure(&mut members, restarts);
         drop(members);
+        let refused = refused.map(|f| backend.size(&f));
         // A search that fails part way has still moved every formula onto
         // the vtree the backend now holds.
         let global = backend.global();
@@ -1813,13 +1899,57 @@ impl Compilation {
         stats.pairs_before += found.pairs_before;
         stats.pairs_after += found.pairs_after;
         stats.work_units += found.work_units;
-        Ok(())
+        stats.restarts += found.restarts;
+        stats.restarts_kept += found.restarts_kept;
+        Ok(refused)
     }
 }
 
 /// Live pairs the atoms' formulas reach before the first search of the
 /// `dynamic` strategies; CUDD's first reordering is at 4004 nodes.
 pub(crate) const DYNAMIC_FIRST_PAIRS: usize = 4096;
+
+/// A round of a `dynamic` compile runs under a watch of this many times
+/// the live pairs, which count as at least the `first_pairs` its first
+/// search waits for ([`Compilation::dynamic`]), and at least
+/// [`GUARD_FLOOR`] times those, until it takes a formula ([`last_reads`]):
+/// a formula that outgrows it, which no search has sized, puts the
+/// component back, and a search with that formula among its members runs
+/// before the component runs again ([`Compilation::run`]). On b64k90s1 the
+/// negated bodies of a component grew to 1.2 G pairs, a factor of three
+/// for each pair of facts the vtree split near its root, where the live
+/// formulas held 0.2 M; a search with the first 2 M pairs of it among its
+/// members left it at 419.
+///
+/// A formula the search leaves larger than the live formulas together grew
+/// with the program, not the vtree: for the rest of the run the factor is
+/// at least the one that formula reached.
+const GUARD: usize = 8;
+
+/// The least watch of [`GUARD`], in multiples of `first_pairs` (1 M pairs
+/// at [`DYNAMIC_FIRST_PAIRS`]). A smaller formula costs little memory on
+/// any vtree, and the search after a refusal moves every formula: on
+/// g20_60 the guard refused one of 0.24 M pairs and the compile did 1.7
+/// times the work.
+const GUARD_FLOOR: usize = 256;
+
+/// The rounds of one component the guard puts back; the next runs without
+/// it.
+const GUARD_TRIES: usize = 2;
+
+/// The restarts of [`Compilation::dynamic`]'s searches: one from 20 random
+/// moves, kept when it removes 2% of the pool, drawn from this seed and the
+/// pool's live pairs ([`TddBackend::restructure`]). Two restarts a search
+/// cost more than they gained.
+fn search_restarts() -> PoolRestarts {
+    PoolRestarts {
+        count: 1,
+        kick: 20,
+        seed: 0x9E37_79B9_7F4A_7C15,
+        min_gain_permille: 20,
+        ..PoolRestarts::default()
+    }
+}
 
 /// The state of [`Compilation::dynamic`]'s search between steps.
 struct Dynamic {

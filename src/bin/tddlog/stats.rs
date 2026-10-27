@@ -91,14 +91,16 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
     );
     if let Some(sr) = &s.search {
         eprintln!(
-            "compile search: {} searches ({} gained under a tenth), {} probes, {} kept, {} pairs to {}, {} work units",
+            "compile search: {} searches ({} gained under a tenth), {} probes, {} kept, {} pairs to {}, {} work units, {} restarts ({} kept)",
             sr.searches,
             sr.weak,
             sr.probes,
             sr.accepts,
             sr.pairs_before,
             sr.pairs_after,
-            sr.work_units
+            sr.work_units,
+            sr.restarts,
+            sr.restarts_kept
         );
     }
     if let Some(pr) = &s.projection {

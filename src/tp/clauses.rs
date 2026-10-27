@@ -220,6 +220,11 @@ impl ClauseMemo {
     pub(super) fn forget_refused(&mut self) {
         self.refused = None;
     }
+
+    /// The formula of the loop the watch refused, taken out.
+    pub(super) fn take_refused(&mut self) -> Option<Tdd> {
+        self.refused.take().map(|r| r.f)
+    }
 }
 
 /// A loop of clauses over facts alone: its scope's number of variables, and

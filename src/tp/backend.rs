@@ -11,7 +11,7 @@ use tididi::diagram::{
 use tididi::limits::{StopAt, StopRules};
 use tididi::reduce::ReductionPlan;
 use tididi::restructure::EmbedError;
-use tididi::restructure::search::{PoolSearchConfig, PoolSearchStats};
+use tididi::restructure::search::{PoolRestarts, PoolSearchConfig, PoolSearchStats};
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{Engine, Literal, OperationError, Tdd, Vtree};
 
@@ -1029,19 +1029,27 @@ impl TddBackend<'_> {
     }
 
     /// Search for a global vtree on which `members` are smaller, sweeping
-    /// until a sweep keeps no move. The members must be every live formula
-    /// on the global scope; they keep their functions, and afterwards
-    /// [`TddBackend::global`] is the scope they live on.
+    /// until a sweep keeps no move, then running `restarts`, their seed
+    /// mixed with the members' live pairs so that each search draws its
+    /// own. The members must be every live formula on the global scope;
+    /// they keep their functions, and afterwards [`TddBackend::global`] is
+    /// the scope they live on.
     pub(crate) fn restructure(
         &self,
         members: &mut [&mut Tdd],
+        restarts: PoolRestarts,
     ) -> Result<PoolSearchStats, CompileError> {
+        let pairs: usize = members.iter().map(|m| m.pair_count()).sum();
         // No sweep or work limit: the library's default of four sweeps stops
         // the searches of the random graphs while they still gain, and the
         // compile's schedule, not a budget, bounds what searching costs.
         let config = PoolSearchConfig {
             max_sweeps: usize::MAX,
             max_work_units: u64::MAX,
+            restarts: PoolRestarts {
+                seed: restarts.seed ^ pairs as u64,
+                ..restarts
+            },
             ..PoolSearchConfig::default()
         };
         // A search that stops part way keeps the moves it made: the members
