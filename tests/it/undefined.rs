@@ -109,3 +109,24 @@ fn a_call_nothing_asked_reaches_is_answered_as_problog_answers_it() {
     assert_answers("0::b. 0.3::c. a :- c, b. query(a).", &[("a", 0.0)]);
     assert_answers("0.3::x; 0.5::y. a :- y. query(a).", &[("a", 0.5)]);
 }
+
+#[test]
+fn an_instance_of_a_nonground_fact_no_rule_reads_has_its_probability() {
+    // `0.5::i(_).` gives every instance of `i/1` its own variable, asked
+    // for or observed whether a rule reads that instance or not (as in
+    // cplint's mln.pl). They were read as false.
+    assert_answers("0.5::i(_). query(i(a)).", &[("i(a)", 0.5)]);
+    assert_answers("0.5::i(X). query(i(a)).", &[("i(a)", 0.5)]);
+    assert_answers(
+        "0.5::i(_). r :- i(b). query(i(a)). query(r).",
+        &[("i(a)", 0.5), ("r", 0.5)],
+    );
+    assert_answers(
+        "0.5::i(_). 0.3::c. r :- c, i(a). evidence(i(b), true). query(r). query(i(b)).",
+        &[("r", 0.15), ("i(b)", 1.0)],
+    );
+    assert_answers(
+        "0.4::i(_). r :- i(b). evidence(i(a), false). query(i(a)). query(r).",
+        &[("i(a)", 0.0), ("r", 0.4)],
+    );
+}
