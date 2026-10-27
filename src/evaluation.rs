@@ -52,6 +52,13 @@ impl Evaluation {
         }
     }
 
+    /// The components the compile had finished, and all of them, where its
+    /// last run passed half the trial's target ([`tp::Horizon`]); `None`
+    /// where it did not, or the compile has finished.
+    pub(crate) fn marked(&self) -> Option<(usize, usize)> {
+        self.compilation.as_ref().and_then(|c| c.marked)
+    }
+
     /// The work units that settling the names of `program` and `decision`
     /// has spent within its budget, over every call, which no turn is
     /// charged for (`tp::settle`, `Settled::free`).
