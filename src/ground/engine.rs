@@ -949,7 +949,7 @@ fn compile_rule<'a>(
     }));
     let mut bound_names: FxHashSet<String> = FxHashSet::default();
     let ordered = schedule_body(&clause.body, &mut bound_names, |i| {
-        known[i].is_none_or(|(_, switch)| !switch)
+        known[i].is_some_and(|(_, switch)| switch)
     })
     .map_err(|stuck| {
         GroundError::Unsafe(format!(
@@ -2182,16 +2182,12 @@ fn narrow(g: &mut Grounder, rule: &IRule, i: usize, (s, e): (usize, usize)) -> b
     if i == 0 {
         return true;
     }
-    // The last literal before the delta's that may add an atom: a switch
-    // not yet an atom, or a negative literal of the component.
-    let adds = rule.body[..i].iter().rposition(|l| match l {
-        ILit::Switch(q, a) | ILit::NegSwitch(q, a) => {
-            !a.iter().all(|x| matches!(x, Arg::Val(_)))
-                || with_resolved(a, &[], |vals| g.lookup_atom(*q, vals)).is_none()
-        }
-        ILit::Neg(q, _) => g.current_stratum.contains(q),
-        _ => false,
-    });
+    // The last literal before the delta's that may add an atom: a negative
+    // literal of the component. A switch, which adds its atom, comes after
+    // every positive literal ([`super::schedule`]).
+    let adds = rule.body[..i]
+        .iter()
+        .rposition(|l| matches!(l, ILit::Neg(q, _) if g.current_stratum.contains(q)));
     // The delta's tuples that may match the literal's constants, not all
     // of it: on a chain of ground rules each round grounds every rule
     // against the delta, which round 0 makes the whole chain.

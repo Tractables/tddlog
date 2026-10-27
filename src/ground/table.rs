@@ -366,9 +366,10 @@ impl<'a> Shape<'a> {
     }
 
     /// The grounder's output: each table's rules in the order of its
-    /// clauses and heads, the atoms numbered as the grounder meets them (a
-    /// rule's switch, the guards' switches, the parents, the head), a rule
-    /// whose parent is impossible dropped after its switch is numbered.
+    /// clauses and heads, the atoms numbered as the grounder meets them (the
+    /// rule's switch after its parents, then the head), and a row whose
+    /// parent is impossible making nothing: its switches come last in its
+    /// rules ([`super::schedule`]), where the grounder never reaches them.
     pub(super) fn ground(&self, program: &Program, order: &[usize]) -> GroundProgram {
         let mut gp = GroundProgram::default();
         // The atoms and the rules, allocated for what the clauses can give:
@@ -410,16 +411,17 @@ impl<'a> Shape<'a> {
                     parents.extend(id.map(|&b| GLit::Pos(b)));
                     id.is_some()
                 });
+                if !possible {
+                    continue;
+                }
                 if !probabilistic(clause) {
-                    if possible {
-                        let h = number(&mut gp, &mut ids, x, &clause.heads[0].atom);
-                        let mut body = parents.clone();
-                        body.sort_unstable();
-                        body.dedup();
-                        let rule = GroundRule::new(h, body);
-                        if kept.keep(&gp.rules, &rule) {
-                            gp.rules.push(rule);
-                        }
+                    let h = number(&mut gp, &mut ids, x, &clause.heads[0].atom);
+                    let mut body = parents.clone();
+                    body.sort_unstable();
+                    body.dedup();
+                    let rule = GroundRule::new(h, body);
+                    if kept.keep(&gp.rules, &rule) {
+                        gp.rules.push(rule);
                     }
                     continue;
                 }
@@ -434,9 +436,6 @@ impl<'a> Shape<'a> {
                     ));
                     gp.kinds.push(AtomKind::Fact(q));
                     switches.push(switch);
-                    if !possible {
-                        continue;
-                    }
                     let h = number(&mut gp, &mut ids, x, &h.atom);
                     // The head's switch, and the switches of the heads before
                     // it negated.
@@ -541,8 +540,8 @@ mod tests {
 
     #[test]
     fn impossible_parents_and_queries_ground_alike() {
-        // b(z) has no row and e no table, so rows that read them are
-        // dropped after their switches are numbered; queries and evidence
+        // b(z) has no row and e no table, so rows that read them make
+        // nothing, not even their switches; queries and evidence
         // on atoms that do not exist or are of no table.
         table_shaped(
             "0.6::b(x); 0.4::b(y).

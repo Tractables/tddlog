@@ -282,10 +282,11 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
                 }
             }
             let guard = Literal::Pos(Atom::new(magic.clone(), bound_args(head, &adornment)));
-            let ordered = schedule_body(&rule.body, &mut bound.clone(), |i| match &rule.body[i] {
-                Literal::Pos(a) => derived(a),
-                _ => false,
-            })
+            let ordered = schedule_body(
+                &rule.body,
+                &mut bound.clone(),
+                |i| matches!(&rule.body[i], Literal::Pos(a) | Literal::Neg(a) if is_switch(a)),
+            )
             .ok()?;
             // Walk the schedule, emitting magic rules for body atoms with rules.
             let mut bound_so_far = bound.clone();

@@ -213,8 +213,9 @@ is refused, as is a findall whose answer ProbLog gives otherwise
 than tddlog could: over a probabilistic goal, which is a distribution over
 lists, or where a solution has two proofs, which ProbLog lists twice.
 Rules must be range restricted, but for variables a demand binds; a body
-is reordered so that binding literals come first (`ground/schedule.rs`,
-shared by the grounder and the magic rewrite). Predicate names and
+is reordered so that binding literals come first and switches last, as
+they bind nothing and reject no binding (`ground/schedule.rs`, shared by
+the grounder and the magic rewrite). Predicate names and
 constants are `Name`s, an `Arc<str>` shared from the lexer on, one per
 distinct spelling.
 

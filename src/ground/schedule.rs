@@ -1,9 +1,13 @@
 //! Body-literal scheduling: order a rule body so that every literal has the
 //! variables it needs bound when it is evaluated.
 //!
-//! Positive atoms over predicates with rules bind their variables and stay in
-//! source order. Every other literal is placed as early as its variables allow:
-//! a switch atom (probabilistic fact) when its arguments are bound, a negative
+//! Positive atoms over predicates that are not switches bind their variables
+//! and stay in source order. A switch atom (a probabilistic choice), positive
+//! or negated, comes last, in source order: it binds nothing and rejects no
+//! binding, so earlier it would only make the walk create its atom for
+//! bindings that a later literal rejects, and keep a semi-naive round from
+//! passing over the literals before it (`narrow` in [`super::engine`]).
+//! Every other literal is placed as early as its variables allow: a negative
 //! literal or comparison when all its variables are bound, `X = t` with one
 //! side an unbound variable and the other bound (it binds the variable), `V =
 //! f(A1,...,An)` with `V` bound (it binds the `Ai`), `V is E` when `E` is bound
@@ -82,20 +86,19 @@ fn ready(l: &Literal, unbound: &[String], bound: &mut FxHashSet<String>) -> bool
     }
 }
 
-/// Schedule `body` starting from `bound` variables. `binds` says of the
-/// positive atom at a position of `body` whether its predicate has rules
-/// (binds its variables) or is a switch (must be called bound). On success
-/// returns the order, as positions in `body`, and updates `bound` with
-/// everything the body binds. On failure gives the position of the stuck
-/// literal.
+/// Schedule `body` starting from `bound` variables. `switch` says of the
+/// atom, positive or negated, at a position of `body` whether its predicate
+/// is a switch (called bound, last). On success returns the order, as
+/// positions in `body`, and updates `bound` with everything the body binds.
+/// On failure gives the position of the stuck literal.
 pub(crate) fn schedule_body(
     body: &[Literal],
     bound: &mut FxHashSet<String>,
-    binds: impl Fn(usize) -> bool,
+    switch: impl Fn(usize) -> bool,
 ) -> Result<Vec<usize>, usize> {
-    let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && binds(i);
+    let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && !switch(i);
     let mut pending: Vec<usize> = Vec::with_capacity(body.len());
-    pending.extend((0..body.len()).filter(|&i| !binding(i)));
+    pending.extend((0..body.len()).filter(|&i| !binding(i) && !switch(i)));
     let mut out: Vec<usize> = Vec::with_capacity(body.len());
     let release =
         |bound: &mut FxHashSet<String>, pending: &mut Vec<usize>, out: &mut Vec<usize>| loop {
@@ -126,8 +129,32 @@ pub(crate) fn schedule_body(
         out.push(l);
         release(bound, &mut pending, &mut out);
     }
-    match pending.into_iter().next() {
-        Some(stuck) => Err(stuck),
-        None => Ok(out),
+    if let Some(&stuck) = pending.first() {
+        return Err(stuck);
+    }
+    for i in (0..body.len()).filter(|&i| switch(i)) {
+        if literal_vars(&body[i]).iter().any(|v| !bound.contains(v)) {
+            return Err(i);
+        }
+        out.push(i);
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::syntax::parse_program;
+
+    /// The switches, positive or negated, come after every other literal,
+    /// in source order; a negative literal that is no switch is placed as
+    /// soon as its variables are bound.
+    #[test]
+    fn switches_come_last() {
+        let p = parse_program("h(X,Y) :- s(X), q(X,Y), \\+ t(X), r(Y), \\+ w(X).\n").unwrap();
+        let order = schedule_body(&p.clauses[0].body, &mut FxHashSet::default(), |i| {
+            matches!(i, 0 | 2)
+        });
+        assert_eq!(order, Ok(vec![1, 4, 3, 0, 2]));
     }
 }
