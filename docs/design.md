@@ -155,7 +155,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding`, `clause_links`, the binary reads (`Bits`), `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
-| `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk |
+| `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk; `sum_out.rs`: its finished subtrees summed out where only P(e) is wanted |
 | `eval/` | `mod.rs`: `Value`; `number.rs`: `Count`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes, the count of a conjunction; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels |
 | `cubes.rs` | cubes merged on complementary literals |
 | `disjoint.rs` | the union-find |
@@ -1251,11 +1251,17 @@ per literal of the program. `--stats` prints a `decision:` line wherever
 the program was ground again.
 
 Where the conditioning records decisions, the conditioned program goes
-to `decision` where it is a trial, and to the trials whose layout the
-rules' text does not set where it is not: `program`, whose order is the
-one the program states its facts in, and `closed` and `td`, which search
-theirs on the program they get. The other trials compile the program as
-ground (`auto::Programs`; a `--vtree` layout compiles the program as
+to `decision` where it is a trial. Where it is not, it goes to the
+trials whose layout the rules' text does not set only where the pass
+made at least a quarter as many atoms as the program had derived ones
+before the merge of equal gates (`auto::takes_conditioned`): `program`,
+whose order is the one the program states its facts in, and `closed`
+and `td`, which search theirs on the program they get. On the zeroone
+circuits the pass makes an eighth as many atoms as derived ones, and the
+conditioned program holds 45% more derived atoms than the program as
+ground (bb_zeroone_w2_w25: 14 499 against 9 972); taken there, `auto`
+took 25 to 28% longer on three of them. The other trials compile the
+program as ground (`auto::Programs`; a `--vtree` layout compiles the program as
 ground). `closed` and `program` take less work on the conditioned
 program at about the same sizes. `program:fanin` reads its order off the
 rules, a walk through the atoms they read, and the conditioning rewrites
@@ -1275,8 +1281,13 @@ again, through shared sub-circuits and derived tests; conditioned on the
 selectors above them, the branches no longer read those flips, and a
 branch's diagram need not keep their values alive. Each derived atom is
 conditioned once per cube of fact literals, the cube restricted to the
-range of facts its support lies in; a definition under a cube other than
-the empty one is an atom of its own (`$gd`). The pass leaves the program
+atom's cover: the range of facts its support lies in, less the widest
+run of facts within it that the covers of its rules' literals leave out,
+built bottom up. Keyed by the range alone, two frames in five on the
+bit-blasted circuits evaluated an atom again to a value an earlier frame
+had found under a fact the support does not reach. A definition under a
+cube other than the empty one is an atom of its own (`$gd`). The pass
+leaves the program
 as it was past `GROWTH` times its size or `SPEND` literal visits per
 literal. Chains of steps, a decision list folding a sequence of tests
 into one value, are then written as balanced trees of their compositions
@@ -1716,6 +1727,26 @@ density than the compile's (`QUERY_ROUTE`).
   `DEFER_FROM` pairs or more, is tried capped; past the cap it waits, and
   where the walk's last join reads it with a smaller operand, that operand
   goes into the larger of the two first.
+- **Parts under a chain.** Where the vtree's top is a chain (a node whose
+  one child is a leaf, over another such node; `decision` puts the
+  decisions every part reads there), a batch whose factors read the
+  chain's leaves and two parts or more below it is grouped by part, so
+  that the factors of one part meet first (`EvidenceWalk::by_part`). The
+  factors of two parts agree only through the chain's leaves, and their
+  product holds every pair of what each keeps apart.
+
+**Summing out** (`sum_out.rs`). Where no query reads the evidence formula
+(`--no-queries`), the walk's result is only counted, and a variable can
+be summed out of a join's result once no later join can read it. A join
+sums out every finished subtree of its scope as it builds it
+(`Engine::and_marginalizing`): a subtree whose variables no other slot of
+the walk holds, found with a Fenwick tree over the vtree's leaves. The
+weights are tididi's scaled floats (`Arithmetic::ScaledFloat`), and the
+walk reads P(e) from its last result's weighted value. Before, every join
+kept its full structure, and on Markov networks of high width the last
+joins ran out of memory: nine partition functions of the UAI 2022 PR set
+answer with it, 1bxv and 1jer at a peak of 2.1 and 4.3 GB. Programs with
+queries keep the walk above.
 
 **Queries.** A query on an atom with an indicator in the evidence's scope
 is a literal of the evidence formula, and one backward pass
@@ -1780,8 +1811,10 @@ read so by the columns under it. A count up still not exact goes on in
 `Count`s from the level that failed, and a query that reads a column it
 cannot fit takes the count over in `Count`s from the float counts up
 (`Counts::widen`); every later query reads that count
-(`QuerySizes::recounts`). The evidence's mass is the pass up, with queries
-or without (`--no-queries`), and is not charged to the engine's work clock,
+(`QuerySizes::recounts`). With queries, the evidence's mass is the pass
+up; without them (`--no-queries`) it is the walk's last result's
+weighted value (Summing out, below). Neither is charged to the engine's
+work clock,
 so a trial that has built its evidence formula within its bounds counts it;
 a formula counted without evidence is the engine's evaluation
 (`eval::mass`), one range for the whole diagram, which the work clock is
