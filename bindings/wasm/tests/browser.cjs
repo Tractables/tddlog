@@ -773,6 +773,8 @@ function benchmarksOf(root) {
       await page.waitForSelector("#view figure.overview svg a.row");
       await page.click(`#view svg.overview a.row[href="#/kind/${k.key}/${x}"]`);
       await page.waitForFunction((x) => document.querySelector("#view select.vs")?.value === x, x);
+      // The legend is drawn after the menu takes the system's name.
+      await page.waitForSelector(`#view figure.plot .legend button[aria-pressed="true"][data-system="${x}"]`);
       assert.equal(new URL(page.url()).hash, `#/kind/${k.key}/${x}`, `tddlog against ${x}: the address`);
       const vs = await page.$eval("#view", (v) => ({ marked: v.querySelector("table.board tr.vs th").textContent,
         coloured: [...v.querySelectorAll('figure.plot .legend button[aria-pressed="true"]')].map((b) => b.dataset.system),
