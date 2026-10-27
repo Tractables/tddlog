@@ -396,12 +396,18 @@ are skipped. Several steps have a program in `examples/` that shows them.
    second rewrite: its free demand derives every atom a bound one would,
    and a bound demand whose rule reads the predicate's own atoms before
    the bound argument (`r(Y) :- r(X), a(Y, X)`) calls `a` for every pair
-   of a bound `Y` and an atom of `r`. A predicate of ground facts alone
-   is not demanded: its facts are read once, rather than copied under a
-   guard and checked against every new demand of a recursive stratum
-   (PSouffle's side-channel analyses: 83 571 facts in each of 1 350
-   rounds). A program whose recursive strata
-   all have rising levels (below) is not rewritten but grounded level by
+   of a bound `Y` and an atom of `r`. A given predicate, of ground facts
+   or of rules that read only given predicates and bind their heads
+   without a demand, is not demanded: its rules are read once, rather
+   than copied under a guard and checked against every new demand of a
+   recursive stratum (PSouffle's side-channel analyses: 83 571 facts in
+   each of 1 350 rounds). Its atoms are all known before any demand is,
+   so a negation of it filters a demand as a positive literal does:
+   cplint's left-corner grammar tries a goal's third clause only where
+   `\+ lc(G, B, rule(G, [B|_]))` holds, which is nowhere, and without the
+   filter demanded every derivation of that clause. A program whose
+   recursive strata all have rising levels (below) is not rewritten but
+   grounded level by
    level: the demand of a loop over a time index runs down the levels
    (`T0 is T - 1`) and makes the whole chain one stratum without levels.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the

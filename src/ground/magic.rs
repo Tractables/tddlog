@@ -14,8 +14,9 @@
 //! [`super::schedule`]. The atoms themselves are not renamed, so the copies for
 //! different patterns derive into the same predicate; every atom derived is in
 //! the original model, and every atom the queries depend on is derived. A
-//! predicate whose clauses are all ground facts is not demanded: its facts
-//! are read as they are. A
+//! given predicate, of ground facts or of rules that read only given
+//! predicates, is not demanded: its rules are read as they are, and a
+//! negation of it filters the demand as a positive literal does. A
 //! rule that cannot use some of a pattern's bindings, a head variable its
 //! body reads only as the value of an `is`, is copied under the pattern
 //! without them instead, whose magic predicate the first one's feeds. A
@@ -149,6 +150,51 @@ pub(super) fn ground_clause(c: &Clause) -> bool {
     c.heads.iter().all(|h| h.atom.is_ground()) && c.body.iter().all(|l| literal_vars(l).is_empty())
 }
 
+/// The predicates the rewrite reads as they are, without a demand: those
+/// whose clauses are all ground facts, and those whose rules read only
+/// given predicates and bind their heads without a demand. Their atoms are
+/// all known before any demand is, and a demand would only copy them under
+/// guards for the grounder to check against every new demand: on
+/// PSouffle's side-channel analyses, 83 571 facts against the demands of
+/// each of 1 350 semi-naive rounds. A negation of a given predicate joins
+/// the demand's prefix: cplint's left-corner grammar tries a goal's third
+/// clause only where `\+ lc(G, B, rule(G, [B|_]))` holds, which is nowhere.
+fn given<'a>(norm: &'a NormProgram, rules_of: &FxHashMap<Sig<'a>, Vec<usize>>) -> FxHashSet<Sig<'a>> {
+    let reads_given = |rule: &Clause, given: &FxHashSet<Sig>| {
+        let [head] = &rule.heads[..] else {
+            return false;
+        };
+        let literals = rule.body.iter().all(|l| match l {
+            Literal::Pos(a) | Literal::Neg(a) => given.contains(&a.signature()),
+            Literal::Cmp(..) | Literal::Is(..) | Literal::Builtin(..) => true,
+            Literal::Findall(_) | Literal::Collect(_) => false,
+        });
+        let mut bound = FxHashSet::default();
+        literals
+            && !head.negated
+            && schedule_body(&rule.body, &mut bound, |_| false).is_ok()
+            && literal_vars(&Literal::Pos(head.atom.clone()))
+                .iter()
+                .all(|v| bound.contains(v))
+    };
+    let switches: FxHashSet<Sig> = norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
+    let mut given: FxHashSet<Sig> = FxHashSet::default();
+    loop {
+        let before = given.len();
+        for (&sig, rules) in rules_of {
+            if !given.contains(&sig)
+                && !switches.contains(&sig)
+                && rules.iter().all(|&ri| reads_given(&norm.rules[ri], &given))
+            {
+                given.insert(sig);
+            }
+        }
+        if given.len() == before {
+            return given;
+        }
+    }
+}
+
 /// Rewrite `norm`. Returns the rewritten program, or `None` if some rule
 /// cannot be scheduled even with the head bindings (then the plain program
 /// will report the same problem with a better message).
@@ -192,29 +238,13 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
 fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormProgram, Demands)> {
     let rules_of = norm.rules_by_sig();
     let is_switch = |a: &Atom| norm.switches.contains_key(&(a.name.clone(), a.args.len()));
-    // The predicates whose clauses are all ground facts: their atoms are
-    // the facts, read as they are where a demand reaches them. A demand
-    // would copy each fact under a guard, and the grounder would check the
-    // copies against every new demand: on PSouffle's side-channel
-    // analyses, 83 571 facts against the demands of each of 1 350
-    // semi-naive rounds.
-    let facts: FxHashSet<Sig> = rules_of
-        .iter()
-        .filter(|(_, rules)| {
-            rules.iter().all(|&ri| {
-                let rule = &norm.rules[ri];
-                rule.body.is_empty() && rule.heads.iter().all(|h| h.atom.is_ground())
-            })
-        })
-        .map(|(&sig, _)| sig)
-        .collect();
-    // An atom of a predicate with rules other than facts, which a demand
-    // reaches.
+    let given = given(norm, &rules_of);
+    // An atom of a predicate with rules, not given, which a demand reaches.
     let derived = |a: &Atom| {
         let sig = a.signature();
-        rules_of.contains_key(&sig) && !facts.contains(&sig) && !is_switch(a)
+        rules_of.contains_key(&sig) && !given.contains(&sig) && !is_switch(a)
     };
-    // The fact predicates reached, whose facts are in `out`.
+    // The given predicates reached, whose rules are in `out`.
     let mut read: FxHashSet<(Name, usize)> = FxHashSet::default();
 
     let mut out = NormProgram {
@@ -273,10 +303,17 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
 
     while let Some((atom, adornment)) = work.pop() {
         let sig = atom.signature();
-        if facts.contains(&sig) {
+        if given.contains(&sig) {
             if read.insert((atom.name.clone(), sig.1)) {
-                out.rules
-                    .extend(rules_of[&sig].iter().map(|&ri| norm.rules[ri].clone()));
+                for &ri in &rules_of[&sig] {
+                    let rule = &norm.rules[ri];
+                    for l in &rule.body {
+                        if let Literal::Pos(a) | Literal::Neg(a) = l {
+                            work.push((a.clone(), Vec::new()));
+                        }
+                    }
+                    out.rules.push(rule.clone());
+                }
             }
             continue;
         }
@@ -349,16 +386,17 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
                         out.rules
                             .push(Clause::rule(magic_atom(a, &sub), body, u32::MAX));
                         work.push((a.clone(), sub));
-                    } else if facts.contains(&a.signature()) {
+                    } else if given.contains(&a.signature()) {
                         work.push((a.clone(), Vec::new()));
                     }
                 }
-                // Positive literals and deterministic filters join the prefix;
-                // negative literals do not (they would add negative
-                // dependencies to the magic predicates) and switches bind
-                // nothing.
+                // Positive literals and deterministic filters join the prefix,
+                // and so do negations of given predicates, whose atoms are
+                // all known before any demand is; other negative literals do
+                // not (they would add negative dependencies to the magic
+                // predicates) and switches bind nothing.
                 match lit {
-                    Literal::Neg(_) => {}
+                    Literal::Neg(a) if !given.contains(&a.signature()) => {}
                     Literal::Pos(a) if is_switch(a) => {}
                     _ => prefix.push(i),
                 }
@@ -464,6 +502,31 @@ mod tests {
         assert!(
             text.iter()
                 .any(|t| t.starts_with("p(X,Z) :- '$m_p_bf'(X), e(X,Y), p(Y,Z)")),
+            "{text:?}"
+        );
+    }
+
+    /// A predicate whose rules read only facts is given too, and its
+    /// negation filters the demand: the magic rule of `q` reads it, so `q`
+    /// is demanded only where `nt` fails.
+    #[test]
+    fn a_negation_of_a_given_predicate_filters_the_demand() {
+        let p = parse_program(
+            "lc(s,a,r(a)).\nlc(s,b,r(c)).\nnt(G,B) :- lc(G,B,R), R = r(B).\n\
+             0.5::q(X,N) :- lc(s,X,_), N = 1.\n\
+             p(X,N) :- lc(s,X,_), \\+ nt(s,X), q(X,N).\nquery(p(b,_)).\n",
+        )
+        .unwrap();
+        let n = normalize(&p).unwrap();
+        let m = rewrite(&n).unwrap();
+        let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
+        assert!(
+            !text.iter().any(|t| t.contains("$m_nt") || t.contains("$m_lc")),
+            "{text:?}"
+        );
+        assert!(
+            text.iter().any(|t| t.starts_with("'$m_q_bf'(X) :- '$m_p_bf'(X), ")
+                && t.contains("\\+nt(s,X)")),
             "{text:?}"
         );
     }
