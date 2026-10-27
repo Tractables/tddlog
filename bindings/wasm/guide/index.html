@@ -65,10 +65,13 @@
 
 <section class="card prose" id="getting-started">
   <h2>Getting started</h2>
-  <p>tddlog reads a probabilistic logic program written in
-  ProbLog and prints the probability of each of its queries given its
-  evidence. The answers are exact: tddlog compiles the program into tree
-  decision diagrams and counts the queries on them.</p>
+  <p>tddlog is an exact inference engine for probabilistic Datalog. It
+  reads a probabilistic logic program written in ProbLog, or a Bayesian
+  or Markov network, and prints the probability of each of its queries
+  given its evidence; translators reduce Dice programs and LPADs to
+  ProbLog (<a href="#networks">below</a>). The answers are exact:
+  tddlog grounds the program to probabilistic Datalog, compiles it into
+  tree decision diagrams and counts the queries on them.</p>
   <p>There are three ways to run it:</p>
   <ul>
     <li>In the browser: the <a href="../">playground</a> runs tddlog in
@@ -154,8 +157,8 @@ path(X,Y) :- edge(X,Z), path(Z,Y).
   <p>A name that starts with a lower-case letter is a constant or a
   predicate, one that starts with an upper-case letter or <code>_</code>
   is a variable, and <code>%</code> starts a comment, as does
-  <code>/*</code>. A probability is a number or an expression of numbers,
-  such as <code>1/3::a.</code> A probabilistic rule makes one independent
+  <code>/*</code>. A probability is a number or a fraction, such as
+  <code>1/3::a.</code> A probabilistic rule makes one independent
   choice for each instance of its variables: under
   <code>0.6::q(X) :- p(X).</code>, each q(X) whose p(X) holds is true with
   probability 0.6, independently of the others. A body is a conjunction

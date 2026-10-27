@@ -22,14 +22,25 @@
 
 **Exact probabilistic inference by compilation into tree decision diagrams.**
 
-tddlog computes exact probabilities for probabilistic logic programs
-written in ProbLog, for Bayesian and Markov networks, and for the
-discrete programs that probabilistic programming languages compile to.
-It grounds a program, compiles it bottom up into tree decision diagrams
-(TDDs) with the [tididi](https://github.com/Tractables/tididi) library,
-and reads every query's probability off the diagrams. It is a Rust
-library and command-line tool, with Python, C and WebAssembly bindings,
-and it [runs in the browser](https://tractables.github.io/tddlog/).
+tddlog is an exact inference engine for probabilistic Datalog:
+probabilistic facts and annotated disjunctions, and recursive rules with
+negation, comparisons and arithmetic, over atoms whose arguments are
+constants. Front ends reduce richer inputs to this intermediate
+language: ProbLog programs with function symbols and lists, Bayesian
+and Markov networks, Dice programs and LPADs. The
+engine grounds the program, simplifies it, compiles it bottom up into
+tree decision diagrams (TDDs) with the
+[tididi](https://github.com/Tractables/tididi) library, and reads every
+query's probability off the diagrams. It is a Rust library and
+command-line tool, with Python, C and WebAssembly bindings, and it
+[runs in the browser](https://tractables.github.io/tddlog/).
+
+- [Front ends](#front-ends): the languages and formats tddlog reads, and
+  how each reduces to probabilistic Datalog.
+- [Inside the engine](#inside-the-engine): the techniques the inference
+  rests on.
+- [Performance](#performance): tddlog against every exact inference
+  system we could find, by type of program.
 
 <p align="center">
   <img src="docs/images/overview.svg"
@@ -86,33 +97,113 @@ with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
 0.357143.
 
 The [guide] describes the language and the command line, with worked
-examples that open in the [playground]:
-
-- **Probabilistic logic programs** in ProbLog: probabilistic facts and
-  rules, annotated disjunctions, negation as failure, comparisons and
-  arithmetic, function symbols and lists with ProbLog's list predicates,
-  and `findall` over deterministic goals. The [reachability example]
-  queries paths in a graph with cycles, and the [negation example] the
-  winning positions of a game defined by negation through recursion.
-  Cut, if-then-else and `findall` over a probabilistic goal are not
-  supported.
-  `scripts/lpad2problog.py` converts LPADs written for cplint and PITA.
-- **Bayesian and Markov networks** in the BIF, Hugin, GeNIe and UAI
-  formats, which tddlog reads as programs whose answers are the marginals
-  given the evidence, and a Markov network's partition function: the
-  [Bayesian network example].
-- **Discrete probabilistic programs**, with integers in bits as Dice and
-  Alea.jl compile them: the [binary integers example] adds two random
-  integers, and `scripts/dice2problog.py` translates Dice programs into
-  ProbLog.
-
+examples that open in the [playground]: the [reachability example]
+queries paths in a graph with cycles, the [negation example] the winning
+positions of a game defined by negation through recursion, the
+[Bayesian network example] a network's marginals, and the
+[binary integers example] the sum of two random integers.
 [examples/](examples/) lists every example program by what it shows.
 
-As a library, [`tddlog::solve`] takes a program's text and the command
-line's options and returns the answers, and the
+## Front ends
+
+Every input is reduced to a probabilistic Datalog program before
+inference. `tddlog --ground` prints the ground program that results,
+which ProbLog also reads, so each reduction can be checked on its own.
+
+| Input | Read by | Reduced to probabilistic Datalog as |
+|---|---|---|
+| ProbLog programs | tddlog | function symbols and lists ground to constants, with ProbLog's list predicates and `findall/3` over deterministic goals |
+| Bayesian networks in BIF, Hugin, GeNIe or UAI, with evidence in Ace's `.inst` or UAI's `.evid` | tddlog, by the file's extension | one annotated disjunction per row of each table |
+| Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
+| Dice programs | [`scripts/dice2problog.py`](scripts/dice2problog.py) | each integer as its bits, each operation as rules over them |
+| LPADs written for cplint and PITA | [`scripts/lpad2problog.py`](scripts/lpad2problog.py) | the same clauses in ProbLog's syntax |
+
+```text
+$ tddlog examples/asia.net --query leaves
+$ python3 scripts/dice2problog.py tests/dice/arith.dice > arith.pl && tddlog arith.pl
+```
+
+`tddlog --program examples/asia.net` prints the program a network is
+read as. As a library, [`tddlog::solve`] takes a program's text and the
+command line's options and returns the answers, and the
 [Python](bindings/python/README.md) (`tddlog.solve(program).answers`),
 [C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)
-bindings wrap the same call.
+bindings wrap the same call; a front end of one's own writes the text,
+as [examples/sprinkler.rs](examples/sprinkler.rs) does from Rust data.
+
+Not yet read: cut, if-then-else, `call/N`, `assert`, strings and
+probabilities computed in a rule's body in ProbLog, and `findall/3` over
+a probabilistic or recursive goal; lists, `/`, `%`, `nth_bit` and
+`sample` in Dice; network files through the bindings, which take a
+program's text (`tddlog --program` writes it).
+
+## Inside the engine
+
+The engine answers a ground program exactly, in four stages.
+[docs/design.md](docs/design.md) describes each technique and the cases
+measured behind it.
+
+**Grounding and simplification**
+
+- **Relevant grounding.** Magic sets and semi-naive bottom-up evaluation
+  ground only what the queries and evidence depend on (Fierens et al.,
+  TPLP 2015). Transitive closures ground from their bound end, and
+  linear recursion is solved without iteration by Gaussian elimination
+  (Tarjan, 1981).
+- **And-inverter graph.** Acyclic rules are hashed into an and-inverter
+  graph, so a gate the program writes many times is built once: of a
+  12-bit circuit's 6 635 gates, 4 941 merge. Gates equal to another
+  gate, to its negation or to a constant are then found by random
+  simulation, proved by SAT and merged (fraiging, Mishchenko et al.,
+  2005).
+- **Conditioning on the evidence.** Unit propagation, SAT backbones and
+  equivalences fix and merge facts, and tables are renormalized to the
+  evidence, before anything is compiled.
+- **Table structure.** The rows of one distribution share a class atom,
+  rows that exclude each other share switches, and a choice read under
+  exclusive contexts becomes one fact per context.
+
+**Compilation**
+
+- **Tp-compilation.** Each derived atom's TDD is built bottom up by the
+  immediate-consequence operator on diagrams (Vlasselaer et al., IJCAI
+  2015), one strongly connected component at a time and each shared atom
+  once. Negation through recursion takes the well-founded fixpoint by
+  approximation fixpoint theory (Bogaerts and Van den Broeck, ICLP 2015),
+  which answers sound programs that ProbLog rejects.
+- **Names where depth needs them.** An atom read across a narrow cut of
+  the variable order is read through a named copy tied to its definition,
+  as in a Tseitin encoding. After the compile, each name is kept or
+  composed away, whichever gives the smaller diagram.
+- **Projected scopes.** Each component compiles over the part of the
+  vtree its facts lie in, since a TDD has a node on every level of its
+  vtree.
+
+**Vtrees**
+
+- **Layouts from the program.** A vtree, the layout of the diagrams'
+  variables, is read from tree decompositions computed with
+  [goatd](https://github.com/Tractables/goatd), from the rules'
+  dependency order, from the order the program states its facts in, or
+  from the fan-in order of its rules.
+- **Decision vtrees for circuits.** In a bit-blasted program, an atom
+  read under a fact is read conditioned on it, a decision list becomes a
+  balanced tree, and these guards give the vtree.
+- **Layouts as trials.** By default, several layouts run in turns under
+  doubling budgets of engine work, one of them a vtree searched by
+  rotations during the compile, and the first to finish answers. The
+  budgets count pairs and units of engine work, not seconds, so the same
+  layout wins on every machine.
+
+**Queries and evidence**
+
+- **Every marginal in one pass.** The evidence is conjoined bottom up
+  along the vtree, and every query is read off one backward pass.
+  Probabilities below a double's range, as a thousand observations give,
+  keep an exponent of their own instead of underflowing.
+- **Summing out.** Where only the probability of the evidence or a
+  partition function is asked, each join sums out what no later join
+  reads.
 
 ## Performance
 
@@ -237,18 +328,7 @@ versions and every table; the
 [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
 has the code that runs each system and the copies of their programs.
 
-## How it works
-
-tddlog grounds the part of the program the queries and evidence depend
-on, simplifies it as an and-inverter graph, and compiles each derived
-atom into a TDD, one strongly connected component at a time, by
-Tp-compilation (Vlasselaer et al., IJCAI 2015; Bogaerts and Van den
-Broeck, ICLP 2015, for negation through recursion). The layout of the
-diagrams' variables, their vtree, comes from tree decompositions of the
-program computed with [goatd](https://github.com/Tractables/goatd). The
-evidence is conjoined bottom up along the vtree and each query is
-counted against it. [docs/design.md](docs/design.md) describes each
-stage.
+## Building and testing
 
 From a checkout, `cargo build --release` builds `target/release/tddlog`,
 and `cargo test` checks it against ProbLog's answers on the examples and

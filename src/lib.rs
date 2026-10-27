@@ -1,9 +1,10 @@
 //! Exact probabilistic inference by compilation into tree decision diagrams.
 //!
-//! tddlog computes exact probabilities for probabilistic logic programs in
-//! ProbLog, for Bayesian and Markov networks, and for discrete
-//! probabilistic programs. It grounds a program, compiles it
-//! bottom up into tree decision diagrams (TDDs) with the
+//! tddlog is an exact inference engine for probabilistic Datalog. Front
+//! ends reduce ProbLog programs with function symbols and lists, Bayesian
+//! and Markov networks, and discrete probabilistic programs to it. It
+//! grounds a program, compiles it bottom up into tree decision diagrams
+//! (TDDs) with the
 //! [tididi](https://github.com/Tractables/tididi) library, and counts each
 //! query on the diagrams. The same solver is a command-line tool, and runs
 //! from [Python](https://tractables.github.io/tddlog/python/),
