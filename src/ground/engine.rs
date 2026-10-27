@@ -2851,7 +2851,12 @@ fn ground_body(
                 return;
             }
             match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
-                Some(id) if g.fixed(id) == Some(true) => {}
+                // An atom true in every world: the literal is false. Kept
+                // as a literal, it would not stop a demand, whose rule
+                // drops its body: cplint's left-corner grammar demanded
+                // every derivation of a goal's third clause behind
+                // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
+                Some(id) if g.fixed(id) == Some(true) || g.certain(id) => {}
                 Some(id) if g.fixed(id) == Some(false) => {
                     part(g, rule, i, Part::None);
                     ground_body(g, rule, i + 1, delta, subst, body_atoms)

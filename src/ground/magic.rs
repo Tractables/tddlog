@@ -595,6 +595,25 @@ mod tests {
         );
     }
 
+    /// The negation filters the grounded demand too: `nt(s, a)` holds in
+    /// every world, so `q` is not demanded for `a`, and is for `b`, where
+    /// `nt` fails.
+    #[test]
+    fn a_negation_of_a_certain_atom_stops_the_grounded_demand() {
+        let p = parse_program(
+            "lc(s,a,r(a)).\nlc(s,b,r(c)).\nnt(G,B) :- lc(G,B,R), R = r(B).\n\
+             0.5::q(X,N) :- lc(s,X,_), N = 1.\n\
+             p(X,N) :- lc(s,X,_), \\+ nt(s,X), q(X,N).\nquery(p(a,_)).\nquery(p(b,_)).\n",
+        )
+        .unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
+        let m = rewrite(&n).unwrap();
+        let gp = crate::ground::engine::ground_normalized(&m, None).unwrap();
+        let atoms: Vec<String> = gp.atoms.iter().map(|a| a.to_string()).collect();
+        assert!(atoms.contains(&"'$m_q_bf'(b)".to_string()), "{atoms:?}");
+        assert!(!atoms.contains(&"'$m_q_bf'(a)".to_string()), "{atoms:?}");
+    }
+
     /// A demand reads the literals before it that bear on its bound
     /// arguments: `c` is demanded where `a` holds, whatever `b` holds, and
     /// `b`, with no argument bound, wherever `h` is

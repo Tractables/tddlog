@@ -534,7 +534,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    same in every demand). A literal with bound arguments, the delta's included, takes
    its candidate tuples from a per-position index of its relation, each
    position indexed when a join first binds it. A negative literal on an impossible
-   atom is dropped as true; one inside its own stratum (negation through
+   atom is dropped as true, and one on an atom true in every world fails
+   the rule, a demand's rule too; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint
    (`examples/win.pl` shows both). The atoms and the rules grow through
    fallible reservations: where the allocator refuses one, the grounding
