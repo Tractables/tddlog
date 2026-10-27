@@ -466,7 +466,8 @@ struct DecisionTrial {
 /// [`Kind::ground_options`]), rewritten for `decision` ([`Kind::rewrite`]),
 /// where `ground` is large and the conditioning on guards applies to it
 /// and gets under way there (`auto::may_decide`), and kept where the
-/// conditioning recorded decisions; `None` where the program is not
+/// conditioning recorded decisions and made enough atoms for a trial to
+/// take it (`auto::takes_conditioned`); `None` where the program is not
 /// rewritten. `closed` takes less work on it: bb_altermu2_w11 2.29 G units
 /// against 14.4 G. The full weekend circuit of the bit-blasting paper
 /// (98 303 flips) runs out of memory under every other layout of the
@@ -476,9 +477,17 @@ fn decision_trial(
     ground: &GroundProgram,
 ) -> Option<DecisionTrial> {
     let written = written.filter(|_| auto::may_decide(ground))?;
-    let decided = Kind::Decision.rewrite(written.clone());
-    let guarded = decided.stats.guarded;
-    let program = decided.stats.decisions.is_some().then_some(decided);
+    // `Kind::Decision.rewrite`, which `written`, read through no
+    // indicator, takes in full, finished again only where a trial takes
+    // it.
+    let decided = ground::guarded_where(Kind::eliminated(written.clone()), |made| {
+        auto::takes_conditioned(made, ground)
+    });
+    let guarded = match &decided {
+        Ok(gp) => gp.stats.guarded,
+        Err(gp) => gp.stats.guarded,
+    };
+    let program = decided.ok().filter(|gp| gp.stats.decisions.is_some());
     Some(DecisionTrial { guarded, program })
 }
 

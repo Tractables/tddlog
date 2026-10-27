@@ -530,20 +530,34 @@ pub(crate) fn without_linear_recursion(mut gp: GroundProgram) -> GroundProgram {
 /// apart, and every layout's work grows a hundredfold and more. A program
 /// already conditioned, its decisions recorded, is returned as it is:
 /// `auto` hands one to every trial (`solve::decision_trial`).
-pub(crate) fn guarded(mut gp: GroundProgram) -> GroundProgram {
+pub(crate) fn guarded(gp: GroundProgram) -> GroundProgram {
+    guarded_where(gp, |_| true).unwrap_or_else(|gp| *gp)
+}
+
+/// [`guarded`], where `keep` holds of the atoms the conditioning made
+/// (`GroundStats::guarded`); otherwise `Err` with the program as the
+/// conditioning left it, its steps not balanced and the program not
+/// finished again.
+pub(crate) fn guarded_where(
+    mut gp: GroundProgram,
+    keep: impl FnOnce(usize) -> bool,
+) -> Result<GroundProgram, Box<GroundProgram>> {
     if gp.stats.decisions.is_some() {
-        return gp;
+        return Ok(gp);
     }
     let conditioned = guards::condition(&mut gp).is_some();
+    if !keep(gp.stats.guarded) {
+        return Err(Box::new(gp));
+    }
     let stepped = steps::balance(&mut gp) > 0;
     if !conditioned && !stepped && gp.options.views {
-        return gp;
+        return Ok(gp);
     }
     let opts = GroundOptions {
         views: true,
         ..gp.options
     };
-    finish(gp, &opts, true)
+    Ok(finish(gp, &opts, true))
 }
 
 #[cfg(test)]
