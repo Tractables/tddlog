@@ -23,9 +23,9 @@
 //! parser with its message.
 //!
 //! The clauses are found in the text as cplint's examples write them, as
-//! `scripts/lpad2problog.py` found them before this reader replaced it,
-//! and the program is the one that script wrote: `/* */` and `%`
-//! comments are dropped, a clause ends at a `.` followed by white space
+//! the Python script `lpad2problog.py` (on the baselines branch) found
+//! them before this reader replaced it, and the program is the one that
+//! script wrote: `/* */` and `%` comments are dropped, a clause ends at a `.` followed by white space
 //! outside quotes and brackets, and the names a body mentions are the
 //! words outside quotes that start with a lower-case letter.
 

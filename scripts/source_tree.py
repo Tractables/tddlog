@@ -4,7 +4,13 @@ The scripts sit in the source tree's `scripts/`, or in a checkout that holds
 the source tree in `tddlog/`. Importing this module finds it and puts its
 `scripts/` and `tests/` on the import path: the converters and the reference
 answers the scripts share with it.
+
+`program(path)` is the program tddlog reads a file as (`tddlog --program`):
+the conversion of a network, a Dice program or an LPAD that the harness
+gives the systems that read ProbLog programs.
 """
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -19,6 +25,22 @@ def script(name):
     tree's."""
     own = ROOT / 'scripts' / name
     return own if own.exists() else SOURCE / 'scripts' / name
+
+
+def program(*args, stdout=None, binary=None):
+    """The program tddlog reads a file as, `tddlog --program ARGS` (ARGS
+    the file and, for a network, its queries and observations): a
+    network's, a Dice program's or an LPAD's, by `binary`, else $TDDLOG,
+    else BINARY. Returns its text, or with `stdout` (a file) writes it
+    there. Its notes and errors go to standard error, and a failure stops
+    the caller."""
+    cmd = [binary or os.environ.get('TDDLOG') or str(BINARY), '--program', *map(str, args)]
+    if stdout is not None:
+        stdout.flush()
+    p = subprocess.run(cmd, stdout=stdout if stdout is not None else subprocess.PIPE, text=True)
+    if p.returncode != 0:
+        raise SystemExit(f'{" ".join(cmd)}: exit {p.returncode}')
+    return p.stdout
 
 
 for _dir in (SOURCE / 'scripts', SOURCE / 'tests'):

@@ -37,8 +37,9 @@ A family and its sizes give one program:
 The Dice programs of link and router are the artifact's generators',
 written here anew (their text the same). The ProbLog program goes to
 standard output, its first line `% gen_geni.py FAMILY SIZES`, the rest
-dice2problog.py's translation of the Dice program. `--dice PATH` also
-writes the Dice program. `--reference` prints the answers instead, `ATOM:
+the Dice program as tddlog reads it (`tddlog --program`, the binary
+$TDDLOG or the source tree's). `--dice PATH` also writes the Dice
+program. `--reference` prints the answers instead, `ATOM:
 PROBABILITY` a line, from a dynamic program over the model's states, never
 from either program: for link and router over the grid's frontier, row
 by row (2^(N+1) states for `link`, 2^N for `router`); for weather over
@@ -51,11 +52,11 @@ import argparse
 import os
 import re
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import source_tree  # noqa: E402,F401  (the source tree's converters)
-from dice2problog import translate  # noqa: E402
+import source_tree  # noqa: E402  (tddlog --program)
 
 HEADER = '% gen_geni.py'
 FAMILIES = {'link': 1, 'router': 1, 'weather': 2}      # the number of sizes
@@ -374,6 +375,17 @@ def reference(family, sizes):
     return {'link': link_reference, 'router': router_reference, 'weather': weather_reference}[family](*sizes)
 
 
+def translate(dice, stdout=None):
+    """The ProbLog program of Dice program `dice` (its text), as tddlog
+    reads it (`tddlog --program`, of the program written to a temporary
+    file): its text, or with `stdout` (a file) written there."""
+    with tempfile.TemporaryDirectory(prefix='gen_geni-') as d:
+        path = os.path.join(d, 'program.dice')
+        with open(path, 'w') as f:
+            f.write(dice)
+        return source_tree.program(path, stdout=stdout)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('family', nargs='?', choices=list(FAMILIES))
@@ -419,7 +431,8 @@ def main():
         for q, x in zip(query, values):
             print(f'{q}: {x!r}')
         return
-    sys.stdout.write(f'{HEADER} {a.family} {" ".join(map(str, a.sizes))}\n' + translate(dice))
+    sys.stdout.write(f'{HEADER} {a.family} {" ".join(map(str, a.sizes))}\n')
+    translate(dice, stdout=sys.stdout)   # written by tddlog, hundreds of MB for weather's longest
     if a.dice:
         with open(a.dice, 'w') as f:
             f.write(dice)

@@ -9,13 +9,14 @@ programs `dice_scale.py` wrote.
 SCRIPTS is a tddlog scripts directory with dice2alea.py; SYSTEM is
 tddlog, onehot, dice, alea or problog (ProbLog's d-DNNF on the .pl, the
 reference); PROGRAM a path without extension whose .dice and
-.pl (dice2problog.py's translation) exist. `onehot` is tddlog on the
-program's one-hot translation, $ONEHOT/NAME.pl (dice2problog_onehot.py),
-recorded as tddlog's variant auto+onehot. The runs are bench.py's own:
-`timed` for the wall time, pinned to CPU, `run_dice` and `run_alea` for
-Dice and Alea.jl with the program as a `dice` instance (the Alea script
-written by dice2alea.py, untimed, to a directory of the run's own under
-the program's, work/). The commands come from the environment: TDDLOG,
+.pl (`tddlog --program`'s translation) exist. tddlog reads the .dice
+itself, so that reading it is part of its time (bench.py's `original`);
+`onehot` is tddlog on the program's one-hot translation, $ONEHOT/NAME.pl
+(dice2problog_onehot.py), recorded as tddlog's variant auto+onehot. The
+runs are bench.py's own: `timed` for the wall time, pinned to CPU,
+`run_dice` and `run_alea` for Dice and Alea.jl with the program as a
+`dice` instance (the Alea script written by dice2alea.py, untimed, to a
+directory of the run's own under the program's, work/). The commands come from the environment: TDDLOG,
 DICE (a binary), ALEA (a template with {file}) and PROBLOG (a binary).
 """
 import fcntl
@@ -39,7 +40,7 @@ os.makedirs(work, exist_ok=True)
 args = SimpleNamespace(dir=work, timeout=float(timeout),
                        dice=os.environ['DICE'] + ' {file}', alea=os.environ['ALEA'])
 if system in ('tddlog', 'onehot'):
-    src = pl if system == 'tddlog' else os.path.join(os.environ['ONEHOT'], name + '.pl')
+    src = dice if system == 'tddlog' else os.path.join(os.environ['ONEHOT'], name + '.pl')
     r = bench.timed([os.environ['TDDLOG'], '--stats', '--precision', '17', src], args.timeout)
     if r['status'] == 'ok':
         r['answers'] = bench.parse_answers(r['stdout'])
@@ -56,6 +57,8 @@ else:
     raise SystemExit(f'unknown system {system}')
 rec = {'instance': name, 'family': 'dice_scaled', 'system': system, 'variant': variant, 'rep': int(rep),
        'status': r['status'], 'seconds': round(r['seconds'], 3)}
+if variant == 'auto':
+    rec['original'] = os.path.basename(dice)       # no converted program (rel/charge.py)
 rec.update(r.get('stats', {}))
 if r['status'] == 'ok':
     rec['answers'] = r['answers']

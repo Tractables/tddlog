@@ -1,5 +1,5 @@
 //! The text conventions the Hugin and BIF readers share with the regular
-//! expressions of `scripts/gen_bn.py`, which read the same files: white
+//! expressions of `gen_bn.py`, which read the same files: white
 //! space and word characters as Python's `re` and `str.split` take them.
 
 /// White space as Python's `\s` and `str.split()` take it: Unicode's, and

@@ -12,10 +12,15 @@ row of its conditional probability table,
 so the program is ground and every rule is a CPT row. Zero-probability heads
 are dropped; a row with a single certain value becomes a plain rule.
 
-tddlog reads these network files itself (src/network), as the program this
-script writes: `tddlog --program` prints it, and tests/it/networks.rs and
-tests/test_gen_bn.py check that the two write the same text. This script
-serves the other systems, which read the program, and the Dice format.
+The harness's copy: tddlog reads these network files itself (the source
+tree's src/network), as the program this script writes, and this script
+left the source tree. `tddlog --program` prints the program, which
+bench.py's gen gives the systems that read ProbLog programs;
+tests/it/networks.rs and tests/test_gen_bn.py check that the two write
+the same text. This script writes the files only the other systems
+read: Ace's observations (--inst), the network in the UAI format for
+Merlin (--uai), its weighted CNF (--cnf, uai_wcnf.py) and its Dice
+programs (--format dice).
 
 Usage: gen_bn.py network.{bif,net,hugin,xdsl,uai}[.gz] [--query all | --query VAR[,VAR...] | --query leaves
                                                           | --query none]

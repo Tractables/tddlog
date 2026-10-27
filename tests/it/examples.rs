@@ -480,9 +480,8 @@ mod regress {
         );
     }
 
-    /// A Markov network written by scripts/gen_bn.py, its factors
-    /// observed (tests/test_gen_bn.py): the marginals by enumeration in
-    /// the programs' comments.
+    /// A Markov network read as a program, its factors observed: the
+    /// marginals by enumeration in the programs' comments.
     #[test]
     fn markov_network_marginals() {
         check(
@@ -743,8 +742,8 @@ fn dice() {
     );
 }
 
-/// A Bayesian network written by scripts/gen_bn.py (bnlearn's cancer
-/// network, leaf marginals); ProbLog's answers.
+/// A Bayesian network read as a program (`tddlog --program`; bnlearn's
+/// cancer network, leaf marginals); ProbLog's answers.
 #[test]
 fn bn_cancer() {
     check(
@@ -758,8 +757,8 @@ fn bn_cancer() {
     );
 }
 
-/// The asia network with both leaves observed (scripts/gen_bn.py
-/// --evidence); ProbLog's answers. The families layout reads the evidence
+/// The asia network with both leaves observed (`tddlog --program
+/// --evidence`); ProbLog's answers. The families layout reads the evidence
 /// and every query through indicators.
 #[test]
 fn bn_asia_evidence() {
@@ -828,9 +827,9 @@ fn dice_translations() {
 /// (tests/dice/NAME.dice, after the Dice paper's programs in
 /// [`data/dice`](https://github.com/Tractables/tddlog/tree/baselines/data/dice) on the baselines branch),
 /// read by tddlog's Dice reader (`tddlog::syntax::dice`) as the program
-/// scripts/dice2problog.py wrote for each before the reader replaced it
-/// (tests/dice/NAME.pl); Dice's answers, which tests/test_dice2problog.py
-/// also checks against an exact evaluation of the Dice program.
+/// the Python script dice2problog.py wrote for each before the reader
+/// replaced it (tests/dice/NAME.pl); Dice's answers, which the baselines
+/// branch also checks against an exact evaluation of the Dice program.
 mod dice {
     use super::*;
     use tddlog::Options;
@@ -1226,8 +1225,8 @@ mod dice {
 
     /// A network written as nested `discrete`s, its rows of thirds
     /// summing to 0.999999 (tests/dice/nested.dice); the answers by hand,
-    /// which ProbLog and tests/test_dice2problog.py's exact evaluation
-    /// give too.
+    /// which ProbLog and the baselines branch's exact evaluation of the
+    /// Dice program give too.
     #[test]
     fn nested() {
         check(
@@ -1242,10 +1241,10 @@ mod dice {
 }
 
 /// LPADs as cplint reads them (tests/lpad/NAME.cplint.pl), read by
-/// tddlog's LPAD reader (`tddlog::syntax::lpad`) as the program
-/// scripts/lpad2problog.py wrote for each before the reader replaced it
-/// (tests/lpad/NAME.pl), with cplint's PITA answers, which ProbLog gives
-/// on that program too.
+/// tddlog's LPAD reader (`tddlog::syntax::lpad`) as the program the
+/// Python script lpad2problog.py wrote for each before the reader
+/// replaced it (tests/lpad/NAME.pl), with cplint's PITA answers, which
+/// ProbLog gives on that program too.
 mod lpad {
     use super::*;
 

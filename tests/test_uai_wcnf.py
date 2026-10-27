@@ -17,10 +17,11 @@ import unittest
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-regress = root / 'tests' / 'regress'
 sys.path.insert(0, str(scripts))
 sys.path.insert(0, str(root / 'tests'))
+from source_tree import SOURCE  # noqa: E402  (the source tree's examples and fixtures)
 import gen_bn  # noqa: E402
+regress = SOURCE / 'tests' / 'regress'
 import uai_wcnf  # noqa: E402
 from test_gen_bn import brute_force_z, random_markov, random_network_as_markov  # noqa: E402
 
@@ -294,7 +295,7 @@ class EncodingTests(unittest.TestCase):
                 self.assertIn('no --cnf', r.stderr)
             self.assertNotEqual(uai_wcnf.encode(sizes, scopes, tables, [], 'enc5')[0],
                                 uai_wcnf.encode(sizes, scopes, tables, [])[0])
-            for argv, error in [([str(root / 'examples' / 'asia.net')], 'not one'),
+            for argv, error in [([str(SOURCE / 'examples' / 'asia.net')], 'not one'),
                                 ([str(regress / 'markov.uai'), '--rescale'], 'rescale'),
                                 ([str(regress / 'markov.uai'), '--format', 'dice'], 'Dice')]:
                 with self.subTest(error=error):

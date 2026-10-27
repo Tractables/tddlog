@@ -3,7 +3,7 @@
 //! nothing reads, observes or asks its other value.
 //!
 //! A Bayesian network written one annotated disjunction per row
-//! (`scripts/gen_bn.py`) holds a table `x` of values `b` and `c` over
+//! (`tddlog --program` of a network) holds a table `x` of values `b` and `c` over
 //! parents `y_1, ..., y_m` of two values each as one row per assignment
 //! `u` to the parents. With `u*` the row in which `c` is likeliest,
 //! `L = P(c | u*)` and `q_i = P(c | u* with y_i flipped) / L`, the table is
@@ -476,7 +476,7 @@ mod tests {
     fn a_chain_of_noisy_ors_is_one_rule_per_cause() {
         // Two causes, a two-parent noisy-or of them (0.6 and 0.5 inhibit,
         // no leak) and a link that adds a third cause (0.5 inhibits) with a
-        // leak of 0.1: as gen_bn.py writes the UAI or_chain networks.
+        // leak of 0.1: as the UAI or_chain networks are read.
         let source = "\
 0.9::d1(v_0); 0.1::d1(v_1).
 0.8::d2(v_0); 0.2::d2(v_1).

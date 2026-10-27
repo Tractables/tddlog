@@ -1,4 +1,4 @@
-% gen_bn.py's program for percent.hugin --rescale: every row divided by its
+% `tddlog --program --rescale percent.hugin`: every row divided by its
 % sum, a row of one certain value a plain rule.
 0.2::temp(v__12_); 0.5::temp(v_12_20_); 0.3::temp(v__20_).
 0.9::ice(yes); 0.1::ice(no) :- temp(v__12_).

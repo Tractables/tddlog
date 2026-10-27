@@ -42,6 +42,14 @@ iterate, recursion. Operator precedence is Dice's (lib/Parser.mly).
 Not supported: lists, /, %, nth_bit, sample.
 
 Usage: dice2problog.py program.dice > program.pl
+
+The harness's copy: tddlog reads Dice programs itself since this script
+left the source tree (`tddlog --program program.dice` prints the same
+program, byte for byte), and the benchmark harness writes the ProbLog
+program of a Dice program with it. The translators of Dice programs for
+the other systems (dice_ir.py, dice2alea.py, dice2prism.py, dice2psi.py,
+dice2roulette.py) import this script's parser from here, as does the
+exact evaluation of tests/test_dice2problog.py.
 """
 import math
 import re

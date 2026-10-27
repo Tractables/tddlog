@@ -80,11 +80,12 @@ answer and the first of `--pr-ref` for log10 Z; `--approx` (Scallop by
 default) gets a column of its own.
 
 tddlog's time includes the conversion of a program from its original
-language into the file tddlog reads: `dice2problog.py`'s ProbLog program
-of a Dice or noDice program (and `dice2problog_onehot.py`'s, which
-tddlog's one-hot arm reads), `gen_bn.py`'s ProbLog program of a network,
-the circuit Alea.jl writes of a bit-blasted program and `lpad2problog.py`'s
-ProbLog program of a cplint LPAD. Each conversion is timed once an
+language into the file tddlog reads: the ProbLog program of a Dice or
+noDice program (and `dice2problog_onehot.py`'s, which tddlog's one-hot
+arm reads), of a network and of a cplint LPAD, which `tddlog --program`
+writes (`dice2problog.py`, `gen_bn.py` and `lpad2problog.py` wrote the
+same text before tddlog's readers replaced them), and the circuit
+Alea.jl writes of a bit-blasted program. Each conversion is timed once an
 instance on one machine, apart from the runs (matched to the file the
 runs read by its SHA-256), as the median of three runs. A conversion is
 timed as the system it comes from is: a Python converter's process, and
@@ -110,6 +111,20 @@ program to one baseline (`problog2pita.py`, `problog2souffle.py`,
 `dice2geni.py`, `dice2genfer.py`, `dice2psi.py`, `dice2alea.py`,
 `dice2roulette.py`, the Hugin and UAI writers) is not timed: its start-up
 on every call is the harness's, not the system's work.
+
+Where tddlog reads the original itself, its time includes the reading
+and it pays nothing (a record that names the file it read, `network` or
+`original`: `bench.py`'s `network_args` and `original`, and
+`bench_one.py` on the scaled loops), and the systems that read the
+program `tddlog --program` writes of it pay that command's time. tddlog
+has read the networks so since the rerun of 2026-10-27, whose conversion
+times are `tddlog --program`'s, and the harness gives it the Dice and
+noDice programs and cplint's LPADs so from the same day. The records
+made before keep their charge: every record on a Dice, noDice or cplint
+program to date, where tddlog read the script's program and paid its
+time (`dice2problog.py`'s or `lpad2problog.py`'s), as the systems that
+read ProbLog did, and on the networks every record before that rerun,
+where tddlog paid `gen_bn.py`'s.
 
 ---
 
@@ -301,8 +316,9 @@ evidence together come out as multiples of 2^-53, the spacing of doubles
 below one, and its answers are off by up to 0.031. These wrong answers are
 PITA's, not the translation's.
 
-`scripts/lpad2problog.py` converts cplint's example LPADs to ProbLog, with
-the `?- prob(Q, P)` queries of their `/** <examples> */` block; 28 of the
+tddlog reads cplint's example LPADs itself, and `tddlog --program`
+converts them to ProbLog (as `scripts/lpad2problog.py` did), with the
+`?- prob(Q, P)` queries of their `/** <examples> */` block; 28 of the
 29 in tddlog's fragment agree with ProbLog to 1e-6. `data/cplint/`
 (Artistic License 2.0) keeps `bloodtype.pl`, `uwcse3s.pl` and the Cora
 theory with fold m1 of cplint_datasets (`cora_m1.pl`, input of
@@ -391,7 +407,8 @@ would print the joint).
 ### Programs
 
 - `data/dice/`: the eight programs of the paper's comparison with Psi and
-  WebPPL, translated by `scripts/dice2problog.py` (all agree with Dice),
+  WebPPL, read by tddlog and translated by `tddlog --program` (as by
+  `scripts/dice2problog.py`; all agree with Dice),
   and the loop programs (caesar-iter, simpleCaesar, pmc1, pmc2,
   recursion from Dice's repository; diamond and ladder from dicebench's
   generators), which use integers, `iterate` and recursion. `bench.py

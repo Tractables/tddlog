@@ -17,7 +17,9 @@ professor's publications and the values of the three disjunctions, whose
 probabilities inclusion and exclusion give from powers N of one student's.
 Every probability is the program's decimal as an exact fraction, so the
 answer is exact up to its printing. The script stops on a program that is
-not gen_uwcse.py's, or whose probabilities are not the ones below.
+not gen_uwcse.py's (its rules those `tddlog --program` reads in
+data/cplint/uwcse3s.pl, the binary $TDDLOG or the source tree's), or whose
+probabilities are not the ones below.
 """
 import argparse
 import os
@@ -27,8 +29,7 @@ from fractions import Fraction
 from itertools import product
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import source_tree  # noqa: E402,F401  (the source tree's converters)
-import lpad2problog  # noqa: E402
+import source_tree  # noqa: E402  (tddlog --program)
 
 # Each probability as the program writes it; main() checks that each is there.
 ADVISED = {True: '0.10708782742681', False: '0.0278422273781903'}   # by p1, faculty or not
@@ -116,7 +117,7 @@ def main():
     text = open(a.program).read()
     n = len(re.findall(r'^student\(s\d+\)\.$', text, re.M))
     src = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'cplint', 'uwcse3s.pl')
-    model = [x for x in lpad2problog.convert(open(src).read()).splitlines() if not x.startswith('student(s')]
+    model = [x for x in source_tree.program(src).splitlines() if not x.startswith('student(s')]
     read = [x for x in text.splitlines() if not x.startswith('%') and not x.startswith('student(s')]
     if n == 0 or read != model:
         sys.exit(f"uwcse_exact.py: {a.program} is not gen_uwcse.py's program")

@@ -1,12 +1,13 @@
 //! Network files read as programs (`tddlog::network`): each reads as the
-//! program `scripts/gen_bn.py` writes for it, line for line, and the
-//! command line answers it as ProbLog or enumeration does, a Markov
-//! network's partition function on the `Z:` line.
+//! program beside it, line for line, and the command line answers it as
+//! ProbLog or enumeration does, a Markov network's partition function on
+//! the `Z:` line.
 //!
-//! The programs are the fixtures gen_bn.py wrote: tests/regress/markov*.pl
-//! and potts.pl, examples/bn_cancer.pl and bn_asia_evidence.pl, and
-//! tests/networks/*.pl, whose comments say how; tests/test_gen_bn.py checks
-//! that gen_bn.py still writes the last.
+//! The programs are the ones the benchmarks' Python script `gen_bn.py`,
+//! which the reader replaced, wrote: tests/regress/markov*.pl and
+//! potts.pl, examples/bn_cancer.pl and bn_asia_evidence.pl, and
+//! tests/networks/*.pl, whose comments say how; the baselines branch
+//! checks that the script still writes them.
 use std::process::{Command, Output};
 
 use tddlog::network::{self, Evidence, Format, Queries, ReadOptions};
@@ -28,8 +29,9 @@ fn read(path: &str, queries: Queries, evidence: Option<&str>, rescale: bool) -> 
         .program
 }
 
-/// The lines of a program gen_bn.py wrote, without the comments a fixture
-/// adds after its first line (the offset line, which gen_bn.py writes).
+/// The lines of a program the script wrote, without the comments a
+/// fixture adds after its first line (the offset line, which the program
+/// states).
 fn written(path: &str) -> Vec<String> {
     let text = std::fs::read_to_string(path).unwrap();
     text.lines()
@@ -42,7 +44,7 @@ fn written(path: &str) -> Vec<String> {
 }
 
 #[test]
-fn a_network_reads_as_the_program_gen_bn_py_writes() {
+fn a_network_reads_as_the_program_beside_it() {
     let named = |names: &[&str]| Queries::Named(names.iter().map(|n| n.to_string()).collect());
     let cases: [(&str, Queries, Option<&str>, bool, &str); 12] = [
         (
@@ -241,7 +243,7 @@ fn a_network_answers_as_problog_and_enumeration_do() {
         ("x2(v_2)", 22.0 / 65.0),
     ];
     assert_close("markov.uai", &answers(&out, "Z").0, &markov, 1e-11);
-    // ProbLog's answers on the programs gen_bn.py writes
+    // ProbLog's answers on the programs the networks read as
     // (tests/it/examples.rs).
     let out = tddlog(&[
         "examples/cancer.net",
@@ -279,8 +281,8 @@ fn a_network_answers_as_problog_and_enumeration_do() {
         ("either(no)", 0.69630537),
     ];
     assert_close("asia.net", &answers(&out, "P(e)").0, &asia, 1e-7);
-    // ProbLog's answers on gen_bn.py's programs for tests/networks/,
-    // one query at a time.
+    // ProbLog's answers on the programs of tests/networks/, one query at
+    // a time.
     for (args, expected) in [
         (
             &["tests/networks/sprinkler.bif", "--query", "WetGrass"][..],

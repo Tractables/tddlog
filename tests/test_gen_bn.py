@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-import gen_bn
+from source_tree import SOURCE  # noqa: E402  (the source tree's examples and fixtures)
+import gen_bn  # noqa: E402
 try:
     import bn_exact   # on the baselines branch only; its tests skip without it
 except ImportError:
@@ -194,12 +195,12 @@ class RowTests(unittest.TestCase):
 class SourceTests(unittest.TestCase):
     def test_a_gzipped_network_reads_as_the_plain_one(self):
         root = Path(__file__).resolve().parents[1]
-        plain = gen_bn.parse(str(root / 'examples' / 'asia.net'))
+        plain = gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
         target = root / 'tmp' / 'asia.net.gz'
         target.parent.mkdir(exist_ok=True)
         import gzip
         with gzip.open(target, 'wt') as f:
-            f.write((root / 'examples' / 'asia.net').read_text())
+            f.write((SOURCE / 'examples' / 'asia.net').read_text())
         self.assertEqual(gen_bn.parse(str(target)), plain)
 
 
@@ -252,8 +253,7 @@ class DiceFormatTests(unittest.TestCase):
         return [sum(p for value, p in dist.items() if value[0] == k) for k in range(n)]
 
     def test_a_bayesian_network_observes_its_evidence(self):
-        root = Path(__file__).resolve().parents[1]
-        net = str(root / 'examples' / 'asia.net')
+        net = str(SOURCE / 'examples' / 'asia.net')
         network = gen_bn.parse(net)
         order, variables, _ = network
         evidence = gen_bn.sampled_evidence(network, 'half', 1)
@@ -271,7 +271,7 @@ class DiceFormatTests(unittest.TestCase):
 
     def test_a_markov_network_observes_its_factors(self):
         """markov.uai given markov.uai.evid: the marginals of markov_ev.pl."""
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         programs = dict(gen_bn.dice_programs([str(regress / 'markov.uai'), '--evid', str(regress / 'markov.uai.evid')]))
         self.assertEqual(sorted(programs), ['x0', 'x1'])
         self.assertIn('flip', programs['x0'])
@@ -288,7 +288,7 @@ class DiceFormatTests(unittest.TestCase):
         ProbLog format's program, the program tddlog is given."""
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import test_dice2problog
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         uai = str(regress / 'markov.uai')
         [(name, text)] = gen_bn.dice_programs([uai, '--evid', uai + '.evid'], pe=True)
         self.assertEqual(name, 'pe')
@@ -299,7 +299,7 @@ class DiceFormatTests(unittest.TestCase):
         self.assertAlmostEqual(math.log10(p) + offset, math.log10(165), places=12)
         if bn_exact is None:
             self.skipTest('bn_exact.py is on the baselines branch')
-        net = str(Path(__file__).resolve().parents[1] / 'examples' / 'asia.net')
+        net = str(SOURCE / 'examples' / 'asia.net')
         network = gen_bn.parse(net)
         evidence = gen_bn.sampled_evidence(network, 'half', 1)
         [(_, text)] = gen_bn.dice_programs([net, '--query', 'all', '--evidence', 'half'], pe=True)
@@ -315,13 +315,12 @@ class DiceFormatTests(unittest.TestCase):
         1.0 prints zeros where the observations' probability is under 1e-6)."""
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import test_dice2problog
-        root = Path(__file__).resolve().parents[1]
-        net = str(root / 'examples' / 'asia.net')
+        net = str(SOURCE / 'examples' / 'asia.net')
         network = gen_bn.parse(net)
         order, variables, _ = network
         evidence = gen_bn.sampled_evidence(network, 'half', 1)
         by_ident = {gen_bn.ident(v): v for v in order}
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         markov = [str(regress / 'markov.uai'), '--evid', str(regress / 'markov.uai.evid')]
         cases = [(i, text, self.marginal(network, evidence, by_ident[i]))
                  for i, text in gen_bn.dice_programs([net, '--query', 'all', '--evidence', 'half'], joint=True)]
@@ -368,8 +367,7 @@ class DiceFormatTests(unittest.TestCase):
             self.assertAlmostEqual(float(got), float(want), places=12)
 
     def test_a_program_defines_the_ancestors_it_needs(self):
-        root = Path(__file__).resolve().parents[1]
-        network = gen_bn.parse(str(root / 'examples' / 'asia.net'))
+        network = gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
         order, _, tables = network
         top = next(v for v in order if not tables[v][0])
         text = gen_bn.to_dice(network, top)
@@ -463,7 +461,7 @@ class FormatTests(unittest.TestCase):
         if bn_exact is None:
             self.skipTest('bn_exact.py is on the baselines branch')
         from fractions import Fraction
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         program = lambda name: ''.join(
             line for line in (regress / name).read_text().splitlines(keepends=True) if not line.startswith('%'))
         network, forced, offset = gen_bn.parse(str(regress / 'markov.uai'))
@@ -496,7 +494,7 @@ class FormatTests(unittest.TestCase):
         the marginals given the factors' `ok` and markov.uai.evid, by
         enumeration of the Hugin file's tables, are markov_ev.pl's."""
         from fractions import Fraction
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         network, forced, _ = gen_bn.parse(str(regress / 'markov.uai'))
         evidence = forced + gen_bn.read_evid(str(regress / 'markov.uai.evid'), network)
         order, variables, tables = gen_bn.parse(self.scratch('markov.net', gen_bn.write_hugin(network).encode()))
@@ -550,7 +548,7 @@ probability ( Cancer | Smoker ) {
         if bn_exact is None:
             self.skipTest('bn_exact.py is on the baselines branch')
         import random
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         cases = [((regress / 'markov.uai').read_text(), ''),
                  ((regress / 'markov.uai').read_text(), (regress / 'markov.uai.evid').read_text()),
                  ((regress / 'markov_pr.uai').read_text(), ''),
@@ -661,7 +659,7 @@ probability ( Cancer | Smoker ) {
         self.assertGreater(broke, 50)
         # tests/regress/potts.pl, which tests/it/evidence_probability.rs runs
         # through tddlog, is this script's program for potts.uai.
-        regress = Path(__file__).resolve().parent / 'regress'
+        regress = SOURCE / 'tests' / 'regress'
         network, forced, offset = gen_bn.parse(str(regress / 'potts.uai'), colours=True)
         self.assertEqual(forced, [(f'f{j}', 'ok') for j in range(7)])
         written = (regress / 'potts.pl').read_text()
@@ -744,8 +742,7 @@ class ReaderTests(unittest.TestCase):
         """tddlog reads each network file as the program beside it
         (tests/it/networks.rs, its comments left out), which gen_bn.py
         wrote: gen_bn.py still writes it."""
-        root = Path(__file__).resolve().parents[1]
-        net, regress, examples = root / 'tests' / 'networks', root / 'tests' / 'regress', root / 'examples'
+        net, regress, examples = SOURCE / 'tests' / 'networks', SOURCE / 'tests' / 'regress', SOURCE / 'examples'
         offset = '% log10 Z - log10 P(e) = '
         for args, program in [
             ([regress / 'markov.uai'], regress / 'markov.pl'),

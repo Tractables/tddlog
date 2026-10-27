@@ -949,19 +949,19 @@ fn without_evidence_it_is_one_and_inconsistent_evidence_zero() {
 
 #[test]
 fn markov_networks_and_weighted_cnfs_give_their_partition_function() {
-    // gen_bn.py's programs for tests/regress/markov.uai and markov_pr.uai,
-    // without and with their .evid files: the first line states log10 Z -
+    // The programs of tests/regress/markov.uai and markov_pr.uai, without
+    // and with their .evid files: the first line states log10 Z -
     // log10 P(e), and Z by enumeration of the UAI file's worlds is 325,
-    // 165, 19947/25 and 11853/40 (tests/test_gen_bn.py, in exact
-    // fractions). The programs of weighted CNFs in tests/lit (wcnf.pl: its
+    // 165, 19947/25 and 11853/40 (in exact fractions, the programs'
+    // comments). The programs of weighted CNFs in tests/lit (wcnf.pl: its
     // weighted model count is 153/200 by hand; wcnf_factors_bn.pl and
     // wcnf_factors_mn.pl: a Bayesian and a Markov network's weighted CNFs
     // with clauses over other variables besides, 45/128 and 499/20 by
-    // enumeration of their models, in exact fractions). gen_bn.py's program
-    // for tests/regress/potts.uai under --query none, a Markov network of
+    // enumeration of their models, in exact fractions). The program of
+    // tests/regress/potts.uai under --no-queries, a Markov network of
     // Potts tables whose colour symmetry the program breaks (a third of Z,
-    // the offset holding log10 3 besides): Z = 225/2 by enumeration
-    // (tests/test_gen_bn.py, in exact fractions).
+    // the offset holding log10 3 besides): Z = 225/2 by enumeration (in
+    // exact fractions, the program's comment).
     for (file, z) in [
         ("tests/regress/markov.pl", 325.0),
         ("tests/regress/potts.pl", 225.0 / 2.0),

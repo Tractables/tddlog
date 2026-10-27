@@ -116,7 +116,7 @@ impl Decimal {
     /// 0.007262920000000001), and the noise would make the entry's slack
     /// that of 16 digits; 2/3 printed in full stays 0.6666666666666666.
     /// For an entry the file writes in 12 significant digits or fewer, this
-    /// is its text. `scripts/gen_bn.py`'s `meant_decimal`.
+    /// is its text. `gen_bn.py`'s `meant_decimal`.
     fn meant(x: f64) -> Decimal {
         if x == 0.0 {
             return Decimal {
@@ -228,7 +228,7 @@ impl PartialOrd for Natural {
 /// (Shewchuk's partials, then the rounding of their sum): whether a row
 /// sums to more than one decides whether it is divided, and where a plain
 /// sum differs from the exact one in the last bit, the decisions of
-/// `scripts/gen_bn.py`, which sums with `math.fsum`, would differ.
+/// `gen_bn.py`, which sums with `math.fsum`, would differ.
 pub(crate) fn fsum(xs: &[f64]) -> f64 {
     let mut partials: Vec<f64> = Vec::new();
     for &x in xs {
@@ -282,7 +282,7 @@ pub(crate) fn fsum(xs: &[f64]) -> f64 {
 /// that read back as `x` (Rust's), positional for a decimal exponent from
 /// -5 to 15 and scientific with a signed exponent of two digits or more
 /// otherwise (`1e-05`, `0.0001`, `1.0`), so that the program is the one
-/// `scripts/gen_bn.py` writes.
+/// `gen_bn.py` wrote.
 pub(crate) fn write_float(out: &mut String, x: f64) {
     use std::fmt::Write;
     if !x.is_finite() {

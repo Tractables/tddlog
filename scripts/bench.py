@@ -23,11 +23,16 @@ A strategy name may carry tddlog flags after a `+`, so `s+flag` is the run
 
 `gen` writes the instances from the fixed specification below with the
 generators in this directory, so an instance is identified by its name
-alone. tddlog reads a network (an instance of `gen_bn.py`) itself, the
-file with its queries and observations (`network_args`), so that reading
-it is part of tddlog's time; the program the systems that read ProbLog
-programs are given is written by tddlog's reader, `tddlog --program`
-(gen's `--tddlog`), the text `gen_bn.py` writes (`gen_network`); and `gen`
+alone. tddlog reads a network (an instance of `gen_bn.py`), a Dice program
+(of `dice2problog.py`) and a cplint LPAD (of `gen_cplint.py`) itself, the
+file with a network's queries and observations (`network_args`,
+`original`), so that reading it is part of tddlog's time; the program the
+systems that read ProbLog programs are given is written by tddlog's
+reader, `tddlog --program` (gen's `--tddlog`, `source_tree.program`), the
+text the scripts gen_bn.py, dice2problog.py and lpad2problog.py wrote
+before the reader replaced them (`gen_network`, `write_program`); the
+generators that convert a cplint LPAD or a Dice program they write
+(gen_uwcse.py, gen_pedigree.py, gen_geni.py) call it too. `gen`
 decompresses a gzipped network for tddlog once, outside its time, as the
 harness does for Ace. The bnlearn networks of data/bn and data/bn-large are not in the
 repository (no license for them is established): `fetch` downloads each
@@ -285,10 +290,16 @@ for family, names in [('arith', ARITH), ('hybit', HYBIT), ('pluck', PLUCK)]:
 for name in NODICE:
     PPL[f'nodice_{name}'] = ('nodice', ['dice2problog.py', os.path.join(ROOT, 'data', 'nodice', f'{name}.dice')])
 # An instance whose generator is dice2problog.py is a Dice program (its
-# argument) translated; one whose generator is alea_bench.jl is the
-# circuit of an Alea.jl program; the generators of DICE_WRITERS write a
+# argument) translated by tddlog's reader (`write_program`: the program
+# the script wrote); one whose generator is alea_bench.jl is the circuit
+# of an Alea.jl program; the generators of DICE_WRITERS write a
 # Dice program beside the ProbLog one (`--dice`, NAME.dice).
 DICE_WRITERS = ('gen_roulette.py', 'gen_geni.py')
+# The generators whose programs tddlog's reader writes (`tddlog --program`):
+# of a network, of a Dice program, and of a cplint LPAD, whole or with
+# its students or families made anew.
+PROGRAM_OF_TDDLOG = ('gen_bn.py', 'dice2problog.py', 'gen_cplint.py', 'gen_uwcse.py', 'gen_pedigree.py',
+                     'gen_geni.py')
 ALEA_BENCH = os.path.join(HERE, 'alea_bench.jl')
 
 # The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and
@@ -745,6 +756,22 @@ def network_args(args, name, gargs, no_queries):
     return out, [out[0]] + [out[i + 1] for i, x in enumerate(out) if x == '--evidence']
 
 
+def original(gargs, variant):
+    """The file tddlog reads itself where NAME.pl is its reader's
+    conversion of a whole file (`write_program`): a Dice program
+    (dice2problog.py) or a cplint LPAD (gen_cplint.py), so that reading it
+    is part of tddlog's time, as a network's is (`network_args`). None for
+    another instance, and for the one-hot arm (`+onehot`), which reads the
+    one-hot translation in place of NAME.pl (tddlog-onehot.sh)."""
+    if 'onehot' in variant.split('+')[1:]:
+        return None
+    if gargs[0] == 'dice2problog.py':
+        return gargs[1]
+    if gargs[0] == 'gen_cplint.py':
+        return os.path.join(ROOT, 'data', 'cplint', gargs[1] + '.pl')
+    return None
+
+
 def program_args(args, name, gargs):
     """The arguments of `tddlog --program` that write the program `gen`
     writes of a gen_bn.py instance (`gen_network`): the network with its
@@ -782,13 +809,18 @@ def gen_network(args, name, gargs):
         pr = ['--query', 'none'] if getattr(args, 'pr', False) else []
         subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), *gargs[1:], *pr, *side],
                        stdout=subprocess.DEVNULL, check=True)
-    tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
-    argv = program_args(args, name, gargs)
-    with open(os.path.join(args.dir, name + '.pl.part'), 'w') as f:
-        p = subprocess.run([tddlog, '--program', *argv], stdout=f, stderr=subprocess.PIPE, text=True)
-    if p.returncode != 0:
-        raise SystemExit(f'{name}: {tddlog} --program {" ".join(argv)}: {p.stderr.strip()}')
-    os.replace(os.path.join(args.dir, name + '.pl.part'), os.path.join(args.dir, name + '.pl'))
+    write_program(args, name, program_args(args, name, gargs))
+
+
+def write_program(args, name, argv):
+    """NAME.pl of instance `name`, the program tddlog reads a file as
+    (`tddlog --program ARGV`, gen's --tddlog): a network's (`gen_network`)
+    or a Dice program's, which the systems that read ProbLog programs are
+    given."""
+    part = os.path.join(args.dir, name + '.pl.part')
+    with open(part, 'w') as f:
+        source_tree.program(*argv, stdout=f, binary=getattr(args, 'tddlog', None))
+    os.replace(part, os.path.join(args.dir, name + '.pl'))
 
 
 FETCH = os.path.join(ROOT, 'data', 'fetch.txt')
@@ -862,9 +894,9 @@ def gen(args):
         raise SystemExit('--pr writes the uai suite\'s programs for the partition function alone, and the suite is '
                          + args.suite)
     tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
-    if any(e[1][0] == 'gen_bn.py' for e in spec.values()) and not os.access(tddlog, os.X_OK):
-        raise SystemExit(f'--tddlog {tddlog}: not an executable, and gen writes the program of a network with '
-                         '`tddlog --program`')
+    if any(e[1][0] in PROGRAM_OF_TDDLOG for e in spec.values()) and not os.access(tddlog, os.X_OK):
+        raise SystemExit(f'--tddlog {tddlog}: not an executable, and gen writes the program of a network, a Dice '
+                         'program or an LPAD with `tddlog --program`')
     for name, entry in spec.items():
         gargs = entry[1]
         if gargs[0] == 'alea_bench.jl':
@@ -878,12 +910,18 @@ def gen(args):
             # of a plain gen.
             gen_network(args, name, gargs)
             continue
+        if gargs[0] == 'dice2problog.py':
+            write_program(args, name, [gargs[1]])
+            continue
         cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if gargs[0] in DICE_WRITERS:
             cmd += ['--dice', os.path.join(args.dir, name + '.dice')]
         if has_cnf(entry) and (gargs[0] in CNF_WRITERS or args.cnf):
             cmd += ['--cnf', os.path.join(args.dir, name + '.cnf')]
-        out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
+        # a generator that converts an LPAD or a Dice program calls `tddlog
+        # --program` (source_tree.program) with gen's --tddlog
+        out = subprocess.run(cmd, capture_output=True, text=True, check=True,
+                             env=dict(os.environ, TDDLOG=tddlog)).stdout
         with open(os.path.join(args.dir, name + '.pl'), 'w') as f:
             f.write(out)
     print(f'{len(spec)} instances in {args.dir}')
@@ -3923,6 +3961,9 @@ def run_job(args, spec, systems, out, lock, names):
                         # the network itself, read as part of tddlog's run
                         target, inputs = network_args(args, name, spec[name][1],
                                                       'no-queries' in variant.split('+')[1:])
+                    elif original(spec[name][1], variant):
+                        # the Dice program or the LPAD itself, likewise
+                        target = inputs = [original(spec[name][1], variant)]
                     cmd = [binary, '--stats', '--precision', '17'] + tddlog_flags(variant) + target
                 else:
                     cmd = [args.problog, '-k', variant, src]
@@ -3939,6 +3980,9 @@ def run_job(args, spec, systems, out, lock, names):
             if system == 'tddlog' and spec[name][1][0] == 'gen_bn.py':
                 # what tddlog read: the network, no converted program (rel/charge.py)
                 rec['network'] = os.path.basename(network_file(args, spec[name][1]))
+            elif system == 'tddlog' and original(spec[name][1], variant):
+                # the Dice program or the LPAD, no converted program (rel/charge.py)
+                rec['original'] = os.path.basename(original(spec[name][1], variant))
             rec.update(r.get('stats', {}))
             if r['status'] == 'ok' and 'log10_z' in r:
                 rec['log10_z'] = r['log10_z']   # Merlin's PR task and the counters, and Ace's beside its answers
@@ -4241,8 +4285,8 @@ def main():
                    help="the uai suite's programs for the partition function alone, for run --pr: no queries, and "
                    "a Potts network's colour symmetry broken (gen_bn.py --query none)")
     g.add_argument('--tddlog', default=str(source_tree.BINARY),
-                   help="the tddlog that writes a network's program (`tddlog --program`), which the systems that "
-                   'read ProbLog programs are given')
+                   help="the tddlog that writes the program of a network, a Dice program or an LPAD (`tddlog "
+                   "--program`), which the systems that read ProbLog programs are given")
     g.set_defaults(fn=gen)
     r = sub.add_parser('run')
     r.add_argument('--dir', default=os.path.join(ROOT, 'bench'))

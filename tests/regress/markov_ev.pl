@@ -1,5 +1,5 @@
 % log10 Z - log10 P(e) = 2.9822712330395684
-% gen_bn.py's program for markov.uai given markov.uai.evid (x2 = 0),
+% `tddlog --program --evidence markov.uai.evid markov.uai` (x2 = 0),
 % querying x0 and x1. The marginals by enumeration of the four worlds left:
 % x0: 2/11 9/11; x1: 5/33 28/33. Given x2 = 0, Z = 33 * 5 and
 % P(e) = 165/960 = 33/192.

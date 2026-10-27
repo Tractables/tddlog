@@ -26,7 +26,7 @@ those and a few more.
 | file | what it shows |
 |---|---|
 | [asia.net](asia.net), [cancer.net](cancer.net) | Bayesian networks in Hugin format, which tddlog reads as programs (`tddlog examples/asia.net`); `tddlog --program examples/asia.net` prints the program |
-| [bn_cancer.pl](bn_cancer.pl) | cancer.net as `tddlog --query leaves` reads it and `scripts/gen_bn.py` writes it |
+| [bn_cancer.pl](bn_cancer.pl) | cancer.net as `tddlog --query leaves` reads it and `tddlog --program --query leaves` prints it |
 | [bn_split.pl](bn_split.pl) | a table that the indicator rewrite splits on a parent |
 | [negcycle_sound.pl](negcycle_sound.pl) | negation through a cycle that is two-valued in every world, which ProbLog refuses |
 | [dice_evidence.pl](dice_evidence.pl), [dice_murder.pl](dice_murder.pl) | Dice programs as tddlog's Dice reader reads them (`tddlog --program`) |

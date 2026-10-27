@@ -30,13 +30,17 @@
 //! merge the proxy charges a bit per switch kept alive between separated
 //! values and no single move can pay. The search is simulated annealing
 //! over insertion moves that keep every component after its dependencies
-//! and before its consumers, from the compiler's own component order. The
+//! and before its consumers, from the compiler's own component order taken
+//! root by root ([`by_roots`]). The
 //! objective is the proxy summed over the components with the most
 //! ancestors, since those own the large formulas. Work is bounded in
 //! evaluations, not seconds, so the order does not depend on the machine's
 //! load; programs beyond [`MAX_UNITS`] components or [`MAX_FACTS`] facts,
 //! or where the budget cannot pay for [`MIN_MOVES_PER_UNIT`] moves per
-//! component, keep the compiler's order.
+//! component, keep the order the search would start from.
+
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 
 use rustc_hash::FxHashMap;
 
@@ -374,13 +378,146 @@ struct Scratch {
     touched: Vec<usize>,
 }
 
+/// `sccs`, a dependency order, taken root by root where the roots' cones
+/// share no component. The roots are the components nothing reads: the
+/// evidence, the queries, a circuit's outputs. The next root is, of those
+/// whose cones share a fact with the roots before it, the one whose cone
+/// adds the fewest facts, and where none shares one, the first in the
+/// given order; the first in the given order on a tie. So a root that
+/// reads the facts already placed goes before one that brings its own,
+/// and roots that share nothing keep the given order. Each root's cone
+/// follows the roots before it, in the given order. With one root, or
+/// where two cones share a component, it is the given order.
+///
+/// The compiler's order interleaves roots that read different facts. On a
+/// right-linear vtree, and on `closed`'s chains of blocks, a fact stays
+/// alive from its first reader to its last, so interleaved roots keep the
+/// facts of all of them alive at once. clinicalTrial1 observes 400
+/// comparisons `u < p` of fresh numbers `u` with one of three parameters
+/// `p`, guarded by one fact: in the compiler's order every cut keeps the
+/// three parameters' values, and with the observations of each parameter
+/// taken together, one. Where cones share components, the given order
+/// builds each shared component among its first reader's own, and
+/// `closed` lets the first reader's block absorb it; moving the readers'
+/// own components away from the shared ones changes which blocks absorb
+/// which: on zeroone, whose observations of equal points share their
+/// arithmetic, it made the compile up to 13 times the work.
+fn by_roots(gp: &GroundProgram, by_head: &RulesByHead, sccs: Vec<Vec<AtomId>>) -> Vec<Vec<AtomId>> {
+    let n = sccs.len();
+    let mut comp_of = vec![usize::MAX; gp.num_atoms()];
+    for (i, c) in sccs.iter().enumerate() {
+        for &a in c {
+            comp_of[a as usize] = i;
+        }
+    }
+    // The components each component's rules read, and their facts.
+    let mut deps: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut facts: Vec<Vec<AtomId>> = vec![Vec::new(); n];
+    let mut read = vec![false; n];
+    for (i, c) in sccs.iter().enumerate() {
+        for &h in c {
+            for &ri in &by_head[h as usize] {
+                for l in &gp.rules[ri].body {
+                    let a = l.atom();
+                    let j = comp_of[a as usize];
+                    if j == usize::MAX {
+                        if gp.is_fact(a) {
+                            facts[i].push(a);
+                        }
+                    } else if j != i {
+                        deps[i].push(j);
+                        read[j] = true;
+                    }
+                }
+            }
+        }
+        deps[i].sort_unstable();
+        deps[i].dedup();
+        facts[i].sort_unstable();
+        facts[i].dedup();
+    }
+    let roots: Vec<usize> = (0..n).filter(|&i| !read[i]).collect();
+    if roots.len() < 2 {
+        return sccs;
+    }
+    // The root whose cone holds each component, and the facts of each
+    // cone; each component is visited once, as a second cone to reach it
+    // ends the walk.
+    let mut owner = vec![usize::MAX; n];
+    let mut cones: Vec<Vec<AtomId>> = Vec::with_capacity(roots.len());
+    let mut roots_of: Vec<Vec<usize>> = vec![Vec::new(); gp.num_atoms()];
+    let mut stack: Vec<usize> = Vec::new();
+    for (k, &r) in roots.iter().enumerate() {
+        let mut cone: Vec<AtomId> = Vec::new();
+        owner[r] = k;
+        stack.push(r);
+        while let Some(c) = stack.pop() {
+            for &f in &facts[c] {
+                if roots_of[f as usize].last() != Some(&k) {
+                    roots_of[f as usize].push(k);
+                    cone.push(f);
+                }
+            }
+            for &d in &deps[c] {
+                if owner[d] == usize::MAX {
+                    owner[d] = k;
+                    stack.push(d);
+                } else if owner[d] != k {
+                    return sccs;
+                }
+            }
+        }
+        cones.push(cone);
+    }
+    // The facts each root's cone would add, and whether it shares one with
+    // the roots taken: sharing first, then the fewest added, with stale
+    // heap entries passed over.
+    let mut adds: Vec<usize> = cones.iter().map(Vec::len).collect();
+    let mut taken = vec![false; roots.len()];
+    let mut placed = vec![false; gp.num_atoms()];
+    let mut heap: BinaryHeap<(bool, Reverse<usize>, Reverse<usize>)> = (0..roots.len())
+        .map(|k| (false, Reverse(0), Reverse(k)))
+        .collect();
+    let mut place = vec![0; roots.len()];
+    let mut next = 0;
+    while let Some((sharing, Reverse(a), Reverse(k))) = heap.pop() {
+        if taken[k] || sharing != (adds[k] < cones[k].len()) || (sharing && a != adds[k]) {
+            continue;
+        }
+        taken[k] = true;
+        for &f in &cones[k] {
+            if !placed[f as usize] {
+                placed[f as usize] = true;
+                for &j in &roots_of[f as usize] {
+                    if !taken[j] {
+                        adds[j] -= 1;
+                        heap.push((true, Reverse(adds[j]), Reverse(j)));
+                    }
+                }
+            }
+        }
+        place[k] = next;
+        next += 1;
+    }
+    let mut order: Vec<usize> = (0..n).collect();
+    order.sort_by_key(|&i| place[owner[i]]);
+    let mut sccs = sccs;
+    order
+        .iter()
+        .map(|&i| std::mem::take(&mut sccs[i]))
+        .collect()
+}
+
 /// The components of `sccs` (in a dependency order) reordered by the
 /// search, still a dependency order; `note` tells what the search did.
+/// The order the search starts from, and keeps where it is skipped, is
+/// `sccs` taken root by root ([`by_roots`]).
 pub(crate) fn search(
     gp: &GroundProgram,
     by_head: &RulesByHead,
     sccs: Vec<Vec<AtomId>>,
 ) -> (Vec<Vec<AtomId>>, String) {
+    let sccs = by_roots(gp, by_head, sccs);
     let num_facts = gp.facts().count();
     if sccs.len() > MAX_UNITS || num_facts > MAX_FACTS {
         let note = format!(
@@ -689,6 +826,49 @@ mod tests {
             "the sweep over the components is charged"
         );
         assert_eq!(first, program.objective(&pos, &mut scratch));
+    }
+
+    #[test]
+    fn roots_that_read_the_same_facts_are_taken_together() {
+        // Observations of two parameters `a` and `b`, written in turn, all
+        // guarded by `g`: the observations of `a` come first, together,
+        // then those of `b`.
+        let mut src = String::from("0.5::g. 0.5::a. 0.5::b. q :- g. query(q).\n");
+        for i in 1..=4 {
+            let p = if i % 2 == 1 { "a" } else { "b" };
+            src.push_str(&format!(
+                "0.5::u{i}. c{i} :- {p}, u{i}. o{i} :- g, c{i}. evidence(o{i}, false).\n"
+            ));
+        }
+        let gp = program(&src);
+        let by_head = gp.rules_by_head();
+        let sccs = deps::derived_sccs(&gp, &by_head);
+        let order = by_roots(&gp, &by_head, sccs);
+        assert!(is_dependency_order(&gp, &order));
+        let roots: Vec<String> = order
+            .iter()
+            .map(|c| gp.atoms[c[0] as usize].to_string())
+            .filter(|name| name.starts_with('o'))
+            .collect();
+        assert_eq!(roots, ["o1", "o3", "o2", "o4"]);
+    }
+
+    #[test]
+    fn roots_that_share_a_component_keep_the_given_order() {
+        // The same observations, now reading `g` through a component `s`
+        // (`g` or `h`) they all share: the order stays the compiler's.
+        let mut src =
+            String::from("0.5::g. 0.5::h. 0.5::a. 0.5::b. s :- g. s :- h. q :- g. query(q).\n");
+        for i in 1..=4 {
+            let p = if i % 2 == 1 { "a" } else { "b" };
+            src.push_str(&format!(
+                "0.5::u{i}. c{i} :- {p}, u{i}. o{i} :- s, c{i}. evidence(o{i}, false).\n"
+            ));
+        }
+        let gp = program(&src);
+        let by_head = gp.rules_by_head();
+        let sccs = deps::derived_sccs(&gp, &by_head);
+        assert_eq!(by_roots(&gp, &by_head, sccs.clone()), sccs);
     }
 
     #[test]

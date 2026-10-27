@@ -3,7 +3,8 @@
 
 usage: gen_pedigree.py G W [--observe F] [--seed S]
 
-The rules are cplint's bloodtype example (data/cplint/bloodtype.pl; Meert,
+The rules are cplint's bloodtype example (data/cplint/bloodtype.pl, read
+by `tddlog --program`, the binary $TDDLOG or the source tree's; Meert,
 Struyf, Blockeel, ILP 2009), the benchmark PITA scales by family size
 (Riguzzi and Swift, TPLP 2011, Fig. 5a). There the family is a tree of
 ancestors; here it is a pedigree of G generations of W people, as in
@@ -21,8 +22,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import source_tree  # noqa: E402,F401  (the source tree's converters)
-import lpad2problog  # noqa: E402
+import source_tree  # noqa: E402  (tddlog --program)
 
 RULES = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'cplint', 'bloodtype.pl')
 PRIOR = [('a', 0.3), ('b', 0.3), ('null', 0.4)]
@@ -51,7 +51,7 @@ def main():
     if a.g < 2 or a.w < 2:
         ap.error('a pedigree needs two generations of at least two people')
     rng = random.Random(a.seed)
-    rules = [line for line in lpad2problog.convert(open(RULES).read()).splitlines() if ':-' in line]
+    rules = [line for line in source_tree.program(RULES).splitlines() if ':-' in line]
     assert len(rules) == 27, len(rules)
 
     def draw(row):

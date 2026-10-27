@@ -4,8 +4,9 @@ The baseline programs of the Dice paper (Holtzen, Van den Broeck, Millstein,
 "Scaling exact inference for discrete probabilistic programs", OOPSLA 2020),
 copied from `benchmarks/baselines/` of <https://github.com/SHoltzen/dice>
 (Apache License 2.0). They are the source of the `dice` benchmark family:
-`scripts/dice2problog.py` translates each into a propositional ProbLog
-program.
+tddlog reads each itself, and `tddlog --program` translates it into a
+propositional ProbLog program for the systems that read ProbLog
+(`scripts/dice2problog.py` did before tddlog's reader replaced it).
 `digitRecognition.dice` is a naive Bayes digit classifier: a class prior
 over ten digits and 7830 observed pixel flips per class. Its evidence
 probability is far below double precision, which Dice reports as an

@@ -5,8 +5,9 @@ Copies of example and dataset files from Fabrizio Riguzzi's cplint
 and cplint_datasets (<https://github.com/friguzzi/cplint_datasets>,
 `prolog/coralearn.pl`, commit 168a98599ad4cd45216f8dc5ed1fea2e8775544f), both
 under the Artistic License 2.0. They are the sources of the `uwcse`, `cora`
-and `cplint` benchmark families, converted to ProbLog by
-`scripts/lpad2problog.py`.
+and `cplint` benchmark families: tddlog reads an LPAD itself, and
+`tddlog --program` converts it to ProbLog for the other systems
+(`scripts/lpad2problog.py` did before tddlog's reader replaced it).
 
 - `bloodtype.pl`: Mendelian inheritance of blood types (Meert, Struyf,
   Blockeel, ILP 2009).

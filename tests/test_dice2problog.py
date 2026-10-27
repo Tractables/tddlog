@@ -17,10 +17,11 @@ import sys
 import unittest
 
 root = Path(__file__).resolve().parents[1]
-scripts = root / 'scripts'
-translations = root / 'tests' / 'dice'
-sys.path.insert(0, str(scripts))
+sys.path.insert(0, str(root / 'scripts'))
+from source_tree import SOURCE  # noqa: E402  (the source tree's tests/dice)
 import dice2problog  # noqa: E402
+
+translations = SOURCE / 'tests' / 'dice'
 
 RECURSION_LIMIT = dice2problog.RECURSION_LIMIT
 

@@ -1,4 +1,4 @@
-% gen_bn.py's program for chain.uai --query leaves, a UAI BAYES network: x0's
+% `tddlog --program --query leaves chain.uai`, a UAI BAYES network: x0's
 % row 0.3333333 three times is divided by its sum, which rounding explains,
 % as is x1's 0.9, 0.09; x2's 0.0, 0.25, 0.5 is kept, its rest left to no value.
 0.33333333333333337::x0(v_0); 0.33333333333333337::x0(v_1); 0.33333333333333337::x0(v_2).

@@ -2,10 +2,12 @@
 
 Discrete Bayesian networks from the bnlearn repository
 (<https://www.bnlearn.com/bnrepository/>) in Hugin `.net` format, the
-source of the `bn` and `bnev` benchmark families: `scripts/gen_bn.py`
-writes each as a propositional ProbLog program with one annotated
-disjunction per conditional probability table row, querying the
-marginals of the leaf variables. The networks with the largest tables
+source of the `bn` and `bnev` benchmark families: tddlog reads each
+itself, and `tddlog --program` writes it for the systems that read
+ProbLog as a propositional program with one annotated disjunction per
+conditional probability table row, querying the marginals of the leaf
+variables (`scripts/gen_bn.py` did before tddlog's reader replaced it,
+and writes the other systems' files). The networks with the largest tables
 (barley, diabetes, mildew, 1 to 5 MB each) and the four MUNIN
 subnetworks munin1 to munin4 are the `large` suite, gzipped in
 `data/bn-large`.

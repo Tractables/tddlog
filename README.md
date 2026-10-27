@@ -57,11 +57,17 @@ README this file replaces here.
   Dice front end, against Dice's answers) and `test_counters.py` (the
   weighted CNFs of `scripts/uai_wcnf.py` against Ganak and sharpSAT-TD).
 
-The front ends (`scripts/dice2problog.py`, `scripts/lpad2problog.py`,
-`scripts/alea2problog.jl` and its test programs `tests/alea/*.jl`),
-the generators of tddlog's own suites, the exact references
-(`bn_exact.py`, `lit_exact.py`, `tpch_exact.py`, `reliability_exact.py`)
-and the Dice paper's programs (`data/dice`) are on main.
+The front ends (tddlog's readers of networks, Dice programs and LPADs,
+`--program` printing the program a file is read as, and
+`scripts/alea2problog.jl`), the generators of tddlog's own suites, the
+exact references (`bn_exact.py`, `lit_exact.py`, `tpch_exact.py`,
+`reliability_exact.py`) and the Dice paper's programs (`data/dice`) are
+on main. The Python scripts the readers replaced (`dice2problog.py`,
+`lpad2problog.py`, `gen_bn.py` with `uai_wcnf.py`) are here: the harness
+writes the programs of the systems that read ProbLog with `tddlog
+--program`, and keeps the scripts for what imports them (the translators
+from Dice to other languages, gen_bn.py's files for Ace, Merlin, Dice
+and the counters) and for the records made before the switch.
 
 ## The baselines
 
@@ -258,7 +264,7 @@ for k in 100 400 1600 6400; do
   python3 scripts/dice_scale.py data/dice/diamond.dice $k S/dice_diamond_k$k.dice
 done   # and ladder at the same counts, pmc1 at 10 20 40 75, pmc2 at 10 20 51,
        # caesar-iter at 100 1000 3000, simpleCaesar at 100 300 1000
-python3 scripts/dice2problog.py S/NAME.dice > S/NAME.pl
+$TDDLOG --program S/NAME.dice > S/NAME.pl   # tddlog itself reads S/NAME.dice
 python3 scripts/dice2problog_onehot.py S/NAME.dice > "$ONEHOT/NAME.pl"
 DICE="prlimit --stack=unlimited $DICE" ALEA="$JULIA" PROBLOG=... TDDLOG=... \
   python3 scripts/bench_one.py scripts SYSTEM S/NAME REP CPU 600 scaled.jsonl

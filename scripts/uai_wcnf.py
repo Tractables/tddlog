@@ -3,7 +3,7 @@ count is the network's partition function Z given the evidence: the
 encoding of Darwiche (A logical approach to factoring belief networks, KR
 2002) and Chavira and Darwiche (On probabilistic inference by weighted
 model counting, AIJ 2008), for a weighted model counter (Ganak).
-`gen_bn.py --cnf OUT` writes it.
+`gen_bn.py --cnf OUT` writes it. The harness's copy, with gen_bn.py.
 
 Indicators. A variable of two values is one Boolean variable, true at its
 value 1 and false at its value 0. A variable of k > 2 values is k Boolean
