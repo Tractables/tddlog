@@ -436,6 +436,12 @@ impl Relation {
     /// together, or all of `s..e` where neither is fewer. The caller
     /// checks the other positions. A posting list is in tuple order, so the
     /// range is a slice of it.
+    ///
+    /// A union costs a lookup per value, so it is looked up only over
+    /// fewer values than the tuples of the list or range it would replace:
+    /// plcg's `lc_call` literal, bound by its derivation, was reached once
+    /// per demand of a round and looked up each of the delta's derivations
+    /// there, a round's time the product of the two.
     fn candidates(
         &mut self,
         arity: usize,
@@ -456,8 +462,10 @@ impl Relation {
             .iter()
             .map(|(pos, v)| posting(*pos, v))
             .min_by_key(|l| l.len());
+        let limit = one.map_or(e - s, |l| l.len());
         let union = among
             .iter()
+            .filter(|(_, vals)| vals.len() < limit)
             .map(|&(pos, vals)| {
                 let lists: Vec<&[usize]> = vals.iter().map(|v| posting(pos, v)).collect();
                 (lists.iter().map(|l| l.len()).sum::<usize>(), lists)
