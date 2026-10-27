@@ -81,6 +81,7 @@ pub(crate) mod structure;
 mod table;
 pub(crate) mod tables;
 pub(crate) mod terms;
+mod unread;
 
 pub use aig::SweepStats;
 pub use condition::{Backbones, Conditioned};
@@ -219,6 +220,9 @@ pub(crate) fn ground_keeping(
     }
     let mut norm = normalize::normalize(program)?;
     norm.counted = counted;
+    // An argument no clause reads, as a derivation a fact leaves free, is
+    // dropped ([`unread`]).
+    let norm = unread::drop_unread(&norm).unwrap_or(norm);
     // A transitive closure written with the chain rule holds what its linear
     // form holds in every world, and the linear form is what the bound-end
     // rewrite below and the compile's elimination of linear recursion take.
