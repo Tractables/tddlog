@@ -13,6 +13,7 @@
 //! program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
 
+pub mod dice;
 mod lexer;
 pub mod lpad;
 mod parser;

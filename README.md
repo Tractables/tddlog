@@ -23,7 +23,8 @@ README this file replaces here.
   `tddlog --ground` prints it, for Scallop), `dice2alea.py` (a Dice
   program as a Julia script for Alea.jl), `alea_bench.jl` (runs an
   Alea.jl program, or writes the circuit Alea builds for it as a ProbLog
-  program and as Dice programs), `gen_geni.py` and `gen_roulette.py` (the
+  program, through main's `scripts/alea2problog.jl`, and as Dice
+  programs), `gen_geni.py` and `gen_roulette.py` (the
   programs of Geni's and Roulette's evaluations for tddlog, ProbLog and
   Dice, and their exact answers), `dice2problog_onehot.py` and
   `tddlog-onehot.sh` (the one-hot arm), `dice_scale.py` and
@@ -54,10 +55,10 @@ README this file replaces here.
   `test_dice2alea.py`, `test_problog2pita.py`, `test_gen_geni.py`,
   `test_gen_roulette.py`, `test_nodice.py` (noDice's programs through the
   Dice front end, against Dice's answers) and `test_counters.py` (the
-  weighted CNFs of `scripts/uai_wcnf.py` against Ganak and sharpSAT-TD),
-  and `tests/alea/*.jl`.
+  weighted CNFs of `scripts/uai_wcnf.py` against Ganak and sharpSAT-TD).
 
-The front ends (`scripts/dice2problog.py`, `scripts/lpad2problog.py`),
+The front ends (`scripts/dice2problog.py`, `scripts/lpad2problog.py`,
+`scripts/alea2problog.jl` and its test programs `tests/alea/*.jl`),
 the generators of tddlog's own suites, the exact references
 (`bn_exact.py`, `lit_exact.py`, `tpch_exact.py`, `reliability_exact.py`)
 and the Dice paper's programs (`data/dice`) are on main.

@@ -1,7 +1,7 @@
 % Dice evidence2: an observation inside one branch of a conditional holds
 % only when that branch is taken (Dice answers 0.666667).
-% Translated from Dice by scripts/dice2problog.py. Run with
-% `tddlog examples/dice_evidence.pl`.
+% The program tddlog reads Dice's evidence2.dice as (`tddlog --program`).
+% Run with `tddlog examples/dice_evidence.pl`.
 0.5::evidence.
 0.5::coin1.
 obs :- evidence, coin1.

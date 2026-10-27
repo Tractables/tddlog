@@ -642,9 +642,9 @@ function benchmarksOf(root) {
     // lists every system of the category, its table of families narrows it
     // to a family and its filters to a system's own benchmarks. The menu
     // lists the categories, then the solvers by their answers, each solver
-    // with a page of its own (#/system/KEY): its plot against tddlog over
-    // every instance of the categories it was given, then one in each
-    // category against the others. A suite's view (#/SUITE) plots the suite's systems, its legend
+    // with a page of its own (#/system/KEY): its plots against tddlog on
+    // the instances in its own language and on those translated for it,
+    // then one in each category against the others. A suite's view (#/SUITE) plots the suite's systems, its legend
     // "answers k of N", and tddlog against each system given some of the
     // same instances; a plot of more than five lines there draws tddlog's
     // and the three that answer the most in colour.
@@ -879,17 +879,24 @@ function benchmarksOf(root) {
       assert.ok(Math.abs(s.total - t.total) < 0.01, `${what}: its total, ${s.total} against ${t.total}`);
       assert.equal(s.given, cs.reduce((n, c) => n + c.given[s.key], 0), `${what}: the instances it was given`);
       assert.equal(s.how.reduce((n, h) => n + h.n, 0), s.given, `${what}: how it was given each instance`);
-      await visit(`#/system/${s.key}`, "figure.plot svg.cactus path.line");
+      // (its first plot's lines may all be flat: a system that answers none
+      // of the programs in its own language)
+      await visit(`#/system/${s.key}`, "figure.plot svg.cactus rect.hit");
+      // the instances in its own language (its own among them) and those translated for it
+      const ways = ["on", "t"].map((letters) => cs.flatMap((c) => rowsOf(c).filter((r) => letters.includes(r.cls[c.systems.indexOf(s.key)]))))
+        .filter((w) => w.length);
+      assert.equal(ways.reduce((n, w) => n + w.length, 0), s.given, `${what}: each instance it was given in its own language or translated`);
       const figs = (await plots()).map((f) => [f.systems.join(" "), f.instances, f.coloured.join(" ")]);
-      assert.deepEqual(figs, [...(me ? [] : [[`tddlog ${s.key}`, rows.length, `tddlog ${s.key}`]]), ...cs.map((c) => {
+      const pair = me ? "tddlog" : `tddlog ${s.key}`;
+      assert.deepEqual(figs, [...ways.map((w) => [pair, w.length, pair]), ...cs.map((c) => {
         const other = me ? c.best ?? "tddlog" : s.key;
         const drawn = [...new Set([...c.drawn, s.key, other])];
         return [["tddlog", ...ranked(c, drawn)].join(" "), c.instances, [...new Set(["tddlog", other])].join(" ")];
       })], `${what}: its plots`);
       for (const fig of await plots()) linear(fig, what);
       if (!me) {
-        assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]), sides(rows, [s.key]),
-          `${what}: tddlog against it`);
+        assert.deepEqual(await page.$$eval("#view figure.scatter", (fs) => fs.map((f) => [f.dataset.faster, f.dataset.slower])),
+          ways.map((w) => sides(w, [s.key])), `${what}: tddlog against it`);
       }
       const tables = await page.$$eval("#view table.board", (ts) => ts.map((t) => t.tBodies[0].rows.length));
       assert.deepEqual([tables[0], tables.at(-1)], [cs.length, s.how.length], `${what}: a row for each category, and how it was given the instances`);

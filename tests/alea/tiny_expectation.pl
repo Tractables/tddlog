@@ -1,4 +1,4 @@
-% tiny_expectation.jl: the circuit Alea.jl builds, written by tddlog's scripts/alea_bench.jl (baselines branch).
+% tiny_expectation.jl: the circuit Alea.jl builds, written by tddlog's scripts/alea2problog.jl.
 % 4 flips, 15 gates, 1 observations, 4 queries.
 0.6666666666666666::f1.
 0.5::f2.

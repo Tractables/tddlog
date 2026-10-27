@@ -311,7 +311,8 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     }
 }
 
-/// A Dice diamond loop of `steps` steps as dice2problog writes it: each
+/// A Dice diamond loop of `steps` steps, unrolled as Dice programs were
+/// translated before a loop became recursion over a step index: each
 /// step drops the signal with probability 1e-4 on one of its two routes,
 /// so that the query keeps it with probability (1 - 0.5e-4)^steps.
 fn diamond_loop(steps: usize) -> GroundProgram {

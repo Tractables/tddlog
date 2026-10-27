@@ -56,11 +56,14 @@
 # as deep as the circuit.
 #
 # `export` builds the program and writes its circuit, without inference.
-# PREFIX.pl is a ProbLog program: a flip is a probabilistic fact `P::fN.`
+# PREFIX.pl is the ProbLog program that the source tree's
+# scripts/alea2problog.jl writes of the program run with the `--set`s,
+# whose first line names them: a flip is a probabilistic fact `P::fN.`
 # (the N-th flip of the circuit in the order Alea created them), an `&` a
 # rule, a `|` two rules, a `!` a negated literal, every observation
 # `evidence(...)`, every answer a query, `qK(U)` defined by the
-# conjunction of its world's bit literals.
+# conjunction of its world's bit literals. alea2problog.jl also builds the
+# model that `run` answers.
 # Under `--warm-below S`, `export` is timed as `run` times Alea, for the
 # time a reader of the circuit pays for it: after the small program,
 # `alea_seconds T` and `alea_compile_seconds T` are those of building the
@@ -87,52 +90,20 @@ import CUDD
 using Alea: JointQuery, MetaDist, Flip, DistAnd, DistOr, DistNot, CondError,
     returnvalue, allobservations, tobits
 
+# The program's model and its circuit, as the source tree's
+# scripts/alea2problog.jl builds and writes them: beside this script on the
+# baselines branch and in a flat copy, in tddlog/scripts/ in a checkout that
+# holds the source tree there (as scripts/source_tree.py finds it).
+include(let own = joinpath(@__DIR__, "alea2problog.jl")
+    isfile(own) ? own : joinpath(dirname(@__DIR__), "tddlog", "scripts", "alea2problog.jl")
+end)
+using .Alea2ProbLog: Model, load, build, allbits, isbool, queried, MAX_WORLD_BITS,
+    circuit, flip_numbers, flips, gates, literal, prob_text, write_problog
+
 const USAGE = "usage: alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX] | export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX"
-
-# The program's module.
-module Program end
-
-# The worlds of a `:pr` component are queried one atom each; past this many
-# bits the export refuses.
-const MAX_WORLD_BITS = 16
-
-# The components of a program's value.
-components(x::Tuple) = reduce(vcat, map(components, x); init = Any[])
-components(x) = Any[x]
-
-# A number's bits, the most significant first, constants included.
-allbits(x::DistUInt) = x.bits
-allbits(x::DistInt) = x.number.bits
-allbits(x::DistFix) = x.mantissa.number.bits
-
-isbool(x) = x isa Dist{Bool} || x isa Bool
 
 # The value a world of a number's bits names, for display.
 value(x, world) = Alea.frombits(x, world)
-
-struct Model
-    comps::Vector{Any}
-    evidence::Vector{AnyBool}
-    errors::Vector{CondError}
-end
-
-function build(query, ignore_errors)
-    m = Base.invokelatest(Program.model)
-    if m isa MetaDist
-        errors = ignore_errors ? CondError[] : m.errors
-        Model(components(returnvalue(m)), m.observations, errors)
-    else
-        Model(components(m), AnyBool[], CondError[])
-    end
-end
-
-# The Booleans queried for component k: the component itself for a
-# Boolean, its bits that are not constant for a number.
-function queried(c, query)
-    isbool(c) && return c isa Bool ? Dist{Bool}[] : Dist{Bool}[c]
-    bits = Dist{Bool}[b for b in allbits(c) if b isa Dist{Bool}]
-    unique(bits)
-end
 
 # The answers of every component, by Alea: `pr` with one joint query per
 # component under `:pr`, and one query per bit under `:expectation`, as
@@ -256,7 +227,7 @@ end
 
 function run_program(query, ignore_errors)
     stats = @timed begin
-        model = build(query, ignore_errors)
+        model = build(ignore_errors)
         shape, worlds = answer(model, query)
         (model, shape, worlds)
     end
@@ -266,154 +237,6 @@ function run_program(query, ignore_errors)
     println("alea_compile_seconds ", get(stats, :compile_time, NaN))
     flush(stdout)
     model, stats.time
-end
-
-#
-# The circuit
-#
-
-# The nodes under `roots`, every node after its children; iterative, as a
-# circuit can be as deep as a loop is long.
-function topological(roots)
-    order = Dist{Bool}[]
-    seen = IdDict{Dist{Bool}, Bool}()
-    for root in roots
-        root isa Dist{Bool} || continue
-        stack = Tuple{Dist{Bool}, Bool}[(root, false)]
-        while !isempty(stack)
-            node, expanded = pop!(stack)
-            if expanded
-                push!(order, node)
-                continue
-            end
-            haskey(seen, node) && continue
-            seen[node] = true
-            push!(stack, (node, true))
-            for child in children(node)
-                haskey(seen, child) || push!(stack, (child, false))
-            end
-        end
-    end
-    order
-end
-
-children(n::DistAnd) = Dist{Bool}[n.x, n.y]
-children(n::DistOr) = Dist{Bool}[n.x, n.y]
-children(n::DistNot) = Dist{Bool}[n.x]
-children(::Flip) = Dist{Bool}[]
-
-prob_text(p) = repr(Float64(p))
-
-struct Circuit
-    order::Vector{Dist{Bool}}
-    names::IdDict{Dist{Bool}, String}
-end
-
-# The flips of the model's circuit (its answers and observations),
-# numbered from 1 in the order Alea created them, so that the names do not
-# depend on what else the process built before.
-function flip_numbers(model::Model, query)
-    roots = Any[n for (_, conj) in query_atoms(model, query) if conj !== nothing for (n, _) in conj]
-    append!(roots, model.evidence)
-    fs = sort([n for n in topological(roots) if n isa Flip]; by = f -> f.global_id)
-    IdDict{Dist{Bool}, Int}(f => i for (i, f) in enumerate(fs))
-end
-
-function circuit(roots, flipno)
-    order = topological(roots)
-    names = IdDict{Dist{Bool}, String}()
-    k = 0
-    for n in order
-        if n isa Flip
-            names[n] = "f$(flipno[n])"
-        elseif !(n isa DistNot)
-            k += 1
-            names[n] = "g$k"
-        end
-    end
-    Circuit(order, names)
-end
-
-flips(c::Circuit) = sort([n for n in c.order if n isa Flip]; by = f -> f.global_id)
-gates(c::Circuit) = [n for n in c.order if n isa DistAnd || n isa DistOr]
-
-# The literal of a node: its atom, or a negation's.
-function literal(c::Circuit, n::Dist{Bool}, neg)
-    while n isa DistNot
-        n, neg = n.x, !neg
-    end
-    (c.names[n], neg)
-end
-
-# The queries of the program: (atom, conjunction of (node, polarity)), the
-# conjunction empty for an answer that is constantly true and `nothing`
-# for one constantly false.
-function query_atoms(model::Model, query)
-    atoms = []
-    for (k, c) in enumerate(model.comps)
-        if isbool(c)
-            push!(atoms, ("q$k", c isa Bool ? (c ? [] : nothing) : [(c, true)]))
-        elseif query == :pr
-            bits = queried(c, query)
-            length(bits) <= MAX_WORLD_BITS ||
-                error("component $k has $(length(bits)) bits that are not constant; at most $MAX_WORLD_BITS are queried as worlds")
-            n = length(bits)
-            for u in 0:(2^n - 1)
-                push!(atoms, ("q$k($u)", [(bits[i], (u >> (n - i)) & 1 == 1) for i in 1:n]))
-            end
-        else
-            seen = Set{Dist{Bool}}()
-            for (j, b) in enumerate(allbits(c))
-                (b isa Dist{Bool} && !(b in seen)) || continue
-                push!(seen, b)
-                push!(atoms, ("e$k($j)", [(b, true)]))
-            end
-        end
-    end
-    atoms
-end
-
-function write_problog(io, model::Model, query, source)
-    atoms = query_atoms(model, query)
-    roots = Any[n for (_, conj) in atoms if conj !== nothing for (n, _) in conj]
-    append!(roots, model.evidence)
-    c = circuit(roots, flip_numbers(model, query))
-    lit(n, pos = true) = begin
-        name, neg = literal(c, n, !pos)
-        neg ? "\\+$name" : name
-    end
-    println(io, "% $source: the circuit Alea.jl builds, written by tddlog's scripts/alea_bench.jl.")
-    fs, gs = flips(c), gates(c)
-    println(io, "% $(length(fs)) flips, $(length(gs)) gates, $(length(model.evidence)) observations, $(length(atoms)) queries.")
-    for f in fs
-        println(io, prob_text(f.prob), "::", c.names[f], ".")
-    end
-    for g in gs
-        if g isa DistAnd
-            println(io, c.names[g], " :- ", lit(g.x), ", ", lit(g.y), ".")
-        else
-            println(io, c.names[g], " :- ", lit(g.x), ".")
-            println(io, c.names[g], " :- ", lit(g.y), ".")
-        end
-    end
-    for (k, o) in enumerate(model.evidence)
-        if o isa Bool
-            o || println(io, "evidence(false_observation, true).")
-            continue
-        end
-        name, neg = literal(c, o, false)
-        println(io, "evidence($name, $(neg ? "false" : "true")).")
-    end
-    for (atom, conj) in atoms
-        if conj === nothing
-            println(io, atom, " :- fail.")
-        elseif isempty(conj)
-            println(io, atom, ".")
-        elseif !(length(conj) == 1 && conj[1][2] && lit(conj[1][1]) == atom)
-            println(io, atom, " :- ", join([lit(n, pos) for (n, pos) in conj], ", "), ".")
-        end
-        println(io, "query(", atom, ").")
-    end
 end
 
 # Dice: one program per answer group, each with the whole circuit the
@@ -512,10 +335,7 @@ function main()
         n == 1 || error("--set $name: $(basename(src)) has $n lines `const $name = ...`, not one")
         text = replace(text, line => "const $name = $value")
     end
-    Base.include_string(Program, text, src)
-    query = Program.QUERY
-    query in (:pr, :expectation) || error("QUERY must be :pr or :expectation, not $query")
-    ignore_errors = isdefined(Program, :IGNORE_ERRORS) && Program.IGNORE_ERRORS
+    query, ignore_errors = load(text, src)
     source = join([basename(src); ["$name=$value" for (name, value) in sets]], " ")
     if mode == "run"
         warmup()
@@ -523,17 +343,17 @@ function main()
         prefix === nothing || export_model(prefix, model, query, source)
         below = something(warm_below, Inf)
         if seconds < below
-            stats = @timed answer(build(query, ignore_errors), query)
+            stats = @timed answer(build(ignore_errors), query)
             println("alea_warm_seconds ", stats.time)
             # The BDDs' sizes take about the time of a warm run again: only
             # where that took less than half of S.
-            2 * stats.time < below && bdd_sizes(build(query, ignore_errors), query)
+            2 * stats.time < below && bdd_sizes(build(ignore_errors), query)
         end
     elseif mode == "export" && prefix !== nothing && warm_below === nothing
-        export_model(prefix, build(query, ignore_errors), query, source)
+        export_model(prefix, build(ignore_errors), query, source)
     elseif mode == "export" && prefix !== nothing
         warmup()
-        circuit_of = () -> (m = build(query, ignore_errors); write_circuit(prefix, m, query, source); m)
+        circuit_of = () -> (m = build(ignore_errors); write_circuit(prefix, m, query, source); m)
         stats = @timed circuit_of()
         write_dice(prefix, stats.value, query, source)
         println("alea_seconds ", stats.time)

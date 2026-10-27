@@ -993,6 +993,8 @@ nav.filters a[aria-current] { border-color: var(--accent); background: var(--acc
 nav.filters a .n { margin-left: 0.35rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 h3.own-head { margin-top: 2rem; }
 table.board.own td.about { white-space: normal; min-width: 18rem; max-width: 40rem; }
+table.board.families thead th, table.board.families td.about { white-space: normal; }
+table.board.families td.about { min-width: 10rem; max-width: 30rem; }
 /* A solver's page: its name and line's sample, its plot in each category
    (two to a row where they fit), how it was given the instances, and its
    version, settings and paper. */

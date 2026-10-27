@@ -596,7 +596,9 @@ point of its fixed-point numbers (`--suite bitblast`, below).
 `export` writes PREFIX.pl, a ProbLog program (a flip `P::fN.`, numbered
 in creation order, an `&` one rule, an `|` two, `!` a negated literal,
 each observation `evidence/2`, each answer a query defined by its
-literals), and PREFIX__dJ.dice, Dice programs over the same circuit with
+literals), which main's front end `scripts/alea2problog.jl` writes (a
+user's Alea.jl program in the same form, without `--set`; alea_bench.jl
+includes it and runs the program it loads), and PREFIX__dJ.dice, Dice programs over the same circuit with
 the flips first in Alea's order (so that Dice's BDD has Alea's variable
 order), one per Boolean or `:pr` number (returning its bits as nested
 pairs, printed as a joint table) or per expectation bit, listed in

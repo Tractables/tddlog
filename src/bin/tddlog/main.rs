@@ -13,12 +13,13 @@ use tddlog::{Options, Progress, Strategy};
 use stats::{ground_line, print_stats};
 
 const USAGE: &str = "\
-usage: tddlog [options] <program.pl | network>
+usage: tddlog [options] <program.pl | program.dice | network>
 
 Prints one `atom:<tab>probability` line per query, like ProbLog. A network
 file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
-read as a program of one annotated disjunction per row of its tables, and
-a program that holds `:- begin_lpad.` as an LPAD written for cplint.
+read as a program of one annotated disjunction per row of its tables, a
+Dice program (.dice) as the program its symbolic evaluation writes, and a
+program that holds `:- begin_lpad.` as an LPAD written for cplint.
 
 options:
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)
@@ -64,8 +65,8 @@ options:
   --rescale                             for a network: divide every row of every table by its
                                         sum, for a file that writes its tables in percent or as
                                         weights
-  --program                             print the program a network or an LPAD is read as and
-                                        exit
+  --program                             print the program a network, a Dice program or an LPAD
+                                        is read as and exit
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error
@@ -96,6 +97,8 @@ struct Args {
     precision: usize,
     /// The file's format where it is a network; `None` for a program.
     network: Option<Format>,
+    /// Whether the file is a Dice program.
+    dice: bool,
     /// How a network is read: its queries, its evidence file and whether
     /// its rows are rescaled.
     queries: Queries,
@@ -166,6 +169,7 @@ fn parse_args() -> Result<Request, String> {
         return Err(format!("{file} is compressed: gunzip it first"));
     }
     let network = Format::of_path(&file);
+    let dice = file.ends_with(".dice");
     if network.is_none() {
         for (given, option) in [
             (queries.is_some(), "--query"),
@@ -217,6 +221,7 @@ fn parse_args() -> Result<Request, String> {
         no_queries: no_queries.is_some(),
         precision,
         network,
+        dice,
         queries,
         evidence,
         rescale: rescale.is_some(),
@@ -260,10 +265,10 @@ fn main() -> ExitCode {
         }
     };
     // An LPAD's example queries that its program leaves out are named, and
-    // `--program` prints a network's or an LPAD's program.
-    let lpad = match args.network {
-        Some(_) => None,
-        None => tddlog::syntax::lpad::read(&source),
+    // `--program` prints a network's, a Dice program's or an LPAD's program.
+    let lpad = match (args.network, args.dice) {
+        (None, false) => tddlog::syntax::lpad::read(&source),
+        _ => None,
     };
     let lpad = match lpad.transpose() {
         Ok(lpad) => lpad,
@@ -276,13 +281,14 @@ fn main() -> ExitCode {
         eprintln!("{}: {note}", args.file);
     }
     if args.program_only {
-        match (&lpad, args.network) {
+        match (&lpad, args.network.is_some() || args.dice) {
             (Some(lpad), _) => println!("{}", lpad.program),
-            (None, Some(_)) => print!("{source}"),
-            (None, None) => {
+            (None, true) => print!("{source}"),
+            (None, false) => {
                 eprintln!(
-                    "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai) or an LPAD \
-                     (a program that holds `:- begin_lpad.`), and {} is neither",
+                    "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
+                     program (.dice) or an LPAD (a program that holds `:- begin_lpad.`), and {} is \
+                     none of them",
                     args.file
                 );
                 return ExitCode::from(2);
@@ -306,13 +312,18 @@ fn main() -> ExitCode {
 
 /// The program's text, and for a Markov network `log10 Z - log10 P(e)`.
 /// The outer error is a file that cannot be read, the inner one a network
-/// that cannot be read as a program.
+/// or a Dice program that cannot be read as a program.
 #[allow(clippy::type_complexity)]
 fn read_source(args: &Args) -> Result<Result<(String, Option<f64>), String>, String> {
     let read = |path: &str| std::fs::read(path).map_err(|e| format!("cannot read {path}: {e}"));
     let Some(format) = args.network else {
         let source = std::fs::read_to_string(&args.file)
             .map_err(|e| format!("cannot read {}: {e}", args.file))?;
+        if args.dice {
+            return Ok(tddlog::syntax::dice::read(&source)
+                .map(|program| (program, None))
+                .map_err(|e| format!("parse error: {e}")));
+        }
         return Ok(Ok((source, None)));
     };
     let data = read(&args.file)?;

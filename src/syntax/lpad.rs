@@ -165,7 +165,7 @@ fn intervention(lit: &str) -> bool {
 }
 
 /// Python's white space (`str.isspace`), which the clauses are trimmed of.
-fn space(c: char) -> bool {
+pub(super) fn space(c: char) -> bool {
     matches!(c, ' ' | '\t'..='\r' | '\x1c'..='\x1f') || (!c.is_ascii() && c.is_whitespace())
 }
 

@@ -2,7 +2,8 @@
 
 Each file's header says what it shows and how to run it. `cargo test`
 checks every program's answers (`tests/it/examples.rs`), against
-ProbLog's or, for the Dice translations, Dice's. The
+ProbLog's or, for the Dice translations, Dice's, and for the Alea.jl
+program the ones computed by hand in its header. The
 [guide](https://tractables.github.io/tddlog/guide/) works through four of
 them, and the [playground](https://tractables.github.io/tddlog/) opens
 those and a few more.
@@ -28,7 +29,8 @@ those and a few more.
 | [bn_cancer.pl](bn_cancer.pl) | cancer.net as `tddlog --query leaves` reads it and `scripts/gen_bn.py` writes it |
 | [bn_split.pl](bn_split.pl) | a table that the indicator rewrite splits on a parent |
 | [negcycle_sound.pl](negcycle_sound.pl) | negation through a cycle that is two-valued in every world, which ProbLog refuses |
-| [dice_evidence.pl](dice_evidence.pl), [dice_murder.pl](dice_murder.pl) | Dice programs translated by `scripts/dice2problog.py` |
+| [dice_evidence.pl](dice_evidence.pl), [dice_murder.pl](dice_murder.pl) | Dice programs as tddlog's Dice reader reads them (`tddlog --program`) |
+| [alea_dice.jl](alea_dice.jl), [alea_dice.pl](alea_dice.pl) | an Alea.jl program and the circuit Alea.jl builds for it, which `scripts/alea2problog.jl` writes |
 | [query_beside_evidence.pl](query_beside_evidence.pl) | a query's formula beside evidence it does not read |
 
 ## One grounding step each

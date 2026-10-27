@@ -1,26 +1,23 @@
-"""Dice programs and their ProbLog translations (scripts/dice2problog.py).
+"""An exact evaluation of Dice programs, by enumeration.
 
 `exact` evaluates a Dice program by enumeration: every expression denotes
 a distribution over values, an observation drops the mass where it fails,
 a loop's state is a distribution after every step, and probabilities are
 exact fractions. It is checked against Dice's own answers, or answers
 computed by hand on a program written for these tests, on the programs of
-tests/dice/, and their committed translations there against what the
-translator writes now; tests/it/examples.rs checks tddlog's answers on
-those translations against the same answers. Where data/dice is there
-(the baselines branch), every Dice program of the benchmarks translates.
+tests/dice/; tests/it/examples.rs checks tddlog's answers on those
+programs, as its Dice reader reads them, against the same answers, and
+test_gen_bn.py checks the Dice programs gen_bn.py writes with it. It reads
+a program with scripts/dice2problog.py's parser.
 """
 from fractions import Fraction
 from pathlib import Path
-import math
 import re
-import subprocess
 import sys
 import unittest
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
-data = root / 'data' / 'dice'
 translations = root / 'tests' / 'dice'
 sys.path.insert(0, str(scripts))
 import dice2problog  # noqa: E402
@@ -247,82 +244,6 @@ class DiceTests(unittest.TestCase):
                 got = answers(exact((translations / f'{name}.dice').read_text()), queries(text))
                 for (q, x), g in zip(expected, got):
                     self.assertAlmostEqual(g, x, delta=1e-15, msg=q)
-
-    def test_translations_are_current(self):
-        names = [*DICE, *BY_HAND]
-        for suffix in ('*.dice', '*.pl'):
-            self.assertEqual(sorted(p.stem for p in translations.glob(suffix)), sorted(names))
-        for name in names:
-            with self.subTest(name=name):
-                source = translations / f'{name}.dice'
-                out = subprocess.run([sys.executable, str(scripts / 'dice2problog.py'), str(source)],
-                                     capture_output=True, text=True, check=True).stdout
-                self.assertEqual(out, (translations / f'{name}.pl').read_text())
-
-    @unittest.skipUnless(data.is_dir(), 'data/dice is on the baselines branch')
-    def test_the_baseline_programs_translate(self):
-        for path in sorted(data.glob('*.dice')):
-            if path.stem == 'digitRecognition':
-                continue
-            with self.subTest(name=path.stem):
-                text = dice2problog.translate(path.read_text())
-                self.assertIn('query(', text)
-
-    def test_unsupported_constructs_fail(self):
-        for program, error in [('let x = [flip 0.5] in x', NotImplementedError),
-                               ('int(3, 4) / int(3, 2)', NotImplementedError),
-                               ('sample flip 0.5', NotImplementedError),
-                               ('int(2, 1) + int(3, 1)', TypeError),
-                               ('int(2, 4)', ValueError)]:
-            with self.subTest(program=program):
-                with self.assertRaises(error):
-                    dice2problog.translate(program)
-
-    def test_a_discrete_off_one_by_rounding_is_normalized(self):
-        # Dice accepts a list within 1e-4 of one and normalizes it (each bit
-        # a ratio of sums); noDice's networks print thirds as 0.333333.
-        for ps in [(0.333333, 0.333333, 0.333333), (0.5, 0.50005)]:
-            with self.subTest(ps=ps):
-                got = dice2problog.discrete_probs(ps)
-                self.assertAlmostEqual(math.fsum(got), 1.0, delta=1e-15)
-                self.assertAlmostEqual(got[0] / got[-1], ps[0] / ps[-1], delta=1e-15)
-        self.assertEqual(dice2problog.discrete_probs((0.25, 0.75)), [0.25, 0.75])
-        self.assertEqual(dice2problog.discrete_probs((0.25, 0.7)), [0.25, 0.7])
-
-    def test_a_disjunctive_guard_restricts_its_branch(self):
-        # Under `x == 1 || x == 3`, x takes the values 1 and 3 alone, whose
-        # bit 0 is set: in that branch bit 0 is the constant true, so the
-        # result's bit 0, true in the other branch too, is constant, and
-        # the values with bit 0 clear have no rule.
-        program = ('let x = discrete(0.1, 0.2, 0.3, 0.4) in\n'
-                   'if x == int(2, 1) || x == int(2, 3) then x else int(2, 1)')
-        text = dice2problog.translate(program)
-        qs = queries(text)
-        heads = {line.split(' :- ')[0].rstrip('.') for line in text.splitlines() if not line.startswith('query(')}
-        self.assertEqual([q in heads for q in qs], [False, True, False, True], text)
-        self.assertEqual(answers(exact(program), qs), [0.0, 0.6, 0.0, 0.4])
-
-    def test_an_integer_is_its_bits(self):
-        # A discrete is drawn bit by bit from the most significant, as Dice
-        # draws it: bit 1 with the mass of 2 and 3; bit 0 with that of 1
-        # among 0 and 1, and of 3 among 2 and 3. A uniform over a power of
-        # two takes one flip a bit. No atom stands for one value but the
-        # queries.
-        facts = lambda text: sorted(float(line.split('::')[0]) for line in text.splitlines() if '::' in line)
-        text = dice2problog.translate('let x = discrete(0.1, 0.2, 0.3, 0.4) in x')
-        p = [Fraction(x) for x in (0.1, 0.2, 0.3, 0.4)]   # the masses as written, exactly
-        self.assertEqual(facts(text), sorted(float(r) for r in [p[2] + p[3], p[1] / (p[0] + p[1]),
-                                                                p[3] / (p[2] + p[3])]))
-        text = dice2problog.translate('let x = uniform(3, 0, 8) in let y = uniform(3, 0, 8) in x + y == int(3, 5)')
-        self.assertEqual(facts(text), [0.5] * 6)
-        self.assertFalse(re.search(r'^[a-z_0-9]+\(\d+\)', text, re.M), text)
-
-    def test_precedence_is_dices(self):
-        # `!` binds looser than == and <, tighter than && (lib/Parser.mly);
-        # == shares the level of + and -.
-        tree = dice2problog.Parser(dice2problog.tokenize('!a == b && c < d + e')).expr()
-        self.assertEqual(tree, ('bin', '&&', ('not', ('bin', '==', ('var', 'a'), ('var', 'b'))),
-                                ('bin', '<', ('var', 'c'), ('bin', '+', ('var', 'd'), ('var', 'e')))))
 
 
 if __name__ == '__main__':

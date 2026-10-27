@@ -3,13 +3,15 @@ answers as Alea does.
 
 Julia runs only where TDDLOG_ALEA names it, as a command template with
 {file} for the script (bench.py's --alea, e.g. "julia --project=ALEA
-{file}"); otherwise the tests are skipped. Each test program of
-tests/alea/ is answered by Alea (`run`), its circuit is written
-(`export`), and the ProbLog program and the Dice programs are evaluated
-here by enumerating the worlds of their flips; both must give Alea's
-answers, and Alea's must be the hand-computed ones in the program's
-comment. The circuit must be the one committed beside the program, which
-tests/it/examples.rs answers with tddlog.
+{file}"); otherwise the tests are skipped. Each test program of the
+source tree's tests/alea/ is answered by Alea (`run`), its circuit is
+written (`export`), and the ProbLog program and the Dice programs are
+evaluated here by enumerating the worlds of their flips; both must give
+Alea's answers, and Alea's must be the hand-computed ones in the
+program's comment. The ProbLog program must be the one committed beside
+the program, which the source tree's scripts/alea2problog.jl writes
+(its tests/test_alea2problog.py) and tests/it/examples.rs answers with
+tddlog.
 """
 import itertools
 import os
@@ -24,7 +26,7 @@ root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / 'scripts'))
 from source_tree import SOURCE  # noqa: E402
 script = root / 'scripts' / 'alea_bench.jl'
-programs = Path(__file__).resolve().parent / 'alea'
+programs = SOURCE / 'tests' / 'alea'
 ALEA = os.environ.get('TDDLOG_ALEA', '')
 
 
@@ -168,11 +170,7 @@ class AleaBenchTests(unittest.TestCase):
             times = dict(line.split() for line in out.splitlines())
             self.assertEqual(set(times), {'alea_seconds', 'alea_compile_seconds', 'alea_warm_seconds'})
             self.assertLess(float(times['alea_warm_seconds']), float(times['alea_seconds']))
-            # The public copy's first line also says where the script is.
-            public = (SOURCE / 'tests' / 'alea' / f'{name}.pl').read_text().split('\n', 1)
-            first, rest = text.split('\n', 1)
-            self.assertEqual(public[0], first.rstrip('.') + ' (baselines branch).')
-            self.assertEqual(public[1], rest)
+            self.assertEqual((programs / f'{name}.pl').read_text(), text)
         return answers, values, expectations
 
     def test_booleans_and_worlds_of_a_number(self):
@@ -197,6 +195,8 @@ class AleaBenchTests(unittest.TestCase):
         self.assertAlmostEqual(answers['e1(1)'], 0.6, places=12)
 
     def test_set_runs_the_program_with_a_constant_replaced(self):
+        # With lo = -1, y is uniform on -1 .. 2, and given y != 0 its
+        # expectation is (-1 + 1 + 2) / 3.
         with tempfile.TemporaryDirectory() as d:
             prefix = Path(d, 'set')
             answers, _, expectations = alea_answers(

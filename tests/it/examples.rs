@@ -11,12 +11,17 @@ use tddlog::{Kind, Strategy};
 
 fn check(file: &str, expected: &[(&str, f64)]) {
     let source = std::fs::read_to_string(format!("examples/{file}")).unwrap();
+    check_text(file, &source, expected);
+}
+
+/// [`check`] on the program `source`; `file` names it.
+fn check_text(file: &str, source: &str, expected: &[(&str, f64)]) {
     for strategy in [
         Strategy::Trial(Kind::Closed),
         Strategy::Auto,
         Strategy::Trial(Kind::Dynamic),
     ] {
-        one(file, &source, expected, strategy, Projection::Off);
+        one(file, source, expected, strategy, Projection::Off);
     }
     // Projecting each component's vtree onto its ancestor cone must not move
     // an answer: the cone contains the support of the formula, and a
@@ -31,7 +36,7 @@ fn check(file: &str, expected: &[(&str, f64)]) {
         for &max_share in shares {
             one(
                 file,
-                &source,
+                source,
                 expected,
                 strategy,
                 Projection::Cones { max_share },
@@ -46,7 +51,7 @@ fn check(file: &str, expected: &[(&str, f64)]) {
         Strategy::Trial(Kind::Families { search: true }),
         Strategy::Trial(Kind::Closed),
     ] {
-        indicated(file, &source, expected, true, strategy, Rows::Apart);
+        indicated(file, source, expected, true, strategy, Rows::Apart);
     }
     // Nor may row classes (the default): in each world at most one of the
     // rows that read a class holds (src/ground/classes.rs).
@@ -55,7 +60,7 @@ fn check(file: &str, expected: &[(&str, f64)]) {
         (false, Strategy::Auto),
         (true, Strategy::Trial(Kind::Families { search: true })),
     ] {
-        indicated(file, &source, expected, indicators, strategy, Rows::Classes);
+        indicated(file, source, expected, indicators, strategy, Rows::Classes);
     }
     // `run` reads the program through every indicator for `families`, as
     // the binary does, written without linear recursion; a program where no
@@ -67,12 +72,12 @@ fn check(file: &str, expected: &[(&str, f64)]) {
     ] {
         let options = common::options(strategy, Projection::default());
         let refused = |e: &tddlog::Error| matches!(e, tddlog::Error::Vtree(e) if e.contains("reads no atom through one"));
-        match tddlog::rewritten(&source, &options) {
+        match tddlog::rewritten(source, &options) {
             Ok(gp) => {
                 assert!(!gp.encoding.is_empty(), "{file} ({strategy:?})");
-                one(file, &source, expected, strategy, Projection::default());
+                one(file, source, expected, strategy, Projection::default());
             }
-            Err(e) if refused(&e) => match common::run(&source, &options) {
+            Err(e) if refused(&e) => match common::run(source, &options) {
                 Err(e) if refused(&e) => {}
                 other => panic!(
                     "{file} ({strategy:?}): families without indicators gave {:?}",
@@ -87,7 +92,7 @@ fn check(file: &str, expected: &[(&str, f64)]) {
     // facts of probability 0.5 that the links observe: a constant factor in
     // the evidence and each query alike.
     for indicators in [false, true] {
-        let printed = common::ground(&source, Rows::Classes, indicators).to_string();
+        let printed = common::ground(source, Rows::Classes, indicators).to_string();
         one(
             &format!("{file} printed ground (indicators {indicators})"),
             &printed,
@@ -810,8 +815,8 @@ fn query_beside_evidence() {
     check("query_beside_evidence.pl", &[("w", 0.0), ("d", 0.29)]);
 }
 
-/// Dice programs translated by scripts/dice2problog.py; ProbLog and Dice
-/// agree on both. evidence2 observes inside one branch of a conditional,
+/// Dice programs as tddlog's Dice reader reads them (`tddlog --program`);
+/// ProbLog and Dice agree on both. evidence2 observes inside one branch of a conditional,
 /// murderMystery inlines a function returning a tuple.
 #[test]
 fn dice_translations() {
@@ -820,13 +825,268 @@ fn dice_translations() {
 }
 
 /// Dice programs with loops, integer arithmetic and recursion
-/// (tests/dice/, after the Dice paper's programs in
+/// (tests/dice/NAME.dice, after the Dice paper's programs in
 /// [`data/dice`](https://github.com/Tractables/tddlog/tree/baselines/data/dice) on the baselines branch),
-/// translated by scripts/dice2problog.py beside them;
-/// Dice's answers, which tests/test_dice2problog.py also checks against
-/// an exact evaluation of the Dice program.
+/// read by tddlog's Dice reader (`tddlog::syntax::dice`) as the program
+/// scripts/dice2problog.py wrote for each before the reader replaced it
+/// (tests/dice/NAME.pl); Dice's answers, which tests/test_dice2problog.py
+/// also checks against an exact evaluation of the Dice program.
 mod dice {
     use super::*;
+    use tddlog::Options;
+
+    fn read(source: &str, what: &str) -> String {
+        tddlog::syntax::dice::read(source).unwrap_or_else(|e| panic!("{what}: {e}"))
+    }
+
+    #[test]
+    fn each_program_is_read_as_the_program_dice2problog_wrote() {
+        let mut read = 0;
+        for entry in std::fs::read_dir("tests/dice").unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.to_str().unwrap();
+            let Some(stem) = name.strip_suffix(".dice") else {
+                continue;
+            };
+            let program = self::read(&std::fs::read_to_string(&path).unwrap(), name);
+            let written = std::fs::read_to_string(format!("{stem}.pl")).unwrap();
+            assert_eq!(program, written, "{name}");
+            read += 1;
+        }
+        assert_eq!(read, 10);
+    }
+
+    /// Under `x == 1 || x == 3`, x takes the values 1 and 3 alone (the
+    /// reader's unit tests check that the branch's bit 0 is the constant
+    /// true); the answers by hand: x is 3 with probability 0.4, and 1
+    /// otherwise.
+    #[test]
+    fn a_disjunctive_guard() {
+        let program = read(
+            "let x = discrete(0.1, 0.2, 0.3, 0.4) in\n\
+             if x == int(2, 1) || x == int(2, 3) then x else int(2, 1)",
+            "a disjunctive guard",
+        );
+        check_text(
+            "a disjunctive guard",
+            &program,
+            &[
+                ("result(0)", 0.0),
+                ("result(1)", 0.6),
+                ("result(2)", 0.0),
+                ("result(3)", 0.4),
+            ],
+        );
+    }
+
+    /// Every Dice program of the benchmarks (data/dice and data/nodice, on
+    /// the baselines branch) is read, its result queried. Skipped without
+    /// them.
+    #[test]
+    fn the_benchmarks_programs_are_read() {
+        for dir in ["data/dice", "data/nodice"] {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                eprintln!("no {dir} (the baselines branch)");
+                continue;
+            };
+            for entry in entries {
+                let path = entry.unwrap().path();
+                if path.extension().is_some_and(|e| e == "dice") {
+                    let name = path.to_str().unwrap();
+                    let program = read(&std::fs::read_to_string(&path).unwrap(), name);
+                    assert!(program.contains("query("), "{name}");
+                }
+            }
+        }
+    }
+
+    /// The Dice suite's loop programs (data/dice, on the baselines branch)
+    /// and their scaled versions, each `iterate` run for the number of
+    /// steps tests/dice/loops.json gives: tddlog's answers against those
+    /// it gave when Dice's loops were unrolled, to 1e-9, and against the
+    /// suite's reference, ProbLog's d-DNNF (eight significant digits, so to
+    /// 5e-8 of the answer) or else Alea.jl's (to 1e-9), none on the
+    /// programs neither answers. Skipped without data/dice.
+    #[test]
+    fn the_loops() {
+        let data = std::path::Path::new("data/dice");
+        if !data.is_dir() {
+            eprintln!("no data/dice (the baselines branch)");
+            return;
+        }
+        let cases = Json::parse(&std::fs::read_to_string("tests/dice/loops.json").unwrap());
+        let Json::Object(cases) = cases else {
+            panic!("loops.json holds an object");
+        };
+        for (name, case) in &cases {
+            let file = data.join(format!("{}.dice", case.get("program").str()));
+            let mut source = std::fs::read_to_string(&file).unwrap();
+            if let Json::Number(k) = case.get("steps") {
+                source = scaled(&source, *k as u64);
+            }
+            let program = read(&source, name);
+            let run = common::run(&program, &Options::default())
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
+            let results = run.results.expect("evidence is consistent");
+            // In order, by number: the unrolled translation named the
+            // queries by the loop's length.
+            assert_eq!(results.len(), case.get("queries").array().len(), "{name}");
+            let probabilities: Vec<f64> = results.iter().map(|r| r.probability).collect();
+            for (g, u) in probabilities.iter().zip(case.get("unrolled").array()) {
+                assert!(
+                    (g - u.number()).abs() <= 1e-9,
+                    "{name}: {g} against {u:?} unrolled"
+                );
+            }
+            if let Json::Object(_) = case.get("reference") {
+                let reference = case.get("reference");
+                let system = reference.get("system").str();
+                let rel = if system.starts_with("problog") {
+                    5e-8
+                } else {
+                    0.0
+                };
+                for (g, r) in probabilities.iter().zip(reference.get("answers").array()) {
+                    let r = r.number();
+                    assert!(
+                        (g - r).abs() <= f64::max(1e-9, rel * r.abs()),
+                        "{name}: {g} against {system}'s {r}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// The Dice program `source` with the count of its first `iterate`
+    /// call, the one the program's result reads, set to `k`.
+    fn scaled(source: &str, k: u64) -> String {
+        let i = source.find("iterate(").expect("an iterate call");
+        let mut depth = 0;
+        let mut j = i;
+        for (at, c) in source[i..].char_indices() {
+            match c {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        j = i + at;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        let call = source[i..j].trim_end();
+        let start = call.trim_end_matches(|c: char| c.is_ascii_digit()).len();
+        assert!(
+            call[..start].trim_end().ends_with(','),
+            "the iterate call ends in a count"
+        );
+        format!("{}{k}{}", &source[..i + start], &source[i + call.len()..])
+    }
+
+    /// A JSON value, as far as tests/dice/loops.json needs: no escapes in
+    /// strings, no Booleans.
+    #[derive(Debug)]
+    enum Json {
+        Null,
+        Number(f64),
+        Str(String),
+        Array(Vec<Json>),
+        Object(Vec<(String, Json)>),
+    }
+
+    impl Json {
+        fn parse(text: &str) -> Json {
+            let mut rest = text;
+            let value = Json::value(&mut rest);
+            assert!(rest.trim().is_empty(), "JSON: `{rest}` after the value");
+            value
+        }
+
+        fn value(s: &mut &str) -> Json {
+            *s = s.trim_start();
+            let open = s.chars().next().expect("JSON: a value");
+            match open {
+                '{' | '[' => {
+                    *s = &s[1..];
+                    let mut items = Vec::new();
+                    loop {
+                        *s = s.trim_start();
+                        if let Some(rest) = s.strip_prefix(['}', ']']) {
+                            *s = rest;
+                            break;
+                        }
+                        let key = if open == '{' {
+                            let Json::Str(key) = Json::value(s) else {
+                                panic!("JSON: a key");
+                            };
+                            *s = s.trim_start().strip_prefix(':').expect("JSON: `:`");
+                            key
+                        } else {
+                            String::new()
+                        };
+                        items.push((key, Json::value(s)));
+                        *s = s.trim_start();
+                        *s = s.strip_prefix(',').unwrap_or(s);
+                    }
+                    if open == '{' {
+                        Json::Object(items)
+                    } else {
+                        Json::Array(items.into_iter().map(|(_, v)| v).collect())
+                    }
+                }
+                '"' => {
+                    let end = s[1..].find('"').expect("JSON: a closing quote");
+                    let out = s[1..=end].to_string();
+                    *s = &s[end + 2..];
+                    Json::Str(out)
+                }
+                _ if s.starts_with("null") => {
+                    *s = &s[4..];
+                    Json::Null
+                }
+                _ => {
+                    let end = s.find([',', ']', '}']).unwrap_or(s.len());
+                    let n = s[..end].trim().parse().expect("JSON: a number");
+                    *s = &s[end..];
+                    Json::Number(n)
+                }
+            }
+        }
+
+        fn get(&self, key: &str) -> &Json {
+            let Json::Object(fields) = self else {
+                panic!("JSON: {self:?} is not an object");
+            };
+            fields
+                .iter()
+                .find(|(k, _)| k == key)
+                .map(|(_, v)| v)
+                .unwrap_or_else(|| panic!("JSON: no {key}"))
+        }
+
+        fn str(&self) -> &str {
+            match self {
+                Json::Str(s) => s,
+                _ => panic!("JSON: {self:?} is not a string"),
+            }
+        }
+
+        fn number(&self) -> f64 {
+            match self {
+                Json::Number(x) => *x,
+                _ => panic!("JSON: {self:?} is not a number"),
+            }
+        }
+
+        fn array(&self) -> &[Json] {
+            match self {
+                Json::Array(xs) => xs,
+                _ => panic!("JSON: {self:?} is not an array"),
+            }
+        }
+    }
 
     /// Integer arithmetic modulo four, shifts, uniform, comparisons.
     #[test]
@@ -1034,12 +1294,19 @@ mod lpad {
     }
 }
 
-/// The circuits that the baselines branch's [`scripts/alea_bench.jl`](https://github.com/Tractables/tddlog/blob/baselines/scripts/alea_bench.jl) writes
-/// for its two Alea.jl test programs (tests/alea/*.jl there), with the
-/// answers computed by hand in those programs' comments, which Alea gives
-/// too.
+/// The circuits that scripts/alea2problog.jl writes for the Alea.jl
+/// programs beside them (tests/test_alea2problog.py checks that it does),
+/// with the answers computed by hand in those programs' comments, which
+/// Alea gives too.
 mod alea {
     use super::*;
+
+    /// examples/alea_dice.pl: two dice, the first at least 4; the sum 7
+    /// and the first showing more.
+    #[test]
+    fn dice() {
+        check("alea_dice.pl", &[("q1", 1.0 / 6.0), ("q2", 2.0 / 3.0)]);
+    }
 
     /// A Boolean, and the distribution of a three-bit number over the
     /// worlds of its bits, under an observation.
