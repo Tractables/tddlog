@@ -1299,9 +1299,13 @@ impl Compilation {
         // it for the next run (`checked`, [`Factoring::checked`]). The
         // guard's watch holds until the round takes a formula: the round it
         // refuses runs again from the formulas it read.
+        //
+        // With neither watch, `watched` and `checked` pass `f` through
+        // without counting it: nothing else reads that count.
         let (taken, untaken) = (&self.dying.taken, self.dying.taken.get());
+        let limit = || watch.or(guard.filter(|_| taken.get() == untaken));
         let check = |mut f: Tdd, pairs: usize| -> Result<Checked<(Tdd, usize)>, CompileError> {
-            match watch.or(guard.filter(|_| taken.get() == untaken)) {
+            match limit() {
                 Some(w) if pairs > w => {
                     backend.minimize(&mut f, Reduce::Settled)?;
                     let pairs = backend.size(&f);
@@ -1325,10 +1329,16 @@ impl Compilation {
                 })
             };
         let checked = |f: Tdd| -> Result<Checked<Tdd>, CompileError> {
+            if limit().is_none() {
+                return Ok(Ok(f));
+            }
             let pairs = backend.size(&f);
             Ok(check(f, pairs)?.map(|(f, _)| f))
         };
         let watched = |f: Tdd, a: AtomId| -> Result<Tdd, CompileError> {
+            if limit().is_none() {
+                return Ok(f);
+            }
             let pairs = backend.size(&f);
             watched_sized(f, pairs, a).map(|(f, _)| f)
         };
