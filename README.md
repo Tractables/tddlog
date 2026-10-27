@@ -247,9 +247,9 @@ says how each system was given each suite and what it was not given.
 ProbLog programs: the standard suite, the literature suite's families
 and Biomine.
 
-- tddlog answers **78 of 80** in 16 min. The best other system,
-  Roulette, answers 55 in 2.7 h, and the virtual best of all other
-  systems 62 in 2.1 h.
+- tddlog answers **120 of 129** in 1.2 h. The best other system,
+  Alea.jl, answers 65 in 5.9 h, and the virtual best of all other
+  systems 92 in 3.9 h.
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
 - Where others win: pgmpy answers grid25, a path query across a 25 by 25
@@ -266,9 +266,9 @@ and Biomine.
 Boolean queries over tuple-independent databases: the TPC-H queries and
 the literature suite's pdb family.
 
-- tddlog answers **211 of 213** in 31 min. The best other system,
-  ProvSQL, answers 201 in 2.1 h, and the virtual best of all other
-  systems 204 in 1.6 h.
+- tddlog answers **308 of 320** in 2.3 h. The best other system,
+  ProvSQL, answers 284 in 5.2 h, and the virtual best of all other
+  systems 298 in 3.7 h.
 - Where others win: ProvSQL is fast on the easy TPC-H queries, its own
   benchmarks, and faster than tddlog on 107 of them.
 
@@ -284,9 +284,9 @@ the networks of the Dice, Roulette and noDice papers, and the UAI 2022
 networks whose factors are conditional probability tables, the Promedus
 diagnosis and or_chain networks among them.
 
-- tddlog answers **288 of 288** in 2 min. The best other system,
-  Ace, answers 266 in 3.2 h, and the virtual best of all other
-  systems 283 in 1.2 h.
+- tddlog answers **291 of 292** in 7 min. The best other system,
+  Ace, answers 272 in 2.6 h, and the virtual best of all other
+  systems 286 in 1.1 h.
 
 ### Markov networks
 
@@ -299,11 +299,11 @@ The other UAI 2022 networks, whose factors are not conditional
 probability tables over an acyclic graph: object detection,
 segmentation and grid networks, protein networks and random networks.
 
-- tddlog answers **215 of 263** in 4.7 h. The best other system,
+- tddlog answers **215 of 263** in 4.6 h. The best other system,
   TensorInference.jl, answers 187 in 9.1 h, and the virtual best of all other
   systems 198 in 6.6 h.
-- Where others win: 15 partition functions of the UAI 2022 final set,
-  14 of them protein networks, run out of time or memory.
+- Where others win: 15 partition functions of the UAI 2022 final set, 14
+  of them protein networks, run out of time or memory.
   TensorInference.jl answers each in 45 to 85 s.
 
 ### Probabilistic functional programs
@@ -317,9 +317,9 @@ Programs over discrete values with conditionals and loops: the Dice
 paper's programs and loops, Roulette's, Geni's, noDice's and Pluck's
 programs, and Cao et al.'s integer programs.
 
-- tddlog answers **191 of 201** in 2.2 h. The best other system,
-  Storm, answers 148 in 10 h, and the virtual best of all other
-  systems 187 in 3.8 h.
+- tddlog answers **222 of 258** in 7.1 h. The best other system,
+  Storm, answers 174 in 16 h, and the virtual best of all other
+  systems 216 in 8.8 h.
 - Where others win: PRISM and Storm answer Geni's three largest router
   networks, which tddlog does not, by value iteration over decision
   diagrams in double precision; their exact engines time out from 18 to
@@ -336,9 +336,9 @@ Programs over integers written in Alea.jl, which compiles each to a
 Boolean circuit. Alea.jl runs its own program; every other system is
 given the circuit.
 
-- tddlog answers **201 of 224** in 6.0 h. The best other system,
-  Alea.jl, answers 135 in 17 h, and the virtual best of all other
-  systems 173 in 10 h.
+- tddlog answers **218 of 250** in 8.0 h. The best other system,
+  Alea.jl, answers 137 in 21 h, and the virtual best of all other
+  systems 179 in 14 h.
 - Where others win: Alea.jl on 65 circuits, six of which tddlog does not
   answer, and Roulette on 34; Ace, pyAgrum and pgmpy on two clinical
   trial circuits that tddlog does not answer, and Merlin on one of them;
@@ -349,21 +349,22 @@ given the circuit.
 
 | System | Its benchmarks | Instances | tddlog | The system |
 |---|---|--:|--:|--:|
-| Ace | Ace's own benchmarks (Chavira and Darwiche) | 46 | 46 in 14 s | 46 in 8 min |
+| Ace | Ace's own benchmarks (Chavira and Darwiche) | 46 | 46 in 18 s | 46 in 8 min |
 | ProbLog | The Biomine network of ProbLog's first paper (De Raedt et al., IJCAI 2007) | 10 | 10 in 3 min | 4 in 1.0 h |
-| PITA | Cplint's blood type example, which PITA ships | 1 | 1 in 0.2 s | 1 in 0.5 s |
-| ProvSQL | The TPC-H queries, ProvSQL's own evaluation | 208 | 206 in 31 min | 196 in 2.1 h |
-| Dice | The Dice paper's programs and networks (OOPSLA 2020) and its repository's loops | 46 | 46 in 18 s | 29 in 3.0 h |
-| Alea.jl | The bit-blasting paper's programs (PLDI 2024), Alea.jl's own | 224 | 201 in 6.0 h | 135 in 17 h |
+| PITA | cplint's blood type example, which PITA ships | 1 | 1 in 0.2 s | 1 in 0.5 s |
+| ProvSQL | The TPC-H queries, ProvSQL's own evaluation | 295 | 289 in 1.6 h | 275 in 3.9 h |
+| Dice | The Dice paper's programs and networks (OOPSLA 2020) and its repository's loops | 69 | 67 in 41 min | 39 in 5.3 h |
+| Alea.jl | The bit-blasting paper's programs (PLDI 2024), Alea.jl's own | 250 | 218 in 8.0 h | 137 in 21 h |
 | Alea.jl | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch | 28 | 25 in 35 min | 25 in 33 min |
-| Roulette | The Roulette paper's programs and networks (PLDI 2025), from its artifact | 88 | 88 in 10 min | 44 in 7.4 h |
-| Geni | The programs of Geni's evaluation (ICFP 2025) | 55 | 48 in 1.4 h | 38 in 3.3 h |
-| noDice | NoDice's programs (OOPSLA 2026) | 11 | 11 in 3.8 s | 10 in 25 min |
-| Pluck | Pluck's four sequence models (PLDI 2025) | 4 | 4 in 2 min | 3 in 10 min |
-| Genfer | Genfer's population model (NeurIPS 2023) | 8 | 8 in 3 min | 8 in 1.6 s |
+| Roulette | The Roulette paper's programs and networks (PLDI 2025), from its artifact | 114 | 95 in 3.5 h | 44 in 12 h |
+| Geni | The programs of Geni's evaluation (ICFP 2025) | 60 | 49 in 2.1 h | 39 in 4.2 h |
+| noDice | noDice's programs (OOPSLA 2026) | 14 | 13 in 11 min | 10 in 55 min |
+| Pluck | Pluck's four sequence models (PLDI 2025) | 4 | 4 in 2 min | 1 in 30 min |
+| Genfer | Genfer's population model (NeurIPS 2023) | 12 | 12 in 8 min | 12 in 4.3 s |
 | Genfer | The Dice programs Genfer's repository ships | 7 | 7 in 1.4 s | 7 in 1.4 s |
 | Psi | Psi's R2 linear regression, as Psi's own program | 8 | 6 in 27 min | 2 in 1.0 h |
-| SPPL | SPPL's hierarchical Markov switching model (PLDI 2021) | 8 | 8 in 6 min | 0 in 1.3 h |
+| SPPL | SPPL's hierarchical Markov switching model (PLDI 2021) | 8 | 8 in 7 min | 0 in 1.3 h |
+| PSouffle | The Android taint analyses of PSouffle's evaluation (FMCAD 2026) | 15 | 12 in 16 min | 10 in 35 min |
 
 ### Setup
 
