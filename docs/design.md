@@ -358,6 +358,13 @@ are skipped. Several steps have a program in `examples/` that shows them.
    mass left keeps its mass. Switch predicates have no rules; their
    ground atoms are the random variables. A value that takes all the mass
    left has no switch, and a head of probability zero none either.
+   A predicate given by ground facts alone, `p::f(a,b).` or `f(a,b).`,
+   none of them in a disjunction and none read by a findall, is kept as
+   its facts (`Facts`): the grounder makes each tuple an atom, a fact of
+   its switch's weights or a certain one, without a switch or a rule per
+   fact, and two facts of one tuple make it true where either is. A
+   database's tables are such facts: TPC-H's line items at scale factor
+   0.1 are 600 000 of them.
 
    **Arguments no clause reads** (`unread.rs`). An argument that every
    clause of a predicate leaves as a variable the clause mentions nowhere
@@ -410,8 +417,9 @@ are skipped. Several steps have a program in `examples/` that shows them.
    and a bound demand whose rule reads the predicate's own atoms before
    the bound argument (`r(Y) :- r(X), a(Y, X)`) calls `a` for every pair
    of a bound `Y` and an atom of `r`. A given predicate, of ground facts
-   or of rules that read only given predicates and bind their heads
-   without a demand, is not demanded: its rules are read once, rather
+   (with or without probabilities) or of rules that read only given
+   predicates and bind their heads without a demand, is not demanded: its
+   facts and rules are read once, rather
    than copied under a guard and checked against every new demand of a
    recursive stratum (PSouffle's side-channel analyses: 83 571 facts in
    each of 1 350 rounds). Its atoms are all known before any demand is,

@@ -218,8 +218,7 @@ pub(crate) fn ground_keeping(
         };
         return Ok(finish_keeping(gp, opts, keep));
     }
-    let mut norm = normalize::normalize(program)?;
-    norm.counted = counted;
+    let norm = normalize::normalize(program, counted)?;
     // An argument no clause reads, as a derivation a fact leaves free, is
     // dropped ([`unread`]).
     let norm = unread::drop_unread(&norm).unwrap_or(norm);
@@ -625,6 +624,27 @@ mod tests {
         assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
     }
 
+    /// Under a demand, the atoms of facts are numbered as the demand reaches
+    /// them, in the order the rules first read them, and not in the order
+    /// of the facts; a fact no rule reads comes last.
+    #[test]
+    fn facts_under_a_demand_are_numbered_as_read() {
+        let source = "0.5::e(3,4). 0.5::e(2,3). 0.5::e(5,6). 0.5::e(1,2).\n\
+                      p(X,Y) :- e(X,Y).\np(X,Y) :- e(X,Z), p(Z,Y).\nquery(p(1,4)).\n";
+        let program = crate::syntax::parse_program(source).expect("parses");
+        let norm = super::normalize::normalize(&program, Default::default()).expect("normalizes");
+        let magic = super::magic::rewrite(&norm).expect("rewrites");
+        let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
+        let facts: Vec<String> = gp
+            .atoms
+            .iter()
+            .zip(&gp.kinds)
+            .filter(|(_, k)| matches!(k, super::AtomKind::Fact(_)))
+            .map(|(a, _)| a.to_string())
+            .collect();
+        assert_eq!(facts, ["e(1,2)", "e(2,3)", "e(3,4)", "e(5,6)"]);
+    }
+
     /// A rule whose body atoms are all true in every world makes its head
     /// so, and the head's other derivations are not kept: each atom of a
     /// closure of deterministic facts has one rule
@@ -634,7 +654,7 @@ mod tests {
         let source = include_str!("../../tests/regress/certain_closure.pl");
         let program = crate::syntax::parse_program(source).expect("parses");
         let (lowered, _) = super::terms::lower(&program).expect("lowers");
-        let norm = super::normalize::normalize(&lowered).expect("normalizes");
+        let norm = super::normalize::normalize(&lowered, Default::default()).expect("normalizes");
         let magic = super::magic::rewrite(&norm).expect("rewrites");
         let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
         let eq: Vec<super::AtomId> = gp

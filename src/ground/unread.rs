@@ -123,6 +123,7 @@ fn unread(norm: &NormProgram) -> FxHashMap<(Name, usize), Vec<bool>> {
 /// Every predicate `norm` names.
 fn signatures(norm: &NormProgram) -> FxHashSet<Sig<'_>> {
     let mut used: FxHashSet<Sig> = norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
+    used.extend(norm.facts.iter().map(|(_, f)| (&*f.name, f.arity)));
     for rule in &norm.rules {
         used.extend(rule.heads.iter().map(|h| h.atom.signature()));
         for l in &rule.body {
@@ -159,7 +160,7 @@ mod tests {
              query(first(s, 1, a)).\n",
         )
         .unwrap();
-        let norm = normalize(&p).unwrap();
+        let norm = normalize(&p, Default::default()).unwrap();
         let dropped = drop_unread(&norm).unwrap();
         let text: Vec<String> = dropped.rules.iter().map(|r| r.to_string()).collect();
         assert!(text.contains(&"lc(s,a,r(a)).".to_string()), "{text:?}");

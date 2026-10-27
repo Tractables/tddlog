@@ -235,6 +235,16 @@ impl Prob {
         out
     }
 
+    /// The weights of a fact true where either of two independent facts of
+    /// weights `self` and `other` is, as two facts of one atom make it:
+    /// false where both are.
+    pub(crate) fn either(self, other: Prob) -> Prob {
+        Prob {
+            p: self.p * (other.p + other.not) + self.not * other.p,
+            not: self.not * other.not,
+        }
+    }
+
     /// The bits of both weights, a key that tells two facts apart where
     /// either weight differs.
     pub(crate) fn bits(self) -> (u64, u64) {

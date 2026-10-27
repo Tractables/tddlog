@@ -13,7 +13,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use super::normalize::NormProgram;
+use super::normalize::{Facts, NormProgram};
 use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{
@@ -461,6 +461,8 @@ struct Pred<'a> {
     name: &'a Name,
     arity: usize,
     switch: Option<Prob>,
+    /// The facts of a predicate given by ground facts alone, its atoms.
+    facts: Option<&'a Facts>,
     /// A magic-set control predicate: grounded, never emitted.
     control: bool,
     /// A predicate a findall reads, whose derivations are counted.
@@ -518,6 +520,15 @@ struct Grounder<'a> {
     fixed: Vec<Option<bool>>,
     /// The atoms true in every world that a rule derived ([`ground_body`]).
     certain: Vec<bool>,
+    /// The weights of the atoms of [`Facts`], by atom ([`load`]).
+    weights: Vec<Option<Prob>>,
+    /// Under a demand, the atoms of [`Facts`] no rule has read yet, by
+    /// atom, those read, in the order of their first reads, and where
+    /// each round of evaluation began among them
+    /// ([`number_facts_as_read`]).
+    unread: Vec<bool>,
+    read: Vec<AtomId>,
+    read_rounds: Vec<usize>,
     /// The stratum being grounded level by level.
     by_level: Option<ByLevel>,
     /// The ground compound terms, and the symbols `[]` and `'[|]'` once
@@ -611,6 +622,7 @@ impl<'a> Grounder<'a> {
                 name,
                 arity,
                 switch,
+                facts: None,
                 control: false,
                 counted: false,
                 rules: Vec::new(),
@@ -853,6 +865,14 @@ impl<'a> Grounder<'a> {
 
     fn fixed(&self, id: AtomId) -> Option<bool> {
         self.fixed.get(id as usize).copied().flatten()
+    }
+
+    /// Marks a round of evaluation begun among the first reads of facts
+    /// under a demand ([`number_facts_as_read`]).
+    fn new_round(&mut self) {
+        if !self.unread.is_empty() {
+            self.read_rounds.push(self.read.len());
+        }
     }
 
     /// Whether atom `id` is true in every world by a rule whose body
@@ -1494,6 +1514,10 @@ fn ground_with(
         demands: 0,
         fixed: Vec::new(),
         certain: Vec::new(),
+        weights: Vec::new(),
+        unread: Vec::new(),
+        read: Vec::new(),
+        read_rounds: Vec::new(),
         by_level: None,
         terms: Terms::default(),
         lists: None,
@@ -1510,7 +1534,14 @@ fn ground_with(
         let p = g.pred(name, *arity, None);
         g.preds[p as usize].control = true;
     }
-    for clause in &norm.rules {
+    // The predicates numbered as the rules and facts name them, each
+    // predicate's facts where the first of them was.
+    let mut facts = norm.facts.iter().peekable();
+    for (i, clause) in norm.rules.iter().enumerate() {
+        while let Some((_, f)) = facts.next_if(|(at, _)| *at <= i) {
+            let p = g.pred(&f.name, f.arity, None);
+            g.preds[p as usize].facts = Some(f);
+        }
         let head = &clause.heads[0].atom;
         let counted = !norm.counted.is_empty()
             && norm.counted.contains(&(head.name.clone(), head.args.len()));
@@ -1518,6 +1549,10 @@ fn ground_with(
         let h = r.head.0;
         g.preds[h as usize].rules.push(g.rules.len());
         g.rules.push(r);
+    }
+    for (_, f) in facts {
+        let p = g.pred(&f.name, f.arity, None);
+        g.preds[p as usize].facts = Some(f);
     }
     // Predicates only mentioned in queries/evidence.
     for a in norm
@@ -1575,17 +1610,23 @@ fn ground_with(
     let mut keys = 0;
     for (k, stratum) in strata.iter().enumerate() {
         // A stratum without rules derives nothing: every switch predicate
-        // is one, a hundred thousand of them on bn_barley.
-        if stratum
+        // is one, a hundred thousand of them on bn_barley. A predicate's
+        // facts, which read nothing, are a stratum of their own.
+        if let &[p] = &stratum[..]
+            && let Some(f) = g.preds[p as usize].facts
+        {
+            load(&mut g, p, f, !norm.control.is_empty());
+        } else if stratum
             .iter()
             .all(|&p| g.preds[p as usize].rules.is_empty())
         {
             continue;
-        }
-        g.current_stratum = stratum.iter().copied().collect();
-        match (levelled.get_mut(k).and_then(Option::take), &mut pruner) {
-            (Some(lv), Some(pruner)) => keys += evaluate_by_levels(&mut g, stratum, lv, pruner),
-            _ => evaluate_stratum(&mut g, stratum),
+        } else {
+            g.current_stratum = stratum.iter().copied().collect();
+            match (levelled.get_mut(k).and_then(Option::take), &mut pruner) {
+                (Some(lv), Some(pruner)) => keys += evaluate_by_levels(&mut g, stratum, lv, pruner),
+                _ => evaluate_stratum(&mut g, stratum),
+            }
         }
         if g.over() {
             return Err(if let Some(e) = g.error.take() {
@@ -1621,7 +1662,10 @@ fn ground_with(
     for id in 0..n as AtomId {
         gp.atoms.push(g.display_atom(id));
         let (p, _) = &g.atoms[id as usize];
-        gp.kinds.push(match g.preds[*p as usize].switch {
+        // A fact's weights, those of its own or its switch predicate's.
+        let weights = g.weights.get(id as usize).copied().flatten();
+        let weights = weights.or(g.preds[*p as usize].switch);
+        gp.kinds.push(match weights {
             Some(q) => AtomKind::Fact(q),
             None => AtomKind::Derived,
         });
@@ -1665,7 +1709,48 @@ fn ground_with(
             gp.evidence.push((atom, id, *v));
         }
     }
+    if !norm.control.is_empty() {
+        number_facts_as_read(&g, &mut gp);
+    }
     Ok(Some(gp))
+}
+
+/// Numbers the atoms of [`Facts`] of a program under a demand
+/// ([`super::magic`]) as the demand reaches them: by the round of
+/// evaluation that first read them ([`ground_body`]), those one round
+/// reads in the order of their facts, in the places their loading took,
+/// and those no rule reads after. A predicate of facts is loaded whole, in
+/// the order of its facts, where a demand made the atoms of the facts it
+/// reached in a round, in their order, round after round: a search from
+/// the queries. The vtree heuristics read the numbering, and a random
+/// graph of 80 edges written by their sources compiled four times slower
+/// in the facts' order.
+fn number_facts_as_read(g: &Grounder, gp: &mut GroundProgram) {
+    let n = gp.atoms.len();
+    let of_facts = |a: usize| g.preds[g.atoms[a].0 as usize].facts.is_some();
+    let places: Vec<AtomId> = (0..n)
+        .filter(|&a| of_facts(a))
+        .map(|a| a as AtomId)
+        .collect();
+    let mut read = g.read.clone();
+    let ends = g.read_rounds.iter().skip(1).copied().chain([read.len()]);
+    for (&start, end) in g.read_rounds.iter().zip(ends) {
+        read[start..end].sort_unstable();
+    }
+    let unread = |a: &&AtomId| g.unread.get(**a as usize).is_some_and(|&u| u);
+    read.extend(places.iter().filter(unread));
+    if read == places {
+        return;
+    }
+    let mut order: Vec<AtomId> = (0..n as AtomId).collect();
+    for (&place, &a) in places.iter().zip(&read) {
+        order[place as usize] = a;
+    }
+    super::simplify::renumber(gp, &order);
+    // Bodies in the order of their atoms, as the grounder writes them.
+    for r in &mut gp.rules {
+        r.body.sort_unstable();
+    }
 }
 
 /// Ground instances of a possibly non-ground query/evidence atom among the
@@ -1737,6 +1822,48 @@ fn substitute(t: &Term, binding: &FxHashMap<&Term, &Term>) -> Term {
     }
 }
 
+/// Makes the atoms of the facts `f`, the relation of `p`: an atom per
+/// tuple, in the order of the facts, a fact of its weights, or one true in
+/// every world by a rule with an empty body where the tuple has none, as
+/// its fact's rule would make it. A tuple given twice is true where either
+/// of its facts is, as ProbLog reads two facts of one atom: the weights of
+/// its falsity multiply. Under a demand (`demanded`), each atom is unread
+/// until a rule reads it ([`number_facts_as_read`]).
+fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
+    for (args, weights) in f.tuples() {
+        let vals: Vec<Val> = args.iter().map(|a| g.val(a)).collect();
+        let (id, new) = g.atom_id(p, vals);
+        if g.over() {
+            return;
+        }
+        let at = id as usize;
+        if demanded && new {
+            if g.unread.len() <= at {
+                g.unread.resize(at + 1, false);
+            }
+            g.unread[at] = true;
+        }
+        if g.certain(id) {
+            continue;
+        }
+        if g.weights.len() <= at {
+            g.weights.resize(at + 1, None);
+        }
+        match (weights, g.weights[at]) {
+            (Some(q), Some(w)) if !new => g.weights[at] = Some(w.either(q)),
+            (Some(q), _) => g.weights[at] = Some(q),
+            (None, _) => {
+                g.weights[at] = None;
+                if g.certain.len() <= at {
+                    g.certain.resize(at + 1, false);
+                }
+                g.certain[at] = true;
+                g.keep_rule(GroundRule::new(id, Vec::new()));
+            }
+        }
+    }
+}
+
 /// Semi-naive evaluation of one stratum (a set of mutually recursive predicates).
 ///
 /// Round 0 grounds every rule against the relations as they are (the
@@ -1758,6 +1885,7 @@ fn evaluate_stratum(g: &mut Grounder, stratum: &[PredId]) {
         }
     }
     let mut from = lens(g, stratum);
+    g.new_round();
     for &r in &rule_ids {
         eval_rule(g, r, None);
     }
@@ -1818,6 +1946,7 @@ fn rounds(
             break;
         }
         due.sort_unstable();
+        g.new_round();
         for &(k, i, s) in &due {
             eval_rule(g, rule_ids[k], Some((i, delta[s])));
         }
@@ -1939,15 +2068,32 @@ fn step_of(
                 .position(|a| matches!(a, Arg::Var(x) if *x == v))
         };
         let (b, h) = (at(vb)?, at(vh)?);
-        g.preds[q as usize]
-            .rules
-            .iter()
-            .map(|&r| match (&g.rules[r].head.1[b], &g.rules[r].head.1[h]) {
-                (Arg::Val(Val::Int(b)), Arg::Val(Val::Int(h))) if h - b >= 1 => Some(h - b),
-                _ => None,
-            })
-            .try_fold(i64::MAX, |m, c| Some(m.min(c?)))
-            .filter(|&c| c < i64::MAX)
+        // The least step over the predicate's facts or its rules' heads.
+        let least = |steps: &mut dyn Iterator<Item = (Option<i64>, Option<i64>)>| {
+            steps
+                .map(|step| match step {
+                    (Some(b), Some(h)) if h - b >= 1 => Some(h - b),
+                    _ => None,
+                })
+                .try_fold(i64::MAX, |m, c| Some(m.min(c?)))
+                .filter(|&c| c < i64::MAX)
+        };
+        let int = |a: &Arg| match a {
+            Arg::Val(Val::Int(i)) => Some(*i),
+            _ => None,
+        };
+        let term = |t: &Term| match t {
+            Term::Int(i) => Some(*i),
+            _ => None,
+        };
+        let pred = &g.preds[q as usize];
+        match pred.facts {
+            Some(f) => least(&mut f.tuples().map(|(args, _)| (term(&args[b]), term(&args[h])))),
+            None => least(&mut pred.rules.iter().map(|&r| {
+                let head = &g.rules[r].head.1;
+                (int(&head[b]), int(&head[h]))
+            })),
+        }
     };
     body.iter().find_map(|l| match l {
         ILit::Pos(q, args) if !local.contains_key(q) => rises(*q, args),
@@ -2389,6 +2535,16 @@ fn ground_body(
                     body_atoms.clone(),
                 ));
                 return;
+            }
+        }
+        // The atoms of facts read for the first time, under a demand.
+        if !g.unread.is_empty() {
+            for l in body_atoms.iter() {
+                let a = l.atom() as usize;
+                if g.unread.get(a).is_some_and(|&u| u) {
+                    g.unread[a] = false;
+                    g.read.push(a as AtomId);
+                }
             }
         }
         let (head, new) = g.atom_id(rule.head.0, head_args);

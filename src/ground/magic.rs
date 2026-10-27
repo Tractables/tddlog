@@ -15,9 +15,10 @@
 //! arguments of `q`. The atoms themselves are not renamed, so the copies for
 //! different patterns derive into the same predicate; every atom derived is in
 //! the original model, and every atom the queries depend on is derived. A
-//! given predicate, of ground facts or of rules that read only given
-//! predicates, is not demanded: its rules are read as they are, and a
-//! negation of it filters the demand as a positive literal does. A
+//! given predicate, one of ground facts ([`super::normalize::Facts`]) or
+//! one of rules that read only given predicates, is not demanded: its facts
+//! and rules are read as they are, and a negation of it filters the demand
+//! as a positive literal does. A
 //! rule that cannot use some of a pattern's bindings, a head variable its
 //! body reads only as the value of an `is`, is copied under the pattern
 //! without them instead, whose magic predicate the first one's feeds. A
@@ -34,7 +35,9 @@
 //! stratum). The caller checks stratification and falls back to the plain
 //! program in that case.
 
-use super::normalize::{NormProgram, Sig};
+use std::sync::Arc;
+
+use super::normalize::{Facts, NormProgram, Sig};
 use super::schedule::{Order, literal_vars, schedule_body};
 use crate::syntax::{Atom, Clause, Literal, Name, Term};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -152,10 +155,10 @@ pub(super) fn ground_clause(c: &Clause) -> bool {
 }
 
 /// The predicates the rewrite reads as they are, without a demand: those
-/// whose clauses are all ground facts, and those whose rules read only
-/// given predicates and bind their heads without a demand. Their atoms are
-/// all known before any demand is, and a demand would only copy them under
-/// guards for the grounder to check against every new demand: on
+/// given by ground facts, as [`Facts`] or as rules, and those whose rules
+/// read only given predicates and bind their heads without a demand. Their
+/// atoms are all known before any demand is, and a demand would only copy
+/// them under guards for the grounder to check against every new demand: on
 /// PSouffle's side-channel analyses, 83 571 facts against the demands of
 /// each of 1 350 semi-naive rounds. A negation of a given predicate joins
 /// the demand's prefix: cplint's left-corner grammar tries a goal's third
@@ -182,7 +185,11 @@ fn given<'a>(
                 .all(|v| bound.contains(v))
     };
     let switches: FxHashSet<Sig> = norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
-    let mut given: FxHashSet<Sig> = FxHashSet::default();
+    let mut given: FxHashSet<Sig> = norm
+        .facts
+        .iter()
+        .map(|(_, f)| (&*f.name, f.arity))
+        .collect();
     loop {
         let before = given.len();
         for (&sig, rules) in rules_of {
@@ -279,12 +286,17 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
     let rules_of = norm.rules_by_sig();
     let is_switch = |a: &Atom| norm.switches.contains_key(&(a.name.clone(), a.args.len()));
     let given = given(norm, &rules_of);
+    let facts: FxHashMap<Sig, &Arc<Facts>> = norm
+        .facts
+        .iter()
+        .map(|(_, f)| ((&*f.name, f.arity), f))
+        .collect();
     // An atom of a predicate with rules, not given, which a demand reaches.
     let derived = |a: &Atom| {
         let sig = a.signature();
         rules_of.contains_key(&sig) && !given.contains(&sig) && !is_switch(a)
     };
-    // The given predicates reached, whose rules are in `out`.
+    // The given predicates reached, whose rules or facts are in `out`.
     let mut read: FxHashSet<(Name, usize)> = FxHashSet::default();
 
     let mut out = NormProgram {
@@ -345,6 +357,10 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
         let sig = atom.signature();
         if given.contains(&sig) {
             if read.insert((atom.name.clone(), sig.1)) {
+                if let Some(&f) = facts.get(&sig) {
+                    out.facts.push((out.rules.len(), f.clone()));
+                    continue;
+                }
                 for &ri in &rules_of[&sig] {
                     let rule = &norm.rules[ri];
                     for l in &rule.body {
@@ -476,7 +492,7 @@ mod tests {
     fn countdown_gets_demand_rules() {
         let p =
             parse_program("0.6::w(T) :- T > 0, P is T - 1, w(P).\nw(0).\nquery(w(3)).\n").unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(text.contains(&"'$m_w_b'(3).".to_string()), "{text:?}");
@@ -504,7 +520,7 @@ mod tests {
              r(Y) :- r(X), a(Y,X).\ns(Z) :- b(Z,X), r(X).\nquery(r(_)).\nquery(s(_)).\n",
         )
         .unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
@@ -525,8 +541,8 @@ mod tests {
     }
 
     /// A predicate of ground facts is read as it is, not demanded: its facts
-    /// are in the rewritten program once, unguarded, and only the rules of
-    /// the derived predicates are copied under their demands.
+    /// are in the rewritten program once, as they are, and only the rules
+    /// of the derived predicates are copied under their demands.
     #[test]
     fn facts_are_read_as_they_are() {
         let p = parse_program(
@@ -534,13 +550,16 @@ mod tests {
              p(X,Z) :- e(X,Y), p(Y,Z).\nquery(p(1,_)).\n",
         )
         .unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(!text.iter().any(|t| t.contains("$m_e")), "{text:?}");
-        for fact in ["e(1,2).", "e(2,3).", "e(4,5)."] {
-            assert_eq!(text.iter().filter(|t| *t == fact).count(), 1, "{text:?}");
-        }
+        let facts: Vec<(&str, usize)> = m
+            .facts
+            .iter()
+            .map(|(_, f)| (&*f.name, f.probs.len()))
+            .collect();
+        assert_eq!(facts, [("e", 3)]);
         assert!(
             text.iter()
                 .any(|t| t.starts_with("p(X,Z) :- '$m_p_bf'(X), e(X,Y), p(Y,Z)")),
@@ -559,7 +578,7 @@ mod tests {
              p(X,N) :- lc(s,X,_), \\+ nt(s,X), q(X,N).\nquery(p(b,_)).\n",
         )
         .unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
@@ -579,15 +598,16 @@ mod tests {
     /// A demand reads the literals before it that bear on its bound
     /// arguments: `c` is demanded where `a` holds, whatever `b` holds, and
     /// `b`, with no argument bound, wherever `h` is
-    /// (tests/regress/magic_bearing.pl, by hand).
+    /// (tests/regress/magic_bearing.pl, by hand, its facts made rules on
+    /// `s`, as a predicate of facts is given).
     #[test]
     fn a_demand_reads_the_literals_that_bear_on_it() {
         let p = parse_program(
-            "0.5::a(1).\n0.4::d(5).\nb(7) :- d(9).\n0.6::c(1,3).\n\
+            "s.\n0.5::a(1) :- s.\n0.4::d(5) :- s.\nb(7) :- d(9).\n0.6::c(1,3) :- s.\n\
              h(X) :- a(X), b(Y), c(X,Z).\nquery(h(1)).\n",
         )
         .unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
@@ -610,7 +630,7 @@ mod tests {
              s(1,S) :- d(1,S).\ns(K,S) :- next(J,K), s(J,S0), d(K,D), S is S0+D.\nquery(s(2,1)).\n",
         )
         .unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
