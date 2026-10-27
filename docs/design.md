@@ -1076,12 +1076,23 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   search on a size proxy (`src/vtree/order.rs`: simulated annealing over
   dependency orders, components sharing switches merged first; skipped
   where 64 facts or fewer bound every formula, and where its budget of
-  steps pays for fewer than four moves per component), each component a
-  block with its new facts on a right-linear spine above a balanced join
-  of the blocks it reads. Blocks that share nothing and are read by one
-  component are siblings, the only place the tree branches. A join whose
-  rules pair up the blocks' atoms one to one (UW-CSE's
-  `advised_by(S,P), student_nb_publications(S,_)`) is not taken.
+  steps pays for fewer than four moves per component). The search starts
+  from the compiler's order taken root by root, and keeps that order
+  where it is skipped: where the roots' cones (a root is a component
+  nothing reads) share no component, the components are grouped by
+  root, the roots ordered so that each next adds the fewest facts to
+  those of the roots before it among those that share one with them.
+  Observations of one parameter are then read together rather than
+  interleaved with another's. Where cones share components the
+  compiler's order stays, since it builds each shared component among
+  its first reader's own and moving them apart changes which blocks
+  absorb which (zeroone's compile took up to 13 times the work). Each
+  component is a block with its new facts on a right-linear spine above
+  a balanced join of the blocks it reads. Blocks that share nothing and
+  are read by one component are siblings, the only place the tree
+  branches. A join whose rules pair up the blocks' atoms one to one
+  (UW-CSE's `advised_by(S,P), student_nb_publications(S,_)`) is not
+  taken.
 - **`families`** and **`families:0`** (`families_forest`, `nest`): for a
   program rewritten with indicators. A *family* is a formula the query
   phase conjoins (a link, a derived query or evidence atom); *groups* are
