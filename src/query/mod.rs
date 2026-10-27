@@ -500,7 +500,7 @@ impl QueryEvaluation {
                             None => w,
                         }
                     };
-                    let stored = compiled.formulas[*a as usize].as_ref();
+                    let stored = compiled.formulas[*a as usize].as_deref();
                     // The polarity of the formula counted first: the stored
                     // formula's, or for a fact the polarity asked.
                     let first = if stored.is_some() {
@@ -907,7 +907,7 @@ mod tests {
                     .unwrap()
             };
             let (a, b) = (literal("a"), literal("b"));
-            compiled.formulas[q as usize] = Some(backend.and(a, b).unwrap());
+            compiled.formulas[q as usize] = Some(std::sync::Arc::new(backend.and(a, b).unwrap()));
             compiled.for_queries.counted.remove(&q);
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
             assert!(matches!(

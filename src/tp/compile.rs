@@ -2,19 +2,21 @@
 //! in dependency order, and the compiled program it leaves.
 
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::sync::Arc;
 use std::time::Instant;
 
 use tididi::Tdd;
 use tididi::restructure::search::PoolRestarts;
 use tididi::vtree::VarId;
 
+use super::backend::{Part, Read};
 use super::clauses::ClauseMemo;
 use super::factoring::{Checked, Factoring, Pairs, Scratch};
 use super::stats::Op;
 use super::template::{Template, templates};
 use super::tie::{Tie, ties};
 use super::{
-    CompileError, CompileStats, Formula, Formulation, NegationSource, Negations, Projection,
+    CompileError, CompileStats, Formulation, NegationSource, Negations, Projection,
     ProjectionStats, Reduce, ScopeTable, SearchStats, TddBackend, VtreeScope, aft, cone,
 };
 use crate::eval::Probabilities;
@@ -50,18 +52,20 @@ pub struct Compiled {
 }
 
 /// A formula or none for each atom, with an entry only for the atoms
-/// given a formula. Most atoms are facts, which have none, and a `Tdd` is
-/// 224 bytes: an entry for each atom would write most of a small
-/// program's memory before its compile begins.
+/// given a formula. Most atoms are facts, which have none: an entry for
+/// each atom would write most of a small program's memory before its
+/// compile begins. A formula is held through an `Arc`, which a read that
+/// does not take it shares ([`Read::Shared`]) for a conjunction to read in
+/// place; no read outlives the atom update that made it.
 #[derive(Default)]
 pub struct Formulas {
     /// Where each atom's entry is in `held`, plus one; 0 for an atom given
     /// none yet.
     at: Vec<u32>,
     /// The entries, in the order the atoms were first given one.
-    held: Vec<Option<Tdd>>,
+    held: Vec<Option<Arc<Tdd>>>,
     /// What an atom without an entry reads.
-    none: Option<Tdd>,
+    none: Option<Arc<Tdd>>,
 }
 
 impl Formulas {
@@ -76,7 +80,7 @@ impl Formulas {
     }
 
     /// Each atom's formula or none, in the atoms' order.
-    pub fn iter(&self) -> impl Iterator<Item = &Option<Tdd>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
         self.at.iter().map(|&i| {
             if i == 0 {
                 &self.none
@@ -88,7 +92,14 @@ impl Formulas {
 
     /// The atoms' formulas, in the atoms' order.
     fn formulas_mut(&mut self) -> Vec<&mut Tdd> {
-        let mut held: Vec<Option<&mut Tdd>> = self.held.iter_mut().map(Option::as_mut).collect();
+        let mut held: Vec<Option<&mut Tdd>> = self
+            .held
+            .iter_mut()
+            .map(|f| {
+                f.as_mut()
+                    .map(|f| Arc::get_mut(f).expect("no read of a formula outstanding"))
+            })
+            .collect();
         self.at
             .iter()
             .filter(|&&i| i != 0)
@@ -96,8 +107,10 @@ impl Formulas {
             .collect()
     }
 
-    /// Take `a`'s formula, leaving none, without giving `a` an entry.
-    pub(crate) fn take(&mut self, a: usize) -> Option<Tdd> {
+    /// Take `a`'s formula, leaving none, without giving `a` an entry. A
+    /// read of it in the atom update under way may still hold it
+    /// ([`Read::taken`]).
+    pub(crate) fn take(&mut self, a: usize) -> Option<Arc<Tdd>> {
         match self.at[a] {
             0 => None,
             i => self.held[i as usize - 1].take(),
@@ -111,9 +124,9 @@ impl Formulas {
 }
 
 impl std::ops::Index<usize> for Formulas {
-    type Output = Option<Tdd>;
+    type Output = Option<Arc<Tdd>>;
 
-    fn index(&self, a: usize) -> &Option<Tdd> {
+    fn index(&self, a: usize) -> &Option<Arc<Tdd>> {
         match self.at[a] {
             0 => &self.none,
             i => &self.held[i as usize - 1],
@@ -123,7 +136,7 @@ impl std::ops::Index<usize> for Formulas {
 
 /// A write gives the atom an entry if it has none.
 impl std::ops::IndexMut<usize> for Formulas {
-    fn index_mut(&mut self, a: usize) -> &mut Option<Tdd> {
+    fn index_mut(&mut self, a: usize) -> &mut Option<Arc<Tdd>> {
         if self.at[a] == 0 {
             self.held.push(None);
             self.at[a] = self.held.len() as u32;
@@ -1240,12 +1253,12 @@ impl Compilation {
         let fixpoint = &mut self.fixpoint;
         for (a, cached, g) in moved {
             if cached {
-                fixpoint.lambda_cache.get_mut()[a] = Some(g);
+                fixpoint.lambda_cache.get_mut()[a] = Some(Arc::new(g));
             } else {
                 let size = backend.size(&g);
                 fixpoint.live = fixpoint.live - fixpoint.sizes[a] + size;
                 fixpoint.sizes[a] = size;
-                fixpoint.formulas[a] = Some(g);
+                fixpoint.formulas[a] = Some(Arc::new(g));
             }
         }
         p.narrowed(i, &vars, &into, built);
@@ -1411,10 +1424,11 @@ impl Compilation {
         // The read stands for `covers` bodies of the component's rules,
         // none where the caller may read the literal again. In a run
         // without a watch the last read of a formula takes it, and the
-        // cached other polarity, rather than copying them: the end of the
-        // component would drop them.
+        // cached other polarity: the end of the component would drop them.
+        // Another read shares them with the store ([`Read::Shared`]), and
+        // the conjunction that reads it reads it in place.
         let derived =
-            |l: GLit, covers: u32, formulas: &mut Formulas| -> Result<Tdd, CompileError> {
+            |l: GLit, covers: u32, formulas: &mut Formulas| -> Result<Read, CompileError> {
                 let b = l.atom() as usize;
                 debug_assert!(
                     dies_after[b] as usize >= next,
@@ -1443,54 +1457,54 @@ impl Compilation {
                 };
                 let own = scope_of(l.atom());
                 let stored_positive = positive.borrow()[b];
-                let stored = |formulas: &mut Formulas| -> Result<Tdd, CompileError> {
+                let stored = |formulas: &mut Formulas| -> Read {
                     let f = if last {
                         formulas.take(b)
                     } else {
-                        formulas[b].as_ref().map(|f| backend.copy(f)).transpose()?
+                        formulas[b].clone()
                     };
-                    Ok(f.unwrap_or_else(|| {
-                        if stored_positive {
-                            backend.zero(own)
-                        } else {
-                            backend.one(own)
-                        }
-                    }))
+                    match f {
+                        Some(f) => Read::taken(f),
+                        None if stored_positive => Read::Owned(backend.zero(own)),
+                        None => Read::Owned(backend.one(own)),
+                    }
                 };
                 if stored_positive == l.is_positive() {
                     if last {
                         lambda_cache.borrow_mut().take(b);
                     }
-                    return stored(formulas);
+                    return Ok(stored(formulas));
                 }
                 match formulation {
                     Formulation::Dual => {
                         let cached = if last {
                             lambda_cache.borrow_mut().take(b)
                         } else {
-                            lambda_cache.borrow()[b]
-                                .as_ref()
-                                .map(|f| backend.copy(f))
-                                .transpose()?
+                            lambda_cache.borrow()[b].clone()
                         };
                         if let Some(f) = cached {
                             if last {
                                 formulas.take(b);
                             }
-                            return Ok(f);
+                            return Ok(Read::taken(f));
                         }
                         let source = if stored_positive {
                             NegationSource::Primal
                         } else {
                             NegationSource::Lambda
                         };
-                        let f = negate(source, stored(formulas)?)?;
-                        if !last {
-                            lambda_cache.borrow_mut()[b] = Some(backend.copy(&f)?);
+                        let f = negate(source, stored(formulas).owned(backend)?)?;
+                        if last {
+                            return Ok(Read::Owned(f));
                         }
-                        Ok(f)
+                        let f = Arc::new(f);
+                        lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
+                        Ok(Read::Shared(f))
                     }
-                    Formulation::Primal => negate(NegationSource::Primal, stored(formulas)?),
+                    Formulation::Primal => Ok(Read::Owned(negate(
+                        NegationSource::Primal,
+                        stored(formulas).owned(backend)?,
+                    )?)),
                 }
             };
         // One application of the operator to atom `a`: the rules of `a` whose
@@ -1536,7 +1550,7 @@ impl Compilation {
                     lambda_cache.borrow_mut().take(a as usize),
                     &formulas[a as usize],
                 ) {
-                    (Some(not_acc), _) => Some(not_acc),
+                    (Some(not_acc), _) => Some(Read::taken(not_acc).owned(backend)?),
                     (None, Some(acc)) => Some(negate(NegationSource::Primal, backend.copy(acc)?)?),
                     (None, None) => None,
                 },
@@ -1548,24 +1562,24 @@ impl Compilation {
             // one's `derived` formula, on `b`'s scope, which the conjunction
             // that reads it moves onto its own, which contains it: a cone
             // holds the cone of everything it depends on.
-            let mut part =
-                |l: GLit, covers: u32, on: &VtreeScope| -> Result<Formula, CompileError> {
-                    let b = l.atom() as usize;
-                    match gp.kinds[b] {
-                        AtomKind::Fact(_) => {
-                            let v = var_of[b].unwrap();
-                            let lit = if l.is_positive() {
-                                tididi::Literal::pos(v)
-                            } else {
-                                tididi::Literal::neg(v)
-                            };
-                            Ok((backend.literal(on, lit)?, on.clone()))
-                        }
-                        AtomKind::Derived => {
-                            Ok((derived(l, covers, formulas)?, scope_of(l.atom()).clone()))
-                        }
+            let mut part = |l: GLit, covers: u32, on: &VtreeScope| -> Result<Part, CompileError> {
+                let b = l.atom() as usize;
+                match gp.kinds[b] {
+                    AtomKind::Fact(_) => {
+                        let v = var_of[b].unwrap();
+                        let lit = if l.is_positive() {
+                            tididi::Literal::pos(v)
+                        } else {
+                            tididi::Literal::neg(v)
+                        };
+                        Ok(Part(Read::Owned(backend.literal(on, lit)?), on.clone()))
                     }
-                };
+                    AtomKind::Derived => Ok(Part(
+                        derived(l, covers, formulas)?,
+                        scope_of(l.atom()).clone(),
+                    )),
+                }
+            };
             let mut factoring = Factoring {
                 backend,
                 gp,
@@ -1597,7 +1611,7 @@ impl Compilation {
                 // every level of it.
                 Formulation::Dual => match formulas[a as usize].as_ref().filter(|_| incremental) {
                     Some(acc) => {
-                        let r = backend.and(backend.copy(acc)?, nb)?;
+                        let r = backend.and(&**acc, nb)?;
                         count(Op::And, 1);
                         (r, None)
                     }
@@ -1655,12 +1669,12 @@ impl Compilation {
         let mut store = |a: AtomId, f: Tdd, size: usize, formulas: &mut Formulas| {
             *live = *live - sizes[a as usize] + size;
             sizes[a as usize] = size;
-            formulas[a as usize] = Some(f);
+            formulas[a as usize] = Some(Arc::new(f));
         };
         if deps::has_internal_negation(gp, by_head, scc) {
             stats.cyclic_components += 1;
             let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
-                backend.embed(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
+                backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
             };
             let mut updates = 0;
             let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f);
@@ -1683,7 +1697,8 @@ impl Compilation {
                 let f = match formulation {
                     Formulation::Primal => lambda,
                     Formulation::Dual => {
-                        lambda_cache.borrow_mut()[a as usize] = Some(backend.copy(&lambda)?);
+                        lambda_cache.borrow_mut()[a as usize] =
+                            Some(Arc::new(backend.copy(&lambda)?));
                         negate(NegationSource::WellFounded, lambda)?
                     }
                 };
@@ -1750,7 +1765,11 @@ impl Compilation {
                         }
                     };
                     let own = scope_of(k);
-                    let (x, y) = (backend.embed(x, own, scope)?, backend.embed(y, own, scope)?);
+                    let placed = |f: Read| match own.same(scope) {
+                        true => Ok(f),
+                        false => backend.embed_read(f, own, scope).map(Read::Owned),
+                    };
+                    let (x, y) = (placed(x)?, placed(y)?);
                     backend.select_at_root(
                         scope,
                         var_of[v as usize].expect("a fact has a variable"),
@@ -1842,7 +1861,7 @@ impl Compilation {
             // the update built, which is the old formula's too when the two
             // are the same, and otherwise nothing once the formula changed.
             if other.is_some() || !same {
-                lambda_cache.borrow_mut()[a as usize] = other;
+                lambda_cache.borrow_mut()[a as usize] = other.map(Arc::new);
             }
             if !same {
                 stats.max_pairs = stats.max_pairs.max(pairs);

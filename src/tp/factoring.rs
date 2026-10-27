@@ -6,6 +6,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use tididi::Tdd;
 use tididi::vtree::VarId;
 
+use super::backend::Part;
 use super::clauses::ClauseMemo;
 use super::stats::Op;
 use super::{CompileError, Formula, NegationSource, Reduce, TddBackend, VtreeScope};
@@ -289,20 +290,21 @@ pub(super) struct Factoring<'a> {
     /// first built every such level, and the conjunction then walked it:
     /// a formula of a decision circuit holds a node or two a level, and
     /// the scope it is read on often twice its own variables.
-    pub(super) part: &'a mut dyn FnMut(GLit, u32, &VtreeScope) -> Result<Formula, CompileError>,
+    pub(super) part: &'a mut dyn FnMut(GLit, u32, &VtreeScope) -> Result<Part, CompileError>,
 }
 
-/// What the formula `f` would count once placed on `on`, which holds its
-/// scope, where it counts `count` (pairs or nodes) on its own: each level
+/// What a formula on `own` would count once placed on `on`, which holds
+/// `own`, where it counts `count` (pairs or nodes) on its own: each level
 /// the placement adds holds at least one node and one pair.
-pub(super) fn placed_count(count: usize, f: &Formula, on: &VtreeScope) -> usize {
-    count + (on.len() - f.1.len())
+pub(super) fn placed_count(count: usize, own: &VtreeScope, on: &VtreeScope) -> usize {
+    count + (on.len() - own.len())
 }
 
 impl Factoring<'_> {
     /// `f` on `on`, which holds its scope.
-    pub(super) fn placed(&self, f: Formula, on: &VtreeScope) -> Result<Tdd, CompileError> {
-        self.backend.embed(f.0, &f.1, on)
+    pub(super) fn placed(&self, f: impl Into<Part>, on: &VtreeScope) -> Result<Tdd, CompileError> {
+        let Part(f, own) = f.into();
+        self.backend.embed_read(f, &own, on)
     }
 
     pub(super) fn fact_literal(&self, l: GLit) -> Option<tididi::Literal> {

@@ -97,6 +97,7 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::hash_map::Entry;
+use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -433,7 +434,7 @@ fn replace(
                 later.into_iter().for_each(|t| readers[t].push(r));
             }
         }
-        compiled.formulas[r as usize] = Some(f);
+        compiled.formulas[r as usize] = Some(Arc::new(f));
         compiled.scopes.push(scope);
         compiled.comp_of[r as usize] = (compiled.scopes.len() - 1) as u32;
     }
@@ -813,7 +814,7 @@ fn groups(
         let link = links.on(backend, compiled, i, &scope)?;
         let pairs = backend.size(&link);
         if let Some((conj, apart, members)) = out.last_mut() {
-            let joined = backend.and(backend.copy(conj)?, backend.copy(&link)?)?;
+            let joined = backend.and(&*conj, &link)?;
             if backend.size(&joined) <= *apart + pairs {
                 (*conj, *apart) = (joined, *apart + pairs);
                 members.push(i);

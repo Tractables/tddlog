@@ -496,7 +496,8 @@ impl EvidenceWalk {
                 continue;
             }
             if let Some(f) = compiled.formulas.take(a as usize) {
-                self.taken.insert(i, f);
+                // No read of a formula outlives its compile: nothing is copied.
+                self.taken.insert(i, Arc::unwrap_or_clone(f));
             }
         }
         !self.taken.is_empty()
@@ -1144,8 +1145,8 @@ impl EvidenceWalk {
                             // Past the cap: the operands go into the batch's
                             // target, or wait on the join's scope.
                             let (_, fa, fb) = *refused;
-                            self.slots[a] = Some(fa);
-                            self.slots[b] = Some(fb);
+                            self.slots[a] = Some(fa.owned(backend)?);
+                            self.slots[b] = Some(fb.owned(backend)?);
                             if let Some(id) = batch {
                                 self.unbatch(id);
                                 continue;
@@ -1158,8 +1159,8 @@ impl EvidenceWalk {
                         }
                         Err(refused) => {
                             let (e, fa, fb) = *refused;
-                            self.slots[a] = Some(fa);
-                            self.slots[b] = Some(fb);
+                            self.slots[a] = Some(fa.owned(backend)?);
+                            self.slots[b] = Some(fb.owned(backend)?);
                             return Err(e);
                         }
                     };
