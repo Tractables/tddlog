@@ -10,8 +10,9 @@
 //! seeded by the query and evidence atoms. Every rule for `p` gets a copy
 //! guarded by `m_p^α(bound head args)`, and every body atom `q` in that copy
 //! yields a magic rule `m_q^β(bound args of q) :- m_p^α(...), <preceding
-//! positive literals>`, following the left-to-right scheduling of
-//! [`super::schedule`]. The atoms themselves are not renamed, so the copies for
+//! literals>`, following the left-to-right scheduling of
+//! [`super::schedule`], of those literals the ones that bear on the bound
+//! arguments of `q`. The atoms themselves are not renamed, so the copies for
 //! different patterns derive into the same predicate; every atom derived is in
 //! the original model, and every atom the queries depend on is derived. A
 //! given predicate, of ground facts or of rules that read only given
@@ -196,6 +197,42 @@ fn given<'a>(
             return given;
         }
     }
+}
+
+/// The literals of `prefix`, positions in `body`, that bear on the values
+/// of `args`: those that share a variable with them, or with a literal
+/// that does, in their order. Another literal only asks that some values
+/// of its own satisfy it, which a demand need not ask: on PSouffle's
+/// side-channel analyses the demand of `equal_assign` with no argument
+/// bound was derived again from each of the 437 million pairs of an
+/// `xor_assign_right` and a `share` before it, 20 s for each of eight
+/// rules.
+fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
+    let mut reached: FxHashSet<String> = FxHashSet::default();
+    for t in args {
+        let mut vs = Vec::new();
+        t.vars_into(&mut vs);
+        reached.extend(vs);
+    }
+    let vars: Vec<Vec<String>> = prefix.iter().map(|&j| literal_vars(&body[j])).collect();
+    let mut kept = vec![false; prefix.len()];
+    let mut grew = true;
+    while grew {
+        grew = false;
+        for (k, vs) in vars.iter().enumerate() {
+            if !kept[k] && vs.iter().any(|v| reached.contains(v)) {
+                kept[k] = true;
+                grew = true;
+                reached.extend(vs.iter().cloned());
+            }
+        }
+    }
+    prefix
+        .iter()
+        .zip(kept)
+        .filter(|(_, k)| *k)
+        .map(|(&j, _)| j)
+        .collect()
 }
 
 /// Rewrite `norm`. Returns the rewritten program, or `None` if some rule
@@ -384,9 +421,10 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
                 if let Some(a) = body_atom {
                     if derived(a) {
                         let sub = adorn(a, &bound_so_far);
-                        let mut body = Vec::with_capacity(1 + prefix.len());
+                        let bearing = bearing(&rule.body, &prefix, &bound_args(a, &sub));
+                        let mut body = Vec::with_capacity(1 + bearing.len());
                         body.push(guard.clone());
-                        body.extend(prefix.iter().map(|&j| rule.body[j].clone()));
+                        body.extend(bearing.iter().map(|&j| rule.body[j].clone()));
                         out.rules
                             .push(Clause::rule(magic_atom(a, &sub), body, u32::MAX));
                         work.push((a.clone(), sub));
@@ -457,7 +495,8 @@ mod tests {
     /// A predicate asked with its argument free, whose rule reads its own
     /// atoms before the bound head argument, is demanded free only: its
     /// demand under a bound argument would call `a` for every pair of a
-    /// bound head and an atom of `r`.
+    /// bound head and an atom of `r`. Its free demand reads none of the
+    /// literals before it, which bind nothing it is asked with.
     #[test]
     fn a_predicate_demanded_free_is_demanded_free_only() {
         let p = parse_program(
@@ -475,8 +514,7 @@ mod tests {
             "{text:?}"
         );
         assert!(
-            text.iter()
-                .any(|t| t.starts_with("'$m_r_f' :- '$m_s_f', b(Z,X)")),
+            text.iter().any(|t| t == "'$m_r_f' :- '$m_s_f'."),
             "{text:?}"
         );
         assert!(
@@ -534,6 +572,30 @@ mod tests {
             text.iter().any(
                 |t| t.starts_with("'$m_q_bf'(X) :- '$m_p_bf'(X), ") && t.contains("\\+nt(s,X)")
             ),
+            "{text:?}"
+        );
+    }
+
+    /// A demand reads the literals before it that bear on its bound
+    /// arguments: `c` is demanded where `a` holds, whatever `b` holds, and
+    /// `b`, with no argument bound, wherever `h` is
+    /// (tests/regress/magic_bearing.pl, by hand).
+    #[test]
+    fn a_demand_reads_the_literals_that_bear_on_it() {
+        let p = parse_program(
+            "0.5::a(1).\n0.4::d(5).\nb(7) :- d(9).\n0.6::c(1,3).\n\
+             h(X) :- a(X), b(Y), c(X,Z).\nquery(h(1)).\n",
+        )
+        .unwrap();
+        let n = normalize(&p).unwrap();
+        let m = rewrite(&n).unwrap();
+        let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
+        assert!(
+            text.contains(&"'$m_c_bf'(X) :- '$m_h_b'(X), a(X).".to_string()),
+            "{text:?}"
+        );
+        assert!(
+            text.contains(&"'$m_b_f' :- '$m_h_b'(X).".to_string()),
             "{text:?}"
         );
     }

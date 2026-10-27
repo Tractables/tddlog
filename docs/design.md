@@ -388,7 +388,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    again, once per bound end.
 3. **Magic sets** (`magic.rs`), wherever the program has variables:
    adorned copies `h :- $m_h(bound args), body` plus demand rules, seeded
-   from the queries and evidence. The rewrite only restricts which ground
+   from the queries and evidence. A demand rule reads the literals before
+   its atom that bear on the atom's bound arguments, those that share a
+   variable with them or with a literal that does: another only asks that
+   some values of its own satisfy it (on PSouffle's side-channel analyses
+   the demand of `equal_assign` with no argument bound was derived again
+   from each of 437 million pairs before it). The rewrite only restricts which ground
    atoms are produced; the control predicates do not reach the compiler. A
    recursive component with internal negation is ground as it is, its
    negative literals left to the compiler; the program as written is the
