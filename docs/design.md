@@ -194,7 +194,19 @@ The parser reads ProbLog without cut:
 - `query/1` (also `query(\+a)`), `query(pattern) :- body.`, and
   `evidence/1,2`.
 
-There are no cut, if-then-else or strings. The grounder lowers the rest
+There are no cut, if-then-else or strings.
+
+A predicate without clauses is not read as false: a query or an
+observation of one, and a call of one that is not a built-in above in a
+clause the queries and the evidence reach, is refused, as ProbLog refuses
+it ("No clauses found"), so that a misspelt name or a built-in of
+ProbLog's that tddlog does not evaluate (`write/1`, `call/1`) stops the
+run rather than give a wrong probability. ProbLog refuses a call only
+once its resolution reaches it, and answers where the call comes after a
+literal that never holds; tddlog, which checks predicates, refuses that
+program too.
+
+The grounder lowers the rest
 to the Datalog the passes after it read (`ground/terms.rs`, before
 normalization): a compound with variables in a clause becomes a variable
 and a unification with one functor in the body, which builds the term

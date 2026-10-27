@@ -892,7 +892,9 @@ mod tests {
 
     #[test]
     fn completed_answers_and_pending_query_survive_size_stops() {
-        let gp = ground("0.5::a. 0.4::b. q :- a,b. query(missing). query(q). query(\\+q).");
+        let gp = ground(
+            "0.5::a. 0.4::b. q :- a,b. missing :- fail. query(missing). query(q). query(\\+q).",
+        );
         let (
             crate::vtree::Layout {
                 vtree: tree, order, ..

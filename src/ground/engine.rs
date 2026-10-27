@@ -38,6 +38,9 @@ pub enum GroundError {
     /// A findall that the grounder cannot list as ProbLog does, whichever
     /// way the program is ground (the grounder's `terms` module).
     Refused(String),
+    /// A query, an observation or a call of a predicate that has no
+    /// clauses, which ProbLog refuses too (the grounder's `terms` module).
+    NoClauses(String),
 }
 
 impl fmt::Display for GroundError {
@@ -52,6 +55,7 @@ impl fmt::Display for GroundError {
                 "the grounding does not end: it builds terms deeper than {MAX_DEPTH}, as {s}"
             ),
             GroundError::Refused(s) => write!(f, "unsupported findall: {s}"),
+            GroundError::NoClauses(s) => write!(f, "no clauses for {s}"),
         }
     }
 }

@@ -25,6 +25,10 @@
 //!   becomes the negation of an auxiliary predicate `'$nt<k>'` over its
 //!   other variables, defined by the atom.
 //!
+//! Before any of it, a query, an observation or a call of a predicate that
+//! has no clauses is refused where the queries and the evidence reach it,
+//! as ProbLog refuses it ([`check_defined`]).
+//!
 //! The predicates a findall reads, its cone, are counted: the engine lists
 //! the solutions in the order of resolution from their derivations, and
 //! refuses a solution with more than one derivation, which ProbLog lists
@@ -62,9 +66,7 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
     let compound = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
     let lowers = |l: &Literal| match l {
         Literal::Pos(a) | Literal::Neg(a) => {
-            a.args.iter().any(compound)
-                || Builtin::of(&a.name, a.args.len()).is_some()
-                || unevaluated(&a.name, a.args.len())
+            a.args.iter().any(compound) || Builtin::of(&a.name, a.args.len()).is_some()
         }
         Literal::Cmp(op, a, b) => {
             !op.arithmetic() && (matches!(a, Term::Compound(_)) || matches!(b, Term::Compound(_)))
@@ -72,28 +74,8 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
         Literal::Findall(_) | Literal::Builtin(..) | Literal::Collect(_) => true,
         Literal::Is(..) => false,
     };
-    let defined = || -> FxHashSet<(&str, usize)> {
-        program
-            .clauses
-            .iter()
-            .flat_map(|c| c.heads.iter().map(|h| h.atom.signature()))
-            .collect()
-    };
-    // A query or an observation of a built-in tddlog does not evaluate.
-    let asked = || {
-        let facts = program
-            .queries
-            .iter()
-            .chain(&program.evidence)
-            .map(|(a, _)| a);
-        facts.chain(program.query_rules.iter().map(|r| &r.pattern))
-    };
-    if asked().any(|a| unevaluated(&a.name, a.args.len())) {
-        let defined = defined();
-        for a in asked() {
-            evaluated(a, &defined)?;
-        }
-    }
+    let defined = by_head(program);
+    check_defined(program, &defined)?;
     if !program.clauses.iter().any(|c| {
         c.heads.iter().any(|h| h.atom.args.iter().any(compound))
             || c.body.iter().any(lowers)
@@ -105,7 +87,6 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
     {
         return Ok((Cow::Borrowed(program), FxHashSet::default()));
     }
-    let defined = defined();
     let mut l = Lowering {
         defined: &defined,
         fresh: 0,
@@ -141,134 +122,119 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
 
 /// The list predicate `a` calls, where the program defines none of its name
 /// and arity.
-fn builtin(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> Option<Builtin> {
+fn builtin(a: &Atom, defined: &ByHead) -> Option<Builtin> {
     let (name, arity) = a.signature();
-    Builtin::of(name, arity).filter(|_| !defined.contains(&(name, arity)))
+    Builtin::of(name, arity).filter(|_| !defined.contains_key(&(name, arity)))
 }
 
-/// Whether `name/arity` is one of ProbLog's built-ins or of its
-/// library(lists) that tddlog does not evaluate.
-fn unevaluated(name: &str, arity: usize) -> bool {
-    matches!(
-        (name, arity),
-        ("call" | "call_nc" | "try_call", 1..=9)
-            | ("nl", 0)
-            | (
-                "once"
-                    | "callable"
-                    | "atom"
-                    | "atomic"
-                    | "compound"
-                    | "float"
-                    | "integer"
-                    | "number"
-                    | "var"
-                    | "nonvar"
-                    | "ground"
-                    | "is_list"
-                    | "is_set"
-                    | "rational"
-                    | "simple"
-                    | "primitive"
-                    | "dbreference"
-                    | "unknown"
-                    | "possible"
-                    | "cmd_args"
-                    | "consult"
-                    | "use_module"
-                    | "unzip",
-                1
-            )
-            | (
-                "=.."
-                    | "succ"
-                    | "forall"
-                    | "atom_number"
-                    | "clause"
-                    | "subquery"
-                    | "module"
-                    | "numbervars"
-                    | "varnumbers"
-                    | "subsumes_term"
-                    | "subsumes_chk"
-                    | "create_scope"
-                    | "call_in_scope"
-                    | "find_scope"
-                    | "nocache"
-                    | "use_module"
-                    | "append"
-                    | "flatten"
-                    | "groupby"
-                    | "head"
-                    | "list_to_set"
-                    | "max_member"
-                    | "min_member"
-                    | "permutation"
-                    | "prefix"
-                    | "proper_length"
-                    | "same_length"
-                    | "subset"
-                    | "memberchk_search",
-                2
-            )
-            | (
-                "arg"
-                    | "functor"
-                    | "plus"
-                    | "compare"
-                    | "all"
-                    | "all_or_none"
-                    | "numbervars"
-                    | "sample_uniform1"
-                    | "clause"
-                    | "subquery"
-                    | "subquery_in_scope"
-                    | "delete"
-                    | "flatten"
-                    | "intersection"
-                    | "make_list"
-                    | "max_member"
-                    | "min_member"
-                    | "nextto"
-                    | "numlist"
-                    | "select"
-                    | "selectchk"
-                    | "subtract"
-                    | "union"
-                    | "unzip"
-                    | "zip"
-                    | "max_list"
-                    | "min_list"
-                    | "reverse"
-                    | "sum_list",
-                3
-            )
-            | (
-                "subquery_in_scope"
-                    | "select"
-                    | "selectchk"
-                    | "select_uniform"
-                    | "select_weighted"
-                    | "groupby",
-                4
-            )
-            | ("subquery" | "select_weighted" | "sub_list", 5)
-            | ("subquery_in_scope" | "sub_list" | "sw", 6)
-    )
+/// The predicates the program's clauses define, by their heads, each with
+/// those of its clauses that have a body.
+type ByHead<'p> = FxHashMap<(&'p str, usize), Vec<&'p Clause>>;
+
+/// [`ByHead`] of `program`.
+fn by_head(program: &Program) -> ByHead<'_> {
+    // The clauses of a predicate mostly come one after another: a run of
+    // them is looked up once.
+    let mut runs: Vec<((&str, usize), Vec<&Clause>)> = Vec::new();
+    for c in &program.clauses {
+        for h in &c.heads {
+            let sig = h.atom.signature();
+            if runs.last().is_none_or(|(s, _)| *s != sig) {
+                runs.push((sig, Vec::new()));
+            }
+            if !c.body.is_empty() {
+                runs.last_mut().expect("a run").1.push(c);
+            }
+        }
+    }
+    let mut out = ByHead::default();
+    for (sig, rules) in runs {
+        out.entry(sig).or_default().extend(rules);
+    }
+    out
 }
 
-/// Refuses a call of one of ProbLog's built-ins that tddlog does not
-/// evaluate (call/1, plus/3, select/3, ...), where the program defines no
-/// predicate of its name and arity: tddlog would read it as a predicate
-/// without clauses, false, where ProbLog evaluates it.
-fn evaluated(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> Result<(), GroundError> {
-    let (name, arity) = a.signature();
-    if unevaluated(name, arity) && !defined.contains(&(name, arity)) {
-        return Err(GroundError::Unsupported(format!(
-            "{name}/{arity} is a built-in of ProbLog's that tddlog does not evaluate, in {a}"
-        )));
+/// Refuses what ProbLog stops on with its "No clauses found": a query or an
+/// observation of a predicate that no clause defines, and a call of one
+/// that is not a built-in tddlog evaluates, in a clause of a predicate the
+/// queries and the evidence reach, or in a query rule. tddlog would read
+/// such a predicate as false: a misspelt name, or a built-in of ProbLog's
+/// it does not evaluate (`write/1`, `call/1`, `select/3`), would give a
+/// wrong probability. ProbLog stops where its resolution reaches the call,
+/// so it also answers a program whose call comes after a literal that
+/// never holds, or in a clause whose head unifies with no call; tddlog
+/// refuses those too.
+fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError> {
+    let mut reached: FxHashSet<(&str, usize)> = FxHashSet::default();
+    let mut stack: Vec<(&str, usize)> = Vec::new();
+    let asked = [("query", &program.queries), ("evidence", &program.evidence)]
+        .into_iter()
+        .flat_map(|(what, atoms)| atoms.iter().map(move |(a, positive)| (what, a, *positive)))
+        .chain(
+            program
+                .query_rules
+                .iter()
+                .map(|r| ("query", &r.pattern, r.positive)),
+        );
+    for (what, a, positive) in asked {
+        let sig = a.signature();
+        if !defined.contains_key(&sig) {
+            let sign = if positive { "" } else { "\\+" };
+            let body = match Builtin::of(sig.0, sig.1) {
+                Some(_) => " (tddlog evaluates this built-in in a clause's body only)",
+                None => "",
+            };
+            return Err(GroundError::NoClauses(format!(
+                "{}/{}, asked in {what}({sign}{a}){body}",
+                sig.0, sig.1
+            )));
+        }
+        if reached.insert(sig) {
+            stack.push(sig);
+        }
+    }
+    let called = |a: &Atom, at: &dyn std::fmt::Display| {
+        let (name, arity) = a.signature();
+        GroundError::NoClauses(format!(
+            "{name}/{arity}, called in {at}, nor is it a built-in tddlog evaluates"
+        ))
+    };
+    for r in &program.query_rules {
+        if let Some(a) = first_undefined(&r.body, defined, &mut reached, &mut stack) {
+            return Err(called(a, &format!("a query rule for {}", r.pattern)));
+        }
+    }
+    while let Some(sig) = stack.pop() {
+        for c in defined.get(&sig).into_iter().flatten() {
+            if let Some(a) = first_undefined(&c.body, defined, &mut reached, &mut stack) {
+                return Err(called(a, c));
+            }
+        }
     }
     Ok(())
+}
+
+/// The first atom `body` calls whose predicate has no clauses and is not a
+/// built-in tddlog evaluates; each predicate with clauses that it calls is
+/// pushed on `stack` the first time it is `reached`.
+fn first_undefined<'p>(
+    body: &'p [Literal],
+    defined: &ByHead<'p>,
+    reached: &mut FxHashSet<(&'p str, usize)>,
+    stack: &mut Vec<(&'p str, usize)>,
+) -> Option<&'p Atom> {
+    let mut missing = None;
+    calls(body, &mut |a| {
+        let sig = a.signature();
+        if defined.contains_key(&sig) {
+            if reached.insert(sig) {
+                stack.push(sig);
+            }
+        } else if missing.is_none() && Builtin::of(sig.0, sig.1).is_none() {
+            missing = Some(a);
+        }
+    });
+    missing
 }
 
 /// Spreads each argument of a predicate that is, in every head and every
@@ -367,9 +333,7 @@ fn spread_plan(program: &Program) -> FxHashMap<Pred, Vec<Option<usize>>> {
         let arity = at.iter().map(|s| s.as_ref().map_or(1, |(_, k)| *k)).sum();
         let (name, old) = pred;
         if arity != *old
-            && (Builtin::of(name, arity).is_some()
-                || unevaluated(name, arity)
-                || !taken.insert((name.clone(), arity)))
+            && (Builtin::of(name, arity).is_some() || !taken.insert((name.clone(), arity)))
         {
             continue;
         }
@@ -382,7 +346,7 @@ fn spread_plan(program: &Program) -> FxHashMap<Pred, Vec<Option<usize>>> {
 }
 
 /// Each atom `body` calls, in findalls' goals too.
-fn calls(body: &[Literal], f: &mut impl FnMut(&Atom)) {
+fn calls<'a>(body: &'a [Literal], f: &mut impl FnMut(&'a Atom)) {
     for l in body {
         match l {
             Literal::Pos(a) | Literal::Neg(a) => f(a),
@@ -412,7 +376,7 @@ fn calls_mut(body: &mut [Literal], f: &impl Fn(&mut Atom)) {
 }
 
 struct Lowering<'a, 'p> {
-    defined: &'a FxHashSet<(&'p str, usize)>,
+    defined: &'a ByHead<'p>,
     /// Fresh variables made, and auxiliary predicates.
     fresh: usize,
     aux: usize,
@@ -590,9 +554,6 @@ impl Lowering<'_, '_> {
             })
             .collect();
         for (i, l) in body.into_iter().enumerate() {
-            if let Literal::Pos(a) | Literal::Neg(a) = &l {
-                evaluated(a, self.defined)?;
-            }
             match l {
                 Literal::Pos(a) => match builtin(&a, self.defined) {
                     Some(b) => {

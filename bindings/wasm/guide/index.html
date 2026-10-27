@@ -248,6 +248,10 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
   <ul>
     <li>strings, cut, if-then-else and the built-ins beyond arithmetic,
     comparison, the list predicates and <code>findall/3</code>;</li>
+    <li>a query, an observation or a call of a predicate that has no
+    clauses, which ProbLog refuses too: a misspelt name stops tddlog
+    rather than read as false, though a call that no query and no
+    observation reaches is left alone;</li>
     <li>a <code>findall/3</code> over a probabilistic goal, whose answer
     in ProbLog is a distribution over lists, over a recursive goal, or
     with a solution that has two proofs, which ProbLog lists twice;</li>
@@ -265,8 +269,8 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
   in</p>
 <pre data-lang="shell">$ tddlog choice.pl
 parse error: line 1: if-then-else is not supported</pre>
-  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 54, reports as
-  errors the 7 that ProbLog expects to fail, and reports the other 48 as
+  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 52, reports as
+  errors the 9 that ProbLog expects to fail, and reports the other 48 as
   unsupported (<a href="https://github.com/Tractables/tddlog/blob/main/tests/problog_suite.py"><code>tests/problog_suite.py</code></a>).</p>
 </section>
 
