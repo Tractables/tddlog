@@ -244,8 +244,10 @@ says how each system was given each suite and what it was not given.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-ProbLog programs: the standard suite, the literature suite's families
-and Biomine.
+ProbLog programs of 13 families: paths in random graphs and in grids,
+Biomine's paths, smokers, UW-CSE, Cora's citation matching, blood types,
+pedigrees, sickness, Mastermind, MNIST addition, Prob-EC's event
+calculus and taint analyses of Android apps.
 
 - tddlog answers **120 of 129** in 1.2 h. The best other system,
   Alea.jl, answers 65 in 5.9 h, and the virtual best of all other
@@ -263,8 +265,9 @@ and Biomine.
        alt="Probabilistic database queries answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-Boolean queries over tuple-independent databases: the TPC-H queries and
-the literature suite's pdb family.
+Boolean queries over tuple-independent databases: 16 TPC-H queries,
+the queries h0 and h1, the safe queries QW and Q9, and paths of two
+edges in random graphs.
 
 - tddlog answers **308 of 320** in 2.3 h. The best other system,
   ProvSQL, answers 284 in 5.2 h, and the virtual best of all other
@@ -279,10 +282,11 @@ the literature suite's pdb family.
        alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-bnlearn's networks, Ace's, the large networks, the noisy-or networks,
-the networks of the Dice, Roulette and noDice papers, and the UAI 2022
-networks whose factors are conditional probability tables, the Promedus
-diagnosis and or_chain networks among them.
+bnlearn's networks, the large ones and the Roulette and noDice papers'
+versions among them, Ace's networks, the noisy-or networks, and the
+UAI 2022 networks whose factors are conditional probability tables:
+Promedus diagnosis, pedigree, or_chain and BN networks, and the
+blockmap, Mastermind and fs networks that Ace's benchmarks also have.
 
 - tddlog answers **291 of 292** in 7 min. The best other system,
   Ace, answers 272 in 2.6 h, and the virtual best of all other
@@ -297,7 +301,8 @@ diagnosis and or_chain networks among them.
 
 The other UAI 2022 networks, whose factors are not conditional
 probability tables over an acyclic graph: object detection,
-segmentation and grid networks, protein networks and random networks.
+segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
+the rus networks and weighted CSPs.
 
 - tddlog answers **215 of 263** in 4.6 h. The best other system,
   TensorInference.jl, answers 187 in 9.1 h, and the virtual best of all other
@@ -313,9 +318,13 @@ segmentation and grid networks, protein networks and random networks.
        alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-Programs over discrete values with conditionals and loops: the Dice
-paper's programs and loops, Roulette's, Geni's, noDice's and Pluck's
-programs, and Cao et al.'s integer programs.
+Programs over discrete values with conditionals and loops, of 16
+families: the Caesar cipher, diamond and ladder networks, Geni's router
+grids with failing links or routers and its weather factory, hidden
+Markov models and Pluck's sequence models, a Markov chain, a lossy
+network, contract signing, a perturbed-memory interpreter, Cao et al.'s
+integer programs, the coupon collector, 3-SAT and the Dice paper's small
+programs.
 
 - tddlog answers **222 of 258** in 7.1 h. The best other system,
   Storm, answers 174 in 16 h, and the virtual best of all other

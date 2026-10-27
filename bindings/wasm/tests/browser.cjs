@@ -639,12 +639,12 @@ function benchmarksOf(root) {
     // for each system drawn, k and T the data's over all N instances, a run
     // that does not answer or was not given counted at its limit and a time
     // under 0.2 s at 0.2 s; its axis goes to all N, linear from 0; its board
-    // lists every system of the category, and its filters narrow it to a
-    // source or a system's own benchmarks. The menu lists the categories,
-    // then the solvers by their answers, each solver with a page of its own
-    // (#/system/KEY): its plot against tddlog over every instance of the
-    // categories it was given, then one in each category against the
-    // others. A suite's view (#/SUITE) plots the suite's systems, its legend
+    // lists every system of the category, its table of families narrows it
+    // to a family and its filters to a system's own benchmarks. The menu
+    // lists the categories, then the solvers by their answers, each solver
+    // with a page of its own (#/system/KEY): its plot against tddlog over
+    // every instance of the categories it was given, then one in each
+    // category against the others. A suite's view (#/SUITE) plots the suite's systems, its legend
     // "answers k of N", and tddlog against each system given some of the
     // same instances; a plot of more than five lines there draws tddlog's
     // and the three that answer the most in colour.
@@ -798,27 +798,46 @@ function benchmarksOf(root) {
       assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
         sides(rows, c.drawn.filter((x) => x !== "tddlog")), `${what}: tddlog against the fastest other system`);
       assert.match(await page.textContent("#view p.headline"), new RegExp(`^tddlog ${count(c.answers.tddlog)} of ${count(c.instances)} in `), `${what}: its headline`);
-      const filters = c.sources.length + c.systems.filter((x) => c.classes[x].own > 0).length;
+      const filters = c.systems.filter((x) => c.classes[x].own > 0).length;
       assert.equal((await page.$$("#view nav.filters a")).length, filters ? filters + 1 : 0, `${what}: its filters`);
+      assert.deepEqual(await page.$$eval("#view table.families tbody th a", (as) => as.map((a) => a.getAttribute("href"))),
+        c.groups.map((g) => `#/category/${c.key}/in/${encodeURIComponent(g.key)}`), `${what}: its families`);
+      assert.equal(c.groups.reduce((n, g) => n + g.rows.length, 0), c.instances, `${what}: each instance in one family`);
       assert.equal(await page.title(), `${c.title} · tddlog results`);
     }
     console.log(`ok the categories ${categories.map((c) => `${c.key} ${c.instances}`).join(", ")}: every system of a category over all of its instances`);
-    // A category narrowed to a source: the address names it, the plot and the
-    // board count its instances alone.
+    // A category narrowed to a family, from its table of families, and to a
+    // system's own benchmarks: the address names it, the plot and the board
+    // count its instances alone, and the menu marks the family. An address
+    // that narrowed a category to a suite opens the category whole.
+    for (const c of [categories.find((x) => x.groups.length > 1), categories.find((x) => x.systems.some((y) => x.classes[y].own > 0))]) {
+      const g = c.groups.find((x) => x.rows.length > 1) ?? c.groups[0];
+      const x = c.systems.find((y) => c.classes[y].own > 0);
+      for (const [only, from] of [[g.key, "table.families"], ...(x ? [[`own:${x}`, "nav.filters"]] : [])]) {
+        const h = `#/category/${c.key}/in/${encodeURIComponent(only)}`;
+        await visit(`#/category/${c.key}`, from);
+        await page.click(`#view ${from} a[href="${h}"]`);
+        await page.waitForFunction((h) => location.hash === h && document.querySelector("#view nav.filters a[aria-current]")?.getAttribute("href") === h, h);
+        const j = only.startsWith("own:") ? c.systems.indexOf(only.slice(4)) : -1;
+        const rows = rowsOf(c).filter((r, i) => (j >= 0 ? r.cls[j] === "o" : g.rows.includes(i)));
+        assert.equal((await shown()).instances, rows.length, `${c.key} narrowed to ${only}: its instances`);
+        const tddlog = await page.$eval("#view table.board tr.mine td", (td) => td.textContent.trim().replace(/,/g, ""));
+        assert.equal(tddlog, String(virtual(rows, ["tddlog"]).answers), `${c.key} narrowed to ${only}: tddlog's answers`);
+        if (j < 0) {
+          assert.equal(await page.getAttribute(`#tree a[href="${h}"]`, "aria-current"), "page", `${c.key} narrowed to ${only}: the menu`);
+          assert.equal(await page.textContent("#view h2"), g.title, `${c.key} narrowed to ${only}: its title`);
+        }
+        console.log(`ok ${c.key} narrowed to ${only}, ${rows.length} instances`);
+      }
+    }
     {
-      const c = categories.find((x) => x.sources.length) ?? categories.find((x) => x.systems.some((y) => x.classes[y].own > 0));
-      const only = c.sources[0]?.key ?? `own:${c.systems.find((y) => c.classes[y].own > 0)}`;
-      await visit(`#/category/${c.key}`, "nav.filters a");
-      await page.click(`#view nav.filters a[href="#/category/${c.key}/in/${encodeURIComponent(only)}"]`);
-      await page.waitForFunction((h) => location.hash === h && document.querySelector("#view nav.filters a[aria-current]")?.getAttribute("href") === h,
-        `#/category/${c.key}/in/${encodeURIComponent(only)}`);
-      const j = only.startsWith("own:") ? c.systems.indexOf(only.slice(4)) : -1;
-      const source = c.sources.find((s) => s.key === only);
-      const rows = rowsOf(c).filter((r) => (j >= 0 ? r.cls[j] === "o" : source.suites.includes(r.suite)));
-      assert.equal((await shown()).instances, rows.length, `${c.key} narrowed to ${only}: its instances`);
-      const tddlog = await page.$eval("#view table.board tr.mine td", (td) => td.textContent.trim().replace(/,/g, ""));
-      assert.equal(tddlog, String(virtual(rows, ["tddlog"]).answers), `${c.key} narrowed to ${only}: tddlog's answers`);
-      console.log(`ok ${c.key} narrowed to ${only}, ${rows.length} instances`);
+      const c = categories[0];
+      const suite = [...new Set(c.rows.map((r) => r[0]))].find((k) => !c.groups.some((g) => g.key === k));
+      const whole = `#/category/${c.key}`;
+      await page.evaluate((h) => { location.hash = h; }, `${whole}/in/${suite}`);
+      await page.waitForFunction((h) => location.hash === h && document.querySelector(`#view[data-route="${h}"] figure.plot svg.cactus path.line`)
+        && (document.querySelector("#view nav.filters a[aria-current]")?.getAttribute("href") ?? h) === h, whole);
+      assert.equal((await shown()).instances, c.instances, "a category narrowed to a suite opens whole: its instances");
     }
     // A category's times set against one system, from its name on the
     // board: the address names it, the menu holds it, its row is marked and
@@ -1118,7 +1137,7 @@ function benchmarksOf(root) {
       await page.click("#view table.grid tbody tr.on td button");
       await page.waitForSelector("#drawer:not([hidden]) h4");
       await page.click("#view .crumbs a >> nth=-1");
-      await page.waitForSelector(`#view[data-route="#/${family.suite}"]`);
+      await page.waitForSelector(`#view[data-route^="#/category/"]`);
       await page.waitForSelector("#drawer", { state: "hidden" });
 
       // The program tddlog read opens in the playground, from the instance's
