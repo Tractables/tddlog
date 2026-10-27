@@ -2,6 +2,7 @@
 //! in dependency order, and the compiled program it leaves.
 
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::borrow::Cow;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -1158,7 +1159,7 @@ impl Compilation {
                                 negated = Some(self.negations.borrow_mut().negate(
                                     backend,
                                     NegationSource::Query,
-                                    backend.copy(f)?,
+                                    &**f,
                                 )?);
                             }
                             Ok(crate::eval::mass(
@@ -1394,7 +1395,7 @@ impl Compilation {
         let counts = &self.counts;
         let count = |op: Op, n: usize| counts.borrow_mut()[op as usize] += n;
         let negations = &self.negations;
-        let negate = |source: NegationSource, f: Tdd| -> Result<Tdd, CompileError> {
+        let negate = |source: NegationSource, f: Cow<'_, Tdd>| -> Result<Tdd, CompileError> {
             let r = negations.borrow_mut().negate(backend, source, f)?;
             count(Op::Negate, 1);
             Ok(r)
@@ -1493,7 +1494,7 @@ impl Compilation {
                         } else {
                             NegationSource::Lambda
                         };
-                        let f = negate(source, stored(formulas).owned(backend)?)?;
+                        let f = stored(formulas).with_cow(|f| negate(source, f))?;
                         if last {
                             return Ok(Read::Owned(f));
                         }
@@ -1501,10 +1502,9 @@ impl Compilation {
                         lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
                         Ok(Read::Shared(f))
                     }
-                    Formulation::Primal => Ok(Read::Owned(negate(
-                        NegationSource::Primal,
-                        stored(formulas).owned(backend)?,
-                    )?)),
+                    Formulation::Primal => Ok(Read::Owned(
+                        stored(formulas).with_cow(|f| negate(NegationSource::Primal, f))?,
+                    )),
                 }
             };
         // One application of the operator to atom `a`: the rules of `a` whose
@@ -1551,7 +1551,9 @@ impl Compilation {
                     &formulas[a as usize],
                 ) {
                     (Some(not_acc), _) => Some(Read::taken(not_acc).owned(backend)?),
-                    (None, Some(acc)) => Some(negate(NegationSource::Primal, backend.copy(acc)?)?),
+                    (None, Some(acc)) => {
+                        Some(negate(NegationSource::Primal, Cow::Borrowed(&**acc))?)
+                    }
                     (None, None) => None,
                 },
                 _ => None,
@@ -1617,7 +1619,9 @@ impl Compilation {
                     }
                     None => (nb, None),
                 },
-                Formulation::Primal if !started => (negate(NegationSource::Primal, nb)?, None),
+                Formulation::Primal if !started => {
+                    (negate(NegationSource::Primal, nb.into())?, None)
+                }
                 // `λ_a ∨ ¬nb` as `¬(¬λ_a ∧ nb)`: the disjunction of `λ_a`
                 // with the negated `nb` negated both operands, and so took
                 // `nb` back to itself, two negations of its four. The
@@ -1634,11 +1638,9 @@ impl Compilation {
                 Formulation::Primal => {
                     let mut c = nb;
                     backend.minimize(&mut c, Reduce::Settled)?;
-                    let r = negations.borrow_mut().negate(
-                        backend,
-                        NegationSource::Primal,
-                        backend.copy(&c)?,
-                    )?;
+                    let r = negations
+                        .borrow_mut()
+                        .negate(backend, NegationSource::Primal, &c)?;
                     count(Op::Or, 1);
                     (r, Some(c))
                 }
@@ -1677,7 +1679,7 @@ impl Compilation {
                 backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
             };
             let mut updates = 0;
-            let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f);
+            let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f.into());
             let result = aft::compile_component(
                 gp,
                 by_head,
@@ -1697,9 +1699,9 @@ impl Compilation {
                 let f = match formulation {
                     Formulation::Primal => lambda,
                     Formulation::Dual => {
-                        lambda_cache.borrow_mut()[a as usize] =
-                            Some(Arc::new(backend.copy(&lambda)?));
-                        negate(NegationSource::WellFounded, lambda)?
+                        let f = negate(NegationSource::WellFounded, Cow::Borrowed(&lambda))?;
+                        lambda_cache.borrow_mut()[a as usize] = Some(Arc::new(lambda));
+                        f
                     }
                 };
                 let size = backend.size(&f);

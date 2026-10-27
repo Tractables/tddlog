@@ -2,6 +2,7 @@
 //! literals the bodies share.
 
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::borrow::Cow;
 
 use tididi::Tdd;
 use tididi::vtree::VarId;
@@ -227,6 +228,10 @@ impl Exclusive {
 /// refuses it.
 pub(super) type Checked<T> = Result<T, (Tdd, usize)>;
 
+/// Negates a formula, owned or lent, counted under the given source.
+pub(super) type Negate<'a> =
+    dyn for<'f> Fn(NegationSource, Cow<'f, Tdd>) -> Result<Tdd, CompileError> + 'a;
+
 /// Builds `⋀_r ¬body_r` over a set of rule bodies by factoring out shared
 /// literals: `⋀_r ¬body_r = ¬(L ∧ ¬⋀_{r∋L} ¬body_r\\L) ∧ ⋀_{r∌L} ¬body_r`,
 /// with `L` the literal in the most bodies, recursively. The bodies of one
@@ -274,7 +279,7 @@ pub(super) struct Factoring<'a> {
     /// Counts that many operations of the given kind.
     pub(super) count: &'a dyn Fn(Op, usize),
     /// Negates, counted under the given source.
-    pub(super) negate: &'a dyn Fn(NegationSource, Tdd) -> Result<Tdd, CompileError>,
+    pub(super) negate: &'a Negate<'a>,
     /// The source of the terms: [`NegationSource::LinkTerm`] for a link,
     /// [`NegationSource::Term`] otherwise.
     pub(super) term: NegationSource,
@@ -432,7 +437,7 @@ impl Factoring<'_> {
         scope: &VtreeScope,
     ) -> Result<Tdd, CompileError> {
         let mu = self.negated_bodies_on(bodies, &[], scope, None)?;
-        (self.negate)(NegationSource::Disjunction, mu)
+        (self.negate)(NegationSource::Disjunction, mu.into())
     }
 
     /// The scope the bodies and the rules of pairs are built on: `parent`
@@ -704,7 +709,7 @@ impl Factoring<'_> {
                 continue;
             }
             let both = (self.watched)(self.placed(positive, &own)?, self.head)?;
-            let term = (self.negate)(self.term, both)?;
+            let term = (self.negate)(self.term, both.into())?;
             terms.push((term, own));
         }
         terms.extend(start.map(|f| (f, scope.clone())));
