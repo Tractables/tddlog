@@ -6,6 +6,7 @@
 use crate::common;
 
 use common::Rows;
+use tddlog::ground::{GroundOptions, GroundProgram};
 use tddlog::{Kind, Strategy};
 
 const PRIOR: [f64; 3] = [0.5, 0.3, 0.2];
@@ -46,8 +47,8 @@ fn chain(steps: usize) -> String {
     source
 }
 
-/// P(h_last = v | o) for each v, by the forward pass.
-fn forward(steps: usize) -> Vec<(String, f64)> {
+/// P(h_last = v, o) for each v, by the forward pass.
+fn alpha(steps: usize) -> Vec<f64> {
     let seen = |i: usize, v: usize| if observed(i) { SEEN[v] } else { 1.0 - SEEN[v] };
     let mut alpha: Vec<f64> = (0..3).map(|v| PRIOR[v] * seen(0, v)).collect();
     for i in 1..steps {
@@ -55,6 +56,12 @@ fn forward(steps: usize) -> Vec<(String, f64)> {
             .map(|w| (0..3).map(|v| alpha[v] * MOVE[v][w]).sum::<f64>() * seen(i, w))
             .collect();
     }
+    alpha
+}
+
+/// P(h_last = v | o) for each v, by the forward pass.
+fn forward(steps: usize) -> Vec<(String, f64)> {
+    let alpha = alpha(steps);
     let total: f64 = alpha.iter().sum();
     alpha
         .iter()
@@ -63,31 +70,38 @@ fn forward(steps: usize) -> Vec<(String, f64)> {
         .collect()
 }
 
+/// Each strategy, and the steps of the chain it runs. Under closed and td
+/// the evidence grows exponentially along the chain: closed's from 16 910
+/// pairs at 16 steps to 4.16 M at 20, td's from 5 867 at 3 steps to
+/// 3.65 M at 6, where auto's grows by 79 a step.
+const RUNS: [(Strategy, usize); 6] = [
+    (Strategy::Auto, 40),
+    (Strategy::Trial(Kind::Families { search: true }), 40),
+    (Strategy::Trial(Kind::Families { search: false }), 40),
+    (Strategy::Trial(Kind::Dynamic), 40),
+    (Strategy::Trial(Kind::Closed), 12),
+    (Strategy::Trial(Kind::Td), 4),
+];
+
+/// The ground program `gp` of the chain of `steps` solved under
+/// `strategy`.
+fn solve(gp: GroundProgram, strategy: Strategy, steps: usize) -> tddlog::Run {
+    // dynamic changes the one vtree every formula lives on.
+    let projection = if strategy == Strategy::Trial(Kind::Dynamic) {
+        tddlog::Projection::Off
+    } else {
+        tddlog::Projection::default()
+    };
+    tddlog::solve_ground(gp, &common::options(strategy, projection))
+        .unwrap_or_else(|e| panic!("{strategy:?}, {steps} steps: {e}"))
+}
+
 #[test]
 fn a_chain_observed_at_every_step() {
     use Kind::*;
-    // Under closed and td the evidence grows exponentially along the chain:
-    // closed's from 16 910 pairs at 16 steps to 4.16 M at 20, td's from
-    // 5 867 at 3 steps to 3.65 M at 6, where auto's grows by 79 a step.
-    let runs = [
-        (Strategy::Auto, 40),
-        (Strategy::Trial(Families { search: true }), 40),
-        (Strategy::Trial(Families { search: false }), 40),
-        (Strategy::Trial(Dynamic), 40),
-        (Strategy::Trial(Closed), 12),
-        (Strategy::Trial(Td), 4),
-    ];
-    for (strategy, steps) in runs {
-        let source = chain(steps);
-        let gp = common::ground(&source, Rows::Classes, false);
-        // dynamic changes the one vtree every formula lives on.
-        let projection = if strategy == Strategy::Trial(Dynamic) {
-            tddlog::Projection::Off
-        } else {
-            tddlog::Projection::default()
-        };
-        let run = tddlog::solve_ground(gp, &common::options(strategy, projection))
-            .unwrap_or_else(|e| panic!("{strategy:?}, {steps} steps: {e}"));
+    for (strategy, steps) in RUNS {
+        let gp = common::ground(&chain(steps), Rows::Classes, false);
+        let run = solve(gp, strategy, steps);
         common::assert_answers(
             &format!("{strategy:?}, {steps} steps"),
             run.results.as_ref().unwrap(),
@@ -110,4 +124,35 @@ fn a_chain_observed_at_every_step() {
         &forward(40),
         1e-12,
     );
+}
+
+#[test]
+fn a_chain_without_queries_is_summed_out_as_it_is_walked() {
+    // With no query, only P(o) is wanted: the walk's joins sum out the
+    // steps no later join reads (src/query/sum_out.rs), and P(o) is the
+    // last join's weighted value, against the forward pass's. Nothing is
+    // detached, so that P(o) is counted (`GroundOptions::detach`).
+    let mut summing = 0;
+    for (strategy, steps) in RUNS {
+        let program = tddlog::syntax::parse_program(&chain(steps))
+            .unwrap()
+            .without_queries();
+        let options = GroundOptions {
+            detach: false,
+            ..Rows::Classes.options()
+        };
+        let gp = tddlog::ground::ground(&program, &options).unwrap();
+        let run = solve(gp, strategy, steps);
+        let p = run
+            .evidence_probability
+            .unwrap_or_else(|| panic!("{strategy:?}, {steps} steps: no P(o)"));
+        let want: f64 = alpha(steps).iter().sum();
+        assert!(
+            (p.log10() - want.log10()).abs() < 1e-12,
+            "{strategy:?}, {steps} steps: P(o) = {} against {want}",
+            p.to_f64()
+        );
+        summing += run.query_sizes.summing_joins;
+    }
+    assert!(summing > 0, "no join summed out");
 }

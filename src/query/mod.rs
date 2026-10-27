@@ -6,6 +6,7 @@
 //! A formula is therefore evaluated on its own scope, and only a conjunction
 //! of two formulas needs them brought together on the scope holding both.
 
+mod sum_out;
 mod walk;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -109,6 +110,12 @@ pub struct QuerySizes {
     pub names_expanded: usize,
     /// The work units settling the names took, in the query phase's.
     pub names_work: u64,
+    /// The evidence walk's joins that summed out finished subtrees as they
+    /// were built, and its other joins with an operand that carried the
+    /// facts' weights, where no query reads the evidence formula
+    /// (`query::sum_out`).
+    pub summing_joins: usize,
+    pub weighted_joins: usize,
 }
 
 impl QuerySizes {
@@ -192,6 +199,12 @@ impl QueryEvaluation {
             let i = v.0 as usize;
             (weights.pos[i], weights.neg[i], weights.one[i]) = (0.5, 0.5, 1.0);
         }
+        // Where no query reads the evidence formula, only its count is
+        // wanted, and the walk sums out what no later join reads.
+        let mut walk = EvidenceWalk::new(observed, &backend.vtree());
+        if gp.queries.iter().all(|(_, id, _)| id.is_none()) {
+            walk.sum_out(&backend.vtree(), &weights);
+        }
         let settled = &compiled.for_queries.settled;
         Self {
             weights,
@@ -201,7 +214,7 @@ impl QueryEvaluation {
                 .evidence
                 .iter()
                 .any(|(_, a, value)| a.is_none() && *value),
-            walk: EvidenceWalk::new(observed, &backend.vtree()),
+            walk,
             evidence: None,
             mass: None,
             counted: None,
@@ -402,12 +415,28 @@ impl QueryEvaluation {
                 // would take again in `Count`s. The queries read the pass
                 // down too, which is taken when one reads it.
                 let t = Instant::now();
-                if self.counted.is_none() {
-                    let c = CountedEvidence::new(e, scope, w, &mut sizes.recounts)?;
-                    sizes.grid_pairs = c.counted.grid_pairs();
-                    self.counted = Some(c);
+                if e.has_marginal_level() {
+                    // The walk summed the evidence out as it built it: its
+                    // value is the mass, a scaled float.
+                    let value = backend
+                        .engine
+                        .weighted_value(e)?
+                        .expect("a summed-out evidence formula carries its weights");
+                    let mass = value
+                        .as_scaled()
+                        .expect("the walk sums out in scaled floats");
+                    self.mass = Some(match mass.mantissa() {
+                        0.0 => Count::ZERO,
+                        m => Count::new(m).shifted(mass.exponent()),
+                    });
+                } else {
+                    if self.counted.is_none() {
+                        let c = CountedEvidence::new(e, scope, w, &mut sizes.recounts)?;
+                        sizes.grid_pairs = c.counted.grid_pairs();
+                        self.counted = Some(c);
+                    }
+                    self.mass = Some(self.counted.as_ref().unwrap().total(e));
                 }
-                self.mass = Some(self.counted.as_ref().unwrap().total(e));
                 sizes.count_seconds += t.elapsed().as_secs_f64();
             }
             // Only a mass that is zero as a count: in a float the
