@@ -215,10 +215,13 @@ lists, or where a solution has two proofs, which ProbLog lists twice.
 Rules must be range restricted, but for variables a demand binds; a body
 is reordered so that binding literals come first and switches last, as
 they bind nothing and reject no binding (`ground/schedule.rs`, shared by
-the grounder and the magic rewrite). Where the grounder joins a body, an
-atom whose variables are all unbound after some are bound waits for the
-first atom that shares one, rather than pair each of its tuples with
-each binding so far; the magic rewrite passes the bindings in the order
+the grounder and the magic rewrite). Where the grounder joins a body, the
+next atom is one whose variables are all bound, else the one that shares
+the most bound variables, the first in source order among equals: an
+atom whose variables are all unbound after some are bound would pair
+each of its tuples with each binding so far, and one that shares only a
+variable most tuples bind alike would read most of its relation for each
+binding; the magic rewrite passes the bindings in the order
 of the source, as ProbLog's resolution does, which a clause such as
 `walk([], _, _)` relies on to be asked bound. Predicate names and
 constants are `Name`s, an `Arc<str>` shared from the lexer on, one per

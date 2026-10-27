@@ -2,17 +2,24 @@
 //! variables it needs bound when it is evaluated.
 //!
 //! Positive atoms over predicates that are not switches bind their variables
-//! and stay in source order. Where the grounder joins them, an atom whose
-//! variables are all unbound after some are bound would pair each of its
-//! tuples with each binding so far, and waits for the first atom that
-//! shares a bound variable: in PSouffle's side-channel analyses,
-//! `share(TO_E, FROM2_E)` after `xor_assign_right(TO, FROM2)` waits for
-//! `equal_assign(FROM2, FROM2_E)`. A semi-naive round of the grounder
-//! starts its join from the atom that reads the round's new tuples, the
-//! others joined after it ([`Order::From`]). A switch atom (a probabilistic
-//! choice), positive or negated, comes last, in source order: it binds
-//! nothing and rejects no binding, so earlier it would only make the walk
-//! create its atom for bindings that a later literal rejects.
+//! and stay in source order. Where the grounder joins them, the next atom
+//! is one whose variables are all bound, a lookup, else the one that shares
+//! the most bound variables, the first in source order among equals. An
+//! atom whose variables are all unbound after some are bound would pair
+//! each of its tuples with each binding so far: in PSouffle's side-channel
+//! analyses, `share(TO_E, FROM2_E)` after `xor_assign_right(TO, FROM2)`
+//! waits for `equal_assign(FROM2, FROM2_E)`. One that shares fewer may
+//! share only a variable that most tuples bind alike: in cplint's
+//! left-corner grammar, a semi-naive round of the grounder, which starts
+//! its join from the atom that reads the round's new tuples
+//! ([`Order::From`]), joins `lc_call(G, A, L1, L2, Der1, Der)` to
+//! `g_call(RHS2, L, L1, [..|Der0], Der1)`, which shares the rest of the
+//! word and the derivation, rather than to the demand of `lc_call(G, B, L,
+//! Der0)`, which shares the nonterminal `G` with every demand. A switch
+//! atom (a probabilistic choice), positive or negated, comes last, in
+//! source order: it binds nothing and rejects no binding, so earlier it
+//! would only make the walk create its atom for bindings that a later
+//! literal rejects.
 //! Every other literal is placed as early as its variables allow: a negative
 //! literal or comparison when all its variables are bound, `X = t` with one
 //! side an unbound variable and the other bound (it binds the variable), `V =
@@ -102,8 +109,8 @@ pub(crate) enum Order {
     /// S)` asks `walk` with `S` bound, which its clause `walk([], _, _)`
     /// needs).
     Source,
-    /// As the grounder joins them: an atom that shares no variable with
-    /// those bound waits for one that does.
+    /// As the grounder joins them: an atom whose variables are all bound
+    /// first, else the one that shares the most bound variables.
     Join,
     /// The atom at this position first, then as `Join`: a semi-naive round
     /// joins the rest of the body to the tuples it adds to that atom's
@@ -152,13 +159,14 @@ pub(crate) fn schedule_body(
     release(bound, &mut pending, &mut out);
     let mut atoms: Vec<usize> = (0..body.len()).filter(|&i| binding(i)).collect();
     while !atoms.is_empty() {
-        // An atom whose variables are all unbound, after some are bound,
-        // would pair each of its tuples with each binding so far: it waits
-        // for the first atom that shares a bound variable, unless none is
-        // left.
-        let joins = |l: usize| {
+        // A lookup first, then the atom that shares the most bound
+        // variables, the first in source order among equals: one that
+        // shares none, after some are bound, would pair each of its tuples
+        // with each binding so far.
+        let rank = |l: usize| {
             let vars = literal_vars(&body[l]);
-            vars.is_empty() || vars.iter().any(|v| bound.contains(v))
+            let shared = vars.iter().filter(|&v| bound.contains(v)).count();
+            (shared == vars.len(), shared)
         };
         let first = match order {
             Order::From(first) => atoms.iter().position(|&l| l == first),
@@ -167,8 +175,10 @@ pub(crate) fn schedule_body(
         let k = match (order, first) {
             (_, Some(k)) => k,
             (Order::Source, _) => 0,
-            _ if bound.is_empty() => 0,
-            _ => atoms.iter().position(|&l| joins(l)).unwrap_or(0),
+            _ => (0..atoms.len())
+                .rev()
+                .max_by_key(|&k| rank(atoms[k]))
+                .expect("an atom left"),
         };
         let l = atoms.remove(k);
         for v in literal_vars(&body[l]) {
@@ -237,5 +247,24 @@ mod tests {
             Order::From(2),
         );
         assert_eq!(order, Ok(vec![2, 0, 1, 3]));
+    }
+
+    /// The atom that shares the most bound variables comes next: from the
+    /// new tuples of `l`, `g` (sharing `L1` and `D1`) before the demand `m`
+    /// and `a`, which share only `G`; then `m` (`G` and `L`), then `a`, a
+    /// lookup.
+    #[test]
+    fn the_atom_sharing_most_comes_next() {
+        let p = parse_program(
+            "l(G, B, L) :- m(G, B, L, D), a(G, D), g(R, L, L1, D1), l(G, A, L1, D1).\n",
+        )
+        .unwrap();
+        let order = schedule_body(
+            &p.clauses[0].body,
+            &mut FxHashSet::default(),
+            |_| false,
+            Order::From(3),
+        );
+        assert_eq!(order, Ok(vec![3, 2, 0, 1]));
     }
 }
