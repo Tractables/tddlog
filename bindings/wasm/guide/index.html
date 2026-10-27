@@ -65,10 +65,13 @@
 
 <section class="card prose" id="getting-started">
   <h2>Getting started</h2>
-  <p>tddlog reads a probabilistic logic program in the Datalog fragment of
-  ProbLog and prints the probability of each of its queries given its
-  evidence. The answers are exact: tddlog compiles the program into tree
-  decision diagrams and counts the queries on them.</p>
+  <p>tddlog is an exact inference engine for probabilistic Datalog. It
+  reads a probabilistic logic program written in ProbLog, or a Bayesian
+  or Markov network, and prints the probability of each of its queries
+  given its evidence; translators reduce Dice programs and LPADs to
+  ProbLog (<a href="#networks">below</a>). The answers are exact:
+  tddlog grounds the program to probabilistic Datalog, compiles it into
+  tree decision diagrams and counts the queries on them.</p>
   <p>There are three ways to run it:</p>
   <ul>
     <li>In the browser: the <a href="../">playground</a> runs tddlog in
@@ -140,10 +143,10 @@ P(e):   1.960000e-1     log10 -0.707744</pre>
 
 <section class="card prose" id="language">
   <h2>The language</h2>
-  <p>tddlog reads the Datalog fragment of ProbLog: atoms whose arguments
-  are constants, integers and variables. A program for tddlog is a program
-  ProbLog reads too, and the repository's tests check tddlog's answers
-  against ProbLog's.</p>
+  <p>tddlog reads ProbLog without cut: atoms whose arguments are
+  constants, numbers, variables and compound terms, lists among them. A
+  program for tddlog is a program ProbLog reads too, and the repository's
+  tests check tddlog's answers against ProbLog's.</p>
 
   <h3 id="facts-and-rules">Facts and rules</h3>
 <pre data-lang="problog">edge(1,2).                           % a fact
@@ -154,8 +157,8 @@ path(X,Y) :- edge(X,Z), path(Z,Y).
   <p>A name that starts with a lower-case letter is a constant or a
   predicate, one that starts with an upper-case letter or <code>_</code>
   is a variable, and <code>%</code> starts a comment, as does
-  <code>/*</code>. A probability is a number or an expression of numbers,
-  such as <code>1/3::a.</code> A probabilistic rule makes one independent
+  <code>/*</code>. A probability is a number or a fraction, such as
+  <code>1/3::a.</code> A probabilistic rule makes one independent
   choice for each instance of its variables: under
   <code>0.6::q(X) :- p(X).</code>, each q(X) whose p(X) holds is true with
   probability 0.6, independently of the others. A body is a conjunction
@@ -190,15 +193,42 @@ c :- not(a).
 <pre data-lang="problog">n(1). n(2). n(3).
 0.5::x(N) :- n(N).
 s(S) :- x(A), x(B), A &lt; B, S is A + B.</pre>
-  <p><code>is</code> evaluates integer arithmetic: <code>+</code>,
-  <code>-</code>, <code>*</code>, <code>//</code> and <code>mod</code>.
-  The comparisons are <code>=</code>, <code>\=</code>, <code>==</code>,
-  <code>\==</code>, <code>&lt;</code>, <code>&gt;</code>,
-  <code>=&lt;</code> and <code>&gt;=</code>. tddlog grounds a program
-  before it compiles it, so the variables of an arithmetic expression or a
-  comparison must be bound by a positive atom of the body; tddlog orders a
-  body so that the atoms that bind come first. Floating-point arithmetic is
-  not supported.</p>
+  <p><code>is</code> evaluates arithmetic as ProbLog does, which is as
+  Python does: <code>+</code>, <code>-</code>, <code>*</code>,
+  <code>/</code> (in floating point: <code>X is 4 / 2</code> binds
+  <code>2.0</code>), <code>//</code> (rounded down), <code>mod</code>,
+  <code>**</code>, <code>abs</code>, <code>min</code>, <code>max</code>
+  and the like. The arithmetic comparisons <code>&lt;</code>,
+  <code>&gt;</code>, <code>=&lt;</code>, <code>&gt;=</code>,
+  <code>=:=</code> and <code>=\=</code> evaluate both sides;
+  <code>=</code> and <code>\=</code> unify terms, and <code>==</code>,
+  <code>\==</code>, <code>@&lt;</code> and the like compare them in
+  ProbLog's standard order. tddlog grounds a program before it compiles
+  it, so the variables of an arithmetic expression or a comparison must be
+  bound by a positive atom of the body; tddlog orders a body so that the
+  atoms that bind come first.</p>
+
+  <h3 id="terms-and-lists">Terms, lists and findall</h3>
+<pre data-lang="problog">0.4::item(a). 0.7::item(b). 0.5::item(c).
+cost(a, 3). cost(b, 4). cost(c, 5).
+first_two :- nth1(1, [a, b, c], X), nth1(2, [a, b, c], Y), item(X), item(Y).
+total(S) :- findall(C, cost(_, C), L), sum_list(L, S).
+query(first_two).
+query(total(_)).</pre>
+  <p>Arguments may be compound terms, <code>f(X, g(Y))</code>, and lists,
+  <code>[a, b | T]</code>; <code>N1 = N - 1</code> binds
+  <code>N1</code> to the term <code>N - 1</code>, which <code>is</code>
+  evaluates. The list predicates of ProbLog's library are built in:
+  <code>member/2</code>, <code>memberchk/2</code>, <code>append/3</code>,
+  <code>length/2</code>, <code>nth0/3</code>, <code>nth1/3</code>,
+  <code>last/2</code>, <code>reverse/2</code>, <code>sum_list/2</code>,
+  <code>max_list/2</code>, <code>min_list/2</code>, <code>sort/2</code>
+  and <code>between/3</code>, unless the program defines its own.
+  <code>findall/3</code> collects the solutions of a deterministic goal in
+  ProbLog's order, and its list may then be counted, summed or sorted
+  under probabilistic facts, as <code>total</code> above. tddlog grounds
+  the program to one without terms, which it compiles as any other: a
+  term is a value of the grounding.</p>
 
   <h3 id="evidence-and-queries">Evidence and queries</h3>
 <pre data-lang="problog">evidence(calls(john), true).
@@ -216,21 +246,27 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
 
   <h3 id="not-read">What tddlog does not read</h3>
   <ul>
-    <li>function symbols (<code>a(f(1))</code>), lists, strings and
-    floating-point arithmetic;</li>
-    <li>cut, <code>findall</code> and the other built-ins beyond arithmetic
-    and comparison, and directives such as <code>use_module</code>;</li>
+    <li>strings, cut, if-then-else and the built-ins beyond arithmetic,
+    comparison, the list predicates and <code>findall/3</code>;</li>
+    <li>a <code>findall/3</code> over a probabilistic goal, whose answer
+    in ProbLog is a distribution over lists, over a recursive goal, or
+    with a solution that has two proofs, which ProbLog lists twice;</li>
+    <li>a grounding that does not end, as
+    <code>nat(s(X)) :- nat(X).</code> asked for every
+    <code>nat(X)</code>;</li>
     <li>facts with variables (<code>p(X).</code>) and rules that are not
     range restricted: each variable of a head, of a negated literal and of
     a comparison must occur in a positive atom of the body, though a query
-    can bind a head's variables.</li>
+    or a call can bind a head's variables, and a variable that only a
+    negated atom has is read as ProbLog reads it (<code>\+ p(X, _)</code>:
+    no <code>p(X, Y)</code> for any <code>Y</code>).</li>
   </ul>
   <p>Each of these stops tddlog with a message and exit status 1, as
   in</p>
-<pre data-lang="shell">$ tddlog lists.pl
-parse error: line 1: lists are not supported (`[`)</pre>
-  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 47, reports as
-  errors the 7 that ProbLog expects to fail, and reports the other 55 as
+<pre data-lang="shell">$ tddlog choice.pl
+parse error: line 1: if-then-else is not supported</pre>
+  <p>Of ProbLog 2.3's 109 system tests, tddlog passes 54, reports as
+  errors the 7 that ProbLog expects to fail, and reports the other 48 as
   unsupported (<a href="https://github.com/Tractables/tddlog/blob/main/tests/problog_suite.py"><code>tests/problog_suite.py</code></a>).</p>
 </section>
 
@@ -302,8 +338,8 @@ P(e):   3.961994e-2     log10 -1.402086</pre>
   or lung cancer (<code>either</code>) to 0.58; the absence of dyspnoea,
   which either disease makes likely, brings it back to 0.30. The last line
   is the probability of the two observations together.
-  <code>scripts/gen_bn.py</code> writes such programs from the usual
-  network files (<a href="#networks">below</a>).</p>
+  tddlog reads such programs from the usual network files itself
+  (<a href="#networks">below</a>).</p>
   <p class="try"><a href="../?example=asia&amp;evidence=1">Open it in the
   playground</a>.</p>
 
@@ -513,27 +549,35 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 
 <section class="card prose" id="networks">
   <h2>Networks, Dice programs and LPADs</h2>
-  <p>Three Python 3 scripts in the repository's
+  <p>tddlog reads network files itself, and two Python 3 scripts in the
+  repository's
   <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
-  write other formats as programs tddlog reads.</p>
+  write Dice programs and LPADs as programs it reads.</p>
 
   <h3 id="networks-gen-bn">Bayesian and Markov networks</h3>
-  <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/gen_bn.py"><code>scripts/gen_bn.py</code></a> writes a discrete network as a ground
-  program, as in the asia example: a Bayesian network in BIF, Hugin
+  <p>tddlog reads a discrete network file as a ground program, as in the
+  asia example: a Bayesian network in BIF (<code>.bif</code>), Hugin
   (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
-  the UAI format, and a Markov network in the UAI format, each factor an
-  observed atom.</p>
-<pre data-lang="shell">python3 scripts/gen_bn.py examples/asia.net &gt; asia.pl
-python3 scripts/gen_bn.py tests/regress/markov.uai --evid tests/regress/markov.uai.evid &gt; markov.pl
-tddlog markov.pl</pre>
+  the UAI format (<code>.uai</code>), and a Markov network in the UAI
+  format, each factor an observed atom. The file's extension names its
+  format.</p>
+<pre data-lang="shell">tddlog examples/asia.net --query leaves
+tddlog tests/regress/markov.uai --evidence tests/regress/markov.uai.evid --evidence-probability
+tddlog --program examples/asia.net &gt; asia.pl</pre>
   <p>The program queries every value of every unobserved variable
-  (<code>--query</code> narrows that), and its answers are the network's
-  marginals given the evidence. For a Markov network the program's first
-  line is <code>% log10 Z - log10 P(e) = c</code>, and
-  <code>--evidence-probability --no-queries</code> then gives the partition
-  function given the evidence, the UAI PR task: log10 Z = l + c, where l is
-  the logarithm on the <code>P(e)</code> line. The script's docstring has
-  the encoding and its options.</p>
+  (<code>--query leaves</code> those of the variables without children,
+  <code>--query a,b</code> those of the variables named), and its answers
+  are the network's marginals given the evidence, an Ace
+  <code>.inst</code> file or, for a UAI network, a UAI <code>.evid</code>
+  file (<code>--evidence</code>). For a Markov network,
+  <code>--evidence-probability</code> prints the partition function given
+  the evidence on a <code>Z:</code> line in place of <code>P(e):</code>,
+  and with <code>--no-queries</code> that line alone, the UAI PR task.
+  <code>--rescale</code> divides every row by its sum, for a file that
+  writes its tables in percent. <code>--program</code> prints the program;
+  <a href="https://github.com/Tractables/tddlog/blob/main/scripts/gen_bn.py"><code>scripts/gen_bn.py</code></a>
+  writes the same program for other systems, and its docstring has the
+  encoding.</p>
 
   <h3 id="dice">Dice programs</h3>
   <p><code>python3 scripts/dice2problog.py program.dice &gt; program.pl</code>

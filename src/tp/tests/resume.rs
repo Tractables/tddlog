@@ -147,8 +147,7 @@ fn a_resumed_runs_first_search_spends_what_the_run_allows() {
         next_at: 0,
         since: Some(400),
         resumed: false,
-        weak: 0,
-        left: 0,
+        debt: 0,
     };
     assert_eq!(dynamic.budget(650, 1, 10), 250);
     dynamic.resumed = true;
@@ -165,8 +164,7 @@ fn a_search_spends_no_more_than_the_components_left_take() {
         next_at: 0,
         since: Some(400),
         resumed: false,
-        weak: 0,
-        left: 0,
+        debt: 0,
     };
     assert_eq!(dynamic.budget(1000, 9, 1), 111);
     assert_eq!(dynamic.budget(1000, 1, 9), 600);
@@ -177,24 +175,25 @@ fn a_search_spends_no_more_than_the_components_left_take() {
     );
 }
 
-/// Two weak searches hold the next until the formulas hold sixteen times
-/// the pairs the last one left; one more weak search then holds it again.
+/// A search that spent past its budget holds the next until the compile
+/// has spent the excess since it ended, or until the formulas have doubled
+/// again past where the next was due; a run that resumes a stopped
+/// compile, on a fresh clock, does not wait.
 #[test]
-fn weak_searches_wait_for_the_formulas_to_grow() {
+fn a_search_past_its_budget_waits_for_the_compile_to_spend_the_excess() {
     let mut dynamic = Dynamic {
         first_pairs: 0,
         next_at: 2000,
-        since: None,
+        since: Some(400),
         resumed: false,
-        weak: 1,
-        left: 1000,
+        debt: 300,
     };
-    assert!(!dynamic.due(1999));
-    assert!(dynamic.due(2000));
-    dynamic.weak = 2;
-    assert!(!dynamic.due(15_999));
-    assert!(dynamic.due(16_000));
-    assert_eq!(dynamic.weak, 1);
+    assert!(!dynamic.due(800, 1999));
+    assert!(!dynamic.due(699, 3999));
+    assert!(dynamic.due(699, 4000));
+    assert!(dynamic.due(700, 2000));
+    dynamic.resumed = true;
+    assert!(dynamic.due(10, 2000));
 }
 
 /// The answers of `gp` compiled on the `closed` layout under the watches

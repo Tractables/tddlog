@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- The sprinkler network as GeNIe writes it, with CRLF line ends, in ISO-8859-1 (arrosage été). -->
+<smile version="1.0" id="Sprinkler" numsamples="1000">
+	<nodes>
+		<cpt id="Cloudy">
+			<state id="T" />
+			<state id="F" />
+			<probabilities>0.5 0.5</probabilities>
+		</cpt>
+		<cpt id="Sprinkler">
+			<state id="T" />
+			<state id="F" />
+			<parents>Cloudy</parents>
+			<probabilities>0.1 0.9 0.5 0.5</probabilities>
+		</cpt>
+		<cpt id="Rain">
+			<state id="T" />
+			<state id="F" />
+			<parents>Cloudy</parents>
+			<probabilities>0.8 0.2 0.2 0.8</probabilities>
+		</cpt>
+		<cpt id="WetGrass">
+			<state id="T" />
+			<state id="F" />
+			<parents>Sprinkler Rain</parents>
+			<probabilities>0.99 0.01 0.9 0.1 0.9 0.1 0 1</probabilities>
+		</cpt>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe" name="Arrosage &amp; pluie">
+		</genie>
+	</extensions>
+</smile>

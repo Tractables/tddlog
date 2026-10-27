@@ -1,0 +1,34 @@
+// The sprinkler network in the Bayesian Interchange Format: a root's
+// `table` row, a comment inside a block, and a table whose rows are not in
+// the order of its parent's values.
+network sprinkler {
+}
+variable Cloudy {
+  type discrete [ 2 ] { true, false };
+}
+variable Sprinkler {
+  type discrete [ 2 ] { true, false };
+}
+variable Rain {
+  type discrete [ 2 ] { true, false };
+}
+variable WetGrass {
+  type discrete [ 2 ] { true, false };
+}
+probability ( Cloudy ) {
+  table 0.5, 0.5;
+}
+probability ( Sprinkler | Cloudy ) {
+  (true) 0.1, 0.9;
+  (false) 0.5, 0.5;
+}
+probability ( Rain | Cloudy ) {
+  (false) 0.2, 0.8; // the parent's second value first
+  (true) 0.8, 0.2;
+}
+probability ( WetGrass | Sprinkler, Rain ) {
+  (true, true) 0.99, 0.01;
+  (true, false) 0.9, 0.1;
+  (false, true) 0.9, 0.1;
+  (false, false) 0.0, 1.0;
+}

@@ -65,13 +65,7 @@ pub(crate) fn linearize(norm: &NormProgram) -> Option<NormProgram> {
     for (ri, _, _) in &chains {
         replaced[*ri] = true;
     }
-    out.rules = norm
-        .rules
-        .iter()
-        .zip(&replaced)
-        .filter(|(_, r)| !**r)
-        .map(|(c, _)| c.clone())
-        .collect();
+    out.retain_rules(|i, _| !replaced[i]);
     for (ri, exits, left) in &chains {
         // One set of steps for the predicate, however many chain rules it has.
         if chains.iter().any(|(rj, e, _)| rj < ri && e == exits) {
@@ -194,7 +188,7 @@ mod tests {
     use crate::syntax::parse_program;
 
     fn linearized(src: &str) -> Option<Vec<String>> {
-        let n = normalize(&parse_program(src).unwrap()).unwrap();
+        let n = normalize(&parse_program(src).unwrap(), Default::default()).unwrap();
         linearize(&n).map(|m| m.rules.iter().map(|r| r.to_string()).collect())
     }
 

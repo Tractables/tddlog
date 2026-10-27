@@ -1,0 +1,58 @@
+fun draw (have: (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, (bool, bool))))))))))))))) ) {
+    let draw1 = uniform(4, 0, 16) in
+    let draw2 = uniform(4, 0, 16) in
+
+    let t = observe(draw1 != draw2) in
+
+    let r0 = (fst have) || (draw1 == int(4, 0)) || (draw2 == int(4, 0)) in
+    let r1 = (fst (snd have)) || (draw1 == int(4, 1)) || (draw2 == int(4, 1)) in
+    let r2 = (fst (snd (snd have))) || (draw1 == int(4, 2)) || (draw2 == int(4, 2)) in
+    let r3 = (fst (snd (snd (snd have)))) || (draw1 == int(4, 3)) || (draw2 == int(4, 3)) in
+    let r4 = (fst (snd (snd (snd (snd have))))) || (draw1 == int(4, 4)) || (draw2 == int(4, 4)) in
+    let r5 = (fst (snd (snd (snd (snd (snd have)))))) || (draw1 == int(4, 5)) || (draw2 == int(4, 5)) in
+    let r6 = (fst (snd (snd (snd (snd (snd (snd have))))))) || (draw1 == int(4, 6)) || (draw2 == int(4, 6)) in
+    let r7 = (fst (snd (snd (snd (snd (snd (snd (snd have)))))))) || (draw1 == int(4, 7)) || (draw2 == int(4, 7)) in
+    let r8 = (fst (snd (snd (snd (snd (snd (snd (snd (snd have))))))))) || (draw1 == int(4, 8)) || (draw2 == int(4, 8)) in
+    let r9 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd have)))))))))) || (draw1 == int(4, 9)) || (draw2 == int(4, 9)) in
+    let r10 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have))))))))))) || (draw1 == int(4, 10)) || (draw2 == int(4, 10)) in
+    let r11 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have)))))))))))) || (draw1 == int(4, 11)) || (draw2 == int(4, 11)) in
+    let r12 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have))))))))))))) || (draw1 == int(4, 12)) || (draw2 == int(4, 12)) in
+    let r13 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have)))))))))))))) || (draw1 == int(4, 13)) || (draw2 == int(4, 13)) in
+    let r14 = (fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have))))))))))))))) || (draw1 == int(4, 14)) || (draw2 == int(4, 14)) in
+    let r15 = (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd have))))))))))))))) || (draw1 == int(4, 15)) || (draw2 == int(4, 15)) in
+    (r0, (r1, (r2, (r3, (r4, (r5, (r6, (r7, (r8, (r9, (r10, (r11, (r12, (r13, (r14, r15)))))))))))))))
+}
+
+let h0 = (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, (false, false))))))))))))))) in
+let h1 = draw(h0) in
+let h2 = draw(h1) in
+let h3 = draw(h2) in
+let h4 = draw(h3) in
+let h5 = draw(h4) in
+let h6 = draw(h5) in
+let h7 = draw(h6) in
+let h8 = draw(h7) in
+let h9 = draw(h8) in
+let h10 = draw(h9) in
+let h11 = draw(h10) in
+let h12 = draw(h11) in
+let h13 = draw(h12) in
+let h14 = draw(h13) in
+let h15 = draw(h14) in
+let h = draw(h15) in
+(fst h) && 
+(fst (snd h)) && 
+(fst (snd (snd h))) && 
+(fst (snd (snd (snd h)))) && 
+(fst (snd (snd (snd (snd h))))) &&
+(fst (snd (snd (snd (snd (snd h)))))) &&
+(fst (snd (snd (snd (snd (snd (snd h))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd h)))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd h))))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd h)))))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h))))))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h)))))))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h))))))))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h)))))))))))))) &&
+(fst (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h))))))))))))))) &&
+(snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd (snd h)))))))))))))))

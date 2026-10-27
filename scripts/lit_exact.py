@@ -15,6 +15,12 @@ computes its answers by a method that shares nothing with tddlog's:
     mastermind enumeration of the codes the feedback admits
     pdb        variable elimination of the pairwise model whose partition
                function is the probability that h0 (or h1) fails
+    liftsep    inclusion-exclusion over the query's clauses, each term a
+               product over the domain (lifted inference)
+    rgraph     the weighted sum of the graph's matchings, by dynamic
+               programming over the subsets of nodes
+    eventcalc  forward filtering, for each pair of people, over the joint
+               states of the fluents that pair's queries read
 
 Prints `q:\tp` per query, in the order of the query facts, as tddlog does,
 or `evidence is inconsistent`.
@@ -290,6 +296,153 @@ def mastermind(text):
 
 
 FAMILIES = {'mnist_sum': mnist_sum, 'mastermind': mastermind, 'pedigree': pedigree, 'sickness': sickness, 'noisyor': noisyor, 'pdb': pdb}
+
+
+# The families of the second literature scan.
+
+def chain_ok(probs):
+    """The probability that no two consecutive variables of a chain are
+    both true, the variables independent with these probabilities."""
+    off, on = 1 - probs[0], probs[0]
+    for q in probs[1:]:
+        off, on = (off + on) * (1 - q), off * q
+    return off + on
+
+
+def liftsep(text):
+    """Inclusion-exclusion over the CNF of each query over h30..h33 (Beame,
+    Li, Roy, Suciu, TODS 2017, Example 3.6): a term whose atoms miss one
+    h3l splits into runs of consecutive h3l on disjoint relations, and a
+    run is a product over x (it reads R), over y (it reads T) or over the
+    pairs (neither)."""
+    r = {c: float(p) for p, c in facts(text, r'([0-9.]+)::r\((\w+)\)\.')}
+    t = {c: float(p) for p, c in facts(text, r'([0-9.]+)::t\((\w+)\)\.')}
+    s = {}
+    for p, rel, x, y in facts(text, r'([0-9.]+)::s([123])\((\w+),(\w+)\)\.'):
+        s[int(rel), x, y] = float(p)
+    xs, ys = sorted(r), sorted(t)
+    assert len(s) == 3 * len(xs) * len(ys), 'S1, S2 and S3 hold every pair'
+
+    def run_false(lo, hi):
+        """P(no h3l with lo <= l <= hi holds); nodes z0 = R(x), zl = Sl(x,y)
+        for 1 <= l <= 3, z4 = T(y), and h3l reads z_l and z_l+1."""
+        def nodes(x, y, zr=None, zt=None):
+            z = [zr, *(s[ell, x, y] for ell in (1, 2, 3)), zt]
+            return z[lo:hi + 2]
+        if lo == 0:
+            return math.prod((1 - r[x]) * math.prod(chain_ok(nodes(x, y, zr=0.0)) for y in ys)
+                             + r[x] * math.prod(chain_ok(nodes(x, y, zr=1.0)) for y in ys) for x in xs)
+        if hi == 3:
+            return math.prod((1 - t[y]) * math.prod(chain_ok(nodes(x, y, zt=0.0)) for x in xs)
+                             + t[y] * math.prod(chain_ok(nodes(x, y, zt=1.0)) for x in xs) for y in ys)
+        return math.prod(chain_ok(nodes(x, y)) for x in xs for y in ys)
+
+    def union(atoms):
+        """P(h3l for some l in atoms), a proper subset of {0, 1, 2, 3}."""
+        none, run = 1.0, []
+        for ell in range(5):
+            if ell in atoms:
+                run.append(ell)
+            elif run:
+                none *= run_false(run[0], run[-1])
+                run = []
+        return 1 - none
+
+    clauses = {}
+    for name, k, ell in facts(text, r'(\w+)_(\d+) :- h3(\d)\.'):
+        clauses.setdefault(name, {}).setdefault(int(k), set()).add(int(ell))
+    answers = {}
+    for name, cnf in clauses.items():
+        cnf = list(cnf.values())
+        coefficient = {}
+        for size in range(1, len(cnf) + 1):
+            for chosen in itertools.combinations(cnf, size):
+                atoms = frozenset().union(*chosen)
+                coefficient[atoms] = coefficient.get(atoms, 0) + (-1) ** (size + 1)
+        assert coefficient.pop(frozenset(range(4)), 0) == 0, f'{name} is not safe: its h3 term does not cancel'
+        answers[name] = sum(c * union(atoms) for atoms, c in coefficient.items())
+    return answers
+
+
+def rgraph(text):
+    """No path of two edges: the edges present form a matching. The weighted
+    sum of the matchings of each set of nodes, by its lowest node."""
+    edges = {(int(x), int(y)): float(p) for p, x, y in facts(text, r'([0-9.]+)::e\((\d+),(\d+)\)\.')}
+    assert queries(text) == ['path2'], 'rgraph asks path2'
+    n = 1 + max(max(e) for e in edges)
+    if n > 26:
+        sys.exit(f'lit_exact: the subsets of {n} nodes do not fit')
+    w = np.zeros((n, n))
+    for (x, y), p in edges.items():
+        w[x, y] = w[y, x] = p / (1 - p)
+    m = np.zeros(1 << n)
+    m[0] = 1.0
+    for v in range(n - 1, -1, -1):
+        rest = np.arange(1 << (n - 1 - v), dtype=np.int64) << (v + 1)
+        acc = m[rest].copy()
+        for u in range(v + 1, n):
+            has = ((rest >> u) & 1) == 1
+            acc[has] += w[v, u] * m[rest[has] ^ (1 << u)]
+        m[rest | (1 << v)] = acc
+    return {'path2': 1 - math.prod(1 - p for p in edges.values()) * m[-1]}
+
+
+EC_MOVES = {'walking', 'running', 'active'}
+
+
+def eventcalc(text):
+    """Each queried pair (P,Q): the joint distribution of person(P),
+    person(Q), meeting(P,Q) and moving(P,Q) at each frame, filtered forward
+    over the frames; the events of a frame are independent of earlier
+    frames and of other people."""
+    nxt = dict(facts(text, r'next\((\d+),(\d+)\)\.'))
+    frames = int(max(nxt.values(), key=int)) + 1
+    assert all(int(b) == int(a) + 1 for a, b in nxt.items()) and len(nxt) == frames - 1, 'frames 0 to T-1'
+    happens = {(who, int(t)): (act, float(p)) for p, act, who, t in facts(text, r'([0-9.]+)::happens\((\w+),(\w+),(\d+)\)\.')}
+    gone = {(who, int(t)) for who, t in facts(text, r'disappear\((\w+),(\d+)\)\.')}
+    scene = {(rel, x, y, int(t)) for rel, x, y, t in facts(text, r'(close25|close34|far34|orient45)\((\w+),(\w+),(\d+)\)\.')}
+    asked = {}
+    for q in queries(text):
+        fluent, x, y, t = re.fullmatch(r'holds_(meeting|moving)\((\w+),(\w+),(\d+)\)', q).groups()
+        asked.setdefault((x, y), set()).add(int(t))
+    answers = {}
+    for (x, y), times in asked.items():
+        dist = {(False, False, False, False): 1.0}
+        for t in range(frames):
+            if t in times:
+                answers[f'holds_meeting({x},{y},{t})'] = sum(p for s, p in dist.items() if s[2])
+                answers[f'holds_moving({x},{y},{t})'] = sum(p for s, p in dist.items() if s[3])
+            if t == frames - 1:
+                break
+            far = ('far34', x, y, t) in scene
+            out_x, out_y = (x, t) in gone, (y, t) in gone
+            cases = [((), 1.0)]
+            for who in (x, y):
+                act, p = happens.get((who, t), (None, 0.0))
+                cases = [(c + (act,), w * p) for c, w in cases] + [(c + (None,), w * (1 - p)) for c, w in cases]
+            step = {}
+            for (hx, hy), w in cases:
+                if w == 0.0:
+                    continue
+                stop = hx == 'running' or hy == 'running' or out_x or out_y or \
+                    (far and (hx == 'walking' or hy == 'walking'))
+                term_move = stop or (hx, hy) in (('active', 'active'), ('active', 'inactive'), ('inactive', 'active'))
+                init_move = hx == 'walking' and hy == 'walking' and ('close34', x, y, t) in scene \
+                    and ('orient45', x, y, t) in scene
+                for (px, py, meet, move), p in dist.items():
+                    near = ('close25', x, y, t) in scene and py
+                    init_meet = near and ((hx == 'active' and hy != 'running')
+                                          or (px and hx == 'inactive' and hy not in ('running', 'active')))
+                    s = ((hx in EC_MOVES and not out_x) or (px and not out_x),
+                         (hy in EC_MOVES and not out_y) or (py and not out_y),
+                         init_meet or (meet and not stop),
+                         init_move or (move and not term_move))
+                    step[s] = step.get(s, 0.0) + w * p
+            dist = step
+    return answers
+
+
+FAMILIES.update({'liftsep': liftsep, 'rgraph': rgraph, 'eventcalc': eventcalc})
 
 
 def main():

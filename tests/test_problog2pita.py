@@ -43,6 +43,21 @@ class TranslationTests(unittest.TestCase):
         # a program without such a name prints its queries as before
         self.assertIn('format("~q:\\t~w~n", [Q, P])', problog2pita.program('0.5::a.\nquery(a).\n', driver=True))
 
+    def test_every_instance_of_a_query_with_variables_is_printed(self):
+        # prob/2 inside forall/2's condition, so that its every solution is
+        # printed: as forall/2's action it printed only the first instance
+        # (PSouffle's side-channel cases, query(key_sensitive(_))).
+        main = problog2pita.program('0.5::a(1).\n0.5::a(2).\nquery(a(_)).\n', driver=True).split('main :-')[1]
+        self.assertRegex(main, r'^\s*forall\(\(Q = a\(_\), prob\(Q, P\)\), format\("~q:\\t~w~n", \[Q, P\]\)\)\.\s*$')
+        main = problog2pita.program('0.5::a(1).\nevidence(a(1)).\nquery(a(_)).\n', driver=True).split('main :-')[1]
+        self.assertIn('forall((Q = a(_), prob(Q, (a(1)), P)), ', main)
+        # a program with a name PITA keeps prints through four goals, one
+        # argument of forall/2 (tf1e: forall/5, undefined, on every
+        # side-channel case)
+        main = problog2pita.program('0.5::v(1).\nquery(v(_)).\n', driver=True).split('main :-')[1]
+        self.assertIn('prob(Q, P)), (term_to_atom(Q, Q0), ', main)
+        self.assertTrue(main.rstrip().endswith('[Q1, P]))).'), main)
+
     def test_a_long_chain_is_translated_in_linear_time(self):
         # a gate a predicate, as a circuit's program has them: the earlier
         # search from every predicate took quadratic time

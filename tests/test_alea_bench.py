@@ -162,7 +162,17 @@ class AleaBenchTests(unittest.TestCase):
             # tests/it/examples.rs reads.
             julia('export', programs / f'{name}.jl', Path(d, 'again'))
             self.assertEqual(Path(d, 'again.pl').read_text(), text)
-            self.assertEqual((SOURCE / 'tests' / 'alea' / f'{name}.pl').read_text(), text)
+            # Timed, it writes that circuit too, and times it twice.
+            out = julia('export', '--warm-below', 'Inf', programs / f'{name}.jl', Path(d, 'timed'))
+            self.assertEqual(Path(d, 'timed.pl').read_text(), text)
+            times = dict(line.split() for line in out.splitlines())
+            self.assertEqual(set(times), {'alea_seconds', 'alea_compile_seconds', 'alea_warm_seconds'})
+            self.assertLess(float(times['alea_warm_seconds']), float(times['alea_seconds']))
+            # The public copy's first line also says where the script is.
+            public = (SOURCE / 'tests' / 'alea' / f'{name}.pl').read_text().split('\n', 1)
+            first, rest = text.split('\n', 1)
+            self.assertEqual(public[0], first.rstrip('.') + ' (baselines branch).')
+            self.assertEqual(public[1], rest)
         return answers, values, expectations
 
     def test_booleans_and_worlds_of_a_number(self):

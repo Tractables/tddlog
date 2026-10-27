@@ -178,6 +178,14 @@ class RowTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.001'):
             gen_bn.normalized([0.9, 0.101], 'x')
 
+    def test_an_excess_of_binary_rounding_is_rescaled(self):
+        # Two doubles that sum to 1.0000000000000003 in the decimals they
+        # mean, more than the slack of their own digits allows.
+        row = [0.3, 0.7000000000000003]
+        self.assertAlmostEqual(math.fsum(gen_bn.normalized(row, 'x')), 1.0, places=15)
+        with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.000000002'):
+            gen_bn.normalized([0.3, 0.700000002], 'x')
+
     def test_a_row_that_sums_to_one_keeps_its_numbers(self):
         self.assertEqual(gen_bn.normalized([0.2, 0.8], 'x'), [0.2, 0.8])
         self.assertEqual(gen_bn.normalized([1, 0], 'x'), [1, 0])
@@ -299,6 +307,65 @@ class DiceFormatTests(unittest.TestCase):
         states, tables = bn_exact.factors(rows, values)
         _, _, log10_pe = bn_exact.marginals(states, tables, ev)
         self.assertAlmostEqual(test_dice2problog.exact(text).get(True, 0.0), 10 ** log10_pe, places=12)
+
+    def test_the_joint_program_returns_the_observations_beside_the_variable(self):
+        """With `joint`, a program that observes nothing and returns the pair
+        of the variable and the conjunction of the observations: its rows
+        where the conjunction holds, over their sum, are the marginals (Dice
+        1.0 prints zeros where the observations' probability is under 1e-6)."""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import test_dice2problog
+        root = Path(__file__).resolve().parents[1]
+        net = str(root / 'examples' / 'asia.net')
+        network = gen_bn.parse(net)
+        order, variables, _ = network
+        evidence = gen_bn.sampled_evidence(network, 'half', 1)
+        by_ident = {gen_bn.ident(v): v for v in order}
+        regress = Path(__file__).resolve().parent / 'regress'
+        markov = [str(regress / 'markov.uai'), '--evid', str(regress / 'markov.uai.evid')]
+        cases = [(i, text, self.marginal(network, evidence, by_ident[i]))
+                 for i, text in gen_bn.dice_programs([net, '--query', 'all', '--evidence', 'half'], joint=True)]
+        cases += [(v, text, [Fraction(p) for p in {'x0': ['2/11', '9/11'], 'x1': ['5/33', '28/33']}[v]])
+                  for v, text in gen_bn.dice_programs(markov, joint=True)]
+        self.assertEqual(len(cases), len(order) - len(evidence) + 2)
+        for i, text, want in cases:
+            with self.subTest(variable=i):
+                self.assertNotIn('observe', text)
+                dist = test_dice2problog.exact(text)
+                held = [sum(p for value, p in dist.items() if value[1] is True and value[0][0] == k)
+                        for k in range(len(want))]
+                for got, w in zip(held, want):
+                    self.assertAlmostEqual(float(got / sum(held)), float(w), places=12)
+
+    def test_each_let_follows_its_parents_on_a_chain_longer_than_python_recursion(self):
+        """`program_order`: the observations first, then each returned
+        variable after the parents it reads, on a chain of 3 000 declared
+        last first."""
+        n = 3000
+        chain = [f'v{i}' for i in range(n)]
+        variables = {v: ['f', 't'] for v in chain}
+        tables = {'v0': ([], {(): [0.3, 0.7]})}
+        for i in range(1, n):
+            tables[f'v{i}'] = ([f'v{i - 1}'], {('f',): [0.9, 0.1], ('t',): [0.2, 0.8]})
+        text = gen_bn.to_dice((list(reversed(chain)), variables, tables), f'v{n - 1}', [('v0', 't')])
+        lets = [line.split()[1] for line in text.splitlines() if line.startswith('let ')]
+        self.assertEqual([x for x in lets if x.isupper()], [gen_bn.ident(v).upper() for v in chain])
+
+    def test_small_values_are_flips_and_certain_rows_constants(self):
+        """Dice 1.0 sets to zero a discrete's value whose bit carries under
+        1e-4 (gen_discrete): such a row is written as flips over the value's
+        bits, which keep it, and a row certain of one value as that value."""
+        variables = {'a': ['x', 'y', 'z'], 'b': ['f', 't']}
+        tables = {'a': ([], {(): [0.99995, 0.00004, 0.00001]}),
+                  'b': (['a'], {('x',): [1.0, 0.0], ('y',): [0.25, 0.75], ('z',): [0.5, 0.5]})}
+        network = (['a', 'b'], variables, tables)
+        text = gen_bn.to_dice(network, 'a', [('b', 't')])
+        let_a = next(line for line in text.splitlines() if line.startswith('let A '))
+        self.assertNotIn('discrete', let_a)
+        self.assertIn('flip', let_a)
+        self.assertIn('int(1, 0)', next(line for line in text.splitlines() if line.startswith('let B ')))
+        for got, want in zip(self.dice_marginal(text, 3), self.marginal(network, [('b', 't')], 'a')):
+            self.assertAlmostEqual(float(got), float(want), places=12)
 
     def test_a_program_defines_the_ancestors_it_needs(self):
         root = Path(__file__).resolve().parents[1]
@@ -670,6 +737,37 @@ probability ( Cancer | Smoker ) {
         zero = self.scratch('zero.net', text.replace('(50 50)', '(0 0)').encode())
         with self.assertRaisesRegex(SystemExit, r"b \('y',\): a row of zeros"):
             gen_bn.rescaled(gen_bn.parse(zero))
+
+
+class ReaderTests(unittest.TestCase):
+    def test_the_programs_tddlog_reads_networks_as_are_gen_bn_pys(self):
+        """tddlog reads each network file as the program beside it
+        (tests/it/networks.rs, its comments left out), which gen_bn.py
+        wrote: gen_bn.py still writes it."""
+        root = Path(__file__).resolve().parents[1]
+        net, regress, examples = root / 'tests' / 'networks', root / 'tests' / 'regress', root / 'examples'
+        offset = '% log10 Z - log10 P(e) = '
+        for args, program in [
+            ([regress / 'markov.uai'], regress / 'markov.pl'),
+            ([regress / 'markov.uai', '--evid', regress / 'markov.uai.evid'], regress / 'markov_ev.pl'),
+            ([regress / 'markov_pr.uai'], regress / 'markov_pr.pl'),
+            ([regress / 'markov_pr.uai', '--evid', regress / 'markov_pr.uai.evid'], regress / 'markov_pr_ev.pl'),
+            ([regress / 'potts.uai', '--query', 'none'], regress / 'potts.pl'),
+            ([examples / 'cancer.net', '--query', 'leaves'], examples / 'bn_cancer.pl'),
+            ([examples / 'asia.net', '--evidence-file', net / 'asia_leaves.inst'], examples / 'bn_asia_evidence.pl'),
+            ([net / 'sprinkler.bif', '--query', 'WetGrass'], net / 'sprinkler_bif.pl'),
+            ([net / 'sprinkler.xdsl', '--query', 'leaves', '--evidence-file', net / 'sprinkler.inst'],
+             net / 'sprinkler_xdsl.pl'),
+            ([net / 'percent.hugin', '--rescale'], net / 'percent.pl'),
+            ([net / 'chain.uai', '--query', 'leaves'], net / 'chain.pl'),
+            ([net / 'noisy.xdsl'], net / 'noisy.pl'),
+        ]:
+            a = gen_bn.arguments().parse_args([str(x) for x in args])
+            network, off, evidence, _ = gen_bn.model(a)
+            written = gen_bn.offset_line(off) + gen_bn.to_problog(network, a.query, evidence)
+            lines = program.read_text().splitlines()
+            expected = [l for i, l in enumerate(lines) if (i == 0 and l.startswith(offset)) or not l.startswith('%')]
+            self.assertEqual(written.splitlines(), expected, program.name)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Rows from Ace's pathfinder.xdsl, which a program wrote with binary noise
+     in its doubles (0.00726292 as 0.007262920000000001). Each row is off one
+     by 1e-8, the rounding of its eight-decimal entries, and is divided by
+     its sum. -->
+<smile version="1.0" id="Noisy" numsamples="1000">
+	<nodes>
+		<cpt id="Mantle">
+			<state id="Present" />
+			<state id="Absent" />
+			<probabilities>0.3 0.7</probabilities>
+		</cpt>
+		<cpt id="F5">
+			<state id="s0" />
+			<state id="s1" />
+			<state id="s2" />
+			<state id="s3" />
+			<parents>Mantle</parents>
+			<probabilities>0 0.99403579 0.00497018 0.0009940400000000005 0 0.99800399 0.0009980000000000004 0.0009980000000000004</probabilities>
+		</cpt>
+		<cpt id="Fault">
+			<state id="s0" />
+			<state id="s1" />
+			<state id="s2" />
+			<probabilities>0 0.99273709 0.007262920000000001</probabilities>
+		</cpt>
+	</nodes>
+</smile>

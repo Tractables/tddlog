@@ -26,13 +26,23 @@
 //! variables of the program. Switch atoms are created on demand by the
 //! grounder with whatever arguments the rule binds.
 //!
+//! A predicate given by ground facts alone, `p::f(a,b).` or `f(a,b).`, is
+//! kept as its [`Facts`]: its tuples, each with the weights of the switch
+//! its fact would have, are the predicate's atoms, which the grounder makes
+//! facts (certain ones where the fact has no probability) without a switch
+//! or a rule per fact. A database is such facts: TPC-H's line items are
+//! 600 000 at scale factor 0.1, and a switch and a rule for each made two
+//! atoms of each.
+//!
 //! Negative head literals: when a predicate `p/n` has clauses with head
 //! `\+p(..)`, all its positive clauses are renamed to `p⁺/n`, the negative
 //! ones to `p⁻/n`, and `p(V) :- p⁺(V), \+ p⁻(V)` is added.
 
+use std::sync::Arc;
+
 use super::Prob;
 use super::engine::GroundError;
-use crate::syntax::{Args, Atom, Clause, HeadChoice, Literal, Name, Program, Term};
+use crate::syntax::{Args, Atom, Clause, HeadChoice, Literal, Name, Program, Term, same_name};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 /// Marks switch predicate names. Cannot clash with user predicates because a
@@ -57,6 +67,41 @@ pub(crate) struct NormProgram {
     /// Control predicates (magic sets): evaluated during grounding, never
     /// emitted into ground rules.
     pub(crate) control: FxHashSet<(Name, usize)>,
+    /// The predicates findalls read, whose derivations the grounder
+    /// counts ([`super::terms`]).
+    pub(crate) counted: FxHashSet<(Name, usize)>,
+    /// The predicates given by ground facts alone, each with the number of
+    /// rules before its first fact, in that order. A rewrite of the program
+    /// shares them.
+    pub(crate) facts: Vec<(usize, Arc<Facts>)>,
+}
+
+/// A predicate given by ground facts alone, none of them negated or in a
+/// disjunction, that no findall reads: its tuples, in the order of the
+/// facts. A tuple given twice is true where either fact is.
+#[derive(Debug)]
+pub(crate) struct Facts {
+    pub(crate) name: Name,
+    pub(crate) arity: usize,
+    /// The facts' arguments, `arity` to a fact.
+    pub(crate) args: Vec<Term>,
+    /// Each fact's weights, those of the switch of its head
+    /// ([`switch_probabilities`]), or `None` for a certain fact.
+    pub(crate) probs: Vec<Option<Prob>>,
+}
+
+impl Facts {
+    /// The arguments of each fact, with its weights, in order.
+    pub(crate) fn tuples(&self) -> impl Iterator<Item = (&[Term], Option<Prob>)> {
+        // By place rather than in chunks: a predicate of arity zero has
+        // facts and no arguments.
+        (0..self.probs.len()).map(|k| {
+            (
+                &self.args[k * self.arity..(k + 1) * self.arity],
+                self.probs[k],
+            )
+        })
+    }
 }
 
 /// A predicate, `(name, arity)`, the name borrowed from the program.
@@ -74,62 +119,105 @@ impl NormProgram {
         }
         rules_of
     }
+
+    /// Keeps the rules for which `keep` holds of their index and clause,
+    /// each predicate's facts at its place among them.
+    pub(super) fn retain_rules(&mut self, mut keep: impl FnMut(usize, &Clause) -> bool) {
+        // How many rules are kept before each place.
+        let mut before = Vec::with_capacity(self.rules.len() + 1);
+        before.push(0);
+        self.rules.retain(|c| {
+            let i = before.len() - 1;
+            let k = keep(i, c);
+            before.push(before[i] + usize::from(k));
+            k
+        });
+        for (at, _) in &mut self.facts {
+            *at = before[*at];
+        }
+    }
 }
 
 /// Variables of a clause in order of first occurrence.
 fn clause_vars(heads: &[HeadChoice], body: &[Literal]) -> Vec<Term> {
-    let mut vars: Vec<Term> = Vec::new();
+    let mut vars: Vec<String> = Vec::new();
     for h in heads {
-        for t in &h.atom.args {
-            if t.is_var() && !vars.contains(t) {
-                vars.push(t.clone());
-            }
-        }
+        h.atom.vars_into(&mut vars);
     }
     for l in body {
-        match l {
-            Literal::Pos(a) | Literal::Neg(a) => {
-                for t in &a.args {
-                    if t.is_var() && !vars.contains(t) {
-                        vars.push(t.clone());
-                    }
-                }
-            }
-            Literal::Cmp(_, a, b) => {
-                a.vars(&mut vars);
-                b.vars(&mut vars);
-            }
-            Literal::Is(v, e) => {
-                if !vars.contains(v) {
-                    vars.push(v.clone());
-                }
-                e.vars(&mut vars);
-            }
-        }
+        l.vars_into(&mut vars);
     }
-    vars
+    vars.into_iter().map(Term::Var).collect()
 }
 
-pub(crate) fn normalize(program: &Program) -> Result<NormProgram, GroundError> {
+pub(crate) fn normalize(
+    program: &Program,
+    counted: FxHashSet<(Name, usize)>,
+) -> Result<NormProgram, GroundError> {
     let mut out = NormProgram {
         queries: program.queries.clone(),
         evidence: program.evidence.clone(),
         ..Default::default()
     };
 
-    // Predicates with negative head literals, and all predicates with rules.
-    // Signatures are borrowed from the program, not owned one per head.
+    // Predicates with negative head literals, and each predicate's number
+    // of clauses and whether they are all ground facts ([`Facts`]).
+    // Signatures are borrowed from the program, not owned one per head;
+    // a predicate's facts usually come together, and the last one is
+    // looked up by its name's address before its signature is hashed.
     fn sig(a: &Atom) -> (&str, usize) {
         a.signature()
     }
+    fn fact(c: &Clause) -> Option<&HeadChoice> {
+        match &c.heads[..] {
+            [h] if c.body.is_empty() && !h.negated && h.atom.is_ground() => Some(h),
+            _ => None,
+        }
+    }
+    /// The place of `a`'s predicate in `defined`, which gains it where it
+    /// is new; `last` is the last one looked up.
+    fn place_of<'p>(
+        a: &'p Atom,
+        last: &mut Option<(&'p Name, usize, usize)>,
+        place: &mut FxHashMap<(&'p str, usize), usize>,
+        defined: &mut Vec<Defined<'p>>,
+    ) -> usize {
+        if let Some((name, arity, k)) = *last
+            && arity == a.args.len()
+            && same_name(name, &a.name)
+        {
+            return k;
+        }
+        let k = *place.entry(sig(a)).or_insert_with(|| {
+            defined.push((sig(a), 0, true));
+            defined.len() - 1
+        });
+        *last = Some((&a.name, a.args.len(), k));
+        k
+    }
+    /// A predicate, its number of clauses, and whether they are all facts.
+    type Defined<'p> = ((&'p str, usize), usize, bool);
     let mut negated_preds: Vec<(&str, usize)> = Vec::new();
-    let mut defined: FxHashMap<(&str, usize), usize> = FxHashMap::default();
+    let mut place: FxHashMap<(&str, usize), usize> = FxHashMap::default();
+    let mut defined: Vec<Defined> = Vec::new();
+    let mut last = None;
+    // The non-ground probabilistic facts, by their predicates' places.
+    let mut open_facts: Vec<(usize, f64)> = Vec::new();
     for c in &program.clauses {
+        let is_fact = fact(c).is_some();
+        let open = c.heads.len() == 1 && c.body.is_empty() && !is_fact;
         for h in &c.heads {
-            let sig = sig(&h.atom);
-            *defined.entry(sig).or_default() += 1;
-            if h.negated && !negated_preds.contains(&sig) {
-                negated_preds.push(sig);
+            let k = place_of(&h.atom, &mut last, &mut place, &mut defined);
+            defined[k].1 += 1;
+            defined[k].2 &= is_fact;
+            if h.negated && !negated_preds.contains(&defined[k].0) {
+                negated_preds.push(defined[k].0);
+            }
+            if let Some(p) = h.prob
+                && open
+                && !h.negated
+            {
+                open_facts.push((k, p));
             }
         }
     }
@@ -137,25 +225,72 @@ pub(crate) fn normalize(program: &Program) -> Result<NormProgram, GroundError> {
     // Non-ground probabilistic facts become switch predicates outright, if the
     // predicate has no other clause.
     let mut fact_switches: FxHashMap<(&str, usize), f64> = FxHashMap::default();
-    for c in &program.clauses {
-        if c.body.is_empty() && c.heads.len() == 1 && !c.heads[0].negated {
-            let h = &c.heads[0];
-            if let Some(p) = h.prob
-                && !h.atom.is_ground()
-                && defined[&sig(&h.atom)] == 1
-            {
-                fact_switches.insert(sig(&h.atom), p);
-            }
+    for (k, p) in open_facts {
+        if defined[k].1 == 1 {
+            fact_switches.insert(defined[k].0, p);
         }
     }
     for (&(name, arity), p) in &fact_switches {
         out.switches.insert((name.into(), arity), Prob::new(*p));
     }
 
-    // The switches' names are written in one buffer, not one per clause:
-    // each of TPC-H's probabilistic tuples is a switch of its own.
+    // The predicates kept as their facts, by place: each one's place in
+    // `made`, `NEW` until its first fact makes it. A predicate a findall
+    // reads keeps its facts as rules, whose derivations the grounder counts.
+    const NEW: usize = usize::MAX;
+    let mut kept: Vec<Option<usize>> = defined
+        .iter()
+        .map(|&((name, arity), _, all_facts)| {
+            let read = counted.iter().any(|(n, k)| *k == arity && &**n == name);
+            (all_facts && !read).then_some(NEW)
+        })
+        .collect();
+    let mut made: Vec<(usize, Facts)> = Vec::new();
+    let mut qs = Vec::with_capacity(1);
+    let sum_error = |heads: Vec<HeadChoice>, clause: &Clause, total: f64| {
+        let clause = Clause {
+            heads,
+            body: clause.body.clone(),
+            group: clause.group,
+        };
+        GroundError::Unsupported(format!(
+            "annotated disjunction probabilities sum to {total} > 1: {clause}"
+        ))
+    };
+
+    // The switches' names are written in one buffer, not one per clause.
     let mut name = String::new();
+    last = None;
     for clause in &program.clauses {
+        if let Some(h) = fact(clause) {
+            let k = place_of(&h.atom, &mut last, &mut place, &mut defined);
+            if let Some(mut t) = kept[k] {
+                if t == NEW {
+                    t = made.len();
+                    kept[k] = Some(t);
+                    let (_, n, _) = defined[k];
+                    let facts = Facts {
+                        name: h.atom.name.clone(),
+                        arity: h.atom.args.len(),
+                        args: Vec::with_capacity(n * h.atom.args.len()),
+                        probs: Vec::with_capacity(n),
+                    };
+                    made.push((out.rules.len(), facts));
+                }
+                let prob = if h.prob.is_some() {
+                    qs.clear();
+                    switch_probabilities(&clause.heads, &mut qs)
+                        .map_err(|total| sum_error(clause.heads.clone(), clause, total))?;
+                    Some(qs[0])
+                } else {
+                    None
+                };
+                let (_, facts) = &mut made[t];
+                facts.args.extend(h.atom.args.iter().cloned());
+                facts.probs.push(prob);
+                continue;
+            }
+        }
         let heads = renamed_heads(&clause.heads, &negated_preds);
         let probabilistic = heads.iter().any(|h| h.prob.is_some());
         if !probabilistic {
@@ -176,19 +311,12 @@ pub(crate) fn normalize(program: &Program) -> Result<NormProgram, GroundError> {
             continue; // declared as a switch predicate above
         }
         let vars = clause_vars(&heads, &clause.body);
-        let mut qs = Vec::with_capacity(heads.len());
+        qs.clear();
         if let Err(total) = switch_probabilities(&heads, &mut qs) {
-            let clause = Clause {
-                heads,
-                body: clause.body.clone(),
-                group: clause.group,
-            };
-            return Err(GroundError::Unsupported(format!(
-                "annotated disjunction probabilities sum to {total} > 1: {clause}"
-            )));
+            return Err(sum_error(heads, clause, total));
         }
         let mut guards: Vec<Literal> = Vec::new();
-        for (i, (head, q)) in heads.into_iter().zip(qs).enumerate() {
+        for (i, (head, &q)) in heads.into_iter().zip(&qs).enumerate() {
             let sw_name = switch_name(&mut name, &head.atom.name, clause.group, i);
             let sw = Atom::new(sw_name.clone(), vars.iter().cloned().collect::<Args>());
             out.switches.insert((sw_name, vars.len()), q);
@@ -202,14 +330,20 @@ pub(crate) fn normalize(program: &Program) -> Result<NormProgram, GroundError> {
             guards.push(Literal::Neg(sw));
         }
     }
+    out.facts = made.into_iter().map(|(at, f)| (at, Arc::new(f))).collect();
+    out.counted = counted;
 
     for (k, qr) in program.query_rules.iter().enumerate() {
-        let mut vars: Vec<Term> = Vec::new();
-        for t in &qr.pattern.args {
-            if t.is_var() && !vars.contains(t) {
-                vars.push(t.clone());
-            }
+        // The pattern's variables that the body binds: the others stay
+        // variables of the queries, as ProbLog's findall1.pl has one.
+        let mut vars: Vec<String> = Vec::new();
+        qr.pattern.vars_into(&mut vars);
+        let mut bound: Vec<String> = Vec::new();
+        for l in &qr.body {
+            l.vars_into(&mut bound);
         }
+        vars.retain(|v| bound.contains(v));
+        let vars: Vec<Term> = vars.into_iter().map(Term::Var).collect();
         let driver = Atom::new(format!("$query{k}"), vars);
         out.rules
             .push(Clause::rule(driver.clone(), qr.body.clone(), u32::MAX));
@@ -366,8 +500,10 @@ mod tests {
     #[test]
     fn ad_becomes_switches() {
         let p = parse_program("0.2::a(X); 0.3::b(X,Y) :- c(X,Y).\nd.\n").unwrap();
-        let n = normalize(&p).unwrap();
-        assert_eq!(n.rules.len(), 3);
+        let n = normalize(&p, Default::default()).unwrap();
+        assert_eq!(n.rules.len(), 2);
+        let (at, d) = &n.facts[0];
+        assert_eq!((*at, &*d.name, d.probs.len()), (2, "d", 1));
         assert_eq!(n.switches.len(), 2);
         let q1 = n.switches[&(Name::from(format!("{SWITCH_PREFIX}a_0_0")), 2)];
         let q2 = n.switches[&(Name::from(format!("{SWITCH_PREFIX}b_0_1")), 2)];
@@ -383,7 +519,7 @@ mod tests {
     #[test]
     fn rounded_distribution_is_full() {
         let p = parse_program("0.3::a; 0.699999999::b.\n0.3::c; 0.6999::d.\n").unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let a = n.switches[&(Name::from(format!("{SWITCH_PREFIX}a_0_0")), 0)];
         let b = n.switches[&(Name::from(format!("{SWITCH_PREFIX}b_0_1")), 0)];
         let d = n.switches[&(Name::from(format!("{SWITCH_PREFIX}d_1_1")), 0)];
@@ -395,7 +531,7 @@ mod tests {
     #[test]
     fn nonground_fact_is_switch_predicate() {
         let p = parse_program("0.5::b(X).\ns(X) :- p(X), b(X).\n").unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         assert_eq!(n.rules.len(), 1);
         assert_eq!(n.switches[&("b".into(), 1)], Prob::HALF);
     }
@@ -403,10 +539,40 @@ mod tests {
     #[test]
     fn negative_heads() {
         let p = parse_program("0.5::a :- b.\n\\+a :- c.\n").unwrap();
-        let n = normalize(&p).unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
         let text: Vec<String> = n.rules.iter().map(|r| r.to_string()).collect();
         assert_eq!(text[0], "'a$pos' :- b, '$swa$pos_0_0'.");
         assert_eq!(text[1], "'a$neg' :- c.");
         assert_eq!(text[2], "a :- 'a$pos', \\+'a$neg'.");
+    }
+
+    /// A predicate given by ground facts alone is kept as its facts, their
+    /// weights those of their switches, at its place among the rules; one
+    /// with a rule, a negated head, a non-ground fact or a findall reading
+    /// it keeps its clauses.
+    #[test]
+    fn ground_facts_are_kept_as_facts() {
+        let p = parse_program(
+            "0.3::e(1,2). e(2,3). 0.999999999999::e(3,1).\n0.4::r(1). r(X) :- e(X,_).\n\
+             0.5::n(1). \\+n(2).\n0.5::v(1). 0.5::v(X).\n0.2::c(a). 0.6::c(b).\n",
+        )
+        .unwrap();
+        let counted = [(Name::from("c"), 1)].into_iter().collect();
+        let n = normalize(&p, counted).unwrap();
+        let kept: Vec<(usize, &str, usize, usize)> = n
+            .facts
+            .iter()
+            .map(|(at, f)| (*at, &*f.name, f.arity, f.probs.len()))
+            .collect();
+        assert_eq!(kept, [(0, "e", 2, 3)]);
+        let facts: Vec<(String, Option<Prob>)> = n.facts[0]
+            .1
+            .tuples()
+            .map(|(args, prob)| (format!("{args:?}"), prob))
+            .collect();
+        assert_eq!(facts[0].1, Some(Prob::new(0.3)));
+        assert_eq!(facts[1].1, None);
+        assert_eq!(facts[2].1, Some(Prob::TRUE));
+        assert_eq!(facts[1].0, "[Int(2), Int(3)]");
     }
 }

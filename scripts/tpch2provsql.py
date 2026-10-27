@@ -93,6 +93,8 @@ def parse(text):
                 m2 = re.fullmatch(r'(\w+)\((.*)\)', b)
                 if m2:
                     items.append(('atom', m2.group(1), [term(a) for a in split_top(m2.group(2))]))
+                elif re.fullmatch(r'[a-z]\w*', b):
+                    items.append(('atom', b, []))   # an atom of no arguments (liftsep's h30, rgraph's)
                 else:
                     c = COMPARISON.match(b)
                     items.append(('cmp', OPS[c.group(2)], term(c.group(1)), term(c.group(3))))

@@ -58,8 +58,7 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<(NormProgram, Vec<String>)> 
     }
     let mut out = norm.clone();
     let rewritten: FxHashSet<Sig> = plans.iter().map(|p| p.sig).collect();
-    out.rules
-        .retain(|c| !rewritten.contains(&c.heads[0].atom.signature()));
+    out.retain_rules(|_, c| !rewritten.contains(&c.heads[0].atom.signature()));
     for plan in &plans {
         plan.emit(norm, &mut out.rules);
     }
@@ -327,7 +326,7 @@ mod tests {
     use crate::syntax::parse_program;
 
     fn rewritten(src: &str) -> Option<Vec<String>> {
-        let n = normalize(&parse_program(src).unwrap()).unwrap();
+        let n = normalize(&parse_program(src).unwrap(), Default::default()).unwrap();
         rewrite(&n).map(|(m, _)| m.rules.iter().map(|r| r.to_string()).collect())
     }
 
@@ -394,6 +393,7 @@ mod tests {
         let n = normalize(
             &parse_program("0.5::e(1,2). 0.5::e(2,3). 0.5::e(3,1).\npath(X,Y) :- e(X,Y).\npath(X,Y) :- e(X,Z), path(Z,Y).\nquery(path(1,Y)).\n")
                 .unwrap(),
+            Default::default(),
         )
         .unwrap();
         let (linear, _) = rewrite(&n).unwrap();

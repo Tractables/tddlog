@@ -272,9 +272,9 @@ def program(text, driver=False):
         goal = 'prob(Q, P)' if not evidence else f"prob(Q, ({', '.join(evidence)}), P)"
         show = 'format("~q:\\t~w~n", [Q, P])'
         if renamed:
-            show = (f"term_to_atom(Q, Q0), atomic_list_concat(Qs, '{PREFIX}', Q0), atomic_list_concat(Qs, Q1), "
-                    'format("~w:\\t~w~n", [Q1, P])')
-        ask = f'({goal}, {show})'
+            # one argument of forall/2
+            show = (f"(term_to_atom(Q, Q0), atomic_list_concat(Qs, '{PREFIX}', Q0), atomic_list_concat(Qs, Q1), "
+                    'format("~w:\\t~w~n", [Q1, P]))')
         enumerators = []
         for term, body in queries:
             if body is None:
@@ -284,8 +284,10 @@ def program(text, driver=False):
                 lines += copies
                 enumerators.append(f'{renamed}, Q = {term}')
         lines.append('main :-')
-        lines += [f'    forall(({e}), {ask}),' for e in enumerators[:-1]]
-        lines.append(f'    forall(({enumerators[-1]}), {ask}).' if enumerators else '    true.')
+        # prob/2 backtracks over the instances of a query with variables:
+        # each is printed, as ProbLog asks every instance of such a query.
+        lines += [f'    forall(({e}, {goal}), {show}),' for e in enumerators[:-1]]
+        lines.append(f'    forall(({enumerators[-1]}, {goal}), {show}).' if enumerators else '    true.')
     return '\n'.join(lines) + '\n'
 
 

@@ -32,7 +32,9 @@ builds:
 | pgmpy | yes (variable elimination) | UAI files | `--pgmpy` |
 | libDAI 0.3.2 | yes (junction tree, min-fill) | UAI files | `--libdai` |
 | TensorInference.jl | yes (tensor network contraction, `treesa`, `greedy`) | UAI files | `--tensorinference` |
-| ProvSQL 1.13.0 (PostgreSQL 16.4) | yes (its own method choice, tree decomposition) | the TPC-H programs and the literature suite's pdb and noisy-or, as SQL | `--provsql` |
+| ProvSQL 1.13.0 (PostgreSQL 16.4) | yes (its own method choice, tree decomposition) | the TPC-H programs and the literature suite's pdb, noisy-or, liftsep and rgraph, as SQL | `--provsql` |
+| PSouffle (3fb0fd06) | yes (derivation graph, BDDs) | the programs of the logic program and database suites, through `problog2souffle.py` (section 26) | `--psouffle` |
+| vProbLog | yes, at the fixpoint | not run, section 27 | |
 | Storm 1.14 (stormpy) | yes (`sparse`, `exact`, `dd`) | the weather factory as Rubicon's PRISM model; every other Dice program as a Markov chain, through `dice2prism.py` | `--storm`, `--storm-variants`, `--weather-models` |
 | PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the same as Storm | `--prism`, `--prism-variants`, `--prism-heap` |
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
@@ -76,6 +78,38 @@ installed ones):
 `bench.py table` takes the first of `--ref` that finished as the reference
 answer and the first of `--pr-ref` for log10 Z; `--approx` (Scallop by
 default) gets a column of its own.
+
+tddlog's time includes the conversion of a program from its original
+language into the file tddlog reads: `dice2problog.py`'s ProbLog program
+of a Dice or noDice program (and `dice2problog_onehot.py`'s, which
+tddlog's one-hot arm reads), `gen_bn.py`'s ProbLog program of a network,
+the circuit Alea.jl writes of a bit-blasted program and `lpad2problog.py`'s
+ProbLog program of a cplint LPAD. Each conversion is timed once an
+instance on one machine, apart from the runs (matched to the file the
+runs read by its SHA-256), as the median of three runs. A conversion is
+timed as the system it comes from is: a Python converter's process, and
+the circuit as Alea.jl is timed, its build and the write of its ProbLog
+program a second time in the process (`export --warm-below S`), without
+Julia's start, loading or compilation, and without the Dice programs,
+which translate the circuit for the Dice family. The processing
+(`rel/charge.py`) adds its
+seconds to the record of tddlog and of every system whose input is made
+from the converted file, directly or through a translator of its own: for
+example the ProbLog family, PITA, aspmc, Scallop and PSouffle; Ace, Merlin
+and the network tools on the
+ground networks of a converted program; the Dice family on the Dice
+programs written from it; and on a circuit, Dice, Roulette, Genfer, Psi,
+SPPL, PRISM and Storm, which read its translations. A run that passes
+the limit with it counts as a timeout. A system that reads the
+benchmark's original program pays nothing (Dice and the systems that
+translate a Dice program themselves, Alea.jl on its own programs, Ace,
+Merlin and the network tools on a network's own file), and neither does
+one whose input another converter writes for one baseline (`gen_bn.py`'s
+Dice programs, Hugin and UAI files). A translator written only to hand a
+program to one baseline (`problog2pita.py`, `problog2souffle.py`,
+`dice2geni.py`, `dice2genfer.py`, `dice2psi.py`, `dice2alea.py`,
+`dice2roulette.py`, the Hugin and UAI writers) is not timed: its start-up
+on every call is the harness's, not the system's work.
 
 ---
 
@@ -553,7 +587,7 @@ program run without it stops in Alea where an error has positive
 probability.
 
     julia --project=Alea.jl alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX]
-    julia --project=Alea.jl alea_bench.jl export [--set NAME=VALUE ...] PROGRAM.jl PREFIX
+    julia --project=Alea.jl alea_bench.jl export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX
 
 `--set NAME=VALUE` runs the program with its one line `const NAME = ...`
 reading `const NAME = VALUE`: a size, such as the bits after the binary
@@ -661,9 +695,9 @@ PREFIX__dJ.dice programs (a `let` per flip and per gate) that Dice runs
 and the other systems' translators read. Those Dice programs are the
 circuit in Dice's syntax, not a model written in Dice, and
 `dice2problog.py` on them gives the same circuit back, so these
-instances are attempted only for every system but Alea.jl (section 24),
+instances are translated for every system but Alea.jl (section 24),
 apart from the three models that Genfer, SPPL and Psi run as their own
-programs (section 12). A natural input would need a translator from
+programs (section 12). A native input would need a translator from
 Alea.jl's source, which does not exist yet.
 
 ---
@@ -687,7 +721,12 @@ from stderr. A ground query it does not print is an atom its grounder
 removed: one the program states as a fact answers 1 (`bench_pe :- true.`,
 P(e) on the seven PR networks with no observations, where aspmc prints
 only the program's overall weight), and any other answers 0, since no
-rule derives it (water's values of probability 0).
+rule derives it (water's values of probability 0). The processing reads
+the records of runs before bench.py did so (bn_water_ev, 11 of 14 queries)
+the same way: of aspmc alone, a query left out where the reference answers
+exactly 0 counts as answered 0. Any other
+system's record that leaves out a query the reference answers counts as
+wrong (`missing`).
 
 Its ProbLog frontend does not condition on `evidence/1,2`: it reads them
 as facts and returns unconditional probabilities with exit code zero.
@@ -702,6 +741,13 @@ inconsistent where P(bench_e) is 0. aspmc compiles the program once with
 the extra queries, so its time includes what conditioning costs it. It
 computes in doubles, and on the UAI networks, where P(e) is as low as
 1e-618, its answers are checked against the reference.
+The release run's harness, before `aspmc_conditioned`, refused aspmc on
+a program with evidence (an error, "aspmc ProbLog frontend does not
+condition on evidence"), as did the reruns of its skips at its commit.
+Such a refusal says nothing of aspmc, which takes the program: a later
+run of the current harness replaces each (aspmc_std, aspmc_lit, bnx),
+neither a table nor a page shows it (bench.py's `stale_refusal`), and
+one that no later run replaces stops the processing.
 Its grammar reads a probability as `1`, `1.0...` or `0.` and digits, not
 in exponent notation, in which the network programs write a small one
 (`1e-05`): on the UAI MAR set the parser refused 95 of the 120 networks'
@@ -867,7 +913,9 @@ answers wrongly: `log_e(Pr(e)) = -∞` on Promedus_31 and Segmentation_11,
 whose P(e) is 1.6e-2 and 2.0e-52, and a NullPointerException in the
 evaluator on Alchemy_11 and Grids_14 to Grids_18. On the PR sets it
 printed P(e) = 0 for three wcsp networks (myciel5g_3, myciel5g_4,
-queen5_5_4) that have no reference. An `Xlog` run whose compile reports
+queen5_5_4) that have no reference; their Z is positive, since every
+entry of their tables is 1 or 1e-4 (soft colouring constraints, as in
+queen5_5_3, whose log10 Z is -113.03). An `Xlog` run whose compile reports
 `Method : c2dCompilation` is therefore a failed run: bench.py does not
 evaluate the circuit. The uai_pr table
 therefore runs Ace as `Xlog` (its default route, in log space) and
@@ -981,11 +1029,21 @@ holds both (section 7).
 
 On the uai suite, MAR and PR alike, `bench.py run` checks every baseline's
 record against the instance's reference once its systems have run
-(`check_against_reference`): the marginals against the clique tree's
-(else Merlin's, else tddlog's) to 1e-6, and log10 Z against the clique
-tree's (else Merlin's PR task, Ganak's or tddlog's) to 1e-6 times
-max(1, |log10 Z|), the tolerance of the release's tables. A record off by
-more is an error with the difference in its message, a failed run as a
+(`check_against_reference`), and the processing checks every suite's
+records with the same function (`answer_right`): an answer is right
+when it is within 1e-6 of the reference and within 1e-3 of it
+relatively, each beyond the last digit either of the two prints (Merlin
+six decimals, noDice six with its last unrounded, Geni seven, ProbLog and
+PSouffle eight significant digits, the network tools' drivers twelve),
+or when it is within 1e-9 of it: differences under 1e-9 count as
+floating-point noise. The reference is
+the exact record, else Alea.jl's, ProbLog's, Merlin's or Ace's (whose
+answers of 0 or NaN, its underflow in doubles, are never a reference),
+and tddlog's only where none of them answers (the page then says checked
+against tddlog only); the reference itself is checked against none. log10 Z is
+checked against the clique tree's (else Merlin's PR task, Ganak's or
+tddlog's) to 1e-6 times max(1, |log10 Z|). A record off by more is an
+error with the difference in its message, a failed run as a
 crash is: a system that computes in doubles can underflow on these
 networks, whose P(e) goes down to 1e-618 (Grids_18 of the MAR set).
 
@@ -1323,7 +1381,14 @@ where its paper has one (Genfer's seven Dice programs, Geni's suite);
 everything else goes through the translation. As for Psi, a program is
 asked one component of its value at a time (Genfer, Geni) or compiled
 once and asked each value of each component (SPPL): the table's single
-marginals, no joint, as the other systems are asked. A circuit's program is asked
+marginals, no joint, as the other systems are asked. Where a system is
+asked one component a run (Genfer, Geni, Psi), the record's seconds are
+its runs', and the translations, one translator process a component, are
+bounded by a time limit of their own, the suite's (bench.py's
+by_component): a program of 30 000 queries (smokers s30000) translates
+for hours. Past the limit the record is the translator's error, "the
+translation of N components passed the time limit", and the instance
+counts as unanswered by that system. A circuit's program is asked
 what Dice is asked of it: a `bool` program its probability of true, a
 `joint` one, whose value is N Booleans, the joint of the N
 (`--joint`: the int(N) whose bits they are, the first the most
@@ -1421,7 +1486,13 @@ Genfer, SPPL and tddlog agree with it and Geni agrees with it on the other
 networks it answers. Geni rebuilt with `Precision = f64` prints the same answers,
 and every `discrete` of the Dice program sums to one, so neither rounding
 nor a table short of one explains the difference; whether Geni or the
-program `dice2geni.py` writes is at fault is not known. A Boolean's two answers are `Pr(1)` (true) and
+program `dice2geni.py` writes is at fault is not known. On a network whose
+evidence has a small probability the seven decimals are too few: on
+uai_promedus_24, P(e) = 1.37e-6, Geni prints `Pr(1) = 0.0000013`, and its
+log10 Z differs from the reference by 0.024 and its marginals (each over
+P(e)) by 0.034, while Dice, Alea.jl, Roulette, Genfer, SPPL, Pluck, Storm
+and PRISM agree with it to 1e-12 on the same programs. Such answers are
+wrong answers of Geni's own and count as failures. A Boolean's two answers are `Pr(1)` (true) and
 `Pr(0)`. `scripts/gen_geni.py --gir` writes the `.gir` program of an
 instance (link, router and weather-factory families; the weather programs
 equal the artifact's files byte for byte); the weather query is Pr(0) (the
@@ -1500,6 +1571,11 @@ On the two smallest programs of the Geni weather factory
 (`geni_weather_h1`, `geni_weather_n2`) noDice exits in 0.03 s without
 printing anything, and the cause is not known. The larger weather
 programs run out of time or memory. Both count as unanswered.
+Its six decimals are too few for a network whose evidence has a small
+probability: on uai_promedus_24 under `--pr`, P(e) = 1.37e-6, noDice
+prints 0.000001 for the program Dice answers 1.37e-6 on, and its log10 Z
+differs from the reference by 0.138. Such answers are wrong answers of
+noDice's own and count as failures.
 
 ### Psi
 
@@ -1667,7 +1743,7 @@ its method by cost (independent tuples, a tree decomposition built in,
 external knowledge compilers where installed; none is, so it uses what is
 built in). It is the TPC-H suite's database baseline, and runs on every
 other family whose programs are queries over tuple-independent tables:
-the literature suite's `pdb` and `noisyor`.
+the literature suite's `pdb`, `noisyor`, `liftsep` and `rgraph`.
 
 The installation (in a prefix,
 `$HOME/local/code/provsql` in the release run) builds libuuid (util-linux 2.39.3, for
@@ -1675,9 +1751,10 @@ The installation (in a prefix,
 source and ProvSQL v1.13.0 as an extension, and ends with a smoke test.
 
 `scripts/tpch2provsql.py` translates a program of `gen_tpch.py`,
-`gen_pdb.py` or `gen_noisyor.py` (facts, probabilistic facts,
-non-recursive conjunctive rules with comparisons, queries and evidence on
-ground atoms) to SQL: a table per fact predicate (`c1`.. and `prob`), the
+`gen_pdb.py`, `gen_noisyor.py`, `gen_liftsep.py` or `gen_rgraph.py`
+(facts, probabilistic facts, non-recursive conjunctive rules with
+comparisons, queries and evidence on ground atoms) to SQL: a table per
+fact predicate (`c1`.. and `prob`), the
 data loaded by `COPY`, `add_provenance` and `set_prob`, a view per rule
 predicate (a `UNION` of `SELECT DISTINCT` per clause, in dependency order),
 and per query `SELECT probability_evaluate(provenance()) FROM q`. A ground
@@ -1789,8 +1866,8 @@ loops): that is the engine's failure, which Storm's `exact` does not
 have. The answers are `result X` and `Result: X`; the time is the
 process's, the components' runs added (PRISM's JVM starts each), with
 the checkers' own building and checking in `inproc_seconds` (`storm_inference_seconds` on
-the weather factory). The translation is not timed, as no system's is;
-its seconds over all the engines of an instance are bounded by the time
+the weather factory). The translation is not timed, as no translator
+written for one baseline is (the introduction); its seconds over all the engines of an instance are bounded by the time
 limit, past which the instance is a timeout. Tests:
 `tests/test_modelcheckers.py` against `gen_geni.py weather N H
 --reference`, `tests/test_dice2prism.py` (every program of data/dice and
@@ -1887,29 +1964,41 @@ the files the script writes.
 
 ## 24. What each system is compared on
 
-Every system of a kind of problems is compared on all of the kind's
-instances, as the README's figures and the results page's plots of the
-kinds draw them: a kind is the set of programs naturally written in the
-languages of that kind, and an instance a system does not answer counts
+The results are partitioned by type of program, six categories:
+probabilistic logic programs, probabilistic database queries, Bayesian
+networks, Markov networks, probabilistic functional programs and
+bit-blasted programs. Each instance counts in one category, whatever
+language its source was written in, and a copy of an instance (the same
+original files and the same program, by SHA-256) counts once. A UAI 2022 network
+is a Bayesian or a Markov network by its structure: every file of those
+sets has the header MARKOV, and `scripts/uai_types.py` calls a network
+Bayesian when its factors are conditional probability tables over an
+acyclic graph, writing `data/uai_types.tsv`, which the processing reads.
+Every system given some instance of a category is compared on all of
+the category's instances, as the README's figures and the results
+page's plots draw them, and an instance a system does not answer counts
 as unanswered, whatever the reason. This section documents how each
 system was given each suite: as its own program, written as its users
 write programs (line for line), or through a translation that does some
-of its work.
+of its work. Each system's version, settings, the instances it is not
+given and why, and its paper and link are in `data/systems.json`, from
+this document and the systems' own repositories, which the results page
+shows on the system's page beside these rows.
 
-For each system, an instance is its own, natural to it, attempted or
-not attempted. An instance is the system's **own** if it comes from the
-system's own papers, benchmarks or distribution. It is **natural** if it
+For each system, an instance is its own, native to it, translated or
+not given. An instance is the system's **own** if it comes from the
+system's own papers, benchmarks or distribution. It is **native** if it
 is written as the system's users write programs: in the system's
 language, or translated line for line, within a constant factor of the
 original's size, with none of the system's work done for it by tddlog
 or another system (no grounding, no unrolling of recursion, no
-bit-blasting, no blow-up); a system's own instances are natural to it.
-An instance the system is given otherwise is **attempted** only.
-tddlog's input is classified the same way: it only attempts the
-bit-blasted and integer programs (`bb_`, `arith_`, `pluck_`), where it
-reads the circuit Alea.jl builds. The Dice programs with loops are
-natural to it: `dice2problog.py` writes a loop as recursion over a step
-index, as a ProbLog user writes one, and tddlog's grounder unrolls it.
+bit-blasting, no blow-up); a system's own instances are native to it.
+An instance the system is given otherwise is **translated**.
+tddlog's input is classified the same way: it reads the bit-blasted and
+integer programs (`bb_`, `arith_`, `pluck_`) translated, as the circuit
+Alea.jl builds. The Dice programs with loops are native to it:
+`dice2problog.py` writes a loop as recursion over a step index, as a
+ProbLog user writes one, and tddlog's grounder unrolls it.
 
 The ProbLog family is scored on the dice suite's 21 scaled loops in the
 form of the ProbLog program on which it does better, so that no system
@@ -1922,21 +2011,24 @@ total time, for the whole suite. ProbLog is scored on the unrolled form
 (15 answered against 10 on the recursion), aspmc on the unrolled form
 (16 on each, 3412 s against 3949 s) and PITA on the recursion (10 on
 each, 6739 s against 6752 s); tddlog stays on the recursion. An
-answer that differs from tddlog's by more than 1e-6 counts as
-unanswered. The unrolled form is attempted only, as the translation
+answer that fails the answer check against tddlog's counts as
+unanswered. The unrolled form is translated, as the translation
 does the unrolling for the system. Each loop's page shows both forms
 and which systems are scored on each.
 
 The first row that matches an instance's system, suite and name (a
-regular expression the name starts with) classifies it; a system's
-variants (`alea-process`, `roulette-process`) take their stem's rows.
+regular expression the name starts with) classifies it; the processes
+of Alea.jl and Roulette (`alea-process`, `roulette-process`, their times
+with the start-up of Julia and Racket) are not systems of their own in
+the categories. On an instance joined with its copies, a system's class
+is the first of own, native and translated among the copies it was given.
 The uncertain cells were decided as follows: Storm's and
-PRISM's weather factory is natural, not own (Rubicon's model, not
+PRISM's weather factory is native, not own (Rubicon's model, not
 theirs); pgmpy has no own networks (bnlearn's networks are R's
-package's); the Dice family's systems are natural on every network,
+package's); the Dice family's systems are native on every network,
 Markov networks included, as the Dice paper writes networks as nested
-conditionals; the network tools are natural on the networks of the Dice
-and Roulette papers; Alea.jl is natural on Pluck's sequence models,
+conditionals; the network tools are native on the networks of the Dice
+and Roulette papers; Alea.jl is native on Pluck's sequence models,
 which are Dice.jl programs ported to Alea.jl.
 
 | systems | suites | instances | class | reason |
@@ -1956,22 +2048,24 @@ which are Dice.jl programs ported to Alea.jl.
 | genfer | dice | `dice_(twocoins\|evidence\|grass\|noisyOr\|alarm\|murderMystery)` | own | the Dice programs Genfer's repository ships |
 | psi | bitblast | `bb_linreg_` | own | Psi's R2 linear regression, as Psi's own program |
 | sppl | bitblast | `bb_markov_` | own | SPPL's hierarchical Markov switching model (PLDI 2021) |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | natural | a network, the tool's own input |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | natural | the Dice and Roulette papers' Bayesian networks, as networks |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | attempted | a network of Boolean variables built from the ground program (ground2net.py) |
-| tddlog, problog, pita, aspmc | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | natural | a ProbLog program, one annotated disjunction per row of a table (gen_bn.py) |
-| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | natural | a Dice program of nested conditionals over discretes, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
-| tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | natural | a ProbLog program (for PITA through problog2pita.py) |
-| provsql | lit | all | natural | tuple-independent tables and non-recursive views (tpch2provsql.py) |
-| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | attempted | Dice programs of the ground program (ground2net.py) |
-| alea | ppl | `pluck_` | natural | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
-| tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | attempted | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
-| problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | attempted | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
-| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | natural | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
-| tddlog, problog, pita, aspmc | roulette | all | natural | the paper's model written as a ProbLog program (gen_roulette.py) |
-| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | natural | a loop-free Dice program translated line for line by dice2problog.py |
-| storm, prism | geni | `geni_weather_` | natural | Rubicon's PRISM model of the weather factory (CAV 2021) |
-| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | natural | a Dice program, as written or translated into the system's language (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
+| psouffle | lit | `taint_` | own | the Android taint analyses of PSouffle's evaluation (FMCAD 2026) |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | native | a network, the tool's own input |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks, as networks |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
+| tddlog, problog, pita, aspmc | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | native | a ProbLog program, one annotated disjunction per row of a table (gen_bn.py) |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | native | a Dice program of nested conditionals over discretes, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
+| tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program (for PITA through problog2pita.py) |
+| provsql | lit | all | native | tuple-independent tables and non-recursive views (tpch2provsql.py) |
+| psouffle | std, lit, tpch, biomine | all | native | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
+| alea | ppl | `pluck_` | native | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
+| tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
+| problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
+| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | native | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
+| tddlog, problog, pita, aspmc | roulette | all | native | the paper's model written as a ProbLog program (gen_roulette.py) |
+| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | native | a loop-free Dice program translated line for line by dice2problog.py |
+| storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | native | a Dice program, as written or translated into the system's language (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
 
 ## 25. What this release does not run
 
@@ -2002,6 +2096,46 @@ family, was run and counts as unanswered. By system and suite:
   `--ace-stack` or in log space (section 7, the thread stack and log
   space).
 - ProvSQL: section 21.
+- The Dice family on taint, through the apps' ground programs' Dice
+  programs. Geni, Genfer and Psi read the program through
+  `by_component`, which translates the whole Dice program (several MB)
+  once for each component of its value, one a query (thousands on
+  taint). In the run of 2026-10-25 it charged only the runs to the
+  instance's limit, and the jobs on 8 apps (andors_trail, and_roc,
+  app_018, app_kQm, ginger_master, noisy_sounds, tilt_mazes, tom_droid)
+  were stopped after 7.5 hours. The translators the stop ended left
+  records with no message, Genfer's on andors_trail and app_018 and
+  Geni's on ginger_master, noisy_sounds, tilt_mazes and tom_droid,
+  which the processing leaves out.
+  `by_component` now charges its translations to the limit and stops
+  at it (2026-10-26), and a run of 2026-10-26 ran the
+  family again on the 13 apps whose grounding finishes: those 8 and
+  angulo, app_ca7, barcode, savage_knife and yaaic, whose earlier records predate the bound. Its records replace the earlier ones on those apps. Every
+  system of the family failed on every app: Dice, Alea.jl and noDice
+  ran out of 300 s; Geni's and Genfer's translations passed the limit
+  on 12 apps (by_component's bound or the translator's own) and the
+  systems ran out of time on the 13th; Psi and SPPL ran out of time on
+  10 apps and their translations passed the limit on 3; Pluck ran out
+  of time on 10, out of memory on 1 and its translation passed the
+  limit on 2; Roulette's translator failed or passed the limit on 16 of
+  its 26 runs (two forms) and its `raco make` ran out of time on 10.
+  On tuio_droid and video_game the grounding (`tddlog --ground`) ran
+  out of 300 s, so the family, the network systems and the model
+  checkers were handed no program there: those records count as
+  unanswered and need no captured program.
+- The Dice family on Ace's three largest `fs` networks (`ace_fs_25`,
+  `ace_fs_28`, `ace_fs_29`): not given. The family ran on them, and
+  every run failed: the time limit (Dice, Alea.jl, Geni, Psi, Pluck),
+  an allocation failure (Roulette, noDice), a stack overflow (Genfer)
+  or an error (SPPL). A record is published with the files its command
+  read, and the capture writes those files again:
+  through `by_component` that is one translation of the network's Dice
+  program for each of its 1275 to 1711 components and each of Dice,
+  Geni, Psi and Genfer, files of up to 36 MB each. The capture had not
+  finished after 15 hours and was stopped (2026-10-26). The processing
+  leaves the family's records on the three networks out, in the table of the run that wrote them
+  and in the earlier coverage table whose skips they replaced. Pluck's
+  runs on the ground programs' Dice programs stand.
 
 Failures that come from a lane's limits rather than from the system:
 Roulette, in the narrow lanes (55 GB of address space) of the UAI
@@ -2013,3 +2147,196 @@ on the networks and the logic programs are all RSDD's allocations that
 the lane's address space refuses: 3.2 or 8.7 GB in lanes of 17 GB (all
 120 networks of the UAI MAR set, within 40 to 80 s), 34 GB for std_bn,
 ace and large; on the circuits, 8.7 or 17.4 GB in lanes of 25 GB.
+
+## 26. PSouffle
+
+PSouffle (Li, Xia, Adnan and Wang, "PSoufflé: Scaling Exact
+Probabilistic Logic Inference for Program Analysis", FMCAD 2026,
+<https://doi.org/10.34727/2026/isbn.978-3-85448-093-8_42>; its online
+mode is Li, Chen, Dillig and Wang, "Incremental Inference for
+Probabilistic Datalog", CAV 2026;
+<https://github.com/psouffle-lang/psouffle>, UPL-1.0, its evaluation
+directory MIT) is an exact probabilistic Datalog compiler and runtime
+built on Soufflé: the compiled program evaluates the rules semi-naively,
+records each rule application in a derivation graph, prunes the graph to
+the queries and the evidence, and compiles its components into BDDs
+(CUDD) for weighted model counting. Its README says so ("exact
+probabilistic Datalog"), and approximate inference is outside the
+repository. The literature suite's `taint` family is its paper's
+evaluation, so it is that family's own system (rule 15); it runs on every
+other program of the logic program and database suites that its
+translation can express.
+
+PSouffle is built from its repository at 3fb0fd06, with CUDD at fc30c18f,
+the commit its build pins, as `souffle` with 32-bit words.
+
+`scripts/problog2souffle.py PROGRAM OUTDIR` writes the Soufflé program
+(`compute.dl`), its input relations (`input/R.facts`, a row a line, and
+`input/R.prob`, each row's probability) and `names.tsv`, which maps the
+Soufflé relations back to ProbLog's predicates. An argument position is
+a Soufflé number where every constant that reaches it, through the
+variables the clauses share, is an integer, and a symbol otherwise.
+
+- A ground fact is a row of an input relation; a tuple given twice is one
+  row of probability 1 - (1 - p)(1 - q), as ProbLog's two independent
+  facts are.
+- A predicate with facts and rules reads its facts from a relation of its
+  own (`R__f`, with `R(x..) :- R__f(x..)`): PSouffle keeps only the input
+  probability of a tuple that is both an input and derived, with or
+  without its rewrites (a probe on 2026-10-25:
+  `r(3)` answered 0.2 where ProbLog answers 0.48).
+- A rule keeps its probability, which PSouffle draws once per ground
+  instance of the rule, as ProbLog does (probed: `0.5::h(X) :- b(X,_)`
+  over two rows of `b` gives 0.75 in both). The anonymous variables of a
+  probabilistic clause are named, so that each instance is drawn on its
+  own; `\+ A` is `!A`, the comparisons and `is` are Soufflé's.
+- An annotated disjunction chooses its heads in order: the choice of the
+  k-th head has probability p_k / (1 - p_1 - ... - p_(k-1)), and the k-th
+  head holds where its choice does and none of the earlier ones do. The
+  annotated disjunctions of facts are rows of input relations, one pair
+  of relations per shape; one with a body draws its choices over the
+  clause's variables.
+- `query(A)` and `evidence(A, true|false)` are PSouffle's own; a query
+  with variables is written with `_`. PSouffle names the code of a query
+  or of evidence after its relation, so a relation takes one of each (a
+  second one does not compile): a second ground atom of a relation is
+  asked through a relation of no arguments of its own (`q__0() :- p(1,
+  2).`), and several queries with variables of one relation are one
+  query of every tuple of it. A query with a body over certain facts
+  (smokers' `query(smokes(X)) :- person(X).`) is its ground queries.
+  `queries.txt` lists the queries as tddlog prints their atoms.
+
+It refuses (exit 3, `unsupported`) lists, function symbols, a disjunction
+in a body, division, a non-ground fact, a negation through recursion, a
+variable no positive literal binds and arithmetic on symbols. An
+annotated disjunction inside a recursion (pedigree's and bloodtype's
+inheritance) is refused too: the k-th head negates the earlier choices,
+whose rules read the recursion, and Soufflé stratifies negation by
+relation only.
+
+`bench.py run --psouffle SOUFFLE` translates the instance, compiles the
+program with `souffle --full-only compute.dl -o compute` and runs
+`./compute --jobs=1 -F input -D out` within the instance's limit,
+reading `out/facts.prob`. The translation and the compile are not timed,
+as the paper times inference and not the compile of the analysis; the
+record keeps the compile's seconds (`compile_s`, at most 3600 s) and the
+compiled program is reused by every instance whose `compute.dl` is the
+same. The run is PSouffle's default full inference, which the paper's
+evaluation runs as one of its two engines (`souffle_no_rewrite` in
+`evaluation/full/FMCAD.py`); `--jobs=1` keeps it in its lane. The other,
+`--rewrite` (the graph rewrites), loses derivations at 3fb0fd06 and is
+not used: on probes of 2026-10-25 it answers
+0.3 or 0.4 for a tuple that two rules derive from 0.4 and 0.3 facts
+(0.58 without it), 0.5 for `q() :- a(_)` over two 0.5 rows (0.75), and
+0.2995 for TPC-H's q4 through views (tpch_q4v_1; 0.41734 without it, as
+the exact reference). A ground query that PSouffle does not list has
+probability 0. PSouffle prints probabilities with eight decimals, so its
+answers differ from the references by up to 5e-9.
+
+On taint, PSouffle's own runner (`evaluation/full/FMCAD.py`) runs the
+analysis as five stage programs (`evaluation/full/taint/programs/`), each
+stage's output tuples read by the next as facts of probability 1.0: a
+different distribution from the merged program. The family's instances
+are the merged program its evaluation gives ProbLog
+(`compute.problog.dl`, which `gen_taint.py` reads), and PSouffle runs on
+the same program as tddlog and ProbLog, through the translation.
+
+PSouffle answers some recursive programs wrongly at 3fb0fd06: on
+
+```
+0.5::e(1,2). 0.5::e(2,1). 0.5::e(2,3).
+path(X,Y) :- e(X,Y).
+path(X,Y) :- e(X,Z), path(Z,Y).
+```
+
+it answers path(1,3) 0.375 and path(2,3) 0.625, where ProbLog and tddlog
+answer 0.25 and 0.5: the extra 0.125 is the world with e(1,2) and e(2,1)
+but not e(2,3), in which the cycle between path(1,3) and path(2,3)
+supports itself. Its answer under evidence on the same cycle is wrong in
+the same way. Taint's rules are recursive through a dozen relations, so
+an answer of PSouffle that differs from tddlog's is not taken as either
+one's error by itself; a wrong answer counts as a failure (rule 15).
+
+In the timed run of 2026-10-25, against tddlog and the
+references: it agrees within 5e-9 on every program it answered of the
+lit suite but taint's yaaic (section 28: eventcalc4_250, liftsep 3 to 8,
+rgraph 6 to 12, 10 taint apps and 32 programs of the older families), of
+TPC-H (175) and of the standard suite (30); it answers wrongly the
+standard suite's graph programs g10_25 to g18_50 (8, by up to 0.71) and
+all 10 Biomine programs (by up to 0.62), whose graphs have cycles.
+Elsewhere it stops on CUDD's allocation (`bddOr returned NULL`,
+`Cudd_bddAnd failed`), runs past the limit, or is refused by the
+translation (pedigree's 14 programs and bloodtype: their annotated
+disjunctions inside a recursion).
+
+Not given: the networks (`gen_bn.py`'s programs, std_bn and the network
+suites) and the probabilistic functional programs, for lack of time in
+this release; the translation could write them (an annotated disjunction
+per row of a table), but each row would be a clause of its own in the
+compiled C++ program. Tests: `tests/test_problog2souffle.py` (the
+translation, and with `PSOUFFLE` set PSouffle's answers on hand-computed
+programs and on small eventcalc, liftsep and rgraph programs against
+`lit_exact.py`).
+
+## 27. vProbLog
+
+vProbLog (Tsamoura, Gutiérrez-Basulto and Kimmig, "Beyond the Grounding
+Bottleneck: Datalog Techniques for Inference in Probabilistic Logic
+Programs", AAAI 2020, technical report arXiv:1911.07750;
+<https://github.com/jjjxia/Vproblog>, built on VLog, no licence stated)
+computes the TcP operator of Vlasselaer et al. with semi-naive evaluation
+and magic sets on a non-ground program, each derived atom's formula an
+SDD. Run to its fixpoint (`--maxDepth` unbounded, the default) its
+answers are exact, and it has an implementation, so rule 15 makes it a
+baseline. It is not run in this release:
+
+- Its language is ProbLog's positive, function-free programs with
+  probabilities on facts: "We focus on programs without negation for
+  simplicity" (Section 1), and the rules carry no probabilities
+  (Section 2). taint and eventcalc negate in their rules, and taint's
+  rules are probabilistic. PSouffle's evaluation ran it on taint's five
+  stages with a patched VLog that draws a variable per grounding of a
+  probabilistic rule (`evaluation/full/scripts/transform_to_vproblog_native.py`),
+  which is not the released system.
+- Its input is the paper's rewriting of the program into Datalog over
+  formulas (the `t_`, `agg_`, `tt_`, `d_` and `req_` predicates, an
+  external `equiv` over SDDs), with an `edb.conf` and the facts as CSV
+  files: a translator of its own, which this release does not have.
+
+The negation-free families whose probabilities are on facts only (graph,
+pdb, liftsep, rgraph, Biomine) are what it could be given once that
+translator is written.
+
+## 28. What checks the taint family
+
+Taint has no exact reference of its own: ProbLog (`-k ddnnf`, `-k sdd`)
+runs out of 1200 s on angulo, the smallest app, and `lit_exact.py` has no
+method for it. tddlog's answers on taint are checked against PSouffle's
+(rule 2), the paper's own system, on each app where both finish: an app
+is checked where every answer of the two passes the answer check.
+
+In that run 10 of the 15 apps are checked: and_roc, andors_trail,
+app_018, app_ca7, app_kQm, barcode, ginger_master, noisy_sounds,
+tilt_mazes and tom_droid, every answer (56,894 to 191,605 an app) within
+5e-9. On yaaic 11 of 157,963 answers differ by up to 1e-3, PSouffle's the
+higher (reachablecm(0,2574) 0.998999 against tddlog's 0.998001, which is
+0.999 squared), as on its positive cycles; yaaic is not checked. On
+savage_knife PSouffle ran past 300 s; on angulo, tuio_droid and
+video_game tddlog did (angulo answers in 314 s untimed), and PSouffle
+stopped on CUDD's allocation or ran past 300 s too.
+
+The run of 2026-10-26 ran tddlog again beside the Dice family, at
+the build with the successor grounding (1b835f25), and its answers give
+the same check: the same 10 apps within 5e-9 of PSouffle's, yaaic's 11
+answers up to 1e-3 apart, savage_knife answered with no PSouffle answer
+to check, and angulo past 300 s. Another run ran tddlog at that build on
+tuio_droid and video_game: both ran past 300 s.
+
+A check of 2026-10-26 settled yaaic. ProbLog (`-k ddnnf`) and PITA, with the
+driver that prints every instance of a query (section 2), were each given the
+app one ground query at a time, on the 11 queries where PSouffle and
+tddlog differ, and both print tddlog's answers: reachablet(669) 0.999 and
+reachablecm(0,2574) 0.998001, where PSouffle has 0.999997 and 0.998999.
+These 11 answers are yaaic's reference (shown on its page as
+`exact:by-query`): tddlog is checked against them, and
+PSouffle's answers on yaaic count as wrong.

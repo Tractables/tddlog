@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Benchmark tddlog against ProbLog on generated instance families.
 
-    bench.py gen  [--dir bench] [--cnf] [--pr] [--alea CMD] [SELECTION]
+    bench.py gen  [--dir bench] [--cnf] [--pr] [--alea CMD] [--tddlog BIN] [SELECTION]
     bench.py run  [--dir bench] [--out results.jsonl] [--tddlog BIN] [--problog BIN]
                   [--strategies s1,s2] [--kbs ddnnf,sdd,fsdd] [--dice CMD] [--alea CMD] [--timeout S]
                   [--pita SWIPL] [--pita-packs DIR] [--aspmc PYTHON] [--scallop SCLI] [--scallop-k 3,1000]
@@ -23,7 +23,13 @@ A strategy name may carry tddlog flags after a `+`, so `s+flag` is the run
 
 `gen` writes the instances from the fixed specification below with the
 generators in this directory, so an instance is identified by its name
-alone. The bnlearn networks of data/bn and data/bn-large are not in the
+alone. tddlog reads a network (an instance of `gen_bn.py`) itself, the
+file with its queries and observations (`network_args`), so that reading
+it is part of tddlog's time; the program the systems that read ProbLog
+programs are given is written by tddlog's reader, `tddlog --program`
+(gen's `--tddlog`), the text `gen_bn.py` writes (`gen_network`); and `gen`
+decompresses a gzipped network for tddlog once, outside its time, as the
+harness does for Ace. The bnlearn networks of data/bn and data/bn-large are not in the
 repository (no license for them is established): `fetch` downloads each
 file data/fetch.txt lists, checks its SHA-256 and writes it in place, and
 `gen` stops, naming `fetch`, where one is missing. `run` executes every (instance, system) pair once, single-threaded,
@@ -96,16 +102,17 @@ variables); the clique tree with `--evidence-probability`, and Merlin a
 second time as `merlin:bte-pr` (`-t PR`). ProbLog, PITA and aspmc, which
 print no P(e), are asked it as the probability of a query that holds when
 the evidence does (`pe_program`), and Ace runs as for the marginals. A
-record then holds `log10_z`, the base-10 logarithm of Z: for tddlog, the
-clique tree, Ace and the program systems, log10 P(e) plus the constant
-gen_bn.py states on the program's first line (`gen_bn.read_offset`); for
-Merlin, the natural logarithm it prints divided by ln 10. `table` adds the
+record then holds `log10_z`, the base-10 logarithm of Z: for tddlog, which
+reads the network, its `Z:` line for a Markov network and its P(e) for a
+Bayesian one (`network_partition_function`); for the clique tree, Ace and
+the program systems, log10 P(e) plus the constant the program states on
+its first line (`gen_bn.read_offset`); for Merlin, the natural logarithm it prints divided by ln 10. `table` adds the
 largest difference in log10 Z from the first of `--pr-ref` that finished.
 On the uai suite `run` checks each baseline's record against the
 reference when the instance's systems have run (`check_against_reference`):
-marginals further than 1e-6 from the clique tree's (or Merlin's, or
-tddlog's, the first that answered), or a log10 Z further than 1e-6 times
-max(1, |log10 Z|), make the record a failed run. `gen --pr` writes the
+marginals that fail the answer check (`answer_right`: off the reference
+by more than 1e-6 or 1e-3 of it, beyond the digits printed) or a log10 Z
+further than 1e-6 times max(1, |log10 Z|) make the record a failed run. `gen --pr` writes the
 uai suite's programs for the partition function alone (`gen_bn.py --query
 none`): they ask no query, and a Potts network without evidence (the PR
 set's queen and myciel colourings) has its colour symmetry broken
@@ -126,6 +133,7 @@ or from lanes of one `--cpus` run, all systems under the same load.
 """
 import argparse
 import decimal
+import fcntl
 import fractions
 import gzip
 import hashlib
@@ -153,6 +161,7 @@ import source_tree  # noqa: E402  (the source tree: its converters, examples and
 import gen_bn  # noqa: E402
 import ground2scallop  # noqa: E402
 import problog2pita  # noqa: E402
+import problog2souffle  # noqa: E402
 import tpch2provsql  # noqa: E402  (after sys.path, so the script runs from anywhere)
 
 # Suites that scripts/internal_suites.py, where there is one, adds: a name ->
@@ -169,15 +178,16 @@ CNF_WRITERS = {suite.generator for suite in EXTRA_SUITES.values()}
 SPEC = {}
 for n, m, seed in [(10, 25, 3), (11, 29, 7), (12, 32, 7), (13, 35, 7), (14, 37, 7),
                    (15, 40, 7), (16, 44, 1), (18, 50, 1), (20, 56, 1), (20, 60, 1),
-                   (25, 80, 1), (30, 100, 1)]:
+                   (25, 80, 1), (30, 100, 1), (32, 107, 1), (34, 113, 1)]:
     SPEC[f'g{n}_{m}'] = ('graph', ['gen_graph.py', str(n), str(m), '--seed', str(seed)])
 for n in [4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30]:
     SPEC[f'grid{n}'] = ('grid', ['gen_grid.py', str(n), '--seed', '1'])
-for n, k in [(6, 2), (10, 3), (15, 3), (20, 3), (50, 3), (100, 3), (200, 3)]:
+for n, k in [(6, 2), (10, 3), (15, 3), (20, 3), (50, 3), (100, 3), (200, 3),
+             (1000, 3), (3000, 3), (10000, 3), (30000, 3)]:
     SPEC[f's{n}'] = ('smokers', ['gen_smokers.py', str(n), '--friends-per', str(k), '--seed', '1'])
-for n in [2, 3, 4, 5, 6, 8, 10]:
+for n in [2, 3, 4, 5, 6, 8, 10, 20, 80, 640, 2560]:
     SPEC[f'uwcse{n}'] = ('uwcse', ['gen_uwcse.py', str(n)])
-for q in [10, 50, 200, 500]:
+for q in [10, 50, 200, 500, 1000, 2000, 4000, 8000]:
     SPEC[f'cora{q}'] = ('cora', ['gen_cora.py', os.path.join(ROOT, 'data', 'cplint', 'cora_m1.pl'),
                                   '--queries', str(q), '--seed', '1'])
 SPEC['bloodtype'] = ('cplint', ['gen_cplint.py', 'bloodtype'])
@@ -266,6 +276,7 @@ HYBIT = ['pi', 'weekend', 'spacex', 'GPA', 'tug_of_war', 'altermu2', 'conjugate_
          'coinBias', 'addFun_sum', 'clickGraph', 'trueskill', 'clinicalTrial1', 'clinicalTrial2', 'addFun_max']
 PLUCK = ['hmm', 'pcfg', 'string_editing', 'sorted_list']
 NODICE = ['coupon2-10-obs', 'coupon2-11-obs', 'coupon2-12-obs', 'coupon2-13-obs', 'coupon2-14-obs',
+          'coupon2-16-obs', 'coupon2-18-obs', 'coupon2-20-obs',
           'survey', 'hepar2', 'insurance', 'water', 'alarm', '3sat-0']
 PPL = {}
 for family, names in [('arith', ARITH), ('hybit', HYBIT), ('pluck', PLUCK)]:
@@ -307,6 +318,9 @@ BB_PRECISION = {  # program: (its precision constant, the paper's value, width l
     'coinBias': ('bits', 20, 2), 'addFun_sum': ('bits', 18, 5), 'clickGraph': ('bits', 8, 2),
     'trueskill': ('bits', 4, 6), 'clinicalTrial1': ('bits', 6, 2), 'clinicalTrial2': ('bits', 10, 2),
     'addFun_max': ('bits', 18, 5)}
+# Precisions past the paper's 6 above, for the programs that a system still
+# answered there.
+BB_PAST = {'pi': [20], 'zeroone_w1': [18, 22, 26, 30], 'zeroone_w2': [19, 21, 23, 25]}
 BB_SECTION2 = {  # family: (program, the constant laddered, its values, width less precision or None)
     'genes': ('genes', 'T', [5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100], None),
     'genes5': ('genes', 'bits', [8, 10, 12, 14, 16, 18], 9),
@@ -314,7 +328,7 @@ BB_SECTION2 = {  # family: (program, the constant laddered, its values, width le
     'conjugate_ex3': ('conjugate_ex3', 'bits', [10, 12, 14, 16, 18, 20, 22], 8)}
 BITBLAST = {}
 for _name, (_const, _paper, _int) in BB_PRECISION.items():
-    for _v in [_paper + d for d in range(-6, 7, 2) if _paper + d >= 1]:
+    for _v in [_paper + d for d in range(-6, 7, 2) if _paper + d >= 1] + BB_PAST.get(_name, []):
         BITBLAST[f'bb_{_name}_w{_int + _v}'] = (
             f'bb_{_name}', ['alea_bench.jl', os.path.join(ROOT, 'data', 'alea', 'hybit', f'{_name}.jl'),
                             f'{_const}={_v}'])
@@ -328,7 +342,8 @@ for _name, (_prog, _const, _values, _int) in BB_SECTION2.items():
 # by the pieces P (the table's own pieces are the middle rung of `bb_NAME`
 # and left out here).
 BB_PIECES = {  # program: (its pieces constant, the pieces)
-    'spacex': ('pieces', [4, 16, 64, 256, 1024, 4096]), 'weekend': ('num_pieces', [4, 16, 64, 256, 1024]),
+    'spacex': ('pieces', [4, 16, 64, 256, 1024, 4096]),
+    'weekend': ('num_pieces', [4, 16, 64, 256, 1024, 4096, 16384, 65536]),
     'altermu2': ('pieces', [4, 16, 64, 1024, 4096]), 'addFun_max': ('pieces', [4, 16, 64, 256, 1024, 4096])}
 for _name, (_const, _values) in BB_PIECES.items():
     for _v in _values:
@@ -351,14 +366,15 @@ for _name, (_const, _values) in BB_PIECES.items():
 # steps, the population's seasons); the trees fix `dt` for the family.
 BB_PAPERS = {  # family: (directory, program, constant laddered, its values, label, width less precision, fixed)
     'laplace': ('bitblast', 'laplace', 'bits', [6, 8, 10, 12, 14, 16], 'w', 7, []),
-    **{f'fair_dt{_t}': ('fairsquare', 'fairness', 'bits', [4, 8, 12, 16, 20, 24], 'w', 8, [f'dt={_t}'])
+    **{f'fair_dt{_t}': ('fairsquare', 'fairness', 'bits', [4, 8, 12, 16, 20, 24] + ([28, 32] if _t in (4, 14) else []),
+                        'w', 8, [f'dt={_t}'])
        for _t in [4, 14, 16, 44]},
-    'markov': ('sppl', 'markov_switching', 'n', [10, 20, 50, 100, 200, 500, 1000, 2000], 'n', 0, []),
+    'markov': ('sppl', 'markov_switching', 'n', [10, 20, 50, 100, 200, 500, 1000, 2000, 4000], 'n', 0, []),
     'linreg': ('psi', 'linear_regression', 'bits', [1, 2, 3, 4, 5, 6, 7, 8], 'w', 7, []),
-    'wmi_path': ('wmi', 'path', 'n', [16, 32, 64, 128, 256, 512, 1024], 'n', 0, []),
-    'wmi_star': ('wmi', 'star', 'n', [16, 32, 64, 128, 256, 512, 1024], 'n', 0, []),
-    'pedestrian': ('gubpi', 'pedestrian', 'steps', [4, 6, 8, 10, 12, 16, 20, 24, 32], 's', 0, []),
-    'population': ('genfer', 'population', 'steps', [1, 2, 3, 4, 6, 8, 12, 16], 's', 0, [])}
+    'wmi_path': ('wmi', 'path', 'n', [16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536], 'n', 0, []),
+    'wmi_star': ('wmi', 'star', 'n', [16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536], 'n', 0, []),
+    'pedestrian': ('gubpi', 'pedestrian', 'steps', [4, 6, 8, 10, 12, 16, 20, 24, 32, 40], 's', 0, []),
+    'population': ('genfer', 'population', 'steps', [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64], 's', 0, [])}
 for _name, (_dir, _prog, _const, _values, _label, _int, _fixed) in BB_PAPERS.items():
     for _v in _values:
         BITBLAST[f'bb_{_name}_{_label}{_int + _v}'] = (
@@ -377,13 +393,14 @@ for _name, (_dir, _prog, _const, _values, _label, _int, _fixed) in BB_PAPERS.ite
 # artifact's program (`run_roulette`). The hmm marginal likelihood stops
 # at 900 steps: past about 915 it is below the smallest normal double.
 RL_LADDER = [1000, 3000, 10000, 30000, 100000, 300000, 1000000]
-RL_SIZES = {'motivating': RL_LADDER, 'diamond': RL_LADDER, 'ladder': RL_LADDER,
-            'caesar': [25, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000],
+RL_SIZES = {'motivating': RL_LADDER + [3000000, 9000000], 'diamond': RL_LADDER + [3000000, 6000000],
+            'ladder': RL_LADDER + [3000000],
+            'caesar': [25, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000],
             'hmm-marginal-likelihood': [100, 300, 600, 900],
-            **{f'hmm-{q}': [100, 300, 1000, 3000, 10000, 30000, 100000]
+            **{f'hmm-{q}': [100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000, 3000000]
                for q in ['filtering-marginal', 'smoothing-marginal', 'filtering-joint', 'smoothing-joint']},
-            'network': [10, 30, 100, 300, 1000, 3000, 10000, 30000],
-            'hardware': [10, 30, 100, 300, 1000, 3000, 10000]}
+            'network': [10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000],
+            'hardware': [10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000]}
 # The artifact's networks, smallest first, and the variable it queries.
 RL_NETWORKS = [('cancer', 'Xray'), ('survey', 'T'), ('alarm', 'PRESS'), ('insurance', 'PropCost'),
                ('hepar2', 'itching'), ('hailfinder', 'R5Fcst'), ('water', 'CBODD_12_45'),
@@ -416,9 +433,9 @@ def roulette_suite(base):
 # which is geni_weather_n's). gen_geni.py writes each program's ProbLog
 # and Dice programs and answers it (`exact:dp`).
 GENI_SIZES = {'link': [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32],
-              'router': [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 40]}
+              'router': [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 72]}
 GENI_WEATHER_N = [2, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19]
-GENI_WEATHER_H = list(range(1, 10)) + list(range(100, 1001, 100))
+GENI_WEATHER_H = list(range(1, 10)) + list(range(100, 1001, 100)) + [3000, 10000, 30000]
 GENI = {}
 for _family, _sizes in GENI_SIZES.items():
     for _n in _sizes:
@@ -533,17 +550,20 @@ def ace_suite(base):
 # structure from a seed (docs/benchmarks.md). A suite of their own, so that
 # the standard suite's totals stay comparable across commits.
 LIT = {}
-for n in [4, 8, 16, 32, 64, 96]:
+for n in [4, 8, 16, 32, 64, 96, 192, 384, 768]:
     LIT[f'mnist_sum{n}'] = ('mnist_sum', ['gen_mnist_sum.py', str(n), '--seed', '1'])
-for g, w in [(4, 4), (4, 6), (6, 6), (10, 6), (5, 10), (6, 8), (16, 6), (32, 6), (6, 10), (7, 10)]:
+for g, w in [(4, 4), (4, 6), (6, 6), (10, 6), (5, 10), (6, 8), (16, 6), (32, 6), (6, 10), (7, 10),
+             (7, 12), (14, 10), (7, 13), (7, 14)]:
     LIT[f'pedigree{g}_{w}'] = ('pedigree', ['gen_pedigree.py', str(g), str(w), '--seed', '1'])
-for n, t in [(6, 10), (10, 10), (14, 10), (18, 20), (22, 40)]:
+for n, t in [(6, 10), (10, 10), (14, 10), (18, 20), (22, 40), (45, 40), (180, 40), (240, 40)]:
     LIT[f'sickness{n}_{t}'] = ('sickness', ['gen_sickness.py', str(n), str(t), '--seed', '1'])
-for d, f in [(6, 9), (8, 12), (10, 15), (15, 22), (20, 30), (30, 45)]:
+for d, f in [(6, 9), (8, 12), (10, 15), (15, 22), (20, 30), (30, 45), (60, 90), (120, 180), (240, 360),
+             (360, 540)]:
     LIT[f'noisyor{d}_{f}'] = ('noisyor', ['gen_noisyor.py', str(d), str(f), '--seed', '1'])
-for c, pegs, r in [(4, 4, 8), (6, 4, 8), (8, 4, 8), (10, 4, 8), (4, 5, 8), (6, 5, 8), (8, 5, 8)]:
+for c, pegs, r in [(4, 4, 8), (6, 4, 8), (8, 4, 8), (10, 4, 8), (4, 5, 8), (6, 5, 8), (8, 5, 8),
+                   (8, 8, 8), (16, 5, 8), (32, 5, 8), (64, 5, 8)]:
     LIT[f'mastermind{c}_{pegs}_{r}'] = ('mastermind', ['gen_mastermind.py', str(c), str(pegs), str(r), '--seed', '1'])
-for n in [10, 15, 20, 30, 40]:
+for n in [10, 15, 20, 30, 40, 80, 160, 320, 640]:
     LIT[f'pdb{n}'] = ('pdb', ['gen_pdb.py', str(n), '--seed', '1'])
 LIT_FAMILIES = list(dict.fromkeys(family for family, _ in LIT.values()))
 
@@ -554,21 +574,47 @@ for family in LIT_FAMILIES:
     EXACT[f'gen_{family}.py'] = ('lit', lambda path, family=family: ['lit_exact.py', family, path,
                                                                     '--precision', '17'])
 
+# The families of the second literature scan:
+# Prob-EC's event calculus and PSouffle's taint analyses of Android apps
+# (logic programs), and two #P-hard queries on probabilistic databases,
+# Beame et al.'s safe queries whose lineage has no small decision-DNNF and
+# Fink et al.'s path of two edges on a random graph. Each has its
+# reference in lit_exact.py but taint, which has none but ProbLog's and
+# PSouffle's, the paper's own system. The taint programs are PSouffle's
+# (MIT licence), which data/fetch.txt names.
+TAINT_APPS = ['and-roc', 'andors-trail', 'angulo', 'app-018', 'app-ca7', 'app-kQm', 'barcode', 'ginger-master',
+              'noisy-sounds', 'savage-knife', 'tilt-mazes', 'tom-droid', 'tuio-droid', 'video-game', 'yaaic']
+for t in [250, 500, 1000, 2000, 4000, 8000]:
+    LIT[f'eventcalc4_{t}'] = ('eventcalc', ['gen_eventcalc.py', '4', str(t), '--seed', '1'])
+for app in TAINT_APPS:
+    LIT[f'taint_{app.replace("-", "_")}'] = ('taint', ['gen_taint.py',
+                                                        os.path.join(ROOT, 'data', 'psouffle', 'taint', f'{app}.pl.gz')])
+for n in [3, 4, 6, 8, 11, 16, 23, 32]:
+    LIT[f'liftsep{n}'] = ('liftsep', ['gen_liftsep.py', str(n), '--seed', '1'])
+for n in [6, 8, 10, 12, 14, 17, 20, 24]:
+    LIT[f'rgraph{n}'] = ('rgraph', ['gen_rgraph.py', str(n), '--seed', '1'])
+for family in ['eventcalc', 'liftsep', 'rgraph']:
+    EXACT[f'gen_{family}.py'] = ('lit', lambda path, family=family: ['lit_exact.py', family, path,
+                                                                    '--precision', '17'])
+
 
 # TPC-H as a tuple-independent probabilistic database (gen_tpch.py), the
 # workload of SPROUT and of dissociation: each Boolean query alone, a
-# family of its own, at scale factors from 0.001 to 0.1, instance
+# family of its own, at scale factors from 0.001 to 1, instance
 # tpch_<query>_<1000 SF>, from the smallest at which its selections leave a
 # tuple. q19's leave at most three below SF 0.1; it is not in the suite.
 # Each query is also written through views (`--views`), as a person would
 # write it over a database, instance tpch_<query>v_<1000 SF>: the same
-# database and lineage, so the same answer.
+# database and lineage, so the same answer. A family stops at TPCH_LAST,
+# past the first scale factor at which no system answered within the
+# suite's limit.
 TPCH = {}
+TPCH_LAST = {'q7': 500, 'q7v': 200, 'q21': 100, 'q21v': 100}
 for q, first in [('q1', 1), ('q2', 2), ('q3', 1), ('q4', 1), ('q6', 1), ('q7', 2), ('q10', 1), ('q11', 5),
                  ('q12', 1), ('q14', 1), ('q15', 1), ('q16', 1), ('q17', 5), ('q18', 1), ('q20', 2), ('q21', 2)]:
     for views in ['', 'v']:
-        for m in [1, 2, 5, 10, 20, 50, 100]:
-            if m >= first:
+        for m in [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]:
+            if first <= m <= TPCH_LAST.get(q + views, 1000):
                 TPCH[f'tpch_{q}{views}_{m}'] = (f'tpch_{q}{views}', ['gen_tpch.py', str(m / 1000), '--queries', q, '--seed', '1']
                                                 + (['--views'] if views else []))
 EXACT['gen_tpch.py'] = ('tpch', lambda path: ['tpch_exact.py', path, '--precision', '17'])
@@ -583,6 +629,9 @@ BIOMINE_K = [1, 2, 4, 8, 12, 16, 24, 32, 48, 64]
 EXACT['gen_biomine.py'] = ('reliability', lambda path: ['reliability_exact.py', path, '--precision', '17'])
 EXACT['gen_roulette.py'] = ('dp', lambda path: ['gen_roulette.py', '--reference-of', path])
 EXACT['gen_geni.py'] = ('dp', lambda path: ['gen_geni.py', '--reference-of', path])
+# UW-CSE's students are alike given the course and the professor, so a lifted
+# computation answers every size, past where Ace and Merlin stop (uwcse2560).
+EXACT['gen_uwcse.py'] = ('lifted', lambda path: ['uwcse_exact.py', path, '--precision', '17'])
 
 
 def biomine_suite(base):
@@ -610,8 +659,9 @@ def instances(args):
 # The families of different programs, each with the pattern that matches the
 # sizes of a program among them (its group names the program; the sizes are
 # listed smallest first): Alea.jl's arithmetic programs, noDice's coupon
-# collector, and bench_one.py's scaled Dice loops.
-COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None,
+# collector, and bench_one.py's scaled Dice loops. The taint family's apps
+# are one analysis of fifteen programs, none a size of another.
+COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None, 'taint': None,
                'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_coupon2)-\d+-obs',
                'dice_scaled': r'(dice_.+)_k\d+'}
 
@@ -637,6 +687,16 @@ def ran_out(r):
         (r['status'] == 'error' and re.search(r'bad_alloc|memory|alloc', str(r.get('error')), re.I) is not None)
 
 
+def stale_refusal(r):
+    """Whether record r is the refusal of aspmc on a program with evidence by
+    the harness before `aspmc_conditioned`, an error of this text. The
+    harness runs aspmc there since, and a later run's record of the
+    instance replaces each such one in the results (docs/baselines.md,
+    aspmc): it says nothing of aspmc, and neither a table nor a page shows
+    it."""
+    return r['status'] == 'error' and 'aspmc ProbLog frontend does not condition on evidence' in str(r.get('error'))
+
+
 def has_cnf(entry):
     """Whether `gen` writes a weighted CNF beside the instance's program,
     for the weighted model counters (Ganak, sharpSAT-TD): the CNF
@@ -644,6 +704,91 @@ def has_cnf(entry):
     evidence (`gen_bn.py --cnf`)."""
     gargs = entry[1]
     return gargs[0] in CNF_WRITERS or (gargs[0] == 'gen_bn.py' and gargs[1].removesuffix('.gz').endswith('.uai'))
+
+
+def network_file(args, gargs):
+    """The network file of a gen_bn.py instance as tddlog reads it: the file
+    itself, or a gzipped one's copy that `gen` decompresses once into
+    networks/ of the instance's directory (data/bn-large's), outside its
+    time."""
+    source = gargs[1]
+    if not source.endswith('.gz'):
+        return source
+    return os.path.join(os.path.abspath(args.dir), 'networks', os.path.basename(source).removesuffix('.gz'))
+
+
+def network_args(args, name, gargs, no_queries):
+    """tddlog's arguments that read the network of a gen_bn.py instance
+    itself, as the program gen_bn.py writes of it (its first argument the
+    file, `network_file`), and the files they name: the queries (`--query`,
+    or `--no-queries` for gen_bn.py's `--query none`; neither with
+    `no_queries`, where the caller asks for the program of P(e) alone), the
+    observations (`--evidence`: Ace's .inst file, a UAI .evid file, or for
+    sampled ones the .inst file `gen` writes of them) and `--rescale`."""
+    a = gen_bn.arguments().parse_args(gargs[1:])
+    if a.format != 'problog':
+        raise SystemExit(f'{name}: tddlog reads a network as gen_bn.py writes its ProbLog program, '
+                         f'and the instance asks for --format {a.format}')
+    out = [network_file(args, gargs)]
+    if not no_queries:
+        out += ['--no-queries'] if a.query == 'none' else ['--query', a.query]
+    if a.evidence:
+        if getattr(args, 'pr', False):
+            raise SystemExit(f'{name}: its observations are sampled into the .inst file a plain gen writes, '
+                             'and --pr writes none')
+        out += ['--evidence', os.path.abspath(os.path.join(args.dir, name + '.inst'))]
+    for f in (a.evidence_file, a.evid):
+        if f:
+            out += ['--evidence', f]
+    if a.rescale:
+        out.append('--rescale')
+    return out, [out[0]] + [out[i + 1] for i, x in enumerate(out) if x == '--evidence']
+
+
+def program_args(args, name, gargs):
+    """The arguments of `tddlog --program` that write the program `gen`
+    writes of a gen_bn.py instance (`gen_network`): the network with its
+    queries and observations, or under --pr its observations alone (gen_bn.py's
+    `--query none`)."""
+    pr = getattr(args, 'pr', False)
+    argv, _ = network_args(args, name, gargs, pr)
+    return argv + ['--no-queries'] if pr else argv
+
+
+def gen_network(args, name, gargs):
+    """`gen` of a gen_bn.py instance: the gzipped network decompressed once
+    (`network_file`); the files only the baselines read, written by
+    gen_bn.py (the observations as Ace's .inst file, which tddlog reads
+    where they are sampled; the network as a UAI file for Merlin; the
+    weighted CNF under --cnf), its program discarded; and NAME.pl, the
+    program the systems that read ProbLog programs are given, as tddlog's
+    reader writes it (`tddlog --program`, the same text gen_bn.py writes),
+    so that there is one conversion of a network into a program."""
+    net = network_file(args, gargs)
+    if net != gargs[1] and not os.path.exists(net):
+        os.makedirs(os.path.dirname(net), exist_ok=True)
+        with gzip.open(gargs[1], 'rb') as f, open(net + '.part', 'wb') as g:
+            shutil.copyfileobj(f, g)
+        os.replace(net + '.part', net)
+    side = []
+    if not getattr(args, 'pr', False):
+        side += ['--inst', os.path.join(args.dir, name + '.inst')]
+        if not gargs[1].endswith('.uai'):
+            side += ['--uai', os.path.join(args.dir, name + '.uai')]
+    if has_cnf((None, gargs)) and getattr(args, 'cnf', False):
+        side += ['--cnf', os.path.join(args.dir, name + '.cnf')]
+    if side:
+        # Under --pr the CNF alone, of the program for the partition function.
+        pr = ['--query', 'none'] if getattr(args, 'pr', False) else []
+        subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), *gargs[1:], *pr, *side],
+                       stdout=subprocess.DEVNULL, check=True)
+    tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
+    argv = program_args(args, name, gargs)
+    with open(os.path.join(args.dir, name + '.pl.part'), 'w') as f:
+        p = subprocess.run([tddlog, '--program', *argv], stdout=f, stderr=subprocess.PIPE, text=True)
+    if p.returncode != 0:
+        raise SystemExit(f'{name}: {tddlog} --program {" ".join(argv)}: {p.stderr.strip()}')
+    os.replace(os.path.join(args.dir, name + '.pl.part'), os.path.join(args.dir, name + '.pl'))
 
 
 FETCH = os.path.join(ROOT, 'data', 'fetch.txt')
@@ -716,6 +861,10 @@ def gen(args):
     if getattr(args, 'pr', False) and args.suite != 'uai':
         raise SystemExit('--pr writes the uai suite\'s programs for the partition function alone, and the suite is '
                          + args.suite)
+    tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
+    if any(e[1][0] == 'gen_bn.py' for e in spec.values()) and not os.access(tddlog, os.X_OK):
+        raise SystemExit(f'--tddlog {tddlog}: not an executable, and gen writes the program of a network with '
+                         '`tddlog --program`')
     for name, entry in spec.items():
         gargs = entry[1]
         if gargs[0] == 'alea_bench.jl':
@@ -723,19 +872,13 @@ def gen(args):
             subprocess.run(alea_command(args, 'export', gargs[1:], os.path.abspath(os.path.join(args.dir, name))),
                            check=True, stdout=subprocess.DEVNULL)
             continue
-        cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if gargs[0] == 'gen_bn.py':
-            # The observations, for Ace, which reads the network file, and
-            # the network as a UAI file with its observations, for Merlin
-            # (which reads a UAI network's own file). Under --pr the
-            # programs for the partition function alone, without the
-            # observations: run --pr gives Ace the .inst files of a plain gen.
-            if getattr(args, 'pr', False):
-                cmd += ['--query', 'none']
-            else:
-                cmd += ['--inst', os.path.join(args.dir, name + '.inst')]
-            if not gargs[1].endswith('.uai'):
-                cmd += ['--uai', os.path.join(args.dir, name + '.uai')]
+            # Under --pr the programs for the partition function alone,
+            # without the observations: run --pr gives Ace the .inst files
+            # of a plain gen.
+            gen_network(args, name, gargs)
+            continue
+        cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if gargs[0] in DICE_WRITERS:
             cmd += ['--dice', os.path.join(args.dir, name + '.dice')]
         if has_cnf(entry) and (gargs[0] in CNF_WRITERS or args.cnf):
@@ -751,7 +894,7 @@ def parse_answers(out):
     for line in out.splitlines():
         if line.startswith('evidence is inconsistent'):
             return 'inconsistent'
-        if line.startswith(EVIDENCE_LINE):
+        if line.startswith((EVIDENCE_LINE, Z_LINE)):
             continue
         if ':' in line:
             q, v = line.rsplit(':', 1)
@@ -763,19 +906,36 @@ def parse_answers(out):
 
 
 EVIDENCE_LINE = 'P(e):'
+# The line tddlog prints in its place for a Markov network it reads itself:
+# the partition function given the evidence, `Z:<tab>z<tab>log10 l`.
+Z_LINE = 'Z:'
 
 
-def parse_evidence_probability(out):
+def parse_evidence_probability(out, label=EVIDENCE_LINE):
     """log10 P(e) from the line `--evidence-probability` prints after the
     answers, `P(e):<tab>p<tab>log10 l` (tddlog and bn_exact.py alike), `-inf`
-    for inconsistent evidence; None without the line."""
+    for inconsistent evidence; None without the line. With `label` Z_LINE,
+    log10 Z from tddlog's line of the same form."""
     for line in out.splitlines():
-        if line.startswith(EVIDENCE_LINE):
+        if line.startswith(label):
             fields = line.split('\t')
             if len(fields) != 3 or not fields[2].startswith('log10 '):
                 raise ValueError(f'not an evidence line: {line!r}')
             return float(fields[2].removeprefix('log10 '))
     return None
+
+
+def network_partition_function(out):
+    """log10 Z of a run of tddlog on a network file (`network_args`) that
+    printed its `--evidence-probability` line: the `Z:` line's, which it
+    prints for a Markov network (the factors' normalization applied), or
+    for a Bayesian network, whose partition function given the evidence is
+    P(e), the `P(e):` line's. A ValueError where it printed neither."""
+    for label in (Z_LINE, EVIDENCE_LINE):
+        log10 = parse_evidence_probability(out, label)
+        if log10 is not None:
+            return log10
+    raise ValueError('no Z or P(e) line')
 
 
 def partition_function(out, path):
@@ -804,10 +964,11 @@ def program_offset(path):
 DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', 'geni', 'pluck')
 # Under --pr the systems that print no P(e) are asked it as a query of a
 # program of their own (`pe_program`), and the systems that read Dice
-# programs the probability that a network's program returns true where it
+# programs (Storm and PRISM their Markov chains, `run_translated`) the
+# probability that a network's program returns true where it
 # returns the conjunction of the observations (`dice_source`), with the
 # program's query `bench_pe` naming it.
-PE_SYSTEMS = ('problog', 'pita', 'aspmc', *DICE_SYSTEMS)
+PE_SYSTEMS = ('problog', 'pita', 'aspmc', *DICE_SYSTEMS, 'storm', 'prism')
 PE_QUERY = 'bench_pe'
 
 
@@ -833,60 +994,191 @@ def pe_program(path, out):
     return out
 
 
+# The answer check, the one the run and the processing make: an answer a is
+# right against its reference's r when |a - r| <= 1e-9 (floating-point
+# noise), or when |a - r| <= 1e-6 + e(a) + e(r) and |a - r| <= 1e-3 |r| +
+# e(a) + e(r). e(x) is half a unit in the last place a system prints
+# (PRINTED; noDice's last digit is not rounded, a whole unit), so float32
+# and a printed last digit pass, while an answer off by more than 1e-9 and
+# by orders of magnitude (3e-8 for 2e-12) fails.
+# log10 Z keeps its own check: CHECK_TOL times max(1, |log10 Z|).
+CHECK_TOL = 1e-6
+CHECK_REL = 1e-3
+CHECK_NOISE = 1e-9
+CHECK_TEXT = ('off the reference by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond '
+              'the last digit either of the two prints')
+# What a system prints of a probability: ('dec', d) d decimals, ('sig', k) k
+# significant digits, ('unit', u) answers good to u; any other in full. Geni
+# prints seven decimals of float32 masses (run_geni), noDice six decimals
+# whose last is not rounded, Merlin six (its MAR file), ProbLog and PSouffle
+# eight significant digits, the network tools' drivers twelve, the exact
+# references written for the evaluation 17 decimals.
+PRINTED = {'merlin': ('dec', 6), 'nodice': ('unit', 1e-6), 'geni': ('dec', 7), 'problog': ('sig', 8),
+           'psouffle': ('sig', 8), 'agrum': ('sig', 12), 'libdai': ('sig', 12), 'pgmpy': ('sig', 12),
+           ('exact', 'cliquetree'): ('dec', 17), ('exact', 'lit'): ('dec', 17), ('exact', 'tpch'): ('dec', 17),
+           ('exact', 'reliability'): ('dec', 17), ('exact', 'lifted'): ('dec', 17)}
+# An answer's reference: an exact record (the solvers written for the
+# evaluation, bn_exact.py and the like, or the generator's own), then
+# Alea.jl's, ProbLog's, Merlin's (six decimals) and Ace's records, the
+# first of them that answered a query of the record checked and comes
+# before it in this order (the instance's reference itself is checked
+# against none); tddlog's only where none did (the taint apps), and never
+# for tddlog's own. Ace computes in doubles and underflows (below): an Ace
+# answer of 0 or NaN is never a reference (reference_answers).
+REFERENCE_ORDER = [('exact', None), ('alea', None), ('problog', 'ddnnf'), ('problog', 'sdd'), ('problog', 'fsdd'),
+                   ('merlin', 'bte'), ('ace', None)]
+UNDERFLOWS = {'ace'}
 # On the networks of --suite uai, observed factors take P(e) as low as
 # 1e-618, and a baseline that computes in doubles can answer wrongly (Ace
 # prints P(e) = 0 and posteriors that are not numbers where it underflows).
 # There every baseline's answer is checked against the instance's reference
 # once all its systems have run (`check_against_reference`): the marginals
-# against the first of ANSWER_REFS that answered, to CHECK_TOL, log10 Z
-# against the first of PR_REFS, to CHECK_TOL times max(1, |log10 Z|).
+# by the answer check, log10 Z against the first of PR_REFS.
 CHECKED_SUITES = ('uai',)
-CHECK_TOL = 1e-6
-ANSWER_REFS = [('exact', 'cliquetree'), ('merlin', 'bte'), ('tddlog', None)]
 PR_REFS = [('exact', 'cliquetree'), ('merlin', 'bte-pr'), ('ganak', 'wmc'), ('tddlog', None)]
 
 
-def answers_diff(a, b):
-    """The largest difference of two answers over the queries both answer,
-    infinite where one finds the evidence inconsistent and the other does
-    not, None where they share no query."""
-    if isinstance(a, dict) and isinstance(b, dict):
-        return max((answer_diff(a[q], b[q]) for q in a.keys() & b.keys()), default=None)
-    return 0.0 if a == b else math.inf
+def printed_error(system, variant, x):
+    """e(x): half a unit in the last place system:variant prints of x (PRINTED), 0 in full."""
+    p = PRINTED.get((system, variant)) or PRINTED.get(system)
+    if p is None:
+        return 0.0
+    kind, n = p
+    if kind == 'unit':
+        return n
+    if kind == 'dec':
+        return 0.5 * 10.0 ** -n
+    return 0.0 if x == 0 or not math.isfinite(x) else 0.5 * 10.0 ** (math.floor(math.log10(abs(x))) - n + 1)
+
+
+def answer_right(a, r, ea=0.0, er=0.0):
+    """The answer check of a against the reference's r, with their printed errors e(a) and e(r)."""
+    if not isinstance(a, (int, float)) or not isinstance(r, (int, float)):
+        return a == r
+    d = answer_diff(a, r)
+    return d <= CHECK_NOISE or (d <= CHECK_TOL + ea + er and d <= CHECK_REL * abs(r) + ea + er)
+
+
+def answers_check(rec, ref):
+    """(right, the largest difference, the queries compared) of record rec's
+    answers against reference ref's, over the queries both answer; None where
+    they share none. Answers that are not a dict (the evidence inconsistent
+    to the system) are right where both are equal."""
+    a, b = rec.get('answers'), ref.get('answers')
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return (a == b, 0.0 if a == b else math.inf, 1) if a is not None and b is not None else None
+    qs = [q for q in b if q in a]
+    if not qs:
+        return None
+    right = all(answer_right(a[q], b[q], printed_error(rec['system'], rec.get('variant'), a[q]),
+                             printed_error(ref['system'], ref.get('variant'), b[q])) for q in qs)
+    worst = max(answer_diff(a[q], b[q]) if all(isinstance(x, (int, float)) for x in (a[q], b[q]))
+                else (0.0 if a[q] == b[q] else math.inf) for q in qs)
+    return right, worst, len(qs)
+
+
+def reference_answers(rec):
+    """The answers of rec that may stand as a reference: all of them, but
+    for a system that computes in doubles and underflows (UNDERFLOWS: Ace)
+    those that are not 0 or NaN, so that an underflowed 0 never makes
+    another system's answer wrong."""
+    a = rec.get('answers')
+    if rec['system'] not in UNDERFLOWS or not isinstance(a, dict):
+        return a
+    return {q: p for q, p in a.items() if not (isinstance(p, (int, float)) and (p == 0 or math.isnan(p)))}
+
+
+def reference_records(records):
+    """The records an answer is checked against, of `records` (one
+    instance's): those that answered (ok, a non-empty dict of finite
+    answers, reference_answers's), in REFERENCE_ORDER, then tddlog's
+    default arm (`auto`; another arm, a one-hot encoding say, may answer
+    other queries). An Ace record stands with its reference_answers alone,
+    a copy. The first is the instance's reference."""
+    def rank(r):
+        for k, (s, v) in enumerate(REFERENCE_ORDER):
+            if r['system'] == s and v in (None, r.get('variant')):
+                return k
+        return len(REFERENCE_ORDER) if r['system'] == 'tddlog' and r.get('variant') in (None, 'auto') else None
+    answered = []
+    for r in records:
+        if r.get('status') != 'ok' or rank(r) is None:
+            continue
+        a = reference_answers(r)
+        if isinstance(a, dict) and a and all(isinstance(p, (int, float)) and math.isfinite(p) for p in a.values()):
+            answered.append(r if a is r.get('answers') else dict(r, answers=a))
+    return sorted(answered, key=rank)
+
+
+def same_record(a, b):
+    """Whether records a and b are of one system and variant (a reference
+    may be a copy: reference_records)."""
+    return (a['system'], a.get('variant')) == (b['system'], b.get('variant'))
+
+
+def references_above(rec, refs):
+    """The records of `refs` (reference_records's) that rec is checked
+    against: those before rec's own system and variant, all of them where
+    rec is not among them; tddlog's never for tddlog's own. The instance's
+    reference itself has none."""
+    k = next((k for k, x in enumerate(refs) if (x['system'], x.get('variant')) == (rec['system'], rec.get('variant'))),
+             len(refs))
+    return [x for x in refs[:k] if not (rec['system'] == x['system'] == 'tddlog')]
+
+
+def answer_reference(rec, refs):
+    """The first of references_above(rec, refs) that shares a query with rec,
+    None where none does."""
+    return next((x for x in references_above(rec, refs) if answers_check(rec, x) is not None), None)
+
+
+def full_reference(rec, refs):
+    """The reference whose every query rec must answer (a record
+    that leaves a query out answers less than was asked):
+    answer_reference's, else the first above rec, where rec shares a query
+    with none. Not for another arm of tddlog's than its default, which may
+    answer other queries (a one-hot program names its own: reference_records),
+    and is checked where it shares one."""
+    x = answer_reference(rec, refs)
+    if x is not None or (rec['system'] == 'tddlog' and rec.get('variant') not in (None, 'auto')):
+        return x
+    return next(iter(references_above(rec, refs)), None)
 
 
 def check_against_reference(rec, done):
     """Checks a baseline's record `rec` of an instance against the
     reference among `done`, the instance's records by (system, variant): an
-    answer further from the reference's than the tolerance makes the record
-    an error, a failed run, as a crash would. The record keeps its answers,
-    the reference it was checked against and the difference (`ref`,
-    `ref_diff`; `pr_ref`, `pr_ref_diff` for log10 Z). A record with nothing
-    to check against stays as it is, and so does the reference itself."""
-    for key, refs, prefix in (('answers', ANSWER_REFS, 'ref'), ('log10_z', PR_REFS, 'pr_ref')):
-        if rec['status'] != 'ok' or key not in rec:
-            continue
-        for system, variant in refs:
-            ref = next((r for (s, v), r in done.items() if s == system and variant in (None, v)
-                        and r['status'] == 'ok' and key in r), None)
-            if ref is None:
-                continue
-            if ref is rec:
-                break
-            if key == 'answers':
-                d, tol = answers_diff(rec['answers'], ref['answers']), CHECK_TOL
-                if d is None:
-                    continue
-            else:
-                z = ref['log10_z']
-                d, tol = pr_diff(rec['log10_z'], z), CHECK_TOL * max(1.0, abs(z)) if math.isfinite(z) else 0.0
-            name = f"{ref['system']}:{ref['variant']}"
-            rec[prefix], rec[prefix + '_diff'] = name, d
-            if d > tol:
-                what = 'the marginals differ' if key == 'answers' else 'log10 Z differs'
+    answer that fails the answer check (answers_check, against
+    answer_reference) or a log10 Z further from the reference's than
+    CHECK_TOL times its size makes the record an error, a failed run, as a
+    crash would. The record keeps its answers, the reference it was checked
+    against and the difference (`ref`, `ref_diff`; `pr_ref`, `pr_ref_diff`
+    for log10 Z). A record with nothing to check against stays as it is, and
+    so does the reference itself."""
+    if rec['status'] == 'ok' and 'answers' in rec:
+        ref = answer_reference(rec, reference_records(done.values()))
+        if ref is not None:
+            right, d, _ = answers_check(rec, ref)
+            rec['ref'], rec['ref_diff'] = f"{ref['system']}:{ref['variant']}", d
+            if not right:
                 rec['status'] = 'error'
-                rec['error'] = f"{what} from {name}'s by {d:.2e}, more than {tol:.1e}"
+                rec['error'] = f"the marginals differ from {rec['ref']}'s by {d:.2e}, {CHECK_TEXT}"
+    if rec['status'] != 'ok' or 'log10_z' not in rec:
+        return
+    for system, variant in PR_REFS:
+        ref = next((r for (s, v), r in done.items() if s == system and variant in (None, v)
+                    and r['status'] == 'ok' and 'log10_z' in r), None)
+        if ref is None:
+            continue
+        if ref is rec:
             break
+        z = ref['log10_z']
+        d, tol = pr_diff(rec['log10_z'], z), CHECK_TOL * max(1.0, abs(z)) if math.isfinite(z) else 0.0
+        rec['pr_ref'], rec['pr_ref_diff'] = f"{ref['system']}:{ref['variant']}", d
+        if d > tol:
+            rec['status'] = 'error'
+            rec['error'] = f"log10 Z differs from {rec['pr_ref']}'s by {d:.2e}, more than {tol:.1e}"
+        break
 
 
 def pr_variant(strategy):
@@ -1088,12 +1380,16 @@ def run_dice(args, name, path, tool='dice'):
     program of a `dice` or `nodice` instance, the program a generator of
     DICE_WRITERS writes beside its instance, the programs of an Alea.jl
     program's circuit (`run_dice_circuit`), and for a network one generated
-    program per queried variable, with the observations (Dice returns one
-    value; a tuple of them would print the joint; `gen_bn.dice_programs`),
-    and for another program one program per query of its ground program
+    program per queried variable (Dice returns one value; a tuple of them
+    would print the joint; `gen_bn.dice_programs`), which observes the
+    observations (noDice) or, for Dice, returns the variable beside their
+    conjunction, the rows where it holds divided here by their sum (Dice 1.0
+    prints zeros where the observations have probability under 1e-6; noDice
+    prints six decimals, too few for such a joint), and for another program one program per query of its ground program
     (`ground_route`, run as a circuit's). The answers are keyed like the ProbLog program's
     queries: the row of value k is the k-th query of that variable."""
     family, gargs = instances(args)[name]
+    joint = gargs[0] == 'gen_bn.py' and tool == 'dice' and not getattr(args, 'pr', False)
     if getattr(args, 'pr', False):   # P(e), of a network alone, asked as `path`'s one query
         source = dice_source(args, name)
         if source is None:
@@ -1107,7 +1403,8 @@ def run_dice(args, name, path, tool='dice'):
         return run_dice_circuit(args, name, os.path.join(args.dir, name + '.dicemap'), tool)
     elif gargs[0] == 'gen_bn.py':
         try:
-            per_variable = gen_bn.dice_programs(gargs[1:])
+            # for Dice, each returns its variable and whether the observations hold
+            per_variable = gen_bn.dice_programs(gargs[1:], joint=joint)
         except SystemExit as x:
             return {'status': 'error', 'seconds': 0, 'error': f'gen_bn.py --format dice: {x}'}
         programs = []
@@ -1120,7 +1417,7 @@ def run_dice(args, name, path, tool='dice'):
         return run_dice_circuit(args, name, GROUNDED[(name, 'dicemap')]['stem'] + '.dicemap', tool)
     else:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for family {family}'}
-    total, answers = 0.0, {}
+    total, answers, error = 0.0, {}, None
     for program, qs in programs:
         program = os.path.abspath(program)
         cmd = getattr(args, tool).format(file=program, dir=os.path.dirname(program),
@@ -1131,6 +1428,18 @@ def run_dice(args, name, path, tool='dice'):
             r['seconds'] = total
             return r
         rows = parse_dice(r['stdout'])
+        if joint:
+            # (value k, observations held): P(k | e) is its row with true over the sum of those
+            held = {v[1:-len(',true)')]: p for v, p in rows.items() if v.startswith('(') and v.endswith(',true)')}
+            pe = math.fsum(held.values())
+            if not pe > 0:
+                # the instance's error, after its other programs (each is
+                # captured where every run's table is empty)
+                error = error or f'{tool}: the observations have probability {pe} in {os.path.basename(program)}'
+                continue
+            for k, q in enumerate(qs):
+                answers[re.sub(r'\s+', '', q)] = held.get(str(k), 0.0) / pe
+            continue
         marginals = dice_marginals(rows, len(qs)) if len(qs) > 1 else None
         if 'true' in rows and len(qs) == 1:
             answers[re.sub(r'\s+', '', qs[0])] = rows['true']
@@ -1142,6 +1451,8 @@ def run_dice(args, name, path, tool='dice'):
             for k, q in enumerate(qs):
                 if str(k) in rows:
                     answers[re.sub(r'\s+', '', q)] = rows[str(k)]
+    if error:
+        return {'status': 'error', 'seconds': total, 'error': error}
     return {'status': 'ok', 'seconds': total, 'answers': answers}
 
 
@@ -1508,7 +1819,9 @@ def run_roulette(args, name, path, variant):
 # `--NAME CMD` ({file}, {dir}, {base}), runs the instances it accepts, and
 # answers the instance's queries; PROGRAM_SYSTEMS maps NAME to its
 # `accepts(args, name)` and `run(args, name, path)`. The translation of the
-# instance's program into the system's language is untimed, as dice2alea.py's.
+# instance's program into the system's language is untimed, as dice2alea.py's;
+# a system answered one component a run has the translations bounded by a
+# time limit of their own (by_component).
 
 PROGRAM_SYSTEMS = {}
 
@@ -1624,20 +1937,32 @@ def by_component(system, script, ext, flags, masses_of):
     value (`--components`: `bool` or `int W`) and writes a program for each,
     run with the arguments flags(n) for its n values (2 for a Boolean);
     masses_of(stdout, n) reads a run's {value: probability}, which must
-    cover the n values."""
+    cover the n values. The record's seconds are the runs', as for every
+    translated system; the translations, one translator process a
+    component, are bounded by a time limit of their own, since a program of
+    thousands of components translates for hours: past it the record is the
+    translator's error, unanswered."""
     def masses(args, label, source, joint, budget):
         j = ['--joint'] if joint else []
+        t0 = time.time()
         listing, err = translation(args, script, [source, '--components'] + j)
         if err:
             return None, err
-        comps, total = [], 0.0
-        for k, line in enumerate(listing.splitlines()):
+        lines = listing.splitlines()
+        comps, total, made = [], 0.0, time.time() - t0
+        for k, line in enumerate(lines):
             ty = line.split()
             n = 2 if ty[0] == 'bool' else 2 ** int(ty[1])
             file = os.path.abspath(os.path.join(args.dir, f'{label}.{system}{k}.{ext}'))
+            t0 = time.time()
             err = translated(args, script, [source, str(k)] + j, file, system)
             if err:
                 return None, {**err, 'seconds': total}
+            made += time.time() - t0
+            if made > args.timeout:
+                return None, {'status': 'error', 'seconds': total,
+                              'error': f'{script}: the translation of {len(lines)} components passed the time limit '
+                                       f'({k + 1} took {made:.0f} s)'}
             r = timed(program_command(args, system, file) + flags(n), max(0.0, budget - total))
             total += r['seconds']
             if r['status'] != 'ok':
@@ -2271,6 +2596,19 @@ ACE_OPTIONS = {'forceC2d': False, 'forceTabular': False, 'd02': False, 'sbk05': 
 ACE_README_NAMES = {'noTabular': 'forceC2d', 'dtBnMinfill': 'dtBnOrder'}
 
 
+# Checked on the UAI MAR and PR sets (docs/baselines.md, section 7): a c2d
+# circuit evaluated in log space gives log_e(Pr(e)) = -inf where P(e) is
+# 1.6e-2, or fails in the evaluator, so such a run is a failed run.
+ACE_XLOG_C2D = "Ace chose c2d, whose circuit it evaluates wrongly in log space (-Xlog)"
+
+
+def ace_xlog_c2d(variant, method):
+    """Whether an Ace run of `variant` whose compile chose `method` (its
+    record's `ace_method`) is one whose answer is not to be read: log space
+    on the c2d route (ACE_XLOG_C2D)."""
+    return 'Xlog' in variant.split('+') and method == 'c2dCompilation'
+
+
 def ace_flags(variant):
     """The Ace compile options a variant stands for. `auto` is none, so that
     Ace chooses tabular compilation or c2d by the number of entries its
@@ -2464,13 +2802,9 @@ def run_ace(args, name, path, variant):
             m = re.search(pattern, c['stdout'], re.M)
             if m:
                 stats[key] = m.group(1) if key == 'ace_method' else float(m.group(1))
-        if 'Xlog' in variant.split('+') and stats.get('ace_method') == 'c2dCompilation':
-            # Checked on the UAI MAR and PR sets (docs/baselines.md, section 7):
-            # a c2d circuit evaluated in log space gives log_e(Pr(e)) = -inf
-            # where P(e) is 1.6e-2, or fails in the evaluator, so the circuit
-            # is not evaluated and the run fails.
-            return {'status': 'error', 'seconds': c['seconds'], 'stats': stats,
-                    'error': "Ace chose c2d, whose circuit it evaluates wrongly in log space (-Xlog)"}
+        if ace_xlog_c2d(variant, stats.get('ace_method')):
+            # the circuit is not evaluated and the run fails
+            return {'status': 'error', 'seconds': c['seconds'], 'stats': stats, 'error': ACE_XLOG_C2D}
         rest = args.timeout - c['seconds']
         e = timed(java + ['edu.ucla.belief.ace.AceEvaluate', net, inst], rest, cwd=d, env=env) if rest > 0 else \
             {'status': 'timeout', 'seconds': 0.0}
@@ -2678,9 +3012,12 @@ def ground_dice(args, name):
     through its ground program: it has no Dice program of its own
     (`dice_source`) and is not a circuit, and the run does not ask log10 Z
     (--pr), which a ground program does not state."""
-    gen = instances(args)[name][1][0]
-    return not getattr(args, 'pr', False) and gen not in ('dice2problog.py', 'gen_bn.py', 'alea_bench.jl',
-                                                           *DICE_WRITERS)
+    return not getattr(args, 'pr', False) and grounds_dice(instances(args)[name][1][0])
+
+
+def grounds_dice(gen):
+    """`ground_dice` on an instance that generator `gen` writes, outside --pr."""
+    return gen not in ('dice2problog.py', 'gen_bn.py', 'alea_bench.jl', *DICE_WRITERS)
 
 
 def ground_format(args, name, system, variant):
@@ -2691,11 +3028,17 @@ def ground_format(args, name, system, variant):
     Storm and PRISM, its Markov chain) where `ground_dice`; None otherwise,
     and under --pr, where the systems are asked log10 Z, which a ground
     program does not state."""
-    if getattr(args, 'pr', False) or variant.endswith('-pr'):
+    return ground_form(instances(args)[name][1][0], system, variant, getattr(args, 'pr', False))
+
+
+def ground_form(gen, system, variant, pr=False):
+    """`ground_format` on an instance that generator `gen` writes, in a run
+    that asks log10 Z if `pr`."""
+    if pr or variant.endswith('-pr'):
         return None
-    if system in NETWORK_SYSTEMS and instances(args)[name][1][0] != 'gen_bn.py':
+    if system in NETWORK_SYSTEMS and gen != 'gen_bn.py':
         return 'hugin' if system == 'ace' else 'uai'
-    if (system in DICE_SYSTEMS or system in MODEL_CHECKERS) and ground_dice(args, name):
+    if (system in DICE_SYSTEMS or system in MODEL_CHECKERS) and grounds_dice(gen):
         return 'dicemap' if system in ('dice', 'nodice') else 'dice'
     return None
 
@@ -2801,11 +3144,12 @@ class ProvSQLServer:
 # The programs ProvSQL is given: tuple-independent tables (every fact
 # independent) and non-recursive conjunctive rules, which tpch2provsql.py
 # writes as tables and views: TPC-H, the probabilistic databases of the lit
-# suite (pdb) and its noisy-or networks (noisyor, whose findings are
-# evidence). The lit suite's other families are recursive (mnist_sum,
-# sickness, mastermind) or read annotated disjunctions (mnist_sum,
-# pedigree, mastermind), which a tuple-independent table cannot hold.
-PROVSQL_WRITERS = ('gen_tpch.py', 'gen_pdb.py', 'gen_noisyor.py')
+# suite (pdb), its noisy-or networks (noisyor, whose findings are evidence)
+# and its two families of database queries (liftsep, rgraph). The lit
+# suite's other families are recursive (mnist_sum, sickness, mastermind,
+# eventcalc, taint) or read annotated disjunctions (mnist_sum, pedigree,
+# mastermind), which a tuple-independent table cannot hold.
+PROVSQL_WRITERS = ('gen_tpch.py', 'gen_pdb.py', 'gen_noisyor.py', 'gen_liftsep.py', 'gen_rgraph.py')
 
 
 def run_provsql(args, name, path):
@@ -2851,6 +3195,114 @@ def run_provsql(args, name, path):
     finally:
         server.stop()
         shutil.rmtree(d, ignore_errors=True)
+
+
+# PSouffle (Li, Xia, Adnan and Wang, FMCAD 2026; install_psouffle.sh), exact
+# probabilistic Datalog on Souffle: the derivation graph of the queried
+# tuples compiled into BDDs with CUDD. It reads the programs of the logic
+# program and database suites as problog2souffle.py writes them (a program
+# it cannot express is refused, `unsupported`); the networks' programs,
+# a relation per CPT row in that translation, are not given. Souffle
+# compiles the rules into a C++ program that reads the facts when it runs:
+# that compilation depends on the rules alone, is shared by the instances
+# whose translations are the same text (the taint apps), and is left out of
+# the time, as the paper leaves it out (its seconds are the record's
+# compile_s). The run is its default full inference, on one thread: its
+# graph rewrites (`--rewrite`) lose derivations at 3fb0fd06 (docs/baselines.md).
+PSOUFFLE_SUITES = ('standard', 'indicators', 'lit', 'tpch', 'biomine')
+PSOUFFLE_COMPILE_S = 3600
+
+
+def accepts_psouffle(args, name):
+    return args.suite in PSOUFFLE_SUITES and instances(args)[name][1][0] != 'gen_bn.py'
+
+
+def psouffle_binary(args, program):
+    """(the compiled program of the Souffle text PROGRAM, the seconds its
+    compilation took here, or None and the record of its failure). Each text
+    is compiled once, by the first lane that needs it, the others waiting."""
+    d = os.path.abspath(os.path.join(args.dir, 'psouffle-bin', hashlib.sha256(program.encode()).hexdigest()[:20]))
+    os.makedirs(d, exist_ok=True)
+    with open(d + '.lock', 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if os.path.exists(os.path.join(d, 'failed')):
+            with open(os.path.join(d, 'failed')) as f:
+                return None, 0.0, json.load(f)
+        if os.path.exists(os.path.join(d, 'compiled')):
+            return os.path.join(d, 'compute'), 0.0, None
+        with open(os.path.join(d, 'compute.dl'), 'w') as f:
+            f.write(program)
+        r = timed([args.psouffle, '--full-only', 'compute.dl', '-o', 'compute'], PSOUFFLE_COMPILE_S, cwd=d)
+        if r['status'] != 'ok':
+            rec = {'status': 'error', 'seconds': 0.0,
+                   'error': f"PSouffle's compilation: {r['status']} {str(r.get('error', ''))[-2000:]}"}
+            with open(os.path.join(d, 'failed'), 'w') as f:
+                json.dump(rec, f)
+            return None, r['seconds'], rec
+        open(os.path.join(d, 'compiled'), 'w').close()
+        return os.path.join(d, 'compute'), r['seconds'], None
+
+
+def run_psouffle(args, name, path):
+    """PSouffle on the translation of the program (problog2souffle.py: the
+    Souffle program, its input relations' facts and probabilities, and the
+    names of its relations), compiled (psouffle_binary) and run on the facts
+    within the timeout. A ground query PSouffle does not list has
+    probability 0; a query with variables is answered by every tuple of its
+    relation that PSouffle lists and that the query matches."""
+    d = os.path.abspath(os.path.join(args.dir, f'psouffle-{name}'))
+    shutil.rmtree(d, ignore_errors=True)
+    try:
+        err = translated(args, 'problog2souffle.py', [path, d], None, 'psouffle')
+        if err:
+            return err
+        with open(os.path.join(d, 'compute.dl')) as f:
+            binary, compile_s, err = psouffle_binary(args, f.read())
+        if err:
+            return err
+        os.makedirs(os.path.join(d, 'out'))
+        try:
+            r = timed([binary, '--jobs=1', '-F', os.path.join(d, 'input'), '-D', os.path.join(d, 'out')],
+                      args.timeout, cwd=d)
+        except OSError as x:
+            return {'status': 'error', 'seconds': 0.0, 'error': f'PSouffle: {x}'}
+        if r['status'] != 'ok':
+            return r
+        try:
+            with open(os.path.join(d, 'out', 'facts.prob')) as f, open(os.path.join(d, 'names.tsv')) as g:
+                listed = problog2souffle.answers(f.read(), g.read())
+            with open(os.path.join(d, 'queries.txt')) as f:
+                asked = f.read().splitlines()   # the translation's: a query with a body is its ground queries
+        except OSError as x:
+            return {'status': 'error', 'seconds': r['seconds'], 'error': f'PSouffle: {x}'}
+        answers = {}
+        for q in asked:
+            pattern = query_pattern(q)
+            if pattern is None:
+                answers[q] = listed.get(q, 0.0)
+            else:
+                answers.update((a, p) for a, p in listed.items() if pattern.fullmatch(a))
+        return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': {'compile_s': round(compile_s, 3)}}
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def query_pattern(q):
+    """The atoms a query with variables matches, as a pattern over atoms as
+    tddlog prints them; None for a ground query."""
+    m = re.fullmatch(r'(\w+)\((.*)\)', q)
+    if not m:
+        return None
+    parts = tpch2provsql.split_top(m.group(2))
+    if not any(re.fullmatch(r'[A-Z_]\w*', a) for a in parts):
+        return None
+    return re.compile(re.escape(m.group(1)) + r'\(' + ','.join(
+        r'[^,()]+' if re.fullmatch(r'[A-Z_]\w*', a) else re.escape(a) for a in parts) + r'\)')
+
+
+program_system('psouffle', "PSouffle (Li, Xia, Adnan and Wang, FMCAD 2026) on the programs of the logic program and "
+               "database suites, translated by problog2souffle.py; the souffle binary install_psouffle.sh builds",
+               accepts_psouffle, run_psouffle)
 
 
 # Probabilistic model checkers: Storm through stormpy (scripts/storm_check.py)
@@ -2948,8 +3400,10 @@ def checker_masses(system, variant):
     the components (`--components`) and writes a model and its properties
     for each, which the checker builds once and answers. The translations
     are not timed, as no system's are, but their seconds over all the
-    engines are bounded by the time limit: past it the instance is a
-    timeout, a chain too large to write."""
+    engines are bounded by the time limit: past it the engine is not run,
+    and its record is the translator's failure, as one translation past the
+    limit is (translation): an error of dice2prism.py, a chain too large to
+    write and no program handed to the checker."""
     def masses(args, label, source, joint, budget):
         j = ['--joint'] if joint else []
         made = CHAINS.setdefault((label, source, joint), {'seconds': 0.0})
@@ -2964,7 +3418,7 @@ def checker_masses(system, variant):
         def slow():
             if made['seconds'] <= args.timeout:
                 return None
-            return {'status': 'timeout', 'seconds': args.timeout,
+            return {'status': 'error', 'seconds': 0,
                     'error': f'dice2prism.py: the translations took {made["seconds"]:.0f} s, beyond the time limit'}
         listing, err = once('listing', lambda: translation(args, 'dice2prism.py', [source, '--components'] + j))
         if err:
@@ -3275,7 +3729,7 @@ def run(args):
     if args.exact:
         variants = list(dict.fromkeys(EXACT[spec[n][1][0]][0] for n in names if spec[n][1][0] in EXACT))
         if not variants:
-            raise SystemExit('--exact answers the networks, the literature families, tpch, biomine, roulette and geni, '
+            raise SystemExit('--exact answers the networks, the literature families, tpch, biomine, roulette, geni and uwcse, '
                              'and none is selected')
         systems += [('exact', v) for v in variants]
     if args.ace:
@@ -3306,7 +3760,7 @@ def run(args):
                     systems.append((system, variant + '-pr'))
     if getattr(args, 'provsql', ''):
         if not any(spec[n][1][0] in PROVSQL_WRITERS for n in names):
-            raise SystemExit('--provsql answers the programs of tuple-independent tables (PROVSQL_WRITERS: TPC-H, pdb, noisyor), and none is selected')
+            raise SystemExit('--provsql answers the programs of tuple-independent tables (PROVSQL_WRITERS: TPC-H, pdb, noisyor, liftsep, rgraph), and none is selected')
         systems.append(('provsql', 'default'))
     for system, variants in MODEL_CHECKERS.items():
         if getattr(args, system, ''):
@@ -3464,10 +3918,17 @@ def run_job(args, spec, systems, out, lock, names):
             else:
                 if system == 'tddlog':
                     binary = args.tddlog_binary.get(variant, args.tddlog)
-                    cmd = [binary, '--stats', '--precision', '17'] + tddlog_flags(variant) + [path]
+                    target, inputs = [path], []
+                    if spec[name][1][0] == 'gen_bn.py':
+                        # the network itself, read as part of tddlog's run
+                        target, inputs = network_args(args, name, spec[name][1],
+                                                      'no-queries' in variant.split('+')[1:])
+                    cmd = [binary, '--stats', '--precision', '17'] + tddlog_flags(variant) + target
                 else:
                     cmd = [args.problog, '-k', variant, src]
-                r = timed(cmd, args.timeout)
+                missing = [f for f in inputs if not os.path.exists(f)] if system == 'tddlog' else []
+                r = {'status': 'error', 'seconds': 0.0, 'error': f'no {missing[0]}: rerun bench.py gen'} if missing \
+                    else timed(cmd, args.timeout)
             if ground and ground['status'] == 'ok':   # the grounding and the translation are timed
                 r['seconds'] += ground['seconds']
                 r.setdefault('stats', {})['ground_s'] = round(ground['seconds'], 3)
@@ -3475,6 +3936,9 @@ def run_job(args, spec, systems, out, lock, names):
                    'variant': variant, 'status': r['status'], 'seconds': round(r['seconds'], 3)}
             if spec[name][1][0] == 'alea_bench.jl':
                 rec.update(circuit_size(path))
+            if system == 'tddlog' and spec[name][1][0] == 'gen_bn.py':
+                # what tddlog read: the network, no converted program (rel/charge.py)
+                rec['network'] = os.path.basename(network_file(args, spec[name][1]))
             rec.update(r.get('stats', {}))
             if r['status'] == 'ok' and 'log10_z' in r:
                 rec['log10_z'] = r['log10_z']   # Merlin's PR task and the counters, and Ace's beside its answers
@@ -3492,7 +3956,10 @@ def run_job(args, spec, systems, out, lock, names):
                 if (system == 'tddlog' and 'evidence-probability' in variant.split('+')[1:]) or \
                         (system == 'exact' and args.pr):
                     try:
-                        rec['log10_pe'], rec['log10_z'] = partition_function(r['stdout'], path)
+                        if 'network' in rec:
+                            rec['log10_z'] = network_partition_function(r['stdout'])
+                        else:
+                            rec['log10_pe'], rec['log10_z'] = partition_function(r['stdout'], path)
                     except (OSError, ValueError) as x:
                         r = {'status': 'error', 'error': f'partition function: {x}'}
                         rec['status'] = 'error'
@@ -3773,6 +4240,9 @@ def main():
     g.add_argument('--pr', action='store_true',
                    help="the uai suite's programs for the partition function alone, for run --pr: no queries, and "
                    "a Potts network's colour symmetry broken (gen_bn.py --query none)")
+    g.add_argument('--tddlog', default=str(source_tree.BINARY),
+                   help="the tddlog that writes a network's program (`tddlog --program`), which the systems that "
+                   'read ProbLog programs are given')
     g.set_defaults(fn=gen)
     r = sub.add_parser('run')
     r.add_argument('--dir', default=os.path.join(ROOT, 'bench'))
@@ -3822,7 +4292,7 @@ def main():
                    "programs' chains its decision diagrams' memory (-cuddmaxmem), by default 4g")
     r.add_argument('--weather-models', default='', help="the directory with Rubicon's weatherfactoryN.prism, for --storm and --prism")
     r.add_argument('--provsql', default='', help="the directory install_provsql.sh installs ProvSQL in (pg/bin/initdb, ...), "
-                   'for the programs of tuple-independent tables (TPC-H, pdb and noisyor of --suite lit); empty = not run')
+                   'for the programs of tuple-independent tables (TPC-H; pdb, noisyor, liftsep and rgraph of --suite lit); empty = not run')
     r.add_argument('--roulette', default='', help='command template for Racket with Roulette installed, {file} the '
                    "program: the artifact's on --suite roulette, the Dice program dice2roulette.py translates on "
                    "the others; e.g. \"env PLTUSERHOME=... racket {file}\"; empty = not run")

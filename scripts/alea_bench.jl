@@ -2,7 +2,7 @@
 # builds for it as a ProbLog program and as Dice programs.
 #
 #     julia --project=ALEA alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX]
-#     julia --project=ALEA alea_bench.jl export [--set NAME=VALUE ...] PROGRAM.jl PREFIX
+#     julia --project=ALEA alea_bench.jl export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX
 #
 # PROGRAM.jl is a program in the form of data/alea/: Julia code, evaluated
 # in a module of its own, that defines `model()`, returning what an
@@ -61,6 +61,13 @@
 # rule, a `|` two rules, a `!` a negated literal, every observation
 # `evidence(...)`, every answer a query, `qK(U)` defined by the
 # conjunction of its world's bit literals.
+# Under `--warm-below S`, `export` is timed as `run` times Alea, for the
+# time a reader of the circuit pays for it: after the small program,
+# `alea_seconds T` and `alea_compile_seconds T` are those of building the
+# program and writing PREFIX.pl, and `alea_warm_seconds T` that of doing
+# both a second time, without compilation, if the first took less than S.
+# The Dice programs, a translation of the circuit for one family of
+# systems, are written outside the time.
 # The probabilistic errors of a program not run with IGNORE_ERRORS are
 # left out: `run` stops (Alea throws) where an error has a positive
 # probability.
@@ -80,7 +87,7 @@ import CUDD
 using Alea: JointQuery, MetaDist, Flip, DistAnd, DistOr, DistNot, CondError,
     returnvalue, allobservations, tobits
 
-const USAGE = "usage: alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX] | export [--set NAME=VALUE ...] PROGRAM.jl PREFIX"
+const USAGE = "usage: alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX] | export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX"
 
 # The program's module.
 module Program end
@@ -476,9 +483,10 @@ end
 
 function main()
     args = copy(ARGS)
-    # `--warm-below S`: build and answer the program a second time only if
-    # the first took less than S seconds.
-    warm_below = Inf
+    # `--warm-below S`: build and answer the program (`run`), or build it
+    # and write its circuit (`export`), a second time only if the first
+    # took less than S seconds; `export` is timed only under it.
+    warm_below = nothing
     i = findfirst(==("--warm-below"), args)
     if i !== nothing
         i < length(args) || error(USAGE)
@@ -497,7 +505,6 @@ function main()
     length(args) in (2, 3) || error(USAGE)
     mode, src = args[1], abspath(args[2])
     prefix = length(args) == 3 ? abspath(args[3]) : nothing
-    mode == "run" || isinf(warm_below) || error("--warm-below is an option of `run`")
     text = read(src, String)
     for (name, value) in sets
         line = Regex("^const $name = .*\$", "m")
@@ -514,22 +521,34 @@ function main()
         warmup()
         model, seconds = run_program(query, ignore_errors)
         prefix === nothing || export_model(prefix, model, query, source)
-        if seconds < warm_below
+        below = something(warm_below, Inf)
+        if seconds < below
             stats = @timed answer(build(query, ignore_errors), query)
             println("alea_warm_seconds ", stats.time)
             # The BDDs' sizes take about the time of a warm run again: only
             # where that took less than half of S.
-            2 * stats.time < warm_below && bdd_sizes(build(query, ignore_errors), query)
+            2 * stats.time < below && bdd_sizes(build(query, ignore_errors), query)
         end
-    elseif mode == "export" && prefix !== nothing
+    elseif mode == "export" && prefix !== nothing && warm_below === nothing
         export_model(prefix, build(query, ignore_errors), query, source)
+    elseif mode == "export" && prefix !== nothing
+        warmup()
+        circuit_of = () -> (m = build(query, ignore_errors); write_circuit(prefix, m, query, source); m)
+        stats = @timed circuit_of()
+        write_dice(prefix, stats.value, query, source)
+        println("alea_seconds ", stats.time)
+        println("alea_compile_seconds ", get(stats, :compile_time, NaN))
+        stats.time < warm_below && println("alea_warm_seconds ", (@timed circuit_of()).time)
     else
         error(USAGE)
     end
 end
 
-function export_model(prefix, model, query, source)
+write_circuit(prefix, model, query, source) =
     open(io -> write_problog(io, model, query, source), prefix * ".pl", "w")
+
+function export_model(prefix, model, query, source)
+    write_circuit(prefix, model, query, source)
     write_dice(prefix, model, query, source)
 end
 

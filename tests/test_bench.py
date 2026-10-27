@@ -144,7 +144,7 @@ class PplTests(unittest.TestCase):
     def test_the_suite_names_programs_that_exist(self):
         spec = bench.instances(self.args())
         self.assertEqual({family for family, _ in spec.values()}, {'arith', 'hybit', 'pluck', 'nodice'})
-        self.assertEqual(len(spec), 62)
+        self.assertEqual(len(spec), 65)
         for name, (family, gargs) in spec.items():
             self.assertTrue(Path(gargs[1]).is_file(), name)
             self.assertEqual(gargs[0], 'dice2problog.py' if family == 'nodice' else 'alea_bench.jl')
@@ -170,7 +170,36 @@ class PplTests(unittest.TestCase):
 
     def test_a_network_with_observations_runs_a_program_per_queried_variable(self):
         # asia with half its leaves observed: one program for each other
-        # leaf, which observes the evidence, its rows the queries' answers.
+        # leaf, which observes nothing and returns the leaf beside whether
+        # the observations hold; the rows where they hold, over their sum,
+        # are the queries' answers, also where their sum is under 1e-6.
+        asia = str(SOURCE / 'examples' / 'asia.net')
+        spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
+        with tempfile.TemporaryDirectory() as d:
+            program = Path(d, 'asia_ev.pl')
+            network = bench.gen_bn.parse(asia)
+            evidence = bench.gen_bn.sampled_evidence(network, 'half', 1)
+            program.write_text(bench.gen_bn.to_problog(network, 'leaves', evidence))
+            seen = []
+
+            def timed(cmd, timeout):
+                seen.append(Path(cmd[-1]).read_text())
+                rows = [('(0, true)', 2 ** -24), ('(1, true)', 3 * 2 ** -24), ('(0, false)', 0.5), ('(1, false)', 0.5)]
+                return {'status': 'ok', 'seconds': 0.5, 'stderr': '',
+                        'stdout': 'Value\tProbability\t\n' + ''.join(f'{v}\t{p!r}\t\n' for v, p in rows)}
+            with patch.object(bench, 'instances', return_value=spec), patch.object(bench, 'timed', side_effect=timed):
+                r = bench.run_dice(self.args(dir=d, dice='dice {file}'), 'asia_ev', str(program))
+            qs = [q.replace(' ', '') for q in bench.queries(str(program))]
+        self.assertEqual(r['status'], 'ok', r)
+        self.assertEqual(len(seen), len({q.split('(')[0] for q in qs}))
+        self.assertTrue(evidence)
+        self.assertFalse(any('observe' in text for text in seen))
+        self.assertEqual(sorted(r['answers']), sorted(qs))
+        self.assertEqual(sorted(set(r['answers'].values())), [0.25, 0.75])
+
+    def test_nodice_reads_a_network_program_that_observes_the_evidence(self):
+        # noDice prints six decimals, too few for the joint of a variable and
+        # improbable observations: its programs observe them, its rows the answers.
         asia = str(SOURCE / 'examples' / 'asia.net')
         spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
         with tempfile.TemporaryDirectory() as d:
@@ -185,13 +214,35 @@ class PplTests(unittest.TestCase):
                 return {'status': 'ok', 'seconds': 0.5, 'stdout': 'Value\tProbability\t\n0\t0.25\t\n1\t0.75\t\n',
                         'stderr': ''}
             with patch.object(bench, 'instances', return_value=spec), patch.object(bench, 'timed', side_effect=timed):
-                r = bench.run_dice(self.args(dir=d, dice='dice {file}'), 'asia_ev', str(program))
+                r = bench.run_dice(self.args(dir=d, nodice='nDice.exe {file}'), 'asia_ev', str(program), 'nodice')
             qs = [q.replace(' ', '') for q in bench.queries(str(program))]
         self.assertEqual(r['status'], 'ok', r)
-        self.assertEqual(len(seen), len({q.split('(')[0] for q in qs}))
-        self.assertTrue(all(text.count('observe') == len(evidence) for text in seen))
+        self.assertTrue(seen and all(text.count('observe') == len(evidence) for text in seen))
         self.assertEqual(sorted(r['answers']), sorted(qs))
         self.assertEqual(sorted(set(r['answers'].values())), [0.25, 0.75])
+
+    def test_observations_of_probability_zero_are_an_error_after_every_program(self):
+        # Each program still runs (a capture answers every run with an
+        # empty table), and the instance is an error.
+        asia = str(SOURCE / 'examples' / 'asia.net')
+        spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
+        with tempfile.TemporaryDirectory() as d:
+            program = Path(d, 'asia_ev.pl')
+            network = bench.gen_bn.parse(asia)
+            evidence = bench.gen_bn.sampled_evidence(network, 'half', 1)
+            program.write_text(bench.gen_bn.to_problog(network, 'leaves', evidence))
+            seen = []
+
+            def timed(cmd, timeout):
+                seen.append(cmd[-1])
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': '', 'stderr': ''}
+            with patch.object(bench, 'instances', return_value=spec), patch.object(bench, 'timed', side_effect=timed):
+                r = bench.run_dice(self.args(dir=d, dice='dice {file}'), 'asia_ev', str(program))
+            qs = bench.queries(str(program))
+        self.assertEqual(r['status'], 'error', r)
+        self.assertIn('probability 0.0', r['error'])
+        self.assertEqual(len(seen), len({q.split('(')[0] for q in qs}))
+        self.assertEqual(r['seconds'], 0.5 * len(seen))
 
     def test_a_row_of_the_wrong_width_is_an_error(self):
         with tempfile.TemporaryDirectory() as d:
@@ -245,6 +296,55 @@ class PplTests(unittest.TestCase):
         self.assertIn('(report-bool 1 ', runs[0])
         self.assertRegex(runs[1], r'\(query \(list \(cadr (\S+)\) \(car \1\)\) complement\?\)')
         self.assertIn('(report-int 1 (list-ref pmfs 0) 2)', runs[1])
+
+    def test_a_chain_whose_translations_pass_the_limit_is_the_translators_failure(self):
+        # dice2prism.py's translations of a chain took longer than the time
+        # limit: no engine of the checker runs on it, and each engine's
+        # record is dice2prism.py's error, no program handed to the checker,
+        # as one translation past the limit is.
+        clock = [0.0]
+
+        def translation(args, script, argv):
+            clock[0] += 40.0
+            return 'v1 bool\n', None
+        with patch.dict(bench.CHAINS, clear=True), patch.object(bench.time, 'time', side_effect=lambda: clock[0]), \
+                patch.object(bench, 'translation', side_effect=translation) as made, \
+                patch.object(bench, 'timed') as timed:
+            for variant in ('hybrid', 'sparse'):
+                comps, r = bench.checker_masses('prism', variant)(self.args(), 'p', '/p.dice', False, 30.0)
+                self.assertIsNone(comps)
+                self.assertEqual(r['status'], 'error', r)
+                self.assertTrue(r['error'].startswith('dice2prism.py: '), r)
+        self.assertEqual(made.call_count, 1)
+        timed.assert_not_called()
+
+    def test_a_system_run_by_component_has_its_translations_bounded(self):
+        # Geni on a program of three Boolean components, each translation
+        # 12 s and each run 1 s, with a 30 s limit: two components translate
+        # and run, the third's translation passes the limit of the
+        # translations (36 s), and the record is dice2geni.py's error with
+        # the runs' 2 s; a first translation of 40 s hands Geni nothing.
+        for step, ran in [(12.0, 2), (40.0, 0)]:
+            clock = [0.0]
+
+            def translation(args, script, argv):
+                if '--components' in argv:
+                    return 'bool\nbool\nbool\n', None
+                clock[0] += step
+                return 'program\n', None
+            with tempfile.TemporaryDirectory() as d, \
+                    patch.object(bench.time, 'time', side_effect=lambda: clock[0]), \
+                    patch.object(bench, 'translation', side_effect=translation), \
+                    patch.object(bench, 'program_command', return_value=['geni']), \
+                    patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 1.0, 'stdout': ''}) as timed:
+                masses = bench.by_component('geni', 'dice2geni.py', 'gir', lambda n: [], lambda out, n: {0: 0.5, 1: 0.5})
+                comps, r = masses(self.args(dir=d), 'p', '/p.dice', False, 30.0)
+            self.assertIsNone(comps)
+            self.assertEqual(r['status'], 'error', r)
+            self.assertTrue(r['error'].startswith('dice2geni.py: the translation of 3 components passed the time limit'), r)
+            self.assertEqual(timed.call_count, ran)
+            self.assertEqual(r['seconds'], float(ran))
+            self.assertEqual([c.args[1] for c in timed.call_args_list], [30.0, 29.0][:ran])
 
     def test_a_program_the_language_cannot_express_is_unsupported(self):
         refused = SimpleNamespace(returncode=bench.REFUSED, stdout='', stderr='cannot express the program: recursion')
@@ -531,7 +631,9 @@ class SkipTests(unittest.TestCase):
 
         def timed(cmd, timeout, cwd=None, env=None):
             ok = {'status': 'ok', 'seconds': 0.1, 'stdout': 'q:\t0.5\n', 'stderr': ''}
-            return dict(fails.get(Path(cmd[-1]).stem, ok))
+            # a program's stem, or a network's (tddlog reads bn_cancer's cancer.net itself)
+            stems = {Path(a).stem for a in cmd}
+            return dict(next((f for n, f in fails.items() if {n, n.removeprefix('bn_')} & stems), ok))
         with patch('builtins.open', mock_open()) as output, patch.object(bench, 'timed', timed), \
                 patch.object(bench, 'queries', return_value=['q']), redirect_stdout(io.StringIO()):
             bench.run(args)
@@ -584,8 +686,8 @@ class TddlogArmTests(unittest.TestCase):
             other.write_text('#!/bin/sh\n')
             other.chmod(0o755)
             args = self.args(d, tddlog_arm=[f'program={other}'])
-            with redirect_stdout(io.StringIO()):
-                bench.gen(args)
+            with redirect_stdout(io.StringIO()):   # the network's program by the built tddlog
+                bench.gen(SimpleNamespace(**{**vars(args), 'tddlog': str(bench.source_tree.BINARY)}))
             calls = []
 
             def timed(cmd, timeout, cwd=None, env=None):
@@ -885,13 +987,14 @@ class FetchTests(unittest.TestCase):
     """The networks the repository does not ship: data/fetch.txt names each,
     `fetch` downloads and checks them, and `gen` stops without them."""
 
-    def test_the_manifest_names_the_bnlearn_networks_by_their_sha256(self):
+    def test_the_manifest_names_the_bnlearn_networks_and_psouffles_programs_by_their_sha256(self):
         files = bench.fetched()
-        self.assertEqual(len(files), 22)
+        self.assertEqual(len(files), 22 + 15)
         for path, (sha, url) in files.items():
             self.assertRegex(sha, '^[0-9a-f]{64}$')
             self.assertTrue(url.startswith('https://'), url)
-            self.assertIn(os.path.relpath(os.path.dirname(path), bench.ROOT), ['data/bn', 'data/bn-large'])
+            self.assertIn(os.path.relpath(os.path.dirname(path), bench.ROOT),
+                          ['data/bn', 'data/bn-large', 'data/psouffle/taint'])
 
     def fetch(self, d, rows):
         manifest = os.path.join(d, 'fetch.txt')
@@ -1270,13 +1373,13 @@ class MerlinTests(unittest.TestCase):
 
     def test_a_pr_run_records_log10_z_of_each_system(self):
         """`--pr` on the uai suite's tests/regress/markov.uai, its program
-        markov.pl (no evidence but the factors'): tddlog's P(e) line
-        (65/192) and the clique tree's, run for real, plus the program's
+        markov.pl: tddlog's Z line of the network it reads, the clique tree's
+        P(e) line (65/192), run for real on the program, plus the program's
         offset (log10 960), and Merlin's PR file, each log10 325."""
         regress = SOURCE / 'tests' / 'regress'
         calls = []
         real = bench.timed
-        tddlog_out = f'P(e):\t3.385416666666667e-1\tlog10 {bench.math.log10(65 / 192)!r}\n'
+        tddlog_out = f'Z:\t3.25e2\tlog10 {bench.math.log10(325)!r}\n'
 
         def timed(cmd, timeout, cwd=None, env=None):
             calls.append(cmd)
@@ -1302,8 +1405,12 @@ class MerlinTests(unittest.TestCase):
         self.assertEqual(list(records), [('tddlog', 'auto+evidence-probability+no-queries'),
                                          ('tddlog', 'closed+evidence-probability+no-queries'), ('exact', 'cliquetree'),
                                          ('merlin', 'bte'), ('merlin', 'bte-pr')])
-        self.assertEqual(calls[0][-5:-1], ['--vtree', 'auto', '--evidence-probability', '--no-queries'])
+        # tddlog reads the network and its observations, the clique tree the program
+        self.assertEqual(calls[0][-7:], ['--vtree', 'auto', '--evidence-probability', '--no-queries',
+                                         str(regress / 'markov.uai'), '--evidence', str(regress / 'markov.uai.evid')])
         self.assertEqual(calls[2][-2:], [str(Path(d) / 'uai_markov.pl'), '--evidence-probability'])
+        self.assertEqual(records[('tddlog', 'auto+evidence-probability+no-queries')]['network'], 'markov.uai')
+        self.assertNotIn('log10_pe', records[('tddlog', 'auto+evidence-probability+no-queries')])
         for key, delta in [(('tddlog', 'auto+evidence-probability+no-queries'), 1e-12),
                            (('exact', 'cliquetree'), 1e-12),
                            (('merlin', 'bte-pr'), 3e-7)]:
@@ -1425,6 +1532,59 @@ class MerlinTests(unittest.TestCase):
         self.assertEqual([(r['system'], r['status']) for r in records], [('exact', 'ok')])
         self.assertAlmostEqual(records[0]['log10_z'], bench.math.log10(225 / 2), places=12)
         self.assertEqual(records[0]['answers'], {})   # the program asks nothing
+
+    def test_tddlog_is_given_the_network_and_writes_its_program(self):
+        """tddlog reads a gen_bn.py instance's network itself, with its
+        queries and observations (`network_args`): an Ace .inst file, a
+        UAI .evid file, sampled observations through the .inst file gen
+        writes, --rescale, and under --pr no queries. The program the
+        systems that read ProbLog programs are given is `tddlog
+        --program`'s (the built tddlog), the text gen_bn.py writes, of a
+        gzipped network's copy that gen decompresses once."""
+        asia = str(SOURCE / 'examples' / 'asia.net')
+        regress = SOURCE / 'tests' / 'regress'
+        uai, evid = str(regress / 'markov.uai'), str(regress / 'markov.uai.evid')
+        plain, pr = SimpleNamespace(dir='/b', pr=False), SimpleNamespace(dir='/b', pr=True)
+        for args, gargs, no_queries, want in [
+                (plain, [asia, '--query', 'leaves', '--evidence', 'half'], False,
+                 [asia, '--query', 'leaves', '--evidence', '/b/n.inst']),
+                (plain, [asia, '--query', 'none', '--evidence-file', 'e.inst', '--rescale'], False,
+                 [asia, '--no-queries', '--evidence', 'e.inst', '--rescale']),
+                (pr, [uai, '--evid', evid], True, [uai, '--evidence', evid]),
+                (plain, [uai + '.gz'], False, ['/b/networks/markov.uai', '--query', 'all'])]:
+            with self.subTest(gargs=gargs):
+                self.assertEqual(bench.network_args(args, 'n', ['gen_bn.py'] + gargs, no_queries),
+                                 (want, [want[0]] + [want[i + 1] for i, x in enumerate(want) if x == '--evidence']))
+        with self.assertRaisesRegex(SystemExit, 'a plain gen writes, and --pr writes none'):
+            bench.network_args(pr, 'n', ['gen_bn.py', asia, '--evidence', '2'], True)
+        with self.assertRaisesRegex(SystemExit, '--format dice'):
+            bench.network_args(plain, 'n', ['gen_bn.py', asia, '--format', 'dice'], False)
+        with scratch_dir('netread-') as d:
+            with open(asia, 'rb') as f, bench.gzip.open(Path(d) / 'asia.net.gz', 'wb') as g:
+                g.write(f.read())
+            spec = {'bn_a': ('bn', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half']),
+                    'bn_z': ('bn', ['gen_bn.py', str(Path(d) / 'asia.net.gz'), '--query', 'all']),
+                    'uai_m': ('uai', ['gen_bn.py', uai, '--evid', evid])}
+            out = Path(d) / 'bench'
+            with patch.object(bench, 'instances', return_value=spec), redirect_stdout(io.StringIO()):
+                bench.gen(SimpleNamespace(dir=str(out), cnf=False))
+            for name, (_, gargs) in spec.items():
+                with self.subTest(name=name):
+                    gen_bn = str(bench.source_tree.script('gen_bn.py'))
+                    written = bench.subprocess.run([sys.executable, gen_bn, *gargs[1:]], capture_output=True,
+                                                   text=True, check=True).stdout
+                    self.assertEqual((out / f'{name}.pl').read_text(), written)
+            self.assertEqual((out / 'networks' / 'asia.net').read_bytes(), Path(asia).read_bytes())
+            self.assertTrue((out / 'bn_a.inst').exists() and (out / 'bn_a.uai').exists())
+            with self.assertRaisesRegex(SystemExit, 'not an executable'), \
+                    patch.object(bench, 'instances', return_value=spec):
+                bench.gen(SimpleNamespace(dir=str(out), cnf=False, tddlog=str(Path(d) / 'none')))
+        z = f'Z:\t3.25e2\tlog10 {bench.math.log10(325)!r}\n'
+        self.assertEqual(bench.network_partition_function('x0(v_0):\t0.5\n' + z), bench.math.log10(325))
+        self.assertEqual(bench.network_partition_function('P(e):\t5.0e-1\tlog10 -0.25\n'), -0.25)
+        self.assertEqual(bench.parse_answers('x0(v_0):\t0.5\n' + z), {'x0(v_0)': 0.5})
+        with self.assertRaisesRegex(ValueError, 'no Z or P\\(e\\) line'):
+            bench.network_partition_function('a:\t0.5\n')
 
     def test_sharpsat_td_counts_the_same_cnf(self):
         """`run --pr --sharpsat-td` on tests/regress/markov.uai: one run per

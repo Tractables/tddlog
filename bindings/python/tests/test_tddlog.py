@@ -147,7 +147,7 @@ def test_errors():
     with pytest.raises(tddlog.ParseError, match="line 1"):
         tddlog.solve("0.3::a query(a).")
     with pytest.raises(tddlog.GroundingError):
-        tddlog.solve("p(X) :- q(Y). q(1). query(p(1)).")
+        tddlog.solve("p :- X > 1. query(p).")
     unsound = (REPOSITORY / "examples" / "unsound.pl").read_text()
     with pytest.raises(tddlog.CompilationError, match="well-founded"):
         tddlog.solve(unsound)

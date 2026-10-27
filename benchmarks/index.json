@@ -231,7 +231,9 @@
      "bb_fair_dt14_w20",
      "bb_fair_dt14_w24",
      "bb_fair_dt14_w28",
-     "bb_fair_dt14_w32"
+     "bb_fair_dt14_w32",
+     "bb_fair_dt14_w36",
+     "bb_fair_dt14_w40"
     ],
     "key": "fair_dt14",
     "title": "fair_dt14"
@@ -255,7 +257,9 @@
      "bb_fair_dt4_w20",
      "bb_fair_dt4_w24",
      "bb_fair_dt4_w28",
-     "bb_fair_dt4_w32"
+     "bb_fair_dt4_w32",
+     "bb_fair_dt4_w36",
+     "bb_fair_dt4_w40"
     ],
     "key": "fair_dt4",
     "title": "fair_dt4"
@@ -395,7 +399,8 @@
      "bb_pedestrian_s16",
      "bb_pedestrian_s20",
      "bb_pedestrian_s24",
-     "bb_pedestrian_s32"
+     "bb_pedestrian_s32",
+     "bb_pedestrian_s40"
     ],
     "key": "pedestrian",
     "title": "pedestrian"
@@ -408,7 +413,8 @@
      "bb_pi_w14",
      "bb_pi_w16",
      "bb_pi_w18",
-     "bb_pi_w20"
+     "bb_pi_w20",
+     "bb_pi_w22"
     ],
     "key": "pi",
     "title": "pi"
@@ -422,7 +428,11 @@
      "bb_population_s6",
      "bb_population_s8",
      "bb_population_s12",
-     "bb_population_s16"
+     "bb_population_s16",
+     "bb_population_s24",
+     "bb_population_s32",
+     "bb_population_s48",
+     "bb_population_s64"
     ],
     "key": "population",
     "title": "population"
@@ -471,6 +481,9 @@
      "bb_weekend_p64",
      "bb_weekend_p256",
      "bb_weekend_p1024",
+     "bb_weekend_p4096",
+     "bb_weekend_p16384",
+     "bb_weekend_p65536",
      "bb_weekend_w18",
      "bb_weekend_w20",
      "bb_weekend_w22",
@@ -490,7 +503,10 @@
      "bb_wmi_path_n128",
      "bb_wmi_path_n256",
      "bb_wmi_path_n512",
-     "bb_wmi_path_n1024"
+     "bb_wmi_path_n1024",
+     "bb_wmi_path_n4096",
+     "bb_wmi_path_n16384",
+     "bb_wmi_path_n65536"
     ],
     "key": "wmi_path",
     "title": "wmi_path"
@@ -503,7 +519,10 @@
      "bb_wmi_star_n128",
      "bb_wmi_star_n256",
      "bb_wmi_star_n512",
-     "bb_wmi_star_n1024"
+     "bb_wmi_star_n1024",
+     "bb_wmi_star_n4096",
+     "bb_wmi_star_n16384",
+     "bb_wmi_star_n65536"
     ],
     "key": "wmi_star",
     "title": "wmi_star"
@@ -516,7 +535,11 @@
      "bb_zeroone_w1_w16",
      "bb_zeroone_w1_w18",
      "bb_zeroone_w1_w20",
-     "bb_zeroone_w1_w22"
+     "bb_zeroone_w1_w22",
+     "bb_zeroone_w1_w26",
+     "bb_zeroone_w1_w30",
+     "bb_zeroone_w1_w34",
+     "bb_zeroone_w1_w38"
     ],
     "key": "zeroone_w1",
     "title": "zeroone_w1"
@@ -529,7 +552,10 @@
      "bb_zeroone_w2_w19",
      "bb_zeroone_w2_w21",
      "bb_zeroone_w2_w23",
-     "bb_zeroone_w2_w25"
+     "bb_zeroone_w2_w25",
+     "bb_zeroone_w2_w27",
+     "bb_zeroone_w2_w29",
+     "bb_zeroone_w2_w31"
     ],
     "key": "zeroone_w2",
     "title": "zeroone_w2"
@@ -540,7 +566,11 @@
     "instances": [
      "dice_caesar-iter_k100",
      "dice_caesar-iter_k1000",
-     "dice_caesar-iter_k3000"
+     "dice_caesar-iter_k3000",
+     "dice_caesar-iter_k10000",
+     "dice_caesar-iter_k30000",
+     "dice_caesar-iter_k100000",
+     "dice_caesar-iter_k300000"
     ],
     "key": "caesar-iter",
     "title": "caesar-iter"
@@ -550,7 +580,11 @@
      "dice_diamond_k100",
      "dice_diamond_k400",
      "dice_diamond_k1600",
-     "dice_diamond_k6400"
+     "dice_diamond_k6400",
+     "dice_diamond_k25600",
+     "dice_diamond_k102400",
+     "dice_diamond_k409600",
+     "dice_diamond_k1638400"
     ],
     "key": "diamond",
     "title": "diamond"
@@ -560,7 +594,11 @@
      "dice_ladder_k100",
      "dice_ladder_k400",
      "dice_ladder_k1600",
-     "dice_ladder_k6400"
+     "dice_ladder_k6400",
+     "dice_ladder_k25600",
+     "dice_ladder_k102400",
+     "dice_ladder_k409600",
+     "dice_ladder_k1638400"
     ],
     "key": "ladder",
     "title": "ladder"
@@ -593,7 +631,10 @@
      "dice_pmc1_k10",
      "dice_pmc1_k20",
      "dice_pmc1_k40",
-     "dice_pmc1_k75"
+     "dice_pmc1_k75",
+     "dice_pmc1_k150",
+     "dice_pmc1_k300",
+     "dice_pmc1_k600"
     ],
     "key": "pmc1",
     "title": "pmc1"
@@ -602,7 +643,11 @@
     "instances": [
      "dice_pmc2_k10",
      "dice_pmc2_k20",
-     "dice_pmc2_k51"
+     "dice_pmc2_k51",
+     "dice_pmc2_k200",
+     "dice_pmc2_k400",
+     "dice_pmc2_k800",
+     "dice_pmc2_k1600"
     ],
     "key": "pmc2",
     "title": "pmc2"
@@ -611,7 +656,11 @@
     "instances": [
      "dice_simpleCaesar_k100",
      "dice_simpleCaesar_k300",
-     "dice_simpleCaesar_k1000"
+     "dice_simpleCaesar_k1000",
+     "dice_simpleCaesar_k3000",
+     "dice_simpleCaesar_k10000",
+     "dice_simpleCaesar_k30000",
+     "dice_simpleCaesar_k100000"
     ],
     "key": "simpleCaesar",
     "title": "simpleCaesar"
@@ -662,7 +711,9 @@
      "geni_router_24",
      "geni_router_28",
      "geni_router_32",
-     "geni_router_40"
+     "geni_router_40",
+     "geni_router_48",
+     "geni_router_56"
     ],
     "key": "router",
     "title": "router"
@@ -687,7 +738,10 @@
      "geni_weather_h700",
      "geni_weather_h800",
      "geni_weather_h900",
-     "geni_weather_h1000"
+     "geni_weather_h1000",
+     "geni_weather_h3000",
+     "geni_weather_h10000",
+     "geni_weather_h30000"
     ],
     "key": "weather_h",
     "title": "weather_h"
@@ -737,13 +791,43 @@
   "lit": [
    {
     "instances": [
+     "eventcalc4_250",
+     "eventcalc4_500",
+     "eventcalc4_1000",
+     "eventcalc4_2000",
+     "eventcalc4_4000",
+     "eventcalc4_8000"
+    ],
+    "key": "eventcalc",
+    "title": "eventcalc"
+   },
+   {
+    "instances": [
+     "liftsep3",
+     "liftsep4",
+     "liftsep6",
+     "liftsep8",
+     "liftsep11",
+     "liftsep16",
+     "liftsep23",
+     "liftsep32"
+    ],
+    "key": "liftsep",
+    "title": "liftsep"
+   },
+   {
+    "instances": [
      "mastermind4_4_8",
      "mastermind4_5_8",
      "mastermind6_4_8",
      "mastermind6_5_8",
      "mastermind8_4_8",
      "mastermind8_5_8",
-     "mastermind10_4_8"
+     "mastermind8_8_8",
+     "mastermind10_4_8",
+     "mastermind16_5_8",
+     "mastermind32_5_8",
+     "mastermind64_5_8"
     ],
     "key": "mastermind",
     "title": "mastermind"
@@ -755,7 +839,10 @@
      "mnist_sum16",
      "mnist_sum32",
      "mnist_sum64",
-     "mnist_sum96"
+     "mnist_sum96",
+     "mnist_sum192",
+     "mnist_sum384",
+     "mnist_sum768"
     ],
     "key": "mnist_sum",
     "title": "mnist_sum"
@@ -767,7 +854,11 @@
      "noisyor10_15",
      "noisyor15_22",
      "noisyor20_30",
-     "noisyor30_45"
+     "noisyor30_45",
+     "noisyor60_90",
+     "noisyor120_180",
+     "noisyor240_360",
+     "noisyor360_540"
     ],
     "key": "noisyor",
     "title": "noisyor"
@@ -778,7 +869,11 @@
      "pdb15",
      "pdb20",
      "pdb30",
-     "pdb40"
+     "pdb40",
+     "pdb80",
+     "pdb160",
+     "pdb320",
+     "pdb640"
     ],
     "key": "pdb",
     "title": "pdb"
@@ -792,7 +887,11 @@
      "pedigree6_8",
      "pedigree6_10",
      "pedigree7_10",
+     "pedigree7_12",
+     "pedigree7_13",
+     "pedigree7_14",
      "pedigree10_6",
+     "pedigree14_10",
      "pedigree16_6",
      "pedigree32_6"
     ],
@@ -801,14 +900,52 @@
    },
    {
     "instances": [
+     "rgraph6",
+     "rgraph8",
+     "rgraph10",
+     "rgraph12",
+     "rgraph14",
+     "rgraph17",
+     "rgraph20",
+     "rgraph24"
+    ],
+    "key": "rgraph",
+    "title": "rgraph"
+   },
+   {
+    "instances": [
      "sickness6_10",
      "sickness10_10",
      "sickness14_10",
      "sickness18_20",
-     "sickness22_40"
+     "sickness22_40",
+     "sickness45_40",
+     "sickness180_40",
+     "sickness240_40"
     ],
     "key": "sickness",
     "title": "sickness"
+   },
+   {
+    "instances": [
+     "taint_and_roc",
+     "taint_andors_trail",
+     "taint_angulo",
+     "taint_app_018",
+     "taint_app_ca7",
+     "taint_app_kQm",
+     "taint_barcode",
+     "taint_ginger_master",
+     "taint_noisy_sounds",
+     "taint_savage_knife",
+     "taint_tilt_mazes",
+     "taint_tom_droid",
+     "taint_tuio_droid",
+     "taint_video_game",
+     "taint_yaaic"
+    ],
+    "key": "others",
+    "title": "other programs"
    }
   ],
   "ppl": [
@@ -828,7 +965,10 @@
      "nodice_coupon2-11-obs",
      "nodice_coupon2-12-obs",
      "nodice_coupon2-13-obs",
-     "nodice_coupon2-14-obs"
+     "nodice_coupon2-14-obs",
+     "nodice_coupon2-16-obs",
+     "nodice_coupon2-18-obs",
+     "nodice_coupon2-20-obs"
     ],
     "key": "coupon2",
     "title": "coupon2"
@@ -941,7 +1081,9 @@
      "rl_caesar_2000",
      "rl_caesar_5000",
      "rl_caesar_10000",
-     "rl_caesar_20000"
+     "rl_caesar_20000",
+     "rl_caesar_50000",
+     "rl_caesar_100000"
     ],
     "key": "caesar",
     "title": "caesar"
@@ -954,7 +1096,9 @@
      "rl_diamond_30000",
      "rl_diamond_100000",
      "rl_diamond_300000",
-     "rl_diamond_1000000"
+     "rl_diamond_1000000",
+     "rl_diamond_3000000",
+     "rl_diamond_6000000"
     ],
     "key": "diamond",
     "title": "diamond"
@@ -967,7 +1111,11 @@
      "rl_hardware_300",
      "rl_hardware_1000",
      "rl_hardware_3000",
-     "rl_hardware_10000"
+     "rl_hardware_10000",
+     "rl_hardware_30000",
+     "rl_hardware_100000",
+     "rl_hardware_300000",
+     "rl_hardware_1000000"
     ],
     "key": "hardware",
     "title": "hardware"
@@ -980,7 +1128,10 @@
      "rl_hmm_filtering_joint_3000",
      "rl_hmm_filtering_joint_10000",
      "rl_hmm_filtering_joint_30000",
-     "rl_hmm_filtering_joint_100000"
+     "rl_hmm_filtering_joint_100000",
+     "rl_hmm_filtering_joint_300000",
+     "rl_hmm_filtering_joint_1000000",
+     "rl_hmm_filtering_joint_3000000"
     ],
     "key": "hmm_filtering_joint",
     "title": "hmm_filtering_joint"
@@ -993,7 +1144,10 @@
      "rl_hmm_filtering_marginal_3000",
      "rl_hmm_filtering_marginal_10000",
      "rl_hmm_filtering_marginal_30000",
-     "rl_hmm_filtering_marginal_100000"
+     "rl_hmm_filtering_marginal_100000",
+     "rl_hmm_filtering_marginal_300000",
+     "rl_hmm_filtering_marginal_1000000",
+     "rl_hmm_filtering_marginal_3000000"
     ],
     "key": "hmm_filtering_marginal",
     "title": "hmm_filtering_marginal"
@@ -1016,7 +1170,10 @@
      "rl_hmm_smoothing_joint_3000",
      "rl_hmm_smoothing_joint_10000",
      "rl_hmm_smoothing_joint_30000",
-     "rl_hmm_smoothing_joint_100000"
+     "rl_hmm_smoothing_joint_100000",
+     "rl_hmm_smoothing_joint_300000",
+     "rl_hmm_smoothing_joint_1000000",
+     "rl_hmm_smoothing_joint_3000000"
     ],
     "key": "hmm_smoothing_joint",
     "title": "hmm_smoothing_joint"
@@ -1029,7 +1186,10 @@
      "rl_hmm_smoothing_marginal_3000",
      "rl_hmm_smoothing_marginal_10000",
      "rl_hmm_smoothing_marginal_30000",
-     "rl_hmm_smoothing_marginal_100000"
+     "rl_hmm_smoothing_marginal_100000",
+     "rl_hmm_smoothing_marginal_300000",
+     "rl_hmm_smoothing_marginal_1000000",
+     "rl_hmm_smoothing_marginal_3000000"
     ],
     "key": "hmm_smoothing_marginal",
     "title": "hmm_smoothing_marginal"
@@ -1042,7 +1202,8 @@
      "rl_ladder_30000",
      "rl_ladder_100000",
      "rl_ladder_300000",
-     "rl_ladder_1000000"
+     "rl_ladder_1000000",
+     "rl_ladder_3000000"
     ],
     "key": "ladder",
     "title": "ladder"
@@ -1055,7 +1216,9 @@
      "rl_motivating_30000",
      "rl_motivating_100000",
      "rl_motivating_300000",
-     "rl_motivating_1000000"
+     "rl_motivating_1000000",
+     "rl_motivating_3000000",
+     "rl_motivating_9000000"
     ],
     "key": "motivating",
     "title": "motivating"
@@ -1069,7 +1232,10 @@
      "rl_network_1000",
      "rl_network_3000",
      "rl_network_10000",
-     "rl_network_30000"
+     "rl_network_30000",
+     "rl_network_100000",
+     "rl_network_300000",
+     "rl_network_1000000"
     ],
     "key": "network",
     "title": "network"
@@ -1096,7 +1262,11 @@
      "cora10",
      "cora50",
      "cora200",
-     "cora500"
+     "cora500",
+     "cora1000",
+     "cora2000",
+     "cora4000",
+     "cora8000"
     ],
     "key": "cora",
     "title": "Cora"
@@ -1131,7 +1301,9 @@
      "g20_56",
      "g20_60",
      "g25_80",
-     "g30_100"
+     "g30_100",
+     "g32_107",
+     "g34_113"
     ],
     "key": "graphs",
     "title": "random graphs"
@@ -1144,7 +1316,11 @@
      "s20",
      "s50",
      "s100",
-     "s200"
+     "s200",
+     "s1000",
+     "s3000",
+     "s10000",
+     "s30000"
     ],
     "key": "smokers",
     "title": "smokers"
@@ -1171,7 +1347,11 @@
      "uwcse5",
      "uwcse6",
      "uwcse8",
-     "uwcse10"
+     "uwcse10",
+     "uwcse20",
+     "uwcse80",
+     "uwcse640",
+     "uwcse2560"
     ],
     "key": "uwcse",
     "title": "UW-CSE"
@@ -1236,13 +1416,19 @@
      "tpch_q1_20",
      "tpch_q1_50",
      "tpch_q1_100",
+     "tpch_q1_200",
+     "tpch_q1_500",
+     "tpch_q1_1000",
      "tpch_q1v_1",
      "tpch_q1v_2",
      "tpch_q1v_5",
      "tpch_q1v_10",
      "tpch_q1v_20",
      "tpch_q1v_50",
-     "tpch_q1v_100"
+     "tpch_q1v_100",
+     "tpch_q1v_200",
+     "tpch_q1v_500",
+     "tpch_q1v_1000"
     ],
     "key": "q1",
     "title": "q1"
@@ -1256,13 +1442,19 @@
      "tpch_q10_20",
      "tpch_q10_50",
      "tpch_q10_100",
+     "tpch_q10_200",
+     "tpch_q10_500",
+     "tpch_q10_1000",
      "tpch_q10v_1",
      "tpch_q10v_2",
      "tpch_q10v_5",
      "tpch_q10v_10",
      "tpch_q10v_20",
      "tpch_q10v_50",
-     "tpch_q10v_100"
+     "tpch_q10v_100",
+     "tpch_q10v_200",
+     "tpch_q10v_500",
+     "tpch_q10v_1000"
     ],
     "key": "q10",
     "title": "q10"
@@ -1274,11 +1466,17 @@
      "tpch_q11_20",
      "tpch_q11_50",
      "tpch_q11_100",
+     "tpch_q11_200",
+     "tpch_q11_500",
+     "tpch_q11_1000",
      "tpch_q11v_5",
      "tpch_q11v_10",
      "tpch_q11v_20",
      "tpch_q11v_50",
-     "tpch_q11v_100"
+     "tpch_q11v_100",
+     "tpch_q11v_200",
+     "tpch_q11v_500",
+     "tpch_q11v_1000"
     ],
     "key": "q11",
     "title": "q11"
@@ -1292,13 +1490,19 @@
      "tpch_q12_20",
      "tpch_q12_50",
      "tpch_q12_100",
+     "tpch_q12_200",
+     "tpch_q12_500",
+     "tpch_q12_1000",
      "tpch_q12v_1",
      "tpch_q12v_2",
      "tpch_q12v_5",
      "tpch_q12v_10",
      "tpch_q12v_20",
      "tpch_q12v_50",
-     "tpch_q12v_100"
+     "tpch_q12v_100",
+     "tpch_q12v_200",
+     "tpch_q12v_500",
+     "tpch_q12v_1000"
     ],
     "key": "q12",
     "title": "q12"
@@ -1312,13 +1516,19 @@
      "tpch_q14_20",
      "tpch_q14_50",
      "tpch_q14_100",
+     "tpch_q14_200",
+     "tpch_q14_500",
+     "tpch_q14_1000",
      "tpch_q14v_1",
      "tpch_q14v_2",
      "tpch_q14v_5",
      "tpch_q14v_10",
      "tpch_q14v_20",
      "tpch_q14v_50",
-     "tpch_q14v_100"
+     "tpch_q14v_100",
+     "tpch_q14v_200",
+     "tpch_q14v_500",
+     "tpch_q14v_1000"
     ],
     "key": "q14",
     "title": "q14"
@@ -1332,13 +1542,19 @@
      "tpch_q15_20",
      "tpch_q15_50",
      "tpch_q15_100",
+     "tpch_q15_200",
+     "tpch_q15_500",
+     "tpch_q15_1000",
      "tpch_q15v_1",
      "tpch_q15v_2",
      "tpch_q15v_5",
      "tpch_q15v_10",
      "tpch_q15v_20",
      "tpch_q15v_50",
-     "tpch_q15v_100"
+     "tpch_q15v_100",
+     "tpch_q15v_200",
+     "tpch_q15v_500",
+     "tpch_q15v_1000"
     ],
     "key": "q15",
     "title": "q15"
@@ -1352,13 +1568,19 @@
      "tpch_q16_20",
      "tpch_q16_50",
      "tpch_q16_100",
+     "tpch_q16_200",
+     "tpch_q16_500",
+     "tpch_q16_1000",
      "tpch_q16v_1",
      "tpch_q16v_2",
      "tpch_q16v_5",
      "tpch_q16v_10",
      "tpch_q16v_20",
      "tpch_q16v_50",
-     "tpch_q16v_100"
+     "tpch_q16v_100",
+     "tpch_q16v_200",
+     "tpch_q16v_500",
+     "tpch_q16v_1000"
     ],
     "key": "q16",
     "title": "q16"
@@ -1370,11 +1592,17 @@
      "tpch_q17_20",
      "tpch_q17_50",
      "tpch_q17_100",
+     "tpch_q17_200",
+     "tpch_q17_500",
+     "tpch_q17_1000",
      "tpch_q17v_5",
      "tpch_q17v_10",
      "tpch_q17v_20",
      "tpch_q17v_50",
-     "tpch_q17v_100"
+     "tpch_q17v_100",
+     "tpch_q17v_200",
+     "tpch_q17v_500",
+     "tpch_q17v_1000"
     ],
     "key": "q17",
     "title": "q17"
@@ -1388,13 +1616,19 @@
      "tpch_q18_20",
      "tpch_q18_50",
      "tpch_q18_100",
+     "tpch_q18_200",
+     "tpch_q18_500",
+     "tpch_q18_1000",
      "tpch_q18v_1",
      "tpch_q18v_2",
      "tpch_q18v_5",
      "tpch_q18v_10",
      "tpch_q18v_20",
      "tpch_q18v_50",
-     "tpch_q18v_100"
+     "tpch_q18v_100",
+     "tpch_q18v_200",
+     "tpch_q18v_500",
+     "tpch_q18v_1000"
     ],
     "key": "q18",
     "title": "q18"
@@ -1407,12 +1641,18 @@
      "tpch_q2_20",
      "tpch_q2_50",
      "tpch_q2_100",
+     "tpch_q2_200",
+     "tpch_q2_500",
+     "tpch_q2_1000",
      "tpch_q2v_2",
      "tpch_q2v_5",
      "tpch_q2v_10",
      "tpch_q2v_20",
      "tpch_q2v_50",
-     "tpch_q2v_100"
+     "tpch_q2v_100",
+     "tpch_q2v_200",
+     "tpch_q2v_500",
+     "tpch_q2v_1000"
     ],
     "key": "q2",
     "title": "q2"
@@ -1425,12 +1665,18 @@
      "tpch_q20_20",
      "tpch_q20_50",
      "tpch_q20_100",
+     "tpch_q20_200",
+     "tpch_q20_500",
+     "tpch_q20_1000",
      "tpch_q20v_2",
      "tpch_q20v_5",
      "tpch_q20v_10",
      "tpch_q20v_20",
      "tpch_q20v_50",
-     "tpch_q20v_100"
+     "tpch_q20v_100",
+     "tpch_q20v_200",
+     "tpch_q20v_500",
+     "tpch_q20v_1000"
     ],
     "key": "q20",
     "title": "q20"
@@ -1462,13 +1708,19 @@
      "tpch_q3_20",
      "tpch_q3_50",
      "tpch_q3_100",
+     "tpch_q3_200",
+     "tpch_q3_500",
+     "tpch_q3_1000",
      "tpch_q3v_1",
      "tpch_q3v_2",
      "tpch_q3v_5",
      "tpch_q3v_10",
      "tpch_q3v_20",
      "tpch_q3v_50",
-     "tpch_q3v_100"
+     "tpch_q3v_100",
+     "tpch_q3v_200",
+     "tpch_q3v_500",
+     "tpch_q3v_1000"
     ],
     "key": "q3",
     "title": "q3"
@@ -1482,13 +1734,19 @@
      "tpch_q4_20",
      "tpch_q4_50",
      "tpch_q4_100",
+     "tpch_q4_200",
+     "tpch_q4_500",
+     "tpch_q4_1000",
      "tpch_q4v_1",
      "tpch_q4v_2",
      "tpch_q4v_5",
      "tpch_q4v_10",
      "tpch_q4v_20",
      "tpch_q4v_50",
-     "tpch_q4v_100"
+     "tpch_q4v_100",
+     "tpch_q4v_200",
+     "tpch_q4v_500",
+     "tpch_q4v_1000"
     ],
     "key": "q4",
     "title": "q4"
@@ -1502,13 +1760,19 @@
      "tpch_q6_20",
      "tpch_q6_50",
      "tpch_q6_100",
+     "tpch_q6_200",
+     "tpch_q6_500",
+     "tpch_q6_1000",
      "tpch_q6v_1",
      "tpch_q6v_2",
      "tpch_q6v_5",
      "tpch_q6v_10",
      "tpch_q6v_20",
      "tpch_q6v_50",
-     "tpch_q6v_100"
+     "tpch_q6v_100",
+     "tpch_q6v_200",
+     "tpch_q6v_500",
+     "tpch_q6v_1000"
     ],
     "key": "q6",
     "title": "q6"
@@ -1521,12 +1785,15 @@
      "tpch_q7_20",
      "tpch_q7_50",
      "tpch_q7_100",
+     "tpch_q7_200",
+     "tpch_q7_500",
      "tpch_q7v_2",
      "tpch_q7v_5",
      "tpch_q7v_10",
      "tpch_q7v_20",
      "tpch_q7v_50",
-     "tpch_q7v_100"
+     "tpch_q7v_100",
+     "tpch_q7v_200"
     ],
     "key": "q7",
     "title": "q7"

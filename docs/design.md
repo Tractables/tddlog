@@ -51,7 +51,8 @@ of TDDs. `solve` (`src/solve/`) runs six stages, for the binary and for a
 library caller alike.
 
 1. **Parse** (`src/syntax`). The text becomes a `Program`: its clauses,
-   queries and evidence.
+   queries and evidence. A network file is read as a program first
+   ([Network files](#network-files-srcnetwork)).
 2. **Ground** (`src/ground`). The grounder writes the *ground program*:
    rules without variables over the atoms the queries and the evidence
    depend on, simplified by the passes listed under
@@ -149,11 +150,12 @@ the formulation and the projection besides its vtree. The modules, in
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns; `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `table.rs`, `noisy_or.rs`, `normalize.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding`, `clause_links`, the binary reads (`Bits`), `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
-| `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk |
+| `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk; `sum_out.rs`: its finished subtrees summed out where only P(e) is wanted |
 | `eval/` | `mod.rs`: `Value`; `number.rs`: `Count`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes, the count of a conjunction; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels |
 | `cubes.rs` | cubes merged on complementary literals |
 | `disjoint.rs` | the union-find |
@@ -165,26 +167,132 @@ name.
 
 ## Language (`src/syntax`)
 
-The parser reads a Datalog fragment of ProbLog:
+The parser reads ProbLog without cut:
 
-- constants, integers and variables;
+- constants, integers, floats, variables and compound terms, lists
+  `[a, b | T]` among them, with ProbLog's operators (`N - 1` is the term
+  `-(N,1)`, and an operator alone is an atom, as in `[+, -]`);
 - probabilistic facts `p::a.`, probabilistic rules `p::h :- b.`,
   annotated disjunctions `p1::h1; p2::h2 :- b.`, and negative heads
   `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
 - body disjunctions `;` and parentheses, split into clauses that share
   one switch group;
-- negation as failure, `\+` or `not`;
-- comparisons `= \= == \== < > =< >=`, and `is` with integer arithmetic
-  on bound terms: `//` rounds down and `mod` takes the divisor's sign, as
-  in ProbLog; `/`, which divides in floating point there, is refused;
+- negation as failure, `\+` or `not`, also of an atom with variables
+  of its own (`\+ p(X, _)`: no `p(X, Y)` for any `Y`);
+- unification `=` and `\=`, the comparisons of terms `== \== @< @> @=<
+  @>=` in ProbLog's standard order, the arithmetic comparisons `< > =< >=
+  =:= =\=`, and `is` with ProbLog's arithmetic, which is Python's: `//`
+  rounds down, `mod` takes the divisor's sign, `/` divides in floating
+  point, and a float a term holds is rounded to 15 decimal places, as
+  ProbLog's constants round theirs;
+- the list predicates of ProbLog's library, built in: member/2,
+  memberchk/2, append/3, length/2, nth0/3, nth1/3, last/2, reverse/2,
+  sum_list/2, max_list/2, min_list/2, sort/2 and between/3, in ProbLog's
+  modes and order of solutions;
+- `findall/3` over a deterministic goal that is not recursive, its
+  solutions in ProbLog's order;
 - `query/1` (also `query(\+a)`), `query(pattern) :- body.`, and
   `evidence/1,2`.
 
-There are no function symbols, lists, cut, `findall` or non-ground atoms.
-Rules must be range restricted; a body is reordered so that binding
-literals come first (`ground/schedule.rs`, shared by the grounder and the
-magic rewrite). Predicate names and constants are `Name`s, an `Arc<str>`
-shared from the lexer on, one per distinct spelling.
+There are no cut, if-then-else or strings. The grounder lowers the rest
+to the Datalog the passes after it read (`ground/terms.rs`, before
+normalization): a compound with variables in a clause becomes a variable
+and a unification with one functor in the body, which builds the term
+where its arguments are bound and takes it apart where the term is; an
+argument that is a compound of one name and arity in every head and call
+of its predicate is read as the compound's arguments, so that a demand
+binds the parts a call binds (a count passed in, another passed out); the
+goal of a findall becomes an auxiliary predicate whose tuples are its
+solutions, and a negated atom with variables that nothing else in its
+clause reads becomes the negation of an auxiliary predicate over its
+other variables, defined by the atom. A ground compound is a value: the
+engine interns each one once, and the ground program's atoms hold them
+as arguments, so that nothing after grounding sees a term's structure
+and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
+is refused, as is a findall whose answer ProbLog gives otherwise
+than tddlog could: over a probabilistic goal, which is a distribution over
+lists, or where a solution has two proofs, which ProbLog lists twice.
+Rules must be range restricted, but for variables a demand binds; a body
+is reordered so that binding literals come first and switches last, as
+they bind nothing and reject no binding (`ground/schedule.rs`, shared by
+the grounder and the magic rewrite). Where the grounder joins a body, the
+next atom is one whose variables are all bound, else the one that shares
+the most bound variables, the first in source order among equals: an
+atom whose variables are all unbound after some are bound would pair
+each of its tuples with each binding so far, and one that shares only a
+variable most tuples bind alike would read most of its relation for each
+binding; the magic rewrite passes the bindings in the order
+of the source, as ProbLog's resolution does, which a clause such as
+`walk([], _, _)` relies on to be asked bound. Predicate names and
+constants are `Name`s, an `Arc<str>` shared from the lexer on, one per
+distinct spelling.
+
+## Network files (`src/network`)
+
+A Bayesian or Markov network file is read as the program
+`scripts/gen_bn.py` writes for it, the text the other systems of the
+benchmarks read, and that text is parsed as any program is: one route,
+whose answers are those of the program. `tests/it/networks.rs` checks the
+reader's text against gen_bn.py's programs line for line, and
+`tests/test_gen_bn.py` that gen_bn.py still writes them. The extension
+names the format: BIF (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`,
+whose `cpt` nodes are tables; another kind of node is refused) and UAI
+(`.uai`). BIF and Hugin are read as gen_bn.py's regular expressions read
+them, GeNIe's XML into a tree (`xml.rs`: the encoding the declaration
+names, comments, entities). A file that is not UTF-8 is read as
+ISO-8859-1, as Ace's water, pigs and mildew are written. A compressed file
+is refused.
+
+Each variable gets one annotated disjunction per row of its table,
+`p1::x(v1); ...; pk::x(vk) :- p1(u1), ..., pm(um).`, in the order of a
+depth-first walk from each variable in turn to its parents. A name is
+lowercased, every other character than a letter, a digit or `_` becomes
+`_`, and `v_` goes before one that does not start with a letter; a clash
+is an error. A zero head is dropped and a row of one certain value is a
+plain rule. The queries (`--query`) are every value of every variable, of
+those without children or of those named, an observed one left out; the
+evidence (`--evidence`) is an Ace `.inst` file or, for a UAI network, a
+`.evid` one; under `--no-queries` the program asks nothing.
+
+**Rows** (`rows.rs`). A row sums to one, and a file's decimals round it.
+A sum within 1e-9 under one (`math.fsum`'s, the exact sum rounded once)
+keeps the row, and a sum within 1e-9 over one divides it: the binary
+rounding of the arithmetic that wrote the file. A sum further from one
+divides the row where the rounding of its decimals explains the gap. Each
+entry is the decimal it means: the shortest of at most 12 significant
+digits within two units in the last place of its double (the file's own
+text for an entry written so; 0.00099404 for the 0.0009940400000000005 of
+Ace's pathfinder.xdsl, whose doubles a program printed in full), and
+otherwise the shortest decimal that reads back as the double. Each entry
+may be off by the larger of half a unit in the row's finest place and half
+a unit in the most significant digits any entry of the row has
+(pathfinder's `0.3333333` three times; `0.9999, 9.999e-05`, which are
+10000/10001 and 1/10001 to four digits), and the gap of the decimals'
+exact sum is compared with the sum of these. Otherwise a shortfall is the
+table's own, its mass left to no value as in ProbLog, and an excess is an
+error. gen_bn.py decides by the same rule, and the two decide alike on
+every row of every network of the benchmark suites. `--rescale` divides
+every row by its sum first, for Ace's tables in percent or as weights.
+
+**Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
+a conditional table of one variable of its scope, one function per
+variable and the child relation acyclic (Promedus, Pedigree), is that
+Bayesian network. In any other, every variable gets a uniform prior times
+its unary factors, normalized, and every other factor `f` becomes a
+variable `fJ` of one value, observed, whose row for each assignment of the
+factor's scope is its entry over its largest; a constant factor is left
+out. The program's `P(e)` times `10^c`, where `c` sums the base-10
+logarithms of the priors' sums, the factors' largest entries and the
+constants, is the partition function given the evidence: gen_bn.py states
+`c` on the program's first line, and the binary prints `Z:` for such a
+file where it would print `P(e):` ([The probability of the
+evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
+without observations, a network of Potts tables over pairs of variables of
+`k` values each (a graph colouring) has its colour symmetry broken: one
+variable of largest degree is fixed, a neighbour takes two values with
+weights 1 and `k - 1`, and a common neighbour the values used so far and
+the next; `Z` is then a `k`-th of the network's, and `c` holds `log10 k`
+besides.
 
 ## Grounding (`src/ground`)
 
@@ -204,8 +312,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
 
 | step | files | what it does |
 |---|---|---|
-| 0 | `table.rs`, `noisy_or.rs` | grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
-| 1 | `normalize.rs`, `chain.rs` | annotated disjunctions and probabilistic rules to switches and rules; transitive closures to linear steps |
+| 0 | `terms.rs`, `table.rs`, `noisy_or.rs` | compound terms, lists and findall lowered to Datalog with built-in literals; grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
+| 1 | `normalize.rs`, `unread.rs`, `chain.rs` | annotated disjunctions and probabilistic rules to switches and rules; arguments no clause reads dropped; transitive closures to linear steps |
 | 2 | `linear.rs` | right-linear recursion grounded from its bound end |
 | 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
 | 4 | `engine.rs` | stratified semi-naive bottom-up grounding |
@@ -250,6 +358,26 @@ are skipped. Several steps have a program in `examples/` that shows them.
    mass left keeps its mass. Switch predicates have no rules; their
    ground atoms are the random variables. A value that takes all the mass
    left has no switch, and a head of probability zero none either.
+   A predicate given by ground facts alone, `p::f(a,b).` or `f(a,b).`,
+   none of them in a disjunction and none read by a findall, is kept as
+   its facts (`Facts`): the grounder makes each tuple an atom, a fact of
+   its switch's weights or a certain one, without a switch or a rule per
+   fact, and two facts of one tuple make it true where either is. A
+   database's tables are such facts: TPC-H's line items at scale factor
+   0.1 are 600 000 of them. A fact's atom keeps its arguments in its
+   tuple alone, and the ground program has only the atoms of facts that
+   a rule, a query or the evidence names: a query reads few of a
+   table's tuples.
+
+   **Arguments no clause reads** (`unread.rs`). An argument that every
+   clause of a predicate leaves as a variable the clause mentions nowhere
+   else (cplint's left-corner grammar: `lc('S', a, _Der, rule('S', [a]))`)
+   does not decide which atoms hold, and is dropped from the predicate's
+   heads and from every literal that reads it, until none qualifies. The
+   non-ground facts become ground ones, which step 3 reads as they are,
+   and their negations no longer depend on the derivation. A switch
+   predicate, a predicate asked, observed or read by a findall, and one
+   whose name is in use with the smaller arity keep their arguments.
 
    **Transitive closures** (`chain.rs`). A predicate `p/2` whose rules are
    exits that do not read it and the chain rule `p(X,Y) :- p(X,Z),
@@ -273,7 +401,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    again, once per bound end.
 3. **Magic sets** (`magic.rs`), wherever the program has variables:
    adorned copies `h :- $m_h(bound args), body` plus demand rules, seeded
-   from the queries and evidence. The rewrite only restricts which ground
+   from the queries and evidence. A demand rule reads the literals before
+   its atom that bear on the atom's bound arguments, those that share a
+   variable with them or with a literal that does: another only asks that
+   some values of its own satisfy it (on PSouffle's side-channel analyses
+   the demand of `equal_assign` with no argument bound was derived again
+   from each of 437 million pairs before it). The rewrite only restricts which ground
    atoms are produced; the control predicates do not reach the compiler. A
    recursive component with internal negation is ground as it is, its
    negative literals left to the compiler; the program as written is the
@@ -281,24 +414,62 @@ are skipped. Several steps have a program in `examples/` that shows them.
    that the body reads only as the result of an `is` binds nothing: the
    rule is copied under the pattern without it, whose demand is projected
    from the bound one (`'$m_s_bf'(K) :- '$m_s_bb'(K,S)`), so that a sum is
-   not ground once per demanded value. A program whose recursive strata
-   all have rising levels (below) is not rewritten but grounded level by
+   not ground once per demanded value. A predicate demanded both with
+   every argument free and with some bound is demanded free only, in a
+   second rewrite: its free demand derives every atom a bound one would,
+   and a bound demand whose rule reads the predicate's own atoms before
+   the bound argument (`r(Y) :- r(X), a(Y, X)`) calls `a` for every pair
+   of a bound `Y` and an atom of `r`. A given predicate, of ground facts
+   (with or without probabilities) or of rules that read only given
+   predicates and bind their heads without a demand, is not demanded: its
+   facts and rules are read once, rather
+   than copied under a guard and checked against every new demand of a
+   recursive stratum (PSouffle's side-channel analyses: 83 571 facts in
+   each of 1 350 rounds). Its atoms are all known before any demand is,
+   so a negation of it filters a demand as a positive literal does:
+   cplint's left-corner grammar tries a goal's third clause only where
+   `\+ lc(G, B, rule(G, [B|_]))` holds, which is nowhere, and without the
+   filter demanded every derivation of that clause. A program whose
+   recursive strata all have rising levels (below) is not rewritten but
+   grounded level by
    level: the demand of a loop over a time index runs down the levels
    (`T0 is T - 1`) and makes the whole chain one stratum without levels.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in
-   some world. Every instantiation is a ground rule. A literal with bound
-   arguments, the delta's included, takes its candidate tuples from a
-   per-position index of its relation. A negative literal on an impossible
+   some world. Every instantiation is a ground rule, but for those of a
+   head that a rule whose body atoms are all true in every world (the
+   deterministic facts, and what such rules derive from them) has made so:
+   they add nothing, and a closure of deterministic facts (PSouffle's
+   `equal_assign`) would keep a rule for each atom between two of its
+   atoms. A semi-naive round walks a rule from the literal that reads
+   the round's new tuples, the rest of the body joined to them
+   (`schedule.rs`'s `Order::From`): in the rule's own order, a round
+   walked every binding of the literals before that one to find the few
+   that meet a new tuple (pcfg24's 368 518 demands in each of 43
+   rounds). It does so where that is expected to walk fewer bindings: the
+   new tuples times the tuples the atom joined next matches for each,
+   against the product of the tuples each atom before that literal in
+   the own order matches, a relation expected to hold as many tuples for
+   a value of an argument as it holds for each of its values there. The
+   own order stays where the next atom is reached only by a value every
+   tuple shares (DeepProbLog's handwritten formulas, whose label is the
+   same in every demand). A literal with bound arguments, the delta's included, takes
+   its candidate tuples from a per-position index of its relation, each
+   position indexed when a join first binds it. A negative literal on an impossible
    atom is dropped as true; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint
-   (`examples/win.pl` shows both).
+   (`examples/win.pl` shows both). The atoms and the rules grow through
+   fallible reservations: where the allocator refuses one, the grounding
+   is given up with `GroundError::OutOfMemory`, as a diagram operation is
+   refused, rather than aborted.
 
    A recursive stratum has *rising levels* where the last argument of each
    of its predicates is a level that no rule lowers: every literal of the
    stratum is read at its head's level (the same variable, or constant
-   levels h >= b) or below it (`H is B + c`, c >= 1), and some below it,
+   levels h >= b) or below it (`H is B + c`, c >= 1, or a literal of a
+   relation outside the stratum whose clauses all rise from B to H, as
+   `next(B, H)` given by its facts), and some below it,
    an XY-stratification (Zaniolo, Arni and Ong, DOOD 1993). Within a
    level, the components of the graph of the literals read at their
    head's level rank the predicates. A program with variables whose
@@ -745,10 +916,11 @@ link it stands on. A link of fewer than `TIE_FROM` clauses, or at the
 root, is built. Put where the two readers' copies meet instead, the tie
 would meet the copies below that free of the inputs.
 
-**Network files.** `scripts/gen_bn.py` rescales a CPT row whose gap from
-one the rounding of its entries explains (`0.3333333` three times); a row
-like `0.5, 0.499` is kept, and its missing mass goes to no value as in
-ProbLog. Rows that do not sum to one fall outside the clause encoding.
+**Network files.** A network's row whose gap from one the rounding of its
+entries explains (`0.3333333` three times) is rescaled
+([Network files](#network-files-srcnetwork)); a row like `0.5, 0.499` is
+kept, and its missing mass goes to no value as in ProbLog. Rows that do
+not sum to one fall outside the clause encoding.
 
 ## Vtrees (`src/vtree/`)
 
@@ -900,13 +1072,18 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   symmetric in its two sides, so a swap alone changes no size, and the
   crossed rotations are the moves that change the leaf order. The first
   search runs at `DYNAMIC_FIRST_PAIRS` live pairs (CUDD's first reordering
-  is at 4 004 nodes), the next whenever the live pairs have doubled; a
-  search may spend the work the compile spent since the last one, and no
-  more than its work so far per finished component times the components
-  left, and sweeps until a sweep keeps nothing; after two searches that
-  each shrink the formulas by less than a tenth, the next waits for
-  `DYNAMIC_REGROWTH` times the pairs. A formula is dropped once the last
-  component whose rules read it is finished (`dying_atoms`), so the search
+  is at 4 004 nodes), the next whenever the live pairs have doubled. A
+  search sweeps until a sweep keeps nothing. Its budget is the work the
+  compile spent since the last one, and no more than its work so far per
+  finished component times the components left; what the search spends
+  past it, the compile spends before the next search runs, unless the
+  live pairs double again first, so searching costs at most twice what
+  compiling does, plus the last search's excess. A budget that stopped
+  searches part way made the outcome depend on where they stopped (a 2%
+  change of budget made single programs several times slower or faster).
+  A search that finds little ends within a sweep or two, and what it spent
+  past the budget holds off the next search. A formula is dropped once the
+  last component whose rules read it is finished (`dying_atoms`), so the search
   does not fit the vtree to formulas the compile is done with. A dynamic
   compile is unprojected, since a projected scope stops being a projection
   after the first move. A stopped compile resumes inside a cyclic
@@ -1074,11 +1251,17 @@ per literal of the program. `--stats` prints a `decision:` line wherever
 the program was ground again.
 
 Where the conditioning records decisions, the conditioned program goes
-to `decision` where it is a trial, and to the trials whose layout the
-rules' text does not set where it is not: `program`, whose order is the
-one the program states its facts in, and `closed` and `td`, which search
-theirs on the program they get. The other trials compile the program as
-ground (`auto::Programs`; a `--vtree` layout compiles the program as
+to `decision` where it is a trial. Where it is not, it goes to the
+trials whose layout the rules' text does not set only where the pass
+made at least a quarter as many atoms as the program had derived ones
+before the merge of equal gates (`auto::takes_conditioned`): `program`,
+whose order is the one the program states its facts in, and `closed`
+and `td`, which search theirs on the program they get. On the zeroone
+circuits the pass makes an eighth as many atoms as derived ones, and the
+conditioned program holds 45% more derived atoms than the program as
+ground (bb_zeroone_w2_w25: 14 499 against 9 972); taken there, `auto`
+took 25 to 28% longer on three of them. The other trials compile the
+program as ground (`auto::Programs`; a `--vtree` layout compiles the program as
 ground). `closed` and `program` take less work on the conditioned
 program at about the same sizes. `program:fanin` reads its order off the
 rules, a walk through the atoms they read, and the conditioning rewrites
@@ -1098,8 +1281,13 @@ again, through shared sub-circuits and derived tests; conditioned on the
 selectors above them, the branches no longer read those flips, and a
 branch's diagram need not keep their values alive. Each derived atom is
 conditioned once per cube of fact literals, the cube restricted to the
-range of facts its support lies in; a definition under a cube other than
-the empty one is an atom of its own (`$gd`). The pass leaves the program
+atom's cover: the range of facts its support lies in, less the widest
+run of facts within it that the covers of its rules' literals leave out,
+built bottom up. Keyed by the range alone, two frames in five on the
+bit-blasted circuits evaluated an atom again to a value an earlier frame
+had found under a fact the support does not reach. A definition under a
+cube other than the empty one is an atom of its own (`$gd`). The pass
+leaves the program
 as it was past `GROWTH` times its size or `SPEND` literal visits per
 literal. Chains of steps, a decision list folding a sequence of tests
 into one value, are then written as balanced trees of their compositions
@@ -1539,6 +1727,26 @@ density than the compile's (`QUERY_ROUTE`).
   `DEFER_FROM` pairs or more, is tried capped; past the cap it waits, and
   where the walk's last join reads it with a smaller operand, that operand
   goes into the larger of the two first.
+- **Parts under a chain.** Where the vtree's top is a chain (a node whose
+  one child is a leaf, over another such node; `decision` puts the
+  decisions every part reads there), a batch whose factors read the
+  chain's leaves and two parts or more below it is grouped by part, so
+  that the factors of one part meet first (`EvidenceWalk::by_part`). The
+  factors of two parts agree only through the chain's leaves, and their
+  product holds every pair of what each keeps apart.
+
+**Summing out** (`sum_out.rs`). Where no query reads the evidence formula
+(`--no-queries`), the walk's result is only counted, and a variable can
+be summed out of a join's result once no later join can read it. A join
+sums out every finished subtree of its scope as it builds it
+(`Engine::and_marginalizing`): a subtree whose variables no other slot of
+the walk holds, found with a Fenwick tree over the vtree's leaves. The
+weights are tididi's scaled floats (`Arithmetic::ScaledFloat`), and the
+walk reads P(e) from its last result's weighted value. Before, every join
+kept its full structure, and on Markov networks of high width the last
+joins ran out of memory: nine partition functions of the UAI 2022 PR set
+answer with it, 1bxv and 1jer at a peak of 2.1 and 4.3 GB. Programs with
+queries keep the walk above.
 
 **Queries.** A query on an atom with an indicator in the evidence's scope
 is a literal of the evidence formula, and one backward pass
@@ -1603,8 +1811,10 @@ read so by the columns under it. A count up still not exact goes on in
 `Count`s from the level that failed, and a query that reads a column it
 cannot fit takes the count over in `Count`s from the float counts up
 (`Counts::widen`); every later query reads that count
-(`QuerySizes::recounts`). The evidence's mass is the pass up, with queries
-or without (`--no-queries`), and is not charged to the engine's work clock,
+(`QuerySizes::recounts`). With queries, the evidence's mass is the pass
+up; without them (`--no-queries`) it is the walk's last result's
+weighted value (Summing out, below). Neither is charged to the engine's
+work clock,
 so a trial that has built its evidence formula within its bounds counts it;
 a formula counted without evidence is the engine's evaluation
 (`eval::mass`), one range for the whole diagram, which the work clock is
@@ -1634,9 +1844,12 @@ Dropping detached evidence would leave out factors of `P(e)`, so the
 binary grounds with it off under the option. The line is
 `P(e):<tab>p<tab>log10 l`; below the least normal float the mantissa and
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
-`0` and `-inf`, none `1` and `0`. gen_bn.py's program for a Markov network
-states `log10 Z - log10 P(e)` on its first line, which turns the line into
-the UAI PR task. `--no-queries` drops the queries before grounding
+`0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file the binary
+prints the partition function given the evidence instead,
+`Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
+([Network files](#network-files-srcnetwork)), the UAI PR task. gen_bn.py's
+program for the network states the offset, `log10 Z - log10 P(e)`, on its
+first line. `--no-queries` drops the queries before grounding
 (`syntax::Program::without_queries`), so the program is ground for its
 evidence alone and the `P(e)` line is all the run prints.
 tests/it/evidence_probability.rs checks `P(e)` against ProbLog's under every
@@ -1721,7 +1934,10 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   the evidence walk, the query and dense counts, implicit levels, counts
   beyond a float's range (`underflow`), `P(e)` (`evidence_probability`),
   the command line (`cli`, which also checks this page's walk through
-  `examples/alarm.pl` against the binary), and regressions
+  `examples/alarm.pl` against the binary), network files (`networks`: the
+  programs of the files in `tests/networks/`, `tests/regress/` and
+  `examples/` against gen_bn.py's, and the binary's answers and partition
+  functions on them against enumeration and ProbLog), and regressions
   (`tests/regress/`). Queries in groups are tested in
   `src/solve/tests.rs`; `src/tp/tests/` compiles every example with a
   dynamic search after every step, checks formulas dropped as they die,

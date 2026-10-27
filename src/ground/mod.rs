@@ -80,6 +80,8 @@ mod steps;
 pub(crate) mod structure;
 mod table;
 pub(crate) mod tables;
+pub(crate) mod terms;
+mod unread;
 
 pub use aig::SweepStats;
 pub use condition::{Backbones, Conditioned};
@@ -185,6 +187,10 @@ pub(crate) fn ground_keeping(
     opts: &GroundOptions,
     keep: usize,
 ) -> Result<(GroundProgram, Option<Simplified>), GroundError> {
+    // Compound terms, list predicates and findalls are written as the
+    // Datalog the rest reads, with three built-in literals ([`terms`]).
+    let (program, counted) = terms::lower(program)?;
+    let program: &Program = &program;
     // A table-shaped program, a Bayesian network as one annotated
     // disjunction per row, is ground as written and its grounding is known
     // without the generic steps ([`table`]). Its noisy-or tables are first
@@ -212,7 +218,10 @@ pub(crate) fn ground_keeping(
         };
         return Ok(finish_keeping(gp, opts, keep));
     }
-    let norm = normalize::normalize(program)?;
+    let norm = normalize::normalize(program, counted)?;
+    // An argument no clause reads, as a derivation a fact leaves free, is
+    // dropped ([`unread`]).
+    let norm = unread::drop_unread(&norm).unwrap_or(norm);
     // A transitive closure written with the chain rule holds what its linear
     // form holds in every world, and the linear form is what the bound-end
     // rewrite below and the compile's elimination of linear recursion take.
@@ -268,13 +277,20 @@ fn ground_norm(
     // makes safe), the rewrite is tried.
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
-    } else if let Some(gp) = engine::ground_by_levels(norm, bound).ok().flatten() {
+    } else if let Some(gp) = match engine::ground_by_levels(norm, bound) {
+        Err(e @ (GroundError::OutOfMemory | GroundError::Refused(_))) => return Err(e),
+        levelled => levelled.ok().flatten(),
+    } {
         gp
     } else {
         match magic::rewrite(norm) {
             Some(magic) => match engine::ground_normalized(&magic, bound) {
                 Ok(gp) => gp,
-                Err(GroundError::OverBound) => return Err(GroundError::OverBound),
+                Err(
+                    e @ (GroundError::OverBound
+                    | GroundError::OutOfMemory
+                    | GroundError::Refused(_)),
+                ) => return Err(e),
                 Err(_) => engine::ground_normalized(norm, bound)?,
             },
             None => engine::ground_normalized(norm, bound)?,
@@ -514,20 +530,34 @@ pub(crate) fn without_linear_recursion(mut gp: GroundProgram) -> GroundProgram {
 /// apart, and every layout's work grows a hundredfold and more. A program
 /// already conditioned, its decisions recorded, is returned as it is:
 /// `auto` hands one to every trial (`solve::decision_trial`).
-pub(crate) fn guarded(mut gp: GroundProgram) -> GroundProgram {
+pub(crate) fn guarded(gp: GroundProgram) -> GroundProgram {
+    guarded_where(gp, |_| true).unwrap_or_else(|gp| *gp)
+}
+
+/// [`guarded`], where `keep` holds of the atoms the conditioning made
+/// (`GroundStats::guarded`); otherwise `Err` with the program as the
+/// conditioning left it, its steps not balanced and the program not
+/// finished again.
+pub(crate) fn guarded_where(
+    mut gp: GroundProgram,
+    keep: impl FnOnce(usize) -> bool,
+) -> Result<GroundProgram, Box<GroundProgram>> {
     if gp.stats.decisions.is_some() {
-        return gp;
+        return Ok(gp);
     }
     let conditioned = guards::condition(&mut gp).is_some();
+    if !keep(gp.stats.guarded) {
+        return Err(Box::new(gp));
+    }
     let stepped = steps::balance(&mut gp) > 0;
     if !conditioned && !stepped && gp.options.views {
-        return gp;
+        return Ok(gp);
     }
     let opts = GroundOptions {
         views: true,
         ..gp.options
     };
-    finish(gp, &opts, true)
+    Ok(finish(gp, &opts, true))
 }
 
 #[cfg(test)]
@@ -585,8 +615,11 @@ mod tests {
 
     /// A loop over a time index written as recursion is grounded level by
     /// level, which proves atoms constant as their levels complete
-    /// (tests/regress/levels.pl, against ProbLog); a recursion with no
-    /// rising level is not.
+    /// (tests/regress/levels.pl, against ProbLog), and one whose level
+    /// rises through a successor relation given by its facts
+    /// (tests/regress/levels_successor.pl, by hand); a recursion with no
+    /// rising level is not, nor one whose relation has a clause that does
+    /// not rise.
     #[test]
     fn a_rising_level_is_grounded_level_by_level() {
         let opts = GroundOptions::default();
@@ -594,8 +627,67 @@ mod tests {
         let program = crate::syntax::parse_program(source).expect("parses");
         let gp = ground(&program, &opts).expect("grounds");
         assert!(gp.stats.levels > 0 && gp.stats.constants > 0);
+        let source = include_str!("../../tests/regress/levels_successor.pl");
+        let program = crate::syntax::parse_program(source).expect("parses");
+        assert!(ground(&program, &opts).expect("grounds").stats.levels > 0);
+        let flat = format!("{source}\nnext(4,4).");
+        let program = crate::syntax::parse_program(&flat).expect("parses");
+        assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
         let source = include_str!("../../examples/linear_path.pl");
         let program = crate::syntax::parse_program(source).expect("parses");
         assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
+    }
+
+    /// Under a demand, the atoms of facts are numbered as the demand reaches
+    /// them, in the order the rules first read them, and not in the order
+    /// of the facts; a fact no rule reads comes last where a query names
+    /// it, and is left out where nothing does.
+    #[test]
+    fn facts_under_a_demand_are_numbered_as_read() {
+        let facts = |queries: &str| -> Vec<String> {
+            let source = format!(
+                "0.5::e(3,4). 0.5::e(2,3). 0.5::e(5,6). 0.5::e(1,2).\n\
+                 p(X,Y) :- e(X,Y).\np(X,Y) :- e(X,Z), p(Z,Y).\nquery(p(1,4)).\n{queries}"
+            );
+            let program = crate::syntax::parse_program(&source).expect("parses");
+            let norm =
+                super::normalize::normalize(&program, Default::default()).expect("normalizes");
+            let magic = super::magic::rewrite(&norm).expect("rewrites");
+            let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
+            gp.atoms
+                .iter()
+                .zip(&gp.kinds)
+                .filter(|(_, k)| matches!(k, super::AtomKind::Fact(_)))
+                .map(|(a, _)| a.to_string())
+                .collect()
+        };
+        assert_eq!(
+            facts("query(e(5,6)).\n"),
+            ["e(1,2)", "e(2,3)", "e(3,4)", "e(5,6)"]
+        );
+        assert_eq!(facts(""), ["e(1,2)", "e(2,3)", "e(3,4)"]);
+    }
+
+    /// A rule whose body atoms are all true in every world makes its head
+    /// so, and the head's other derivations are not kept: each atom of a
+    /// closure of deterministic facts has one rule
+    /// (tests/regress/certain_closure.pl, by hand).
+    #[test]
+    fn a_closure_of_deterministic_facts_keeps_a_rule_per_atom() {
+        let source = include_str!("../../tests/regress/certain_closure.pl");
+        let program = crate::syntax::parse_program(source).expect("parses");
+        let (lowered, _) = super::terms::lower(&program).expect("lowers");
+        let norm = super::normalize::normalize(&lowered, Default::default()).expect("normalizes");
+        let magic = super::magic::rewrite(&norm).expect("rewrites");
+        let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
+        let eq: Vec<super::AtomId> = gp
+            .rules
+            .iter()
+            .map(|r| r.head)
+            .filter(|&h| &*gp.atoms[h as usize].name == "eq")
+            .collect();
+        let atoms: rustc_hash::FxHashSet<super::AtomId> = eq.iter().copied().collect();
+        assert!(atoms.len() >= 36, "{}", atoms.len());
+        assert_eq!(eq.len(), atoms.len());
     }
 }

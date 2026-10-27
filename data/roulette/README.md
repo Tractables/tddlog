@@ -40,7 +40,7 @@ the attribution above.
 - `caesar_obs.rkt N` prints the first N observations of the caesar
   program, `(random 0 26 rng)` from a generator seeded with `(random-seed
   0)`, as the benchmark draws them; `caesar_obs.txt` holds the first
-  20000 (Racket 8.16), one a line.
+  100000 (Racket 8.16), one a line.
 
 The hmm programs run the artifact's own `benchmark/hmm.rkt` (`racket
 hmm.rkt roulette QUERY N`), which prints its answer on its last line.

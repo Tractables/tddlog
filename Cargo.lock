@@ -109,6 +109,7 @@ version = "0.1.0"
 dependencies = [
  "goatd",
  "libc",
+ "num-rational",
  "rustc-hash",
  "tididi",
  "tikv-jemalloc-sys",
@@ -117,8 +118,8 @@ dependencies = [
 
 [[package]]
 name = "tididi"
-version = "0.1.0"
-source = "git+https://github.com/Tractables/tididi?rev=c7c0c5d61bd74f807071ce9258c71091bdd5ab52#c7c0c5d61bd74f807071ce9258c71091bdd5ab52"
+version = "0.1.1"
+source = "git+https://github.com/Tractables/tididi?rev=3e949a05a6d3c98b25fbe6e8a3d8673fc2e411e2#3e949a05a6d3c98b25fbe6e8a3d8673fc2e411e2"
 dependencies = [
  "itoa",
  "num-bigint",

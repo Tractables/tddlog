@@ -11,7 +11,7 @@ use tididi::diagram::{
 use tididi::limits::{StopAt, StopRules};
 use tididi::reduce::ReductionPlan;
 use tididi::restructure::EmbedError;
-use tididi::restructure::search::{PoolSearchConfig, PoolSearchStats};
+use tididi::restructure::search::{PoolRestarts, PoolSearchConfig, PoolSearchStats};
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{Engine, Literal, OperationError, Tdd, Vtree};
 
@@ -21,6 +21,93 @@ use super::scope::VtreeScope;
 
 /// A formula and the scope it lives on.
 pub(crate) type Formula = (Tdd, VtreeScope);
+
+/// A formula an operation reads: its own, which it consumes, or one a
+/// store keeps ([`super::compile::Formulas`]), which a conjunction reads in
+/// place, copying only the levels its result would take, and any other
+/// operation copies.
+#[allow(
+    clippy::large_enum_variant,
+    reason = "an owned read moves into the conjunction as `Cow` holds it"
+)]
+pub(crate) enum Read {
+    Owned(Tdd),
+    Shared(Arc<Tdd>),
+}
+
+impl std::ops::Deref for Read {
+    type Target = Tdd;
+
+    fn deref(&self) -> &Tdd {
+        match self {
+            Read::Owned(f) => f,
+            Read::Shared(f) => f,
+        }
+    }
+}
+
+impl Read {
+    /// A stored formula taken from its store: owned where no read of it
+    /// is outstanding.
+    pub(crate) fn taken(f: Arc<Tdd>) -> Self {
+        Arc::try_unwrap(f).map_or_else(Read::Shared, Read::Owned)
+    }
+
+    /// The formula for an operation to consume: itself, or a copy of a
+    /// shared one ([`TddBackend::copy`]).
+    pub(crate) fn owned(self, backend: &TddBackend) -> Result<Tdd, CompileError> {
+        match self {
+            Read::Owned(f) => Ok(f),
+            Read::Shared(f) => Arc::try_unwrap(f).or_else(|f| backend.copy(&f)),
+        }
+    }
+
+    /// The formula as a conjunction takes it, with the store's hold on a
+    /// shared one, which the borrow reads through ([`lend`]).
+    fn split(self) -> (Option<Tdd>, Option<Arc<Tdd>>) {
+        match self {
+            Read::Owned(f) => (Some(f), None),
+            Read::Shared(f) => (None, Some(f)),
+        }
+    }
+}
+
+/// An operand of a conjunction split from a [`Read`]: the owned formula,
+/// or a borrow of the shared one.
+fn lend(owned: Option<Tdd>, shared: &Option<Arc<Tdd>>) -> Cow<'_, Tdd> {
+    match (owned, shared) {
+        (Some(f), _) => Cow::Owned(f),
+        (None, Some(f)) => Cow::Borrowed(f),
+        (None, None) => unreachable!("a read is owned or shared"),
+    }
+}
+
+/// The [`Read`] a refused conjunction hands back of an operand [`lend`]
+/// made.
+fn unlend(back: Cow<'_, Tdd>, shared: &Option<Arc<Tdd>>) -> Read {
+    match back {
+        Cow::Owned(f) => Read::Owned(f),
+        Cow::Borrowed(_) => Read::Shared(Arc::clone(
+            shared.as_ref().expect("a borrow of a shared read"),
+        )),
+    }
+}
+
+/// A [`Read`] and the scope it lives on.
+pub(crate) struct Part(pub(crate) Read, pub(crate) VtreeScope);
+
+impl From<Formula> for Part {
+    fn from((f, scope): Formula) -> Self {
+        Part(Read::Owned(f), scope)
+    }
+}
+
+impl Part {
+    /// The formula for an operation to consume ([`Read::owned`]).
+    pub(crate) fn owned(self, backend: &TddBackend) -> Result<Formula, CompileError> {
+        Ok((self.0.owned(backend)?, self.1))
+    }
+}
 
 /// How completely [`TddBackend::minimize`] reduces.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -338,14 +425,18 @@ impl TddBackend<'_> {
     /// costs past the moves is the levels with variables of both operands
     /// under them. Refused, each operand comes back with the scope it was
     /// left on: `scope` once moved there, its own before.
+    ///
+    /// A shared operand is read in place: one already on `scope`
+    /// unchanged, one that is not copied and the copy moved.
     pub(crate) fn and_onto<'m>(
         &self,
-        fa: Formula,
+        fa: impl Into<Part>,
         first: Option<&'m [VarId]>,
-        fb: Formula,
+        fb: impl Into<Part>,
         second: Option<&'m [VarId]>,
         scope: &VtreeScope,
-    ) -> Result<Tdd, Box<(CompileError, Formula, Formula)>> {
+    ) -> Result<Tdd, Box<(CompileError, Part, Part)>> {
+        let (fa, fb) = (fa.into(), fb.into());
         let renaming = |own: &VtreeScope, map: Option<&'m [VarId]>| match (own.same(scope), map) {
             (true, _) => Ok(Cow::Borrowed(&[][..])),
             (false, Some(map)) => Ok(Cow::Borrowed(map)),
@@ -355,25 +446,26 @@ impl TddBackend<'_> {
             (Ok(a), Ok(b)) => (a, b),
             (Err(e), _) | (_, Err(e)) => return Err(Box::new((e, fa, fb))),
         };
-        let ((a, own_a), (b, own_b)) = (fa, fb);
+        let (Part(a, own_a), Part(b, own_b)) = (fa, fb);
+        let ((a, shared_a), (b, shared_b)) = (a.split(), b.split());
         self.engine
             .and_onto(
-                a,
+                lend(a, &shared_a),
                 |v| map_a[v.0 as usize - 1],
-                b,
+                lend(b, &shared_b),
                 |v| map_b[v.0 as usize - 1],
                 scope.vtree(),
             )
             .map_err(|refused| {
-                let left_on = |f: Tdd, own: VtreeScope| match Arc::ptr_eq(f.vtree(), scope.vtree())
+                let left_on = |f: Read, own: VtreeScope| match Arc::ptr_eq(f.vtree(), scope.vtree())
                 {
-                    true => (f, scope.clone()),
-                    false => (f, own),
+                    true => Part(f, scope.clone()),
+                    false => Part(f, own),
                 };
                 Box::new((
                     refused.error.into(),
-                    left_on(refused.f, own_a),
-                    left_on(refused.g, own_b),
+                    left_on(unlend(refused.f, &shared_a), own_a),
+                    left_on(unlend(refused.g, &shared_b), own_b),
                 ))
             })
     }
@@ -386,12 +478,14 @@ impl TddBackend<'_> {
     /// programs, whose operands share their scopes, ran 0.6% slower).
     pub(crate) fn and_on(
         &self,
-        fa: Formula,
-        fb: Formula,
+        fa: impl Into<Part>,
+        fb: impl Into<Part>,
         scope: &VtreeScope,
     ) -> Result<Tdd, CompileError> {
+        let (fa, fb) = (fa.into(), fb.into());
         if fa.1.same(scope) && fb.1.same(scope) {
-            return self.and(fa.0, fb.0);
+            let ((a, shared_a), (b, shared_b)) = (fa.0.split(), fb.0.split());
+            return self.and(lend(a, &shared_a), lend(b, &shared_b));
         }
         self.and_onto(fa, None, fb, None, scope)
             .map_err(|refused| refused.0)
@@ -458,6 +552,19 @@ impl TddBackend<'_> {
     ) -> Result<Tdd, CompileError> {
         self.embed_moving(f, from, into, None)
             .map_err(|refused| refused.0)
+    }
+
+    /// [`embed`](Self::embed) of a read, a shared formula copied first
+    /// ([`Read::owned`]): the copy charges no work, where copying onto
+    /// `into` ([`embed_ref`](Self::embed_ref)) charges each level it
+    /// builds, so a shared read is charged what an owned one is.
+    pub(crate) fn embed_read(
+        &self,
+        f: Read,
+        from: &VtreeScope,
+        into: &VtreeScope,
+    ) -> Result<Tdd, CompileError> {
+        self.embed(f.owned(self)?, from, into)
     }
 
     /// `f`, which lives on `from` and depends on none of its variables but
@@ -857,7 +964,13 @@ impl TddBackend<'_> {
             .map_err(OperationError::from)?,
         ))
     }
-    pub(crate) fn and(&self, a: Tdd, b: Tdd) -> Result<Tdd, CompileError> {
+    /// `a ∧ b`, each operand owned or borrowed: a borrowed one is read in
+    /// place.
+    pub(crate) fn and<'a, 'b>(
+        &self,
+        a: impl Into<Cow<'a, Tdd>>,
+        b: impl Into<Cow<'b, Tdd>>,
+    ) -> Result<Tdd, CompileError> {
         Ok(self.engine.and(a, b)?)
     }
     /// `a ∧ b` on `scope` ([`TddBackend::and_on`]), or both operands back,
@@ -865,11 +978,11 @@ impl TddBackend<'_> {
     /// without finishing; the stop as for [`TddBackend::within`].
     pub(crate) fn and_within(
         &self,
-        a: Formula,
-        b: Formula,
+        a: Part,
+        b: Part,
         scope: &VtreeScope,
         work: u64,
-    ) -> Result<Result<Tdd, (Formula, Formula)>, CompileError> {
+    ) -> Result<Result<Tdd, (Part, Part)>, CompileError> {
         let Some((_scope, at)) = self.stop_after(work) else {
             return Ok(Ok(self.and_on(a, b, scope)?));
         };
@@ -1028,22 +1141,28 @@ impl TddBackend<'_> {
         self.engine.limits().work_units()
     }
 
-    /// Search for a global vtree on which `members` are smaller, spending
-    /// at most `work` units. The members must be every live formula on the
-    /// global scope; they keep their functions, and afterwards
-    /// [`TddBackend::global`] is the scope they live on.
+    /// Search for a global vtree on which `members` are smaller, sweeping
+    /// until a sweep keeps no move, then running `restarts`, their seed
+    /// mixed with the members' live pairs so that each search draws its
+    /// own. The members must be every live formula on the global scope;
+    /// they keep their functions, and afterwards [`TddBackend::global`] is
+    /// the scope they live on.
     pub(crate) fn restructure(
         &self,
         members: &mut [&mut Tdd],
-        work: u64,
+        restarts: PoolRestarts,
     ) -> Result<PoolSearchStats, CompileError> {
-        // As many sweeps as keep a move: the search ends at the first sweep
-        // that keeps nothing, or on its budget. The library's default of
-        // four stops the searches of the random graphs while they still
-        // gain.
+        let pairs: usize = members.iter().map(|m| m.pair_count()).sum();
+        // No sweep or work limit: the library's default of four sweeps stops
+        // the searches of the random graphs while they still gain, and the
+        // compile's schedule, not a budget, bounds what searching costs.
         let config = PoolSearchConfig {
             max_sweeps: usize::MAX,
-            max_work_units: work,
+            max_work_units: u64::MAX,
+            restarts: PoolRestarts {
+                seed: restarts.seed ^ pairs as u64,
+                ..restarts
+            },
             ..PoolSearchConfig::default()
         };
         // A search that stops part way keeps the moves it made: the members

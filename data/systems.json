@@ -1,0 +1,189 @@
+{
+  "about": "Each system of the results: what it is, the version and settings the release run used, what it is not given and why, its paper and its link. release/results/rel/panels.py copies it into the results page's categories.json, and each system's page shows it. The facts come from docs/baselines.md and scripts/bench.py; each citation from the system's own repository, site or artifact.",
+  "systems": {
+    "tddlog": {
+      "about": "Exact inference for probabilistic logic programs by Tp-compilation into tree decision diagrams, built bottom-up.",
+      "version": "tddlog {version}, linked statically",
+      "settings": "Its default strategy (auto) on every instance. Every answer is checked against a reference: ProbLog's, an exact solver written for the suite, the clique tree, Ace or Merlin.",
+      "notgiven": "",
+      "cite": null,
+      "link": "https://github.com/Tractables/tddlog"
+    },
+    "problog": {
+      "about": "The reference implementation of ProbLog: it grounds the program and compiles it into a d-DNNF or an SDD.",
+      "version": "ProbLog 2.3.0",
+      "settings": "Three compilers: d-DNNF (-k ddnnf), SDD (-k sdd) and forward SDD (-k fsdd); each instance counts the fastest. On the Dice paper's loops it is scored on the loops unrolled step by step, the form on which it answers more of them.",
+      "notgiven": "",
+      "cite": {"authors": "Daan Fierens, Guy Van den Broeck, Joris Renkens, Dimitar Shterionov, Bernd Gutmann, Ingo Thon, Gerda Janssens and Luc De Raedt", "title": "Inference and learning in probabilistic logic programs using weighted Boolean formulas", "venue": "Theory and Practice of Logic Programming", "year": 2015, "doi": "10.1017/S1471068414000076"},
+      "link": "https://github.com/ML-KULeuven/problog"
+    },
+    "pita": {
+      "about": "Probabilistic Inference with Tabling and Answer subsumption, part of cplint: it tables the program with answer subsumption and builds BDDs with CUDD.",
+      "version": "PITA (cplint) on SWI-Prolog 9.2.9",
+      "settings": "The ProbLog program in cplint's syntax (problog2pita.py). On the Dice paper's loops it is scored on the recursion, the form on which it answers more of them.",
+      "notgiven": "",
+      "cite": {"authors": "Fabrizio Riguzzi and Terrance Swift", "title": "The PITA system: Tabling and answer subsumption for reasoning under uncertainty", "venue": "Theory and Practice of Logic Programming", "year": 2011, "doi": "10.1017/S147106841100010X"},
+      "link": "https://friguzzi.github.io/cplint/"
+    },
+    "aspmc": {
+      "about": "Algebraic answer set counting: it reads ProbLog, breaks cycles by Tp-unfolding and counts a Clark completion guided by a tree decomposition.",
+      "version": "aspmc 1.1.1 with sharpSAT-TD",
+      "settings": "The ProbLog program (-m problog), counted by the knowledge compiler sharpSAT-TD. On the Dice paper's loops it is scored on the loops unrolled step by step, the form on which it answers more of them.",
+      "notgiven": "",
+      "cite": {"authors": "Thomas Eiter, Markus Hecher and Rafael Kiesel", "title": "Treewidth-aware cycle breaking for algebraic answer set counting", "venue": "KR", "year": 2021},
+      "link": "https://github.com/raki123/aspmc"
+    },
+    "ace": {
+      "about": "Compiles a Bayesian network into an arithmetic circuit, by tabular variable elimination or by encoding it as CNF and compiling with c2d.",
+      "version": "Ace 3.0",
+      "settings": "Three forms: its default route, c2d forced (-forceC2d), and the circuit evaluated in log space (-Xlog) against underflow; each instance counts the fastest. Its Java heap is half of the lane's memory.",
+      "notgiven": "",
+      "cite": {"authors": "Mark Chavira and Adnan Darwiche", "title": "On probabilistic inference by weighted model counting", "venue": "Artificial Intelligence", "year": 2008, "doi": "10.1016/j.artint.2007.11.002"},
+      "link": "http://reasoning.cs.ucla.edu/ace/"
+    },
+    "merlin": {
+      "about": "A C++ solver for exact and approximate inference on graphical models in the UAI format.",
+      "version": "Merlin 1.7.0",
+      "settings": "Bucket-tree elimination (-a bte) along a min-fill order, on the UAI file and its evidence.",
+      "notgiven": "",
+      "cite": null,
+      "link": "https://github.com/radum2275/merlin"
+    },
+    "agrum": {
+      "about": "A toolbox for probabilistic graphical models (aGrUM in C++, pyAgrum in Python); here its exact inference.",
+      "version": "pyAgrum 3.2.1",
+      "settings": "LazyPropagation on a Bayesian network and ShaferShenoyMRFInference on a Markov network, the evidence sliced out of the tables (bn_uai_run.py).",
+      "notgiven": "",
+      "cite": {"authors": "Gaspard Ducamp, Christophe Gonzales and Pierre-Henri Wuillemin", "title": "aGrUM/pyAgrum: a toolbox to build models and algorithms for probabilistic graphical models in Python", "venue": "PGM", "year": 2020},
+      "link": "https://agrum.gitlab.io/"
+    },
+    "pgmpy": {
+      "about": "A Python library for Bayesian networks and other graphical models; here its variable elimination.",
+      "version": "pgmpy 1.1.2",
+      "settings": "VariableElimination, a marginal asked one variable at a time (bn_uai_run.py).",
+      "notgiven": "",
+      "cite": {"authors": "Ankur Ankan and Johannes Textor", "title": "pgmpy: A Python toolkit for Bayesian networks", "venue": "Journal of Machine Learning Research", "year": 2024},
+      "link": "https://github.com/pgmpy/pgmpy"
+    },
+    "libdai": {
+      "about": "A C++ library for inference in graphical models; here its exact junction tree.",
+      "version": "libDAI 0.3.2",
+      "settings": "JTree with HUGIN updates and a min-fill order (libdai_uai.cpp).",
+      "notgiven": "",
+      "cite": {"authors": "Joris M. Mooij", "title": "libDAI: A free and open source C++ library for discrete approximate inference in graphical models", "venue": "Journal of Machine Learning Research", "year": 2010},
+      "link": "http://www.libdai.org"
+    },
+    "tensorinference": {
+      "about": "Exact inference on graphical models by tensor network contraction, in Julia.",
+      "version": "TensorInference.jl 0.6.3 on Julia 1.11.9, one thread",
+      "settings": "Two contraction orders, TreeSA (the package's default) and greedy; each instance counts the faster (tensorinference_uai.jl).",
+      "notgiven": "",
+      "cite": {"authors": "Martin Roa-Villescas and Jin-Guo Liu", "title": "TensorInference: A Julia package for tensor-based probabilistic inference", "venue": "Journal of Open Source Software", "year": 2023, "doi": "10.21105/joss.05700"},
+      "link": "https://github.com/TensorBFS/TensorInference.jl"
+    },
+    "dice": {
+      "about": "A discrete probabilistic programming language whose programs compile into BDDs in the order of the program text.",
+      "version": "Dice 1.0, the binary of the sholtzen/dice image",
+      "settings": "The Dice program as written, with an unlimited stack.",
+      "notgiven": "",
+      "cite": {"authors": "Steven Holtzen, Guy Van den Broeck and Todd Millstein", "title": "Scaling exact inference for discrete probabilistic programs", "venue": "OOPSLA", "year": 2020},
+      "link": "https://github.com/SHoltzen/dice"
+    },
+    "alea": {
+      "about": "The Julia successor of Dice: distributions and integers are Julia values, bit-blasted and compiled into BDDs with CUDD.",
+      "version": "Alea.jl at revision cf5e5b8 on Julia 1.11.9 with CUDD 3.0.0, one thread",
+      "settings": "Dice programs through dice2alea.py. Its time is the one it reports for building the model and computing its answers a second time in the same process, without Julia's compilation, as its papers time it; the process's wall time is on the suites' pages.",
+      "notgiven": "",
+      "cite": {"authors": "Poorva Garg, Steven Holtzen, Guy Van den Broeck and Todd Millstein", "title": "Bit blasting probabilistic programs", "venue": "PLDI", "year": 2024},
+      "link": "https://github.com/Tractables/Alea.jl"
+    },
+    "roulette": {
+      "about": "A discrete probabilistic language embedded in Racket, compiled into BDDs through Rosette's symbolic evaluation.",
+      "version": "Roulette of its PLDI 2025 artifact (revision 54d6185) on Racket 8.16",
+      "settings": "Dice programs through dice2roulette.py. Two forms, the artifact's (rsdd) and without its complement (nocomplement, on the translated programs); each instance counts the faster. Its time is the one the artifact's own time reports, without Racket's start-up.",
+      "notgiven": "",
+      "cite": {"authors": "Cameron Moy, Jack Czenszak, John M. Li, Brianna Marshall and Steven Holtzen", "title": "Roulette: A language for expressive, exact, and efficient discrete probabilistic programming", "venue": "PLDI", "year": 2025, "doi": "10.1145/3729334"},
+      "link": "https://doi.org/10.5281/zenodo.15253254"
+    },
+    "nodice": {
+      "about": "Exact inference for discrete probabilistic programs with nondeterminism and conditioning, in Dice's syntax.",
+      "version": "nDice.exe of noDice's artifact (Zenodo 10.5281/zenodo.18739789)",
+      "settings": "The Dice program as written; it prints six digits.",
+      "notgiven": "",
+      "cite": {"authors": "Tobias Gürtler and Benjamin Lucien Kaminski", "title": "noDice: Inference for discrete probabilistic programs with nondeterminism and conditioning", "venue": "OOPSLA", "year": 2026, "doi": "10.1145/3798215"},
+      "link": "https://doi.org/10.5281/zenodo.18739789"
+    },
+    "psi": {
+      "about": "Exact symbolic inference for probabilistic programs.",
+      "version": "Psi at revision ef8a9e5",
+      "settings": "Dice programs through dice2psi.py. Psi answers one expression, so a program runs once for each component of its value and the times add up.",
+      "notgiven": "",
+      "cite": {"authors": "Timon Gehr, Sasa Misailovic and Martin Vechev", "title": "PSI: Exact symbolic inference for probabilistic programs", "venue": "CAV", "year": 2016},
+      "link": "https://github.com/eth-sri/psi"
+    },
+    "genfer": {
+      "about": "Exact Bayesian inference on discrete models through probability generating functions.",
+      "version": "Genfer at revision d132c76",
+      "settings": "Dice programs through dice2genfer.py; its own programs as its repository ships them, with --rational where their probabilities are rational.",
+      "notgiven": "",
+      "cite": {"authors": "Fabian Zaiser, Andrzej S. Murawski and Luke Ong", "title": "Exact Bayesian inference on discrete models via probability generating functions: A probabilistic programming approach", "venue": "NeurIPS", "year": 2023},
+      "link": "https://github.com/fzaiser/genfer"
+    },
+    "sppl": {
+      "about": "Probabilistic programming with exact symbolic inference over sum-product expressions.",
+      "version": "SPPL 2.0.4 on Python 3.10",
+      "settings": "Dice programs through dice2sppl.py; its own Markov switching model as its notebook runs it.",
+      "notgiven": "",
+      "cite": {"authors": "Feras A. Saad, Martin C. Rinard and Vikash K. Mansinghka", "title": "SPPL: Probabilistic programming with fast exact symbolic inference", "venue": "PLDI", "year": 2021},
+      "link": "https://github.com/probsys/sppl"
+    },
+    "geni": {
+      "about": "Compiles discrete probabilistic programs into generating functions.",
+      "version": "gennifer of Geni's ICFP 2025 artifact (revision 9e5ffb2)",
+      "settings": "Dice programs through dice2geni.py, run as gennifer -l -i FILE; it prints seven decimals.",
+      "notgiven": "",
+      "cite": {"authors": "Jianlin Li and Yizhou Zhang", "title": "Compiling with generating functions", "venue": "ICFP", "year": 2025, "doi": "10.1145/3747534"},
+      "link": "https://github.com/geni-icfp25-ae/geni-icfp25-ae"
+    },
+    "pluck": {
+      "about": "Lazy knowledge compilation of discrete probabilistic programs into BDDs.",
+      "version": "Pluck of its PLDI 2025 artifact (Zenodo 10.5281/zenodo.15051140) on Julia 1.11.9, with rsdd",
+      "settings": "Dice programs through dice2pluck.py, run through bdd_forward as the artifact's harness runs them.",
+      "notgiven": "The UAI 2022 sets of partition functions, for lack of time in this release.",
+      "cite": {"authors": "Maddy Bowers, Alexander K. Lew, Joshua B. Tenenbaum, Armando Solar-Lezama and Vikash K. Mansinghka", "title": "Stochastic lazy knowledge compilation for inference in discrete probabilistic programs", "venue": "PLDI", "year": 2025, "doi": "10.1145/3729325"},
+      "link": "https://doi.org/10.5281/zenodo.15051140"
+    },
+    "storm": {
+      "about": "A probabilistic model checker; here it computes the probability of a program's result on the program's Markov chain.",
+      "version": "Storm 1.14 through stormpy, one Sylvan thread",
+      "settings": "Three engines: the explicit model in doubles (sparse) and in rationals (exact), and decision diagrams (dd); each instance counts the fastest. It reads Rubicon's PRISM models of the weather factory, and the Markov chain that dice2prism.py writes of every other Dice program.",
+      "notgiven": "The UAI 2022 sets of partition functions, for lack of time in this release.",
+      "cite": {"authors": "Christian Hensel, Sebastian Junges, Joost-Pieter Katoen, Tim Quatmann and Matthias Volk", "title": "The probabilistic model checker Storm", "venue": "International Journal on Software Tools for Technology Transfer", "year": 2022},
+      "link": "https://www.stormchecker.org"
+    },
+    "prism": {
+      "about": "A probabilistic model checker; here on the same Markov chains as Storm.",
+      "version": "PRISM 4.8.1",
+      "settings": "Two engines, the explicit one (sparse) and its default hybrid one; each instance counts the faster.",
+      "notgiven": "The UAI 2022 sets of partition functions, for lack of time in this release.",
+      "cite": {"authors": "Marta Kwiatkowska, Gethin Norman and David Parker", "title": "PRISM 4.0: Verification of probabilistic real-time systems", "venue": "CAV", "year": 2011},
+      "link": "https://www.prismmodelchecker.org"
+    },
+    "provsql": {
+      "about": "A PostgreSQL extension that tracks the provenance of query results and computes their probability.",
+      "version": "ProvSQL 1.13.0 on PostgreSQL 16.4",
+      "settings": "The database and the query as SQL over tuple-independent tables (tpch2provsql.py); probability_evaluate picks its method by cost.",
+      "notgiven": "Every program its translation cannot express: a recursive rule, a probabilistic rule or an annotated disjunction (which would need a fresh tuple for each grounding), the networks of the network suites, and the Dice and Alea.jl programs.",
+      "cite": {"authors": "Aryak Sen, Silviu Maniu and Pierre Senellart", "title": "ProvSQL: A general system for keeping track of the provenance and probability of data", "venue": "ICDE", "year": 2026},
+      "link": "https://github.com/PierreSenellart/provsql"
+    },
+    "psouffle": {
+      "about": "An exact probabilistic Datalog compiler and runtime built on Soufflé: the compiled program records each rule application in a derivation graph and compiles the graph's components into BDDs.",
+      "version": "PSouffle 3fb0fd06 (CUDD fc30c18f)",
+      "settings": "The ProbLog program written as a Soufflé program (problog2souffle.py) and compiled untimed (souffle --full-only), as its paper times inference; the run is timed, in its default full inference on one thread (--jobs=1); its graph rewrites (--rewrite) lose derivations at this commit and are not used.",
+      "notgiven": "The networks and the probabilistic functional programs, for lack of time in this release; the programs its language cannot express (lists, function symbols, disjunctive bodies, division, negation through recursion).",
+      "cite": {"authors": "Xuyang Li, Jiahao Xia, Ahmed Adnan and Jingbo Wang", "title": "PSoufflé: Scaling Exact Probabilistic Logic Inference for Program Analysis", "venue": "FMCAD", "year": 2026},
+      "link": "https://github.com/psouffle-lang/psouffle"
+    }
+  }
+}

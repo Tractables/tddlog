@@ -11,7 +11,9 @@
 //! generic steps compute of it is known from the rows:
 //! [`super::normalize`] gives each row's heads a chain of switches, and the
 //! bottom-up grounder ([`super::engine`]) evaluates the tables in the order
-//! its stratification visits them, each row's rules in turn. [`ground_rows`]
+//! its stratification visits them, each row's rules in turn; a table of
+//! facts alone is its facts ([`super::normalize::Facts`]), atoms without a
+//! switch or a rule. [`ground_rows`]
 //! builds the grounder's output directly: the same atoms in the same order,
 //! the same rules with the same bodies, the same queries and evidence. It
 //! skips the normalized program, the grounder's rule compilation and body
@@ -59,6 +61,11 @@ fn row(clause: &Clause) -> bool {
     } else {
         clause.heads.len() == 1
     }
+}
+
+/// Whether `clause` is a fact: one head and no body.
+fn fact(clause: &Clause) -> bool {
+    clause.heads.len() == 1 && clause.body.is_empty()
 }
 
 /// Whether `clause`'s heads have switches.
@@ -366,9 +373,11 @@ impl<'a> Shape<'a> {
     }
 
     /// The grounder's output: each table's rules in the order of its
-    /// clauses and heads, the atoms numbered as the grounder meets them (a
-    /// rule's switch, the guards' switches, the parents, the head), a rule
-    /// whose parent is impossible dropped after its switch is numbered.
+    /// clauses and heads, the atoms numbered as the grounder meets them (the
+    /// rule's switch after its parents, then the head), and a row whose
+    /// parent is impossible making nothing: its switches come last in its
+    /// rules ([`super::schedule`]), where the grounder never reaches them.
+    /// A table of facts alone makes its atoms in the order of its facts.
     pub(super) fn ground(&self, program: &Program, order: &[usize]) -> GroundProgram {
         let mut gp = GroundProgram::default();
         // The atoms and the rules, allocated for what the clauses can give:
@@ -395,6 +404,32 @@ impl<'a> Shape<'a> {
         let mut qs: Vec<Prob> = Vec::new();
         let mut name = String::new();
         for &x in order {
+            // A table of facts alone makes its atoms facts, without a
+            // switch or a rule each ([`super::normalize::Facts`]).
+            if self.clauses(x).iter().all(|s| fact(s.clause)) {
+                for s in self.clauses(x) {
+                    let next = gp.atoms.len();
+                    let h = number(&mut gp, &mut ids, x, &s.clause.heads[0].atom);
+                    let new = h as usize == next;
+                    let q = probabilistic(s.clause).then(|| {
+                        switch_probabilities(&s.clause.heads, &mut qs)
+                            .expect("a row's probabilities sum to one at most");
+                        qs[0]
+                    });
+                    let kind = &mut gp.kinds[h as usize];
+                    match (q, *kind) {
+                        (Some(q), AtomKind::Fact(w)) => *kind = AtomKind::Fact(w.either(q)),
+                        (Some(q), AtomKind::Derived) if new => *kind = AtomKind::Fact(q),
+                        // Certain already.
+                        (_, AtomKind::Derived) if !new => {}
+                        (_, _) => {
+                            *kind = AtomKind::Derived;
+                            gp.rules.push(GroundRule::new(h, Vec::new()));
+                        }
+                    }
+                }
+                continue;
+            }
             // The predicates of each clause's body are the next of the
             // table's reads, not looked up by name again.
             let mut reads = self.reads(x);
@@ -410,16 +445,17 @@ impl<'a> Shape<'a> {
                     parents.extend(id.map(|&b| GLit::Pos(b)));
                     id.is_some()
                 });
+                if !possible {
+                    continue;
+                }
                 if !probabilistic(clause) {
-                    if possible {
-                        let h = number(&mut gp, &mut ids, x, &clause.heads[0].atom);
-                        let mut body = parents.clone();
-                        body.sort_unstable();
-                        body.dedup();
-                        let rule = GroundRule::new(h, body);
-                        if kept.keep(&gp.rules, &rule) {
-                            gp.rules.push(rule);
-                        }
+                    let h = number(&mut gp, &mut ids, x, &clause.heads[0].atom);
+                    let mut body = parents.clone();
+                    body.sort_unstable();
+                    body.dedup();
+                    let rule = GroundRule::new(h, body);
+                    if kept.keep(&gp.rules, &rule) {
+                        gp.rules.push(rule);
                     }
                     continue;
                 }
@@ -434,9 +470,6 @@ impl<'a> Shape<'a> {
                     ));
                     gp.kinds.push(AtomKind::Fact(q));
                     switches.push(switch);
-                    if !possible {
-                        continue;
-                    }
                     let h = number(&mut gp, &mut ids, x, &h.atom);
                     // The head's switch, and the switches of the heads before
                     // it negated.
@@ -496,7 +529,7 @@ mod tests {
     fn both(source: &str) -> Option<(GroundProgram, GroundProgram)> {
         let program = crate::syntax::parse_program(source).expect("parses");
         let rows = ground_rows(&program)?;
-        let norm = normalize::normalize(&program).expect("normalizes");
+        let norm = normalize::normalize(&program, Default::default()).expect("normalizes");
         Some((
             engine::ground_normalized(&norm, None).expect("grounds"),
             rows,
@@ -541,8 +574,8 @@ mod tests {
 
     #[test]
     fn impossible_parents_and_queries_ground_alike() {
-        // b(z) has no row and e no table, so rows that read them are
-        // dropped after their switches are numbered; queries and evidence
+        // b(z) has no row and e no table, so rows that read them make
+        // nothing, not even their switches; queries and evidence
         // on atoms that do not exist or are of no table.
         table_shaped(
             "0.6::b(x); 0.4::b(y).

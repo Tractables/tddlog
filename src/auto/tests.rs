@@ -464,7 +464,7 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
 
 #[test]
 fn settling_past_its_budget_is_the_trials_work() {
-    // At 100 steps `program`'s first attempt compiles and stops while it
+    // At 120 steps `program`'s first attempt compiles and stops while it
     // settles its names, past the budget, the compile's work: past it each
     // cut still reads its readers before it keeps its names. Uncharged,
     // that work tripped the run's stop before the trial had spent its
@@ -472,7 +472,7 @@ fn settling_past_its_budget_is_the_trials_work() {
     // work did not, and each attempt settled a few cuts more (watches of
     // 2^16 and 2^17 pairs, where no formula holds 2^15). Charged to the
     // trial, the stop is one by work, and no trial's watch moves.
-    let steps = 100;
+    let steps = 120;
     let gp = diamond_loop(steps);
     let run = run_with_watch(
         gp.clone(),
@@ -591,7 +591,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
         gp.clone(),
         candidates(&gp),
         Projection::default(),
-        4,
+        2,
         tp::DYNAMIC_FIRST_PAIRS,
     )
     .unwrap();

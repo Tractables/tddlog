@@ -31,3 +31,23 @@ fdafa1739216b71651cc7328f603f9b0494631bf35cc26f943f120ee92333610 data/bn-large/m
 4bfb70c26694b17c04da868ed01e1b959783554f825b62f3d25606f380514672 data/bn-large/munin2.net.gz https://www.bnlearn.com/bnrepository/munin4/munin2.net.gz
 426fc3b16d66e6c6aefa3f08793a06b5a18bc5b3a4aea2dfa5544d9f9a4f51d7 data/bn-large/munin3.net.gz https://www.bnlearn.com/bnrepository/munin4/munin3.net.gz
 a5189869305d5dc6b1b2d629fa36e43cef884ce1ceec932fa312a45f739c4bb3 data/bn-large/munin4.net.gz https://www.bnlearn.com/bnrepository/munin4/munin4.net.gz
+#
+# The taint analyses of 15 Android apps of PSouffle (Li, Xia, Adnan, Wang,
+# FMCAD 2026), evaluation/full/taint/APP/compute.problog.dl at the revision
+# each URL names, under the MIT licence of its evaluation directory:
+# shippable, but 9.4 MB, so read through gen_taint.py like the networks.
+75bc74dbf81e96c4b7bb82e884c124eb89c2a60cdf3dc64fe786b0d1d08fda4a data/psouffle/taint/and-roc.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/and-roc/compute.problog.dl
+9484434b840a9fcef872726295cc67da11bd5456c24aade8eca210911f9f32c3 data/psouffle/taint/andors-trail.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/andors-trail/compute.problog.dl
+a547cde8c0d940a861269be18484f10b3a9b37d0d869059ab1385b3c786f0fc2 data/psouffle/taint/angulo.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/angulo/compute.problog.dl
+05ac1c5d7c21adb700401ab8ebe91cdf5b3aa3d67251f33d2369465168dbebc3 data/psouffle/taint/app-018.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/app-018/compute.problog.dl
+62a4c32da971c2f313844a6cf2c0d409fe273620f5b396572ee58153d28aadb8 data/psouffle/taint/app-ca7.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/app-ca7/compute.problog.dl
+bd17a0adb0b3cda44b947dc3efce85fc12e3ee11f732825bbc582031e67572b2 data/psouffle/taint/app-kQm.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/app-kQm/compute.problog.dl
+d27a2a4806eb995ad324adfc0379ba80ba15a679b0d33b3204c4c011a0b474a1 data/psouffle/taint/barcode.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/barcode/compute.problog.dl
+cbc915cd87862b296f4a02f58923d1ccc88873261ba65a55626a3f0eae0c9643 data/psouffle/taint/ginger-master.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/ginger-master/compute.problog.dl
+44a73ff7fc9827a5bb4206df3985f095cf131942a79f5304342d3741e4a26051 data/psouffle/taint/noisy-sounds.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/noisy-sounds/compute.problog.dl
+b62a3f15020299e16516fe522cb245375724a53e6b65873da7e771ebf055ef9d data/psouffle/taint/savage-knife.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/savage-knife/compute.problog.dl
+ab236c06a7931898d54bbe5698369dcc4d3cf98f23bfdf7da82f66d466e4d50a data/psouffle/taint/tilt-mazes.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/tilt-mazes/compute.problog.dl
+a79d3412eb04a5f5e13c76e2984864c29303e913c4b40b62182692e1f0c26e06 data/psouffle/taint/tom-droid.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/tom-droid/compute.problog.dl
+99cca2f371846f4fb2c5865d8f062875c374d5a71ffe4aa48af2e7ef70c0e911 data/psouffle/taint/tuio-droid.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/tuio-droid/compute.problog.dl
+b026172dcbef0edfe59950d5b0a90c072d0b94c108538dcd0dafe8ccc0905adf data/psouffle/taint/video-game.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/video-game/compute.problog.dl
+7628f9cdfb00e13e6384c2a91334ecbcc8d15e41bc785d0f88867ea74af7b9c5 data/psouffle/taint/yaaic.pl.gz https://raw.githubusercontent.com/psouffle-lang/psouffle/3fb0fd06f0089a32b19cb3134349bd11361e257c/evaluation/full/taint/yaaic/compute.problog.dl

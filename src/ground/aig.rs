@@ -346,7 +346,9 @@ impl Sweep {
     }
 
     /// The solver's literal of `l`, the clauses of the nodes of its cone
-    /// given where they were not yet. `None` where the steps run out.
+    /// given where they were not yet. `None` where the steps run out, the
+    /// cone then left as it was: the pruner gives the search more steps
+    /// with each gate it builds, and a later call encodes the cone anew.
     fn encode(&mut self, g: &Graph, l: Lit) -> Option<SatLit> {
         if self.var.len() < g.fanins.len() {
             self.var.resize(g.fanins.len(), NONE);
@@ -356,6 +358,7 @@ impl Sweep {
             let mut vars = self.solver.num_vars() as SatLit;
             let mut clauses: Vec<[SatLit; 3]> = Vec::new();
             let mut todo = vec![root];
+            let (mut fresh, inputs) = (vec![root], self.inputs.len());
             self.var[root] = 2 * vars;
             vars += 1;
             while let Some(n) = todo.pop() {
@@ -374,6 +377,7 @@ impl Sweep {
                         self.var[node(f)] = 2 * vars;
                         vars += 1;
                         todo.push(node(f));
+                        fresh.push(node(f));
                     }
                 }
                 let (va, vb) = (self.var[node(a)] ^ (a & 1), self.var[node(b)] ^ (b & 1));
@@ -384,6 +388,10 @@ impl Sweep {
             let written = 7 * (clauses.len() as u64) / 3;
             if written >= self.budget {
                 self.budget = 0;
+                for n in fresh {
+                    self.var[n] = NONE;
+                }
+                self.inputs.truncate(inputs);
                 return None;
             }
             self.budget -= written;
@@ -839,5 +847,32 @@ impl Pruner {
         }
         *self.slot(a) = l;
         (node(l) == 0).then_some(l == TRUE)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Graph, Sweep, WORDS};
+
+    /// A cone the steps cannot pay for stays unencoded, so that a call
+    /// after the steps grow, as the pruner grows them with each gate it
+    /// builds, encodes it in full: the cone had kept the solver variables
+    /// it was numbered with, which the solver never had, and the next cone
+    /// was numbered over them.
+    #[test]
+    fn a_cone_the_steps_cannot_pay_for_stays_unencoded() {
+        let mut g = Graph::new(WORDS);
+        let (x, y, z) = (g.input(), g.input(), g.input());
+        let xy = g.and(x, y);
+        let a = g.and(xy, z);
+        let yz = g.and(y, z);
+        let b = g.and(x, yz);
+        let mut sweep = Sweep::new(&g, 0);
+        sweep.budget = 1;
+        assert_eq!(sweep.encode(&g, a), None);
+        sweep.budget = 1 << 20;
+        assert_eq!(sweep.prove(&mut g, a, b), Some(true));
+        let c = g.and(x, y);
+        assert_eq!(sweep.prove(&mut g, a, c), Some(false));
     }
 }

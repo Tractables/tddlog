@@ -460,12 +460,12 @@ mod tests {
         }
     }
 
-    /// Every strategy has to hand `tp` a numbering of exactly the facts.
+    /// Every strategy has to hand `tp` a numbering of exactly the facts of
+    /// the program it lays out, the one with its narrow cuts named where
+    /// `program` names them.
     #[test]
     fn every_strategy_covers_the_facts_once() {
         let gp = ground_smokers();
-        let facts: FxHashSet<AtomId> = gp.facts().map(|(a, _)| a).collect();
-        assert!(!facts.is_empty());
         for strategy in [
             Kind::Td,
             Kind::Closed,
@@ -473,8 +473,11 @@ mod tests {
             Kind::Program { fan_in: false },
             Kind::Program { fan_in: true },
         ] {
-            let (Layout { vtree, order, .. }, _) =
+            let (Layout { vtree, order, .. }, named) =
                 build(&gp, &Deps::of(&gp), strategy).expect("builds");
+            let laid = named.as_ref().unwrap_or(&gp);
+            let facts: FxHashSet<AtomId> = laid.facts().map(|(a, _)| a).collect();
+            assert!(!facts.is_empty());
             let seen: FxHashSet<AtomId> = order.iter().copied().collect();
             assert_eq!(seen, facts, "{strategy} misses or repeats a fact");
             assert_eq!(order.len(), seen.len(), "{strategy} repeats a fact");
@@ -493,20 +496,27 @@ mod tests {
 
     /// `program` reads the facts in program order, and `program:fanin` in
     /// the interleaved fan-in order: each vtree is right-linear over its
-    /// order's reverse.
+    /// order's reverse, the copies of the atoms crossing its narrow cuts
+    /// between the facts where it names them.
     #[test]
     fn program_lays_the_facts_out_right_linear_in_reverse() {
         let gp = ground_smokers();
         let met = crate::ground::deps::fan_in(&gp, true);
         for fan_in in [false, true] {
-            let (Layout { vtree, order, .. }, _) =
+            let (Layout { vtree, order, .. }, named) =
                 build(&gp, &Deps::of(&gp), Kind::Program { fan_in }).expect("builds");
             let mut facts = facts_in_order(&gp);
             if fan_in {
                 facts.sort_by_key(|&a| met[a as usize]);
             }
             facts.reverse();
-            assert_eq!(order, facts, "fan_in {fan_in}");
+            let own: Vec<AtomId> = order
+                .iter()
+                .copied()
+                .filter(|&a| (a as usize) < gp.atoms.len() && gp.is_fact(a))
+                .collect();
+            assert_eq!(own, facts, "fan_in {fan_in}");
+            assert!(named.is_some() || own.len() == order.len());
             assert!(!branches(&vtree));
         }
     }

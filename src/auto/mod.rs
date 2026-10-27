@@ -156,6 +156,21 @@ pub(crate) fn decides(conditioned: &GroundProgram, ground: &GroundProgram) -> bo
     conditioned.stats.guarded >= derived_unmerged(ground)
 }
 
+/// Whether a trial takes `ground` conditioned on its guards, the
+/// conditioning having made `made` atoms (`solve::decision_trial`): where
+/// it made at least a quarter as many as `ground` has derived ones
+/// ([`derived_unmerged`]). `decision` takes it where it made as many
+/// ([`decides`]), and `program`, `closed` and `td` otherwise
+/// ([`Programs::of`]): `closed` wins bb_normal_mixture_theta_w9 (37 186
+/// made for 49 158) on it. The zeroone circuits make an eighth
+/// (bb_zeroone_w2_w25: 2 794 for 21 896), and the conditioned program,
+/// which the merge of equal gates does not follow (`ground::guarded`),
+/// holds 14 499 derived atoms where the program as ground holds 9 972;
+/// `auto` takes 27% longer with it.
+pub(crate) fn takes_conditioned(made: usize, ground: &GroundProgram) -> bool {
+    made * 4 >= derived_unmerged(ground)
+}
+
 /// The derived atoms of `ground` with those the merge of equal gates took
 /// out counted (`GroundStats::reduced`): the conditioning counts what it
 /// makes on the program before any merge (`ground::guarded`), and a merge
@@ -182,11 +197,12 @@ struct Programs {
 }
 
 impl Programs {
-    /// The program trial `kind` rewrites. The conditioned program goes to
-    /// `decision` where it is a trial; where it is not, it goes to
-    /// `program`, `closed` and `td`, whose layouts the rules' text does not
-    /// set: `program`'s order is the one the program states its facts in,
-    /// the same in both programs, and `closed` and `td` search theirs on
+    /// The program trial `kind` rewrites. The conditioned program, where
+    /// there is one ([`takes_conditioned`]), goes to `decision` where it is
+    /// a trial; where it is not, it goes to `program`, `closed` and `td`,
+    /// whose layouts the rules' text does not set: `program`'s order is
+    /// the one the program states its facts in, the same in both
+    /// programs, and `closed` and `td` search theirs on
     /// the program they get (`dynamic`, whose layout the text does not set
     /// either, is a trial only where nothing is left to order, and never
     /// beside a conditioned program). `program` and `program:fanin` rewrite

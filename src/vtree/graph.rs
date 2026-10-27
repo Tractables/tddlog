@@ -516,8 +516,15 @@ pub(super) fn weighted_min_fill(edges: &[(u32, u32)], weight: &[u64]) -> Elimina
 /// The elimination of the vertices of the graph whose edges are `edges`
 /// in the order `order`, every vertex one at a time. `None` when a vertex
 /// would go with more than `width` neighbours, or when eliminating takes
-/// more than `max_work` units of work (a step through a set, an insertion
-/// or a removal is one), which is charged to goatd's meter.
+/// more than `max_work` units of work (two for each edge, and the square
+/// of each vertex's neighbours when it goes), which is charged to goatd's
+/// meter. The edges join distinct vertices.
+///
+/// Each vertex that goes leaves a clique of its neighbours, which takes in
+/// the cliques it was in; a vertex's neighbours when it goes are its own
+/// left and those of the cliques it is in, each clique read once, by the
+/// first of its vertices to go, which takes time linear in the edges of
+/// the eliminated graph.
 ///
 /// goatd eliminates in a caller's order too (`Order::Ranked`), with the
 /// same bags, but numbers them otherwise, and the families layout roots a
@@ -529,32 +536,90 @@ pub(super) fn eliminated_in_order(
     width: usize,
     max_work: u64,
 ) -> Option<Elimination> {
-    let mut adjacent: Vec<FxHashSet<u32>> = vec![FxHashSet::default(); order.len()];
-    for &(u, v) in edges {
-        adjacent[u as usize].insert(v);
-        adjacent[v as usize].insert(u);
+    let n = order.len();
+    let mut position = vec![0u32; n];
+    for (i, &v) in order.iter().enumerate() {
+        position[v as usize] = i as u32;
     }
+    // The graph by its vertices' places in the order, as lists that start
+    // at `start`.
+    let mut start = vec![0usize; n + 1];
+    for &(u, v) in edges {
+        start[position[u as usize] as usize + 1] += 1;
+        start[position[v as usize] as usize + 1] += 1;
+    }
+    for i in 0..n {
+        start[i + 1] += start[i];
+    }
+    let mut next = start.clone();
+    let mut adjacent = vec![0u32; 2 * edges.len()];
+    for &(u, v) in edges {
+        let (pu, pv) = (position[u as usize], position[v as usize]);
+        adjacent[next[pu as usize]] = pv;
+        next[pu as usize] += 1;
+        adjacent[next[pv as usize]] = pu;
+        next[pv as usize] += 1;
+    }
+    drop(next);
+    // Per place: the cliques its vertex is in, by the place of the vertex
+    // that left them; per clique, its vertices, and the clique that took it
+    // in (itself while it stands).
+    let mut cliques_of: Vec<Vec<u32>> = vec![Vec::new(); n];
+    let mut members: Vec<Vec<u32>> = vec![Vec::new(); n];
+    let mut taken_by: Vec<u32> = (0..n as u32).collect();
+    let root = |taken_by: &mut [u32], mut c: u32| -> u32 {
+        while taken_by[c as usize] != c {
+            let up = taken_by[taken_by[c as usize] as usize];
+            taken_by[c as usize] = up;
+            c = up;
+        }
+        c
+    };
+    // The step at which each place and clique was last gathered.
+    let mut seen = vec![u32::MAX; n];
+    let mut read = vec![u32::MAX; n];
+    let mut around: Vec<u32> = Vec::new();
     let mut work = 2 * edges.len() as u64;
-    let mut at_elimination = Vec::with_capacity(order.len());
-    for &v in &order {
-        let neighbours: Vec<u32> = std::mem::take(&mut adjacent[v as usize])
-            .into_iter()
-            .collect();
-        if neighbours.len() > width {
+    let mut at_elimination = Vec::with_capacity(n);
+    for i in 0..n as u32 {
+        around.clear();
+        seen[i as usize] = i;
+        for &u in &adjacent[start[i as usize]..start[i as usize + 1]] {
+            if u > i && seen[u as usize] != i {
+                seen[u as usize] = i;
+                around.push(u);
+            }
+        }
+        for c in std::mem::take(&mut cliques_of[i as usize]) {
+            let c = root(&mut taken_by, c);
+            if read[c as usize] == i {
+                continue;
+            }
+            read[c as usize] = i;
+            for u in std::mem::take(&mut members[c as usize]) {
+                if u > i && seen[u as usize] != i {
+                    seen[u as usize] = i;
+                    around.push(u);
+                }
+            }
+            taken_by[c as usize] = i;
+        }
+        if around.len() > width {
             goatd::meter::charge(work);
             return None;
         }
-        for &u in &neighbours {
-            let set = &mut adjacent[u as usize];
-            set.remove(&v);
-            set.extend(neighbours.iter().copied().filter(|&w| w != u));
-        }
-        work += (neighbours.len() * neighbours.len()) as u64;
+        work += (around.len() * around.len()) as u64;
         if work > max_work {
             goatd::meter::charge(work);
             return None;
         }
-        at_elimination.push(neighbours);
+        for &u in &around {
+            cliques_of[u as usize].push(i);
+        }
+        let mut bag: Vec<u32> = around.iter().map(|&u| order[u as usize]).collect();
+        bag.sort_unstable();
+        at_elimination.push(bag);
+        members[i as usize] = around.clone();
     }
     goatd::meter::charge(work);
     Some(Elimination {
@@ -923,6 +988,112 @@ mod tests {
     }
 
     /// Past its work, an elimination in a given order gives up.
+    /// The elimination in order as it was first written, each vertex's
+    /// neighbours added to each other's sets: the reference for
+    /// [`eliminated_in_order`].
+    fn eliminated_in_order_by_sets(
+        edges: &[(u32, u32)],
+        order: Vec<u32>,
+        width: usize,
+        max_work: u64,
+    ) -> (Option<Elimination>, u64) {
+        let mut adjacent: Vec<FxHashSet<u32>> = vec![FxHashSet::default(); order.len()];
+        for &(u, v) in edges {
+            adjacent[u as usize].insert(v);
+            adjacent[v as usize].insert(u);
+        }
+        let mut work = 2 * edges.len() as u64;
+        let mut at_elimination = Vec::with_capacity(order.len());
+        for &v in &order {
+            let mut neighbours: Vec<u32> = std::mem::take(&mut adjacent[v as usize])
+                .into_iter()
+                .collect();
+            if neighbours.len() > width {
+                return (None, work);
+            }
+            for &u in &neighbours {
+                let set = &mut adjacent[u as usize];
+                set.remove(&v);
+                set.extend(neighbours.iter().copied().filter(|&w| w != u));
+            }
+            work += (neighbours.len() * neighbours.len()) as u64;
+            if work > max_work {
+                return (None, work);
+            }
+            neighbours.sort_unstable();
+            at_elimination.push(neighbours);
+        }
+        (
+            Some(Elimination {
+                order,
+                at_elimination,
+            }),
+            work,
+        )
+    }
+
+    #[test]
+    fn an_elimination_in_order_matches_the_one_by_sets() {
+        let mut state = 0x9e37_79b9_7f4a_7c15u64;
+        let mut draw = |m: u64| {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state % m
+        };
+        for round in 0..400 {
+            let n = 1 + draw(60) as u32;
+            let density = 1 + draw(8);
+            let mut edges = Vec::new();
+            for u in 0..n {
+                for v in u + 1..n {
+                    if draw(16) < density {
+                        edges.push(if draw(2) == 0 { (u, v) } else { (v, u) });
+                    }
+                }
+            }
+            if round % 5 == 0 && !edges.is_empty() {
+                let e = edges[draw(edges.len() as u64) as usize];
+                edges.push(e);
+            }
+            let mut order: Vec<u32> = (0..n).collect();
+            for i in (1..n as usize).rev() {
+                order.swap(i, draw(i as u64 + 1) as usize);
+            }
+            let width = if round % 3 == 0 {
+                draw(n as u64 + 1) as usize
+            } else {
+                usize::MAX
+            };
+            let max_work = if round % 4 == 0 {
+                draw(4 * n as u64 * n as u64 + 1)
+            } else {
+                u64::MAX
+            };
+            let (want, want_work) =
+                eliminated_in_order_by_sets(&edges, order.clone(), width, max_work);
+            let before = goatd::meter::units_spent();
+            let got = eliminated_in_order(&edges, order, width, max_work);
+            assert_eq!(
+                goatd::meter::units_spent() - before,
+                want_work,
+                "round {round}"
+            );
+            match (want, got) {
+                (None, None) => {}
+                (Some(want), Some(got)) => {
+                    assert_eq!(want.order, got.order, "round {round}");
+                    assert_eq!(want.at_elimination, got.at_elimination, "round {round}");
+                }
+                (want, got) => panic!(
+                    "round {round}: by sets {:?}, in order {:?}",
+                    want.is_some(),
+                    got.is_some()
+                ),
+            }
+        }
+    }
+
     #[test]
     fn an_elimination_in_order_past_its_work_gives_up() {
         let edges: Vec<(u32, u32)> = (0..8)

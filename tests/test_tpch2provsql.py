@@ -75,6 +75,12 @@ class TranslateTests(unittest.TestCase):
             seen.add(name)
         self.assertEqual([q for q, _ in qs], re.findall(r'^query\((\w+)\)\.', text, re.M))
 
+    def test_atoms_of_no_arguments_in_a_body(self):
+        # liftsep's union of h-queries: a rule of atoms that have no arguments
+        sql, qs, _ = tpch2provsql.translate('0.5::r(c0).\n0.5::s(c0,c1).\nh0 :- r(X), s(X,Y).\nq :- h0.\nquery(q).\n')
+        self.assertIn('CREATE VIEW q AS SELECT DISTINCT 1 AS c1 FROM h0 t0;', sql)
+        self.assertEqual(qs, [('q', 'SELECT probability_evaluate(provenance()) FROM q')])
+
     def test_evidence_is_a_conjunction_less_the_false_atoms(self):
         sql, qs, ev = tpch2provsql.translate(EVIDENCE)
         self.assertIn("CREATE VIEW pq_atom0 AS SELECT DISTINCT 1 AS c1 FROM f t0 WHERE t0.c1 = 'f';", sql)
@@ -99,7 +105,8 @@ class TranslateTests(unittest.TestCase):
     def test_bench_gives_provsql_the_tuple_independent_families(self):
         self.assertEqual(bench.LIT['pdb10'][1][0], 'gen_pdb.py')
         self.assertEqual(bench.LIT['noisyor6_9'][1][0], 'gen_noisyor.py')
-        self.assertEqual(set(bench.PROVSQL_WRITERS), {'gen_tpch.py', 'gen_pdb.py', 'gen_noisyor.py'})
+        self.assertEqual(set(bench.PROVSQL_WRITERS), {'gen_tpch.py', 'gen_pdb.py', 'gen_noisyor.py', 'gen_liftsep.py',
+                                                      'gen_rgraph.py'})
 
 
 @unittest.skipUnless(os.environ.get('PROVSQL_PREFIX'), 'PROVSQL_PREFIX names the ProvSQL install')
@@ -135,6 +142,14 @@ class AnswerTests(unittest.TestCase):
 
     def test_a_noisy_or_network_under_evidence(self):
         self.check_lit('noisyor', SOURCE / 'tests' / 'lit' / 'noisyor.pl')
+
+    def test_the_database_queries_of_the_second_scan(self):
+        for family, n in [('liftsep', '3'), ('rgraph', '6')]:
+            with self.subTest(family), tempfile.TemporaryDirectory() as d:
+                p = Path(d) / f'{family}.pl'
+                p.write_text(subprocess.run([sys.executable, str(bench.source_tree.script(f'gen_{family}.py')), n],
+                                            capture_output=True, text=True, check=True).stdout)
+                self.check_lit(family, p)
 
     def test_evidence_by_hand(self):
         # f(f) needs x and c(x,f): P(e) = 0.15 (1 - 0.6 * 0.5) = 0.105;

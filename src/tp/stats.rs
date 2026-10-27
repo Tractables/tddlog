@@ -71,8 +71,7 @@ pub(super) enum Op {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SearchStats {
     pub searches: usize,
-    /// Searches that shrank their formulas by less than a tenth; the second
-    /// ends the searching.
+    /// Searches that shrank their formulas by less than a tenth.
     pub weak: usize,
     pub probes: usize,
     pub accepts: usize,
@@ -80,8 +79,11 @@ pub struct SearchStats {
     /// over the searches.
     pub pairs_before: usize,
     pub pairs_after: usize,
-    /// Work units the searches' probes charged.
+    /// Work units the searches' probes charged, their restarts included.
     pub work_units: u64,
+    /// Restarts begun after the searches' descents, and those kept.
+    pub restarts: usize,
+    pub restarts_kept: usize,
 }
 
 /// What a negation was for ([`Negations`]).

@@ -2,10 +2,12 @@
 //! loops compiled so far.
 
 use rustc_hash::FxHashMap;
+use std::sync::Arc;
 
 use tididi::Tdd;
 use tididi::vtree::VarId;
 
+use super::backend::{Part, Read};
 use super::factoring::{AtMostOne, Exclusive, Factoring, Pairs, in_order, placed_count};
 use super::scope::scope_shape;
 use super::stats::{ClauseMemoStats, NegationSource, Op};
@@ -219,6 +221,11 @@ impl ClauseMemo {
     /// Drops the loop the watch refused ([`Refused`]).
     pub(super) fn forget_refused(&mut self) {
         self.refused = None;
+    }
+
+    /// The formula of the loop the watch refused, taken out.
+    pub(super) fn take_refused(&mut self) -> Option<Tdd> {
+        self.refused.take().map(|r| r.f)
     }
 }
 
@@ -484,15 +491,10 @@ impl Factoring<'_> {
     /// Contraction does not remove them; the full plan does, and runs only
     /// where the product has outgrown its operands, each counted as it
     /// would be on `scope`.
-    fn product(
-        &mut self,
-        c: Formula,
-        f: Formula,
-        scope: &VtreeScope,
-    ) -> Result<Formula, CompileError> {
+    fn product(&mut self, c: Part, f: Part, scope: &VtreeScope) -> Result<Formula, CompileError> {
         let bound = 2
-            * (placed_count(self.backend.nodes(&c.0), &c, scope)
-                + placed_count(self.backend.nodes(&f.0), &f, scope));
+            * (placed_count(self.backend.nodes(&c.0), &c.1, scope)
+                + placed_count(self.backend.nodes(&f.0), &f.1, scope));
         let mut r = self.backend.and_on(c, f, scope)?;
         (self.count)(Op::And, 1);
         if self.backend.nodes(&r) > bound {
@@ -507,8 +509,8 @@ impl Factoring<'_> {
     /// one rank multiplied as the second comes.
     fn push_product(
         &mut self,
-        pending: &mut Vec<(Formula, u32)>,
-        f: Formula,
+        pending: &mut Vec<(Part, u32)>,
+        f: Part,
         scope: &VtreeScope,
     ) -> Result<(), CompileError> {
         let mut top = (f, 0);
@@ -516,7 +518,7 @@ impl Factoring<'_> {
             && rank == top.1
         {
             let (c, _) = pending.pop().expect("a product of this rank");
-            top = (self.product(c, top.0, scope)?, rank + 1);
+            top = (self.product(c, top.0, scope)?.into(), rank + 1);
         }
         pending.push(top);
         Ok(())
@@ -531,7 +533,7 @@ impl Factoring<'_> {
         body: &[GLit],
         scope: &VtreeScope,
     ) -> Result<Tdd, CompileError> {
-        let mut pending: Vec<(Formula, u32)> = Vec::new();
+        let mut pending: Vec<(Part, u32)> = Vec::new();
         let mut facts = Vec::new();
         for &l in body {
             if let Some(f) = self.fact_literal(l) {
@@ -568,12 +570,12 @@ impl Factoring<'_> {
     fn and_term(
         &mut self,
         acc: Formula,
-        nb: Formula,
+        nb: Part,
         trivial: bool,
         scope: &VtreeScope,
     ) -> Result<Formula, CompileError> {
         let (mut r, on) = if trivial {
-            nb
+            nb.owned(self.backend)?
         } else {
             let r = self.backend.and_on(acc, nb, scope)?;
             (self.count)(Op::And, 1);
@@ -588,12 +590,12 @@ impl Factoring<'_> {
     /// empties, the later ones first.
     fn collapse(
         &mut self,
-        pending: &mut Vec<(Formula, u32)>,
+        pending: &mut Vec<(Part, u32)>,
         scope: &VtreeScope,
-    ) -> Result<Formula, CompileError> {
+    ) -> Result<Part, CompileError> {
         let (mut r, _) = pending.pop().expect("a product pending");
         while let Some((c, _)) = pending.pop() {
-            r = self.product(c, r, scope)?;
+            r = self.product(c, r, scope)?.into();
         }
         Ok(r)
     }
@@ -605,12 +607,12 @@ impl Factoring<'_> {
     fn last_product(
         &mut self,
         acc: &Formula,
-        a: Formula,
-        b: Formula,
+        a: Part,
+        b: Part,
         scope: &VtreeScope,
-    ) -> Result<Result<Formula, (Formula, Formula)>, CompileError> {
-        let size = |f: &Formula| placed_count(self.backend.size(&f.0), f, scope);
-        let (s_acc, s_a, s_b) = (size(acc), size(&a), size(&b));
+    ) -> Result<Result<Formula, (Part, Part)>, CompileError> {
+        let size = |f: &Tdd, own: &VtreeScope| placed_count(self.backend.size(f), own, scope);
+        let (s_acc, s_a, s_b) = (size(&acc.0, &acc.1), size(&a.0, &a.1), size(&b.0, &b.1));
         if s_acc.saturating_mul(OR_ROUTE_SHARE) <= s_a.min(s_b) {
             return Ok(Err((a, b)));
         }
@@ -639,14 +641,14 @@ impl Factoring<'_> {
         &mut self,
         scope: &VtreeScope,
         acc: Formula,
-        a: Formula,
-        b: Formula,
+        a: Part,
+        b: Part,
         facts: &[tididi::Literal],
     ) -> Result<Tdd, CompileError> {
-        let size = |f: &Formula| placed_count(self.backend.size(&f.0), f, scope);
+        let size = |f: &Part| placed_count(self.backend.size(&f.0), &f.1, scope);
         let (a, b) = if size(&a) >= size(&b) { (a, b) } else { (b, a) };
         let b = if facts.is_empty() {
-            b
+            b.owned(self.backend)?
         } else {
             let mut b = self.placed(b, scope)?;
             for &f in facts {
@@ -656,14 +658,21 @@ impl Factoring<'_> {
             (b, scope.clone())
         };
         // Each part negated on its own scope, the smaller.
-        let not_a = ((self.negate)(self.term, a.0)?, a.1);
-        let x = self
-            .backend
-            .and_on((self.backend.copy(&acc.0)?, acc.1.clone()), not_a, scope)?;
+        let not_a = ((self.negate)(self.term, a.0.owned(self.backend)?)?, a.1);
+        // `acc` is read twice: in place by the first conjunction, then
+        // taken by the second.
+        let (acc, on) = (Arc::new(acc.0), acc.1);
+        let x = self.backend.and_on(
+            Part(Read::Shared(Arc::clone(&acc)), on.clone()),
+            not_a,
+            scope,
+        )?;
         (self.count)(Op::And, 1);
         let x = (self.watched)(x, self.head)?;
         let not_b = ((self.negate)(self.term, b.0)?, b.1);
-        let y = self.backend.and_on(acc, not_b, scope)?;
+        let y = self
+            .backend
+            .and_on(Part(Read::taken(acc), on), not_b, scope)?;
         (self.count)(Op::And, 1);
         let y = (self.watched)(y, self.head)?;
         let not_x = (self.negate)(NegationSource::Disjunction, x)?;
@@ -853,7 +862,7 @@ impl Factoring<'_> {
                 let nb = (self.part)(l.negated(), 1, scope)?;
                 acc = self.and_term(acc, nb, !narrowed, scope)?;
                 narrowed = true;
-                settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc, scope);
+                settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
                 acc.0 = (self.watched)(acc.0, self.head)?;
                 if self.backend.is_zero(&acc.0) {
                     break;
@@ -868,10 +877,10 @@ impl Factoring<'_> {
             // (`ground::steps`) reached 4 095 literals on a bit-blasted
             // circuit, and its fold 575 M work units of its program's
             // 2.53 G.
-            let mut pending: Vec<(Formula, u32)> = Vec::new();
+            let mut pending: Vec<(Part, u32)> = Vec::new();
             let mut dead = false;
             // The two parts of a body that goes in by the or-route.
-            let mut split: Option<(Formula, Formula)> = None;
+            let mut split: Option<(Part, Part)> = None;
             let mut derived_left = body
                 .iter()
                 .filter(|&&l| self.fact_literal(l).is_none())
@@ -890,7 +899,7 @@ impl Factoring<'_> {
                 if narrowed && derived_left == 0 && !pending.is_empty() {
                     let c = self.collapse(&mut pending, scope)?;
                     match self.last_product(&acc, c, f, scope)? {
-                        Ok(r) => pending.push((r, 0)),
+                        Ok(r) => pending.push((r.into(), 0)),
                         Err(parts) => split = Some(parts),
                     }
                     continue;
@@ -982,11 +991,11 @@ impl Factoring<'_> {
                             c = self.backend.and_clause(scope, c, &[f])?;
                             (self.count)(Op::And, 1);
                         }
-                        (c, scope.clone())
+                        Part::from((c, scope.clone()))
                     };
-                    let nb = ((self.negate)(self.term, c.0)?, c.1);
-                    acc = self.and_term(acc, nb, trivial, scope)?;
-                    settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc, scope);
+                    let nb = ((self.negate)(self.term, c.0.owned(self.backend)?)?, c.1);
+                    acc = self.and_term(acc, nb.into(), trivial, scope)?;
+                    settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
                     acc.0 = (self.watched)(acc.0, self.head)?;
                 }
             }

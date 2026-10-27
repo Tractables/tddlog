@@ -12,6 +12,11 @@ row of its conditional probability table,
 so the program is ground and every rule is a CPT row. Zero-probability heads
 are dropped; a row with a single certain value becomes a plain rule.
 
+tddlog reads these network files itself (src/network), as the program this
+script writes: `tddlog --program` prints it, and tests/it/networks.rs and
+tests/test_gen_bn.py check that the two write the same text. This script
+serves the other systems, which read the program, and the Dice format.
+
 Usage: gen_bn.py network.{bif,net,hugin,xdsl,uai}[.gz] [--query all | --query VAR[,VAR...] | --query leaves
                                                           | --query none]
                                    [--evidence K|half [--evidence-from leaves|internal|all] [--seed S]
@@ -652,13 +657,16 @@ def normalized(probs, where):
     # is left to no value as written; over one, it is an error. A shortfall
     # below 10⁻⁹, the grounder's own tolerance for a row's last value, is
     # left as written, so that rows that sum to one but for binary rounding
-    # keep their numbers.
+    # keep their numbers. An excess below 10⁻⁹ is binary rounding too, of
+    # the products and complements a ground network's tables are computed
+    # with (rows that sum to 1.00000000000000027), and is rescaled.
     total = math.fsum(probs)
     exact, slack = rounding_slack(probs)
     if abs(exact - 1) >= slack:
-        if exact > 1:
+        if exact > 1 + Decimal('1e-9'):
             sys.exit(f'{where}: probabilities sum to {exact}')
-        return probs
+        if exact < 1:
+            return probs
     if total > 1 or total < 1 - 1e-9:
         probs = [p / total for p in probs]   # rounding in the file
     return probs
@@ -697,22 +705,55 @@ def queried_variables(order, variables, tables, query):
     return queried
 
 
+def depth_first(roots, parents):
+    """Each variable after its `parents(v)`, depth first from each of `roots`
+    in turn, the parents in the order `parents` gives them. A stack, not
+    recursion: a chain of ancestors can be longer than Python's limit."""
+    done, out = set(), []
+    for v in roots:
+        if v in done:
+            continue
+        done.add(v)
+        stack = [(v, iter(parents(v)))]
+        while stack:
+            u, rest = stack[-1]
+            p = next((p for p in rest if p not in done), None)
+            if p is None:
+                stack.pop()
+                out.append(u)
+            else:
+                done.add(p)
+                stack.append((p, iter(parents(p))))
+    return out
+
+
 def topological(order, tables):
     """Variables with parents before children (depth first from the
     declaration order); the order of the facts in the program."""
-    done, topo = set(), []
+    return depth_first(order, lambda v: tables[v][0])
 
-    def visit(v):
-        if v in done:
-            return
-        done.add(v)
-        for p in tables[v][0]:
-            visit(p)
-        topo.append(v)
 
-    for v in order:
-        visit(v)
-    return topo
+def program_order(order, tables, observed, returned):
+    """The variables `observed` and `returned` and their ancestors, each
+    after its parents, in the order of a Dice program's lets. Dice, Alea.jl
+    and Roulette order their BDD's variables as the program creates its
+    flips, so a variable should come right after the parents it reads:
+    depth first from each observed variable, taken by the place in `order`
+    of the last of their parents, then from each returned one, deepest
+    first, and from each variable to its parents deepest first (the
+    longest path from a root): the depth-first order of BDD variables for
+    circuits. The observations come first, as every answer is conditioned
+    on their conjunction, and a returned root comes after what reads it.
+    The declaration order put every root (every variable of a Markov
+    network, every disease of Promedus) before what reads them, and the
+    BDD of the evidence then held about every assignment of them."""
+    at = {v: i for i, v in enumerate(order)}
+    depth = {}
+    for v in topological(order, tables):
+        depth[v] = 1 + max((depth[p] for p in tables[v][0]), default=-1)
+    last = lambda v: max((at[p] for p in tables[v][0]), default=at[v])
+    return depth_first(sorted(observed, key=last) + sorted(returned, key=lambda v: (-depth[v], last(v))),
+                       lambda v: sorted(tables[v][0], key=lambda p: (-depth[p], at[p])))
 
 
 def sampled_evidence(network, k, seed, pool='leaves'):
@@ -798,11 +839,16 @@ def to_problog(network, query='all', evidence=()):
     return '\n'.join(out) + '\n'
 
 
-def to_dice(network, query, evidence=(), pe=False):
+def to_dice(network, query, evidence=(), pe=False, joint=False):
     """The Dice program of the network returning the variables `query` asks
     (`queried_variables`), the observations `evidence` observed; with `pe`,
     the program that observes nothing and returns the conjunction of the
-    observations instead, whose probability of true is P(e)."""
+    observations instead, whose probability of true is P(e); with `joint`,
+    the program that observes nothing and returns the pair of the queried
+    variables and the conjunction of the observations, whose table's rows
+    where the conjunction holds, divided by their sum, are the marginals:
+    Dice 1.0 prints zeros for every value where the observations'
+    probability is under 1e-6, as it is on most Markov networks."""
     order, variables, tables = network
     observed = dict(evidence)
     queried = [] if pe else [v for v in queried_variables(order, variables, tables, query) if v not in observed]
@@ -813,10 +859,33 @@ def to_dice(network, query, evidence=(), pe=False):
 
     def table(v, parents, rows, key):
         if not parents:
+            # A certain row is a constant, as the ProbLog format writes it a
+            # plain rule (or none): a flip of 1 or 0 would be a BDD variable.
             if len(variables[v]) == 1:   # a Markov network's factor: its row's weight
-                return f'flip {min(1.0, float(rows[key][0]))!r}'
+                w = min(1.0, float(rows[key][0]))
+                return 'true' if abs(w - 1) < 1e-9 else 'false' if w == 0 else f'flip {w!r}'
             probs = normalized(rows[key], f'{v} {key}')
-            return 'discrete(' + ', '.join(repr(float(p)) for p in probs) + ')'
+            held = [k for k, p in enumerate(probs) if p > 0]
+            if len(held) == 1 and abs(probs[held[0]] - 1) < 1e-9:
+                return f'int({max(1, (len(probs) - 1).bit_length())}, {held[0]})'
+            if not any(0 < p < 1e-4 for p in probs):
+                return 'discrete(' + ', '.join(repr(float(p)) for p in probs) + ')'
+            # Dice 1.0 draws a discrete's bits as below but sets a bit's
+            # flip to 0 where the mass with the bit set is under 1e-4
+            # (gen_discrete in lib/Passes.ml), which loses such a value: the
+            # same bits as flips, which keep their probabilities.
+            w = max(1, (len(probs) - 1).bit_length())
+            probs = list(probs) + [0.0] * (2 ** w - len(probs))
+
+            def drawn(lo, hi):   # the values lo .. hi - 1, from the most significant bit down
+                if hi - lo == 1:
+                    return f'int({w}, {lo})'
+                mid, total = (lo + hi) // 2, math.fsum(probs[lo:hi])
+                upper = math.fsum(probs[mid:hi])
+                if upper == 0 or upper == total:
+                    return drawn(lo, mid) if upper == 0 else drawn(mid, hi)
+                return f'(if flip {upper / total!r} then {drawn(mid, hi)} else {drawn(lo, mid)})'
+            return drawn(0, 2 ** w)
         p, rest = parents[0], parents[1:]
         vals = variables[p]
         bits = max(1, (len(vals) - 1).bit_length())   # int(bits, k): Dice's integer width
@@ -826,25 +895,17 @@ def to_dice(network, query, evidence=(), pe=False):
             e = f'if ({names[p]} == int({bits}, {k})) then ({branches[k]}) else ({e})'
         return e
 
-    # The returned and observed variables and their ancestors: the others
-    # sum out.
-    relevant, stack = set(), queried + list(observed)
-    while stack:
-        v = stack.pop()
-        if v not in relevant:
-            relevant.add(v)
-            stack += tables[v][0]
+    # The returned and observed variables and their ancestors (the others
+    # sum out), each after its parents (`program_order`).
     seen = None
-    for v in topological(order, tables):   # a let must follow its parents
-        if v not in relevant:
-            continue
+    for v in program_order(order, tables, list(observed), queried):
         parents, rows = tables[v]
         out.append(f'let {names[v]} = {table(v, parents, rows, ())} in')
         if v in observed:   # names in lower case, which no variable's is
             vals = variables[v]
             holds = names[v] if len(vals) == 1 else \
                 f'{names[v]} == int({max(1, (len(vals) - 1).bit_length())}, {vals.index(observed[v])})'
-            if pe:   # the observations so far, conjoined as they come
+            if pe or joint:   # the observations so far, conjoined as they come
                 out.append(f'let pe_{len(out)} = {seen + " && " if seen else ""}({holds}) in')
                 seen = f'pe_{len(out) - 1}'
             else:
@@ -855,7 +916,7 @@ def to_dice(network, query, evidence=(), pe=False):
     result = names[queried[-1]]
     for v in reversed(queried[:-1]):   # Dice's tuples are pairs
         result = f'({names[v]}, {result})'
-    out.append(result)
+    out.append(f'({result}, {seen or "true"})' if joint else result)
     return '\n'.join(out) + '\n'
 
 
@@ -931,12 +992,13 @@ def model(a, pe=False):
     return network, offset, forced + evidence, evidence
 
 
-def dice_programs(argv, pe=False):
+def dice_programs(argv, pe=False, joint=False):
     """The Dice program of the network and observations of gen_bn.py's
     arguments `argv` for each variable its `--query` asks, one returned
     each, as (the variable's name in the ProbLog format, the program):
     Dice prints a tuple's joint distribution, the program of one
-    variable its marginal. With `pe`, the one program ('pe', ...) whose
+    variable its marginal; with `joint`, the pair of the variable and the
+    conjunction of the observations (`to_dice`). With `pe`, the one program ('pe', ...) whose
     probability of true is P(e) (`to_dice`), of the network the ProbLog
     format's program has, so that P(e) times 10 to the offset its first
     line states is Z."""
@@ -946,7 +1008,7 @@ def dice_programs(argv, pe=False):
         return [('pe', to_dice(network, a.query, evidence, pe=True))]
     order, variables, tables = network
     observed = {v for v, _ in evidence}
-    return [(ident(v), to_dice(network, v, evidence))
+    return [(ident(v), to_dice(network, v, evidence, joint=joint))
             for v in queried_variables(order, variables, tables, a.query) if v not in observed]
 
 

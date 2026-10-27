@@ -2,18 +2,21 @@
 //! in dependency order, and the compiled program it leaves.
 
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::sync::Arc;
 use std::time::Instant;
 
 use tididi::Tdd;
+use tididi::restructure::search::PoolRestarts;
 use tididi::vtree::VarId;
 
+use super::backend::{Part, Read};
 use super::clauses::ClauseMemo;
 use super::factoring::{Checked, Factoring, Pairs, Scratch};
 use super::stats::Op;
 use super::template::{Template, templates};
 use super::tie::{Tie, ties};
 use super::{
-    CompileError, CompileStats, Formula, Formulation, NegationSource, Negations, Projection,
+    CompileError, CompileStats, Formulation, NegationSource, Negations, Projection,
     ProjectionStats, Reduce, ScopeTable, SearchStats, TddBackend, VtreeScope, aft, cone,
 };
 use crate::eval::Probabilities;
@@ -49,18 +52,20 @@ pub struct Compiled {
 }
 
 /// A formula or none for each atom, with an entry only for the atoms
-/// given a formula. Most atoms are facts, which have none, and a `Tdd` is
-/// 224 bytes: an entry for each atom would write most of a small
-/// program's memory before its compile begins.
+/// given a formula. Most atoms are facts, which have none: an entry for
+/// each atom would write most of a small program's memory before its
+/// compile begins. A formula is held through an `Arc`, which a read that
+/// does not take it shares ([`Read::Shared`]) for a conjunction to read in
+/// place; no read outlives the atom update that made it.
 #[derive(Default)]
 pub struct Formulas {
     /// Where each atom's entry is in `held`, plus one; 0 for an atom given
     /// none yet.
     at: Vec<u32>,
     /// The entries, in the order the atoms were first given one.
-    held: Vec<Option<Tdd>>,
+    held: Vec<Option<Arc<Tdd>>>,
     /// What an atom without an entry reads.
-    none: Option<Tdd>,
+    none: Option<Arc<Tdd>>,
 }
 
 impl Formulas {
@@ -75,7 +80,7 @@ impl Formulas {
     }
 
     /// Each atom's formula or none, in the atoms' order.
-    pub fn iter(&self) -> impl Iterator<Item = &Option<Tdd>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
         self.at.iter().map(|&i| {
             if i == 0 {
                 &self.none
@@ -87,7 +92,14 @@ impl Formulas {
 
     /// The atoms' formulas, in the atoms' order.
     fn formulas_mut(&mut self) -> Vec<&mut Tdd> {
-        let mut held: Vec<Option<&mut Tdd>> = self.held.iter_mut().map(Option::as_mut).collect();
+        let mut held: Vec<Option<&mut Tdd>> = self
+            .held
+            .iter_mut()
+            .map(|f| {
+                f.as_mut()
+                    .map(|f| Arc::get_mut(f).expect("no read of a formula outstanding"))
+            })
+            .collect();
         self.at
             .iter()
             .filter(|&&i| i != 0)
@@ -95,8 +107,10 @@ impl Formulas {
             .collect()
     }
 
-    /// Take `a`'s formula, leaving none, without giving `a` an entry.
-    fn take(&mut self, a: usize) -> Option<Tdd> {
+    /// Take `a`'s formula, leaving none, without giving `a` an entry. A
+    /// read of it in the atom update under way may still hold it
+    /// ([`Read::taken`]).
+    pub(crate) fn take(&mut self, a: usize) -> Option<Arc<Tdd>> {
         match self.at[a] {
             0 => None,
             i => self.held[i as usize - 1].take(),
@@ -110,9 +124,9 @@ impl Formulas {
 }
 
 impl std::ops::Index<usize> for Formulas {
-    type Output = Option<Tdd>;
+    type Output = Option<Arc<Tdd>>;
 
-    fn index(&self, a: usize) -> &Option<Tdd> {
+    fn index(&self, a: usize) -> &Option<Arc<Tdd>> {
         match self.at[a] {
             0 => &self.none,
             i => &self.held[i as usize - 1],
@@ -122,7 +136,7 @@ impl std::ops::Index<usize> for Formulas {
 
 /// A write gives the atom an entry if it has none.
 impl std::ops::IndexMut<usize> for Formulas {
-    fn index_mut(&mut self, a: usize) -> &mut Option<Tdd> {
+    fn index_mut(&mut self, a: usize) -> &mut Option<Arc<Tdd>> {
         if self.at[a] == 0 {
             self.held.push(None);
             self.at[a] = self.held.len() as u32;
@@ -162,17 +176,16 @@ impl Compiled {
     ) -> Result<Tdd, CompileError> {
         match &self.formulas[a as usize] {
             Some(f) => {
-                // Negate on the atom's own scope, which is the smaller one,
-                // and embed the result: a function that does not depend on
-                // the free variables has a complement that does not either.
-                let own = self.scope_of(a);
                 if self.stored_positive(a) == positive {
-                    backend.embed_ref(f, own, scope)
+                    backend.embed_ref(f, self.scope_of(a), scope)
                 } else {
-                    backend.embed(
-                        negations.negate(backend, source, backend.copy(f)?)?,
-                        own,
+                    self.taken_literal_formula(
+                        backend,
                         scope,
+                        a,
+                        backend.copy(f)?,
+                        positive,
+                        (negations, source),
                     )
                 }
             }
@@ -188,6 +201,29 @@ impl Compiled {
                 )
             }
         }
+    }
+
+    /// [`literal_formula`](Self::literal_formula) of derived atom `a` from
+    /// `f`, its stored formula taken from [`Compiled::formulas`] or a copy
+    /// of it: `f` itself or its negation, embedded onto `scope`.
+    pub(crate) fn taken_literal_formula(
+        &self,
+        backend: &TddBackend,
+        scope: &VtreeScope,
+        a: AtomId,
+        f: Tdd,
+        positive: bool,
+        (negations, source): (&mut Negations, NegationSource),
+    ) -> Result<Tdd, CompileError> {
+        // Negate on the atom's own scope, which is the smaller one, and
+        // embed the result: a function that does not depend on the free
+        // variables has a complement that does not either.
+        let f = if self.stored_positive(a) == positive {
+            f
+        } else {
+            negations.negate(backend, source, f)?
+        };
+        backend.embed(f, self.scope_of(a), scope)
     }
 }
 
@@ -420,6 +456,21 @@ impl Dying {
     fn after(&self, i: usize) -> &[AtomId] {
         &self.atoms[self.start[i] as usize..self.start[i + 1] as usize]
     }
+
+    /// The reads left of the atoms that die after component `i`.
+    fn reads_after(&self, i: usize) -> Vec<u32> {
+        let left = self.reads_left.borrow();
+        self.after(i).iter().map(|&a| left[a as usize]).collect()
+    }
+
+    /// Sets the reads left of the atoms that die after component `i` to
+    /// `reads`, as [`Dying::reads_after`] read them.
+    fn put_back(&self, i: usize, reads: &[u32]) {
+        let mut left = self.reads_left.borrow_mut();
+        for (&a, &r) in self.after(i).iter().zip(reads) {
+            left[a as usize] = r;
+        }
+    }
 }
 
 /// The scopes of the components under projection, each built as its
@@ -630,6 +681,8 @@ pub(crate) struct Compilation {
     equivalents: FxHashMap<AtomId, (AtomId, AtomId)>,
     /// The rotation search of a dynamic vtree, `None` on a static one.
     dynamic: Option<Dynamic>,
+    /// The formula the guard refused in the round it put back ([`GUARD`]).
+    refused: std::cell::RefCell<Option<Tdd>>,
     dying: Dying,
     /// Whether a run without a watch failed: it may have taken formulas
     /// that the components it did not finish read, and cannot go on.
@@ -849,6 +902,7 @@ impl Compilation {
             memo: std::cell::RefCell::new(ClauseMemo::default()),
             equivalents: FxHashMap::default(),
             dynamic: None,
+            refused: std::cell::RefCell::new(None),
             dying,
             spent: false,
             for_queries: ForQueries {
@@ -866,19 +920,23 @@ impl Compilation {
     /// after each component, and after each round of a cyclic one. The first
     /// search runs once the atoms' formulas hold `first_pairs` live pairs
     /// ([`DYNAMIC_FIRST_PAIRS`] for the `dynamic` strategies), and each
-    /// later one once they have doubled since the last, over every formula
-    /// and cached positive at once
-    /// ([`TddBackend::restructure`]), and may spend as much work as the compile
-    /// did since the last one, and no more than the components left are
-    /// likely to take ([`Dynamic::budget`]); the first search of a run that resumes a
-    /// stopped compile may spend what the run's limits allow. After two
-    /// searches that each shrink the formulas by less than a tenth, the
-    /// next waits until the formulas hold [`DYNAMIC_REGROWTH`] times the
-    /// pairs the last one left, and one more weak search stops it again.
-    /// Rotations change how a formula is represented, not its function, so
-    /// versions, worklists and the fixpoint test are untouched. The rules
-    /// are the ones under which CUDD's sifting paid on the random graphs:
-    /// reorder when the tables double, stop when it stops paying.
+    /// later one once they have doubled since the last, as CUDD reorders
+    /// when its tables double, over every formula and cached positive at
+    /// once ([`TddBackend::restructure`]). A search sweeps until a sweep
+    /// keeps no move, then, while a quarter of the components are left,
+    /// restarts once from random moves ([`search_restarts`]), since a
+    /// smaller pool pays only over the components after it. Its budget is
+    /// the work the compile spent since the last search, and no more than
+    /// the components left are likely to take
+    /// ([`Dynamic::budget`]); what it spends past the budget, the compile
+    /// spends before the next search runs, so searching costs at most twice
+    /// what the compile does, plus the last search's excess, unless the
+    /// formulas double again meanwhile. A budget that
+    /// stopped searches part way made each compile's outcome depend on
+    /// where they stopped: moving it by 2% made single programs several
+    /// times slower or faster. Rotations change how a formula is
+    /// represented, not its function, so versions, worklists and the
+    /// fixpoint test are untouched.
     ///
     /// # Panics
     ///
@@ -896,8 +954,7 @@ impl Compilation {
             next_at: first_pairs,
             since: None,
             resumed: false,
-            weak: 0,
-            left: 0,
+            debt: 0,
         });
         self.stats.search = Some(SearchStats::default());
         self
@@ -923,7 +980,8 @@ impl Compilation {
     /// for another run: a cyclic component at the atom update that failed,
     /// with its rounds so far, the others from their start. A run without a watch is the last: the last read of a
     /// formula takes it rather than copying it ([`last_reads`]), so after
-    /// an error there is no other run.
+    /// an error there is no other run. A dynamic compile's rounds run under
+    /// [`GUARD`]'s watch instead, until they take a formula.
     ///
     /// # Panics
     ///
@@ -946,6 +1004,12 @@ impl Compilation {
         }
         self.reach = None;
         let result = (|| {
+            // The component the guard last put back, and how often.
+            let mut guarded = (usize::MAX, 0);
+            // The guard's factor: [`GUARD`], raised for the rest of the run
+            // past a formula it refused that the search left larger than the
+            // live formulas together.
+            let mut factor = GUARD;
             while self.next < self.sccs.len() {
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next
@@ -961,13 +1025,47 @@ impl Compilation {
                 {
                     self.scopes[self.next] = scope;
                 }
-                let finished = self.round(gp, backend, watch)?;
+                let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
+                // The live pairs the guard's watch is a multiple of, and its
+                // floor.
+                let base = match &self.dynamic {
+                    Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
+                        self.fixpoint.live.max(dynamic.first_pairs),
+                        GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
+                    )),
+                    _ => None,
+                };
+                let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
+                // A round the guard refuses has taken no formula, but has
+                // counted reads down.
+                let reads = guard.map(|_| self.dying.reads_after(self.next));
+                let finished = match self.round(gp, backend, watch, guard) {
+                    Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
+                        guarded = (self.next, tries + 1);
+                        if self.fixpoint.worklist.is_none() {
+                            self.reset(self.next);
+                        }
+                        if let Some(reads) = reads {
+                            self.dying.put_back(self.next, &reads);
+                        }
+                        let refused = self.refused.get_mut().take();
+                        let kept = self.memo.get_mut().take_refused();
+                        let left = self.search(backend, refused.or(kept))?;
+                        if let (Some(left), Some((base, _))) = (left, base)
+                            && left > self.fixpoint.live
+                        {
+                            factor = factor.max(pairs.div_ceil(base.max(1)));
+                        }
+                        continue;
+                    }
+                    r => r?,
+                };
                 if finished {
                     self.next += 1;
                     self.drop_dying(backend, self.next - 1)?;
                     self.narrow(backend, self.next - 1)?;
                 }
-                self.search(backend)?;
+                self.search(backend, None)?;
                 if finished {
                     self.look_ahead(backend)?;
                 }
@@ -1155,12 +1253,12 @@ impl Compilation {
         let fixpoint = &mut self.fixpoint;
         for (a, cached, g) in moved {
             if cached {
-                fixpoint.lambda_cache.get_mut()[a] = Some(g);
+                fixpoint.lambda_cache.get_mut()[a] = Some(Arc::new(g));
             } else {
                 let size = backend.size(&g);
                 fixpoint.live = fixpoint.live - fixpoint.sizes[a] + size;
                 fixpoint.sizes[a] = size;
-                fixpoint.formulas[a] = Some(g);
+                fixpoint.formulas[a] = Some(Arc::new(g));
             }
         }
         p.narrowed(i, &vars, &into, built);
@@ -1203,6 +1301,7 @@ impl Compilation {
         gp: &GroundProgram,
         backend: &TddBackend,
         watch: Option<usize>,
+        guard: Option<usize>,
     ) -> Result<bool, CompileError> {
         let formulation = self.formulation;
         let by_head = &self.by_head;
@@ -1232,9 +1331,16 @@ impl Compilation {
         //
         // `check` is the watch itself, and hands back the formula it
         // refused, reduced in full, with its pairs, for a caller that keeps
-        // it for the next run (`checked`, [`Factoring::checked`]).
+        // it for the next run (`checked`, [`Factoring::checked`]). The
+        // guard's watch holds until the round takes a formula: the round it
+        // refuses runs again from the formulas it read.
+        //
+        // With neither watch, `watched` and `checked` pass `f` through
+        // without counting it: nothing else reads that count.
+        let (taken, untaken) = (&self.dying.taken, self.dying.taken.get());
+        let limit = || watch.or(guard.filter(|_| taken.get() == untaken));
         let check = |mut f: Tdd, pairs: usize| -> Result<Checked<(Tdd, usize)>, CompileError> {
-            match watch {
+            match limit() {
                 Some(w) if pairs > w => {
                     backend.minimize(&mut f, Reduce::Settled)?;
                     let pairs = backend.size(&f);
@@ -1247,15 +1353,27 @@ impl Compilation {
                 _ => Ok(Ok((f, pairs))),
             }
         };
+        let refused = self.dynamic.is_some().then_some(&self.refused);
         let watched_sized =
             |f: Tdd, pairs: usize, a: AtomId| -> Result<(Tdd, usize), CompileError> {
-                check(f, pairs)?.map_err(|(_, pairs)| CompileError::Oversize { atom: a, pairs })
+                check(f, pairs)?.map_err(|(f, pairs)| {
+                    if let Some(refused) = refused {
+                        refused.replace(Some(f));
+                    }
+                    CompileError::Oversize { atom: a, pairs }
+                })
             };
         let checked = |f: Tdd| -> Result<Checked<Tdd>, CompileError> {
+            if limit().is_none() {
+                return Ok(Ok(f));
+            }
             let pairs = backend.size(&f);
             Ok(check(f, pairs)?.map(|(f, _)| f))
         };
         let watched = |f: Tdd, a: AtomId| -> Result<Tdd, CompileError> {
+            if limit().is_none() {
+                return Ok(f);
+            }
             let pairs = backend.size(&f);
             watched_sized(f, pairs, a).map(|(f, _)| f)
         };
@@ -1306,10 +1424,11 @@ impl Compilation {
         // The read stands for `covers` bodies of the component's rules,
         // none where the caller may read the literal again. In a run
         // without a watch the last read of a formula takes it, and the
-        // cached other polarity, rather than copying them: the end of the
-        // component would drop them.
+        // cached other polarity: the end of the component would drop them.
+        // Another read shares them with the store ([`Read::Shared`]), and
+        // the conjunction that reads it reads it in place.
         let derived =
-            |l: GLit, covers: u32, formulas: &mut Formulas| -> Result<Tdd, CompileError> {
+            |l: GLit, covers: u32, formulas: &mut Formulas| -> Result<Read, CompileError> {
                 let b = l.atom() as usize;
                 debug_assert!(
                     dies_after[b] as usize >= next,
@@ -1338,54 +1457,54 @@ impl Compilation {
                 };
                 let own = scope_of(l.atom());
                 let stored_positive = positive.borrow()[b];
-                let stored = |formulas: &mut Formulas| -> Result<Tdd, CompileError> {
+                let stored = |formulas: &mut Formulas| -> Read {
                     let f = if last {
                         formulas.take(b)
                     } else {
-                        formulas[b].as_ref().map(|f| backend.copy(f)).transpose()?
+                        formulas[b].clone()
                     };
-                    Ok(f.unwrap_or_else(|| {
-                        if stored_positive {
-                            backend.zero(own)
-                        } else {
-                            backend.one(own)
-                        }
-                    }))
+                    match f {
+                        Some(f) => Read::taken(f),
+                        None if stored_positive => Read::Owned(backend.zero(own)),
+                        None => Read::Owned(backend.one(own)),
+                    }
                 };
                 if stored_positive == l.is_positive() {
                     if last {
                         lambda_cache.borrow_mut().take(b);
                     }
-                    return stored(formulas);
+                    return Ok(stored(formulas));
                 }
                 match formulation {
                     Formulation::Dual => {
                         let cached = if last {
                             lambda_cache.borrow_mut().take(b)
                         } else {
-                            lambda_cache.borrow()[b]
-                                .as_ref()
-                                .map(|f| backend.copy(f))
-                                .transpose()?
+                            lambda_cache.borrow()[b].clone()
                         };
                         if let Some(f) = cached {
                             if last {
                                 formulas.take(b);
                             }
-                            return Ok(f);
+                            return Ok(Read::taken(f));
                         }
                         let source = if stored_positive {
                             NegationSource::Primal
                         } else {
                             NegationSource::Lambda
                         };
-                        let f = negate(source, stored(formulas)?)?;
-                        if !last {
-                            lambda_cache.borrow_mut()[b] = Some(backend.copy(&f)?);
+                        let f = negate(source, stored(formulas).owned(backend)?)?;
+                        if last {
+                            return Ok(Read::Owned(f));
                         }
-                        Ok(f)
+                        let f = Arc::new(f);
+                        lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
+                        Ok(Read::Shared(f))
                     }
-                    Formulation::Primal => negate(NegationSource::Primal, stored(formulas)?),
+                    Formulation::Primal => Ok(Read::Owned(negate(
+                        NegationSource::Primal,
+                        stored(formulas).owned(backend)?,
+                    )?)),
                 }
             };
         // One application of the operator to atom `a`: the rules of `a` whose
@@ -1431,7 +1550,7 @@ impl Compilation {
                     lambda_cache.borrow_mut().take(a as usize),
                     &formulas[a as usize],
                 ) {
-                    (Some(not_acc), _) => Some(not_acc),
+                    (Some(not_acc), _) => Some(Read::taken(not_acc).owned(backend)?),
                     (None, Some(acc)) => Some(negate(NegationSource::Primal, backend.copy(acc)?)?),
                     (None, None) => None,
                 },
@@ -1443,24 +1562,24 @@ impl Compilation {
             // one's `derived` formula, on `b`'s scope, which the conjunction
             // that reads it moves onto its own, which contains it: a cone
             // holds the cone of everything it depends on.
-            let mut part =
-                |l: GLit, covers: u32, on: &VtreeScope| -> Result<Formula, CompileError> {
-                    let b = l.atom() as usize;
-                    match gp.kinds[b] {
-                        AtomKind::Fact(_) => {
-                            let v = var_of[b].unwrap();
-                            let lit = if l.is_positive() {
-                                tididi::Literal::pos(v)
-                            } else {
-                                tididi::Literal::neg(v)
-                            };
-                            Ok((backend.literal(on, lit)?, on.clone()))
-                        }
-                        AtomKind::Derived => {
-                            Ok((derived(l, covers, formulas)?, scope_of(l.atom()).clone()))
-                        }
+            let mut part = |l: GLit, covers: u32, on: &VtreeScope| -> Result<Part, CompileError> {
+                let b = l.atom() as usize;
+                match gp.kinds[b] {
+                    AtomKind::Fact(_) => {
+                        let v = var_of[b].unwrap();
+                        let lit = if l.is_positive() {
+                            tididi::Literal::pos(v)
+                        } else {
+                            tididi::Literal::neg(v)
+                        };
+                        Ok(Part(Read::Owned(backend.literal(on, lit)?), on.clone()))
                     }
-                };
+                    AtomKind::Derived => Ok(Part(
+                        derived(l, covers, formulas)?,
+                        scope_of(l.atom()).clone(),
+                    )),
+                }
+            };
             let mut factoring = Factoring {
                 backend,
                 gp,
@@ -1473,7 +1592,7 @@ impl Compilation {
                 memo,
                 watched: &watched,
                 checked: &checked,
-                watch,
+                watch: watch.or(guard),
                 count: &count,
                 negate: &negate,
                 term,
@@ -1492,7 +1611,7 @@ impl Compilation {
                 // every level of it.
                 Formulation::Dual => match formulas[a as usize].as_ref().filter(|_| incremental) {
                     Some(acc) => {
-                        let r = backend.and(backend.copy(acc)?, nb)?;
+                        let r = backend.and(&**acc, nb)?;
                         count(Op::And, 1);
                         (r, None)
                     }
@@ -1550,12 +1669,12 @@ impl Compilation {
         let mut store = |a: AtomId, f: Tdd, size: usize, formulas: &mut Formulas| {
             *live = *live - sizes[a as usize] + size;
             sizes[a as usize] = size;
-            formulas[a as usize] = Some(f);
+            formulas[a as usize] = Some(Arc::new(f));
         };
         if deps::has_internal_negation(gp, by_head, scc) {
             stats.cyclic_components += 1;
             let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
-                backend.embed(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
+                backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
             };
             let mut updates = 0;
             let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f);
@@ -1578,7 +1697,8 @@ impl Compilation {
                 let f = match formulation {
                     Formulation::Primal => lambda,
                     Formulation::Dual => {
-                        lambda_cache.borrow_mut()[a as usize] = Some(backend.copy(&lambda)?);
+                        lambda_cache.borrow_mut()[a as usize] =
+                            Some(Arc::new(backend.copy(&lambda)?));
                         negate(NegationSource::WellFounded, lambda)?
                     }
                 };
@@ -1645,7 +1765,11 @@ impl Compilation {
                         }
                     };
                     let own = scope_of(k);
-                    let (x, y) = (backend.embed(x, own, scope)?, backend.embed(y, own, scope)?);
+                    let placed = |f: Read| match own.same(scope) {
+                        true => Ok(f),
+                        false => backend.embed_read(f, own, scope).map(Read::Owned),
+                    };
+                    let (x, y) = (placed(x)?, placed(y)?);
                     backend.select_at_root(
                         scope,
                         var_of[v as usize].expect("a fact has a variable"),
@@ -1737,7 +1861,7 @@ impl Compilation {
             // the update built, which is the old formula's too when the two
             // are the same, and otherwise nothing once the formula changed.
             if other.is_some() || !same {
-                lambda_cache.borrow_mut()[a as usize] = other;
+                lambda_cache.borrow_mut()[a as usize] = other.map(Arc::new);
             }
             if !same {
                 stats.max_pairs = stats.max_pairs.max(pairs);
@@ -1769,15 +1893,20 @@ impl Compilation {
         Ok(true)
     }
 
-    /// The search of [`Compilation::dynamic`], if it is due.
-    fn search(&mut self, backend: &TddBackend) -> Result<(), CompileError> {
+    /// The search of [`Compilation::dynamic`], if it is due or has the formula
+    /// the guard `refused` among its members, and that formula's pairs after.
+    fn search(
+        &mut self,
+        backend: &TddBackend,
+        mut refused: Option<Tdd>,
+    ) -> Result<Option<usize>, CompileError> {
         let Some(dynamic) = self.dynamic.as_mut() else {
-            return Ok(());
+            return Ok(None);
         };
         let now = backend.work_units();
         dynamic.since.get_or_insert(now);
-        if !dynamic.due(self.fixpoint.live) {
-            return Ok(());
+        if refused.is_none() && !dynamic.due(now, self.fixpoint.live) {
+            return Ok(None);
         }
         // The cached polarities are dropped rather than moved: they would
         // double what the search sizes and rotates, and change the vtree
@@ -1786,11 +1915,17 @@ impl Compilation {
         // A loop the watch refused is not among the formulas it moves.
         self.memo.get_mut().forget_refused();
         let mut members = self.fixpoint.formulas.formulas_mut();
-        let found = backend.restructure(
-            &mut members,
-            dynamic.budget(now, self.next, self.sccs.len() - self.next),
-        );
+        members.extend(refused.as_mut());
+        let budget = dynamic.budget(now, self.next, self.sccs.len() - self.next);
+        let left = self.sccs.len() - self.next;
+        let restarts = if 4 * left >= self.sccs.len() {
+            search_restarts()
+        } else {
+            PoolRestarts::default()
+        };
+        let found = backend.restructure(&mut members, restarts);
         drop(members);
+        let refused = refused.map(|f| backend.size(&f));
         // A search that fails part way has still moved every formula onto
         // the vtree the backend now holds.
         let global = backend.global();
@@ -1803,9 +1938,8 @@ impl Compilation {
         self.fixpoint.live = self.fixpoint.sizes.iter().sum();
         let found = found?;
         let weak = found.pairs_after * 10 > found.pairs_before * 9;
-        dynamic.weak += usize::from(weak);
+        dynamic.debt = found.work_units.saturating_sub(budget);
         dynamic.next_at = (2 * self.fixpoint.live).max(dynamic.first_pairs);
-        dynamic.left = self.fixpoint.live;
         dynamic.since = Some(backend.work_units());
         dynamic.resumed = false;
         let stats = self.stats.search.get_or_insert_with(SearchStats::default);
@@ -1816,7 +1950,9 @@ impl Compilation {
         stats.pairs_before += found.pairs_before;
         stats.pairs_after += found.pairs_after;
         stats.work_units += found.work_units;
-        Ok(())
+        stats.restarts += found.restarts;
+        stats.restarts_kept += found.restarts_kept;
+        Ok(refused)
     }
 }
 
@@ -1824,13 +1960,47 @@ impl Compilation {
 /// `dynamic` strategies; CUDD's first reordering is at 4004 nodes.
 pub(crate) const DYNAMIC_FIRST_PAIRS: usize = 4096;
 
-/// How many times the pairs the last search left the formulas must grow
-/// before a search runs again after two weak ones. A weak search on small
-/// formulas says little about the vtree the compile needs once they grow:
-/// on g22_70 written without its recursion both weak searches came early,
-/// and with no search after them the formulas grew more than tenfold past
-/// what a search at sixteen times kept them to.
-const DYNAMIC_REGROWTH: usize = 16;
+/// A round of a `dynamic` compile runs under a watch of this many times
+/// the live pairs, which count as at least the `first_pairs` its first
+/// search waits for ([`Compilation::dynamic`]), and at least
+/// [`GUARD_FLOOR`] times those, until it takes a formula ([`last_reads`]):
+/// a formula that outgrows it, which no search has sized, puts the
+/// component back, and a search with that formula among its members runs
+/// before the component runs again ([`Compilation::run`]). On b64k90s1 the
+/// negated bodies of a component grew to 1.2 G pairs, a factor of three
+/// for each pair of facts the vtree split near its root, where the live
+/// formulas held 0.2 M; a search with the first 2 M pairs of it among its
+/// members left it at 419.
+///
+/// A formula the search leaves larger than the live formulas together grew
+/// with the program, not the vtree: for the rest of the run the factor is
+/// at least the one that formula reached.
+const GUARD: usize = 8;
+
+/// The least watch of [`GUARD`], in multiples of `first_pairs` (1 M pairs
+/// at [`DYNAMIC_FIRST_PAIRS`]). A smaller formula costs little memory on
+/// any vtree, and the search after a refusal moves every formula: on
+/// g20_60 the guard refused one of 0.24 M pairs and the compile did 1.7
+/// times the work.
+const GUARD_FLOOR: usize = 256;
+
+/// The rounds of one component the guard puts back; the next runs without
+/// it.
+const GUARD_TRIES: usize = 2;
+
+/// The restarts of [`Compilation::dynamic`]'s searches: one from 20 random
+/// moves, kept when it removes 2% of the pool, drawn from this seed and the
+/// pool's live pairs ([`TddBackend::restructure`]). Two restarts a search
+/// cost more than they gained.
+fn search_restarts() -> PoolRestarts {
+    PoolRestarts {
+        count: 1,
+        kick: 20,
+        seed: 0x9E37_79B9_7F4A_7C15,
+        min_gain_permille: 20,
+        ..PoolRestarts::default()
+    }
+}
 
 /// The state of [`Compilation::dynamic`]'s search between steps.
 struct Dynamic {
@@ -1844,40 +2014,39 @@ struct Dynamic {
     since: Option<u64>,
     /// Whether this run resumes a stopped compile and has not searched
     /// yet. Each run is on a fresh work clock, so `since` is from an
-    /// earlier one; the search spends what the run's limits allow (a budget
-    /// of the work since, summed over the runs, left g30_100 unfinished).
+    /// earlier one; its first search has the budget the run's limits
+    /// allow and owes nothing (a budget of the work since, summed over the
+    /// runs, left g30_100 unfinished).
     resumed: bool,
-    /// Searches that shrank their formulas by less than a tenth.
-    weak: usize,
-    /// Live pairs the last search left.
-    left: usize,
+    /// The work the last search spent past its budget, which the compile
+    /// spends before the next search unless the formulas outgrow it.
+    debt: u64,
 }
 
 impl Dynamic {
-    /// Whether a search is due with the formulas at `live` pairs: once they
-    /// have doubled since the last, and after two weak searches once they
-    /// hold [`DYNAMIC_REGROWTH`] times what it left, which leaves one weak
-    /// search to stop the next.
-    fn due(&mut self, live: usize) -> bool {
-        if live < self.next_at {
-            return false;
-        }
-        if self.weak >= 2 {
-            if live < self.left.saturating_mul(DYNAMIC_REGROWTH) {
-                return false;
-            }
-            self.weak = 1;
-        }
-        true
+    /// Whether a search is due at work clock `now` with the formulas at
+    /// `live` pairs: once they have doubled since the last, and once the
+    /// compile has spent, since the last search ended, what that search
+    /// spent past its budget, or the formulas have doubled again; at once
+    /// in a run that resumes a stopped compile, whose clock starts afresh.
+    /// Waiting out the excess past a second doubling let the formulas
+    /// grow on the old vtree to a hundred times the pairs the search was
+    /// due at.
+    fn due(&self, now: u64, live: usize) -> bool {
+        live >= self.next_at
+            && (self.resumed
+                || now - self.since.unwrap_or(now) >= self.debt
+                || live >= self.next_at.saturating_mul(2))
     }
 
-    /// The work the search due at work clock `now` may spend, with `done`
-    /// components finished and `left` to go: what the compile spent since
-    /// the last search, and no more than the compile is likely to spend
-    /// after it, its work so far per finished component times the
-    /// components left. A search pays only over the steps after it: on
-    /// g30_100 a search two components before the end spent several times
-    /// what the rest of the compile took.
+    /// The work the search due at work clock `now` spends before it owes
+    /// the excess, with `done` components finished and `left` to go: what
+    /// the compile spent since the last search, and no more than the
+    /// compile is likely to spend after it, its work so far per finished
+    /// component times the components left. A search pays only over the
+    /// steps after it, so one near the end owes more and holds off the
+    /// next for longer: on g30_100 a search two components before the end
+    /// spent several times what the rest of the compile took.
     fn budget(&self, now: u64, done: usize, left: usize) -> u64 {
         match self.since {
             Some(since) if !self.resumed => {

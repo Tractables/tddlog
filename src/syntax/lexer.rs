@@ -1,6 +1,6 @@
 //! Tokenizer for the Prolog-like surface syntax.
 
-use super::{Args, Name, Term};
+use super::{Args, F64, Name, Term};
 use std::fmt;
 
 /// A name's place in the lexer's table ([`Lexer::name`]). A token carries
@@ -17,19 +17,15 @@ pub(crate) mod kw {
     pub(crate) const EVIDENCE: NameId = 1;
     pub(crate) const T: NameId = 2;
     pub(crate) const NOT: NameId = 3;
-    pub(crate) const TRUE: NameId = 4;
-    pub(crate) const FAIL: NameId = 5;
-    pub(crate) const FALSE: NameId = 6;
-    pub(crate) const IS: NameId = 7;
-    pub(crate) const MOD: NameId = 8;
+    pub(crate) const IS: NameId = 4;
+    pub(crate) const MOD: NameId = 5;
+    pub(crate) const REM: NameId = 6;
+    pub(crate) const XOR: NameId = 7;
     /// The names, each at its place.
-    pub(super) const ALL: [&str; 9] = [
-        "query", "evidence", "t", "not", "true", "fail", "false", "is", "mod",
-    ];
+    pub(super) const ALL: [&str; 8] = ["query", "evidence", "t", "not", "is", "mod", "rem", "xor"];
 }
 
-/// An operator: a comparison `= \= \== == < > =< >=` or an arithmetic
-/// `+ - * /`. `=:=` reads as `=` and `=\=` as `\=`.
+/// An operator written with symbols: a comparison or an arithmetic one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Op {
     Eq,
@@ -40,10 +36,24 @@ pub(crate) enum Op {
     Le,
     Gt,
     Ge,
+    ArithEq,
+    ArithNe,
+    TermLt,
+    TermLe,
+    TermGt,
+    TermGe,
     Plus,
     Minus,
     Star,
     Slash,
+    IntDiv,
+    Pow,
+    Caret,
+    BitAnd,
+    BitOr,
+    Shl,
+    Shr,
+    Backslash,
 }
 
 impl Op {
@@ -57,10 +67,24 @@ impl Op {
             Op::Le => "=<",
             Op::Gt => ">",
             Op::Ge => ">=",
+            Op::ArithEq => "=:=",
+            Op::ArithNe => "=\\=",
+            Op::TermLt => "@<",
+            Op::TermLe => "@=<",
+            Op::TermGt => "@>",
+            Op::TermGe => "@>=",
             Op::Plus => "+",
             Op::Minus => "-",
             Op::Star => "*",
             Op::Slash => "/",
+            Op::IntDiv => "//",
+            Op::Pow => "**",
+            Op::Caret => "^",
+            Op::BitAnd => "/\\",
+            Op::BitOr => "\\/",
+            Op::Shl => "<<",
+            Op::Shr => ">>",
+            Op::Backslash => "\\",
         }
     }
 }
@@ -76,6 +100,10 @@ pub(crate) enum Tok<'a> {
     /// `(`
     LParen,
     RParen,
+    /// `[`, `]` and `|`, of a list.
+    LBracket,
+    RBracket,
+    Bar,
     Comma,
     Semi,
     /// `.` terminating a clause
@@ -90,11 +118,12 @@ pub(crate) enum Tok<'a> {
     Eof,
 }
 
-/// What [`Lexer::common`] found: a token, or the byte where a name or
-/// another kind of token starts.
+/// What [`Lexer::common`] found: a token, or the byte where a name, a
+/// number or another kind of token starts.
 enum Common<'a> {
     Tok(Tok<'a>),
     Name(usize),
+    Number(usize),
     Other,
 }
 
@@ -113,6 +142,9 @@ impl fmt::Display for Shown<'_, '_> {
             Tok::Float(x) => write!(f, "number `{x}`"),
             Tok::LParen => f.write_str("`(`"),
             Tok::RParen => f.write_str("`)`"),
+            Tok::LBracket => f.write_str("`[`"),
+            Tok::RBracket => f.write_str("`]`"),
+            Tok::Bar => f.write_str("`|`"),
             Tok::Comma => f.write_str("`,`"),
             Tok::Semi => f.write_str("`;`"),
             Tok::Dot => f.write_str("`.`"),
@@ -196,21 +228,66 @@ struct Number {
     k: i64,
 }
 
+/// `10^n` for the lengths of a run of digits read at once.
+const TEN: [u64; 9] = [
+    1,
+    10,
+    100,
+    1_000,
+    10_000,
+    100_000,
+    1_000_000,
+    10_000_000,
+    100_000_000,
+];
+
+/// The run of digits at byte `start` appended to `w`, `w·10^n` plus the
+/// run's value for a run of `n` digits, and `n`. Eight bytes are read at
+/// a time, as one word: each byte less `0` is a digit's value where it is
+/// below ten, which `x | x + 0x76` tells by its top bit, and the digits
+/// before the first other byte, moved to the word's top, are combined in
+/// three multiplications (Lemire's eight-digit parse; a lower byte's
+/// borrow or carry only reaches bytes past the first other one). The
+/// last seven bytes of the input are read one at a time.
+#[inline(always)]
+fn digit_run(b: &[u8], start: usize, w: &mut u64) -> usize {
+    let mut i = start;
+    while let Some(chunk) = b.get(i..).and_then(<[u8]>::first_chunk::<8>) {
+        let x = u64::from_le_bytes(*chunk).wrapping_sub(0x3030_3030_3030_3030);
+        let other = (x | x.wrapping_add(0x7676_7676_7676_7676)) & 0x8080_8080_8080_8080;
+        let n = (other.trailing_zeros() / 8) as usize;
+        if n == 0 {
+            return i - start;
+        }
+        let v = x << (8 * (8 - n));
+        let v = v.wrapping_mul(10).wrapping_add(v >> 8);
+        let v = (v & 0x0000_00FF_0000_00FF)
+            .wrapping_mul(100 + (1_000_000 << 32))
+            .wrapping_add(((v >> 16) & 0x0000_00FF_0000_00FF).wrapping_mul(1 + (10_000 << 32)))
+            >> 32;
+        *w = w.wrapping_mul(TEN[n]).wrapping_add(v);
+        i += n;
+        if n < 8 {
+            return i - start;
+        }
+    }
+    while i < b.len() && b[i].is_ascii_digit() {
+        *w = w.wrapping_mul(10).wrapping_add(u64::from(b[i] - b'0'));
+        i += 1;
+    }
+    i - start
+}
+
 fn number(b: &[u8], start: usize) -> Number {
     let n = b.len();
     let digit = |i: usize| (i < n && b[i].is_ascii_digit()).then(|| u64::from(b[i] - b'0'));
-    let (mut i, mut w, mut digits, mut k, mut float) = (start, 0u64, 0, 0i64, false);
-    while let Some(d) = digit(i) {
-        w = w.wrapping_mul(10).wrapping_add(d);
-        (digits, i) = (digits + 1, i + 1);
-    }
+    let (mut w, mut k, mut float) = (0u64, 0i64, false);
+    let mut digits = digit_run(b, start, &mut w);
+    let mut i = start + digits;
     if i + 1 < n && b[i] == b'.' && b[i + 1].is_ascii_digit() {
         float = true;
-        i += 1;
-        while let Some(d) = digit(i) {
-            w = w.wrapping_mul(10).wrapping_add(d);
-            (digits, k, i) = (digits + 1, k - 1, i + 1);
-        }
+        let m = digit_run(b, i + 1, &mut w);
+        (digits, k, i) = (digits + m, -(m as i64), i + 1 + m);
     }
     if i < n && (b[i] == b'e' || b[i] == b'E') {
         let negative = i + 1 < n && b[i + 1] == b'-';
@@ -327,6 +404,13 @@ impl<'a> Lexer<'a> {
         &self.names[id as usize]
     }
 
+    /// The name of text `s`, shared with the names the source spells so:
+    /// an operator's or a list's, which the parser names.
+    pub(crate) fn intern(&mut self, s: &str) -> Name {
+        let id = self.place(s.as_bytes());
+        self.names[id as usize].clone()
+    }
+
     /// `tok` as error messages name it.
     pub(crate) fn show<'t>(&self, tok: Tok<'t>) -> Shown<'_, 't> {
         Shown {
@@ -433,7 +517,7 @@ impl<'a> Lexer<'a> {
     /// The parser's fast path for the arguments of an atom, the common
     /// compound: called with the scan past the compound's `(`, it reads
     /// the arguments and the `)` here, where each argument is a flat term,
-    /// a name, a variable or an integer, as the parser's flat terms read
+    /// a name, a variable or a number, as the parser's flat terms read
     /// them (`_` a fresh variable `_G<n>`, `n` counted in `anon`): one held
     /// in place, and more gathered on `terms` and moved from there. Where a
     /// token is of another kind, `None`, and the scan, `terms` and `anon`
@@ -455,8 +539,10 @@ impl<'a> Lexer<'a> {
                 }
                 Tok::Var(v) => Term::Var(v.to_owned()),
                 Tok::Int(i) => Term::Int(i),
+                Tok::Float(x) => Term::Float(F64::rounded(x)),
                 Tok::Op(Op::Minus) => match self.scan() {
                     Tok::Int(i) => Term::Int(-i),
+                    Tok::Float(x) => Term::Float(F64::rounded(-x)),
                     _ => break,
                 },
                 _ => break,
@@ -490,20 +576,21 @@ impl<'a> Lexer<'a> {
 
     /// The next token. The blanks of a line, line ends, the marks that are
     /// a token alone and the end are read here ([`Lexer::common`]), and a
-    /// name, the other common token, and everything else are calls the
-    /// scan ends on, so that it saves one register rather than the six of
+    /// name and a number, the other common tokens, and everything else are
+    /// calls the scan ends on, so that it saves one register rather than the six of
     /// one loop over every kind.
     fn scan(&mut self) -> Tok<'a> {
         match self.common() {
             Common::Tok(tok) => tok,
             Common::Name(i) => self.word(i),
+            Common::Number(i) => self.number_token(i),
             Common::Other => self.uncommon(),
         }
     }
 
     /// The blanks of a line and line ends skipped, the next token where it
     /// is a mark that is a token alone or the end, or where the next token
-    /// starts if it is a name or anything else, the scan on it.
+    /// starts if it is a name, a number or anything else, the scan on it.
     #[inline(always)]
     fn common(&mut self) -> Common<'a> {
         let b = self.src.as_bytes();
@@ -529,6 +616,7 @@ impl<'a> Lexer<'a> {
                 Some(b';') => Tok::Semi,
                 Some(b'.') => Tok::Dot,
                 Some(b'a'..=b'z') => return Common::Name(i),
+                Some(b'0'..=b'9') => return Common::Number(i),
                 Some(_) => {
                     self.i = i;
                     return Common::Other;
@@ -572,6 +660,36 @@ impl<'a> Lexer<'a> {
         Tok::Name(self.place(&src.as_bytes()[i..end]))
     }
 
+    /// The number that starts at byte `start`, a digit, read, the scan
+    /// moved past it.
+    #[inline(never)]
+    fn number_token(&mut self, start: usize) -> Tok<'a> {
+        let src = self.src;
+        let b = src.as_bytes();
+        let number = number(b, start);
+        let i = number.end;
+        self.i = i;
+        if number.float {
+            match decimal(&number).or_else(|| src[start..i].parse().ok()) {
+                Some(x) => Tok::Float(x),
+                None => self.fail(self.line, format!("bad number `{}`", &src[start..i])),
+            }
+        } else {
+            // Eighteen digits or fewer make an integer that fits.
+            let v = if number.digits <= 18 {
+                Some(number.w as i64)
+            } else {
+                b[start..i].iter().try_fold(0i64, |v, &d| {
+                    v.checked_mul(10)?.checked_add(i64::from(d - b'0'))
+                })
+            };
+            match v {
+                Some(v) => Tok::Int(v),
+                None => self.fail(self.line, format!("bad integer `{}`", &src[start..i])),
+            }
+        }
+    }
+
     /// The next token from a byte [`Lexer::common`] stops on: the blanks
     /// and comments of [`Lexer::other`] skipped, until a token of either.
     #[inline(never)]
@@ -583,6 +701,7 @@ impl<'a> Lexer<'a> {
             match self.common() {
                 Common::Tok(tok) => return tok,
                 Common::Name(i) => return self.word(i),
+                Common::Number(i) => return self.number_token(i),
                 Common::Other => {}
             }
         }
@@ -600,7 +719,7 @@ impl<'a> Lexer<'a> {
         let mut line = self.line;
         let c = b[i];
         // The other blanks `char::is_whitespace` takes among the ASCII
-        // bytes, identifiers, numbers, comments, quoted atoms, chars of
+        // bytes, identifiers, comments, quoted atoms, chars of
         // 0x80 or more, punctuation and operators.
         let tok = match c {
             b'\t' | b'\r' | 0x0b | 0x0c => {
@@ -611,42 +730,6 @@ impl<'a> Lexer<'a> {
                 let start = i;
                 i = ident_end(src, i + 1);
                 Some(Tok::Var(&src[start..i]))
-            }
-            b'0'..=b'9' => {
-                let start = i;
-                let number = number(b, i);
-                i = number.end;
-                if number.float {
-                    let x = match decimal(&number) {
-                        Some(x) => x,
-                        None => match src[start..i].parse() {
-                            Ok(x) => x,
-                            Err(_) => {
-                                return Some(
-                                    self.fail(line, format!("bad number `{}`", &src[start..i])),
-                                );
-                            }
-                        },
-                    };
-                    Some(Tok::Float(x))
-                } else {
-                    // Eighteen digits or fewer make an integer that fits.
-                    let v = if number.digits <= 18 {
-                        Some(number.w as i64)
-                    } else {
-                        b[start..i].iter().try_fold(0i64, |v, &d| {
-                            v.checked_mul(10)?.checked_add(i64::from(d - b'0'))
-                        })
-                    };
-                    match v {
-                        Some(v) => Some(Tok::Int(v)),
-                        None => {
-                            return Some(
-                                self.fail(line, format!("bad integer `{}`", &src[start..i])),
-                            );
-                        }
-                    }
-                }
             }
             b'%' => {
                 while i < n && b[i] != b'\n' {
@@ -741,8 +824,18 @@ impl<'a> Lexer<'a> {
                     (b'=', Some(b'='), _) => (Tok::Op(Op::Identical), 2),
                     (b'=', Some(b'<'), _) => (Tok::Op(Op::Le), 2),
                     (b'>', Some(b'='), _) => (Tok::Op(Op::Ge), 2),
-                    (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::Eq), 3),
-                    (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::Ne), 3),
+                    (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::ArithEq), 3),
+                    (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::ArithNe), 3),
+                    (b'@', Some(b'='), Some(b'<')) => (Tok::Op(Op::TermLe), 3),
+                    (b'@', Some(b'>'), Some(b'=')) => (Tok::Op(Op::TermGe), 3),
+                    (b'@', Some(b'<'), _) => (Tok::Op(Op::TermLt), 2),
+                    (b'@', Some(b'>'), _) => (Tok::Op(Op::TermGt), 2),
+                    (b'<', Some(b'<'), _) => (Tok::Op(Op::Shl), 2),
+                    (b'>', Some(b'>'), _) => (Tok::Op(Op::Shr), 2),
+                    (b'/', Some(b'/'), _) => (Tok::Op(Op::IntDiv), 2),
+                    (b'/', Some(b'\\'), _) => (Tok::Op(Op::BitAnd), 2),
+                    (b'\\', Some(b'/'), _) => (Tok::Op(Op::BitOr), 2),
+                    (b'*', Some(b'*'), _) => (Tok::Op(Op::Pow), 2),
                     (b'=', _, _) => (Tok::Op(Op::Eq), 1),
                     (b'<', _, _) => (Tok::Op(Op::Lt), 1),
                     (b'>', _, _) => (Tok::Op(Op::Gt), 1),
@@ -750,11 +843,11 @@ impl<'a> Lexer<'a> {
                     (b'-', _, _) => (Tok::Op(Op::Minus), 1),
                     (b'*', _, _) => (Tok::Op(Op::Star), 1),
                     (b'/', _, _) => (Tok::Op(Op::Slash), 1),
-                    (b'[' | b']' | b'|', _, _) => {
-                        return Some(
-                            self.fail(line, format!("lists are not supported (`{}`)", c as char)),
-                        );
-                    }
+                    (b'^', _, _) => (Tok::Op(Op::Caret), 1),
+                    (b'\\', _, _) => (Tok::Op(Op::Backslash), 1),
+                    (b'[', _, _) => (Tok::LBracket, 1),
+                    (b']', _, _) => (Tok::RBracket, 1),
+                    (b'|', _, _) => (Tok::Bar, 1),
                     _ => {
                         return Some(
                             self.fail(line, format!("unexpected character `{}`", c as char)),
@@ -836,6 +929,31 @@ fn same_long_text(a: &[u8], b: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_digit_run_is_read_as_one_digit_at_a_time() {
+        // Runs of every length up to twenty digits, at the end of the input
+        // and before each kind of byte that ends one: the bytes next to
+        // `0` and `9`, a `.`, an `e`, a blank and a byte of 0x80 or more.
+        let digits = "98765432109876543210";
+        for len in 0..=digits.len() {
+            for after in ["", "/", ":", ".5", "e3", " ", "\u{e9}", ")12345678"] {
+                for before in ["", "x", "1234567"] {
+                    let text = format!("{before}{}{after}", &digits[..len]);
+                    let b = text.as_bytes();
+                    let start = before.len();
+                    let mut w = 7;
+                    let n = digit_run(b, start, &mut w);
+                    let (mut want, mut i) = (7u64, start);
+                    while i < b.len() && b[i].is_ascii_digit() {
+                        want = want.wrapping_mul(10).wrapping_add(u64::from(b[i] - b'0'));
+                        i += 1;
+                    }
+                    assert_eq!((n, w), (i - start, want), "{text:?}");
+                }
+            }
+        }
+    }
 
     #[test]
     fn same_long_text_is_equality() {
