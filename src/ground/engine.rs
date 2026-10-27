@@ -388,9 +388,12 @@ struct Derivation {
 }
 
 /// Possible tuples of one predicate, with a per-argument index built lazily.
-#[derive(Default)]
 struct Relation {
-    tuples: Vec<Vec<Val>>,
+    /// The tuples' values, `arity` to a tuple, in the order derived: one
+    /// block for all, rather than one a tuple, which a table of millions
+    /// allocated and freed one by one.
+    vals: Vec<Val>,
+    arity: usize,
     /// The atom of each tuple.
     ids: Vec<AtomId>,
     /// The tuples by the hash of their values ([`Relation::hash`]), but
@@ -404,8 +407,8 @@ struct Relation {
     same_hash: Vec<u32>,
     /// Atoms named by a negative literal inside their own recursive
     /// component before it is known whether they are possible. Promoted to
-    /// `set` if derived; otherwise they end up as derived atoms without rules,
-    /// which the simplifier treats as false.
+    /// the tuples if derived; otherwise they end up as derived atoms
+    /// without rules, which the simplifier treats as false.
     placeholders: FxHashMap<Vec<Val>, AtomId>,
     /// `index[pos][val]` = tuple indices with that value at `pos`, for each
     /// position a join has bound, built when it is first bound: a join
@@ -419,9 +422,32 @@ impl Relation {
     /// No tuple, in [`Relation::same_hash`].
     const NONE: u32 = u32::MAX;
 
+    fn new(arity: usize) -> Relation {
+        Relation {
+            vals: Vec::new(),
+            arity,
+            ids: Vec::new(),
+            by_hash: FxHashMap::default(),
+            same_hash: Vec::new(),
+            placeholders: FxHashMap::default(),
+            index: Vec::new(),
+            indexed: Vec::new(),
+        }
+    }
+
     /// The hash under which a tuple of `args` is kept.
     fn hash(args: &[Val]) -> u64 {
         rustc_hash::FxBuildHasher.hash_one(args)
+    }
+
+    /// The number of tuples.
+    fn len(&self) -> usize {
+        self.ids.len()
+    }
+
+    /// Tuple `t`.
+    fn tuple(&self, t: usize) -> &[Val] {
+        &self.vals[t * self.arity..(t + 1) * self.arity]
     }
 
     /// The atom of a derived tuple.
@@ -436,7 +462,7 @@ impl Relation {
         }
         let mut t = *self.by_hash.get(&h)?;
         while t != Self::NONE {
-            if self.tuples[t as usize] == args {
+            if self.tuple(t as usize) == args {
                 return Some(self.ids[t as usize]);
             }
             t = self.same_hash[t as usize];
@@ -444,38 +470,39 @@ impl Relation {
         None
     }
 
-    /// Room for `n` more tuples, kept by their hash where `keyed`.
-    fn reserve(&mut self, n: usize, keyed: bool) -> bool {
-        self.tuples.try_reserve(n).is_ok()
+    /// Room for `n` more tuples.
+    fn reserve(&mut self, n: usize) -> bool {
+        self.vals.try_reserve(n * self.arity).is_ok()
             && self.ids.try_reserve(n).is_ok()
-            && (!keyed
+            && (self.arity == 0
                 || self.same_hash.try_reserve(n).is_ok() && self.by_hash.try_reserve(n).is_ok())
     }
 
     /// Adds the tuple `args`, whose hash is `h`, as atom `id`.
-    fn push(&mut self, h: u64, args: Vec<Val>, id: AtomId) {
-        if !args.is_empty() {
-            let t = self.tuples.len() as u32;
+    fn push(&mut self, h: u64, args: &[Val], id: AtomId) {
+        debug_assert_eq!(args.len(), self.arity, "a tuple of the relation's arity");
+        if self.arity > 0 {
+            let t = self.len() as u32;
             let before = self.by_hash.insert(h, t);
             self.same_hash.push(before.unwrap_or(Self::NONE));
         }
-        self.tuples.push(args);
+        self.vals.extend_from_slice(args);
         self.ids.push(id);
     }
 
     /// Indexes the tuples not yet indexed at position `pos`.
-    fn ensure_index(&mut self, arity: usize, pos: usize) {
+    fn ensure_index(&mut self, pos: usize) {
         if self.index.is_empty() {
-            self.index = vec![FxHashMap::default(); arity];
-            self.indexed = vec![0; arity];
+            self.index = vec![FxHashMap::default(); self.arity];
+            self.indexed = vec![0; self.arity];
         }
-        for t in self.indexed[pos]..self.tuples.len() {
+        for t in self.indexed[pos]..self.len() {
             self.index[pos]
-                .entry(self.tuples[t][pos])
+                .entry(self.vals[t * self.arity + pos])
                 .or_default()
                 .push(t);
         }
-        self.indexed[pos] = self.tuples.len();
+        self.indexed[pos] = self.len();
     }
 
     /// The tuples among `s..e` that may have value `v` at each position
@@ -483,17 +510,12 @@ impl Relation {
     /// of `bound`, or all of `s..e` where nothing is bound. The caller
     /// checks the other positions. A posting list is in tuple order, so the
     /// range is a slice of it.
-    fn candidates(
-        &mut self,
-        arity: usize,
-        bound: &[(usize, Val)],
-        (s, e): (usize, usize),
-    ) -> Vec<usize> {
+    fn candidates(&mut self, bound: &[(usize, Val)], (s, e): (usize, usize)) -> Vec<usize> {
         if bound.is_empty() {
             return (s..e).collect();
         }
         for &(pos, _) in bound {
-            self.ensure_index(arity, pos);
+            self.ensure_index(pos);
         }
         let index = &self.index;
         bound
@@ -678,7 +700,7 @@ impl<'a> Grounder<'a> {
                 counted: false,
                 rules: Vec::new(),
             });
-            self.rels.push(Relation::default());
+            self.rels.push(Relation::new(arity));
         }
         id
     }
@@ -856,21 +878,20 @@ impl<'a> Grounder<'a> {
         nums.pop()
     }
 
-    fn atom_id(&mut self, pred: PredId, args: Vec<Val>) -> (AtomId, bool) {
-        let h = Relation::hash(&args);
-        if let Some(id) = self.rels[pred as usize].find(h, &args) {
+    fn atom_id(&mut self, pred: PredId, args: &[Val]) -> (AtomId, bool) {
+        let h = Relation::hash(args);
+        if let Some(id) = self.rels[pred as usize].find(h, args) {
             return (id, false);
         }
         // Past a refused block the grounding is given up, and nothing it
         // keeps reads the id (`keep_rule`, `over`).
-        let keyed = !args.is_empty();
-        if !self.room(|g| g.atoms.try_reserve(1).is_ok() && g.rels[pred as usize].reserve(1, keyed)) {
+        if !self.room(|g| g.atoms.try_reserve(1).is_ok() && g.rels[pred as usize].reserve(1)) {
             return (AtomId::MAX, false);
         }
         let rel = &mut self.rels[pred as usize];
         let placeholder = match rel.placeholders.is_empty() {
             true => None,
-            false => rel.placeholders.remove(&args),
+            false => rel.placeholders.remove(args),
         };
         let id = match placeholder {
             Some(id) => id,
@@ -880,7 +901,7 @@ impl<'a> Grounder<'a> {
                 // ([`Grounder::args`]).
                 let kept = match self.preds[pred as usize].facts {
                     Some(_) => Vec::new(),
-                    None => args.clone(),
+                    None => args.to_vec(),
                 };
                 self.atoms.push((pred, kept));
                 id
@@ -966,8 +987,11 @@ impl<'a> Grounder<'a> {
         }
         let rel = &self.rels[*p as usize];
         let t = (id - rel.ids[0]) as usize;
-        debug_assert_eq!(rel.ids[t], id, "the atoms of facts are numbered as their tuples");
-        &rel.tuples[t]
+        debug_assert_eq!(
+            rel.ids[t], id,
+            "the atoms of facts are numbered as their tuples"
+        );
+        rel.tuple(t)
     }
 
     fn display_atom(&self, id: AtomId) -> Atom {
@@ -1385,19 +1409,18 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
 fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Val> {
     let k = shared.len();
     let bound: Vec<(usize, Val)> = shared.iter().copied().enumerate().collect();
-    let arity = g.preds[c.aux as usize].arity;
     let candidates = {
         let rel = &mut g.rels[c.aux as usize];
-        let all = (0, rel.tuples.len());
-        rel.candidates(arity, &bound, all)
+        let all = (0, rel.len());
+        rel.candidates(&bound, all)
     };
     let mut found: Vec<(Rc<[u32]>, Val)> = Vec::with_capacity(candidates.len());
     for t in candidates {
         let rel = &g.rels[c.aux as usize];
-        if rel.tuples[t][..k] != *shared {
+        if rel.tuple(t)[..k] != *shared {
             continue;
         }
-        let (id, v) = (rel.ids[t], rel.tuples[t][k]);
+        let (id, v) = (rel.ids[t], rel.tuple(t)[k]);
         match proof(g, id) {
             Ok((0, _)) => {}
             Ok((1, key)) => found.push((key, v)),
@@ -1883,11 +1906,11 @@ fn resolve_atom_pattern(g: &mut Grounder, a: &Atom) -> Vec<(Atom, Option<AtomId>
     }
     let mut out = Vec::new();
     let rel = &g.rels[p as usize];
-    for (t, &id) in rel.tuples.iter().zip(&rel.ids) {
+    for (t, &id) in rel.ids.iter().enumerate() {
         let mut binding: FxHashMap<&str, Val> = FxHashMap::default();
         if a.args
             .iter()
-            .zip(t)
+            .zip(rel.tuple(t))
             .all(|(pat, &v)| matches(g, pat, v, &mut binding))
         {
             out.push((g.display_atom(id), Some(id)));
@@ -1948,18 +1971,19 @@ fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
     // vectors and rehashes its keys a score of times otherwise.
     let n = f.probs.len();
     if !g.room(|g| {
-        let rel = &mut g.rels[p as usize];
         g.atoms.try_reserve(n).is_ok()
             && g.weights
                 .try_reserve(g.atoms.len() + n - g.weights.len())
                 .is_ok()
-            && rel.reserve(n, f.arity > 0)
+            && g.rels[p as usize].reserve(n)
     }) {
         return;
     }
+    let mut vals = Vec::with_capacity(f.arity);
     for (args, weights) in f.tuples() {
-        let vals: Vec<Val> = args.iter().map(|a| g.val(a)).collect();
-        let (id, new) = g.atom_id(p, vals);
+        vals.clear();
+        vals.extend(args.iter().map(|a| g.val(a)));
+        let (id, new) = g.atom_id(p, &vals);
         if g.over() {
             return;
         }
@@ -2031,10 +2055,7 @@ fn rules_of(g: &Grounder, stratum: &[PredId]) -> Vec<usize> {
 
 /// The number of tuples of each predicate of `preds`.
 fn lens(g: &Grounder, preds: &[PredId]) -> Vec<usize> {
-    preds
-        .iter()
-        .map(|&p| g.rels[p as usize].tuples.len())
-        .collect()
+    preds.iter().map(|&p| g.rels[p as usize].len()).collect()
 }
 
 /// Rounds of semi-naive evaluation over `group` until one derives
@@ -2060,7 +2081,7 @@ fn rounds(
     while !g.over() {
         due.clear();
         for (s, &p) in group.iter().enumerate() {
-            let e = g.rels[p as usize].tuples.len();
+            let e = g.rels[p as usize].len();
             delta[s] = (from[s], e);
             if e > from[s] {
                 lits.clear();
@@ -2356,7 +2377,7 @@ fn evaluate_by_levels(
             }
         }
         for (s, &p) in group.iter().enumerate() {
-            let e = g.rels[p as usize].tuples.len();
+            let e = g.rels[p as usize].len();
             if e > start[s] {
                 for (k, i) in read_at(&later, p, key.0).collect::<Vec<_>>() {
                     eval_rule(g, rule_ids[k], Some((i, (start[s], e))));
@@ -2386,7 +2407,7 @@ fn emit(g: &mut Grounder, key: Key, p: PredId, args: Vec<Val>, body: Vec<GLit>) 
         }
         lits.push(l);
     }
-    let (head, _) = g.atom_id(p, args);
+    let (head, _) = g.atom_id(p, &args);
     lits.sort_unstable();
     lits.dedup();
     g.keep_rule(GroundRule::new(head, lits));
@@ -2551,14 +2572,13 @@ fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
 /// `parse([N3|T], R)` only through `N3 is N1 * N2`.
 fn from_pays(g: &mut Grounder, v: &FromDelta, (s, e): (usize, usize)) -> bool {
     let expected = |g: &mut Grounder, p: PredId, bound: &[usize]| {
-        let arity = g.preds[p as usize].arity;
         let rel = &mut g.rels[p as usize];
-        let n = rel.tuples.len();
+        let n = rel.len();
         if bound.is_empty() || n == 0 {
             return n;
         }
         for &pos in bound {
-            rel.ensure_index(arity, pos);
+            rel.ensure_index(pos);
         }
         bound
             .iter()
@@ -2676,7 +2696,7 @@ fn ground_body(
                 }
             }
         }
-        let (head, new) = g.atom_id(rule.head.0, head_args);
+        let (head, new) = g.atom_id(rule.head.0, &head_args);
         if g.preds[rule.head.0 as usize].control {
             g.demands += new as usize;
             return; // control atoms exist only to drive grounding
@@ -2765,15 +2785,14 @@ fn ground_body(
                 })
                 .collect();
             let control = g.preds[p as usize].control;
-            let arity = g.preds[p as usize].arity;
             let candidates = {
                 let rel = &mut g.rels[p as usize];
-                let range = range.unwrap_or((0, rel.tuples.len()));
-                rel.candidates(arity, &bound_pos, range)
+                let range = range.unwrap_or((0, rel.len()));
+                rel.candidates(&bound_pos, range)
             };
             for t in candidates {
                 let rel = &g.rels[p as usize];
-                let tuple = &rel.tuples[t];
+                let tuple = rel.tuple(t);
                 if !bound_pos.iter().all(|(pos, v)| tuple[*pos] == *v) {
                     continue;
                 }
@@ -2839,16 +2858,14 @@ fn ground_body(
             }
         }
         ILit::Switch(p, args) => {
-            let vals = resolve(args, subst);
-            let (id, _) = g.atom_id(*p, vals);
+            let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
             part(g, rule, i, Part::Atom(id));
             body_atoms.push(GLit::Pos(id));
             ground_body(g, rule, i + 1, delta, subst, body_atoms);
             body_atoms.pop();
         }
         ILit::NegSwitch(p, args) => {
-            let vals = resolve(args, subst);
-            let (id, _) = g.atom_id(*p, vals);
+            let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
             part(g, rule, i, Part::Neg(id));
             body_atoms.push(GLit::Neg(id));
             ground_body(g, rule, i + 1, delta, subst, body_atoms);
