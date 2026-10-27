@@ -1040,7 +1040,8 @@ function how() {
       + `${FLOOR} s. A system run in several forms counts as its fastest form on each instance, and a virtual best is the `
       + "fastest of several systems on each instance. On each instance a system is marked own (from its own papers, "
       + "benchmarks or distribution), native (the program it read is in its own language, as the benchmark's authors or "
-      + "generator wrote it) or translated (a translator wrote the program it read from a program in another language)."),
+      + "generator wrote it) or translated (a translator wrote the program it read from a program in another language, "
+      + "or a converter wrote it from the network in another format)."),
     element("p", {}, "A plot counts the instances each system answers within a time limit, on a linear scale from 0 to "
       + "the longest limit: a line further up and to the left is better. A category's plots draw the systems given at "
       + "least 20 of its instances, coloured by family; a name in the legend greys its line or colours it again."),
@@ -1320,7 +1321,8 @@ function systemView(route) {
     + "An instance it does not answer counts at its time limit, whatever the reason (out of time or memory, a wrong answer, "
     + `a program it cannot express, or not given), and a time under ${FLOOR} s as ${FLOOR} s. An instance is its own (from `
     + "its own papers, benchmarks or distribution), native (the program it read is in its own language) or translated (a "
-    + "translator wrote the program it read from a program in another language)."));
+    + "translator wrote the program it read from a program in another language, or a converter wrote it from the "
+    + "network in another format)."));
   if (s.cite) {
     const c = s.cite;
     dl.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
@@ -1669,6 +1671,9 @@ function versionLabel(tab) {
 
 const UNFAIR = "Note: this is an automatic translation from the original program, which might have performance "
   + "implications that make the comparison unfair.";
+// The same for the original network converted to another network format.
+const CONVERTED = "Note: this is the original network converted automatically to another format, which might have "
+  + "performance implications that make the comparison unfair.";
 
 // An instance of a family: its programs (the one tddlog read, and a menu of
 // every other system's), then its answers. `route` names the file to show.
@@ -1741,7 +1746,8 @@ function showFile(view, fam, inst, ti, fi) {
     }, element("p", { class: "cap" }, `The original, ${inst.tabs[0].lang}`));
     panes.append(original(shownFiles(inst.tabs[0])[0]));
   }
-  const cap = tab.translated && readersOf(tab).length ? element("p", { class: "unfair" }, UNFAIR)
+  const note = tab.conversion ? CONVERTED : UNFAIR;
+  const cap = tab.translated && readersOf(tab).length ? element("p", { class: "unfair" }, note)
     : two ? element("p", { class: "cap" }, tab.lang) : null;
   panes.append(filePane(fam, tab, fi, (k) => {
     open(ti, k);
