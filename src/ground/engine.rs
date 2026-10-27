@@ -956,9 +956,12 @@ fn compile_rule<'a>(
         _ => None,
     }));
     let mut bound_names: FxHashSet<String> = FxHashSet::default();
-    let ordered = schedule_body(&clause.body, &mut bound_names, |i| {
-        known[i].is_some_and(|(_, switch)| switch)
-    })
+    let ordered = schedule_body(
+        &clause.body,
+        &mut bound_names,
+        |i| known[i].is_some_and(|(_, switch)| switch),
+        true,
+    )
     .map_err(|stuck| {
         GroundError::Unsafe(format!(
             "{clause}: literal {} has variables not bound by a positive body atom",

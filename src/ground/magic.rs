@@ -159,7 +159,10 @@ pub(super) fn ground_clause(c: &Clause) -> bool {
 /// each of 1 350 semi-naive rounds. A negation of a given predicate joins
 /// the demand's prefix: cplint's left-corner grammar tries a goal's third
 /// clause only where `\+ lc(G, B, rule(G, [B|_]))` holds, which is nowhere.
-fn given<'a>(norm: &'a NormProgram, rules_of: &FxHashMap<Sig<'a>, Vec<usize>>) -> FxHashSet<Sig<'a>> {
+fn given<'a>(
+    norm: &'a NormProgram,
+    rules_of: &FxHashMap<Sig<'a>, Vec<usize>>,
+) -> FxHashSet<Sig<'a>> {
     let reads_given = |rule: &Clause, given: &FxHashSet<Sig>| {
         let [head] = &rule.heads[..] else {
             return false;
@@ -172,7 +175,7 @@ fn given<'a>(norm: &'a NormProgram, rules_of: &FxHashMap<Sig<'a>, Vec<usize>>) -
         let mut bound = FxHashSet::default();
         literals
             && !head.negated
-            && schedule_body(&rule.body, &mut bound, |_| false).is_ok()
+            && schedule_body(&rule.body, &mut bound, |_| false, false).is_ok()
             && literal_vars(&Literal::Pos(head.atom.clone()))
                 .iter()
                 .all(|v| bound.contains(v))
@@ -358,6 +361,7 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
                 &rule.body,
                 &mut bound.clone(),
                 |i| matches!(&rule.body[i], Literal::Pos(a) | Literal::Neg(a) if is_switch(a)),
+                false,
             )
             .ok()?;
             // Walk the schedule, emitting magic rules for body atoms with rules.
@@ -521,12 +525,15 @@ mod tests {
         let m = rewrite(&n).unwrap();
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
-            !text.iter().any(|t| t.contains("$m_nt") || t.contains("$m_lc")),
+            !text
+                .iter()
+                .any(|t| t.contains("$m_nt") || t.contains("$m_lc")),
             "{text:?}"
         );
         assert!(
-            text.iter().any(|t| t.starts_with("'$m_q_bf'(X) :- '$m_p_bf'(X), ")
-                && t.contains("\\+nt(s,X)")),
+            text.iter().any(
+                |t| t.starts_with("'$m_q_bf'(X) :- '$m_p_bf'(X), ") && t.contains("\\+nt(s,X)")
+            ),
             "{text:?}"
         );
     }

@@ -2,8 +2,13 @@
 //! variables it needs bound when it is evaluated.
 //!
 //! Positive atoms over predicates that are not switches bind their variables
-//! and stay in source order. A switch atom (a probabilistic choice), positive
-//! or negated, comes last, in source order: it binds nothing and rejects no
+//! and stay in source order. Where the grounder joins them, an atom whose
+//! variables are all unbound after some are bound would pair each of its
+//! tuples with each binding so far, and waits for the first atom that
+//! shares a bound variable: in PSouffle's side-channel analyses,
+//! `share(TO_E, FROM2_E)` after `xor_assign_right(TO, FROM2)` waits for
+//! `equal_assign(FROM2, FROM2_E)`. A switch atom (a probabilistic choice),
+//! positive or negated, comes last, in source order: it binds nothing and rejects no
 //! binding, so earlier it would only make the walk create its atom for
 //! bindings that a later literal rejects, and keep a semi-naive round from
 //! passing over the literals before it (`narrow` in [`super::engine`]).
@@ -14,7 +19,8 @@
 //! (it binds `V`), a list predicate when the arguments it reads are bound (it
 //! binds the others), a findall when the variables it shares with the clause
 //! are bound (it binds its result). Used by the grounder and by the magic-set
-//! rewrite, so both see the same sideways information passing.
+//! rewrite, which passes the bindings sideways in the same order but for the
+//! atoms that wait ([`schedule_body`]).
 
 use crate::syntax::{CmpOp, Literal, Term};
 use rustc_hash::FxHashSet;
@@ -90,11 +96,18 @@ fn ready(l: &Literal, unbound: &[String], bound: &mut FxHashSet<String>) -> bool
 /// atom, positive or negated, at a position of `body` whether its predicate
 /// is a switch (called bound, last). On success returns the order, as
 /// positions in `body`, and updates `bound` with everything the body binds.
-/// On failure gives the position of the stuck literal.
+/// On failure gives the position of the stuck literal. With `join`, an atom
+/// that shares no variable with those bound waits for one that does, as
+/// the grounder joins; without, the atoms keep the order of the source, as
+/// the magic rewrite passes the bindings sideways (a demand follows the
+/// program's order, which ProbLog's resolution follows: `observe(Os) :-
+/// start(S), walk(Os, 0, S)` asks `walk` with `S` bound, which its clause
+/// `walk([], _, _)` needs).
 pub(crate) fn schedule_body(
     body: &[Literal],
     bound: &mut FxHashSet<String>,
     switch: impl Fn(usize) -> bool,
+    join: bool,
 ) -> Result<Vec<usize>, usize> {
     let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && !switch(i);
     let mut pending: Vec<usize> = Vec::with_capacity(body.len());
@@ -122,7 +135,22 @@ pub(crate) fn schedule_body(
             }
         };
     release(bound, &mut pending, &mut out);
-    for l in (0..body.len()).filter(|&i| binding(i)) {
+    let mut atoms: Vec<usize> = (0..body.len()).filter(|&i| binding(i)).collect();
+    while !atoms.is_empty() {
+        // An atom whose variables are all unbound, after some are bound,
+        // would pair each of its tuples with each binding so far: it waits
+        // for the first atom that shares a bound variable, unless none is
+        // left.
+        let joins = |l: usize| {
+            let vars = literal_vars(&body[l]);
+            vars.is_empty() || vars.iter().any(|v| bound.contains(v))
+        };
+        let k = if !join || bound.is_empty() {
+            0
+        } else {
+            atoms.iter().position(|&l| joins(l)).unwrap_or(0)
+        };
+        let l = atoms.remove(k);
         for v in literal_vars(&body[l]) {
             bound.insert(v);
         }
@@ -152,9 +180,34 @@ mod tests {
     #[test]
     fn switches_come_last() {
         let p = parse_program("h(X,Y) :- s(X), q(X,Y), \\+ t(X), r(Y), \\+ w(X).\n").unwrap();
-        let order = schedule_body(&p.clauses[0].body, &mut FxHashSet::default(), |i| {
-            matches!(i, 0 | 2)
-        });
+        let order = schedule_body(
+            &p.clauses[0].body,
+            &mut FxHashSet::default(),
+            |i| matches!(i, 0 | 2),
+            false,
+        );
         assert_eq!(order, Ok(vec![1, 4, 3, 0, 2]));
+    }
+
+    /// An atom that shares no variable with those bound waits for one
+    /// that does where the grounder joins them: `c(Y)` after `b(X, Y)`;
+    /// the magic rewrite keeps the order of the source.
+    #[test]
+    fn an_atom_unbound_waits_for_one_that_joins() {
+        let p = parse_program("h(X) :- a(X), c(Y), b(X, Y), d(Z).\n").unwrap();
+        let order = schedule_body(
+            &p.clauses[0].body,
+            &mut FxHashSet::default(),
+            |_| false,
+            true,
+        );
+        assert_eq!(order, Ok(vec![0, 2, 1, 3]));
+        let order = schedule_body(
+            &p.clauses[0].body,
+            &mut FxHashSet::default(),
+            |_| false,
+            false,
+        );
+        assert_eq!(order, Ok(vec![0, 1, 2, 3]));
     }
 }
