@@ -596,7 +596,12 @@ impl<'a> Parser<'a> {
                 })))
             }
             ("->", 2) => self.err("if-then-else is not supported"),
-            (",", 2) | (";", 2) => self.err("expected a literal, found a conjunction"),
+            (",", 2) | (";", 2) => {
+                // A parenthesised body the body reading gave up on: its
+                // first part that is not a literal says why.
+                self.goal(Compound::term(name.clone(), args))?;
+                self.err("expected a literal, found a conjunction")
+            }
             (op, n) if special(op, n) => {
                 let t = Compound::term(name.clone(), args);
                 self.err(format!("expected a literal, found {t}"))
@@ -1122,6 +1127,10 @@ mod tests {
         assert_eq!(err("p :- q.\nq $ r.\n"), "line 2: unexpected character `$`");
         assert_eq!(err("p.\n'open"), "line 2: unterminated quoted atom");
         assert_eq!(err("p :- (q, $)."), "line 1: unexpected character `$`");
+        assert_eq!(
+            err("p :- (q -> r ; s)."),
+            "line 1: if-then-else is not supported"
+        );
         // A parse error before it.
         assert_eq!(
             err("a :- b c.\nd $.\n"),
