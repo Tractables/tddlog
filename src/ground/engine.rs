@@ -2590,6 +2590,13 @@ fn from_pays(g: &mut Grounder, v: &FromDelta, (s, e): (usize, usize)) -> bool {
         if bound.is_empty() || n == 0 {
             return n;
         }
+        // Every argument bound: a lookup, which matches one tuple at most
+        // and needs no index. An index built only to tell it would hold a
+        // key per tuple: pcfg's demand of a state, bound whole, from each
+        // of its tens of millions of demands.
+        if bound.len() == rel.arity {
+            return 1;
+        }
         for &pos in bound {
             rel.ensure_index(pos);
         }
