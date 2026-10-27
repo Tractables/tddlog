@@ -597,7 +597,7 @@ mod tests {
 
     /// The negation filters the grounded demand too: `nt(s, a)` holds in
     /// every world, so `q` is not demanded for `a`, and is for `b`, where
-    /// `nt` fails.
+    /// `nt` fails: the grounding has `q(b,1)` and not `q(a,1)`.
     #[test]
     fn a_negation_of_a_certain_atom_stops_the_grounded_demand() {
         let p = parse_program(
@@ -610,8 +610,8 @@ mod tests {
         let m = rewrite(&n).unwrap();
         let gp = crate::ground::engine::ground_normalized(&m, None).unwrap();
         let atoms: Vec<String> = gp.atoms.iter().map(|a| a.to_string()).collect();
-        assert!(atoms.contains(&"'$m_q_bf'(b)".to_string()), "{atoms:?}");
-        assert!(!atoms.contains(&"'$m_q_bf'(a)".to_string()), "{atoms:?}");
+        assert!(atoms.contains(&"q(b,1)".to_string()), "{atoms:?}");
+        assert!(!atoms.contains(&"q(a,1)".to_string()), "{atoms:?}");
     }
 
     /// A demand reads the literals before it that bear on its bound

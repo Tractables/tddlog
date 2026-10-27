@@ -282,9 +282,11 @@ goal of a findall becomes an auxiliary predicate whose tuples are its
 solutions, and a negated atom with variables that nothing else in its
 clause reads becomes the negation of an auxiliary predicate over its
 other variables, defined by the atom. A ground compound is a value: the
-engine interns each one once, and the ground program's atoms hold them
-as arguments, so that nothing after grounding sees a term's structure
-and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
+engine interns each one once, its name and its arguments' values end to
+end in one buffer as a relation's tuples are, and builds the term only
+where an atom is printed or terms are compared; the ground program's
+atoms hold them as arguments, so that nothing after grounding sees a
+term's structure and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
 is refused, as is a findall whose answer ProbLog gives otherwise
 than tddlog could: over a probabilistic goal, which is a distribution over
 lists, or where a solution has two proofs, which ProbLog lists twice.
@@ -441,8 +443,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    its switch's weights or a certain one, without a switch or a rule per
    fact, and two facts of one tuple make it true where either is. A
    database's tables are such facts: TPC-H's line items at scale factor
-   0.1 are 600 000 of them. A fact's atom keeps its arguments in its
-   tuple alone, and the ground program has only the atoms of facts that
+   0.1 are 600 000 of them. An atom keeps its arguments in its tuple
+   alone, a fact's as a derived atom's, and the ground program has only the atoms of facts that
    a rule, a query or the evidence names: a query reads few of a
    table's tuples.
 
@@ -484,7 +486,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    some values of its own satisfy it (on PSouffle's side-channel analyses
    the demand of `equal_assign` with no argument bound was derived again
    from each of 437 million pairs before it). The rewrite only restricts which ground
-   atoms are produced; the control predicates do not reach the compiler. A
+   atoms are produced; the control predicates' tuples have no atoms and do
+   not reach the compiler. A
    recursive component with internal negation is ground as it is, its
    negative literals left to the compiler; the program as written is the
    fallback where the rewritten one cannot be ground. A bound head argument

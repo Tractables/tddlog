@@ -9,6 +9,7 @@ use std::hash::BuildHasher;
 
 use rustc_hash::{FxBuildHasher, FxHashMap};
 
+use super::interned::Interned;
 use super::{AtomId, GLit, GroundProgram, RulesByHead};
 
 /// The sets of two or more derived atoms of which at most one is true in
@@ -746,64 +747,6 @@ impl Bodies {
             self.last_held.push(u32::MAX);
         }
         id
-    }
-}
-
-/// Distinct lists numbered in the order they are first seen, their items
-/// end to end in one buffer, rather than a map keyed by the lists
-/// themselves, which costs an allocation per list.
-struct Interned<T> {
-    items: Vec<T>,
-    /// Each list's items, as a range of `items`.
-    spans: Vec<(usize, usize)>,
-    /// The last list with each hash, and per list the one before it with
-    /// the same hash.
-    by_hash: FxHashMap<u64, u32>,
-    same_hash: Vec<u32>,
-}
-
-impl<T: Copy + Eq + std::hash::Hash> Interned<T> {
-    fn with_capacity(lists: usize) -> Self {
-        Interned {
-            items: Vec::new(),
-            spans: Vec::with_capacity(lists),
-            by_hash: FxHashMap::with_capacity_and_hasher(lists, Default::default()),
-            same_hash: Vec::with_capacity(lists),
-        }
-    }
-
-    /// How many lists there are.
-    fn len(&self) -> usize {
-        self.spans.len()
-    }
-
-    /// The number of `list`, numbered anew if it is new, and whether it is.
-    /// Its hash is looked up once, and a new list takes the entry found,
-    /// rather than looked up and then inserted: nearly every body is new.
-    fn id(&mut self, list: &[T]) -> (u32, bool) {
-        let Interned {
-            items,
-            spans,
-            by_hash,
-            same_hash,
-        } = self;
-        let last = by_hash
-            .entry(FxBuildHasher.hash_one(list))
-            .or_insert(u32::MAX);
-        let mut b = *last;
-        while b != u32::MAX {
-            let (start, end) = spans[b as usize];
-            if items[start..end] == *list {
-                return (b, false);
-            }
-            b = same_hash[b as usize];
-        }
-        let id = spans.len() as u32;
-        spans.push((items.len(), items.len() + list.len()));
-        items.extend_from_slice(list);
-        same_hash.push(*last);
-        *last = id;
-        (id, true)
     }
 }
 
