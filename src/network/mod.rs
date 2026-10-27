@@ -37,7 +37,7 @@
 
 mod bif;
 mod hugin;
-mod rows;
+pub(crate) mod rows;
 mod scan;
 mod uai;
 mod xdsl;

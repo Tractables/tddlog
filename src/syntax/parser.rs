@@ -69,7 +69,22 @@ struct Mark<'a> {
     args: usize,
 }
 
+/// The program `src` writes: a ProbLog program or, where `src` holds
+/// `:- begin_lpad.`, the program an LPAD is read as ([`super::lpad`]).
 pub fn parse_program(src: &str) -> Result<Program, ParseError> {
+    match super::lpad::read(src) {
+        None => parse(src),
+        Some(lpad) => parse(&lpad?.program).map_err(|e| ParseError {
+            line: e.line,
+            msg: format!(
+                "{} in the program the LPAD is read as (tddlog --program prints it)",
+                e.msg
+            ),
+        }),
+    }
+}
+
+fn parse(src: &str) -> Result<Program, ParseError> {
     let eof = || Spanned {
         tok: Tok::Eof,
         line: 1,

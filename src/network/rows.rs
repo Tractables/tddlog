@@ -229,7 +229,7 @@ impl PartialOrd for Natural {
 /// sums to more than one decides whether it is divided, and where a plain
 /// sum differs from the exact one in the last bit, the decisions of
 /// `scripts/gen_bn.py`, which sums with `math.fsum`, would differ.
-pub(super) fn fsum(xs: &[f64]) -> f64 {
+pub(crate) fn fsum(xs: &[f64]) -> f64 {
     let mut partials: Vec<f64> = Vec::new();
     for &x in xs {
         let mut x = x;
@@ -283,7 +283,7 @@ pub(super) fn fsum(xs: &[f64]) -> f64 {
 /// -5 to 15 and scientific with a signed exponent of two digits or more
 /// otherwise (`1e-05`, `0.0001`, `1.0`), so that the program is the one
 /// `scripts/gen_bn.py` writes.
-pub(super) fn write_float(out: &mut String, x: f64) {
+pub(crate) fn write_float(out: &mut String, x: f64) {
     use std::fmt::Write;
     if !x.is_finite() {
         write!(out, "{x}").expect("a String takes any text");
