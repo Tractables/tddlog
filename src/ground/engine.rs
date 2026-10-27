@@ -1090,7 +1090,10 @@ fn step_of(
     vb: u32,
 ) -> Option<i64> {
     let rises = |q: PredId, args: &[Arg]| {
-        let at = |v| args.iter().position(|a| matches!(a, Arg::Var(x) if *x == v));
+        let at = |v| {
+            args.iter()
+                .position(|a| matches!(a, Arg::Var(x) if *x == v))
+        };
         let (b, h) = (at(vb)?, at(vh)?);
         g.preds[q as usize]
             .rules
