@@ -12,10 +12,10 @@
 //
 // The page is one view at a time, named by the address's hash:
 //   #/                       the README's figures: each category's total times, cactus and scatter plots
-//   #/category/C[/in/SOURCE][/vs/SYSTEM]
+//   #/category/C[/in/FAMILY][/vs/SYSTEM]
 //                            a category: its systems' answers and totals, its plots (tddlog against
-//                            SYSTEM), narrowed to SOURCE (a suite, a set of suites, or own:SYSTEM, a
-//                            system's own benchmarks)
+//                            SYSTEM), narrowed to FAMILY (the program or model whose sizes they are)
+//                            or to own:SYSTEM (a system's own benchmarks)
 //   #/system/SYSTEM          a solver: its plots against tddlog and the others in each category it
 //                            was given, its totals, how it was given the instances, its version,
 //                            settings, paper and link
@@ -476,24 +476,48 @@ function catRows(c, only) {
     t: Object.fromEntries(c.systems.map((x, j) => [x, answered(row[4 + j]) ? row[4 + j] : null])) }));
 }
 
-// The rows a filter keeps: a source's suites, or the instances that are a
-// system's own (own:SYSTEM).
+// The rows a filter keeps: a family's (the program or model whose sizes
+// they are), or the instances that are a system's own (own:SYSTEM).
 function narrowing(c, only) {
   if (only === undefined) return () => true;
   if (only.startsWith("own:")) {
     const j = c.systems.indexOf(only.slice(4));
     return (row) => row[3][j] === "o";
   }
-  const source = c.sources.find((s) => s.key === only);
-  return (row) => source.suites.includes(row[0]);
+  const rows = new Set(c.groups.find((g) => g.key === only).rows);
+  return (row, i) => rows.has(i);
 }
 
-// The filters a category offers: its sources, then the systems that have
+// The filters a category offers: its families, then the systems that have
 // own benchmarks among its instances.
 function filtersOf(c) {
-  return [...c.sources.map((s) => ({ key: s.key, title: s.title, n: s.instances })),
+  return [...c.groups.map((g) => ({ key: g.key, title: g.title, n: g.rows.length })),
     ...c.systems.filter((x) => c.classes[x].own > 0)
       .map((x) => ({ key: `own:${x}`, title: `${data.names[x]}'s own`, n: c.classes[x].own }))];
+}
+
+// The family of a category (c.groups) whose key is `only`, else undefined.
+const groupOf = (c, only) => c.groups.find((g) => g.key === only);
+
+// The benchmarks' pages of rows (catRows'): each family of the benchmarks'
+// data that holds some of them (without that data, each suite), with how
+// many (n) and how many of them tddlog answers (a), named by its title and,
+// where two share a title, its suite's too.
+function pagesOf(rows) {
+  const out = new Map();
+  for (const r of rows) {
+    const f = familyOf(r.suite, r.name), s = data.suites.get(r.suite);
+    const key = f ? `${r.suite}/${f.key}` : r.suite;
+    if (!out.has(key)) {
+      out.set(key, { route: f ? { view: "family", suite: r.suite, family: f.key } : { view: "suite", suite: r.suite },
+        title: f ? f.title : s.title, suite: s.title, n: 0 });
+    }
+    out.get(key).n++;
+    if (r.t.tddlog !== null) out.get(key).a = (out.get(key).a ?? 0) + 1;
+  }
+  const list = [...out.values()];
+  const twice = new Set(list.map((p) => p.title).filter((t, i, all) => all.indexOf(t) !== i));
+  return list.map((p) => ({ ...p, label: twice.has(p.title) && p.title !== p.suite ? `${p.title} (${p.suite})` : p.title }));
 }
 
 // A run's cost in a total: its time, at least 0.2 s, or its instance's limit
@@ -799,6 +823,7 @@ const data = {
   bench: null,      // benchmarks/index.json: every suite's families, where the site has them
   families: new Map(), // `${suite}/${family}`: the promise of that family's data
   family: new Map(),   // `${suite}/${instance}`: the instance's family
+  place: new Map(),    // `${suite}/${instance}`: the category and the family of its instances (c.groups) that hold it
 };
 
 async function load(file) {
@@ -882,6 +907,7 @@ function parse(hash) {
     for (let i = 2; i < parts.length; i += 2) {
       const [what, key] = [parts[i], parts[i + 1]];
       if (what === "in" && filtersOf(c).some((f) => f.key === key)) route.only = key;
+      else if (what === "in" && (data.suites.has(key) || key === "uai2022")) continue;   // a suite, as the page once narrowed to
       else if (what === "vs" && c.systems.includes(key) && key !== "tddlog") route.vs = key;
       else return missing;
     }
@@ -969,7 +995,7 @@ function home() {
     out.push(element("section", { class: "kind-figs" },
       element("div", { class: "fig-head" }, element("h3", {}, link(to, c.title)),
         element("span", { class: "n" }, `${count(c.instances)} ${c.noun}, ${plural(c.systems.length - 1, "other system")}`),
-        link(to, "Every system and source")),
+        link(to, "Every system and family")),
       headline(c, rows, tal),
       element("div", { class: "pair" }, plotted(catSuite(c, rows, c.drawn, tal), data.names, { bare: true, all: true }),
         scatter(rows, c.drawn))));
@@ -1005,14 +1031,15 @@ function how() {
     element("p", {}, "The results are partitioned by type of program: each instance counts in one category, whatever "
       + "language its source was written in, and a copy of an instance (the same files) counts once. A UAI 2022 network "
       + "is a Bayesian network when its factors are conditional probability tables over an acyclic graph, else a Markov "
-      + "network."),
+      + "network. Within a category, the instances are grouped by family: the program or model whose sizes they are, "
+      + "wherever it was written."),
     element("p", {}, "Every system given some instance of a category is measured on all of its instances, and an instance "
       + "a system does not answer counts as unanswered at its time limit, whatever the reason: out of time or memory, a "
       + `wrong answer, a program the system cannot express, or one it was not given. A time under ${FLOOR} s counts as `
       + `${FLOOR} s. A system run in several forms counts as its fastest form on each instance, and a virtual best is the `
       + "fastest of several systems on each instance. On each instance a system is marked own (from its own papers, "
-      + "benchmarks or distribution), native (in its language, or translated line for line) or translated (through a "
-      + "translation that grounds, unrolls or bit-blasts the program)."),
+      + "benchmarks or distribution), native (the program it read is in its own language, as the benchmark's authors or "
+      + "generator wrote it) or translated (a translator wrote the program it read from a program in another language)."),
     element("p", {}, "A plot counts the instances each system answers within a time limit, on a linear scale from 0 to "
       + "the longest limit: a line further up and to the left is better. A category's plots draw the systems given at "
       + "least 20 of its instances, coloured by family; a name in the legend greys its line or colours it again."),
@@ -1048,8 +1075,8 @@ function scoreboard(c, tal, n, vs, only) {
       element("th", { scope: "col", class: "num" }, "total time"),
       element("th", { scope: "col", class: "num" }, "its time over tddlog's"),
       element("th", { scope: "col", class: "num", title: "instances from the system's own papers, benchmarks or distribution" }, "own"),
-      element("th", { scope: "col", class: "num", title: "instances in the system's language, or translated line for line" }, "native"),
-      element("th", { scope: "col", class: "num", title: "instances given through a translation that grounds, unrolls or bit-blasts the program" }, "translated"))),
+      element("th", { scope: "col", class: "num", title: "instances whose program is in the system's own language" }, "native"),
+      element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote from another language" }, "translated"))),
     body)), "whole");
 }
 
@@ -1067,20 +1094,30 @@ function categoryView(route) {
   const c = data.categories.find((x) => x.key === route.category);
   lastCategory = c.key;
   const only = route.only;
+  const g = groupOf(c, only);
   const rows = catRows(c, only);
   const tal = tally(c, rows, only);
   const drawn = drawnOf(c, rows, only);
   const whole = catSuite(c, rows, drawn, tal);
-  const out = [crumbs(["Results", { view: "home" }], [c.title]), element("h2", {}, c.title), headline(c, rows, tal, only)];
+  const out = [crumbs(["Results", { view: "home" }], g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
+    element("h2", {}, g ? g.title : c.title)];
+  // a family: what it is, where it comes from and its benchmarks' pages
+  if (g) {
+    const pages = pagesOf(rows);
+    out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}. `, pages.length > 1 ? "Its benchmarks' pages: " : "Its benchmark's page: ",
+      ...pages.flatMap((p, i) => [i ? ", " : "", link(p.route, p.label), pages.length > 1 ? ` (${count(p.n)})` : ""]), "."));
+  }
+  out.push(headline(c, rows, tal, only));
   const filters = filtersOf(c);
-  if (filters.length) {
+  const chips = filters.filter((f) => f.key === only || f.key.startsWith("own:"));
+  if (chips.length) {
     const chip = (key, text, n) => {
       const a = link({ view: "category", category: c.key, only: key, vs: route.vs }, text, element("span", { class: "n" }, count(n)));
       if (key === only) a.setAttribute("aria-current", "true");
       return a;
     };
-    out.push(element("nav", { class: "filters", "aria-label": "Narrow the category to a source or to a system's own benchmarks" },
-      chip(undefined, "All", c.instances), ...filters.map((f) => chip(f.key, f.title, f.n))));
+    out.push(element("nav", { class: "filters", "aria-label": "Narrow the category to a family or to a system's own benchmarks" },
+      chip(undefined, "All", c.instances), ...chips.map((f) => chip(f.key, f.title, f.n))));
   }
   const hidden = c.systems.filter((x) => !drawn.includes(x));
   out.push(element("h3", {}, "Each system's answers and total time"), scoreboard(c, tal, rows.length, route.vs, only),
@@ -1094,24 +1131,32 @@ function categoryView(route) {
       + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "instance")} of other suites `
         + "are the same problems as instances here (the same files): each counts once, its systems' fastest answers joined." : "")),
     cannot(whole));
-  // Each suite: tddlog's answers, and the most of another system.
-  const body = element("tbody");
-  for (const key of [...new Set(rows.map((r) => r.suite))]) {
-    const s = data.suites.get(key);
-    const mine = rows.filter((r) => r.suite === key);
-    let best = null;
-    for (const x of c.systems) {
-      if (x === "tddlog") continue;
-      const a = mine.filter((r) => r.t[x] !== null).length;
-      if (best === null || a > best[1]) best = [x, a];
+  // Each family of the instances shown: tddlog's answers, and the most of
+  // another system; a family narrows the category to it.
+  if (!g) {
+    const all = only === undefined ? rows : catRows(c);
+    const keep = narrowing(c, only);
+    const body = element("tbody");
+    for (const fam of c.groups) {
+      const mine = fam.rows.filter((i) => keep(c.rows[i], i)).map((i) => all[i]);
+      if (!mine.length) continue;
+      let best = null;
+      for (const x of c.systems) {
+        if (x === "tddlog") continue;
+        const a = mine.filter((r) => r.t[x] !== null).length;
+        if (best === null || a > best[1]) best = [x, a];
+      }
+      const name = link({ view: "category", category: c.key, only: fam.key }, fam.title);
+      name.title = fam.about;
+      body.append(element("tr", {}, element("th", { scope: "row" }, name),
+        element("td", { class: "num" }, count(mine.length)), element("td", { class: "num" }, count(mine.filter((r) => r.t.tddlog !== null).length)),
+        element("td", {}, best ? `${data.names[best[0]]}, ${count(best[1])}` : ""), prose("td", fam.source, { class: "about" })));
     }
-    body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "suite", suite: key }, s.title)),
-      element("td", { class: "num" }, count(mine.length)), element("td", { class: "num" }, count(mine.filter((r) => r.t.tddlog !== null).length)),
-      element("td", {}, best ? `${data.names[best[0]]}, ${count(best[1])}` : "")));
+    out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board families" },
+      element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "family"), element("th", { scope: "col", class: "num" }, "instances"),
+        element("th", { scope: "col", class: "num" }, "tddlog answers"), element("th", { scope: "col" }, "the most answers of another system"),
+        element("th", { scope: "col" }, "from"))), body))));
   }
-  out.push(element("h3", {}, "Suites"), scroller(stacked(element("table", { class: "board" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "suite"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col", class: "num" }, "tddlog answers"), element("th", { scope: "col" }, "the most answers of another system"))), body))));
   if (c.losses?.length) {
     out.push(element("h3", {}, "Where tddlog is slower"), element("ul", { class: "losses" }, ...c.losses.map((text) => prose("li", text))));
   }
@@ -1211,8 +1256,8 @@ function systemView(route) {
     : "On every instance of the categories it was given, against tddlog run on the same machine in the same lanes. ")
     + "An instance it does not answer counts at its time limit, whatever the reason (out of time or memory, a wrong answer, "
     + `a program it cannot express, or not given), and a time under ${FLOOR} s as ${FLOOR} s. An instance is its own (from `
-    + "its own papers, benchmarks or distribution), native (in its language, or translated line for line) or translated "
-    + "(through a translation that grounds, unrolls or bit-blasts the program)."));
+    + "its own papers, benchmarks or distribution), native (the program it read is in its own language) or translated (a "
+    + "translator wrote the program it read from a program in another language)."));
   if (s.cite) {
     const c = s.cite;
     dl.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
@@ -1420,15 +1465,19 @@ function shortNames(names) {
 
 function familyView(route, view) {
   const s = data.suites.get(route.suite);
-  const c = categoryFor(s.key);
+  // the category and the family of its instances that hold the instance on show
+  const at = data.place.get(`${s.key}/${route.instance}`);
+  const c = at?.c ?? categoryFor(s.key);
+  lastCategory = c.key;
   const f = familiesOf(s.key).find((x) => x.key === route.family);
   const short = shortNames(f.instances);
   const rows = new Map(s.instances.map((row) => [row[0], row]));
   const page = href(pageOf(route));
-  const out = [crumbs(["Results", { view: "home" }], [c.title, { view: "category", category: c.key }], [s.title, { view: "suite", suite: s.key }], [f.title]),
+  const out = [crumbs(["Results", { view: "home" }], [c.title, { view: "category", category: c.key }],
+    at ? [at.g.title, { view: "category", category: c.key, only: at.g.key }] : [s.title, { view: "suite", suite: s.key }], [f.title]),
     element("h2", {}, f.title),
     element("div", { class: "chips" }, element("span", { class: "chip" }, plural(f.instances.length, "instance")),
-      element("span", { class: "chip" }, `${s.limit} s a run`))];
+      element("span", { class: "chip" }, `${s.limit} s a run`), Object.assign(link({ view: "suite", suite: s.key }, s.title), { className: "chip" }))];
   const programs = element("section", { class: "programs", id: "programs" }, note("Loading the programs and the runs…"));
   out.push(element("h3", {}, "Times"), timesGrid(s, f, rows, short, route), programs, raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
   familyData(s.key, f.key).then((fam) => {
@@ -1903,40 +1952,39 @@ async function runs(route) {
 
 // ------------------------------------------------------------- the rail
 
-// The categories, the suites of the category on show and the families of the
-// suite on show; and a search.
+// The categories, the families of the category on show and the benchmarks'
+// pages of the family on show; and a search.
 function rail(route) {
   const tree = element("ul", { class: "tree" });
-  const current = route.view === "category" ? route.category : route.suite ? categoryFor(route.suite).key : null;
+  // a benchmark's page is in the category and the family of its instance
+  const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
+  const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite).key : null;
+  const family = route.view === "category" ? route.only : at?.g.key;
   tree.append(element("li", {}, link({ view: "home" }, "Overview")), element("li", { class: "group" }, "Types of programs"));
   for (const c of data.categories) {
     const li = element("li", {}, link({ view: "category", category: c.key }, c.title, element("span", { class: "n" }, count(c.instances))));
-    if (route.view === "category" && route.category === c.key) li.firstChild.setAttribute("aria-current", "page");
+    if (route.view === "category" && route.category === c.key && route.only === undefined) li.firstChild.setAttribute("aria-current", "page");
     if (c.key === current) {
       const ul = element("ul");
-      for (const key of c.suites) {
-        const s = data.suites.get(key);
-        // the suite's instances in this category, of all it holds
-        const n = c.perSuite.get(key);
-        const sl = element("li", {}, link({ view: "suite", suite: key }, s.title, element("span",
-          { class: "n", title: n === s.instances.length ? null : `${count(n)} of the suite's ${count(s.instances.length)} instances are of this type` }, count(n))));
-        if (route.view === "suite" && route.suite === key) sl.firstChild.setAttribute("aria-current", "page");
-        const fams = familiesOf(key);
-        if (key === route.suite && fams) {
+      for (const g of c.groups) {
+        const gl = element("li", {}, link({ view: "category", category: c.key, only: g.key }, g.title,
+          element("span", { class: "n" }, count(g.rows.length))));
+        if (route.view === "category" && route.only === g.key) gl.firstChild.setAttribute("aria-current", "page");
+        if (g.key === family) {
           const fl = element("ul");
-          const me = column(s, "tddlog");
-          const rows = new Map(s.instances.map((row) => [row[0], row]));
-          for (const f of fams) {
-            const a = f.instances.filter((n) => answered(rows.get(n)?.[me])).length;
-            const fi = element("li", {}, link({ view: "family", suite: key, family: f.key },
-              element("i", { class: `dot ${a === f.instances.length ? "all" : a ? "some" : ""}`, title: `tddlog answers ${a} of ${f.instances.length}` }),
-              f.title, element("span", { class: "n" }, String(f.instances.length))));
-            if (route.view === "family" && route.family === f.key) fi.firstChild.setAttribute("aria-current", "page");
+          const me = 4 + c.systems.indexOf("tddlog");
+          const rows = g.rows.map((i) => ({ suite: c.rows[i][0], name: c.rows[i][1], t: { tddlog: answered(c.rows[i][me]) ? c.rows[i][me] : null } }));
+          for (const p of pagesOf(rows)) {
+            const a = p.a ?? 0;
+            const fi = element("li", {}, link(p.route,
+              element("i", { class: `dot ${a === p.n ? "all" : a ? "some" : ""}`, title: `tddlog answers ${a} of ${p.n}` }),
+              p.label, element("span", { class: "n" }, String(p.n))));
+            if (route.view === p.route.view && route.suite === p.route.suite && route.family === p.route.family) fi.firstChild.setAttribute("aria-current", "page");
             fl.append(fi);
           }
-          sl.append(fl);
+          gl.append(fl);
         }
-        ul.append(sl);
+        ul.append(gl);
       }
       li.append(ul);
     }
@@ -2086,8 +2134,10 @@ function show(again = false) {
     const t = title(route);
     document.title = t === null ? "tddlog results" : `${t} · tddlog results`;
   } else if (route.view === "category" && (route.vs !== before.vs || route.only !== before.only)) {
-    // the same category narrowed otherwise, or against another system: drawn again in place
+    // the same category narrowed otherwise, or against another system: drawn
+    // again in place, the menu marking the family it is narrowed to
     const menu = document.activeElement?.matches("select.vs");
+    if (route.only !== before.only) rail(route);
     view.replaceChildren(...categoryView(route));
     if (menu) view.querySelector("select.vs").focus();
   } else if (route.view === "family" && String(route.file ?? "") !== String(before.file ?? "")) {
@@ -2133,6 +2183,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       for (const copies of Object.values(c.copies)) for (const copy of copies) add(copy.split("/")[0]);
       c.suites = [...c.perSuite.keys()];
       for (const key of c.suites) if (!data.suites.has(key)) throw new Error(`the category ${c.key} has no suite ${key}`);
+      for (const g of c.groups) {
+        for (const i of g.rows) {
+          const key = `${c.rows[i][0]}/${c.rows[i][1]}`;
+          for (const k of [key, ...(c.copies[key] ?? [])]) data.place.set(k, { c, g });
+        }
+      }
     }
     data.version = suites.version;
     window.addEventListener("hashchange", () => show());

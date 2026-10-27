@@ -697,8 +697,8 @@ circuit in Dice's syntax, not a model written in Dice, and
 `dice2problog.py` on them gives the same circuit back, so these
 instances are translated for every system but Alea.jl (section 24),
 apart from the three models that Genfer, SPPL and Psi run as their own
-programs (section 12). A native input would need a translator from
-Alea.jl's source, which does not exist yet.
+programs (section 12). A model written in another system's language
+would need a translator from Alea.jl's source, which does not exist yet.
 
 ---
 
@@ -1978,27 +1978,27 @@ Every system given some instance of a category is compared on all of
 the category's instances, as the README's figures and the results
 page's plots draw them, and an instance a system does not answer counts
 as unanswered, whatever the reason. This section documents how each
-system was given each suite: as its own program, written as its users
-write programs (line for line), or through a translation that does some
-of its work. Each system's version, settings, the instances it is not
+system was given each suite: the program it read, in its own language or
+as a translation. Each system's version, settings, the instances it is not
 given and why, and its paper and link are in `data/systems.json`, from
 this document and the systems' own repositories, which the results page
 shows on the system's page beside these rows.
 
-For each system, an instance is its own, native to it, translated or
-not given. An instance is the system's **own** if it comes from the
-system's own papers, benchmarks or distribution. It is **native** if it
-is written as the system's users write programs: in the system's
-language, or translated line for line, within a constant factor of the
-original's size, with none of the system's work done for it by tddlog
-or another system (no grounding, no unrolling of recursion, no
-bit-blasting, no blow-up); a system's own instances are native to it.
-An instance the system is given otherwise is **translated**.
-tddlog's input is classified the same way: it reads the bit-blasted and
-integer programs (`bb_`, `arith_`, `pluck_`) translated, as the circuit
-Alea.jl builds. The Dice programs with loops are native to it:
-`dice2problog.py` writes a loop as recursion over a step index, as a
-ProbLog user writes one, and tddlog's grounder unrolls it.
+For each system, an instance is its own, native to it, translated for
+it, or not given. An instance is the system's **own** if it comes from
+the system's own papers, benchmarks or distribution. It is **native** if
+the program the system read is in the system's own language, as the
+benchmark's authors or its generator wrote it, and **translated** if a
+translator wrote that program from a program in another language: line
+for line (`dice2problog.py`, `problog2pita.py`, `gen_bn.py`'s program of
+a network), or doing some of the system's work for it (grounding,
+unrolling, bit-blasting). tddlog's input is classified the same way: it
+reads the ProbLog programs and the networks natively, and is given
+translations of the Dice, Roulette and Geni programs (`dice2problog.py`,
+`gen_roulette.py`) and of the bit-blasted and integer programs (the
+circuit Alea.jl builds). Each system's page on the results page
+evaluates it separately on the instances native to it, its own among
+them, and on those translated for it.
 
 The ProbLog family is scored on the dice suite's 21 scaled loops in the
 form of the ProbLog program on which it does better, so that no system
@@ -2012,9 +2012,8 @@ total time, for the whole suite. ProbLog is scored on the unrolled form
 (16 on each, 3412 s against 3949 s) and PITA on the recursion (10 on
 each, 6739 s against 6752 s); tddlog stays on the recursion. An
 answer that fails the answer check against tddlog's counts as
-unanswered. The unrolled form is translated, as the translation
-does the unrolling for the system. Each loop's page shows both forms
-and which systems are scored on each.
+unanswered. Both forms are translations of the Dice program. Each
+loop's page shows both forms and which systems are scored on each.
 
 The first row that matches an instance's system, suite and name (a
 regular expression the name starts with) classifies it; the processes
@@ -2022,14 +2021,19 @@ of Alea.jl and Roulette (`alea-process`, `roulette-process`, their times
 with the start-up of Julia and Racket) are not systems of their own in
 the categories. On an instance joined with its copies, a system's class
 is the first of own, native and translated among the copies it was given.
-The uncertain cells were decided as follows: Storm's and
-PRISM's weather factory is native, not own (Rubicon's model, not
-theirs); pgmpy has no own networks (bnlearn's networks are R's
-package's); the Dice family's systems are native on every network,
-Markov networks included, as the Dice paper writes networks as nested
-conditionals; the network tools are native on the networks of the Dice
-and Roulette papers; Alea.jl is native on Pluck's sequence models,
-which are Dice.jl programs ported to Alea.jl.
+The uncertain cells were decided as follows: Storm's and PRISM's
+weather factory is native, not own (Rubicon's PRISM model, not theirs);
+pgmpy has no own networks (bnlearn's networks are R's package's); a
+network converted to another format of networks for a network tool
+(BIF to Hugin or UAI) is the tool's own input, native to it; the Dice
+family's systems are given every network as a Dice program that
+`gen_bn.py` writes from it, a translation; the network tools read the
+networks of the Dice and Roulette papers as networks, natively; Alea.jl
+is given Pluck's sequence models as a port of their Dice.jl programs, a
+translation; Dice and noDice read each other's programs as they are;
+the blood type example and the other cplint programs reach the ProbLog
+family through `lpad2problog.py`, which makes the blood type example,
+the one program that is only that conversion, a translation.
 
 | systems | suites | instances | class | reason |
 |---|---|---|---|---|
@@ -2049,23 +2053,30 @@ which are Dice.jl programs ported to Alea.jl.
 | psi | bitblast | `bb_linreg_` | own | Psi's R2 linear regression, as Psi's own program |
 | sppl | bitblast | `bb_markov_` | own | SPPL's hierarchical Markov switching model (PLDI 2021) |
 | psouffle | lit | `taint_` | own | the Android taint analyses of PSouffle's evaluation (FMCAD 2026) |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | native | a network, the tool's own input |
+| tddlog | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | native | the network itself, read by tddlog's network reader (BIF, Hugin, GeNIe, UAI) |
+| tddlog | roulette | `rl_bn_` | native | the Roulette paper's Bayesian networks, read by tddlog's network reader |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | native | a network, the tool's own input |
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks, as networks |
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
-| tddlog, problog, pita, aspmc | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | native | a ProbLog program, one annotated disjunction per row of a table (gen_bn.py) |
-| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uaipr, uaitpr, uai_pr | all | native | a Dice program of nested conditionals over discretes, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
-| tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program (for PITA through problog2pita.py) |
-| provsql | lit | all | native | tuple-independent tables and non-recursive views (tpch2provsql.py) |
-| psouffle | std, lit, tpch, biomine | all | native | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
+| problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py) |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
+| tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py |
+| pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
+| tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py |
+| tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
+| provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
+| psouffle | std, lit, tpch, biomine | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
-| alea | ppl | `pluck_` | native | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
+| dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
+| nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
+| alea | ppl | `pluck_` | translated | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
 | tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
 | problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
-| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | native | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
-| tddlog, problog, pita, aspmc | roulette | all | native | the paper's model written as a ProbLog program (gen_roulette.py) |
-| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | native | a loop-free Dice program translated line for line by dice2problog.py |
+| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
+| tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
+| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
-| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | native | a Dice program, as written or translated into the system's language (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
 
 ## 25. What this release does not run
 
