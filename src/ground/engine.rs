@@ -14,6 +14,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::rc::Rc;
 use std::sync::Arc;
 
+use super::interned::Interned;
 use super::normalize::{Facts, NormProgram};
 use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
@@ -80,12 +81,15 @@ enum Val {
 /// ([`Val::Fn`]) whose structure is its name and its arguments' values.
 #[derive(Default)]
 struct Terms {
-    /// Each term's name and arguments, `[Sym(name), args..]`, its depth and
-    /// the term itself, for printing and the standard order.
-    keys: Vec<Box<[Val]>>,
+    /// Each term's name and arguments, `[Sym(name), args..]`, and its
+    /// depth.
+    keys: Interned<Val>,
     depths: Vec<u32>,
-    shown: Vec<Term>,
-    ids: FxHashMap<Box<[Val]>, u32>,
+    /// The terms built from their keys, for printing and the standard
+    /// order ([`Grounder::term_of`]): those of the atoms printed and the
+    /// values compared, not every term, which a grammar's demands make by
+    /// the tens of millions.
+    built: FxHashMap<u32, Term>,
 }
 
 /// A number of the arithmetic.
@@ -391,14 +395,16 @@ struct Derivation {
     parts: Vec<Part>,
 }
 
-/// Possible tuples of one predicate, with a per-argument index built lazily.
+/// Possible tuples of one predicate, each once, in the order derived, with
+/// a per-argument index built lazily.
 struct Relation {
     /// The tuples' values, `arity` to a tuple, in the order derived: one
     /// block for all, rather than one a tuple, which a table of millions
     /// allocated and freed one by one.
     vals: Vec<Val>,
     arity: usize,
-    /// The atom of each tuple.
+    /// The atom of each tuple; [`AtomId::MAX`] for a control predicate's,
+    /// which has none ([`Grounder::atom_id`]).
     ids: Vec<AtomId>,
     /// The tuples by the hash of their values ([`Relation::hash`]), but
     /// for a relation of arity zero, whose one tuple is `ids[0]` once
@@ -410,10 +416,12 @@ struct Relation {
     by_hash: FxHashMap<u64, u32>,
     same_hash: Vec<u32>,
     /// Atoms named by a negative literal inside their own recursive
-    /// component before it is known whether they are possible. Promoted to
-    /// the tuples if derived; otherwise they end up as derived atoms
-    /// without rules, which the simplifier treats as false.
-    placeholders: FxHashMap<Vec<Val>, AtomId>,
+    /// component before it is known whether they are possible, and their
+    /// atoms. Derived, a tuple keeps its placeholder's atom; otherwise it
+    /// ends up a derived atom without rules, which the simplifier treats as
+    /// false.
+    placeholders: Interned<Val>,
+    placeholder_ids: Vec<AtomId>,
     /// `index[pos][val]` = tuple indices with that value at `pos`, for each
     /// position a join has bound, built when it is first bound: a join
     /// binds few of a wide table's positions (TPC-H's line items have 13).
@@ -433,7 +441,8 @@ impl Relation {
             ids: Vec::new(),
             by_hash: FxHashMap::default(),
             same_hash: Vec::new(),
-            placeholders: FxHashMap::default(),
+            placeholders: Interned::default(),
+            placeholder_ids: Vec::new(),
             index: Vec::new(),
             indexed: Vec::new(),
         }
@@ -562,7 +571,9 @@ struct Grounder<'a> {
     pred_ids: FxHashMap<(&'a str, usize), (PredId, bool)>,
     rules: Vec<IRule>,
     rels: Vec<Relation>,
-    atoms: Vec<(PredId, Vec<Val>)>,
+    /// Each atom's predicate and where its arguments are; a control
+    /// predicate's tuples have no atoms ([`Grounder::atom_id`]).
+    atoms: Vec<(PredId, Place)>,
     ground_rules: Vec<GroundRule>,
     kept: super::program::KeptRules,
     /// Predicates of the component being evaluated; a negative literal on one
@@ -622,6 +633,15 @@ struct Grounder<'a> {
     stamp: u32,
     parts: Vec<Part>,
     proofs: FxHashMap<AtomId, Proof>,
+}
+
+/// Where the arguments of an atom are: a tuple of its predicate's relation,
+/// or a placeholder there ([`Relation::placeholders`]) until the tuple is
+/// derived.
+#[derive(Clone, Copy, Debug)]
+enum Place {
+    Tuple(u32),
+    Placeholder(u32),
 }
 
 /// A level and a rank within it: the place of an atom of a stratum
@@ -729,7 +749,7 @@ impl<'a> Grounder<'a> {
                         Term::Compound(c) => {
                             let at = vals.len() - c.args.len();
                             let name = self.syms.intern(&c.name);
-                            let v = self.intern_fn(name, &vals[at..], Some(t), false);
+                            let v = self.intern_fn(name, &vals[at..], false);
                             vals.truncate(at);
                             vals.push(v);
                         }
@@ -741,26 +761,80 @@ impl<'a> Grounder<'a> {
         }
     }
 
-    /// The term of a value.
-    fn term_of(&self, v: Val) -> Term {
+    /// The term of a value, its compound terms built from their keys once,
+    /// from the inside out, a list's spine in a loop.
+    fn term_of(&mut self, v: Val) -> Term {
+        let Val::Fn(id) = v else {
+            return self.leaf_term(v);
+        };
+        let mut work: Vec<(u32, bool)> = vec![(id, false)];
+        while let Some((id, ready)) = work.pop() {
+            if self.terms.built.contains_key(&id) {
+                continue;
+            }
+            let key = self.terms.keys.list(id as usize);
+            if !ready {
+                work.push((id, true));
+                work.extend(key[1..].iter().rev().filter_map(|a| match a {
+                    Val::Fn(a) => Some((*a, false)),
+                    _ => None,
+                }));
+                continue;
+            }
+            let Val::Sym(name) = key[0] else {
+                unreachable!("a term's key starts with its name")
+            };
+            let args = key[1..]
+                .iter()
+                .map(|&a| match a {
+                    Val::Fn(a) => self.terms.built[&a].clone(),
+                    a => self.leaf_term(a),
+                })
+                .collect();
+            let t = Compound::term(self.syms.names[name as usize].clone(), args);
+            self.terms.built.insert(id, t);
+        }
+        self.terms.built[&id].clone()
+    }
+
+    /// The term of a value that is no compound term.
+    fn leaf_term(&self, v: Val) -> Term {
         match v {
             Val::Sym(s) => Term::Const(self.syms.names[s as usize].clone()),
             Val::Int(i) => Term::Int(i),
             Val::Float(b) => Term::Float(F64(f64::from_bits(b))),
-            Val::Fn(id) => self.terms.shown[id as usize].clone(),
+            Val::Fn(_) => unreachable!("a compound term is built from its key"),
         }
     }
 
-    /// The compound term `name(args)`, interned; `shown` is the term where
-    /// the caller has it. A term a rule builds (`built`) is one deeper than
-    /// the deepest built term among its arguments, and one deeper than
-    /// [`MAX_DEPTH`] gives the grounding up: a recursion that builds ever
-    /// deeper terms does not end.
-    fn intern_fn(&mut self, name: u32, args: &[Val], shown: Option<&Term>, built: bool) -> Val {
-        let mut key = Vec::with_capacity(1 + args.len());
-        key.push(Val::Sym(name));
-        key.extend_from_slice(args);
-        if let Some(&id) = self.terms.ids.get(&key[..]) {
+    /// The compound term `name(args)`, interned. A term a rule builds
+    /// (`built`) is one deeper than the deepest built term among its
+    /// arguments, and one deeper than [`MAX_DEPTH`] gives the grounding
+    /// up: a recursion that builds ever deeper terms does not end. Where
+    /// the allocator refuses the terms room, the grounding is given up
+    /// ([`Grounder::room`]) and the value returned is read no more: the
+    /// terms of a grammar's demands grow by blocks of gigabytes.
+    fn intern_fn(&mut self, name: u32, args: &[Val], built: bool) -> Val {
+        const ON_STACK: usize = 8;
+        let mut on_stack = [Val::Int(0); ON_STACK + 1];
+        let heap: Vec<Val>;
+        let key: &[Val] = if args.len() <= ON_STACK {
+            on_stack[0] = Val::Sym(name);
+            on_stack[1..=args.len()].copy_from_slice(args);
+            &on_stack[..=args.len()]
+        } else {
+            heap = std::iter::once(Val::Sym(name))
+                .chain(args.iter().copied())
+                .collect();
+            &heap
+        };
+        if !self.room(|g| {
+            g.terms.keys.try_reserve(1, key.len()) && g.terms.depths.try_reserve(1).is_ok()
+        }) {
+            return Val::Sym(name);
+        }
+        let (id, new) = self.terms.keys.id(key);
+        if !new {
             return Val::Fn(id);
         }
         let depth = if built {
@@ -782,19 +856,7 @@ impl<'a> Grounder<'a> {
                 args.len()
             )));
         }
-        let shown = match shown {
-            Some(t) => t.clone(),
-            None => Compound::term(
-                self.syms.names[name as usize].clone(),
-                args.iter().map(|&a| self.term_of(a)).collect(),
-            ),
-        };
-        let id = self.terms.keys.len() as u32;
-        let key = key.into_boxed_slice();
-        self.terms.ids.insert(key.clone(), id);
-        self.terms.keys.push(key);
         self.terms.depths.push(depth);
-        self.terms.shown.push(shown);
         Val::Fn(id)
     }
 
@@ -815,7 +877,7 @@ impl<'a> Grounder<'a> {
         let (mut items, mut tails) = (Vec::new(), vec![v]);
         let mut v = v;
         while let Val::Fn(id) = v {
-            let key = &self.terms.keys[id as usize];
+            let key = self.terms.keys.list(id as usize);
             if key.len() != 3 || key[0] != Val::Sym(cons) {
                 break;
             }
@@ -839,7 +901,7 @@ impl<'a> Grounder<'a> {
         items
             .iter()
             .rev()
-            .fold(tail, |acc, &x| self.intern_fn(cons, &[x, acc], None, false))
+            .fold(tail, |acc, &x| self.intern_fn(cons, &[x, acc], false))
     }
 
     /// The number a value evaluates to: a number, or a compound term of
@@ -862,7 +924,7 @@ impl<'a> Grounder<'a> {
         while let Some(step) = work.pop() {
             match step {
                 Step::Visit(Val::Fn(id)) => {
-                    let key = &self.terms.keys[id as usize];
+                    let key = self.terms.keys.list(id as usize);
                     let Val::Sym(name) = key[0] else {
                         unreachable!("a term's key starts with its name")
                     };
@@ -882,6 +944,11 @@ impl<'a> Grounder<'a> {
         nums.pop()
     }
 
+    /// The atom of the tuple `args` of `pred`, derived now if it is new,
+    /// and whether it is. A control predicate's tuples have no atoms
+    /// ([`AtomId::MAX`]): they are never emitted, and are read only to
+    /// drive the grounding, where a grammar's demands number tens of
+    /// millions.
     fn atom_id(&mut self, pred: PredId, args: &[Val]) -> (AtomId, bool) {
         let h = Relation::hash(args);
         if let Some(id) = self.rels[pred as usize].find(h, args) {
@@ -892,23 +959,23 @@ impl<'a> Grounder<'a> {
         if !self.room(|g| g.atoms.try_reserve(1).is_ok() && g.rels[pred as usize].reserve(1)) {
             return (AtomId::MAX, false);
         }
+        let control = self.preds[pred as usize].control;
         let rel = &mut self.rels[pred as usize];
-        let placeholder = match rel.placeholders.is_empty() {
-            true => None,
-            false => rel.placeholders.remove(args),
+        let t = rel.len() as u32;
+        let placeholder = match rel.placeholders.len() {
+            0 => None,
+            _ => rel.placeholders.get(args),
         };
         let id = match placeholder {
-            Some(id) => id,
-            None => {
-                let id = self.atoms.len() as AtomId;
-                // The atom of a fact keeps its arguments in its tuple alone
-                // ([`Grounder::args`]).
-                let kept = match self.preds[pred as usize].facts {
-                    Some(_) => Vec::new(),
-                    None => args.to_vec(),
-                };
-                self.atoms.push((pred, kept));
+            Some(k) => {
+                let id = rel.placeholder_ids[k as usize];
+                self.atoms[id as usize].1 = Place::Tuple(t);
                 id
+            }
+            None if control => AtomId::MAX,
+            None => {
+                self.atoms.push((pred, Place::Tuple(t)));
+                (self.atoms.len() - 1) as AtomId
             }
         };
         self.rels[pred as usize].push(h, args, id);
@@ -916,23 +983,44 @@ impl<'a> Grounder<'a> {
     }
 
     /// The id of an atom that may or may not turn out possible.
-    fn placeholder_atom(&mut self, pred: PredId, args: Vec<Val>) -> AtomId {
-        if let Some(id) = self.rels[pred as usize].get(&args) {
+    fn placeholder_atom(&mut self, pred: PredId, args: &[Val]) -> AtomId {
+        let rel = &self.rels[pred as usize];
+        if let Some(id) = rel.get(args) {
             return id;
         }
-        if let Some(&id) = self.rels[pred as usize].placeholders.get(&args) {
-            return id;
+        if let Some(k) = rel.placeholders.get(args) {
+            return rel.placeholder_ids[k as usize];
         }
         if !self.room(|g| {
+            let rel = &mut g.rels[pred as usize];
             g.atoms.try_reserve(1).is_ok()
-                && g.rels[pred as usize].placeholders.try_reserve(1).is_ok()
+                && rel.placeholder_ids.try_reserve(1).is_ok()
+                && rel.placeholders.try_reserve(1, args.len())
         }) {
             return AtomId::MAX;
         }
         let id = self.atoms.len() as AtomId;
-        self.atoms.push((pred, args.clone()));
-        self.rels[pred as usize].placeholders.insert(args, id);
+        let rel = &mut self.rels[pred as usize];
+        let (k, _) = rel.placeholders.id(args);
+        rel.placeholder_ids.push(id);
+        self.atoms.push((pred, Place::Placeholder(k)));
         id
+    }
+
+    /// The predicate and the arguments of atom `id`.
+    fn args_of(&self, id: AtomId) -> (PredId, &[Val]) {
+        let (p, place) = self.atoms[id as usize];
+        let rel = &self.rels[p as usize];
+        let args = match place {
+            Place::Tuple(t) => rel.tuple(t as usize),
+            Place::Placeholder(k) => rel.placeholders.list(k as usize),
+        };
+        (p, args)
+    }
+
+    /// Whether atom `id` is derived (possible), not only a placeholder.
+    fn derived(&self, id: AtomId) -> bool {
+        matches!(self.atoms[id as usize].1, Place::Tuple(_))
     }
 
     fn lookup_atom(&self, pred: PredId, args: &[Val]) -> Option<AtomId> {
@@ -959,8 +1047,8 @@ impl<'a> Grounder<'a> {
 
     /// The key of an atom of the stratum grounded level by level.
     fn key_of(&self, id: AtomId) -> Option<Key> {
-        let (p, args) = &self.atoms[id as usize];
-        let r = *self.by_level.as_ref()?.rank.get(p)?;
+        let (p, args) = self.args_of(id);
+        let r = *self.by_level.as_ref()?.rank.get(&p)?;
         Some((level_of(args.last()), r))
     }
 
@@ -981,31 +1069,12 @@ impl<'a> Grounder<'a> {
         b.done.is_some_and(|d| (level_of(level.as_ref()), r) <= d)
     }
 
-    /// The arguments of atom `id`: those of its tuple for a fact, whose
-    /// atom keeps no copy of them, the atoms of a predicate's facts being
-    /// numbered as its tuples ([`load`]).
-    fn args(&self, id: AtomId) -> &[Val] {
-        let (p, args) = &self.atoms[id as usize];
-        if self.preds[*p as usize].facts.is_none() {
-            return args;
-        }
-        let rel = &self.rels[*p as usize];
-        let t = (id - rel.ids[0]) as usize;
-        debug_assert_eq!(
-            rel.ids[t], id,
-            "the atoms of facts are numbered as their tuples"
-        );
-        rel.tuple(t)
-    }
-
-    fn display_atom(&self, id: AtomId) -> Atom {
-        let p = self.atoms[id as usize].0;
+    fn display_atom(&mut self, id: AtomId) -> Atom {
+        let (p, args) = self.args_of(id);
+        let args = args.to_vec();
         Atom::new(
             self.preds[p as usize].name.clone(),
-            self.args(id)
-                .iter()
-                .map(|&v| self.term_of(v))
-                .collect::<Args>(),
+            args.into_iter().map(|v| self.term_of(v)).collect::<Args>(),
         )
     }
 }
@@ -1236,11 +1305,14 @@ fn side(g: &Grounder, e: &IExpr, subst: &[Option<Val>], arithmetic: bool) -> Opt
 
 /// Whether `x op y` holds of two values. Two terms are equal where their
 /// values are, every ground term being interned once.
-fn compare(g: &Grounder, op: CmpOp, x: Val, y: Val) -> bool {
+fn compare(g: &mut Grounder, op: CmpOp, x: Val, y: Val) -> bool {
     match op {
         CmpOp::Eq | CmpOp::Identical => x == y,
         CmpOp::Ne | CmpOp::NotIdentical => x != y,
-        _ => op.holds(&g.term_of(x), &g.term_of(y)),
+        _ => {
+            let (a, b) = (g.term_of(x), g.term_of(y));
+            op.holds(&a, &b)
+        }
     }
 }
 
@@ -1389,7 +1461,10 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         Builtin::Sort => {
             let l = vals[0].expect("mode");
             let (mut items, _) = g.spine(l, cons);
-            items.sort_by(|&x, &y| term_cmp(&g.term_of(x), &g.term_of(y)));
+            items.sort_by(|&x, &y| {
+                let (a, b) = (g.term_of(x), g.term_of(y));
+                term_cmp(&a, &b)
+            });
             items.dedup();
             let s = g.make_list(&items, nil);
             one(vec![l, s])
@@ -1460,7 +1535,8 @@ fn proof(g: &mut Grounder, id: AtomId) -> Result<Proof, String> {
         return Ok(p.clone());
     }
     let pred = &g.preds[g.atoms[id as usize].0 as usize];
-    let p = match pred.switch {
+    let (switch, counted) = (pred.switch, pred.counted);
+    let p = match switch {
         Some(q) if q == Prob::TRUE => (1, Rc::from([])),
         Some(q) if q == Prob::FALSE => (0, Rc::from([])),
         Some(_) => {
@@ -1470,7 +1546,7 @@ fn proof(g: &mut Grounder, id: AtomId) -> Result<Proof, String> {
                 g.display_atom(id)
             ));
         }
-        None if !pred.counted => {
+        None if !counted => {
             return Err(format!(
                 "the proofs of {} are not counted",
                 g.display_atom(id)
@@ -1917,18 +1993,21 @@ fn resolve_atom_pattern(g: &mut Grounder, a: &Atom) -> Vec<(Atom, Option<AtomId>
         };
         return vec![(a.clone(), id)];
     }
-    let mut out = Vec::new();
     let rel = &g.rels[p as usize];
-    for (t, &id) in rel.ids.iter().enumerate() {
-        let mut binding: FxHashMap<&str, Val> = FxHashMap::default();
-        if a.args
-            .iter()
-            .zip(rel.tuple(t))
-            .all(|(pat, &v)| matches(g, pat, v, &mut binding))
-        {
-            out.push((g.display_atom(id), Some(id)));
-        }
-    }
+    let found: Vec<AtomId> = (0..rel.len())
+        .filter(|&t| {
+            let mut binding: FxHashMap<&str, Val> = FxHashMap::default();
+            a.args
+                .iter()
+                .zip(rel.tuple(t))
+                .all(|(pat, &v)| matches(g, pat, v, &mut binding))
+        })
+        .map(|t| rel.ids[t])
+        .collect();
+    let mut out: Vec<(Atom, Option<AtomId>)> = found
+        .into_iter()
+        .map(|id| (g.display_atom(id), Some(id)))
+        .collect();
     out.sort_by(|a, b| a.0.cmp(&b.0));
     out
 }
@@ -1945,7 +2024,7 @@ fn matches<'t>(g: &Grounder, pat: &'t Term, v: Val, binding: &mut FxHashMap<&'t 
             let Val::Fn(id) = v else {
                 return false;
             };
-            let key = &g.terms.keys[id as usize];
+            let key = g.terms.keys.list(id as usize);
             key.len() == 1 + c.args.len()
                 && g.syms
                     .ids
@@ -1992,6 +2071,7 @@ fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
     }) {
         return;
     }
+    let control = g.preds[p as usize].control;
     let mut vals = Vec::with_capacity(f.arity);
     for (args, weights) in f.tuples() {
         vals.clear();
@@ -1999,6 +2079,10 @@ fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
         let (id, new) = g.atom_id(p, &vals);
         if g.over() {
             return;
+        }
+        // A demand given as a fact has no atom ([`Grounder::atom_id`]).
+        if control {
+            continue;
         }
         let at = id as usize;
         if demanded && new {
@@ -2371,10 +2455,7 @@ fn evaluate_by_levels(
             }
             // An atom of the stratum read but never derived is false: its
             // key is done.
-            let absent = |x: AtomId| {
-                let (q, a) = &g.atoms[x as usize];
-                g.key_of(x).is_some() && g.rels[*q as usize].get(a).is_none()
-            };
+            let absent = |x: AtomId| g.key_of(x).is_some() && !g.derived(x);
             let values: Vec<(AtomId, bool)> = atoms
                 .iter()
                 .filter_map(|&a| {
@@ -2411,8 +2492,7 @@ fn emit(g: &mut Grounder, key: Key, p: PredId, args: Vec<Val>, body: Vec<GLit>) 
         if let GLit::Neg(x) = l
             && g.key_of(x).is_some_and(|k| k < key)
         {
-            let (q, a) = &g.atoms[x as usize];
-            match (g.rels[*q as usize].get(a).is_some(), g.fixed(x)) {
+            match (g.derived(x), g.fixed(x)) {
                 (false, _) | (true, Some(false)) => continue,
                 (true, Some(true)) => return,
                 (true, None) => {}
@@ -2589,6 +2669,13 @@ fn from_pays(g: &mut Grounder, v: &FromDelta, (s, e): (usize, usize)) -> bool {
         let n = rel.len();
         if bound.is_empty() || n == 0 {
             return n;
+        }
+        // Every argument bound: a lookup, which matches one tuple at most
+        // and needs no index. An index built only to tell it would hold a
+        // key per tuple: pcfg's demand of a state, bound whole, from each
+        // of its tens of millions of demands.
+        if bound.len() == rel.arity {
+            return 1;
         }
         for &pos in bound {
             rel.ensure_index(pos);
@@ -2843,7 +2930,7 @@ fn ground_body(
         ILit::Neg(p, args) => {
             if g.current_stratum.contains(p) && !g.complete(*p, args, subst) {
                 // Same recursive component: possibility unknown yet.
-                let id = g.placeholder_atom(*p, resolve(args, subst));
+                let id = with_resolved(args, subst, |vals| g.placeholder_atom(*p, vals));
                 part(g, rule, i, Part::Neg(id));
                 body_atoms.push(GLit::Neg(id));
                 ground_body(g, rule, i + 1, delta, subst, body_atoms);
@@ -2851,7 +2938,12 @@ fn ground_body(
                 return;
             }
             match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
-                Some(id) if g.fixed(id) == Some(true) => {}
+                // An atom true in every world: the literal is false. Kept
+                // as a literal, it would not stop a demand, whose rule
+                // drops its body: cplint's left-corner grammar demanded
+                // every derivation of a goal's third clause behind
+                // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
+                Some(id) if g.fixed(id) == Some(true) || g.certain(id) => {}
                 Some(id) if g.fixed(id) == Some(false) => {
                     part(g, rule, i, Part::None);
                     ground_body(g, rule, i + 1, delta, subst, body_atoms)
@@ -2937,7 +3029,7 @@ fn ground_body(
             let mut bound = Vec::new();
             let ok = match arg_val(target, subst) {
                 Some(Val::Fn(id)) => {
-                    let key = &g.terms.keys[id as usize];
+                    let key = g.terms.keys.list(id as usize);
                     key[0] == Val::Sym(*name) && key.len() == 1 + args.len() && {
                         let vals: Vec<Val> = key[1..].to_vec();
                         unify_args(args, &vals, subst, &mut bound)
@@ -2946,7 +3038,7 @@ fn ground_body(
                 Some(_) => false,
                 None => {
                     let vals = resolve(args, subst);
-                    let v = g.intern_fn(*name, &vals, None, true);
+                    let v = g.intern_fn(*name, &vals, true);
                     unify_args(std::slice::from_ref(target), &[v], subst, &mut bound)
                 }
             };

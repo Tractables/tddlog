@@ -282,9 +282,11 @@ goal of a findall becomes an auxiliary predicate whose tuples are its
 solutions, and a negated atom with variables that nothing else in its
 clause reads becomes the negation of an auxiliary predicate over its
 other variables, defined by the atom. A ground compound is a value: the
-engine interns each one once, and the ground program's atoms hold them
-as arguments, so that nothing after grounding sees a term's structure
-and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
+engine interns each one once, its name and its arguments' values end to
+end in one buffer as a relation's tuples are, and builds the term only
+where an atom is printed or terms are compared; the ground program's
+atoms hold them as arguments, so that nothing after grounding sees a
+term's structure and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
 is refused, as is a findall whose answer ProbLog gives otherwise
 than tddlog could: over a probabilistic goal, which is a distribution over
 lists, or where a solution has two proofs, which ProbLog lists twice.
@@ -441,8 +443,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    its switch's weights or a certain one, without a switch or a rule per
    fact, and two facts of one tuple make it true where either is. A
    database's tables are such facts: TPC-H's line items at scale factor
-   0.1 are 600 000 of them. A fact's atom keeps its arguments in its
-   tuple alone, and the ground program has only the atoms of facts that
+   0.1 are 600 000 of them. An atom keeps its arguments in its tuple
+   alone, a fact's as a derived atom's, and the ground program has only the atoms of facts that
    a rule, a query or the evidence names: a query reads few of a
    table's tuples.
 
@@ -484,7 +486,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    some values of its own satisfy it (on PSouffle's side-channel analyses
    the demand of `equal_assign` with no argument bound was derived again
    from each of 437 million pairs before it). The rewrite only restricts which ground
-   atoms are produced; the control predicates do not reach the compiler. A
+   atoms are produced; the control predicates' tuples have no atoms and do
+   not reach the compiler. A
    recursive component with internal negation is ground as it is, its
    negative literals left to the compiler; the program as written is the
    fallback where the rewritten one cannot be ground. A bound head argument
@@ -534,7 +537,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    same in every demand). A literal with bound arguments, the delta's included, takes
    its candidate tuples from a per-position index of its relation, each
    position indexed when a join first binds it. A negative literal on an impossible
-   atom is dropped as true; one inside its own stratum (negation through
+   atom is dropped as true, and one on an atom true in every world fails
+   the rule, a demand's rule too; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint
    (`examples/win.pl` shows both). The atoms and the rules grow through
    fallible reservations: where the allocator refuses one, the grounding
@@ -1963,6 +1967,16 @@ jemalloc refuses is made again once after a purge of every arena
 (`purge`): a trial `auto` retired leaves its memory to the trials that
 follow. With jemalloc's default, blocks of 8 MiB and more come from an
 arena of their own, whose free address space no other request can take.
+
+tddlog is refused memory only where the allocator refuses it, which under
+a limit on the address space (`ulimit -v`) is at the limit. A cgroup's
+`memory.max` bounds resident memory instead, and the kernel kills a
+process that reaches it without refusing anything first, so `auto` could
+not give up one trial and keep another. The binary therefore lowers its
+address-space limit to the room its cgroups leave, `memory.max` less
+`memory.current`, the least over its cgroup and those above it
+(`src/bin/tddlog/budget.rs`), and is refused there as under `ulimit -v`:
+resident memory never exceeds the address space that holds it.
 
 Huge pages go on once the process has asked for `HUGE_FROM` (16 MB), and
 off for good where the kernel stalls (`kernel_stalls`, looked at every

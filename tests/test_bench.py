@@ -563,6 +563,36 @@ class RouletteTests(unittest.TestCase):
                                                                     'hmm-smoothing-joint-4.pl'), 'error: x\n')
         self.assertEqual(r['status'], 'error')
 
+    def test_a_network_runs_as_the_artifact_runs_its_own(self):
+        """Variant bayes: a network of another suite that observes nothing
+        runs data/roulette/bif.rkt on the BIF file and queries gen_bn.py
+        writes, its answers keyed as the ProbLog program's queries (a value
+        left out answers 0) and its in-process times added; it does not
+        apply to a network with observations, under --pr, or on the roulette
+        suite, whose networks run bayes.rkt."""
+        with tempfile.TemporaryDirectory() as d:
+            args = self.args(suite='standard', dir=d, roulette_variants=['bayes'])
+            prog, rest = bench.roulette_program(args, 'bn_asia', 'bayes')
+            self.assertEqual(prog, f'{bench.ROULETTE_DATA}/bif.rkt')
+            self.assertEqual(rest, [f'{d}/bn_asia.bif', f'{d}/bn_asia.bifq'])
+            self.assertEqual(Path(d, 'bn_asia.bifq').read_text().split()[0], 'x6')
+            self.assertIsNone(bench.roulette_program(args, 'bn_asia_ev', 'bayes'))
+            self.assertIsNone(bench.roulette_program(self.args(suite='standard', dir=d, pr=True), 'bn_cancer', 'bayes'))
+            self.assertIsNone(bench.roulette_program(self.args(), 'rl_bn_alarm', 'bayes'))
+            path = Path(d, 'bn_asia.pl')
+            path.write_text('query(xray(yes)).\nquery(xray(no)).\nquery(dysp(yes)).\nquery(dysp(no)).\n')
+            out = ('cpu time: 10 real time: 12 gc time: 0\nroulette_b x6 s0 0.11\nroulette_b x6 s1 0.89\n'
+                   'cpu time: 20 real time: 21 gc time: 0\nroulette_b x7 s1 1.0\n')
+            with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
+                                                            'stderr': ''}) as timed:
+                r = bench.run_roulette(args, 'bn_asia', str(path), 'bayes')
+            self.assertEqual(timed.call_args_list[0][0][0],
+                             ['racket', '-l-', 'raco', 'make', f'{bench.ROULETTE_DATA}/bif.rkt'])
+            self.assertEqual(timed.call_args_list[1][0][0],
+                             ['racket', f'{bench.ROULETTE_DATA}/bif.rkt', f'{d}/bn_asia.bif', f'{d}/bn_asia.bifq'])
+        self.assertEqual(r['answers'], {'xray(yes)': 0.11, 'xray(no)': 0.89, 'dysp(yes)': 0.0, 'dysp(no)': 1.0})
+        self.assertAlmostEqual(r['stats']['inproc_seconds'], 0.033)
+
     def test_roulette_options_fail_where_they_do_nothing(self):
         def run_args(**kw):
             base = dict(suite='roulette', only=['rl_motivating_1000'], families=[], strategies=[], kbs=[],
@@ -576,6 +606,8 @@ class RouletteTests(unittest.TestCase):
             bench.run(run_args(roulette_variants=['cudd']))
         with self.assertRaisesRegex(SystemExit, 'translated Dice programs, and none is selected'):
             bench.run(run_args(roulette_variants=['rsdd', 'nocomplement']))
+        with self.assertRaisesRegex(SystemExit, 'observe nothing, outside the roulette suite and --pr, and none'):
+            bench.run(run_args(roulette_variants=['rsdd', 'bayes']))
 
         def parsed(cmd, **given):
             fields = dict(cmd=cmd, suite='roulette', ace_benchmarks=None, uai_benchmarks=None,
@@ -620,6 +652,78 @@ class SkipTests(unittest.TestCase):
         self.assertFalse(bench.ran_out({'status': 'error', 'error': 'parse error: line 1'}))
         self.assertFalse(bench.ran_out({'status': 'unsupported', 'error': 'no translation'}))
         self.assertFalse(bench.ran_out({'status': 'ok', 'seconds': 1}))
+
+    def test_memout_is_an_allocation_failure_or_the_cap(self):
+        # the systems' allocation failures as the records keep them
+        for text in ["terminate called after throwing an instance of 'std::bad_alloc'",
+                     'memory allocation of 17448304656 bytes failed', 'CUDD: unable to allocate 32736 bytes',
+                     'numpy._core._exceptions._ArrayMemoryError: Unable to allocate 2.1 GiB for an array',
+                     'Exception in thread "main" java.lang.OutOfMemoryError: Java heap space',
+                     'ERROR: LoadError: OutOfMemoryError()', 'malloc failed in new_sdd_node',
+                     'GNU MP: Cannot reallocate memory (old_size=8 new_size=16)', 'Fatal error: out of memory',
+                     'core.exception.OutOfMemoryError@core/lifetime.d(126): Memory allocation failed',
+                     'compilation error: TDD operation failed: memory allocation refused by the byte budget or the '
+                     'allocator', 'grounding error: the grounding ran out of memory',
+                     'Unable to resize subtable 201 for lack of memory',
+                     '12: 0x12e543f v8::internal::Runtime_AllocateInYoungGeneration(int, unsigned long*)',
+                     bench.cap_error(31 << 20)]:
+            self.assertTrue(bench.memout({'status': 'error', 'error': text}), text)
+            self.assertTrue(bench.ran_out({'status': 'error', 'error': text}), text)
+        # texts that name memory without an allocation failure: an error, not a memout
+        for text in ['Error: Property not found\nMemory limits: cudd=1g, java(heap)=3.9g',
+                     'Assertion failed: makeOrBalanced(const std::vector<BddNodeRef, std::allocator<BddNodeRef> >&)',
+                     'geni_wrap.sh: line 9: ulimit: virtual memory: cannot modify limit: Invalid argument',
+                     '[2340709] signal 15: Terminated\nAllocations: 12625286 (Pool: 12624805; Big: 481); GC: 10',
+                     'ERROR: LoadError: syntax: invalid syntax (memory-error out of gc handles)',
+                     'parse error: line 1']:
+            self.assertFalse(bench.memout({'status': 'error', 'error': text}), text)
+        self.assertFalse(bench.memout({'status': 'timeout', 'seconds': 300}))
+        # a text that names memory in a way neither list knows is refused, and does not skip
+        unknown = {'status': 'error', 'error': 'shared memory segment detached'}
+        with self.assertRaisesRegex(bench.Unclassed, 'shared memory segment'):
+            bench.memout(unknown)
+        self.assertFalse(bench.ran_out(unknown))
+
+    def test_the_cap_sets_the_systems_memory_options(self):
+        def parsed(**given):
+            fields = dict(cmd='run', suite='standard', ace_benchmarks=None, uai_benchmarks=None, biomine_benchmarks=None,
+                          ace='ace', ace_variants=None, ace_heap=None, ace_java=None, sharpsat_td='',
+                          sharpsat_td_decot=None, prism_heap=None, mem_cap=None)
+            return SimpleNamespace(**(fields | given))
+        args = parsed()
+        bench.ace_defaults(args)
+        self.assertEqual((args.ace_heap, args.prism_heap), ('8g', '4g'))
+        args = parsed(mem_cap=30 << 30)
+        bench.ace_defaults(args)
+        self.assertEqual((args.ace_heap, args.prism_heap), ('24576m', '10240m'))
+        args = parsed(mem_cap=30 << 30, ace_heap='20g', prism_heap='8g')
+        bench.ace_defaults(args)
+        self.assertEqual((args.ace_heap, args.prism_heap), ('20g', '8g'))
+        with self.assertRaisesRegex(SystemExit, '--ace-heap 28g is more than 0.8 of --mem-cap'):
+            bench.ace_defaults(parsed(mem_cap=30 << 30, ace_heap='28g'))
+        with self.assertRaisesRegex(SystemExit, '--prism-heap 12g is more than 0.33 of --mem-cap'):
+            bench.ace_defaults(parsed(mem_cap=30 << 30, prism_heap='12g'))
+        cmd = ['env', 'JULIA_DEPOT_PATH=d', '/x/julia-1.11.9/bin/julia', '--startup-file=no', 'f.jl']
+        self.assertEqual(bench.julia_heap_hint(cmd, 10 << 30),
+                         cmd[:3] + ['--heap-size-hint=8192M'] + cmd[3:])
+        self.assertEqual(bench.julia_heap_hint(cmd[:3] + ['--heap-size-hint=1G'], 10 << 30), cmd[:3] + ['--heap-size-hint=1G'])
+        self.assertEqual(bench.julia_heap_hint(['java', '-Xmx1g'], 10 << 30), ['java', '-Xmx1g'])
+
+    def test_a_record_keeps_its_commands_memory(self):
+        bench.LANE.usage = {}
+        r = bench.timed([sys.executable, '-c', 'b = bytearray(64 << 20); print(len(b))'], 60)
+        self.assertEqual(r['status'], 'ok')
+        rec = {'status': 'ok'}
+        self.assertIs(bench.take_usage(rec, r), r)
+        self.assertGreater(rec['maxrss_kb'], 64 << 10)
+        self.assertIsNone(bench.LANE.usage)
+        # a record whose command the cap killed is that memout, whatever the system made of it
+        bench.LANE.usage = {'maxrss_kb': 10, 'mem_peak_kb': 1 << 20, 'mem_cap_kb': 1 << 20, 'cap_killed': True}
+        rec = {'status': 'error', 'error': 'alea: no output'}
+        r = bench.take_usage(rec, {'status': 'error', 'error': 'alea: no output'})
+        self.assertEqual(rec, {'status': 'error', 'error': bench.cap_error(1 << 20), 'maxrss_kb': 10,
+                               'mem_peak_kb': 1 << 20, 'mem_cap_kb': 1 << 20})
+        self.assertTrue(bench.ran_out(r))
 
     def test_only_a_smaller_size_out_of_time_or_memory_skips(self):
         args = SimpleNamespace(suite='standard', only=['grid4', 'grid5', 'grid6', 's6', 's10', 'bn_cancer', 'bn_asia'],
@@ -989,12 +1093,13 @@ class FetchTests(unittest.TestCase):
 
     def test_the_manifest_names_the_bnlearn_networks_and_psouffles_programs_by_their_sha256(self):
         files = bench.fetched()
-        self.assertEqual(len(files), 22 + 15)
+        self.assertEqual(len(files), 22 + 15 + 38 + 1)
         for path, (sha, url) in files.items():
             self.assertRegex(sha, '^[0-9a-f]{64}$')
             self.assertTrue(url.startswith('https://'), url)
             self.assertIn(os.path.relpath(os.path.dirname(path), bench.ROOT),
-                          ['data/bn', 'data/bn-large', 'data/psouffle/taint'])
+                          ['data/bn', 'data/bn-large', 'data/psouffle/taint', 'data/psouffle/side_channel',
+                           'data/problog-tutorial'])
 
     def fetch(self, d, rows):
         manifest = os.path.join(d, 'fetch.txt')
@@ -2056,6 +2161,49 @@ class TableTests(unittest.TestCase):
                 patch.object(bench, 'load', return_value=(rows, systems)), redirect_stdout(output):
             bench.main()
         self.assertIn('| 1.0e-12 (ace:auto) |', output.getvalue())
+
+
+class Ground2ScallopTests(unittest.TestCase):
+    def test_a_name_of_two_arities_is_two_relations(self):
+        import ground2scallop
+        scl = ground2scallop.translate('0.5::a.\nhmm(x) :- hmm(x,y,z,w).\nhmm(x,y,z,w) :- a.\nquery(hmm(x)).\n')
+        # hmm/4 is met first: a rule's body is read before its head
+        self.assertIn('type r_hmm(String, String, String, String)', scl)
+        self.assertIn('type r_hmm__1(String)', scl)
+        self.assertIn('rel r_hmm__1("x") = r_hmm("x", "y", "z", "w")', scl)
+        self.assertIn('rel r_hmm("x", "y", "z", "w") = r_a()', scl)
+
+
+class PitaTests(unittest.TestCase):
+    def pita_command(self, soft):
+        import resource
+        calls = []
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            calls.append(cmd)
+            return {'status': 'ok', 'seconds': 0.1, 'stdout': '', 'stderr': ''}
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'p.pl'
+            path.write_text('0.5::a.\nquery(a).\n')
+            args = SimpleNamespace(dir=d, pita='swipl', pita_packs='', timeout=1)
+            with patch.object(bench, 'timed', timed), \
+                    patch.object(resource, 'getrlimit', return_value=(soft, resource.RLIM_INFINITY)):
+                bench.run_pita(args, 'p', str(path))
+        return calls[0]
+
+    def test_the_table_space_is_the_address_space_limit(self):
+        """SWI's table space is the run's memory limit, set before the
+        program is consulted, so that the limit binds and not SWI's default
+        of 1 GB; without a limit the default stays."""
+        import resource
+        cmd = self.pita_command(12_000_000_000)
+        flag = cmd.index('set_prolog_flag(table_space, 12000000000)')
+        self.assertEqual(cmd[flag - 1], '-g')
+        self.assertLess(flag, next(i for i, c in enumerate(cmd) if c.startswith('consult(')))
+        self.assertFalse(any('table_space' in c for c in self.pita_command(resource.RLIM_INFINITY)))
+
+    def test_a_full_table_space_ran_out_of_memory(self):
+        self.assertTrue(bench.ran_out({'status': 'error', 'error': 'Not enough resources: private_table_space'}))
 
 
 if __name__ == '__main__':

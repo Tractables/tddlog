@@ -125,6 +125,36 @@ time (`dice2problog.py`'s or `lpad2problog.py`'s), as the systems that
 read ProbLog did, and on the networks every record before that rerun,
 where tddlog paid `gen_bn.py`'s.
 
+Every command a run times has the same memory, tddlog's and the
+baselines' alike. `bench.py run --mem-cap SIZE` (the lane's share of the
+box's memory) runs each command in a cgroup of its own
+(`scripts/memcap.py`) whose `memory.max` is SIZE, without swap, the whole
+process tree killed at the cap; the run starts under `memcap.py delegate
+--`, a user scope with `Delegate=yes`, which the lab boxes' user managers
+allow. A command the cap killed is a memout, and so is one whose error
+says that an allocation failed; any other error is an error
+(`bench.py`'s `memout`, which stops on a text that names memory and is
+neither, so that a new text is read and classed). Each record keeps
+`maxrss_kb`, the largest resident set of one of its processes, and under
+the cap `mem_peak_kb`, the tree's peak as the cgroup counts it (its
+`memory.peak` on Linux 6.0 and later, else `memory.current` read every
+0.2 s), and `mem_cap_kb`. The systems' own memory options follow the
+cap: Ace's heap is 0.8 of it (the JVM's own memory and c2d's beside it),
+PRISM's heap and its decision diagrams' memory a third each, Julia's
+`--heap-size-hint` 0.8 (Alea.jl, Pluck, TensorInference.jl; Julia's
+collector otherwise aims at a share of the machine's memory), and
+sharpSAT-TD's cache half of it less 500 MB. ProvSQL's server starts
+outside the commands, and only its client is capped. tddlog bounds its
+own allocations by the address-space limit; under the cap alone the cap
+stops it instead, a memout either way.
+
+The runs before 2026-10-28 capped each process's address space instead,
+the lane's share under `ulimit -v`. That limit counts reservations, not
+memory: a JVM's heap, Julia's and OCaml's reserved pools and the new
+block of a reallocation count against it before any of it is used, so it
+refused allocations below the memory the processes held, and Ace's heap
+was half of it. Their records keep no memory figure.
+
 ---
 
 ## 1. ProbLog 2
@@ -251,6 +281,13 @@ evidence) for every query:
 swipl -q -g "attach_packs('$PREFIX/swipl-packs',[duplicate(replace)])" \
       -g "consult('prog.lpad.pl'), main" -t halt
 ```
+
+Under a memory limit (`ulimit -v`) a `-g "set_prolog_flag(table_space,
+LIMIT)"` before the consult gives PITA's tables the run's whole limit:
+SWI's default table space of 1 GB stopped PITA with `Not enough
+resources: private_table_space` on the larger grammars of the terms
+families (tf1), before the memory limit that binds the other systems.
+That error counts as running out of memory (`ran_out`, the skip rule).
 
 The translation has to:
 
@@ -831,7 +868,8 @@ in a scratch directory `D` of the run's own.
 - **The sort.** Ace's unit resolution sorts with a comparator that is not
   a total order, which Java 7 and later refuse; the system property
   restores the legacy merge sort.
-- **The heap**, `--ace-heap` (8g by default), decides the route: Ace
+- **The heap**, `--ace-heap` (8g by default, 0.8 of `--mem-cap` under
+  the cap), decides the route: Ace
   compiles tabularly when the entries of the best of six min-fill orders
   fit in the free heap, through c2d otherwise. With 8g every network of
   data/bn and data/bn-large but munin1 goes tabular. Compare routes, not
@@ -1091,8 +1129,8 @@ given the evidence. They check answers and are not compared on time.
   with `flow_cutter_pace17` in the same directory: `--sharpsat-td BIN`
   runs `BIN -WE -decot S -decow 100 -tmpdir DIR -cs C NAME.cnf` in 53-bit
   MPFR floats, after S seconds of FlowCutter (`--sharpsat-td-decot`, by
-  default 1), with a cache of C 10^6 bytes (half the address-space
-  limit, less 500), and reads `c s log10-estimate`.
+  default 1), with a cache of C 10^6 bytes (half the memory cap, or
+  else of the address-space limit, less 500), and reads `c s log10-estimate`.
 
 `bench.py gen --cnf` writes the CNF beside each program (`gen_bn.py
 --cnf`, `scripts/uai_wcnf.py`) from the UAI file and its evidence, by the
@@ -1874,7 +1912,8 @@ be exact); `dd` iterates to a relative precision of 1e-15, with Sylvan's
 tables given half of the process's address space where it is limited
 (its default of 4 GB filled on circuits). PRISM with `-sparse` or
 `-hybrid` (`-exact` refuses bounded until), `-javamaxmem` (`--prism-heap`,
-4g by default; the release runs give it a third of the lane's memory,
+4g by default, a third of `--mem-cap` under the cap; the release runs
+give it a third of the lane's memory,
 as 4g ran out parsing the larger networks' chains) and on the chains
 `-cuddmaxmem` (the same), `-epsilon 1e-15` and no cap on the iterations:
 on an acyclic chain they reach the exact values after as many as the
@@ -2209,7 +2248,9 @@ family, was run and counts as unanswered. By system and suite:
   and in the earlier coverage table whose skips they replaced. Pluck's
   runs on the ground programs' Dice programs stand.
 
-Failures that come from a lane's limits rather than from the system:
+Failures that come from a lane's limits rather than from the system,
+under the address-space limit of the runs before 2026-10-28 (the memory
+paragraphs before section 1):
 Roulette, in the narrow lanes (55 GB of address space) of the UAI
 networks' tables of the Dice family, fails on all 112 networks it was
 given there when it allocates its table (`memory allocation of
@@ -2312,6 +2353,18 @@ different distribution from the merged program. The family's instances
 are the merged program its evaluation gives ProbLog
 (`compute.problog.dl`, which `gen_taint.py` reads), and PSouffle runs on
 the same program as tddlog and ProbLog, through the translation.
+
+The side-channel family (`sidechannel_p1` to `sidechannel_p20`) is
+PSouffle's 19 Souffle programs, and PSouffle runs on them as they are:
+`gen_sidechannel.py --souffle` writes each case's `compute.souffle.dl` and
+its input relations beside the ProbLog translation, and `run_psouffle`
+reads that instead of translating the program back. The two readings
+differ where a relation is both an input relation and derived, as
+KEY_SENSITIVE, KEY_IND and RAND are in every case. ProbLog's semantics,
+which the translation keeps, has such a tuple hold where its input fact
+holds or a rule derives it; PSouffle keeps only the input probability of
+the tuple (the ps0 probe above). Where that gives a different answer from
+ProbLog's, the answer counts as wrong (rule 15), as on any other program.
 
 PSouffle answers some recursive programs wrongly at 3fb0fd06: on
 

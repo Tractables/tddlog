@@ -6,6 +6,7 @@ tests/it/examples.rs checks tddlog's answers on the same programs against the
 same ProbLog answers (ProbLog 2.3.0, `-k ddnnf`).
 """
 from pathlib import Path
+import re
 import subprocess
 import sys
 import unittest
@@ -108,6 +109,26 @@ class LitTests(unittest.TestCase):
                 self.assertEqual(lit_exact.queries(text), [q for q, _ in expected])
                 for q, p in expected:
                     self.assertAlmostEqual(answers[q], p, delta=1e-7, msg=q)
+
+    @unittest.skipUnless((root / 'data' / 'problog-tutorial' / '06_pcfg.html').exists(),
+                         'the ProbLog tutorial page is fetched, not shipped')
+    def test_pcfg_brackets_its_blocks_uniformly(self):
+        """The grammar's question has the closed form gen_pcfg.py states:
+        for a word of k top-level blocks, 1 - C(k-2)/C(k-1)."""
+        import gen_pcfg
+        catalan = [1, 1, 2, 5, 14, 42, 132, 429, 1430]
+        for encoding in ('stack', 'counter'):
+            for n in (6, 8, 12, 16):
+                for seed in (1, 2, 3):
+                    with self.subTest(encoding=encoding, n=n, seed=seed):
+                        text = subprocess.run(
+                            [sys.executable, str(scripts / 'gen_pcfg.py'), encoding, str(n), '--seed', str(seed)],
+                            capture_output=True, text=True, check=True).stdout
+                        word = re.search(r'evidence\(word\(\[([a-z,]*)\]\)\)\.', text).group(1).split(',')
+                        k = gen_pcfg.blocks(word)
+                        self.assertGreaterEqual(k, 3)
+                        (p,) = lit_exact.FAMILIES['pcfg'](text).values()
+                        self.assertAlmostEqual(p, 1 - catalan[k - 2] / catalan[k - 1], delta=1e-12)
 
 
 if __name__ == '__main__':

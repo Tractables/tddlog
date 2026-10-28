@@ -21,11 +21,21 @@ computes its answers by a method that shares nothing with tddlog's:
                programming over the subsets of nodes
     eventcalc  forward filtering, for each pair of people, over the joint
                states of the fluents that pair's queries read
+    pcfg       the inside algorithm over the observed word (either encoding)
+    dnahmm     forward over the states, a sequence of states being exclusive
+               of every other
+    plcg       recursion over the left-corner parser's goals and positions,
+               each derivation exclusive of every other
+    hmmpos     forward over the tags, a sequence of tags being exclusive of
+               every other
+    hwf        the sum over the sequences of operators of the distributions of
+               the formula's terms, summed from the right
 
 Prints `q:\tp` per query, in the order of the query facts, as tddlog does,
 or `evidence is inconsistent`.
 """
 import argparse
+import functools
 import itertools
 import math
 import os
@@ -445,6 +455,224 @@ def eventcalc(text):
 FAMILIES.update({'liftsep': liftsep, 'rgraph': rgraph, 'eventcalc': eventcalc})
 
 
+def pcfg(text):
+    """The inside algorithm over the observed word for the ProbLog
+    tutorial's grammar S -> O M | S S, O -> a, M -> b | S C, C -> b, its
+    probabilities read from either encoding gen_pcfg.py writes: the
+    probability that the first S and the first S it expands to both
+    expand to S -> S S, given the word, in long doubles, whose range holds
+    the word's probability."""
+    t = re.sub(r'\s+', '', text)
+    stack = re.search(r'([0-9.]+)::state\(W,\[o,m\|S\]\);([0-9.]+)::state\(W,\[s,s\|S\]\):-state\(W,\[s\|S\]\)\.', t)
+    if stack:
+        m = re.search(r'([0-9.]+)::state\(\[b\|W\],S\);([0-9.]+)::state\(W,\[s,c\|S\]\):-state\(W,\[m\|S\]\)\.', t)
+        assert 'state([a|W],S):-state(W,[o|S]).' in t and 'state([b|W],S):-state(W,[c|S]).' in t
+        (om, ss), (mb, sc) = stack.groups(), m.groups()
+    else:
+        s, m = re.search(r'([0-9.]+)::s_to\(N,om\);([0-9.]+)::s_to\(N,ss\)\.', t), \
+            re.search(r'([0-9.]+)::m_to\(N,b\);([0-9.]+)::m_to\(N,sc\)\.', t)
+        assert "o([a],s(N,N),m(M,M))." in t and "c([b],s(N,N),m(M,M))." in t
+        (om, ss), (mb, sc) = s.groups(), m.groups()
+    om, ss, mb, sc = (np.longdouble(p) for p in (om, ss, mb, sc))
+    w = re.search(r'evidence\(word\(\[([a-z,]*)\]\)\)\.', t).group(1).split(',')
+    n = len(w)
+    # S[i, j] and M[i, j]: the inside probabilities of w[i:j].
+    S = np.zeros((n + 1, n + 1), dtype=np.longdouble)
+    M = np.zeros((n + 1, n + 1), dtype=np.longdouble)
+    for i in range(n):
+        M[i, i + 1] = mb if w[i] == 'b' else 0
+    for span in range(2, n + 1):
+        for i in range(n - span + 1):
+            j = i + span
+            split = np.dot(S[i, i + 1:j], S[i + 1:j, j])
+            S[i, j] = (om * M[i + 1, j] if w[i] == 'a' else 0) + ss * split
+            M[i, j] = sc * S[i, j - 1] if w[j - 1] == 'b' else 0
+    # The prefixes w[:j] derived by an S that expands to S S, each followed
+    # by an S that derives the rest.
+    second = ss * sum(ss * np.dot(S[0, 1:j], S[1:j, j]) * S[j, n] for j in range(2, n))
+    (q,) = queries(text)
+    assert q in ('state([],[s,s,s])', 's_to(1,ss)'), q
+    return {q: float(second / S[0, n])}
+
+
+def dnahmm(text):
+    """Forward over cplint's HMM of DNA: the chain starts in q1, and from
+    a state other than end chooses the next state and a letter, each
+    choice a variable of its own for each sequence of states before it, so
+    the sequences of states are exclusive and the probability of the
+    observed letters is the sum over them, the last step moving to end."""
+    nxt, letter = {}, {}
+    for line in text.splitlines():
+        for p, q, r in re.findall(r'([0-9.eE-]+)::next_state\((\w+),(\w+),S\)', line):
+            nxt.setdefault(q, {})[r] = float(p)
+        for p, q, x in re.findall(r'([0-9.eE-]+)::letter\((\w+),(\w+),S\)', line):
+            letter.setdefault(q, {})[x] = float(p)
+    answers = {}
+    for q in queries(text):
+        seq = re.fullmatch(r'hmm\(\[([a-z,]*)\]\)', q).group(1).split(',')
+        alpha = {'q1': 1.0}
+        for k, x in enumerate(seq):
+            last = k == len(seq) - 1
+            step = {}
+            for s, p in alpha.items():
+                for r, pr in nxt[s].items():
+                    if (r == 'end') == last:
+                        step[r] = step.get(r, 0.0) + p * letter[s].get(x, 0.0) * pr
+            alpha = step
+        answers[q] = alpha.get('end', 0.0)
+    return answers
+
+
+FAMILIES.update({'pcfg': pcfg, 'dnahmm': dnahmm})
+
+
+def plcg(text):
+    """cplint's left-corner parser for S -> S S | a | b, by recursion over
+    its goals and the positions in the word: a goal S chooses its first
+    word, and each rule whose left corner is found attaches to the goal or
+    projects to a new left corner, every choice indexed by the derivation
+    so far, so that the derivations are exclusive and the probability of
+    the word is the sum over them of the products of their choices."""
+    t = re.sub(r'\s+', '', text)
+    first = dict((w, float(p)) for p, w in re.findall(r"(\d+(?:\.\d+)?)::first\('S',Der,(\w+)\)", t))
+    op = dict((o, float(p)) for p, o in re.findall(r"(\d+(?:\.\d+)?)::attach\('S',Der,(\w+)\)", t))
+    for rule in ["lc('S','S',_Der,rule('S',['S','S']))", "lc('S',a,_Der,rule('S',[a]))",
+                 "lc('S',b,_Der,rule('S',[b]))", 'terminal(a).', 'terminal(b).']:
+        assert rule in t, rule
+    assert set(first) == {'a', 'b'} and set(op) == {'attach', 'project'}
+    rhs2 = {'S': ('S',), 'a': (), 'b': ()}
+    answers = {}
+    for q in queries(text):
+        w = re.fullmatch(r'plc\(\[([a-z,]*)\]\)', q).group(1).split(',')
+        n = len(w)
+
+        @functools.lru_cache(maxsize=None)
+        def goals(gs, i):
+            """{j: probability} that the goals gs parse w[i:j]."""
+            if not gs:
+                return {i: 1.0}
+            g, rest = gs[0], gs[1:]
+            out = {}
+            if g in ('a', 'b'):
+                return goals(rest, i + 1) if i < n and w[i] == g else {}
+            if i >= n:
+                return {}
+            for j, p in corner(w[i], i + 1).items():
+                for k, r in goals(rest, j).items():
+                    out[k] = out.get(k, 0.0) + first[w[i]] * p * r
+            return out
+
+        @functools.lru_cache(maxsize=None)
+        def corner(b, i):
+            """{j: probability} that the left corner b, found before i,
+            completes the goal S through w[i:j]."""
+            out = {}
+            for j, p in goals(rhs2[b], i).items():
+                out[j] = out.get(j, 0.0) + op['attach'] * p
+                for k, r in corner('S', j).items():
+                    out[k] = out.get(k, 0.0) + op['project'] * p * r
+            return out
+
+        answers[q] = goals(('S',), 0).get(n, 0.0)
+    return answers
+
+
+def hmmpos(text):
+    """Forward over cplint's part-of-speech HMM: the chain chooses a first
+    tag from start and then each next tag, each choice a variable of its
+    own for each sequence of tags before it, so the sequences of tags are
+    exclusive; a tag emits only the words its out/3 facts allow, and the
+    choice after the last word is summed out."""
+    trans = {}
+    for p, q, r in re.findall(r'([0-9.eE-]+)::trans\((\w+),(\w+),S\)', text):
+        trans.setdefault(q, {})[r] = float(p)
+    emits = set(re.findall(r'^out\((\w+),(\w+),_\)\.', text, re.M))
+    answers = {}
+    for q in queries(text):
+        words = re.fullmatch(r'hmm\(\[([a-z,]*)\]\)', q).group(1).split(',')
+        alpha = {t: p for t, p in trans['start'].items() if (words[0], t) in emits}
+        for x in words[1:]:
+            alpha = {r: sum(a * trans[t].get(r, 0.0) for t, a in alpha.items())
+                     for r in trans['start'] if (x, r) in emits}
+        answers[q] = sum(a * sum(trans[t].values()) for t, a in alpha.items())
+    return answers
+
+
+FAMILIES.update({'plcg': plcg, 'hmmpos': hmmpos})
+
+
+def hwf(text):
+    """DeepProbLog's handwritten formulas: the probability that the
+    classified symbols make a formula within 1e-4 of the label, its value
+    computed as parse/2 does (products and quotients from the left in
+    Python's arithmetic, a quotient by zero no parse, then the sum from
+    the right, a difference adding the next term times -1). A sequence of
+    symbols has one parse, so the sequences are exclusive: the sum runs
+    over the sequences of operators, and for each over the distributions
+    of its terms' values, each term's digits independent of the others'."""
+    num, op = {}, {}
+    for p, img, d in re.findall(r'([0-9.]+)::detect_number\((\w+),(\d+)\)', text):
+        num.setdefault(img, {})[int(d)] = float(p)
+    for p, img, o in re.findall(r'([0-9.]+)::detect_operator\((\w+),([-+*/])\)', text):
+        op.setdefault(img, {})[o] = float(p)
+    answers = {}
+    for q in queries(text):
+        m = re.fullmatch(r'expression\(\[([\w,]+)\],(-?[0-9.]+)\)', q)
+        images, label = m.group(1).split(','), float(m.group(2))
+        digits, ops = images[0::2], images[1::2]
+        total = 0.0
+        for seq in itertools.product('+-*/', repeat=len(ops)):
+            weight = math.prod(op[img][o] for img, o in zip(ops, seq))
+            if weight == 0.0:
+                continue
+            # The terms: each its first digit's image, whether it is
+            # negated, and its operators and digits' images after.
+            terms = [[digits[0], False, []]]
+            for k, o in enumerate(seq):
+                if o in '+-':
+                    terms.append([digits[k + 1], o == '-', []])
+                else:
+                    terms[-1][2].append((o, digits[k + 1]))
+            dists = []
+            for first, negated, rest in terms:
+                dist = {}
+                for d0, p0 in num[first].items():
+                    vals = {(-1 * d0 if negated else d0): p0}
+                    for o, img in rest:
+                        nxt = {}
+                        for v, pv in vals.items():
+                            for d, pd in num[img].items():
+                                if o == '/' and d == 0:
+                                    continue
+                                w = v * d if o == '*' else v / d
+                                nxt[w] = nxt.get(w, 0.0) + pv * pd
+                        vals = nxt
+                    for v, pv in vals.items():
+                        dist[v] = dist.get(v, 0.0) + pv
+                dists.append(dist)
+            if len(dists) == 1:
+                total += weight * sum(p for v, p in dists[0].items() if abs(v - label) < 0.0001)
+                continue
+            # The sum from the right: float(t_j + v_(j+1)), the last float(t_m).
+            right = {}
+            for v, p in dists[-1].items():
+                right[float(v)] = right.get(float(v), 0.0) + p
+            for dist in reversed(dists[1:-1]):
+                nxt = {}
+                for t, pt in dist.items():
+                    for v, pv in right.items():
+                        s = float(t + v)
+                        nxt[s] = nxt.get(s, 0.0) + pt * pv
+                right = nxt
+            total += weight * sum(pt * pv for t, pt in dists[0].items() for v, pv in right.items()
+                                  if abs(t + v - label) < 0.0001)
+        answers[q] = total
+    return answers
+
+
+FAMILIES.update({'hwf': hwf})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('family', choices=sorted(FAMILIES))
@@ -459,7 +687,9 @@ def main():
     for q in queries(text):
         if q not in answers:
             sys.exit(f'lit_exact: no answer for {q}')
-        print(f'{q}:\t{answers[q]:.{a.precision}f}')
+        # Fixed point would print an answer under 1e-precision as 0 (dnahmm's).
+        p = answers[q]
+        print(f'{q}:\t{p:.{a.precision}f}' if p == 0 or p >= 1e-3 else f'{q}:\t{p:.{a.precision}e}')
 
 
 if __name__ == '__main__':

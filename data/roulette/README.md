@@ -36,6 +36,12 @@ the attribution above.
   (its .bif file, queried variable and variable order, read from
   main.rkt) under `benchmark/bayes.rkt`, its distribution printed as
   `roulette_v VALUE P`.
+- `bif.rkt BIF QUERIES`: a network of another suite as the artifact runs
+  its own (bench.py's Roulette variant `bayes`): `benchmark/bayes.rkt`'s
+  `main` on the BIF file `scripts/gen_bn.py` writes of it
+  (`bif_programs`), once for each queried variable, with the variable and
+  its ancestors evaluated in the order of the lets of its Dice program;
+  its distributions printed as `roulette_b VARIABLE VALUE P`.
 - `print.rkt`: `emit`.
 - `caesar_obs.rkt N` prints the first N observations of the caesar
   program, `(random 0 26 rng)` from a generator seeded with `(random-seed

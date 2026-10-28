@@ -224,6 +224,55 @@ XDSL = b'''<?xml version="1.0" encoding="ISO-8859-1"?>
 '''
 
 
+class BifFormatTests(unittest.TestCase):
+    """`to_bif`: the BIF file and queries of the Roulette artifact's own
+    network driver (benchmark/bayes.rkt under data/roulette/bif.rkt)."""
+
+    def test_a_network_written_as_bif_reads_back_as_its_tables(self):
+        """asia's BIF file reads back as asia's normalized tables under the
+        names x<i> and s<k>, with a line for each leaf: the leaf, then it
+        and its ancestors in program_order."""
+        network = gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
+        order, variables, tables = network
+        text, lines, names = gen_bn.to_bif(network, 'leaves')
+        back_order, back_variables, back_tables = gen_bn.parse_bif(text)
+        word = {v: f'x{i}' for i, v in enumerate(order)}
+        self.assertEqual(back_order, [word[v] for v in order])
+        for v in order:
+            self.assertEqual(back_variables[word[v]], [f's{k}' for k in range(len(variables[v]))])
+            parents, rows = tables[v]
+            self.assertEqual(back_tables[word[v]][0], [word[p] for p in parents])
+            for key, row in rows.items():
+                back = back_tables[word[v]][1][tuple(f's{variables[p].index(u)}' for p, u in zip(parents, key))]
+                self.assertEqual([float(p) for p in back], gen_bn.normalized(row, v))
+        leaves = gen_bn.queried_variables(order, variables, tables, 'leaves')
+        self.assertEqual(lines.splitlines(),
+                         [' '.join([word[q]] + [word[v] for v in gen_bn.program_order(order, tables, [], [q])])
+                          for q in leaves])
+        self.assertEqual(names, {word[q]: (gen_bn.ident(q), [gen_bn.ident(u) for u in variables[q]]) for q in leaves})
+
+    def test_numbers_are_positional(self):
+        """The artifact's lexer reads `1e-06` as a word: a small number is
+        written in positional notation, and reads back as itself."""
+        variables = {'a': ['x', 'y'], 'b': ['f', 't']}
+        tables = {'a': ([], {(): [0.999999, 0.000001]}),
+                  'b': (['a'], {('x',): [1.0, 0.0], ('y',): [1e-07, 1 - 1e-07]})}
+        text, _, _ = gen_bn.to_bif((['a', 'b'], variables, tables), 'b')
+        self.assertNotRegex(text, r'[0-9][eE]')
+        self.assertIn('table 0.999999, 0.000001;', text)
+        self.assertIn('(s1) 0.0000001, 0.9999999;', text)
+        self.assertEqual(gen_bn.bif_number(1e-300), '0.' + '0' * 299 + '1')
+
+    def test_observations_and_factors_have_no_bif_file(self):
+        """BIF holds no observations and no factors: bif_programs is None for
+        a network with evidence and for a Markov network."""
+        asia = str(SOURCE / 'examples' / 'asia.net')
+        self.assertIsNotNone(gen_bn.bif_programs([asia, '--query', 'leaves']))
+        self.assertIsNone(gen_bn.bif_programs([asia, '--query', 'leaves', '--evidence', '1']))
+        regress = SOURCE / 'tests' / 'regress'
+        self.assertIsNone(gen_bn.bif_programs([str(regress / 'markov.uai'), '--query', 'all']))
+
+
 class DiceFormatTests(unittest.TestCase):
     """The Dice format with observations (`dice_programs`): one program per
     queried variable, each defining the variables it returns or observes

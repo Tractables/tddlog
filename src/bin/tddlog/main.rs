@@ -3,6 +3,7 @@
 // jemalloc does not build with MSVC; there the system allocator serves.
 #[cfg(not(target_env = "msvc"))]
 mod alloc;
+mod budget;
 mod stats;
 
 use std::borrow::Cow;
@@ -235,6 +236,7 @@ fn once<T>(slot: &mut Option<T>, value: T, option: &str) -> Result<(), String> {
 }
 
 fn main() -> ExitCode {
+    budget::limit_to_cgroups();
     let args = match parse_args() {
         Ok(Request::Run(a)) => a,
         Ok(Request::Help) => {

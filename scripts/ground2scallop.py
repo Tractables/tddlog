@@ -47,8 +47,11 @@ def atom(text, arities):
         raise ValueError(f'not a ground atom: {text}')
     rel = name(m.group(1).strip())
     args = [const(a) for a in split_top(m.group(3), ',')] if m.group(2) else []
+    # A name of two arities is two predicates (hmm/1 and hmm/4): the one
+    # met second is named with its arity.
     if arities.setdefault(rel, len(args)) != len(args):
-        raise ValueError(f'{rel} used with two arities')
+        rel = f'{rel}__{len(args)}'
+        arities.setdefault(rel, len(args))
     return f"{rel}({', '.join(args)})"
 
 

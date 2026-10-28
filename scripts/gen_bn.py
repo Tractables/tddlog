@@ -19,8 +19,9 @@ bench.py's gen gives the systems that read ProbLog programs;
 tests/it/networks.rs and tests/test_gen_bn.py check that the two write
 the same text. This script writes the files only the other systems
 read: Ace's observations (--inst), the network in the UAI format for
-Merlin (--uai), its weighted CNF (--cnf, uai_wcnf.py) and its Dice
-programs (--format dice).
+Merlin (--uai), its weighted CNF (--cnf, uai_wcnf.py), its Dice
+programs (--format dice) and the BIF file the Roulette artifact's own
+network driver reads (`bif_programs`, which bench.py writes).
 
 Usage: gen_bn.py network.{bif,net,hugin,xdsl,uai}[.gz] [--query all | --query VAR[,VAR...] | --query leaves
                                                           | --query none]
@@ -923,6 +924,62 @@ def to_dice(network, query, evidence=(), pe=False, joint=False):
         result = f'({names[v]}, {result})'
     out.append(f'({result}, {seen or "true"})' if joint else result)
     return '\n'.join(out) + '\n'
+
+
+def bif_number(p):
+    """p in positional notation. The Roulette artifact's BIF lexer
+    (benchmark/private/bif-lex.rkt) counts `_`, `-` and digits as letters
+    and prefers a word to a number of the same length, so that `1e-06`
+    reads as a word and its row as no distribution: its own files write
+    every number positionally."""
+    return format(Decimal(repr(float(p))), 'f')
+
+
+def to_bif(network, query):
+    """The network as the BIF file the Roulette artifact's
+    benchmark/bayes.rkt reads, which compiles the distribution of one
+    variable from the variables of an order it is given, and the order for
+    each variable `query` asks (`queried_variables`): a line of the variable,
+    then it and its ancestors in `program_order`, the order of the lets of
+    its Dice program. Variable i (declaration order) is named x<i> and value
+    k s<k>, words of that lexer whatever the names of the format read, and
+    each row is its table's normalized row (`normalized`). Returned as (the
+    file, the lines, {x<i>: (the variable's name in the ProbLog format,
+    its values' names)} of the queried variables); None for a Markov
+    network, whose factors BIF does not hold."""
+    order, variables, tables = network
+    if any(len(variables[v]) == 1 for v in order):
+        return None
+    word = {v: f'x{i}' for i, v in enumerate(order)}
+    out = ['network unknown {', '}']
+    for v in order:
+        vals = ', '.join(f's{k}' for k in range(len(variables[v])))
+        out += [f'variable {word[v]} {{', f'  type discrete [ {len(variables[v])} ] {{ {vals} }};', '}']
+    for v in order:
+        parents, rows = tables[v]
+        if not parents:
+            probs = normalized(rows[()], v)
+            out += [f'probability ( {word[v]} ) {{', f'  table {", ".join(bif_number(p) for p in probs)};', '}']
+            continue
+        out.append(f'probability ( {word[v]} | {", ".join(word[p] for p in parents)} ) {{')
+        for key in itertools.product(*(range(len(variables[p])) for p in parents)):
+            vals = tuple(variables[p][k] for p, k in zip(parents, key))
+            probs = normalized(rows[vals], f'{v} {vals}')
+            out.append(f'  ({", ".join(f"s{k}" for k in key)}) {", ".join(bif_number(p) for p in probs)};')
+        out.append('}')
+    queried = queried_variables(order, variables, tables, query)
+    lines = [' '.join([word[q]] + [word[v] for v in program_order(order, tables, [], [q])]) for q in queried]
+    names = {word[q]: (ident(q), [ident(u) for u in variables[q]]) for q in queried}
+    return '\n'.join(out) + '\n', '\n'.join(lines) + '\n', names
+
+
+def bif_programs(argv):
+    """`to_bif` of the network and question of gen_bn.py's arguments
+    `argv`; None where the network observes something, which BIF does not
+    hold (a Markov network's factors among the observations)."""
+    a = arguments().parse_args([*argv, '--format', 'dice'])
+    network, _, evidence, _ = model(a)
+    return None if evidence else to_bif(network, a.query)
 
 
 def arguments():

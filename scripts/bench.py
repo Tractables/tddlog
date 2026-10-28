@@ -9,8 +9,8 @@
                   [--merlin BIN] [--agrum PYTHON] [--pgmpy PYTHON] [--libdai BIN] [--tensorinference JULIA]
                   [--provsql DIR] [--storm PYTHON] [--prism DIR] [--weather-models DIR]
                   [--ganak BIN] [--sharpsat-td BIN [--sharpsat-td-decot 1,10]] [--pr]
-                  [--roulette CMD [--roulette-variants rsdd,nocomplement]]
-                  [--no-skip] [--cpus 2,4,6,...] [--rotate R] [SELECTION]
+                  [--roulette CMD [--roulette-variants rsdd,nocomplement,bayes]]
+                  [--no-skip] [--cpus 2,4,6,...] [--rotate R] [--mem-cap SIZE] [SELECTION]
     bench.py table results.jsonl... [--ref problog:ddnnf,...] [--approx scallop,...] [--pr-ref exact:cliquetree,...]
     bench.py compare --before a.jsonl --after b.jsonl [--systems tddlog:auto,...]
     bench.py fetch
@@ -83,7 +83,9 @@ compilation of Alea. `--roulette CMD` adds `roulette:rsdd`, Roulette
 the other suites on the Dice program behind an instance translated by
 `dice2roulette.py` (`run_roulette`); with `--roulette-variants
 rsdd,nocomplement` it also queries caesar and the translated programs
-without Roulette's complement (`roulette:nocomplement`).
+without Roulette's complement (`roulette:nocomplement`), and with `bayes`
+it runs a Bayesian network that observes nothing as the artifact runs its
+own networks (`roulette:bayes`, `roulette_bif`).
 
 `--suite ppl` is the benchmark programs of the Dice and Alea.jl papers and
 of later papers (`PPL`): Dice programs (`nodice`), which run as a `dice`
@@ -164,6 +166,7 @@ sys.path.insert(0, HERE)
 
 import source_tree  # noqa: E402  (the source tree: its converters, examples and program)
 import gen_bn  # noqa: E402
+import memcap  # noqa: E402  (the resident memory cap of --mem-cap)
 import ground2scallop  # noqa: E402
 import problog2pita  # noqa: E402
 import problog2souffle  # noqa: E402
@@ -300,6 +303,10 @@ DICE_WRITERS = ('gen_roulette.py', 'gen_geni.py')
 # its students or families made anew.
 PROGRAM_OF_TDDLOG = ('gen_bn.py', 'dice2problog.py', 'gen_cplint.py', 'gen_uwcse.py', 'gen_pedigree.py',
                      'gen_geni.py')
+# The generators of SOUFFLE_WRITERS write the benchmark's original Souffle
+# program and its input relations beside the ProbLog one (`--souffle`,
+# NAME.souffle/), which PSouffle reads instead of a translation.
+SOUFFLE_WRITERS = ('gen_sidechannel.py',)
 ALEA_BENCH = os.path.join(HERE, 'alea_bench.jl')
 
 # The programs of the bit-blasting paper (Garg, Holtzen, Van den Broeck and
@@ -600,6 +607,12 @@ for t in [250, 500, 1000, 2000, 4000, 8000]:
 for app in TAINT_APPS:
     LIT[f'taint_{app.replace("-", "_")}'] = ('taint', ['gen_taint.py',
                                                         os.path.join(ROOT, 'data', 'psouffle', 'taint', f'{app}.pl.gz')])
+# PSouffle's side-channel analyses (the same paper), whose 19 cases are
+# Souffle programs that gen_sidechannel.py translates and PSouffle reads
+# as they are (SOUFFLE_WRITERS).
+for case in ['P1'] + [f'P{k}' for k in range(3, 21)]:
+    LIT[f'sidechannel_{case.lower()}'] = ('sidechannel', ['gen_sidechannel.py'] + [
+        os.path.join(ROOT, 'data', 'psouffle', 'side_channel', f'{case}.{kind}.dl.gz') for kind in ('souffle', 'problog')])
 for n in [3, 4, 6, 8, 11, 16, 23, 32]:
     LIT[f'liftsep{n}'] = ('liftsep', ['gen_liftsep.py', str(n), '--seed', '1'])
 for n in [6, 8, 10, 12, 14, 17, 20, 24]:
@@ -607,6 +620,42 @@ for n in [6, 8, 10, 12, 14, 17, 20, 24]:
 for family in ['eventcalc', 'liftsep', 'rgraph']:
     EXACT[f'gen_{family}.py'] = ('lit', lambda path, family=family: ['lit_exact.py', family, path,
                                                                     '--precision', '17'])
+
+# Grammars and an HMM over lists, which tddlog's grounder reads since it
+# grounds function symbols and lists: the ProbLog tutorial's PCFG in its
+# two encodings (the derivation's stack, pcfg, and counts of expansions,
+# pcfgcount), each asked how the derivation of a balanced word of length
+# N and three or more top-level blocks brackets them, given the word (the
+# first two rules: 1/2 for three blocks), and cplint's HMM of DNA, whose
+# choices are indexed by
+# the states before them, asked the probability of a sequence of length N.
+for n in [8, 12, 16, 20, 24, 28, 32]:
+    LIT[f'pcfg{n}'] = ('pcfg', ['gen_pcfg.py', 'stack', str(n), '--seed', '1'])
+for n in [8, 16, 24, 32, 48, 64, 96, 128]:
+    LIT[f'pcfgcount{n}'] = ('pcfgcount', ['gen_pcfg.py', 'counter', str(n), '--seed', '1'])
+for n in [4, 8, 12, 16, 20, 24, 28]:
+    LIT[f'dnahmm{n}'] = ('dnahmm', ['gen_dnahmm.py', str(n), '--seed', '1'])
+for script, family in [('gen_pcfg.py', 'pcfg'), ('gen_dnahmm.py', 'dnahmm')]:
+    EXACT[script] = ('lit', lambda path, family=family: ['lit_exact.py', family, path, '--precision', '17'])
+
+# cplint's examples whose choices are indexed by the list of choices
+# before them: the probabilistic left-corner grammar, whose clauses negate
+# atoms with variables of their own, asked the probability of a word of N
+# letters, and the part-of-speech HMM, asked the probability of its
+# example's sentence said K times.
+for n in [4, 6, 8, 10, 12, 14, 16]:
+    LIT[f'plcg{n}'] = ('plcg', ['gen_plcg.py', str(n), '--seed', '1'])
+for k in [1, 2, 3, 4, 5]:
+    LIT[f'hmmpos{k}'] = ('hmmpos', ['gen_hmmpos.py', str(k)])
+for family in ['plcg', 'hmmpos']:
+    EXACT[f'gen_{family}.py'] = ('lit', lambda path, family=family: ['lit_exact.py', family, path, '--precision', '17'])
+
+# DeepProbLog's handwritten formulas: the probability of the label of a
+# formula of N symbols, each image's classifier an annotated disjunction,
+# the formula's symbols a list that parse/2 evaluates.
+for n in [3, 5, 7, 9, 11]:
+    LIT[f'hwf{n}'] = ('hwf', ['gen_hwf.py', str(n), '--seed', '1'])
+EXACT['gen_hwf.py'] = ('lit', lambda path: ['lit_exact.py', 'hwf', path, '--precision', '17'])
 
 
 # TPC-H as a tuple-independent probabilistic database (gen_tpch.py), the
@@ -671,8 +720,9 @@ def instances(args):
 # sizes of a program among them (its group names the program; the sizes are
 # listed smallest first): Alea.jl's arithmetic programs, noDice's coupon
 # collector, and bench_one.py's scaled Dice loops. The taint family's apps
-# are one analysis of fifteen programs, none a size of another.
-COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None, 'taint': None,
+# are one analysis of fifteen programs, none a size of another, and so are
+# the side-channel family's cases, whose rules differ from case to case.
+COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None, 'taint': None, 'sidechannel': None,
                'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_coupon2)-\d+-obs',
                'dice_scaled': r'(dice_.+)_k\d+'}
 
@@ -691,11 +741,59 @@ def series(family, name):
     return family
 
 
+# How the systems say that an allocation failed, and the run's own kill at
+# the memory cap (`timed`): C++'s bad_alloc, the C libraries' (CUDD's,
+# SDD's, GMP's, glibc's) and Rust's messages, Python's MemoryError and
+# numpy's, Java's and Julia's OutOfMemoryError, OCaml's, D's and LLVM's
+# messages, PRISM's `Error: Out of memory.`, tddlog's own refusals, and
+# V8's stack at its fatal heap limit where the record keeps only the end
+# of node's output (WebPPL's).
+MEMOUT = re.compile(r'killed by the memory cap|bad_alloc|(?:unable to|cannot|could not) (?:re)?allocate|'
+                    r'memory allocation (?:of \d+ bytes failed|failed|refused)|out of memory|OutOfMemoryError|'
+                    r'MemoryError|Java heap space|(?:malloc|calloc|realloc) failed|ran out of memory|'
+                    r'for lack of memory|v8::internal::Runtime_Allocate|'
+                    r'Not enough resources: (?:private_|shared_)?table_space', re.I)
+# Texts that name memory and say nothing of an allocation that failed:
+# PRISM's header of its limits, printed with every error; a C++ allocator
+# in a type's name (PSouffle's assertions); Julia's memory type in a stack
+# trace and the summary it prints after a fatal signal; the limit of the
+# handles of Julia's old parser on a long expression; and the address-space
+# limit that geni_wrap.sh could not raise.
+NOT_MEMOUT = re.compile(r'Memory limits: cudd=\S+ java\(heap\)=\S+|std::allocator<|GenericMemory|'
+                        r'Allocations: \d+ \(Pool: \d+; Big: \d+\); GC: \d+|memory-error out of gc handles|'
+                        r'ulimit: virtual memory: cannot modify limit', re.I)
+
+
+class Unclassed(ValueError):
+    """An error that names memory, whose text neither MEMOUT nor NOT_MEMOUT
+    classes."""
+
+
+def memout(r):
+    """Whether record r failed for want of memory: an error whose text says
+    that an allocation failed, or that the memory cap killed the run
+    (MEMOUT). An error that names memory otherwise is one of the known
+    texts of NOT_MEMOUT, and raises Unclassed where it is not (rule 3: a
+    new text is read and listed, not guessed)."""
+    if r['status'] != 'error':
+        return False
+    e = str(r.get('error'))
+    if MEMOUT.search(e):
+        return True
+    if re.search(r'memory|alloc', NOT_MEMOUT.sub('', e), re.I):
+        raise Unclassed(f'{r.get("system", "?")} on {r.get("instance", "?")}: an error that names memory and is '
+                        f'neither an allocation failure nor one of the known texts (bench.py NOT_MEMOUT): {e[-400:]!r}')
+    return False
+
+
 def ran_out(r):
-    """Whether a run ran out of time or memory: a timeout, or an error that
-    names an allocation (as the results page reads a failure)."""
-    return r['status'] == 'timeout' or \
-        (r['status'] == 'error' and re.search(r'bad_alloc|memory|alloc', str(r.get('error')), re.I) is not None)
+    """Whether a run ran out of time or memory (`memout`), for the skip rule.
+    An unclassed error does not skip the larger sizes: running them costs
+    time and nothing else, and the processing stops on the text."""
+    try:
+        return r['status'] == 'timeout' or memout(r)
+    except Unclassed:
+        return False
 
 
 def stale_refusal(r):
@@ -916,6 +1014,8 @@ def gen(args):
         cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if gargs[0] in DICE_WRITERS:
             cmd += ['--dice', os.path.join(args.dir, name + '.dice')]
+        if gargs[0] in SOUFFLE_WRITERS:
+            cmd += ['--souffle', os.path.join(args.dir, name + '.souffle')]
         if has_cnf(entry) and (gargs[0] in CNF_WRITERS or args.cnf):
             cmd += ['--cnf', os.path.join(args.dir, name + '.cnf')]
         # a generator that converts an LPAD or a Dice program calls `tddlog
@@ -1312,13 +1412,91 @@ def parse_stats(err):
 
 
 # The lane of a `run` worker thread: the CPU its commands are pinned to,
-# or None without `--cpus`.
+# or None without `--cpus`; and the memory the record under way has used
+# so far (`usage`, which `run_job` resets for each record), or None.
 LANE = threading.local()
 # The commands under way, which a stopped driver kills (`stop_all`), and
 # whether it has been stopped.
 LIVE = set()
 LIVE_LOCK = threading.Lock()
 STOPPED = threading.Event()
+# The run's resident memory cap (`cap_memory`): (memcap.Root, bytes), or None.
+MEMCAP = None
+# The error of a record whose commands the cap killed (`memout` reads it).
+CAP_KILLED = 'killed by the memory cap'
+
+
+def cap_error(cap_kb):
+    return f'{CAP_KILLED} of {cap_kb >> 10} MiB of resident memory'
+
+
+def cap_memory(limit):
+    """Caps every command `timed` runs at `limit` bytes of resident memory,
+    each in a cgroup of its own (memcap.py), and sets the systems' own
+    memory options from it (`memory_options`). An address-space limit
+    beside it would still refuse reservations below the cap, so a run
+    that has one is refused."""
+    global MEMCAP
+    import resource
+    soft = resource.getrlimit(resource.RLIMIT_AS)[0]
+    if soft != resource.RLIM_INFINITY:
+        raise SystemExit(f'--mem-cap caps resident memory, and the run has an address-space limit too '
+                         f'(ulimit -v {soft >> 10}): start it without one')
+    try:
+        MEMCAP = (memcap.Root(), limit)
+    except memcap.MemcapError as e:
+        raise SystemExit(f'--mem-cap: {e}')
+
+
+def memory_bound():
+    """The memory a command may take, in bytes: the cap, else the
+    address-space limit, else None."""
+    if MEMCAP:
+        return MEMCAP[1]
+    import resource
+    soft = resource.getrlimit(resource.RLIMIT_AS)[0]
+    return None if soft == resource.RLIM_INFINITY else soft
+
+
+def julia_heap_hint(cmd, limit):
+    """cmd with `--heap-size-hint` at 0.8 of `limit` after its Julia
+    executable, where it runs Julia without one: Julia's collector
+    otherwise aims at a share of the machine's memory and lets garbage
+    grow past the cap before it collects."""
+    i = next((k for k, a in enumerate(cmd) if os.path.basename(a) == 'julia'), None)
+    if i is None or any(a.startswith('--heap-size-hint') for a in cmd):
+        return cmd
+    return cmd[:i + 1] + [f'--heap-size-hint={limit * 8 // 10 >> 20}M'] + cmd[i + 1:]
+
+
+class _Popen(subprocess.Popen):
+    """A Popen that keeps its process's resource usage (`os.wait4`): its
+    `ru_maxrss` is the largest peak resident set of the process and of the
+    descendants it waited for, each on its own."""
+    rusage = None
+
+    def _try_wait(self, wait_flags):
+        try:
+            pid, sts, ru = os.wait4(self.pid, wait_flags)
+        except ChildProcessError:
+            return self.pid, 0
+        if pid == self.pid:
+            self.rusage = ru
+        return pid, sts
+
+
+def take_usage(rec, r):
+    """Puts the memory of the record's commands (`LANE.usage`, which the
+    caller set to {} before the first) into record rec, whose run's result
+    is r, and returns r: where the cap killed one of the commands and rec
+    failed, rec and the returned result are that memout, whatever the
+    system made of the kill."""
+    usage, LANE.usage = getattr(LANE, 'usage', None) or {}, None
+    if usage.pop('cap_killed', False) and rec['status'] != 'ok':
+        r = {'status': 'error', 'error': cap_error(usage['mem_cap_kb'])}
+        rec['status'], rec['error'] = 'error', r['error']
+    rec.update(usage)
+    return r
 
 
 def kill(p):
@@ -1344,34 +1522,61 @@ def stop_all():
 
 
 def timed(cmd, timeout, cwd=None, env=None):
+    """Runs cmd within `timeout` seconds: its status, seconds and output.
+    Under the memory cap (`cap_memory`) it runs in a cgroup of its own,
+    and a command the cap killed is an error `CAP_KILLED`. Its memory goes
+    to the record under way (`LANE.usage`): `maxrss_kb`, the largest peak
+    resident set of one of its processes (`os.wait4`), and under the cap
+    `mem_peak_kb`, the peak of the whole tree as the cap counts it, the
+    largest of the record's commands."""
     if STOPPED.is_set():
         raise SystemExit('stopped')
+    cap = memcap.Cap(*MEMCAP) if MEMCAP else None
+    if cap:
+        cmd = cap.command(julia_heap_hint(list(cmd), cap.limit))
     cpu = getattr(LANE, 'cpu', None)
     if cpu is not None:
         cmd = ['taskset', '-c', str(cpu)] + list(cmd)
     t0 = time.monotonic()
     # ProbLog and aspmc launch compilers of their own. Killing only the
     # frontend leaves those compilers consuming CPU during later timings.
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                          text=True, cwd=cwd, env=env, start_new_session=(os.name == 'posix')) as p:
-        with LIVE_LOCK:
-            LIVE.add(p)
-        try:
-            stdout, stderr = p.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            kill(p)
-            p.communicate()
-            return {'status': 'timeout', 'seconds': timeout}
-        except BaseException:
-            kill(p)
-            p.communicate()
-            raise
-        finally:
+    try:
+        with _Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    text=True, cwd=cwd, env=env, start_new_session=(os.name == 'posix')) as p:
             with LIVE_LOCK:
-                LIVE.discard(p)
+                LIVE.add(p)
+            if cap:
+                cap.start()
+            try:
+                stdout, stderr = p.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                kill(p)
+                p.communicate()
+                stdout = None
+            except BaseException:
+                kill(p)
+                p.communicate()
+                raise
+            finally:
+                with LIVE_LOCK:
+                    LIVE.discard(p)
+    finally:
+        peak, killed = cap.finish() if cap else (None, False)
+    dt = time.monotonic() - t0
+    usage = getattr(LANE, 'usage', None)
+    if usage is not None:
+        if p.rusage is not None:
+            usage['maxrss_kb'] = max(usage.get('maxrss_kb', 0), p.rusage.ru_maxrss)
+        if cap:
+            usage['mem_peak_kb'] = max(usage.get('mem_peak_kb', 0), peak >> 10)
+            usage['mem_cap_kb'] = cap.limit >> 10
+            usage['cap_killed'] = usage.get('cap_killed', False) or killed
     if STOPPED.is_set():
         raise SystemExit('stopped')
-    dt = time.monotonic() - t0
+    if killed:
+        return {'status': 'error', 'seconds': dt, 'returncode': p.returncode, 'error': cap_error(cap.limit >> 10)}
+    if stdout is None:
+        return {'status': 'timeout', 'seconds': timeout}
     if p.returncode != 0:
         err = stderr.strip() or stdout.strip() or f'exit {p.returncode}'
         # Rust's last line can be just the backtrace hint. Retain the cause,
@@ -1721,8 +1926,40 @@ ROULETTE_DATA = os.path.join(ROOT, 'data', 'roulette')
 ROULETTE_TIME = re.compile(r'cpu time: (\d+) real time: (\d+) gc time: (\d+)')
 
 
+BIF_WRITTEN = {}
+
+
+def roulette_bif(args, name):
+    """Roulette's own route on a network (variant `bayes`), as its
+    artifact runs its networks (benchmark/bayes.rkt, data/roulette/bif.rkt):
+    the network as a BIF file and a line for each queried variable
+    (`gen_bn.bif_programs`), written in the instance's directory once, as
+    (the file, the lines' file, gen_bn.to_bif's names). None for an instance
+    it does not apply to: not a network of gen_bn.py, a network with
+    observations or factors (BIF holds neither), --pr, and the roulette
+    suite, whose networks run the artifact's own driver (bayes.rkt)."""
+    if name not in BIF_WRITTEN:
+        _, gargs = instances(args)[name]
+        made = None
+        if args.suite != 'roulette' and not getattr(args, 'pr', False) and gargs[0] == 'gen_bn.py':
+            import gen_bn
+            made = gen_bn.bif_programs(gargs[1:])
+        if made is not None:
+            text, lines, names = made
+            bif = os.path.abspath(os.path.join(args.dir, f'{name}.bif'))
+            with open(bif, 'w') as f:
+                f.write(text)
+            with open(bif + 'q', 'w') as f:
+                f.write(lines)
+            made = (bif, bif + 'q', names)
+        BIF_WRITTEN[name] = made
+    return BIF_WRITTEN[name]
+
+
 def roulette_program(args, name, variant):
-    """The Racket program and arguments Roulette runs an instance with. On
+    """The Racket program and arguments Roulette runs an instance with. Under
+    the variant `bayes`, data/roulette/bif.rkt on a network's BIF file and
+    its queries (`roulette_bif`), or None. On
     --suite roulette, the artifact's program as data/roulette's driver
     prints its answers in full (`roulette_q ATOM P`; a network's
     `roulette_v VALUE P`), or the artifact's own hmm.rkt, which prints its
@@ -1732,6 +1969,9 @@ def roulette_program(args, name, variant):
     variant `nocomplement` caesar and the translated programs query with
     `(query e #f)` (data/roulette/caesar.rkt, dice2roulette.py); None for
     the artifact's other programs, which it does not apply to."""
+    if variant == 'bayes':
+        made = roulette_bif(args, name)
+        return None if made is None else (os.path.join(ROULETTE_DATA, 'bif.rkt'), [made[0], made[1]])
     if args.suite != 'roulette':
         return os.path.abspath(os.path.join(args.dir, f'{name}.roulette.rkt')), \
             ['--no-complement'] if variant == 'nocomplement' else []
@@ -1796,17 +2036,23 @@ def run_roulette(args, name, path, variant):
     answers are keyed as the ProbLog program's queries; Roulette leaves out
     the values of probability 0, which answer 0, and prints the time of
     building and querying the program (`(time ...)`), kept as
-    `inproc_seconds`, without Racket's start and loading. Values that
-    answer no query (network.rkt's #t, at a probability of 0 up to
-    rounding) are kept under `other`. An Alea.jl program's circuit is run
-    as its Dice programs, one at a time (`run_translated`)."""
+    `inproc_seconds` (the sum of bif.rkt's, one a queried variable), without
+    Racket's start and loading. Values that answer no query (network.rkt's
+    #t, at a probability of 0 up to rounding) are kept under `other`. An
+    Alea.jl program's circuit is run as its Dice programs, one at a time
+    (`run_translated`). bif.rkt is compiled by `raco make` before the clock,
+    as a translated program is."""
     family, gargs = instances(args)[name]
     if args.suite != 'roulette' and gargs[0] == 'alea_bench.jl':
         return run_translated(args, name, path, 'roulette',
                               lambda a, label, source, joint, budget:
                               roulette_masses(a, label, source, joint, budget, variant))
     prog, rest = roulette_program(args, name, variant)
-    if args.suite != 'roulette':
+    if variant == 'bayes':
+        c = timed(roulette_command(args, prog, '-l-', 'raco', 'make'), args.timeout)
+        if c['status'] != 'ok':
+            return {'status': 'error', 'seconds': 0, 'error': f"raco make: {c['status']} {c.get('error', '')[-2000:]}"}
+    elif args.suite != 'roulette':
         source = dice_source(args, name)
         if source is None:
             return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for {name}'}
@@ -1821,7 +2067,10 @@ def run_roulette(args, name, path, variant):
         f = line.split()
         m = ROULETTE_TIME.match(line)
         if m:
-            stats['inproc_seconds'] = int(m.group(2)) / 1000
+            stats['inproc_seconds'] = stats.get('inproc_seconds', 0) + int(m.group(2)) / 1000
+        elif len(f) == 4 and f[0] == 'roulette_b' and variant == 'bayes':
+            var, vals = roulette_bif(args, name)[2][f[1]]
+            printed[f'{var}({vals[int(f[2][1:])]})'] = float(f[3])
         elif len(f) == 3 and f[0] == 'roulette_q':
             printed[f[1]] = float(f[2])
         elif len(f) == 3 and f[0] == 'roulette_v':
@@ -1831,7 +2080,9 @@ def run_roulette(args, name, path, variant):
                 last = float(f[0])
             except ValueError:
                 pass
-    if args.suite != 'roulette':
+    if variant == 'bayes':
+        pass
+    elif args.suite != 'roulette':
         try:
             printed = alea_answers(queries(path), parse_alea(r['stdout'], 'roulette')[0])
         except ValueError as x:
@@ -2447,13 +2698,18 @@ def run_pita(args, name, path):
     process consults the program and asks `prob/2` for every query, so the
     seconds cover parsing, transformation and every query, as the other
     systems' do. PITA answers one query at a time and shares nothing between
-    them, which is the shape of the system, not of the harness."""
+    them, which is the shape of the system, not of the harness. Its tables
+    may fill the run's address-space limit (`ulimit -v`), not only SWI's
+    default table space of 1 GB, so that the memory limit binds, as it does
+    for the other systems."""
     lpad = os.path.join(args.dir, name + '.lpad.pl')
     with open(lpad, 'w') as f:
         f.write(problog2pita.program(open(path).read(), driver=True))
     packs = ['-g', f"attach_packs('{args.pita_packs}',[duplicate(replace)])"] if args.pita_packs else []
-    return timed([args.pita, '-q'] + packs + ['-g', f"consult('{os.path.abspath(lpad)}'), main", '-t', 'halt'],
-                 args.timeout)
+    limit = address_space_limit()
+    space = ['-g', f'set_prolog_flag(table_space, {limit})'] if limit else []
+    return timed([args.pita, '-q'] + packs + space +
+                 ['-g', f"consult('{os.path.abspath(lpad)}'), main", '-t', 'halt'], args.timeout)
 
 
 # aspmc's ProbLog front end recognizes query/1 but reads evidence/1,2 as
@@ -3287,13 +3543,19 @@ def run_psouffle(args, name, path):
     names of its relations), compiled (psouffle_binary) and run on the facts
     within the timeout. A ground query PSouffle does not list has
     probability 0; a query with variables is answered by every tuple of its
-    relation that PSouffle lists and that the query matches."""
+    relation that PSouffle lists and that the query matches. A benchmark
+    whose original is a Souffle program (SOUFFLE_WRITERS) is run as it is,
+    from the copy `gen` wrote beside the program."""
     d = os.path.abspath(os.path.join(args.dir, f'psouffle-{name}'))
     shutil.rmtree(d, ignore_errors=True)
+    original = os.path.splitext(path)[0] + '.souffle'
     try:
-        err = translated(args, 'problog2souffle.py', [path, d], None, 'psouffle')
-        if err:
-            return err
+        if os.path.isdir(original):
+            shutil.copytree(original, d)
+        else:
+            err = translated(args, 'problog2souffle.py', [path, d], None, 'psouffle')
+            if err:
+                return err
         with open(os.path.join(d, 'compute.dl')) as f:
             binary, compile_s, err = psouffle_binary(args, f.read())
         if err:
@@ -3593,20 +3855,29 @@ def parse_sharpsat_td(out):
     return z
 
 
+def address_space_limit():
+    """The run's address-space limit in bytes (`ulimit -v`), which its
+    commands inherit; None without one."""
+    import resource
+    soft = resource.getrlimit(resource.RLIMIT_AS)[0]
+    return None if soft == resource.RLIM_INFINITY else soft
+
+
 def sharpsat_td_cache_mb():
     """sharpSAT-TD's cache bound in MB (`-cs`, in units of 10^6 bytes),
     as its readme sets it for a memory bound X: X/2 - 500, here with X the
-    address-space limit of the run (`ulimit -v`), which its commands
-    inherit. Without `-cs` it takes 95% of the machine's free memory,
-    whatever the limit, so a run without a limit is refused."""
-    import resource
-    soft = resource.getrlimit(resource.RLIMIT_AS)[0]
-    if soft == resource.RLIM_INFINITY:
-        raise SystemExit('--sharpsat-td bounds its cache by half the address-space limit (ulimit -v), and there is '
-                         "none; without a bound it takes 95% of the machine's free memory")
-    cache = soft // 2_000_000 - 500
+    run's memory cap (`--mem-cap`) or else its address-space limit (`ulimit
+    -v`), which its commands inherit. Without `-cs` it takes 95% of the
+    machine's free memory, whatever the limit, so a run without either is
+    refused."""
+    bound = memory_bound()
+    if bound is None:
+        raise SystemExit('--sharpsat-td bounds its cache by half the memory cap (--mem-cap) or the address-space '
+                         "limit (ulimit -v), and there is neither; without a bound it takes 95% of the machine's "
+                         'free memory')
+    cache = bound // 2_000_000 - 500
     if cache < 100:
-        raise SystemExit(f'--sharpsat-td: an address-space limit of {soft} bytes leaves it no cache')
+        raise SystemExit(f'--sharpsat-td: a memory bound of {bound} bytes leaves it no cache')
     return cache
 
 
@@ -3682,6 +3953,8 @@ def tddlog_arms(arms, strategies):
 
 
 def run(args):
+    if getattr(args, 'mem_cap', None) is not None:
+        cap_memory(args.mem_cap)
     spec = instances(args)
     names = list(spec)
     if args.pr:
@@ -3751,13 +4024,16 @@ def run(args):
     if getattr(args, 'alea', ''):
         systems.append(('alea', 'cudd'))
     if getattr(args, 'roulette', ''):
-        unknown = [v for v in args.roulette_variants if v not in ('rsdd', 'nocomplement')]
+        unknown = [v for v in args.roulette_variants if v not in ('rsdd', 'nocomplement', 'bayes')]
         if unknown:
-            raise SystemExit(f'--roulette-variants {unknown[0]}: the variants are rsdd and nocomplement')
+            raise SystemExit(f'--roulette-variants {unknown[0]}: the variants are rsdd, nocomplement and bayes')
         if 'nocomplement' in args.roulette_variants and \
                 not any(roulette_program(args, n, 'nocomplement') for n in names):
             raise SystemExit('--roulette-variants nocomplement changes the query of caesar and of the '
                              'translated Dice programs, and none is selected')
+        if 'bayes' in args.roulette_variants and not any(roulette_program(args, n, 'bayes') for n in names):
+            raise SystemExit('--roulette-variants bayes runs the Bayesian networks that observe nothing, outside '
+                             'the roulette suite and --pr, and none is selected')
         systems += [('roulette', v) for v in args.roulette_variants]
     for opt, ps in PROGRAM_SYSTEMS.items():
         if getattr(args, opt, ''):
@@ -3912,6 +4188,7 @@ def run_job(args, spec, systems, out, lock, names):
                     print(f"{name:10} {system}:{variant:10} skipped (ran out of time or memory on a smaller size)")
                 continue
             src = pe if pe and system in PE_SYSTEMS else path
+            LANE.usage = {}   # the memory of the record's commands (timed)
             # the systems given the instance through its ground program
             ground = ground_route(args, name, path, form) if form else None
             rargs, rpath = args, src
@@ -4036,6 +4313,7 @@ def run_job(args, spec, systems, out, lock, names):
                     m = re.search(r'^(?:parse|grounding|vtree|indicator|compilation) error: .*', r['error'], re.M | re.S)
                     if m:
                         rec['error'] = m.group(0)
+            r = take_usage(rec, r)
             # out of time or memory on one size of a program: its larger sizes
             # are skipped; another failure says nothing of them
             if program and ran_out(r) and not args.no_skip:
@@ -4266,6 +4544,20 @@ def ace_defaults(args):
         raise SystemExit('--sharpsat-td-decot without --sharpsat-td: sharpSAT-TD is not run')
     if getattr(args, 'roulette_variants', None) is not None and not getattr(args, 'roulette', ''):
         raise SystemExit('--roulette-variants without --roulette: Roulette is not run')
+    # Under the memory cap the Java systems' heaps are set from it: Ace's at
+    # 0.8 of it (the JVM's own memory and c2d's beside the heap), PRISM's
+    # heap and its decision diagrams' memory a third each.
+    cap = getattr(args, 'mem_cap', None)
+    if cap is not None:
+        for k, share in [('ace_heap', 0.8), ('prism_heap', 1 / 3)]:
+            heap = getattr(args, k, None)
+            if heap is None:
+                setattr(args, k, f'{int(cap * share) >> 20}m')
+            elif memcap.size(heap) > cap * share:
+                raise SystemExit(f'--{k.replace("_", "-")} {heap} is more than {share:.2g} of --mem-cap '
+                                 f'({cap >> 20} MiB): the cap would kill the run before the heap is full')
+    if getattr(args, 'prism_heap', '') is None:
+        args.prism_heap = '4g'
     for k, default in [('ace_variants', ['auto']), ('ace_heap', '8g'), ('ace_java', 'java'),
                        ('sharpsat_td_decot', ['1']), ('roulette_variants', ['rsdd'])]:
         if getattr(args, k, None) is None:
@@ -4332,8 +4624,9 @@ def main():
     r.add_argument('--prism', default='', help="PRISM's directory (bin/prism), for the weather factory and the "
                    'Markov chains of the Dice programs; empty = not run')
     r.add_argument('--prism-variants', type=lambda s: s.split(','), help='the engines sparse, hybrid (both by default)')
-    r.add_argument('--prism-heap', default='4g', help="the Java heap of PRISM's process (-javamaxmem), and on the Dice "
-                   "programs' chains its decision diagrams' memory (-cuddmaxmem), by default 4g")
+    r.add_argument('--prism-heap', help="the Java heap of PRISM's process (-javamaxmem), and on the Dice "
+                   "programs' chains its decision diagrams' memory (-cuddmaxmem), by default 4g, or a third of "
+                   "--mem-cap")
     r.add_argument('--weather-models', default='', help="the directory with Rubicon's weatherfactoryN.prism, for --storm and --prism")
     r.add_argument('--provsql', default='', help="the directory install_provsql.sh installs ProvSQL in (pg/bin/initdb, ...), "
                    'for the programs of tuple-independent tables (TPC-H; pdb, noisyor, liftsep and rgraph of --suite lit); empty = not run')
@@ -4341,8 +4634,10 @@ def main():
                    "program: the artifact's on --suite roulette, the Dice program dice2roulette.py translates on "
                    "the others; e.g. \"env PLTUSERHOME=... racket {file}\"; empty = not run")
     r.add_argument('--roulette-variants', type=lambda s: s.split(','),
-                   help="Roulette's runs, comma separated: rsdd (the artifact's, the default) and nocomplement "
-                   "(caesar's and the translated programs' query without the complement, `(query e #f)`)")
+                   help="Roulette's runs, comma separated: rsdd (the artifact's, the default), nocomplement "
+                   "(caesar's and the translated programs' query without the complement, `(query e #f)`) and "
+                   "bayes (a Bayesian network that observes nothing, as the artifact runs its own networks: "
+                   "benchmark/bayes.rkt on its BIF file, one queried variable at a time)")
     for opt, ps in PROGRAM_SYSTEMS.items():
         r.add_argument('--' + opt, default='', help=ps['help'] + '; empty = not run')
     r.add_argument('--geni-benchmarks', default=os.path.expanduser('~/local/geni/src/bench/ICFP'),
@@ -4383,6 +4678,12 @@ def main():
                    help='run every size of a program even after a smaller one ran out of time or memory')
     r.add_argument('--rotate', type=int, default=None, help="rotate the systems' order on each instance by a "
                    "checksum of its name plus R (repetition R of a timed run)")
+    r.add_argument('--mem-cap', type=memcap.size,
+                   help='every command capped at this much resident memory (31g, 512m, or bytes), each in a cgroup '
+                   'of its own (memcap.py; the run starts under `memcap.py delegate --`, without `ulimit -v`); the '
+                   "records keep each command's peak; Ace's and PRISM's heaps and Julia's heap size hint are set "
+                   'from it'
+                   )
     r.add_argument('--cpus', default='', type=lambda s: [int(c) for c in s.split(',')] if s else [],
                    help="run in parallel lanes, one per CPU listed, each command pinned to its lane's CPU with "
                    "taskset; a program's sizes are a job of one lane, every other instance (every instance "
