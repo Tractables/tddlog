@@ -149,6 +149,7 @@ fn run(
         ..Options::default()
     };
     let solved = tddlog::solve(&input.program, &options, &mut |progress| match progress {
+        Progress::Parsed { .. } => {}
         Progress::Grounded { seconds } => partial.ground_seconds = seconds,
         Progress::Note(line) => partial.notes.push(line),
         Progress::Compiling(ground) => partial.compiling = Some(ground_json(ground)),

@@ -110,6 +110,14 @@ fn stats_write_to_stderr_alone() {
     assert!(all.status.success());
     assert_eq!(stdout(&all), stdout(&plain));
     let stderr = String::from_utf8(all.stderr).unwrap();
+    // Reading and parsing are timed apart from grounding.
+    let size = std::fs::metadata("examples/alarm.pl").unwrap().len();
+    assert!(
+        stderr
+            .lines()
+            .any(|l| l.starts_with(&format!("read: {size} bytes, file ")) && l.ends_with('s')),
+        "{stderr}"
+    );
     assert!(
         stderr.lines().any(|l| l.starts_with("ground: ")),
         "{stderr}"

@@ -106,6 +106,8 @@ impl Options {
 
 /// What [`solve`] reports as it goes, for `--stats`.
 pub enum Progress<'a> {
+    /// The program is parsed, in `seconds`.
+    Parsed { seconds: f64 },
     /// The program is ground, in `seconds`.
     Grounded { seconds: f64 },
     /// A line on the run as a whole: the `decision` trial's grounding, the
@@ -166,7 +168,11 @@ fn solve_split(
     progress: &mut dyn FnMut(Progress<'_>),
 ) -> Result<Solution, Error> {
     let (projection, first_pairs) = options.checked()?;
+    let start = Instant::now();
     let program = parsed(source, options)?;
+    progress(Progress::Parsed {
+        seconds: start.elapsed().as_secs_f64(),
+    });
     let start = Instant::now();
     let ground_options = options.ground_options();
     // `auto` keeps the program as simplified before its views are
