@@ -1916,6 +1916,9 @@ fn ground_with(
     gp.evidence = evidence;
     gp.stats.levels = keys;
     gp.stats.constants = fixed.iter().filter(|v| v.is_some()).count();
+    if let Some(pruner) = &pruner {
+        gp.stats.swept.add(pruner.stats());
+    }
     if m < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
         let mut new = vec![AtomId::MAX; n];
         for (i, &a) in order.iter().enumerate() {

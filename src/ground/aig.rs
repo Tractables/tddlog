@@ -783,6 +783,11 @@ impl Pruner {
         }
     }
 
+    /// What the sweep did.
+    pub(super) fn stats(&self) -> SweepStats {
+        self.sweep.stats
+    }
+
     fn slot(&mut self, a: AtomId) -> &mut Lit {
         let a = a as usize;
         if a >= self.lit.len() {
