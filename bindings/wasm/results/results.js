@@ -11,9 +11,9 @@
 // language, its runs and its answers.
 //
 // The page is one view at a time, named by the address's hash:
-//   #/                       the README's figures: each category's total times, cactus and scatter plots
+//   #/                       the README's figures: each type's totals and speed-ups, cactus and scatter plots
 //   #/category/C[/in/FAMILY][/vs/SYSTEM]
-//                            a category: its systems' answers and totals, its plots (tddlog against
+//                            a category: its systems' answers, totals and speed-ups, its plots (tddlog against
 //                            SYSTEM), narrowed to FAMILY (the program or model whose sizes they are)
 //                            or to own:SYSTEM (a system's own benchmarks)
 //   #/system/SYSTEM          a solver: its plots against tddlog on the programs in its own language
@@ -27,10 +27,11 @@
 //   …/tab/T[/F]              the file F (0 where left out) of the instance's language T
 //   …/runs/SYSTEM            SYSTEM's runs of the instance, in a drawer beside the view
 // A time in a family's table opens that system's runs of the instance
-// beside the view. A category's instances, systems, answers and total times
-// are the data's (the README's figures draw the same): the page does not
-// choose them. Narrowed to a source, it sums the same rows' times; it
-// computes the scatter plots, as the README's figures do.
+// beside the view. A category's instances, systems, answers, total times and
+// speed-ups are the data's (the README's figures draw the same), narrowed to
+// a family or a system's own benchmarks too (c.narrowed): the page does not
+// choose or compute them. It counts answers and draws the plots, as the
+// README's figures do.
 
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
 // data, as the playground's does to its files.
@@ -394,14 +395,14 @@ function cactus(box, suite, names, series, coloured) {
 }
 
 // The legend: every line in the plot's order, its name and how many
-// instances it answers, and in a kind's plot its total time (total:
-// {system: seconds}, the data's); in a narrow plot, the number its line
+// instances it answers, and in a kind's plot tddlog's speed-up over it
+// (faster: {system: text}, the data's); in a narrow plot, the number its line
 // ends with. A name is a button that colours its line or greys it, and a
 // name under the pointer or the keyboard brings its line forward.
-function legend(series, names, n, figure, total, coloured, narrow, recolour) {
+function legend(series, names, n, figure, faster, coloured, narrow, recolour) {
   const list = element("ul", { class: "legend" });
   series.forEach(({ key, times }, i) => {
-    const counts = `answers ${count(times.length)} of ${count(n)}${total === undefined ? "" : `, total ${duration(total[key])}`}`;
+    const counts = `answers ${count(times.length)} of ${count(n)}${faster?.[key] === undefined ? "" : `, ${faster[key]}`}`;
     const button = element("button", { type: "button", class: "bare", "data-system": key, "aria-pressed": String(coloured.has(key)),
       onclick: () => recolour(key) },
       narrow ? element("span", { class: "no" }, String(i + 1)) : null, swatch(key, !coloured.has(key)),
@@ -436,8 +437,8 @@ function onWidth(box, draw) {
 // the three that answer the most are in colour, and `also`'s, and the others
 // grey until asked for; with `all`, every line is in colour (a category's,
 // each system in its own colour). The figure names the systems it draws and the
-// number of its instances; a category's legend gives each system's total
-// time too (suite.total). A `bare` plot has no legend where its lines are
+// number of its instances; a category's legend gives tddlog's speed-up
+// over each other system too (suite.faster). A `bare` plot has no legend where its lines are
 // named at their ends, nor a button to colour them all.
 function plotted(suite, names, { also, bare, all, colour } = {}) {
   const series = linesOf(suite);
@@ -460,7 +461,7 @@ function plotted(suite, names, { also, bare, all, colour } = {}) {
       return;
     }
     const focused = figure.contains(document.activeElement) ? document.activeElement.closest(".legend button")?.dataset.system : undefined;
-    const fresh = legend(series, names, suite.instances.length, figure, suite.total, coloured, narrow, (key) => {
+    const fresh = legend(series, names, suite.instances.length, figure, suite.faster, coloured, narrow, (key) => {
       coloured = new Set(coloured);
       if (coloured.has(key)) coloured.delete(key);
       else coloured.add(key);
@@ -536,39 +537,26 @@ function pagesOf(rows) {
   return list.map((p) => ({ ...p, label: twice.has(p.title) && p.title !== p.suite ? `${p.title} (${p.suite})` : p.title }));
 }
 
-// A run's cost in a total: its time, at least 0.2 s, or its instance's limit
-// where it does not answer.
-const cost = (r, x) => (r.t[x] === null ? r.limit : Math.max(r.t[x], FLOOR));
-
 const LETTERS = { o: "own", n: "native", t: "translated" };
 
-// Each system's instances given, answers, total time and classes over rows:
-// the data's where rows are the whole category, else summed from the rows.
+// Each system's instances given, answers and classes over rows: the data's
+// where rows are the whole category, else counted from the rows.
 function tally(c, rows, only) {
   const out = {};
   c.systems.forEach((x, j) => {
     if (only === undefined) {
-      out[x] = { given: c.given[x], answers: c.answers[x], total: c.total[x], classes: c.classes[x] };
+      out[x] = { given: c.given[x], answers: c.answers[x], classes: c.classes[x] };
       return;
     }
     const classes = { own: 0, native: 0, translated: 0 };
     for (const r of rows) if (r.cls[j] !== "-") classes[LETTERS[r.cls[j]]]++;
-    out[x] = { given: rows.filter((r) => r.v[x] !== null).length, answers: rows.filter((r) => r.t[x] !== null).length,
-      total: rows.reduce((t, r) => t + cost(r, x), 0), classes };
+    out[x] = { given: rows.filter((r) => r.v[x] !== null).length, answers: rows.filter((r) => r.t[x] !== null).length, classes };
   });
   return out;
 }
 
-// The fastest of xs on each row: how many rows it answers and its total.
-function virtual(rows, xs) {
-  let answers = 0, total = 0;
-  for (const r of rows) {
-    const ts = xs.map((x) => r.t[x]).filter((t) => t !== null);
-    if (ts.length) answers++;
-    total += ts.length ? Math.max(FLOOR, Math.min(...ts)) : r.limit;
-  }
-  return { answers, total };
-}
+// How many rows one of xs answers (the virtual best of xs).
+const virtual = (rows, xs) => rows.filter((r) => xs.some((x) => r.t[x] !== null)).length;
 
 // The systems drawn: the category's, tddlog and the native systems given at
 // least 20 of its instances; narrowed, tddlog and every native system given
@@ -578,55 +566,79 @@ function drawnOf(c, rows, only) {
   return c.systems.filter((x) => x === "tddlog" || (c.native.includes(x) && rows.some((r) => r.v[x] !== null)));
 }
 
-// tddlog against system x as the README compares two systems: over the rows
-// that give x a run and that one of the two answers, each side's answers and
-// total time (the data's c.vs where rows are the whole category).
-function versus(c, rows, x, only) {
-  if (only === undefined) return c.vs[x];
-  const over = rows.filter((r) => r.v[x] !== null && (r.t[x] !== null || r.t.tddlog !== null));
-  const side = (y) => ({ answers: over.filter((r) => r.t[y] !== null).length, total: over.reduce((t, r) => t + cost(r, y), 0) });
-  return { instances: over.length, tddlog: side("tddlog"), system: side(x) };
+// tddlog against system x by rule 16 (release/results/rel/panels.py's
+// compare, the data's): over the category's rows (c.vs), or narrowed to
+// `only` (c.narrowed), where x was given one of them; null otherwise.
+const versus = (c, x, only) => (only === undefined ? c.vs[x] : c.narrowed[only]?.[x]) ?? null;
+
+// The other systems by their answers, then tddlog's speed-up over them, the
+// least first and a system without one last, as the data orders them.
+function ranked(c, xs, tal, only) {
+  const key = (x) => versus(c, x, only)?.speedup ?? Number.MAX_VALUE;
+  return xs.filter((x) => x !== "tddlog").sort((a, b) => tal[b].answers - tal[a].answers || key(a) - key(b));
 }
 
-// A comparison's ratio of totals, how many times less time tddlog takes.
-const ratioOf = (v) => (v.tddlog.total > 0 ? v.system.total / v.tddlog.total : null);
-
-// The other systems by their answers, then their total time.
-const ranked = (xs, tal) => xs.filter((x) => x !== "tddlog")
-  .sort((a, b) => tal[b].answers - tal[a].answers || tal[a].total - tal[b].total);
+// tddlog's speed-up of a comparison: 49×, 1.7×, 1.3× slower, or "too few in
+// common" where fewer than 20 instances both answer; with sentence, "49×
+// faster".
+function speedup(v, sentence = false) {
+  const r = v?.speedup ?? null;
+  if (r === null) return sentence ? "too few instances in common for a speed-up" : "too few in common";
+  return r >= 1 ? `${times(r, 1)}${sentence ? " faster" : ""}` : `${times(1, r)} slower`;
+}
 
 // A category's rows as one suite for a plot: the systems drawn, tddlog first
-// and then by the instances they answer, as the README's legends list them;
-// the limit the longest of its instances'; each system's total time.
-function catSuite(c, rows, drawn, tal) {
-  const systems = ["tddlog", ...ranked(drawn, tal)];
+// and then by their answers and speed-ups, as the README's legends list
+// them; the limit the longest of its instances'; tddlog's speed-up over
+// each other system in words (`faster`).
+function catSuite(c, rows, drawn, tal, only) {
+  const systems = ["tddlog", ...ranked(c, drawn, tal, only)];
   return { key: c.key, title: c.title, noun: c.noun, systems, instances: rows.map((r) => [r.name, ...systems.map((x) => r.v[x])]),
-    limit: Math.max(...rows.map((r) => r.limit)), total: Object.fromEntries(systems.map((x) => [x, tal[x].total])) };
+    limit: Math.max(...rows.map((r) => r.limit)),
+    faster: Object.fromEntries(systems.slice(1).map((x) => {
+      const v = versus(c, x, only);
+      return [x, (v?.speedup ?? null) === null ? "too few in common" : `tddlog ${speedup(v, true)}`];
+    })) };
 }
 
-// How many times less time tddlog takes than another system: 49×, 1.7×,
-// or 1.3× slower; in a sentence, 49× faster.
-function multiple(mine, theirs) {
-  return theirs >= mine ? times(theirs, mine) : `${times(mine, theirs)} slower`;
-}
-const faster = (mine, theirs) => `${multiple(mine, theirs)}${theirs >= mine ? " faster" : ""}`;
+// A comparison's two total times in words, after "over": the instances the
+// system is given and either answers, a run that does not answer counted as
+// twice its limit (PAR-2).
+const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is given and either answers, ${name} takes `
+  + `${duration(v.total)} and tddlog ${duration(v.tddlog_total)} (PAR-${data.measure.par})`;
 
 // A category's headline: tddlog's answers, the best native system's (the
-// most answers, then the least total time; on all programs the best other
-// system's), and the two systems' total times over the instances it is
-// given and either answers.
+// most answers, then the least speed-up; on all programs the best other
+// system's), their total times and tddlog's speed-up.
 function headline(c, rows, tal, only) {
-  const best = ranked(c.native.filter((x) => tal[x]?.given > 0), tal)[0];
+  const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
   const me = tal.tddlog;
   const parts = [element("b", {}, `tddlog ${count(me.answers)} of ${count(rows.length)}`)];
-  if (best) {
-    const v = versus(c, rows, best, only);
-    parts.push(`; the best ${c.key === ALL ? "other" : "native"} system, ${data.names[best]}, ${count(tal[best].answers)}. `
-      + `Over the ${plural(v.instances, "instance")} ${data.names[best]} is given and either answers, tddlog takes `
-      + `${duration(v.tddlog.total)} and ${data.names[best]} ${duration(v.system.total)}`
-      + (v.tddlog.total > 0 ? `: tddlog ${faster(v.tddlog.total, v.system.total)}` : ""));
+  const v = best && versus(c, best, only);
+  if (v) {
+    const name = data.names[best];
+    parts.push(`; the best ${c.key === ALL ? "other" : "native"} system, ${name}, ${count(tal[best].answers)}. `
+      + `Over ${totals(v, name)}; tddlog's speed-up: ${speedup(v)}`);
   }
   return element("p", { class: "headline" }, ...parts, ".");
+}
+
+// How the speed-up is measured, and the totals with it, in words (rule 16),
+// from the data's parameters of the measure (data.measure, panels.py's).
+const twice = (par) => (par === 2 ? "twice" : `${par} times`);
+function speedupText() {
+  const { floor, common } = data.measure;
+  return "tddlog's speed-up over a system is the ratio of their total times on the instances both answer, "
+    + "together with the instances only one of them answers: tddlog's failures counted at its time limit, and the other "
+    + "system's timeouts counted at the limit where that lower bound is at least the speed-up measured on the instances both "
+    + `answer, a time under ${floor} s counted as ${floor} s. With fewer than ${common} instances both answer (those both `
+    + `answer in under ${floor} s left out), there are too few in common for a speed-up.`;
+}
+function measureText() {
+  const { floor, par } = data.measure;
+  return "A system's total time and tddlog's cover the instances the system is given and either answers, a run that "
+    + `does not answer counted as ${twice(par)} its time limit (PAR-${par}, as in the SAT and model counting competitions) `
+    + `and a time under ${floor} s as ${floor} s. ${speedupText()}`;
 }
 
 // The time limits of the data, in words: "300, 600 or 1200 s".
@@ -637,18 +649,17 @@ function limitsText() {
 
 // The README's overview: for each type of program, tddlog's answers and, for
 // each of its five best native systems (c.named), the system's answers and
-// the two total times over the instances it is given and either answers,
-// on one time axis, and how many times less time tddlog takes; the other
+// the two total times over the instances it is given and either answers
+// (PAR-2), on one time axis, and tddlog's speed-up over it; the other
 // native systems in one row (c.others), the least of their totals and of
-// their ratios. A type's title or row opens the type.
+// their speed-ups. A type's title or row opens the type.
 function overview() {
   const box = element("div", { class: "box" });
   const figure = element("figure", { class: "overview" }, box,
     element("figcaption", { class: "note" }, `The release run of tddlog ${data.version}. Each instance counts in one type, `
-      + "each type against the systems native to it. A system's answers are over all of the type's instances; its row puts "
-      + "tddlog's total time and its own over the instances it is given and either answers. A run that does not answer "
-      + "(out of time or memory, a wrong answer, or a program the system cannot express) counts as its time limit, "
-      + `${limitsText()}, and a time under ${FLOOR} s as ${FLOOR} s. A type opens its details.`));
+      + "each type against the systems native to it. A system's answers are over all of the type's instances. A run that "
+      + "does not answer is out of time or memory, a wrong answer, or a program the system cannot express; the time limits "
+      + `are ${limitsText()}. ${measureText()} A type opens its details.`));
   onWidth(box, () => drawOverview(box));
   return figure;
 }
@@ -661,13 +672,13 @@ function drawOverview(box) {
   const nameRight = narrow ? 112 : 190, answersRight = nameRight + 38;
   const ratio = width - (narrow ? 56 : 110);
   const x0 = answersRight + 14, x1 = ratio - (narrow ? 10 : 18);
-  const all = groups.flatMap((g) => [...g.rows.flatMap((r) => [r.v.tddlog.total, r.v.system.total]),
-    ...(g.others.total ? [g.others.total] : [])]).filter((t) => t > 0);
+  const all = groups.flatMap((g) => [...g.rows.flatMap((r) => [r.v.tddlog_total, r.v.total]),
+    ...(g.others.systems.length ? [g.others.total] : [])]).filter((t) => t > 0);
   const lo = Math.min(...all) / 3, hi = Math.max(...all) * 3;
   const lx = (t) => x0 + Math.log(Math.max(t, lo) / lo) / Math.log(hi / lo) * (x1 - x0);
   const height = top + groups.reduce((h, g) => h + head + row * (g.rows.length + (g.others.systems.length ? 1 : 0)), 0) + bottom;
   const plot = svg("svg", { class: "overview", width, height, viewBox: `0 0 ${width} ${height}`, role: "group",
-    "aria-label": "Each type of program: tddlog's and each native system's answers and total times" });
+    "aria-label": "Each type of program: each native system's answers, its total time and tddlog's, and tddlog's speed-up" });
   const ticks = [];
   for (const tick of [[1, "1 s"], [10, "10 s"], [60, "1 min"], [600, "10 min"], [3600, "1 h"], [36000, "10 h"], [360000, "100 h"]]) {
     // each at least 44 px from the one before, so that their names do not touch
@@ -699,6 +710,11 @@ function drawOverview(box) {
     }
     return marks;
   };
+  // the right column: tddlog's speed-up r (with least, "at least"), or too few in common
+  const mark = (r, least = false) => (r === null
+    ? svg("text", { class: "ratio few", x: ratio, y: y + row / 2 + 4 }, narrow ? "too few" : "too few in common")
+    : svg("text", { class: `ratio${r >= 1 ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 },
+      r >= 1 ? `${least ? "≥" : ""}${times(r, 1, least)}` : `${least ? "≤" : ""}${times(1, r)} slower`));
   for (const { c, rows, others } of groups) {
     const to = { view: "category", category: c.key };
     const title = svg("a", { href: href(to), class: "kind" });
@@ -706,16 +722,13 @@ function drawOverview(box) {
     plot.append(title);
     y += head;
     for (const { x, v } of rows) {
-      const mine = v.tddlog.total, theirs = v.system.total;
-      const ratio_ = multiple(mine, theirs);
+      const mine = v.tddlog_total, theirs = v.total;
       const [left, right] = mine <= theirs ? [-1, 1] : [1, -1];
-      line({ ...to, vs: x }, `${data.names[x]}: ${count(c.answers[x])} of ${count(c.instances)} answered; over the `
-        + `${plural(v.instances, "instance")} it is given and either answers, ${duration(theirs)} against tddlog's ${duration(mine)}, `
-        + `tddlog ${faster(mine, theirs)}`,
+      line({ ...to, vs: x }, `${data.names[x]}: ${count(c.answers[x])} of ${count(c.instances)} answered; over `
+        + `${totals(v, data.names[x])}; tddlog's speed-up: ${speedup(v)}`,
       "other", data.names[x], c.answers[x],
       svg("line", { class: "span", x1: lx(mine), y1: y + row / 2, x2: lx(theirs), y2: y + row / 2 }),
-      ...at(theirs, `you s-${base(x)}`, right), ...at(mine, "me", left),
-      svg("text", { class: `ratio${theirs >= mine ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 }, ratio_));
+      ...at(theirs, `you s-${base(x)}`, right), ...at(mine, "me", left), mark(v.speedup));
     }
     if (others.systems.length) {
       const who = others.systems.map((x) => data.names[x]);
@@ -723,13 +736,12 @@ function drawOverview(box) {
       // their names where they fit (about 6.5 px a letter), on hover in any case
       const tail = `${several ? "each more than " : ""}${atLeast(others.total)} in total`;
       const text = `${and(who)}: ${tail}`.length * 6.5 <= x1 - x0 ? `${and(who)}: ${tail}` : tail;
-      const r = others.ratio;
-      const least = r === null ? "" : r >= 1 ? `≥${times(r, 1, true)}` : `≤${times(1, r)} slower`;
-      line(to, `${and(who)}: ${several ? "each " : ""}more than ${atLeast(others.total)} in total`
-        + (r === null ? "" : `, tddlog ${r >= 1 ? `at least ${times(r, 1, true)} faster` : `at most ${times(1, r)} slower`}`)
-        + ` over the instances ${several ? "each" : "it"} is given and either answers`, "others", several ? `${who.length} others` : who[0], null,
-      svg("text", { class: "both", x: x0, y: y + row / 2 + 4 }, text),
-      svg("text", { class: `ratio${others.ratio !== null && others.ratio >= 1 ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 }, least));
+      const r = others.speedup;
+      line(to, `${and(who)}: ${several ? "each " : ""}more than ${atLeast(others.total)} in total over the instances `
+        + `${several ? "each" : "it"} is given and either answers (PAR-${data.measure.par})`
+        + (r === null ? "" : `; tddlog's speed-up ${r >= 1 ? `at least ${times(r, 1, true)}` : `at most ${times(1, r)} slower`}`),
+      "others", several ? `${who.length} others` : who[0], null,
+      svg("text", { class: "both", x: x0, y: y + row / 2 + 4 }, text), mark(r, true));
     }
   }
   box.replaceChildren(plot);
@@ -866,7 +878,9 @@ const data = {
   version: "",      // tddlog's version in the release run
   names: {},        // a system's key: its name
   categories: [],   // categories.json's, in the README's order, each with `suites` and `perSuite` (its instances in each)
+  measure: {},      // the parameters of the measure (rule 16): floor, par, common, named, drawn
   own: [],          // each system on its own benchmarks against tddlog
+  suiteVs: {},      // a suite's key: tddlog against each other system of the suite (categories.json's `suites`)
   systems: [],      // each solver, by the instances it answers: what it is, its totals, how it was given the instances
   suites: new Map(),   // a suite's key: the suite, with `home`, the data's family that holds it, and `file`
   bench: null,      // benchmarks/index.json: every suite's families, where the site has them
@@ -899,24 +913,13 @@ const recorded = (key) => data.bench?.records?.[key] ?? base(key);
 // and "Ace forceC2d" are Ace's.
 const readsAs = (name) => (reader) => reader === name || reader.startsWith(`${name} `);
 
-// tddlog against each other system of a suite, as the findings write it:
-// over the instances both are given, how many each answers; over those that
-// either answers, each one's total time, a run that does not answer counted
-// at the suite's limit and a time under 0.2 s at 0.2 s.
+// tddlog against each other system of a suite by rule 16 (the data's
+// cats.suites, panels.py's compare over the instances both are given): by
+// the system's answers, then tddlog's speed-up, the least first.
 function against(suite) {
-  const me = column(suite, "tddlog");
-  if (me === 0) return [];
-  const cost = (v) => (answered(v) ? Math.max(v, FLOOR) : suite.limit);
-  return suite.systems.filter((key) => key !== "tddlog").map((key) => {
-    const j = column(suite, key);
-    const both = suite.instances.filter((row) => row[me] !== null && row[j] !== null);
-    const either = both.filter((row) => answered(row[me]) || answered(row[j]));
-    return {
-      key, given: both.length, mine: both.filter((row) => answered(row[me])).length,
-      theirs: both.filter((row) => answered(row[j])).length, either: either.length,
-      myTotal: either.reduce((t, row) => t + cost(row[me]), 0), theirTotal: either.reduce((t, row) => t + cost(row[j]), 0),
-    };
-  }).filter((r) => r.given > 0);
+  const vs = data.suiteVs[suite.key] ?? {};
+  const key = (x) => vs[x].speedup ?? Number.MAX_VALUE;
+  return Object.keys(vs).sort((a, b) => vs[b].answers - vs[a].answers || key(a) - key(b)).map((x) => ({ key: x, v: vs[x] }));
 }
 
 // ------------------------------------------------------------- the address
@@ -1030,7 +1033,7 @@ function crumbs(...items) {
 // ------------------------------------------------------------- the views
 
 // The overview: the README's figures, each part a link to its details:
-// tddlog's and each family's total times in every category, then for each
+// each type's native systems against tddlog (total times and speed-ups), then for each
 // category its headline, its cactus plot beside tddlog's times against the
 // fastest other system's, and each system on its own benchmarks.
 function home() {
@@ -1055,9 +1058,11 @@ function home() {
 }
 
 // Each system on its own benchmarks (from its papers, benchmarks or
-// distribution) against tddlog on the same instances; a system opens the
-// category that holds most of them, narrowed to them. `list` is the rows
-// shown (all of them, or one system's), `head` their heading.
+// distribution) against tddlog on the same instances (o.vs, rule 16): each
+// one's answers and total time over the instances either answers, and
+// tddlog's speed-up; a system opens the category that holds most of them,
+// narrowed to them. `list` is the rows shown (all of them, or one
+// system's), `head` their heading.
 function ownTable(list = data.own, head = "Each system on its own benchmarks") {
   const body = element("tbody");
   for (const o of list) {
@@ -1066,13 +1071,15 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
     const name = cs.length ? link({ view: "category", category: cs[0].key, only: `own:${o.system}` }, data.names[o.system]) : data.names[o.system];
     body.append(element("tr", {}, element("th", { scope: "row" }, swatch(o.system), name), prose("td", o.about, { class: "about" }),
       element("td", { class: "num" }, count(o.instances)),
-      element("td", { class: "num" }, `${count(o.answers.tddlog)} in ${duration(o.total.tddlog)}`),
-      element("td", { class: "num" }, `${count(o.answers[o.system])} in ${duration(o.total[o.system])}`)));
+      element("td", { class: "num" }, `${count(o.vs.answers)} in ${duration(o.vs.total)}`),
+      element("td", { class: "num" }, `${count(o.vs.tddlog_answers)} in ${duration(o.vs.tddlog_total)}`),
+      element("td", { class: "num" }, speedup(o.vs))));
   }
   return [element("h3", { class: "own-head" }, head), scroller(stacked(element("table", { class: "board own" },
     element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"), element("th", { scope: "col" }, "its benchmarks"),
-      element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, "tddlog"),
-      element("th", { scope: "col", class: "num" }, "the system"))), body)), "whole")];
+      element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, "the system"),
+      element("th", { scope: "col", class: "num" }, "tddlog"), element("th", { scope: "col", class: "num" }, "tddlog faster"))), body)), "whole"),
+  note(`Each one's answers, and its total time over the instances either answers. ${measureText()}`)];
 }
 
 // How the plots and totals are read, under every overview.
@@ -1086,52 +1093,49 @@ function how() {
     element("p", {}, "Each type is compared with the systems that natively handle it, and all programs with every system. "
       + "A system's answers count over all of a category's instances, an instance it does not answer counted as "
       + "unanswered, whatever the reason: out of time or memory, a wrong answer, a program the system cannot express, or "
-      + "one it was not given. tddlog's total time against a system's covers the instances that system is given and "
-      + `either answers, a run that does not answer counted at its time limit and a time under ${FLOOR} s at ${FLOOR} s. `
+      + `one it was not given. ${measureText()} `
       + "A system run in several forms counts as its fastest form on each instance. On each instance a system is marked own (from its own papers, "
       + "benchmarks or distribution), native (the program it read is in its own language, as the benchmark's authors or "
       + "generator wrote it) or translated (a translator wrote the program it read from a program in another language, "
       + "or a converter wrote it from the network in another format)."),
     element("p", {}, "A plot counts the instances each system answers within a time limit, on a linear scale from 0 to "
       + "the longest limit: a line further up and to the left is better. A type's plots draw tddlog and the native "
-      + "systems given at least 20 of its instances; a name in the legend greys its line or colours it again."),
+      + `systems given at least ${data.measure.drawn} of its instances; a name in the legend greys its line or colours it again.`),
     element("p", {}, "Every system ran single-threaded, and each comparison pairs a baseline with tddlog run on the same "
       + "machine in the same lanes; every answer of tddlog's is checked against a reference. The numbers come from the "
       + "same records as the README's and ",
       element("a", { href: "https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md" }, "docs/benchmarks.md"), "'s."));
 }
 
-// A category's systems by their answers, then their total time, against
-// tddlog, with how each was given the instances; a system's name sets
-// tddlog's times against its, `vs`'s row marked, and a count of own
-// instances narrows the category to them.
+// A category's systems by their answers, then tddlog's speed-up over them,
+// against tddlog (rule 16), with how each was given the instances; a
+// system's name sets tddlog's times against its, `vs`'s row marked, and a
+// count of own instances narrows the category to them.
 function scoreboard(c, rows, tal, n, vs, only) {
-  const order = ["tddlog", ...ranked(c.native.filter((x) => tal[x].given > 0), tal),
+  const order = ["tddlog", ...ranked(c, c.native.filter((x) => tal[x].given > 0), tal, only),
     ...(vs && !c.native.includes(vs) && tal[vs] ? [vs] : [])];
   const body = element("tbody");
   for (const x of order) {
     const t = tal[x];
-    const v = x === "tddlog" ? null : versus(c, rows, x, only);
+    const v = x === "tddlog" ? null : versus(c, x, only);
     const cls = (k) => (!t.classes[k] ? "" : k === "own" && only !== `own:${x}`
       ? link({ view: "category", category: c.key, only: `own:${x}` }, count(t.classes[k])) : count(t.classes[k]));
     body.append(element("tr", { class: x === "tddlog" ? "mine" : x === vs ? "vs" : null },
       element("th", { scope: "row" }, swatch(x), x === "tddlog" ? data.names[x] : link({ view: "category", category: c.key, vs: x, only }, data.names[x])),
       element("td", {}, element("span", { class: "bar" }, element("i", { style: `width:${(100 * t.answers / Math.max(1, n)).toFixed(1)}%` })),
         ` ${count(t.answers)}`),
-      element("td", { class: "num" }, v ? count(v.instances) : ""),
-      element("td", { class: "num" }, v ? duration(v.tddlog.total) : ""),
-      element("td", { class: "num" }, v ? duration(v.system.total) : ""),
-      element("td", { class: "num" }, v && v.tddlog.total > 0 ? times(v.system.total, v.tddlog.total) : ""),
+      element("td", { class: "num" }, v ? duration(v.total) : ""),
+      element("td", { class: "num" }, v ? duration(v.tddlog_total) : ""),
+      element("td", { class: "num" }, v ? speedup(v) : ""),
       element("td", { class: "num" }, cls("own")), element("td", { class: "num" }, cls("native")),
       element("td", { class: "num" }, cls("translated"))));
   }
   return scroller(stacked(element("table", { class: "board" },
     element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"),
       element("th", { scope: "col" }, `answers, of ${count(n)}`),
-      element("th", { scope: "col", class: "num", title: "the instances the system is given and either it or tddlog answers" }, "compared on"),
-      element("th", { scope: "col", class: "num" }, "tddlog's total there"),
-      element("th", { scope: "col", class: "num" }, "its total there"),
-      element("th", { scope: "col", class: "num" }, "its time over tddlog's"),
+      element("th", { scope: "col", class: "num", title: `over the instances the system is given and either it or tddlog answers (PAR-${data.measure.par})` }, "its total time"),
+      element("th", { scope: "col", class: "num", title: `over the same instances (PAR-${data.measure.par})` }, "tddlog's total time"),
+      element("th", { scope: "col", class: "num" }, "tddlog faster"),
       element("th", { scope: "col", class: "num", title: "instances from the system's own papers, benchmarks or distribution" }, "own"),
       element("th", { scope: "col", class: "num", title: "instances whose program is in the system's own language" }, "native"),
       element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote from another language" }, "translated"))),
@@ -1156,7 +1160,7 @@ function categoryView(route) {
   const rows = catRows(c, only);
   const tal = tally(c, rows, only);
   const drawn = drawnOf(c, rows, only);
-  const whole = catSuite(c, rows, drawn, tal);
+  const whole = catSuite(c, rows, drawn, tal, only);
   const out = [crumbs(["Results", { view: "home" }], g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
     element("h2", {}, g ? g.title : c.title)];
   // a family: what it is, where it comes from and its benchmarks' pages
@@ -1183,9 +1187,8 @@ function categoryView(route) {
   const foreign = c.systems.filter((x) => x !== "tddlog" && !c.native.includes(x) && tal[x].given > 0);
   out.push(element("h3", {}, c.key === ALL ? "Each system's answers, and its total time against tddlog's"
     : "The native systems' answers, and their total times against tddlog's"), scoreboard(c, rows, tal, rows.length, route.vs, only),
-    note(`A system's total time against tddlog's covers the ${c.noun} it is given and either answers, a run that does not `
-      + `answer counted at its time limit and a time under ${FLOOR} s at ${FLOOR} s.`),
-    ...(hidden.length ? [note(`Not on the plots, given fewer than 20 of the ${c.noun}: `
+    note(measureText()),
+    ...(hidden.length ? [note(`Not on the plots, given fewer than ${data.measure.drawn} of the ${c.noun}: `
       + `${and(hidden.map((x) => `${data.names[x]} (${count(tal[x].given)})`))}.`)] : []),
     ...(foreign.length ? [note(`Given some of these ${c.noun} through a translation, but not native to them: `,
       `${and(foreign.map((x) => data.names[x]))}; `, link({ view: "category", category: ALL }, "all programs"), " has every system.")] : []),
@@ -1238,8 +1241,8 @@ function categoryView(route) {
 
 // A solver on the instances whose program is in its own language (its own
 // benchmarks among them) and on those a translator wrote for it: for each,
-// its answers and total time against tddlog's on the same instances (on
-// tddlog's page, against the virtual best of all others), their plot and
+// its answers, and its total time, tddlog's and tddlog's speed-up (on
+// tddlog's page, its answers and the virtual best's of all others), their plot and
 // tddlog's times against its, and the families they are of.
 function ways(s, parts) {
   const x = s.key, me = x === "tddlog", name = data.names[x];
@@ -1256,25 +1259,22 @@ function ways(s, parts) {
       out.push(note(`${name} was given no ${none}.`));
       continue;
     }
-    // against tddlog over the rows that one of the two answers (on tddlog's page, all of them)
-    const either = me ? rows : rows.filter((r) => r.t[x] !== null || r.t.tddlog !== null);
-    const t = virtual(either, [x]), ts = virtual(either, ["tddlog"]);
-    // the virtual best of the other systems of each category, over its rows
-    const vb = sets.map((p) => virtual(p.rows, p.c.systems.filter((y) => y !== "tddlog")))
-      .reduce((a, v) => ({ answers: a.answers + v.answers, total: a.total + v.total }), { answers: 0, total: 0 });
+    // against tddlog by rule 16 (the data's s.native and s.translated; on
+    // tddlog's page, the virtual best of the other systems of each category)
+    const v = me ? null : letters === "t" ? s.translated : s.native;
     const own = sets.reduce((n, p) => n + p.own.length, 0);
-    out.push(element("p", { class: "headline" }, element("b", {}, `${name} ${count(t.answers)} of ${count(rows.length)}`), ` in ${duration(t.total)}`,
-      me ? `; the virtual best of all others ${count(vb.answers)} in ${duration(vb.total)}`
-        : `; tddlog ${count(ts.answers)} in ${duration(ts.total)}, over the ${plural(either.length, "instance")} either answers`,
+    out.push(element("p", { class: "headline" }, element("b", {}, `${name} ${count(virtual(rows, [x]))} of ${count(rows.length)}`),
+      me ? `; the virtual best of all others ${count(sets.reduce((n, p) => n + virtual(p.rows, p.c.systems.filter((y) => y !== "tddlog")), 0))}`
+        : `; tddlog ${count(v.tddlog_answers)}. Over ${totals(v, name)}; tddlog's speed-up: ${speedup(v)}`,
       own ? `; ${count(own)} of them its own benchmarks` : "", "."));
     if (me) {
       const best = { key: `${x}-${letters}`, title: head, noun: "instances", systems: ["tddlog"],
-        instances: rows.map((r) => [r.name, r.v.tddlog]), limit: Math.max(...rows.map((r) => r.limit)), total: { tddlog: ts.total } };
+        instances: rows.map((r) => [r.name, r.v.tddlog]), limit: Math.max(...rows.map((r) => r.limit)) };
       out.push(plotted(best, data.names, { all: true }));
     } else {
       const both = { key: `${x}-${letters}`, title: `${name} and tddlog`, noun: "instances", systems: ["tddlog", x],
         instances: rows.map((r) => [r.name, r.v.tddlog, r.v[x]]), limit: Math.max(...rows.map((r) => r.limit)),
-        total: { tddlog: ts.total, [x]: t.total } };
+        faster: { [x]: v.speedup === null ? "too few in common" : `tddlog ${speedup(v, true)}` } };
       out.push(element("div", { class: "pair" }, plotted(both, data.names, { all: true }), scatter(rows, ["tddlog", x], x)));
     }
     // the families, by category: how many of their instances, its own among them
@@ -1307,10 +1307,10 @@ function ways(s, parts) {
 
 // A solver's page: what it is, its plots (against tddlog on the instances in
 // its own language and on those translated for it, then in each category it
-// was given against the others), its answers and total time in each, its own
-// benchmarks, how it was given the instances, its version and settings, and
-// its paper. tddlog's page has its plot in each category beside the best native
-// other system's.
+// was given against the others), its answers in each with its total time,
+// tddlog's and tddlog's speed-up, its own benchmarks, how it was given the
+// instances, its version and settings, and its paper. tddlog's page has its
+// plot in each category beside the best native other system's.
 function systemView(route) {
   const s = data.systems.find((x) => x.key === route.system);
   const x = s.key, me = x === "tddlog", name = data.names[x];
@@ -1319,12 +1319,11 @@ function systemView(route) {
     return { c, rows, tal: tally(c, rows) };
   });
   const all = parts.flatMap((p) => p.rows);
-  const mine = virtual(all, ["tddlog"]);
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   const out = [crumbs(["Results", { view: "home" }], [name]), element("h2", { class: "solver" }, swatch(x), name),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
     element("p", { class: "headline" }, element("b", {}, `${name} ${count(s.answers)} of ${count(all.length)}`),
-      ` in ${duration(s.total)}`, me ? "" : `; tddlog ${count(mine.answers)} in ${duration(mine.total)}`,
+      me ? "" : `; tddlog ${count(virtual(all, ["tddlog"]))}`,
       `, over every instance of the ${plural(parts.length, "category", "categories")} ${me ? "" : "it was given"}`.trimEnd(), ".")];
   out.push(...ways(s, parts));
   // each category: its systems drawn (and this one), tddlog's and this one's
@@ -1333,36 +1332,38 @@ function systemView(route) {
   for (const { c, rows, tal } of parts) {
     const other = me ? c.native[0] ?? x : x;
     const drawn = [...new Set([...c.drawn, x, other])];
-    const t = tal[other];
+    const v = other === "tddlog" ? null : c.vs[other];
     grid.append(element("section", {}, element("h3", {}, link({ view: "category", category: c.key, vs: me ? undefined : x }, c.title)),
-      element("p", { class: "headline" }, `${data.names[other]} ${count(t.answers)} of ${count(c.instances)} in ${duration(t.total)}; `
-        + `tddlog ${count(tal.tddlog.answers)} in ${duration(tal.tddlog.total)}`),
+      element("p", { class: "headline" }, `${data.names[other]} ${count(tal[other].answers)} of ${count(c.instances)}`
+        + (v ? `; tddlog ${count(tal.tddlog.answers)}; tddlog's speed-up: ${speedup(v)}` : "")),
       plotted(catSuite(c, rows, drawn, tal), data.names, { colour: ["tddlog", other] })));
   }
   out.push(element("h3", { id: "figures" }, me ? "In each type of program, against the best native system" : "In each category it was given, against the others"), grid);
   // each category's numbers
   const body = element("tbody");
   for (const { c, tal } of parts) {
-    const t = tal[x], ts = tal.tddlog;
+    const t = tal[x], v = me ? null : c.vs[x];
     const k = (key) => count(t.classes[key]);
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key, vs: me ? undefined : x }, c.title)),
       element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(t.given)),
       element("td", { class: "num" }, `${k("own")} / ${k("native")} / ${k("translated")}`),
-      element("td", { class: "num" }, `${count(t.answers)} in ${duration(t.total)}`),
+      element("td", { class: "num" }, count(t.answers)),
       ...(me ? [element("td", {}, c.native.length ? `${data.names[c.native[0]]}, ${count(tal[c.native[0]].answers)}` : "")]
-        : [element("td", { class: "num" }, `${count(ts.answers)} in ${duration(ts.total)}`),
-          element("td", { class: "num", title: `over the ${plural(c.vs[x].instances, "instance")} it is given and either answers: `
-            + `its ${duration(c.vs[x].system.total)}, tddlog's ${duration(c.vs[x].tddlog.total)}` },
-          c.vs[x].tddlog.total > 0 ? times(c.vs[x].system.total, c.vs[x].tddlog.total) : "")])));
+        : [element("td", { class: "num" }, count(tal.tddlog.answers)), element("td", { class: "num" }, duration(v.total)),
+          element("td", { class: "num" }, duration(v.tddlog_total)), element("td", { class: "num" }, speedup(v))])));
   }
-  out.push(element("h3", {}, "Answers and total time in each category"), scroller(stacked(element("table", { class: "board" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "category"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col", class: "num" }, "given"),
-      element("th", { scope: "col", class: "num", title: "own / native / translated" }, "own / native / translated"),
-      element("th", { scope: "col", class: "num" }, name),
-      ...(me ? [element("th", { scope: "col" }, "the best native system")]
-        : [element("th", { scope: "col", class: "num" }, "tddlog"), element("th", { scope: "col", class: "num", title: "its total time over tddlog's" }, "over tddlog's")]))),
-    body)), "whole"));
+  out.push(element("h3", {}, me ? "Answers in each category" : "Answers, total times and tddlog's speed-up in each category"),
+    scroller(stacked(element("table", { class: "board" },
+      element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "category"), element("th", { scope: "col", class: "num" }, "instances"),
+        element("th", { scope: "col", class: "num" }, "given"),
+        element("th", { scope: "col", class: "num", title: "own / native / translated" }, "own / native / translated"),
+        element("th", { scope: "col", class: "num" }, `${name} answers`),
+        ...(me ? [element("th", { scope: "col" }, "the best native system")]
+          : [element("th", { scope: "col", class: "num" }, "tddlog answers"),
+            element("th", { scope: "col", class: "num", title: `over the instances it is given and either it or tddlog answers (PAR-${data.measure.par})` }, "its total time"),
+            element("th", { scope: "col", class: "num", title: `over the same instances (PAR-${data.measure.par})` }, "tddlog's total time"),
+            element("th", { scope: "col", class: "num" }, "tddlog faster")]))),
+      body)), "whole"), ...(me ? [] : [note(measureText())]));
   const own = data.own.filter((o) => o.system === x);
   if (own.length) out.push(...ownTable(own, "Its own benchmarks, against tddlog"));
   // how it was given the instances: the rows of the classes that apply
@@ -1474,17 +1475,17 @@ function familyTable(s, fams) {
 
 function headToHead(s, rows, paras) {
   const body = element("tbody");
-  for (const r of rows.sort((a, b) => b.theirs - a.theirs || a.theirTotal - b.theirTotal)) {
-    const name = data.names[r.key];
+  for (const { key, v } of rows) {
+    const name = data.names[key];
     const para = paras.get(name.replace(/'s process$/, " (with Julia's start-up and compilation)"))
-      ?? paras.get(name) ?? [...paras].find(([k]) => k.startsWith(`${data.names[base(r.key)]} (`) && dashed(r.key) === /start-up/.test(k) && !/without/.test(k))?.[1]
+      ?? paras.get(name) ?? [...paras].find(([k]) => k.startsWith(`${data.names[base(key)]} (`) && dashed(key) === /start-up/.test(k) && !/without/.test(k))?.[1]
       ?? [...paras].find(([k]) => k.startsWith(`${name} (`))?.[1];
     const tr = element("tr", {},
-      element("th", { scope: "row" }, swatch(r.key), name),
-      element("td", { class: "num" }, count(r.given)),
-      element("td", { class: "num" }, `${count(r.mine)} / ${count(r.theirs)}`),
-      element("td", { class: "num" }, `${duration(r.myTotal)} / ${duration(r.theirTotal)}`),
-      element("td", { class: "num ratio" }, r.myTotal <= r.theirTotal ? `${times(r.theirTotal, r.myTotal)} faster` : `${times(r.myTotal, r.theirTotal)} slower`));
+      element("th", { scope: "row" }, swatch(key), name),
+      element("td", { class: "num" }, count(v.given)),
+      element("td", { class: "num" }, `${count(v.tddlog_answers)} / ${count(v.answers)}`),
+      element("td", { class: "num" }, `${duration(v.tddlog_total)} / ${duration(v.total)}`),
+      element("td", { class: "num ratio" }, speedup(v, true)));
     body.append(tr);
     if (para) {
       const more = element("tr", { class: "words", hidden: true }, element("td", { colspan: "5" }, prose("p", para)));
@@ -1503,8 +1504,8 @@ function headToHead(s, rows, paras) {
       element("th", { scope: "col", class: "num" }, "answers, tddlog / it"),
       element("th", { scope: "col", class: "num" }, "total time, tddlog / it"),
       element("th", { scope: "col", class: "num" }, "tddlog"))), body)), "whole"),
-    note(`Over the instances both are given: how many each answers, and the total times over those either `
-      + `answers, a run that does not answer counted at the ${s.limit} s limit and a time under ${FLOOR} s at ${FLOOR} s.`));
+    note(`Over the instances both are given: how many each answers, and the two total times over those either answers, `
+      + `a run that does not answer counted as ${twice(data.measure.par)} the ${s.limit} s limit (PAR-${data.measure.par}). ${speedupText()}`));
 }
 
 // Every instance's times, sortable by a column; an instance's name opens
@@ -2313,7 +2314,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       for (const f of part.families) for (const s of f.suites) data.suites.set(s.key, { ...s, home: f, file });
     }
     Object.assign(data.names, cats.names);
+    data.measure = cats.measure;
     data.own = cats.own;
+    data.suiteVs = cats.suites;
     data.systems = cats.systems;
     for (const s of data.systems) if (!data.names[s.key]) throw new Error(`the solver ${s.key} has no name`);
     data.categories = [...cats.categories].sort((a, b) => a.order - b.order);

@@ -890,6 +890,7 @@ svg.overview { display: block; max-width: 100%; }
 .overview text.t.you, .overview text.both { fill: var(--muted); }
 .overview text.ratio { font-size: 13px; font-weight: 700; fill: var(--accent-ink); }
 .overview text.ratio.slower { fill: var(--muted); }
+.overview text.ratio.few { font-size: 11px; font-weight: 400; fill: var(--muted); }
 
 section.kind-figs { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 section.kind-figs h3 { margin: 0; font-size: 1.1rem; }

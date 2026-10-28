@@ -636,13 +636,12 @@ function benchmarksOf(root) {
     // systems, tddlog first, then by their answers, every line in colour)
     // and its scatter plot of tddlog against the fastest of them; then each
     // system on its own benchmarks. A category's view
-    // (#/category/KEY) plots the same, its legend "answers k of N, total T"
-    // for each system drawn, k and T the data's over all N instances, a run
-    // that does not answer or was not given counted at its limit and a time
-    // under 0.2 s at 0.2 s; its axis goes to all N, linear from 0; its board
-    // lists tddlog and the native systems of the category, its table of
-    // families narrows it to a family and its filters to a system's own
-    // benchmarks. The menu lists the categories, and under the one on show
+    // (#/category/KEY) plots the same, its legend "answers k of N, tddlog R
+    // faster" for each system drawn, k the data's over all N instances and R
+    // tddlog's speed-up over it (rule 16, checked against an oracle); its axis
+    // goes to all N, linear from 0; its board lists tddlog and the native
+    // systems of the category, its table of families narrows it to a family
+    // and its filters to a system's own benchmarks. The menu lists the categories, and under the one on show
     // its solvers by their answers (all programs' every solver), each solver
     // with a page of its own (#/system/KEY): its plots against tddlog on
     // the instances in its own language and on those translated for it,
@@ -660,8 +659,6 @@ function benchmarksOf(root) {
     const names = Object.assign({}, ...data.map((d) => d.names), cats.names);
     const number = (v) => typeof v === "number";
     const count = (n) => n.toLocaleString("en");
-    const duration = (t) => (t >= 36000 ? `${(t / 3600).toFixed(0)} h` : t >= 3600 ? `${(t / 3600).toFixed(1)} h`
-      : t >= 60 ? `${(t / 60).toFixed(0)} min` : t >= 10 ? `${t.toFixed(0)} s` : `${t.toFixed(1)} s`);
     // A plot's lines in its legend's order: tddlog's, then by their answers.
     const byAnswers = (systems, answers) => [...systems].sort((a, b) => (b === "tddlog") - (a === "tddlog") || answers(b) - answers(a));
     const coloured = (order) => order.slice(0, order.length > 5 ? 4 : order.length);
@@ -693,28 +690,55 @@ function benchmarksOf(root) {
     // A category's instances: each one's limit and every system's record.
     const rowsOf = (c) => c.rows.map((r) => ({ suite: r[0], name: r[1], limit: r[2], cls: r[3],
       v: Object.fromEntries(c.systems.map((x, j) => [x, r[4 + j]])) }));
-    // The answers of the fastest of xs on each row, and its total time.
-    const virtual = (rows, xs) => {
-      let answers = 0, total = 0;
-      for (const r of rows) {
-        const ts = xs.map((x) => r.v[x]).filter(number);
-        if (ts.length) answers++;
-        total += ts.length ? Math.max(0.2, Math.min(...ts)) : r.limit;
-      }
-      return { answers, total };
-    };
-    // A category's other systems by their answers, then their total time.
-    const ranked = (c, xs) => xs.filter((x) => x !== "tddlog").sort((a, b) => c.answers[b] - c.answers[a] || c.total[a] - c.total[b]);
+    // How many rows the fastest of xs answers.
+    const virtual = (rows, xs) => rows.filter((r) => xs.some((x) => number(r.v[x]))).length;
+    // A category's other systems by their answers, then tddlog's speed-up
+    // over them, the least first and a system without one last.
+    const ranked = (c, xs) => xs.filter((x) => x !== "tddlog")
+      .sort((a, b) => c.answers[b] - c.answers[a] || (c.vs[a].speedup ?? Number.MAX_VALUE) - (c.vs[b].speedup ?? Number.MAX_VALUE));
     // How many times less time tddlog takes, as the README writes it.
     const ratio = (a, b) => `${a / b >= 10 ? (a / b).toFixed(0) : (a / b).toFixed(1)}×`;
-    const multiple = (mine, theirs) => (theirs >= mine ? ratio(theirs, mine) : `${ratio(mine, theirs)} slower`);
-    // tddlog against x over the rows x is given and either answers (rule 16).
-    const versus = (rows, x) => {
-      const over = rows.filter((r) => r.v[x] !== null && (number(r.v[x]) || number(r.v.tddlog)));
-      const side = (y) => ({ answers: over.filter((r) => number(r.v[y])).length,
-        total: over.reduce((t, r) => t + (number(r.v[y]) ? Math.max(0.2, r.v[y]) : r.limit), 0) });
-      return { instances: over.length, tddlog: side("tddlog"), system: side(x) };
+    const speed = (r) => (r >= 1 ? ratio(r, 1) : `${ratio(1, r)} slower`);
+    // tddlog against a system by rule 16 over runs [limit, tddlog's record,
+    // its record], the instances it is given: the two totals over those
+    // either answers, a run that does not answer counted as twice its limit
+    // (PAR-2), and the speed-up: the ratio of the totals over those both
+    // answer (but those both answer in under 0.2 s), tddlog's failures at the
+    // limit and the system's timeouts at the limit where that bound is at
+    // least the ratio on those both answer; none with fewer than 20 both
+    // answer. A time under 0.2 s counts as 0.2 s. (0.2, 2 and 20: the data's
+    // measure, panels.py's parameters.)
+    const { floor, par: times, common } = cats.measure;
+    const compare = (runs) => {
+      const f = (t) => Math.max(t, floor);
+      const par = (limit, v) => (number(v) ? f(v) : times * limit);
+      const either = runs.filter(([, t, x]) => number(t) || number(x));
+      const both = either.filter(([, t, x]) => number(t) && number(x) && Math.max(t, x) >= floor);
+      const out = { given: runs.length, answers: runs.filter(([, , x]) => number(x)).length,
+        tddlog_answers: runs.filter(([, t]) => number(t)).length, either: either.length,
+        total: either.reduce((s, [l, , x]) => s + par(l, x), 0), tddlog_total: either.reduce((s, [l, t]) => s + par(l, t), 0),
+        both: both.length, ratio: null, speedup: null };
+      if (both.length < common) return out;
+      let mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
+      const r = theirs / mine;
+      for (const [l, t, x] of either) {
+        if (number(x) && !number(t)) [mine, theirs] = [mine + l, theirs + f(x)];
+        else if (number(t) && !number(x) && l / f(t) >= r) [mine, theirs] = [mine + f(t), theirs + l];
+      }
+      return { ...out, ratio: r, speedup: theirs / mine };
     };
+    // A comparison of the data's is the oracle's: its counts, its totals to
+    // 0.01 s, its ratio and speed-up to their four digits.
+    const same = (v, w, what) => {
+      for (const k of ["given", "answers", "tddlog_answers", "either", "both"]) assert.equal(v[k], w[k], `${what}: ${k}`);
+      for (const k of ["total", "tddlog_total"]) assert.ok(Math.abs(v[k] - w[k]) < 0.01, `${what}: ${k}, ${v[k]} against ${w[k]}`);
+      for (const k of ["ratio", "speedup"]) {
+        assert.equal(v[k] === null, w[k] === null, `${what}: a ${k} or none`);
+        if (w[k] !== null) assert.ok(Math.abs(v[k] / w[k] - 1) < 1e-3, `${what}: ${k}, ${v[k]} against ${w[k]}`);
+      }
+    };
+    // tddlog against x over rows, those that give x a run.
+    const versus = (rows, x) => compare(rows.filter((r) => r.v[x] !== null).map((r) => [r.limit, r.v.tddlog, r.v[x]]));
     // A scatter plot's dots under and over the diagonal: tddlog's time
     // against the fastest of `others`, the instances both answer in under
     // 0.2 s and those neither answers left out.
@@ -730,45 +754,65 @@ function benchmarksOf(root) {
       }
       return [String(faster), String(slower)];
     };
-    // The data: each category's answers, totals, systems given, native and
-    // drawn, and each system's comparison with tddlog are its rows'.
+    // The data: each category's answers, systems given, native and drawn,
+    // and each system's comparison with tddlog, over the category and
+    // narrowed to each family and each system's own benchmarks, are its rows'.
     for (const c of categories) {
       const what = `the category ${c.key}`;
       const rows = rowsOf(c);
       assert.equal(c.systems[0], "tddlog", `${what}: tddlog first in the data`);
       assert.equal(c.instances, rows.length, `${what}: its instances`);
       for (const x of c.systems) {
-        const t = virtual(rows, [x]);
-        assert.equal(c.answers[x], t.answers, `${what}: ${x}'s answers`);
-        assert.ok(Math.abs(c.total[x] - t.total) < 0.01, `${what}: ${x}'s total, ${c.total[x]} against ${t.total}`);
+        assert.equal(c.answers[x], virtual(rows, [x]), `${what}: ${x}'s answers`);
         assert.equal(c.given[x], rows.filter((r) => r.v[x] !== null).length, `${what}: the instances ${x} was given`);
-        if (x === "tddlog") continue;
-        const v = versus(rows, x);
-        assert.equal(c.vs[x].instances, v.instances, `${what}: the instances ${x} is compared on`);
-        for (const side of ["tddlog", "system"]) {
-          assert.equal(c.vs[x][side].answers, v[side].answers, `${what}: ${side}'s answers against ${x}`);
-          assert.ok(Math.abs(c.vs[x][side].total - v[side].total) < 0.01, `${what}: ${side}'s total against ${x}`);
-        }
+        if (x !== "tddlog") same(c.vs[x], versus(rows, x), `${what}: tddlog against ${x}`);
       }
-      assert.deepEqual(c.native, ranked(c, c.native), `${what}: the native systems by their answers`);
+      const parts = [...c.groups.map((g) => [g.key, g.rows.map((i) => rows[i])]),
+        ...c.systems.map((x, j) => [`own:${x}`, rows.filter((r) => r.cls[j] === "o")]).filter(([, sub]) => sub.length)];
+      assert.deepEqual(Object.keys(c.narrowed).sort(), parts.map(([key]) => key).sort(), `${what}: narrowed to each family and own benchmarks`);
+      for (const [key, sub] of parts) {
+        const given = c.systems.filter((x) => x !== "tddlog" && sub.some((r) => r.v[x] !== null));
+        assert.deepEqual(Object.keys(c.narrowed[key]).sort(), [...given].sort(), `${what} narrowed to ${key}: its systems`);
+        for (const x of given) same(c.narrowed[key][x], versus(sub, x), `${what} narrowed to ${key}: tddlog against ${x}`);
+      }
+      assert.deepEqual(c.native, ranked(c, c.native), `${what}: the native systems by their answers, then speed-up`);
       if (c.key === ALL) assert.deepEqual([...c.native].sort(), c.systems.filter((x) => x !== "tddlog").sort(), `${what}: every system`);
-      const shown = c.native.filter((x) => c.given[x] >= 20);
+      const shown = c.native.filter((x) => c.given[x] >= cats.measure.drawn);
       assert.deepEqual(c.drawn, ["tddlog", ...shown], `${what}: the systems drawn`);
       assert.deepEqual([...c.named, ...c.others.systems], shown, `${what}: the named systems, then the others`);
-      assert.ok(c.named.length === shown.length || (c.named.length === 5 && c.others.systems.length > 1), `${what}: five named, or all of them`);
+      assert.ok(c.named.length === shown.length || (c.named.length === cats.measure.named && c.others.systems.length > 1), `${what}: the best named, or all of them`);
       if (c.others.systems.length) {
-        const ratios = c.others.systems.map((x) => c.vs[x].system.total / c.vs[x].tddlog.total);
-        assert.ok(Math.abs(c.others.ratio - Math.min(...ratios)) < 0.001, `${what}: the others' least ratio`);
-        assert.ok(Math.abs(c.others.total - Math.min(...c.others.systems.map((x) => c.vs[x].system.total))) < 0.01, `${what}: the others' least total`);
+        const vs = c.others.systems.map((x) => c.vs[x]);
+        const fast = vs.map((v) => v.speedup).filter((r) => r !== null);
+        assert.equal(c.others.speedup, fast.length ? Math.min(...fast) : null, `${what}: the others' least speed-up`);
+        assert.equal(c.others.total, Math.min(...vs.map((v) => v.total)), `${what}: the others' least total`);
+        assert.deepEqual(c.others.answers, [Math.min(...c.others.systems.map((x) => c.answers[x])),
+          Math.max(...c.others.systems.map((x) => c.answers[x]))], `${what}: the range of the others' answers`);
+        assert.deepEqual(c.others.tddlog, [Math.min(...vs.map((v) => v.tddlog_total)), Math.max(...vs.map((v) => v.tddlog_total))],
+          `${what}: the range of tddlog's totals against the others`);
       }
       assert.equal(c.groups.reduce((n, g) => n + g.rows.length, 0), c.instances, `${what}: each instance in one family`);
+    }
+    // Each system on its own benchmarks, and each suite's systems, against tddlog.
+    for (const o of cats.own) assert.ok(o.vs.given <= o.instances, `${o.system}'s own benchmarks: given at most its instances`);
+    for (const s of bySuite.values()) {
+      const me = s.systems.indexOf("tddlog") + 1;
+      if (me === 0) continue;
+      const vs = cats.suites[s.key];
+      const others = s.systems.filter((x, i) => x !== "tddlog" && s.instances.some((row) => row[me] !== null && row[i + 1] !== null));
+      assert.deepEqual(Object.keys(vs).sort(), [...others].sort(), `the suite ${s.key}: tddlog against each system`);
+      for (const x of others) {
+        const j = s.systems.indexOf(x) + 1;
+        same(vs[x], compare(s.instances.filter((row) => row[me] !== null && row[j] !== null).map((row) => [s.limit, row[me], row[j]])),
+          `the suite ${s.key}: tddlog against ${x}`);
+      }
     }
     assert.equal(categories.at(-1).key, ALL, "all programs, the last category");
     assert.equal(categories.at(-1).instances, types.reduce((n, c) => n + c.instances, 0), "all programs: the types' instances");
     // The overview: for each type, a link to it with its instances and
     // tddlog's answers, a row for each named native system, with its answers
-    // and how many times less time tddlog takes over the instances it is
-    // given and either answers, and a row for the others. Then each
+    // and tddlog's speed-up over it (too few in common, narrow: too few),
+    // and a row for the others. Then each
     // category's cactus plot of its systems drawn, every line in colour, and
     // its scatter plot of tddlog against the fastest of them; then each
     // system on its own benchmarks.
@@ -779,9 +823,9 @@ function benchmarksOf(root) {
     assert.deepEqual(heads, types.map((c) => [`#/category/${c.key}`,
       `${c.title}, ${count(c.instances)} ${c.noun}: tddlog answers ${count(c.answers.tddlog)}`]), "the overview: a type a group");
     const overviewRows = await page.$$eval("#view svg.overview a.row.other", (as) => as.map((a) => [a.getAttribute("href"),
-      ...["answers", "ratio"].map((c) => a.querySelector(`text.${c}`)?.textContent ?? "")]));
+      ...["answers", "ratio"].map((c) => (a.querySelector(`text.${c}`)?.textContent ?? "").replace(/^too few$/, "too few in common"))]));
     assert.deepEqual(overviewRows, types.flatMap((c) => c.named.map((x) => [`#/category/${c.key}/vs/${x}`, count(c.answers[x]),
-      multiple(c.vs[x].tddlog.total, c.vs[x].system.total)])), "the overview: each named system's answers and how many times less time tddlog takes");
+      c.vs[x].speedup === null ? "too few in common" : speed(c.vs[x].speedup)])), "the overview: each named system's answers and tddlog's speed-up");
     assert.equal((await page.$$("#view svg.overview a.row.others")).length, types.filter((c) => c.others.systems.length).length,
       "the overview: a row of the others");
     const sections = await page.$$eval("#view section.kind-figs", (ss) => ss.map((s) => [s.querySelector("h3 a").getAttribute("href"),
@@ -790,7 +834,7 @@ function benchmarksOf(root) {
     assert.deepEqual(sections, categories.map((c) => [`#/category/${c.key}`, ["tddlog", ...ranked(c, c.drawn)].join(" "),
       ...sides(rowsOf(c), c.drawn.filter((x) => x !== "tddlog")), 0]), "the overview: each category's cactus plot and its scatter plot");
     assert.equal((await page.$$("#view table.board.own tbody tr")).length, cats.own.length, "the overview: each system on its own benchmarks");
-    console.log(`ok the overview: ${overviewRows.length} native systems' total times against tddlog's, each category's plots and the own benchmarks`);
+    console.log(`ok the overview: ${overviewRows.length} native systems' speed-ups, each category's plots and the own benchmarks`);
     // The menu: the overview and the categories; under all programs, on the
     // overview, every solver by its answers.
     const menu = await page.$$eval("#tree .tree > li", (lis) => lis.map((li) => (li.classList.contains("group") ? li.textContent
@@ -808,7 +852,8 @@ function benchmarksOf(root) {
       assert.deepEqual(fig.systems, order, `${what}: its systems drawn, tddlog first and then by their answers`);
       assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
       assert.deepEqual(fig.legend, byAnswers(order, (x) => c.answers[x])
-        .map((x) => `answers${count(c.answers[x])}of${count(rows.length)},total${duration(c.total[x]).replace(/\s/g, "")}`), `${what}: its legend`);
+        .map((x) => `answers${count(c.answers[x])}of${count(rows.length)}${x === "tddlog" ? "" : c.vs[x].speedup === null ? ",toofewincommon"
+          : `,tddlog${speed(c.vs[x].speedup)}${c.vs[x].speedup >= 1 ? "faster" : ""}`.replace(/\s/g, "")}`), `${what}: its legend`);
       assert.deepEqual([...fig.coloured].sort(), [...order].sort(), `${what}: every line in colour`);
       assert.ok(fig.axis.includes(`all${count(rows.length)}instances`), `${what}: its axis`);
       linear(fig, what);
@@ -845,7 +890,7 @@ function benchmarksOf(root) {
         const rows = rowsOf(c).filter((r, i) => (j >= 0 ? r.cls[j] === "o" : g.rows.includes(i)));
         assert.equal((await shown()).instances, rows.length, `${c.key} narrowed to ${only}: its instances`);
         const tddlog = await page.$eval("#view table.board tr.mine td", (td) => td.textContent.trim().replace(/,/g, ""));
-        assert.equal(tddlog, String(virtual(rows, ["tddlog"]).answers), `${c.key} narrowed to ${only}: tddlog's answers`);
+        assert.equal(tddlog, String(virtual(rows, ["tddlog"])), `${c.key} narrowed to ${only}: tddlog's answers`);
         if (j < 0) {
           assert.equal(await page.getAttribute(`#tree a[href="${h}"]`, "aria-current"), "page", `${c.key} narrowed to ${only}: the menu`);
           assert.equal(await page.textContent("#view h2"), g.title, `${c.key} narrowed to ${only}: its title`);
@@ -884,8 +929,9 @@ function benchmarksOf(root) {
         sides(rows, c.drawn.filter((y) => y !== "tddlog")), "tddlog against the fastest other system again");
       console.log(`ok tddlog against ${x} on ${c.key}, from its board and back`);
     }
-    // Each solver's page: its answers and total over every instance of the
-    // categories it was given; its plot against tddlog over all of them and
+    // Each solver's page: its answers over every instance of the categories
+    // it was given, and against tddlog (rule 16) on the instances in its own
+    // language and on those translated for it; its plot against tddlog over all of them and
     // its scatter plot (but on tddlog's page), then a plot in each category
     // of the systems drawn and this one, tddlog's line and its own in
     // colour (on tddlog's page, the best native system's); a row for each
@@ -897,9 +943,7 @@ function benchmarksOf(root) {
       const cs = types.filter((c) => c.systems.includes(s.key));
       assert.deepEqual(s.categories, cs.map((c) => c.key), `${what}: the categories it was given`);
       const rows = cs.flatMap(rowsOf);
-      const t = virtual(rows, [s.key]);
-      assert.equal(s.answers, t.answers, `${what}: its answers`);
-      assert.ok(Math.abs(s.total - t.total) < 0.01, `${what}: its total, ${s.total} against ${t.total}`);
+      assert.equal(s.answers, virtual(rows, [s.key]), `${what}: its answers`);
       assert.equal(s.given, cs.reduce((n, c) => n + c.given[s.key], 0), `${what}: the instances it was given`);
       assert.equal(s.how.reduce((n, h) => n + h.n, 0), s.given, `${what}: how it was given each instance`);
       // (its first plot's lines may all be flat: a system that answers none
@@ -909,6 +953,11 @@ function benchmarksOf(root) {
       const ways = ["on", "t"].map((letters) => cs.flatMap((c) => rowsOf(c).filter((r) => letters.includes(r.cls[c.systems.indexOf(s.key)]))))
         .filter((w) => w.length);
       assert.equal(ways.reduce((n, w) => n + w.length, 0), s.given, `${what}: each instance it was given in its own language or translated`);
+      for (const [letters, key] of [["on", "native"], ["t", "translated"]]) {
+        const w = cs.flatMap((c) => rowsOf(c).filter((r) => letters.includes(r.cls[c.systems.indexOf(s.key)])));
+        if (me || !w.length) assert.equal(s[key], null, `${what}: no comparison of its ${key} instances`);
+        else same(s[key], versus(w, s.key), `${what}: against tddlog on its ${key} instances`);
+      }
       const figs = (await plots()).map((f) => [f.systems.join(" "), f.instances, f.coloured.join(" ")]);
       const pair = me ? "tddlog" : `tddlog ${s.key}`;
       assert.deepEqual(figs, [...ways.map((w) => [pair, w.length, pair]), ...cs.map((c) => {
