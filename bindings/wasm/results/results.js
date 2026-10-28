@@ -1163,14 +1163,10 @@ function categoryView(route) {
   const whole = catSuite(c, rows, drawn, tal, only);
   const out = [crumbs(["Results", { view: "home" }], g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
     element("h2", {}, g ? g.title : c.title)];
-  // a family: what it is, where it comes from and its benchmarks' pages
+  // a family: what it is and where it comes from
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
     link({ view: "category", category: g.key }, g.title), "."));
-  else if (g) {
-    const pages = pagesOf(rows);
-    out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}. `, pages.length > 1 ? "Its benchmarks' pages: " : "Its benchmark's page: ",
-      ...pages.flatMap((p, i) => [i ? ", " : "", link(p.route, p.label), pages.length > 1 ? ` (${count(p.n)})` : ""]), "."));
-  }
+  else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`));
   out.push(headline(c, rows, tal, only));
   const filters = filtersOf(c);
   const chips = filters.filter((f) => f.key === only || f.key.startsWith("own:"));
@@ -1185,6 +1181,11 @@ function categoryView(route) {
   }
   const hidden = c.native.filter((x) => tal[x].given > 0 && !drawn.includes(x));
   const foreign = c.systems.filter((x) => x !== "tddlog" && !c.native.includes(x) && tal[x].given > 0);
+  // a family's benchmark pages (its programs and runs), each with tddlog's answers there
+  if (g?.source) {
+    out.push(element("p", { class: "pages" }, "Programs and runs: ", ...pagesOf(rows).flatMap((p, i) => [i ? ", " : "",
+      link(p.route, p.label), ` (tddlog answers ${count(p.a ?? 0)} of ${count(p.n)})`]), "."));
+  }
   out.push(element("h3", {}, c.key === ALL ? "Each system's answers, and its total time against tddlog's"
     : "The native systems' answers, and their total times against tddlog's"), scoreboard(c, rows, tal, rows.length, route.vs, only),
     note(measureText()),
@@ -2098,7 +2099,8 @@ async function runs(route) {
 // answer; and a search.
 function rail(route) {
   const tree = element("ul", { class: "tree" });
-  // a benchmark's page is in the category and the family of its instance; a
+  // a benchmark's page is in the category and the family of its instance,
+  // and the rail marks that family as it marks a category narrowed to it; a
   // solver's in the category the reader came from where the solver is native
   // to it, else all programs, as the overview is
   const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
@@ -2115,21 +2117,7 @@ function rail(route) {
       for (const g of c.key === ALL ? [] : c.groups) {
         const gl = element("li", {}, link({ view: "category", category: c.key, only: g.key }, g.title,
           element("span", { class: "n" }, count(g.rows.length))));
-        if (route.view === "category" && route.only === g.key) gl.firstChild.setAttribute("aria-current", "page");
-        if (g.key === family) {
-          const fl = element("ul");
-          const me = 4 + c.systems.indexOf("tddlog");
-          const rows = g.rows.map((i) => ({ suite: c.rows[i][0], name: c.rows[i][1], t: { tddlog: answered(c.rows[i][me]) ? c.rows[i][me] : null } }));
-          for (const p of pagesOf(rows)) {
-            const a = p.a ?? 0;
-            const fi = element("li", {}, link(p.route,
-              element("i", { class: `dot ${a === p.n ? "all" : a ? "some" : ""}`, title: `tddlog answers ${a} of ${p.n}` }),
-              p.label, element("span", { class: "n" }, String(p.n))));
-            if (route.view === p.route.view && route.suite === p.route.suite && route.family === p.route.family) fi.firstChild.setAttribute("aria-current", "page");
-            fl.append(fi);
-          }
-          gl.append(fl);
-        }
+        if (g.key === family) gl.firstChild.setAttribute("aria-current", "page");
         ul.append(gl);
       }
       ul.append(element("li", { class: "group" }, c.key === ALL ? "Every solver" : "Native solvers"));

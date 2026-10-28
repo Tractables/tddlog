@@ -893,7 +893,20 @@ function benchmarksOf(root) {
         assert.equal(tddlog, String(virtual(rows, ["tddlog"])), `${c.key} narrowed to ${only}: tddlog's answers`);
         if (j < 0) {
           assert.equal(await page.getAttribute(`#tree a[href="${h}"]`, "aria-current"), "page", `${c.key} narrowed to ${only}: the menu`);
+          assert.equal((await page.$$("#tree .tree > li > ul > li > ul")).length, 0, `${c.key} narrowed to ${only}: no pages in the menu`);
           assert.equal(await page.textContent("#view h2"), g.title, `${c.key} narrowed to ${only}: its title`);
+          // one line above the table links the family's benchmark pages,
+          // each with tddlog's answers there, all of its instances between them
+          const pages = await page.$("#view p.pages");
+          assert.equal(pages !== null, Boolean(g.source), `${c.key} narrowed to ${only}: its benchmark pages`);
+          if (pages) {
+            const text = (await pages.textContent()).replace(/,(?=\d)/g, "");
+            const counts = [...text.matchAll(/\(tddlog answers (\d+) of (\d+)\)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+            assert.ok(text.startsWith("Programs and runs: ") && text.endsWith("."), `${c.key} narrowed to ${only}: ${text}`);
+            assert.equal((await pages.$$("a")).length, counts.length, `${c.key} narrowed to ${only}: a link a page`);
+            assert.deepEqual([counts.reduce((s, [a]) => s + a, 0), counts.reduce((s, [, n]) => s + n, 0)],
+              [virtual(rows, ["tddlog"]), rows.length], `${c.key} narrowed to ${only}: tddlog's answers on its pages`);
+          }
         }
         console.log(`ok ${c.key} narrowed to ${only}, ${rows.length} instances`);
       }
@@ -1138,6 +1151,17 @@ function benchmarksOf(root) {
       const hash = hashOf(family);
       await visit(hash, "#programs select.version");
       assert.equal(await page.title(), `${family.name} · ${family.suite}/${family.key} · tddlog results`);
+      // the menu marks the family of its instance, as it marks a category
+      // narrowed to that family
+      {
+        const key = `${family.suite}/${family.name}`;
+        const placed = types.flatMap((c) => c.groups.filter((g) => g.rows.some((i) => {
+          const k = `${c.rows[i][0]}/${c.rows[i][1]}`;
+          return k === key || (c.copies?.[k] ?? []).includes(key);
+        })).map((g) => `#/category/${c.key}/in/${encodeURIComponent(g.key)}`));
+        const marked = await page.$$eval('#tree a[aria-current="page"]', (as) => as.map((a) => a.getAttribute("href")));
+        assert.deepEqual(marked, placed.slice(-1), `${family.name}: its family marked in the menu`);
+      }
       assert.equal((await page.$$("#programs select.version option")).length, family.tabs, `${family.name}: an entry a language`);
       // The program tddlog read shows first; a translation another system
       // read warns that it may make the comparison unfair, the original does not.
