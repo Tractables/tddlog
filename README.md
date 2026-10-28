@@ -323,9 +323,9 @@ networks it is given and either answers:
 | Ace | 272 | 2.5 h | 2 min | 79× |
 | Alea.jl | 198 | 9.9 h | 2 min | 325× |
 | Merlin | 186 | 11 h | 2 min | 338× |
-| libDAI | 179 | 11 h | 2 min | 361× |
-| TensorInference.jl | 178 | 16 h | 2 min | 493× |
-| 13 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Geni, Psi | 43 to 168 | over 12 h each | 2 min | at least 399× |
+| libDAI | 179 | 11 h | 2 min | 362× |
+| TensorInference.jl | 178 | 16 h | 2 min | 494× |
+| 13 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Geni, Psi | 43 to 168 | over 12 h each | 2 min | at least 400× |
 
 PSouffle was given 10 of the networks and answers 6.
 
@@ -378,10 +378,10 @@ programs it is given and either answers:
 | System | Answers | Its total time | tddlog's | tddlog faster |
 |---|--:|--:|--:|--:|
 | Alea.jl | 154 | 12 h | 1.1 h | 11× |
-| Dice | 119 | 19 h | 1.1 h | 17× |
+| Dice | 119 | 19 h | 1.1 h | 18× |
 | Roulette | 118 | 18 h | 1.1 h | 16× |
 | Geni | 65 | 27 h | 1.1 h | 25× |
-| Pluck | 63 | 27 h | 1.1 h | 24× |
+| Pluck | 63 | 27 h | 1.1 h | 25× |
 | 4 others: Genfer, noDice, SPPL, Psi | 8 to 39 | over 30 h each | 1.1 h | at least 28× |
 
 ### Bit-blasted programs
@@ -400,12 +400,12 @@ programs it is given and either answers:
 
 | System | Answers | Its total time | tddlog's | tddlog faster |
 |---|--:|--:|--:|--:|
-| Alea.jl | 137 | 17 h | 3.8 h | 4.4× |
-| Roulette | 98 | 21 h | 2.6 h | 8.1× |
-| Pluck | 47 | 29 h | 2.6 h | 11× |
-| Dice | 19 | 34 h | 2.6 h | 13× |
-| Genfer | 12 | 34 h | 2.6 h | 13× |
-| 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 35 h each | 2.6 h to 3.0 h | at least 12× |
+| Alea.jl | 137 | 17 h | 3.7 h | 4.5× |
+| Roulette | 98 | 21 h | 2.5 h | 8.4× |
+| Pluck | 47 | 29 h | 2.5 h | 12× |
+| Dice | 19 | 34 h | 2.5 h | 13× |
+| Genfer | 12 | 34 h | 2.5 h | 13× |
+| 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 35 h each | 2.5 h to 2.9 h | at least 13× |
 
 - Where others win: Alea.jl on 65 circuits, six of which tddlog does not
   answer, and Roulette on 34; Genfer on the population models, which it
@@ -428,11 +428,11 @@ programs it is given and either answers:
 
 | System | Answers | Its total time | tddlog's | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 863 | 74 h | 5.9 h | 13× |
-| libDAI | 745 | 94 h | 5.6 h | 17× |
-| pyAgrum | 716 | 96 h | 6.0 h | 16× |
-| Merlin | 701 | 97 h | 5.9 h | 17× |
-| TensorInference.jl | 690 | 116 h | 6.8 h | 17× |
+| Ace | 863 | 74 h | 5.8 h | 13× |
+| libDAI | 745 | 94 h | 5.5 h | 17× |
+| pyAgrum | 716 | 96 h | 5.9 h | 16× |
+| Merlin | 701 | 97 h | 5.8 h | 17× |
+| TensorInference.jl | 690 | 116 h | 6.7 h | 17× |
 | 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, ProvSQL, PRISM, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 3.8 h each | 45 min to 6.7 h | at least 5.0× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
