@@ -1968,6 +1968,16 @@ jemalloc refuses is made again once after a purge of every arena
 follow. With jemalloc's default, blocks of 8 MiB and more come from an
 arena of their own, whose free address space no other request can take.
 
+tddlog is refused memory only where the allocator refuses it, which under
+a limit on the address space (`ulimit -v`) is at the limit. A cgroup's
+`memory.max` bounds resident memory instead, and the kernel kills a
+process that reaches it without refusing anything first, so `auto` could
+not give up one trial and keep another. The binary therefore lowers its
+address-space limit to the room its cgroups leave, `memory.max` less
+`memory.current`, the least over its cgroup and those above it
+(`src/bin/tddlog/budget.rs`), and is refused there as under `ulimit -v`:
+resident memory never exceeds the address space that holds it.
+
 Huge pages go on once the process has asked for `HUGE_FROM` (16 MB), and
 off for good where the kernel stalls (`kernel_stalls`, looked at every
 `HUGE_FROM` bytes asked for): where it has taken more than a tenth of a
