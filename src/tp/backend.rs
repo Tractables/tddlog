@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tididi::diagram::{
     ChildPair, EncodedChildRef, NEG_LEAF_IDX, NodeIdx, ONE_LEAF_IDX, POS_LEAF_IDX, TddNodeId,
 };
-use tididi::limits::{StopAt, StopRules};
+use tididi::limits::StopAt;
 use tididi::reduce::ReductionPlan;
 use tididi::restructure::EmbedError;
 use tididi::restructure::search::{PoolRestarts, PoolSearchConfig, PoolSearchStats};
@@ -1039,12 +1039,8 @@ impl TddBackend<'_> {
             Some(_) => return None,
         }
         Some((
-            limits.edit(|c| {
-                c.with_stop_rules(StopRules {
-                    unconditional: Some(StopAt::WorkUnits(at)),
-                    ..rules
-                })
-            }),
+            limits
+                .edit(|c| c.with_stop_rules(rules.with_unconditional(Some(StopAt::WorkUnits(at))))),
             at,
         ))
     }
@@ -1057,10 +1053,9 @@ impl TddBackend<'_> {
             return None;
         };
         Some(limits.edit(|c| {
-            c.with_stop_rules(StopRules {
-                unconditional: Some(StopAt::WorkUnits(u.saturating_add(work))),
-                ..rules
-            })
+            c.with_stop_rules(
+                rules.with_unconditional(Some(StopAt::WorkUnits(u.saturating_add(work)))),
+            )
         }))
     }
     pub(crate) fn or(&self, a: Tdd, b: Tdd) -> Result<Tdd, CompileError> {
@@ -1168,15 +1163,10 @@ impl TddBackend<'_> {
         // No sweep or work limit: the library's default of four sweeps stops
         // the searches of the random graphs while they still gain, and the
         // compile's schedule, not a budget, bounds what searching costs.
-        let config = PoolSearchConfig {
-            max_sweeps: usize::MAX,
-            max_work_units: u64::MAX,
-            restarts: PoolRestarts {
-                seed: restarts.seed ^ pairs as u64,
-                ..restarts
-            },
-            ..PoolSearchConfig::default()
-        };
+        let config = PoolSearchConfig::default()
+            .with_max_sweeps(usize::MAX)
+            .with_max_work_units(u64::MAX)
+            .with_restarts(restarts.with_seed(restarts.seed ^ pairs as u64));
         // A search that stops part way keeps the moves it made: the members
         // share the rotated vtree either way, and the backend follows them.
         let found = self.engine.pool_search(members, &config);
