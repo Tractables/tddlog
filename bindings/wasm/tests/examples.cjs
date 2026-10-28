@@ -25,7 +25,7 @@ const TOLERANCE = 1e-9;
     for (const strategy of ["auto", "closed"]) {
       for (const evidence of [false, true]) {
         const what = `${example.key} (${strategy}, P(e) ${evidence})`;
-        const result = runtime.solve(solver, program, strategy, evidence);
+        const result = runtime.solve(solver, program, strategy, evidence, example.format ?? "problog");
         assert.equal(result.error, undefined, `${what}: ${result.error}`);
         assert.deepEqual(result.answers.map((a) => a.query), example.problog.map(([q]) => q), `${what}: the queries`);
         result.answers.forEach(({ query, probability }, i) => {
@@ -61,7 +61,7 @@ const TOLERANCE = 1e-9;
   }
   const inconsistent = runtime.solve(solver, "0.5::a. b :- a. evidence(a,true). evidence(b,false). query(a).", "auto", true);
   assert.equal(inconsistent.answers, null);
-  assert.deepEqual(inconsistent.evidence, { probability: 0, log10: null });
+  assert.deepEqual(inconsistent.evidence, { probability: 0, log10: null, z: false });
   const again = runtime.solve(solver, fs.readFileSync(path.join(root, "examples/alarm.pl"), "utf8"), "auto", false);
   assert.equal(again.answers.length, 3);
   console.log("ok refusals");

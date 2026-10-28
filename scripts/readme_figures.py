@@ -8,25 +8,31 @@ printed as JSON.
 --data reads another categories.json than the tree's.
 
 The results are partitioned by type of program: each instance counts in
-one category, whatever language its source was written in. Every system
-given some instance of a category is measured on all of the category's
-instances: an instance it does not answer counts as unanswered at the
-instance's time limit, whatever the reason (out of time or memory, a
-wrong answer, a program the system cannot express, a skip, or one it
-was not given), and a time under 0.2 s counts as 0.2 s. The figures draw
-the category's drawn systems (those given at least 20 of its instances),
-and their legends' numbers are the data's, which the results page shows.
+one type, whatever language its source was written in, and all programs
+are a seventh category, their union. A type is compared with the systems
+native to it, all programs with every system. A system's answers count
+over all of a category's instances, an instance it does not answer
+(out of time or memory, a wrong answer, a program it cannot express, a
+skip, or one it was not given) counting as unanswered. tddlog's total
+time against a system's covers the instances that system is given and
+either answers (rule 16), a run that does not answer counted at its
+time limit and a time under 0.2 s at 0.2 s. The figures draw a
+category's drawn systems (tddlog and the native systems given at least
+20 of its instances), and their legends' numbers are the data's, which
+the results page shows.
 
 Writes, as SVG:
-  overview          for each category, tddlog's answers and total time
-                    and each family's virtual best (the fastest of the
-                    family's drawn systems on each instance);
+  overview          for each type, tddlog's answers and, for each of its
+                    five best native systems, the system's answers and
+                    the two total times over the instances it is given
+                    and either answers; the other native systems in one
+                    row, the least of their ratios and of their totals;
   results-CATEGORY  the cactus plot of the category's drawn systems over
                     all its instances (how many each answers within each
-                    time limit), coloured by family with shades within it,
-                    beside the scatter plot of tddlog's time against the
-                    fastest other drawn system's, instance by instance; the
-                    legend under them, ordered by answers.
+                    time limit), each system its colour and line, beside
+                    the scatter plot of tddlog's time against the fastest
+                    other drawn system's, instance by instance; the legend
+                    under them, ordered by answers.
 
 The cactus plots' time axes are linear, from 0 to the category's longest
 time limit; the scatter plots' are logarithmic from 0.2 s, shorter runs
@@ -53,11 +59,10 @@ PNG = '--png' in sys.argv
 WIDTH = 9.4  # inches; 900 pixels in a browser
 
 # Each system's colour and line, the results page's (bindings/wasm/styles.css,
-# its light steps): tddlog teal, and each system a shade of its family's hue
-# (logic programming orange, graphical models blue, probabilistic
-# programming violet and magenta, model checking green, databases ochre),
-# the shades of a family told apart by their lines too. A family's colour
-# is its first system's.
+# its light steps): tddlog teal, the logic programming systems orange, the
+# network tools blue, the probabilistic programming languages violet and
+# magenta, the model checkers green and the database ochre, systems of one
+# hue told apart by their lines too.
 TDDLOG = '#0d6670'
 DASH, DOT, DASHDOT = (0, (6, 3)), (0, (1.5, 2.5)), (0, (7, 3, 2, 3))
 COLOURS = {
@@ -71,25 +76,25 @@ COLOURS = {
     'storm': ('#1a7f37', '-'), 'prism': ('#3f9a50', DASH),
     'provsql': ('#8a6a12', '-'),
 }
+ALL = 'all-programs'  # all programs, the union of the types: a category of its own, not on the overview
 THEME = dict(bg='#ffffff', text='#1f2328', muted='#59636e', grid='#d8dee4')
 FONTS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
 
 def load(path):
-    """The data panels.py writes: names, families, categories (in the
-    README's order) and own."""
+    """The data panels.py writes: names, categories (in the README's order)
+    and own."""
     data = json.load(open(path))
     data['categories'].sort(key=lambda c: c['order'])
     return data
 
 
-def colours(families):
-    """{system: (colour, line style)}, and {family: colour}; a system of
-    the data without a colour stops the figures."""
-    systems = [s for f in families for s in f['systems'].split()]
-    missing = [s for s in systems if s not in COLOURS]
+def colours(categories):
+    """{system: (colour, line style)}; a system of the data without a colour
+    stops the figures."""
+    missing = sorted({s for c in categories for s in c['systems']} - set(COLOURS))
     assert not missing, f'systems without a colour (COLOURS): {missing}'
-    return COLOURS, {f['key']: COLOURS[f['systems'].split()[0]][0] for f in families}
+    return COLOURS
 
 
 def answered(v):
@@ -200,13 +205,13 @@ def cactus(ax, cat, systems, hi, c, col):
 # inches: a legend block's width, its header's height, a row's height, and
 # the right edges of its columns of numbers
 LEGEND_BLOCK, LEGEND_HEAD, LEGEND_ROW = 4.5, 0.3, 0.235
-LEGEND_COLUMNS = [('answers', 2.85), ('total time', 4.1)]
+LEGEND_COLUMNS = [('answers', 2.85), ('tddlog faster', 4.1)]
 
 
 def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
     """A legend as a table, in ncol blocks side by side from (x, top), inches
     from the figure's top left: each system's line, its name, how many of the
-    n instances it answers and its total time."""
+    n instances it answers and how many times less time tddlog takes."""
     per = math.ceil(len(entries) / ncol)
     for b in range(ncol):
         x0 = x + b * LEGEND_BLOCK
@@ -230,9 +235,9 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
                          color=c['text'] if j == 0 else c['muted'])
 
 
-def scatter(ax, cat, others, hi, c, col, other):
+def scatter(ax, cat, others, hi, c, col, other, label):
     """tddlog's time against the fastest of others', instance by instance;
-    other: the colour of tddlog's losses."""
+    other: the colour of tddlog's losses, label: the x axis's."""
     fail = 10 ** (math.log10(hi) + 0.32)
     mine = [v for _, v in column(cat, 'tddlog')]
     best = [fastest(vs) for vs in zip(*[[v for _, v in column(cat, s)] for s in others])] if others else []
@@ -269,7 +274,7 @@ def scatter(ax, cat, others, hi, c, col, other):
     ax.set_aspect('equal')
     ax.grid(True, color=c['grid'], lw=0.7)
     ax.set_axisbelow(True)
-    ax.set_xlabel('fastest other system (s)')
+    ax.set_xlabel(f'{label} (s)')
     ax.set_ylabel('tddlog (s)')
     ax.set_title(f'tddlog faster on {len(faster)}', loc='left', color=col['tddlog'][0], fontsize=11.5, pad=10)
     ax.set_title(f'slower on {len(slower)}', loc='right', color=other, fontsize=11.5, pad=10)
@@ -277,10 +282,18 @@ def scatter(ax, cat, others, hi, c, col, other):
                 neither=neither)
 
 
+def versus(cat, s):
+    """How many times less time tddlog takes than s over the instances s is
+    given and either answers (the data's vs, rule 16)."""
+    v = cat['vs'][s]
+    return ratio_text(v['system']['total'] / v['tddlog']['total']) if v['tddlog']['total'] else ''
+
+
 def results(cat, names, col, out):
     """The cactus plot of the category's drawn systems beside the scatter
-    plot, the legend under them. Returns each system's answers and the
-    scatter plot's numbers."""
+    plot, the legend under them: each system's answers and how many times
+    less time tddlog takes over the instances it is given and either
+    answers. Returns each system's answers and the scatter plot's numbers."""
     c = style()
     systems = ordered(cat)
     others = [s for s in systems if s != 'tddlog']
@@ -294,9 +307,10 @@ def results(cat, names, col, out):
         return [x / WIDTH, (h - top - height) / h, w / WIDTH, height / h]
 
     solved = cactus(fig.add_axes(box(0.8, 0.4, 4.35, 3.45)), cat, systems, hi, c, col)
-    loss = col[cat['best']][0] if cat['best'] in col else c['muted']
-    sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), cat, others, hi, c, col, loss)
-    legend = [(s, names[s], [solved[s], seconds(total(column(cat, s)))]) for s in systems]
+    loss = col[cat['named'][0]][0] if cat['named'] else c['muted']
+    sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), cat, others, hi, c, col, loss,
+                 'fastest other system' if cat['key'] == ALL else 'fastest native system')
+    legend = [(s, names[s], [solved[s], '' if s == 'tddlog' else versus(cat, s)]) for s in systems]
     legend_table(fig, h, (WIDTH - ncol * LEGEND_BLOCK) / 2, legend_top, legend, cat['instances'], cat['noun'],
                  ncol, c, col)
     save(fig, out, f'results-{cat["key"]}')
@@ -320,67 +334,103 @@ def times(lo, hi):
     return [(t, s) for t, s in named if lo <= t <= hi]
 
 
-def multiple(r):
+def ratio_text(r, least=False):
+    """How many times less time tddlog takes, r its ratio to the other's:
+    14×, 2.5×, 1.3× slower; with least, "at least" in a sign, rounded down
+    (up where tddlog is slower)."""
     x = max(r, 1 / r)
-    return (f'{x:.0f}×' if x >= 10 else f'{x:.1f}×') + ('' if r >= 1 else ' slower')
+    if least:
+        x = math.floor(x) if x >= 10 else math.floor(x * 10) / 10
+        if r < 1:
+            x = math.ceil(1 / r) if 1 / r >= 10 else math.ceil(10 / r) / 10
+    text = f'{x:.0f}×' if x >= 10 else f'{x:.1f}×'
+    if r < 1:
+        return ('≤' if least else '') + text + ' slower'
+    return ('≥' if least else '') + text
 
 
-def overview(data, fam_colour, out):
-    """For each category, under its title and number of instances, tddlog's
-    total time and each family's virtual best's, points on one time axis,
-    with their answers to the left and how many times less time tddlog
-    takes to the right."""
+def at_least(t):
+    """A duration as seconds() writes it, rounded down: what "more than"
+    can say of t."""
+    for unit, size, digits in ((36000, 3600, 0), (3600, 3600, 1), (60, 60, 0)):
+        if t >= unit:
+            v = math.floor(t / size * 10 ** digits) / 10 ** digits
+            return seconds(v * size)
+    return seconds(math.floor(t * 10) / 10)
+
+
+def overview(data, names, col, out):
+    """For each type, under its title, its number of instances and tddlog's
+    answers, its NAMED best native systems (cat['named']), each with its
+    answers to the left, tddlog's total time and its own over the instances
+    it is given and either answers as points on one time axis, and how many
+    times less time tddlog takes to the right; the other native systems in
+    one row that names them, the least of their totals and of their ratios."""
     c = style()
-    titles = {f['key']: f['title'] for f in data['families']}
     lines = []
     for cat in data['categories']:
-        lines.append(('head', f"{cat['title']}, {cat['instances']} {cat['noun']}", None, None))
-        mine = cat['total']['tddlog']
-        lines.append(('tddlog', 'tddlog', (cat['answers']['tddlog'], mine), None))
-        fams = sorted(cat['vfamily'].items(), key=lambda kv: kv[1]['total'])
-        lines += [('row', titles[k], (v['answers'], v['total']), (k, mine)) for k, v in fams]
-    ts = [st[1] for kind, _, st, _ in lines if kind != 'head']
-    names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 0.95
-    n = len(lines)
+        if cat['key'] == ALL:
+            continue
+        lines.append(('head', f"{cat['title']}, {cat['instances']} {cat['noun']}: tddlog answers "
+                      f"{cat['answers']['tddlog']}", None, None))
+        for x in cat['named']:
+            v = cat['vs'][x]
+            lines.append(('row', names[x], cat['answers'][x], (x, v['tddlog']['total'], v['system']['total'])))
+        o = cat['others']
+        if o['systems']:
+            text = textwrap.fill(', '.join(names[x] for x in o['systems']) + f": each more than {at_least(o['total'])} in total", 70)
+            lines.append(('others', f"{len(o['systems'])} others", None, (text, o['ratio'])))
+    ts = [t for kind, _, _, st in lines if kind == 'row' for t in st[1:]]
+    ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['total']]
+    names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 1.15
+    # each line's height in rows, and its middle, from the top
+    tall = [0.6 + 0.55 * st[0].count('\n') + 0.4 if kind == 'others' else 1 for kind, _, _, st in lines]
+    mids = [sum(tall[:k]) + tall[k] / 2 for k in range(len(lines))]
+    n = sum(tall)
     h = n * row + top + bottom
     axes_w = WIDTH - names_w - ratio_w
     fig = plt.figure(figsize=(WIDTH, h))
     ax = fig.add_axes([names_w / WIDTH, bottom / h, axes_w / WIDTH, n * row / h])
     at = ax.get_yaxis_transform()
     ratio_x = 1 + 0.25 / axes_w
+    lo, hi = min(ts) / 3, max(ts) * 3
     ys, labels = [], []
-    for y, (kind, name, st, fam) in enumerate(lines):
+    for y, (kind, name, answers, st) in zip(mids, lines):
         y = -y
         if kind == 'head':
             ax.text(-names_w / axes_w + 0.005, y, name, transform=at, ha='left', va='center', fontweight='bold',
                     fontsize=12.5)
             continue
-        a, t = st
-        colour = TDDLOG if kind == 'tddlog' else fam_colour[fam[0]]
-        if kind == 'row':
-            mine = fam[1]
-            ax.plot([mine, t], [y, y], color=c['grid'], lw=3, solid_capstyle='round', zorder=2)
-            r = t / mine
-            ax.text(ratio_x, y, multiple(r), transform=at, ha='left', va='center', fontsize=12.5,
-                    fontweight='bold', color=TDDLOG if r >= 1 else colour)
-        ax.scatter([t], [y], s=64, color=colour, lw=0, zorder=4 if kind == 'tddlog' else 3)
-        ax.text(t * 1.3 if kind == 'row' and t >= fam[1] else t / 1.3, y, seconds(t),
-                ha='left' if kind == 'row' and t >= fam[1] else 'right', va='center', color=c['text'], fontsize=11.5)
-        ax.text(-0.12 / axes_w, y, f'{a}', transform=at, ha='right', va='center', fontsize=11, color=c['text'],
-                fontweight='bold' if kind == 'tddlog' else 'normal')
         ys.append(y)
         labels.append(name)
-    lo, hi = min(ts) / 3, max(ts) * 3
+        if kind == 'others':
+            text, r = st
+            ax.text(0.01, y, text, transform=at, ha='left', va='center', fontsize=10.5, color=c['muted'],
+                    linespacing=1.25)
+            if r is not None:
+                ax.text(ratio_x, y, ratio_text(r, least=True), transform=at, ha='left', va='center', fontsize=12.5,
+                        fontweight='bold', color=TDDLOG if r >= 1 else c['muted'])
+            continue
+        x, mine, t = st
+        colour = col[x][0]
+        ax.plot([mine, t], [y, y], color=c['grid'], lw=3, solid_capstyle='round', zorder=2)
+        r = t / mine
+        ax.text(ratio_x, y, ratio_text(r), transform=at, ha='left', va='center', fontsize=12.5,
+                fontweight='bold', color=TDDLOG if r >= 1 else colour)
+        ax.scatter([t], [y], s=64, color=colour, lw=0, zorder=3)
+        ax.scatter([mine], [y], s=64, color=TDDLOG, lw=0, zorder=4)
+        out_right = t >= mine
+        ax.text(t * 1.3 if out_right else t / 1.3, y, seconds(t), ha='left' if out_right else 'right', va='center',
+                color=c['text'], fontsize=11.5)
+        ax.text(mine / 1.3 if out_right else mine * 1.3, y, seconds(mine), ha='right' if out_right else 'left',
+                va='center', color=TDDLOG, fontsize=11.5)
+        ax.text(-0.12 / axes_w, y, f'{answers}', transform=at, ha='right', va='center', fontsize=11, color=c['text'])
     ticks = times(lo, hi)
     log_axis(ax, 'x', [t for t, _ in ticks], [s for _, s in ticks])
     ax.set_xlim(lo, hi)
-    ax.set_ylim(-n + 0.5, 0.5)
+    ax.set_ylim(-n, 0)
     ax.set_yticks(ys)
     ax.set_yticklabels(labels, fontsize=12)
-    for label in ax.get_yticklabels():
-        if label.get_text() == 'tddlog':
-            label.set_color(TDDLOG)
-            label.set_fontweight('bold')
     ax.tick_params(axis='y', length=0, pad=56)
     ax.tick_params(axis='x', length=0, pad=6)
     ax.grid(True, axis='x', color=c['grid'], lw=0.7)
@@ -388,7 +438,7 @@ def overview(data, fam_colour, out):
     for side in ('left', 'bottom'):
         ax.spines[side].set_visible(False)
     head = (bottom + n * row + 0.72) / h
-    fig.text(0.006, head, 'Total time over every instance of a category', fontweight='bold', fontsize=13.5,
+    fig.text(0.006, head, 'Each type of program against the systems native to it', fontweight='bold', fontsize=13.5,
              va='center', ha='left')
     over = 1 + 0.12 / (n * row)
     ax.text(-0.12 / axes_w, over, 'answers', transform=ax.transAxes, ha='right', va='bottom', fontsize=11,
@@ -396,10 +446,12 @@ def overview(data, fam_colour, out):
     ax.text(ratio_x, over, 'tddlog\nfaster', transform=ax.transAxes, ha='left', va='bottom', fontsize=11,
             color=c['muted'], linespacing=1.1)
     fig.text(0.006, 0.08 / h, textwrap.fill(
-        'Each instance counts in one category, whatever language its source was written in. A family’s line is '
-        'its virtual best: the fastest of its systems on each instance. Total time over all of a category’s '
-        'instances: a run that does not answer (out of time or memory, failed, a program the system cannot '
-        'express, or not given) counts as its time limit, a time under 0.2 s as 0.2 s.', 112),
+        'Each instance counts in one type, whatever language its source was written in. A system’s answers are over '
+        'all of the type’s instances. On each row, tddlog’s total time (teal) and the system’s over the instances '
+        'the system is given and either answers: a run that does not answer (out of time or memory, failed, or a '
+        'program the system cannot express) counts as its time limit, a time under 0.2 s as 0.2 s. The five best '
+        'native systems by answers have a row each; the others share one, with the least of their totals and of '
+        'their ratios to tddlog.', 112),
         ha='left', va='bottom', fontsize=10.5, color=c['muted'], linespacing=1.35)
     save(fig, out, 'overview')
 
@@ -422,7 +474,7 @@ def main():
     out = args[0] if args else os.path.join(SOURCE, 'docs', 'images')
     os.makedirs(out, exist_ok=True)
     data = load(path)
-    names, (col, fam_colour) = data["names"], colours(data["families"])
+    names, col = data["names"], colours(data["categories"])
     numbers = {}
     for cat in data['categories']:
         assert cat['drawn'][0] == 'tddlog', f"{cat['key']}: tddlog not drawn"
@@ -432,15 +484,16 @@ def main():
         assert all(res['answers'][s] == cat['answers'][s] and abs(total(column(cat, s)) - cat['total'][s]) < 0.01
                    for s in cat['drawn']), f"{cat['key']}: not the data"
         res['total'] = {s: cat['total'][s] for s in cat['drawn']}
-        res['best'] = dict(system=cat['best'], answers=cat['answers'].get(cat['best']),
-                           total=cat['total'].get(cat['best']))
-        res['vbest'] = cat['vbest']
-        res['vfamily'] = cat['vfamily']
+        # each native system against tddlog by rule 16, by answers on the category
+        res['native'] = {x: dict(answers=cat['answers'][x], given=cat['given'][x], vs=cat['vs'][x],
+                                 ratio=round(cat['vs'][x]['system']['total'] / cat['vs'][x]['tddlog']['total'], 2)
+                                 if cat['vs'][x]['tddlog']['total'] else None) for x in cat['native']}
+        res['named'], res['others'] = cat['named'], cat['others']
         res['not_drawn'] = {s: cat['given'][s] for s in cat['systems'] if s not in cat['drawn']}
         res['tddlog_failures'] = misses(cat)
         res['within'] = within(cat, cat['drawn'])
         numbers[cat['key']] = res
-    overview(data, fam_colour, out)
+    overview(data, names, col, out)
     json.dump(numbers, sys.stdout, indent=1)
     print()
 

@@ -62,6 +62,18 @@ impl Read {
         }
     }
 
+    /// Run `op` on the formula, owned where no other read holds it and
+    /// borrowed otherwise, where [`owned`](Self::owned) would copy it.
+    pub(crate) fn with_cow<R>(self, op: impl FnOnce(Cow<'_, Tdd>) -> R) -> R {
+        match self {
+            Read::Owned(f) => op(Cow::Owned(f)),
+            Read::Shared(f) => match Arc::try_unwrap(f) {
+                Ok(f) => op(Cow::Owned(f)),
+                Err(f) => op(Cow::Borrowed(&f)),
+            },
+        }
+    }
+
     /// The formula as a conjunction takes it, with the store's hold on a
     /// shared one, which the borrow reads through ([`lend`]).
     fn split(self) -> (Option<Tdd>, Option<Arc<Tdd>>) {
@@ -1067,7 +1079,7 @@ impl TddBackend<'_> {
         }
         Ok(self.engine.and_clause(a, &renamed)?)
     }
-    pub(crate) fn negate(&self, a: Tdd) -> Result<Tdd, CompileError> {
+    pub(crate) fn negate<'f>(&self, a: impl Into<Cow<'f, Tdd>>) -> Result<Tdd, CompileError> {
         // The compiler minimizes every result it keeps, so the full reduction
         // `negate` ends with by default is paid twice. Pruning is the part
         // negation cannot skip: it removes the operand's dead cone, the nodes

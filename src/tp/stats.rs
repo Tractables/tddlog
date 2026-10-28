@@ -1,6 +1,8 @@
 //! What a compilation counts: operations, negations by source, the
 //! rotation searches of a dynamic vtree, projection and the clause memo.
 
+use std::borrow::Cow;
+
 use tididi::Tdd;
 
 use super::{CompileError, TddBackend};
@@ -172,12 +174,13 @@ impl Negations {
     }
 
     /// `¬f`, counted under `source`.
-    pub(crate) fn negate(
+    pub(crate) fn negate<'f>(
         &mut self,
         backend: &TddBackend,
         source: NegationSource,
-        f: Tdd,
+        f: impl Into<Cow<'f, Tdd>>,
     ) -> Result<Tdd, CompileError> {
+        let f = f.into();
         let pairs = backend.size(&f);
         let work = backend.work_units();
         let r = backend.negate(f)?;

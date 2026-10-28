@@ -2,13 +2,19 @@
 
 // The page's examples, shared by the page, the site's assembly and the tests.
 // Each is a program the repository already tests against ProbLog: `file` is
-// its path in the repository, and the site serves it at examples/<name>.pl.
-// `key` names it in the address bar and `name` on its button.
+// its path in the repository, and the site serves it at examples/ under its
+// file name. `key` names it in the address bar and `name` on its button;
+// `format` names the format of a file that is not a ProbLog program
+// (runtime.js's formats).
 //
 // `problog` holds ProbLog 2.3.0's answers (`-k sdd`, one query at a time, as
 // the repository's differential tests take them; here to 12 significant
 // digits), and `evidence` its P(e): the probability of one rule whose body is
 // the evidence, queried without it, and 1 for a program without evidence.
+// For the Dice program and the network they are the answers of the program
+// tddlog reads each as, computed by hand: Dice's own for the walk
+// (tests/it/examples.rs), and the network's marginals by a sum over its
+// worlds.
 // tests/examples.cjs checks the built module against both.
 const tddlogExamples = [
   {
@@ -107,6 +113,30 @@ const tddlogExamples = [
       ["sum(8)", 0.05089386], ["sum(9)", 0.08413355], ["sum(10)", 0.04095259], ["sum(11)", 0.50704523],
       ["sum(12)", 0.02676586], ["sum(13)", 0.02359843], ["sum(14)", 0.02757976], ["sum(15)", 0.03501714],
       ["sum(16)", 0.00668589], ["sum(17)", 0.00121972], ["sum(18)", 0.03377582],
+    ],
+    evidence: 1,
+  },
+  {
+    key: "walk",
+    name: "Dice: a random walk",
+    file: "tests/dice/walk.dice",
+    format: "dice",
+    problog: [
+      ["x(0)", 0], ["x(1)", 0.245556733026], ["x(2)", 0], ["x(3)", 0.362357126637],
+      ["x(4)", 0], ["x(5)", 0.190068881992], ["x(6)", 0], ["x(7)", 0.202017258345],
+    ],
+    evidence: 0.432898048,
+  },
+  {
+    key: "chest",
+    name: "Hugin network: the chest clinic",
+    file: "examples/asia.net",
+    format: "hugin",
+    problog: [
+      ["asia(yes)", 0.01], ["asia(no)", 0.99], ["tub(yes)", 0.0104], ["tub(no)", 0.9896],
+      ["smoke(yes)", 0.5], ["smoke(no)", 0.5], ["lung(yes)", 0.055], ["lung(no)", 0.945],
+      ["bronc(yes)", 0.45], ["bronc(no)", 0.55], ["either(yes)", 0.064828], ["either(no)", 0.935172],
+      ["xray(yes)", 0.11029004], ["xray(no)", 0.88970996], ["dysp(yes)", 0.4359706], ["dysp(no)", 0.5640294],
     ],
     evidence: 1,
   },

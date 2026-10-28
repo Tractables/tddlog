@@ -20,6 +20,7 @@ mod front_pages;
 mod guards;
 mod implicit_levels;
 mod indicators;
+mod input;
 mod link_reuse;
 mod naming;
 mod narrowed;

@@ -155,6 +155,54 @@ def test_errors():
         assert issubclass(error, tddlog.Error)
 
 
+def test_dice_program():
+    # tests/dice/walk.dice, against Dice's answers
+    # (tests/it/examples.rs).
+    program = (REPOSITORY / "tests" / "dice" / "walk.dice").read_text()
+    answers = tddlog.solve(program, format="dice").answers
+    dice = {"x(0)": 0.0, "x(1)": 0.245556733026, "x(2)": 0.0, "x(3)": 0.362357126637,
+            "x(4)": 0.0, "x(5)": 0.190068881992, "x(6)": 0.0, "x(7)": 0.202017258345}
+    assert list(answers) == list(dice)
+    for query, probability in dice.items():
+        assert answers[query] == pytest.approx(probability, abs=1e-9), query
+
+
+def test_network_and_its_evidence():
+    # examples/asia.net given tests/networks/asia_leaves.inst, against
+    # ProbLog's answers on the program it is read as
+    # (examples/bn_asia_evidence.pl).
+    network = (REPOSITORY / "examples" / "asia.net").read_text()
+    observed = (REPOSITORY / "tests" / "networks" / "asia_leaves.inst").read_text()
+    solution = tddlog.solve(network, format="hugin", evidence=observed, evidence_probability=True)
+    assert solution.answers["asia(yes)"] == pytest.approx(0.01167842, abs=1e-7)
+    assert solution.answers["either(no)"] == pytest.approx(0.69630537, abs=1e-7)
+    assert len(solution.answers) == 12
+    assert solution.evidence_probability == pytest.approx(0.0396199356, abs=1e-10)
+
+
+def test_markov_network_partition_function():
+    # tests/regress/markov.uai given markov.uai.evid: Z = 165 by
+    # enumeration of its worlds.
+    regress = REPOSITORY / "tests" / "regress"
+    solution = tddlog.solve((regress / "markov.uai").read_text(), format="uai",
+                            evidence=(regress / "markov.uai.evid").read_text(),
+                            evidence_probability=True, queries=False)
+    assert solution.answers == {}
+    assert solution.evidence_probability == pytest.approx(165.0, abs=1e-9)
+    assert solution.log10_evidence_probability == pytest.approx(math.log10(165.0), abs=1e-12)
+
+
+def test_format_errors():
+    with pytest.raises(ValueError, match="unknown format"):
+        tddlog.solve(ALARM, format="prolog")
+    with pytest.raises(ValueError, match="is for a network"):
+        tddlog.solve(ALARM, evidence="<instantiation/>")
+    with pytest.raises(tddlog.ParseError):
+        tddlog.solve("network x {", format="bif")
+    with pytest.raises(tddlog.ParseError, match="line 1"):
+        tddlog.solve("let x = in x", format="dice")
+
+
 def test_option_errors():
     with pytest.raises(ValueError, match="unknown vtree strategy"):
         tddlog.solve(ALARM, vtree="balanced")

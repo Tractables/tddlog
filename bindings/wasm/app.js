@@ -202,7 +202,8 @@ function answersHtml(result, digits, reference, all = false) {
   }
   if (result.evidence !== null) {
     const e = tddlogRuntime.evidence(result.evidence, digits);
-    let line = `P(evidence) <b>${e.scientific}</b>, log10 <b>${e.log10}</b>`;
+    // A Markov network's is its partition function given the evidence.
+    let line = `${result.evidence.z ? "Z" : "P(evidence)"} <b>${e.scientific}</b>, log10 <b>${e.log10}</b>`;
     if (reference?.evidence) {
       const r = tddlogRuntime.evidence(reference.evidence, digits);
       line += `; ${escapeHtml(reference.column)} <b>${r.scientific}</b>, log10 <b>${r.log10}</b>`;
@@ -395,6 +396,16 @@ if (typeof document !== "undefined") {
   };
   element("strategy").addEventListener("change", showStrategy);
 
+  // The formats, ProbLog first; an example, a file or the address sets it,
+  // and the reader may change it.
+  for (const [name, label] of tddlogRuntime.formats) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = label;
+    element("format").append(option);
+  }
+  const format = element("format");
+
   // ------------------------------------------------------------ the editor
 
   // The program in colours: the textarea's text is transparent, and the
@@ -443,8 +454,9 @@ if (typeof document !== "undefined") {
     }
   }
 
-  // Every program the editor shows comes through here.
-  function setProgram(text, from, name) {
+  // Every program the editor shows comes through here, with its format.
+  function setProgram(text, from, name, as = "problog") {
+    format.value = as;
     editor.value = text;
     editor.scrollTop = 0;
     editor.scrollLeft = 0;
@@ -490,7 +502,7 @@ if (typeof document !== "undefined") {
     }
     if (ticket !== loading) return;
     const example = tddlogExamples[i];
-    setProgram(text, { example: i, reference: exampleReference(example) }, tddlogExamplePath(example).split("/").pop());
+    setProgram(text, { example: i, reference: exampleReference(example) }, tddlogExamplePath(example).split("/").pop(), example.format);
     showSource("");
     requestRun();
   }
@@ -536,7 +548,7 @@ if (typeof document !== "undefined") {
     const ticket = ++loading;
     const text = await file.text();
     if (ticket !== loading) return;
-    setProgram(text, null, file.name);
+    setProgram(text, null, file.name, tddlogRuntime.formatOf(file.name));
     showSource("");
     saveSoon();
   }
@@ -576,6 +588,13 @@ if (typeof document !== "undefined") {
     });
     saveSoon();
   });
+  // Another format reads the text as another program.
+  format.addEventListener("change", () => {
+    loading++;
+    if (source?.bench !== undefined) sourceNote.append(" Edited since.");
+    if (source !== null) choose(null);
+    saveSoon();
+  });
   editor.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
@@ -590,7 +609,8 @@ if (typeof document !== "undefined") {
 
   // The address carries the choices, so a result can be linked to:
   // ?example=<key>&strategy=<s>&evidence=1&digits=<n>, an unedited benchmark
-  // after #bench=, and an edited program after #program=. It is read once
+  // after #bench=, and an edited program after #program=, with &format=<f>
+  // where it is not ProbLog. It is read once
   // when the page opens, and written at every run and after edits.
   function readAddress() {
     const params = new URLSearchParams(location.search);
@@ -601,6 +621,7 @@ if (typeof document !== "undefined") {
     const hash = new URLSearchParams(location.hash.slice(1));
     return {
       example: tddlogExamples.findIndex(({ key }) => key === params.get("example")),
+      format: tddlogRuntime.formats.some(([name]) => name === params.get("format")) ? params.get("format") : "problog",
       program: hash.get("program"),
       bench: hash.get("bench"),
     };
@@ -614,6 +635,7 @@ if (typeof document !== "undefined") {
     if (settings.strategy !== "auto") params.set("strategy", settings.strategy);
     if (settings.evidence) params.set("evidence", "1");
     if (settings.digits !== 6) params.set("digits", String(settings.digits));
+    if (source === null && settings.format !== "problog") params.set("format", settings.format);
     const query = params.toString();
     let hash = "";
     if (source?.bench !== undefined) hash = `#bench=${source.bench}`;
@@ -653,7 +675,7 @@ if (typeof document !== "undefined") {
   element("copy").addEventListener("click", () => {
     const { result, settings: { digits } } = shown;
     const lines = [["query", "probability"], ...(result.answers ?? []).map(({ query, probability }) => [query, tddlogRuntime.probability(probability, digits)])];
-    if (result.evidence !== null) lines.push(["P(evidence)", tddlogRuntime.evidence(result.evidence, digits).scientific]);
+    if (result.evidence !== null) lines.push([result.evidence.z ? "Z" : "P(evidence)", tddlogRuntime.evidence(result.evidence, digits).scientific]);
     copy(element("copy"), lines.map((line) => line.join("\t")).join("\n") + "\n");
   });
 
@@ -762,6 +784,7 @@ if (typeof document !== "undefined") {
   function settings() {
     return {
       program: editor.value,
+      format: format.value,
       strategy: element("strategy").value,
       evidence: element("evidence").checked,
       digits: tddlogRuntime.digits(element("digits").value),
@@ -790,8 +813,8 @@ if (typeof document !== "undefined") {
     element("run").hidden = true;
     element("cancel").hidden = false;
     document.body.classList.add("busy");
-    const { program, strategy, evidence } = chosenSettings;
-    worker.postMessage({ program, strategy, evidence });
+    const { program, strategy, evidence, format } = chosenSettings;
+    worker.postMessage({ program, strategy, evidence, format });
   }
 
   element("run").addEventListener("click", requestRun);
@@ -845,7 +868,8 @@ if (typeof document !== "undefined") {
   } else if (opening.program !== null) {
     decodeProgram(opening.program).then(
       (text) => {
-        setProgram(text, null, "program.pl");
+        const extension = tddlogRuntime.formats.find(([name]) => name === opening.format)[2][0] ?? ".pl";
+        setProgram(text, null, `program${extension}`, opening.format);
         requestRun();
       },
       () => loadExample(0),

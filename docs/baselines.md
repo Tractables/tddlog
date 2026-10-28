@@ -84,23 +84,22 @@ language into the file tddlog reads: the ProbLog program of a Dice or
 noDice program (and `dice2problog_onehot.py`'s, which tddlog's one-hot
 arm reads), of a network and of a cplint LPAD, which `tddlog --program`
 writes (`dice2problog.py`, `gen_bn.py` and `lpad2problog.py` wrote the
-same text before tddlog's readers replaced them), and the circuit
-Alea.jl writes of a bit-blasted program. Each conversion is timed once an
+same text before tddlog's readers replaced them). The circuit Alea.jl
+writes of a bit-blasted program is not charged: it is the benchmark's
+input, and tddlog and every system that reads it or a translation of it
+start from the same circuit (the owner, 2026-10-28), as Alea.jl starts
+from its own program. Each conversion is timed once an
 instance on one machine, apart from the runs (matched to the file the
 runs read by its SHA-256), as the median of three runs. A conversion is
-timed as the system it comes from is: a Python converter's process, and
-the circuit as Alea.jl is timed, its build and the write of its ProbLog
-program a second time in the process (`export --warm-below S`), without
-Julia's start, loading or compilation, and without the Dice programs,
-which translate the circuit for the Dice family. The processing
+timed as the system it comes from is: a Python converter's process, or
+`tddlog --program`'s. The processing
 (`rel/charge.py`) adds its
 seconds to the record of tddlog and of every system whose input is made
 from the converted file, directly or through a translator of its own: for
 example the ProbLog family, PITA, aspmc, Scallop and PSouffle; Ace, Merlin
 and the network tools on the
-ground networks of a converted program; the Dice family on the Dice
-programs written from it; and on a circuit, Dice, Roulette, Genfer, Psi,
-SPPL, PRISM and Storm, which read its translations. A run that passes
+ground networks of a converted program; and the Dice family on the Dice
+programs written from it. A run that passes
 the limit with it counts as a timeout. A system that reads the
 benchmark's original program pays nothing (Dice and the systems that
 translate a Dice program themselves, Alea.jl on its own programs, Ace,
@@ -2009,13 +2008,34 @@ the system's own papers, benchmarks or distribution. It is **native** if
 the program the system read is in the system's own language, as the
 benchmark's authors or its generator wrote it, and **translated** if a
 translator wrote that program from a program in another language: line
-for line (`dice2problog.py`, `problog2pita.py`, `gen_bn.py`'s program of
-a network), or doing some of the system's work for it (grounding,
-unrolling, bit-blasting). tddlog's input is classified the same way: it
-reads the ProbLog programs and the networks natively, and is given
-translations of the Dice, Roulette and Geni programs (`dice2problog.py`,
-`gen_roulette.py`) and of the bit-blasted and integer programs (the
-circuit Alea.jl builds). Each system's page on the results page
+for line (`problog2pita.py`, or the ProbLog program of a Dice program, a
+cplint LPAD or a network, which `tddlog --program` writes and
+`dice2problog.py`, `lpad2problog.py` and `gen_bn.py` wrote before), or doing some of the system's work for it (grounding,
+unrolling, bit-blasting); a network that a converter wrote in another
+network format for a tool that does not read the original's (`gen_bn.py`
+writes a Hugin file of a UAI or BIF network for Ace, and a UAI file of a
+Hugin or BIF network for the other network tools) is translated too.
+The class is decided by the files the system's commands read, as the run
+captured them, the same way in the results and on the benchmark pages:
+a page marks each program it shows as the original (or a copy of it,
+byte for byte or decompressed), native, a conversion of format or a
+translation, the rows below give each instance its class, and a check
+of the results compares every record's class with its page. A page
+tells a conversion as one: its tab says that the original network was
+converted to the format, and its warning that the file might make the
+comparison unfair says so of a conversion. An own instance is so by
+where it comes from, whatever file the system read, and is not compared
+with its page. A converted program's page names the converter that the
+runs which read it ran: the script in the runs before tddlog read the
+original itself, `tddlog --program`, which writes the same program, in
+the runs since (each run's capture records which); the rows below name
+both. tddlog's input is classified the same way: it reads the ProbLog
+programs and the networks natively, and the Dice programs and cplint's
+LPADs in the runs since it reads them itself, which were given to it
+before as `dice2problog.py`'s and `lpad2problog.py`'s translations; it is
+given translations of the Roulette and Geni programs (`gen_roulette.py`,
+`gen_geni.py`) and of the bit-blasted and integer programs (the circuit
+Alea.jl builds). Each system's page on the results page
 evaluates it separately on the instances native to it, its own among
 them, and on those translated for it.
 
@@ -2043,16 +2063,32 @@ is the first of own, native and translated among the copies it was given.
 The uncertain cells were decided as follows: Storm's and PRISM's
 weather factory is native, not own (Rubicon's PRISM model, not theirs);
 pgmpy has no own networks (bnlearn's networks are R's package's); a
-network converted to another format of networks for a network tool
-(BIF to Hugin or UAI) is the tool's own input, native to it; the Dice
-family's systems are given every network as a Dice program that
-`gen_bn.py` writes from it, a translation; the network tools read the
-networks of the Dice and Roulette papers as networks, natively; Alea.jl
-is given Pluck's sequence models as a port of their Dice.jl programs, a
-translation; Dice and noDice read each other's programs as they are;
-the blood type example and the other cplint programs reach the ProbLog
-family through `lpad2problog.py`, which makes the blood type example,
-the one program that is only that conversion, a translation.
+network converted to another network format for a network tool (BIF or
+UAI to Hugin for Ace, Hugin or BIF to UAI for the others) is translated,
+and Ace's copy of a Hugin file, the same file with a `+` in a number
+dropped where its reader refuses one (`bench.py`'s `hugin_for_ace`),
+native; the observations `gen_bn.py --inst` writes of a network's evidence are the
+generator's, native to Ace and tddlog, and a conversion where the
+original has its own (a UAI network's `.evid`); the Dice family's
+systems are given every network as a Dice program that `gen_bn.py`
+writes from it, a translation; Ace reads the Dice paper's networks as
+Hugin files, natively, and the Roulette paper's BIF files converted to
+Hugin, and the other network tools read both converted to UAI files;
+Alea.jl is given
+Pluck's sequence models as a port of the Dice.jl versions in Pluck's
+artifact, a translation, Pluck's own programs being the models (the
+original on their pages); Dice and noDice read each other's programs as
+they are; the blood type example and the other cplint programs reach
+the ProbLog family through `lpad2problog.py` (through `tddlog --program`
+in the runs since tddlog reads LPADs itself), which makes the blood type
+example, the one program that is only that conversion, a translation,
+its original on its page cplint's file; Cora's program is native,
+written in ProbLog by `gen_cora.py` from cplint's dataset (its
+generator, the dataset shown as its source), and so is each taint app's,
+which `gen_taint.py` writes from PSouffle's ProbLog program with two
+constructs respelled as ProbLog reads them alike; aspmc's form of a
+ProbLog program (`bench.py`'s `run_aspmc`: the evidence asked as queries,
+the same model) has the class of the program it is written from.
 
 | systems | suites | instances | class | reason |
 |---|---|---|---|---|
@@ -2074,26 +2110,32 @@ the one program that is only that conversion, a translation.
 | psouffle | lit | `taint_` | own | the Android taint analyses of PSouffle's evaluation (FMCAD 2026) |
 | tddlog | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | native | the network itself, read by tddlog's network reader (BIF, Hugin, GeNIe, UAI) |
 | tddlog | roulette | `rl_bn_` | native | the Roulette paper's Bayesian networks, read by tddlog's network reader |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | native | a network, the tool's own input |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks, as networks |
+| ace | std_bn, large | all | native | a Hugin network, Ace's own input (a + in a number dropped where Ace's reader refuses one) |
+| ace | dice | `bn_` | native | the Dice paper's Bayesian networks, as Hugin networks |
+| ace | uai, uai_pr, uaipr, uaitpr | all | translated | the UAI network converted to a Hugin file (gen_bn.py), as Ace reads a UAI file only as a Bayesian network |
+| ace | roulette | `rl_bn_` | translated | the Roulette paper's BIF networks converted to Hugin files (gen_bn.py), as Ace reads no BIF file |
+| merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr | all | native | a UAI network, the tool's own input |
+| merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | translated | the network converted to a UAI file (gen_bn.py --uai) |
+| merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | translated | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai) |
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
-| problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py) |
+| problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
+| tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
-| tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py |
+| tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
-| tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py |
+| tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
 | psouffle | std, lit, tpch, biomine | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
-| alea | ppl | `pluck_` | translated | Pluck's sequence models as Dice.jl programs, ported to Alea.jl |
-| tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog or as Dice programs of its gates |
+| alea | ppl | `pluck_` | translated | the Dice.jl versions of Pluck's sequence models in the paper's artifact, ported to Alea.jl (Pluck's own programs are the models) |
+| tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog (alea2problog.jl) or as Dice programs of its gates |
 | problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
-| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | dice2problog.py writes the program's loops as recursion over a step index, which the system's grounder unrolls |
+| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
-| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py |
+| tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
 

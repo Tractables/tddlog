@@ -53,7 +53,7 @@ in docs/design.md; `tddlog --ground FILE` prints what the step made of it.
 
 | file | what it shows |
 |---|---|
-| [solve.rs](solve.rs) | answers a program file as the command line does: `cargo run --release --example solve -- examples/alarm.pl` |
+| [solve.rs](solve.rs) | answers a program, Dice or network file as the command line does: `cargo run --release --example solve -- examples/alarm.pl` |
 | [sprinkler.rs](sprinkler.rs) | a network written as a program from Rust data: `cargo run --release --example sprinkler` |
 
 The Python and C bindings have examples of their own, in

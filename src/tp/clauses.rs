@@ -658,7 +658,7 @@ impl Factoring<'_> {
             (b, scope.clone())
         };
         // Each part negated on its own scope, the smaller.
-        let not_a = ((self.negate)(self.term, a.0.owned(self.backend)?)?, a.1);
+        let not_a = (a.0.with_cow(|f| (self.negate)(self.term, f))?, a.1);
         // `acc` is read twice: in place by the first conjunction, then
         // taken by the second.
         let (acc, on) = (Arc::new(acc.0), acc.1);
@@ -669,18 +669,18 @@ impl Factoring<'_> {
         )?;
         (self.count)(Op::And, 1);
         let x = (self.watched)(x, self.head)?;
-        let not_b = ((self.negate)(self.term, b.0)?, b.1);
+        let not_b = ((self.negate)(self.term, b.0.into())?, b.1);
         let y = self
             .backend
             .and_on(Part(Read::taken(acc), on), not_b, scope)?;
         (self.count)(Op::And, 1);
         let y = (self.watched)(y, self.head)?;
-        let not_x = (self.negate)(NegationSource::Disjunction, x)?;
-        let not_y = (self.negate)(NegationSource::Disjunction, y)?;
+        let not_x = (self.negate)(NegationSource::Disjunction, x.into())?;
+        let not_y = (self.negate)(NegationSource::Disjunction, y.into())?;
         let neither = self.backend.and(not_x, not_y)?;
         (self.count)(Op::And, 1);
         let neither = (self.watched)(neither, self.head)?;
-        let mut acc = (self.negate)(NegationSource::Disjunction, neither)?;
+        let mut acc = (self.negate)(NegationSource::Disjunction, neither.into())?;
         self.backend.minimize(&mut acc, Reduce::Between)?;
         (self.count)(Op::Minimize, 1);
         self.memo.borrow_mut().stats.or_routes += 1;
@@ -993,7 +993,7 @@ impl Factoring<'_> {
                         }
                         Part::from((c, scope.clone()))
                     };
-                    let nb = ((self.negate)(self.term, c.0.owned(self.backend)?)?, c.1);
+                    let nb = (c.0.with_cow(|f| (self.negate)(self.term, f))?, c.1);
                     acc = self.and_term(acc, nb.into(), trivial, scope)?;
                     settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
                     acc.0 = (self.watched)(acc.0, self.head)?;

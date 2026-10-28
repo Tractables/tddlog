@@ -54,6 +54,7 @@ pub(crate) enum Op {
     Shl,
     Shr,
     Backslash,
+    Arrow,
 }
 
 impl Op {
@@ -85,6 +86,7 @@ impl Op {
             Op::Shl => "<<",
             Op::Shr => ">>",
             Op::Backslash => "\\",
+            Op::Arrow => "->",
         }
     }
 }
@@ -840,6 +842,7 @@ impl<'a> Lexer<'a> {
                     (b'<', _, _) => (Tok::Op(Op::Lt), 1),
                     (b'>', _, _) => (Tok::Op(Op::Gt), 1),
                     (b'+', _, _) => (Tok::Op(Op::Plus), 1),
+                    (b'-', Some(b'>'), _) => (Tok::Op(Op::Arrow), 2),
                     (b'-', _, _) => (Tok::Op(Op::Minus), 1),
                     (b'*', _, _) => (Tok::Op(Op::Star), 1),
                     (b'/', _, _) => (Tok::Op(Op::Slash), 1),

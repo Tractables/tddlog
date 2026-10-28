@@ -12,9 +12,10 @@
 </p>
 
 The [playground](https://tractables.github.io/tddlog/) runs tddlog in the
-tab: a ProbLog program goes in, and the page answers its queries. The
-solver is the crate's
-[`solve`](https://tractables.github.io/tddlog/api/tddlog/fn.solve.html),
+tab: a ProbLog program goes in, or a Dice program or a network file with
+its format chosen, and the page answers its queries. The solver is the
+crate's [`read`](https://tractables.github.io/tddlog/api/tddlog/fn.read.html)
+and [`solve`](https://tractables.github.io/tddlog/api/tddlog/fn.solve.html),
 built for WebAssembly with Emscripten. It runs in a worker, so the page
 stays live during a run and a run can be cancelled.
 

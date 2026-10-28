@@ -628,12 +628,12 @@ footer {
 }
 
 /* The results page. Each system has a colour of its own, the same in every
-   plot and in the README's figures (scripts/readme_figures.py): a shade of
-   its family's hue (logic programming orange, graphical models blue,
-   probabilistic programming violet and magenta, model checking green,
-   databases ochre), and tddlog teal. The light and the dark steps each have
+   plot and in the README's figures (scripts/readme_figures.py): the logic
+   programming systems orange, the network tools blue, the probabilistic
+   programming languages violet and magenta, the model checkers green, the
+   database ochre, and tddlog teal. The light and the dark steps each have
    a contrast of 3:1 or more with the page and the card they are drawn on.
-   The shades of a family are told apart by their lines too (--d, a dash
+   Systems of one hue are told apart by their lines too (--d, a dash
    pattern; --sws, the legend sample's), and every line is named in the
    legend and at its end (results.js). */
 :root {
@@ -745,12 +745,6 @@ footer {
 .s-storm { --s: var(--s-storm); }
 .s-prism { --s: var(--s-prism); --d: 6 3; --sws: dashed; }
 .s-provsql { --s: var(--s-provsql); }
-/* A family's colour, its first system's: the overview's dots. */
-.f-logic { --s: var(--s-problog); }
-.f-graphical { --s: var(--s-ace); }
-.f-ppl { --s: var(--s-dice); }
-.f-checking { --s: var(--s-storm); }
-.f-databases { --s: var(--s-provsql); }
 
 /* The results page: a rail to browse its categories, suites and families beside
    one view, and a system's runs of an instance in a drawer at the right.

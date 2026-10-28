@@ -4,7 +4,9 @@
  * Each argument is one of ProbLog's system tests (tests/problog in the
  * repository), whose `%Expected outcome:` comment block lists ProbLog's
  * probability for each query. Every program is solved under several vtree
- * strategies, which must all agree with ProbLog. */
+ * strategies, which must all agree with ProbLog. A Dice program and
+ * networks from the repository's tests, beside tests/problog, are read in
+ * their formats. */
 
 #include <math.h>
 #include <stdio.h>
@@ -166,6 +168,94 @@ static void check_evidence(void) {
   tddlog_solution_free(solution);
 }
 
+/* The file `name` of the repository's tests, `tests` its directory. */
+static char *test_file(const char *tests, const char *name) {
+  char path[4096];
+  snprintf(path, sizeof path, "%s/%s", tests, name);
+  char *text = read_file(path);
+  CHECK(text != NULL, "cannot read %s", path);
+  return text;
+}
+
+/* Programs in other formats: Dice's answers on tests/dice/walk.dice
+ * (tests/it/examples.rs), ProbLog's on the program a GeNIe network
+ * with an Ace evidence file is read as, and a Markov network's partition
+ * function, 165 by enumeration (tests/it/networks.rs). */
+static void check_formats(const char *tests) {
+  TddlogOptions options = tddlog_options_default();
+  TddlogSolution *solution = NULL;
+  double z = -1.0, log10_z = -1.0;
+
+  char *walk = test_file(tests, "dice/walk.dice");
+  options.format = "dice";
+  CHECK(walk && tddlog_solve(walk, &options, &solution) == TDDLOG_OK, "walk.dice: %s",
+        tddlog_last_error_message());
+  if (solution) {
+    CHECK(fabs(answer(solution, "x(1)") - 0.245556733026) < 1e-9, "walk.dice: x(1)");
+    CHECK(fabs(answer(solution, "x(7)") - 0.202017258345) < 1e-9, "walk.dice: x(7)");
+    tddlog_solution_free(solution);
+    solution = NULL;
+  }
+
+  char *xdsl = test_file(tests, "networks/sprinkler.xdsl");
+  char *inst = test_file(tests, "networks/sprinkler.inst");
+  options.format = "xdsl";
+  options.evidence = inst;
+  CHECK(xdsl && inst && tddlog_solve(xdsl, &options, &solution) == TDDLOG_OK,
+        "sprinkler.xdsl: %s", tddlog_last_error_message());
+  if (solution) {
+    CHECK(fabs(answer(solution, "wetgrass(t)") - 0.927) < 1e-9, "sprinkler.xdsl: wetgrass(t)");
+    tddlog_solution_free(solution);
+    solution = NULL;
+  }
+
+  char *markov = test_file(tests, "regress/markov.uai");
+  char *evid = test_file(tests, "regress/markov.uai.evid");
+  options.format = "uai";
+  options.evidence = evid;
+  options.evidence_probability = true;
+  options.queries = false;
+  CHECK(markov && evid && tddlog_solve(markov, &options, &solution) == TDDLOG_OK,
+        "markov.uai: %s", tddlog_last_error_message());
+  if (solution) {
+    CHECK(tddlog_solution_evidence_probability(solution, &z, &log10_z), "Z asked for");
+    CHECK(fabs(z - 165.0) < 1e-9 && fabs(log10_z - log10(165.0)) < 1e-12,
+          "markov.uai: Z is %.17g, not 165", z);
+    tddlog_solution_free(solution);
+    solution = NULL;
+  }
+
+  /* An unknown format, evidence for a program that is not a network, and a
+     network that does not read. */
+  struct {
+    const char *program;
+    const char *format;
+    const char *evidence;
+    TddlogStatus status;
+    const char *message;
+  } cases[] = {
+      {"0.3::a. query(a).", "prolog", NULL, TDDLOG_ERROR_INVALID_INPUT, "unknown format"},
+      {"0.3::a. query(a).", NULL, "<instantiation/>", TDDLOG_ERROR_INVALID_INPUT, "is for a network"},
+      {"network x {", "bif", NULL, TDDLOG_ERROR_PARSE, ""},
+  };
+  for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+    options = tddlog_options_default();
+    options.format = cases[i].format;
+    options.evidence = cases[i].evidence;
+    TddlogStatus status = tddlog_solve(cases[i].program, &options, &solution);
+    CHECK(status == cases[i].status, "format case %zu: status %d, not %d (%s)", i, status,
+          cases[i].status, tddlog_last_error_message());
+    CHECK(strstr(tddlog_last_error_message(), cases[i].message) != NULL,
+          "format case %zu: the message `%s` does not say `%s`", i, tddlog_last_error_message(),
+          cases[i].message);
+  }
+  free(walk);
+  free(xdsl);
+  free(inst);
+  free(markov);
+  free(evid);
+}
+
 static void check_accessors(void) {
   TddlogSolution *solution = NULL;
   CHECK(tddlog_solve("0.3::p. query(\\+p). query(p).", NULL, &solution) == TDDLOG_OK, "%s",
@@ -220,6 +310,14 @@ int main(int argc, char **argv) {
     for (size_t s = 0; s < sizeof STRATEGIES / sizeof STRATEGIES[0]; s++)
       check_program(argv[i], STRATEGIES[s]);
   check_evidence();
+  if (argc > 1) {
+    /* TESTS/problog/NAME.pl, whose directory's parent holds the others. */
+    char tests[4096];
+    snprintf(tests, sizeof tests, "%s", argv[1]);
+    char *slash = strrchr(tests, '/');
+    if (slash) snprintf(slash, sizeof tests - (size_t)(slash - tests), "/..");
+    check_formats(tests);
+  }
   check_accessors();
   check_errors();
   if (failures) {

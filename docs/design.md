@@ -145,6 +145,7 @@ the formulation and the projection besides its vtree. The modules, in
 |---|---|
 | `bin/tddlog/` | the binary: `main.rs`, the command line, options and answers; `stats.rs`, the `--stats` lines; `alloc.rs`, the allocator |
 | `lib.rs` | `Run`, `Error`, the public items |
+| `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
 | `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, the `decision` trial, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
@@ -196,10 +197,19 @@ The parser reads ProbLog without cut:
 
 There are no cut, if-then-else or strings.
 
+Every input reaches the parser through `read` (`input.rs`): a ProbLog
+program is its own text, and an LPAD, a Dice program and a network file
+are read by their modules as the program `tddlog --program` prints. The
+command line takes the format from the file's extension
+(`Format::of_path`), and the bindings take its name (`problog`, `dice`,
+`bif`, `hugin`, `xdsl`, `uai`), with a network's evidence file as its
+contents; a network's options given for another format are refused.
+
 A source that holds the directive `:- begin_lpad.` (or cplint's other
 spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and
 `syntax/lpad.rs` reads it as a ProbLog program, which the parser then
-reads and `tddlog --program` prints. The LPAD is the clauses between
+reads and `tddlog --program` prints (`read` finds the directive in a
+ProbLog input). The LPAD is the clauses between
 `:- begin_lpad.` and `:- end_lpad.`: `h1:p1 ; h2:p2 :- b.` becomes
 `p1::h1; p2::h2 :- b.` and `a:p.` becomes `p::a.`, a head without a
 probability taking what the others leave (a probability may be a
