@@ -40,11 +40,12 @@ command-line tool, with Python, C and WebAssembly bindings, and it
 - [Inside the engine](#inside-the-engine): the techniques the inference
   rests on.
 - [Performance](#performance): tddlog against every exact inference
-  system we could find, by type of program.
+  system we could find, each type of program against the systems
+  native to it.
 
 <p align="center">
   <img src="docs/images/overview.svg"
-       alt="Answers and total time of tddlog and of the virtual best of each family of exact inference systems, by type of program">
+       alt="Each type of program against the exact inference systems native to it: their answers, and tddlog's total time against each one's">
 </p>
 
 ## Install
@@ -210,33 +211,42 @@ measured behind it.
 ## Performance
 
 tddlog was run against every exact inference system we could find. The
-results are partitioned by type of program, in six categories, and each
-instance counts in one category, whatever language its source was
-written in. Every system given some instance of a category is measured
-on all of the category's instances: it is given each one it can take,
-through a translation where it cannot read the original, and an
-instance it does not answer, cannot express or was not given counts as
-unanswered. Each run is single-threaded, each suite with its own time
-limit (300 to 1200 seconds), and every answer is checked against an
-exact reference.
+results are partitioned by type of program, in six types, and each
+instance counts in one type, whatever language its source was written
+in. Each type is compared with the systems that natively handle it:
+ProbLog, PITA, aspmc and PSouffle on logic programs; ProvSQL and the
+same four on database queries; Ace, Merlin, pyAgrum, pgmpy, libDAI and
+TensorInference.jl on Bayesian and Markov networks, and on Bayesian
+networks also the logic programming systems and the probabilistic
+programming languages; Dice, Alea.jl, Roulette, noDice, Psi, Genfer,
+SPPL, Geni and Pluck on functional and bit-blasted programs. A system is
+given each instance of a type it can take, through a translation where
+it cannot read the original (an LPAD for ProbLog, a Dice program for
+Roulette). All programs, the union of the six, has every system on
+every program it is given, Storm and PRISM included. Each run is
+single-threaded, each suite with its own time limit (300 to 1200
+seconds), and every answer is checked against an exact reference.
 
-Total time is the measure: a system's total over all of a category's
-instances, a run that does not answer counting as its time limit and a
-time under 0.2 s as 0.2 s. A system run in several forms (ProbLog's
-three compilers, Ace's two modes) counts as its fastest form on each
-instance, and the virtual best of several systems is the fastest of
-them on each instance. The figure above compares tddlog with the
-virtual best of each family of systems. The cactus plots count the
-instances each system answers within each time limit, for the systems
-given at least 20 of the category's instances, and the scatter plots put
-tddlog's time against the fastest other system's, instance by instance.
+A system's answers count over all of a type's instances. Two systems
+are compared by their total times over the instances the other system
+is given and either answers, a run that does not answer counting as its
+time limit and a time under 0.2 s as 0.2 s; an instance that neither
+answers adds nothing. A system run in several forms (ProbLog's three
+compilers, Ace's two modes) counts as its fastest form on each instance.
+The figure above has a row for each of a type's five best native
+systems, by answers, and puts the others in one row with the least of
+their total times and of their ratios to tddlog's. The cactus plots
+count the instances each system answers within each time limit, for
+tddlog and the native systems given at least 20 of the type's
+instances, and the scatter plots put tddlog's time against the fastest
+of those systems, instance by instance.
 The [results page](https://tractables.github.io/tddlog/results/) has
-every instance and time, each category with every system, a page for
-each system (its version and settings, how it was given each program,
-its plots against tddlog on the programs in its own language and on
-those translated for it, and its paper), and for each benchmark the
-program as its authors wrote it, as each system was given it, and every
-run;
+every instance and time, each type with its native systems and all
+programs with every system, a page for each system (its version and
+settings, how it was given each program, its plots against tddlog on
+the programs in its own language and on those translated for it, and
+its paper), and for each benchmark the program as its authors wrote it,
+as each system was given it, and every run;
 [docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md)
 says how each system was given each suite and what it was not given.
 
@@ -244,7 +254,7 @@ says how each system was given each suite and what it was not given.
 
 <p align="center">
   <img src="docs/images/results-logic-programs.svg"
-       alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 ProbLog programs of 13 families: paths in random graphs and in grids,
@@ -252,29 +262,41 @@ Biomine's paths, smokers, UW-CSE, Cora's citation matching, blood types,
 pedigrees, sickness, Mastermind, MNIST addition, Prob-EC's event
 calculus and taint analyses of Android apps.
 
-- tddlog answers **120 of 129** in 1.2 h. The best other system,
-  Alea.jl, answers 65 in 5.9 h, and the virtual best of all other
-  systems 92 in 3.9 h.
+tddlog answers **120 of 129**. Against each native system, over the
+programs it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| PITA | 63 | 5.6 h | 24 min | 14× |
+| ProbLog | 58 | 5.9 h | 24 min | 15× |
+| PSouffle | 54 | 6.6 h | 24 min | 17× |
+| aspmc | 31 | 8.3 h | 24 min | 21× |
+
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
-- Where others win: pgmpy answers grid25, a path query across a 25 by 25
-  grid of probabilistic edges, in 144 s on the program's ground network,
-  and tddlog runs out of time.
 
 ### Probabilistic database queries
 
 <p align="center">
   <img src="docs/images/results-database-queries.svg"
-       alt="Probabilistic database queries answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="Probabilistic database queries answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 Boolean queries over tuple-independent databases: 16 TPC-H queries,
 the queries h0 and h1, the safe queries QW and Q9, and paths of two
 edges in random graphs.
 
-- tddlog answers **308 of 320** in 2.3 h. The best other system,
-  ProvSQL, answers 284 in 5.2 h, and the virtual best of all other
-  systems 298 in 3.7 h.
+tddlog answers **308 of 320**. Against each native system, over the
+queries it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| ProvSQL | 284 | 3.7 h | 45 min | 4.9× |
+| ProbLog | 204 | 22 h | 45 min | 29× |
+| PSouffle | 189 | 20 h | 45 min | 27× |
+| PITA | 123 | 32 h | 45 min | 42× |
+| aspmc | 16 | 48 h | 45 min | 64× |
+
 - Where others win: ProvSQL is fast on the easy TPC-H queries, its own
   benchmarks, and faster than tddlog on 107 of them.
 
@@ -282,7 +304,7 @@ edges in random graphs.
 
 <p align="center">
   <img src="docs/images/results-bayesian-networks.svg"
-       alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 bnlearn's networks, the large ones and the Roulette and noDice papers'
@@ -291,15 +313,25 @@ UAI 2022 networks whose factors are conditional probability tables:
 Promedus diagnosis, pedigree, or_chain and BN networks, and the
 blockmap, Mastermind and fs networks that Ace's benchmarks also have.
 
-- tddlog answers **291 of 292** in 7 min. The best other system,
-  Ace, answers 272 in 2.6 h, and the virtual best of all other
-  systems 286 in 1.1 h.
+tddlog answers **291 of 292**. Against each native system, over the
+networks it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| Ace | 272 | 2.5 h | 2 min | 79× |
+| Alea.jl | 198 | 9.9 h | 2 min | 325× |
+| Merlin | 186 | 11 h | 2 min | 338× |
+| libDAI | 179 | 11 h | 2 min | 361× |
+| TensorInference.jl | 178 | 16 h | 2 min | 493× |
+| 13 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Geni, Psi | 43 to 168 | over 12 h each | 2 min | at least 399× |
+
+PSouffle was given 10 of the networks and answers 6.
 
 ### Markov networks
 
 <p align="center">
   <img src="docs/images/results-markov-networks.svg"
-       alt="Markov networks answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="Markov networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 The other UAI 2022 networks, whose factors are not conditional
@@ -307,9 +339,18 @@ probability tables over an acyclic graph: object detection,
 segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
 the rus networks and weighted CSPs.
 
-- tddlog answers **215 of 263** in 4.6 h. The best other system,
-  TensorInference.jl, answers 187 in 9.1 h, and the virtual best of all other
-  systems 198 in 6.6 h.
+tddlog answers **215 of 263**. Against each native system, over the
+networks it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| TensorInference.jl | 187 | 6.3 h | 1.9 h | 3.4× |
+| libDAI | 175 | 6.1 h | 38 min | 9.7× |
+| Merlin | 167 | 5.4 h | 43 min | 7.5× |
+| pyAgrum | 166 | 5.2 h | 38 min | 8.2× |
+| pgmpy | 109 | 9.9 h | 38 min | 16× |
+| Ace | 74 | 13 h | 38 min | 21× |
+
 - Where others win: 15 partition functions of the UAI 2022 final set, 14
   of them protein networks, run out of time or memory.
   TensorInference.jl answers each in 45 to 85 s.
@@ -318,7 +359,7 @@ the rus networks and weighted CSPs.
 
 <p align="center">
   <img src="docs/images/results-functional-programs.svg"
-       alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 Programs over discrete values with conditionals and loops, of 16
@@ -329,33 +370,77 @@ network, contract signing, a perturbed-memory interpreter, Cao et al.'s
 integer programs, the coupon collector, 3-SAT and the Dice paper's small
 programs.
 
-- tddlog answers **222 of 258** in 7.1 h. The best other system,
-  Storm, answers 174 in 16 h, and the virtual best of all other
-  systems 216 in 8.8 h.
-- Where others win: PRISM and Storm answer Geni's three largest router
-  networks, which tddlog does not, by value iteration over decision
-  diagrams in double precision; their exact engines time out from 18 to
-  20 routers.
+tddlog answers **222 of 258**. Against each native system, over the
+programs it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| Alea.jl | 154 | 12 h | 1.1 h | 11× |
+| Dice | 119 | 19 h | 1.1 h | 17× |
+| Roulette | 118 | 18 h | 1.1 h | 16× |
+| Geni | 65 | 27 h | 1.1 h | 25× |
+| Pluck | 63 | 27 h | 1.1 h | 24× |
+| 4 others: Genfer, noDice, SPPL, Psi | 8 to 39 | over 30 h each | 1.1 h | at least 28× |
 
 ### Bit-blasted programs
 
 <p align="center">
   <img src="docs/images/results-bit-blasted.svg"
-       alt="Bit-blasted programs answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="Bit-blasted programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 Programs over integers written in Alea.jl, which compiles each to a
 Boolean circuit. Alea.jl runs its own program; every other system is
 given the circuit.
 
-- tddlog answers **218 of 250** in 8.0 h. The best other system,
-  Alea.jl, answers 137 in 21 h, and the virtual best of all other
-  systems 179 in 14 h.
+tddlog answers **218 of 250**. Against each native system, over the
+programs it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| Alea.jl | 137 | 17 h | 3.8 h | 4.4× |
+| Roulette | 98 | 21 h | 2.6 h | 8.1× |
+| Pluck | 47 | 29 h | 2.6 h | 11× |
+| Dice | 19 | 34 h | 2.6 h | 13× |
+| Genfer | 12 | 34 h | 2.6 h | 13× |
+| 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 35 h each | 2.6 h to 3.0 h | at least 12× |
+
 - Where others win: Alea.jl on 65 circuits, six of which tddlog does not
-  answer, and Roulette on 34; Ace, pyAgrum and pgmpy on two clinical
-  trial circuits that tddlog does not answer, and Merlin on one of them;
-  Genfer on the population models, which it answers in milliseconds; Psi
-  on two linear regressions it solves symbolically.
+  answer, and Roulette on 34; Genfer on the population models, which it
+  answers in milliseconds; Psi on two linear regressions it solves
+  symbolically.
+
+### All programs
+
+<p align="center">
+  <img src="docs/images/results-all-programs.svg"
+       alt="All programs answered within each time limit, and tddlog's time against the fastest other system's">
+</p>
+
+The six types together, every system on every program it is given,
+natively or through a translation: how the systems fare when the
+programs are translated into their languages.
+
+tddlog answers **1374 of 1512**. Against each system, over the
+programs it is given and either answers:
+
+| System | Answers | Its total time | tddlog's | tddlog faster |
+|---|--:|--:|--:|--:|
+| Ace | 863 | 74 h | 5.9 h | 13× |
+| libDAI | 745 | 94 h | 5.6 h | 17× |
+| pyAgrum | 716 | 96 h | 6.0 h | 16× |
+| Merlin | 701 | 97 h | 5.9 h | 17× |
+| TensorInference.jl | 690 | 116 h | 6.8 h | 17× |
+| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, ProvSQL, PRISM, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 3.8 h each | 45 min to 6.7 h | at least 5.0× |
+
+- Where others win: pgmpy answers grid25, a logic program's path query
+  across a 25 by 25 grid of probabilistic edges, in 144 s on the
+  program's ground network, and tddlog runs out of time. PRISM and Storm
+  answer Geni's three largest router networks, which tddlog does not, by
+  value iteration over decision diagrams in double precision; their
+  exact engines time out from 18 to 20 routers. Ace, pyAgrum and pgmpy
+  answer two clinical trial circuits that tddlog does not, and Merlin
+  one of them.
 
 ### Each system on its own benchmarks
 
