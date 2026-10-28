@@ -1344,10 +1344,10 @@ fn query_counting_obeys_the_batch_work_limit() {
             None,
         )
         .unwrap();
-        let stopped = LimitConfig::none().with_stop_rules(StopRules {
-            unconditional: Some(StopAt::WorkUnits(engine.limits().work_units())),
-            after_pairs: None,
-        });
+        let stopped = LimitConfig::none().with_stop_rules(
+            StopRules::default()
+                .with_unconditional(Some(StopAt::WorkUnits(engine.limits().work_units()))),
+        );
         {
             let _guard = engine.limits().scope(stopped);
             assert!(matches!(

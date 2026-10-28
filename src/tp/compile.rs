@@ -2017,13 +2017,11 @@ const GUARD_TRIES: usize = 2;
 /// pool's live pairs ([`TddBackend::restructure`]). Two restarts a search
 /// cost more than they gained.
 fn search_restarts() -> PoolRestarts {
-    PoolRestarts {
-        count: 1,
-        kick: 20,
-        seed: 0x9E37_79B9_7F4A_7C15,
-        min_gain_permille: 20,
-        ..PoolRestarts::default()
-    }
+    PoolRestarts::default()
+        .with_count(1)
+        .with_kick(20)
+        .with_seed(0x9E37_79B9_7F4A_7C15)
+        .with_min_gain_permille(20)
 }
 
 /// The state of [`Compilation::dynamic`]'s search between steps.

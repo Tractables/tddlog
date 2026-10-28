@@ -769,10 +769,12 @@ fn attempt(
         let start_work = engine.limits().work_units();
         let mut limits = LimitConfig::none().with_memory_budget_bytes(memory_bytes);
         if let Some(Bounds { pairs, work, .. }) = bounds {
-            let stop = StopRules {
-                unconditional: Some(StopAt::WorkUnits(start_work.saturating_add(work))),
-                after_pairs: Some(((pairs as u64).saturating_mul(16), StopAt::WorkUnits(0))),
-            };
+            let stop = StopRules::default()
+                .with_unconditional(Some(StopAt::WorkUnits(start_work.saturating_add(work))))
+                .with_after_pairs(Some((
+                    (pairs as u64).saturating_mul(16),
+                    StopAt::WorkUnits(0),
+                )));
             limits = limits
                 .with_output_node_cap(Some((pairs as u64).saturating_mul(2)))
                 .with_stop_rules(stop);

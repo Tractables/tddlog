@@ -912,12 +912,9 @@ mod tests {
         let tree = Arc::new(Vtree::random(8, 1));
         tree.context().run(|engine| {
             let at = engine.limits().work_units() + 1000;
-            let _run = engine
-                .limits()
-                .scope(LimitConfig::none().with_stop_rules(StopRules {
-                    unconditional: Some(StopAt::WorkUnits(at)),
-                    ..StopRules::default()
-                }));
+            let _run = engine.limits().scope(LimitConfig::none().with_stop_rules(
+                StopRules::default().with_unconditional(Some(StopAt::WorkUnits(at))),
+            ));
             let backend = TddBackend::new(engine, tree.clone());
             let stop = || engine.limits().armed().stop_rules().unconditional;
             {
