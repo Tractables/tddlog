@@ -653,17 +653,20 @@ impl<T: Copy> Chains<T> {
 }
 
 /// Distinct bodies numbered in the order they are first seen
-/// ([`Interned`]), with the sets that hold each ([`exclusive_sets`]), on
-/// chains rather than a list in a map per set and body: on a network
-/// nearly every body is a rule's own. A body is what other rules can clash
-/// with of a rule's, without the facts no other rule reads.
+/// ([`Interned`]), with the sets that hold each ([`exclusive_sets`]), on a
+/// chain per body and key rather than a list in a map per set and body: on
+/// a network nearly every body is a rule's own. A body is what other rules
+/// can clash with of a rule's, without the facts no other rule reads. The
+/// chains are per key, not per body: a body read under many keys, as every
+/// leaf's adder of bb_wmi_star reads the bits of the centre, would have
+/// each atom with it walk the sets of every key.
 struct Bodies {
     bodies: Interned<GLit>,
-    /// Per body the last set it rules out, as an index into `held`; per
-    /// entry the set's key, the set, the entry before it for the body and
-    /// how many entries of the same key lead the chain up to it.
-    last_held: Vec<u32>,
-    held: Vec<(usize, usize, u32, u32)>,
+    /// Per body and key, the last set the body rules out under the key, as
+    /// an index into `held`, and how many sets it rules out there; per
+    /// entry the set and the entry before it on its chain.
+    last_held: FxHashMap<(u32, u32), (u32, u32)>,
+    held: Vec<(u32, u32)>,
     /// Whether `held` takes no more entries ([`Bodies::rule_out`]).
     full: bool,
 }
@@ -672,7 +675,7 @@ impl Bodies {
     fn with_capacity(bodies: usize) -> Self {
         Bodies {
             bodies: Interned::with_capacity(bodies),
-            last_held: Vec::with_capacity(bodies),
+            last_held: FxHashMap::default(),
             held: Vec::with_capacity(bodies),
             full: false,
         }
@@ -685,12 +688,13 @@ impl Bodies {
 
     /// `f` of each set under `key` that body `b` rules out.
     fn holders(&self, b: u32, key: usize, mut f: impl FnMut(usize)) {
-        let mut e = self.last_held[b as usize];
+        let mut e = self
+            .last_held
+            .get(&(b, key as u32))
+            .map_or(u32::MAX, |&(e, _)| e);
         while e != u32::MAX {
-            let (k, set, before, _) = self.held[e as usize];
-            if k == key {
-                f(set);
-            }
+            let (set, before) = self.held[e as usize];
+            f(set as usize);
             e = before;
         }
     }
@@ -704,49 +708,52 @@ impl Bodies {
     ///
     /// The record only spares comparisons: a set it would rule out is
     /// compared with the atom, and the comparison finds the atom not
-    /// exclusive with it. Where `held` cannot grow, because the allocator
-    /// refuses it or its entries would pass the `u32` indices, nothing more
-    /// is recorded and the sets found are the same. The entries grow with
+    /// exclusive with it. Where `held` or `last_held` cannot grow, because
+    /// the allocator refuses it or the entries would pass the `u32`
+    /// indices, nothing more is recorded and the sets found are the same. The entries grow with
     /// the bodies times the sets: a large weighted CNF would ask for
     /// gigabytes.
     fn rule_out(&mut self, b: u32, key: usize, set: usize) {
-        if self.held.len() == self.held.capacity() && !self.grow() {
+        if (self.held.len() == self.held.capacity()
+            || self.last_held.len() == self.last_held.capacity())
+            && !self.grow()
+        {
             return;
         }
-        let before = self.last_held[b as usize];
-        let run = match self.held.get(before as usize) {
-            Some(&(k, _, _, run)) if k == key => run + 1,
-            _ => 1,
-        };
-        self.held.push((key, set, before, run));
-        self.last_held[b as usize] = self.held.len() as u32 - 1;
+        let (last, sets) = self
+            .last_held
+            .entry((b, key as u32))
+            .or_insert((u32::MAX, 0));
+        self.held.push((set as u32, *last));
+        *last = self.held.len() as u32 - 1;
+        *sets += 1;
     }
 
-    /// Room for one more entry of `held`, as a push makes it; false once
-    /// there is none ([`rule_out`](Self::rule_out)).
+    /// Room for one more entry of `held` and of `last_held`, as a push and
+    /// an insertion make it; false once there is none
+    /// ([`rule_out`](Self::rule_out)).
     #[cold]
     fn grow(&mut self) -> bool {
         self.full = self.full
             || self.held.len() >= u32::MAX as usize - 1
-            || self.held.try_reserve(1).is_err();
+            || self.held.try_reserve(1).is_err()
+            || self.last_held.try_reserve(1).is_err();
         !self.full
     }
 
     /// Whether body `b` rules out all of the `sets` sets under `key`: the
-    /// entries of the key that lead its chain, distinct sets, number as
-    /// many. Entries of other keys interleaved with them only hide some.
+    /// sets of its chain under the key, distinct, number as many.
     fn rules_out_all(&self, b: u32, key: usize, sets: usize) -> bool {
         sets > 0
-            && matches!(self.held.get(self.last_held[b as usize] as usize), Some(&(k, _, _, run)) if k == key && run as usize == sets)
+            && self
+                .last_held
+                .get(&(b, key as u32))
+                .is_some_and(|&(_, held)| held as usize == sets)
     }
 
     /// The number of `body`, numbered anew if it is new.
     fn id(&mut self, body: &[GLit]) -> u32 {
-        let (id, new) = self.bodies.id(body);
-        if new {
-            self.last_held.push(u32::MAX);
-        }
-        id
+        self.bodies.id(body).0
     }
 }
 
@@ -1263,5 +1270,30 @@ mod tests {
         for set in [["a1", "b1"], ["a2", "b2"], ["a3", "b3"], ["c", "d"]] {
             assert!(sets.contains(&names(&set)), "{set:?} in {sets:?}");
         }
+    }
+
+    #[test]
+    fn a_body_holds_the_sets_of_each_key_apart() {
+        // A body that rules out sets under two keys in turn, as the centre's
+        // bits of bb_wmi_star are read under each leaf's key: the sets of
+        // one key are walked without those of the other, and the body rules
+        // out every set of a key that its entries there number.
+        let mut bodies = super::Bodies::with_capacity(0);
+        let b = bodies.id(&[crate::ground::GLit::Pos(0)]);
+        for (key, set) in [(0, 0), (1, 1), (0, 2), (1, 3), (1, 4)] {
+            bodies.rule_out(b, key, set);
+        }
+        let holders = |key| {
+            let mut sets = Vec::new();
+            bodies.holders(b, key, |i| sets.push(i));
+            sets
+        };
+        assert_eq!(holders(0), [2, 0]);
+        assert_eq!(holders(1), [4, 3, 1]);
+        assert_eq!(holders(2), Vec::<usize>::new());
+        assert!(bodies.rules_out_all(b, 0, 2));
+        assert!(bodies.rules_out_all(b, 1, 3));
+        assert!(!bodies.rules_out_all(b, 1, 4));
+        assert!(!bodies.rules_out_all(b, 2, 0));
     }
 }
