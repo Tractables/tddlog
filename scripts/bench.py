@@ -810,13 +810,25 @@ def translation_limit(r):
     return r['status'] == 'error' and bool(TRANSLATION_LIMIT.match(str(r.get('error') or '')))
 
 
+# PSouffle's compilation stopped at PSOUFFLE_COMPILE_S (psouffle_binary): an
+# error, its text kept, that the processing charges as a timeout past every
+# limit (rel/charge.py) and the skip rule takes for one (ran_out).
+COMPILE_TIMEOUT = "PSouffle's compilation: timeout"
+
+
+def compile_timeout(r):
+    """Whether record r is PSouffle's compilation stopped at its bound (COMPILE_TIMEOUT)."""
+    return r['status'] == 'error' and str(r.get('error') or '').startswith(COMPILE_TIMEOUT)
+
+
 def ran_out(r):
     """Whether a run ran out of time or memory (`memout`), for the skip rule,
-    a translator's time limit (translation_limit) counted as a timeout. An
+    a translator's time limit (translation_limit) and PSouffle's compilation
+    stopped at its bound (compile_timeout) counted as timeouts. An
     unclassed error does not skip the larger sizes: running them costs time
     and nothing else, and the processing stops on the text."""
     try:
-        return r['status'] == 'timeout' or translation_limit(r) or memout(r)
+        return r['status'] == 'timeout' or translation_limit(r) or compile_timeout(r) or memout(r)
     except Unclassed:
         return False
 

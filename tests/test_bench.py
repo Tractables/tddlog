@@ -654,6 +654,11 @@ class SkipTests(unittest.TestCase):
         # a translator's time limit: an error, its text kept, that skips the larger sizes as a timeout does
         limit = {'status': 'error', 'seconds': 0, 'error': 'problog2souffle.py: no translation within 600 s'}
         self.assertTrue(bench.translation_limit(limit) and bench.ran_out(limit))
+        # PSouffle's compilation stopped at its bound: charged as a timeout (rel/charge.py), so it skips as one
+        stopped = {'status': 'error', 'seconds': 0.0, 'error': "PSouffle's compilation: timeout ", 'stats': {'compile_s': 3600.0}}
+        self.assertTrue(bench.compile_timeout(stopped) and bench.ran_out(stopped))
+        failed = {'status': 'error', 'seconds': 0.0, 'error': "PSouffle's compilation: error souffle: syntax error"}
+        self.assertFalse(bench.compile_timeout(failed) or bench.ran_out(failed))
         self.assertFalse(bench.ran_out({'status': 'error', 'error': 'dice2prism.py: Traceback ...\nKeyError'}))
         self.assertFalse(bench.ran_out({'status': 'ok', 'seconds': 1}))
 
