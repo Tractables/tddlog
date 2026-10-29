@@ -384,18 +384,18 @@ network, contract signing, a perturbed-memory interpreter, Cao et al.'s
 integer programs, the coupon collector, 3-SAT and the Dice paper's small
 programs.
 
-tddlog answers **223 of 260**. Against each native system: its answers,
+tddlog answers **222 of 260**. Against each native system: its answers,
 its total time and tddlog's over the programs it is given and either
 answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Alea.jl | 154 | 24 h | 1.2 h | 13× |
-| Dice | 119 | 37 h | 1.2 h | 33× |
-| Roulette | 118 | 36 h | 1.2 h | 17× |
-| Pluck | 70 | 51 h | 1.2 h | 29× |
-| Geni | 65 | 53 h | 1.2 h | 54× |
-| 4 others: Genfer, noDice, SPPL, Psi | 8 to 39 | over 61 h each | 1.2 h | at least 529× |
+| Alea.jl | 154 | 24 h | 1.1 h | 13× |
+| Dice | 119 | 36 h | 1.1 h | 33× |
+| Roulette | 118 | 35 h | 1.1 h | 16× |
+| Pluck | 72 | 50 h | 1.1 h | 30× |
+| Geni | 65 | 53 h | 1.1 h | 54× |
+| 4 others: Genfer, noDice, SPPL, Psi | 8 to 39 | over 61 h each | 1.1 h | at least 556× |
 
 ### Bit-blasted programs
 
@@ -437,18 +437,18 @@ The six types together, every system on every program it is given,
 natively or through a translation: how the systems fare when the
 programs are translated into their languages.
 
-tddlog answers **1384 of 1514**. Against each system: its answers,
+tddlog answers **1383 of 1514**. Against each system: its answers,
 its total time and tddlog's over the programs it is given and either
 answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
 | Ace | 864 | 143 h | 6.9 h | 28× |
-| libDAI | 745 | 184 h | 6.4 h | 47× |
-| pyAgrum | 716 | 188 h | 7.1 h | 34× |
+| libDAI | 745 | 183 h | 6.4 h | 48× |
+| pyAgrum | 716 | 188 h | 7.0 h | 34× |
 | Merlin | 701 | 194 h | 6.9 h | 31× |
-| TensorInference.jl | 690 | 215 h | 7.3 h | 47× |
-| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 16 h each | 45 min to 8.6 h | at least 17× |
+| TensorInference.jl | 690 | 215 h | 7.2 h | 46× |
+| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 16 h each | 45 min to 8.5 h | at least 17× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
@@ -474,7 +474,7 @@ the instances either answers, and tddlog's speed-up:
 | ProvSQL | The TPC-H queries, ProvSQL's own evaluation | 295 | 259 in 14 h | 289 in 38 min | 19× |
 | Dice | The Dice paper's programs and networks (OOPSLA 2020) and its repository's loops | 69 | 39 in 9.6 h | 67 in 21 min | 27× |
 | Alea.jl | The bit-blasting paper's programs (PLDI 2024), Alea.jl's own | 250 | 137 in 31 h | 218 in 4.9 h | 4.9× |
-| Alea.jl | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch | 28 | 25 in 23 min | 26 in 10 min | too few in common |
+| Alea.jl | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch | 28 | 25 in 3 min | 25 in 5 min | too few in common |
 | Roulette | The Roulette paper's programs and networks (PLDI 2025), from its artifact | 114 | 44 in 17 h | 95 in 20 min | 85× |
 | Geni | The programs of Geni's evaluation (ICFP 2025) | 62 | 39 in 4.0 h | 49 in 17 min | 13× |
 | noDice | noDice's programs (OOPSLA 2026) | 14 | 10 in 1.3 h | 13 in 1 min | too few in common |
