@@ -315,7 +315,7 @@ L 485.400019 179.385469
    </g>
    <g id="line2d_48">
     <path d="M 363.264306 228.345469 
-L 483.504774 228.345469 
+L 483.734422 228.345469 
 " clip-path="url(#pad3ff84e2b)" style="fill: none; stroke: #d8dee4; stroke-width: 3; stroke-linecap: round"/>
    </g>
    <g id="line2d_49">
@@ -587,11 +587,11 @@ z
 "/>
     </defs>
     <g clip-path="url(#pad3ff84e2b)">
-     <use xlink:href="#mdd033c1a76" x="483.504774" y="228.345469" style="fill: #8a6a12"/>
+     <use xlink:href="#mdd033c1a76" x="483.734422" y="228.345469" style="fill: #8a6a12"/>
     </g>
    </g>
    <g id="text_58">
-    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="493.905407" y="231.51875" transform="rotate(-0, 493.905407, 231.51875)">16 h</text>
+    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="494.135055" y="231.51875" transform="rotate(-0, 494.135055, 231.51875)">16 h</text>
    </g>
    <g id="text_59">
     <text style="fill: #0d6670; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="352.863673" y="231.51875" transform="rotate(-0, 352.863673, 231.51875)">45 min</text>

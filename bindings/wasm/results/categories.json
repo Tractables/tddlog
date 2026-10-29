@@ -930,7 +930,7 @@
     ["tpch","tpch_q4_1000",600,"nntntttttttttttttttttto",33.606,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","error","error","skipped","timeout","error","skipped","skipped","skipped","skipped","skipped","timeout"],
     ["tpch","tpch_q4v_200",600,"nntntttttttttttttttttto",7.217,385.335,"skipped","error","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error",115.02],
     ["tpch","tpch_q4v_500",600,"nntntttttttttttttttttto",16.607,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","memout",314.533],
-    ["tpch","tpch_q4v_1000",600,"nntntttttttttttttttttto",34.574,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",12.576],
+    ["tpch","tpch_q4v_1000",600,"nntntttttttttttttttttto",34.574,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",312.769],
     ["tpch","tpch_q6_200",600,"nntntttttttttttttttttto",7.883,"timeout","skipped","error",44.169,"error","memout","timeout",218.134,125.388,"skipped",122.027,"error",1.257,"skipped","skipped","skipped","skipped","skipped","skipped",40.131,"skipped",111.747],
     ["tpch","tpch_q6_500",600,"nntntttttttttttttttttto",17.49,"skipped","skipped","error","error","error","memout","timeout","timeout","timeout","skipped","timeout","error","error","skipped","skipped","skipped","skipped","skipped","skipped",189.215,"skipped",234.567],
     ["tpch","tpch_q6_1000",600,"nntntttttttttttttttttto",32.235,"skipped","skipped","timeout","error","error","skipped","skipped","skipped","skipped","skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped",278.887],
@@ -945,7 +945,7 @@
     ["tpch","tpch_q10v_1000",600,"nntntttttttttttttttttto",34.282,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout"],
     ["tpch","tpch_q11_200",600,"nntntttttttttttttttttto",0.825,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout",15.774],
     ["tpch","tpch_q11_500",600,"nntntttttttttttttttttto",2.023,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",33.573],
-    ["tpch","tpch_q11_1000",600,"nntntttttttttttttttttto",3.933,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",2.592],
+    ["tpch","tpch_q11_1000",600,"nntntttttttttttttttttto",3.933,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",29.661],
     ["tpch","tpch_q11v_200",600,"nntntttttttttttttttttto",0.764,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped"],
     ["tpch","tpch_q11v_500",600,"nntntttttttttttttttttto",2.016,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["tpch","tpch_q11v_1000",600,"nntntttttttttttttttttto",6.207,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
@@ -1180,7 +1180,7 @@
     "pluck":{"given":320,"answers":81,"tddlog_answers":308,"either":308,"total":266198.301,"tddlog_total":2712.962,"both":81,"failures":0,"timeouts":227,"counted":200,"ratio":20.42,"speedup":128.0},
     "storm":{"given":320,"answers":118,"tddlog_answers":308,"either":308,"total":225456.695,"tddlog_total":2712.962,"both":117,"failures":0,"timeouts":190,"counted":138,"ratio":65.19,"speedup":175.3},
     "prism":{"given":320,"answers":57,"tddlog_answers":308,"either":308,"total":292491.831,"tddlog_total":2712.962,"both":57,"failures":0,"timeouts":251,"counted":204,"ratio":42.46,"speedup":222.2},
-    "provsql":{"given":320,"answers":268,"tddlog_answers":308,"either":308,"total":56328.625,"tddlog_total":2712.962,"both":252,"failures":0,"timeouts":40,"counted":30,"ratio":13.26,"speedup":19.86}
+    "provsql":{"given":320,"answers":268,"tddlog_answers":308,"either":308,"total":56655.887,"tddlog_total":2712.962,"both":252,"failures":0,"timeouts":40,"counted":30,"ratio":13.57,"speedup":20.08}
    },
    "narrowed":{
     "liftsep":{
@@ -1325,7 +1325,7 @@
      "pluck":{"given":20,"answers":0,"tddlog_answers":20,"either":20,"total":24000,"tddlog_total":139.772,"both":0,"failures":0,"timeouts":20,"counted":null,"ratio":null,"speedup":null},
      "storm":{"given":20,"answers":4,"tddlog_answers":20,"either":20,"total":19639.122,"tddlog_total":139.772,"both":4,"failures":0,"timeouts":16,"counted":null,"ratio":null,"speedup":null},
      "prism":{"given":20,"answers":0,"tddlog_answers":20,"either":20,"total":24000,"tddlog_total":139.772,"both":0,"failures":0,"timeouts":20,"counted":null,"ratio":null,"speedup":null},
-     "provsql":{"given":20,"answers":19,"tddlog_answers":20,"either":20,"total":2685.145,"tddlog_total":139.772,"both":19,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null}
+     "provsql":{"given":20,"answers":19,"tddlog_answers":20,"either":20,"total":2985.338,"tddlog_total":139.772,"both":19,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null}
     },
     "q12":{
      "problog":{"given":20,"answers":10,"tddlog_answers":20,"either":20,"total":12749.975,"tddlog_total":199.172,"both":10,"failures":0,"timeouts":10,"counted":null,"ratio":null,"speedup":null},
@@ -1517,7 +1517,7 @@
      "pluck":{"given":16,"answers":4,"tddlog_answers":16,"either":16,"total":14441.266,"tddlog_total":18.86,"both":4,"failures":0,"timeouts":12,"counted":null,"ratio":null,"speedup":null},
      "storm":{"given":16,"answers":2,"tddlog_answers":16,"either":16,"total":17042.848,"tddlog_total":18.86,"both":2,"failures":0,"timeouts":14,"counted":null,"ratio":null,"speedup":null},
      "prism":{"given":16,"answers":0,"tddlog_answers":16,"either":16,"total":19200,"tddlog_total":18.86,"both":0,"failures":0,"timeouts":16,"counted":null,"ratio":null,"speedup":null},
-     "provsql":{"given":16,"answers":10,"tddlog_answers":16,"either":16,"total":7262.852,"tddlog_total":18.86,"both":10,"failures":0,"timeouts":6,"counted":null,"ratio":null,"speedup":null}
+     "provsql":{"given":16,"answers":10,"tddlog_answers":16,"either":16,"total":7289.921,"tddlog_total":18.86,"both":10,"failures":0,"timeouts":6,"counted":null,"ratio":null,"speedup":null}
     },
     "q18":{
      "problog":{"given":20,"answers":13,"tddlog_answers":19,"either":19,"total":8878.015,"tddlog_total":416.365,"both":13,"failures":0,"timeouts":6,"counted":null,"ratio":null,"speedup":null},
@@ -1661,7 +1661,7 @@
      "pluck":{"given":295,"answers":74,"tddlog_answers":289,"either":289,"total":258795.842,"tddlog_total":2298.927,"both":74,"failures":0,"timeouts":215,"counted":184,"ratio":28.9,"speedup":146.2},
      "storm":{"given":295,"answers":115,"tddlog_answers":289,"either":289,"total":215767.836,"tddlog_total":2298.927,"both":114,"failures":0,"timeouts":174,"counted":125,"ratio":64.73,"speedup":170.0},
      "prism":{"given":295,"answers":54,"tddlog_answers":289,"either":289,"total":282823.188,"tddlog_total":2298.927,"both":54,"failures":0,"timeouts":235,"counted":191,"ratio":40.34,"speedup":218.3},
-     "provsql":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50316.874,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.26,"speedup":18.58}
+     "provsql":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50644.136,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.56,"speedup":18.8}
     }
    },
    "native":["provsql","problog","psouffle","pita","aspmc"],
@@ -1674,7 +1674,7 @@
     "tddlog":null,
     "speedup":null
    },
-   "losses":["Where others win: ProvSQL is fast on the easy TPC-H queries, its own benchmarks, and faster than tddlog on 107 of them."]
+   "losses":["Where others win: ProbLog on the paths of two edges in random graphs of 14 and 17 nodes, in 4.8 s and 39 s against tddlog's 18 s and 182 s."]
   },
   {
    "key":"bayesian-networks",
@@ -3205,7 +3205,7 @@
     "tddlog":null,
     "speedup":null
    },
-   "losses":["Where others win: 15 partition functions of the UAI 2022 final set, 14 of them protein networks, run out of time or memory. TensorInference.jl answers each in 45 to 85 s."]
+   "losses":["Where others win: six partition functions of the UAI 2022 final set, five of them protein networks, run out of time or memory. TensorInference.jl answers each in 50 to 85 s."]
   },
   {
    "key":"functional-programs",
@@ -5335,7 +5335,7 @@
     "tddlog":[9167.881,11567.881],
     "speedup":null
    },
-   "losses":["Where others win: Alea.jl on 65 circuits, six of which tddlog does not answer, and Roulette on 34; Genfer on the population models, which it answers in milliseconds; Psi on two linear regressions it solves symbolically."]
+   "losses":["Where others win: Alea.jl on 67 circuits, seven of which tddlog does not answer, and Roulette on 34; Genfer on the population models, which it answers in milliseconds; Psi on two linear regressions it solves symbolically."]
   },
   {
    "key":"all-programs",
@@ -6261,7 +6261,7 @@
     ["tpch","tpch_q4_1000",600,"nntntttttttttttttttttto",33.606,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","error","error","skipped","timeout","error","skipped","skipped","skipped","skipped","skipped","timeout"],
     ["tpch","tpch_q4v_200",600,"nntntttttttttttttttttto",7.217,385.335,"skipped","error","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error",115.02],
     ["tpch","tpch_q4v_500",600,"nntntttttttttttttttttto",16.607,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","memout",314.533],
-    ["tpch","tpch_q4v_1000",600,"nntntttttttttttttttttto",34.574,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",12.576],
+    ["tpch","tpch_q4v_1000",600,"nntntttttttttttttttttto",34.574,"timeout","skipped","timeout","error","error","skipped","skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",312.769],
     ["tpch","tpch_q6_200",600,"nntntttttttttttttttttto",7.883,"timeout","skipped","error",44.169,"error","memout","timeout",218.134,125.388,"skipped",122.027,"error",1.257,"skipped","skipped","skipped","skipped","skipped","skipped",40.131,"skipped",111.747],
     ["tpch","tpch_q6_500",600,"nntntttttttttttttttttto",17.49,"skipped","skipped","error","error","error","memout","timeout","timeout","timeout","skipped","timeout","error","error","skipped","skipped","skipped","skipped","skipped","skipped",189.215,"skipped",234.567],
     ["tpch","tpch_q6_1000",600,"nntntttttttttttttttttto",32.235,"skipped","skipped","timeout","error","error","skipped","skipped","skipped","skipped","skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped",278.887],
@@ -6276,7 +6276,7 @@
     ["tpch","tpch_q10v_1000",600,"nntntttttttttttttttttto",34.282,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout"],
     ["tpch","tpch_q11_200",600,"nntntttttttttttttttttto",0.825,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout",15.774],
     ["tpch","tpch_q11_500",600,"nntntttttttttttttttttto",2.023,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",33.573],
-    ["tpch","tpch_q11_1000",600,"nntntttttttttttttttttto",3.933,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",2.592],
+    ["tpch","tpch_q11_1000",600,"nntntttttttttttttttttto",3.933,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",29.661],
     ["tpch","tpch_q11v_200",600,"nntntttttttttttttttttto",0.764,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped"],
     ["tpch","tpch_q11v_500",600,"nntntttttttttttttttttto",2.016,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["tpch","tpch_q11v_1000",600,"nntntttttttttttttttttto",6.207,"skipped","skipped","error","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
@@ -7100,7 +7100,7 @@
     "pluck":{"given":1514,"answers":411,"tddlog_answers":1384,"either":1384,"total":942971.86,"tddlog_total":22561.866,"both":411,"failures":0,"timeouts":973,"counted":875,"ratio":8.058,"speedup":53.55},
     "storm":{"given":1197,"answers":417,"tddlog_answers":1106,"either":1113,"total":723529.231,"tddlog_total":26346.788,"both":379,"failures":7,"timeouts":696,"counted":630,"ratio":9.612,"speedup":29.62},
     "prism":{"given":1197,"answers":278,"tddlog_answers":1106,"either":1112,"total":875729.353,"tddlog_total":25146.788,"both":272,"failures":6,"timeouts":834,"counted":740,"ratio":12.84,"speedup":44.05},
-    "provsql":{"given":330,"answers":276,"tddlog_answers":317,"either":317,"total":57309.371,"tddlog_total":2725.771,"both":260,"failures":0,"timeouts":41,"counted":31,"ratio":13.59,"speedup":20.14}
+    "provsql":{"given":330,"answers":276,"tddlog_answers":317,"either":317,"total":57636.633,"tddlog_total":2725.771,"both":260,"failures":0,"timeouts":41,"counted":31,"ratio":13.9,"speedup":20.36}
    },
    "narrowed":{
     "logic-programs":{
@@ -7148,7 +7148,7 @@
      "pluck":{"given":320,"answers":81,"tddlog_answers":308,"either":308,"total":266198.301,"tddlog_total":2712.962,"both":81,"failures":0,"timeouts":227,"counted":200,"ratio":20.42,"speedup":128.0},
      "storm":{"given":320,"answers":118,"tddlog_answers":308,"either":308,"total":225456.695,"tddlog_total":2712.962,"both":117,"failures":0,"timeouts":190,"counted":138,"ratio":65.19,"speedup":175.3},
      "prism":{"given":320,"answers":57,"tddlog_answers":308,"either":308,"total":292491.831,"tddlog_total":2712.962,"both":57,"failures":0,"timeouts":251,"counted":204,"ratio":42.46,"speedup":222.2},
-     "provsql":{"given":320,"answers":268,"tddlog_answers":308,"either":308,"total":56328.625,"tddlog_total":2712.962,"both":252,"failures":0,"timeouts":40,"counted":30,"ratio":13.26,"speedup":19.86}
+     "provsql":{"given":320,"answers":268,"tddlog_answers":308,"either":308,"total":56655.887,"tddlog_total":2712.962,"both":252,"failures":0,"timeouts":40,"counted":30,"ratio":13.57,"speedup":20.08}
     },
     "bayesian-networks":{
      "problog":{"given":292,"answers":101,"tddlog_answers":291,"either":291,"total":151371.529,"tddlog_total":124.815,"both":88,"failures":0,"timeouts":190,"counted":187,"ratio":99.06,"speedup":760.6},
@@ -7554,7 +7554,7 @@
      "pluck":{"given":295,"answers":74,"tddlog_answers":289,"either":289,"total":258795.842,"tddlog_total":2298.927,"both":74,"failures":0,"timeouts":215,"counted":184,"ratio":28.9,"speedup":146.2},
      "storm":{"given":295,"answers":115,"tddlog_answers":289,"either":289,"total":215767.836,"tddlog_total":2298.927,"both":114,"failures":0,"timeouts":174,"counted":125,"ratio":64.73,"speedup":170.0},
      "prism":{"given":295,"answers":54,"tddlog_answers":289,"either":289,"total":282823.188,"tddlog_total":2298.927,"both":54,"failures":0,"timeouts":235,"counted":191,"ratio":40.34,"speedup":218.3},
-     "provsql":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50316.874,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.26,"speedup":18.58}
+     "provsql":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50644.136,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.56,"speedup":18.8}
     }
    },
    "native":["ace","libdai","agrum","merlin","tensorinference","alea","pgmpy","roulette","problog","pita","storm","pluck","dice","aspmc","prism","provsql","psouffle","nodice","genfer","geni","sppl","psi"],
@@ -7563,11 +7563,11 @@
    "others":{
     "systems":["alea","pgmpy","roulette","problog","pita","storm","pluck","dice","aspmc","prism","provsql","psouffle","nodice","genfer","geni","sppl","psi"],
     "answers":[88,629],
-    "total":57309.371,
+    "total":57636.633,
     "tddlog":[2725.771,30956.708],
     "speedup":17.37
    },
-   "losses":["Where others win: pgmpy answers grid25, a logic program's path query across a 25 by 25 grid of probabilistic edges, in 144 s on the program's ground network, and tddlog runs out of time. PRISM and Storm answer Geni's three largest router networks, which tddlog does not, by value iteration over decision diagrams in double precision; their exact engines time out from 18 to 20 routers. Ace, pyAgrum and pgmpy answer two clinical trial circuits that tddlog does not, and Merlin one of them."]
+   "losses":["Where others win: pgmpy answers grid25, a logic program's path query across a 25 by 25 grid of probabilistic edges, in 144 s on the program's ground network, and tddlog runs out of time. PRISM and Storm answer Geni's four largest router networks (PRISM alone the largest, 48 routers), which tddlog does not, by value iteration over decision diagrams in double precision; their exact engines time out from 18 to 20 routers. Ace, pyAgrum and pgmpy answer two clinical trial circuits that tddlog does not, and Merlin one of them."]
   }
  ],
  "own":[
@@ -7593,7 +7593,7 @@
    "system":"provsql",
    "about":"the TPC-H queries, ProvSQL's own evaluation",
    "instances":295,
-   "vs":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50316.874,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.26,"speedup":18.58}
+   "vs":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50644.136,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.56,"speedup":18.8}
   },
   {
    "system":"dice",
@@ -8575,7 +8575,7 @@
      "n":35
     }
    ],
-   "native":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50316.874,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.26,"speedup":18.58},
+   "native":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50644.136,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.56,"speedup":18.8},
    "translated":{"given":35,"answers":17,"tddlog_answers":28,"either":28,"total":6992.497,"tddlog_total":426.844,"both":10,"failures":0,"timeouts":11,"counted":null,"ratio":null,"speedup":null}
   },
   {
@@ -9096,7 +9096,7 @@
    "problog":{"given":295,"answers":192,"tddlog_answers":289,"either":289,"total":135665.012,"tddlog_total":2298.927,"both":192,"failures":0,"timeouts":97,"counted":45,"ratio":68.48,"speedup":104.3},
    "pita":{"given":295,"answers":110,"tddlog_answers":289,"either":289,"total":220373.556,"tddlog_total":2298.927,"both":110,"failures":0,"timeouts":179,"counted":91,"ratio":123.0,"speedup":314.1},
    "aspmc":{"given":295,"answers":3,"tddlog_answers":289,"either":289,"total":343772.723,"tddlog_total":2298.927,"both":3,"failures":0,"timeouts":286,"counted":null,"ratio":null,"speedup":null},
-   "provsql":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50316.874,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.26,"speedup":18.58},
+   "provsql":{"given":295,"answers":259,"tddlog_answers":289,"either":289,"total":50644.136,"tddlog_total":2298.927,"both":250,"failures":0,"timeouts":30,"counted":22,"ratio":13.56,"speedup":18.8},
    "psouffle":{"given":295,"answers":175,"tddlog_answers":289,"either":289,"total":144166.232,"tddlog_total":2298.927,"both":175,"failures":0,"timeouts":114,"counted":70,"ratio":39.48,"speedup":93.36},
    "ace":{"given":295,"answers":212,"tddlog_answers":289,"either":289,"total":96364.185,"tddlog_total":2298.927,"both":212,"failures":0,"timeouts":77,"counted":74,"ratio":7.483,"speedup":27.41},
    "merlin":{"given":295,"answers":171,"tddlog_answers":289,"either":289,"total":142686.465,"tddlog_total":2298.927,"both":129,"failures":0,"timeouts":118,"counted":116,"ratio":6.313,"speedup":38.47},

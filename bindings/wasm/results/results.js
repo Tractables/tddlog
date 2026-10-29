@@ -2035,7 +2035,7 @@ async function runs(route) {
   const shown = [];
   const folded = new Map();
   for (const r of [...mine].reverse()) {
-    const sig = JSON.stringify([r.label, r.skipped ?? false, (r.rows ?? []).map((row) => row.cells.slice(1, 3))]);
+    const sig = JSON.stringify([r.label, r.skipped ?? false, r.queued ?? false, (r.rows ?? []).map((row) => row.cells.slice(1, 3))]);
     if (folded.has(sig)) { folded.get(sig).more++; continue; }
     const e = { r, more: 0 };
     folded.set(sig, e);
@@ -2063,7 +2063,7 @@ async function runs(route) {
     const { r, more } = e;
     const hit = e === inTable;
     const at = (r.cols ?? []).indexOf("seconds");
-    const summary = r.skipped ? "not run" : r.rows.map((row) => (row.cells[1] === "answered" ? `${row.cells[at]} s` : row.cells[1])).join(", ");
+    const summary = r.skipped ? (r.queued ? "not yet run" : "not run") : r.rows.map((row) => (row.cells[1] === "answered" ? `${row.cells[at]} s` : row.cells[1])).join(", ");
     const block = element("details", { class: "run", open: i === 0 || hit },
       element("summary", {}, element("b", {}, r.label), hit ? element("span", { class: "badge orig" }, "time in the table") : null,
         element("span", { class: "muted" }, ` ${summary}${more ? `; and ${plural(more, "run")} with the same outcome` : ""}`)),
@@ -2072,7 +2072,7 @@ async function runs(route) {
       const t = tddlogIn(r.later).map(med).filter((x) => x !== null);
       if (t.length) block.append(note(`tddlog in the same lanes: ${seconds(t[0])} s.`));
     }
-    if (r.skipped) block.append(note(`Not run in any repetition: ${FAILURES.skipped[1]}.`));
+    if (r.skipped) block.append(note(r.queued ? "Not yet run: a rerun is queued." : `Not run in any repetition: ${FAILURES.skipped[1]}.`));
     else {
       // The sizes, a long line, under the other columns of their row.
       const sizes = r.cols.indexOf("sizes");
