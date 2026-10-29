@@ -309,8 +309,8 @@ answers, and tddlog's speed-up:
 | PITA | 123 | 62 h | 45 min | 223× |
 | aspmc | 16 | 97 h | 45 min | too few in common |
 
-- Where others win: ProvSQL, which pays for loading its database, is
-  faster than tddlog on two TPC-H queries of the largest size.
+- Where others win: ProbLog on the paths of two edges in random graphs
+  of 14 and 17 nodes, in 4.8 s and 39 s against tddlog's 18 s and 182 s.
 
 ### Bayesian networks
 
@@ -421,7 +421,7 @@ answers, and tddlog's speed-up:
 | Genfer | 12 | 69 h | 2.5 h | too few in common |
 | 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 70 h each | 2.5 h to 3.2 h | too few in common |
 
-- Where others win: Alea.jl on 65 circuits, six of which tddlog does not
+- Where others win: Alea.jl on 67 circuits, seven of which tddlog does not
   answer, and Roulette on 34; Genfer on the population models, which it
   answers in milliseconds; Psi on two linear regressions it solves
   symbolically.
@@ -448,12 +448,13 @@ answers, and tddlog's speed-up:
 | pyAgrum | 716 | 188 h | 7.1 h | 34× |
 | Merlin | 701 | 194 h | 6.9 h | 31× |
 | TensorInference.jl | 690 | 215 h | 7.3 h | 47× |
-| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 15 h each | 45 min to 8.6 h | at least 17× |
+| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 16 h each | 45 min to 8.6 h | at least 17× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
   program's ground network, and tddlog runs out of time. PRISM and Storm
-  answer Geni's three largest router networks, which tddlog does not, by
+  answer Geni's four largest router networks (PRISM alone the largest,
+  48 routers), which tddlog does not, by
   value iteration over decision diagrams in double precision; their
   exact engines time out from 18 to 20 routers. Ace, pyAgrum and pgmpy
   answer two clinical trial circuits that tddlog does not, and Merlin
