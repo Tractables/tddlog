@@ -1744,9 +1744,6 @@ function versionLabel(tab) {
 
 const UNFAIR = "Note: this is an automatic translation from the original program, which might have performance "
   + "implications that make the comparison unfair.";
-// The same for the original network converted to another network format.
-const CONVERTED = "Note: this is the original network converted automatically to another format, which might have "
-  + "performance implications that make the comparison unfair.";
 
 // An instance of a family: its programs (the one tddlog read, and a menu of
 // every other system's), then its answers. `route` names the file to show.
@@ -1819,8 +1816,8 @@ function showFile(view, fam, inst, ti, fi) {
     }, element("p", { class: "cap" }, `The original, ${inst.tabs[0].lang}`));
     panes.append(original(shownFiles(inst.tabs[0])[0]));
   }
-  const note = tab.conversion ? CONVERTED : UNFAIR;
-  const cap = tab.translated && readersOf(tab).length ? element("p", { class: "unfair" }, note)
+  // a network converted to another network format is native: no note
+  const cap = tab.translated && !tab.conversion && readersOf(tab).length ? element("p", { class: "unfair" }, UNFAIR)
     : two ? element("p", { class: "cap" }, tab.lang) : null;
   panes.append(filePane(fam, tab, fi, (k) => {
     open(ti, k);
