@@ -47,6 +47,15 @@ pub(super) struct Trial {
     /// Whether the others' memory has been freed for it, which happens at
     /// most once a run ([`super::run`]).
     pub(super) freed_for: bool,
+    /// Whether it was last retired for memory refused while another trial
+    /// held what its attempts built. Such a trial runs again once no trial
+    /// is left, since what the others held is freed by then
+    /// (`super::run_within`; on multimodal_w11 under a 40 GB address-space
+    /// limit, `closed` was refused while `program:fanin` held its formulas,
+    /// and `program:fanin` was refused alone after it).
+    pub(super) behind: bool,
+    /// Whether it has run again so ([`Self::behind`]), at most once a run.
+    pub(super) revived: bool,
 }
 
 impl Trial {
@@ -69,6 +78,8 @@ impl Trial {
             evaluation: Evaluation::default(),
             disabled: false,
             freed_for: false,
+            behind: false,
+            revived: false,
         }
     }
 
@@ -267,12 +278,14 @@ impl Trial {
     }
 
     /// Ends the trial for the run, where an operation of its attempt was
-    /// refused memory while no other trial held any, or outgrew tididi's
-    /// 32-bit indices: an attempt in a later turn would resume at that
-    /// operation with larger bounds and no less held, so the run goes on
-    /// with the other trials, and fails with the refusal once none is left
-    /// (on latin5 and gnb30 `families:0` is refused memory and `closed`
-    /// finishes). What the trial built is freed ([`Self::release`]).
+    /// refused memory behind a trial that has spent as much, while no other
+    /// trial held any, or outgrew tididi's 32-bit indices: an attempt in a
+    /// later turn would resume at that operation with larger bounds and no
+    /// less held, so the run goes on with the other trials, and fails with
+    /// the refusal once none is left (on latin5 and gnb30 `families:0` is
+    /// refused memory and `closed` finishes), unless one was retired behind
+    /// another's memory ([`Self::behind`]). What the trial built is freed
+    /// ([`Self::release`]).
     pub(super) fn retire(&mut self) {
         self.release();
         self.disabled = true;
