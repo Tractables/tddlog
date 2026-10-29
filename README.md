@@ -280,7 +280,7 @@ answers, and tddlog's speed-up:
 |---|--:|--:|--:|--:|
 | PITA | 63 | 11 h | 24 min | 59× |
 | ProbLog | 58 | 12 h | 24 min | 126× |
-| PSouffle | 54 | 13 h | 24 min | 145× |
+| PSouffle | 46 | 15 h | 24 min | 427× |
 | aspmc | 31 | 16 h | 24 min | 537× |
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
@@ -303,14 +303,14 @@ answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| ProvSQL | 284 | 6.9 h | 45 min | 4.9× |
+| ProvSQL | 268 | 16 h | 45 min | 20× |
 | ProbLog | 204 | 39 h | 45 min | 72× |
-| PSouffle | 189 | 40 h | 45 min | 48× |
+| PSouffle | 189 | 41 h | 45 min | 94× |
 | PITA | 123 | 62 h | 45 min | 223× |
 | aspmc | 16 | 97 h | 45 min | too few in common |
 
-- Where others win: ProvSQL is fast on the easy TPC-H queries, its own
-  benchmarks, and faster than tddlog on 107 of them.
+- Where others win: ProvSQL, which pays for loading its database, is
+  faster than tddlog on two TPC-H queries of the largest size.
 
 ### Bayesian networks
 
@@ -331,12 +331,12 @@ answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 272 | 4.1 h | 2 min | 85× |
-| Alea.jl | 198 | 19 h | 2 min | 433× |
-| Merlin | 186 | 21 h | 2 min | 443× |
-| libDAI | 179 | 22 h | 2 min | 476× |
-| TensorInference.jl | 178 | 27 h | 2 min | 605× |
-| 13 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Psi, Geni | 43 to 168 | over 24 h each | 2 min | at least 490× |
+| Ace | 272 | 4.1 h | 2 min | 77× |
+| Alea.jl | 198 | 19 h | 2 min | 382× |
+| Merlin | 186 | 21 h | 2 min | 424× |
+| libDAI | 179 | 22 h | 2 min | 456× |
+| TensorInference.jl | 178 | 27 h | 2 min | 568× |
+| 13 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Psi, Geni | 43 to 168 | over 24 h each | 2 min | at least 471× |
 
 PSouffle was given 10 of the networks and answers 6.
 
@@ -352,22 +352,22 @@ probability tables over an acyclic graph: object detection,
 segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
 the rus networks and weighted CSPs.
 
-tddlog answers **215 of 263**. Against each native system: its answers,
+tddlog answers **224 of 263**. Against each native system: its answers,
 its total time and tddlog's over the networks it is given and either
 answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| TensorInference.jl | 187 | 9.9 h | 3.1 h | 2.6× |
-| libDAI | 175 | 9.5 h | 38 min | 19× |
-| Merlin | 167 | 9.5 h | 48 min | 10× |
-| pyAgrum | 166 | 9.3 h | 38 min | 14× |
-| pgmpy | 109 | 19 h | 38 min | 40× |
-| Ace | 74 | 25 h | 38 min | 68× |
+| TensorInference.jl | 187 | 9.9 h | 2.4 h | 3.9× |
+| libDAI | 175 | 11 h | 1.4 h | 13× |
+| Merlin | 167 | 11 h | 1.5 h | 8.1× |
+| pyAgrum | 166 | 11 h | 1.4 h | 9.7× |
+| pgmpy | 109 | 20 h | 1.4 h | 26× |
+| Ace | 74 | 26 h | 1.4 h | 50× |
 
-- Where others win: 15 partition functions of the UAI 2022 final set, 14
-  of them protein networks, run out of time or memory.
-  TensorInference.jl answers each in 45 to 85 s.
+- Where others win: six partition functions of the UAI 2022 final set,
+  five of them protein networks, run out of time or memory.
+  TensorInference.jl answers each in 50 to 85 s.
 
 ### Probabilistic functional programs
 
@@ -384,18 +384,18 @@ network, contract signing, a perturbed-memory interpreter, Cao et al.'s
 integer programs, the coupon collector, 3-SAT and the Dice paper's small
 programs.
 
-tddlog answers **222 of 258**. Against each native system: its answers,
+tddlog answers **223 of 260**. Against each native system: its answers,
 its total time and tddlog's over the programs it is given and either
 answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Alea.jl | 154 | 24 h | 1.1 h | 13× |
-| Dice | 119 | 36 h | 1.1 h | 33× |
-| Roulette | 118 | 35 h | 1.1 h | 16× |
-| Geni | 65 | 53 h | 1.1 h | 54× |
-| Pluck | 63 | 53 h | 1.1 h | 47× |
-| 4 others: Genfer, noDice, SPPL, Psi | 8 to 39 | over 61 h each | 1.1 h | at least 556× |
+| Alea.jl | 154 | 24 h | 1.2 h | 13× |
+| Dice | 119 | 37 h | 1.2 h | 33× |
+| Roulette | 118 | 36 h | 1.2 h | 17× |
+| Pluck | 70 | 51 h | 1.2 h | 29× |
+| Geni | 65 | 53 h | 1.2 h | 54× |
+| 4 others: Genfer, noDice, SPPL, Psi | 8 to 39 | over 61 h each | 1.2 h | at least 529× |
 
 ### Bit-blasted programs
 
@@ -416,7 +416,7 @@ answers, and tddlog's speed-up:
 |---|--:|--:|--:|--:|
 | Alea.jl | 137 | 31 h | 4.9 h | 4.9× |
 | Roulette | 98 | 41 h | 2.5 h | 14× |
-| Pluck | 47 | 58 h | 2.5 h | 32× |
+| Pluck | 54 | 56 h | 2.5 h | 20× |
 | Dice | 19 | 67 h | 2.5 h | too few in common |
 | Genfer | 12 | 69 h | 2.5 h | too few in common |
 | 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 70 h each | 2.5 h to 3.2 h | too few in common |
@@ -437,18 +437,18 @@ The six types together, every system on every program it is given,
 natively or through a translation: how the systems fare when the
 programs are translated into their languages.
 
-tddlog answers **1374 of 1512**. Against each system: its answers,
+tddlog answers **1384 of 1514**. Against each system: its answers,
 its total time and tddlog's over the programs it is given and either
 answers, and tddlog's speed-up:
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 863 | 141 h | 6.1 h | 29× |
-| libDAI | 745 | 182 h | 5.6 h | 55× |
-| pyAgrum | 716 | 186 h | 6.3 h | 38× |
-| Merlin | 701 | 192 h | 6.1 h | 36× |
-| TensorInference.jl | 690 | 215 h | 8.0 h | 38× |
-| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, ProvSQL, PRISM, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 7.0 h each | 45 min to 7.8 h | at least 5.0× |
+| Ace | 864 | 143 h | 6.9 h | 28× |
+| libDAI | 745 | 184 h | 6.4 h | 47× |
+| pyAgrum | 716 | 188 h | 7.1 h | 34× |
+| Merlin | 701 | 194 h | 6.9 h | 31× |
+| TensorInference.jl | 690 | 215 h | 7.3 h | 47× |
+| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 629 | over 15 h each | 45 min to 8.6 h | at least 17× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
@@ -467,22 +467,22 @@ the instances either answers, and tddlog's speed-up:
 
 | System | Its benchmarks | Instances | The system | tddlog | tddlog faster |
 |---|---|--:|--:|--:|--:|
-| Ace | Ace's own benchmarks (Chavira and Darwiche) | 46 | 46 in 8 min | 46 in 18 s | 28× |
+| Ace | Ace's own benchmarks (Chavira and Darwiche) | 46 | 46 in 8 min | 46 in 19 s | 26× |
 | ProbLog | The Biomine network of ProbLog's first paper (De Raedt et al., IJCAI 2007) | 10 | 4 in 2.0 h | 10 in 3 min | too few in common |
 | PITA | cplint's blood type example, which PITA ships | 1 | 1 in 0.5 s | 1 in 0.2 s | too few in common |
-| ProvSQL | The TPC-H queries, ProvSQL's own evaluation | 295 | 275 in 5.2 h | 289 in 38 min | 4.5× |
+| ProvSQL | The TPC-H queries, ProvSQL's own evaluation | 295 | 259 in 14 h | 289 in 38 min | 19× |
 | Dice | The Dice paper's programs and networks (OOPSLA 2020) and its repository's loops | 69 | 39 in 9.6 h | 67 in 21 min | 27× |
 | Alea.jl | The bit-blasting paper's programs (PLDI 2024), Alea.jl's own | 250 | 137 in 31 h | 218 in 4.9 h | 4.9× |
-| Alea.jl | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch | 28 | 25 in 3 min | 25 in 5 min | too few in common |
+| Alea.jl | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch | 28 | 25 in 23 min | 26 in 10 min | too few in common |
 | Roulette | The Roulette paper's programs and networks (PLDI 2025), from its artifact | 114 | 44 in 17 h | 95 in 20 min | 85× |
-| Geni | The programs of Geni's evaluation (ICFP 2025) | 60 | 39 in 4.0 h | 49 in 17 min | 13× |
+| Geni | The programs of Geni's evaluation (ICFP 2025) | 62 | 39 in 4.0 h | 49 in 17 min | 13× |
 | noDice | noDice's programs (OOPSLA 2026) | 14 | 10 in 1.3 h | 13 in 1 min | too few in common |
 | Pluck | Pluck's four sequence models (PLDI 2025) | 4 | 1 in 1.0 h | 4 in 2 min | too few in common |
 | Genfer | Genfer's population model (NeurIPS 2023) | 12 | 12 in 4.3 s | 12 in 7 min | too few in common |
 | Genfer | The Dice programs Genfer's repository ships | 7 | 7 in 1.4 s | 7 in 1.4 s | too few in common |
 | Psi | Psi's R2 linear regression, as Psi's own program | 8 | 2 in 2.0 h | 6 in 47 min | too few in common |
 | SPPL | SPPL's hierarchical Markov switching model (PLDI 2021) | 8 | 0 in 2.7 h | 8 in 6 min | too few in common |
-| PSouffle | The Android taint analyses of PSouffle's evaluation (FMCAD 2026) | 15 | 10 in 30 min | 12 in 32 s | too few in common |
+| PSouffle | The Android taint analyses of PSouffle's evaluation (FMCAD 2026) | 15 | 9 in 1.1 h | 12 in 32 s | too few in common |
 
 ### Setup
 

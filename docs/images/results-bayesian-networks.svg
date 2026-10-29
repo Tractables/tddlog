@@ -1546,40 +1546,50 @@ L 76.932371 178.400578
 L 76.932371 177.620133 
 L 77.491955 177.620133 
 L 77.491955 176.839688 
-L 79.038119 176.839688 
-L 79.135211 175.278798 
-L 79.351319 175.278798 
+L 78.783383 176.839688 
+L 78.783383 176.059243 
+L 79.038119 176.059243 
+L 79.135211 174.498353 
 L 79.351319 174.498353 
-L 79.790321 174.498353 
+L 79.351319 173.717908 
 L 79.790321 173.717908 
-L 81.425747 173.717908 
+L 79.790321 172.937464 
 L 81.425747 172.937464 
-L 82.047449 172.937464 
-L 82.126793 171.376574 
-L 83.366021 171.376574 
+L 81.425747 172.157019 
+L 82.047449 172.157019 
+L 82.126793 170.596129 
 L 83.366021 170.596129 
-L 84.402191 170.596129 
+L 83.366021 169.815684 
 L 84.402191 169.815684 
-L 84.946115 169.815684 
+L 84.402191 169.035239 
 L 84.946115 169.035239 
-L 86.140973 169.035239 
+L 84.946115 168.254794 
 L 86.140973 168.254794 
-L 87.806675 168.254794 
+L 86.140973 167.474349 
 L 87.806675 167.474349 
-L 88.574015 167.474349 
-L 88.655969 165.91346 
-L 90.828533 165.91346 
+L 87.806675 166.693904 
+L 88.574015 166.693904 
+L 88.655969 165.133015 
 L 90.828533 165.133015 
-L 93.376415 165.133015 
+L 90.828533 164.35257 
 L 93.376415 164.35257 
-L 103.116413 164.35257 
-L 103.116413 163.572125 
-L 174.924299 163.572125 
-L 174.924299 162.79168 
-L 195.503105 162.79168 
-L 195.503105 162.011235 
-L 368.564375 162.011235 
-L 368.564375 162.011235 
+L 93.376415 163.572125 
+L 102.180989 163.572125 
+L 102.180989 162.79168 
+L 103.116413 162.79168 
+L 103.116413 162.011235 
+L 174.924299 162.011235 
+L 174.924299 161.23079 
+L 195.503105 161.23079 
+L 195.503105 160.450345 
+L 208.207541 160.450345 
+L 208.207541 159.6699 
+L 223.777235 159.6699 
+L 223.777235 158.889455 
+L 257.829905 158.889455 
+L 257.829905 158.109011 
+L 368.564375 158.109011 
+L 368.564375 158.109011 
 " clip-path="url(#pecf5dd2e08)" style="fill: none; stroke-dasharray: 11.9,5.1,3.4,5.1; stroke-dashoffset: 0; stroke: #5c3a9e; stroke-width: 1.7"/>
    </g>
    <g id="line2d_35">
@@ -2459,23 +2469,27 @@ L 368.564375 66.796958
    <g id="line2d_42">
     <path d="M 55.364375 279.077969 
 L 55.468775 279.077969 
-L 55.577873 93.332085 
-L 55.593533 93.332085 
-L 55.699499 80.064521 
-L 55.711505 80.064521 
-L 55.792415 68.357848 
-L 55.837829 68.357848 
-L 55.920305 62.894734 
-L 55.994429 62.894734 
-L 56.053415 60.553399 
-L 56.170865 60.553399 
-L 56.270045 58.212065 
-L 56.302409 58.212065 
-L 56.349389 55.87073 
-L 56.497115 55.87073 
-L 56.509121 53.529395 
-L 57.481607 53.529395 
-L 57.481607 52.74895 
+L 55.578395 101.136534 
+L 55.587269 101.136534 
+L 55.694801 87.86897 
+L 55.698977 87.86897 
+L 55.797113 72.260073 
+L 55.814861 72.260073 
+L 55.895771 64.455624 
+L 55.926047 64.455624 
+L 56.032535 61.333844 
+L 56.053415 61.333844 
+L 56.084735 59.772954 
+L 56.256995 59.772954 
+L 56.326943 56.651175 
+L 56.416727 56.651175 
+L 56.505989 55.090285 
+L 56.549837 55.090285 
+L 56.549837 54.30984 
+L 57.017027 54.30984 
+L 57.017027 53.529395 
+L 59.451635 53.529395 
+L 59.451635 52.74895 
 L 61.215473 52.74895 
 L 61.215473 51.968505 
 L 368.564375 51.968505 
@@ -2700,10 +2714,10 @@ L 667.364375 279.077969
     <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: middle" x="600.95355" y="211.81038" transform="rotate(-45, 600.95355, 211.81038)">100×</text>
    </g>
    <g id="text_30">
-    <text style="fill: #0d6670; font: 700 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="418.964375" y="20.677969" transform="rotate(-0, 418.964375, 20.677969)">tddlog faster on 115</text>
+    <text style="fill: #0d6670; font: 700 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="418.964375" y="20.677969" transform="rotate(-0, 418.964375, 20.677969)">tddlog faster on 113</text>
    </g>
    <g id="text_31">
-    <text style="fill: #1f5fa8; font: 700 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="667.364375" y="20.677969" transform="rotate(-0, 667.364375, 20.677969)">slower on 43</text>
+    <text style="fill: #1f5fa8; font: 700 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="667.364375" y="20.677969" transform="rotate(-0, 667.364375, 20.677969)">slower on 46</text>
    </g>
    <g id="PathCollection_1">
     <defs>
@@ -2721,43 +2735,43 @@ z
     </defs>
     <g clip-path="url(#pdd0ea9ee66)">
      <use xlink:href="#m28d563fbeb" x="427.938031" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="501.395101" y="263.909063" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="503.739048" y="236.95741" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="463.187571" y="238.455412" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="463.673695" y="238.630988" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="501.395101" y="263.116615" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="503.739048" y="236.792294" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="463.187571" y="238.073095" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="463.673695" y="238.10763" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="425.717151" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="439.322614" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="464.678693" y="239.526304" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="464.678693" y="239.021296" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="438.951043" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="504.553342" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="521.931715" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="535.838182" y="259.850049" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="547.439904" y="247.854736" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="563.355209" y="238.142208" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="577.055097" y="226.457103" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="580.646131" y="217.01116" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="535.838182" y="259.468025" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="547.439904" y="246.176091" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="563.355209" y="234.762959" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="577.055097" y="224.026324" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="580.646131" y="215.272111" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="440.478594" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="438.574318" y="271.4857" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="586.960832" y="214.320009" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="468.464732" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="467.644702" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="469.309712" y="247.5595" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="503.614771" y="255.850607" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="506.156308" y="253.928006" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="492.134109" y="252.016963" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="509.707483" y="246.692572" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="510.200643" y="246.362768" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="512.674636" y="243.604248" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="438.574318" y="268.470869" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="586.960832" y="212.523903" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="468.464732" y="274.086273" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="467.644702" y="271.962229" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="469.309712" y="245.48726" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="503.614771" y="251.959357" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="506.156308" y="250.557527" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="492.134109" y="247.755967" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="509.707483" y="242.6482" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="510.200643" y="242.162438" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="512.674636" y="241.02318" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="435.270641" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="434.488337" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="531.630092" y="231.594374" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="534.588614" y="234.218503" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="466.064637" y="240.003799" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="461.577299" y="239.164628" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="531.630092" y="231.082641" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="534.588614" y="233.831962" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="466.064637" y="239.453582" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="461.577299" y="238.630988" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="458.149483" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="447.918541" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="432.284851" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="536.059136" y="268.051379" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="536.059136" y="268.365388" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="523.040499" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="490.11798" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="496.65691" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
@@ -2769,29 +2783,27 @@ z
      <use xlink:href="#m28d563fbeb" x="495.375473" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="525.121468" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="518.581419" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="466.229586" y="269.548845" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="466.229586" y="266.045935" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="437.173132" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="430.506377" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="492.657063" y="241.567204" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="505.076393" y="224.026324" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="503.301567" y="238.985581" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="465.252952" y="244.507561" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="467.955122" y="268.576762" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="492.657063" y="238.525506" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="505.076393" y="222.81895" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="503.301567" y="235.56918" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="465.252952" y="242.81207" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="467.955122" y="266.337474" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="660.238186" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="660.238186" y="273.191463" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="660.238186" y="257.073078" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="428.929836" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="573.25104" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="466.366282" y="270.443129" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="444.483051" y="259.166229" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="436.114231" y="272.325193" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="493.261472" y="239.128724" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="466.366282" y="266.632176" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="436.114231" y="268.365388" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="493.261472" y="237.798388" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="436.27985" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="436.031041" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="504.08811" y="229.856713" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="660.238186" y="275.146366" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="446.820961" y="252.658831" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="504.08811" y="226.910939" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="660.238186" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="436.362282" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="448.292451" y="274.877438" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="448.292451" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="465.451108" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="541.303087" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="555.741107" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
@@ -2852,48 +2864,51 @@ z
 "/>
     </defs>
     <g clip-path="url(#pdd0ea9ee66)">
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="260.709907" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="257.563749" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="269.769671" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="257.776781" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="258.646021" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="448.713567" y="215.064204" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="459.270074" y="210.524501" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="429.676956" y="232.005296" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="431.606991" y="232.227023" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="444.604851" y="216.601049" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="434.751617" y="215.647379" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="438.498342" y="251.446324" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="443.803207" y="248.354041" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="437.804821" y="245.441953" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="441.924792" y="247.461797" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="271.604051" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="268.155646" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="257.493108" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="255.784279" style="fill: #1f5fa8; fill-opacity: 0.75"/>
      <use xlink:href="#me29d1e09cd" x="422.760509" y="268.789794" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="266.045935" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="263.909063" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="266.830435" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="265.096138" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="267.63827" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="259.773213" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="427.712624" y="264.725328" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="435.947596" y="224.482829" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="264.541804" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="433.591839" y="210.238129" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="231.377731" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="231.922612" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="249.381061" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="256.727947" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="446.426083" y="250.99829" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="445.205793" y="248.91409" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="448.973487" y="193.535838" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="447.430111" y="210.300128" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="422.760509" y="219.751327" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="453.882454" y="239.672333" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="456.553528" y="238.525506" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="448.973487" y="242.6482" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="453.004787" y="240.793322" style="fill: #1f5fa8; fill-opacity: 0.75"/>
-     <use xlink:href="#me29d1e09cd" x="453.226876" y="240.18971" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="257.563749" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="258.942062" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="448.713567" y="214.946111" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="459.270074" y="210.312544" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="429.676956" y="231.648805" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="431.606991" y="231.567199" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="444.604851" y="216.995271" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="434.751617" y="216.181619" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="438.498342" y="249.433445" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="443.803207" y="247.219066" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="437.804821" y="244.376663" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="441.924792" y="246.362768" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="256.591113" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="253.316236" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="266.731124" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="254.553873" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="257.212368" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="246.692572" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="254.680795" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="245.623636" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="257.142633" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="243.987709" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="444.483051" y="247.364444" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="427.712624" y="256.727947" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="435.947596" y="175.669993" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="249.644" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="433.591839" y="239.021296" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="227.535899" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="240.264432" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="236.660921" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="242.894377" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="446.426083" y="239.672333" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="445.205793" y="241.177507" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="448.973487" y="200.264493" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="446.820961" y="240.869725" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="447.430111" y="209.288843" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="422.760509" y="224.862126" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="453.882454" y="231.594374" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="456.553528" y="229.577611" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="448.973487" y="231.703346" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="453.004787" y="233.509132" style="fill: #1f5fa8; fill-opacity: 0.75"/>
+     <use xlink:href="#me29d1e09cd" x="453.226876" y="233.161276" style="fill: #1f5fa8; fill-opacity: 0.75"/>
      <use xlink:href="#me29d1e09cd" x="422.760509" y="243.646588" style="fill: #1f5fa8; fill-opacity: 0.75"/>
     </g>
    </g>
@@ -3015,7 +3030,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="404.83125" transform="rotate(-0, 213.764375, 404.83125)">272</text>
   </g>
   <g id="text_39">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="404.83125" transform="rotate(-0, 325.364375, 404.83125)">85×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="404.83125" transform="rotate(-0, 325.364375, 404.83125)">77×</text>
   </g>
   <g id="text_40">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="421.75125" transform="rotate(-0, 40.964375, 421.75125)">Alea.jl</text>
@@ -3024,7 +3039,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="421.75125" transform="rotate(-0, 213.764375, 421.75125)">198</text>
   </g>
   <g id="text_42">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="421.75125" transform="rotate(-0, 325.364375, 421.75125)">433×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="421.75125" transform="rotate(-0, 325.364375, 421.75125)">382×</text>
   </g>
   <g id="text_43">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="438.67125" transform="rotate(-0, 40.964375, 438.67125)">Merlin</text>
@@ -3033,7 +3048,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="438.67125" transform="rotate(-0, 213.764375, 438.67125)">186</text>
   </g>
   <g id="text_45">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="438.67125" transform="rotate(-0, 325.364375, 438.67125)">443×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="438.67125" transform="rotate(-0, 325.364375, 438.67125)">424×</text>
   </g>
   <g id="text_46">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="455.59125" transform="rotate(-0, 40.964375, 455.59125)">libDAI</text>
@@ -3042,7 +3057,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="455.59125" transform="rotate(-0, 213.764375, 455.59125)">179</text>
   </g>
   <g id="text_48">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="455.59125" transform="rotate(-0, 325.364375, 455.59125)">476×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="455.59125" transform="rotate(-0, 325.364375, 455.59125)">456×</text>
   </g>
   <g id="text_49">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="472.51125" transform="rotate(-0, 40.964375, 472.51125)">TensorInference.jl</text>
@@ -3051,7 +3066,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="472.51125" transform="rotate(-0, 213.764375, 472.51125)">178</text>
   </g>
   <g id="text_51">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="472.51125" transform="rotate(-0, 325.364375, 472.51125)">605×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="472.51125" transform="rotate(-0, 325.364375, 472.51125)">568×</text>
   </g>
   <g id="text_52">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="489.43125" transform="rotate(-0, 40.964375, 489.43125)">Roulette</text>
@@ -3060,7 +3075,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="489.43125" transform="rotate(-0, 213.764375, 489.43125)">168</text>
   </g>
   <g id="text_54">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="489.43125" transform="rotate(-0, 325.364375, 489.43125)">532×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="489.43125" transform="rotate(-0, 325.364375, 489.43125)">473×</text>
   </g>
   <g id="text_55">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="506.35125" transform="rotate(-0, 40.964375, 506.35125)">pyAgrum</text>
@@ -3069,16 +3084,16 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="506.35125" transform="rotate(-0, 213.764375, 506.35125)">165</text>
   </g>
   <g id="text_57">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="506.35125" transform="rotate(-0, 325.364375, 506.35125)">490×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="506.35125" transform="rotate(-0, 325.364375, 506.35125)">471×</text>
   </g>
   <g id="text_58">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="523.27125" transform="rotate(-0, 40.964375, 523.27125)">Pluck</text>
   </g>
   <g id="text_59">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="523.27125" transform="rotate(-0, 213.764375, 523.27125)">150</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="523.27125" transform="rotate(-0, 213.764375, 523.27125)">155</text>
   </g>
   <g id="text_60">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="523.27125" transform="rotate(-0, 325.364375, 523.27125)">565×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="523.27125" transform="rotate(-0, 325.364375, 523.27125)">499×</text>
   </g>
   <g id="text_61">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="540.19125" transform="rotate(-0, 40.964375, 540.19125)">aspmc</text>
@@ -3087,7 +3102,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="540.19125" transform="rotate(-0, 213.764375, 540.19125)">142</text>
   </g>
   <g id="text_63">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="540.19125" transform="rotate(-0, 325.364375, 540.19125)">684×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="540.19125" transform="rotate(-0, 325.364375, 540.19125)">618×</text>
   </g>
   <g id="text_64">
    <text style="fill: #59636e; font: 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="368.237344" transform="rotate(-0, 537.764375, 368.237344)">answers</text>
@@ -3102,7 +3117,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="387.91125" transform="rotate(-0, 537.764375, 387.91125)">137</text>
   </g>
   <g id="text_68">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="387.91125" transform="rotate(-0, 649.364375, 387.91125)">708×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="387.91125" transform="rotate(-0, 649.364375, 387.91125)">665×</text>
   </g>
   <g id="text_69">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="404.83125" transform="rotate(-0, 364.964375, 404.83125)">pgmpy</text>
@@ -3111,7 +3126,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="404.83125" transform="rotate(-0, 537.764375, 404.83125)">127</text>
   </g>
   <g id="text_71">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="404.83125" transform="rotate(-0, 649.364375, 404.83125)">610×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="404.83125" transform="rotate(-0, 649.364375, 404.83125)">589×</text>
   </g>
   <g id="text_72">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="421.75125" transform="rotate(-0, 364.964375, 421.75125)">Dice</text>
@@ -3120,7 +3135,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="421.75125" transform="rotate(-0, 537.764375, 421.75125)">120</text>
   </g>
   <g id="text_74">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="421.75125" transform="rotate(-0, 649.364375, 421.75125)">885×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="421.75125" transform="rotate(-0, 649.364375, 421.75125)">826×</text>
   </g>
   <g id="text_75">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="438.67125" transform="rotate(-0, 364.964375, 438.67125)">ProbLog</text>
@@ -3129,7 +3144,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="438.67125" transform="rotate(-0, 537.764375, 438.67125)">101</text>
   </g>
   <g id="text_77">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="438.67125" transform="rotate(-0, 649.364375, 438.67125)">796×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="438.67125" transform="rotate(-0, 649.364375, 438.67125)">761×</text>
   </g>
   <g id="text_78">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="455.59125" transform="rotate(-0, 364.964375, 455.59125)">Genfer</text>
@@ -3138,7 +3153,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="455.59125" transform="rotate(-0, 537.764375, 455.59125)">66</text>
   </g>
   <g id="text_80">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="455.59125" transform="rotate(-0, 649.364375, 455.59125)">1046×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="455.59125" transform="rotate(-0, 649.364375, 455.59125)">972×</text>
   </g>
   <g id="text_81">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="472.51125" transform="rotate(-0, 364.964375, 472.51125)">SPPL</text>
@@ -3147,7 +3162,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="472.51125" transform="rotate(-0, 537.764375, 472.51125)">62</text>
   </g>
   <g id="text_83">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="472.51125" transform="rotate(-0, 649.364375, 472.51125)">977×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="472.51125" transform="rotate(-0, 649.364375, 472.51125)">904×</text>
   </g>
   <g id="text_84">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="489.43125" transform="rotate(-0, 364.964375, 489.43125)">noDice</text>
@@ -3156,7 +3171,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="489.43125" transform="rotate(-0, 537.764375, 489.43125)">60</text>
   </g>
   <g id="text_86">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="489.43125" transform="rotate(-0, 649.364375, 489.43125)">1163×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="489.43125" transform="rotate(-0, 649.364375, 489.43125)">1120×</text>
   </g>
   <g id="text_87">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="506.35125" transform="rotate(-0, 364.964375, 506.35125)">Psi</text>
@@ -3165,7 +3180,7 @@ L 357.764375 520.097969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="506.35125" transform="rotate(-0, 537.764375, 506.35125)">43</text>
   </g>
   <g id="text_89">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="506.35125" transform="rotate(-0, 649.364375, 506.35125)">1006×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="506.35125" transform="rotate(-0, 649.364375, 506.35125)">975×</text>
   </g>
   <g id="text_90">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="523.27125" transform="rotate(-0, 364.964375, 523.27125)">Geni</text>
