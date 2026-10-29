@@ -12,7 +12,12 @@
 //! the clause store is then rebuilt without the worse half of them and
 //! without what level zero satisfies or falsifies. A call stops at its
 //! conflict limit, or once the solver's propagation steps pass its limit,
-//! and then says it does not know. Where the caller asks
+//! and then says it does not know. The steps stop propagation itself, the
+//! literals not yet propagated left on the trail for the next call: one
+//! propagation over clauses that a call's assumption does not need can
+//! reach most of them (the cones of every gate encoded before, in the
+//! sweep of [`crate::ground::aig`]), and a call past its limit would
+//! otherwise finish it. Where the caller asks
 //! ([`Solver::keep_assumptions`]), a call starts from the levels of the
 //! assumptions it shares, in order, with the last call's, as a search
 //! whose assumptions change at their end asks.
@@ -468,9 +473,13 @@ impl Solver {
     }
 
     /// Unit propagation from the trail's head: the clause that fails, if
-    /// one does.
+    /// one does. It stops once the steps pass the limit, with no conflict
+    /// found, and the caller then stops too.
     fn propagate(&mut self) -> Option<Conflict> {
         while self.qhead < self.trail.len() {
+            if self.ticks >= self.tick_limit {
+                return None;
+            }
             let p = self.trail[self.qhead];
             self.qhead += 1;
             let f = p ^ 1;
@@ -1175,5 +1184,27 @@ mod tests {
         }
         assert_eq!(s.solve(&[], 1), Outcome::Unknown);
         assert_eq!(s.solve(&[], u64::MAX), Outcome::Unsat);
+    }
+
+    /// A call stops propagating once its steps pass the limit, and the
+    /// next call takes up the literals it left: the assumption `x1` of a
+    /// chain `x1 -> x2 -> ... -> xn -> -x1` is refuted only by propagating
+    /// all of it, a thousand steps and more, which a call with a limit of
+    /// fifty used to take in full before it stopped.
+    #[test]
+    fn a_call_stops_propagating_at_its_step_limit() {
+        let n = 1000;
+        let mut s = Solver::new(n as usize);
+        for i in 1..n {
+            s.add_clause(&lits(&[-i, i + 1]));
+        }
+        s.add_clause(&lits(&[-n, -1]));
+        s.tick_limit = 50;
+        assert_eq!(s.solve(&lits(&[1]), u64::MAX), Outcome::Unknown);
+        assert!(s.ticks < 100, "{} steps", s.ticks);
+        s.tick_limit = u64::MAX;
+        assert_eq!(s.solve(&lits(&[1]), u64::MAX), Outcome::Unsat);
+        assert_eq!(s.solve(&[], u64::MAX), Outcome::Sat);
+        assert_eq!(s.fixed(lits(&[1])[0]), Some(false));
     }
 }

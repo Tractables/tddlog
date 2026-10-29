@@ -823,11 +823,6 @@ body.results .site-logo { width: 8.5rem; }
 .tree a:hover { background: var(--accent-fill); }
 .tree a[aria-current] { background: var(--accent-fill); color: var(--accent); font-weight: 600; }
 
-/* A family's dot: tddlog answers all of its instances, some, or none. */
-i.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
-i.dot.all { background: var(--accent); }
-i.dot.some { background: var(--amber); }
-
 .crumbs { display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 13px; color: var(--muted); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
@@ -890,6 +885,7 @@ svg.overview { display: block; max-width: 100%; }
 .overview text.t.you, .overview text.both { fill: var(--muted); }
 .overview text.ratio { font-size: 13px; font-weight: 700; fill: var(--accent-ink); }
 .overview text.ratio.slower { fill: var(--muted); }
+.overview text.ratio.few { font-size: 11px; font-weight: 400; fill: var(--muted); }
 
 section.kind-figs { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 section.kind-figs h3 { margin: 0; font-size: 1.1rem; }

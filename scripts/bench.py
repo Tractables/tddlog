@@ -151,6 +151,7 @@ import os
 import re
 import shlex
 import shutil
+import glob
 import signal
 import subprocess
 import tempfile
@@ -741,6 +742,16 @@ def series(family, name):
     return family
 
 
+# The instances of the suites this script lists itself, each by its place in
+# its suite's listing, so a program's sizes smallest first (series). A table's
+# file need not hold them in that order: a run in lanes writes each record as
+# its job ends (Geni's weather H at 600 to 1000 days before 4).
+LISTED = {}
+for _spec in (SPEC, INDICATORS, LARGE, LIT, TPCH, PPL, BITBLAST, GENI):
+    for _k, _name in enumerate(_spec):
+        LISTED.setdefault(_name, _k)
+
+
 # How the systems say that an allocation failed, and the run's own kill at
 # the memory cap (`timed`): C++'s bad_alloc, the C libraries' (CUDD's,
 # SDD's, GMP's, glibc's) and Rust's messages, Python's MemoryError and
@@ -786,12 +797,26 @@ def memout(r):
     return False
 
 
+# A translator for one system that did not finish within the time limit
+# (`translated`, dice2alea.py's and dice2roulette.py's calls): an error, its
+# text kept, that the skip rule takes for a timeout (ran_out). A system that
+# cannot be handed a program's smaller size within the limit is not handed
+# its larger ones either.
+TRANSLATION_LIMIT = re.compile(r'\S+: no translation within ')
+
+
+def translation_limit(r):
+    """Whether record r is a translator's time limit (TRANSLATION_LIMIT)."""
+    return r['status'] == 'error' and bool(TRANSLATION_LIMIT.match(str(r.get('error') or '')))
+
+
 def ran_out(r):
-    """Whether a run ran out of time or memory (`memout`), for the skip rule.
-    An unclassed error does not skip the larger sizes: running them costs
-    time and nothing else, and the processing stops on the text."""
+    """Whether a run ran out of time or memory (`memout`), for the skip rule,
+    a translator's time limit (translation_limit) counted as a timeout. An
+    unclassed error does not skip the larger sizes: running them costs time
+    and nothing else, and the processing stops on the text."""
     try:
-        return r['status'] == 'timeout' or memout(r)
+        return r['status'] == 'timeout' or translation_limit(r) or memout(r)
     except Unclassed:
         return False
 
@@ -3401,15 +3426,26 @@ def drop_ground(args, name):
 class ProvSQLServer:
     """A PostgreSQL cluster of its own with ProvSQL loaded, in `d`, on a
     unix socket (no port), its processes pinned to the lane's core as the
-    timed commands are (they inherit the affinity)."""
+    timed commands are (they inherit the affinity). The postmaster runs in
+    the foreground, in a session of its own and, under the memory cap, in a
+    cgroup of its own, because ProvSQL's backend starts compilers (d4) that
+    outlive the client a timeout killed: `stop` kills the session and the
+    cgroup and fails if any process is left. The server's temporary files
+    (`TMPDIR`, which ProvSQL's compiler directories follow) are in `d`; the
+    run stops when the root filesystem has less than ROOT_FREE_GB free."""
+    ROOT_FREE_GB = 2
 
     def __init__(self, prefix, d):
         self.bin = os.path.join(os.path.abspath(prefix), 'pg', 'bin')
         self.d = d
+        self.tmp = os.path.join(d, 'tmp')
+        os.makedirs(self.tmp)
         # a unix socket's path is at most 107 bytes: the socket lives in a short directory of its own
         self.sock = tempfile.mkdtemp(prefix='ps', dir='/tmp')
         cpu = getattr(LANE, 'cpu', None)
         self.pin = ['taskset', '-c', str(cpu)] if cpu is not None else []
+        self.proc = self.cap = None
+        self.t0 = time.time()
 
     def run(self, cmd, **kw):
         r = subprocess.run(self.pin + cmd, capture_output=True, text=True, **kw)
@@ -3418,21 +3454,83 @@ class ProvSQLServer:
         return r
 
     def start(self):
+        free = shutil.disk_usage('/').free
+        if free < self.ROOT_FREE_GB << 30:
+            raise SystemExit(f'ProvSQL: the root filesystem has {free >> 20} MB free, less than {self.ROOT_FREE_GB} GB')
         data = os.path.join(self.d, 'data')
         self.run([os.path.join(self.bin, 'initdb'), '-D', data, '-A', 'trust'])
         with open(os.path.join(data, 'postgresql.conf'), 'a') as f:
             f.write(f"shared_preload_libraries = 'provsql'\nlisten_addresses = ''\nunix_socket_directories = '{self.sock}'\n"
                     'fsync = off\nsynchronous_commit = off\nfull_page_writes = off\nautovacuum = off\n'
                     'max_wal_size = 4GB\nshared_buffers = 512MB\n')
-        self.run([os.path.join(self.bin, 'pg_ctl'), '-D', data, '-l', os.path.join(self.d, 'server.log'), '-w', 'start'])
+        cmd = [os.path.join(self.bin, 'postgres'), '-D', data]
+        if MEMCAP:
+            self.cap = memcap.Cap(*MEMCAP)
+            cmd = self.cap.command(cmd)
+        self.proc = subprocess.Popen(self.pin + cmd, stdout=open(os.path.join(self.d, 'server.log'), 'w'),
+                                     stderr=subprocess.STDOUT, start_new_session=True,
+                                     env={**os.environ, 'TMPDIR': self.tmp, 'PROVSQL_SERVER': self.d})
         self.psql_cmd = [os.path.join(self.bin, 'psql'), '-h', self.sock, '-d', 'postgres', '-X']
+        ready = [os.path.join(self.bin, 'pg_isready'), '-h', self.sock, '-q']
+        for _ in range(600):
+            if self.proc.poll() is not None:
+                raise RuntimeError('postgres exited: ' + open(os.path.join(self.d, 'server.log')).read()[-300:])
+            if subprocess.run(ready).returncode == 0:
+                break
+            time.sleep(0.1)
+        else:
+            raise RuntimeError('postgres did not accept connections within 60 s')
         self.run(self.psql_cmd + ['-q', '-v', 'ON_ERROR_STOP=1', '-c', 'CREATE EXTENSION provsql CASCADE'])
         self.run(self.psql_cmd + ['-q', '-v', 'ON_ERROR_STOP=1', '-c', 'SELECT provsql.setup_search_path()'])   # for new sessions
 
+    @staticmethod
+    def marked(pid, mark):
+        try:
+            with open(f'/proc/{pid}/environ', 'rb') as f:
+                return mark in f.read().split(b'\0')
+        except OSError:
+            return False
+
     def stop(self):
-        subprocess.run([os.path.join(self.bin, 'pg_ctl'), '-D', os.path.join(self.d, 'data'), '-m', 'immediate', 'stop'],
-                       capture_output=True)
+        """Kills the server and what it started, and checks that nothing of
+        the run is left (a process or a /tmp/provsql* directory)."""
+        left = []
+        if self.proc is not None:
+            try:
+                os.killpg(self.proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            self.proc.wait()
+            for _ in range(36):   # freeing a server of many GB takes longer than memcap's 5 s
+                if not self.cap:
+                    break
+                try:
+                    self.cap.finish()   # cgroup.kill
+                    break
+                except memcap.MemcapError:
+                    pass
+            else:
+                left.append('processes of the server cgroup')
+            # what a backend started and a session or reparenting lost: every process
+            # of ours that carries the server's marker in its environment
+            mark = f'PROVSQL_SERVER={self.d}'.encode()
+            for _ in range(50):
+                alive = [pid for pid in os.listdir('/proc') if pid.isdigit() and pid != str(os.getpid())
+                         and self.marked(pid, mark)]
+                if not alive:
+                    break
+                for pid in alive:
+                    try:
+                        os.kill(int(pid), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                time.sleep(0.1)
+            else:
+                left.append('processes ' + ' '.join(alive))
+        left += [f for f in glob.glob('/tmp/provsql*') if os.path.getmtime(f) >= self.t0]
         shutil.rmtree(self.sock, ignore_errors=True)
+        if left:
+            raise RuntimeError('ProvSQL left ' + ', '.join(left))
 
 
 # The programs ProvSQL is given: tuple-independent tables (every fact
@@ -3450,45 +3548,60 @@ def run_provsql(args, name, path):
     """ProvSQL (Senellart, MIT; v1.13.0 on PostgreSQL 16) on a program of
     tuple-independent tables (PROVSQL_WRITERS): `tpch2provsql.py` writes it
     as tables with a probability per tuple and one view per rule predicate,
-    loaded into a cluster of its own before the clock (a database holds its
-    data), and each query is the SQL `SELECT probability_evaluate(provenance())
+    loaded into a cluster of its own (the load, `psql -f load.sql`, is timed:
+    building the tables and their provenance is parsing the input, as
+    tddlog's reading of its fact files is; the start of the server is not),
+    and each query is the SQL `SELECT probability_evaluate(provenance())
     FROM q` with ProvSQL's own choice of evaluation method, timed through psql
     as the other systems' commands are. Under evidence e the answer of q is
-    P(q and e) / P(e), two such queries. The record's seconds are the
-    queries', within the timeout together."""
+    P(q and e) / P(e), two such queries. The record's seconds are the load's
+    and the queries', within the timeout together; the load's are the
+    record's stats `load_seconds`, and a load past the timeout is a timeout."""
     d = os.path.abspath(os.path.join(args.dir, f'provsql-{name}'))
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(d)
     server = ProvSQLServer(args.provsql, d)
     try:
-        sql, qs, ev = tpch2provsql.translate(open(path).read())
-        with open(os.path.join(d, 'load.sql'), 'w') as f:
-            f.write(sql)
-        try:
-            server.start()
-            server.run(server.psql_cmd + ['-q', '-v', 'ON_ERROR_STOP=1', '-f', os.path.join(d, 'load.sql')], timeout=args.timeout)
-        except (RuntimeError, subprocess.TimeoutExpired) as x:
-            return {'status': 'error', 'seconds': 0.0, 'error': f'ProvSQL load: {x}'}
-        answers, seconds = {}, 0.0
-        for q, query in qs + ([('', ev)] if ev else []):
-            r = timed(server.psql_cmd + ['-At', '-c', query], max(0.0, args.timeout - seconds), cwd=d)
-            seconds += r['seconds']
-            if r['status'] != 'ok':
-                return {**r, 'seconds': seconds}
-            try:
-                # a row of the probability and the provenance token ProvSQL adds; no row: the lineage is empty
-                answers[q] = float(r['stdout'].split('|')[0].strip() or 0.0)
-            except ValueError as x:
-                return {'status': 'error', 'seconds': seconds, 'error': f'ProvSQL answer: {x}'}
-        if ev:
-            pe = answers.pop('')
-            if pe <= 0:
-                return {'status': 'error', 'seconds': seconds, 'error': f'ProvSQL: the evidence has probability {pe}'}
-            answers = {q: p / pe for q, p in answers.items()}
-        return {'status': 'ok', 'seconds': seconds, 'answers': answers}
+        r = provsql_run(args, path, server, d)
     finally:
-        server.stop()
+        try:
+            server.stop()
+        except RuntimeError as x:
+            r = {'status': 'error', 'seconds': 0.0, 'error': f'ProvSQL: {x}'}
         shutil.rmtree(d, ignore_errors=True)
+    return r
+
+
+def provsql_run(args, path, server, d):
+    """`run_provsql`'s load and queries on a server not yet started."""
+    sql, qs, ev = tpch2provsql.translate(open(path).read())
+    with open(os.path.join(d, 'load.sql'), 'w') as f:
+        f.write(sql)
+    try:
+        server.start()
+    except RuntimeError as x:
+        return {'status': 'error', 'seconds': 0.0, 'error': f'ProvSQL load: {x}'}
+    r = timed(server.psql_cmd + ['-q', '-v', 'ON_ERROR_STOP=1', '-f', os.path.join(d, 'load.sql')], args.timeout, cwd=d)
+    load = r['seconds']
+    if r['status'] != 'ok':
+        return {**r, 'error': f"ProvSQL load: {r['error']}"} if r['status'] == 'error' else r
+    answers, seconds = {}, load
+    for q, query in qs + ([('', ev)] if ev else []):
+        r = timed(server.psql_cmd + ['-At', '-c', query], max(0.0, args.timeout - seconds), cwd=d)
+        seconds += r['seconds']
+        if r['status'] != 'ok':
+            return {**r, 'seconds': seconds}
+        try:
+            # a row of the probability and the provenance token ProvSQL adds; no row: the lineage is empty
+            answers[q] = float(r['stdout'].split('|')[0].strip() or 0.0)
+        except ValueError as x:
+            return {'status': 'error', 'seconds': seconds, 'error': f'ProvSQL answer: {x}'}
+    if ev:
+        pe = answers.pop('')
+        if pe <= 0:
+            return {'status': 'error', 'seconds': seconds, 'error': f'ProvSQL: the evidence has probability {pe}'}
+        answers = {q: p / pe for q, p in answers.items()}
+    return {'status': 'ok', 'seconds': seconds, 'stats': {'load_seconds': round(load, 3)}, 'answers': answers}
 
 
 # PSouffle (Li, Xia, Adnan and Wang, FMCAD 2026; install_psouffle.sh), exact
@@ -3499,9 +3612,12 @@ def run_provsql(args, name, path):
 # a relation per CPT row in that translation, are not given. Souffle
 # compiles the rules into a C++ program that reads the facts when it runs:
 # that compilation depends on the rules alone, is shared by the instances
-# whose translations are the same text (the taint apps), and is left out of
-# the time, as the paper leaves it out (its seconds are the record's
-# compile_s). The run is its default full inference, on one thread: its
+# whose translations are the same text (the taint apps), and is timed apart
+# from the run, as the paper times it: every record after it carries the
+# seconds its text's compilation took as `compile_s` (where an earlier
+# instance's compilation is reused, that compilation's), and the processing
+# charges them to the record (rel/charge.py, PSOUFFLE_COMPILE in
+# final_all.sh). The run is its default full inference, on one thread: its
 # graph rewrites (`--rewrite`) lose derivations at 3fb0fd06 (docs/baselines.md).
 PSOUFFLE_SUITES = ('standard', 'indicators', 'lit', 'tpch', 'biomine')
 PSOUFFLE_COMPILE_S = 3600
@@ -3513,27 +3629,32 @@ def accepts_psouffle(args, name):
 
 def psouffle_binary(args, program):
     """(the compiled program of the Souffle text PROGRAM, the seconds its
-    compilation took here, or None and the record of its failure). Each text
-    is compiled once, by the first lane that needs it, the others waiting."""
+    compilation took, or None and the record of its failure). Each text is
+    compiled once, by the first lane that needs it, the others waiting and
+    given the seconds it took."""
     d = os.path.abspath(os.path.join(args.dir, 'psouffle-bin', hashlib.sha256(program.encode()).hexdigest()[:20]))
     os.makedirs(d, exist_ok=True)
     with open(d + '.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if os.path.exists(os.path.join(d, 'failed')):
             with open(os.path.join(d, 'failed')) as f:
-                return None, 0.0, json.load(f)
+                rec = json.load(f)
+            return None, rec['stats']['compile_s'], rec
         if os.path.exists(os.path.join(d, 'compiled')):
-            return os.path.join(d, 'compute'), 0.0, None
+            with open(os.path.join(d, 'compiled')) as f:
+                return os.path.join(d, 'compute'), float(f.read()), None
         with open(os.path.join(d, 'compute.dl'), 'w') as f:
             f.write(program)
         r = timed([args.psouffle, '--full-only', 'compute.dl', '-o', 'compute'], PSOUFFLE_COMPILE_S, cwd=d)
         if r['status'] != 'ok':
             rec = {'status': 'error', 'seconds': 0.0,
-                   'error': f"PSouffle's compilation: {r['status']} {str(r.get('error', ''))[-2000:]}"}
+                   'error': f"PSouffle's compilation: {r['status']} {str(r.get('error', ''))[-2000:]}",
+                   'stats': {'compile_s': round(r['seconds'], 3)}}
             with open(os.path.join(d, 'failed'), 'w') as f:
                 json.dump(rec, f)
             return None, r['seconds'], rec
-        open(os.path.join(d, 'compiled'), 'w').close()
+        with open(os.path.join(d, 'compiled'), 'w') as f:
+            f.write(repr(r['seconds']))
         return os.path.join(d, 'compute'), r['seconds'], None
 
 
@@ -3560,21 +3681,22 @@ def run_psouffle(args, name, path):
             binary, compile_s, err = psouffle_binary(args, f.read())
         if err:
             return err
+        stats = {'compile_s': round(compile_s, 3)}
         os.makedirs(os.path.join(d, 'out'))
         try:
             r = timed([binary, '--jobs=1', '-F', os.path.join(d, 'input'), '-D', os.path.join(d, 'out')],
                       args.timeout, cwd=d)
         except OSError as x:
-            return {'status': 'error', 'seconds': 0.0, 'error': f'PSouffle: {x}'}
+            return {'status': 'error', 'seconds': 0.0, 'error': f'PSouffle: {x}', 'stats': stats}
         if r['status'] != 'ok':
-            return r
+            return r | {'stats': stats}
         try:
             with open(os.path.join(d, 'out', 'facts.prob')) as f, open(os.path.join(d, 'names.tsv')) as g:
                 listed = problog2souffle.answers(f.read(), g.read())
             with open(os.path.join(d, 'queries.txt')) as f:
                 asked = f.read().splitlines()   # the translation's: a query with a body is its ground queries
         except OSError as x:
-            return {'status': 'error', 'seconds': r['seconds'], 'error': f'PSouffle: {x}'}
+            return {'status': 'error', 'seconds': r['seconds'], 'error': f'PSouffle: {x}', 'stats': stats}
         answers = {}
         for q in asked:
             pattern = query_pattern(q)
@@ -3582,7 +3704,7 @@ def run_psouffle(args, name, path):
                 answers[q] = listed.get(q, 0.0)
             else:
                 answers.update((a, p) for a, p in listed.items() if pattern.fullmatch(a))
-        return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': {'compile_s': round(compile_s, 3)}}
+        return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': stats}
     finally:
         shutil.rmtree(d, ignore_errors=True)
 

@@ -713,7 +713,9 @@
      "geni_router_32",
      "geni_router_40",
      "geni_router_48",
-     "geni_router_56"
+     "geni_router_56",
+     "geni_router_64",
+     "geni_router_72"
     ],
     "key": "router",
     "title": "router"

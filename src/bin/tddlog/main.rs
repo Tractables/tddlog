@@ -8,6 +8,7 @@ mod stats;
 
 use std::borrow::Cow;
 use std::process::ExitCode;
+use std::time::Instant;
 
 use tddlog::network::{Evidence, Queries, ReadOptions};
 use tddlog::{Format, Input, Options, Progress, Strategy};
@@ -252,6 +253,7 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    let started = Instant::now();
     let (data, evidence) = match read_files(&args) {
         Ok(files) => files,
         Err(e) => {
@@ -269,11 +271,17 @@ fn main() -> ExitCode {
         },
         None => None,
     };
+    let mut front = Front {
+        bytes: data.len(),
+        read_secs: started.elapsed().as_secs_f64(),
+        text_secs: 0.0,
+    };
     let options = ReadOptions {
         queries: args.queries.clone(),
         evidence,
         rescale: args.rescale,
     };
+    let started = Instant::now();
     let input = match tddlog::read(&data, args.format, &options) {
         Ok(input) => input,
         Err(e @ tddlog::Error::Options(_)) => {
@@ -285,6 +293,7 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    front.text_secs = started.elapsed().as_secs_f64();
     // An LPAD's example queries that its program leaves out are named, and
     // `--program` prints the program a network, a Dice program or an LPAD
     // is read as.
@@ -304,7 +313,7 @@ fn main() -> ExitCode {
         print!("{program}");
         return ExitCode::SUCCESS;
     }
-    match run(&args, &input) {
+    match run(&args, &input, &front) {
         Ok(()) => ExitCode::SUCCESS,
         // Options the library refuses are option errors, as above.
         Err(e @ tddlog::Error::Options(_)) => {
@@ -339,7 +348,16 @@ fn read_files(args: &Args) -> Result<(Vec<u8>, Option<(&str, Vec<u8>)>), String>
     Ok((data, evidence))
 }
 
-fn run(args: &Args, input: &Input) -> Result<(), tddlog::Error> {
+/// What reading the input took: the file's bytes and the seconds to read
+/// it and to make the program text of it (a network's, a Dice program's or
+/// an LPAD's program; a program's own text is checked as UTF-8).
+struct Front {
+    bytes: usize,
+    read_secs: f64,
+    text_secs: f64,
+}
+
+fn run(args: &Args, input: &Input, front: &Front) -> Result<(), tddlog::Error> {
     let options = Options {
         strategy: args.strategy,
         evidence_probability: args.evidence_probability,
@@ -361,6 +379,10 @@ fn run(args: &Args, input: &Input) -> Result<(), tddlog::Error> {
             return;
         }
         match progress {
+            Progress::Parsed { seconds } => eprintln!(
+                "read: {} bytes, file {:.3}s, program text {:.3}s, parse {seconds:.3}s",
+                front.bytes, front.read_secs, front.text_secs
+            ),
             Progress::Grounded { seconds } => ground_secs = seconds,
             Progress::Note(line) => eprintln!("{line}"),
             Progress::Compiling(ground) => failed = Some(ground_line(ground, ground_secs)),

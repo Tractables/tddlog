@@ -1160,10 +1160,11 @@ impl EvidenceWalk {
                     let attempt = match cap {
                         Some(outer) => {
                             let _cap = backend.engine.limits().edit(|c| {
-                                c.with_stop_rules(StopRules {
-                                    unconditional: outer.unconditional,
-                                    after_pairs: Some((floor, StopAt::WorkUnits(0))),
-                                })
+                                c.with_stop_rules(
+                                    StopRules::default()
+                                        .with_unconditional(outer.unconditional)
+                                        .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
+                                )
                             });
                             join(fa, fb)
                         }

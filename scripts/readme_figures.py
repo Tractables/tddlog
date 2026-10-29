@@ -13,26 +13,40 @@ are a seventh category, their union. A type is compared with the systems
 native to it, all programs with every system. A system's answers count
 over all of a category's instances, an instance it does not answer
 (out of time or memory, a wrong answer, a program it cannot express, a
-skip, or one it was not given) counting as unanswered. tddlog's total
-time against a system's covers the instances that system is given and
-either answers (rule 16), a run that does not answer counted at its
-time limit and a time under 0.2 s at 0.2 s. The figures draw a
-category's drawn systems (tddlog and the native systems given at least
-20 of its instances), and their legends' numbers are the data's, which
-the results page shows.
+skip, or one it was not given) counting as unanswered. tddlog is compared
+with a system by rule 16 (the data's vs, which panels.py computes): the
+two total times over the instances the system is given and either
+answers, a run that does not finish counted as twice its time limit
+(PAR-2), and tddlog's speed-up, the ratio of their total times on the
+instances both answer, together with the instances only one of them
+answers: tddlog's failures counted at its time limit, and the other
+system's timeouts counted at the limit where that lower bound is at
+least the speed-up measured on the instances both answer. A time under
+0.2 s counts as 0.2 s, and with fewer than 20 instances both answer
+(leaving out those both answer in under 0.2 s) there is no speed-up. The
+figures draw a category's drawn systems (tddlog and the native systems
+given at least 20 of its instances), and their legends' numbers are the
+data's, which the results page shows.
 
 Writes, as SVG:
   overview          for each type, tddlog's answers and, for each of its
-                    five best native systems, the system's answers and
-                    the two total times over the instances it is given
-                    and either answers; the other native systems in one
-                    row, the least of their ratios and of their totals;
+                    five best native systems, the system's answers, its
+                    total time and tddlog's on one time axis, and
+                    tddlog's speed-up over it; the other native systems
+                    in one row, the least of their totals and of their
+                    speed-ups;
   results-CATEGORY  the cactus plot of the category's drawn systems over
                     all its instances (how many each answers within each
                     time limit), each system its colour and line, beside
                     the scatter plot of tddlog's time against the fastest
                     other drawn system's, instance by instance; the legend
-                    under them, ordered by answers.
+                    under them, ordered by answers, each system's answers
+                    and tddlog's speed-up over it.
+
+The JSON printed is {categories, own}: for each category, the numbers its
+text quotes and `table`, the lines of the README's table of its native
+systems (all programs: every system); and `own`, the lines of the
+README's table of each system on its own benchmarks.
 
 The cactus plots' time axes are linear, from 0 to the category's longest
 time limit; the scatter plots' are logarithmic from 0.2 s, shorter runs
@@ -105,10 +119,6 @@ def clamp(t):
     return max(t, FLOOR)
 
 
-def cost(limit, v):
-    return clamp(v) if answered(v) else limit
-
-
 def column(cat, s):
     """[(limit, s's record)] over the category's rows."""
     j = 4 + cat['systems'].index(s)
@@ -118,10 +128,6 @@ def column(cat, s):
 def fastest(vs):
     ts = [v for v in vs if answered(v)]
     return min(ts) if ts else None
-
-
-def total(pairs):
-    return sum(cost(limit, v) for limit, v in pairs)
 
 
 def style():
@@ -168,8 +174,10 @@ def linear_ticks(hi, room=5):
 
 
 def ordered(cat):
-    """The drawn systems by answers, then by total time."""
-    return sorted(cat['drawn'], key=lambda s: (-cat['answers'][s], cat['total'][s]))
+    """The drawn systems by answers, then in the data's order (the native
+    systems by answers, then speed-up)."""
+    rank = ['tddlog'] + cat['native']
+    return sorted(cat['drawn'], key=lambda s: (-cat['answers'][s], rank.index(s)))
 
 
 def cactus(ax, cat, systems, hi, c, col):
@@ -205,13 +213,14 @@ def cactus(ax, cat, systems, hi, c, col):
 # inches: a legend block's width, its header's height, a row's height, and
 # the right edges of its columns of numbers
 LEGEND_BLOCK, LEGEND_HEAD, LEGEND_ROW = 4.5, 0.3, 0.235
-LEGEND_COLUMNS = [('answers', 2.85), ('tddlog faster', 4.1)]
+LEGEND_COLUMNS = [('answers', 2.8), ('tddlog faster', 4.35)]
+FEW = 'too few in common'  # a comparison with fewer than 20 instances both answer
 
 
 def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
     """A legend as a table, in ncol blocks side by side from (x, top), inches
     from the figure's top left: each system's line, its name, how many of the
-    n instances it answers and how many times less time tddlog takes."""
+    n instances it answers and tddlog's speed-up over it."""
     per = math.ceil(len(entries) / ncol)
     for b in range(ncol):
         x0 = x + b * LEGEND_BLOCK
@@ -231,7 +240,7 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
             fig.text((x0 + 0.4) / WIDTH, y, name, ha='left', va='center', fontsize=11.5,
                      fontweight='bold' if lead else 'normal')
             for j, ((_, right), v) in enumerate(zip(LEGEND_COLUMNS, numbers)):
-                fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=11.5,
+                fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=9.5 if v == FEW else 11.5,
                          color=c['text'] if j == 0 else c['muted'])
 
 
@@ -282,18 +291,17 @@ def scatter(ax, cat, others, hi, c, col, other, label):
                 neither=neither)
 
 
-def versus(cat, s):
-    """How many times less time tddlog takes than s over the instances s is
-    given and either answers (the data's vs, rule 16)."""
-    v = cat['vs'][s]
-    return ratio_text(v['system']['total'] / v['tddlog']['total']) if v['tddlog']['total'] else ''
+def faster(v):
+    """tddlog's speed-up of a comparison (the data's vs, rule 16): 14×, 1.3×
+    slower, or FEW where fewer than 20 instances both answer."""
+    return FEW if v['speedup'] is None else ratio_text(v['speedup'])
 
 
 def results(cat, names, col, out):
     """The cactus plot of the category's drawn systems beside the scatter
-    plot, the legend under them: each system's answers and how many times
-    less time tddlog takes over the instances it is given and either
-    answers. Returns each system's answers and the scatter plot's numbers."""
+    plot, the legend under them: each system's answers and tddlog's
+    speed-up over it. Returns each system's answers and the scatter plot's
+    numbers."""
     c = style()
     systems = ordered(cat)
     others = [s for s in systems if s != 'tddlog']
@@ -310,7 +318,7 @@ def results(cat, names, col, out):
     loss = col[cat['named'][0]][0] if cat['named'] else c['muted']
     sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), cat, others, hi, c, col, loss,
                  'fastest other system' if cat['key'] == ALL else 'fastest native system')
-    legend = [(s, names[s], [solved[s], '' if s == 'tddlog' else versus(cat, s)]) for s in systems]
+    legend = [(s, names[s], [solved[s], '' if s == 'tddlog' else faster(cat['vs'][s])]) for s in systems]
     legend_table(fig, h, (WIDTH - ncol * LEGEND_BLOCK) / 2, legend_top, legend, cat['instances'], cat['noun'],
                  ncol, c, col)
     save(fig, out, f'results-{cat["key"]}')
@@ -359,13 +367,45 @@ def at_least(t):
     return seconds(math.floor(t * 10) / 10)
 
 
+def speed_mark(ax, x, y, r, transform, colour, muted, least=False):
+    """tddlog's speed-up r at x of the overview's right column, bold, teal
+    where tddlog is faster, with least "at least"; FEW where r is None."""
+    if r is None:
+        ax.text(x, y, 'too few\nin common', transform=transform, ha='left', va='center', fontsize=9.5, color=muted,
+                linespacing=1.05)
+        return
+    ax.text(x, y, ratio_text(r, least=least), transform=transform, ha='left', va='center', fontsize=12.5,
+            fontweight='bold', color=TDDLOG if r >= 1 else colour)
+
+
+WORDS = 'no one two three four five six seven eight nine ten'.split()
+
+
+def measure_text(m):
+    """The overview's footnote: how its rows compare (rule 16), from the
+    data's parameters of the measure (panels.py's)."""
+    par = 'twice' if m['par'] == 2 else f"{m['par']:g} times"
+    return (
+        'Each instance counts in one type, whatever language its source was written in. A system’s answers are over '
+        'all of the type’s instances. On each row, the system’s total time and tddlog’s (teal) over the instances the '
+        'system is given and either answers, a run that does not answer (out of time or memory, failed, or a program '
+        f"the system cannot express) counted as {par} its time limit (PAR-{m['par']:g}, as in the SAT and model "
+        f"counting competitions) and a time under {m['floor']:g} s as {m['floor']:g} s. tddlog’s speed-up over a "
+        'system is the ratio of their total times on the instances both answer, together with the instances only one '
+        'of them answers: tddlog’s failures counted at its time limit, and the other system’s timeouts counted at the '
+        'limit where that lower bound is at least the speed-up measured on the instances both answer; with fewer than '
+        f"{m['common']} instances both answer, there are too few in common for one. The {WORDS[m['named']]} best "
+        'native systems by answers, then speed-up, have a row each; the others share one, with the least of their '
+        'total times and of their speed-ups.')
+
+
 def overview(data, names, col, out):
     """For each type, under its title, its number of instances and tddlog's
     answers, its NAMED best native systems (cat['named']), each with its
-    answers to the left, tddlog's total time and its own over the instances
-    it is given and either answers as points on one time axis, and how many
-    times less time tddlog takes to the right; the other native systems in
-    one row that names them, the least of their totals and of their ratios."""
+    answers to the left, its total time and tddlog's over the instances it
+    is given and either answers (PAR-2) as points on one time axis, and
+    tddlog's speed-up over it to the right; the other native systems in one
+    row that names them, the least of their totals and of their speed-ups."""
     c = style()
     lines = []
     for cat in data['categories']:
@@ -375,14 +415,15 @@ def overview(data, names, col, out):
                       f"{cat['answers']['tddlog']}", None, None))
         for x in cat['named']:
             v = cat['vs'][x]
-            lines.append(('row', names[x], cat['answers'][x], (x, v['tddlog']['total'], v['system']['total'])))
+            lines.append(('row', names[x], cat['answers'][x], (x, v['tddlog_total'], v['total'], v['speedup'])))
         o = cat['others']
         if o['systems']:
             text = textwrap.fill(', '.join(names[x] for x in o['systems']) + f": each more than {at_least(o['total'])} in total", 70)
-            lines.append(('others', f"{len(o['systems'])} others", None, (text, o['ratio'])))
-    ts = [t for kind, _, _, st in lines if kind == 'row' for t in st[1:]]
-    ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['total']]
-    names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 1.15
+            lines.append(('others', f"{len(o['systems'])} others", None, (text, o['speedup'])))
+    ts = [t for kind, _, _, st in lines if kind == 'row' for t in st[1:3]]
+    ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['systems']]
+    foot = textwrap.wrap(measure_text(data['measure']), 112)
+    names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 0.55 + 0.2 * len(foot)
     # each line's height in rows, and its middle, from the top
     tall = [0.6 + 0.55 * st[0].count('\n') + 0.4 if kind == 'others' else 1 for kind, _, _, st in lines]
     mids = [sum(tall[:k]) + tall[k] / 2 for k in range(len(lines))]
@@ -407,16 +448,12 @@ def overview(data, names, col, out):
             text, r = st
             ax.text(0.01, y, text, transform=at, ha='left', va='center', fontsize=10.5, color=c['muted'],
                     linespacing=1.25)
-            if r is not None:
-                ax.text(ratio_x, y, ratio_text(r, least=True), transform=at, ha='left', va='center', fontsize=12.5,
-                        fontweight='bold', color=TDDLOG if r >= 1 else c['muted'])
+            speed_mark(ax, ratio_x, y, r, at, c['muted'], c['muted'], least=True)
             continue
-        x, mine, t = st
+        x, mine, t, r = st
         colour = col[x][0]
         ax.plot([mine, t], [y, y], color=c['grid'], lw=3, solid_capstyle='round', zorder=2)
-        r = t / mine
-        ax.text(ratio_x, y, ratio_text(r), transform=at, ha='left', va='center', fontsize=12.5,
-                fontweight='bold', color=TDDLOG if r >= 1 else colour)
+        speed_mark(ax, ratio_x, y, r, at, colour, c['muted'])
         ax.scatter([t], [y], s=64, color=colour, lw=0, zorder=3)
         ax.scatter([mine], [y], s=64, color=TDDLOG, lw=0, zorder=4)
         out_right = t >= mine
@@ -445,14 +482,8 @@ def overview(data, names, col, out):
             color=c['muted'])
     ax.text(ratio_x, over, 'tddlog\nfaster', transform=ax.transAxes, ha='left', va='bottom', fontsize=11,
             color=c['muted'], linespacing=1.1)
-    fig.text(0.006, 0.08 / h, textwrap.fill(
-        'Each instance counts in one type, whatever language its source was written in. A system’s answers are over '
-        'all of the type’s instances. On each row, tddlog’s total time (teal) and the system’s over the instances '
-        'the system is given and either answers: a run that does not answer (out of time or memory, failed, or a '
-        'program the system cannot express) counts as its time limit, a time under 0.2 s as 0.2 s. The five best '
-        'native systems by answers have a row each; the others share one, with the least of their totals and of '
-        'their ratios to tddlog.', 112),
-        ha='left', va='bottom', fontsize=10.5, color=c['muted'], linespacing=1.35)
+    fig.text(0.006, 0.08 / h, '\n'.join(foot), ha='left', va='bottom', fontsize=10.5, color=c['muted'],
+             linespacing=1.35)
     save(fig, out, 'overview')
 
 
@@ -466,6 +497,49 @@ def within(cat, systems, limits=(1, 2, 10)):
     return {t: {s: sum(answered(v) and clamp(v) <= t for _, v in column(cat, s)) for s in systems} for t in limits}
 
 
+def least_text(r):
+    """A table's "at least" speed-up: at least 400×, at most 1.3× slower."""
+    if r is None:
+        return FEW
+    text = ratio_text(r, least=True)
+    return ('at most ' if r < 1 else 'at least ') + text.lstrip('≤≥')
+
+
+def table(cat, names):
+    """The README's table of the category's native systems (all programs:
+    every system), rule 16: each named system's answers, its total time,
+    tddlog's and tddlog's speed-up; the others in one row, the range of
+    their answers, the least of their totals, the range of tddlog's and the
+    least of their speed-ups."""
+    lines = ["| System | Answers | Its total time | tddlog's total time | tddlog faster |", '|---|--:|--:|--:|--:|']
+    for x in cat['named']:
+        v = cat['vs'][x]
+        lines.append(f"| {names[x]} | {cat['answers'][x]} | {seconds(v['total'])} | {seconds(v['tddlog_total'])} | "
+                     f"{faster(v)} |")
+    o = cat['others']
+    if o['systems']:
+        span = lambda lo, hi: lo if lo == hi else f'{lo} to {hi}'
+        mine = span(*map(seconds, o['tddlog']))
+        lines.append(f"| {len(o['systems'])} others: {', '.join(names[x] for x in o['systems'])} | "
+                     f"{span(*o['answers'])} | over {at_least(o['total'])} each | {mine} | "
+                     f"{least_text(o['speedup'])} |")
+    return lines
+
+
+def own(data, names):
+    """The README's table of each system on its own benchmarks (the data's
+    own), rule 16: its answers and tddlog's, each with its total time over
+    the instances either answers, and tddlog's speed-up."""
+    lines = ['| System | Its benchmarks | Instances | The system | tddlog | tddlog faster |', '|---|---|--:|--:|--:|--:|']
+    for o in data['own']:
+        v, about = o['vs'], o['about']
+        if about.startswith('the '):     # the data's words continue a sentence; a name keeps its case
+            about = 'T' + about[1:]
+        lines.append(f"| {names[o['system']]} | {about} | {o['instances']} | {v['answers']} in "
+                     f"{seconds(v['total'])} | {v['tddlog_answers']} in {seconds(v['tddlog_total'])} | {faster(v)} |")
+    return lines
+
+
 def main():
     args = [a for a in sys.argv[1:] if a != '--png']
     path = os.path.join(SOURCE, 'bindings', 'wasm', 'results', 'categories.json')
@@ -474,6 +548,8 @@ def main():
     out = args[0] if args else os.path.join(SOURCE, 'docs', 'images')
     os.makedirs(out, exist_ok=True)
     data = load(path)
+    global FLOOR
+    FLOOR = data['measure']['floor']  # the data's, as its numbers were computed with it
     names, col = data["names"], colours(data["categories"])
     numbers = {}
     for cat in data['categories']:
@@ -481,20 +557,18 @@ def main():
         res = dict(instances=cat['instances'], limit=max(r[2] for r in cat['rows']))
         res['answers'], res['scatter'] = results(cat, names, col, out)
         # The legend's numbers are the results page's (the data's).
-        assert all(res['answers'][s] == cat['answers'][s] and abs(total(column(cat, s)) - cat['total'][s]) < 0.01
-                   for s in cat['drawn']), f"{cat['key']}: not the data"
-        res['total'] = {s: cat['total'][s] for s in cat['drawn']}
-        # each native system against tddlog by rule 16, by answers on the category
-        res['native'] = {x: dict(answers=cat['answers'][x], given=cat['given'][x], vs=cat['vs'][x],
-                                 ratio=round(cat['vs'][x]['system']['total'] / cat['vs'][x]['tddlog']['total'], 2)
-                                 if cat['vs'][x]['tddlog']['total'] else None) for x in cat['native']}
+        assert all(res['answers'][s] == cat['answers'][s] for s in cat['drawn']), f"{cat['key']}: not the data"
+        # each native system against tddlog by rule 16, by answers, then speed-up
+        res['native'] = {x: dict(answers=cat['answers'][x], given=cat['given'][x], vs=cat['vs'][x])
+                         for x in cat['native']}
         res['named'], res['others'] = cat['named'], cat['others']
         res['not_drawn'] = {s: cat['given'][s] for s in cat['systems'] if s not in cat['drawn']}
         res['tddlog_failures'] = misses(cat)
         res['within'] = within(cat, cat['drawn'])
+        res['table'] = table(cat, names)
         numbers[cat['key']] = res
     overview(data, names, col, out)
-    json.dump(numbers, sys.stdout, indent=1)
+    json.dump(dict(categories=numbers, own=own(data, names)), sys.stdout, indent=1, ensure_ascii=False)
     print()
 
 

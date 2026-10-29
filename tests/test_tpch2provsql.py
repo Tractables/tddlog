@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -109,6 +110,51 @@ class TranslateTests(unittest.TestCase):
                                                       'gen_rgraph.py'})
 
 
+class LoadIsTimedTests(unittest.TestCase):
+    """The load of the database is part of ProvSQL's time (not the server's
+    start), and a load past the limit is a timeout."""
+
+    def run_with(self, results):
+        calls = []
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            calls.append((cmd[-1].endswith('load.sql'), timeout))
+            return results.pop(0)
+
+        class Server:
+            psql_cmd = ['psql']
+
+            def __init__(self, prefix, d):
+                pass
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(bench, 'ProvSQLServer', Server), \
+                mock.patch.object(bench, 'timed', timed):
+            path = Path(d) / 'p.pl'
+            path.write_text(SMALL)
+            r = bench.run_provsql(SimpleNamespace(dir=d, provsql='x', timeout=100), 'x', str(path))
+        return r, calls
+
+    def test_seconds_include_the_load(self):
+        r, calls = self.run_with([{'status': 'ok', 'seconds': 3.0, 'stdout': '', 'stderr': ''},
+                                  {'status': 'ok', 'seconds': 0.5, 'stdout': '0.25|tok\n', 'stderr': ''}])
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(r['stats'], {'load_seconds': 3.0})
+        self.assertEqual(r['seconds'], 3.5)
+        self.assertEqual(r['answers'], {'q': 0.25})
+        self.assertEqual(calls, [(True, 100), (False, 97.0)])   # the queries get what the load left
+
+    def test_a_load_past_the_limit_is_a_timeout(self):
+        r, calls = self.run_with([{'status': 'timeout', 'seconds': 100}])
+        self.assertEqual(r, {'status': 'timeout', 'seconds': 100})
+        self.assertEqual(len(calls), 1)
+
+
 @unittest.skipUnless(os.environ.get('PROVSQL_PREFIX'), 'PROVSQL_PREFIX names the ProvSQL install')
 class AnswerTests(unittest.TestCase):
     def check(self, path, ref):
@@ -150,6 +196,19 @@ class AnswerTests(unittest.TestCase):
                 p.write_text(subprocess.run([sys.executable, str(bench.source_tree.script(f'gen_{family}.py')), n],
                                             capture_output=True, text=True, check=True).stdout)
                 self.check_lit(family, p)
+
+    def test_stop_kills_what_the_server_started(self):
+        # a compiler (d4) that a backend starts outlives the client a timeout killed
+        with tempfile.TemporaryDirectory() as d:
+            sleep = f'sleep 7{os.getpid()}'   # unique to this run: an earlier run's leftover must not match
+            server = bench.ProvSQLServer(os.environ['PROVSQL_PREFIX'], d)
+            try:
+                server.start()
+                server.run(server.psql_cmd + ['-q', '-c', f"COPY (SELECT 1) TO PROGRAM '{sleep} &'"])
+                self.assertEqual(subprocess.run(['pgrep', '-f', f'^{sleep}$'], capture_output=True).returncode, 0)
+            finally:
+                server.stop()
+            self.assertEqual(subprocess.run(['pgrep', '-f', f'^{sleep}$'], capture_output=True).returncode, 1)
 
     def test_evidence_by_hand(self):
         # f(f) needs x and c(x,f): P(e) = 0.15 (1 - 0.6 * 0.5) = 0.105;

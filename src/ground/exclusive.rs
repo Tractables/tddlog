@@ -7,7 +7,7 @@
 
 use std::hash::BuildHasher;
 
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use super::interned::Interned;
 use super::{AtomId, GLit, GroundProgram, RulesByHead};
@@ -137,8 +137,6 @@ pub(super) fn exclusive_sets(
     for &a in sccs.iter().flatten() {
         silent[predicate_of[a as usize]] &= false_unread[a as usize];
     }
-    // The sets ruled out for the atom at hand, by that atom's position.
-    let mut ruled_out: Vec<usize> = Vec::new();
     let mut marks = Marks::new(n);
     // Buffers reused across atoms and rules: a body, the rest of it that
     // other rules can clash with, and what `rows_of` reads of each rule.
@@ -151,12 +149,17 @@ pub(super) fn exclusive_sets(
     let mut read_sets: Vec<usize> = Vec::new();
     // The sets the atom at hand reads, each marked with the atom's stamp
     // as it is listed, so that it is listed once, without sorting the sets
-    // of every literal of its rules.
+    // of every literal of its rules. Atoms are numbered from zero, so an
+    // atom's number plus one is a stamp fresh for each.
     let mut read_mark = vec![0usize; n];
     let mut key: Vec<usize> = Vec::new();
     let mut rule_bodies: Vec<(usize, u32)> = Vec::new();
     let mut bodies: Vec<u32> = Vec::new();
     let mut shared: Vec<(usize, u32)> = Vec::new();
+    // The bodies of the atom at hand that rule out a set of its key, and
+    // the sets a shared body is found to rule out as the atom is compared.
+    let mut holding: Vec<u32> = Vec::new();
+    let mut failed: Vec<(u32, usize)> = Vec::new();
     let mut runs: Vec<(usize, usize)> = Vec::new();
     // The atoms of a set whose rows read other sets than the atom's, kept
     // from one call of `exclusive_with` to the next rather than a list
@@ -204,7 +207,7 @@ pub(super) fn exclusive_sets(
         // The sets of the atoms it reads that came before it; an atom that
         // reads none is compared with the atoms of its own unit only, the
         // values of a table without parents.
-        let stamp = order_stamp(&mut ruled_out, sets.len(), a);
+        let stamp = a as usize + 1;
         read_sets.clear();
         for l in by_head[a as usize]
             .iter()
@@ -329,11 +332,19 @@ pub(super) fn exclusive_sets(
         let alone = bodies
             .iter()
             .any(|&b| body_ids.rules_out_all(b, key_id, by_key.len_of(key_id)));
-        if !alone {
-            for &body in &bodies {
-                body_ids.holders(body, key_id, |i| ruled_out[i] = stamp);
-            }
-        }
+        // Each set that comes up is asked whether it holds one of the
+        // bodies of `a` that rule out a set of the key, rather than every
+        // set holding one marked first: each leaf's adder of bb_wmi_star
+        // has the bits of the centre for bodies, and its atoms of one key
+        // marked the sets of every leaf before them.
+        holding.clear();
+        holding.extend(
+            bodies
+                .iter()
+                .copied()
+                .filter(|&b| body_ids.rules_out_some(b, key_id)),
+        );
+        let ruled_out = |i: usize| holding.iter().any(|&b| body_ids.holds(b, i));
         // Whether `a` is exclusive with every atom of a set: whether every
         // rule of `a` clashes with every rule of each atom, or, where the
         // two atoms' rows read the same sets, with every rule of the same
@@ -414,7 +425,7 @@ pub(super) fn exclusive_sets(
                             .iter()
                             .all(|&rb| marks.clashes(&gp.rules[rb].body, &set_of))
                     }) {
-                        body_ids.rule_out(b, key_id, i);
+                        failed.push((b, i));
                     }
                 }
             }
@@ -428,7 +439,7 @@ pub(super) fn exclusive_sets(
                 .flat_map(|&l| reading.iter(l))
                 .filter(|&i| {
                     key_of_set[i] == key_id
-                        && ruled_out[i] != stamp
+                        && !ruled_out(i)
                         && common[common_of[i].0..common_of[i].1]
                             .binary_search(&x)
                             .is_ok()
@@ -459,7 +470,7 @@ pub(super) fn exclusive_sets(
                         candidates.extend(
                             listed(ri)
                                 .flat_map(|k| clash_lists.iter(k))
-                                .filter(|&i| ruled_out[i] != stamp),
+                                .filter(|&i| !ruled_out(i)),
                         );
                         candidates.sort_unstable();
                         candidates.dedup();
@@ -467,12 +478,15 @@ pub(super) fn exclusive_sets(
                     }
                     None => by_key
                         .iter(key_id)
-                        .filter(|&i| ruled_out[i] != stamp)
+                        .filter(|&i| !ruled_out(i))
                         .find(|&i| exclusive_with(i)),
                 }
             }
         };
         marks.clear();
+        for (b, i) in failed.drain(..) {
+            body_ids.rule_out(b, key_id, i);
+        }
         let i = match joined {
             Some(i) => {
                 let (start, end) = common_of[i];
@@ -653,17 +667,17 @@ impl<T: Copy> Chains<T> {
 }
 
 /// Distinct bodies numbered in the order they are first seen
-/// ([`Interned`]), with the sets that hold each ([`exclusive_sets`]), on
-/// chains rather than a list in a map per set and body: on a network
-/// nearly every body is a rule's own. A body is what other rules can clash
-/// with of a rule's, without the facts no other rule reads.
+/// ([`Interned`]), with the sets that hold each ([`exclusive_sets`]): each
+/// body with a set it rules out, and per body and key how many sets of the
+/// key it rules out, rather than a list in a map per set and body: on a
+/// network nearly every body is a rule's own. A body is what other rules
+/// can clash with of a rule's, without the facts no other rule reads.
 struct Bodies {
     bodies: Interned<GLit>,
-    /// Per body the last set it rules out, as an index into `held`; per
-    /// entry the set's key, the set, the entry before it for the body and
-    /// how many entries of the same key lead the chain up to it.
-    last_held: Vec<u32>,
-    held: Vec<(usize, usize, u32, u32)>,
+    /// Each body with a set it rules out.
+    held: FxHashSet<(u32, u32)>,
+    /// Per body and key, how many sets of the key the body rules out.
+    counts: FxHashMap<(u32, u32), u32>,
     /// Whether `held` takes no more entries ([`Bodies::rule_out`]).
     full: bool,
 }
@@ -672,8 +686,8 @@ impl Bodies {
     fn with_capacity(bodies: usize) -> Self {
         Bodies {
             bodies: Interned::with_capacity(bodies),
-            last_held: Vec::with_capacity(bodies),
-            held: Vec::with_capacity(bodies),
+            held: FxHashSet::default(),
+            counts: FxHashMap::default(),
             full: false,
         }
     }
@@ -683,16 +697,14 @@ impl Bodies {
         self.bodies.len()
     }
 
-    /// `f` of each set under `key` that body `b` rules out.
-    fn holders(&self, b: u32, key: usize, mut f: impl FnMut(usize)) {
-        let mut e = self.last_held[b as usize];
-        while e != u32::MAX {
-            let (k, set, before, _) = self.held[e as usize];
-            if k == key {
-                f(set);
-            }
-            e = before;
-        }
+    /// Whether body `b` rules out `set`.
+    fn holds(&self, b: u32, set: usize) -> bool {
+        self.held.contains(&(b, set as u32))
+    }
+
+    /// Whether body `b` rules out a set under `key`.
+    fn rules_out_some(&self, b: u32, key: usize) -> bool {
+        self.counts.contains_key(&(b, key as u32))
     }
 
     /// Record that body `b` rules out `set`, under `key`: an atom with a
@@ -704,49 +716,42 @@ impl Bodies {
     ///
     /// The record only spares comparisons: a set it would rule out is
     /// compared with the atom, and the comparison finds the atom not
-    /// exclusive with it. Where `held` cannot grow, because the allocator
-    /// refuses it or its entries would pass the `u32` indices, nothing more
-    /// is recorded and the sets found are the same. The entries grow with
-    /// the bodies times the sets: a large weighted CNF would ask for
-    /// gigabytes.
+    /// exclusive with it. Where `held` or `counts` cannot grow, because
+    /// the allocator refuses it, nothing more is recorded and the sets found
+    /// are the same. The entries grow with the bodies times the sets: a
+    /// large weighted CNF would ask for gigabytes.
     fn rule_out(&mut self, b: u32, key: usize, set: usize) {
-        if self.held.len() == self.held.capacity() && !self.grow() {
+        if (self.held.len() == self.held.capacity() || self.counts.len() == self.counts.capacity())
+            && !self.grow()
+        {
             return;
         }
-        let before = self.last_held[b as usize];
-        let run = match self.held.get(before as usize) {
-            Some(&(k, _, _, run)) if k == key => run + 1,
-            _ => 1,
-        };
-        self.held.push((key, set, before, run));
-        self.last_held[b as usize] = self.held.len() as u32 - 1;
+        if self.held.insert((b, set as u32)) {
+            *self.counts.entry((b, key as u32)).or_insert(0) += 1;
+        }
     }
 
-    /// Room for one more entry of `held`, as a push makes it; false once
-    /// there is none ([`rule_out`](Self::rule_out)).
+    /// Room for one more entry of `held` and of `counts`, as an insertion
+    /// makes it; false once there is none ([`rule_out`](Self::rule_out)).
     #[cold]
     fn grow(&mut self) -> bool {
-        self.full = self.full
-            || self.held.len() >= u32::MAX as usize - 1
-            || self.held.try_reserve(1).is_err();
+        self.full =
+            self.full || self.held.try_reserve(1).is_err() || self.counts.try_reserve(1).is_err();
         !self.full
     }
 
-    /// Whether body `b` rules out all of the `sets` sets under `key`: the
-    /// entries of the key that lead its chain, distinct sets, number as
-    /// many. Entries of other keys interleaved with them only hide some.
+    /// Whether body `b` rules out all of the `sets` sets under `key`.
     fn rules_out_all(&self, b: u32, key: usize, sets: usize) -> bool {
         sets > 0
-            && matches!(self.held.get(self.last_held[b as usize] as usize), Some(&(k, _, _, run)) if k == key && run as usize == sets)
+            && self
+                .counts
+                .get(&(b, key as u32))
+                .is_some_and(|&held| held as usize == sets)
     }
 
     /// The number of `body`, numbered anew if it is new.
     fn id(&mut self, body: &[GLit]) -> u32 {
-        let (id, new) = self.bodies.id(body);
-        if new {
-            self.last_held.push(u32::MAX);
-        }
-        id
+        self.bodies.id(body).0
     }
 }
 
@@ -846,13 +851,6 @@ impl Marks {
             self.reads[s] = Self::NONE;
         }
     }
-}
-
-/// A stamp for atom `a` in `ruled_out`, grown to cover `sets` sets: atoms
-/// are numbered from zero, so `a + 1` is fresh for each.
-fn order_stamp(ruled_out: &mut Vec<usize>, sets: usize, a: AtomId) -> usize {
-    ruled_out.resize(sets, 0);
-    a as usize + 1
 }
 
 /// An atom's rules keyed by the atoms of sets each reads positively
@@ -1263,5 +1261,26 @@ mod tests {
         for set in [["a1", "b1"], ["a2", "b2"], ["a3", "b3"], ["c", "d"]] {
             assert!(sets.contains(&names(&set)), "{set:?} in {sets:?}");
         }
+    }
+
+    #[test]
+    fn a_body_holds_the_sets_of_each_key_apart() {
+        // A body that rules out sets under two keys in turn, as the centre's
+        // bits of bb_wmi_star are read under each leaf's key: each set is
+        // asked alone, and the body rules out every set of a key that its
+        // sets there number.
+        let mut bodies = super::Bodies::with_capacity(0);
+        let b = bodies.id(&[crate::ground::GLit::Pos(0)]);
+        for (key, set) in [(0, 0), (1, 1), (0, 2), (1, 3), (1, 4)] {
+            bodies.rule_out(b, key, set);
+        }
+        let held: Vec<usize> = (0..6).filter(|&i| bodies.holds(b, i)).collect();
+        assert_eq!(held, [0, 1, 2, 3, 4]);
+        assert!(bodies.rules_out_some(b, 0) && bodies.rules_out_some(b, 1));
+        assert!(!bodies.rules_out_some(b, 2));
+        assert!(bodies.rules_out_all(b, 0, 2));
+        assert!(bodies.rules_out_all(b, 1, 3));
+        assert!(!bodies.rules_out_all(b, 1, 4));
+        assert!(!bodies.rules_out_all(b, 2, 0));
     }
 }

@@ -39,6 +39,9 @@ pub(super) struct Trial {
     pub(super) progress: Vec<(u64, f64)>,
     /// Whether `progress` measures its query phase.
     pub(super) querying: bool,
+    /// The target of its compile's record at its first turn's mark, while
+    /// `progress` holds it ([`Self::record`], [`Self::ahead`]).
+    pub(super) mark: Option<u64>,
     pub(super) evaluation: Evaluation,
     pub(super) disabled: bool,
     /// Whether the others' memory has been freed for it, which happens at
@@ -62,6 +65,7 @@ impl Trial {
             last_work: 0,
             progress: Vec::new(),
             querying: false,
+            mark: None,
             evaluation: Evaluation::default(),
             disabled: false,
             freed_for: false,
@@ -103,25 +107,51 @@ impl Trial {
 
     /// Records the share of its phase finished after an attempt that did
     /// not finish it ([`Evaluation::progress`]), at the attempt's target,
-    /// in place of an earlier record at that target. The first in its
-    /// query phase drops those of its compile: the phase is projected from
-    /// where it began ([`Self::began`]).
+    /// in place of an earlier record at that target. A compile that passed
+    /// half its target in the attempt, its first turn's, is recorded there
+    /// too ([`Evaluation::marked`]), so that the turn after its first has a
+    /// doubling to be projected from. The first in its query phase drops
+    /// those of its compile: the phase is projected from where it began
+    /// ([`Self::began`]).
     pub(super) fn record_progress(&mut self) {
-        self.record(self.evaluation.is_compiled(), self.evaluation.progress());
+        self.record(
+            self.evaluation.is_compiled(),
+            self.evaluation.progress(),
+            self.evaluation.marked(),
+        );
     }
 
     /// [`Self::record_progress`] after an attempt that left the trial with
-    /// its compile finished or not, and `progress` of its phase.
-    pub(super) fn record(&mut self, compiled: bool, progress: Option<(usize, usize)>) {
+    /// its compile finished or not, `progress` of its phase, and the
+    /// compile's progress at half the target where it passed it.
+    pub(super) fn record(
+        &mut self,
+        compiled: bool,
+        progress: Option<(usize, usize)>,
+        marked: Option<(usize, usize)>,
+    ) {
         if compiled && !self.querying {
             self.querying = true;
             self.progress.clear();
+            self.mark = None;
         }
         if let Some((done, all)) = progress
             && all > 0
         {
             if self.progress.last().is_some_and(|&(t, _)| t == self.target) {
                 self.progress.pop();
+            }
+            if let Some((done, all)) = marked
+                && all > 0
+                && !self.querying
+                && self
+                    .progress
+                    .last()
+                    .is_none_or(|&(t, _)| t < self.target / 2)
+            {
+                self.progress
+                    .push((self.target / 2, done as f64 / all as f64));
+                self.mark = Some(self.target / 2);
             }
             self.progress.push((self.target, done as f64 / all as f64));
         }
@@ -134,8 +164,9 @@ impl Trial {
     /// with no such record is projected from where it began
     /// ([`Self::began`]): the share it finished per doubling of the work
     /// spent since. Infinite where that span finished no step of the
-    /// phase; `None` before a compile's target has doubled, or before a
-    /// query phase has spent any work. The records are by target, a power
+    /// phase; `None` before a compile has a record at half its target
+    /// (its first turn's where that turn passed it), or before a query
+    /// phase has spent any work. The records are by target, a power
     /// of two times the first, rather than by the work spent, which an
     /// attempt stopped by work overruns by a little: by the work, a record
     /// at a hair past half the last one went unread, and the projection
@@ -179,12 +210,27 @@ impl Trial {
     /// The doublings its projection puts its finish past its target
     /// ([`Self::projected`]), at least none and at most
     /// [`PROJECTED_DOUBLINGS`], which is what a trial without a projection
-    /// counts.
+    /// counts. So does a compile projected from its first turn's mark to
+    /// finish within its target: its next turn would spend what the compile
+    /// leaves of it on the query phase, which the compile's pace does not
+    /// project (`program` on markov_n200, 99.5% compiled after its first
+    /// turn, spent two more on its query phase, where `families:0`, which
+    /// it went ahead of, answered in one).
     pub(super) fn ahead(&self) -> f64 {
         let target = (self.target.max(1) as f64).log2();
-        self.projected().map_or(PROJECTED_DOUBLINGS, |p| {
-            (p - target).clamp(0.0, PROJECTED_DOUBLINGS)
-        })
+        match self.projected() {
+            Some(p) if p > target || !self.projected_from_mark() => {
+                (p - target).clamp(0.0, PROJECTED_DOUBLINGS)
+            }
+            _ => PROJECTED_DOUBLINGS,
+        }
+    }
+
+    /// Whether its projection reads its compile's record at its first
+    /// turn's mark: whether its last record is the one after it.
+    fn projected_from_mark(&self) -> bool {
+        self.mark
+            .is_some_and(|m| self.progress.last().is_some_and(|&(t, _)| t == 2 * m))
     }
 
     /// Its place in the turns, the least first: the base-2 logarithm of the
@@ -213,6 +259,7 @@ impl Trial {
         self.kept = None;
         self.progress.clear();
         self.querying = false;
+        self.mark = None;
         if let Some(layout) = self.built.as_mut() {
             layout.vtree =
                 Arc::new(tididi::Vtree::clone(&layout.vtree).with_context(Arc::default()));

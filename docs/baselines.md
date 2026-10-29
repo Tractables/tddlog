@@ -1821,8 +1821,19 @@ the Boolean semiring), and a query under evidence is its atom's view times
 the evidence's: its answer is P(q and e) / P(e), two evaluations within
 the instance's time limit. `bench.py run --provsql PREFIX` starts a
 private cluster per instance on a unix socket (`fsync` off, one
-connection), loads the data untimed (a database holds its data) and times
-the queries through `psql`; the record's seconds are the queries'. Tests:
+connection), then times the load (`psql -f load.sql`: the tables and their
+provenance, which is parsing the input as tddlog's reading of its fact
+files is; the owner, 2026-10-27) and the queries through `psql`. The
+record's seconds are the load's and the queries', within the time limit
+together (a load past it is a timeout); the load's are the record's
+`load_seconds`. The start of the server is not timed. The postmaster
+runs in a session of its own (and under `--mem-cap` in a cgroup of its
+own) with `TMPDIR` in the instance's directory, and is killed with
+everything it started after each instance: ProvSQL's backend starts a
+compiler (d4) that a timeout does not stop, and seven of them filled a lab
+box's root filesystem in the first run (the record is an error if any
+process or /tmp/provsql* directory is left, and the run stops with under
+2 GB free on `/`). Tests:
 `tests/test_tpch2provsql.py` (the translation, and with `PROVSQL_PREFIX`
 set the answers against `tpch_exact.py` and `lit_exact.py`).
 
@@ -1952,6 +1963,26 @@ small and fast only because every probability in these programs is within
 6e-7 of 0.5. The answer is 0.50000045 at every N from 4 to 40, within the
 tolerance of the reference, and it counts as an answer, as any system's
 does.
+
+Past 2^63 reachable states PRISM has no engine that answers. `-sparse`
+and `-hybrid` switch to MTBDD past 2^31 states, as above. The MTBDD
+engine's unbounded until (`PrismMTBDD.ProbUntil`, line 413) reads the
+reachable states from the model's offset-labelled diagram (ODD), which
+PRISM builds only up to 2^63 states (`ODDUtils.BuildODD` returns null
+past it), and PRISM stops with a `NullPointerException` and "Error:
+Caught unhandled exception, aborting". The explicit engine indexes
+states by Java ints. 109 records of the coverage runs end that way, on
+Markov chains of 1.8e19 to 2.8e70 states: Geni's routers from N = 56,
+TPC-H queries, the long hidden Markov models, the circuits and the UAI
+networks' chains. They used 0.3 to 1.4 GB of resident memory, and eight
+of them, run again under the memory cap, gave the same exception. Nor does
+forcing an engine help on those eight: with `-mtbdd` each stops in the same
+exception (4 to 288 s), and with `-explicit` five run out of Java's heap
+while PRISM enumerates the states and three reach their time limit. Their text names
+memory only in PRISM's header ("Memory limits: cudd=..."), so
+`bench.memout` classes them as errors, not memouts. They are
+unanswered, and they do not justify skipping the larger sizes of their
+programs (rule 15), so those larger sizes are run.
 
 ## 23. Programs as networks and Dice programs (`ground2net.py`)
 
@@ -2330,11 +2361,25 @@ relation only.
 `bench.py run --psouffle SOUFFLE` translates the instance, compiles the
 program with `souffle --full-only compute.dl -o compute` and runs
 `./compute --jobs=1 -F input -D out` within the instance's limit,
-reading `out/facts.prob`. The translation and the compile are not timed,
-as the paper times inference and not the compile of the analysis; the
-record keeps the compile's seconds (`compile_s`, at most 3600 s) and the
+reading `out/facts.prob`. The translation is the harness's and is not
+timed. The compile is timed apart from the run, as the paper times
+inference and not the compile of the analysis: every record after it
+keeps the compile's seconds (`compile_s`, at most 3600 s), and the
 compiled program is reused by every instance whose `compute.dl` is the
-same. The run is PSouffle's default full inference, which the paper's
+same, whose record gets that compile's seconds (before 2026-10-28 the
+harness gave such a record 0 and a failed run none). The processing
+charges the compile to the record (`rel/charge.py`, final_all.sh's
+`PSOUFFLE_COMPILE`, charged by default while the owner decides): the
+system's own work from the program to the answer, as ProvSQL pays for
+loading its tables. A reused compile is charged its seconds from the
+record of the same run that compiled the text (the `compute.dl` its
+captured call reads); an answer or error whose compile and run pass the
+limit, and a compile stopped at its 3600 s, become timeouts. On the
+published tables this turns 10 of PSouffle's 276 answers into timeouts
+(std's s1000, cora10, cora50 and cora500; the literature's
+taint_app_ca7, taint_yaaic, eventcalc4_250, mastermind32_5_8,
+mastermind64_5_8 and sickness45_40) and its 10 compile timeouts (std 8,
+the literature 2) into timeouts. The run is PSouffle's default full inference, which the paper's
 evaluation runs as one of its two engines (`souffle_no_rewrite` in
 `evaluation/full/FMCAD.py`); `--jobs=1` keeps it in its lane. The other,
 `--rewrite` (the graph rewrites), loses derivations at 3fb0fd06 and is

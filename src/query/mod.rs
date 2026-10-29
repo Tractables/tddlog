@@ -803,10 +803,7 @@ struct PendingQuery {
 /// large accumulator with small factors, and at the levels above a factor's
 /// variables the dense grid of the two is mostly empty. The compile keeps
 /// the library's default (64, 4096), which is faster there.
-const QUERY_ROUTE: SparseRoute = SparseRoute {
-    sparsity: 16,
-    min_grid: 1024,
-};
+const QUERY_ROUTE: SparseRoute = SparseRoute::new(16, 1024);
 
 #[cfg(test)]
 mod tests {
@@ -1004,12 +1001,11 @@ mod tests {
                     let mut done = 0;
                     let (answers, sizes) = loop {
                         let result = tree.context().run(|engine| {
-                            let limit = LimitConfig::none().with_stop_rules(StopRules {
-                                unconditional: Some(StopAt::WorkUnits(
+                            let limit = LimitConfig::none().with_stop_rules(
+                                StopRules::default().with_unconditional(Some(StopAt::WorkUnits(
                                     engine.limits().work_units() + budget,
-                                )),
-                                after_pairs: None,
-                            });
+                                ))),
+                            );
                             let _guard = engine.limits().scope(limit);
                             state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
                         });
@@ -1140,10 +1136,10 @@ mod tests {
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
             state.take_last_reads(&gp, &mut compiled);
             {
-                let limit = LimitConfig::none().with_stop_rules(StopRules {
-                    unconditional: Some(StopAt::WorkUnits(engine.limits().work_units() + 1)),
-                    after_pairs: None,
-                });
+                let limit =
+                    LimitConfig::none().with_stop_rules(StopRules::default().with_unconditional(
+                        Some(StopAt::WorkUnits(engine.limits().work_units() + 1)),
+                    ));
                 let _guard = engine.limits().scope(limit);
                 assert!(matches!(
                     state.run(&gp, &backend, &compiled, None),
@@ -1254,12 +1250,11 @@ mod tests {
                     let mut budget = 1;
                     let answers = loop {
                         let result = tree.context().run(|engine| {
-                            let limit = LimitConfig::none().with_stop_rules(StopRules {
-                                unconditional: Some(StopAt::WorkUnits(
+                            let limit = LimitConfig::none().with_stop_rules(
+                                StopRules::default().with_unconditional(Some(StopAt::WorkUnits(
                                     engine.limits().work_units() + budget,
-                                )),
-                                after_pairs: None,
-                            });
+                                ))),
+                            );
                             let _guard = engine.limits().scope(limit);
                             state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
                         });

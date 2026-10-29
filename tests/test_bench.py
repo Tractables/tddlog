@@ -651,6 +651,10 @@ class SkipTests(unittest.TestCase):
         self.assertTrue(bench.ran_out({'status': 'error', 'error': 'memory allocation of 8 bytes failed'}))
         self.assertFalse(bench.ran_out({'status': 'error', 'error': 'parse error: line 1'}))
         self.assertFalse(bench.ran_out({'status': 'unsupported', 'error': 'no translation'}))
+        # a translator's time limit: an error, its text kept, that skips the larger sizes as a timeout does
+        limit = {'status': 'error', 'seconds': 0, 'error': 'problog2souffle.py: no translation within 600 s'}
+        self.assertTrue(bench.translation_limit(limit) and bench.ran_out(limit))
+        self.assertFalse(bench.ran_out({'status': 'error', 'error': 'dice2prism.py: Traceback ...\nKeyError'}))
         self.assertFalse(bench.ran_out({'status': 'ok', 'seconds': 1}))
 
     def test_memout_is_an_allocation_failure_or_the_cap(self):
@@ -670,7 +674,13 @@ class SkipTests(unittest.TestCase):
             self.assertTrue(bench.memout({'status': 'error', 'error': text}), text)
             self.assertTrue(bench.ran_out({'status': 'error', 'error': text}), text)
         # texts that name memory without an allocation failure: an error, not a memout
+        # (PRISM's MTBDD until past 2^63 states, where it builds no ODD, stops with a
+        # NullPointerException at any memory: an error, its header naming memory)
         for text in ['Error: Property not found\nMemory limits: cudd=1g, java(heap)=3.9g',
+                     'Memory limits: cudd=5g, java(heap)=4.8g\nStates:      4.539391276497261E19 (1 initial)\n'
+                     'Warning: Switching to MTBDD engine, as number of states is too large for Sparse engine.\n'
+                     'Engine: MTBDD\n\njava.lang.NullPointerException\n    at mtbdd.PrismMTBDD.ProbUntil(PrismMTBDD.java:413)\n'
+                     '\nError: Caught unhandled exception, aborting....',
                      'Assertion failed: makeOrBalanced(const std::vector<BddNodeRef, std::allocator<BddNodeRef> >&)',
                      'geni_wrap.sh: line 9: ulimit: virtual memory: cannot modify limit: Invalid argument',
                      '[2340709] signal 15: Terminated\nAllocations: 12625286 (Pool: 12624805; Big: 481); GC: 10',
@@ -2204,6 +2214,43 @@ class PitaTests(unittest.TestCase):
 
     def test_a_full_table_space_ran_out_of_memory(self):
         self.assertTrue(bench.ran_out({'status': 'error', 'error': 'Not enough resources: private_table_space'}))
+
+
+class PsouffleTests(unittest.TestCase):
+    """PSouffle's compilation, timed apart from the run: every record after
+    it carries the seconds its text's compilation took (compile_s), which
+    the processing charges (rel/charge.py)."""
+
+    @staticmethod
+    def timed(cmd, timeout, cwd=None, env=None):
+        if '--full-only' in cmd:
+            failed = 'bad' in Path(cwd, 'compute.dl').read_text()
+            return {'status': 'timeout' if failed else 'ok', 'seconds': 7.5, 'stdout': '', 'stderr': ''}
+        return {'status': 'timeout', 'seconds': 300.0}
+
+    def test_a_text_compiled_once_gives_every_instance_its_seconds(self):
+        calls = []
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            calls.append(cmd)
+            return self.timed(cmd, timeout, cwd, env)
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', timed):
+            args = SimpleNamespace(dir=d, psouffle='souffle')
+            self.assertEqual(bench.psouffle_binary(args, 'a(1).')[1:], (7.5, None))
+            self.assertEqual(bench.psouffle_binary(args, 'a(1).')[1:], (7.5, None))    # reused, its seconds kept
+            for _ in range(2):
+                _, seconds, err = bench.psouffle_binary(args, 'bad(1).')
+                self.assertEqual((seconds, err['status'], err['stats']), (7.5, 'error', {'compile_s': 7.5}))
+        self.assertEqual(sum('--full-only' in c for c in calls), 2)
+
+    def test_a_run_past_the_limit_keeps_the_compilation_seconds(self):
+        def translated(args, script, argv, *rest):
+            os.makedirs(argv[1], exist_ok=True)
+            Path(argv[1], 'compute.dl').write_text('a(1).')
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', self.timed), \
+                patch.object(bench, 'translated', translated):
+            r = bench.run_psouffle(SimpleNamespace(dir=d, psouffle='souffle', timeout=300), 'p', str(Path(d) / 'p.pl'))
+        self.assertEqual((r['status'], r['seconds'], r['stats']), ('timeout', 300.0, {'compile_s': 7.5}))
 
 
 if __name__ == '__main__':
