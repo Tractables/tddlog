@@ -1440,7 +1440,10 @@ a stop raises the watch, by powers of two, until it holds the formula
 it is still the least: a formula's pairs need not follow its work, and a
 watch tied to the target would give the other trials turns for nothing.
 An operation in flight may output twice the watch in nodes, and a raw
-conjunction sixteen times it in pairs. Where `program` goes first, it,
+conjunction sixteen times it in pairs, but for a join of the evidence
+walk that sums out its whole scope: it makes a weight, its nodes are
+folded away as it builds them, and it runs under the work stop and the
+memory budget alone. Where `program` goes first, it,
 `program:fanin` and the trial after them start at a 256th of their first
 targets (`LEAD_SHARE`): the circuits whose views were inlined are won by
 one of the three. The trial left alone runs without bounds (`attempt`).

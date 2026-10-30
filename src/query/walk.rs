@@ -1230,6 +1230,13 @@ impl EvidenceWalk {
             (Some(so), true, true) => so.and_onto(backend, fa, first, fb, second, &scope),
             _ => backend.and_onto(fa, first, fb, second, &scope),
         };
+        // A join that sums out its whole scope makes a weight: the nodes it
+        // emits are folded away level by level, and neither the attempt's
+        // node cap nor its pair floor measures what it holds. It runs under
+        // the work stop and the memory budget alone (rus_20_40's last join,
+        // 3.3 G units, was cut short six times by the cap and the work stop
+        // in turn and built again each time).
+        let whole = targets.contains(&scope.vtree().root());
         let attempt = match cap {
             Some(outer) => {
                 let _cap = backend.engine.limits().edit(|c| {
@@ -1238,6 +1245,13 @@ impl EvidenceWalk {
                             .with_unconditional(outer.unconditional)
                             .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
                     )
+                });
+                join(fa, fb)
+            }
+            None if whole => {
+                let _uncapped = backend.engine.limits().edit(|c| {
+                    let stop = c.stop_rules().with_after_pairs(None);
+                    c.with_output_node_cap(None).with_stop_rules(stop)
                 });
                 join(fa, fb)
             }

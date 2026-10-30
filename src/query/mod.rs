@@ -1226,6 +1226,57 @@ mod tests {
     }
 
     #[test]
+    fn a_join_that_sums_out_its_scope_runs_past_the_caps() {
+        // Two observations and no query: the walk's one join sums out its
+        // whole scope into P(e), and a cap of one emitted node and a stop
+        // past one pair, which a join that keeps its result is held to,
+        // do not cut it short. P(a, b) = P(f1) + P(¬f1) P(f0) P(f2).
+        let source = "0.5::f(0). 0.5::f(1). 0.5::f(2).
+            a :- f(0). a :- f(1). b :- f(1). b :- f(2).
+            evidence(a,true). evidence(b,true).";
+        let gp = crate::ground::ground(
+            &crate::syntax::parse_program(source).unwrap(),
+            &GroundOptions {
+                detach: false,
+                ..GroundOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(gp.evidence.len(), 2);
+        let (
+            crate::vtree::Layout {
+                vtree: tree, order, ..
+            },
+            _,
+        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
+        let (mass, sizes) = tree.context().run(|engine| {
+            let backend = TddBackend::new(engine, tree.clone());
+            let compiled = compile(
+                &gp,
+                fact_variables(&gp, &order),
+                Formulation::Primal,
+                &backend,
+                Projection::Off,
+                None,
+            )
+            .unwrap();
+            let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            let limit = LimitConfig::none()
+                .with_output_node_cap(Some(1))
+                .with_stop_rules(
+                    StopRules::default().with_after_pairs(Some((1, StopAt::WorkUnits(0)))),
+                );
+            let _guard = engine.limits().scope(limit);
+            let result = state.run(&gp, &backend, &compiled, None);
+            let (_, sizes) = result.unwrap_or_else(|e| panic!("{e} at {:?}", state.progress()));
+            (state.evidence_mass(), sizes)
+        });
+        assert_eq!(sizes.summing_joins, 1);
+        let p = (gp.weight * mass).normalized().to_f64();
+        assert!((p - 0.625).abs() < 1e-12, "P(e) = {p}");
+    }
+
+    #[test]
     fn waiting_joins_keep_the_answers_through_stops() {
         // A join that may wait does where its result outgrows its operands
         // (operands of a pair or more, a cap of their pairs), so that the
