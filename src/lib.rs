@@ -89,6 +89,7 @@
 #![doc(html_favicon_url = "https://tractables.github.io/tddlog/favicon.svg")]
 
 mod auto;
+mod by_hash;
 mod cubes;
 mod disjoint;
 pub mod eval;
