@@ -119,11 +119,15 @@ function said(result, elapsed) {
   return `done in ${time}: ${n === 0 ? "no query" : `${count(n)} ${n === 1 ? "answer" : "answers"}`}`;
 }
 
-// The answers beside an example's: ProbLog's.
+// The answers beside an example's: ProbLog's, or for an example ProbLog
+// does not answer, the exact answers its `exact` says how they were
+// computed.
 function exampleReference(example) {
   return {
-    column: "ProbLog",
-    caption: "ProbLog: ProbLog 2.3.0's answers (-k sdd, one query at a time), as the repository's tests record them.",
+    column: example.exact === undefined ? "ProbLog" : "Exact",
+    caption: example.exact === undefined
+      ? "ProbLog: ProbLog 2.3.0's answers (-k sdd, one query at a time), as the repository's tests record them."
+      : `Exact: ${example.exact}`,
     values: new Map(example.problog),
     evidence: { probability: example.evidence, log10: Math.log10(example.evidence) },
   };
@@ -428,10 +432,16 @@ if (typeof document !== "undefined") {
   let painting = 0;
   editor.addEventListener("scroll", follow, { passive: true });
 
-  // A button per example; the one whose program is in the editor, unedited,
-  // is pressed.
+  // A button per example, the larger ones after a label of their own; the
+  // one whose program is in the editor, unedited, is pressed.
   const examples = element("examples");
-  tddlogExamples.forEach(({ name }, i) => {
+  tddlogExamples.forEach(({ name, larger }, i) => {
+    if (larger && !tddlogExamples[i - 1]?.larger) {
+      const label = document.createElement("span");
+      label.className = "larger";
+      label.textContent = "Larger, a few seconds each:";
+      examples.append(label);
+    }
     const chip = document.createElement("button");
     chip.type = "button";
     chip.textContent = name;
@@ -449,7 +459,7 @@ if (typeof document !== "undefined") {
   let fileName = "program.pl";
   function choose(from) {
     source = from;
-    for (const chip of examples.children) {
+    for (const chip of examples.querySelectorAll("button")) {
       chip.setAttribute("aria-pressed", String(from?.example === Number(chip.dataset.example)));
     }
   }

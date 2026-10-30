@@ -6,7 +6,7 @@ ProbLog's or, for the Dice translations, Dice's, and for the Alea.jl
 program the ones computed by hand in its header. The
 [guide](https://tractables.github.io/tddlog/guide/) works through four of
 them, and the [playground](https://tractables.github.io/tddlog/) opens
-those and a few more.
+those and a few more, the larger programs below among them.
 
 ## Start here
 
@@ -32,6 +32,22 @@ those and a few more.
 | [dice_evidence.pl](dice_evidence.pl), [dice_murder.pl](dice_murder.pl) | Dice programs as tddlog's Dice reader reads them (`tddlog --program`) |
 | [alea_dice.jl](alea_dice.jl), [alea_dice.pl](alea_dice.pl) | an Alea.jl program and the circuit Alea.jl builds for it, which `scripts/alea2problog.jl` writes |
 | [query_beside_evidence.pl](query_beside_evidence.pl) | a query's formula beside evidence it does not read |
+
+## Larger programs
+
+In [larger](larger): sizes that ProbLog does not answer within five
+minutes, and tddlog's browser build in one to three seconds. Their
+answers are checked against exact ones computed independently, which
+agree with ProbLog's on the smaller sizes it answers.
+
+| file | what it shows |
+|---|---|
+| [grid_reliability.pl](larger/grid_reliability.pl) | two-terminal reliability of an 8 by 8 grid of routers: reachability over 112 uncertain links |
+| [dice_sum.pl](larger/dice_sum.pl) | the sum of 100 dice, built die by die with arithmetic in the rules |
+| [blood_types.pl](larger/blood_types.pl) | ABO blood types in a pedigree of 7 generations full of loops, with evidence on the youngest |
+| [mastermind.pl](larger/mastermind.pl) | a code of 12 pegs in 12 colours after 10 scored guesses: counting with negation, and evidence of probability 2.5e-10 |
+| [stones.pl](larger/stones.pl) | a game whose winning positions are defined through their own negation, over 4000 heaps |
+| [robot.pl](larger/robot.pl) | a hidden Markov model: a robot on a ring of 12 cells after 400 sensor readings |
 
 ## One grounding step each
 

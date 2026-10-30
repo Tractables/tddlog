@@ -1,7 +1,10 @@
 //! The programs under `examples/` with the probabilities ProbLog gives for
 //! them (or, for negcycle_sound.pl, the probabilities that follow from the
 //! well-founded model of each world; ProbLog refuses that program). Every
-//! vtree strategy, each under its own formulation, must agree.
+//! vtree strategy, each under its own formulation, must agree. The
+//! playground's larger examples, which ProbLog does not answer within five
+//! minutes, are checked under one strategy each against exact answers
+//! ([`larger`]).
 
 use crate::common;
 
@@ -1948,6 +1951,161 @@ fn the_index_lists_every_example() {
         assert!(
             name == "README.md" || index.contains(&format!("[{name}]({name})")),
             "examples/README.md does not list {name}"
+        );
+    }
+}
+
+/// The playground's larger examples (bindings/wasm/examples.js), as the
+/// bindings solve them, against exact answers computed independently of
+/// tddlog and ProbLog: a dynamic program over the grid's connectivity, the
+/// dice sum's distribution in fractions, forward and backward over the
+/// family's generations, a search for the codes the scores allow, the
+/// stones heap by heap, and the robot's forward algorithm. Each takes about
+/// a second or two under `auto`. Mastermind is checked under `closed`, which
+/// answers it in under a second, as `auto` does where memory is limited;
+/// `closed` runs out of memory or time on several of the others.
+mod larger {
+    use crate::common::assert_answers;
+    use tddlog::{Kind, Options, Strategy};
+
+    fn check(file: &str, expected: &[(&str, f64)], log10_pe: f64) {
+        check_under(Strategy::Auto, file, expected, log10_pe);
+    }
+
+    fn check_under(strategy: Strategy, file: &str, expected: &[(&str, f64)], log10_pe: f64) {
+        let data = std::fs::read(format!("examples/{file}")).unwrap();
+        let input =
+            tddlog::read(&data, tddlog::Format::of_path(file), &Default::default()).unwrap();
+        let options = Options {
+            strategy,
+            evidence_probability: true,
+            ..Options::default()
+        };
+        let solution = tddlog::solve(&input.program, &options, &mut |_| {})
+            .unwrap_or_else(|e| panic!("{file}: {e}"));
+        assert_answers(
+            file,
+            solution.answers.as_deref().expect("consistent evidence"),
+            expected,
+            1e-9,
+        );
+        let (_, log10) = input
+            .evidence_probability(&solution)
+            .expect("P(e) asked for");
+        assert!(
+            (log10 - log10_pe).abs() < 1e-9,
+            "{file}: log10 P(e) = {log10} against {log10_pe}"
+        );
+    }
+
+    #[test]
+    fn grid_reliability() {
+        check(
+            "larger/grid_reliability.pl",
+            &[
+                ("reaches(8,8)", 0.085163906983),
+                ("reaches(8,1)", 0.108944533606),
+            ],
+            0.0,
+        );
+    }
+
+    #[test]
+    fn dice_sum() {
+        check(
+            "larger/dice_sum.pl",
+            &[
+                ("prime", 0.163737706468),
+                ("sevens", 0.142857142857),
+                ("high", 0.00182302430809),
+            ],
+            0.0,
+        );
+    }
+
+    #[test]
+    fn blood_types() {
+        check(
+            "larger/blood_types.pl",
+            &[
+                ("blood(p(1,1),a)", 0.518137535803),
+                ("blood(p(1,1),ab)", 0.0292381634438),
+                ("blood(p(1,1),b)", 0.0573358853336),
+                ("blood(p(1,1),o)", 0.39528841542),
+                ("has(p(1,1),b)", 0.0865740487775),
+                ("has(p(1,2),b)", 0.0877441576365),
+                ("has(p(1,3),b)", 0.0883633033983),
+                ("has(p(1,4),b)", 0.0883633033983),
+                ("has(p(1,5),b)", 0.0877441576365),
+                ("has(p(1,6),b)", 0.0865740487775),
+                ("has(p(1,7),b)", 0.084397114572),
+            ],
+            -2.050210825765579,
+        );
+    }
+
+    #[test]
+    fn mastermind() {
+        // 2192 codes are consistent with the scores; a colour's probability
+        // at the first peg is its share of them.
+        let share = |codes: f64| codes / 2192.0;
+        check_under(
+            Strategy::Trial(Kind::Closed),
+            "larger/mastermind.pl",
+            &[
+                ("code(1,1)", 0.0),
+                ("code(1,2)", 0.0),
+                ("code(1,3)", 0.0),
+                ("code(1,4)", 0.0),
+                ("code(1,5)", 0.0),
+                ("code(1,6)", 0.0),
+                ("code(1,7)", 0.0),
+                ("code(1,8)", share(586.0)),
+                ("code(1,9)", share(502.0)),
+                ("code(1,10)", share(828.0)),
+                ("code(1,11)", share(276.0)),
+                ("code(1,12)", 0.0),
+            ],
+            -9.609334402759167,
+        );
+    }
+
+    #[test]
+    fn stones() {
+        check(
+            "larger/stones.pl",
+            &[
+                ("win(1)", 0.6),
+                ("win(2)", 0.696),
+                ("win(4)", 0.508271616),
+                ("win(5)", 0.546749927424),
+                ("win(10)", 0.593404502099),
+                ("win(50)", 0.601997552254),
+                ("win(4000)", 0.601997578692),
+            ],
+            0.0,
+        );
+    }
+
+    #[test]
+    fn robot() {
+        check(
+            "larger/robot.pl",
+            &[
+                ("at(400,1)", 0.000753783329927),
+                ("at(400,2)", 0.0250366111806),
+                ("at(400,3)", 0.0203417719893),
+                ("at(400,4)", 0.00296430798699),
+                ("at(400,5)", 0.135799230715),
+                ("at(400,6)", 0.015962539863),
+                ("at(400,7)", 0.112224825303),
+                ("at(400,8)", 0.0126669608722),
+                ("at(400,9)", 0.665833407746),
+                ("at(400,10)", 0.00098898502858),
+                ("at(400,11)", 0.00225543177311),
+                ("at(400,12)", 0.00517214421171),
+            ],
+            -103.13838857010707,
         );
     }
 }

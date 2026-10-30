@@ -199,7 +199,9 @@ label {
 }
 
 .examples .lead { font-size: 14px; font-weight: 500; }
-.examples #examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.examples #examples { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+/* The larger examples start a line of their own, after their label. */
+.examples #examples .larger { flex-basis: 100%; margin-top: 0.2rem; font-size: 13px; color: var(--muted); }
 
 .examples #examples button {
   width: auto;
@@ -585,6 +587,7 @@ footer {
   }
   .examples #examples::-webkit-scrollbar { display: none; }
   .examples #examples button { flex: none; white-space: nowrap; scroll-snap-align: start; }
+  .examples #examples .larger { flex: none; margin: 0 0 0 0.6rem; white-space: nowrap; }
   .io select, .io input, .editor textarea, .editor pre { font-size: 16px; }
 }
 

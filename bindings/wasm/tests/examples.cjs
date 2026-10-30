@@ -1,6 +1,7 @@
 // Every example of the page, run through the built module, against
-// ProbLog's answers and P(e) as examples.js records them; and the module's
-// refusals. `node tests/examples.cjs <path to tddlog.js>`.
+// ProbLog's answers and P(e) as examples.js records them, or for a larger
+// example exact ones; and the module's refusals.
+// `node tests/examples.cjs <path to tddlog.js>`.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -22,7 +23,8 @@ const TOLERANCE = 1e-9;
 
   for (const example of tddlogExamples) {
     const program = fs.readFileSync(path.join(root, example.file), "utf8");
-    for (const strategy of ["auto", "closed"]) {
+    // `closed` runs out of memory or time on several larger examples.
+    for (const strategy of example.larger ? ["auto"] : ["auto", "closed"]) {
       for (const evidence of [false, true]) {
         const what = `${example.key} (${strategy}, P(e) ${evidence})`;
         const result = runtime.solve(solver, program, strategy, evidence, example.format ?? "problog");
@@ -46,7 +48,7 @@ const TOLERANCE = 1e-9;
         }
       }
     }
-    console.log(`ok ${example.key}: ${example.problog.length} answers and P(e) agree with ProbLog`);
+    console.log(`ok ${example.key}: ${example.problog.length} answers and P(e) agree with ${example.exact === undefined ? "ProbLog" : "the exact ones"}`);
   }
 
   // Refusals come back as errors, and the module keeps answering after them.

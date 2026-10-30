@@ -27,7 +27,10 @@ the [guide](https://tractables.github.io/tddlog/guide/) and the
 
 The examples are programs the repository tests against ProbLog, from
 burglary and alarm to a game defined by negation through recursion, and
-the page shows ProbLog's answer beside each of tddlog's. A program can be
+the page shows ProbLog's answer beside each of tddlog's. Six larger ones
+take a second or a few each, sizes that ProbLog does not answer within
+five minutes: the page shows exact answers beside them, computed
+independently, and says how. A program can be
 edited or written from scratch. The vtree strategy (`--vtree` on the
 command line), P(e) (`--evidence-probability`) and the digits shown
 (`--precision`) are settings. Under the answers the page says what tddlog
@@ -127,7 +130,8 @@ node tests/browser.cjs site screenshots
 
 The first tests the wrapper natively, the second the page's runtime with
 a stand-in for the module, the third runs every example through the built
-module against ProbLog's answers and P(e), as `examples.js` records them,
+module against ProbLog's answers and P(e) (or the larger examples' exact
+ones), as `examples.js` records them,
 and the last drives the assembled site, the results page among it, in a
 headless Chromium.
 
