@@ -955,15 +955,19 @@ impl fmt::Display for CmpOp {
     }
 }
 
-/// A predicate of ProbLog's `library(lists)`, or `between/3`, which the
-/// grounder evaluates on ground arguments where the program defines no
-/// predicate of its name and arity.
+/// A predicate of ProbLog's `library(lists)`, or one of its built-ins
+/// `between/3`, `plus/3`, `compare/3` and `is_list/1`, which the grounder
+/// evaluates on ground arguments where the program defines no predicate of
+/// its name and arity. `append/2`, `subset/2`, `intersection/3`,
+/// `union/3`, `subtract/3`, `delete/3` and `flatten/2`, which the library
+/// writes as clauses, give the answers of those clauses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum Builtin {
     Member,
     Memberchk,
     Select,
     Append,
+    AppendLists,
     Length,
     Nth0,
     Nth1,
@@ -973,75 +977,85 @@ pub(crate) enum Builtin {
     MaxList,
     MinList,
     Sort,
+    Subset,
+    Intersection,
+    Union,
+    Subtract,
+    Delete,
+    Flatten,
     Between,
+    Plus,
+    Compare,
+    IsList,
 }
 
+/// Each built-in, by its name and arity.
+const BUILTINS: [(&str, usize, Builtin); 24] = [
+    ("member", 2, Builtin::Member),
+    ("memberchk", 2, Builtin::Memberchk),
+    ("select", 3, Builtin::Select),
+    ("append", 3, Builtin::Append),
+    ("append", 2, Builtin::AppendLists),
+    ("length", 2, Builtin::Length),
+    ("nth0", 3, Builtin::Nth0),
+    ("nth1", 3, Builtin::Nth1),
+    ("last", 2, Builtin::Last),
+    ("reverse", 2, Builtin::Reverse),
+    ("sum_list", 2, Builtin::SumList),
+    ("max_list", 2, Builtin::MaxList),
+    ("min_list", 2, Builtin::MinList),
+    ("sort", 2, Builtin::Sort),
+    ("subset", 2, Builtin::Subset),
+    ("intersection", 3, Builtin::Intersection),
+    ("union", 3, Builtin::Union),
+    ("subtract", 3, Builtin::Subtract),
+    ("delete", 3, Builtin::Delete),
+    ("flatten", 2, Builtin::Flatten),
+    ("between", 3, Builtin::Between),
+    ("plus", 3, Builtin::Plus),
+    ("compare", 3, Builtin::Compare),
+    ("is_list", 1, Builtin::IsList),
+];
+
 impl Builtin {
+    fn entry(self) -> &'static (&'static str, usize, Builtin) {
+        BUILTINS.iter().find(|e| e.2 == self).expect("listed")
+    }
+
     pub(crate) fn name(self) -> &'static str {
-        match self {
-            Builtin::Member => "member",
-            Builtin::Memberchk => "memberchk",
-            Builtin::Select => "select",
-            Builtin::Append => "append",
-            Builtin::Length => "length",
-            Builtin::Nth0 => "nth0",
-            Builtin::Nth1 => "nth1",
-            Builtin::Last => "last",
-            Builtin::Reverse => "reverse",
-            Builtin::SumList => "sum_list",
-            Builtin::MaxList => "max_list",
-            Builtin::MinList => "min_list",
-            Builtin::Sort => "sort",
-            Builtin::Between => "between",
-        }
+        self.entry().0
     }
 
     pub(crate) fn arity(self) -> usize {
-        match self {
-            Builtin::Select
-            | Builtin::Append
-            | Builtin::Nth0
-            | Builtin::Nth1
-            | Builtin::Between => 3,
-            _ => 2,
-        }
+        self.entry().1
     }
 
     /// The built-in `name/arity`.
     pub(crate) fn of(name: &str, arity: usize) -> Option<Builtin> {
-        let b = match name {
-            "member" => Builtin::Member,
-            "memberchk" => Builtin::Memberchk,
-            "select" => Builtin::Select,
-            "append" => Builtin::Append,
-            "length" => Builtin::Length,
-            "nth0" => Builtin::Nth0,
-            "nth1" => Builtin::Nth1,
-            "last" => Builtin::Last,
-            "reverse" => Builtin::Reverse,
-            "sum_list" => Builtin::SumList,
-            "max_list" => Builtin::MaxList,
-            "min_list" => Builtin::MinList,
-            "sort" => Builtin::Sort,
-            "between" => Builtin::Between,
-            _ => return None,
-        };
-        (b.arity() == arity).then_some(b)
+        BUILTINS
+            .iter()
+            .find(|e| e.0 == name && e.1 == arity)
+            .map(|e| e.2)
     }
 
     /// Whether `name` is the name of a predicate of `library(lists)` the
     /// grounder evaluates.
     pub(crate) fn in_lists(name: &str) -> bool {
-        [2, 3]
-            .into_iter()
-            .filter_map(|arity| Builtin::of(name, arity))
-            .any(|b| b != Builtin::Between)
+        BUILTINS.iter().any(|e| {
+            e.0 == name
+                && !matches!(
+                    e.2,
+                    Builtin::Between | Builtin::Plus | Builtin::Compare | Builtin::IsList
+                )
+        })
     }
 
     /// Whether the built-in runs with the arguments bound that `bound`
     /// flags: the list it reads (the third of `append/3`'s or both others),
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,
-    /// or the bounds of `between/3`. It then binds the others.
+    /// the two lists or the list and the item the set predicates and
+    /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, or the
+    /// terms `compare/3` orders. It then binds the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
             Builtin::Member | Builtin::Memberchk | Builtin::Select | Builtin::Nth0 => bound[1],
@@ -1052,9 +1066,19 @@ impl Builtin {
             | Builtin::MaxList
             | Builtin::MinList
             | Builtin::Reverse
-            | Builtin::Sort => bound[0],
+            | Builtin::Sort
+            | Builtin::AppendLists
+            | Builtin::Flatten
+            | Builtin::IsList => bound[0],
             Builtin::Append => bound[2] || (bound[0] && bound[1]),
-            Builtin::Between => bound[0] && bound[1],
+            Builtin::Subset
+            | Builtin::Intersection
+            | Builtin::Union
+            | Builtin::Subtract
+            | Builtin::Delete
+            | Builtin::Between => bound[0] && bound[1],
+            Builtin::Plus => bound.iter().filter(|&&b| b).count() >= 2,
+            Builtin::Compare => bound[1] && bound[2],
         }
     }
 }

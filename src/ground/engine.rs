@@ -1336,6 +1336,30 @@ fn unify_args(args: &[Arg], vals: &[Val], subst: &mut [Option<Val>], bound: &mut
     true
 }
 
+/// The flattenings of `v`, as `flatten/2`'s clauses give them: `[]` is no
+/// item, a list cell the flattenings of its head followed by those of its
+/// tail, and anything else, a cell of a list that is not proper among
+/// them, itself.
+fn flattened(g: &mut Grounder, v: Val, nil: Val, cons: u32) -> Vec<Vec<Val>> {
+    if v == nil {
+        return vec![Vec::new()];
+    }
+    let (items, tails) = g.spine(v, cons);
+    let mut out = Vec::new();
+    if let (Some(&head), Some(&tail)) = (items.first(), tails.get(1)) {
+        let tails = flattened(g, tail, nil, cons);
+        for h in flattened(g, head, nil, cons) {
+            for t in &tails {
+                out.push(h.iter().chain(t).copied().collect());
+            }
+        }
+    }
+    if g.items(v).is_none() {
+        out.push(vec![v]);
+    }
+    out
+}
+
 /// The argument tuples of the solutions of a built-in under the values
 /// bound of its arguments, in the order ProbLog's library enumerates them;
 /// the caller unifies each with the arguments. `between/3` enumerating its
@@ -1491,6 +1515,106 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             },
             _ => Vec::new(),
         },
+        // The lists concatenated, the last as the tail, as `append/2`'s
+        // clauses concatenate them.
+        Builtin::AppendLists => {
+            let lists = g.items(vals[0].expect("mode"));
+            let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
+                return match lists {
+                    Some(_) => one(vec![vals[0].expect("mode"), nil]),
+                    None => Vec::new(),
+                };
+            };
+            let mut items = Vec::new();
+            for &l in init {
+                match g.items(l) {
+                    Some(xs) => items.extend(xs),
+                    None => return Vec::new(),
+                }
+            }
+            let joined = g.make_list(&items, last);
+            one(vec![vals[0].expect("mode"), joined])
+        }
+        // The set predicates and delete/3 over the items of a proper list,
+        // each tested against the second argument: the items of a list, as
+        // memberchk/2 reads them, or a term.
+        Builtin::Subset
+        | Builtin::Intersection
+        | Builtin::Union
+        | Builtin::Subtract
+        | Builtin::Delete => {
+            let (l, other) = (vals[0].expect("mode"), vals[1].expect("mode"));
+            let Some(items) = g.items(l) else {
+                return Vec::new();
+            };
+            let set = match b {
+                Builtin::Delete => vec![other],
+                _ => g.spine(other, cons).0,
+            };
+            let kept = |keep_members: bool| -> Vec<Val> {
+                items
+                    .iter()
+                    .copied()
+                    .filter(|x| set.contains(x) == keep_members)
+                    .collect()
+            };
+            match b {
+                Builtin::Subset if items.iter().all(|x| set.contains(x)) => one(vec![l, other]),
+                Builtin::Subset => Vec::new(),
+                Builtin::Intersection => {
+                    let r = g.make_list(&kept(true), nil);
+                    one(vec![l, other, r])
+                }
+                // `union(Xs, Ys, R)`: the items not in `Ys`, then `Ys`.
+                Builtin::Union => {
+                    let r = g.make_list(&kept(false), other);
+                    one(vec![l, other, r])
+                }
+                _ => {
+                    let r = g.make_list(&kept(false), nil);
+                    one(vec![l, other, r])
+                }
+            }
+        }
+        Builtin::Flatten => {
+            let l = vals[0].expect("mode");
+            flattened(g, l, nil, cons)
+                .into_iter()
+                .map(|items| vec![l, g.make_list(&items, nil)])
+                .collect()
+        }
+        // Integers only, as ProbLog's plus/3: the third from the first two,
+        // or one of those from the other and the third.
+        Builtin::Plus => {
+            let int = |v: Option<Val>| match v {
+                Some(Val::Int(i)) => Some(Some(i)),
+                None => Some(None),
+                Some(_) => None,
+            };
+            let sol = match (int(vals[0]), int(vals[1]), int(vals[2])) {
+                (Some(Some(x)), Some(Some(y)), Some(_)) => x.checked_add(y).map(|z| [x, y, z]),
+                (Some(Some(x)), Some(None), Some(Some(z))) => z.checked_sub(x).map(|y| [x, y, z]),
+                (Some(None), Some(Some(y)), Some(Some(z))) => z.checked_sub(y).map(|x| [x, y, z]),
+                _ => None,
+            };
+            sol.map_or_else(Vec::new, |s| one(s.map(Val::Int).to_vec()))
+        }
+        // The order of the two terms in the standard order: `<`, `=` or `>`.
+        Builtin::Compare => {
+            let (a, b) = (vals[1].expect("mode"), vals[2].expect("mode"));
+            let (x, y) = (g.term_of(a), g.term_of(b));
+            let order = match term_cmp(&x, &y) {
+                std::cmp::Ordering::Less => "<",
+                std::cmp::Ordering::Equal => "=",
+                std::cmp::Ordering::Greater => ">",
+            };
+            let order = Val::Sym(g.syms.intern(&Name::from(order)));
+            one(vec![order, a, b])
+        }
+        Builtin::IsList => {
+            let l = vals[0].expect("mode");
+            g.items(l).map_or_else(Vec::new, |_| one(vec![l]))
+        }
     }
 }
 

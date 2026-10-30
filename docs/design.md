@@ -191,12 +191,15 @@ The parser reads ProbLog without cut:
   point, and a float a term holds is rounded to 15 decimal places, as
   ProbLog's constants round theirs;
 - the list predicates of ProbLog's library, built in: member/2,
-  memberchk/2, select/3, append/3, length/2, nth0/3, nth1/3, last/2,
-  reverse/2, sum_list/2, max_list/2, min_list/2, sort/2 and between/3,
-  in ProbLog's modes and order of solutions;
+  memberchk/2, select/3, append/2,3, length/2, nth0/3, nth1/3, last/2,
+  reverse/2, sum_list/2, max_list/2, min_list/2, sort/2, subset/2,
+  intersection/3, union/3, subtract/3, delete/3 and flatten/2, and
+  ProbLog's built-ins between/3, plus/3, compare/3 and is_list/1, in
+  ProbLog's modes and order of solutions, on ground arguments;
 - the predicates ProbLog's libraries write as clauses, in those clauses,
-  which the grounder adds where the program calls them (`ground/library.rs`):
-  the random selections select_uniform/4 and select_weighted/4,5, and
+  which the grounder adds where the program calls them
+  (`ground/library.rs`): the random selections select_uniform/4 and
+  select_weighted/4,5, and
   `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
   and partition/4; and `call/N`, whose goal names a predicate the program
   defines;

@@ -287,6 +287,90 @@ fn select_takes_each_item_out_of_the_list() {
 }
 
 #[test]
+fn plus_compare_and_is_list_answer_as_problog_s_built_ins() {
+    // The ground queries of ProbLog's test 00_builtins.pl, and the
+    // standard order of terms that compare/3 shares with sort/2 and `@<`.
+    assert_answers(
+        "plus_000(X) :- plus(1, 2, X).
+         plus_001(X) :- plus(1, X, 3).
+         plus_002(X) :- plus(X, 2, 3).
+         plus_003 :- plus(1, 2, 3).
+         plus_004 :- plus(1, 2, 4).
+         is_list_001 :- is_list([a, b|e]).
+         is_list_003 :- is_list([a, f(b)]).
+         cmp_003(X) :- compare(X, a, b).
+         cmp_004 :- compare('<', a, b).
+         cmp_005(X) :- compare(X, f(1), f(1)).
+         cmp_006(X) :- compare(X, g(a), f(a, b)).
+         cmp_007(X) :- compare(X, a, 3).
+         query(plus_000(_)). query(plus_001(_)). query(plus_002(_)).
+         query(plus_003). query(plus_004).
+         query(is_list_001). query(is_list_003).
+         query(cmp_003(_)). query(cmp_004). query(cmp_005(_)). query(cmp_006(_)).
+         query(cmp_007(_)).",
+        &[
+            ("plus_000(3)", 1.0),
+            ("plus_001(2)", 1.0),
+            ("plus_002(1)", 1.0),
+            ("plus_003", 1.0),
+            ("plus_004", 0.0),
+            ("is_list_001", 0.0),
+            ("is_list_003", 1.0),
+            ("cmp_003(<)", 1.0),
+            ("cmp_004", 1.0),
+            ("cmp_005(=)", 1.0),
+            ("cmp_006(<)", 1.0),
+            ("cmp_007(>)", 1.0),
+        ],
+    );
+    // A partial list is a list to ProbLog; tddlog reads ground terms only.
+    assert!(refusal("q :- is_list([a|T]). query(q).").contains("is_list"));
+}
+
+#[test]
+fn the_lists_library_s_clauses_concatenate_compare_and_flatten() {
+    // As the clauses of ProbLog's library(lists) answer; its test
+    // specific/bug_keep_order.pl (under tests/problog/) uses subset/2,
+    // delete/3 and flatten/2.
+    assert_answers(
+        "0.4::item(a). 0.7::item(b).
+         cat(L) :- append([[1], [2, 3], [], [4]], L).
+         none(L) :- append([], L).
+         tail(L) :- append([[1], [2|t]], L).
+         sub :- subset([b, a], [a, b, c]).
+         nosub :- subset([d], [a, b, c]).
+         inter(L) :- intersection([a, c, b, c], [b, c, d], L).
+         uni(L) :- union([a, b], [b, c], L).
+         sub2(L) :- subtract([a, b, c, b], [b], L).
+         del(L) :- delete([a, f(b), a, c], a, L).
+         flat(L) :- flatten([a, [b, [c, []], d], [[e]]], L).
+         odd(L) :- flatten([a|b], L).
+         kept(X) :- member(X, [a, b]), item(X), subset([X], [b, c]).
+         query(cat(_)). query(none(_)). query(tail(_)). query(sub). query(nosub).
+         query(inter(_)). query(uni(_)). query(sub2(_)). query(del(_)). query(flat(_)).
+         query(odd(_)). query(kept(_)).",
+        &[
+            ("cat([1, 2, 3, 4])", 1.0),
+            ("none([])", 1.0),
+            ("tail([1, 2 | t])", 1.0),
+            ("sub", 1.0),
+            ("nosub", 0.0),
+            ("inter([c, b, c])", 1.0),
+            ("uni([a, b, c])", 1.0),
+            ("sub2([a, c])", 1.0),
+            ("del([f(b), c])", 1.0),
+            ("flat([a, b, c, d, e])", 1.0),
+            ("odd([a, b])", 1.0),
+            ("odd([[a | b]])", 1.0),
+            ("kept(b)", 0.7),
+        ],
+    );
+    // A list they would build rather than read is refused.
+    let e = refusal("t(L) :- subset(L, [a, b]). query(t(_)).");
+    assert!(e.contains("unsafe rule"), "{e}");
+}
+
+#[test]
 fn a_random_selection_is_made_of_problog_s_random_variables() {
     // One identifier and one list make one choice, however often it is
     // asked; another identifier makes another.
