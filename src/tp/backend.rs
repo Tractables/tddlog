@@ -148,7 +148,7 @@ pub(crate) enum Reduce {
 /// of it and shares its execution context, so one engine serves every scope
 /// (tididi `Context`: bind several vtrees to one context when their
 /// operations should reuse the same scratch).
-pub struct TddBackend<'a> {
+pub(crate) struct TddBackend<'a> {
     pub(crate) engine: &'a Engine,
     vtree: RefCell<Arc<Vtree>>,
     prune: Cell<FullSchedule>,
@@ -231,7 +231,7 @@ pub(crate) struct KeptProjector {
 }
 
 impl<'a> TddBackend<'a> {
-    pub fn new(engine: &'a Engine, vtree: Arc<Vtree>) -> Self {
+    pub(crate) fn new(engine: &'a Engine, vtree: Arc<Vtree>) -> Self {
         Self::resume(engine, vtree, None)
     }
 

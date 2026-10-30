@@ -25,7 +25,7 @@ use crate::ground::deps::Deps;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, RulesByHead, deps};
 
 /// The compiled program.
-pub struct Compiled {
+pub(crate) struct Compiled {
     /// Variable of each fact atom.
     pub(crate) var_of: Vec<Option<VarId>>,
     /// Formula of each derived atom (`None` for facts, whose formula is the
@@ -59,7 +59,7 @@ pub struct Compiled {
 /// does not take it shares ([`Read::Shared`]) for a conjunction to read in
 /// place; no read outlives the atom update that made it.
 #[derive(Default)]
-pub struct Formulas {
+pub(crate) struct Formulas {
     /// Where each atom's entry is in `held`, plus one; 0 for an atom given
     /// none yet.
     at: Vec<u32>,
@@ -81,7 +81,7 @@ impl Formulas {
     }
 
     /// Each atom's formula or none, in the atoms' order.
-    pub fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
         self.at.iter().map(|&i| {
             if i == 0 {
                 &self.none
@@ -229,7 +229,7 @@ impl Compiled {
 }
 
 /// Assign vtree variables to the facts: `var_of[a]` for each fact atom.
-pub fn fact_variables(gp: &GroundProgram, order: &[AtomId]) -> Vec<Option<VarId>> {
+pub(crate) fn fact_variables(gp: &GroundProgram, order: &[AtomId]) -> Vec<Option<VarId>> {
     let mut var_of = vec![None; gp.num_atoms()];
     for (i, &a) in order.iter().enumerate() {
         debug_assert!(gp.is_fact(a));
