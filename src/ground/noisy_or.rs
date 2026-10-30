@@ -169,9 +169,35 @@ pub(super) fn rewrite(
         return None;
     }
 
-    // The values something reads, asks or observes: of the tables not
-    // rewritten every value their rows read, of those rewritten the
-    // parents' values away from `u*`.
+    let chosen = choose(shape, order, program, &value, &rows, &dists);
+    let count = chosen.iter().flatten().count();
+    if count == 0 {
+        return None;
+    }
+    let written = (0..n)
+        .map(|t| {
+            let f = chosen[t]?;
+            let r = rows[t].as_ref().expect("a table taken has rows");
+            Some(write(t, r, f, &values, &dists))
+        })
+        .collect();
+    Some((written, count))
+}
+
+/// The form each table of `rows` is taken in, `None` for a table not taken:
+/// the absent value of each taken is one nothing reads, asks or observes,
+/// once the tables not taken read every value their rows read and those
+/// taken the parents' values away from `u*`; and a table observed is taken
+/// only where its parents are.
+fn choose(
+    shape: &Shape,
+    order: &[usize],
+    program: &Program,
+    value: &impl Fn(usize, &Atom) -> Option<usize>,
+    rows: &[Option<Rows>],
+    dists: &[[f64; 2]],
+) -> Vec<Option<Form>> {
+    let n = shape.predicates();
     let mut needed = vec![0u8; n];
     let mut observed = vec![false; n];
     let asked = program.queries.iter().map(|(a, _)| (a, false));
@@ -225,7 +251,7 @@ pub(super) fn rewrite(
             changed = true;
             match form {
                 Some(f) => {
-                    let dist = r.dist(&dists);
+                    let dist = r.dist(dists);
                     for (i, &p) in r.parents.iter().enumerate() {
                         if f.q(dist, i) < 1.0 {
                             needed[p] |= 1 << (f.base >> i & 1 ^ 1);
@@ -241,64 +267,63 @@ pub(super) fn rewrite(
             }
         }
     }
-    let count = taken.iter().filter(|&&t| t).count();
-    if count == 0 {
-        return None;
-    }
+    chosen
+}
 
-    // Each table taken as clauses: the row u* as written gives the leak;
-    // where c is certain there, each flipped row as written gives its cause.
-    let written = (0..n)
-        .map(|t| {
-            let f = chosen[t]?;
-            let r = rows[t].as_ref().expect("a table taken has rows");
-            let dist = r.dist(&dists);
-            let of = |p: usize| values[p].expect("a table taken and its parents are candidates");
-            let present = of(t)[1 - f.absent];
-            let head = |p: f64| {
-                vec![HeadChoice {
-                    prob: (p < 1.0).then_some(Annotation::Number(p)),
-                    atom: present.clone(),
-                    negated: false,
-                }]
-            };
-            let leak = dist[f.base][1 - f.absent];
-            let mut out = Vec::with_capacity(r.parents.len() + 1);
-            if leak > 0.0 {
-                out.push((
-                    Clause {
-                        heads: head(leak),
-                        body: Vec::new(),
-                        group: 0,
-                    },
-                    None,
-                ));
-            }
-            for (k, &p) in r.parents.iter().enumerate() {
-                let q = f.q(dist, k);
-                if q >= 1.0 {
-                    continue;
-                }
-                let flipped = f.base ^ 1 << k;
-                let cause = if f.leak == 1.0 {
-                    dist[flipped][1 - f.absent]
-                } else {
-                    1.0 - q
-                };
-                let active = of(p)[f.base >> k & 1 ^ 1].clone();
-                out.push((
-                    Clause {
-                        heads: head(cause),
-                        body: vec![Literal::Pos(active)],
-                        group: 0,
-                    },
-                    Some(p),
-                ));
-            }
-            Some(out)
-        })
-        .collect();
-    Some((written, count))
+/// Table `t` of the rows `r`, taken in the form `f`, as clauses: the row
+/// `u*` as written gives the leak; where `c` is certain there, each
+/// flipped row as written gives its cause.
+fn write(
+    t: usize,
+    r: &Rows,
+    f: Form,
+    values: &[Option<[&Atom; 2]>],
+    dists: &[[f64; 2]],
+) -> Written {
+    let dist = r.dist(dists);
+    let of = |p: usize| values[p].expect("a table taken and its parents are candidates");
+    let present = of(t)[1 - f.absent];
+    let head = |p: f64| {
+        vec![HeadChoice {
+            prob: (p < 1.0).then_some(Annotation::Number(p)),
+            atom: present.clone(),
+            negated: false,
+        }]
+    };
+    let leak = dist[f.base][1 - f.absent];
+    let mut out = Vec::with_capacity(r.parents.len() + 1);
+    if leak > 0.0 {
+        out.push((
+            Clause {
+                heads: head(leak),
+                body: Vec::new(),
+                group: 0,
+            },
+            None,
+        ));
+    }
+    for (k, &p) in r.parents.iter().enumerate() {
+        let q = f.q(dist, k);
+        if q >= 1.0 {
+            continue;
+        }
+        let flipped = f.base ^ 1 << k;
+        let cause = if f.leak == 1.0 {
+            dist[flipped][1 - f.absent]
+        } else {
+            1.0 - q
+        };
+        let active = of(p)[f.base >> k & 1 ^ 1].clone();
+        out.push((
+            Clause {
+                heads: head(cause),
+                body: vec![Literal::Pos(active)],
+                group: 0,
+            },
+            Some(p),
+        ));
+    }
+    out
 }
 
 /// The two values of the table of `clauses`, its distinct head atoms in
