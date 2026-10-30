@@ -1551,6 +1551,24 @@ mod roulette {
         );
     }
 
+    /// The same interpreter with cells of five bits, n = 2 and three
+    /// units of fuel, every bit of both cells written out: the totals a
+    /// run can end with, and res(6) for a run out of fuel.
+    #[test]
+    fn hardware_bitwidth() {
+        check(
+            "../tests/roulette/hardware-bitwidth-5.pl",
+            &[
+                ("res(0)", 0.000100010000999),
+                ("res(1)", 9.99799990005e-09),
+                ("res(2)", 9.99899970006e-05),
+                ("res(3)", 1.99900019998e-08),
+                ("res(5)", 9.99400149980e-05),
+                ("res(6)", 0.999700029999),
+            ],
+        );
+    }
+
     /// The hidden Markov model, 3 steps: filtering joint.
     #[test]
     fn hmm_filtering_joint() {
