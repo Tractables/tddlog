@@ -268,6 +268,51 @@ fn list_predicates_over_probabilistic_facts() {
 }
 
 #[test]
+fn select_takes_each_item_out_of_the_list() {
+    // As in cplint's jail: the item that leaves `[A]`.
+    let (b, c) = (0.4, 0.7);
+    assert_answers(
+        "0.4::item(b). 0.7::item(c).
+         rest(X, R) :- select(X, [a, b, a], R).
+         other(A) :- select(B, [b, c], [A]), item(B).
+         query(rest(_, _)). query(other(_)).",
+        &[
+            ("rest(a,[a, b])", 1.0),
+            ("rest(a,[b, a])", 1.0),
+            ("rest(b,[a, a])", 1.0),
+            ("other(b)", c),
+            ("other(c)", b),
+        ],
+    );
+}
+
+#[test]
+fn a_random_selection_is_made_of_problog_s_random_variables() {
+    // One identifier and one list make one choice, however often it is
+    // asked; another identifier makes another.
+    let third = 1.0 / 3.0;
+    assert_answers(
+        "pick(X) :- select_uniform(u, [a, b, c], X, _).
+         same :- select_uniform(u, [a, b, c], X, _), select_uniform(u, [a, b, c], Y, _), X == Y.
+         apart :- select_uniform(u, [a, b], X, _), select_uniform(v, [a, b], Y, _), X == Y.
+         weighted(X, R) :- select_weighted(w, [1, 3], [a, b], X, R).
+         paired(X) :- select_weighted(w, [(1, a), (3, b)], X, _).
+         query(pick(_)). query(same). query(apart). query(weighted(_, _)). query(paired(_)).",
+        &[
+            ("pick(a)", third),
+            ("pick(b)", third),
+            ("pick(c)", third),
+            ("same", 1.0),
+            ("apart", 0.5),
+            ("weighted(a,[b])", 0.25),
+            ("weighted(b,[a])", 0.75),
+            ("paired(a)", 0.25),
+            ("paired(b)", 0.75),
+        ],
+    );
+}
+
+#[test]
 fn equality_builds_terms_and_is_evaluates_them() {
     // `=` unifies terms: `3 - 1` is a term, which `is` and `=:=` evaluate.
     assert_answers(

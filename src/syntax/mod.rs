@@ -962,6 +962,7 @@ impl fmt::Display for CmpOp {
 pub(crate) enum Builtin {
     Member,
     Memberchk,
+    Select,
     Append,
     Length,
     Nth0,
@@ -980,6 +981,7 @@ impl Builtin {
         match self {
             Builtin::Member => "member",
             Builtin::Memberchk => "memberchk",
+            Builtin::Select => "select",
             Builtin::Append => "append",
             Builtin::Length => "length",
             Builtin::Nth0 => "nth0",
@@ -996,7 +998,11 @@ impl Builtin {
 
     pub(crate) fn arity(self) -> usize {
         match self {
-            Builtin::Append | Builtin::Nth0 | Builtin::Nth1 | Builtin::Between => 3,
+            Builtin::Select
+            | Builtin::Append
+            | Builtin::Nth0
+            | Builtin::Nth1
+            | Builtin::Between => 3,
             _ => 2,
         }
     }
@@ -1006,6 +1012,7 @@ impl Builtin {
         let b = match name {
             "member" => Builtin::Member,
             "memberchk" => Builtin::Memberchk,
+            "select" => Builtin::Select,
             "append" => Builtin::Append,
             "length" => Builtin::Length,
             "nth0" => Builtin::Nth0,
@@ -1037,7 +1044,7 @@ impl Builtin {
     /// or the bounds of `between/3`. It then binds the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
-            Builtin::Member | Builtin::Memberchk | Builtin::Nth0 => bound[1],
+            Builtin::Member | Builtin::Memberchk | Builtin::Select | Builtin::Nth0 => bound[1],
             Builtin::Nth1 => bound[0] && bound[1],
             Builtin::Length
             | Builtin::Last

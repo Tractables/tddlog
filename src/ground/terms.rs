@@ -14,6 +14,9 @@
 //!   compound terms is taken apart, or makes its clause false;
 //! - a call of a list predicate the program does not define becomes a
 //!   [`Literal::Builtin`];
+//! - a call of ProbLog's random selection of an item of a list, which the
+//!   program does not define, brings in the library's clauses for it
+//!   ([`SELECTIONS`]);
 //! - `findall(T, G, R)` becomes an auxiliary predicate `'$fa<k>'` whose
 //!   tuples are the solutions of `G`, one per substitution of its
 //!   variables: the variables it shares with the clause, the value of `T`
@@ -61,6 +64,10 @@ pub(crate) type Pred = (Name, usize);
 /// `program` lowered, and the predicates of the cones of its findalls;
 /// the program itself, borrowed, where it has nothing to lower.
 pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pred>), GroundError> {
+    if let Some(with) = with_selections(program) {
+        let (lowered, cone) = lower(&with)?;
+        return Ok((Cow::Owned(lowered.into_owned()), cone));
+    }
     // A compound term with variables; a call that may be of a built-in,
     // unless the program defines its predicate.
     let compound = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
@@ -125,6 +132,82 @@ pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pr
 fn builtin(a: &Atom, defined: &ByHead) -> Option<Builtin> {
     let (name, arity) = a.signature();
     Builtin::of(name, arity).filter(|_| !defined.contains_key(&(name, arity)))
+}
+
+/// ProbLog's random selections from a list, `select_uniform/4` and
+/// `select_weighted/5` and `/4` of its `library(lists)`, in the library's
+/// own clauses, so that a choice is made of ProbLog's random variables:
+/// each item in turn is chosen with its weight over those of the items
+/// left, by a probabilistic fact of the selection's identifier, that
+/// weight, the weights left, the item and the items after it. The helpers
+/// are named apart from the program's predicates.
+const SELECTIONS: &str = r"
+select_uniform(ID, Values, Value, Rest) :-
+    length(Values, Len), Len > 0, Weight is 1/Len,
+    '$lists_make_list'(Len, Weight, Weights),
+    select_weighted(ID, Weights, Values, Value, Rest).
+select_weighted(ID, Weights, Values, Value, Rest) :-
+    sum_list(Weights, Total), Total > 0,
+    '$lists_sw'(ID, Total, Weights, Values, Value, Rest).
+select_weighted(ID, WeightsValues, Value, Rest) :-
+    '$lists_unzip'(WeightsValues, Weights, Values),
+    select_weighted(ID, Weights, Values, Value, Rest).
+P::'$lists_sw_p'(ID, P, _, _, _).
+'$lists_sw'(_, _, [_|_], [X], X, []).
+'$lists_sw'(ID, PW, [W|WT], [X|XT], X, XT) :-
+    XT \= [], W1 is W/PW, '$lists_sw_p'(ID, W1, WT, X, XT).
+'$lists_sw'(ID, PW, [W|WT], [X|XT], Y, [X|RT]) :-
+    XT \= [], W1 is W/PW, \+ '$lists_sw_p'(ID, W1, WT, X, XT),
+    PW1 is PW-W, '$lists_sw'(ID, PW1, WT, XT, Y, RT).
+'$lists_make_list'(0, _, []).
+'$lists_make_list'(Len, X, [X|L]) :-
+    Len > 0, Len1 is Len-1, '$lists_make_list'(Len1, X, L).
+'$lists_unzip'([], [], []).
+'$lists_unzip'([(X,Y)|T], [X|R], [Y|S]) :- '$lists_unzip'(T, R, S).
+";
+
+/// `program` with [`SELECTIONS`] where it calls one of them and defines
+/// none; `None` otherwise.
+fn with_selections(program: &Program) -> Option<Program> {
+    let selection =
+        |sig: (&str, usize)| matches!(sig, ("select_uniform", 4) | ("select_weighted", 4 | 5));
+    if program
+        .clauses
+        .iter()
+        .flat_map(|c| &c.heads)
+        .any(|h| selection(h.atom.signature()))
+    {
+        return None;
+    }
+    let mut called = false;
+    let mut visit = |a: &Atom| called |= selection(a.signature());
+    for body in program
+        .clauses
+        .iter()
+        .map(|c| &c.body)
+        .chain(program.query_rules.iter().map(|r| &r.body))
+    {
+        calls(body, &mut visit);
+    }
+    if !called {
+        return None;
+    }
+    let library = crate::syntax::parse_program(SELECTIONS).expect("the library parses");
+    // The library's clauses in groups of their own, which share no switch
+    // with the program's.
+    let after = program
+        .clauses
+        .iter()
+        .map(|c| c.group + 1)
+        .max()
+        .unwrap_or(0);
+    let mut with = program.clone();
+    with.clauses
+        .extend(library.clauses.into_iter().map(|mut c| {
+            c.group += after;
+            c
+        }));
+    Some(with)
 }
 
 /// The predicates the program's clauses define, by their heads, each with

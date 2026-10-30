@@ -1373,6 +1373,19 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             };
             first.map_or_else(Vec::new, |x| one(vec![x, l]))
         }
+        // Each item with the list without it, from the first.
+        Builtin::Select => {
+            let l = vals[1].expect("mode");
+            let (items, tails) = g.spine(l, cons);
+            let end = tails[items.len()];
+            (0..items.len())
+                .map(|k| {
+                    let rest: Vec<Val> =
+                        items[..k].iter().chain(&items[k + 1..]).copied().collect();
+                    vec![items[k], l, g.make_list(&rest, end)]
+                })
+                .collect()
+        }
         Builtin::Append => match (vals[0], vals[1], vals[2]) {
             (Some(a), Some(b), _) => match g.items(a) {
                 Some(items) => {
