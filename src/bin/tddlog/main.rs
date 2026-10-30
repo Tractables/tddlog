@@ -282,7 +282,7 @@ fn main() -> ExitCode {
         rescale: args.rescale,
     };
     let started = Instant::now();
-    let input = match tddlog::read(&data, args.format, &options) {
+    let mut input = match tddlog::read(&data, args.format, &options) {
         Ok(input) => input,
         Err(e @ tddlog::Error::Options(_)) => {
             eprintln!("{e}");
@@ -293,10 +293,21 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    // A ProbLog program's own text, with the files it consults in their
+    // directives' places.
+    if let Cow::Borrowed(text) = input.program {
+        input.program = match tddlog::consult(text, &args.file) {
+            Ok(program) => program,
+            Err(e) => {
+                eprintln!("{}: {e}", args.file);
+                return ExitCode::FAILURE;
+            }
+        };
+    }
     front.text_secs = started.elapsed().as_secs_f64();
     // An LPAD's example queries that its program leaves out are named, and
-    // `--program` prints the program a network, a Dice program or an LPAD
-    // is read as.
+    // `--program` prints the program a network, a Dice program, an LPAD or
+    // a program that consults files is read as.
     for note in &input.left_out {
         eprintln!("{}: {note}", args.file);
     }
@@ -304,8 +315,8 @@ fn main() -> ExitCode {
         let Cow::Owned(program) = &input.program else {
             eprintln!(
                 "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
-                 program (.dice) or an LPAD (a program that holds `:- begin_lpad.`), and {} is \
-                 none of them",
+                 program (.dice), an LPAD (a program that holds `:- begin_lpad.`) or a program \
+                 that consults files, and {} is none of them",
                 args.file
             );
             return ExitCode::from(2);

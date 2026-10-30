@@ -21,7 +21,7 @@ mod lexer;
 pub mod lpad;
 mod parser;
 
-pub use parser::{ParseError, parse_program};
+pub use parser::{Consult, ParseError, consults, parse_program};
 
 use std::cmp::Ordering;
 use std::fmt;

@@ -67,7 +67,8 @@ fn check_with(
     let src = std::fs::read_to_string(path).unwrap();
     let expected = expected_outcomes(&src);
     let options = rows.options();
-    let ground = tddlog::syntax::parse_program(&src)
+    let ground = tddlog::consult(&src, path.to_str().expect("a path"))
+        .and_then(|src| tddlog::syntax::parse_program(&src))
         .map_err(tddlog::Error::from)
         .and_then(|program| Ok(tddlog::ground::ground(&program, &options)?))
         .map(|ground| {

@@ -109,7 +109,7 @@ pub mod vtree;
 use std::sync::Arc;
 
 pub use ground::{GroundOptions, GroundProgram};
-pub use input::{Format, Input, read};
+pub use input::{Format, Input, consult, read};
 pub use query::QueryResult;
 pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground};
 pub use strategy::Strategy;

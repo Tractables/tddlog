@@ -55,6 +55,20 @@ struct Parser<'a> {
     terms: Vec<Term>,
     args: Vec<PTerm>,
     heads: Vec<HeadChoice>,
+    /// The line of the last token [`Parser::expect`] moved past: at a
+    /// clause's start, the end of the clause before it.
+    expected: usize,
+    /// The `consult/1` directives read, where the program is read for them
+    /// ([`consults`]); `None` where they are refused ([`parse_program`]).
+    consults: Option<Vec<Consult>>,
+}
+
+/// A directive `:- consult(File).`: the file it names, and its first and
+/// last lines, on which it stands alone.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Consult {
+    pub file: String,
+    pub lines: (usize, usize),
 }
 
 /// Where a speculative parse started ([`Parser::mark`]).
@@ -70,8 +84,22 @@ struct Mark<'a> {
 }
 
 /// The ProbLog program `src`. Another input, an LPAD among them, is read
-/// as a program first ([`crate::read`]).
+/// as a program first ([`crate::read`]). A `consult/1` directive is
+/// refused: the files it names are read in its place first
+/// ([`crate::consult`]).
 pub fn parse_program(src: &str) -> Result<Program, ParseError> {
+    parse(src, None).map(|(program, _)| program)
+}
+
+/// The `consult/1` directives of the ProbLog program `src`, in order.
+pub fn consults(src: &str) -> Result<Vec<Consult>, ParseError> {
+    parse(src, Some(Vec::new())).map(|(_, consults)| consults.expect("read"))
+}
+
+fn parse(
+    src: &str,
+    consults: Option<Vec<Consult>>,
+) -> Result<(Program, Option<Vec<Consult>>), ParseError> {
     let eof = || Spanned {
         tok: Tok::Eof,
         line: 1,
@@ -86,6 +114,8 @@ pub fn parse_program(src: &str) -> Result<Program, ParseError> {
         terms: Vec::new(),
         args: Vec::new(),
         heads: Vec::new(),
+        expected: 0,
+        consults,
     };
     p.bump();
     p.bump();
@@ -101,7 +131,7 @@ pub fn parse_program(src: &str) -> Result<Program, ParseError> {
     }
     match p.lexer.error() {
         Some(e) => Err(e.into()),
-        None => parsed.map(|()| prog),
+        None => parsed.map(|()| (prog, p.consults)),
     }
 }
 
@@ -243,6 +273,7 @@ impl<'a> Parser<'a> {
     /// ([`Parser::at`]).
     fn expect(&mut self, tok: Tok) -> Result<(), ParseError> {
         if self.at(tok) {
+            self.expected = self.line();
             self.bump();
             Ok(())
         } else {
@@ -256,12 +287,17 @@ impl<'a> Parser<'a> {
 
     fn clause(&mut self, prog: &mut Program) -> Result<(), ParseError> {
         if self.at(Tok::Neck) {
+            let (first, before) = (self.line(), self.expected);
             self.bump();
             let t = self.term(1200)?;
+            let last = self.line();
             self.expect(Tok::Dot)?;
             let Some((name, args)) = t.into_compound() else {
                 return self.err("unsupported directive");
             };
+            if &*name == "consult" {
+                return self.consult(args, before, (first, last));
+            }
             let start = self.args.len();
             self.args.extend(args);
             return self.directive(&name, start, prog);
@@ -333,6 +369,38 @@ impl<'a> Parser<'a> {
                 }
             }
         }
+        Ok(())
+    }
+
+    /// The directive `consult(args)` on `lines`, after a clause that ends
+    /// on line `before`, read where the parse reads them.
+    fn consult(
+        &mut self,
+        args: Vec<PTerm>,
+        before: usize,
+        lines: (usize, usize),
+    ) -> Result<(), ParseError> {
+        let file = match <[PTerm; 1]>::try_from(args) {
+            Ok([t]) => match t.into_term() {
+                Term::Const(file) => file.to_string(),
+                t => return self.err(format!("consult({t}): the file is named by an atom")),
+            },
+            Err(args) => return self.err(format!("unsupported directive consult/{}", args.len())),
+        };
+        if self.consults.is_none() {
+            return self.err(format!(
+                "consult({file}) reads a file: give tddlog the program as a file, \
+                 which it reads with the files it consults"
+            ));
+        }
+        // The directive is replaced by its file's lines.
+        if before == lines.0 || (!self.at(Tok::Eof) && self.line() == lines.1) {
+            return self.err(format!("consult({file}) must stand on lines of its own"));
+        }
+        self.consults
+            .as_mut()
+            .expect("read")
+            .push(Consult { file, lines });
         Ok(())
     }
 

@@ -208,7 +208,13 @@ The parser reads ProbLog without cut:
 - `query/1` (also `query(\+a)`) and `evidence/1,2`, and their rules
   `query(pattern) :- body.` and `evidence(pattern, v) :- body.`, whose
   pattern's instances under each grounding of the body are queries or
-  evidence.
+  evidence;
+- the directives `use_module(library(lists))` and
+  `use_module(library(apply))`, `unknown(fail)`, under which a predicate
+  without clauses is false (one of ProbLog's built-ins or library
+  predicates that tddlog does not evaluate stays refused), and
+  `consult(File)`, which the file's program replaces in a program read
+  from a file (`consult`, `input.rs`).
 
 There are no cut, if-then-else or strings.
 

@@ -7,6 +7,7 @@
 
 use std::borrow::Cow;
 use std::fmt;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use crate::network::{self, Evidence, Queries, ReadOptions};
@@ -162,6 +163,73 @@ pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result
         log10_offset: read.log10_offset,
         left_out: Vec::new(),
     })
+}
+
+/// `text`, the ProbLog program in the file at `path`, with each directive
+/// `:- consult(File).` replaced by the program of the file it names, as
+/// ProbLog consults it: the file `File` or `File.pl` in the directory of the
+/// file that names it, read in the directive's place, each file once (the
+/// first time a directive names it, `path` among them), with the files it
+/// consults in turn. A directive stands on lines of its own, which the
+/// file's lines replace. A program without the word `consult` is its own
+/// text.
+pub fn consult<'a>(text: &'a str, path: &str) -> Result<Cow<'a, str>, ParseError> {
+    let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.into());
+    let mut loaded = vec![path.clone()];
+    consulted(text, &path, &mut loaded)
+}
+
+/// [`consult`] of the file at `path`, after the files `loaded`.
+fn consulted<'a>(
+    text: &'a str,
+    path: &Path,
+    loaded: &mut Vec<PathBuf>,
+) -> Result<Cow<'a, str>, ParseError> {
+    if !text.contains("consult") {
+        return Ok(Cow::Borrowed(text));
+    }
+    let consults = syntax::consults(text)?;
+    if consults.is_empty() {
+        return Ok(Cow::Borrowed(text));
+    }
+    let lines: Vec<&str> = text.split_inclusive('\n').collect();
+    let mut out = String::with_capacity(text.len());
+    let mut next = 0;
+    for c in consults {
+        let (first, last) = c.lines;
+        out.extend(lines[next..first - 1].iter().copied());
+        next = last;
+        let fail = |msg: String| ParseError { line: first, msg };
+        // As named, else with `.pl` added.
+        let named = path.parent().unwrap_or(Path::new("")).join(&c.file);
+        let file = if named.is_file() {
+            named
+        } else {
+            let mut pl = named.into_os_string();
+            pl.push(".pl");
+            PathBuf::from(pl)
+        };
+        let read = std::fs::canonicalize(&file).and_then(|f| Ok((std::fs::read_to_string(&f)?, f)));
+        let (text, file) = read.map_err(|e| {
+            fail(format!(
+                "consult({}): cannot read {}: {e}",
+                c.file,
+                file.display()
+            ))
+        })?;
+        if loaded.contains(&file) {
+            continue;
+        }
+        loaded.push(file.clone());
+        let program = consulted(&text, &file, loaded)
+            .map_err(|e| fail(format!("in {}, which it consults: {e}", file.display())))?;
+        out.push_str(&program);
+        if !program.is_empty() && !program.ends_with('\n') {
+            out.push('\n');
+        }
+    }
+    out.extend(lines[next..].iter().copied());
+    Ok(Cow::Owned(out))
 }
 
 /// `data` as text, failing at the line of its first byte that is not
