@@ -207,10 +207,12 @@ impl Body {
 
 /// Whether a literal named `name` of `arity` arguments is read other than
 /// as an atom: a comparison, `is`, a negation, an operator, `findall/3`.
+/// A scope `S:A` is an atom of the predicate `:/2`, as ProbLog reads it
+/// without its library(scope).
 fn special(name: &str, arity: usize) -> bool {
     match arity {
         1 => name == "not" || prefix_op(name).is_some(),
-        2 => infix_op(name).is_some(),
+        2 => name != ":" && infix_op(name).is_some(),
         3 => name == "findall",
         _ => false,
     }

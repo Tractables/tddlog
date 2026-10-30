@@ -759,7 +759,18 @@ impl Atom {
 }
 
 impl fmt::Display for Atom {
+    /// As ProbLog prints the atom: an operator's, `scope:a` among them,
+    /// as the term it is.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let operator = match self.args.len() {
+            1 => printed_prefix(&self.name).is_some(),
+            2 => printed_infix(&self.name).is_some(),
+            _ => false,
+        };
+        if operator {
+            let t = Compound::term(self.name.clone(), self.args.iter().cloned().collect());
+            return write_term(f, &t, 1200);
+        }
         write_const(f, &self.name)?;
         if !self.args.is_empty() {
             f.write_str("(")?;

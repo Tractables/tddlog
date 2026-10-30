@@ -54,6 +54,7 @@ pub(crate) enum Op {
     Shr,
     Backslash,
     Arrow,
+    Colon,
 }
 
 impl Op {
@@ -86,6 +87,7 @@ impl Op {
             Op::Shr => ">>",
             Op::Backslash => "\\",
             Op::Arrow => "->",
+            Op::Colon => ":",
         }
     }
 }
@@ -835,6 +837,7 @@ impl<'a> Lexer<'a> {
                 let (tok, len) = match (c, at(i + 1), at(i + 2)) {
                     (b':', Some(b'-'), _) | (b'<', Some(b'-'), _) => (Tok::Neck, 2),
                     (b':', Some(b':'), _) => (Tok::DoubleColon, 2),
+                    (b':', _, _) => (Tok::Op(Op::Colon), 1),
                     (b'\\', Some(b'='), Some(b'=')) => (Tok::Op(Op::NotIdentical), 3),
                     (b'\\', Some(b'='), _) => (Tok::Op(Op::Ne), 2),
                     (b'\\', Some(b'+'), _) => (Tok::Naf, 2),
