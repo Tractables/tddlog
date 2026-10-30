@@ -176,6 +176,9 @@ The parser reads ProbLog without cut:
 - probabilistic facts `p::a.`, probabilistic rules `p::h :- b.`,
   annotated disjunctions `p1::h1; p2::h2 :- b.`, and negative heads
   `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
+- flexible probabilities, a term before `::` that the body binds or
+  computes (`P::pack(I) :- weight(I, W), P is 1/W.`), each ground
+  instance of the clause an annotated disjunction of its own;
 - body disjunctions `;` and parentheses, split into clauses that share
   one switch group;
 - negation as failure, `\+` or `not`, also of an atom with variables
@@ -213,7 +216,8 @@ ProbLog input). The LPAD is the clauses between
 `:- begin_lpad.` and `:- end_lpad.`: `h1:p1 ; h2:p2 :- b.` becomes
 `p1::h1; p2::h2 :- b.` and `a:p.` becomes `p::a.`, a head without a
 probability taking what the others leave (a probability may be a
-fraction, `1/4`). The clauses outside the markers are cplint's database
+fraction, `1/4`, or a flexible probability, a term the body binds,
+written as it is before `::`). The clauses outside the markers are cplint's database
 clauses, which the LPAD calls through `db(Goal)` or the goal of a
 built-in such as `findall/3`: those the LPAD's bodies name, and those
 they name in turn, are kept, and `db(Goal)` becomes `Goal`; the rest
@@ -226,7 +230,8 @@ example query not under an intervention `do(L)`; a query under other
 evidence or under an intervention is named in a comment of the program
 and on standard error, and left out. A clause the program cannot write
 (a disjunctive head with no probability or with two heads without one, a
-probability that is not a finite number) is refused on its line. The
+head without one beside a flexible probability, a probability that is not
+a finite number) is refused on its line. The
 reader finds the clauses in the text and writes the program that the
 Python script it replaced (`lpad2problog.py`, now on the baselines
 branch) wrote: the clauses end at a `.` before white space outside
@@ -445,6 +450,13 @@ are skipped. Several steps have a program in `examples/` that shows them.
    mass left keeps its mass. Switch predicates have no rules; their
    ground atoms are the random variables. A value that takes all the mass
    left has no switch, and a head of probability zero none either.
+   A clause with flexible probabilities has a switch per head, whose
+   arguments end with every head's probability (a term the body computes
+   is bound by an `is` after the body); its weights are a
+   `Weights::Flexible`, computed by the same `switch_weights` for each
+   ground switch atom from the numbers its arguments hold, so that each
+   instance of the clause is an annotated disjunction of its own, and a
+   probability out of range or heads that sum past one are refused there.
    A predicate given by ground facts alone, `p::f(a,b).` or `f(a,b).`,
    none of them in a disjunction and none read by a findall, is kept as
    its facts (`Facts`): the grounder makes each tuple an atom, a fact of

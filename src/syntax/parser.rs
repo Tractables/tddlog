@@ -3,8 +3,8 @@
 
 use super::lexer::{LexError, Lexer, Op, Spanned, Tok, kw};
 use super::{
-    Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice, Literal, NIL, Name,
-    Program, QueryRule, Term, infix_op, prefix_op,
+    Annotation, Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice,
+    Literal, NIL, Name, Program, QueryRule, Term, infix_op, prefix_op,
 };
 use std::fmt;
 
@@ -414,45 +414,77 @@ impl<'a> Parser<'a> {
     }
 
     fn head(&mut self) -> Result<HeadChoice, ParseError> {
-        // `P::atom` where P is a number or a fraction `a/b`.
+        // `P::atom`: a number, or a term read up to `::`, which is the
+        // head itself where no `::` follows.
         let prob = match (self.peek(), self.peek2()) {
             (Tok::Float(p), Tok::DoubleColon) => {
                 self.bump();
                 self.bump();
-                Some(p)
+                Annotation::Number(p)
             }
             (Tok::Int(p), Tok::DoubleColon) => {
                 self.bump();
                 self.bump();
-                Some(p as f64)
+                Annotation::Number(p as f64)
             }
-            (Tok::Int(a), Tok::Op(Op::Slash)) => {
-                self.bump();
-                self.bump();
-                let b = match self.bump() {
-                    Tok::Int(b) if b != 0 => b,
-                    Tok::Float(b) if b != 0.0 => return self.fraction_tail(a as f64, b),
-                    _ => return self.err("expected a nonzero denominator"),
-                };
-                self.expect(Tok::DoubleColon)?;
-                Some(a as f64 / b as f64)
-            }
-            (Tok::Name(kw::T), Tok::LParen) => {
-                let save = self.mark();
-                let _ = self.term(999)?;
-                if self.at(Tok::DoubleColon) {
-                    return self.err("learnable probabilities t(...) are not supported");
+            (Tok::Naf, _) => return self.negated_head(None),
+            _ => {
+                let t = self.term(999)?;
+                if !self.at(Tok::DoubleColon) {
+                    let line = self.line();
+                    let atom = t.into_atom().ok_or_else(|| ParseError {
+                        line,
+                        msg: "expected an atom".into(),
+                    })?;
+                    return Ok(HeadChoice {
+                        prob: None,
+                        atom,
+                        negated: false,
+                    });
                 }
-                self.rewind(save);
-                None
+                self.bump();
+                self.annotation(t.into_term())?
             }
-            _ => None,
         };
-        if let Some(p) = prob
+        if let Annotation::Number(p) = prob
             && !(0.0..=1.0 + 1e-12).contains(&p)
         {
             return self.err(format!("probability {p} out of range"));
         }
+        self.negated_head(Some(prob))
+    }
+
+    /// The probability a term before `::` writes: a number, or a fraction
+    /// `a/b` of two, as a number; `t(...)`, a learnable probability, is
+    /// refused; any other term is a flexible probability.
+    fn annotation(&self, t: Term) -> Result<Annotation, ParseError> {
+        let number = |t: &Term| match t {
+            Term::Int(i) => Some(*i as f64),
+            Term::Float(x) => Some(x.0),
+            _ => None,
+        };
+        if let Some(p) = number(&t) {
+            return Ok(Annotation::Number(p));
+        }
+        match t.as_compound() {
+            Some((name, [a, b])) if &**name == "/" => {
+                if let (Some(a), Some(b)) = (number(a), number(b)) {
+                    if b == 0.0 {
+                        return self.err("expected a nonzero denominator");
+                    }
+                    return Ok(Annotation::Number(a / b));
+                }
+            }
+            Some((name, [_])) if &**name == "t" => {
+                return self.err("learnable probabilities t(...) are not supported");
+            }
+            _ => {}
+        }
+        Ok(Annotation::Flexible(t))
+    }
+
+    /// The head after its probability, if any: `\+atom` or `atom`.
+    fn negated_head(&mut self, prob: Option<Annotation>) -> Result<HeadChoice, ParseError> {
         let negated = if self.at(Tok::Naf) {
             self.bump();
             true
@@ -464,16 +496,6 @@ impl<'a> Parser<'a> {
             prob,
             atom,
             negated,
-        })
-    }
-
-    fn fraction_tail(&mut self, a: f64, b: f64) -> Result<HeadChoice, ParseError> {
-        self.expect(Tok::DoubleColon)?;
-        let atom = self.atom()?;
-        Ok(HeadChoice {
-            prob: Some(a / b),
-            atom,
-            negated: false,
         })
     }
 
@@ -930,7 +952,7 @@ mod tests {
         assert_eq!(p.queries.len(), 1);
         assert_eq!(p.evidence.len(), 2);
         assert!(!p.evidence[1].1);
-        assert_eq!(p.clauses[0].heads[0].prob, Some(0.3));
+        assert_eq!(p.clauses[0].heads[0].mass(), Some(0.3));
         assert_eq!(p.clauses[6].body.len(), 3);
         let text = p.to_string();
         let p2 = parse_program(&text).unwrap();
@@ -971,7 +993,7 @@ mod tests {
             "1/3::a <- true.\np(X) :- q(Y), X is Y*2+1, X > -3, X =:= 7, Z is 2 ** -1 / 4.\n",
         )
         .unwrap();
-        assert!((p.clauses[0].heads[0].prob.unwrap() - 1.0 / 3.0).abs() < 1e-12);
+        assert!((p.clauses[0].heads[0].mass().unwrap() - 1.0 / 3.0).abs() < 1e-12);
         let c = &p.clauses[1];
         assert_eq!(c.body.len(), 5);
         assert_eq!(c.body[1].to_string(), "X is Y*2+1");
@@ -980,6 +1002,35 @@ mod tests {
         assert_eq!(c.body[4].to_string(), "Z is 2**-1/4");
         let p = parse_program("p(X) :- X is (1 + 2) * 3 - 4 - 5 mod 2.\n").unwrap();
         assert_eq!(p.clauses[0].body[0].to_string(), "X is (1+2)*3-4-5 mod 2");
+    }
+
+    #[test]
+    fn a_term_before_the_double_colon_is_a_probability() {
+        let p = parse_program(
+            "P::h(X) :- w(X, P).\n1 / W::g(X); 0.5::k :- w(X, W).\n(1 / 4)::a. 0.5::\\+b.\n",
+        )
+        .unwrap();
+        let flexible = |c: usize, h: usize| match &p.clauses[c].heads[h].prob {
+            Some(Annotation::Flexible(t)) => t.to_string(),
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(flexible(0, 0), "P");
+        assert_eq!(flexible(1, 0), "1/W");
+        assert_eq!(p.clauses[1].heads[1].mass(), Some(0.5));
+        assert_eq!(p.clauses[2].heads[0].mass(), Some(0.25));
+        assert!(p.clauses[3].heads[0].negated);
+        let text = p.to_string();
+        assert_eq!(parse_program(&text).unwrap().to_string(), text);
+        for (source, error) in [
+            ("t(0.5)::a.", "learnable"),
+            ("t(_)::a :- b.", "learnable"),
+            ("1/0::a.", "nonzero denominator"),
+            ("1/0.5::a.", "probability 2 out of range"),
+            ("1.5::a.", "out of range"),
+        ] {
+            let e = parse_program(source).unwrap_err();
+            assert!(e.msg.contains(error), "{source}: {}", e.msg);
+        }
     }
 
     #[test]

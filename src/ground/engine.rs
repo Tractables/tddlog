@@ -15,7 +15,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use super::interned::Interned;
-use super::normalize::{Facts, NormProgram};
+use super::normalize::{Facts, NormProgram, Weights, switch_weights};
 use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{
@@ -546,7 +546,7 @@ impl Relation {
 struct Pred<'a> {
     name: &'a Name,
     arity: usize,
-    switch: Option<Prob>,
+    switch: Option<Weights>,
     /// The facts of a predicate given by ground facts alone, its atoms.
     facts: Option<&'a Facts>,
     /// A magic-set control predicate: grounded, never emitted.
@@ -708,7 +708,7 @@ impl<'a> Grounder<'a> {
         self.pred_ids.get(&(name, arity)).copied()
     }
 
-    fn pred(&mut self, name: &'a Name, arity: usize, switch: Option<Prob>) -> PredId {
+    fn pred(&mut self, name: &'a Name, arity: usize, switch: Option<Weights>) -> PredId {
         let next = self.preds.len() as PredId;
         let (id, _) = *self
             .pred_ids
@@ -1535,10 +1535,15 @@ fn proof(g: &mut Grounder, id: AtomId) -> Result<Proof, String> {
         return Ok(p.clone());
     }
     let pred = &g.preds[g.atoms[id as usize].0 as usize];
-    let (switch, counted) = (pred.switch, pred.counted);
+    // A switch's weights where every atom has the same.
+    let fixed = |w: &Weights| match w {
+        Weights::Fixed(q) => Some(*q),
+        Weights::Flexible { .. } => None,
+    };
+    let (switch, counted) = (pred.switch.as_ref().map(fixed), pred.counted);
     let p = match switch {
-        Some(q) if q == Prob::TRUE => (1, Rc::from([])),
-        Some(q) if q == Prob::FALSE => (0, Rc::from([])),
+        Some(Some(q)) if q == Prob::TRUE => (1, Rc::from([])),
+        Some(Some(q)) if q == Prob::FALSE => (0, Rc::from([])),
         Some(_) => {
             return Err(format!(
                 "its goal reads the probabilistic fact {}, and tddlog's findall reads \
@@ -1590,6 +1595,42 @@ fn proof(g: &mut Grounder, id: AtomId) -> Result<Proof, String> {
     };
     g.proofs.insert(id, p.clone());
     Ok(p)
+}
+
+/// The weights of the switch atom `id` of head `index` of `clause`, whose
+/// probabilities are flexible: the atom's last `heads` arguments are the
+/// heads' probabilities in this instance of the clause
+/// ([`Weights::Flexible`]). A probability that is not a number in [0, 1],
+/// or that passes one with the others, is an error, as in ProbLog.
+fn flexible_weights(
+    g: &Grounder,
+    id: AtomId,
+    index: usize,
+    heads: usize,
+    clause: &str,
+) -> Result<Prob, GroundError> {
+    let (_, args) = g.args_of(id);
+    let mut masses = Vec::with_capacity(heads);
+    for &v in &args[args.len() - heads..] {
+        let p = g.num(v).map(Num::float).ok_or_else(|| {
+            GroundError::Unsupported(format!(
+                "a probability that is not a number, in an instance of {clause}"
+            ))
+        })?;
+        if !(0.0..=1.0 + 1e-12).contains(&p) {
+            return Err(GroundError::Unsupported(format!(
+                "probability {p} out of range, in an instance of {clause}"
+            )));
+        }
+        masses.push(p);
+    }
+    let mut qs = Vec::with_capacity(heads);
+    switch_weights(&masses, &mut qs).map_err(|total| {
+        GroundError::Unsupported(format!(
+            "annotated disjunction probabilities sum to {total} > 1, in an instance of {clause}"
+        ))
+    })?;
+    Ok(qs[index])
 }
 
 fn arg_vars(args: &[Arg]) -> Vec<u32> {
@@ -1698,8 +1739,8 @@ fn ground_with(
         parts: Vec::new(),
         proofs: FxHashMap::default(),
     };
-    for (&(ref name, arity), &p) in &norm.switches {
-        g.pred(name, arity, Some(p));
+    for (&(ref name, arity), w) in &norm.switches {
+        g.pred(name, arity, Some(w.clone()));
     }
     for (name, arity) in &norm.control {
         let p = g.pred(name, *arity, None);
@@ -1904,8 +1945,22 @@ fn ground_with(
         gp.atoms.push(g.display_atom(id));
         let (p, _) = &g.atoms[id as usize];
         // A fact's weights, those of its own or its switch predicate's.
-        let weights = g.weights.get(id as usize).copied().flatten();
-        let weights = weights.or(g.preds[*p as usize].switch);
+        let weights = match (
+            g.weights.get(id as usize).copied().flatten(),
+            &g.preds[*p as usize].switch,
+        ) {
+            (Some(q), _) => Some(q),
+            (None, Some(Weights::Fixed(q))) => Some(*q),
+            (
+                None,
+                Some(Weights::Flexible {
+                    index,
+                    heads,
+                    clause,
+                }),
+            ) => Some(flexible_weights(&g, id, *index, *heads, clause)?),
+            (None, None) => None,
+        };
         gp.kinds.push(match weights {
             Some(q) => AtomKind::Fact(q),
             None => AtomKind::Derived,

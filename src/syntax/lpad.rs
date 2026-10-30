@@ -7,11 +7,13 @@
 //! The LPAD is the clauses between `:- begin_lpad.` and `:- end_lpad.`.
 //! Its clauses `h1:p1 ; h2:p2 :- body.` are written `p1::h1; p2::h2 :-
 //! body.`, and `a:p.` is written `p::a.`; a head without a probability
-//! takes what the others leave. The clauses outside the markers are
-//! cplint's database clauses, plain Prolog, which an LPAD body calls
-//! through `db(Goal)` or the goal of a built-in such as `findall/3`: those
-//! the LPAD's bodies name, and those they name in turn, are kept as they
-//! are, and `db(Goal)` is written `Goal`. The rest (plots, samplers and
+//! takes what the others leave. A probability that is not a number, a term
+//! the body binds (`male:M/P ; female:F/P :- ..., P is M + F.`), is a
+//! flexible probability and is written as it is. The clauses outside the
+//! markers are cplint's database clauses, plain Prolog, which an LPAD body
+//! calls through `db(Goal)` or the goal of a built-in such as `findall/3`:
+//! those the LPAD's bodies name, and those they name in turn, are kept as
+//! they are, and `db(Goal)` is written `Goal`. The rest (plots, samplers and
 //! other programs over the LPAD) is left out, as are the directives and
 //! goals. The example queries `?- prob(Q, P).` in the file become
 //! `query(Q).`, and `?- prob(Q, E, P).` becomes `query(Q).` and an
@@ -48,8 +50,9 @@ pub struct Lpad {
 /// The ProbLog program `source` is read as, where `source` holds the
 /// directive `:- begin_lpad.` or `:- begin_plp.`; `None` for any other
 /// source. The error is a clause the program cannot write: a disjunctive
-/// head with no probabilities or with two heads without one, or a
-/// probability that is not a finite number.
+/// head with no probabilities, with two heads without one or with one
+/// beside a flexible probability, or a probability that is not a finite
+/// number.
 pub fn read(source: &str) -> Option<Result<Lpad, ParseError>> {
     if !(source.contains("begin_lpad") || source.contains("begin_plp")) {
         return None;
@@ -455,7 +458,18 @@ fn convert_clause(clause: &str) -> Result<String, String> {
             _ => Err("a disjunctive head without probabilities".into()),
         };
     }
-    let given: Vec<f64> = heads.iter().filter_map(|&(_, p)| p).collect();
+    // A flexible probability is written as it is, and what it leaves to a
+    // head without one is not a number the reader knows.
+    let mut given = Vec::with_capacity(heads.len());
+    for (_, p) in &heads {
+        match p {
+            Some(Written::Number(p)) => given.push(*p),
+            Some(Written::Term(_)) if heads.iter().any(|(_, p)| p.is_none()) => {
+                return Err("a head without a probability beside a flexible one".into());
+            }
+            _ => {}
+        }
+    }
     let total = fsum(&given);
     let mut missing = heads.iter_mut().filter(|(_, p)| p.is_none());
     if let Some(rest) = missing.next() {
@@ -463,21 +477,18 @@ fn convert_clause(clause: &str) -> Result<String, String> {
             return Err("two heads without a probability".into());
         }
         let left = 1.0 - total;
-        rest.1 = Some(if left > 0.0 { left } else { 0.0 });
+        rest.1 = Some(Written::Number(if left > 0.0 { left } else { 0.0 }));
     }
     let mut lhs = String::new();
     for (k, (atom, p)) in heads.iter().enumerate() {
-        let p = p.expect("every head has its probability");
-        if !p.is_finite() {
-            return Err(format!("the probability {p}"));
-        }
         if k > 0 {
             lhs.push_str("; ");
         }
-        if p == p.trunc() {
-            lhs.push_str(&format!("{p:.1}"));
-        } else {
-            write_float(&mut lhs, p);
+        match p.expect("every head has its probability") {
+            Written::Term(t) => lhs.push_str(t),
+            Written::Number(p) if !p.is_finite() => return Err(format!("the probability {p}")),
+            Written::Number(p) if p == p.trunc() => lhs.push_str(&format!("{p:.1}")),
+            Written::Number(p) => write_float(&mut lhs, p),
         }
         lhs.push_str("::");
         lhs.push_str(atom);
@@ -485,13 +496,26 @@ fn convert_clause(clause: &str) -> Result<String, String> {
     Ok(format!("{lhs}{tail}."))
 }
 
+/// A head's probability as an LPAD writes it: a number, or a term its body
+/// binds, a flexible probability (`male:M/P :- ..., P is F + M.`).
+#[derive(Clone, Copy)]
+enum Written<'a> {
+    Number(f64),
+    Term(&'a str),
+}
+
 /// A head `atom:p` as the atom and its probability, a head without one as
-/// itself; an error where the probability divides by zero.
-fn head_prob(head: &str) -> Result<(&str, Option<f64>), String> {
-    if let [atom, p] = split_top(head, b':')[..]
-        && let Some(p) = number(p)?
-    {
-        return Ok((trim(atom), Some(p)));
+/// itself; an error where the probability divides by zero or is empty.
+fn head_prob(head: &str) -> Result<(&str, Option<Written<'_>>), String> {
+    if let [atom, p] = split_top(head, b':')[..] {
+        return Ok((
+            trim(atom),
+            Some(match number(p)? {
+                Some(p) => Written::Number(p),
+                None if trim(p).is_empty() => return Err("an empty probability".into()),
+                None => Written::Term(trim(p)),
+            }),
+        ));
     }
     Ok((trim(head), None))
 }
@@ -612,6 +636,16 @@ mod tests {
     }
 
     #[test]
+    fn a_flexible_probability_is_written_as_it_is() {
+        assert_eq!(
+            program(&lpad(
+                "male:M/P ; female:F/P :- n(M, F), P is F+M.\nred(P):P.\nc:1-Q ; d:0.5 :- q(Q).\n"
+            )),
+            "M/P::male; F/P::female :- n(M, F), P is F+M.\nP::red(P).\n1-Q::c; 0.5::d :- q(Q)."
+        );
+    }
+
+    #[test]
     fn the_database_clauses_the_lpad_calls_are_kept() {
         // q through db/1, r through q; plot, a program over the LPAD that
         // ProbLog's language does not read, is left out, as are the
@@ -661,6 +695,11 @@ mod tests {
             ("a ; b ; c:0.5.", "two heads without a probability"),
             ("a:1/0.", "a division by zero"),
             ("a:inf.", "the probability inf"),
+            (
+                "a:P ; b :- p(P).",
+                "a head without a probability beside a flexible one",
+            ),
+            ("a: ; b:0.5.", "an empty probability"),
         ] {
             let source =
                 format!("/* a\nblock */ :- begin_lpad.\n\nc:0.5.\n{clause}\n:- end_lpad.\n");

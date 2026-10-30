@@ -16,6 +16,7 @@ mod dense_count;
 mod evidence_probability;
 mod evidence_walk;
 mod examples;
+mod flexible;
 mod front_pages;
 mod guards;
 mod implicit_levels;

@@ -15,14 +15,13 @@ pub(crate) mod kw {
 
     pub(crate) const QUERY: NameId = 0;
     pub(crate) const EVIDENCE: NameId = 1;
-    pub(crate) const T: NameId = 2;
-    pub(crate) const NOT: NameId = 3;
-    pub(crate) const IS: NameId = 4;
-    pub(crate) const MOD: NameId = 5;
-    pub(crate) const REM: NameId = 6;
-    pub(crate) const XOR: NameId = 7;
+    pub(crate) const NOT: NameId = 2;
+    pub(crate) const IS: NameId = 3;
+    pub(crate) const MOD: NameId = 4;
+    pub(crate) const REM: NameId = 5;
+    pub(crate) const XOR: NameId = 6;
     /// The names, each at its place.
-    pub(super) const ALL: [&str; 8] = ["query", "evidence", "t", "not", "is", "mod", "rem", "xor"];
+    pub(super) const ALL: [&str; 7] = ["query", "evidence", "not", "is", "mod", "rem", "xor"];
 }
 
 /// An operator written with symbols: a comparison or an arithmetic one.

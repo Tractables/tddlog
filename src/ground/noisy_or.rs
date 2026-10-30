@@ -68,7 +68,7 @@
 
 use super::normalize::SUM_TOLERANCE;
 use super::table::{Shape, Switched};
-use crate::syntax::{Atom, Clause, HeadChoice, Literal, Program};
+use crate::syntax::{Annotation, Atom, Clause, HeadChoice, Literal, Program};
 
 /// How far an entry of a table may be from the noisy-or's.
 const TOLERANCE: f64 = 1e-12;
@@ -257,7 +257,7 @@ pub(super) fn rewrite(
             let present = of(t)[1 - f.absent];
             let head = |p: f64| {
                 vec![HeadChoice {
-                    prob: (p < 1.0).then_some(p),
+                    prob: (p < 1.0).then_some(Annotation::Number(p)),
                     atom: present.clone(),
                     negated: false,
                 }]
@@ -369,7 +369,7 @@ fn table_rows<'s>(
         }
         let mut d = [0.0f64; 2];
         for h in &clause.heads {
-            d[value_of(values, &h.atom)?] += h.prob.unwrap_or(1.0);
+            d[value_of(values, &h.atom)?] += h.mass()?;
         }
         let total = d[0] + d[1];
         if (total - 1.0).abs() > SUM_TOLERANCE {

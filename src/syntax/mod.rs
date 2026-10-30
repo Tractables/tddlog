@@ -3,14 +3,16 @@
 //! Supported: constants (atoms, quoted strings, integers, floats),
 //! variables and compound terms, lists among them (`[a, b | T]`);
 //! probabilistic facts `p::a.` and rules `p::h :- body.`; annotated
-//! disjunctions `p1::a; p2::b :- body.`; negative heads `\+h :- body.`;
-//! disjunctions and parentheses in bodies; negation as failure (`\+` or
-//! `not`); unification `=` and the comparisons of terms; `is` and the
-//! arithmetic comparisons with ProbLog's arithmetic; the list predicates of
-//! ProbLog's `library(lists)`, `between/3`, and `findall/3` over a
-//! deterministic goal; `query/1`, query patterns `query(p(X)) :- body.`,
-//! and `evidence/1,2`. No cut, `call/N` or `assert`. The grounder grounds a
-//! program to the Datalog fragment the rest of the crate reads
+//! disjunctions `p1::a; p2::b :- body.`; flexible probabilities, a term
+//! that the body binds or an arithmetic expression over its variables
+//! (`P::h(X) :- w(X, P).`, `1/W::h(X) :- w(X, W).`); negative heads
+//! `\+h :- body.`; disjunctions and parentheses in bodies; negation as
+//! failure (`\+` or `not`); unification `=` and the comparisons of terms;
+//! `is` and the arithmetic comparisons with ProbLog's arithmetic; the list
+//! predicates of ProbLog's `library(lists)`, `between/3`, and `findall/3`
+//! over a deterministic goal; `query/1`, query patterns `query(p(X)) :-
+//! body.`, and `evidence/1,2`. No cut, `call/N` or `assert`. The grounder
+//! grounds a program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
 
 pub mod dice;
@@ -1177,15 +1179,37 @@ impl fmt::Display for Literal {
     }
 }
 
+/// A head's probability: a number, or a flexible probability, a term whose
+/// variables the clause binds (`P::h(X) :- w(X, P).`, `1/W::h(X) :- w(X,
+/// W).`), which is a number in each ground instance of the clause.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum Annotation {
+    Number(f64),
+    Flexible(Term),
+}
+
 /// One head alternative of a clause with its probability annotation.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct HeadChoice {
     /// `None` for a deterministic head.
-    pub(crate) prob: Option<f64>,
+    pub(crate) prob: Option<Annotation>,
     pub(crate) atom: Atom,
     /// A negative head literal `\+atom`: when the body holds, the atom is
     /// made false (ProbLog's "negative head literals").
     pub(crate) negated: bool,
+}
+
+impl HeadChoice {
+    /// The head's mass among its clause's heads: its probability, or one
+    /// for a head without one; `None` for a flexible probability, which
+    /// only a ground instance of the clause knows.
+    pub(crate) fn mass(&self) -> Option<f64> {
+        match &self.prob {
+            None => Some(1.0),
+            Some(Annotation::Number(p)) => Some(*p),
+            Some(Annotation::Flexible(_)) => None,
+        }
+    }
 }
 
 /// A clause: one or more (annotated) heads and a body.
@@ -1222,8 +1246,13 @@ impl fmt::Display for Clause {
             if i > 0 {
                 f.write_str("; ")?;
             }
-            if let Some(p) = h.prob {
-                write!(f, "{p}::")?;
+            match &h.prob {
+                None => {}
+                Some(Annotation::Number(p)) => write!(f, "{p}::")?,
+                Some(Annotation::Flexible(t)) => {
+                    write_term(f, t, 999)?;
+                    f.write_str("::")?;
+                }
             }
             if h.negated {
                 f.write_str("\\+")?;
