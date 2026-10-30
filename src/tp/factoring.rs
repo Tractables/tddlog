@@ -99,6 +99,87 @@ impl Scratch {
             self.lit_count[Self::slot(l)] = 0;
         }
     }
+
+    /// The literal in the most of `bodies`, if one is in two or more; ties
+    /// go to the literals `derived` says are derived (the large formulas
+    /// belong near the root, where they are conjoined least often), then
+    /// to the smaller literal for determinism.
+    fn most_shared(
+        &mut self,
+        bodies: &[Vec<GLit>],
+        derived: impl Fn(GLit) -> bool,
+    ) -> Option<GLit> {
+        for body in bodies {
+            for &l in body {
+                let c = &mut self.lit_count[Self::slot(l)];
+                if *c == 0 {
+                    self.touched.push(l);
+                }
+                *c += 1;
+            }
+        }
+        let shared = self
+            .touched
+            .iter()
+            .map(|&l| (l, self.lit_count[Self::slot(l)]))
+            .filter(|&(_, c)| c > 1)
+            .max_by_key(|&(l, c)| (c, derived(l), std::cmp::Reverse(l)))
+            .map(|(l, _)| l);
+        self.reset_counts();
+        shared
+    }
+
+    /// The literals other than `shared` that every one of `bodies` holds,
+    /// in the first body's order.
+    fn common(&mut self, bodies: &[Vec<GLit>], shared: GLit) -> Vec<GLit> {
+        for &l in bodies[0].iter().filter(|&&l| l != shared) {
+            let c = &mut self.lit_count[Self::slot(l)];
+            if *c == 0 {
+                self.touched.push(l);
+            }
+            *c = 1;
+        }
+        for body in &bodies[1..] {
+            for &l in body {
+                let c = &mut self.lit_count[Self::slot(l)];
+                if *c > 0 {
+                    *c += 1;
+                }
+            }
+        }
+        let common = bodies[0]
+            .iter()
+            .copied()
+            .filter(|&l| l != shared && self.lit_count[Self::slot(l)] as usize == bodies.len())
+            .collect();
+        self.reset_counts();
+        common
+    }
+
+    /// `bodies` without the literals `gone`.
+    fn strip(
+        &mut self,
+        bodies: Vec<Vec<GLit>>,
+        gone: impl Iterator<Item = GLit>,
+    ) -> Vec<Vec<GLit>> {
+        for l in gone {
+            let c = &mut self.lit_count[Self::slot(l)];
+            if *c == 0 {
+                self.touched.push(l);
+                *c = 1;
+            }
+        }
+        let bodies = bodies
+            .into_iter()
+            .map(|body| {
+                body.into_iter()
+                    .filter(|&l| self.lit_count[Self::slot(l)] == 0)
+                    .collect()
+            })
+            .collect();
+        self.reset_counts();
+        bodies
+    }
 }
 
 /// A group of fact literals of which at most one holds, and whether a body
@@ -543,31 +624,10 @@ impl Factoring<'_> {
         );
         let mut terms = Vec::new();
         while !bodies.is_empty() {
-            // The literal in the most bodies; ties go to derived literals (the
-            // large formulas belong near the root, where they are conjoined
-            // least often), then to the smaller literal for determinism.
-            let shared = {
-                let mut scratch = self.scratch.borrow_mut();
-                let s = &mut *scratch;
-                for body in &bodies {
-                    for &l in body {
-                        let c = &mut s.lit_count[Scratch::slot(l)];
-                        if *c == 0 {
-                            s.touched.push(l);
-                        }
-                        *c += 1;
-                    }
-                }
-                let shared = s
-                    .touched
-                    .iter()
-                    .map(|&l| (l, s.lit_count[Scratch::slot(l)]))
-                    .filter(|&(_, c)| c > 1)
-                    .max_by_key(|&(l, c)| (c, self.fact_literal(l).is_none(), std::cmp::Reverse(l)))
-                    .map(|(l, _)| l);
-                s.reset_counts();
-                shared
-            };
+            let shared = self
+                .scratch
+                .borrow_mut()
+                .most_shared(&bodies, |l| self.fact_literal(l).is_none());
             let Some(shared) = shared else {
                 // The bodies left go into the terms' conjunction rather than
                 // beside it: each term narrows what the loop's accumulator
@@ -599,56 +659,9 @@ impl Factoring<'_> {
             // table read through indicators names a parent's value by one copy
             // true and the copies of its other values false, so the rows on
             // one value share as many literals as the parent has values.
-            let common: Vec<GLit> = {
-                let mut scratch = self.scratch.borrow_mut();
-                let s = &mut *scratch;
-                for &l in with[0].iter().filter(|&&l| l != shared) {
-                    let c = &mut s.lit_count[Scratch::slot(l)];
-                    if *c == 0 {
-                        s.touched.push(l);
-                    }
-                    *c = 1;
-                }
-                for body in &with[1..] {
-                    for &l in body {
-                        let c = &mut s.lit_count[Scratch::slot(l)];
-                        if *c > 0 {
-                            *c += 1;
-                        }
-                    }
-                }
-                let common = with[0]
-                    .iter()
-                    .copied()
-                    .filter(|&l| {
-                        l != shared && s.lit_count[Scratch::slot(l)] as usize == with.len()
-                    })
-                    .collect();
-                s.reset_counts();
-                common
-            };
+            let common = self.scratch.borrow_mut().common(&with, shared);
             let stripped = || std::iter::once(shared).chain(common.iter().copied());
-            let with: Vec<Vec<GLit>> = {
-                let mut scratch = self.scratch.borrow_mut();
-                let s = &mut *scratch;
-                for l in stripped() {
-                    let c = &mut s.lit_count[Scratch::slot(l)];
-                    if *c == 0 {
-                        s.touched.push(l);
-                        *c = 1;
-                    }
-                }
-                let with = with
-                    .into_iter()
-                    .map(|body| {
-                        body.into_iter()
-                            .filter(|&l| s.lit_count[Scratch::slot(l)] == 0)
-                            .collect()
-                    })
-                    .collect();
-                s.reset_counts();
-                with
-            };
+            let with = self.scratch.borrow_mut().strip(with, stripped());
             // The stripped bodies' scope is `own` less the stripped fact
             // literals' variables, which no body left mentions (a body
             // with a literal and its complement was dropped on entry);
