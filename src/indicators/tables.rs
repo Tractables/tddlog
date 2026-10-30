@@ -4,9 +4,8 @@
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use std::hash::BuildHasher;
 
-use super::{Bits, CopyOf, PartId, Sets};
+use super::{Bits, Copies, PartId, Sets};
 use crate::ground::{AtomId, GLit, GroundProgram, GroundRule};
-use crate::syntax::Term;
 
 /// A table whose readers' links hold clauses.
 pub(super) struct ClauseTable {
@@ -121,17 +120,13 @@ pub(super) fn outside_codes(
 pub(super) fn clause_tables(
     gp: &GroundProgram,
     sets: &Sets,
-    copy: &FxHashMap<(AtomId, usize, PartId), AtomId>,
-    copy_of: &CopyOf,
-    copies: &[(AtomId, AtomId, Vec<Term>)],
-    tie: &[AtomId],
+    copies: &Copies,
 ) -> (Vec<ClauseTable>, Vec<bool>) {
     // The copy whose link holds each atom's formula, per reader unit, with
     // the part it is of.
     let mut first: FxHashMap<(AtomId, usize), (usize, PartId)> = FxHashMap::default();
-    for (i, &(k, var, _)) in copies.iter().enumerate() {
-        if tie[i] == k {
-            let &(_, u, p) = copy_of.get(var).expect("a copy");
+    for (i, &(k, u, p)) in copies.keys.iter().enumerate() {
+        if copies.tie[i] == k {
             first.insert((k, u), (i, p));
         }
     }
@@ -163,7 +158,7 @@ pub(super) fn clause_tables(
     // tables, so the sets are checked until no more become tables.
     let mut table = vec![false; exclusive.len()];
     let mut firing: Vec<Vec<usize>> = vec![Vec::new(); exclusive.len()];
-    let mut inputs = Inputs::new(gp.atoms.len(), sets, copy, copy_of);
+    let mut inputs = Inputs::new(gp.atoms.len(), sets, copies);
     let mut buffers = Buffers::default();
     loop {
         let mut more = false;
@@ -440,14 +435,10 @@ struct Inputs {
 }
 
 impl Inputs {
-    fn new(
-        atoms: usize,
-        sets: &Sets,
-        copy: &FxHashMap<(AtomId, usize, PartId), AtomId>,
-        copy_of: &CopyOf,
-    ) -> Inputs {
+    fn new(atoms: usize, sets: &Sets, copies: &Copies) -> Inputs {
         let exclusive = sets.exclusive;
-        let mut keys: Vec<(usize, usize, PartId)> = copy_of
+        let copy = &copies.copy;
+        let mut keys: Vec<(usize, usize, PartId)> = copies
             .keys
             .iter()
             .map(|&(b, u, p)| match sets.of(b) {
@@ -470,10 +461,7 @@ impl Inputs {
                 size += 2;
                 continue;
             }
-            if sets.bit_atoms[s]
-                .first()
-                .is_some_and(|&b| copy.contains_key(&(b, u, p)))
-            {
+            if copies.in_binary(&sets.bit_atoms[s], u, p) {
                 for (j, &b) in sets.bit_atoms[s].iter().enumerate() {
                     of[copy[&(b, u, p)] as usize] = (i as u32, j as u32);
                 }
