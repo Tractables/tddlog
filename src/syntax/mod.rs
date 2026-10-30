@@ -1022,6 +1022,15 @@ impl Builtin {
         (b.arity() == arity).then_some(b)
     }
 
+    /// Whether `name` is the name of a predicate of `library(lists)` the
+    /// grounder evaluates.
+    pub(crate) fn in_lists(name: &str) -> bool {
+        [2, 3]
+            .into_iter()
+            .filter_map(|arity| Builtin::of(name, arity))
+            .any(|b| b != Builtin::Between)
+    }
+
     /// Whether the built-in runs with the arguments bound that `bound`
     /// flags: the list it reads (the third of `append/3`'s or both others),
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,

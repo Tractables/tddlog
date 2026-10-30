@@ -23,18 +23,21 @@
 //! comment and in [`Lpad::left_out`], as is a query under an intervention
 //! `do(L)`, which ProbLog does not read. Everything else is passed
 //! through, so that a clause that uses what tddlog does not read stops the
-//! parser with its message.
+//! parser with its message. The program imports `library(lists)` where
+//! it calls a predicate of it that it does not define, as ProbLog loads
+//! the library only when asked.
 //!
 //! The clauses are found in the text as cplint's examples write them, as
 //! the Python script `lpad2problog.py` (on the baselines branch) found
 //! them before this reader replaced it, and the program is the one that
-//! script wrote: `/* */` and `%` comments are dropped, a clause ends at a `.` followed by white space
-//! outside quotes and brackets, and the names a body mentions are the
-//! words outside quotes that start with a lower-case letter.
+//! script wrote but for that import: `/* */` and `%` comments are
+//! dropped, a clause ends at a `.` followed by white space outside quotes
+//! and brackets, and the names a body mentions are the words outside
+//! quotes that start with a lower-case letter.
 
 use rustc_hash::FxHashSet;
 
-use super::ParseError;
+use super::{Builtin, ParseError};
 use crate::network::rows::{fsum, write_float};
 
 /// An LPAD read as a ProbLog program.
@@ -98,6 +101,19 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
         }
     }
     let mut out = Vec::new();
+    // ProbLog loads `library(lists)` where the program asks for it.
+    let defined: FxHashSet<&str> = read
+        .iter()
+        .zip(&kept)
+        .filter(|(_, keep)| **keep)
+        .filter_map(|((c, _, _), _)| head_name(c))
+        .collect();
+    if named
+        .iter()
+        .any(|n| Builtin::in_lists(n) && !defined.contains(n.as_str()))
+    {
+        out.push(":- use_module(library(lists)).".to_string());
+    }
     for ((c, _, at), _) in read.iter().zip(&kept).filter(|(_, keep)| **keep) {
         out.push(convert_clause(c).map_err(|msg| ParseError {
             line: raw.line(source, *at),
@@ -657,6 +673,21 @@ mod tests {
         // A name in quotes is not a call.
         let source = "s(1).\n:- begin_lpad.\np:0.5 :- X = 's'.\n:- end_lpad.\n";
         assert_eq!(program(source), "0.5::p :- X = 's'.");
+    }
+
+    #[test]
+    fn a_list_predicate_the_program_calls_is_imported() {
+        assert_eq!(
+            program(&lpad("p(X):0.5 :- member(X, [1, 2]).\n")),
+            ":- use_module(library(lists)).\n0.5::p(X) :- member(X, [1, 2])."
+        );
+        // Not one the program defines, nor between/3, which is built in.
+        assert_eq!(
+            program(&lpad(
+                "p(X):0.5 :- member(X), between(1, 2, X).\nmember(1).\n"
+            )),
+            "0.5::p(X) :- member(X), between(1, 2, X).\nmember(1)."
+        );
     }
 
     #[test]
