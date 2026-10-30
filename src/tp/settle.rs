@@ -107,7 +107,7 @@ use tididi::vtree::VarId;
 use super::{
     CompileError, Compiled, Formula, NegationSource, Negations, Projection, TddBackend, VtreeScope,
 };
-use crate::ground::{AtomId, GroundProgram, Indicator};
+use crate::ground::{AtomId, Encoding, GroundProgram, Indicator};
 
 /// How many times the pairs of a cut's links and readers that are not
 /// queries the readers may gain composed before the cut keeps its names.
@@ -232,51 +232,11 @@ fn settle_from(
     budget: &mut Budget,
 ) -> Result<(), CompileError> {
     let encoding = &gp.encoding;
-    // The copies of each segment, and the segment of each copy's variable.
-    let mut segments: Vec<Vec<usize>> = Vec::new();
-    let mut segment_of: FxHashMap<VarId, usize> = FxHashMap::default();
-    for (i, (ind, &s)) in encoding
-        .indicators
-        .iter()
-        .zip(&encoding.segments)
-        .enumerate()
-    {
-        // A copy no segment reads (a context of `decision`'s tree).
-        if s == usize::MAX {
-            continue;
-        }
-        if s >= segments.len() {
-            segments.resize_with(s + 1, Vec::new);
-        }
-        segments[s].push(i);
-        if let Some(v) = compiled.var_of[ind.var as usize] {
-            segment_of.insert(v, s);
-        }
-    }
-    // The formulas that read each segment's copies: those whose scope holds
-    // one. A formula composed below with links that read a later segment's
-    // copies joins that segment's list ([`replace`]), so the lists stay
+    let (segments, segment_of) = segments(encoding, compiled);
+    // A formula composed below with links that read a later segment's
+    // copies joins that segment's readers ([`replace`]), so the lists stay
     // right as the cuts are settled in order.
-    let mut readers: Vec<Vec<AtomId>> = vec![Vec::new(); segments.len()];
-    for a in 0..gp.num_atoms() {
-        if compiled.formulas[a].is_none() {
-            continue;
-        }
-        let Some(vars) = compiled.scope_of(a as AtomId).vars() else {
-            // A formula on the whole program's scope may read every copy.
-            readers.iter_mut().for_each(|r| r.push(a as AtomId));
-            continue;
-        };
-        let mut seen: Vec<usize> = vars
-            .iter()
-            .filter_map(|v| segment_of.get(v).copied())
-            .collect();
-        seen.sort_unstable();
-        seen.dedup();
-        for s in seen {
-            readers[s].push(a as AtomId);
-        }
-    }
+    let mut readers = readers(gp, compiled, segments.len(), &segment_of);
     let mut supports = Supports::default();
     // The queries' atoms, and the copies of the queried atoms.
     let asks: FxHashSet<AtomId> = gp.queries.iter().filter_map(|(_, a, _)| *a).collect();
@@ -284,43 +244,7 @@ fn settle_from(
         let first = encoding.first_copies();
         asks.iter().filter_map(|a| first.get(a).copied()).collect()
     };
-    // Each cut whose links have formulas of their own and are observed (a
-    // tie's are not built), and that no tie stands on (module doc).
-    let observed: FxHashMap<AtomId, bool> = gp
-        .evidence
-        .iter()
-        .filter_map(|(_, a, value)| a.map(|a| (a, *value)))
-        .collect();
-    let ties = &compiled.for_queries.ties;
-    let stood_on: FxHashSet<AtomId> = ties.values().map(|tie| tie.reference).collect();
-    let cuts: Vec<Option<Cut>> = segments
-        .iter()
-        .map(|copies| {
-            let mut cut = Cut {
-                links: Vec::new(),
-                vars: Vec::new(),
-            };
-            for &i in copies {
-                let Indicator { var, link, .. } = encoding.indicators[i];
-                let settles = compiled.formulas[link as usize].is_some()
-                    && !ties.contains_key(&link)
-                    && !stood_on.contains(&link);
-                let value = observed.get(&link).copied().filter(|_| settles)?;
-                let at = cut
-                    .links
-                    .iter()
-                    .position(|&(l, _)| l == link)
-                    .unwrap_or_else(|| {
-                        cut.links.push((link, value));
-                        cut.links.len() - 1
-                    });
-                if let Some(v) = compiled.var_of[var as usize] {
-                    cut.vars.push((v, at));
-                }
-            }
-            Some(cut)
-        })
-        .collect();
+    let cuts = cuts(gp, compiled, &segments);
     // The readers that are not queries, cut by cut.
     while settled.next < segments.len() {
         let s = settled.next;
@@ -408,6 +332,107 @@ fn settle_from(
         settled.next_asked += 1;
     }
     Ok(())
+}
+
+/// The copies of each segment, and the segment of each copy's variable.
+fn segments(
+    encoding: &Encoding,
+    compiled: &Compiled,
+) -> (Vec<Vec<usize>>, FxHashMap<VarId, usize>) {
+    let mut segments: Vec<Vec<usize>> = Vec::new();
+    let mut segment_of: FxHashMap<VarId, usize> = FxHashMap::default();
+    for (i, (ind, &s)) in encoding
+        .indicators
+        .iter()
+        .zip(&encoding.segments)
+        .enumerate()
+    {
+        // A copy no segment reads (a context of `decision`'s tree).
+        if s == usize::MAX {
+            continue;
+        }
+        if s >= segments.len() {
+            segments.resize_with(s + 1, Vec::new);
+        }
+        segments[s].push(i);
+        if let Some(v) = compiled.var_of[ind.var as usize] {
+            segment_of.insert(v, s);
+        }
+    }
+    (segments, segment_of)
+}
+
+/// The formulas that read each of the `count` segments' copies: those
+/// whose scope holds one (`segment_of` gives each copy's segment).
+fn readers(
+    gp: &GroundProgram,
+    compiled: &Compiled,
+    count: usize,
+    segment_of: &FxHashMap<VarId, usize>,
+) -> Vec<Vec<AtomId>> {
+    let mut readers: Vec<Vec<AtomId>> = vec![Vec::new(); count];
+    for a in 0..gp.num_atoms() {
+        if compiled.formulas[a].is_none() {
+            continue;
+        }
+        let Some(vars) = compiled.scope_of(a as AtomId).vars() else {
+            // A formula on the whole program's scope may read every copy.
+            readers.iter_mut().for_each(|r| r.push(a as AtomId));
+            continue;
+        };
+        let mut seen: Vec<usize> = vars
+            .iter()
+            .filter_map(|v| segment_of.get(v).copied())
+            .collect();
+        seen.sort_unstable();
+        seen.dedup();
+        for s in seen {
+            readers[s].push(a as AtomId);
+        }
+    }
+    readers
+}
+
+/// The cut of each segment whose links have formulas of their own and are
+/// observed (a tie's are not built), and that no tie stands on (module
+/// doc); `None` for any other.
+fn cuts(gp: &GroundProgram, compiled: &Compiled, segments: &[Vec<usize>]) -> Vec<Option<Cut>> {
+    let encoding = &gp.encoding;
+    let observed: FxHashMap<AtomId, bool> = gp
+        .evidence
+        .iter()
+        .filter_map(|(_, a, value)| a.map(|a| (a, *value)))
+        .collect();
+    let ties = &compiled.for_queries.ties;
+    let stood_on: FxHashSet<AtomId> = ties.values().map(|tie| tie.reference).collect();
+    segments
+        .iter()
+        .map(|copies| {
+            let mut cut = Cut {
+                links: Vec::new(),
+                vars: Vec::new(),
+            };
+            for &i in copies {
+                let Indicator { var, link, .. } = encoding.indicators[i];
+                let settles = compiled.formulas[link as usize].is_some()
+                    && !ties.contains_key(&link)
+                    && !stood_on.contains(&link);
+                let value = observed.get(&link).copied().filter(|_| settles)?;
+                let at = cut
+                    .links
+                    .iter()
+                    .position(|&(l, _)| l == link)
+                    .unwrap_or_else(|| {
+                        cut.links.push((link, value));
+                        cut.links.len() - 1
+                    });
+                if let Some(v) = compiled.var_of[var as usize] {
+                    cut.vars.push((v, at));
+                }
+            }
+            Some(cut)
+        })
+        .collect()
 }
 
 /// Store `composed`, each reader's formula and the scope it lives on, the
