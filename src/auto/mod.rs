@@ -707,10 +707,14 @@ fn run_within(
         match stop {
             // A formula past the watch: the trial's next attempt holds it.
             Stop::Size(pairs) => t.hold(pairs, first_pairs),
-            // Its target spent, the trial's next is twice that, past what it
-            // has spent.
+            // Its target spent, the trial's next doubles until it leaves
+            // the trial more than twice the work the stop lost: the step
+            // the stop cut short starts over, and each time it is cut
+            // short its next try has at least twice the work (rus_20_40,
+            // whose last join of 3.3 G units was otherwise stopped at
+            // 2.1 G and given 2.1 G again).
             Stop::Work => {
-                while t.target <= t.spent {
+                while t.target.saturating_sub(t.spent) <= t.lost.saturating_mul(2) {
                     t.target = t.target.saturating_mul(2);
                 }
             }
@@ -904,6 +908,7 @@ fn attempt(
         let charged = work - (t.evaluation.settled_work() - settled);
         t.spent = t.spent.saturating_add(charged);
         t.last_work = charged;
+        t.lost = backend.lost();
         reached = Some(backend.vtree());
         t.kept = Some(backend.keep());
         evaluated

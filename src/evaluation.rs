@@ -155,6 +155,7 @@ impl Evaluation {
     ) -> Result<Answers, tp::CompileError> {
         if self.query.is_none() {
             tp::settle(gp, backend, self.compiled.as_mut().unwrap())?;
+            backend.kept();
         }
         let _later = backend.stop_later(self.settled_work() - settled);
         let compiled = self.compiled.as_mut().unwrap();

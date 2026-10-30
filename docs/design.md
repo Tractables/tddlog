@@ -1429,7 +1429,15 @@ the trial whose target is least for its weight, the first in the
 candidates' order on a tie, so the trials take their first turns in
 order and later ones in proportion to their weights. The attempt may
 spend the target less what the trial has spent; once the trial has spent
-its target, the target doubles.
+its target, the target doubles until it leaves the trial more than twice
+the work the stop lost. A stop loses the work since the phase last kept a
+step (a component, an atom's update, an observation, a join, an answer;
+`TddBackend::kept`), and the next attempt does that step again from its
+start. Where steps are small that is nothing, and the target doubles once;
+where one step outweighs a turn, each try of it has at least twice the
+work of the last, so the work it wastes is at most what it finally takes
+(rus_20_40, whose last join of 3.3 G units was otherwise stopped at
+2.1 G and given 2.1 G again).
 
 An attempt may complete formulas of up to its watch in pairs: a sixteenth
 of the target (`WORK_PER_HELD_PAIR`), `FIRST_PAIRS` at least, or more

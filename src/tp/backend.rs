@@ -157,6 +157,9 @@ pub(crate) struct TddBackend<'a> {
     projector: RefCell<Projector>,
     /// The arenas of [`TddBackend::none_of`]'s builds, kept between them.
     none_of: RefCell<super::none_of::Scratch>,
+    /// The work clock where the phase under way last kept a step
+    /// ([`TddBackend::kept`]).
+    kept_at: Cell<u64>,
 }
 
 /// When a minimization between operations runs tididi's full plan, and
@@ -252,6 +255,7 @@ impl<'a> TddBackend<'a> {
             prune: Cell::new(FullSchedule::default()),
             projector: RefCell::new(projector),
             none_of: RefCell::default(),
+            kept_at: Cell::new(engine.limits().work_units()),
         }
     }
 
@@ -1146,6 +1150,20 @@ impl TddBackend<'_> {
     /// The work clock the backend's operations advance, in its own units.
     pub(crate) fn work_units(&self) -> u64 {
         self.engine.limits().work_units()
+    }
+
+    /// Marks the work clock where the phase under way has kept a step: a
+    /// component, an atom's update, an observation, a join or its putting
+    /// off, an answer. A stop after the mark loses the work since
+    /// ([`Self::lost`]): the step it cut short starts over.
+    pub(crate) fn kept(&self) {
+        self.kept_at.set(self.work_units());
+    }
+
+    /// The work since the backend began or last kept a step
+    /// ([`Self::kept`]): what a stop now loses.
+    pub(crate) fn lost(&self) -> u64 {
+        self.work_units().saturating_sub(self.kept_at.get())
     }
 
     /// Search for a global vtree on which `members` are smaller, sweeping

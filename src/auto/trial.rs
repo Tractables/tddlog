@@ -33,6 +33,9 @@ pub(super) struct Trial {
     /// The engine work its attempts have spent, and its last attempt.
     pub(super) spent: u64,
     pub(super) last_work: u64,
+    /// The work its last attempt spent since its phase last kept a step
+    /// ([`tp::TddBackend::lost`]): what a stop then lost.
+    pub(super) lost: u64,
     /// Its target and the share of its phase finished after the last
     /// attempt at that target that left it in that phase
     /// ([`Self::projected`]).
@@ -72,6 +75,7 @@ impl Trial {
             held: 0,
             spent: 0,
             last_work: 0,
+            lost: 0,
             progress: Vec::new(),
             querying: false,
             mark: None,

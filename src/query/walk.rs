@@ -1073,6 +1073,7 @@ impl EvidenceWalk {
         let id = self.slot(Some((formula, own)), pairs);
         self.at[node.idx()].push(id);
         self.next_observed += 1;
+        backend.kept();
         Ok(())
     }
 
@@ -1275,6 +1276,7 @@ impl EvidenceWalk {
                 let (_, fa, fb) = *refused;
                 self.slots[a] = Some(fa.owned(backend)?);
                 self.slots[b] = Some(fb.owned(backend)?);
+                backend.kept();
                 if let Some(id) = batch {
                     self.unbatch(id);
                     return Ok(false);
@@ -1298,6 +1300,7 @@ impl EvidenceWalk {
         });
         self.slots[a] = None;
         self.slots[b] = None;
+        backend.kept();
         Ok(true)
     }
 
@@ -1391,6 +1394,7 @@ impl EvidenceWalk {
         self.batch_of.remove(&out);
         self.joins.pop_front();
         self.completed_joins += 1;
+        backend.kept();
         // Commit even an oversized result before yielding. The next call checks
         // the saved high-water mark before using it.
         sizes.record(size, if last { None } else { watch })?;

@@ -1029,6 +1029,7 @@ impl Compilation {
             // live formulas together.
             let mut factor = GUARD;
             while self.next < self.sccs.len() {
+                backend.kept();
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next
                     && let Some(scope) = p.start(
@@ -1902,6 +1903,7 @@ impl Compilation {
                 }
             }
             dirty.remove(&(r, a));
+            backend.kept();
         }
         *dirty = std::mem::take(next);
         *midway = false;

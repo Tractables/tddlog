@@ -402,6 +402,7 @@ impl QueryEvaluation {
                 Some(a) => answers.probability(*a, *positive)?,
             };
             *answers.pending_query = None;
+            backend.kept();
             out.push(QueryResult {
                 atom: atom.clone(),
                 positive: *positive,
