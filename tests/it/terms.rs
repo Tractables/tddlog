@@ -537,31 +537,75 @@ fn a_findall_reads_a_nested_findall() {
 }
 
 #[test]
-fn a_solution_with_more_than_one_proof_is_refused() {
-    // ProbLog lists a solution once per proof: `[a, b, a]` for the first.
-    for source in [
-        "r(a). r(b). r(a). s(L) :- findall(X, r(X), L). query(s(_)).",
-        "q(a) :- r1. q(a) :- r2. r1. r2. s(L) :- findall(X, q(X), L). query(s(_)).",
-        "s(L) :- findall(X, member(X, [a, b, a]), L). query(s(_)).",
-        "q(X) :- e(X, _). e(a, 1). e(a, 2). s(L) :- findall(X, q(X), L). query(s(_)).",
-        "q(X) :- e(X), between(1, 3, _). e(a). s(L) :- findall(X, q(X), L). query(s(_)).",
+fn a_solution_is_listed_once_per_proof() {
+    // As ProbLog's findall_duplicates.pl lists `[a, b, a]` for the first.
+    for (source, list) in [
+        (
+            "r(a). r(b). r(a). s(L) :- findall(X, r(X), L). query(s(_)).",
+            "s([a, b, a])",
+        ),
+        (
+            "q(a) :- r1. q(a) :- r2. r1. r2. s(L) :- findall(X, q(X), L). query(s(_)).",
+            "s([a, a])",
+        ),
+        (
+            "s(L) :- findall(X, member(X, [a, b, a]), L). query(s(_)).",
+            "s([a, b, a])",
+        ),
+        (
+            "q(X) :- e(X, _). e(a, 1). e(a, 2). s(L) :- findall(X, q(X), L). query(s(_)).",
+            "s([a, a])",
+        ),
+        (
+            "q(X) :- e(X), between(1, 3, _). e(a). s(L) :- findall(X, q(X), L). query(s(_)).",
+            "s([a, a, a])",
+        ),
     ] {
-        let e = refusal(source);
-        assert!(e.contains("more than one proof"), "{source}: {e}");
+        assert_answers(source, &[(list, 1.0)]);
     }
 }
 
 #[test]
-fn a_findall_over_a_probabilistic_goal_is_refused() {
-    // Its answer is a distribution over lists, as ProbLog's findall2.pl.
-    let e = refusal(
+fn a_findall_over_a_probabilistic_goal_lists_the_solutions_of_each_world() {
+    // As ProbLog's findall2.pl.
+    assert_answers(
         "interested(a1, i1). interested(a2, i1).
          0.1::appears(i1, t1).
          bids(A, I, T) :- appears(I, T), interested(A, I).
          bidding(I, T, As) :- findall(A, bids(A, I, T), As).
          query(bidding(I, T, As)) :- interested(_, I), T = t1.",
+        &[("bidding(i1,t1,[])", 0.9), ("bidding(i1,t1,[a1, a2])", 0.1)],
     );
-    assert!(e.contains("probabilistic fact"), "{e}");
+    // Two proofs of one solution, each its own entry; a solution of one
+    // literal's proofs after one of several literals, as ProbLog numbers
+    // their formulas' nodes.
+    assert_answers(
+        "0.5::a. 0.4::b.
+         p(1) :- a, b.
+         p(2) :- a.
+         p(2) :- b.
+         s(L) :- findall(X, p(X), L).
+         query(s(_)).",
+        &[
+            ("s([])", 0.5 * 0.6),
+            ("s([1])", 0.0),
+            ("s([2])", 0.5 * 0.6 + 0.5 * 0.4),
+            ("s([2, 1])", 0.0),
+            ("s([2, 2])", 0.0),
+            ("s([2, 2, 1])", 0.5 * 0.4),
+        ],
+    );
+    // all/3 lists each solution once and fails where there is none.
+    assert_answers(
+        "0.3::p(a). 0.2::p(b). 0.4::p(a).
+         s(L) :- all(X, p(X), L).
+         query(s(_)).",
+        &[
+            ("s([a])", 0.58 * 0.8),
+            ("s([a, b])", 0.58 * 0.2),
+            ("s([b])", 0.42 * 0.2),
+        ],
+    );
 }
 
 #[test]
@@ -570,7 +614,7 @@ fn a_findall_tddlog_cannot_list_as_prolog_does_is_refused() {
         // Through its own clause, as ProbLog's cycle_over_findall.pl.
         (
             "a(1). a(2). a(L) :- findall(X, a(X), L). query(a(_)).",
-            "recursive",
+            "own clause",
         ),
         // A disjunction after another literal of the goal.
         (

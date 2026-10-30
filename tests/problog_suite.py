@@ -65,6 +65,11 @@ def norm(term):
     return t
 
 
+def has_variable(term):
+    """Whether a normalized term has a variable as an argument or an item."""
+    return re.search(r"[(,\[|][A-Z_]", re.sub(r"'[^']*'", "''", term)) is not None
+
+
 def run_tddlog(binary, path, timeout):
     try:
         p = subprocess.run([binary, '--precision', '10', path], capture_output=True, text=True, timeout=timeout)
@@ -120,6 +125,11 @@ def main():
         bad = []
         for q, v in expected.items():
             got = results.get(q)
+            if got is None and v == 0 and has_variable(q):
+                # A query with variables that nothing answers: ProbLog prints
+                # the query, its variables renamed, with probability 0, and
+                # tddlog prints no row.
+                continue
             if got is None:
                 bad.append(f'{q}: missing (have {sorted(results)[:5]})')
             elif abs(got - v) > args.tol:

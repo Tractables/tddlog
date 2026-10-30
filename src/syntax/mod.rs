@@ -1100,8 +1100,9 @@ impl fmt::Display for Builtin {
     }
 }
 
-/// `findall(Template, Goal, Result)` as read: the goal's alternatives,
-/// each a conjunction. The grounder lowers it to a [`Collect`].
+/// `findall(Template, Goal, Result)` as read, or `all/3`: the goal's
+/// alternatives, each a conjunction. The grounder lowers it to a
+/// [`Collect`].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Findall {
     pub(crate) template: Term,
@@ -1110,6 +1111,8 @@ pub(crate) struct Findall {
     /// Whether a disjunction of the goal comes after another literal
     /// ([`Program::interleaved`]).
     pub(crate) interleaved: bool,
+    /// all/3: each solution once, and no empty list.
+    pub(crate) all: bool,
 }
 
 /// A findall lowered by the grounder: `result` is the list of the template
@@ -1122,6 +1125,8 @@ pub(crate) struct Collect {
     pub(crate) arity: usize,
     pub(crate) shared: Vec<Term>,
     pub(crate) result: Term,
+    /// all/3: each solution once, and no empty list.
+    pub(crate) all: bool,
     /// The findall as written, for the errors that name it.
     pub(crate) text: Arc<str>,
 }
@@ -1199,7 +1204,7 @@ impl fmt::Display for Literal {
                 write_term(f, e, 699)
             }
             Literal::Findall(fa) => {
-                f.write_str("findall(")?;
+                f.write_str(if fa.all { "all(" } else { "findall(" })?;
                 write_term(f, &fa.template, 999)?;
                 f.write_str(",(")?;
                 for (k, alt) in fa.goal.iter().enumerate() {

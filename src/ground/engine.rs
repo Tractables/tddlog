@@ -15,7 +15,7 @@ use std::hash::BuildHasher;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use super::interned::Interned;
 use super::normalize::{Facts, NormProgram, Weights, switch_weights};
@@ -26,6 +26,7 @@ use crate::syntax::{
     Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Literal, NIL, Name, Term, term_cmp,
 };
 
+mod lists;
 pub(super) mod topdown;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -353,6 +354,7 @@ struct ICollect {
     aux: PredId,
     shared: Vec<Arg>,
     result: Arg,
+    all: bool,
     text: Arc<str>,
 }
 
@@ -402,16 +404,14 @@ enum Part {
     Rank(u32),
 }
 
-/// A ground rule of a predicate a findall reads, its body as kept, as
-/// derived: from a clause of `group`, by one substitution or more (`mult`,
-/// up to two), the first in the walk numbered `stamp`, its body's parts in
-/// the clause's order.
+/// A derivation of an atom of a predicate a findall reads, the last step
+/// of its proofs: its body as kept, its clause's group, the number of the
+/// walk that found it, and its body's parts in the clause's order.
 #[derive(Debug)]
 struct Derivation {
     body: Vec<GLit>,
     group: u32,
     stamp: u32,
-    mult: u8,
     parts: Vec<Part>,
 }
 
@@ -561,10 +561,6 @@ struct Pred<'a> {
     rules: Vec<usize>,
 }
 
-/// The number of proofs of an atom, up to two, and the order of its one
-/// proof among the solutions of a findall ([`proof`]).
-type Proof = (u8, Rc<[u32]>);
-
 struct Grounder<'a> {
     syms: Interner,
     preds: Vec<Pred<'a>>,
@@ -632,12 +628,14 @@ struct Grounder<'a> {
     error: Option<GroundError>,
     /// The derivations of the atoms of counted predicates, by head; the
     /// number of the rule's walk ([`eval_rule`]); what each body literal
-    /// of a counted rule contributes, by its place in the walk; and the
-    /// proofs counted ([`proof`]).
+    /// of a counted rule contributes, by its place in the walk; the
+    /// proofs listed ([`lists::proofs`]); and the predicate of the atoms
+    /// the lists are made of, with the number of the next.
     derivations: FxHashMap<AtomId, Vec<Derivation>>,
     stamp: u32,
     parts: Vec<Part>,
-    proofs: FxHashMap<AtomId, Proof>,
+    proofs: FxHashMap<AtomId, Rc<[lists::Proof]>>,
+    states: Option<(PredId, i64)>,
 }
 
 /// Where the arguments of an atom are: a tuple of its predicate's relation,
@@ -711,6 +709,7 @@ impl<'a> Grounder<'a> {
             stamp: 0,
             parts: Vec::new(),
             proofs: FxHashMap::default(),
+            states: None,
         }
     }
 
@@ -1228,6 +1227,7 @@ fn compile_rule<'a>(
                     aux,
                     shared,
                     result,
+                    all: c.all,
                     text: c.text.clone(),
                 })));
             }
@@ -1638,11 +1638,11 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
     }
 }
 
-/// The list of the template values of the solutions of a findall's goal
-/// whose shared variables have the values `shared`, in the order ProbLog
-/// lists them; `None` where it gives the grounding up, a solution read with
-/// more than one proof or a proof not counted ([`proof`]).
-fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Val> {
+/// The lists of the template values of the solutions of a findall's goal
+/// whose shared variables have the values `shared`, each with the literal
+/// of the worlds where it is the list ([`lists::collect`]); `None` where the
+/// grounding is given up.
+fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Vec<lists::Listed>> {
     let k = shared.len();
     let bound: Vec<(usize, Val)> = shared.iter().copied().enumerate().collect();
     let candidates = {
@@ -1650,108 +1650,122 @@ fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Val> {
         let all = (0, rel.len());
         rel.candidates(&bound, all)
     };
-    let mut found: Vec<(Rc<[u32]>, Val)> = Vec::with_capacity(candidates.len());
-    for t in candidates {
-        let rel = &g.rels[c.aux as usize];
-        if rel.tuple(t)[..k] != *shared {
-            continue;
-        }
-        let (id, v) = (rel.ids[t], rel.tuple(t)[k]);
-        match proof(g, id) {
-            Ok((0, _)) => {}
-            Ok((1, key)) => found.push((key, v)),
-            Ok(_) => {
-                let e = format!(
-                    "{}: the solution {} has more than one proof, and tddlog lists a solution \
-                     only where it has one",
-                    c.text,
-                    g.term_of(v)
-                );
-                g.fail(GroundError::Refused(e));
-                return None;
-            }
-            Err(why) => {
-                g.fail(GroundError::Refused(format!("{}: {why}", c.text)));
-                return None;
-            }
+    let rel = &g.rels[c.aux as usize];
+    let answers: Vec<(Val, u32)> = candidates
+        .into_iter()
+        .filter(|&t| rel.tuple(t)[..k] == *shared)
+        .map(|t| (rel.tuple(t)[k], rel.ids[t]))
+        .collect();
+    match lists::collect(g, &answers, c.all, &c.text) {
+        Ok(l) => Some(l),
+        Err(e) => {
+            g.fail(e);
+            None
         }
     }
-    found.sort_unstable_by(|a, b| a.0.cmp(&b.0));
-    let items: Vec<Val> = found.into_iter().map(|(_, v)| v).collect();
-    let (nil, _) = g.list_syms();
-    Some(g.make_list(&items, Val::Sym(nil)))
 }
 
-/// The number of proofs of `id`, up to two, and the order of its proof
-/// where it has one: its clause's group, then what each body literal reads
-/// in the clause's order, which sorts proofs as SLD resolution finds them.
-/// A certain switch has one proof and an impossible one none; any other
-/// is refused, as is an atom whose derivations are not counted.
-fn proof(g: &mut Grounder, id: AtomId) -> Result<Proof, String> {
-    if let Some(p) = g.proofs.get(&id) {
-        return Ok(p.clone());
+/// The atoms of a findall's proofs: a switch is a leaf but where it is
+/// certain or impossible, an atom of a counted predicate is derived by its
+/// derivations, and the atoms of its lists by the rules they were given.
+impl lists::Source for Grounder<'_> {
+    fn node(&mut self, a: u32) -> lists::Node {
+        if let Some(t) = self.truth(a) {
+            return if t {
+                lists::Node::True
+            } else {
+                lists::Node::False
+            };
+        }
+        let pred = &self.preds[self.atoms[a as usize].0 as usize];
+        if pred.switch.is_some() {
+            return lists::Node::Leaf;
+        }
+        let derivations = self.derivations.remove(&a).unwrap_or_default();
+        lists::Node::Derived(
+            derivations
+                .into_iter()
+                .map(|d| {
+                    let steps = d
+                        .parts
+                        .iter()
+                        .filter_map(|p| match *p {
+                            Part::Atom(b) => Some(lists::Step::Pos(b)),
+                            Part::Neg(b) => Some(lists::Step::Neg(b)),
+                            Part::Rank(r) => Some(lists::Step::Rank(r)),
+                            Part::None => None,
+                        })
+                        .collect();
+                    (d.group, steps)
+                })
+                .collect(),
+        )
     }
-    let pred = &g.preds[g.atoms[id as usize].0 as usize];
-    // A switch's weights where every atom has the same.
-    let fixed = |w: &Weights| match w {
-        Weights::Fixed(q) => Some(*q),
-        Weights::Flexible { .. } => None,
-    };
-    let (switch, counted) = (pred.switch.as_ref().map(fixed), pred.counted);
-    let p = match switch {
-        Some(Some(q)) if q == Prob::TRUE => (1, Rc::from([])),
-        Some(Some(q)) if q == Prob::FALSE => (0, Rc::from([])),
-        Some(_) => {
-            return Err(format!(
-                "its goal reads the probabilistic fact {}, and tddlog's findall reads \
-                 deterministic goals only",
-                g.display_atom(id)
-            ));
+
+    fn truth(&mut self, a: u32) -> Option<bool> {
+        let pred = &self.preds[self.atoms[a as usize].0 as usize];
+        match &pred.switch {
+            Some(Weights::Fixed(q)) if *q == Prob::TRUE => Some(true),
+            Some(Weights::Fixed(q)) if *q == Prob::FALSE => Some(false),
+            Some(_) => None,
+            None => self.fixed(a).or(self.certain(a).then_some(true)),
         }
-        None if !counted => {
-            return Err(format!(
-                "the proofs of {} are not counted",
-                g.display_atom(id)
-            ));
+    }
+
+    fn known(&mut self) -> &mut FxHashMap<u32, Rc<[lists::Proof]>> {
+        &mut self.proofs
+    }
+
+    fn list(&mut self, items: &[Val]) -> Val {
+        let (nil, _) = self.list_syms();
+        self.make_list(items, Val::Sym(nil))
+    }
+
+    fn show(&mut self, a: u32) -> String {
+        self.display_atom(a).to_string()
+    }
+
+    fn fresh(&mut self) -> Result<u32, GroundError> {
+        static STATES: LazyLock<Name> = LazyLock::new(|| Name::from(lists::LISTS));
+        let (p, n) = match self.states {
+            Some(s) => s,
+            None => (self.pred(&STATES, 1, None), 0),
+        };
+        self.states = Some((p, n + 1));
+        match self.atom_id(p, &[Val::Int(n)]) {
+            (AtomId::MAX, _) => Err(GroundError::OutOfMemory),
+            (id, _) => Ok(id),
         }
-        None => {
-            let derivations = g.derivations.remove(&id).unwrap_or_default();
-            let (mut count, mut first) = (0u8, None);
-            for d in &derivations {
-                let mut n = d.mult;
-                let mut key = vec![d.group];
-                for part in &d.parts {
-                    if n == 0 {
-                        break;
-                    }
-                    match *part {
-                        Part::Atom(a) => {
-                            let (m, k) = proof(g, a)?;
-                            n = n.saturating_mul(m).min(2);
-                            key.extend_from_slice(&k);
-                        }
-                        Part::Neg(a) => {
-                            if proof(g, a)?.0 > 0 {
-                                n = 0;
-                            }
-                        }
-                        Part::Rank(r) => key.push(r),
-                        Part::None => {}
-                    }
-                }
-                if n > 0 {
-                    count = count.saturating_add(n).min(2);
-                    first.get_or_insert(key);
-                }
-                if count == 2 {
-                    break;
-                }
-            }
-            (count, Rc::from(first.unwrap_or_default()))
+    }
+
+    fn rule(&mut self, head: u32, body: &[lists::Lit]) -> Result<(), GroundError> {
+        let lits: Vec<GLit> = body
+            .iter()
+            .map(|&(pos, a)| if pos { GLit::Pos(a) } else { GLit::Neg(a) })
+            .collect();
+        let parts = body
+            .iter()
+            .map(|&(pos, a)| if pos { Part::Atom(a) } else { Part::Neg(a) })
+            .collect();
+        self.derivations.entry(head).or_default().push(Derivation {
+            body: lits.clone(),
+            group: 0,
+            stamp: self.stamp,
+            parts,
+        });
+        let mut lits = lits;
+        lits.sort_unstable();
+        lits.dedup();
+        self.keep_rule(GroundRule::new(head, lits));
+        if self.over() {
+            return Err(match self.error.take() {
+                Some(e) => e,
+                None if self.refused => GroundError::OutOfMemory,
+                None => GroundError::OverBound,
+            });
         }
-    };
-    g.proofs.insert(id, p.clone());
-    Ok(p)
+        Ok(())
+    }
 }
 
 /// The weights of the switch atom `id` of head `index` of `clause`, whose
@@ -2947,32 +2961,31 @@ fn part(g: &mut Grounder, rule: &IRule, i: usize, p: Part) {
     }
 }
 
-/// Records the derivation of `head :- body` by a counted rule: a ground
-/// rule that another clause derives too, or the same walk by another
-/// substitution, has more than one proof.
+/// Records the derivation of `head :- body` by a counted rule: another
+/// clause's derivation of a ground rule, or another substitution's in the
+/// same walk, is another proof; the same clause's in a later walk is the
+/// same proof walked again.
 fn derive(g: &mut Grounder, head: AtomId, body: &[GLit], c: &Counted) {
     let stamp = g.stamp;
+    let derivations = g.derivations.entry(head).or_default();
+    if derivations
+        .iter()
+        .any(|d| d.body == body && d.group == c.group && d.stamp != stamp)
+    {
+        return;
+    }
     let parts: Vec<Part> = c
         .order
         .iter()
         .map(|&k| g.parts[k])
         .filter(|&p| p != Part::None)
         .collect();
-    let derivations = g.derivations.entry(head).or_default();
-    match derivations.iter_mut().find(|d| d.body == body) {
-        Some(d) => {
-            if d.group != c.group || d.stamp == stamp {
-                d.mult = 2;
-            }
-        }
-        None => derivations.push(Derivation {
-            body: body.to_vec(),
-            group: c.group,
-            stamp,
-            mult: 1,
-            parts,
-        }),
-    }
+    derivations.push(Derivation {
+        body: body.to_vec(),
+        group: c.group,
+        stamp,
+        parts,
+    });
 }
 
 fn ground_body(
@@ -3310,15 +3323,32 @@ fn ground_body(
         }
         ILit::Collect(c) => {
             let shared = resolve(&c.shared, subst);
-            let Some(list) = collect(g, c, &shared) else {
+            let Some(lists) = collect(g, c, &shared) else {
                 return;
             };
             let mut bound = Vec::new();
-            if unify_args(std::slice::from_ref(&c.result), &[list], subst, &mut bound) {
-                ground_body(g, rule, i + 1, delta, subst, body_atoms);
-            }
-            for x in bound {
-                subst[x as usize] = None;
+            for (list, cond) in lists {
+                if unify_args(std::slice::from_ref(&c.result), &[list], subst, &mut bound) {
+                    match cond {
+                        None => {
+                            part(g, rule, i, Part::None);
+                            ground_body(g, rule, i + 1, delta, subst, body_atoms);
+                        }
+                        Some((positive, a)) => {
+                            let (p, l) = match positive {
+                                true => (Part::Atom(a), GLit::Pos(a)),
+                                false => (Part::Neg(a), GLit::Neg(a)),
+                            };
+                            part(g, rule, i, p);
+                            body_atoms.push(l);
+                            ground_body(g, rule, i + 1, delta, subst, body_atoms);
+                            body_atoms.pop();
+                        }
+                    }
+                }
+                for x in bound.drain(..) {
+                    subst[x as usize] = None;
+                }
             }
         }
     }

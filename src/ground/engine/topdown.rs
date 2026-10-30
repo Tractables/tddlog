@@ -32,17 +32,25 @@
 //! - `is/2`, the comparisons and the list built-ins are the engine's
 //!   ([`super::solutions`]), on the values of ground terms. Prolog's
 //!   `length/2` also makes a list of fresh variables.
+//! - A findall calls its goal with its shared variables bound to ground
+//!   terms, and lists the solutions of the complete table as the engine
+//!   does ([`lists`]): each clause instance of the predicates it reads is
+//!   recorded as a derivation, its clause's group and what each body
+//!   literal reads.
 //!
-//! The answers and the rules count against the grounding's bound, and a
-//! ground term deeper than [`MAX_DEPTH`](super::MAX_DEPTH), or calls or a term with variables
+//! The answers, the rules and the derivations count against the
+//! grounding's bound, and a ground term deeper than
+//! [`MAX_DEPTH`](super::MAX_DEPTH), or calls or a term with variables
 //! nested deeper than [`MAX_NESTING`], give the grounding up with the goal
 //! that reached them.
 
 use std::rc::Rc;
+use std::sync::{Arc, LazyLock};
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::{GroundError, Grounder, Val, compare, ground_normalized, solutions};
+use super::lists::{self, Step};
+use super::{GroundError, Grounder, Prob, Val, Weights, compare, ground_normalized, solutions};
 use crate::ground::GroundProgram;
 use crate::ground::normalize::{Driver, NormProgram};
 use crate::syntax::{Args, Atom, Builtin, Clause, CmpOp, Compound, Literal, Name, Term};
@@ -89,6 +97,17 @@ enum Lit {
     Cmp(CmpOp, Tpl, Tpl),
     Is(Tpl, Tpl),
     Builtin(Builtin, Box<[Tpl]>, bool),
+    Collect(Box<Collect>),
+}
+
+/// A findall: its goal's predicate, whose arguments are the shared terms,
+/// the template and the goal's other variables.
+struct Collect {
+    aux: u32,
+    shared: Box<[Tpl]>,
+    result: Tpl,
+    all: bool,
+    text: Arc<str>,
 }
 
 struct Rule {
@@ -97,6 +116,8 @@ struct Rule {
     vars: u32,
     /// The rule's place in the program, for the errors that name it.
     at: usize,
+    /// The group of the clause, for the order of a findall's solutions.
+    group: u32,
 }
 
 /// What defines a predicate.
@@ -116,6 +137,8 @@ struct Pred {
     rules: Vec<u32>,
     /// A query rule's driver, whose atoms the ground program leaves out.
     driver: bool,
+    /// Read by a findall: the derivations of its atoms are recorded.
+    counted: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -132,6 +155,9 @@ type FactIndex = Rc<FxHashMap<Val, Vec<u32>>>;
 
 /// A ground rule: its head and its body's literals, each atom with its sign.
 type GroundRule = (u32, Box<[(bool, u32)]>);
+
+/// The lists a findall gives ([`lists::collect`]).
+type Lists = Rc<[lists::Listed]>;
 
 struct Table {
     pred: u32,
@@ -212,7 +238,17 @@ struct TopDown<'a> {
     atom_ix: FxHashMap<(u32, Box<[Val]>), u32>,
     ground: Vec<GroundRule>,
     ground_ix: FxHashSet<GroundRule>,
-    /// The answers and the rules' terms, against `bound`.
+    /// The derivations of the atoms of counted predicates and of lists, by
+    /// atom: each its clause's group and what its body reads.
+    derivations: FxHashMap<u32, Vec<(u32, Vec<Step>)>>,
+    /// The proofs of the atoms findalls read ([`lists::proofs`]).
+    proofs: FxHashMap<u32, Rc<[lists::Proof]>>,
+    /// The lists of each findall's goal and shared values.
+    collected: FxHashMap<(u32, Box<[Val]>), Lists>,
+    /// The predicate of the lists' atoms, and the next one's number.
+    states: Option<(u32, i64)>,
+    /// The answers, the rules' terms and the derivations' steps, against
+    /// `bound`.
     size: usize,
     bound: usize,
 }
@@ -239,9 +275,17 @@ impl<'a> TopDown<'a> {
             atom_ix: FxHashMap::default(),
             ground: Vec::new(),
             ground_ix: FxHashSet::default(),
+            derivations: FxHashMap::default(),
+            proofs: FxHashMap::default(),
+            collected: FxHashMap::default(),
+            states: None,
             size: 0,
             bound: bound.unwrap_or(usize::MAX),
         };
+        for (name, arity) in &norm.counted {
+            let p = td.pred(name, *arity);
+            td.preds[p as usize].counted = true;
+        }
         for (name, arity) in norm.switches.keys() {
             let p = td.pred(name, *arity);
             td.preds[p as usize].kind = Kind::Switch;
@@ -285,6 +329,7 @@ impl<'a> TopDown<'a> {
                 kind: Kind::Undefined,
                 rules: Vec::new(),
                 driver: false,
+                counted: false,
             });
         }
         p
@@ -314,11 +359,14 @@ impl<'a> TopDown<'a> {
                     let args = args.iter().map(|t| self.tpl(t, &mut vars)).collect();
                     Lit::Builtin(*b, args, *negated)
                 }
-                Literal::Collect(_) | Literal::Findall(_) => {
-                    return Err(GroundError::Unsupported(format!(
-                        "{c}: a findall in a program ground top-down"
-                    )));
-                }
+                Literal::Collect(k) => Lit::Collect(Box::new(Collect {
+                    aux: self.pred(&k.aux, k.arity),
+                    shared: k.shared.iter().map(|t| self.tpl(t, &mut vars)).collect(),
+                    result: self.tpl(&k.result, &mut vars),
+                    all: k.all,
+                    text: k.text.clone(),
+                })),
+                Literal::Findall(_) => unreachable!("a findall is lowered before grounding"),
             });
         }
         Ok(Rule {
@@ -326,6 +374,7 @@ impl<'a> TopDown<'a> {
             body: body.into(),
             vars: vars.len() as u32,
             at,
+            group: c.group,
         })
     }
 
@@ -354,7 +403,7 @@ impl<'a> TopDown<'a> {
             Term::Var(v) => match vars.iter().find(|(w, _)| w == v) {
                 Some((_, x)) => x.clone(),
                 None => {
-                    let x = self.fresh();
+                    let x = self.fresh_var();
                     vars.push((v.clone(), x.clone()));
                     x
                 }
@@ -367,7 +416,7 @@ impl<'a> TopDown<'a> {
         }
     }
 
-    fn fresh(&mut self) -> T {
+    fn fresh_var(&mut self) -> T {
         self.binds.push(None);
         T::X(self.binds.len() as u32 - 1)
     }
@@ -756,8 +805,9 @@ impl<'a> TopDown<'a> {
     }
 
     /// Resolves the literals of `rule` from the `i`th on, its variables
-    /// from `base`, for table `t`'s call `call`; `nodes` holds the atoms
-    /// the literals before it read, negated where the flag says so.
+    /// from `base`, for table `t`'s call `call`; `steps` holds what the
+    /// literals before it read: atoms, negated or not, and the ranks of
+    /// built-ins' solutions.
     fn body(
         &mut self,
         t: u32,
@@ -765,16 +815,16 @@ impl<'a> TopDown<'a> {
         base: u32,
         i: usize,
         call: &[T],
-        nodes: &mut Vec<(bool, u32)>,
+        steps: &mut Vec<Step>,
     ) -> Result<(), GroundError> {
         let Some(lit) = rule.body.get(i) else {
-            return self.answer(t, call, nodes);
+            return self.answer(t, call, rule.group, steps);
         };
-        let next = |me: &mut Self, node: Option<(bool, u32)>, nodes: &mut Vec<(bool, u32)>| {
-            nodes.extend(node);
-            let r = me.body(t, rule, base, i + 1, call, nodes);
-            if node.is_some() {
-                nodes.pop();
+        let next = |me: &mut Self, step: Option<Step>, steps: &mut Vec<Step>| {
+            steps.extend(step);
+            let r = me.body(t, rule, base, i + 1, call, steps);
+            if step.is_some() {
+                steps.pop();
             }
             r
         };
@@ -792,7 +842,7 @@ impl<'a> TopDown<'a> {
                             let mark = self.mark();
                             let answer = self.unkey(&key, arity);
                             if self.unify_all(&args, &answer) {
-                                next(self, Some((false, a)), nodes)?;
+                                next(self, Some(Step::Pos(a)), steps)?;
                             }
                             self.undo(mark);
                         }
@@ -803,7 +853,7 @@ impl<'a> TopDown<'a> {
                             let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
                             if self.unify_all(&args, &tuple) {
                                 let a = self.atom(p, vals)?;
-                                next(self, Some((false, a)), nodes)?;
+                                next(self, Some(Step::Pos(a)), steps)?;
                             }
                             self.undo(mark);
                         }
@@ -811,7 +861,7 @@ impl<'a> TopDown<'a> {
                     Kind::Switch => {
                         let vals = self.values(p, &args, rule, "a probabilistic choice")?;
                         let a = self.atom(p, vals)?;
-                        next(self, Some((false, a)), nodes)?;
+                        next(self, Some(Step::Pos(a)), steps)?;
                     }
                     Kind::Undefined => {}
                 }
@@ -832,30 +882,30 @@ impl<'a> TopDown<'a> {
                         }
                         // The call is ground, and so is its one answer.
                         match self.tables[u as usize].answers.first() {
-                            None => next(self, None, nodes)?,
-                            Some(&(_, a)) => next(self, Some((true, a)), nodes)?,
+                            None => next(self, None, steps)?,
+                            Some(&(_, a)) => next(self, Some(Step::Neg(a)), steps)?,
                         }
                     }
                     Kind::Facts(f) => {
                         if self.fact_matches(p, f, &args).is_empty() {
-                            next(self, None, nodes)?;
+                            next(self, None, steps)?;
                         } else {
                             let a = self.atom(p, vals)?;
-                            next(self, Some((true, a)), nodes)?;
+                            next(self, Some(Step::Neg(a)), steps)?;
                         }
                     }
                     Kind::Switch => {
                         let a = self.atom(p, vals)?;
-                        next(self, Some((true, a)), nodes)?;
+                        next(self, Some(Step::Neg(a)), steps)?;
                     }
-                    Kind::Undefined => next(self, None, nodes)?,
+                    Kind::Undefined => next(self, None, steps)?,
                 }
             }
             Lit::Unify(a, b) => {
                 let (a, b) = (Self::inst(a, base), Self::inst(b, base));
                 let mark = self.mark();
                 if self.unify(&a, &b) {
-                    next(self, None, nodes)?;
+                    next(self, None, steps)?;
                 }
                 self.undo(mark);
             }
@@ -863,7 +913,7 @@ impl<'a> TopDown<'a> {
                 let a = Self::inst(a, base);
                 let b = Self::inst(b, base);
                 if self.compare(*op, &a, &b, rule)? {
-                    next(self, None, nodes)?;
+                    next(self, None, steps)?;
                 }
             }
             Lit::Is(v, e) => {
@@ -877,23 +927,92 @@ impl<'a> TopDown<'a> {
                 let v = Self::inst(v, base);
                 let mark = self.mark();
                 if self.unify(&v, &T::G(x)) {
-                    next(self, None, nodes)?;
+                    next(self, None, steps)?;
                 }
                 self.undo(mark);
             }
             Lit::Builtin(b, args, negated) => {
                 let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
                 let args = self.full_all(&args)?;
-                for sol in self.builtin(*b, &args, *negated, rule, i)? {
+                let sols = self.builtin(*b, &args, *negated, rule, i)?;
+                for (rank, sol) in sols.into_iter().enumerate() {
                     let mark = self.mark();
                     if self.unify_all(&args, &sol) {
-                        next(self, None, nodes)?;
+                        let step = (!negated).then_some(Step::Rank(rank as u32));
+                        next(self, step, steps)?;
+                    }
+                    self.undo(mark);
+                }
+            }
+            Lit::Collect(c) => {
+                for &(list, cond) in self.collect(c, base, rule)?.iter() {
+                    let mark = self.mark();
+                    if self.unify(&Self::inst(&c.result, base), &T::G(list)) {
+                        let step = cond.map(|(positive, a)| match positive {
+                            true => Step::Pos(a),
+                            false => Step::Neg(a),
+                        });
+                        next(self, step, steps)?;
                     }
                     self.undo(mark);
                 }
             }
         }
         Ok(())
+    }
+
+    /// The lists of the findall `c` of `rule`, its variables from `base`,
+    /// each with the literal of the worlds where it is the list: its goal
+    /// called with the shared variables' terms, which must be ground, and
+    /// its table complete.
+    fn collect(&mut self, c: &Collect, base: u32, rule: &Rule) -> Result<Lists, GroundError> {
+        let shared: Vec<T> = c.shared.iter().map(|a| Self::inst(a, base)).collect();
+        let vals = self.values(c.aux, &shared, rule, "a findall")?;
+        if let Some(l) = self.collected.get(&(c.aux, vals.clone())) {
+            return Ok(l.clone());
+        }
+        let mut answers: Vec<(Val, u32)> = Vec::new();
+        if self.preds[c.aux as usize].kind == Kind::Rules {
+            let arity = self.preds[c.aux as usize].arity;
+            let mut args = shared;
+            while args.len() < arity {
+                let x = self.fresh_var();
+                args.push(x);
+            }
+            let u = self.call(c.aux, &args)?;
+            if self.tables[u as usize].state != State::Complete {
+                return Err(GroundError::Unsupported(format!(
+                    "{}: a findall in a cycle of calls, in {}",
+                    c.text, self.norm.rules[rule.at]
+                )));
+            }
+            let k = vals.len();
+            for (key, a) in self.tables[u as usize].answers.clone() {
+                let mark = self.mark();
+                let answer = self.unkey(&key, arity);
+                let template = self.full(&answer[k])?;
+                let T::G(v) = template else {
+                    let goal = self.show(c.aux, &answer);
+                    self.undo(mark);
+                    return Err(GroundError::Unsupported(format!(
+                        "{}: a solution with variables, {goal}",
+                        c.text
+                    )));
+                };
+                self.undo(mark);
+                answers.push((v, a));
+            }
+        }
+        let l: Rc<[_]> = lists::collect(self, &answers, c.all, &c.text)?.into();
+        if let Some(e) = self.g.error.take() {
+            return Err(e);
+        }
+        if self.g.refused {
+            return Err(GroundError::OutOfMemory);
+        }
+        self.grow(l.len())?;
+        self.collected.insert((c.aux, vals), l.clone());
+        Ok(l)
     }
 
     /// The error of `rule`'s `i`th literal, called with a variable it
@@ -1104,7 +1223,7 @@ impl<'a> TopDown<'a> {
         };
         // The items read, then fresh variables to the length asked.
         while items.len() < n {
-            let x = self.fresh();
+            let x = self.fresh_var();
             items.push(x);
         }
         let list = items
@@ -1116,9 +1235,16 @@ impl<'a> TopDown<'a> {
         Ok(vec![vec![list, T::G(Val::Int(n as i64))]])
     }
 
-    /// An answer of table `t` from the clause instance just proved: the
-    /// call's terms as bound, read with the body's atoms `nodes`.
-    fn answer(&mut self, t: u32, call: &[T], nodes: &[(bool, u32)]) -> Result<(), GroundError> {
+    /// An answer of table `t` from the instance of a clause of `group`
+    /// just proved: the call's terms as bound, read with the body's
+    /// `steps`.
+    fn answer(
+        &mut self,
+        t: u32,
+        call: &[T],
+        group: u32,
+        steps: &[Step],
+    ) -> Result<(), GroundError> {
         let p = self.tables[t as usize].pred;
         let args = self.full_all(call)?;
         let Some(key) = Self::key(&args) else {
@@ -1137,7 +1263,7 @@ impl<'a> TopDown<'a> {
         };
         let a = self.atom(p, vals)?;
         if !self.preds[p as usize].driver {
-            self.emit(a, nodes)?;
+            self.emit(a, group, steps)?;
         }
         let table = &mut self.tables[t as usize];
         if table.known.contains(&key) {
@@ -1153,9 +1279,27 @@ impl<'a> TopDown<'a> {
         self.grow(n)
     }
 
-    /// The ground rule `head :- nodes`, kept once.
-    fn emit(&mut self, head: u32, nodes: &[(bool, u32)]) -> Result<(), GroundError> {
-        let body: Box<[(bool, u32)]> = nodes.into();
+    /// The ground rule of `head` that reads the atoms of `steps`, kept
+    /// once, and where a findall reads `head`, its derivation by a clause
+    /// of `group`: another clause's, or another instance's that reads
+    /// other atoms or solutions, is another proof.
+    fn emit(&mut self, head: u32, group: u32, steps: &[Step]) -> Result<(), GroundError> {
+        let p = self.atoms[head as usize].0;
+        if self.preds[p as usize].counted {
+            let derivations = self.derivations.entry(head).or_default();
+            if !derivations.iter().any(|(g, s)| *g == group && s == steps) {
+                derivations.push((group, steps.to_vec()));
+                self.grow(1 + steps.len())?;
+            }
+        }
+        let body: Box<[(bool, u32)]> = steps
+            .iter()
+            .filter_map(|s| match *s {
+                Step::Pos(a) => Some((false, a)),
+                Step::Neg(a) => Some((true, a)),
+                Step::Rank(_) => None,
+            })
+            .collect();
         if self.ground_ix.contains(&(head, body.clone())) {
             return Ok(());
         }
@@ -1293,5 +1437,82 @@ impl<'a> TopDown<'a> {
             facts: norm.facts.iter().map(|(_, f)| (0, f.clone())).collect(),
             ..Default::default()
         }
+    }
+}
+
+/// The atoms of a findall's proofs: a switch is a leaf but where it is
+/// certain or impossible, an atom of a counted predicate or a list is
+/// derived by its derivations.
+impl lists::Source for TopDown<'_> {
+    fn node(&mut self, a: u32) -> lists::Node {
+        if let Some(t) = self.truth(a) {
+            return if t {
+                lists::Node::True
+            } else {
+                lists::Node::False
+            };
+        }
+        match self.preds[self.atoms[a as usize].0 as usize].kind {
+            Kind::Switch | Kind::Facts(_) => lists::Node::Leaf,
+            Kind::Rules | Kind::Undefined => {
+                lists::Node::Derived(self.derivations.remove(&a).unwrap_or_default())
+            }
+        }
+    }
+
+    fn truth(&mut self, a: u32) -> Option<bool> {
+        let pred = &self.preds[self.atoms[a as usize].0 as usize];
+        match pred.kind {
+            Kind::Switch => match self.norm.switches.get(&(pred.name.clone(), pred.arity)) {
+                Some(Weights::Fixed(q)) if *q == Prob::TRUE => Some(true),
+                Some(Weights::Fixed(q)) if *q == Prob::FALSE => Some(false),
+                _ => None,
+            },
+            Kind::Facts(f) => {
+                let certain = self.norm.facts[f].1.probs.iter().all(Option::is_none);
+                certain.then_some(true)
+            }
+            Kind::Rules | Kind::Undefined => None,
+        }
+    }
+
+    fn known(&mut self) -> &mut FxHashMap<u32, Rc<[lists::Proof]>> {
+        &mut self.proofs
+    }
+
+    fn list(&mut self, items: &[Val]) -> Val {
+        let (nil, _) = self.g.list_syms();
+        self.g.make_list(items, Val::Sym(nil))
+    }
+
+    fn show(&mut self, a: u32) -> String {
+        let (p, vals) = self.atoms[a as usize].clone();
+        let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
+        Atom::new(self.preds[p as usize].name.clone(), args).to_string()
+    }
+
+    fn fresh(&mut self) -> Result<u32, GroundError> {
+        static STATES: LazyLock<Name> = LazyLock::new(|| Name::from(lists::LISTS));
+        let (p, n) = match self.states {
+            Some(s) => s,
+            None => {
+                let p = self.pred(&STATES, 1);
+                self.preds[p as usize].counted = true;
+                (p, 0)
+            }
+        };
+        self.states = Some((p, n + 1));
+        self.atom(p, Box::new([Val::Int(n)]))
+    }
+
+    fn rule(&mut self, head: u32, body: &[lists::Lit]) -> Result<(), GroundError> {
+        let steps: Vec<Step> = body
+            .iter()
+            .map(|&(positive, a)| match positive {
+                true => Step::Pos(a),
+                false => Step::Neg(a),
+            })
+            .collect();
+        self.emit(head, 0, &steps)
     }
 }

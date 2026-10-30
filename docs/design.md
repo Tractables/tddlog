@@ -203,8 +203,9 @@ The parser reads ProbLog without cut:
   `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
   and partition/4; and `call/N`, whose goal names a predicate the program
   defines;
-- `findall/3` over a deterministic goal that is not recursive, its
-  solutions in ProbLog's order;
+- `findall/3`, `all/3` and `forall/2`, over probabilistic goals too: in
+  each world the list of the solutions whose proofs hold there, once per
+  proof and in ProbLog's order (`all/3` once per solution);
 - `query/1` (also `query(\+a)`) and `evidence/1,2`, and their rules
   `query(pattern) :- body.` and `evidence(pattern, v) :- body.`, whose
   pattern's instances under each grounding of the body are queries or
@@ -309,10 +310,15 @@ engine interns each one once, its name and its arguments' values end to
 end in one buffer as a relation's tuples are, and builds the term only
 where an atom is printed or terms are compared; the ground program's
 atoms hold them as arguments, so that nothing after grounding sees a
-term's structure and the compile does not change. A grounding that builds terms deeper than 10 000 does not end and
-is refused, as is a findall whose answer ProbLog gives otherwise
-than tddlog could: over a probabilistic goal, which is a distribution over
-lists, or where a solution has two proofs, which ProbLog lists twice.
+term's structure and the compile does not change. A grounding that
+builds terms deeper than 10 000 does not end and is refused. A findall
+over a probabilistic goal is a distribution over lists
+(`ground/engine/lists.rs`): its goal's solutions are expanded into their
+proofs, conjunctions of probabilistic facts and negations, in ProbLog's
+order, and the lists are built through the proofs one at a time, each
+state of the list so far an atom with a rule for each way to it, so that
+the states that reach one list merge. A findall whose goal reads its own
+clause is refused, as is one past 2^16 proofs of an atom or 2^16 lists.
 Rules must be range restricted, but for variables a demand binds; a body
 is reordered so that binding literals come first and switches last, as
 they bind nothing and reject no binding (`ground/schedule.rs`, shared by

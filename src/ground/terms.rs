@@ -32,13 +32,14 @@
 //! evidence reach it, as ProbLog refuses it ([`check_defined`]).
 //!
 //! The predicates a findall reads, its cone, are counted: the engine lists
-//! the solutions in the order of resolution from their derivations, and
-//! refuses a solution with more than one derivation, which ProbLog lists
-//! once per proof ([`super::engine`]). The cone's clauses get groups of
-//! their own, one per clause and alternative, in the order of the source.
-//! A cone that is recursive, reads the findall's own clause or has a
-//! disjunction after another literal (whose alternatives would be listed in
-//! another order than resolution's) is refused.
+//! the solutions once per proof, as ProbLog does, in the order of
+//! resolution from their derivations, and in each world the solutions
+//! whose proofs hold there ([`super::engine`]'s `lists`). The cone's
+//! clauses get groups of their own, one per clause and alternative, in the
+//! order of the source. A cone that reads the findall's own clause, or has
+//! a disjunction after another literal (whose alternatives would be listed
+//! in another order than resolution's), is refused. `all(T, G, R)` is
+//! lowered as a findall, and lists each solution once.
 
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -827,6 +828,7 @@ impl Lowering<'_, '_> {
             arity,
             shared: shared.into_iter().map(Term::Var).collect(),
             result: fa.result,
+            all: fa.all,
             text,
         })
     }
@@ -887,18 +889,21 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
             Some(w)
         },
         |comp| {
-            if cyclic.is_none()
-                && comp.iter().any(|&p| reached[p])
-                && (comp.len() > 1 || out[comp[0]].contains(&comp[0]))
-            {
-                cyclic = Some(comp[0]);
+            // A findall in a cycle reads its own clause, whose list is not
+            // known before the goal's solutions are.
+            let own = comp
+                .iter()
+                .copied()
+                .find(|&p| names[p].0.starts_with(FINDALL_PREFIX));
+            if cyclic.is_none() && (comp.len() > 1 || out[comp[0]].contains(&comp[0])) {
+                cyclic = own;
             }
         },
     );
     if let Some(p) = cyclic {
         let (name, arity) = names[p];
         return Err(GroundError::Refused(format!(
-            "findall over a recursive goal: {name}/{arity} is recursive or reads the findall's own clause"
+            "findall over a goal that reads the findall's own clause, through {name}/{arity}"
         )));
     }
     let cone: FxHashSet<Pred> = (0..n)

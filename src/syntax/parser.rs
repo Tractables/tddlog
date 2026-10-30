@@ -206,14 +206,14 @@ impl Body {
 }
 
 /// Whether a literal named `name` of `arity` arguments is read other than
-/// as an atom: a comparison, `is`, a negation, an operator, `findall/3`.
-/// A scope `S:A` is an atom of the predicate `:/2`, as ProbLog reads it
-/// without its library(scope).
+/// as an atom: a comparison, `is`, a negation, an operator, `findall/3`,
+/// `all/3`, `forall/2`. A scope `S:A` is an atom of the predicate `:/2`,
+/// as ProbLog reads it without its library(scope).
 fn special(name: &str, arity: usize) -> bool {
     match arity {
         1 => name == "not" || prefix_op(name).is_some(),
-        2 => name != ":" && infix_op(name).is_some(),
-        3 => name == "findall",
+        2 => (name != ":" && infix_op(name).is_some()) || name == "forall",
+        3 => name == "findall" || name == "all",
         _ => false,
     }
 }
@@ -698,7 +698,7 @@ impl<'a> Parser<'a> {
                 Ok(Literal::Cmp(CmpOp::of(op).expect("a comparison"), a, b))
             }
             ("\\+" | "not", 1) => self.negation(args.pop().expect("an argument")),
-            ("findall", 3) => {
+            ("findall" | "all", 3) => {
                 let result = args.pop().expect("three arguments");
                 let goal = self.goal(args.pop().expect("three arguments"))?;
                 let template = args.pop().expect("three arguments");
@@ -708,6 +708,25 @@ impl<'a> Parser<'a> {
                     goal: goal.dnf(),
                     result,
                     interleaved,
+                    all: &*name == "all",
+                })))
+            }
+            // forall(C, A) holds where (C, \+ A) has no solution:
+            // findall(_, (C, \+ A), []).
+            ("forall", 2) => {
+                let unless = self.negation(args.pop().expect("two arguments"))?;
+                let goal = self.goal(args.pop().expect("two arguments"))?;
+                let interleaved = goal.interleaved();
+                let mut alts = goal.dnf();
+                for alt in &mut alts {
+                    alt.push(unless.clone());
+                }
+                Ok(Literal::Findall(Box::new(Findall {
+                    template: Term::Const("true".into()),
+                    goal: alts,
+                    result: Term::Const(super::NIL.into()),
+                    interleaved,
+                    all: false,
                 })))
             }
             ("->", 2) => self.err("if-then-else is not supported"),
