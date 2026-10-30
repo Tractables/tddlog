@@ -63,7 +63,9 @@ use std::time::Instant;
 use crate::evaluation::Answers;
 use crate::strategy::Prepared;
 use crate::vtree::Kind;
-use crate::{Error, GroundProgram, Projection, QueryResult, Run, ground, query, tp, vtree};
+use crate::{
+    Error, GroundOptions, GroundProgram, Projection, QueryResult, Run, ground, query, tp, vtree,
+};
 use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
@@ -119,24 +121,25 @@ pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
 
 /// `auto` on `original`, as grounded, its trials the [`candidates`], each
 /// compiling its layout's rewrite of its program ([`Programs::of`]:
-/// `original`, `written`, `original` ground with its views in place, each
-/// eliminated once for all of them, [`Kind::eliminated`], or
-/// `conditioned`, `written` conditioned on its guards,
-/// `solve::decision_trial`); the `families:0` trial takes `laid`, its
-/// program and layout built from `original` by [`families`], as its own,
-/// and where `conditioned` [`decides`], `decision` is the first trial.
+/// `original`, or `ready`'s `written` or `conditioned`, each eliminated
+/// once for all of them, [`Kind::eliminated`]); the `families:0` trial
+/// takes `ready`'s `laid` as its own, and where `ready`'s `conditioned`
+/// [`decides`], `decision` is the first trial.
 pub(crate) fn run(
     original: GroundProgram,
     projection: Projection,
-    laid: Option<Box<Prepared>>,
-    conditioned: Option<GroundProgram>,
-    written: Option<GroundProgram>,
+    ready: Ready,
 ) -> Result<Run, Error> {
     let mut trials = candidates(&original);
-    let decision = conditioned.as_ref().is_some_and(|c| decides(c, &original));
+    let decision = ready.decides(&original);
     if decision {
         trials.insert(0, Kind::Decision);
     }
+    let Ready {
+        written,
+        conditioned,
+        laid,
+    } = ready;
     run_within(
         Programs {
             ground: original,
@@ -151,6 +154,81 @@ pub(crate) fn run(
     )
 }
 
+/// What [`run`] can be handed ready beside the program as ground, each
+/// where it was built: the program ground with its views in place, and
+/// that program conditioned on its guards ([`ready`]); and `families:0`'s
+/// program and layout, built from the program as ground by [`families`]
+/// (`solve::split_check`). Each is the whole program's: a part of a split
+/// is handed none.
+#[derive(Default)]
+pub(crate) struct Ready {
+    pub(crate) written: Option<GroundProgram>,
+    pub(crate) conditioned: Option<GroundProgram>,
+    pub(crate) laid: Option<Box<Prepared>>,
+}
+
+impl Ready {
+    /// Whether `decision` is the first trial on `ground` ([`decides`]).
+    pub(crate) fn decides(&self, ground: &GroundProgram) -> bool {
+        self.conditioned
+            .as_ref()
+            .is_some_and(|c| decides(c, ground))
+    }
+}
+
+/// The programs `auto` takes beside `ground` ([`Ready`]), from `kept`,
+/// `ground`'s grounding kept before its views were inlined
+/// ([`ground::ground_keeping`]), and how many atoms the conditioning on
+/// guards made where it ran. `written` is `kept` finished with its views
+/// in place under `options`, the options `ground` was ground under
+/// ([`Kind::ground_options`]), where the grounding inlined any atom, a
+/// view's or a chain's, or where [`may_decide`]; `conditioned` is
+/// `written` rewritten for `decision` ([`Kind::rewrite`]) where `ground`
+/// may decide, kept where the conditioning recorded decisions and made
+/// enough atoms for a trial to take it ([`takes_conditioned`]). `closed`
+/// takes less work on it: bb_altermu2_w11 2.29 G units against 14.4 G.
+/// The full weekend circuit of the bit-blasting paper (98 303 flips) runs
+/// out of memory under every other layout of the program as ground and
+/// compiles under `decision` in 533 M work units.
+pub(crate) fn ready(
+    ground: &GroundProgram,
+    kept: Option<ground::Simplified>,
+    options: GroundOptions,
+) -> (Ready, Option<usize>) {
+    let Some(kept) = kept else {
+        return (Ready::default(), None);
+    };
+    let decide = may_decide(ground);
+    let written = (ground.stats.inlined + ground.stats.chained > 0 || decide)
+        .then(|| ground::finish_kept(kept, &Kind::Decision.ground_options(options)));
+    let Some(program) = written.as_ref().filter(|_| decide) else {
+        return (
+            Ready {
+                written,
+                ..Ready::default()
+            },
+            None,
+        );
+    };
+    // `Kind::Decision.rewrite`, which `written`, read through no
+    // indicator, takes in full, finished again only where a trial takes
+    // it.
+    let decided = ground::guarded_where(Kind::eliminated(program.clone()), |made| {
+        takes_conditioned(made, ground)
+    });
+    let guarded = match &decided {
+        Ok(gp) => gp.stats.guarded,
+        Err(gp) => gp.stats.guarded,
+    };
+    let conditioned = decided.ok().filter(|gp| gp.stats.decisions.is_some());
+    let ready = Ready {
+        written,
+        conditioned,
+        laid: None,
+    };
+    (ready, Some(guarded))
+}
+
 /// Whether `decision` is a trial on `conditioned`, `ground` conditioned on
 /// its guards: where the conditioning made at least as many atoms as
 /// `ground` has derived ones ([`derived_unmerged`]). The full weekend
@@ -163,7 +241,7 @@ pub(crate) fn decides(conditioned: &GroundProgram, ground: &GroundProgram) -> bo
 }
 
 /// Whether a trial takes `ground` conditioned on its guards, the
-/// conditioning having made `made` atoms (`solve::decision_trial`): where
+/// conditioning having made `made` atoms ([`ready`]): where
 /// it made at least a quarter as many as `ground` has derived ones
 /// ([`derived_unmerged`]). `decision` takes it where it made as many
 /// ([`decides`]), and `program`, `closed` and `td` otherwise
@@ -192,7 +270,7 @@ pub(crate) fn derived_unmerged(ground: &GroundProgram) -> usize {
 /// The programs `auto`'s trials rewrite: the program as ground, written
 /// without its linear recursion; the program ground with its views in
 /// place, where the grounding inlined any or `decision` may be a trial
-/// (`solve::decision_trial`); the program conditioned on its guards, where
+/// ([`ready`]); the program conditioned on its guards, where
 /// the conditioning records decisions; and whether `decision` is a trial
 /// on it ([`decides`]).
 struct Programs {
@@ -271,7 +349,7 @@ impl Default for Watch {
 }
 
 /// Whether `auto` finishes `gp`'s grounding again for a `decision` trial
-/// (`solve::decision_trial`): a program of at least [`DECISION_DERIVED`]
+/// ([`ready`]): a program of at least [`DECISION_DERIVED`]
 /// derived atoms to which the conditioning on guards applies and on which
 /// it gets under way, as ground with its views inlined
 /// ([`ground::guards_apply`]). The circuits a bit-blasting front end

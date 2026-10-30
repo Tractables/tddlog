@@ -180,7 +180,7 @@ pub fn ground(program: &Program, opts: &GroundOptions) -> Result<GroundProgram, 
 /// its views are inlined, where that holds at least `keep` derived atoms:
 /// what [`finish_kept`] finishes under options that differ in
 /// [`GroundOptions::views`] alone, as `auto`'s `decision` trial does
-/// (`solve::decision_trial`), without grounding and simplifying the
+/// (`auto::ready`), without grounding and simplifying the
 /// program again. Where the bound-end grounding is kept, the kept program
 /// is its own.
 pub(crate) fn ground_keeping(
@@ -530,7 +530,7 @@ pub(crate) fn without_linear_recursion(mut gp: GroundProgram) -> GroundProgram {
 /// is not the grounder's default: on uwcse it takes the tables' structure
 /// apart, and every layout's work grows a hundredfold and more. A program
 /// already conditioned, its decisions recorded, is returned as it is:
-/// `auto` hands one to every trial (`solve::decision_trial`).
+/// `auto` hands one to every trial (`auto::ready`).
 pub(crate) fn guarded(gp: GroundProgram) -> GroundProgram {
     guarded_where(gp, |_| true).unwrap_or_else(|gp| *gp)
 }

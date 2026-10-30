@@ -1827,7 +1827,7 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
         crate::ground::ground(&crate::syntax::parse_program(source).unwrap(), &options).unwrap();
     let gp = crate::indicators::introduce(&gp);
     assert!(!gp.encoding.is_empty());
-    let run = run(gp, Projection::default(), None, None, None).unwrap();
+    let run = run(gp, Projection::default(), Ready::default()).unwrap();
     assert!(!run.ground.encoding.is_empty());
     let answers = run.results.unwrap();
     assert!(
