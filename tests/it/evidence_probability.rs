@@ -180,18 +180,16 @@ fn examples_against_problog() {
 
 #[test]
 fn noisy_or_tables_are_counted_as_noisy_ors() {
-    // tests/regress/noisy_or_chain.pl: d1, d2, d3, d4, x1, x2 and y1 are
-    // noisy-ors whose absent value nothing reads, asks or observes, and f1
-    // and f2, observed present, are noisy-ors whose parents are written
-    // too: nine in all. f3 is observed absent and stays a table, and with
-    // it d5 and d6, which it reads at both values; y1, not observed, is
-    // written over d5 all the same. f4, observed present, is a noisy-or of
-    // d6, which stays: f4 stays a table. Written as noisy-ors or as tables,
-    // P(e) and the answers are ProbLog's.
+    // tests/regress/noisy_or_chain.pl: d1 to d6, x1, x2 and y1 are
+    // noisy-ors whose absent value nothing reads or asks, and f1, f2 and
+    // f4, observed present, are noisy-ors whose parents are written too.
+    // So is f3, observed absent: observed at its present value, false.
+    // Thirteen in all. Written as noisy-ors or as tables, P(e) and the
+    // answers are ProbLog's.
     let source = read("tests/regress/noisy_or_chain.pl");
     let program = tddlog::syntax::parse_program(&source).unwrap();
     let ground = tddlog::ground::ground(&program, &GroundOptions::default()).unwrap();
-    assert_eq!(ground.stats.noisy_or, 9, "tables written as noisy-ors");
+    assert_eq!(ground.stats.noisy_or, 13, "tables written as noisy-ors");
     let off = GroundOptions {
         noisy_or: false,
         ..GroundOptions::default()

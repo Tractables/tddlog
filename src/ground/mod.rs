@@ -216,13 +216,16 @@ pub(crate) fn ground_keeping(
         } else {
             None
         } {
-            Some((written, n)) => {
-                let shape = shape.rewritten(program, &written);
+            Some(rewritten) => {
+                let shape = shape.rewritten(program, &rewritten.written);
                 let order = shape
                     .evaluation_order()
                     .expect("tables written as noisy-ors read no more than they did");
                 let mut gp = shape.ground(program, &order);
-                gp.stats.noisy_or = n;
+                if let Some(evidence) = &rewritten.evidence {
+                    noisy_or::observe(&mut gp, evidence);
+                }
+                gp.stats.noisy_or = rewritten.count;
                 gp
             }
             None => shape.ground(program, &order),

@@ -480,10 +480,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    rows partition the parents' values, and whose value `c` has
    `P(c | u) = L · ∏ q_i` over the parents at which `u` differs from the
    row `u*` where `c` is likeliest, becomes `(1-L)::x(b).` and
-   `(1-q_i)::x(b) :- y_i(a_i).`, where nothing reads, asks or observes
-   `x(c)` once the readers taken are written so too, and an observed table
-   only with its parents (the conditioning reads a table's clauses, not a
-   noisy-or's). A chain of such tables is then a chain of views that
+   `(1-q_i)::x(b) :- y_i(a_i).`, where nothing reads or asks `x(c)` once
+   the readers taken are written so too (an observation of `x(c)` is one
+   of `x(b)`, negated), and an observed table only with its parents (the
+   conditioning reads a table's clauses, not a noisy-or's), as is every
+   table written below one observed at its absent value, which turns all
+   of their causes off. A chain of such tables is then a chain of views that
    inline (step 6) into one rule per cause. The program written is not
    built: its shape is made from the source's (`Shape::rewritten`).
 1. **Normalize** (`normalize.rs`). Each probabilistic clause
