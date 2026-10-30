@@ -13,7 +13,7 @@
 //!
 //! # A first program
 //!
-//! [`solve`] takes a program's text and [`Options`], the command line's
+//! [`fn@solve`] takes a program's text and [`Options`], the command line's
 //! options, and returns a [`Solution`]: the answers to the program's
 //! queries, in their order, and `P(e)`, the probability of the evidence,
 //! where it was asked for. Its third argument receives what `--stats`
@@ -79,7 +79,7 @@
 //! the immediate-consequence operator, one strongly connected component at
 //! a time; and [`query`]
 //! conjoins the evidence and counts each query against it, with the
-//! weighted counts of [`eval`]. [`solve`] runs them under a [`Strategy`]:
+//! weighted counts of [`eval`]. [`fn@solve`] runs them under a [`Strategy`]:
 //! `auto`, the default, runs trials of layouts ([`Kind`]) under bounds
 //! that double until one finishes.
 //! [docs/design.md](https://github.com/Tractables/tddlog/blob/main/docs/design.md)

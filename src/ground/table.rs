@@ -13,7 +13,7 @@
 //! bottom-up grounder ([`super::engine`]) evaluates the tables in the order
 //! its stratification visits them, each row's rules in turn; a table of
 //! facts alone is its facts ([`super::normalize::Facts`]), atoms without a
-//! switch or a rule. [`ground_rows`]
+//! switch or a rule. [`Shape::ground`]
 //! builds the grounder's output directly: the same atoms in the same order,
 //! the same rules with the same bodies, the same queries and evidence. It
 //! skips the normalized program, the grounder's rule compilation and body

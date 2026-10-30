@@ -485,7 +485,7 @@ impl EvidenceWalk {
     /// here on, for its last read in `observed` to negate or embed in place
     /// of a copy, but for the atoms of ties and those `read_after` names,
     /// whose formulas are read after the walk or by a tie
-    /// ([`crate::tp::tie`]). A read that fails may have consumed its
+    /// (`tp/tie.rs`). A read that fails may have consumed its
     /// formula, and the walk cannot go on after an error.
     pub(super) fn take_last_reads(
         &mut self,

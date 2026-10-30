@@ -130,7 +130,7 @@ impl std::ops::Deref for RuleBody<'_> {
 /// each hash, and per rule kept its index and the one kept before it with
 /// the same hash. A rule is kept without a second copy of it: a set of the
 /// rules themselves cost a copy of each, ace_blockmap_22_03's 182 k
-/// deterministic rows among them ([`table`]).
+/// deterministic rows among them ([`super::table`]).
 #[derive(Default)]
 pub(super) struct KeptRules {
     by_hash: rustc_hash::FxHashMap<u64, u32>,
@@ -179,7 +179,7 @@ impl KeptRules {
 /// A fact's weights, true and false. They sum to one, and each is a number
 /// of its own: the weight false is not taken as `1 - p` from the weight
 /// true. A switch of an annotated disjunction is true with `p_i / S_i` and
-/// false with `S_{i+1} / S_i` ([`chain_weights`]), and where the heads after
+/// false with `S_{i+1} / S_i` ([`super::normalize::chain_weights`]), and where the heads after
 /// head `i` hold under the rounding of `p_i / S_i` against one, `1 - p_i /
 /// S_i` is zero and their mass is lost.
 #[derive(Clone, Copy, Debug, PartialEq)]

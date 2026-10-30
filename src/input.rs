@@ -86,7 +86,7 @@ impl fmt::Display for Format {
 /// An input read as the program tddlog answers.
 #[derive(Clone, Debug)]
 pub struct Input<'a> {
-    /// The program [`crate::solve`] takes: a ProbLog program's own text,
+    /// The program [`fn@crate::solve`] takes: a ProbLog program's own text,
     /// borrowed, or the program another input is read as, which
     /// `tddlog --program` prints.
     pub program: Cow<'a, str>,

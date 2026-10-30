@@ -88,7 +88,7 @@ impl Probabilities {
 }
 
 /// The engine's evaluation of a diagram in `V`s, a node's value the sum of
-/// its pairs' products settled, as [`count`]'s pass up computes it. The
+/// its pairs' products settled, as [`fn@count`]'s pass up computes it. The
 /// engine hands the algebra one node at a time, not a level, so every
 /// value an evaluation settles is noted in one range, and the evaluation
 /// is exact when the products of that range with itself are: every
@@ -168,7 +168,7 @@ pub(crate) fn complement<E>(m: f64, count: impl FnOnce() -> Result<f64, E>) -> R
 
 /// The weighted count of `f` under `w` by the engine's evaluation in
 /// floats, which the engine's work clock is charged for; where that is not
-/// exact, by [`count`]'s pass up in [`Count`]s, which is not charged, and
+/// exact, by [`fn@count`]'s pass up in [`Count`]s, which is not charged, and
 /// `recounts` counts it.
 pub(crate) fn mass(
     engine: &tididi::Engine,

@@ -1,4 +1,4 @@
-//! The two passes of a count over one diagram ([`count`], [`Counted`]),
+//! The two passes of a count over one diagram ([`fn@count`], [`Counted`]),
 //! and the count of the conjunction of two diagrams, one on a projection
 //! of the other's vtree, without building it ([`conjunction_count`]).
 

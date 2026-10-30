@@ -348,7 +348,7 @@ struct Unit<'a> {
 /// copies, are a row; a split goes by those atoms, so every part is made
 /// of whole rows. A row keeps the facts its rules read, each once: the
 /// rules of a row of a table read its switches over and over, each value's
-/// rule those of the values before it ([`crate::ground::normalize`]), and
+/// rule those of the values before it (the grounder's normalization), and
 /// the parts' costs read every literal of every rule.
 #[derive(Default)]
 struct RowIndex {

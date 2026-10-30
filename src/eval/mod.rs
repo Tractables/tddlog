@@ -2,7 +2,7 @@
 //! ([`Value`]: a float, or a [`Count`] where a float would not do), the
 //! weights of facts and indicators ([`Probabilities`]), the engine's
 //! evaluation of a diagram (`mass`), the two passes of a count over one
-//! diagram ([`count`], [`Counted`]), and the count of the conjunction of
+//! diagram ([`fn@count`], [`Counted`]), and the count of the conjunction of
 //! two diagrams, one on a projection of the other's vtree, without
 //! building it (`conjunction_count`).
 //!

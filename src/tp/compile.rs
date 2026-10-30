@@ -358,7 +358,7 @@ const TAKEN: u32 = u32::MAX;
 /// Per atom, how many times the last component that reads its formula
 /// reads it, where that component is one acyclic atom's: once at most for
 /// each body of that atom's rules the atom is in, a rule of pairs counted
-/// by its pairs ([`GroundRule::bodies`]); 0 for every other atom. A read of
+/// by its pairs ([`crate::ground::GroundRule::bodies`]); 0 for every other atom. A read of
 /// one literal for several bodies at once (the factoring's shared
 /// literals) says how many it stands for, and a body the compile drops or
 /// stops reading leaves its reads uncounted, so the count reaches 0 at the
@@ -816,7 +816,7 @@ pub(crate) struct ForQueries {
     /// The readers' links of clause tables tied to another reader's copies
     /// ([`ties`]), whose own formulas are not built.
     pub(crate) ties: FxHashMap<AtomId, Tie>,
-    /// The links of the names expanded ([`super::settle`]), which the
+    /// The links of the names expanded ([`fn@super::settle`]), which the
     /// evidence leaves out, and the copies they tied, which no formula
     /// reads any more.
     pub(crate) dropped: FxHashSet<AtomId>,
