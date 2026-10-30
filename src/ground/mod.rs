@@ -292,7 +292,10 @@ fn ground_norm(
                     | GroundError::OutOfMemory
                     | GroundError::Refused(_)),
                 ) => return Err(e),
-                Err(_) => engine::ground_normalized(norm, bound)?,
+                // Where neither grounds, the rewritten program's error is
+                // the one to give: the plain program's is that a rule only
+                // the demand makes safe is unsafe.
+                Err(e) => engine::ground_normalized(norm, bound).map_err(|_| e)?,
             },
             None => engine::ground_normalized(norm, bound)?,
         }
