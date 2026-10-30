@@ -46,6 +46,8 @@
 //! `\+p(..)`, all its positive clauses are renamed to `p⁺/n`, the negative
 //! ones to `p⁻/n`, and `p(V) :- p⁺(V), \+ p⁻(V)` is added.
 
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::sync::Arc;
 
 use super::Prob;
@@ -527,6 +529,76 @@ fn pos_name(name: &str) -> Name {
 }
 fn neg_name(name: &str) -> Name {
     format!("{name}$neg").into()
+}
+
+/// `program` with the heads of its annotated disjunctions in one order
+/// that every disjunction keeps; `None` where each keeps it as written.
+///
+/// A disjunction's chain of switches follows its heads' order, and the
+/// passes that compare rows, the row classes ([`super::classes`]) and the
+/// switch sharing ([`super::share`]), find two rows of one distribution
+/// alike only where their heads come in one order. A table written with
+/// each row's values in an order of its own holds the distribution of
+/// the table written in one order; with its rows in one order it is
+/// compiled alike. The order is the one the disjunctions agree on: the
+/// heads, numbered in the order they are first read, are put in a
+/// topological order of "comes before" in a disjunction, the lowest number
+/// ready first, and where none is ready (the disjunctions disagree) the
+/// lowest number left. Disjunctions that agree keep their order, rows that
+/// leave a value out included.
+pub(super) fn ordered_heads(program: &Program) -> Option<Program> {
+    let disjunctions = || program.clauses.iter().filter(|c| c.heads.len() > 1);
+    let mut id: FxHashMap<&Atom, usize> = FxHashMap::default();
+    let mut next: Vec<Vec<usize>> = Vec::new();
+    let mut before: Vec<usize> = Vec::new();
+    for c in disjunctions() {
+        let mut last = usize::MAX;
+        for h in &c.heads {
+            let fresh = id.len();
+            let a = *id.entry(&h.atom).or_insert(fresh);
+            if a == fresh {
+                next.push(Vec::new());
+                before.push(0);
+            }
+            if last != usize::MAX {
+                next[last].push(a);
+                before[a] += 1;
+            }
+            last = a;
+        }
+    }
+    let n = id.len();
+    let mut rank = vec![usize::MAX; n];
+    let mut ready: BinaryHeap<Reverse<usize>> =
+        (0..n).filter(|&a| before[a] == 0).map(Reverse).collect();
+    let mut lowest = 0;
+    for r in 0..n {
+        let a = match ready.pop() {
+            Some(Reverse(a)) => a,
+            None => {
+                while rank[lowest] != usize::MAX {
+                    lowest += 1;
+                }
+                lowest
+            }
+        };
+        rank[a] = r;
+        for &b in &next[a] {
+            before[b] -= 1;
+            if before[b] == 0 && rank[b] == usize::MAX {
+                ready.push(Reverse(b));
+            }
+        }
+    }
+    let key = |h: &HeadChoice| rank[id[&h.atom]];
+    if disjunctions().all(|c| c.heads.is_sorted_by_key(key)) {
+        return None;
+    }
+    let mut out = program.clone();
+    for c in out.clauses.iter_mut().filter(|c| c.heads.len() > 1) {
+        c.heads.sort_by_key(key);
+    }
+    Some(out)
 }
 
 /// A clause's heads, with those of the predicates in `negated` renamed

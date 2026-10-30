@@ -194,7 +194,11 @@ pub(crate) fn ground_keeping(
     // Compound terms, list predicates and findalls are written as the
     // Datalog the rest reads, with three built-in literals ([`terms`]).
     let (program, counted) = terms::lower(program)?;
-    let program: &Program = &program;
+    // The heads of the annotated disjunctions in one order that each keeps
+    // ([`normalize::ordered_heads`]), so that rows of one distribution
+    // written in other orders are found alike.
+    let ordered = normalize::ordered_heads(&program);
+    let program: &Program = ordered.as_ref().unwrap_or(&program);
     // A table-shaped program, a Bayesian network as one annotated
     // disjunction per row, is ground as written and its grounding is known
     // without the generic steps ([`table`]). Its noisy-or tables are first

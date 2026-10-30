@@ -89,16 +89,25 @@ fn contexts(v: &Var) -> Vec<Vec<usize>> {
 
 /// The network as annotated disjunctions, `x(v)` the value `v` of `x`.
 fn annotated() -> String {
+    annotated_reversing(|_| false)
+}
+
+/// [`annotated`] with the heads of each row `r` for which `reversed(r)`
+/// holds in the reverse order.
+fn annotated_reversing(reversed: fn(usize) -> bool) -> String {
     let atom = |x: usize, u: usize| format!("{}({})", NET[x].name, u + 1);
     let mut s = String::new();
     for (x, v) in NET.iter().enumerate() {
-        for (row, context) in v.rows.iter().zip(contexts(v)) {
-            let heads: Vec<String> = row
+        for (r, (row, context)) in v.rows.iter().zip(contexts(v)).enumerate() {
+            let mut heads: Vec<String> = row
                 .iter()
                 .enumerate()
                 .filter(|&(_, &p)| p > 0.0)
                 .map(|(u, p)| format!("{p}::{}", atom(x, u)))
                 .collect();
+            if reversed(r) {
+                heads.reverse();
+            }
             let body: Vec<String> = v
                 .parents
                 .iter()
@@ -221,7 +230,14 @@ fn enumerated() -> Vec<f64> {
 #[test]
 fn a_network_written_as_rules_answers_as_written_as_annotated_disjunctions() {
     let expected = enumerated();
-    for (writing, source) in [("annotated", annotated()), ("rules", rules())] {
+    for (writing, source) in [
+        ("annotated", annotated()),
+        (
+            "annotated, odd rows reversed",
+            annotated_reversing(|r| r % 2 == 1),
+        ),
+        ("rules", rules()),
+    ] {
         for strategy in [
             Strategy::Trial(Kind::Closed),
             Strategy::Auto,
@@ -261,5 +277,18 @@ fn a_table_written_as_rules_reads_its_switches_not_its_values() {
                 "{gp}"
             );
         }
+    }
+}
+
+#[test]
+fn rows_written_with_their_values_in_other_orders_are_ground_alike() {
+    // The odd rows of each table list their values backwards; the heads
+    // are put in the order the rows agree on before the chains of
+    // switches are made, so that the rows of one distribution (`c`'s
+    // third and fifth) read switches alike, as written in one order.
+    for rows in [Rows::Apart, Rows::Classes] {
+        let reversed = common::ground(&annotated_reversing(|r| r % 2 == 1), rows, false);
+        let written = common::ground(&annotated(), rows, false);
+        assert_eq!(reversed.to_string(), written.to_string());
     }
 }

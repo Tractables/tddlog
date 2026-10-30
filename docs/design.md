@@ -428,7 +428,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 
 | step | files | what it does |
 |---|---|---|
-| 0 | `terms.rs`, `table.rs`, `noisy_or.rs` | compound terms, lists and findall lowered to Datalog with built-in literals; grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
+| 0 | `terms.rs`, `normalize.rs`, `table.rs`, `noisy_or.rs` | compound terms, lists and findall lowered to Datalog with built-in literals; the heads of the annotated disjunctions in one order; grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
 | 1 | `normalize.rs`, `unread.rs`, `chain.rs` | annotated disjunctions and probabilistic rules to switches and rules; arguments no clause reads dropped; transitive closures to linear steps |
 | 2 | `linear.rs` | right-linear recursion grounded from its bound end |
 | 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
@@ -442,7 +442,21 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 11 | `preprocess/` | in a CNF over facts: implied clauses dropped, defined facts eliminated |
 | 12 | `eliminate.rs` | linear recursion without recursion, after the grounder |
 
-0. **Table-shaped programs** (`table.rs`). A program whose clauses each
+0. **The heads' order** (`normalize::ordered_heads`). The chain of
+   switches of an annotated disjunction (step 1) follows its heads'
+   order, and the passes that compare rows, the row classes and the
+   switch sharing (step 7), find two rows of one distribution alike only
+   where their heads come in one order. Once the terms are lowered, the
+   heads of every disjunction are put in an order that every disjunction
+   keeps: numbered in the order they are first read, the heads go in a
+   topological order of "comes before" in a disjunction, the lowest
+   number first among those ready, and the lowest number left where the
+   disjunctions disagree. A program whose disjunctions agree is left as
+   written, rows that leave out a value of probability zero included; a
+   table written with each row's values in an order of its own is ground
+   as the table written in one order.
+
+   **Table-shaped programs** (`table.rs`). A program whose clauses each
    have ground heads of one predicate and a body of positive ground
    atoms, with ground queries and evidence, no query patterns and no
    cycle among its predicates, is a Bayesian network written one
