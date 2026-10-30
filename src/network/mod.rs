@@ -132,7 +132,9 @@ impl<'a> Evidence<'a> {
 /// How a network is read.
 #[derive(Clone, Debug)]
 pub struct ReadOptions<'a> {
+    /// The variables the program queries.
     pub queries: Queries,
+    /// The evidence file's contents, if the network is read with one.
     pub evidence: Option<Evidence<'a>>,
     /// Divide every row by its sum, for a file that writes its tables in
     /// percent or as weights, as Ace's `-Xnormalize` does on reading.

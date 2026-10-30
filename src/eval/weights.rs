@@ -15,11 +15,12 @@ use super::*;
 /// ([`crate::indicators`]).
 #[derive(Clone, Debug)]
 pub struct Probabilities {
-    /// The weights of `x`, of `¬x` and of both, indexed by `VarId.0`;
-    /// index 0 unused. Both is kept apart so that a fact's is exactly one,
-    /// whatever `p + (1 - p)` rounds to.
+    /// The weights of `x`, indexed by `VarId.0`; index 0 unused.
     pub pos: Vec<f64>,
+    /// The weights of `¬x`, indexed alike.
     pub neg: Vec<f64>,
+    /// The weights of `x` and `¬x` together, indexed alike: kept apart so
+    /// that a fact's is exactly one, whatever `p + (1 - p)` rounds to.
     pub one: Vec<f64>,
 }
 
@@ -104,6 +105,7 @@ pub struct Weighing<'a, V> {
 }
 
 impl<'a, V: Value> Weighing<'a, V> {
+    /// An evaluation under `weights` that has settled no value yet.
     pub fn new(weights: &'a Probabilities) -> Self {
         Weighing {
             weights,

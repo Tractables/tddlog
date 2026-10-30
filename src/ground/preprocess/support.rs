@@ -49,15 +49,17 @@ const TICKS_FLOOR: u64 = 20_000_000;
 /// What the search did.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SupportStats {
-    /// The candidates tried, those proved functions of the others, those
-    /// whose call stopped at its conflict limit, and those the search did
-    /// not try for its budget.
+    /// The candidates tried.
     pub tried: u64,
+    /// The candidates proved functions of the others.
     pub defined: u64,
+    /// The candidates whose call stopped at its conflict limit.
     pub unknown: u64,
+    /// The candidates the search did not try, for its budget.
     pub untried: u64,
-    /// The solver's conflicts and propagation steps.
+    /// The solver's conflicts.
     pub conflicts: u64,
+    /// The solver's propagation steps.
     pub ticks: u64,
 }
 

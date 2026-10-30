@@ -94,7 +94,9 @@ impl Route {
 /// zero is not walked, and its pairs not counted.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Routes {
+    /// The pairs of the passes up, by route.
     pub up: [usize; ROUTES],
+    /// The pairs of the passes down, by route.
     pub down: [usize; ROUTES],
 }
 

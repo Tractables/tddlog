@@ -149,6 +149,7 @@ pub struct Run {
     /// What conjoining the evidence and the queries built: with indicators,
     /// the conjunction of their links is here.
     pub query_sizes: query::QuerySizes,
+    /// What the compile that made the answers counted, over its runs.
     pub stats: CompileStats,
     /// `None` when the evidence is inconsistent.
     pub results: Option<Vec<QueryResult>>,
