@@ -31,6 +31,22 @@
 //! conjoins factors of different nodes without what lies between them,
 //! and their products grow.
 //!
+//! Where the walk sums out what no later join reads (`super::sum_out`), a
+//! factor put off holds its variables until it meets the result, so no
+//! subtree over them is finished and none is summed: the result keeps
+//! what it would have summed, and its pairs multiply with each factor that
+//! meets it. Putting nothing off there loses where a factor joined at its
+//! node brings in variables that a factor higher up also reads, which put
+//! off the two would have met first (1aie of the UAI 2022 PR set under
+//! `families:0`, 29 s with put-offs against 230 s without). So a summing
+//! walk puts items off, and `auto` starts it over once, putting nothing
+//! off, where it is refused memory or outgrows an index
+//! (`crate::evaluation::Evaluation::walk_again`): on the PR proteins under
+//! `families:0` at 29.59 GB, 1cxy, 1fas, 1nkd and 1svy were refused near
+//! the end of the walk with put-offs, and answer without (the root
+//! formulas of 2rta, 1vfy and 1a7w held 4.85e9, 2.79e9 and 586 M pairs
+//! with put-offs, 274 M, 203 M and 34 M without).
+//!
 //! A join also walks every level of the scope it is built on, the union
 //! of its operands', whatever their pairs: a factor of a few pairs joined
 //! into a result over hundreds of variables pays for all of them. The
@@ -420,6 +436,10 @@ pub(super) struct EvidenceWalk {
     /// Where only the evidence formula's count is wanted, what the joins
     /// sum out (`super::sum_out`).
     sum_out: Option<SumOut>,
+    /// Whether a node may put items off, and the nodes that put any off
+    /// (module doc; [`EvidenceWalk::put_nothing_off`]).
+    put_off: bool,
+    pub(super) put_offs: usize,
     pub(super) done: bool,
     /// The joins finished, each of which makes one formula of two: the
     /// walk makes one of the observed factors in one fewer.
@@ -472,6 +492,8 @@ impl EvidenceWalk {
             full_due_on: 0,
             in_full: FxHashMap::default(),
             sum_out: None,
+            put_off: true,
+            put_offs: 0,
             completed_joins: 0,
             #[cfg(test)]
             reassociated: 0,
@@ -519,6 +541,18 @@ impl EvidenceWalk {
     /// weights `w`, where no query reads the evidence formula.
     pub(super) fn sum_out(&mut self, tree: &tididi::Vtree, w: &crate::eval::Probabilities) {
         self.sum_out = Some(SumOut::new(tree, w));
+    }
+
+    /// Whether a walk that puts nothing off may start over in place of
+    /// this one (module doc): it sums out and has put items off.
+    pub(super) fn walks_again(&self) -> bool {
+        self.sum_out.is_some() && self.put_offs > 0
+    }
+
+    /// No node puts items off, for a walk that has not started.
+    pub(super) fn put_nothing_off(&mut self) {
+        debug_assert!(self.next_node == 0, "the walk has started");
+        self.put_off = false;
     }
 
     /// The joins finished, and all the walk makes: one fewer than the
@@ -888,6 +922,12 @@ impl EvidenceWalk {
         (vars.len() <= SHARED_UP_TO).then(|| vars.into())
     }
 
+    /// Whether a node below the root passes its largest item, `main`, up
+    /// and puts off the others, `rest` pairs (see the module doc).
+    fn puts_off(&self, rest: usize, main: usize) -> bool {
+        self.put_off && PUT_OFF_BELOW * rest < self.charged(main)
+    }
+
     /// What the put-off test charges slot `id`: its pairs, and
     /// [`LEVEL_PAIRS`] per node of its scope's vtree.
     fn charged(&self, id: usize) -> usize {
@@ -946,7 +986,7 @@ impl EvidenceWalk {
             } else {
                 let rest = others.iter().sum::<usize>()
                     + children.iter().map(|b| b.put_off_size).sum::<usize>();
-                PUT_OFF_BELOW * rest < self.charged(main)
+                self.puts_off(rest, main)
             };
         if kept { Vec::new() } else { waiting }
     }
@@ -1431,7 +1471,7 @@ impl EvidenceWalk {
         };
         let rest = items.iter().map(|&(_, z)| z).sum::<usize>() - size
             + put_off.iter().map(|&(_, z, _)| z).sum::<usize>();
-        if node != tree.root() && PUT_OFF_BELOW * rest < self.charged(items[largest].0) {
+        if node != tree.root() && self.puts_off(rest, items[largest].0) {
             let (main, _) = items.remove(largest);
             let mut groups = Vec::new();
             for &group in put_off.iter().flat_map(|(_, _, groups)| groups) {
@@ -1449,6 +1489,7 @@ impl EvidenceWalk {
                 rest_factors = concat(rest_factors, factors);
             }
             rest_factors.extend(items.into_iter().map(|(f, _)| f));
+            self.put_offs += usize::from(!rest_factors.is_empty());
             self.built[node.idx()] = Some(Built {
                 main,
                 put_off: rest_factors,

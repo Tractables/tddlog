@@ -235,6 +235,20 @@ impl QueryEvaluation {
         }
     }
 
+    /// The phase, not yet run, with an evidence walk that puts nothing off
+    /// (`walk`'s module doc).
+    pub(crate) fn putting_nothing_off(mut self) -> Self {
+        self.walk.put_nothing_off();
+        self
+    }
+
+    /// Whether the phase may start over with a walk that puts nothing off
+    /// ([`crate::evaluation::Evaluation::walk_again`]): its walk sums out,
+    /// has put items off, and holds no formula taken from the compile.
+    pub(crate) fn walks_again(&self) -> bool {
+        self.walk.walks_again() && !self.took
+    }
+
     /// The steps of the phase finished, and all of them: the evidence
     /// walk's joins, then the queries answered.
     pub(crate) fn progress(&self) -> (usize, usize) {

@@ -32,7 +32,10 @@
 //! The trial resumes where it stopped: finished components survive a
 //! stopped compile, and completed evidence conjunctions and query answers
 //! a stopped query phase. The first trial
-//! to finish answers. Memory goes to the trial that has spent the most:
+//! to finish answers. An evidence walk that sums out and is refused memory
+//! or outgrows an index starts over first, once, putting nothing off
+//! ([`crate::evaluation::Evaluation::walk_again`]); beyond that, memory
+//! goes to the trial that has spent the most:
 //! refused it while other trials hold what their attempts built, and
 //! having spent more work than each of them, a trial takes it, once: what
 //! they hold is freed, each of them to begin its phase again at its next
@@ -657,6 +660,19 @@ fn run_within(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
             {
+                // A walk that sums out starts over first, once, putting
+                // nothing off (`query::walk`'s module doc).
+                if trials[i].evaluation.walk_again() {
+                    let t = &mut trials[i];
+                    t.progress.clear();
+                    ledger.notes.push(format!(
+                        "walked again: {} indicators={} putting nothing off ({} units): {e}",
+                        t.kind,
+                        t.kind.indicators_name(),
+                        t.spent
+                    ));
+                    continue;
+                }
                 // Memory refused goes to the trial refused it where it has
                 // spent more than each trial that holds any, once: what
                 // they built is freed, and it resumes at its next turn.

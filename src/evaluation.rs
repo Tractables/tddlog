@@ -28,10 +28,14 @@ pub(crate) struct Evaluation {
     query: Option<query::QueryEvaluation>,
     /// Seconds in the query phase, over every call.
     pub(crate) query_seconds: f64,
-    /// Work units in the query phase, over every call, but for what
-    /// settling spent within its budget ([`Self::settled_work`]): the work
-    /// `auto` charges a trial's turns for it.
+    /// Work units in the query phase, over every call since it last
+    /// began ([`Self::walk_again`]), but for what settling spent within its
+    /// budget ([`Self::settled_work`]): the work `auto` charges a trial's
+    /// turns for it.
     pub(crate) query_work: u64,
+    /// Whether the query phase started over with a walk that puts nothing
+    /// off ([`Self::walk_again`]).
+    walked_again: bool,
 }
 
 impl Evaluation {
@@ -159,17 +163,122 @@ impl Evaluation {
         }
         let _later = backend.stop_later(self.settled_work() - settled);
         let compiled = self.compiled.as_mut().unwrap();
-        let query = self
-            .query
-            .get_or_insert_with(|| query::QueryEvaluation::new(gp, backend, compiled));
+        let query = self.query.get_or_insert_with(|| {
+            let query = query::QueryEvaluation::new(gp, backend, compiled);
+            if self.walked_again {
+                query.putting_nothing_off()
+            } else {
+                query
+            }
+        });
         if watch.is_none() {
             query.take_last_reads(gp, compiled);
         }
         query.run(gp, backend, compiled, watch)
     }
 
+    /// Starts the query phase over, once, with an evidence walk that puts
+    /// nothing off, where its walk sums out, has put items off and holds
+    /// no formula taken from the compile (`query::walk`'s module doc):
+    /// `auto` does so for a trial whose walk was refused memory or outgrew
+    /// an index. What the walk built is dropped. Whether it did.
+    pub(crate) fn walk_again(&mut self) -> bool {
+        if !self.query.as_ref().is_some_and(|q| q.walks_again()) {
+            return false;
+        }
+        self.query = None;
+        self.query_work = 0;
+        self.walked_again = true;
+        true
+    }
+
     /// The finished compile's statistics.
     pub(crate) fn into_stats(self) -> CompileStats {
         self.compiled.expect("the compile finished").stats
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Evaluation;
+    use crate::GroundOptions;
+    use crate::tp::{CompileError, Projection, TddBackend};
+    use crate::vtree::Kind;
+
+    #[test]
+    fn a_summing_walk_starts_over_putting_nothing_off() {
+        // Two naive Bayes models of 40 features, each with its first half
+        // observed and no query, so that only P(e) is wanted and the walk
+        // sums out. On `closed`'s right-linear layout it puts observations
+        // along the spine off. Stopped by the watch once it has, as `auto`
+        // stops it where it is refused memory, it starts over putting
+        // nothing off, once, and answers the same P(e), hand computed from
+        // the program's rounded weights: each model's P(e) is 0.5 times
+        // the product of the observed p_i plus 0.5 times that of the q_i,
+        // and the models are independent.
+        let k = 40;
+        let weight = |x: f64| format!("{x:.4}").parse::<f64>().unwrap();
+        let p = |i: usize| weight(0.1 + 0.8 * (i as f64 / k as f64));
+        let q = |i: usize| weight(0.9 - 0.8 * (i as f64 / k as f64));
+        let mut bayes = String::new();
+        for m in ["a", "b"] {
+            bayes.push_str(&format!("0.5::cls({m},v1); 0.5::cls({m},v2).\n"));
+            for i in 1..=k / 2 {
+                bayes.push_str(&format!(
+                    "{}::obs({m},{i}) :- cls({m},v1).\n{}::obs({m},{i}) :- cls({m},v2).\n",
+                    p(i),
+                    q(i)
+                ));
+                bayes.push_str(&format!("evidence(obs({m},{i}), true).\n"));
+            }
+        }
+        let (v1, v2) = (1..=k / 2).fold((0.5, 0.5), |(a, b), i| (a * p(i), b * q(i)));
+        let want = 2.0 * (v1 + v2).log10();
+        let options = GroundOptions {
+            detach: false,
+            ..GroundOptions::default()
+        };
+        let gp = crate::ground::ground(&crate::syntax::parse_program(&bayes).unwrap(), &options)
+            .unwrap();
+        let deps = crate::ground::deps::Deps::of(&gp);
+        let (layout, _) = crate::vtree::build(&gp, &deps, Kind::Closed).unwrap();
+        let tree = layout.vtree.clone();
+        let mut evaluation = Evaluation::default();
+        let run = |evaluation: &mut Evaluation, watch| {
+            tree.context().run(|engine| {
+                let backend = TddBackend::new(engine, tree.clone());
+                evaluation
+                    .run(
+                        &gp,
+                        &deps,
+                        &layout.order,
+                        &backend,
+                        Kind::Closed,
+                        Projection::default(),
+                        1,
+                        watch,
+                        None,
+                    )
+                    .map(|_| ())
+            })
+        };
+        let mut watch = 1;
+        loop {
+            match run(&mut evaluation, Some(watch)) {
+                Err(CompileError::Oversize { .. } | CompileError::QueryOversize { .. }) => {}
+                other => panic!("at a watch of {watch} pairs: {other:?}"),
+            }
+            if evaluation.walk_again() {
+                break;
+            }
+            watch *= 2;
+        }
+        run(&mut evaluation, None).unwrap();
+        assert!(!evaluation.walk_again(), "the walk put items off again");
+        let got = evaluation
+            .evidence_probability(&gp)
+            .expect("nothing detached")
+            .log10();
+        assert!((got - want).abs() < 1e-9, "log10 P(e) {got} against {want}");
     }
 }

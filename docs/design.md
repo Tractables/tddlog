@@ -1550,7 +1550,9 @@ weight bets on the estimate, and the families trials that win spend far
 fewer units a pair than those that lose. Their formulas need not reach
 the watch, which grows with the target.
 
-**Refusals.** Memory goes to the trial that has spent the most. An
+**Refusals.** A walk that sums out and is refused starts over first,
+once, putting nothing off (`Evaluation::walk_again`, under Put-offs
+below). Beyond that, memory goes to the trial that has spent the most. An
 operation refused memory, by the allocator or tididi's byte budget,
 while other trials hold what their attempts built, frees that
 (`Trial::release`) where the refused trial has spent more work than each
@@ -1835,6 +1837,12 @@ density than the compile's (`QUERY_ROUTE`).
   largest passes up and the rest are put off; the first node where that
   fails conjoins them. On a right-linear vtree the observations otherwise
   each join a growing result.
+  A walk that sums out (P(e) alone) and is refused memory or outgrows an
+  index starts over once putting nothing off (`Evaluation::walk_again`):
+  a factor put off keeps its variables unsummed until it meets the
+  result, whose pairs then multiply with each factor (the UAI 2022 PR
+  proteins 1cxy, 1fas, 1nkd and 1svy under `families:0`). Elsewhere
+  put-offs win (1aie, 29 s against 230 s without).
 - **Batches.** The factors a child put off are conjoined among themselves
   and their product meets the child's result. They go in groups that merge
   as a binary counter carries, each a balanced tree, the groups' products
