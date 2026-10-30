@@ -1096,8 +1096,9 @@ function how() {
       + `one it was not given. ${measureText()} `
       + "A system run in several forms counts as its fastest form on each instance. On each instance a system is marked own (from its own papers, "
       + "benchmarks or distribution), native (the program it read is in its own language, as the benchmark's authors or "
-      + "generator wrote it) or translated (a translator wrote the program it read from a program in another language, "
-      + "or a converter wrote it from the network in another format)."),
+      + "generator wrote it, or is the network converted to another network format, the same variables and tables) or "
+      + "translated (a translator wrote the program it read from a program in another language, or wrote a Markov "
+      + "network as a Bayesian network, a node per factor)."),
     element("p", {}, "A plot counts the instances each system answers within a time limit, on a linear scale from 0 to "
       + "the longest limit: a line further up and to the left is better. A type's plots draw tddlog and the native "
       + `systems given at least ${data.measure.drawn} of its instances; a name in the legend greys its line or colours it again.`),
@@ -1392,9 +1393,9 @@ function systemView(route) {
     : "On every instance of the categories it was given, against tddlog run on the same machine in the same lanes. ")
     + "An instance it does not answer counts at its time limit, whatever the reason (out of time or memory, a wrong answer, "
     + `a program it cannot express, or not given), and a time under ${FLOOR} s as ${FLOOR} s. An instance is its own (from `
-    + "its own papers, benchmarks or distribution), native (the program it read is in its own language) or translated (a "
-    + "translator wrote the program it read from a program in another language, or a converter wrote it from the "
-    + "network in another format)."));
+    + "its own papers, benchmarks or distribution), native (the program it read is in its own language, or is the "
+    + "network converted to another network format) or translated (a translator wrote the program it read from a "
+    + "program in another language, or wrote a Markov network as a Bayesian network, a node per factor)."));
   if (s.cite) {
     const c = s.cite;
     dl.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
@@ -1743,9 +1744,6 @@ function versionLabel(tab) {
 
 const UNFAIR = "Note: this is an automatic translation from the original program, which might have performance "
   + "implications that make the comparison unfair.";
-// The same for the original network converted to another network format.
-const CONVERTED = "Note: this is the original network converted automatically to another format, which might have "
-  + "performance implications that make the comparison unfair.";
 
 // An instance of a family: its programs (the one tddlog read, and a menu of
 // every other system's), then its answers. `route` names the file to show.
@@ -1818,8 +1816,8 @@ function showFile(view, fam, inst, ti, fi) {
     }, element("p", { class: "cap" }, `The original, ${inst.tabs[0].lang}`));
     panes.append(original(shownFiles(inst.tabs[0])[0]));
   }
-  const note = tab.conversion ? CONVERTED : UNFAIR;
-  const cap = tab.translated && readersOf(tab).length ? element("p", { class: "unfair" }, note)
+  // a network converted to another network format is native: no note
+  const cap = tab.translated && !tab.conversion && readersOf(tab).length ? element("p", { class: "unfair" }, UNFAIR)
     : two ? element("p", { class: "cap" }, tab.lang) : null;
   panes.append(filePane(fam, tab, fi, (k) => {
     open(ti, k);

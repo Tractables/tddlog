@@ -1749,14 +1749,33 @@ core, single-threaded: numpy, BLAS and Julia threads are set to one):
 - `libdai` (`scripts/libdai_uai.cpp`): `JTree` with HUGIN updates and a
   min-fill order, `logZ()` for the PR task.
 - `tensorinference` (`scripts/tensorinference_uai.jl`): `TensorNetworkModel`
-  with the optimizer `TreeSA` (variant `treesa`, the package's default) or
-  `GreedyMethod` (variant `greedy`), `marginals` and `log_probability`.
+  with the optimizer `TreeSA` (variant `treesa`, the package's default, with
+  its default settings) or `GreedyMethod` (variant `greedy`), `marginals`
+  and `log_probability`. Julia is timed warm: the
+  driver first runs a Markov network of three binary variables, one
+  observed, through the same calls (reading the files, the model with the
+  same optimizer and an evidence dictionary, `log_probability`, and
+  `marginals` for the marginals), then times the instance from reading its
+  model and evidence to its answers, the search for a contraction order
+  included (`inference_seconds`, with Julia's compilation within it,
+  `compile_seconds`). The package compiles methods anew for the instance's
+  tensors, which the small model does not cover and which can take most of
+  that time, so the driver solves the instance a second time where the
+  first took under `BN_WARM_BELOW` seconds (`warm_seconds`), as
+  alea_bench.jl times Alea.jl: bench.py passes a third of the limit. It
+  prints the warm-up's time apart (`warmup_seconds`).
 
 The tables carry one column per system (variant). The PR task
 (`--suite uai --pr`) gives each system's `log10_z` from the same drivers in
 PR mode. The time is the process's wall time; `inference_seconds` goes to
 the record's stats to separate start-up (Python, Julia's package load)
-from the work. A model whose factors overflow memory is an error or a
+from the work. TensorInference.jl's record has, as Alea.jl's, the first
+solve as `inproc_seconds`, Julia's compilation within it as
+`jit_seconds`, the second solve as `warm_seconds` where there was one, and
+the warm-up's `warmup_seconds`; the tables take its own time
+(`bench.own_seconds`, as for Alea.jl, Pluck and Roulette): the warm one,
+else the first less its compilation. A run whose wall time passed the
+limit stays a timeout. A model whose factors overflow memory is an error or a
 timeout, counted as a failure. A marginals run reads the query
 variables' indices from a file (`@FILE`). On the largest networks of
 the final PR set the list is longer than Linux allows for one argument
@@ -2081,19 +2100,24 @@ translator wrote that program from a program in another language: line
 for line (`problog2pita.py`, or the ProbLog program of a Dice program, a
 cplint LPAD or a network, which `tddlog --program` writes and
 `dice2problog.py`, `lpad2problog.py` and `gen_bn.py` wrote before), or doing some of the system's work for it (grounding,
-unrolling, bit-blasting); a network that a converter wrote in another
-network format for a tool that does not read the original's (`gen_bn.py`
-writes a Hugin file of a UAI or BIF network for Ace, and a UAI file of a
-Hugin or BIF network for the other network tools) is translated too.
+unrolling, bit-blasting). A Bayesian network that a converter wrote in
+another network format for a tool that does not read the original's
+(`gen_bn.py` writes a Hugin file of a UAI or BIF network for Ace, and a
+UAI file of a Hugin or BIF network for the other network tools) is
+native: the same variables and tables in another syntax (the owner,
+2026-10-29). A Markov network that `gen_bn.py` writes as a Bayesian
+network for Ace, a node per factor, observed, is translated: the file
+changes the model's structure.
 The class is decided by the files the system's commands read, as the run
 captured them, the same way in the results and on the benchmark pages:
 a page marks each program it shows as the original (or a copy of it,
 byte for byte or decompressed), native, a conversion of format or a
 translation, the rows below give each instance its class, and a check
-of the results compares every record's class with its page. A page
+of the results compares every record's class with its page, a
+conversion of format counting as native. A page
 tells a conversion as one: its tab says that the original network was
-converted to the format, and its warning that the file might make the
-comparison unfair says so of a conversion. An own instance is so by
+converted to the format, without the warning a translation carries that
+the file might make the comparison unfair. An own instance is so by
 where it comes from, whatever file the system read, and is not compared
 with its page. A converted program's page names the converter that the
 runs which read it ran: the script in the runs before tddlog read the
@@ -2133,9 +2157,14 @@ is the first of own, native and translated among the copies it was given.
 The uncertain cells were decided as follows: Storm's and PRISM's
 weather factory is native, not own (Rubicon's PRISM model, not theirs);
 pgmpy has no own networks (bnlearn's networks are R's package's); a
-network converted to another network format for a network tool (BIF or
-UAI to Hugin for Ace, Hugin or BIF to UAI for the others) is translated,
-and Ace's copy of a Hugin file, the same file with a `+` in a number
+Bayesian network converted to another network format for a network tool
+(BIF or UAI to Hugin for Ace, Hugin or BIF to UAI for the others) is
+native, and a Markov network of the UAI sets that Ace is given as a
+Bayesian network with an observed node per factor translated: the rows
+tell the two by `data/uai_types.tsv`, and the network's page by the
+file Ace read (its `.inst` observes a factor's node, `f` and a number,
+or its `.net` declares one), which the check of the results compares;
+Ace's copy of a Hugin file, the same file with a `+` in a number
 dropped where its reader refuses one (`bench.py`'s `hugin_for_ace`),
 native; the observations `gen_bn.py --inst` writes of a network's evidence are the
 generator's, native to Ace and tddlog, and a conversion where the
@@ -2182,17 +2211,21 @@ the same model) has the class of the program it is written from.
 | tddlog | roulette | `rl_bn_` | native | the Roulette paper's Bayesian networks, read by tddlog's network reader |
 | ace | std_bn, large | all | native | a Hugin network, Ace's own input (a + in a number dropped where Ace's reader refuses one) |
 | ace | dice | `bn_` | native | the Dice paper's Bayesian networks, as Hugin networks |
-| ace | uai, uai_pr, uaipr, uaitpr | all | translated | the UAI network converted to a Hugin file (gen_bn.py), as Ace reads a UAI file only as a Bayesian network |
-| ace | roulette | `rl_bn_` | translated | the Roulette paper's BIF networks converted to Hugin files (gen_bn.py), as Ace reads no BIF file |
+| ace | uai, uai_pr, uaipr, uaitpr | `uai_bn_31$` | translated | a Bayesian network by its structure whose tables sum to one within 1e-5 (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it for Ace as a Markov network, a node per factor, observed |
+| ace | uai, uai_pr, uaipr, uaitpr | bayesian (`data/uai_types.tsv`) | native | a Bayesian network of the UAI sets converted to a Hugin file (gen_bn.py), the same variables and tables, as Ace reads a UAI file only as a Bayesian network |
+| ace | uai, uai_pr, uaipr, uaitpr | all | translated | a Markov network written as a Bayesian network for Ace (gen_bn.py write_hugin): a node per factor, observed |
+| ace | roulette | `rl_bn_` | native | the Roulette paper's BIF networks converted to Hugin files (gen_bn.py), the same variables and tables, as Ace reads no BIF file |
 | merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr | all | native | a UAI network, the tool's own input |
-| merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | translated | the network converted to a UAI file (gen_bn.py --uai) |
-| merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | translated | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai) |
+| merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | native | the network converted to a UAI file (gen_bn.py --uai), the same variables and tables |
+| merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai), the same variables and tables |
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
 | problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
 | tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
+| tddlog | std, dice | `dice_(?!(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder))` | native | the Dice paper's program, read by tddlog's Dice reader |
+| tddlog | ppl | `nodice_` | native | noDice's programs, which are Dice programs, read by tddlog's Dice reader |
 | tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
@@ -2364,17 +2397,20 @@ program with `souffle --full-only compute.dl -o compute` and runs
 reading `out/facts.prob`. The translation is the harness's and is not
 timed. The compile is timed apart from the run, as the paper times
 inference and not the compile of the analysis: every record after it
-keeps the compile's seconds (`compile_s`, at most 3600 s), and the
+keeps the compile's seconds (`compile_s`), and the
 compiled program is reused by every instance whose `compute.dl` is the
 same, whose record gets that compile's seconds (before 2026-10-28 the
 harness gave such a record 0 and a failed run none). The processing
-charges the compile to the record (`rel/charge.py`, final_all.sh's
-`PSOUFFLE_COMPILE`, charged by default while the owner decides): the
-system's own work from the program to the answer, as ProvSQL pays for
-loading its tables. A reused compile is charged its seconds from the
-record of the same run that compiled the text (the `compute.dl` its
-captured call reads); an answer or error whose compile and run pass the
-limit, and a compile stopped at its 3600 s, become timeouts. On the
+charges the compile to the record (`rel/charge.py`; the owner,
+2026-10-29): the system's own work from the program to the answer, as
+ProvSQL pays for loading its tables. A reused compile is charged its
+seconds from the record of the same run that compiled the text (the
+`compute.dl` its captured call reads); an answer or error whose compile
+and run pass the limit, and a compile stopped at its bound, become
+timeouts. The compile is stopped at the instance's limit, or at 3600 s
+where that is lower: one past the limit is a timeout already (before
+2026-10-29 it ran up to 3600 s whatever the limit, and compiles of 35
+to 54 minutes held a run's lease under a 300 s limit). On the
 published tables this turns 10 of PSouffle's 276 answers into timeouts
 (std's s1000, cora10, cora50 and cora500; the literature's
 taint_app_ca7, taint_yaaic, eventcalc4_250, mastermind32_5_8,

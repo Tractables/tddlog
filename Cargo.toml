@@ -15,7 +15,7 @@ categories = ["science", "command-line-utilities"]
 
 [dependencies]
 # The TDD library.
-tididi = { git = "https://github.com/Tractables/tididi", rev = "ca759585cc8f75fe4da86f03cab3ef337facea75" }
+tididi = { git = "https://github.com/Tractables/tididi", rev = "df7b84a31faa2aaa3a6dc3b0c1f74d70716a2899" }
 # Tree decompositions for the structure-aware vtree strategies. Its build.rs
 # compiles a vendored C++ FlowCutter, so building needs a C++ compiler.
 goatd = { git = "https://github.com/Tractables/goatd", rev = "e592d1e2233d4f724c6cb3475a4810d95e0b847a" }

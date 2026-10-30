@@ -1547,6 +1547,80 @@ fn memory_goes_to_the_trial_that_has_spent_the_most_once() {
 }
 
 #[test]
+fn a_trial_retired_behind_held_memory_runs_again_once_none_is_left() {
+    // As above, under budgets of 1 to 4 KiB: a trial refused while
+    // another holds its formulas, and behind it in work, is retired behind
+    // it. Once every trial is retired, each trial retired so runs again,
+    // once, with nothing held beside it. Under a byte budget per operation
+    // it may be refused again, and the run then fails with the refusal;
+    // under an address-space limit, the formulas the others held may be
+    // what refused it (multimodal_w11 at 40 GB, where `closed` was refused
+    // while `program:fanin` held its formulas). Which budgets retire a
+    // trial behind another moves with the memory tididi's operations take,
+    // so several are tried.
+    let mut revivals = 0;
+    for budget in (4..16).map(|k| k << 8) {
+        let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+        let result = run_within(
+            Programs {
+                ground: gp,
+                written: None,
+                conditioned: None,
+                decision: false,
+            },
+            vec![
+                Kind::Program { fan_in: false },
+                Kind::Closed,
+                Kind::Families { search: false },
+            ],
+            Projection::default(),
+            Watch {
+                first_pairs: 1,
+                memory_bytes: Some(budget),
+                ..Watch::default()
+            },
+            None,
+        );
+        let failed = result.is_err();
+        assert!(!failed || refused(&result), "budget {budget}");
+        let notes = match result {
+            Ok(run) => run.vtree_notes,
+            Err(Error::Trials { notes, .. }) => notes,
+            Err(_) => unreachable!(),
+        };
+        let revived: Vec<usize> = (0..notes.len())
+            .filter(|&k| notes[k].starts_with("revived: "))
+            .collect();
+        revivals += revived.len();
+        for &k in &revived {
+            let trial = notes[k]["revived: ".len()..].split(" (").next().unwrap();
+            let retired = format!("retired: {trial} ");
+            assert!(
+                notes[..k].iter().any(|n| n.starts_with(&retired)),
+                "{notes:#?}"
+            );
+            assert!(
+                notes[k + 1..]
+                    .iter()
+                    .any(|n| n.starts_with(&format!("trial: {trial},"))),
+                "{notes:#?}"
+            );
+            assert!(
+                !failed || notes[k + 1..].iter().any(|n| n.starts_with(&retired)),
+                "{notes:#?}"
+            );
+            let again = format!("revived: {trial} ");
+            assert_eq!(
+                notes.iter().filter(|n| n.starts_with(&again)).count(),
+                1,
+                "{notes:#?}"
+            );
+        }
+    }
+    assert!(revivals > 0);
+}
+
+#[test]
 fn closed_follows_dynamic_where_nothing_to_order_has_no_recursion() {
     // One component of acyclic atoms merged by the facts they share,
     // as gh20 is. A byte budget per operation that the min-fill vtree

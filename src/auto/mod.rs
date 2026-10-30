@@ -42,7 +42,10 @@
 //! it is retired, and the run goes on with the others ([`Trial::retire`]).
 //! So a refusal discards less work than the refused trial has spent, from
 //! each other trial, and once a trial. A trial with no other left runs
-//! without bounds ([`attempt`]).
+//! without bounds ([`attempt`]). A trial retired while another held what
+//! it built may have been refused for that memory alone: once no trial is
+//! left, each such trial runs again, once, with nothing held beside it
+//! ([`Trial::behind`]).
 //!
 //! So the run spends on each other trial at most its weight's share of
 //! twice the winner's work, times two to the doublings by which the
@@ -499,6 +502,24 @@ fn run_within(
             .filter(|&i| !trials[i].disabled)
             .min_by(|&i, &j| trials[i].key().total_cmp(&trials[j].key()));
         let Some(i) = next else {
+            // Trials retired while another held memory, which is freed now,
+            // run again, once each.
+            let behind: Vec<usize> = (0..trials.len())
+                .filter(|&j| trials[j].behind && !trials[j].revived)
+                .collect();
+            if !behind.is_empty() {
+                for &j in &behind {
+                    let t = &mut trials[j];
+                    (t.disabled, t.revived) = (false, true);
+                    ledger.notes.push(format!(
+                        "revived: {} indicators={} ({} units), retired while another trial held memory",
+                        t.kind,
+                        t.kind.indicators_name(),
+                        t.spent
+                    ));
+                }
+                continue;
+            }
             let error = refused.map_or_else(
                 || Error::Vtree("auto has no trial left".into()),
                 |e| Error::Trials {
@@ -596,6 +617,7 @@ fn run_within(
                     bounds.pairs
                 ));
                 t.retire();
+                t.behind = e == tididi::OperationError::OverBudget && !others.is_empty();
                 refused = Some(e);
                 continue;
             }

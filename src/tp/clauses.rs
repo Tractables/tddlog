@@ -565,21 +565,21 @@ impl Factoring<'_> {
     }
 
     /// `acc ∧ nb` on `scope` for the negation `nb` of a body, minimized;
-    /// `nb` itself where `acc` is true (`trivial`), which a conjunction
+    /// `nb` itself where `acc` is true (`None`), which a conjunction
     /// would walk level by level to give back, left on its own scope.
     fn and_term(
         &mut self,
-        acc: Formula,
+        acc: Option<Formula>,
         nb: Part,
-        trivial: bool,
         scope: &VtreeScope,
     ) -> Result<Formula, CompileError> {
-        let (mut r, on) = if trivial {
-            nb.owned(self.backend)?
-        } else {
-            let r = self.backend.and_on(acc, nb, scope)?;
-            (self.count)(Op::And, 1);
-            (r, scope.clone())
+        let (mut r, on) = match acc {
+            None => nb.owned(self.backend)?,
+            Some(acc) => {
+                let r = self.backend.and_on(acc, nb, scope)?;
+                (self.count)(Op::And, 1);
+                (r, scope.clone())
+            }
         };
         self.backend.minimize(&mut r, Reduce::Between)?;
         (self.count)(Op::Minimize, 1);
@@ -698,7 +698,7 @@ impl Factoring<'_> {
         start: Option<Tdd>,
     ) -> Result<Tdd, CompileError> {
         let started = start.is_some();
-        let mut acc = start.unwrap_or_else(|| self.backend.one(scope));
+        let mut acc = start;
         let (mut groups, bodies) = self.at_most_one(bodies, pairs);
         if self.seeds {
             let siblings = self.sibling_groups(&bodies, &groups);
@@ -809,28 +809,30 @@ impl Factoring<'_> {
                 memo.stats.from_models += usize::from(from_models);
                 memo.stats.left_out += left_out;
                 drop(memo);
-                if !started {
+                let Some(acc) = acc else {
                     return self.kept_if_refused(f, scope, vars, cubes, local_groups);
-                }
-                acc = self.backend.and(acc, f)?;
+                };
+                let acc = self.backend.and(acc, f)?;
                 return (self.watched)(acc, self.head);
             }
             memo.stats.fell_back += 1;
         }
-        // Whether the formula is other than true, as the or-route needs: from
-        // true it builds the product it would avoid. Until then `acc` is
-        // `one`, and a body's negation is the formula (`and_term`).
-        let mut narrowed = started || !groups.is_empty();
+        // The formula is `None` while it is true, so that `one` is built only
+        // for an operation that reads it, mostly a clause conjoined into it:
+        // the first body's negation is the formula (`and_term`). The
+        // or-route needs a formula other than true: from true it builds the
+        // product it would avoid.
         for (mut lits, exactly) in groups {
-            let one = self.one_of(scope, &mut lits, exactly)?;
-            acc = self.backend.and_on((acc, scope.clone()), one, scope)?;
+            let group = self.one_of(scope, &mut lits, exactly)?;
+            let f = acc.unwrap_or_else(|| self.backend.one(scope));
+            let f = self.backend.and_on((f, scope.clone()), group, scope)?;
             (self.count)(Op::And, 1);
-            acc = (self.watched)(acc, self.head)?;
+            acc = Some((self.watched)(f, self.head)?);
         }
         // The formula, on `scope` but where it is a body's negation alone,
         // on the body's own scope (`and_term`), until an operation needs
         // it on `scope`.
-        let mut acc: Formula = (acc, scope.clone());
+        let mut acc: Option<Formula> = acc.map(|f| (f, scope.clone()));
         let mut uncontracted = 0;
         let mut every = CLAUSES_PER_CONTRACTION;
         // The formula's nodes after its last contraction. `and_clause`
@@ -839,7 +841,8 @@ impl Factoring<'_> {
         // clause after clause; a run that doubles the nodes is contracted
         // where it stands (pdb30's `td` loop otherwise grows to a thousand
         // times its formula's pairs between contractions).
-        let mut settled_nodes = self.backend.nodes(&acc.0);
+        // While the formula is true it is `one`'s, read where `one` is built.
+        let mut settled_nodes = acc.as_ref().map_or(0, |f| self.backend.nodes(&f.0));
         // The clauses conjoined since they were last counted: a run is
         // counted at the next contraction, the next body with a derived
         // literal, or the end.
@@ -860,11 +863,12 @@ impl Factoring<'_> {
             {
                 (self.count)(Op::And, std::mem::take(&mut run));
                 let nb = (self.part)(l.negated(), 1, scope)?;
-                acc = self.and_term(acc, nb, !narrowed, scope)?;
-                narrowed = true;
-                settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
-                acc.0 = (self.watched)(acc.0, self.head)?;
-                if self.backend.is_zero(&acc.0) {
+                let mut f = self.and_term(acc.take(), nb, scope)?;
+                settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
+                f.0 = (self.watched)(f.0, self.head)?;
+                let zero = self.backend.is_zero(&f.0);
+                acc = Some(f);
+                if zero {
                     break;
                 }
                 continue;
@@ -896,9 +900,12 @@ impl Factoring<'_> {
                     break;
                 }
                 derived_left -= 1;
-                if narrowed && derived_left == 0 && !pending.is_empty() {
+                if derived_left == 0
+                    && !pending.is_empty()
+                    && let Some(formula) = &acc
+                {
                     let c = self.collapse(&mut pending, scope)?;
-                    match self.last_product(&acc, c, f, scope)? {
+                    match self.last_product(formula, c, f, scope)? {
                         Ok(r) => pending.push((r.into(), 0)),
                         Err(parts) => split = Some(parts),
                     }
@@ -914,27 +921,38 @@ impl Factoring<'_> {
             if dead {
                 continue; // body false: ¬body = true
             }
-            let trivial = !narrowed;
-            narrowed = true;
             let left_out = exclusive.leave_out(&mut fact_lits);
             if left_out > 0 {
                 self.memo.borrow_mut().stats.left_out += left_out;
             }
-            match (conj, split) {
+            let formula = acc.take();
+            let f = match (conj, split) {
                 (_, Some((a, b))) => {
                     (self.count)(Op::And, std::mem::take(&mut run));
-                    acc = (self.or_route(scope, acc, a, b, &fact_lits)?, scope.clone());
+                    // A split is made only against a formula other than true.
+                    let formula = self.formula(formula, scope);
+                    let mut acc = (
+                        self.or_route(scope, formula, a, b, &fact_lits)?,
+                        scope.clone(),
+                    );
                     settled_nodes = self.backend.nodes(&acc.0);
                     acc.0 = (self.watched)(acc.0, self.head)?;
+                    acc
                 }
                 (None, None) => {
                     // ¬cube is a clause of literals.
                     let clause: Vec<tididi::Literal> =
                         fact_lits.iter().map(|l| l.negated()).collect();
                     run += 1;
-                    if !acc.1.same(scope) {
-                        acc = (self.placed(acc, scope)?, scope.clone());
-                    }
+                    let mut acc = match formula {
+                        Some(f) if f.1.same(scope) => f,
+                        Some(f) => (self.placed(f, scope)?, scope.clone()),
+                        None => {
+                            let one = self.backend.one(scope);
+                            settled_nodes = self.backend.nodes(&one);
+                            (one, scope.clone())
+                        }
+                    };
                     acc.0 = self.backend.and_clause(scope, acc.0, &clause)?;
                     exclusive.take_pair(&fact_lits);
                     uncontracted += 1;
@@ -975,6 +993,7 @@ impl Factoring<'_> {
                             every = CLAUSES_PER_CONTRACTION;
                         }
                     }
+                    acc
                 }
                 (Some(c), None) => {
                     (self.count)(Op::And, std::mem::take(&mut run));
@@ -994,16 +1013,25 @@ impl Factoring<'_> {
                         Part::from((c, scope.clone()))
                     };
                     let nb = (c.0.with_cow(|f| (self.negate)(self.term, f))?, c.1);
-                    acc = self.and_term(acc, nb.into(), trivial, scope)?;
+                    let mut acc = self.and_term(formula, nb.into(), scope)?;
                     settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
                     acc.0 = (self.watched)(acc.0, self.head)?;
+                    acc
                 }
-            }
-            if self.backend.is_zero(&acc.0) {
+            };
+            let zero = self.backend.is_zero(&f.0);
+            acc = Some(f);
+            if zero {
                 break;
             }
         }
         (self.count)(Op::And, run);
+        let acc = self.formula(acc, scope);
         self.placed(acc, scope)
+    }
+
+    /// The formula `acc`, `one` on `scope` where it is true (`None`).
+    fn formula(&self, acc: Option<Formula>, scope: &VtreeScope) -> Formula {
+        acc.unwrap_or_else(|| (self.backend.one(scope), scope.clone()))
     }
 }

@@ -120,6 +120,13 @@ class BaselineTests(unittest.TestCase):
                         out = Path(d, 'out.' + task)
                         run(cmd + [str(model), str(evid), str(out), task])
                         body = out.read_text()
+                        if system.startswith('tensorinference'):
+                            # timed warm, after a warm-up on a small model whose files it removes, the
+                            # instance solved twice (no BN_WARM_BELOW: always)
+                            self.assertRegex(body, r'(?m)^inference_seconds \S+\ncompile_seconds \S+\nwarm_seconds \S+\n'
+                                                   r'warmup_seconds \S+\n\Z')
+                            self.assertEqual(sorted(os.listdir(d)), sorted(['m.uai', 'm.evid', out.name] +
+                                                                           (['out.PR'] if task == 'MAR' else [])))
                         if task == 'PR':
                             self.assertAlmostEqual(bench.parse_merlin_pr(body), log10_z, places=8)
                         else:

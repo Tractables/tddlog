@@ -194,6 +194,11 @@ for n in [4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30]:
 for n, k in [(6, 2), (10, 3), (15, 3), (20, 3), (50, 3), (100, 3), (200, 3),
              (1000, 3), (3000, 3), (10000, 3), (30000, 3)]:
     SPEC[f's{n}'] = ('smokers', ['gen_smokers.py', str(n), '--friends-per', str(k), '--seed', '1'])
+# The same network with mutual friendships: each random pair written in
+# both directions, a cycle on every edge. Its sizes grow by about three
+# until no system answers one: none answers ssym30 within 300 s.
+for n in [10, 30]:
+    SPEC[f'ssym{n}'] = ('symsmokers', ['gen_smokers.py', str(n), '--friends-per', '3', '--seed', '1', '--symmetric'])
 for n in [2, 3, 4, 5, 6, 8, 10, 20, 80, 640, 2560]:
     SPEC[f'uwcse{n}'] = ('uwcse', ['gen_uwcse.py', str(n)])
 for q in [10, 50, 200, 500, 1000, 2000, 4000, 8000]:
@@ -810,9 +815,10 @@ def translation_limit(r):
     return r['status'] == 'error' and bool(TRANSLATION_LIMIT.match(str(r.get('error') or '')))
 
 
-# PSouffle's compilation stopped at PSOUFFLE_COMPILE_S (psouffle_binary): an
-# error, its text kept, that the processing charges as a timeout past every
-# limit (rel/charge.py) and the skip rule takes for one (ran_out).
+# PSouffle's compilation stopped at the run's limit, or at PSOUFFLE_COMPILE_S
+# where that is lower (psouffle_binary): an error, its text kept, that the
+# processing charges as a timeout past every limit (rel/charge.py) and the
+# skip rule takes for one (ran_out).
 COMPILE_TIMEOUT = "PSouffle's compilation: timeout"
 
 
@@ -841,6 +847,28 @@ def stale_refusal(r):
     aspmc): it says nothing of aspmc, and neither a table nor a page shows
     it."""
     return r['status'] == 'error' and 'aspmc ProbLog frontend does not condition on evidence' in str(r.get('error'))
+
+
+# The systems the tables time by their own time in the process,
+# without their language's start, their packages' load and their
+# compilation: Alea.jl, Pluck and TensorInference.jl in Julia, Roulette in
+# Racket. Their records' `seconds` stay the process's wall time, and a run
+# whose wall time passed the limit stays a timeout.
+OWN_TIME = ('alea', 'roulette', 'pluck', 'tensorinference')
+
+
+def own_seconds(r):
+    """The own time of an answering record r of a system in OWN_TIME, its
+    stats among its keys: warm where it ran so (`warm_seconds`: Alea.jl's,
+    Pluck's and TensorInference.jl's second run in the process), else in
+    the process less the compilation within it (`inproc_seconds` less
+    `jit_seconds` where it reports one), else the process's wall time
+    (TensorInference.jl's runs before its warm-up)."""
+    if r.get('warm_seconds') is not None:
+        return r['warm_seconds']
+    if r.get('inproc_seconds') is not None:
+        return max(r['inproc_seconds'] - r.get('jit_seconds', 0.0), 0.0)
+    return r['seconds']
 
 
 def has_cnf(entry):
@@ -3275,6 +3303,9 @@ UAI_SYSTEMS = {
     'tensorinference': (('treesa', 'greedy'),
                         lambda a: shlex.split(a.tensorinference) + [os.path.join(HERE, 'tensorinference_uai.jl')]),
 }
+# A driver timed warm (TensorInference.jl's): its record's stats and the driver's lines they come from
+UAI_WARM = (('inproc_seconds', 'inference_seconds'), ('jit_seconds', 'compile_seconds'),
+            ('warm_seconds', 'warm_seconds'), ('warmup_seconds', 'warmup_seconds'))
 
 
 def run_uai_system(args, name, path, system, variant):
@@ -3285,7 +3316,11 @@ def run_uai_system(args, name, path, system, variant):
     (rule 19: what the others are asked), and the `-pr` variant gives
     `log10_z`, the natural logarithm the driver writes over ln 10. The
     record keeps the seconds of the inference proper, without the start of
-    the interpreter and the libraries."""
+    the interpreter and the libraries. TensorInference.jl's driver times it
+    as alea_bench.jl times Alea.jl (own_seconds): after a warm-up on a small
+    model (`warmup_seconds`), the first solve (`inproc_seconds`, Julia's
+    compilation within it `jit_seconds`) and, where that took under a third
+    of the limit, a second (`warm_seconds`)."""
     order, model, evid, cells = uai_inputs(args, name, path)
     if order is None:
         return {'status': 'error', 'seconds': 0.0, 'error': f'no {evid}: rerun bench.py gen'}
@@ -3308,14 +3343,21 @@ def run_uai_system(args, name, path, system, variant):
                 f.write(','.join(map(str, qvars)))
             cmd.append('@' + os.path.join(d, 'vars'))
         env = dict(os.environ, OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1', BN_VARIANT=variant)
+        if system in OWN_TIME:   # its second solve, where the first took under a third of the limit (as Alea.jl's)
+            env['BN_WARM_BELOW'] = f'{args.timeout / 3:g}'
         r = timed(cmd, args.timeout, cwd=d, env=env)
         if r['status'] != 'ok':
             return r
         try:
             with open(out) as f:
                 text = f.read()
-            secs = re.search(r'^inference_seconds ([0-9.eE+-]+)$', text, re.M)
-            stats = {f'{system}_inference_seconds': float(secs.group(1))} if secs else {}
+            line = lambda key: re.search(rf'^{key} ([0-9.eE+-]+)$', text, re.M)
+            if system in OWN_TIME:
+                # timed warm as Alea.jl is (own_seconds): the first solve after the warm-up on a
+                # small model, Julia's compilation within it, the second solve where there was one
+                stats = {stat: float(m.group(1)) for stat, key in UAI_WARM if (m := line(key))}
+            else:
+                stats = {f'{system}_inference_seconds': float(m.group(1))} if (m := line('inference_seconds')) else {}
             if task == 'PR':
                 return {'status': 'ok', 'seconds': r['seconds'], 'log10_z': parse_merlin_pr(text), 'stats': stats}
             rows = parse_merlin_marginals(text)
@@ -3628,8 +3670,8 @@ def provsql_run(args, path, server, d):
 # from the run, as the paper times it: every record after it carries the
 # seconds its text's compilation took as `compile_s` (where an earlier
 # instance's compilation is reused, that compilation's), and the processing
-# charges them to the record (rel/charge.py, PSOUFFLE_COMPILE in
-# final_all.sh). The run is its default full inference, on one thread: its
+# charges them to the record (rel/charge.py, final_all.sh's step T). The
+# run is its default full inference, on one thread: its
 # graph rewrites (`--rewrite`) lose derivations at 3fb0fd06 (docs/baselines.md).
 PSOUFFLE_SUITES = ('standard', 'indicators', 'lit', 'tpch', 'biomine')
 PSOUFFLE_COMPILE_S = 3600
@@ -3645,19 +3687,24 @@ def psouffle_binary(args, program):
     compiled once, by the first lane that needs it, the others waiting and
     given the seconds it took."""
     d = os.path.abspath(os.path.join(args.dir, 'psouffle-bin', hashlib.sha256(program.encode()).hexdigest()[:20]))
+    # the compilation is charged to the run (rel/charge.py): one past the
+    # run's limit is a timeout already, and is not let run longer
+    bound = min(PSOUFFLE_COMPILE_S, float(args.timeout))
     os.makedirs(d, exist_ok=True)
     with open(d + '.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if os.path.exists(os.path.join(d, 'failed')):
             with open(os.path.join(d, 'failed')) as f:
                 rec = json.load(f)
-            return None, rec['stats']['compile_s'], rec
+            # a compilation stopped at a lower bound is tried again
+            if not compile_timeout(rec) or rec['stats']['compile_s'] >= bound:
+                return None, rec['stats']['compile_s'], rec
         if os.path.exists(os.path.join(d, 'compiled')):
             with open(os.path.join(d, 'compiled')) as f:
                 return os.path.join(d, 'compute'), float(f.read()), None
         with open(os.path.join(d, 'compute.dl'), 'w') as f:
             f.write(program)
-        r = timed([args.psouffle, '--full-only', 'compute.dl', '-o', 'compute'], PSOUFFLE_COMPILE_S, cwd=d)
+        r = timed([args.psouffle, '--full-only', 'compute.dl', '-o', 'compute'], bound, cwd=d)
         if r['status'] != 'ok':
             rec = {'status': 'error', 'seconds': 0.0,
                    'error': f"PSouffle's compilation: {r['status']} {str(r.get('error', ''))[-2000:]}",

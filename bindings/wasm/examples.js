@@ -1,11 +1,11 @@
 "use strict";
 
 // The page's examples, shared by the page, the site's assembly and the tests.
-// Each is a program the repository already tests against ProbLog: `file` is
-// its path in the repository, and the site serves it at examples/ under its
-// file name. `key` names it in the address bar and `name` on its button;
-// `format` names the format of a file that is not a ProbLog program
-// (runtime.js's formats).
+// Each is a program the repository tests against ProbLog's answers or exact
+// ones: `file` is its path in the repository, and the site serves it at
+// examples/ under its file name. `key` names it in the address bar and `name`
+// on its button; `format` names the format of a file that is not a ProbLog
+// program (runtime.js's formats).
 //
 // `problog` holds ProbLog 2.3.0's answers (`-k sdd`, one query at a time, as
 // the repository's differential tests take them; here to 12 significant
@@ -15,6 +15,12 @@
 // tddlog reads each as, computed by hand: Dice's own for the walk
 // (tests/it/examples.rs), and the network's marginals by a sum over its
 // worlds.
+//
+// The examples marked `larger` take a few seconds each, and ProbLog does not
+// answer them within five minutes. Their `problog` holds exact answers,
+// computed independently of tddlog and ProbLog as `exact` says; on the
+// smaller sizes ProbLog answers, those computations agree with ProbLog and
+// with tddlog.
 // tests/examples.cjs checks the built module against both.
 const tddlogExamples = [
   {
@@ -139,6 +145,78 @@ const tddlogExamples = [
       ["xray(yes)", 0.11029004], ["xray(no)", 0.88970996], ["dysp(yes)", 0.4359706], ["dysp(no)", 0.5640294],
     ],
     evidence: 1,
+  },
+  {
+    key: "grid",
+    name: "Reliability of a grid network",
+    file: "examples/larger/grid_reliability.pl",
+    larger: true,
+    exact: "a dynamic program over the connectivity of the grid's last column, column by column. ProbLog 2.3.0 answers 5 by 5 routers in 121 s and does not finish 8 by 8 in five minutes.",
+    problog: [["reaches(8,8)", 0.085163906983], ["reaches(8,1)", 0.108944533606]],
+    evidence: 1,
+  },
+  {
+    key: "dicesum",
+    name: "The sum of 100 dice",
+    file: "examples/larger/dice_sum.pl",
+    larger: true,
+    exact: "the distribution of the sum by convolution, in fractions. ProbLog 2.3.0 answers 5 dice in 43 s and does not finish 6 in five minutes.",
+    problog: [["prime", 0.163737706468], ["sevens", 0.142857142857], ["high", 0.00182302430809]],
+    evidence: 1,
+  },
+  {
+    key: "blood",
+    name: "Blood types in a family with loops",
+    file: "examples/larger/blood_types.pl",
+    larger: true,
+    exact: "forward and backward over the generations, through every combination of a generation's genotypes. ProbLog 2.3.0 answers 3 generations of 4 in 1.9 s and does not finish 4 of 4 in five minutes.",
+    problog: [
+      ["blood(p(1,1),a)", 0.518137535803], ["blood(p(1,1),ab)", 0.0292381634438],
+      ["blood(p(1,1),b)", 0.0573358853336], ["blood(p(1,1),o)", 0.39528841542],
+      ["has(p(1,1),b)", 0.0865740487775], ["has(p(1,2),b)", 0.0877441576365], ["has(p(1,3),b)", 0.0883633033983],
+      ["has(p(1,4),b)", 0.0883633033983], ["has(p(1,5),b)", 0.0877441576365], ["has(p(1,6),b)", 0.0865740487775],
+      ["has(p(1,7),b)", 0.084397114572],
+    ],
+    evidence: 0.00890818390475,
+  },
+  {
+    key: "mastermind",
+    name: "Mastermind: 12 pegs, 12 colours",
+    file: "examples/larger/mastermind.pl",
+    larger: true,
+    exact: "a search for the codes the scores allow, 2192 of them. ProbLog 2.3.0 answers 8 pegs of 10 colours after 8 guesses in 15 s and does not finish 10 of 10 after 10 in five minutes.",
+    problog: [
+      ["code(1,1)", 0], ["code(1,2)", 0], ["code(1,3)", 0], ["code(1,4)", 0], ["code(1,5)", 0], ["code(1,6)", 0],
+      ["code(1,7)", 0], ["code(1,8)", 0.267335766423], ["code(1,9)", 0.22901459854], ["code(1,10)", 0.377737226277],
+      ["code(1,11)", 0.125912408759], ["code(1,12)", 0],
+    ],
+    evidence: 2.45847387288e-10,
+  },
+  {
+    key: "stones",
+    name: "A game of stones: 4000 heaps",
+    file: "examples/larger/stones.pl",
+    larger: true,
+    exact: "heap by heap over the last three heaps' outcomes, in fractions. ProbLog 2.3.0 answers a heap of 40 in 5.4 s and does not finish 100 in five minutes.",
+    problog: [
+      ["win(1)", 0.6], ["win(2)", 0.696], ["win(4)", 0.508271616], ["win(5)", 0.546749927424],
+      ["win(10)", 0.593404502099], ["win(50)", 0.601997552254], ["win(4000)", 0.601997578692],
+    ],
+    evidence: 1,
+  },
+  {
+    key: "robot",
+    name: "A robot on a ring: 400 readings",
+    file: "examples/larger/robot.pl",
+    larger: true,
+    exact: "the forward algorithm of the hidden Markov model. ProbLog 2.3.0 answers 5 readings in 4.2 s and does not finish 10 in five minutes.",
+    problog: [
+      ["at(400,1)", 0.000753783329927], ["at(400,2)", 0.0250366111806], ["at(400,3)", 0.0203417719893],
+      ["at(400,4)", 0.00296430798699], ["at(400,5)", 0.135799230715], ["at(400,6)", 0.015962539863],
+      ["at(400,7)", 0.112224825303], ["at(400,8)", 0.0126669608722], ["at(400,9)", 0.665833407746],
+      ["at(400,10)", 0.00098898502858], ["at(400,11)", 0.00225543177311], ["at(400,12)", 0.00517214421171],
+    ],
+    evidence: 7.27128939706e-104,
   },
 ];
 

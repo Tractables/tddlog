@@ -1477,6 +1477,49 @@ class MerlinTests(unittest.TestCase):
         self.assertEqual(r['status'], 'ok')
         self.assertAlmostEqual(r['answers']['x2(v_1)'], 2 / 13, delta=5e-7)
 
+    def test_tensorinference_is_timed_warm(self):
+        """TensorInference.jl's driver is timed as Alea.jl's:
+        after a warm-up on a small model, the instance's first solve, Julia's
+        compilation within it, and a second solve where the first took under
+        a third of the limit, which bench.py passes it (BN_WARM_BELOW). The
+        record's own time is the second solve's, else the first's less its
+        compilation (none where Julia reports it as NaN)."""
+        regress = SOURCE / 'tests' / 'regress'
+        first = 'inference_seconds 12.5\ncompile_seconds 12.25\n'
+        for tail, own, stats in (
+                (first + 'warm_seconds 0.0625\nwarmup_seconds 31.5\n', 0.0625,
+                 dict(inproc_seconds=12.5, jit_seconds=12.25, warm_seconds=0.0625, warmup_seconds=31.5)),
+                (first + 'warmup_seconds 31.5\n', 0.25, dict(inproc_seconds=12.5, jit_seconds=12.25, warmup_seconds=31.5)),
+                ('inference_seconds 0.25\n', 0.25, dict(inproc_seconds=0.25)),
+                (first.replace('12.25', 'NaN') + 'warmup_seconds 31.5\n', 12.5, dict(inproc_seconds=12.5, warmup_seconds=31.5))):
+            env = {}
+            def timed(cmd, timeout, cwd=None, env=None, seen=env):
+                seen.update(env)
+                Path(cmd[-3]).write_text(MERLIN_MAR + tail)
+                return {'status': 'ok', 'seconds': 40.0, 'stdout': '', 'stderr': ''}
+            with scratch_dir('uai-ti-') as d:
+                args = SimpleNamespace(suite='uai', only=[], families=[], uai_benchmarks=str(regress), dir=d,
+                                       tensorinference='julia', timeout=60)
+                with patch.object(bench, 'timed', timed):
+                    r = bench.run_uai_system(args, 'uai_markov', str(regress / 'markov.pl'), 'tensorinference', 'treesa')
+            self.assertEqual(env['BN_WARM_BELOW'], '20')
+            self.assertEqual(r['stats'], stats)
+            flat = {'system': 'tensorinference', 'seconds': r['seconds'], **r['stats']}
+            self.assertEqual(bench.own_seconds(flat), own)
+
+    def test_own_seconds(self):
+        """The own time of a system timed so (bench.OWN_TIME): warm, else in the
+        process less its compilation, else the process's."""
+        self.assertEqual(set(bench.OWN_TIME), {'alea', 'roulette', 'pluck', 'tensorinference'})
+        alea = {'system': 'alea', 'seconds': 20.0, 'inproc_seconds': 12.5, 'jit_seconds': 12.25}
+        self.assertEqual(bench.own_seconds(alea), 0.25)
+        self.assertEqual(bench.own_seconds(dict(alea, warm_seconds=0.0625)), 0.0625)
+        self.assertEqual(bench.own_seconds({'system': 'roulette', 'seconds': 3.0, 'inproc_seconds': 1.5}), 1.5)
+        self.assertEqual(bench.own_seconds({'system': 'pluck', 'seconds': 5.0, 'inproc_seconds': 1.5,
+                                            'warm_seconds': 0.03}), 0.03)
+        self.assertEqual(bench.own_seconds({'system': 'pluck', 'seconds': 5.0, 'inproc_seconds': 1.5}), 1.5)
+        self.assertEqual(bench.own_seconds({'system': 'tensorinference', 'seconds': 30.0}), 30.0)
+
     def test_the_partition_function_file_is_read(self):
         """Merlin's PR file for tests/regress/markov.uai without evidence,
         Z = 325: the natural logarithm to six decimals. A false status where exp
@@ -2229,8 +2272,9 @@ class PsouffleTests(unittest.TestCase):
     @staticmethod
     def timed(cmd, timeout, cwd=None, env=None):
         if '--full-only' in cmd:
-            failed = 'bad' in Path(cwd, 'compute.dl').read_text()
-            return {'status': 'timeout' if failed else 'ok', 'seconds': 7.5, 'stdout': '', 'stderr': ''}
+            if 'bad' in Path(cwd, 'compute.dl').read_text():     # a compilation that fails, reused
+                return {'status': 'error', 'seconds': 7.5, 'returncode': 1, 'error': 'compute.dl: syntax error'}
+            return {'status': 'ok', 'seconds': 7.5, 'stdout': '', 'stderr': ''}
         return {'status': 'timeout', 'seconds': 300.0}
 
     def test_a_text_compiled_once_gives_every_instance_its_seconds(self):
@@ -2240,13 +2284,32 @@ class PsouffleTests(unittest.TestCase):
             calls.append(cmd)
             return self.timed(cmd, timeout, cwd, env)
         with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', timed):
-            args = SimpleNamespace(dir=d, psouffle='souffle')
+            args = SimpleNamespace(dir=d, psouffle='souffle', timeout=300)
             self.assertEqual(bench.psouffle_binary(args, 'a(1).')[1:], (7.5, None))
             self.assertEqual(bench.psouffle_binary(args, 'a(1).')[1:], (7.5, None))    # reused, its seconds kept
             for _ in range(2):
                 _, seconds, err = bench.psouffle_binary(args, 'bad(1).')
                 self.assertEqual((seconds, err['status'], err['stats']), (7.5, 'error', {'compile_s': 7.5}))
         self.assertEqual(sum('--full-only' in c for c in calls), 2)
+
+    def test_the_compilation_stops_at_the_runs_limit(self):
+        """A compilation past the run's limit is a timeout of the run already
+        (its seconds are charged to it), so it is bounded there, and at
+        PSOUFFLE_COMPILE_S under a longer limit, where a compilation stopped
+        at a lower bound is tried again; its error keeps COMPILE_TIMEOUT's
+        text."""
+        bounds = []
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            bounds.append(timeout)
+            return {'status': 'timeout', 'seconds': float(timeout), 'stdout': '', 'stderr': ''}
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', timed):
+            _, seconds, err = bench.psouffle_binary(SimpleNamespace(dir=d, psouffle='souffle', timeout=300), 'a(1).')
+            bench.psouffle_binary(SimpleNamespace(dir=d, psouffle='souffle', timeout=7200), 'a(1).')
+            bench.psouffle_binary(SimpleNamespace(dir=d, psouffle='souffle', timeout=300), 'a(1).')    # reused
+        self.assertEqual(bounds, [300.0, bench.PSOUFFLE_COMPILE_S])
+        self.assertEqual(seconds, 300.0)
+        self.assertTrue(bench.compile_timeout(err))
 
     def test_a_run_past_the_limit_keeps_the_compilation_seconds(self):
         def translated(args, script, argv, *rest):
