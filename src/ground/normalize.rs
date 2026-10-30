@@ -71,6 +71,18 @@ pub(crate) enum Weights {
     },
 }
 
+/// A query rule, `query(pattern) :- body.` or `evidence(pattern, v) :-
+/// body.`: the pattern's instances are queries, or evidence, for every
+/// true atom of the driver predicate `'$query_k'(vars) :- body`.
+#[derive(Clone, Debug)]
+pub(crate) struct Driver {
+    pub(crate) atom: Atom,
+    pub(crate) pattern: Atom,
+    /// The query's sign, or the evidence's value.
+    pub(crate) positive: bool,
+    pub(crate) evidence: bool,
+}
+
 /// Marks switch predicate names. Cannot clash with user predicates because a
 /// user name never contains this character.
 pub(crate) const SWITCH_PREFIX: &str = "$sw";
@@ -87,9 +99,8 @@ pub(crate) struct NormProgram {
     pub(crate) switches: FxHashMap<(Name, usize), Weights>,
     pub(crate) queries: Vec<(Atom, bool)>,
     pub(crate) evidence: Vec<(Atom, bool)>,
-    /// Query rules: the pattern's instances are queries for every true atom
-    /// of the driver predicate `'$query_k'(vars)`; `(driver, pattern, positive)`.
-    pub(crate) query_drivers: Vec<(Atom, Atom, bool)>,
+    /// Query rules, of queries or evidence ([`Driver`]).
+    pub(crate) drivers: Vec<Driver>,
     /// Control predicates (magic sets): evaluated during grounding, never
     /// emitted into ground rules.
     pub(crate) control: FxHashSet<(Name, usize)>,
@@ -407,8 +418,12 @@ pub(crate) fn normalize(
         let driver = Atom::new(format!("$query{k}"), vars);
         out.rules
             .push(Clause::rule(driver.clone(), qr.body.clone(), u32::MAX));
-        out.query_drivers
-            .push((driver, qr.pattern.clone(), qr.positive));
+        out.drivers.push(Driver {
+            atom: driver,
+            pattern: qr.pattern.clone(),
+            positive: qr.positive,
+            evidence: qr.evidence,
+        });
     }
 
     // p(V) :- p⁺(V), \+ p⁻(V) for each predicate with negative heads.

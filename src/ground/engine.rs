@@ -1872,38 +1872,39 @@ fn ground_with(
             queries.push((atom, id, *positive));
         }
     }
-    for (driver, pattern, positive) in &norm.query_drivers {
-        // Every true instance of the driver binds the pattern's variables.
-        for (instance, _) in resolve_atom_pattern(&mut g, driver) {
-            let binding: FxHashMap<&Term, &Term> = driver.args.iter().zip(&instance.args).collect();
-            let q = Atom::new(
-                pattern.name.clone(),
-                pattern
-                    .args
-                    .iter()
-                    .map(|t| substitute(t, &binding))
-                    .collect::<Args>(),
-            );
-            for (atom, id) in resolve_atom_pattern(&mut g, &q) {
-                queries.push((atom, id, *positive));
-            }
-        }
-    }
     let mut evidence = Vec::new();
     for (e, v) in &norm.evidence {
         for (atom, id) in resolve_atom_pattern(&mut g, e) {
             evidence.push((atom, id, *v));
         }
     }
+    for d in &norm.drivers {
+        // Every true instance of the driver binds the pattern's variables.
+        for (instance, _) in resolve_atom_pattern(&mut g, &d.atom) {
+            let binding: FxHashMap<&Term, &Term> = d.atom.args.iter().zip(&instance.args).collect();
+            let q = Atom::new(
+                d.pattern.name.clone(),
+                d.pattern
+                    .args
+                    .iter()
+                    .map(|t| substitute(t, &binding))
+                    .collect::<Args>(),
+            );
+            let asked = if d.evidence {
+                &mut evidence
+            } else {
+                &mut queries
+            };
+            for (atom, id) in resolve_atom_pattern(&mut g, &q) {
+                asked.push((atom, id, d.positive));
+            }
+        }
+    }
     if g.refused {
         return Err(GroundError::OutOfMemory);
     }
     // The driver atoms themselves are not part of the output program.
-    let drivers: FxHashSet<&str> = norm
-        .query_drivers
-        .iter()
-        .map(|(d, _, _)| &*d.name)
-        .collect();
+    let drivers: FxHashSet<&str> = norm.drivers.iter().map(|d| &*d.atom.name).collect();
     if !drivers.is_empty() {
         let name = |a: AtomId| &**g.preds[g.atoms[a as usize].0 as usize].name;
         g.ground_rules.retain(|r| !drivers.contains(name(r.head)));

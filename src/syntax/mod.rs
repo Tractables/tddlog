@@ -10,8 +10,9 @@
 //! failure (`\+` or `not`); unification `=` and the comparisons of terms;
 //! `is` and the arithmetic comparisons with ProbLog's arithmetic; the list
 //! predicates of ProbLog's `library(lists)`, `between/3`, and `findall/3`
-//! over a deterministic goal; `query/1`, query patterns `query(p(X)) :-
-//! body.`, and `evidence/1,2`. No cut, `call/N` or `assert`. The grounder
+//! over a deterministic goal; `query/1` and `evidence/1,2`, and their
+//! patterns `query(p(X)) :- body.` and `evidence(p(X)) :- body.`. No cut,
+//! `call/N` or `assert`. The grounder
 //! grounds a program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
 
@@ -1273,11 +1274,14 @@ impl fmt::Display for Clause {
 }
 
 /// `query(pattern) :- body.`: every instance of `pattern` under a grounding
-/// of `body` is a query.
+/// of `body` is a query; `evidence(pattern, v) :- body.` makes each one
+/// evidence instead.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct QueryRule {
     pub(crate) pattern: Atom,
+    /// The query's sign (`query(\+a)`), or the evidence's value.
     pub(crate) positive: bool,
+    pub(crate) evidence: bool,
     pub(crate) body: Vec<Literal>,
 }
 
@@ -1305,7 +1309,7 @@ impl Program {
     /// depends on is left out (`--no-queries`).
     pub fn without_queries(mut self) -> Program {
         self.queries.clear();
-        self.query_rules.clear();
+        self.query_rules.retain(|r| r.evidence);
         self
     }
 }
@@ -1326,8 +1330,12 @@ impl fmt::Display for Program {
             }
         }
         for r in &self.query_rules {
-            let sign = if r.positive { "" } else { "\\+" };
-            write!(f, "query({sign}{}) :- ", r.pattern)?;
+            if r.evidence {
+                write!(f, "evidence({},{}) :- ", r.pattern, r.positive)?;
+            } else {
+                let sign = if r.positive { "" } else { "\\+" };
+                write!(f, "query({sign}{}) :- ", r.pattern)?;
+            }
             for (i, l) in r.body.iter().enumerate() {
                 if i > 0 {
                     f.write_str(", ")?;

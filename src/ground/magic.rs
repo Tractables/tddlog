@@ -37,7 +37,7 @@
 
 use std::sync::Arc;
 
-use super::normalize::{Facts, NormProgram, Sig};
+use super::normalize::{Driver, Facts, NormProgram, Sig};
 use super::schedule::{Order, literal_vars, schedule_body};
 use crate::syntax::{Atom, Clause, Literal, Name, Term};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -146,7 +146,7 @@ fn usable(rule: &Clause, adornment: &Adornment) -> Option<Adornment> {
 /// Whether no rule of `norm` has a variable. Queries and evidence may still
 /// be patterns; the grounder resolves those against the possible atoms.
 pub(crate) fn is_ground(norm: &NormProgram) -> bool {
-    norm.query_drivers.is_empty() && norm.rules.iter().all(ground_clause)
+    norm.drivers.is_empty() && norm.rules.iter().all(ground_clause)
 }
 
 /// Whether neither the heads nor the body of `c` has a variable.
@@ -303,7 +303,7 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
         switches: norm.switches.clone(),
         queries: norm.queries.clone(),
         evidence: norm.evidence.clone(),
-        query_drivers: norm.query_drivers.clone(),
+        drivers: norm.drivers.clone(),
         counted: norm.counted.clone(),
         ..Default::default()
     };
@@ -334,7 +334,12 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
     for (e, _) in &norm.evidence {
         seed(e, &mut out, &mut work);
     }
-    for (driver, pattern, _) in &norm.query_drivers {
+    for Driver {
+        atom: driver,
+        pattern,
+        ..
+    } in &norm.drivers
+    {
         seed(driver, &mut out, &mut work);
         // Every true driver instance demands the pattern instance it names:
         // m_pattern(bound args) :- driver(vars). The pattern's variables are

@@ -276,19 +276,19 @@ impl<'a> Parser<'a> {
             let start = self.args.len();
             self.argument_list()?;
             if self.at(Tok::Neck) {
-                // `query(p(X)) :- body.`: a query rule.
+                // `query(p(X)) :- body.` or `evidence(p(X)) :- body.`: a
+                // query rule.
                 self.bump();
                 let body = self.body()?;
                 self.expect(Tok::Dot)?;
-                if id != kw::QUERY || self.args.len() - start != 1 {
-                    return self.err("only query/1 may have a body");
-                }
-                let t = self.args.pop().expect("an argument");
-                let (pattern, positive) = self.signed_atom(t, "query/1")?;
+                let evidence = id == kw::EVIDENCE;
+                let (pattern, positive) =
+                    self.asked(if evidence { "evidence" } else { "query" }, start)?;
                 for alt in body.dnf() {
                     prog.query_rules.push(QueryRule {
                         pattern: pattern.clone(),
                         positive,
+                        evidence,
                         body: alt,
                     });
                 }
@@ -347,27 +347,13 @@ impl<'a> Parser<'a> {
         let arity = self.args.len() - start;
         match (name, arity) {
             ("query", 1) => {
-                let t = self.args.pop().expect("an argument");
-                let (q, pos) = self.signed_atom(t, "query/1")?;
-                prog.queries.push((q, pos));
+                let q = self.asked(name, start)?;
+                prog.queries.push(q);
                 Ok(())
             }
-            ("evidence", 1) => {
-                let t = self.args.pop().expect("an argument");
-                let (a, pol) = self.signed_atom(t, "evidence")?;
-                prog.evidence.push((a, pol));
-                Ok(())
-            }
-            ("evidence", 2) => {
-                let value = self.args.pop().expect("an argument");
-                let t = self.args.pop().expect("an argument");
-                let (a, pol) = self.signed_atom(t, "evidence")?;
-                let v = match value {
-                    PTerm::Term(Term::Const(s)) if &*s == "true" => true,
-                    PTerm::Term(Term::Const(s)) if &*s == "false" => false,
-                    _ => return self.err("evidence/2 expects true or false"),
-                };
-                prog.evidence.push((a, pol == v));
+            ("evidence", 1 | 2) => {
+                let e = self.asked(name, start)?;
+                prog.evidence.push(e);
                 Ok(())
             }
             // The list predicates are built in ([`super::Builtin`]).
@@ -387,6 +373,29 @@ impl<'a> Parser<'a> {
     }
 
     /// An atom or `\+ atom`, as `(atom, positive)`.
+    /// The atom and sign that `query(A)`, `evidence(A)` or `evidence(A, V)`
+    /// asks, its arguments on [`Parser::args`] from `start`, taken from
+    /// there: the sign of `\+` in `A`, and for evidence its value `V`.
+    fn asked(&mut self, name: &str, start: usize) -> Result<(Atom, bool), ParseError> {
+        let value = match (name, self.args.len() - start) {
+            ("query", 1) | ("evidence", 1) => true,
+            ("evidence", 2) => match self.args.pop().expect("an argument") {
+                PTerm::Term(Term::Const(s)) if &*s == "true" => true,
+                PTerm::Term(Term::Const(s)) if &*s == "false" => false,
+                _ => return self.err("evidence/2 expects true or false"),
+            },
+            (_, arity) => return self.err(format!("unsupported directive {name}/{arity}")),
+        };
+        let t = self.args.pop().expect("an argument");
+        let what = if name == "query" {
+            "query/1"
+        } else {
+            "evidence"
+        };
+        let (a, sign) = self.signed_atom(t, what)?;
+        Ok((a, sign == value))
+    }
+
     fn signed_atom(&self, t: PTerm, what: &str) -> Result<(Atom, bool), ParseError> {
         let negated = matches!(t.functor(), Some((n, 1)) if n == "\\+" || n == "not");
         let (t, pos) = if negated {
@@ -1086,6 +1095,29 @@ mod tests {
         assert_eq!(p.query_rules[0].pattern.to_string(), "p(X)");
         assert_eq!(p.query_rules[0].body.len(), 2);
         assert!(matches!(p.query_rules[0].body[1], Literal::Neg(_)));
+        // Evidence rules, the value as evidence/2 gives it.
+        let p = parse_program(
+            "evidence(p(X)) :- a(X).\nevidence(q(X), false) :- a(X).\nevidence(\\+r(X)) :- a(X).\n",
+        )
+        .unwrap();
+        let rules: Vec<(String, bool, bool)> = p
+            .query_rules
+            .iter()
+            .map(|r| (r.pattern.to_string(), r.positive, r.evidence))
+            .collect();
+        assert_eq!(
+            rules,
+            [
+                ("p(X)".to_string(), true, true),
+                ("q(X)".to_string(), false, true),
+                ("r(X)".to_string(), false, true)
+            ]
+        );
+        assert_eq!(parse_program(&p.to_string()).unwrap(), p);
+        let e = parse_program("evidence(p(X), maybe) :- a(X).").unwrap_err();
+        assert!(e.msg.contains("true or false"), "{}", e.msg);
+        let e = parse_program("query(p(X), true) :- a(X).").unwrap_err();
+        assert!(e.msg.contains("query/2"), "{}", e.msg);
     }
 
     #[test]

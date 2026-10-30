@@ -140,9 +140,9 @@ fn bound_second_only(norm: &NormProgram, rules: &[usize], sig: &Sig) -> bool {
             .filter(|a| a.signature() == *sig),
     );
     uses.extend(
-        norm.query_drivers
+        norm.drivers
             .iter()
-            .map(|(_, a, _)| a)
+            .map(|d| &d.pattern)
             .filter(|a| a.signature() == *sig),
     );
     let ground = |t: &Term| !t.is_var();

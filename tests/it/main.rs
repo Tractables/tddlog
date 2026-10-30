@@ -30,6 +30,7 @@ mod networks;
 mod or_route;
 mod problog_suite;
 mod query_count;
+mod query_rules;
 mod renormalize;
 mod separator_copies;
 mod share;

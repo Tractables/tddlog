@@ -247,7 +247,7 @@ fn plan<'a>(
             return None;
         }
     }
-    for (_, pattern, _) in &norm.query_drivers {
+    for pattern in norm.drivers.iter().map(|d| &d.pattern) {
         if !used(pattern) {
             return None;
         }

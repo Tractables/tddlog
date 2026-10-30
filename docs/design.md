@@ -195,8 +195,10 @@ The parser reads ProbLog without cut:
   modes and order of solutions;
 - `findall/3` over a deterministic goal that is not recursive, its
   solutions in ProbLog's order;
-- `query/1` (also `query(\+a)`), `query(pattern) :- body.`, and
-  `evidence/1,2`.
+- `query/1` (also `query(\+a)`) and `evidence/1,2`, and their rules
+  `query(pattern) :- body.` and `evidence(pattern, v) :- body.`, whose
+  pattern's instances under each grounding of the body are queries or
+  evidence.
 
 There are no cut, if-then-else or strings.
 
