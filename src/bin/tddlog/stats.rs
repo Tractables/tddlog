@@ -228,6 +228,9 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.noisy_or
         ));
     }
+    if g.stats.unfolded > 0 {
+        line.push_str(&format!("; {} negated atoms unfolded", g.stats.unfolded));
+    }
     if g.stats.inlined > 0 {
         line.push_str(&format!("; {} views inlined", g.stats.inlined));
     }

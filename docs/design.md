@@ -152,7 +152,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text, which `syntax/lpad.rs` and `syntax/dice.rs` write too |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
@@ -434,7 +434,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
 | 4 | `engine.rs` | stratified semi-naive bottom-up grounding |
 | 5 | `simplify.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables |
-| 6 | `exclusive.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; views; equal gates; choices read under exclusive contexts |
+| 6 | `exclusive.rs`, `negation.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; negated atoms unfolded; views; equal gates; choices read under exclusive contexts |
 | 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
 | 8 | `cover.rs` | atoms certain by cover |
 | 9 | `condition.rs`, `preprocess/backbone.rs`, `renormalize.rs` | conditioning on the evidence: unit propagation, backbones, gates, renormalized rows |
@@ -663,6 +663,29 @@ are skipped. Several steps have a program in `examples/` that shows them.
    by the literals that clash with that rule, and an atom is compared with
    the sets listed under the literals of one of its rules, the one with
    the fewest.
+
+   First, **negated atoms unfolded** (`negation.rs`). A table written as
+   rules reads its earlier values negatively, `0.5::x(2) :- c, \+x(1)`,
+   where the normalization of an annotated disjunction reads the switches
+   of the row, `x(2) :- c, \+s1, s2`; read through the values, no two
+   rules of the table clash, and neither the sets nor the passes below
+   find it. In a rule `h :- B, \+a`, `a` an earlier atom of `h`'s
+   predicate, where every rule of `a` but one clashes with `B` and that
+   one's literals are `B`'s and one more, `l`, `\+a` is replaced by the
+   negation of `l`; where every rule clashes, `\+a` is dropped, and where
+   the one rule holds under `B`, the rule is. Atoms of other predicates
+   stay as read (a bit-blasted number's bits read the earlier bits
+   negatively, but each is a gate its readers share).
+   The rule left is found by its context, its literals but the facts one
+   rule alone reads, and `a`'s contexts are checked to clash pairwise
+   once; besides the sets, two atoms one of which every rule reads the
+   other negatively clash, the values of a table written so. The atoms go
+   in reverse dependency order, so that each reads its siblings as
+   written, the latest first. A table without parents written so starts
+   with a fact, `0.2::x(1)`; where an atom of its predicate reads it
+   negatively in every rule, its positive readers read it through a
+   derived atom `x(1) :- f`, which joins the table's set. The sets are
+   found again after it.
 
    Then **views** (`inline.rs`; `examples/views.pl`). A derived atom that
    no query or evidence names, of a predicate that does not depend on

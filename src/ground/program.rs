@@ -313,6 +313,9 @@ pub struct GroundStats {
     pub swept: super::SweepStats,
     /// How many tables the grounder wrote as noisy-ors (`noisy_or`).
     pub noisy_or: usize,
+    /// How many negated derived atoms the grounder unfolded under the
+    /// rules that read them, rules dropped among them (`negation`).
+    pub unfolded: usize,
     /// How many facts the grounder made to read choices through, one per
     /// context (`contexts`).
     pub contexts: usize,

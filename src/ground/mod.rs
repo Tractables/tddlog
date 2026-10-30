@@ -29,7 +29,8 @@
 //!    - Otherwise `exclusive` finds the program's structure (its rules by
 //!      head, components and exclusive sets), which each of these passes
 //!      reads and hands on, updated or found anew where the pass changed
-//!      the program: `inline` (views, then atoms with equal rules merged,
+//!      the program: `negation` (negated atoms unfolded under their
+//!      rules), `inline` (views, then atoms with equal rules merged,
 //!      `simplify`), `contexts` (choices read through a fact per context),
 //!      `classes` (row classes), `share` (switch sharing), `cover` (atoms
 //!      certain by cover) and `condition` (what the evidence implies, with
@@ -68,6 +69,7 @@ mod interned;
 mod library;
 mod linear;
 mod magic;
+mod negation;
 mod noisy_or;
 mod normalize;
 mod preprocess;
@@ -399,7 +401,16 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
             gp.structure = OnceLock::new();
             Stage::Settled(settled)
         }
-        None => Stage::Structured(Structure::of(&gp)),
+        None => {
+            let mut structure = Structure::of(&gp);
+            let unfolded = negation::unfold(&mut gp, &structure);
+            if unfolded > 0 {
+                gp.stats.unfolded += unfolded;
+                simplify::restrict_to_relevant(&mut gp);
+                structure = Structure::of(&gp);
+            }
+            Stage::Structured(structure)
+        }
     };
     Simplified { gp, stage }
 }
