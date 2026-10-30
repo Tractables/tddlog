@@ -370,6 +370,18 @@ impl<'a> Parser<'a> {
                     _ => self.err(format!("unsupported directive use_module({t})")),
                 }
             }
+            // ProbLog's flag for a call of a predicate without clauses:
+            // an error, its default, or a failure.
+            ("unknown", 1) => {
+                let t = self.args.pop().expect("an argument").into_term();
+                match &t {
+                    Term::Const(flag) if matches!(&**flag, "error" | "fail") => {
+                        prog.unknown_fails = &**flag == "fail";
+                        Ok(())
+                    }
+                    _ => self.err(format!("unsupported directive unknown({t})")),
+                }
+            }
             _ => self.err(format!("unsupported directive {name}/{arity}")),
         }
     }

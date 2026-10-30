@@ -1341,6 +1341,9 @@ pub struct Program {
     /// which Prolog's resolution tries them (`a(X), (b ; c)` tries `b`
     /// then `c` for each `X`).
     pub(crate) interleaved: Vec<u32>,
+    /// `:- unknown(fail).`: a predicate without clauses is false, as
+    /// ProbLog reads it under that flag, rather than refused.
+    pub(crate) unknown_fails: bool,
 }
 
 impl Program {
@@ -1356,6 +1359,9 @@ impl Program {
 
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.unknown_fails {
+            writeln!(f, ":- unknown(fail).")?;
+        }
         for c in &self.clauses {
             writeln!(f, "{c}")?;
         }

@@ -160,6 +160,119 @@ fn by_head(program: &Program) -> ByHead<'_> {
     out
 }
 
+/// The names of ProbLog's built-ins and of the predicates of its libraries
+/// `lists` and `apply`, sorted.
+const PROBLOG_PREDICATES: &[&str] = &[
+    "all",
+    "all_or_none",
+    "append",
+    "arg",
+    "atom",
+    "atom_number",
+    "atomic",
+    "between",
+    "call",
+    "call_in_scope",
+    "call_nc",
+    "callable",
+    "clause",
+    "cmd_args",
+    "compare",
+    "compound",
+    "consult",
+    "convlist",
+    "create_scope",
+    "dbreference",
+    "debugprint",
+    "delete",
+    "enum_groups",
+    "error",
+    "exclude",
+    "fail",
+    "false",
+    "find_scope",
+    "findall",
+    "flatten",
+    "float",
+    "foldl",
+    "forall",
+    "functor",
+    "ground",
+    "ground_list",
+    "groupby",
+    "head",
+    "include",
+    "integer",
+    "intersection",
+    "is_list",
+    "is_set",
+    "last",
+    "length",
+    "list_to_set",
+    "make_list",
+    "maplist",
+    "max_list",
+    "max_member",
+    "member",
+    "memberchk",
+    "memberchk_ground",
+    "min_list",
+    "min_member",
+    "module",
+    "nextto",
+    "nl",
+    "nocache",
+    "nonvar",
+    "nth0",
+    "nth1",
+    "number",
+    "numbervars",
+    "numlist",
+    "once",
+    "partition",
+    "permutation",
+    "plus",
+    "possible",
+    "prefix",
+    "previous",
+    "primitive",
+    "proper_length",
+    "rational",
+    "reverse",
+    "same_length",
+    "sample",
+    "sample_uniform1",
+    "scanl",
+    "select",
+    "select_uniform",
+    "select_weighted",
+    "selectchk",
+    "simple",
+    "sort",
+    "sub_list",
+    "subquery",
+    "subquery_in_scope",
+    "subset",
+    "subsumes_chk",
+    "subsumes_term",
+    "subtract",
+    "succ",
+    "sum_list",
+    "true",
+    "try_call",
+    "union",
+    "unknown",
+    "unzip",
+    "use_module",
+    "value",
+    "var",
+    "varnumbers",
+    "write",
+    "writeln",
+    "writenl",
+    "zip",
+];
+
 /// Refuses what ProbLog stops on with its "No clauses found": a query or an
 /// observation of a predicate that no clause defines, and a call of one
 /// that is not a built-in tddlog evaluates, in a clause of a predicate the
@@ -170,7 +283,13 @@ fn by_head(program: &Program) -> ByHead<'_> {
 /// so it also answers a program whose call comes after a literal that
 /// never holds, or in a clause whose head unifies with no call; tddlog
 /// refuses those too.
+///
+/// Under `:- unknown(fail).` a predicate without clauses is false, as in
+/// ProbLog, unless it is one of ProbLog's built-ins or of its libraries
+/// `lists` and `apply` ([`PROBLOG_PREDICATES`]) that tddlog does not
+/// evaluate, which ProbLog would run.
 fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError> {
+    let refused = |name: &str| !program.unknown_fails || PROBLOG_PREDICATES.contains(&name);
     let mut reached: FxHashSet<(&str, usize)> = FxHashSet::default();
     let mut stack: Vec<(&str, usize)> = Vec::new();
     let asked = [("query", &program.queries), ("evidence", &program.evidence)]
@@ -184,7 +303,7 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
         );
     for (what, a, positive) in asked {
         let sig = a.signature();
-        if !defined.contains_key(&sig) {
+        if !defined.contains_key(&sig) && refused(sig.0) {
             let sign = if positive { "" } else { "\\+" };
             let body = match Builtin::of(sig.0, sig.1) {
                 Some(_) => " (tddlog evaluates this built-in in a clause's body only)",
@@ -206,13 +325,13 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
         ))
     };
     for r in &program.query_rules {
-        if let Some(a) = first_undefined(&r.body, defined, &mut reached, &mut stack) {
+        if let Some(a) = first_undefined(&r.body, defined, &refused, &mut reached, &mut stack) {
             return Err(called(a, &format!("a query rule for {}", r.pattern)));
         }
     }
     while let Some(sig) = stack.pop() {
         for c in defined.get(&sig).into_iter().flatten() {
-            if let Some(a) = first_undefined(&c.body, defined, &mut reached, &mut stack) {
+            if let Some(a) = first_undefined(&c.body, defined, &refused, &mut reached, &mut stack) {
                 return Err(called(a, c));
             }
         }
@@ -220,12 +339,14 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
     Ok(())
 }
 
-/// The first atom `body` calls whose predicate has no clauses and is not a
-/// built-in tddlog evaluates; each predicate with clauses that it calls is
-/// pushed on `stack` the first time it is `reached`.
+/// The first atom `body` calls whose predicate has no clauses, is not a
+/// built-in tddlog evaluates and is `refused` by name; each predicate with
+/// clauses that it calls is pushed on `stack` the first time it is
+/// `reached`.
 fn first_undefined<'p>(
     body: &'p [Literal],
     defined: &ByHead<'p>,
+    refused: &dyn Fn(&str) -> bool,
     reached: &mut FxHashSet<(&'p str, usize)>,
     stack: &mut Vec<(&'p str, usize)>,
 ) -> Option<&'p Atom> {
@@ -236,7 +357,7 @@ fn first_undefined<'p>(
             if reached.insert(sig) {
                 stack.push(sig);
             }
-        } else if missing.is_none() && Builtin::of(sig.0, sig.1).is_none() {
+        } else if missing.is_none() && Builtin::of(sig.0, sig.1).is_none() && refused(sig.0) {
             missing = Some(a);
         }
     });
