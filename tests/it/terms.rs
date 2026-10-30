@@ -462,6 +462,17 @@ fn equality_builds_terms_and_is_evaluates_them() {
 }
 
 #[test]
+fn hexadecimal_integers_are_read_as_problog_reads_them() {
+    // ProbLog's test hex_numbers.pl, its clause `Q :- ...` given a head.
+    assert_answers(
+        "q :- A = 0x10, B = 16, A = B. (1/0x10)::r. s(X) :- X is 0xfF + 1.
+         query(q). query(r). query(s(_)).",
+        &[("q", 1.0), ("r", 0.0625), ("s(256)", 1.0)],
+    );
+    assert!(refusal("p(0x10000000000000000). query(p(_)).").contains("bad integer"));
+}
+
+#[test]
 fn division_is_in_floating_point_and_floats_are_not_integers() {
     assert_answers(
         "t(X) :- X is 7 / 2.

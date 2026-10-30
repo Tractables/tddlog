@@ -667,6 +667,22 @@ impl<'a> Lexer<'a> {
     fn number_token(&mut self, start: usize) -> Tok<'a> {
         let src = self.src;
         let b = src.as_bytes();
+        // ProbLog's hexadecimal integers, `0x10`.
+        if b[start] == b'0'
+            && b.get(start + 1) == Some(&b'x')
+            && b.get(start + 2).is_some_and(u8::is_ascii_hexdigit)
+        {
+            let digits = b[start + 2..]
+                .iter()
+                .take_while(|d| d.is_ascii_hexdigit())
+                .count();
+            let i = start + 2 + digits;
+            self.i = i;
+            return match i64::from_str_radix(&src[start + 2..i], 16) {
+                Ok(v) => Tok::Int(v),
+                Err(_) => self.fail(self.line, format!("bad integer `{}`", &src[start..i])),
+            };
+        }
         let number = number(b, start);
         let i = number.end;
         self.i = i;
