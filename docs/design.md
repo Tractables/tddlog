@@ -335,8 +335,7 @@ evidence (`--evidence`) is an Ace `.inst` file or, for a UAI network, a
 
 **Rows** (`rows.rs`). A row sums to one, and a file's decimals round it.
 A sum within 1e-9 under one (`math.fsum`'s, the exact sum rounded once)
-keeps the row, and a sum within 1e-9 over one divides it: the binary
-rounding of the arithmetic that wrote the file. A sum further from one
+keeps the row. A sum further from one
 divides the row where the rounding of its decimals explains the gap. Each
 entry is the decimal it means: the shortest of at most 12 significant
 digits within two units in the last place of its double (the file's own
@@ -347,10 +346,19 @@ may be off by the larger of half a unit in the row's finest place and half
 a unit in the most significant digits any entry of the row has
 (pathfinder's `0.3333333` three times; `0.9999, 9.999e-05`, which are
 10000/10001 and 1/10001 to four digits), and the gap of the decimals'
-exact sum is compared with the sum of these. Otherwise a shortfall is the
+exact sum is compared with the sum of these. An excess may equal that
+slack, entries rounded up by half a unit each (`0.160598, 0.839403` in
+the UAI 2006 networks); a shortfall must be under it. An excess also
+divides the row where it is at most `(n + 1) 2^-24` for `n` entries, the
+error of a row computed in single precision, its entries rounded to
+floats and divided by their sum of `n - 1` rounded additions: the UAI
+classics write such rows to eight decimals, diagnose_b's `0.94297521,
+0.05702495` over one by 1.6e-7. Otherwise a shortfall is the
 table's own, its mass left to no value as in ProbLog, and an excess is an
-error. The script decided by the same rule, and the two decide alike on
-every row of every network of the benchmark suites. `--rescale` divides
+error. The script decided by the same rule, but for the excess of single
+precision, which it refused past 1e-9, and an excess equal to the slack,
+which it refused, and the two decide alike on every
+row of every network the script read. `--rescale` divides
 every row by its sum first, for Ace's tables in percent or as weights.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each

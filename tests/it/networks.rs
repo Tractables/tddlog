@@ -337,6 +337,28 @@ fn a_network_answers_as_problog_and_enumeration_do() {
 }
 
 #[test]
+fn a_row_that_sums_to_one_in_single_precision_is_divided_by_its_sum() {
+    // single.uai's rows of x1 are two of diagnose_a's (the UAI classics),
+    // written to eight decimals from single precision: they sum to
+    // 1.00000004 and 1.00000005, more than the decimals explain and within
+    // the 3 · 2^-24 of a row of two computed in single precision. Each is
+    // divided by its sum.
+    let out = tddlog(&[
+        "tests/networks/single.uai",
+        "--query",
+        "leaves",
+        "--precision",
+        "13",
+    ]);
+    let (a, b) = (1.00000004, 1.00000005);
+    let expected = [
+        ("x1(v_0)", 0.3 * 0.99800204 / a + 0.7 * 0.99400605 / b),
+        ("x1(v_1)", 0.3 * 0.001998 / a + 0.7 * 0.005994 / b),
+    ];
+    assert_close("single.uai", &answers(&out, "P(e)").0, &expected, 1e-12);
+}
+
+#[test]
 fn program_prints_what_the_network_reads_as() {
     let out = tddlog(&["--program", "examples/cancer.net", "--query", "leaves"]);
     assert!(
