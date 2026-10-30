@@ -162,10 +162,10 @@ use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
 
 use super::sum_out::SumOut;
-use super::{Formula, PendingFormula, QuerySizes};
+use super::{Formula, QuerySizes, Scopes};
 use crate::ground::AtomId;
 use crate::tp::backend::FullSchedule;
-use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend, VtreeScope};
+use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend};
 
 /// The evidence phase puts a node's smaller items off while they total under
 /// 1/PUT_OFF_BELOW of its largest (see the module doc).
@@ -215,6 +215,13 @@ impl Join {
             Join::Smallest(items, _) => items.contains(&slot),
         }
     }
+}
+
+/// A join's result kept across a size stop, and whether it was reduced
+/// since: the walk resumes from it rather than joining again.
+struct PendingFormula {
+    formula: Formula,
+    reduced: bool,
 }
 
 /// A child's put-off factors conjoined among themselves into `product`,
@@ -948,8 +955,7 @@ impl EvidenceWalk {
         &mut self,
         backend: &TddBackend,
         compiled: &Compiled,
-        own_scope: &impl Fn(AtomId) -> Result<VtreeScope, CompileError>,
-        scope_over: &impl Fn(&[VarId]) -> Result<VtreeScope, CompileError>,
+        scopes: &Scopes,
         sizes: &mut QuerySizes,
         watch: Option<usize>,
     ) -> Result<Option<Formula>, CompileError> {
@@ -968,7 +974,7 @@ impl EvidenceWalk {
                     debug_assert!(!value, "a clause table's link is observed false");
                     let mut vars = tie.vars();
                     vars.dedup();
-                    let own = scope_over(&vars)?;
+                    let own = scopes.over(&vars)?;
                     let formula = tie.formula(backend, &own)?;
                     let pairs = compiled.formulas[tie.reference as usize]
                         .as_ref()
@@ -978,11 +984,11 @@ impl EvidenceWalk {
                 }
                 None => {
                     // A formula taken lives on its atom's scope, which
-                    // `own_scope` gives an atom with a stored formula.
+                    // [`Scopes::own`] gives an atom with a stored formula.
                     let taken = self.taken.remove(&self.next_observed);
                     let own = match taken {
                         Some(_) => compiled.scope_of(a).clone(),
-                        None => own_scope(a)?,
+                        None => scopes.own(a)?,
                     };
                     let node = backend.lowest_over(&own);
                     let negations = (&mut sizes.negations, NegationSource::Evidence);
@@ -1116,9 +1122,9 @@ impl EvidenceWalk {
                     let scope = if sa.same(sb) {
                         sa.clone()
                     } else if let Some(vars) = shared {
-                        scope_over(vars)?
+                        scopes.over(vars)?
                     } else if merged {
-                        scope_over(&self.union.vars)?
+                        scopes.over(&self.union.vars)?
                     } else {
                         backend.global()
                     };

@@ -1165,9 +1165,7 @@ impl Compilation {
                 && let Some(f) = &self.fixpoint.formulas[a as usize]
             {
                 let scope = &self.scopes[self.comp_of[a as usize] as usize];
-                let w = scope
-                    .vars()
-                    .map_or_else(|| weights.clone(), |vars| weights.restrict(vars));
+                let w = weights.restrict(scope.vars());
                 // The complement's formula, negated once for the atom and the
                 // templates it answers, where one of them needs it. The
                 // counts are of the atom and its negation, in that order.

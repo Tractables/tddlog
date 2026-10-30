@@ -51,7 +51,8 @@ impl Probabilities {
     }
 
     /// This table on a projected scope: local variable `i + 1` takes the
-    /// weights of the program's variable `vars[i]`.
+    /// weights of the program's variable `vars[i]`. `None` is the whole
+    /// program, on which it is this table.
     ///
     /// A fact a formula does not mention contributes `p + (1 - p) = 1` to
     /// its weighted model count, so dropping it from the vtree leaves the
@@ -60,7 +61,10 @@ impl Probabilities {
     /// is dropped from a count: the query phase counts every formula
     /// together with the links of all of them, which mention them all.
     #[must_use]
-    pub(crate) fn restrict(&self, vars: &[VarId]) -> Probabilities {
+    pub(crate) fn restrict(&self, vars: Option<&[VarId]>) -> Probabilities {
+        let Some(vars) = vars else {
+            return self.clone();
+        };
         // Index 0 is unused, as in `from_program`.
         let pos = std::iter::once(0.5)
             .chain(vars.iter().map(|v| self.pos[v.0 as usize]))
