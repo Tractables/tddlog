@@ -139,8 +139,7 @@ end of one's own writes the text, as
 
 Not yet read: cut, if-then-else, `call/N`, `assert`, strings and
 probabilities computed in a rule's body in ProbLog, and `findall/3` over
-a probabilistic or recursive goal; lists, `/`, `%`, `nth_bit` and
-`sample` in Dice.
+a probabilistic or recursive goal; `/`, `%` and `sample` in Dice.
 
 ## Inside the engine
 

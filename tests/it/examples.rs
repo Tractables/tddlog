@@ -883,6 +883,103 @@ mod dice {
         );
     }
 
+    /// Lists, `binomial` and `nth_bit`: the programs of Dice's own tests
+    /// (its test/Test.ml, at commit 1d8a277) and their answers there, each
+    /// a Boolean, the one query.
+    #[test]
+    fn lists_binomial_and_nth_bit() {
+        let build = "fun build(n: int(2)): list(bool) {\n\
+                     if n == int(2, 0) then ([] : list(bool))\n\
+                     else if flip 0.5 then flip 0.2 :: build(n - int(2, 1))\n\
+                     else build(n - int(2, 1))\n\
+                     }\n\
+                     let xs = build(int(2, 3)) in\n";
+        let index = "fun index(n: int(2), xs: list(bool)): bool {\n\
+                     if n == int(2, 0) then head xs else index(n - int(2, 1), tail xs)\n\
+                     }\n\
+                     let xs = [true, false, false] in\n";
+        let (h, t) = (0.2, 0.8);
+        let mut cases = vec![
+            (
+                "let b = binomial(3, 4, 0.25) in b == int(3, 1)".to_string(),
+                0.421875,
+            ),
+            (
+                "let b = binomial(5, 29, 0.5) in b <= int(5, 14)".into(),
+                0.5,
+            ),
+            ("let b = binomial(3, 0, 0.5) in b == int(3, 0)".into(), 1.0),
+            ("let b = binomial(3, 1, 0.3) in b == int(3, 1)".into(), 0.3),
+            (
+                "let f1 = discrete(0.1, 0.4, 0.3, 0.2) in nth_bit(int(2, 1), f1)".into(),
+                0.6,
+            ),
+            (
+                "let f1 = discrete(0.1, 0.4, 0.3, 0.2) in nth_bit(int(2, 0), f1)".into(),
+                0.5,
+            ),
+            ("let a = int(2, 1) in nth_bit(int(2,1), a)".into(), 1.0),
+            ("let a = int(2, 1) in nth_bit(int(2,0), a)".into(), 0.0),
+            (
+                "let xs = [true, false, false] in\n\
+                 (head xs) && !(head (tail xs)) && !(head (tail (tail xs)))"
+                    .into(),
+                1.0,
+            ),
+            (
+                "let xs = [true, false, false] in (length xs) == int(4, 3)".into(),
+                1.0,
+            ),
+            (
+                "let xs = [] : list(bool) in (length xs) == int(4, 0)".into(),
+                1.0,
+            ),
+            (
+                format!(
+                    "{index}!index(int(2, 2), xs) && !index(int(2, 1), xs) && index(int(2, 0), xs)"
+                ),
+                1.0,
+            ),
+            (
+                "let xs = [flip 0.2, flip 0.4] in\n\
+                 let ys = if flip 0.5 then (head xs) :: xs else tail xs in\n\
+                 head ys"
+                    .into(),
+                0.2 * 0.5 + 0.4 * 0.5,
+            ),
+            (format!("{build}(length xs) == int(4, 0)"), 0.125),
+        ];
+        // Of length 1, 2 and 3, each element true (0.2) or false (0.8).
+        for (n, ways) in [(1, 3.0), (2, 3.0), (3, 1.0)] {
+            for k in 0..1 << n {
+                let mut conj = Vec::new();
+                let mut p = 0.125 * ways;
+                let mut at = "xs".to_string();
+                for i in 0..n {
+                    let set = k >> i & 1 == 1;
+                    conj.push(format!("{}(head {at})", if set { "" } else { "!" }));
+                    p *= if set { h } else { t };
+                    at = format!("(tail {at})");
+                }
+                let text = format!(
+                    "{build}if (length xs) == int(4, {n}) then {} else false",
+                    conj.join(" && ")
+                );
+                cases.push((text, p));
+            }
+        }
+        for (program, p) in &cases {
+            let text = read(program, program);
+            let solution = tddlog::solve(&text, &Options::default(), &mut |_| {})
+                .unwrap_or_else(|e| panic!("{program}: {e}"));
+            let answers = solution.answers.expect("consistent evidence");
+            let [answer] = &answers[..] else {
+                panic!("{program}: {} answers", answers.len());
+            };
+            check_text(program, &text, &[(&answer.to_string(), *p)]);
+        }
+    }
+
     /// Every Dice program of the benchmarks (data/dice and data/nodice, on
     /// the baselines branch) is read, its result queried. Skipped without
     /// them.

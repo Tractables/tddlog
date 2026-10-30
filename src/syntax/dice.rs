@@ -41,14 +41,23 @@
 //! value of an integer (the conjunction of its bits), every component of a
 //! tuple.
 //!
+//! A list is held as Dice holds one (its `lib/Passes.ml`): a pair of its
+//! length, an integer of 4 bits, and exactly [`LIST_LENGTH`] elements as
+//! nested pairs, those past the length its type's default value (false,
+//! zero). `x :: xs` keeps the first 9 elements of `xs`, its length capped
+//! at 10; `head` and `tail` of an empty list observe false on their path.
+//! `binomial(w, n, p)` is the sum of `n` flips `p`, each added in a
+//! conditional as Dice adds it, and `nth_bit(int(w, i), x)` is bit `i` of
+//! `x` counted from the most significant.
+//!
 //! Supported: `let`, `if`-`then`-`else`, `flip`, `discrete`, `uniform`,
-//! `int(w, k)`, `true`, `false`, `&&`, `||`, `!`, `^`, `<=>`, `==`, `!=`,
-//! `<`, `<=`, `>`, `>=`, `+`, `-`, `*`, `<<` and `>>` by a constant, tuples
-//! with `fst` and `snd`, `observe`, `fun` definitions and calls,
-//! `iterate`, recursion. Operator precedence is Dice's (its
-//! `lib/Parser.mly`). Refused: lists, `/`, `%`, `nth_bit`, `sample`,
-//! `head`, `tail`, `length`, integers of more than 63 bits, and a
-//! `uniform` over more than 2^24 values.
+//! `binomial`, `int(w, k)`, `true`, `false`, `&&`, `||`, `!`, `^`, `<=>`,
+//! `==`, `!=`, `<`, `<=`, `>`, `>=`, `+`, `-`, `*`, `<<` and `>>` by a
+//! constant, `nth_bit`, tuples with `fst` and `snd`, lists with `[...]`,
+//! `[] : list(t)`, `::`, `head`, `tail` and `length`, `observe`, `fun`
+//! definitions and calls, `iterate`, recursion. Operator precedence is
+//! Dice's (its `lib/Parser.mly`). Refused: `/`, `%`, `sample`, integers of
+//! more than 63 bits, and a `uniform` over more than 2^24 values.
 //!
 //! The program is the one the Python script `dice2problog.py` (on the
 //! baselines branch) wrote before this reader replaced it, byte for byte: its atoms are named in the same
@@ -79,6 +88,11 @@ pub fn read(source: &str) -> Result<String, ParseError> {
 /// Dice's recursion limit (its `lib/Passes.ml`): a function that calls
 /// itself is inlined this deep, and the call past it observes false.
 const RECURSION_LIMIT: usize = 10;
+
+/// The elements a list holds (Dice's `max_list_length`, its recursion
+/// limit): a longer literal is an error, and `::` on a full list drops its
+/// last element.
+const LIST_LENGTH: usize = RECURSION_LIMIT;
 
 /// The most pairs of values whose results an integer operation lists, to
 /// know the values the result can take.
@@ -238,6 +252,18 @@ enum Kind<'a> {
     Iterate(&'a str, Box<Expr<'a>>, u64),
     Fst(Box<Expr<'a>>),
     Snd(Box<Expr<'a>>),
+    /// `binomial(width, n, p)`.
+    Binomial(u64, u64, f64),
+    /// `nth_bit(int(width, i), x)`.
+    NthBit(u64, u64, Box<Expr<'a>>),
+    /// `[x1, ..., xn]`.
+    List(Vec<Expr<'a>>),
+    /// `[] : t`.
+    Nil(Type),
+    /// `head`, `tail` or `length` of a list.
+    Head(Box<Expr<'a>>),
+    Tail(Box<Expr<'a>>),
+    Length(Box<Expr<'a>>),
     Bool(bool),
     Call(&'a str, Vec<Expr<'a>>),
     Var(&'a str),
@@ -265,8 +291,8 @@ struct Program<'a> {
 }
 
 /// Dice's binary operators and their precedence, low to high (its
-/// `lib/Parser.mly`); all associate to the left. `!` binds between `&&`
-/// and `<=>` ([`NOT_LEVEL`]).
+/// `lib/Parser.mly`); all but `::` associate to the left. `!` binds
+/// between `&&` and `<=>` ([`NOT_LEVEL`]).
 fn precedence(op: &str) -> Option<u8> {
     Some(match op {
         "||" => 1,
@@ -274,6 +300,7 @@ fn precedence(op: &str) -> Option<u8> {
         "<=>" => 4,
         "^" => 5,
         "<" | "<=" | ">" | ">=" | "!=" => 6,
+        "::" => 7,
         "+" | "-" | "==" | "<<" | ">>" => 8,
         "*" | "/" | "%" => 9,
         _ => return None,
@@ -283,7 +310,7 @@ fn precedence(op: &str) -> Option<u8> {
 const NOT_LEVEL: u8 = 3;
 
 /// Names that Dice reads and this reader refuses.
-const UNSUPPORTED: [&str; 5] = ["sample", "head", "tail", "length", "nth_bit"];
+const UNSUPPORTED: [&str; 1] = ["sample"];
 
 /// Recursive descent for Dice's expression language:
 ///
@@ -293,14 +320,20 @@ const UNSUPPORTED: [&str; 5] = ["sample", "head", "tail", "length", "nth_bit"];
 /// atom := 'flip' num | 'flip' '(' num ')' | 'discrete' '(' nums ')'
 ///       | 'int' '(' num ',' num ')' | 'uniform' '(' num ',' num ',' num ')'
 ///       | 'iterate' '(' id ',' expr ',' num ')'
-///       | 'fst' atom | 'snd' atom | 'true' | 'false' | id ['(' args ')']
-///       | '(' expr [',' expr] ')'
+///       | 'binomial' '(' num ',' num ',' num ')'
+///       | 'nth_bit' '(' 'int' '(' num ',' num ')' ',' expr ')'
+///       | 'fst' atom | 'snd' atom | ('head' | 'tail' | 'length') expr7
+///       | 'true' | 'false' | id ['(' args ')']
+///       | '(' expr [',' expr] ')' | '[' expr {',' expr} ']' | '[' ']' ':' type
 /// ```
 ///
 /// `let`, `if` and `observe` extend as far right as they can, as Dice's
 /// parser resolves those conflicts by shifting. Dice's `fst e` and `snd e`
 /// also take the longest `e`, which a well-typed program never uses (no
-/// binary operator returns a tuple), so here they take an atom. A chain of
+/// binary operator returns a tuple), so here they take an atom. `head e`,
+/// `tail e` and `length e` take the longest `e` too, of which a well-typed
+/// program uses `::` alone (`tail xs :: ys` is `tail (xs :: ys)`), so here
+/// they take the operators from `::` up (`expr7`). A chain of
 /// `let`s and a chain of `else if`s are read in a loop and held as one
 /// node: programs have thousands.
 struct Parser<'a> {
@@ -458,7 +491,9 @@ impl<'a> Parser<'a> {
             let kind = if matches!(t.text, "<<" | ">>") {
                 Kind::Shift(t.text, Box::new(e), self.integer()?)
             } else {
-                Kind::Bin(t.text, Box::new(e), Box::new(self.expr(prec + 1)?))
+                // `::` associates to the right.
+                let next = if t.text == "::" { prec } else { prec + 1 };
+                Kind::Bin(t.text, Box::new(e), Box::new(self.expr(next)?))
             };
             e = Expr { line: t.line, kind };
         }
@@ -572,8 +607,39 @@ impl<'a> Parser<'a> {
                 self.op(")")?;
                 Kind::Iterate(f, Box::new(init), k)
             }
+            (Tk::Id, "binomial") => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let n = self.integer()?;
+                self.op(",")?;
+                let p = self.float()?;
+                self.op(")")?;
+                Kind::Binomial(w, n, p)
+            }
+            (Tk::Id, "nth_bit") => {
+                self.op("(")?;
+                self.expect(Tk::Id, Some("int"))?;
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let i = self.integer()?;
+                self.op(")")?;
+                self.op(",")?;
+                let x = self.expr(0)?;
+                self.op(")")?;
+                Kind::NthBit(w, i, Box::new(x))
+            }
             (Tk::Id, "fst") => Kind::Fst(Box::new(self.atom()?)),
             (Tk::Id, "snd") => Kind::Snd(Box::new(self.atom()?)),
+            (Tk::Id, op @ ("head" | "tail" | "length")) => {
+                let x = Box::new(self.expr(precedence("::").expect("a level"))?);
+                match op {
+                    "head" => Kind::Head(x),
+                    "tail" => Kind::Tail(x),
+                    _ => Kind::Length(x),
+                }
+            }
             (Tk::Id, "true") => Kind::Bool(true),
             (Tk::Id, "false") => Kind::Bool(false),
             (Tk::Id, name) if UNSUPPORTED.contains(&name) => {
@@ -607,7 +673,20 @@ impl<'a> Parser<'a> {
                     return Ok(e);
                 }
             }
-            (Tk::Op, "[") => return Err(fail(line, "Dice's lists are not supported")),
+            (Tk::Op, "[") if self.at(Tk::Op, "]") => {
+                self.take();
+                self.op(":")?;
+                Kind::Nil(self.ty()?)
+            }
+            (Tk::Op, "[") => {
+                let mut items = vec![self.expr(0)?];
+                while self.at(Tk::Op, ",") {
+                    self.take();
+                    items.push(self.expr(0)?);
+                }
+                self.op("]")?;
+                Kind::List(items)
+            }
             _ => return Err(fail(line, format!("unexpected `{}`", t.text))),
         };
         Ok(Expr { line, kind })
@@ -683,15 +762,22 @@ fn calls(e: &Expr<'_>, name: &str) -> bool {
             | Kind::Not(x)
             | Kind::Fst(x)
             | Kind::Snd(x)
+            | Kind::Head(x)
+            | Kind::Tail(x)
+            | Kind::Length(x)
+            | Kind::NthBit(_, _, x)
             | Kind::Shift(_, x, _) => stack.push(x),
             Kind::Bin(_, l, r) | Kind::Tuple(l, r) => {
                 stack.push(l);
                 stack.push(r);
             }
+            Kind::List(items) => stack.extend(items),
             Kind::Flip(_)
             | Kind::Discrete(_)
             | Kind::Int(..)
             | Kind::Uniform(..)
+            | Kind::Binomial(..)
+            | Kind::Nil(_)
             | Kind::Bool(_)
             | Kind::Var(_) => {}
         }
@@ -931,6 +1017,45 @@ fn compare(op: &str, a: u64, b: u64) -> bool {
 /// Dice's int width for `n` values (`num_binary_digits (n - 1)`).
 fn bits_for(n: usize) -> u64 {
     u64::from((n.max(1) - 1).checked_ilog2().map_or(0, |b| b + 1)).max(1)
+}
+
+/// The width of a list's length (Dice's `bit_length max_list_length`).
+fn list_width() -> u64 {
+    bits_for(LIST_LENGTH + 1)
+}
+
+/// The type of a value, a list's as the pair it is held as.
+fn type_of(v: &Value) -> Type {
+    match v {
+        Value::Bool(_) => Type::Bool,
+        Value::Int(x) => Type::Int(x.width),
+        Value::Tuple(t) => Type::Tuple(Box::new(type_of(&t.0)), Box::new(type_of(&t.1))),
+    }
+}
+
+/// A list's length and its [`LIST_LENGTH`] elements.
+fn list_parts(v: &Value, name: &str, line: usize) -> Res<(Rc<Int>, Vec<Value>)> {
+    let not_list = || fail(line, format!("{name}: a list is expected"));
+    let Value::Tuple(t) = v else {
+        return Err(not_list());
+    };
+    let Value::Int(n) = &t.0 else {
+        return Err(not_list());
+    };
+    if n.width != list_width() {
+        return Err(not_list());
+    }
+    let mut elems = Vec::with_capacity(LIST_LENGTH);
+    let mut rest = &t.1;
+    for _ in 1..LIST_LENGTH {
+        let Value::Tuple(pair) = rest else {
+            return Err(not_list());
+        };
+        elems.push(pair.0.clone());
+        rest = &pair.1;
+    }
+    elems.push(rest.clone());
+    Ok((n.clone(), elems))
 }
 
 /// The probabilities of `discrete(ps)` as read: a list whose sum is off
@@ -1259,7 +1384,11 @@ impl<'a> Translator<'a> {
         })
     }
 
+    /// A flip `p`: a probabilistic fact, or a constant where `p` is 0 or 1.
     fn flip(&mut self, p: f64, name: &str) -> Lit {
+        if p <= 0.0 || p >= 1.0 {
+            return lit(if p >= 1.0 { "true" } else { "false" });
+        }
         let a = self.fresh(name);
         let p = repr(p);
         match &self.in_loop {
@@ -1609,6 +1738,9 @@ impl<'a> Translator<'a> {
     }
 
     fn binary(&mut self, op: &str, l: Value, r: Value, name: &str, line: usize) -> Res<Value> {
+        if op == "::" {
+            return self.cons(l, r, name, line);
+        }
         if matches!(op, "/" | "%") {
             return Err(fail(line, format!("Dice's operator {op} is not supported")));
         }
@@ -1702,13 +1834,7 @@ impl<'a> Translator<'a> {
                 .cloned()
                 .ok_or_else(|| fail(line, format!("unbound variable {x}"))),
             Kind::Bool(b) => Ok(boolean(*b)),
-            Kind::Flip(p) => Ok(if *p <= 0.0 {
-                boolean(false)
-            } else if *p >= 1.0 {
-                boolean(true)
-            } else {
-                Value::Bool(self.flip(*p, name))
-            }),
+            Kind::Flip(p) => Ok(Value::Bool(self.flip(*p, name))),
             Kind::Discrete(ps) => {
                 let ps = discrete_probs(ps);
                 self.choice(&ps, bits_for(ps.len()), name, line)
@@ -1746,6 +1872,68 @@ impl<'a> Translator<'a> {
                 }),
                 _ => Err(fail(line, format!("{name}: a tuple is expected"))),
             },
+            &Kind::Binomial(width, n, p) => self.binomial(width, n, p, name, line),
+            &Kind::NthBit(width, i, ref x) => {
+                let v = self.eval(x, env, path, name)?;
+                let x = self.integer(&v, name, line)?;
+                if x.width != width || i >= width {
+                    return Err(fail(
+                        line,
+                        format!(
+                            "nth_bit(int({width}, {i}), x): x has {} bits, bit {i} of {width} is asked",
+                            x.width
+                        ),
+                    ));
+                }
+                Ok(Value::Bool(x.bits[(width - 1 - i) as usize].clone()))
+            }
+            Kind::List(items) => {
+                if items.len() > LIST_LENGTH {
+                    return Err(fail(
+                        line,
+                        format!(
+                            "a list of {} elements: Dice's lists hold at most {LIST_LENGTH}",
+                            items.len()
+                        ),
+                    ));
+                }
+                let mut elems = Vec::new();
+                for (k, x) in items.iter().enumerate() {
+                    elems.push(self.eval(x, env, path, &format!("{name}_{}", k + 1))?);
+                }
+                let n = self.constant(items.len() as u64, list_width(), line)?;
+                let t = type_of(&elems[0]);
+                self.list(n, elems, &t, name, line)
+            }
+            Kind::Nil(t) => match t {
+                Type::List(_) => self.default(Some(t), name, line),
+                _ => Err(fail(
+                    line,
+                    format!("[] : {t:?}: an empty list has a list type"),
+                )),
+            },
+            Kind::Head(x) | Kind::Tail(x) | Kind::Length(x) => {
+                let v = self.eval(x, env, path, name)?;
+                let (n, elems) = list_parts(&v, name, line)?;
+                if let Kind::Length(_) = e.kind {
+                    return Ok(Value::Int(n));
+                }
+                // Dice's head and tail of an empty list observe false.
+                let zero = self.constant(0, list_width(), line)?;
+                let empty = self.compare("==", n.clone(), zero, name, line)?;
+                let empty = self.literal(&empty, name, line)?;
+                if !is(&empty, "false") {
+                    self.observe(neg(&empty), path);
+                }
+                if let Kind::Head(_) = e.kind {
+                    return Ok(elems[0].clone());
+                }
+                let one = self.constant(1, list_width(), line)?;
+                let n = self.arith("-", n, one, name, line)?;
+                let n = self.integer(&n, name, line)?;
+                let t = type_of(&elems[0]);
+                self.list(n, elems[1..].to_vec(), &t, name, line)
+            }
             Kind::Not(x) => {
                 let v = self.eval(x, env, path, name)?;
                 Ok(Value::Bool(neg(&self.literal(&v, name, line)?)))
@@ -2144,11 +2332,95 @@ impl<'a> Translator<'a> {
                 let b = self.default(Some(b), fname, line)?;
                 Ok(Value::Tuple(Rc::new((a, b))))
             }
-            Some(Type::List(_)) => Err(fail(
-                line,
-                format!("{fname}: Dice's lists are not supported"),
-            )),
+            Some(Type::List(t)) => {
+                // The empty list: length 0, every element the default.
+                let d = self.default(Some(t), fname, line)?;
+                let zero = self.constant(0, list_width(), line)?;
+                self.list(zero, Vec::new(), &type_of(&d), fname, line)
+            }
         }
+    }
+
+    /// The list of length `n` whose first elements are `elems`, each of
+    /// type `t`, and its others `t`'s default.
+    fn list(
+        &mut self,
+        n: Rc<Int>,
+        mut elems: Vec<Value>,
+        t: &Type,
+        name: &str,
+        line: usize,
+    ) -> Res<Value> {
+        if let Some(x) = elems.iter().map(type_of).find(|x| x != t) {
+            return Err(fail(
+                line,
+                format!("{name}: a list of elements of types {t:?} and {x:?}"),
+            ));
+        }
+        while elems.len() < LIST_LENGTH {
+            elems.push(self.default(Some(t), name, line)?);
+        }
+        let mut rest = elems.pop().expect("an element");
+        while let Some(x) = elems.pop() {
+            rest = Value::Tuple(Rc::new((x, rest)));
+        }
+        Ok(Value::Tuple(Rc::new((Value::Int(n), rest))))
+    }
+
+    /// `x :: xs`, as Dice makes it: x, then the elements of xs but its
+    /// last; the length xs's plus one, unless xs is full.
+    fn cons(&mut self, x: Value, xs: Value, name: &str, line: usize) -> Res<Value> {
+        let (n, mut elems) = list_parts(&xs, name, line)?;
+        let t = type_of(&elems[0]);
+        let full = self.constant(LIST_LENGTH as u64, list_width(), line)?;
+        let one = self.constant(1, list_width(), line)?;
+        let at_full = self.compare("==", n.clone(), full.clone(), name, line)?;
+        let at_full = self.literal(&at_full, name, line)?;
+        let more = self.arith("+", n, one, name, line)?;
+        let n = match &*at_full {
+            "false" => more,
+            "true" => Value::Int(full),
+            _ => self.merge(
+                vec![(at_full.clone(), Value::Int(full)), (neg(&at_full), more)],
+                name,
+                line,
+            )?,
+        };
+        let n = self.integer(&n, name, line)?;
+        elems.pop();
+        elems.insert(0, x);
+        self.list(n, elems, &t, name, line)
+    }
+
+    /// `binomial(width, n, p)`, as Dice writes it: from 0, `n` times
+    /// `if flip p then x + 1 else x`.
+    fn binomial(&mut self, width: u64, n: u64, p: f64, name: &str, line: usize) -> Res<Value> {
+        let mut x = self.constant(0, width, line)?;
+        if n >= x.modulus() {
+            return Err(fail(
+                line,
+                format!(
+                    "binomial({width}, {n}, p): {n} out of range for {} values",
+                    x.modulus()
+                ),
+            ));
+        }
+        let one = self.constant(1, width, line)?;
+        for _ in 0..n {
+            let f = self.flip(p, name);
+            let more = self.arith("+", x.clone(), one.clone(), name, line)?;
+            let v = match &*f {
+                "true" => more,
+                "false" => Value::Int(x),
+                _ => self.merge(
+                    vec![(f.clone(), more), (neg(&f), Value::Int(x))],
+                    name,
+                    line,
+                )?,
+            };
+            x = self.integer(&v, name, line)?;
+        }
+        Ok(Value::Int(x))
     }
 
     /// What condition `e`, or its negation where not `positive`, says of
@@ -2523,6 +2795,23 @@ mod tests {
         assert_eq!(tree("!a == b && c < d + e"), "(!(a == b) && (c < (d + e)))");
         assert_eq!(tree("a || b && c"), "(a || (b && c))");
         assert_eq!(tree("a - b - c"), "((a - b) - c)");
+        // `::` associates to the right, between the comparisons and `+`.
+        assert_eq!(tree("a < b :: c :: d + e"), "(a < (b :: (c :: (d + e))))");
+    }
+
+    /// A list is its length, 4 bits, and ten elements as nested pairs;
+    /// `head` and `tail` of a list that may be empty observe that it is
+    /// not, and a list of known length needs no observation.
+    #[test]
+    fn a_list_is_its_length_and_ten_elements() {
+        // The length, the constant 1, is queried at 0 and 1.
+        let text = read("let xs = [flip 0.5, true] in tail xs").unwrap();
+        let queries = text.lines().filter(|l| l.starts_with("query(")).count();
+        assert_eq!(queries, 2 + 10, "{text}");
+        assert!(!text.contains("evidence("), "{text}");
+        let text =
+            read("let xs = if flip 0.5 then [true] else [] : list(bool) in head xs").unwrap();
+        assert_eq!(text.matches("evidence(").count(), 1, "{text}");
     }
 
     #[test]
@@ -2625,11 +2914,20 @@ mod tests {
     #[test]
     fn what_the_reader_does_not_support_is_refused() {
         for (program, error) in [
-            ("let x = [flip 0.5] in x", "lists are not supported"),
             ("int(3, 4) / int(3, 2)", "operator / is not supported"),
             ("int(3, 4) % int(3, 2)", "operator % is not supported"),
             ("sample flip 0.5", "`sample` is not supported"),
-            ("nth_bit(int(2, 1), 0)", "`nth_bit` is not supported"),
+            ("[flip 0.5, int(2, 1)]", "a list of elements of types"),
+            ("int(2, 1) :: [true]", "a list of elements of types"),
+            (
+                "[true, true, true, true, true, true, true, true, true, true, true]",
+                "hold at most 10",
+            ),
+            ("[] : bool", "an empty list has a list type"),
+            ("head (true, false)", "a list is expected"),
+            ("nth_bit(int(3, 1), int(2, 1))", "x has 2 bits"),
+            ("nth_bit(int(2, 2), int(2, 1))", "bit 2 of 2"),
+            ("binomial(2, 4, 0.5)", "4 out of range for 4 values"),
             ("int(2, 1) + int(3, 1)", "integers of 4 and 8 values"),
             ("int(2, 4)", "out of range for 4 values"),
             ("int(64, 4)", "more than 63 bits"),

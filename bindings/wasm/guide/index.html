@@ -605,9 +605,9 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   probabilistic fact, and the integer operations rules over the bits, as
   in the adder above; <code>iterate</code> becomes recursion over a step
   index, and a recursive function is inlined up to Dice's limit of ten
-  calls. The program's result is queried. Lists, <code>/</code>,
-  <code>%</code>, <code>nth_bit</code> and <code>sample</code> are
-  refused.
+  calls. A list is held as Dice holds one, its length and ten
+  elements. The program's result is queried. <code>/</code>,
+  <code>%</code> and <code>sample</code> are refused.
   <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.
   The bindings read a Dice program with the format <code>dice</code>.</p>
   <p class="try"><a href="../?example=walk&amp;evidence=1">Open a random
