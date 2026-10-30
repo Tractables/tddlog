@@ -38,8 +38,8 @@ command-line tool with Python, C and WebAssembly bindings, and it
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each">
 </p>
 
-The figure compares tddlog with the exact inference systems native to
-each type of program: their answers, total times and tddlog's speed-up
+On every type of program, tddlog answers more instances than each
+exact inference system native to it, in less total time
 ([Performance](#performance)).
 
 ## Install
@@ -193,70 +193,45 @@ measured behind it.
 
 ## Performance
 
-tddlog was run against every exact inference system we could find: on
+tddlog was compared with every exact inference system we could find, on
 six types of program, each against the systems that natively handle it,
 and on [all programs](#all-programs) together, against every system.
-Each run is single-threaded under its suite's time limit (300 to 1200
-seconds), and every answer is checked against an exact reference. Each
-table gives a system's answers, its total time and tddlog's over the
-instances it is given and either answers, and tddlog's speed-up. The
+Every answer is checked against an exact reference. Each table gives a
+system's answers, its total time and tddlog's over the instances it is
+given and either answers, and how many times faster tddlog is. The
 [results page](https://tractables.github.io/tddlog/results/) has every
-instance and time, a page for each system (its version and settings,
-how it was given each program, its plots against tddlog, and its paper)
-and one for each benchmark (the program as its authors wrote it, as each
-system was given it, and every run).
+instance, time and program, and a page for each system.
 
 <details>
 <summary>How the systems were run and compared</summary>
 
 - Each instance counts in one type, whatever language its source was
-  written in. A system is given every instance of a type it can take,
-  through a translation where it cannot read the original (an LPAD for
-  ProbLog, a Dice program for Roulette).
-- **Answers** count over all of a type's instances.
-- **Total times** are the system's and tddlog's over the instances the
-  system is given and either answers. A run that does not answer counts
-  as twice its time limit (PAR-2, as in the SAT and model counting
-  competitions), and a time under 0.2 s as 0.2 s.
-- **tddlog faster** is the ratio of the two total times over three sets
-  of instances: those both answer, leaving out those both answer in
-  under 0.2 s; those only the other system answers, tddlog counted at
-  its time limit; and those only tddlog answers where the other system's
-  time limit over tddlog's time is at least the ratio on the first set,
-  the other system counted at its limit. The other system's timeouts can
-  only raise the speed-up, and tddlog's only lower it. With fewer than 20
-  instances both answer there are too few in common for a speed-up.
+  written in. A system is given every instance it can take, through a
+  translation where it cannot read the original (an LPAD for ProbLog, a
+  Dice program for Roulette).
+- Runs are single-threaded, under each suite's time limit (300 to 1200
+  seconds). A suite's systems ran side by side on the same machines, and
+  tddlog's current version in the same lanes, with the same memory per
+  run.
+- **Answers** count over all of a type's instances. **Total times** count
+  a run that does not answer as twice its time limit (PAR-2, as in the
+  SAT and model counting competitions) and a time under 0.2 s as 0.2 s.
+- **tddlog faster** is the ratio of the total times on the instances both
+  answer, leaving out those both answer in under 0.2 s. An instance only
+  the other system answers is added with tddlog at its time limit, and
+  one only tddlog answers with the other system at its limit, where that
+  limit over tddlog's time is at least the ratio: the other system's
+  timeouts can only raise the speed-up. With fewer than 20 instances both
+  answer there is no speed-up.
 - A system run in several forms (ProbLog's three compilers, Ace's two
   modes) counts as its fastest form on each instance.
-- The figure at the top and the tables name a type's five best native
-  systems, by answers and then speed-up, and put the others in one row
-  with the least of their total times and of their speed-ups.
-- The cactus plots count the instances each system answers within each
-  time limit, for tddlog and the native systems given at least 20 of the
-  type's instances. The scatter plots put tddlog's time against the
-  fastest of those systems', instance by instance.
-
-The release run compared tddlog with ProbLog 2.3.0, PITA, aspmc, Ace
-3.0, Merlin 1.7.0, pyAgrum 3.2.1, pgmpy 1.1.2, libDAI 0.3.2,
-TensorInference.jl 0.6.3, ProvSQL 1.13.0, Dice, Alea.jl, Roulette and
-the further systems, on lab and cloud machines. A suite's systems ran in
-one job, side by side in parallel lanes, so that times compare within a
-suite and each comparison pairs a system with tddlog on the same machine
-in the same lanes. tddlog's rows come from a rerun of its current
-version on the same machines, with the same memory per run; the suites
-first run on cloud machines were rerun in full on lab machines, every
-system side by side. Dice's loops are given to ProbLog, PITA and aspmc
-both unrolled and as recursion, each scored on the form it does better
-on. The references are ProbLog, Ace, Merlin and Alea.jl where they
-answer, Ganak's exact model count, and exact solvers written for this
-repository.
-
-On the [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines),
-[docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md)
-says how each system was given each suite and what it was not given,
-[docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md)
-has the machines, versions and every table, and the rest of the branch
-has the code that runs each system and the copies of their programs.
+- The plots count the instances each system answers within each time
+  limit, and put tddlog's time against the fastest other system's,
+  instance by instance.
+- The [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
+  has the code that runs each system,
+  [how each was given each suite](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md),
+  and the [machines, versions and tables](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md).
 
 </details>
 
@@ -267,11 +242,10 @@ has the code that runs each system and the copies of their programs.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-ProbLog programs of 13 families: paths in random graphs and in grids,
-Biomine's paths, smokers, UW-CSE, Cora's citation matching, blood types,
-pedigrees, sickness, Mastermind, MNIST addition, Prob-EC's event
-calculus and taint analyses of Android apps. tddlog answers
-**124 of 134**.
+tddlog answers **124 of 134** ProbLog programs, of 13 families: paths
+in random graphs and in grids, Biomine's paths, smokers, UW-CSE, Cora's
+citation matching, blood types, pedigrees, sickness, Mastermind, MNIST
+addition, Prob-EC's event calculus and taint analyses of Android apps.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -290,9 +264,9 @@ calculus and taint analyses of Android apps. tddlog answers
        alt="Probabilistic database queries answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-Boolean queries over tuple-independent databases: 16 TPC-H queries,
-the queries h0 and h1, the safe queries QW and Q9, and paths of two
-edges in random graphs. tddlog answers **308 of 320**.
+tddlog answers **308 of 320** Boolean queries over tuple-independent
+databases: 16 TPC-H queries, the queries h0 and h1, the safe queries QW
+and Q9, and paths of two edges in random graphs.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -312,12 +286,12 @@ edges in random graphs. tddlog answers **308 of 320**.
        alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-bnlearn's networks, the large ones and the Roulette and noDice papers'
-versions among them, Ace's networks, the noisy-or networks, and the
-UAI 2022 networks whose factors are conditional probability tables:
-Promedus diagnosis, pedigree, or_chain and BN networks, and the
-blockmap, Mastermind and fs networks that Ace's benchmarks also have.
-tddlog answers **291 of 292**.
+tddlog answers **291 of 292** networks: bnlearn's, the large ones and
+the Roulette and noDice papers' versions among them, Ace's, the noisy-or
+networks, and the UAI 2022 networks whose factors are conditional
+probability tables (Promedus diagnosis, pedigree, or_chain and BN
+networks, and the blockmap, Mastermind and fs networks that Ace's
+benchmarks also have).
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -337,10 +311,10 @@ PSouffle was given 10 of the networks and answers 6.
        alt="Markov networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-The other UAI 2022 networks, whose factors are not conditional
-probability tables over an acyclic graph: object detection,
-segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
-the rus networks and weighted CSPs. tddlog answers **224 of 263**.
+tddlog answers **224 of 263** networks, the UAI 2022 networks whose
+factors are not conditional probability tables over an acyclic graph:
+object detection, segmentation, grid, DBN, CSP and Alchemy networks,
+protein side chains, the rus networks and weighted CSPs.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -362,13 +336,13 @@ the rus networks and weighted CSPs. tddlog answers **224 of 263**.
        alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-Programs over discrete values with conditionals and loops, of 16
-families: the Caesar cipher, diamond and ladder networks, Geni's router
-grids with failing links or routers and its weather factory, hidden
-Markov models and Pluck's sequence models, a Markov chain, a lossy
-network, contract signing, a perturbed-memory interpreter, Cao et al.'s
-integer programs, the coupon collector, 3-SAT and the Dice paper's small
-programs. tddlog answers **224 of 260**.
+tddlog answers **224 of 260** programs over discrete values with
+conditionals and loops, of 16 families: the Caesar cipher, diamond and
+ladder networks, Geni's router grids with failing links or routers and
+its weather factory, hidden Markov models and Pluck's sequence models, a
+Markov chain, a lossy network, contract signing, a perturbed-memory
+interpreter, Cao et al.'s integer programs, the coupon collector, 3-SAT
+and the Dice paper's small programs.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -386,9 +360,9 @@ programs. tddlog answers **224 of 260**.
        alt="Bit-blasted programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-Programs over integers written in Alea.jl, which compiles each to a
-Boolean circuit. Alea.jl runs its own program; every other system is
-given the circuit. tddlog answers **224 of 257**.
+tddlog answers **224 of 257** programs over integers written in
+Alea.jl, which compiles each to a Boolean circuit. Alea.jl runs its own
+program; every other system is given the circuit.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -411,8 +385,8 @@ given the circuit. tddlog answers **224 of 257**.
        alt="All programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-The six types together, every system on every program it is given,
-natively or through a translation. tddlog answers **1395 of 1526**.
+tddlog answers **1395 of 1526**: the six types together, every system
+on every program it is given, natively or through a translation.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -432,31 +406,6 @@ natively or through a translation. tddlog answers **1395 of 1526**.
   exact engines time out from 18 to 20 routers. Ace, pyAgrum and pgmpy
   answer two clinical trial circuits that tddlog does not, and Merlin
   one of them.
-
-### Each system on its own benchmarks
-
-Each system on the benchmarks of its own papers, repository or
-distribution, with each one's total time over the instances either
-answers:
-
-| System | Its benchmarks | Instances | The system | tddlog | tddlog faster |
-|---|---|--:|--:|--:|--:|
-| Ace | Ace's own benchmarks (Chavira and Darwiche) | 46 | 46 in 8 min | 46 in 19 s | 26× |
-| ProbLog | The Biomine network of ProbLog's first paper (De Raedt et al., IJCAI 2007) | 10 | 4 in 2.0 h | 10 in 3 min | too few in common |
-| PITA | cplint's blood type example, which PITA ships | 1 | 1 in 0.6 s | 1 in 0.2 s | too few in common |
-| ProvSQL | The TPC-H queries, ProvSQL's own evaluation | 295 | 259 in 14 h | 289 in 38 min | 19× |
-| Dice | The Dice paper's programs and networks (OOPSLA 2020) and its repository's loops | 69 | 39 in 9.6 h | 67 in 21 min | 27× |
-| Alea.jl | The bit-blasting paper's programs (PLDI 2024), Alea.jl's own | 257 | 139 in 32 h | 224 in 3.7 h | 6.6× |
-| Alea.jl | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch | 28 | 25 in 23 min | 26 in 8 min | too few in common |
-| Roulette | The Roulette paper's programs and networks (PLDI 2025), from its artifact | 114 | 44 in 17 h | 95 in 20 min | 85× |
-| Geni | The programs of Geni's evaluation (ICFP 2025) | 62 | 38 in 4.5 h | 50 in 14 min | 19× |
-| noDice | noDice's programs (OOPSLA 2026) | 14 | 10 in 1.2 h | 13 in 1 min | too few in common |
-| Pluck | Pluck's four sequence models (PLDI 2025) | 4 | 1 in 1.0 h | 4 in 2 min | too few in common |
-| Genfer | Genfer's population model (NeurIPS 2023) | 12 | 12 in 4.7 s | 12 in 6 min | too few in common |
-| Genfer | The Dice programs Genfer's repository ships | 7 | 7 in 1.4 s | 7 in 1.4 s | too few in common |
-| Psi | Psi's R2 linear regression, as Psi's own program | 8 | 2 in 2.0 h | 6 in 44 min | too few in common |
-| SPPL | SPPL's hierarchical Markov switching model (PLDI 2021) | 8 | 0 in 2.7 h | 8 in 6 min | too few in common |
-| PSouffle | The Android taint analyses of PSouffle's evaluation (FMCAD 2026) | 15 | 9 in 1.1 h | 12 in 32 s | too few in common |
 
 ## Building and testing
 
