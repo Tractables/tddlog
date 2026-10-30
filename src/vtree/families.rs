@@ -1208,462 +1208,46 @@ fn lay_out(
     search: bool,
 ) -> Result<(Forest, usize, String, Estimate), String> {
     let num_atoms = gp.num_atoms();
-    let Groups {
-        families,
-        groups,
-        group_rules,
-        inputs,
-        parents,
-        owner,
-        hub_group,
-        first_root,
-        is_link,
-        is_clause,
-        is_clause_atom,
-        atoms_of_clause,
-        code_of,
-        link_of,
-        row_kind,
-        kind,
-    } = groups;
+    let num_groups = groups.groups.len();
     let mut forest = Forest::default();
-    // A group's block ([`nest`]) over what each of its rules reads, or its
-    // branches' blocks ([`Branch`]); a hub's group is its facts in a
-    // balanced tree.
-    let mut scratch = NestScratch::new(num_atoms);
-    let (mut group_reader, mut fact_reader) =
-        (AtomMarks::new(groups.len()), AtomMarks::new(num_atoms));
-    // The lists `block` fills for each group, kept from one group to the
-    // next with the room they have grown to, rather than made anew and
-    // grown from nothing for each. The rows, and per context and row the
-    // one before it with the same hash.
-    let mut rows = Rows::default();
-    let mut same_context: Vec<u32> = Vec::new();
-    let mut same_row: Vec<usize> = Vec::new();
-    // The row and head of each rule, gathered by row at the end, and the
-    // hubs' groups each row reads.
-    let mut row_heads: Vec<(usize, AtomId)> = Vec::new();
-    let mut row_hubs: Vec<(usize, usize)> = Vec::new();
-    // What a rule reads, from one pass over its literals: its facts with
-    // their ranks, its copies as it reads them, each a word `atom << 1 |
-    // sign` to be compared with the rule before's, and the hubs' groups,
-    // not a pass each with the facts' ranks looked up in every comparison.
-    let mut ranked: Vec<(u32, AtomId)> = Vec::new();
-    let mut facts: Vec<AtomId> = Vec::new();
-    let mut read: Vec<u64> = Vec::new();
-    let mut hubs: Vec<usize> = Vec::new();
-    let mut copies: Vec<(AtomId, bool)> = Vec::new();
-    // The reading and the facts of the rule before: the rules of one row
-    // come one after another and read alike, and a rule that reads as the
-    // one before is found without a lookup.
-    let mut last_read: Vec<u64> = Vec::new();
-    let mut last_facts: Vec<AtomId> = Vec::new();
-    let mut block = |forest: &mut Forest, g: usize| -> (Option<usize>, Vec<Branch>) {
-        if group_rules[g].is_empty() && groups[g].0.is_empty() {
-            let leaves: Vec<usize> = groups[g].1.iter().map(|&f| forest.leaf(f)).collect();
-            return (forest.balanced(&leaves), Vec::new());
-        }
-        scratch.start(&groups[g].1);
-        scratch.mark.next();
-        for &v in &inputs[g] {
-            scratch.mark.set(v, 0);
-        }
-        // Contexts by a hash of their copies and rows by a hash of their
-        // facts and context, compared on a match, so that neither is copied
-        // to be looked up; each is built in `facts` and `copies` and copied
-        // once it is new. A rule that reads its copies as the rule before
-        // has that rule's context (below), and only another reading is
-        // sorted to be looked up: such a reading is nearly always one not
-        // seen before.
-        fn hash<T: std::hash::Hash>(value: &T) -> u64 {
-            use std::hash::Hasher;
-            let mut h = rustc_hash::FxHasher::default();
-            value.hash(&mut h);
-            h.finish()
-        }
-        // The last context and row with each hash, at most one a rule of
-        // the group, for which they are allocated.
-        let rules = group_rules[g].len();
-        let mut context_by: FxHashMap<u64, u32> =
-            FxHashMap::with_capacity_and_hasher(rules, Default::default());
-        let mut row_by: FxHashMap<u64, usize> =
-            FxHashMap::with_capacity_and_hasher(rules, Default::default());
-        rows.clear();
-        same_context.clear();
-        same_row.clear();
-        row_heads.clear();
-        row_hubs.clear();
-        // The context and the row of the rule before.
-        let mut before: Option<(u32, usize)> = None;
-        for &ri in &group_rules[g] {
-            let Some((body, left_out)) = row_body(gp, &row_kind, ri) else {
-                continue;
-            };
-            ranked.clear();
-            read.clear();
-            hubs.clear();
-            // Only a fact other than an indicator has a rank or is a hub,
-            // and only an indicator is a copy the group reads.
-            for l in body {
-                let a = l.atom();
-                match kind[a as usize] {
-                    FACT => {
-                        if let Some(rank) = scratch.rank.get(a) {
-                            ranked.push((rank, a));
-                        }
-                        let h = hub_group[a as usize];
-                        if h != usize::MAX {
-                            hubs.push(h);
-                        }
-                    }
-                    INDICATOR if reads(&link_of, l, left_out) && scratch.mark.get(a).is_some() => {
-                        read.push(u64::from(a) << 1 | u64::from(l.is_positive()));
-                    }
-                    _ => {}
-                }
-            }
-            // A fact's rank is its place among the group's facts, one each.
-            // A rule's facts may come in the order of their ranks already,
-            // each once, and only the others are sorted.
-            if !ranked.is_sorted_by(|x, y| x < y) {
-                ranked.sort_unstable();
-                ranked.dedup();
-            }
-            facts.clear();
-            facts.extend(ranked.iter().map(|&(_, f)| f));
-            if facts.is_empty() && read.is_empty() {
-                continue;
-            }
-            let x = match before {
-                Some((x, _)) if read == last_read => x,
-                _ => {
-                    copies.clear();
-                    copies.extend(read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
-                    copies.sort_unstable();
-                    copies.dedup();
-                    let h = hash(&copies);
-                    let last = context_by.get(&h).copied().unwrap_or(u32::MAX);
-                    let mut x = last;
-                    while x != u32::MAX && rows.context_copies(x) != copies.as_slice() {
-                        x = same_context[x as usize];
-                    }
-                    if x == u32::MAX {
-                        x = rows.num_contexts() as u32;
-                        rows.contexts.extend_from_slice(&copies);
-                        rows.context_ends.push(rows.contexts.len());
-                        context_by.insert(h, x);
-                        same_context.push(last);
-                    }
-                    std::mem::swap(&mut read, &mut last_read);
-                    x
-                }
-            };
-            let i = match before {
-                Some((y, i)) if y == x && facts == last_facts => i,
-                _ => {
-                    let h = hash(&(&facts, x));
-                    let last = row_by.get(&h).copied().unwrap_or(usize::MAX);
-                    let mut i = last;
-                    while i != usize::MAX
-                        && (rows.context[i] != x || rows.facts(i) != facts.as_slice())
-                    {
-                        i = same_row[i];
-                    }
-                    if i == usize::MAX {
-                        i = rows.len();
-                        rows.facts.extend_from_slice(&facts);
-                        rows.fact_ends.push(rows.facts.len());
-                        rows.context.push(x);
-                        row_by.insert(h, i);
-                        same_row.push(last);
-                    }
-                    std::mem::swap(&mut facts, &mut last_facts);
-                    i
-                }
-            };
-            before = Some((x, i));
-            row_heads.push((i, gp.rules[ri].head));
-            row_hubs.extend(hubs.iter().map(|&h| (i, h)));
-        }
-        // A stable sort keeps each row's heads in the order they were read.
-        row_heads.sort_by_key(|&(i, _)| i);
-        let mut at = 0;
-        for i in 0..rows.len() {
-            while at < row_heads.len() && row_heads[at].0 == i {
-                rows.heads.push(row_heads[at].1);
-                at += 1;
-            }
-            rows.head_ends.push(rows.heads.len());
-        }
-        scratch.context.reserve(rows.num_contexts());
-        let branches = branches_of(
-            &rows,
-            &owner,
-            &row_hubs,
-            g,
-            &mut group_reader,
-            &mut fact_reader,
-        );
-        if branches.is_empty() {
-            let members = (0..rows.len()).collect();
-            return (nest(forest, &rows, members, &mut scratch), Vec::new());
-        }
-        let branches = branches
-            .into_iter()
-            .map(|(members, parents)| {
-                let mut facts: Vec<AtomId> = members
-                    .iter()
-                    .flat_map(|&i| rows.facts(i).iter().copied())
-                    .collect();
-                facts.sort_unstable();
-                facts.dedup();
-                let mut copies: Vec<AtomId> = members
-                    .iter()
-                    .flat_map(|&i| rows.context_copies(rows.context[i]).iter().map(|&(c, _)| c))
-                    .collect();
-                copies.sort_unstable();
-                copies.dedup();
-                Branch {
-                    block: nest(forest, &rows, members, &mut scratch),
-                    parents,
-                    facts,
-                    copies,
-                }
-            })
-            .collect();
-        (None, branches)
-    };
-    let (blocks, branches): (Vec<Option<usize>>, Vec<Vec<Branch>>) =
-        (0..groups.len()).map(|g| block(&mut forest, g)).unzip();
-    // A group can retain a fact in its family after specialization removed
-    // the ordinary rule that placed it in a block. Count actual leaves, so
-    // variables read only by observations or links still get a stray leaf.
-    let mut placed = vec![false; num_atoms];
-    for &t in blocks
-        .iter()
-        .flatten()
-        .chain(branches.iter().flatten().filter_map(|b| b.block.as_ref()))
-    {
-        for a in forest.leaves_of(t) {
-            placed[a as usize] = true;
-        }
-    }
-    let stray: Vec<usize> = gp
-        .facts()
-        .map(|(a, _)| a)
-        .filter(|&a| !placed[a as usize])
-        .map(|a| forest.leaf(a))
-        .collect();
+    let mut builder = Blocks::new(num_atoms, num_groups);
+    let (blocks, branches): (Vec<Option<usize>>, Vec<Vec<Branch>>) = (0..num_groups)
+        .map(|g| builder.of(gp, &groups, &mut forest, g))
+        .unzip();
+    let stray = stray_facts(gp, &mut forest, &blocks, &branches);
     let stray_top = forest.balanced(&stray);
-    // What each leaf belongs to, for pairing a bag's items and weighing a
-    // layout: a group's value count is the number of atoms of it that have
-    // copies, and one more for none of them.
-    // The atoms of a table as clauses are its links' group's, not that of
-    // the families that read them through their first reader's copy.
-    // A link that holds clauses has a rule per row of its table, and its
-    // atoms are set once per group that has its rules.
-    let mut group_of_atom = vec![usize::MAX; num_atoms];
-    let mut link_done = vec![usize::MAX; num_atoms];
-    for (g, rules) in group_rules.iter().enumerate() {
-        for &ri in rules {
-            let head = gp.rules[ri].head;
-            if is_clause[head as usize] {
-                if link_done[head as usize] == g {
-                    continue;
-                }
-                link_done[head as usize] = g;
-                for &k in &atoms_of_clause[&head] {
-                    group_of_atom[k as usize] = g;
-                }
-            } else if !is_link[head as usize] && !is_clause_atom[head as usize] {
-                group_of_atom[head as usize] = g;
-            }
-        }
-    }
-    let mut copied: Vec<FxHashSet<AtomId>> = vec![FxHashSet::default(); groups.len()];
-    let mut scope = Scope::new(num_atoms);
-    for ind in &gp.encoding.indicators {
-        // A copy of a bit of a set read in binary is a copy of the set's
-        // values to the group of their formulas, or of their table as
-        // clauses.
-        let code = code_of.get(&ind.atom).map(|&c| &gp.encoding.codes[c]);
-        let g = match (group_of_atom[ind.atom as usize], code) {
-            (usize::MAX, Some(code)) => group_of_atom[code.values[0] as usize],
-            (g, _) => g,
-        };
-        if g != usize::MAX {
-            match code {
-                Some(code) => copied[g].extend(&code.values),
-                None => {
-                    copied[g].insert(ind.atom);
-                }
-            }
-            scope.set(ind.var, [g]);
-        }
-    }
-    for (g, (_, facts)) in groups.iter().enumerate() {
-        for &f in facts {
-            scope.set(f, std::iter::once(g).chain(parents[g].iter().copied()));
-        }
-    }
-    // A branch's facts belong to its group and the groups the branch reads,
-    // and its copies to its group as well as the one that defines them: a
-    // subtree that holds some of a group's branches but not all is open on
-    // the disjunctions they have made so far.
-    for (g, bs) in branches.iter().enumerate() {
-        for b in bs {
-            for &f in &b.facts {
-                scope.set(f, std::iter::once(g).chain(b.parents.iter().copied()));
-            }
-            for &v in &b.copies {
-                match owner[v as usize] {
-                    h if h == usize::MAX || h == g => scope.set(v, [g]),
-                    h => scope.set(v, [h, g]),
-                }
-            }
-        }
-    }
-    // The items laid out: the groups, then the branches of each group that
-    // has them, each with its block and the items it is placed with.
-    let num_groups = groups.len();
-    let mut item_block: Vec<Option<usize>> = blocks;
-    let mut item_parents: Vec<Vec<usize>> = (0..num_groups)
-        .map(|g| {
-            if branches[g].is_empty() {
-                parents[g].clone()
-            } else {
-                Vec::new()
-            }
-        })
-        .collect();
-    let mut branch_items: Vec<Vec<usize>> = vec![Vec::new(); num_groups];
-    for (g, bs) in branches.iter().enumerate() {
-        for b in bs {
-            branch_items[g].push(item_block.len());
-            item_block.push(b.block);
-            item_parents.push(b.parents.clone());
-        }
-    }
-    let num_items = item_block.len();
-    let values: Vec<f64> = copied.iter().map(|c| (c.len() + 1).max(2) as f64).collect();
-    let leaves = item_block
+    let (scope, values) = scope(gp, &groups, &branches);
+    let items = Items::of(&groups.parents, blocks, &branches);
+    let num_items = items.block.len();
+    let leaves = items
+        .block
         .iter()
         .flatten()
         .flat_map(|&t| forest.leaves_of(t));
     let interfaces = Interfaces::new(&scope, leaves, &values);
     // The blocks are under every layout, so what each is open on, and what
     // its joins are charged, is worked out once for all of them.
-    let block_open: Vec<Option<Open>> = item_block
+    let block_open: Vec<Option<Open>> = items
+        .block
         .iter()
         .map(|b| b.map(|t| interfaces.of_leaves(&forest, t)))
         .collect();
     let mut weighed = Weighed::default();
-    for &t in item_block.iter().flatten() {
+    for &t in items.block.iter().flatten() {
         interfaces.weigh(&forest, t, &mut weighed);
     }
-    // The layout over a decomposition whose vertex `v` is item
-    // `item_at[v]`. Rooted at bag 0, each item's block goes in the highest
-    // bag holding it with its parents, which a decomposition has, and a
-    // bag's node joins its blocks and its children's nodes
-    // ([`Interfaces::paired`]).
-    let lay =
-        |forest: &mut Forest, td: &goatd::TreeDecomposition, item_at: &[usize]| -> Option<usize> {
-            let bags = td.bags();
-            let adjacency = td.adjacency();
-            let mut parent_bag = vec![usize::MAX; bags.len()];
-            let mut preorder = Vec::with_capacity(bags.len());
-            let mut visited = vec![false; bags.len()];
-            let mut tops = Vec::new();
-            for start in 0..bags.len() {
-                if visited[start] {
-                    continue;
-                }
-                visited[start] = true;
-                tops.push(start);
-                let mut stack = vec![start];
-                while let Some(b) = stack.pop() {
-                    preorder.push(b);
-                    for &c in &adjacency[b] {
-                        if !visited[c] {
-                            visited[c] = true;
-                            parent_bag[c] = b;
-                            stack.push(c);
-                        }
-                    }
-                }
-            }
-            let mut blocks_at: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
-            let mut placed_item = vec![false; num_items];
-            for &b in &preorder {
-                let held: FxHashSet<usize> = bags[b]
-                    .vertices()
-                    .iter()
-                    .map(|&v| item_at[v as usize])
-                    .collect();
-                for &v in bags[b].vertices() {
-                    let i = item_at[v as usize];
-                    if !placed_item[i] && item_parents[i].iter().all(|h| held.contains(h)) {
-                        placed_item[i] = true;
-                        blocks_at[b].push(i);
-                    }
-                }
-            }
-            let mut children: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
-            for &b in &preorder {
-                if parent_bag[b] != usize::MAX {
-                    children[parent_bag[b]].push(b);
-                }
-            }
-            let mut subtree: Vec<Option<(usize, Open)>> = vec![None; bags.len()];
-            for &b in preorder.iter().rev() {
-                let mut items: Vec<(usize, Open)> = blocks_at[b]
-                    .iter()
-                    .filter_map(|&i| Some((item_block[i]?, block_open[i].clone()?)))
-                    .collect();
-                items.extend(children[b].iter().filter_map(|&c| subtree[c].take()));
-                subtree[b] = interfaces.paired(forest, items);
-            }
-            let mut top_items: Vec<(usize, Open)> =
-                tops.iter().filter_map(|&t| subtree[t].take()).collect();
-            // Items no bag placed (a decomposition places them all, but nothing
-            // above depends on it), and facts no family reads.
-            for i in (0..num_items).filter(|&i| !placed_item[i]) {
-                top_items.extend(item_block[i].zip(block_open[i].clone()));
-            }
-            top_items.extend(stray_top.map(|t| (t, Open::default())));
-            interfaces.paired(forest, top_items).map(|(top, _)| top)
-        };
-    // The decomposition of the groups, each with its parents a clique: the
-    // moral graph of a Bayesian network. A group with branches is the last
-    // of a chain of them instead, each branch a clique with the groups it
-    // reads.
-    let mut cliques: Vec<Vec<usize>> = Vec::new();
-    for (g, ps) in parents.iter().enumerate() {
-        if branch_items[g].is_empty() {
-            cliques.push(std::iter::once(g).chain(ps.iter().copied()).collect());
-            continue;
-        }
-        for (k, &b) in branch_items[g].iter().enumerate() {
-            cliques.push(
-                std::iter::once(b)
-                    .chain(item_parents[b].iter().copied())
-                    .collect(),
-            );
-            cliques.push(vec![b, branch_items[g].get(k + 1).copied().unwrap_or(g)]);
-        }
-    }
-    let mut seen_edge = FxHashSet::default();
-    let mut edges = Vec::new();
-    for clique in &cliques {
-        for (i, &u) in clique.iter().enumerate() {
-            for &v in &clique[i + 1..] {
-                let e = (u.min(v), u.max(v));
-                if seen_edge.insert(e) {
-                    edges.push(e);
-                }
-            }
-        }
-    }
+    let mut layouts = Layouts {
+        forest,
+        items: &items,
+        interfaces,
+        block_open,
+        weighed,
+        stray_top,
+        best: None,
+        candidates: 0,
+        weigh_seconds: 0.0,
+    };
+    let edges = items.edges(&groups.parents);
     let num_edges = edges.len();
     // A decomposition breaks its ties by vertex number, and a layout that is
     // as wide as another can still cost more pairs. The groups are numbered
@@ -1678,34 +1262,12 @@ fn lay_out(
     // on one of a thousand, which on the small networks would be most of
     // the run, and width alone does not tell those apart. `families:0`
     // skips the searches, which is how `auto` tries these layouts first.
-    let mut by_root: Vec<usize> = (0..groups.len()).collect();
-    by_root.sort_by_key(|&g| first_root[g]);
-    let mut numberings: Vec<Vec<usize>> = vec![(0..groups.len()).collect()];
-    if by_root != numberings[0] {
-        numberings.push(by_root);
-    }
-    // A group's branches are numbered just before it.
-    for numbering in &mut numberings {
-        *numbering = numbering
-            .iter()
-            .flat_map(|&g| branch_items[g].iter().copied().chain(std::iter::once(g)))
-            .collect();
-    }
-    // The values of each item. A branch's are its group's: a subtree
-    // holding some of the group's branches is open on the group's copies.
-    let mut item_values = vec![0u64; num_items];
-    for g in 0..num_groups {
-        item_values[g] = values[g] as u64;
-        for &b in &branch_items[g] {
-            item_values[b] = item_values[g];
-        }
-    }
+    let numberings = items.numberings(&groups.first_root);
+    let item_values = items.values(&values);
     let uniform = item_values.iter().all(|&v| v == item_values[0]);
-    let mut best: Option<(f64, usize, u32, usize)> = None;
-    let mut candidates = 0;
-    // Seconds in the decomposer's searches and the annealing, and in laying
-    // out and weighing the candidates, for `--stats`.
-    let (mut search_seconds, mut weigh_seconds, mut search_units) = (0.0, 0.0, 0);
+    // Seconds and units in the decomposer's searches and the annealing,
+    // for `--stats`.
+    let (mut search_seconds, mut search_units) = (0.0, 0);
     // Seconds and units in the numberings' min-fill eliminations, weighted
     // min-fill's among them.
     let (mut min_fill_seconds, mut min_fill_units) = (0.0, 0);
@@ -1715,20 +1277,6 @@ fn lay_out(
     // What the searches charge, or would charge where `search` is off
     // ([`Estimate::search_units`]).
     let mut search_cost = 0;
-    let mut weigh = |td: &goatd::TreeDecomposition,
-                     item_at: &[usize],
-                     best: &mut Option<(f64, usize, u32, usize)>|
-     -> Result<(), String> {
-        let started = std::time::Instant::now();
-        let top = lay(&mut forest, td, item_at).ok_or("the families vtree has no leaf")?;
-        let cost = interfaces.layout_cost(&forest, top, &weighed);
-        weigh_seconds += started.elapsed().as_secs_f64();
-        candidates += 1;
-        if best.is_none_or(|(c, ..)| cost < c) {
-            *best = Some((cost, top, td.treewidth(), td.bags().len()));
-        }
-        Ok(())
-    };
     // The first numbering's graph, its items' values and its weighted
     // min-fill elimination, where the annealing may run (below).
     let mut annealable = None;
@@ -1816,7 +1364,7 @@ fn lay_out(
         });
         tds.extend(weighted.as_ref().and_then(|e| e.decomposition(&graph)));
         for td in &tds {
-            weigh(td, item_at, &mut best)?;
+            layouts.weigh(td, item_at)?;
         }
         if k == 0 && search && narrowable {
             annealable = Some((edges, graph, weights, weighted));
@@ -1837,7 +1385,9 @@ fn lay_out(
     // PR final set, a fifth of a budget the second numbering's layout,
     // five times cheaper, would have given it, for no cheaper layout.
     if let Some((edges, graph, weights, weighted)) = annealable
-        && let Some(budget) = best.and_then(|(cost, ..)| anneal_budget(num_items, num_edges, cost))
+        && let Some(budget) = layouts
+            .best
+            .and_then(|(cost, ..)| anneal_budget(num_items, num_edges, cost))
     {
         let bits: Vec<f64> = weights.iter().map(|&w| (w as f64).log2()).collect();
         let (found, units, seconds) = metered(|| {
@@ -1853,32 +1403,34 @@ fn lay_out(
         search_units += units;
         search_seconds += seconds;
         if let Some(td) = found.and_then(|e| e.decomposition(&graph)) {
-            weigh(&td, &numberings[0], &mut best)?;
+            layouts.weigh(&td, &numberings[0])?;
         }
     }
-    let (cost, top, width, num_bags) = best.expect("a numbering has a decomposition");
+    let (cost, top, width, num_bags) = layouts.best.expect("a numbering has a decomposition");
     let widest_facts = groups
+        .groups
         .iter()
         .map(|(_, facts)| facts.len())
         .max()
         .unwrap_or(0);
-    let widest_inputs = inputs.iter().map(Vec::len).max().unwrap_or(0);
+    let widest_inputs = groups.inputs.iter().map(Vec::len).max().unwrap_or(0);
+    let (candidates, weigh_seconds) = (layouts.candidates, layouts.weigh_seconds);
     let note = format!(
         "families: {} families in {} groups over {} indicators, {} stray facts; td over the groups width {width}{}, {num_bags} bags, \
          {num_edges} edges, layout cost {cost:.3e} (the least of {candidates}); the most copies one group reads {widest_inputs}, \
          the most facts in one group {widest_facts}, {} branches of {} groups; min-fill {min_fill_units} units charged, \
          {min_fill_seconds:.3}s; searched {search_units} units charged, {search_seconds:.3}s, laid out and weighed \
          {weigh_seconds:.3}s",
-        families,
-        groups.len(),
+        groups.families,
+        num_groups,
         gp.encoding.indicators.len(),
         stray.len(),
         lower_bound.map_or(String::new(), |b| format!(" (treewidth at least {b})")),
         num_items - num_groups,
-        branch_items.iter().filter(|b| !b.is_empty()).count(),
+        items.branches.iter().filter(|b| !b.is_empty()).count(),
     );
     Ok((
-        forest,
+        layouts.forest,
         top,
         note,
         Estimate {
@@ -1886,4 +1438,599 @@ fn lay_out(
             search_units: search_cost,
         },
     ))
+}
+
+/// The lists [`Blocks::of`] fills for each group, kept from one group to
+/// the next with the room they have grown to, rather than made anew and
+/// grown from nothing for each.
+struct Blocks {
+    scratch: NestScratch,
+    group_reader: AtomMarks,
+    fact_reader: AtomMarks,
+    /// The rows, and per context and row the one before it with the same
+    /// hash.
+    rows: Rows,
+    same_context: Vec<u32>,
+    same_row: Vec<usize>,
+    /// The row and head of each rule, gathered by row at the end, and the
+    /// hubs' groups each row reads.
+    row_heads: Vec<(usize, AtomId)>,
+    row_hubs: Vec<(usize, usize)>,
+    /// What a rule reads, from one pass over its literals: its facts with
+    /// their ranks, its copies as it reads them, each a word `atom << 1 |
+    /// sign` to be compared with the rule before's, and the hubs' groups,
+    /// not a pass each with the facts' ranks looked up in every comparison.
+    ranked: Vec<(u32, AtomId)>,
+    facts: Vec<AtomId>,
+    read: Vec<u64>,
+    hubs: Vec<usize>,
+    copies: Vec<(AtomId, bool)>,
+    /// The reading and the facts of the rule before: the rules of one row
+    /// come one after another and read alike, and a rule that reads as the
+    /// one before is found without a lookup.
+    last_read: Vec<u64>,
+    last_facts: Vec<AtomId>,
+}
+
+impl Blocks {
+    fn new(num_atoms: usize, num_groups: usize) -> Blocks {
+        Blocks {
+            scratch: NestScratch::new(num_atoms),
+            group_reader: AtomMarks::new(num_groups),
+            fact_reader: AtomMarks::new(num_atoms),
+            rows: Rows::default(),
+            same_context: Vec::new(),
+            same_row: Vec::new(),
+            row_heads: Vec::new(),
+            row_hubs: Vec::new(),
+            ranked: Vec::new(),
+            facts: Vec::new(),
+            read: Vec::new(),
+            hubs: Vec::new(),
+            copies: Vec::new(),
+            last_read: Vec::new(),
+            last_facts: Vec::new(),
+        }
+    }
+
+    /// Group `g`'s block ([`nest`]) over what each of its rules reads, or
+    /// its branches' blocks ([`Branch`]); a hub's group is its facts in a
+    /// balanced tree.
+    fn of(
+        &mut self,
+        gp: &GroundProgram,
+        groups: &Groups,
+        forest: &mut Forest,
+        g: usize,
+    ) -> (Option<usize>, Vec<Branch>) {
+        let Blocks {
+            scratch,
+            group_reader,
+            fact_reader,
+            rows,
+            same_context,
+            same_row,
+            row_heads,
+            row_hubs,
+            ranked,
+            facts,
+            read,
+            hubs,
+            copies,
+            last_read,
+            last_facts,
+        } = self;
+        let Groups {
+            groups,
+            group_rules,
+            inputs,
+            owner,
+            hub_group,
+            link_of,
+            row_kind,
+            kind,
+            ..
+        } = groups;
+        if group_rules[g].is_empty() && groups[g].0.is_empty() {
+            let leaves: Vec<usize> = groups[g].1.iter().map(|&f| forest.leaf(f)).collect();
+            return (forest.balanced(&leaves), Vec::new());
+        }
+        scratch.start(&groups[g].1);
+        scratch.mark.next();
+        for &v in &inputs[g] {
+            scratch.mark.set(v, 0);
+        }
+        // Contexts by a hash of their copies and rows by a hash of their
+        // facts and context, compared on a match, so that neither is copied
+        // to be looked up; each is built in `facts` and `copies` and copied
+        // once it is new. A rule that reads its copies as the rule before
+        // has that rule's context (below), and only another reading is
+        // sorted to be looked up: such a reading is nearly always one not
+        // seen before.
+        fn hash<T: std::hash::Hash>(value: &T) -> u64 {
+            use std::hash::Hasher;
+            let mut h = rustc_hash::FxHasher::default();
+            value.hash(&mut h);
+            h.finish()
+        }
+        // The last context and row with each hash, at most one a rule of
+        // the group, for which they are allocated.
+        let rules = group_rules[g].len();
+        let mut context_by: FxHashMap<u64, u32> =
+            FxHashMap::with_capacity_and_hasher(rules, Default::default());
+        let mut row_by: FxHashMap<u64, usize> =
+            FxHashMap::with_capacity_and_hasher(rules, Default::default());
+        rows.clear();
+        same_context.clear();
+        same_row.clear();
+        row_heads.clear();
+        row_hubs.clear();
+        // The context and the row of the rule before.
+        let mut before: Option<(u32, usize)> = None;
+        for &ri in &group_rules[g] {
+            let Some((body, left_out)) = row_body(gp, row_kind, ri) else {
+                continue;
+            };
+            ranked.clear();
+            read.clear();
+            hubs.clear();
+            // Only a fact other than an indicator has a rank or is a hub,
+            // and only an indicator is a copy the group reads.
+            for l in body {
+                let a = l.atom();
+                match kind[a as usize] {
+                    FACT => {
+                        if let Some(rank) = scratch.rank.get(a) {
+                            ranked.push((rank, a));
+                        }
+                        let h = hub_group[a as usize];
+                        if h != usize::MAX {
+                            hubs.push(h);
+                        }
+                    }
+                    INDICATOR if reads(link_of, l, left_out) && scratch.mark.get(a).is_some() => {
+                        read.push(u64::from(a) << 1 | u64::from(l.is_positive()));
+                    }
+                    _ => {}
+                }
+            }
+            // A fact's rank is its place among the group's facts, one each.
+            // A rule's facts may come in the order of their ranks already,
+            // each once, and only the others are sorted.
+            if !ranked.is_sorted_by(|x, y| x < y) {
+                ranked.sort_unstable();
+                ranked.dedup();
+            }
+            facts.clear();
+            facts.extend(ranked.iter().map(|&(_, f)| f));
+            if facts.is_empty() && read.is_empty() {
+                continue;
+            }
+            let x = match before {
+                Some((x, _)) if read == last_read => x,
+                _ => {
+                    copies.clear();
+                    copies.extend(read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
+                    copies.sort_unstable();
+                    copies.dedup();
+                    let h = hash(copies);
+                    let last = context_by.get(&h).copied().unwrap_or(u32::MAX);
+                    let mut x = last;
+                    while x != u32::MAX && rows.context_copies(x) != copies.as_slice() {
+                        x = same_context[x as usize];
+                    }
+                    if x == u32::MAX {
+                        x = rows.num_contexts() as u32;
+                        rows.contexts.extend_from_slice(copies);
+                        rows.context_ends.push(rows.contexts.len());
+                        context_by.insert(h, x);
+                        same_context.push(last);
+                    }
+                    std::mem::swap(read, last_read);
+                    x
+                }
+            };
+            let i = match before {
+                Some((y, i)) if y == x && facts == last_facts => i,
+                _ => {
+                    let h = hash(&(&**facts, x));
+                    let last = row_by.get(&h).copied().unwrap_or(usize::MAX);
+                    let mut i = last;
+                    while i != usize::MAX
+                        && (rows.context[i] != x || rows.facts(i) != facts.as_slice())
+                    {
+                        i = same_row[i];
+                    }
+                    if i == usize::MAX {
+                        i = rows.len();
+                        rows.facts.extend_from_slice(facts);
+                        rows.fact_ends.push(rows.facts.len());
+                        rows.context.push(x);
+                        row_by.insert(h, i);
+                        same_row.push(last);
+                    }
+                    std::mem::swap(facts, last_facts);
+                    i
+                }
+            };
+            before = Some((x, i));
+            row_heads.push((i, gp.rules[ri].head));
+            row_hubs.extend(hubs.iter().map(|&h| (i, h)));
+        }
+        // A stable sort keeps each row's heads in the order they were read.
+        row_heads.sort_by_key(|&(i, _)| i);
+        let mut at = 0;
+        for i in 0..rows.len() {
+            while at < row_heads.len() && row_heads[at].0 == i {
+                rows.heads.push(row_heads[at].1);
+                at += 1;
+            }
+            rows.head_ends.push(rows.heads.len());
+        }
+        let rows: &Rows = rows;
+        scratch.context.reserve(rows.num_contexts());
+        let branches = branches_of(rows, owner, row_hubs, g, group_reader, fact_reader);
+        if branches.is_empty() {
+            let members = (0..rows.len()).collect();
+            return (nest(forest, rows, members, scratch), Vec::new());
+        }
+        let branches = branches
+            .into_iter()
+            .map(|(members, parents)| {
+                let mut facts: Vec<AtomId> = members
+                    .iter()
+                    .flat_map(|&i| rows.facts(i).iter().copied())
+                    .collect();
+                facts.sort_unstable();
+                facts.dedup();
+                let mut copies: Vec<AtomId> = members
+                    .iter()
+                    .flat_map(|&i| rows.context_copies(rows.context[i]).iter().map(|&(c, _)| c))
+                    .collect();
+                copies.sort_unstable();
+                copies.dedup();
+                Branch {
+                    block: nest(forest, rows, members, scratch),
+                    parents,
+                    facts,
+                    copies,
+                }
+            })
+            .collect();
+        (None, branches)
+    }
+}
+
+/// The facts of `gp` that none of the `blocks` and `branches` holds, each a
+/// leaf of `forest`. A group can retain a fact in its family after
+/// specialization removed the ordinary rule that placed it in a block. Count
+/// actual leaves, so variables read only by observations or links still get
+/// a stray leaf.
+fn stray_facts(
+    gp: &GroundProgram,
+    forest: &mut Forest,
+    blocks: &[Option<usize>],
+    branches: &[Vec<Branch>],
+) -> Vec<usize> {
+    let mut placed = vec![false; gp.num_atoms()];
+    for &t in blocks
+        .iter()
+        .flatten()
+        .chain(branches.iter().flatten().filter_map(|b| b.block.as_ref()))
+    {
+        for a in forest.leaves_of(t) {
+            placed[a as usize] = true;
+        }
+    }
+    gp.facts()
+        .map(|(a, _)| a)
+        .filter(|&a| !placed[a as usize])
+        .map(|a| forest.leaf(a))
+        .collect()
+}
+
+/// What each leaf belongs to, for pairing a bag's items and weighing a
+/// layout, and each group's value count: the number of atoms of it that
+/// have copies, and one more for none of them, at least two.
+fn scope(gp: &GroundProgram, groups: &Groups, branches: &[Vec<Branch>]) -> (Scope, Vec<f64>) {
+    let num_atoms = gp.num_atoms();
+    // The atoms of a table as clauses are its links' group's, not that of
+    // the families that read them through their first reader's copy.
+    // A link that holds clauses has a rule per row of its table, and its
+    // atoms are set once per group that has its rules.
+    let mut group_of_atom = vec![usize::MAX; num_atoms];
+    let mut link_done = vec![usize::MAX; num_atoms];
+    for (g, rules) in groups.group_rules.iter().enumerate() {
+        for &ri in rules {
+            let head = gp.rules[ri].head;
+            if groups.is_clause[head as usize] {
+                if link_done[head as usize] == g {
+                    continue;
+                }
+                link_done[head as usize] = g;
+                for &k in &groups.atoms_of_clause[&head] {
+                    group_of_atom[k as usize] = g;
+                }
+            } else if !groups.is_link[head as usize] && !groups.is_clause_atom[head as usize] {
+                group_of_atom[head as usize] = g;
+            }
+        }
+    }
+    let mut copied: Vec<FxHashSet<AtomId>> = vec![FxHashSet::default(); groups.groups.len()];
+    let mut scope = Scope::new(num_atoms);
+    for ind in &gp.encoding.indicators {
+        // A copy of a bit of a set read in binary is a copy of the set's
+        // values to the group of their formulas, or of their table as
+        // clauses.
+        let code = groups
+            .code_of
+            .get(&ind.atom)
+            .map(|&c| &gp.encoding.codes[c]);
+        let g = match (group_of_atom[ind.atom as usize], code) {
+            (usize::MAX, Some(code)) => group_of_atom[code.values[0] as usize],
+            (g, _) => g,
+        };
+        if g != usize::MAX {
+            match code {
+                Some(code) => copied[g].extend(&code.values),
+                None => {
+                    copied[g].insert(ind.atom);
+                }
+            }
+            scope.set(ind.var, [g]);
+        }
+    }
+    for (g, (_, facts)) in groups.groups.iter().enumerate() {
+        for &f in facts {
+            scope.set(
+                f,
+                std::iter::once(g).chain(groups.parents[g].iter().copied()),
+            );
+        }
+    }
+    // A branch's facts belong to its group and the groups the branch reads,
+    // and its copies to its group as well as the one that defines them: a
+    // subtree that holds some of a group's branches but not all is open on
+    // the disjunctions they have made so far.
+    for (g, bs) in branches.iter().enumerate() {
+        for b in bs {
+            for &f in &b.facts {
+                scope.set(f, std::iter::once(g).chain(b.parents.iter().copied()));
+            }
+            for &v in &b.copies {
+                match groups.owner[v as usize] {
+                    h if h == usize::MAX || h == g => scope.set(v, [g]),
+                    h => scope.set(v, [h, g]),
+                }
+            }
+        }
+    }
+    let values = copied.iter().map(|c| (c.len() + 1).max(2) as f64).collect();
+    (scope, values)
+}
+
+/// The items laid out: the groups, then the branches of each group that
+/// has them, each with its block and the items it is placed with.
+struct Items {
+    block: Vec<Option<usize>>,
+    parents: Vec<Vec<usize>>,
+    /// Each group's branches' items.
+    branches: Vec<Vec<usize>>,
+}
+
+impl Items {
+    /// The groups' items, with their `blocks` and `parents`, and their
+    /// `branches`'.
+    fn of(parents: &[Vec<usize>], blocks: Vec<Option<usize>>, branches: &[Vec<Branch>]) -> Items {
+        let num_groups = blocks.len();
+        let mut block = blocks;
+        let mut item_parents: Vec<Vec<usize>> = (0..num_groups)
+            .map(|g| {
+                if branches[g].is_empty() {
+                    parents[g].clone()
+                } else {
+                    Vec::new()
+                }
+            })
+            .collect();
+        let mut branch_items: Vec<Vec<usize>> = vec![Vec::new(); num_groups];
+        for (g, bs) in branches.iter().enumerate() {
+            for b in bs {
+                branch_items[g].push(block.len());
+                block.push(b.block);
+                item_parents.push(b.parents.clone());
+            }
+        }
+        Items {
+            block,
+            parents: item_parents,
+            branches: branch_items,
+        }
+    }
+
+    /// The edges of the items' graph, each once: each group with its
+    /// `parents` a clique, the moral graph of a Bayesian network. A group
+    /// with branches is the last of a chain of them instead, each branch a
+    /// clique with the groups it reads.
+    fn edges(&self, parents: &[Vec<usize>]) -> Vec<(usize, usize)> {
+        let mut cliques: Vec<Vec<usize>> = Vec::new();
+        for (g, ps) in parents.iter().enumerate() {
+            if self.branches[g].is_empty() {
+                cliques.push(std::iter::once(g).chain(ps.iter().copied()).collect());
+                continue;
+            }
+            for (k, &b) in self.branches[g].iter().enumerate() {
+                cliques.push(
+                    std::iter::once(b)
+                        .chain(self.parents[b].iter().copied())
+                        .collect(),
+                );
+                cliques.push(vec![b, self.branches[g].get(k + 1).copied().unwrap_or(g)]);
+            }
+        }
+        let mut seen_edge = FxHashSet::default();
+        let mut edges = Vec::new();
+        for clique in &cliques {
+            for (i, &u) in clique.iter().enumerate() {
+                for &v in &clique[i + 1..] {
+                    let e = (u.min(v), u.max(v));
+                    if seen_edge.insert(e) {
+                        edges.push(e);
+                    }
+                }
+            }
+        }
+        edges
+    }
+
+    /// The numberings of the items decomposed: the groups in their order and
+    /// by their first families, `first_root`, where that differs, each
+    /// group's branches just before it.
+    fn numberings(&self, first_root: &[usize]) -> Vec<Vec<usize>> {
+        let num_groups = self.branches.len();
+        let mut by_root: Vec<usize> = (0..num_groups).collect();
+        by_root.sort_by_key(|&g| first_root[g]);
+        let mut numberings: Vec<Vec<usize>> = vec![(0..num_groups).collect()];
+        if by_root != numberings[0] {
+            numberings.push(by_root);
+        }
+        for numbering in &mut numberings {
+            *numbering = numbering
+                .iter()
+                .flat_map(|&g| self.branches[g].iter().copied().chain(std::iter::once(g)))
+                .collect();
+        }
+        numberings
+    }
+
+    /// The values of each item, by the groups' `values`. A branch's are its
+    /// group's: a subtree holding some of the group's branches is open on
+    /// the group's copies.
+    fn values(&self, values: &[f64]) -> Vec<u64> {
+        let mut item_values = vec![0u64; self.block.len()];
+        for (g, branches) in self.branches.iter().enumerate() {
+            item_values[g] = values[g] as u64;
+            for &b in branches {
+                item_values[b] = item_values[g];
+            }
+        }
+        item_values
+    }
+}
+
+/// The layouts of the items over decompositions of their graph
+/// ([`Layouts::lay`]), each weighed by its layout cost, and the cheapest.
+struct Layouts<'a> {
+    forest: Forest,
+    items: &'a Items,
+    interfaces: Interfaces<'a>,
+    /// What each item's block is open on.
+    block_open: Vec<Option<Open>>,
+    /// What the blocks' joins are charged.
+    weighed: Weighed,
+    /// The facts no family reads.
+    stray_top: Option<usize>,
+    /// The cheapest layout so far: its cost, its top, and its
+    /// decomposition's width and bags.
+    best: Option<(f64, usize, u32, usize)>,
+    /// How many layouts were weighed, and the seconds it took, for
+    /// `--stats`.
+    candidates: usize,
+    weigh_seconds: f64,
+}
+
+impl Layouts<'_> {
+    /// The layout over a decomposition whose vertex `v` is item
+    /// `item_at[v]`. Rooted at bag 0, each item's block goes in the highest
+    /// bag holding it with its parents, which a decomposition has, and a
+    /// bag's node joins its blocks and its children's nodes
+    /// ([`Interfaces::paired`]).
+    fn lay(&mut self, td: &goatd::TreeDecomposition, item_at: &[usize]) -> Option<usize> {
+        let items = self.items;
+        let num_items = items.block.len();
+        let bags = td.bags();
+        let adjacency = td.adjacency();
+        let mut parent_bag = vec![usize::MAX; bags.len()];
+        let mut preorder = Vec::with_capacity(bags.len());
+        let mut visited = vec![false; bags.len()];
+        let mut tops = Vec::new();
+        for start in 0..bags.len() {
+            if visited[start] {
+                continue;
+            }
+            visited[start] = true;
+            tops.push(start);
+            let mut stack = vec![start];
+            while let Some(b) = stack.pop() {
+                preorder.push(b);
+                for &c in &adjacency[b] {
+                    if !visited[c] {
+                        visited[c] = true;
+                        parent_bag[c] = b;
+                        stack.push(c);
+                    }
+                }
+            }
+        }
+        let mut blocks_at: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
+        let mut placed_item = vec![false; num_items];
+        for &b in &preorder {
+            let held: FxHashSet<usize> = bags[b]
+                .vertices()
+                .iter()
+                .map(|&v| item_at[v as usize])
+                .collect();
+            for &v in bags[b].vertices() {
+                let i = item_at[v as usize];
+                if !placed_item[i] && items.parents[i].iter().all(|h| held.contains(h)) {
+                    placed_item[i] = true;
+                    blocks_at[b].push(i);
+                }
+            }
+        }
+        let mut children: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
+        for &b in &preorder {
+            if parent_bag[b] != usize::MAX {
+                children[parent_bag[b]].push(b);
+            }
+        }
+        let mut subtree: Vec<Option<(usize, Open)>> = vec![None; bags.len()];
+        for &b in preorder.iter().rev() {
+            let mut joined: Vec<(usize, Open)> = blocks_at[b]
+                .iter()
+                .filter_map(|&i| Some((items.block[i]?, self.block_open[i].clone()?)))
+                .collect();
+            joined.extend(children[b].iter().filter_map(|&c| subtree[c].take()));
+            subtree[b] = self.interfaces.paired(&mut self.forest, joined);
+        }
+        let mut top_items: Vec<(usize, Open)> =
+            tops.iter().filter_map(|&t| subtree[t].take()).collect();
+        // Items no bag placed (a decomposition places them all, but nothing
+        // above depends on it), and facts no family reads.
+        for i in (0..num_items).filter(|&i| !placed_item[i]) {
+            top_items.extend(items.block[i].zip(self.block_open[i].clone()));
+        }
+        top_items.extend(self.stray_top.map(|t| (t, Open::default())));
+        self.interfaces
+            .paired(&mut self.forest, top_items)
+            .map(|(top, _)| top)
+    }
+
+    /// The layout over `td`, its items numbered by `item_at`, weighed, and
+    /// kept where it is the cheapest so far.
+    fn weigh(&mut self, td: &goatd::TreeDecomposition, item_at: &[usize]) -> Result<(), String> {
+        let started = std::time::Instant::now();
+        let top = self
+            .lay(td, item_at)
+            .ok_or("the families vtree has no leaf")?;
+        let cost = self
+            .interfaces
+            .layout_cost(&self.forest, top, &self.weighed);
+        self.weigh_seconds += started.elapsed().as_secs_f64();
+        self.candidates += 1;
+        if self.best.is_none_or(|(c, ..)| cost < c) {
+            self.best = Some((cost, top, td.treewidth(), td.bags().len()));
+        }
+        Ok(())
+    }
 }
