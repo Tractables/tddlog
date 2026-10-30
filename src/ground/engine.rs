@@ -4,6 +4,9 @@
 //! are true in at least one possible world. Along the way each successful rule
 //! instantiation is recorded as a ground rule. A negative literal over a lower
 //! stratum is kept when its atom is possible and dropped (as true) otherwise.
+//!
+//! A program that no demand makes safe is resolved top-down instead
+//! ([`topdown`]), and its ground rules grounded here.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -22,6 +25,8 @@ use crate::by_hash::ByHash;
 use crate::syntax::{
     Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Literal, NIL, Name, Term, term_cmp,
 };
+
+pub(super) mod topdown;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GroundError {
@@ -671,6 +676,44 @@ fn level_of(v: Option<&Val>) -> i64 {
 }
 
 impl<'a> Grounder<'a> {
+    /// A grounder of `clauses`, room made for `preds` predicates, given up
+    /// past `bound` ([`ground_normalized`]).
+    fn new(clauses: &'a [Clause], preds: usize, bound: Option<usize>) -> Self {
+        Grounder {
+            syms: Interner::default(),
+            preds: Vec::with_capacity(preds),
+            pred_ids: FxHashMap::with_capacity_and_hasher(preds, Default::default()),
+            rules: Vec::with_capacity(clauses.len()),
+            rels: Vec::with_capacity(preds),
+            atoms: Vec::new(),
+            ground_rules: Vec::new(),
+            kept: super::program::KeptRules::default(),
+            current_stratum: FxHashSet::default(),
+            known: Vec::new(),
+            walk: (Vec::new(), Vec::new()),
+            clauses,
+            from_delta: FxHashMap::default(),
+            size: 0,
+            bound: bound.unwrap_or(usize::MAX),
+            refused: false,
+            demands: 0,
+            fixed: Vec::new(),
+            certain: Vec::new(),
+            weights: Vec::new(),
+            unread: Vec::new(),
+            read: Vec::new(),
+            read_rounds: Vec::new(),
+            by_level: None,
+            terms: Terms::default(),
+            lists: None,
+            error: None,
+            derivations: FxHashMap::default(),
+            stamp: 0,
+            parts: Vec::new(),
+            proofs: FxHashMap::default(),
+        }
+    }
+
     /// Adds `rule` unless it is kept already.
     fn keep_rule(&mut self, rule: GroundRule) {
         if self.room(|g| g.ground_rules.try_reserve(1).is_ok())
@@ -1115,19 +1158,7 @@ fn compile_rule<'a>(
         Literal::Pos(a) | Literal::Neg(a) => g.pred_id(&a.name, a.args.len()),
         _ => None,
     }));
-    let mut bound_names: FxHashSet<String> = FxHashSet::default();
-    let ordered = schedule_body(
-        &clause.body,
-        &mut bound_names,
-        |i| known[i].is_some_and(|(_, switch)| switch),
-        Order::Join,
-    )
-    .map_err(|stuck| {
-        GroundError::Unsafe(format!(
-            "{clause}: literal {} has variables not bound by a positive body atom",
-            clause.body[stuck]
-        ))
-    })?;
+    let ordered = schedule_rule(clause, |i| known[i].is_some_and(|(_, switch)| switch))?;
     let mut body: Vec<ILit> = Vec::with_capacity(ordered.len());
     for &i in &ordered {
         match &clause.body[i] {
@@ -1212,17 +1243,6 @@ fn compile_rule<'a>(
         .iter()
         .map(|t| var_of(t, &mut vars, g))
         .collect();
-    let bound: FxHashSet<u32> = bound_names
-        .iter()
-        .filter_map(|n| vars.get(n).copied())
-        .collect();
-    for v in arg_vars(&head_args) {
-        if !bound.contains(&v) {
-            return Err(GroundError::Unsafe(format!(
-                "{clause}: head variable not bound by a positive body atom"
-            )));
-        }
-    }
     g.known = known;
     let counted = counted.then(|| {
         g.preds[head_pred as usize].counted = true;
@@ -1770,13 +1790,46 @@ fn flexible_weights(
     Ok(qs[index])
 }
 
-fn arg_vars(args: &[Arg]) -> Vec<u32> {
-    args.iter()
-        .filter_map(|a| match a {
-            Arg::Var(v) => Some(*v),
-            Arg::Val(_) => None,
-        })
-        .collect()
+/// The order in which `clause`'s body is ground, every literal with the
+/// variables it needs bound by those before it ([`schedule_body`]),
+/// `switch` saying which of its atoms are switches; an unsafe rule's error
+/// where a literal or a head variable is left unbound.
+fn schedule_rule(
+    clause: &Clause,
+    switch: impl Fn(usize) -> bool,
+) -> Result<Vec<usize>, GroundError> {
+    let mut bound: FxHashSet<String> = FxHashSet::default();
+    let ordered =
+        schedule_body(&clause.body, &mut bound, switch, Order::Join).map_err(|stuck| {
+            GroundError::Unsafe(format!(
+                "{clause}: literal {} has variables not bound by a positive body atom",
+                clause.body[stuck]
+            ))
+        })?;
+    let mut head = Vec::new();
+    clause.heads[0].atom.vars_into(&mut head);
+    if head.iter().any(|v| !bound.contains(v)) {
+        return Err(GroundError::Unsafe(format!(
+            "{clause}: head variable not bound by a positive body atom"
+        )));
+    }
+    Ok(ordered)
+}
+
+/// Whether every rule of `norm` is safe, as the grounder schedules it
+/// ([`schedule_rule`]): the check that chooses a program's route before
+/// any of it is ground (`super::ground_norm`).
+pub(crate) fn safe(norm: &NormProgram) -> bool {
+    let switches: FxHashSet<(&str, usize)> =
+        norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
+    norm.rules.iter().all(|c| {
+        super::magic::ground_clause(c)
+            || schedule_rule(c, |i| match &c.body[i] {
+                Literal::Pos(a) | Literal::Neg(a) => switches.contains(&a.signature()),
+                _ => false,
+            })
+            .is_ok()
+    })
 }
 
 /// Predicate dependency graph → strata (lists of predicate ids), lowest first.
@@ -1842,40 +1895,7 @@ fn ground_with(
     by_levels: bool,
 ) -> Result<Option<GroundProgram>, GroundError> {
     // Every switch is a predicate, most of the predicates of a network.
-    let preds = norm.switches.len() + 64;
-    let mut g = Grounder {
-        syms: Interner::default(),
-        preds: Vec::with_capacity(preds),
-        pred_ids: FxHashMap::with_capacity_and_hasher(preds, Default::default()),
-        rules: Vec::with_capacity(norm.rules.len()),
-        rels: Vec::with_capacity(preds),
-        atoms: Vec::new(),
-        ground_rules: Vec::new(),
-        kept: super::program::KeptRules::default(),
-        current_stratum: FxHashSet::default(),
-        known: Vec::new(),
-        walk: (Vec::new(), Vec::new()),
-        clauses: &norm.rules,
-        from_delta: FxHashMap::default(),
-        size: 0,
-        bound: bound.unwrap_or(usize::MAX),
-        refused: false,
-        demands: 0,
-        fixed: Vec::new(),
-        certain: Vec::new(),
-        weights: Vec::new(),
-        unread: Vec::new(),
-        read: Vec::new(),
-        read_rounds: Vec::new(),
-        by_level: None,
-        terms: Terms::default(),
-        lists: None,
-        error: None,
-        derivations: FxHashMap::default(),
-        stamp: 0,
-        parts: Vec::new(),
-        proofs: FxHashMap::default(),
-    };
+    let mut g = Grounder::new(&norm.rules, norm.switches.len() + 64, bound);
     for (&(ref name, arity), w) in &norm.switches {
         g.pred(name, arity, Some(w.clone()));
     }

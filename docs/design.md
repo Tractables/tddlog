@@ -552,6 +552,28 @@ are skipped. Several steps have a program in `examples/` that shows them.
    grounded level by
    level: the demand of a loop over a time index runs down the levels
    (`T0 is T - 1`) and makes the whole chain one stratum without levels.
+
+   The route is chosen before any of the program is ground, by whether
+   its rules are safe (`engine::safe`, the check the grounder makes of
+   each rule): the levels where the plain program is safe and its strata
+   rise, else the rewritten program where it is safe, else the plain
+   program where it is. A program none of these makes safe is one whose
+   demand a binding pattern cannot carry: a query of a term with
+   variables in it (the tutorial's `seen([_,_,_,_,_])`, `length(L, N)`),
+   or a clause that answers with a variable (`reverse([], L, L)`, an
+   annotated disjunction whose head has a variable only its caller
+   binds). Such a program is resolved top-down from its queries
+   (`engine/topdown.rs`), as ProbLog grounds every program: SLD
+   resolution with a table per call up to variants, every switch
+   possible, a recursive component completed by linear tabling (its
+   leader re-evaluates the component's calls until none has a new
+   answer). An answer with variables in it is kept where it holds in
+   every world (`reverse([], L, L)`) and refused where it holds in some
+   only. The resolution emits the ground instances of the clauses it
+   used, which the grounder then grounds as a program without variables;
+   they count against the grounding bound, and a call or a term with
+   variables nested deeper than 1 000 gives the grounding up with the
+   goal that reached it.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in

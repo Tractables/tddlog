@@ -275,30 +275,45 @@ fn ground_norm(
     // a time index, is grounded level by level and not rewritten: its
     // demand runs down the levels (`T0 is T - 1`) and makes a chain one
     // stratum without them ([`engine::ground_by_levels`]). Where that
-    // grounding fails (past the bound, or a rule that only the demand
-    // makes safe), the rewrite is tried.
+    // grounding fails (past the bound), the rewrite is tried.
+    // The route is chosen before any of the program is ground, by whether
+    // its rules are safe ([`engine::safe`]): the plain program's for the
+    // levels, the rewritten program's for the rewrite, then the plain
+    // program's again. A program whose demand no rewrite makes safe, a
+    // call of a term with variables in it or an answer that leaves a
+    // variable unbound, is resolved top-down from its queries
+    // ([`engine::topdown`]).
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
-    } else if let Some(gp) = match engine::ground_by_levels(norm, bound) {
-        Err(e @ (GroundError::OutOfMemory | GroundError::Refused(_))) => return Err(e),
-        levelled => levelled.ok().flatten(),
-    } {
-        gp
     } else {
-        match magic::rewrite(norm) {
-            Some(magic) => match engine::ground_normalized(&magic, bound) {
-                Ok(gp) => gp,
-                Err(
-                    e @ (GroundError::OverBound
-                    | GroundError::OutOfMemory
-                    | GroundError::Refused(_)),
-                ) => return Err(e),
-                // Where neither grounds, the rewritten program's error is
-                // the one to give: the plain program's is that a rule only
-                // the demand makes safe is unsafe.
-                Err(e) => engine::ground_normalized(norm, bound).map_err(|_| e)?,
-            },
-            None => engine::ground_normalized(norm, bound)?,
+        let plain = engine::safe(norm);
+        let levelled = if plain {
+            match engine::ground_by_levels(norm, bound) {
+                Err(e @ (GroundError::OutOfMemory | GroundError::Refused(_))) => return Err(e),
+                levelled => levelled.ok().flatten(),
+            }
+        } else {
+            None
+        };
+        if let Some(gp) = levelled {
+            gp
+        } else {
+            match magic::rewrite(norm).filter(engine::safe) {
+                Some(magic) => match engine::ground_normalized(&magic, bound) {
+                    Ok(gp) => gp,
+                    Err(
+                        e @ (GroundError::OverBound
+                        | GroundError::OutOfMemory
+                        | GroundError::Refused(_)),
+                    ) => return Err(e),
+                    // Where neither grounds, the rewritten program's error
+                    // is the one to give.
+                    Err(e) if plain => engine::ground_normalized(norm, bound).map_err(|_| e)?,
+                    Err(e) => return Err(e),
+                },
+                None if plain => engine::ground_normalized(norm, bound)?,
+                None => engine::topdown::ground(norm, bound)?,
+            }
         }
     };
     let size = gp.size();

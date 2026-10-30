@@ -34,6 +34,18 @@
 //! lower-stratum atom may pass through a recursive predicate of a higher
 //! stratum). The caller checks stratification and falls back to the plain
 //! program in that case.
+//!
+//! Which route a program takes is decided before any of it is ground, by
+//! whether its rules are safe ([`super::engine::safe`]: every variable bound
+//! by a positive body atom, in some order of the body). A program the
+//! rewrite leaves with an unsafe rule is one whose demand a binding pattern
+//! cannot carry: a query of a term with variables in it (`seen([_,_,_])`,
+//! `length(L, 3)`), whose pattern binds no argument, or a fact or rule that
+//! answers with a variable (`reverse([], L, L)`, `0.5::bit(T, 0)` with `T`
+//! bound only by the caller). Where the plain program is unsafe too, no
+//! demand makes it safe, and the program is resolved top-down from its
+//! queries instead ([`super::engine::topdown`]), as ProbLog grounds every
+//! program.
 
 use std::sync::Arc;
 
