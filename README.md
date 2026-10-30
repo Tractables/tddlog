@@ -22,31 +22,25 @@
 
 **Exact probabilistic inference by compilation into tree decision diagrams.**
 
-tddlog is an exact inference engine for probabilistic Datalog:
-probabilistic facts and annotated disjunctions, and recursive rules with
-negation, comparisons and arithmetic, over atoms whose arguments are
-constants. Front ends reduce richer inputs to this intermediate
-language: ProbLog programs with function symbols and lists, Bayesian
-and Markov networks, Dice programs and LPADs. The
-engine grounds the program, simplifies it, compiles it bottom up into
-tree decision diagrams (TDDs) with the
+tddlog answers probabilistic Datalog programs exactly: probabilistic
+facts, annotated disjunctions, and recursive rules with negation,
+comparisons and arithmetic. [Front ends](#front-ends) reduce ProbLog
+programs with function symbols and lists, Bayesian and Markov networks,
+Dice programs and LPADs to it. tddlog grounds the program, simplifies
+it, compiles it bottom up into tree decision diagrams (TDDs) with the
 [tididi](https://github.com/Tractables/tididi) library, and reads every
 query's probability off the diagrams. It is a Rust library and
-command-line tool, with Python, C and WebAssembly bindings, and it
+command-line tool with Python, C and WebAssembly bindings, and it
 [runs in the browser](https://tractables.github.io/tddlog/).
-
-- [Front ends](#front-ends): the languages and formats tddlog reads, and
-  how each reduces to probabilistic Datalog.
-- [Inside the engine](#inside-the-engine): the techniques the inference
-  rests on.
-- [Performance](#performance): tddlog against every exact inference
-  system we could find, each type of program against the systems
-  native to it.
 
 <p align="center">
   <img src="docs/images/overview.svg"
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each">
 </p>
+
+The figure compares tddlog with the exact inference systems native to
+each type of program: their answers, total times and tddlog's speed-up
+([Performance](#performance)).
 
 ## Install
 
@@ -98,18 +92,13 @@ with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
 0.357143.
 
 The [guide] describes the language and the command line, with worked
-examples that open in the [playground]: the [reachability example]
-queries paths in a graph with cycles, the [negation example] the winning
-positions of a game defined by negation through recursion, the
-[Bayesian network example] a network's marginals, and the
-[binary integers example] the sum of two random integers.
+examples that open in the [playground].
 [examples/](examples/) lists every example program by what it shows.
 
 ## Front ends
 
 Every input is reduced to a probabilistic Datalog program before
-inference. `tddlog --ground` prints the ground program that results,
-which ProbLog also reads, so each reduction can be checked on its own.
+inference:
 
 | Input | Read by | Reduced to probabilistic Datalog as |
 |---|---|---|
@@ -123,19 +112,18 @@ which ProbLog also reads, so each reduction can be checked on its own.
 ```text
 $ tddlog examples/asia.net --query leaves
 $ tddlog tests/dice/arith.dice
+$ tddlog --program tests/lpad/coin.cplint.pl
 ```
 
-`tddlog --program examples/asia.net` prints the program a network is
-read as, `tddlog --program tests/dice/arith.dice` a Dice program's, and
-`tddlog --program tests/lpad/coin.cplint.pl` an LPAD's. As a library, [`tddlog::solve`] takes a program's text and the
-command line's options and returns the answers, and [`tddlog::read`]
-reads an input in any of these formats, a network with its evidence
-file, as that program. The
-[Python](bindings/python/README.md) (`tddlog.solve(text, format="dice").answers`),
+`--program` prints the program an input is read as, and `--ground` the
+ground program after it, which ProbLog also reads, so each reduction can
+be checked on its own. As a library, [`tddlog::read`] reads an input in
+any of these formats as a program and [`tddlog::solve`] answers it; the
+[Python](bindings/python/README.md) (`tddlog.solve(text, format="dice")`),
 [C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)
-bindings take the text with its format's name and call both; a front
-end of one's own writes the text, as
-[examples/sprinkler.rs](examples/sprinkler.rs) does from Rust data.
+bindings take the text with its format's name. A front end of one's own
+writes the program's text, as [examples/sprinkler.rs](examples/sprinkler.rs)
+does from Rust data.
 
 Not yet read: cut, if-then-else, `call/N`, `assert`, strings and
 probabilities computed in a rule's body in ProbLog, and `findall/3` over
@@ -143,26 +131,23 @@ a probabilistic or recursive goal; `/`, `%` and `sample` in Dice.
 
 ## Inside the engine
 
-The engine answers a ground program exactly, in four stages.
-[docs/design.md](docs/design.md) describes each technique and the cases
+[docs/design.md](docs/design.md) describes each stage and the cases
 measured behind it.
 
 **Grounding and simplification**
 
-- **Relevant grounding.** Magic sets and semi-naive bottom-up evaluation
-  ground only what the queries and evidence depend on (Fierens et al.,
-  TPLP 2015). Transitive closures ground from their bound end, and
-  linear recursion is solved without iteration by Gaussian elimination
-  (Tarjan, 1981).
+- **Relevant grounding.** Magic sets and semi-naive evaluation ground
+  only what the queries and the evidence depend on, ProbLog's relevant
+  ground program (Fierens et al., TPLP 2015). Transitive closures ground
+  from their bound end, and linear recursion is solved without iteration
+  by Gaussian elimination (Tarjan, 1981).
 - **And-inverter graph.** Acyclic rules are hashed into an and-inverter
-  graph, so a gate the program writes many times is built once: of a
-  12-bit circuit's 6 635 gates, 4 941 merge. Gates equal to another
-  gate, to its negation or to a constant are then found by random
-  simulation, proved by SAT and merged (fraiging, Mishchenko et al.,
-  2005).
-- **Conditioning on the evidence.** Unit propagation, SAT backbones and
-  equivalences fix and merge facts, and tables are renormalized to the
-  evidence, before anything is compiled.
+  graph, so a gate the program writes many times is built once (of a
+  12-bit circuit's 6 635 gates, 4 941 merge). Gates equal to another
+  gate, to its negation or to a constant are found by random simulation,
+  proved by SAT and merged (fraiging, Mishchenko et al., 2005).
+- **Conditioning.** Unit propagation, SAT backbones and equivalences fix
+  and merge facts under the evidence, and tables are renormalized to it.
 - **Table structure.** The rows of one distribution share a class atom,
   rows that exclude each other share switches, and a choice read under
   exclusive contexts becomes one fact per context.
@@ -171,17 +156,15 @@ measured behind it.
 
 - **Tp-compilation.** Each derived atom's TDD is built bottom up by the
   immediate-consequence operator on diagrams (Vlasselaer et al., IJCAI
-  2015), one strongly connected component at a time and each shared atom
-  once. Negation through recursion takes the well-founded fixpoint by
+  2015), one strongly connected component at a time, each shared atom
+  once, and each component over the part of the vtree its facts lie in.
+  Negation through recursion takes the well-founded fixpoint by
   approximation fixpoint theory (Bogaerts and Van den Broeck, ICLP 2015),
   which answers sound programs that ProbLog rejects.
 - **Names where depth needs them.** An atom read across a narrow cut of
-  the variable order is read through a named copy tied to its definition,
-  as in a Tseitin encoding. After the compile, each name is kept or
-  composed away, whichever gives the smaller diagram.
-- **Projected scopes.** Each component compiles over the part of the
-  vtree its facts lie in, since a TDD has a node on every level of its
-  vtree.
+  the variable order is read through a named copy tied to its
+  definition, as in a Tseitin encoding. After the compile, each name is
+  kept or composed away, whichever gives the smaller diagram.
 
 **Vtrees**
 
@@ -189,75 +172,93 @@ measured behind it.
   variables, is read from tree decompositions computed with
   [goatd](https://github.com/Tractables/goatd), from the rules'
   dependency order, from the order the program states its facts in, or
-  from the fan-in order of its rules.
-- **Decision vtrees for circuits.** In a bit-blasted program, an atom
-  read under a fact is read conditioned on it, a decision list becomes a
-  balanced tree, and these guards give the vtree.
+  from its rules' fan-in. In a bit-blasted program, an atom read under a
+  fact is read conditioned on it, a decision list becomes a balanced
+  tree, and these guards give the vtree.
 - **Layouts as trials.** By default, several layouts run in turns under
   doubling budgets of engine work, one of them a vtree searched by
   rotations during the compile, and the first to finish answers. The
-  budgets count pairs and units of engine work, not seconds, so the same
-  layout wins on every machine.
+  budgets count pairs and units of work, not seconds, so the same layout
+  wins on every machine.
 
 **Queries and evidence**
 
 - **Every marginal in one pass.** The evidence is conjoined bottom up
   along the vtree, and every query is read off one backward pass.
-  Probabilities below a double's range, as a thousand observations give,
-  keep an exponent of their own instead of underflowing.
+  Probabilities below a double's range keep an exponent of their own
+  instead of underflowing.
 - **Summing out.** Where only the probability of the evidence or a
   partition function is asked, each join sums out what no later join
   reads.
 
 ## Performance
 
-tddlog was run against every exact inference system we could find. The
-results are partitioned by type of program, in six types, and each
-instance counts in one type, whatever language its source was written
-in. Each type is compared with the systems that natively handle it:
-ProbLog, PITA, aspmc and PSouffle on logic programs; ProvSQL and the
-same four on database queries; Ace, Merlin, pyAgrum, pgmpy, libDAI and
-TensorInference.jl on Bayesian and Markov networks, and on Bayesian
-networks also the logic programming systems and the probabilistic
-programming languages; Dice, Alea.jl, Roulette, noDice, Psi, Genfer,
-SPPL, Geni and Pluck on functional and bit-blasted programs. A system is
-given each instance of a type it can take, through a translation where
-it cannot read the original (an LPAD for ProbLog, a Dice program for
-Roulette). All programs, the union of the six, has every system on
-every program it is given, Storm and PRISM included. Each run is
-single-threaded, each suite with its own time limit (300 to 1200
-seconds), and every answer is checked against an exact reference.
+tddlog was run against every exact inference system we could find: on
+six types of program, each against the systems that natively handle it,
+and on [all programs](#all-programs) together, against every system.
+Each run is single-threaded under its suite's time limit (300 to 1200
+seconds), and every answer is checked against an exact reference. Each
+table gives a system's answers, its total time and tddlog's over the
+instances it is given and either answers, and tddlog's speed-up. The
+[results page](https://tractables.github.io/tddlog/results/) has every
+instance and time, a page for each system (its version and settings,
+how it was given each program, its plots against tddlog, and its paper)
+and one for each benchmark (the program as its authors wrote it, as each
+system was given it, and every run).
 
-A system's answers count over all of a type's instances. Its total time
-and tddlog's are over the instances the system is given and either
-answers, a run that does not answer counted as twice its time limit
-(PAR-2, as in the SAT and model counting competitions) and a time under
-0.2 s as 0.2 s; an instance that neither answers adds nothing.
-tddlog's speed-up over a system is the ratio of their total times on
-the instances both answer, together with the instances only one of them
-answers: tddlog's failures counted at its time limit, and the other
-system's timeouts counted at the limit where that lower bound is at
-least the speed-up measured on the instances both answer. The instances
-both answer in under 0.2 s are left out of it, and with fewer than 20
-instances both answer there are too few in common for a speed-up. A
-system run in several forms (ProbLog's three compilers, Ace's two
-modes) counts as its fastest form on each instance. The figure above
-has a row for each of a type's five best native systems, by answers and
-then speed-up, and puts the others in one row with the least of their
-total times and of their speed-ups. The cactus plots count the
-instances each system answers within each time limit, for tddlog and
-the native systems given at least 20 of the type's instances, and the
-scatter plots put tddlog's time against the fastest of those systems,
-instance by instance.
-The [results page](https://tractables.github.io/tddlog/results/) has
-every instance and time, each type with its native systems and all
-programs with every system, a page for each system (its version and
-settings, how it was given each program, its plots against tddlog on
-the programs in its own language and on those translated for it, and
-its paper), and for each benchmark the program as its authors wrote it,
-as each system was given it, and every run;
+<details>
+<summary>How the systems were run and compared</summary>
+
+- Each instance counts in one type, whatever language its source was
+  written in. A system is given every instance of a type it can take,
+  through a translation where it cannot read the original (an LPAD for
+  ProbLog, a Dice program for Roulette).
+- **Answers** count over all of a type's instances.
+- **Total times** are the system's and tddlog's over the instances the
+  system is given and either answers. A run that does not answer counts
+  as twice its time limit (PAR-2, as in the SAT and model counting
+  competitions), and a time under 0.2 s as 0.2 s.
+- **tddlog faster** is the ratio of the two total times over three sets
+  of instances: those both answer, leaving out those both answer in
+  under 0.2 s; those only the other system answers, tddlog counted at
+  its time limit; and those only tddlog answers where the other system's
+  time limit over tddlog's time is at least the ratio on the first set,
+  the other system counted at its limit. The other system's timeouts can
+  only raise the speed-up, and tddlog's only lower it. With fewer than 20
+  instances both answer there are too few in common for a speed-up.
+- A system run in several forms (ProbLog's three compilers, Ace's two
+  modes) counts as its fastest form on each instance.
+- The figure at the top and the tables name a type's five best native
+  systems, by answers and then speed-up, and put the others in one row
+  with the least of their total times and of their speed-ups.
+- The cactus plots count the instances each system answers within each
+  time limit, for tddlog and the native systems given at least 20 of the
+  type's instances. The scatter plots put tddlog's time against the
+  fastest of those systems', instance by instance.
+
+The release run compared tddlog with ProbLog 2.3.0, PITA, aspmc, Ace
+3.0, Merlin 1.7.0, pyAgrum 3.2.1, pgmpy 1.1.2, libDAI 0.3.2,
+TensorInference.jl 0.6.3, ProvSQL 1.13.0, Dice, Alea.jl, Roulette and
+the further systems, on lab and cloud machines. A suite's systems ran in
+one job, side by side in parallel lanes, so that times compare within a
+suite and each comparison pairs a system with tddlog on the same machine
+in the same lanes. tddlog's rows come from a rerun of its current
+version on the same machines, with the same memory per run; the suites
+first run on cloud machines were rerun in full on lab machines, every
+system side by side. Dice's loops are given to ProbLog, PITA and aspmc
+both unrolled and as recursion, each scored on the form it does better
+on. The references are ProbLog, Ace, Merlin and Alea.jl where they
+answer, Ganak's exact model count, and exact solvers written for this
+repository.
+
+On the [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines),
 [docs/baselines.md](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md)
-says how each system was given each suite and what it was not given.
+says how each system was given each suite and what it was not given,
+[docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md)
+has the machines, versions and every table, and the rest of the branch
+has the code that runs each system and the copies of their programs.
+
+</details>
 
 ### Probabilistic logic programs
 
@@ -269,11 +270,8 @@ says how each system was given each suite and what it was not given.
 ProbLog programs of 13 families: paths in random graphs and in grids,
 Biomine's paths, smokers, UW-CSE, Cora's citation matching, blood types,
 pedigrees, sickness, Mastermind, MNIST addition, Prob-EC's event
-calculus and taint analyses of Android apps.
-
-tddlog answers **124 of 134**. Against each native system: its answers,
-its total time and tddlog's over the programs it is given and either
-answers, and tddlog's speed-up:
+calculus and taint analyses of Android apps. tddlog answers
+**124 of 134**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -294,11 +292,7 @@ answers, and tddlog's speed-up:
 
 Boolean queries over tuple-independent databases: 16 TPC-H queries,
 the queries h0 and h1, the safe queries QW and Q9, and paths of two
-edges in random graphs.
-
-tddlog answers **308 of 320**. Against each native system: its answers,
-its total time and tddlog's over the queries it is given and either
-answers, and tddlog's speed-up:
+edges in random graphs. tddlog answers **308 of 320**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -323,10 +317,7 @@ versions among them, Ace's networks, the noisy-or networks, and the
 UAI 2022 networks whose factors are conditional probability tables:
 Promedus diagnosis, pedigree, or_chain and BN networks, and the
 blockmap, Mastermind and fs networks that Ace's benchmarks also have.
-
-tddlog answers **291 of 292**. Against each native system: its answers,
-its total time and tddlog's over the networks it is given and either
-answers, and tddlog's speed-up:
+tddlog answers **291 of 292**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -349,11 +340,7 @@ PSouffle was given 10 of the networks and answers 6.
 The other UAI 2022 networks, whose factors are not conditional
 probability tables over an acyclic graph: object detection,
 segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
-the rus networks and weighted CSPs.
-
-tddlog answers **224 of 263**. Against each native system: its answers,
-its total time and tddlog's over the networks it is given and either
-answers, and tddlog's speed-up:
+the rus networks and weighted CSPs. tddlog answers **224 of 263**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -381,11 +368,7 @@ grids with failing links or routers and its weather factory, hidden
 Markov models and Pluck's sequence models, a Markov chain, a lossy
 network, contract signing, a perturbed-memory interpreter, Cao et al.'s
 integer programs, the coupon collector, 3-SAT and the Dice paper's small
-programs.
-
-tddlog answers **224 of 260**. Against each native system: its answers,
-its total time and tddlog's over the programs it is given and either
-answers, and tddlog's speed-up:
+programs. tddlog answers **224 of 260**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -405,11 +388,7 @@ answers, and tddlog's speed-up:
 
 Programs over integers written in Alea.jl, which compiles each to a
 Boolean circuit. Alea.jl runs its own program; every other system is
-given the circuit.
-
-tddlog answers **224 of 257**. Against each native system: its answers,
-its total time and tddlog's over the programs it is given and either
-answers, and tddlog's speed-up:
+given the circuit. tddlog answers **224 of 257**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -433,12 +412,7 @@ answers, and tddlog's speed-up:
 </p>
 
 The six types together, every system on every program it is given,
-natively or through a translation: how the systems fare when the
-programs are translated into their languages.
-
-tddlog answers **1395 of 1526**. Against each system: its answers,
-its total time and tddlog's over the programs it is given and either
-answers, and tddlog's speed-up:
+natively or through a translation. tddlog answers **1395 of 1526**.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -462,8 +436,8 @@ answers, and tddlog's speed-up:
 ### Each system on its own benchmarks
 
 Each system on the benchmarks of its own papers, repository or
-distribution: its answers and tddlog's, each with its total time over
-the instances either answers, and tddlog's speed-up:
+distribution, with each one's total time over the instances either
+answers:
 
 | System | Its benchmarks | Instances | The system | tddlog | tddlog faster |
 |---|---|--:|--:|--:|--:|
@@ -483,26 +457,6 @@ the instances either answers, and tddlog's speed-up:
 | Psi | Psi's R2 linear regression, as Psi's own program | 8 | 2 in 2.0 h | 6 in 44 min | too few in common |
 | SPPL | SPPL's hierarchical Markov switching model (PLDI 2021) | 8 | 0 in 2.7 h | 8 in 6 min | too few in common |
 | PSouffle | The Android taint analyses of PSouffle's evaluation (FMCAD 2026) | 15 | 9 in 1.1 h | 12 in 32 s | too few in common |
-
-### Setup
-
-The release run compared tddlog with ProbLog 2.3.0, PITA, aspmc, Ace
-3.0, Merlin 1.7.0, pyAgrum 3.2.1, pgmpy 1.1.2, libDAI 0.3.2,
-TensorInference.jl 0.6.3, ProvSQL 1.13.0, Dice, Alea.jl, Roulette and
-the further systems, on lab and cloud machines. A suite's systems ran in
-the same job, side by side in parallel lanes, so times compare within a
-suite, and each comparison pairs a baseline with tddlog run on the same
-machine in the same lanes. tddlog's rows come from a rerun of its current version on the
-same machines, with the same memory per run; the suites that had run on
-cloud machines were rerun in full on lab machines, every system side by
-side. Dice's loops are given to ProbLog, PITA and aspmc both unrolled and
-as recursion, and each is scored on the form it does better on. The
-references are ProbLog, Ace, Merlin and Alea.jl where they
-answer, Ganak's exact model count, and exact solvers written for this
-repository. [docs/benchmarks.md](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md) on the `baselines` branch has the machines,
-versions and every table; the
-[`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
-has the code that runs each system and the copies of their programs.
 
 ## Building and testing
 
@@ -532,9 +486,5 @@ compiled into the binaries.
 [guide]: https://tractables.github.io/tddlog/guide/
 [playground]: https://tractables.github.io/tddlog/
 [Rust API]: https://tractables.github.io/tddlog/api/tddlog/
-[reachability example]: https://tractables.github.io/tddlog/guide/#reachability
-[negation example]: https://tractables.github.io/tddlog/guide/#negation
-[Bayesian network example]: https://tractables.github.io/tddlog/guide/#bayesian-network
-[binary integers example]: https://tractables.github.io/tddlog/guide/#binary-integers
 [`tddlog::solve`]: https://tractables.github.io/tddlog/api/tddlog/fn.solve.html
 [`tddlog::read`]: https://tractables.github.io/tddlog/api/tddlog/fn.read.html
