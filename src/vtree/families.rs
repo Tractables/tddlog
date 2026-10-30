@@ -13,8 +13,8 @@ use crate::multisets::Multisets;
 use super::cost::{Interfaces, Open, Scope, Weighed};
 use super::forest::Forest;
 use super::graph::{
-    ELIMINATION_BUDGET_UNITS, anneal_budget, annealed, eliminated_in_order, elimination_budget,
-    facts_by_use, min_fill_cliques, minor_min_width, weighted_min_fill,
+    ELIMINATION_BUDGET_UNITS, Elimination, anneal_budget, annealed, eliminated_in_order,
+    elimination_budget, facts_by_use, min_fill_cliques, minor_min_width, weighted_min_fill,
 };
 use super::nest::{AtomMarks, NestScratch, Rows, nest};
 use super::td::{metered, portfolio_to_bound, scaled_budget_units};
@@ -1218,37 +1218,7 @@ fn lay_out(
     let stray_top = forest.balanced(&stray);
     let (scope, values) = scope(gp, &groups, &branches);
     let items = Items::of(&groups.parents, blocks, &branches);
-    let num_items = items.block.len();
-    let leaves = items
-        .block
-        .iter()
-        .flatten()
-        .flat_map(|&t| forest.leaves_of(t));
-    let interfaces = Interfaces::new(&scope, leaves, &values);
-    // The blocks are under every layout, so what each is open on, and what
-    // its joins are charged, is worked out once for all of them.
-    let block_open: Vec<Option<Open>> = items
-        .block
-        .iter()
-        .map(|b| b.map(|t| interfaces.of_leaves(&forest, t)))
-        .collect();
-    let mut weighed = Weighed::default();
-    for &t in items.block.iter().flatten() {
-        interfaces.weigh(&forest, t, &mut weighed);
-    }
-    let mut layouts = Layouts {
-        forest,
-        items: &items,
-        interfaces,
-        block_open,
-        weighed,
-        stray_top,
-        best: None,
-        candidates: 0,
-        weigh_seconds: 0.0,
-    };
-    let edges = items.edges(&groups.parents);
-    let num_edges = edges.len();
+    let mut layouts = Layouts::new(forest, &items, &scope, &values, stray_top);
     // A decomposition breaks its ties by vertex number, and a layout that is
     // as wide as another can still cost more pairs. The groups are numbered
     // by the first atom they define and by the first link among their roots
@@ -1263,29 +1233,100 @@ fn lay_out(
     // the run, and width alone does not tell those apart. `families:0`
     // skips the searches, which is how `auto` tries these layouts first.
     let numberings = items.numberings(&groups.first_root);
-    let item_values = items.values(&values);
-    let uniform = item_values.iter().all(|&v| v == item_values[0]);
-    // Seconds and units in the decomposer's searches and the annealing,
-    // for `--stats`.
-    let (mut search_seconds, mut search_units) = (0.0, 0);
-    // Seconds and units in the numberings' min-fill eliminations, weighted
-    // min-fill's among them.
-    let (mut min_fill_seconds, mut min_fill_units) = (0.0, 0);
-    // The graph's treewidth lower bound, taken once where a numbering's
-    // min-fill width would call for a search.
-    let mut lower_bound = None;
-    // What the searches charge, or would charge where `search` is off
-    // ([`Estimate::search_units`]).
-    let mut search_cost = 0;
-    // The first numbering's graph, its items' values and its weighted
-    // min-fill elimination, where the annealing may run (below).
+    let mut tds = Decompositions::new(&items, &groups, &values, search);
     let mut annealable = None;
     for (k, item_at) in numberings.iter().enumerate() {
+        let first = tds.of_numbering(&mut layouts, k, item_at)?;
+        annealable = annealable.or(first);
+    }
+    if let Some(start) = annealable {
+        tds.anneal(&mut layouts, start, &numberings[0])?;
+    }
+    let note = tds.note(gp, &groups, &items, &layouts, stray.len());
+    let (cost, top, ..) = layouts.best.expect("a numbering has a decomposition");
+    Ok((
+        layouts.forest,
+        top,
+        note,
+        Estimate {
+            pairs: cost,
+            search_units: tds.search_cost,
+        },
+    ))
+}
+
+/// The decompositions of the items' graph that [`lay_out`] lays the items
+/// out over, and what finding them charged.
+struct Decompositions {
+    /// The items' graph: its edges between items, and each item's values.
+    edges: Vec<(usize, usize)>,
+    num_items: usize,
+    item_values: Vec<u64>,
+    /// Whether every item has as many values as every other.
+    uniform: bool,
+    /// Whether the searches run (`families:0` skips them).
+    search: bool,
+    /// Seconds and units in the decomposer's searches and the annealing,
+    /// for `--stats`.
+    search_seconds: f64,
+    search_units: u64,
+    /// Seconds and units in the numberings' min-fill eliminations, weighted
+    /// min-fill's among them.
+    min_fill_seconds: f64,
+    min_fill_units: u64,
+    /// The graph's treewidth lower bound, taken once where a numbering's
+    /// min-fill width would call for a search.
+    lower_bound: Option<usize>,
+    /// What the searches charge, or would charge where `search` is off
+    /// ([`Estimate::search_units`]).
+    search_cost: u64,
+}
+
+/// The first numbering's graph, its items' values and its weighted
+/// min-fill elimination, where the annealing may run
+/// ([`Decompositions::anneal`]).
+struct Annealable {
+    edges: Vec<(u32, u32)>,
+    graph: goatd::Graph,
+    weights: Vec<u64>,
+    weighted: Option<Elimination>,
+}
+
+impl Decompositions {
+    fn new(items: &Items, groups: &Groups, values: &[f64], search: bool) -> Self {
+        let item_values = items.values(values);
+        let uniform = item_values.iter().all(|&v| v == item_values[0]);
+        Decompositions {
+            edges: items.edges(&groups.parents),
+            num_items: items.block.len(),
+            item_values,
+            uniform,
+            search,
+            search_seconds: 0.0,
+            search_units: 0,
+            min_fill_seconds: 0.0,
+            min_fill_units: 0,
+            lower_bound: None,
+            search_cost: 0,
+        }
+    }
+
+    /// The layouts over the decompositions of numbering `k`, whose vertex
+    /// `v` is item `item_at[v]`, weighed into `layouts`; and the first
+    /// numbering's graph where its search runs, for the annealing.
+    fn of_numbering(
+        &mut self,
+        layouts: &mut Layouts,
+        k: usize,
+        item_at: &[usize],
+    ) -> Result<Option<Annealable>, String> {
+        let num_items = self.num_items;
         let mut vertex_of = vec![0u32; num_items];
         for (v, &i) in item_at.iter().enumerate() {
             vertex_of[i] = v as u32;
         }
-        let edges: Vec<(u32, u32)> = edges
+        let edges: Vec<(u32, u32)> = self
+            .edges
             .iter()
             .map(|&(u, v)| {
                 (
@@ -1304,8 +1345,8 @@ fn lay_out(
             )
         });
         let min_fill = min_fill.map_err(|e| format!("min-fill decomposition failed: {e:?}"))?;
-        min_fill_seconds += seconds;
-        min_fill_units += units;
+        self.min_fill_seconds += seconds;
+        self.min_fill_units += units;
         let mut tds = Vec::new();
         let wide = min_fill.treewidth() >= FAMILIES_SEARCH_FROM_WIDTH;
         // No search narrows a decomposition as narrow as the graph's lower
@@ -1316,24 +1357,27 @@ fn lay_out(
         // budget (goatd's hard cutoff): the search's own eliminations, of
         // which min-fill is one, then stop part way, and what it returns
         // has the vertices they left in one bag.
-        let budget_units = scaled_budget_units(num_items, num_edges);
+        let budget_units = scaled_budget_units(num_items, self.edges.len());
         let narrowable = wide
             && units < 2 * budget_units
             && min_fill.treewidth() as usize
-                > *lower_bound.get_or_insert_with(|| minor_min_width(num_items, &edges));
+                > *self
+                    .lower_bound
+                    .get_or_insert_with(|| minor_min_width(num_items, &edges));
         if narrowable {
-            search_cost += 2 * budget_units;
+            self.search_cost += 2 * budget_units;
         }
-        if search && narrowable {
+        if self.search && narrowable {
             let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
-            let bound =
-                lower_bound.expect("the bound is computed where the decomposition is narrowable");
+            let bound = self
+                .lower_bound
+                .expect("the bound is computed where the decomposition is narrowable");
             let (found, units, seconds) =
                 metered(|| portfolio_to_bound(&graph, budget, budget_units, bound));
             let (td, pushed) = found.ok_or("tree decomposition failed")?;
             tds.push(td);
-            search_seconds += seconds;
-            search_units += units.saturating_sub(pushed);
+            self.search_seconds += seconds;
+            self.search_units += units.saturating_sub(pushed);
         }
         // The groups eliminated in their numbering's order, where that is
         // narrower than min-fill. A program whose atoms are derived layer
@@ -1355,43 +1399,63 @@ fn lay_out(
         // the items' values ([`weighted_min_fill`]), where they differ: on
         // equal values it is tddlog's min-fill, which ties as goatd's does
         // not.
-        let weights: Vec<u64> = item_at.iter().map(|&i| item_values[i]).collect();
-        let weighted = (k == 0 && !uniform).then(|| {
+        let weights: Vec<u64> = item_at.iter().map(|&i| self.item_values[i]).collect();
+        let weighted = (k == 0 && !self.uniform).then(|| {
             let (weighted, units, seconds) = metered(|| weighted_min_fill(&edges, &weights));
-            min_fill_units += units;
-            min_fill_seconds += seconds;
+            self.min_fill_units += units;
+            self.min_fill_seconds += seconds;
             weighted
         });
         tds.extend(weighted.as_ref().and_then(|e| e.decomposition(&graph)));
         for td in &tds {
             layouts.weigh(td, item_at)?;
         }
-        if k == 0 && search && narrowable {
-            annealable = Some((edges, graph, weights, weighted));
-        }
+        Ok((k == 0 && self.search && narrowable).then_some(Annealable {
+            edges,
+            graph,
+            weights,
+            weighted,
+        }))
     }
-    // Where the portfolio searches the first numbering and the cheapest
-    // layout of both numberings pays for it ([`anneal_budget`]), the better
-    // of the first numbering's min-fill and weighted min-fill eliminations
-    // by their states ([`Elimination::states`]) is improved by annealing,
-    // and laid out too. It runs with the portfolio, whose charge `auto`
-    // already weighs, and where the portfolio does not run `families:0`
-    // has no search to weigh: counted beside the portfolio's, its budget
-    // delayed the searched layout on the UAI PR tuning set's grids (from
-    // 0.3 s of `families:0` to 3.5 s), and where it ran alone it made
-    // `auto` build a searched layout that did not win (objectdetection, 0.2
-    // to 0.7 s more). Its budget is read off the cheapest layout of both
-    // numberings: off the first's alone, it spent 4.8 s on 1npl of the UAI
-    // PR final set, a fifth of a budget the second numbering's layout,
-    // five times cheaper, would have given it, for no cheaper layout.
-    if let Some((edges, graph, weights, weighted)) = annealable
-        && let Some(budget) = layouts
+
+    /// Where the portfolio searches the first numbering, `item_at`, and
+    /// the cheapest layout of both numberings pays for it
+    /// ([`anneal_budget`]), the better of the first numbering's min-fill
+    /// and weighted min-fill eliminations by their states
+    /// ([`Elimination::states`]) improved by annealing, and laid out too.
+    ///
+    /// It runs with the portfolio, whose charge `auto` already weighs, and
+    /// where the portfolio does not run `families:0` has no search to
+    /// weigh: counted beside the portfolio's, its budget delayed the
+    /// searched layout on the UAI PR tuning set's grids (from 0.3 s of
+    /// `families:0` to 3.5 s), and where it ran alone it made `auto` build
+    /// a searched layout that did not win (objectdetection, 0.2 to 0.7 s
+    /// more). Its budget is read off the cheapest layout of both
+    /// numberings: off the first's alone, it spent 4.8 s on 1npl of the
+    /// UAI PR final set, a fifth of a budget the second numbering's
+    /// layout, five times cheaper, would have given it, for no cheaper
+    /// layout.
+    fn anneal(
+        &mut self,
+        layouts: &mut Layouts,
+        start: Annealable,
+        item_at: &[usize],
+    ) -> Result<(), String> {
+        let Some(budget) = layouts
             .best
-            .and_then(|(cost, ..)| anneal_budget(num_items, num_edges, cost))
-    {
+            .and_then(|(cost, ..)| anneal_budget(self.num_items, self.edges.len(), cost))
+        else {
+            return Ok(());
+        };
+        let Annealable {
+            edges,
+            graph,
+            weights,
+            weighted,
+        } = start;
         let bits: Vec<f64> = weights.iter().map(|&w| (w as f64).log2()).collect();
         let (found, units, seconds) = metered(|| {
-            let min_fill = min_fill_cliques(num_items, &edges);
+            let min_fill = min_fill_cliques(self.num_items, &edges);
             let start = match weighted {
                 Some(w) if w.states(&bits) < min_fill.states(&bits) => w,
                 _ => min_fill,
@@ -1400,44 +1464,53 @@ fn lay_out(
                 eliminated_in_order(&edges, order, usize::MAX, 2 * ELIMINATION_BUDGET_UNITS)
             })
         });
-        search_units += units;
-        search_seconds += seconds;
+        self.search_units += units;
+        self.search_seconds += seconds;
         if let Some(td) = found.and_then(|e| e.decomposition(&graph)) {
-            layouts.weigh(&td, &numberings[0])?;
+            layouts.weigh(&td, item_at)?;
         }
+        Ok(())
     }
-    let (cost, top, width, num_bags) = layouts.best.expect("a numbering has a decomposition");
-    let widest_facts = groups
-        .groups
-        .iter()
-        .map(|(_, facts)| facts.len())
-        .max()
-        .unwrap_or(0);
-    let widest_inputs = groups.inputs.iter().map(Vec::len).max().unwrap_or(0);
-    let (candidates, weigh_seconds) = (layouts.candidates, layouts.weigh_seconds);
-    let note = format!(
-        "families: {} families in {} groups over {} indicators, {} stray facts; td over the groups width {width}{}, {num_bags} bags, \
-         {num_edges} edges, layout cost {cost:.3e} (the least of {candidates}); the most copies one group reads {widest_inputs}, \
-         the most facts in one group {widest_facts}, {} branches of {} groups; min-fill {min_fill_units} units charged, \
-         {min_fill_seconds:.3}s; searched {search_units} units charged, {search_seconds:.3}s, laid out and weighed \
-         {weigh_seconds:.3}s",
-        groups.families,
-        num_groups,
-        gp.encoding.indicators.len(),
-        stray.len(),
-        lower_bound.map_or(String::new(), |b| format!(" (treewidth at least {b})")),
-        num_items - num_groups,
-        items.branches.iter().filter(|b| !b.is_empty()).count(),
-    );
-    Ok((
-        layouts.forest,
-        top,
-        note,
-        Estimate {
-            pairs: cost,
-            search_units: search_cost,
-        },
-    ))
+
+    /// The layout's note for `--stats`: the groups, the layout kept and
+    /// what the decompositions charged.
+    fn note(
+        &self,
+        gp: &GroundProgram,
+        groups: &Groups,
+        items: &Items,
+        layouts: &Layouts,
+        stray: usize,
+    ) -> String {
+        let (cost, _, width, num_bags) = layouts.best.expect("a numbering has a decomposition");
+        let num_groups = groups.groups.len();
+        let widest_facts = groups
+            .groups
+            .iter()
+            .map(|(_, facts)| facts.len())
+            .max()
+            .unwrap_or(0);
+        let widest_inputs = groups.inputs.iter().map(Vec::len).max().unwrap_or(0);
+        let (candidates, weigh_seconds) = (layouts.candidates, layouts.weigh_seconds);
+        let (min_fill_units, min_fill_seconds) = (self.min_fill_units, self.min_fill_seconds);
+        let (search_units, search_seconds) = (self.search_units, self.search_seconds);
+        let num_edges = self.edges.len();
+        format!(
+            "families: {} families in {} groups over {} indicators, {} stray facts; td over the groups width {width}{}, {num_bags} bags, \
+             {num_edges} edges, layout cost {cost:.3e} (the least of {candidates}); the most copies one group reads {widest_inputs}, \
+             the most facts in one group {widest_facts}, {} branches of {} groups; min-fill {min_fill_units} units charged, \
+             {min_fill_seconds:.3}s; searched {search_units} units charged, {search_seconds:.3}s, laid out and weighed \
+             {weigh_seconds:.3}s",
+            groups.families,
+            num_groups,
+            gp.encoding.indicators.len(),
+            stray,
+            self.lower_bound
+                .map_or(String::new(), |b| format!(" (treewidth at least {b})")),
+            self.num_items - num_groups,
+            items.branches.iter().filter(|b| !b.is_empty()).count(),
+        )
+    }
 }
 
 /// The lists [`Blocks::of`] fills for each group, kept from one group to
@@ -1939,7 +2012,47 @@ struct Layouts<'a> {
     weigh_seconds: f64,
 }
 
-impl Layouts<'_> {
+impl<'a> Layouts<'a> {
+    /// The layouts of `items` over the facts' groups `scope` of `values`
+    /// values, under each of which the facts no family reads go at
+    /// `stray_top`; none weighed yet. The blocks are under every layout,
+    /// so what each is open on, and what its joins are charged, is worked
+    /// out once for all of them.
+    fn new(
+        forest: Forest,
+        items: &'a Items,
+        scope: &'a Scope,
+        values: &[f64],
+        stray_top: Option<usize>,
+    ) -> Self {
+        let leaves = items
+            .block
+            .iter()
+            .flatten()
+            .flat_map(|&t| forest.leaves_of(t));
+        let interfaces = Interfaces::new(scope, leaves, values);
+        let block_open: Vec<Option<Open>> = items
+            .block
+            .iter()
+            .map(|b| b.map(|t| interfaces.of_leaves(&forest, t)))
+            .collect();
+        let mut weighed = Weighed::default();
+        for &t in items.block.iter().flatten() {
+            interfaces.weigh(&forest, t, &mut weighed);
+        }
+        Layouts {
+            forest,
+            items,
+            interfaces,
+            block_open,
+            weighed,
+            stray_top,
+            best: None,
+            candidates: 0,
+            weigh_seconds: 0.0,
+        }
+    }
+
     /// The layout over a decomposition whose vertex `v` is item
     /// `item_at[v]`. Rooted at bag 0, each item's block goes in the highest
     /// bag holding it with its parents, which a decomposition has, and a
