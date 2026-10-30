@@ -107,6 +107,7 @@ inference:
 | Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
 | Dice programs | tddlog, by the extension `.dice` | each integer as its bits, each operation as rules over them, a loop as recursion over a step index |
 | Alea.jl programs (`model()` and `QUERY`) | [`scripts/alea2problog.jl`](scripts/alea2problog.jl), in Julia with Alea.jl | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence |
+| Roulette programs (`#lang roulette/example/disrupt`) | [`scripts/roulette2problog.rkt`](scripts/roulette2problog.rkt), in Racket with Roulette; with `--tddlog`, the program runs with tddlog answering its queries | the Boolean circuit Roulette builds: each flip a probabilistic fact, each gate a rule, each observation evidence |
 | LPADs written for cplint and PITA | tddlog, where the file holds `:- begin_lpad.` | the same clauses in ProbLog's syntax, with the database clauses they call and the file's example queries |
 
 ```text

@@ -2125,7 +2125,8 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   they die, resumes stopped cyclic components, and checks the primal's
   update in a cyclic component against enumeration.
 - The Python tests (`tests/test_*.py`) check `scripts/alea2problog.jl`
-  (where Julia is installed) and the release metadata check.
+  and `scripts/roulette2problog.rkt` (where Julia with Alea.jl and Racket
+  with Roulette are installed) and the release metadata check.
 - `bindings/wasm/tests/examples.cjs` runs the playground's examples
   through the WebAssembly build against ProbLog's answers and `P(e)`, and
   `bindings/wasm/tests/browser.cjs` the page in a headless browser.

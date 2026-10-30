@@ -1657,6 +1657,46 @@ mod roulette {
     }
 }
 
+/// The circuits that scripts/roulette2problog.rkt writes for the Roulette
+/// programs beside them in tests/roulette/ (tests/test_roulette2problog.py
+/// checks that it does), with the answers computed by hand in those
+/// programs' comments, which Roulette gives too. qK(I) is the I-th value of
+/// the K-th query, in Racket's `datum-order`.
+mod roulette_circuits {
+    use super::*;
+
+    /// Observed `a or b`: a Boolean, a list, an integer and an equality.
+    #[test]
+    fn tiny_pr() {
+        let pe = 0.72;
+        check(
+            "../tests/roulette/tiny_pr.pl",
+            &[
+                ("q1(0)", 0.03 / pe),
+                ("q1(1)", 0.69 / pe),
+                ("q2(0)", 0.42 / pe),
+                ("q2(1)", 0.0),
+                ("q2(2)", 0.18 / pe),
+                ("q2(3)", 0.12 / pe),
+                ("q3(0)", 0.3 / pe),
+                ("q3(1)", 0.42 / pe),
+                ("q3(2)", 0.0),
+                ("q4(0)", 0.45 / pe),
+                ("q4(1)", 0.27 / pe),
+            ],
+        );
+    }
+
+    /// An observation on one path of an `if`, and a constant query.
+    #[test]
+    fn tiny_path() {
+        check(
+            "../tests/roulette/tiny_path.pl",
+            &[("q1(0)", 0.8), ("q1(1)", 0.2), ("q2(0)", 1.0)],
+        );
+    }
+}
+
 /// The literature families (generators and notes on the baselines branch),
 /// each on a small program in tests/lit/; ProbLog's answers (ProbLog 2.3.0, `-k
 /// ddnnf`, one query at a time), which [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py) also gives
