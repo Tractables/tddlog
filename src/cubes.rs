@@ -6,6 +6,8 @@
 
 use rustc_hash::FxHashMap;
 
+use crate::by_hash::ByHash;
+
 /// What [`merge_complements`] did.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Merged {
@@ -131,12 +133,11 @@ pub(crate) fn merge_complements(
 pub(crate) struct CubeMerge {
     vars: usize,
     /// The literals of each context, sorted, one context after another
-    /// from `context_start`; a context's number by the hash of its
-    /// literals, and the next of the same hash; the cubes given of each.
+    /// from `context_start`; the contexts by the hash of their literals;
+    /// the cubes given of each.
     context_lits: Vec<u32>,
     context_start: Vec<u32>,
-    context_by_hash: FxHashMap<u64, u32>,
-    context_next: Vec<u32>,
+    context_by_hash: ByHash,
     context_cubes: Vec<u32>,
     /// Of each cube, given or made: its context; its literals, one cube
     /// after another from `start`; its hash; whether it is left; the
@@ -169,7 +170,6 @@ impl CubeMerge {
         self.context_start.clear();
         self.context_start.push(0);
         self.context_by_hash.clear();
-        self.context_next.clear();
         self.context_cubes.clear();
         self.context.clear();
         self.lits.clear();
@@ -182,30 +182,25 @@ impl CubeMerge {
         let h = lits.iter().fold(Self::MIX, |h, &x| {
             (h.rotate_left(5) ^ u64::from(x)).wrapping_mul(Self::MIX)
         });
-        let first = self.context_by_hash.get(&h).copied().unwrap_or(u32::MAX);
-        let mut k = first;
-        while k != u32::MAX {
+        let (context_lits, context_start) = (&self.context_lits, &self.context_start);
+        let (k, new) = self.context_by_hash.find_or_push(h, |k| {
             let (a, b) = (
-                self.context_start[k as usize] as usize,
-                self.context_start[k as usize + 1] as usize,
+                context_start[k as usize] as usize,
+                context_start[k as usize + 1] as usize,
             );
-            if self.context_lits[a..b] == *lits {
-                return k;
-            }
-            k = self.context_next[k as usize];
+            context_lits[a..b] == *lits
+        });
+        if new {
+            self.context_lits.extend_from_slice(lits);
+            self.context_start.push(self.context_lits.len() as u32);
+            self.context_cubes.push(0);
         }
-        let k = self.context_next.len() as u32;
-        self.context_lits.extend_from_slice(lits);
-        self.context_start.push(self.context_lits.len() as u32);
-        self.context_next.push(first);
-        self.context_by_hash.insert(h, k);
-        self.context_cubes.push(0);
         k
     }
 
     /// How many contexts have been numbered.
     pub(crate) fn contexts(&self) -> usize {
-        self.context_next.len()
+        self.context_by_hash.len()
     }
 
     /// The literals of cube `c`'s context.

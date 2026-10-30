@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
+use crate::by_hash::ByHash;
 use crate::disjoint::{find, union};
 use crate::ground::deps::Deps;
 use crate::ground::{AtomId, GLit, GroundProgram, RulesByHead};
@@ -1520,11 +1521,7 @@ struct Blocks {
     scratch: NestScratch,
     group_reader: AtomMarks,
     fact_reader: AtomMarks,
-    /// The rows, and per context and row the one before it with the same
-    /// hash.
     rows: Rows,
-    same_context: Vec<u32>,
-    same_row: Vec<usize>,
     /// The row and head of each rule, gathered by row at the end, and the
     /// hubs' groups each row reads.
     row_heads: Vec<(usize, AtomId)>,
@@ -1552,8 +1549,6 @@ impl Blocks {
             group_reader: AtomMarks::new(num_groups),
             fact_reader: AtomMarks::new(num_atoms),
             rows: Rows::default(),
-            same_context: Vec::new(),
-            same_row: Vec::new(),
             row_heads: Vec::new(),
             row_hubs: Vec::new(),
             ranked: Vec::new(),
@@ -1581,8 +1576,6 @@ impl Blocks {
             group_reader,
             fact_reader,
             rows,
-            same_context,
-            same_row,
             row_heads,
             row_hubs,
             ranked,
@@ -1626,16 +1619,12 @@ impl Blocks {
             value.hash(&mut h);
             h.finish()
         }
-        // The last context and row with each hash, at most one a rule of
-        // the group, for which they are allocated.
+        // The contexts and the rows by hash, at most one a rule of the
+        // group, for which they are allocated.
         let rules = group_rules[g].len();
-        let mut context_by: FxHashMap<u64, u32> =
-            FxHashMap::with_capacity_and_hasher(rules, Default::default());
-        let mut row_by: FxHashMap<u64, usize> =
-            FxHashMap::with_capacity_and_hasher(rules, Default::default());
+        let mut context_by = ByHash::with_capacity(rules);
+        let mut row_by = ByHash::with_capacity(rules);
         rows.clear();
-        same_context.clear();
-        same_row.clear();
         row_heads.clear();
         row_hubs.clear();
         // The context and the row of the rule before.
@@ -1686,18 +1675,12 @@ impl Blocks {
                     copies.extend(read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
                     copies.sort_unstable();
                     copies.dedup();
-                    let h = hash(copies);
-                    let last = context_by.get(&h).copied().unwrap_or(u32::MAX);
-                    let mut x = last;
-                    while x != u32::MAX && rows.context_copies(x) != copies.as_slice() {
-                        x = same_context[x as usize];
-                    }
-                    if x == u32::MAX {
-                        x = rows.num_contexts() as u32;
+                    let (x, new) = context_by.find_or_push(hash(copies), |x| {
+                        rows.context_copies(x) == copies.as_slice()
+                    });
+                    if new {
                         rows.contexts.extend_from_slice(copies);
                         rows.context_ends.push(rows.contexts.len());
-                        context_by.insert(h, x);
-                        same_context.push(last);
                     }
                     std::mem::swap(read, last_read);
                     x
@@ -1706,24 +1689,16 @@ impl Blocks {
             let i = match before {
                 Some((y, i)) if y == x && facts == last_facts => i,
                 _ => {
-                    let h = hash(&(&**facts, x));
-                    let last = row_by.get(&h).copied().unwrap_or(usize::MAX);
-                    let mut i = last;
-                    while i != usize::MAX
-                        && (rows.context[i] != x || rows.facts(i) != facts.as_slice())
-                    {
-                        i = same_row[i];
-                    }
-                    if i == usize::MAX {
-                        i = rows.len();
+                    let (i, new) = row_by.find_or_push(hash(&(&**facts, x)), |i| {
+                        rows.context[i as usize] == x && rows.facts(i as usize) == facts.as_slice()
+                    });
+                    if new {
                         rows.facts.extend_from_slice(facts);
                         rows.fact_ends.push(rows.facts.len());
                         rows.context.push(x);
-                        row_by.insert(h, i);
-                        same_row.push(last);
                     }
                     std::mem::swap(facts, last_facts);
-                    i
+                    i as usize
                 }
             };
             before = Some((x, i));

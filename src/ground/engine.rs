@@ -18,6 +18,7 @@ use super::interned::Interned;
 use super::normalize::{Facts, NormProgram, Weights, switch_weights};
 use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
+use crate::by_hash::ByHash;
 use crate::syntax::{
     Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Literal, NIL, Name, Term, term_cmp,
 };
@@ -423,12 +424,9 @@ struct Relation {
     /// The tuples by the hash of their values ([`Relation::hash`]), but
     /// for a relation of arity zero, whose one tuple is `ids[0]` once
     /// derived ([`Relation::get`]): every switch of a ground program is
-    /// one, and needs no table allocated. `by_hash` holds the last tuple
-    /// of each hash, and `same_hash` before each tuple the one of its hash
-    /// before it, or [`Relation::NONE`]. A table of tuples by their values
+    /// one, and needs no table allocated. A table of tuples by their values
     /// held a copy of each: a gigabyte for TPC-H's six million line items.
-    by_hash: FxHashMap<u64, u32>,
-    same_hash: Vec<u32>,
+    by_hash: ByHash,
     /// Atoms named by a negative literal inside their own recursive
     /// component before it is known whether they are possible, and their
     /// atoms. Derived, a tuple keeps its placeholder's atom; otherwise it
@@ -445,16 +443,12 @@ struct Relation {
 }
 
 impl Relation {
-    /// No tuple, in [`Relation::same_hash`].
-    const NONE: u32 = u32::MAX;
-
     fn new(arity: usize) -> Relation {
         Relation {
             vals: Vec::new(),
             arity,
             ids: Vec::new(),
-            by_hash: FxHashMap::default(),
-            same_hash: Vec::new(),
+            by_hash: ByHash::default(),
             placeholders: Interned::default(),
             placeholder_ids: Vec::new(),
             index: Vec::new(),
@@ -487,31 +481,23 @@ impl Relation {
         if args.is_empty() {
             return self.ids.first().copied();
         }
-        let mut t = *self.by_hash.get(&h)?;
-        while t != Self::NONE {
-            if self.tuple(t as usize) == args {
-                return Some(self.ids[t as usize]);
-            }
-            t = self.same_hash[t as usize];
-        }
-        None
+        let t = self.by_hash.find(h, |t| self.tuple(t as usize) == args)?;
+        Some(self.ids[t as usize])
     }
 
     /// Room for `n` more tuples.
     fn reserve(&mut self, n: usize) -> bool {
         self.vals.try_reserve(n * self.arity).is_ok()
             && self.ids.try_reserve(n).is_ok()
-            && (self.arity == 0
-                || self.same_hash.try_reserve(n).is_ok() && self.by_hash.try_reserve(n).is_ok())
+            && (self.arity == 0 || self.by_hash.try_reserve(n))
     }
 
     /// Adds the tuple `args`, whose hash is `h`, as atom `id`.
     fn push(&mut self, h: u64, args: &[Val], id: AtomId) {
         debug_assert_eq!(args.len(), self.arity, "a tuple of the relation's arity");
         if self.arity > 0 {
-            let t = self.len() as u32;
-            let before = self.by_hash.insert(h, t);
-            self.same_hash.push(before.unwrap_or(Self::NONE));
+            let t = self.by_hash.push(h);
+            debug_assert_eq!(t as usize, self.len(), "a tuple numbered in order");
         }
         self.vals.extend_from_slice(args);
         self.ids.push(id);

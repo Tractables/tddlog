@@ -81,6 +81,7 @@ use super::OWN_VALUE_FROM;
 use super::program::Lists;
 use super::tables::Tables;
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, simplify};
+use crate::by_hash::ByHash;
 use crate::syntax::{Args, Atom, Name, Term};
 
 /// A table is rewritten where its rows hold fewer than one class per this
@@ -174,17 +175,16 @@ pub(crate) fn row_classes(gp: &mut GroundProgram, tables: &mut Tables) -> bool {
 /// (`switched`), `own` the table that owns each fact.
 fn rows_of(gp: &GroundProgram, tables: &Tables, own: &[usize], switched: &[bool]) -> Rows {
     // Each table's rows, in the order of their first rules. A row is found
-    // by the hash of its table and context, as the last row with that hash
-    // and per row the one before it with the same hash, rather than a map
-    // keyed by the table and the context, which costs a context per rule.
+    // by the hash of its table and context ([`ByHash`]), rather than in a
+    // map keyed by the table and the context, which costs a context per
+    // rule.
     let mut rows = Rows {
         context_start: vec![0],
         ..Rows::default()
     };
     let mut row_of_rule: Vec<usize> = Vec::with_capacity(gp.rules.len());
     let mut row_table: Vec<usize> = Vec::new();
-    let mut row_by_hash: FxHashMap<u64, usize> = FxHashMap::default();
-    let mut same_hash: Vec<usize> = Vec::new();
+    let mut row_by_hash = ByHash::default();
     // The tables in the order of their first rows, and each table's place
     // in that order.
     let mut table_order: Vec<usize> = Vec::new();
@@ -218,19 +218,14 @@ fn rows_of(gp: &GroundProgram, tables: &Tables, own: &[usize], switched: &[bool]
         context.sort_unstable();
         context.dedup();
         let hash = rustc_hash::FxBuildHasher.hash_one((t, context.as_slice()));
-        let last = row_by_hash.get(&hash).copied().unwrap_or(usize::MAX);
-        let mut row = last;
-        while row != usize::MAX && (row_table[row] != t || rows.context(row) != context.as_slice())
-        {
-            row = same_hash[row];
-        }
-        if row == usize::MAX {
-            row = rows.len();
+        let (row, new) = row_by_hash.find_or_push(hash, |row| {
+            row_table[row as usize] == t && rows.context(row as usize) == context.as_slice()
+        });
+        let row = row as usize;
+        if new {
             rows.lits.extend_from_slice(&context);
             rows.context_start.push(rows.lits.len());
             row_table.push(t);
-            row_by_hash.insert(hash, row);
-            same_hash.push(last);
             if table_number[t] == usize::MAX {
                 table_number[t] = table_order.len();
                 table_order.push(t);
