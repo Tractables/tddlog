@@ -313,6 +313,18 @@ fn division_is_in_floating_point_and_floats_are_not_integers() {
 }
 
 #[test]
+fn sign_and_fractional_part_keep_their_operand_s_kind() {
+    // An integer's sign is an integer and a float's a float; the
+    // fractional part keeps the number's sign.
+    assert_answers(
+        "s(X, Y, Z) :- X is sign(2 - 6), Y is sign(0), Z is sign(2.5).
+         f(X, Y) :- X is float_fractional_part(-2.75), Y is float_fractional_part(3).
+         query(s(_, _, _)). query(f(_, _)).",
+        &[("s(-1,0,1.0)", 1.0), ("f(-0.75,0)", 1.0)],
+    );
+}
+
+#[test]
 fn floats_are_rounded_and_numbers_sorted_as_problog_does() {
     // ProbLog rounds a float it binds to 15 decimal places; a comparison
     // reads the number computed. Its standard order puts numbers of

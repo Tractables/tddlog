@@ -138,6 +138,7 @@ enum ArithFn {
     Neg,
     Plus,
     Abs,
+    Sign,
     Min,
     Max,
     BitAnd,
@@ -150,6 +151,7 @@ enum ArithFn {
     Floor,
     Ceiling,
     Truncate,
+    FractionalPart,
     Sqrt,
     Exp,
     Log,
@@ -177,6 +179,7 @@ impl ArithFn {
             ("-", 1) => Neg,
             ("+", 1) => Plus,
             ("abs", 1) => Abs,
+            ("sign", 1) => Sign,
             ("min", 2) => Min,
             ("max", 2) => Max,
             ("/\\", 2) => BitAnd,
@@ -189,6 +192,7 @@ impl ArithFn {
             ("floor", 1) => Floor,
             ("ceiling", 1) => Ceiling,
             ("truncate", 1) => Truncate,
+            ("float_fractional_part", 1) => FractionalPart,
             ("sqrt", 1) => Sqrt,
             ("exp", 1) => Exp,
             ("log", 1) => Log,
@@ -254,6 +258,14 @@ impl ArithFn {
             (Plus, &[x]) => Some(x),
             (Abs, &[I(x)]) => x.checked_abs().map(I),
             (Abs, &[F(x)]) => Some(F(x.abs())),
+            (Sign, &[I(x)]) => Some(I(x.signum())),
+            (Sign, &[F(x)]) => Some(F(if x > 0.0 {
+                1.0
+            } else if x < 0.0 {
+                -1.0
+            } else {
+                x
+            })),
             // Python's `min` and `max` return the first of equal values.
             (Min, &[x, y]) => Some(if y.float() < x.float() { y } else { x }),
             (Max, &[x, y]) => Some(if y.float() > x.float() { y } else { x }),
@@ -268,6 +280,8 @@ impl ArithFn {
             (Floor, &[F(x)]) => to_int(x.floor()),
             (Ceiling, &[F(x)]) => to_int(x.ceil()),
             (Truncate, &[F(x)]) => to_int(x.trunc()),
+            (FractionalPart, &[I(_)]) => Some(I(0)),
+            (FractionalPart, &[F(x)]) => Some(F(x - x.trunc())),
             (Sqrt, &[x]) => (x.float() >= 0.0).then(|| F(x.float().sqrt())),
             (Exp, _) => float(f64::exp),
             (Log, &[x]) => (x.float() > 0.0).then(|| F(x.float().ln())),
