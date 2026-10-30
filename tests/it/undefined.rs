@@ -75,7 +75,7 @@ fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
     // clauses, they would be false.
     for source in [
         "0.3::c. a :- c, write(hello). query(a).",
-        "q. p :- call(q). query(p).",
+        "q. p :- once(q). query(p).",
         "s(X) :- plus(1, 2, X). query(s(_)).",
         "t(L) :- subtract([a, b], [a], L). query(t(_)).",
         "u :- findall(X, (member(X, [1, 2]), integer(X)), _). query(u).",

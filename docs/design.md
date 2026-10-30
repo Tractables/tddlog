@@ -192,9 +192,13 @@ The parser reads ProbLog without cut:
 - the list predicates of ProbLog's library, built in: member/2,
   memberchk/2, select/3, append/3, length/2, nth0/3, nth1/3, last/2,
   reverse/2, sum_list/2, max_list/2, min_list/2, sort/2 and between/3,
-  in ProbLog's modes and order of solutions; and its random selections
-  select_uniform/4 and select_weighted/4,5 in the library's own clauses,
-  which the grounder adds where the program calls them;
+  in ProbLog's modes and order of solutions;
+- the predicates ProbLog's libraries write as clauses, in those clauses,
+  which the grounder adds where the program calls them (`ground/library.rs`):
+  the random selections select_uniform/4 and select_weighted/4,5, and
+  `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
+  and partition/4; and `call/N`, whose goal names a predicate the program
+  defines;
 - `findall/3` over a deterministic goal that is not recursive, its
   solutions in ProbLog's order;
 - `query/1` (also `query(\+a)`) and `evidence/1,2`, and their rules

@@ -356,12 +356,14 @@ impl<'a> Parser<'a> {
                 prog.evidence.push(e);
                 Ok(())
             }
-            // The list predicates are built in ([`super::Builtin`]).
+            // The list predicates are built in ([`super::Builtin`]), and the
+            // grounder adds the clauses of those of the two libraries that are
+            // written as clauses.
             ("use_module", 1) => {
                 let t = self.args.pop().expect("an argument").into_term();
                 match t.as_compound() {
-                    Some((library, [Term::Const(lists)]))
-                        if &**library == "library" && &**lists == "lists" =>
+                    Some((library, [Term::Const(name)]))
+                        if &**library == "library" && matches!(&**name, "lists" | "apply") =>
                     {
                         Ok(())
                     }
@@ -1066,7 +1068,8 @@ mod tests {
         assert_eq!(fa.template.to_string(), "X-Y");
         assert_eq!(fa.goal.len(), 2);
         assert!(!fa.interleaved);
-        assert!(parse_program(":- use_module(library(apply)).\n").is_err());
+        assert!(parse_program(":- use_module(library(apply)).\n").is_ok());
+        assert!(parse_program(":- use_module(library(assert)).\n").is_err());
         // An operator alone is an atom; before a term, a prefix operator.
         let p =
             parse_program("ops([+, -, *, /]). p([N, +|T], -, - X) :- q(N, T, X, /).\n").unwrap();

@@ -313,6 +313,45 @@ fn a_random_selection_is_made_of_problog_s_random_variables() {
 }
 
 #[test]
+fn call_and_the_apply_library_call_the_goals_they_are_given() {
+    // As ProbLog's tutorial's higher-order programs do: three coins of
+    // heads 0.8, counted by maplist/3 and by foldl/4.
+    let (h, t) = (0.8, 0.2);
+    let three = [t * t * t, 3.0 * h * t * t, 3.0 * h * h * t, h * h * h];
+    assert_answers(
+        "PH::make_coin(C, PH).
+         id(1). id(2). id(3).
+         coin(C) :- id(C), make_coin(C, 0.8).
+         tonum(C, 1) :- coin(C).
+         tonum(C, 0) :- \\+ coin(C).
+         add(C, In, Out) :- tonum(C, N), Out is In + N.
+         offset(A, B, C) :- C is A + B.
+         mapped(S) :- maplist(tonum, [1, 2, 3], Ns), sum_list(Ns, S).
+         folded(S) :- foldl(add, [1, 2, 3], 0, S).
+         kept(N) :- include(coin, [1, 2], L), length(L, N).
+         shifted(L) :- maplist(offset(10), [1, 2], L).
+         named(X) :- G = tonum(1), call(G, X).
+         query(mapped(_)). query(folded(_)). query(kept(_)). query(shifted(_)). query(named(_)).",
+        &[
+            ("mapped(0)", three[0]),
+            ("mapped(1)", three[1]),
+            ("mapped(2)", three[2]),
+            ("mapped(3)", three[3]),
+            ("folded(0)", three[0]),
+            ("folded(1)", three[1]),
+            ("folded(2)", three[2]),
+            ("folded(3)", three[3]),
+            ("kept(0)", t * t),
+            ("kept(1)", 2.0 * h * t),
+            ("kept(2)", h * h),
+            ("shifted([11, 12])", 1.0),
+            ("named(0)", t),
+            ("named(1)", h),
+        ],
+    );
+}
+
+#[test]
 fn equality_builds_terms_and_is_evaluates_them() {
     // `=` unifies terms: `3 - 1` is a term, which `is` and `=:=` evaluate.
     assert_answers(

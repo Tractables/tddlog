@@ -65,6 +65,7 @@ mod fact_copies;
 pub(crate) mod guards;
 mod inline;
 mod interned;
+mod library;
 mod linear;
 mod magic;
 mod noisy_or;

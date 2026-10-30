@@ -8,11 +8,11 @@
 //! (`P::h(X) :- w(X, P).`, `1/W::h(X) :- w(X, W).`); negative heads
 //! `\+h :- body.`; disjunctions and parentheses in bodies; negation as
 //! failure (`\+` or `not`); unification `=` and the comparisons of terms;
-//! `is` and the arithmetic comparisons with ProbLog's arithmetic; the list
-//! predicates of ProbLog's `library(lists)`, `between/3`, and `findall/3`
-//! over a deterministic goal; `query/1` and `evidence/1,2`, and their
-//! patterns `query(p(X)) :- body.` and `evidence(p(X)) :- body.`. No cut,
-//! `call/N` or `assert`. The grounder
+//! `is` and the arithmetic comparisons with ProbLog's arithmetic; the
+//! predicates of ProbLog's `library(lists)` and `library(apply)`,
+//! `between/3`, `call/N` and `findall/3` over a deterministic goal;
+//! `query/1` and `evidence/1,2`, and their patterns `query(p(X)) :-
+//! body.` and `evidence(p(X)) :- body.`. No cut or `assert`. The grounder
 //! grounds a program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
 
