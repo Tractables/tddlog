@@ -119,7 +119,10 @@ use tp::CompileStats;
 
 /// Everything the driver needs to report.
 pub struct Run {
+    /// The program compiled: the ground program as [`Run::kind`] rewrote
+    /// it ([`Kind::rewrite`]), with the copies its layout made.
     pub ground: GroundProgram,
+    /// The vtree the formulas were compiled on.
     pub vtree: Arc<tididi::Vtree>,
     /// The layout the vtree came from (for `auto`, the trial that
     /// finished), which fixed the program's rewrite and the formulation.
@@ -161,15 +164,21 @@ pub struct Run {
     pub(crate) spent: auto::Spent,
 }
 
+/// Why a program was not answered.
 #[derive(Debug)]
 pub enum Error {
+    /// The program does not parse.
     Parse(syntax::ParseError),
     /// A network file that cannot be read as a program ([`network::read`]).
     Network(String),
+    /// The program cannot be ground.
     Ground(ground::GroundError),
+    /// The strategy could not lay out a vtree for the program, or `auto`
+    /// had no trial left to try.
     Vtree(String),
     /// [`Options`] that ask for nothing, or for what the strategy cannot do.
     Options(String),
+    /// The compile or the query phase failed.
     Compile(tp::CompileError),
     /// `auto`'s trials ended without an answer: the error that ended the
     /// last of them, and the notes the trials left so far (the `trial:`,
