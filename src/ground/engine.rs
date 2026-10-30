@@ -582,10 +582,10 @@ struct Grounder<'a> {
     /// of them cannot be resolved yet.
     current_stratum: FxHashSet<PredId>,
     /// Buffers kept from one rule to the next: the predicates a body names
-    /// ([`compile_rule`]), and the substitution and body literals of a
-    /// rule being grounded ([`eval_rule`]), rather than allocated per rule.
+    /// ([`compile_rule`]), and the state of a rule's walk ([`Walk`]),
+    /// rather than allocated per rule.
     known: Vec<Option<(PredId, bool)>>,
-    walk: (Vec<Option<Val>>, Vec<GLit>),
+    walk: Walk,
     /// The clauses of the rules, by rule, and each rule as a semi-naive
     /// round may walk it from one of its atoms ([`from_delta`]), by rule
     /// and atom.
@@ -689,7 +689,7 @@ impl<'a> Grounder<'a> {
             kept: super::program::KeptRules::default(),
             current_stratum: FxHashSet::default(),
             known: Vec::new(),
-            walk: (Vec::new(), Vec::new()),
+            walk: Walk::default(),
             clauses,
             from_delta: FxHashMap::default(),
             size: 0,
@@ -2800,12 +2800,14 @@ fn walk_rule(g: &mut Grounder, rule: &IRule, delta: Option<(usize, (usize, usize
         g.parts.clear();
         g.parts.resize(rule.body.len(), Part::None);
     }
-    let (mut subst, mut body_atoms) = std::mem::take(&mut g.walk);
-    subst.clear();
-    subst.resize(rule.num_vars as usize, None);
-    body_atoms.clear();
-    ground_body(g, rule, 0, delta, &mut subst, &mut body_atoms);
-    g.walk = (subst, body_atoms);
+    let mut w = std::mem::take(&mut g.walk);
+    w.subst.clear();
+    w.subst.resize(rule.num_vars as usize, None);
+    w.body_atoms.clear();
+    w.trail.clear();
+    w.choices.clear();
+    ground_body(g, rule, delta, &mut w);
+    g.walk = w;
 }
 
 /// A rule as a semi-naive round walks it from one of its atoms
@@ -3017,78 +3019,189 @@ fn derive(g: &mut Grounder, head: AtomId, body: &[GLit], c: &Counted) {
     });
 }
 
+/// A rule's walk ([`ground_body`]): the substitution, the body literals
+/// kept so far, the variables bound in the order they were (the trail), and
+/// a choice for each body literal entered.
+#[derive(Default)]
+struct Walk {
+    subst: Vec<Option<Val>>,
+    body_atoms: Vec<GLit>,
+    trail: Vec<u32>,
+    choices: Vec<Choice>,
+}
+
+/// Body literal `i` as a walk entered it: its alternatives not yet taken,
+/// and the lengths of the trail and of the body literals before it, to
+/// which the walk returns before it takes the next.
+struct Choice {
+    i: usize,
+    alts: Alts,
+    trail: usize,
+    atoms: usize,
+}
+
+/// The alternatives of a body literal that a walk has not taken yet.
+enum Alts {
+    /// The literal, not tried yet, which has one alternative or none.
+    Once,
+    /// None left.
+    Spent,
+    /// A positive literal's tuples from candidate `next` on, `bound` its
+    /// arguments bound as the walk entered it.
+    Tuples {
+        candidates: Vec<usize>,
+        next: usize,
+        bound: Vec<(usize, Val)>,
+    },
+    /// The values from `next` to `hi` of `between(lo, hi, X)`.
+    Range { lo: i64, next: Option<i64>, hi: i64 },
+    /// A built-in's solutions from `next` on.
+    Solutions { sols: Vec<Vec<Val>>, next: usize },
+    /// A findall's lists from `next` on, each with the literal of the
+    /// worlds where it is the list ([`collect`]).
+    Lists {
+        lists: Vec<lists::Listed>,
+        next: usize,
+    },
+}
+
+/// Unbinds the variables the trail holds past `mark`.
+fn unbind(subst: &mut [Option<Val>], trail: &mut Vec<u32>, mark: usize) {
+    for x in trail.drain(mark..) {
+        subst[x as usize] = None;
+    }
+}
+
+/// Binds `x`, which is free, to `v`, on the trail.
+fn bind(subst: &mut [Option<Val>], trail: &mut Vec<u32>, x: u32, v: Val) {
+    subst[x as usize] = Some(v);
+    trail.push(x);
+}
+
+/// Walks `rule`'s body depth first, each literal's alternatives in turn,
+/// and keeps a ground rule for each way through it ([`keep_walked`]). The walk
+/// keeps its choices in `w`, not on the call stack: a body of thousands of
+/// literals (a comparison of two numbers of 30000 bits, bit by bit) took a
+/// stack frame for each and overflowed the stack.
 fn ground_body(
+    g: &mut Grounder,
+    rule: &IRule,
+    delta: Option<(usize, (usize, usize))>,
+    w: &mut Walk,
+) {
+    let mut i = 0;
+    loop {
+        if g.over() {
+            return;
+        }
+        if i == rule.body.len() {
+            keep_walked(g, rule, &w.subst, &w.body_atoms);
+        } else {
+            let alts = enter(g, rule, i, delta, &w.subst);
+            w.choices.push(Choice {
+                i,
+                alts,
+                trail: w.trail.len(),
+                atoms: w.body_atoms.len(),
+            });
+        }
+        // The innermost choice's next alternative, the choices with none
+        // left dropped.
+        loop {
+            let Some(c) = w.choices.last_mut() else {
+                return;
+            };
+            unbind(&mut w.subst, &mut w.trail, c.trail);
+            w.body_atoms.truncate(c.atoms);
+            if take(
+                g,
+                rule,
+                c.i,
+                &mut c.alts,
+                &mut w.subst,
+                &mut w.trail,
+                &mut w.body_atoms,
+            ) {
+                i = c.i + 1;
+                break;
+            }
+            w.choices.pop();
+        }
+    }
+}
+
+/// Keeps the ground rule of `rule` that a walk found, its body literals
+/// `body_atoms` under `subst`.
+fn keep_walked(g: &mut Grounder, rule: &IRule, subst: &[Option<Val>], body_atoms: &[GLit]) {
+    let head_args = resolve(&rule.head.1, subst);
+    if let Some(b) = &mut g.by_level
+        && let Some(&r) = b.rank.get(&rule.head.0)
+    {
+        let key = (level_of(head_args.last()), r);
+        if key != b.current {
+            debug_assert!(b.done.is_none_or(|d| key > d), "a head at a key done");
+            b.deferred
+                .entry(key)
+                .or_default()
+                .push((rule.head.0, head_args, body_atoms.to_vec()));
+            return;
+        }
+    }
+    // The atoms of facts read for the first time, under a demand.
+    if !g.unread.is_empty() {
+        for l in body_atoms {
+            let a = l.atom() as usize;
+            if g.unread.get(a).is_some_and(|&u| u) {
+                g.unread[a] = false;
+                g.read.push(a as AtomId);
+            }
+        }
+    }
+    let (head, new) = g.atom_id(rule.head.0, &head_args);
+    if g.preds[rule.head.0 as usize].control {
+        g.demands += new as usize;
+        return; // control atoms exist only to drive grounding
+    }
+    // A rule whose body atoms are all true in every world makes its
+    // head so, and the head's other derivations say nothing: a closure
+    // of deterministic facts, PSouffle's `equal_assign`, derives each
+    // of its atoms once per atom between, and kept a rule for each.
+    let counted = rule.counted.is_some();
+    if !counted && g.certain(head) {
+        return;
+    }
+    let mut body = body_atoms.to_vec();
+    body.sort_unstable();
+    body.dedup();
+    if let Some(c) = &rule.counted {
+        derive(g, head, &body, c);
+    }
+    if !counted
+        && body
+            .iter()
+            .all(|l| matches!(*l, GLit::Pos(a) if g.certain(a)))
+    {
+        if g.certain.len() <= head as usize {
+            g.certain.resize(head as usize + 1, false);
+        }
+        g.certain[head as usize] = true;
+    }
+    g.keep_rule(GroundRule::new(head, body));
+}
+
+/// The alternatives of body literal `i`, entered under `subst`: the tuples
+/// of a positive literal with a free argument (or walked over `delta`'s
+/// range), the values of `between/3` and the solutions of another built-in;
+/// any other literal has one alternative or none ([`Alts::Once`]).
+fn enter(
     g: &mut Grounder,
     rule: &IRule,
     i: usize,
     delta: Option<(usize, (usize, usize))>,
-    subst: &mut Vec<Option<Val>>,
-    body_atoms: &mut Vec<GLit>,
-) {
-    if g.over() {
-        return;
-    }
-    if i == rule.body.len() {
-        let head_args = resolve(&rule.head.1, subst);
-        if let Some(b) = &mut g.by_level
-            && let Some(&r) = b.rank.get(&rule.head.0)
-        {
-            let key = (level_of(head_args.last()), r);
-            if key != b.current {
-                debug_assert!(b.done.is_none_or(|d| key > d), "a head at a key done");
-                b.deferred.entry(key).or_default().push((
-                    rule.head.0,
-                    head_args,
-                    body_atoms.clone(),
-                ));
-                return;
-            }
-        }
-        // The atoms of facts read for the first time, under a demand.
-        if !g.unread.is_empty() {
-            for l in body_atoms.iter() {
-                let a = l.atom() as usize;
-                if g.unread.get(a).is_some_and(|&u| u) {
-                    g.unread[a] = false;
-                    g.read.push(a as AtomId);
-                }
-            }
-        }
-        let (head, new) = g.atom_id(rule.head.0, &head_args);
-        if g.preds[rule.head.0 as usize].control {
-            g.demands += new as usize;
-            return; // control atoms exist only to drive grounding
-        }
-        // A rule whose body atoms are all true in every world makes its
-        // head so, and the head's other derivations say nothing: a closure
-        // of deterministic facts, PSouffle's `equal_assign`, derives each
-        // of its atoms once per atom between, and kept a rule for each.
-        let counted = rule.counted.is_some();
-        if !counted && g.certain(head) {
-            return;
-        }
-        let mut body = body_atoms.clone();
-        body.sort_unstable();
-        body.dedup();
-        if let Some(c) = &rule.counted {
-            derive(g, head, &body, c);
-        }
-        if !counted
-            && body
-                .iter()
-                .all(|l| matches!(*l, GLit::Pos(a) if g.certain(a)))
-        {
-            if g.certain.len() <= head as usize {
-                g.certain.resize(head as usize + 1, false);
-            }
-            g.certain[head as usize] = true;
-        }
-        g.keep_rule(GroundRule::new(head, body));
-        return;
-    }
+    subst: &[Option<Val>],
+) -> Alts {
     match &rule.body[i] {
         ILit::Pos(p, args) => {
-            let p = *p;
             let range = match delta {
                 Some((j, range)) if j == i => Some(range),
                 _ => None,
@@ -3101,23 +3214,7 @@ fn ground_body(
                         || matches!(a, Arg::Var(v) if subst[*v as usize].is_some())
                 })
             {
-                let Some(id) = with_resolved(args, subst, |vals| g.lookup_atom(p, vals)) else {
-                    return;
-                };
-                let fixed = g.fixed(id);
-                if fixed == Some(false) {
-                    return;
-                }
-                if g.preds[p as usize].control || fixed == Some(true) {
-                    part(g, rule, i, Part::None);
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                } else {
-                    part(g, rule, i, Part::Atom(id));
-                    body_atoms.push(GLit::Pos(id));
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                    body_atoms.pop();
-                }
-                return;
+                return Alts::Once;
             }
             // Candidate tuple indices, from the bound arguments' posting
             // lists, in the delta range where there is one. Scanning the
@@ -3125,7 +3222,7 @@ fn ground_body(
             // candidates on cora500, each of whose facts of `haswordtitle`
             // is a rule guarded by its magic atom, grounded against the many
             // new magic tuples of a round.
-            let bound_pos: Vec<(usize, Val)> = args
+            let bound: Vec<(usize, Val)> = args
                 .iter()
                 .enumerate()
                 .filter_map(|(pos, a)| match a {
@@ -3133,221 +3230,31 @@ fn ground_body(
                     Arg::Var(v) => subst[*v as usize].map(|val| (pos, val)),
                 })
                 .collect();
-            // The variables this literal binds, unbound again after each
-            // candidate.
-            let free: Vec<u32> = args
-                .iter()
-                .filter_map(|a| match a {
-                    Arg::Var(x) if subst[*x as usize].is_none() => Some(*x),
-                    _ => None,
-                })
-                .collect();
-            let control = g.preds[p as usize].control;
-            let candidates = {
-                let rel = &mut g.rels[p as usize];
-                let range = range.unwrap_or((0, rel.len()));
-                rel.candidates(&bound_pos, range)
-            };
-            for t in candidates {
-                let rel = &g.rels[p as usize];
-                let tuple = rel.tuple(t);
-                if !bound_pos.iter().all(|(pos, v)| tuple[*pos] == *v) {
-                    continue;
-                }
-                let mut ok = true;
-                for (a, v) in args.iter().zip(tuple) {
-                    if let Arg::Var(x) = a {
-                        match subst[*x as usize] {
-                            None => subst[*x as usize] = Some(*v),
-                            Some(b) if b != *v => {
-                                ok = false;
-                                break;
-                            }
-                            Some(_) => {}
-                        }
-                    }
-                }
-                let id = rel.ids[t];
-                let fixed = g.fixed(id);
-                if ok && fixed != Some(false) {
-                    if control || fixed == Some(true) {
-                        part(g, rule, i, Part::None);
-                        ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                    } else {
-                        part(g, rule, i, Part::Atom(id));
-                        body_atoms.push(GLit::Pos(id));
-                        ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                        body_atoms.pop();
-                    }
-                }
-                for &x in &free {
-                    subst[x as usize] = None;
-                }
+            let rel = &mut g.rels[*p as usize];
+            let range = range.unwrap_or((0, rel.len()));
+            let candidates = rel.candidates(&bound, range);
+            Alts::Tuples {
+                candidates,
+                next: 0,
+                bound,
             }
         }
-        ILit::Neg(p, args) => {
-            if g.current_stratum.contains(p) && !g.complete(*p, args, subst) {
-                // Same recursive component: possibility unknown yet.
-                let id = with_resolved(args, subst, |vals| g.placeholder_atom(*p, vals));
-                part(g, rule, i, Part::Neg(id));
-                body_atoms.push(GLit::Neg(id));
-                ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                body_atoms.pop();
-                return;
-            }
-            match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
-                // An atom true in every world: the literal is false. Kept
-                // as a literal, it would not stop a demand, whose rule
-                // drops its body: cplint's left-corner grammar demanded
-                // every derivation of a goal's third clause behind
-                // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
-                Some(id) if g.fixed(id) == Some(true) || g.certain(id) => {}
-                Some(id) if g.fixed(id) == Some(false) => {
-                    part(g, rule, i, Part::None);
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms)
-                }
-                // Possible atom: keep the negative literal.
-                Some(id) => {
-                    part(g, rule, i, Part::Neg(id));
-                    body_atoms.push(GLit::Neg(id));
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                    body_atoms.pop();
-                }
-                // Impossible atom: the literal is true.
-                None => {
-                    part(g, rule, i, Part::None);
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms)
-                }
-            }
-        }
-        ILit::Switch(p, args) => {
-            let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
-            part(g, rule, i, Part::Atom(id));
-            body_atoms.push(GLit::Pos(id));
-            ground_body(g, rule, i + 1, delta, subst, body_atoms);
-            body_atoms.pop();
-        }
-        ILit::NegSwitch(p, args) => {
-            let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
-            part(g, rule, i, Part::Neg(id));
-            body_atoms.push(GLit::Neg(id));
-            ground_body(g, rule, i + 1, delta, subst, body_atoms);
-            body_atoms.pop();
-        }
-        ILit::Cmp(op, a, b) => {
-            let arithmetic = op.arithmetic();
-            match (side(g, a, subst, arithmetic), side(g, b, subst, arithmetic)) {
-                (Some(x), Some(y)) if compare(g, *op, x, y) => {
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                }
-                (None, Some(y)) if *op == CmpOp::Eq => {
-                    if let Some(Arg::Var(v)) = a.as_arg() {
-                        subst[*v as usize] = Some(y);
-                        ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                        subst[*v as usize] = None;
-                    }
-                }
-                (Some(x), None) if *op == CmpOp::Eq => {
-                    if let Some(Arg::Var(v)) = b.as_arg() {
-                        subst[*v as usize] = Some(x);
-                        ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                        subst[*v as usize] = None;
-                    }
-                }
-                // Undefined arithmetic (or an unbound side) fails the literal.
-                _ => {}
-            }
-        }
-        ILit::Is(v, e) => {
-            if let Some(x) = eval_num(g, e, subst).map(|n| n.rounded().val()) {
-                match v {
-                    Arg::Var(var) => match subst[*var as usize] {
-                        None => {
-                            subst[*var as usize] = Some(x);
-                            ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                            subst[*var as usize] = None;
-                        }
-                        Some(b) => {
-                            if b == x {
-                                ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                            }
-                        }
-                    },
-                    Arg::Val(c) => {
-                        if *c == x {
-                            ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                        }
-                    }
-                }
-            }
-        }
-        // Taken apart where the term is bound, built from its bound
-        // arguments otherwise.
-        ILit::Build(target, name, args) => {
-            let mut bound = Vec::new();
-            let ok = match arg_val(target, subst) {
-                Some(Val::Fn(id)) => {
-                    let key = g.terms.keys.list(id as usize);
-                    key[0] == Val::Sym(*name) && key.len() == 1 + args.len() && {
-                        let vals: Vec<Val> = key[1..].to_vec();
-                        unify_args(args, &vals, subst, &mut bound)
-                    }
-                }
-                Some(_) => false,
-                None => {
-                    let vals = resolve(args, subst);
-                    let v = g.intern_fn(*name, &vals, true);
-                    unify_args(std::slice::from_ref(target), &[v], subst, &mut bound)
-                }
-            };
-            if ok {
-                ground_body(g, rule, i + 1, delta, subst, body_atoms);
-            }
-            for x in bound {
-                subst[x as usize] = None;
-            }
-        }
-        ILit::Builtin(b, args, negated) => {
+        ILit::Builtin(b, args, false) => {
             let vals: Vec<Option<Val>> = args.iter().map(|a| arg_val(a, subst)).collect();
-            let mut bound = Vec::new();
             // The range of `between/3`, walked without listing it.
-            if *b == Builtin::Between && vals[2].is_none() && !negated {
-                let (Some(Val::Int(lo)), Some(Val::Int(hi))) = (vals[0], vals[1]) else {
-                    return;
+            if *b == Builtin::Between && vals[2].is_none() {
+                return match (vals[0], vals[1]) {
+                    (Some(Val::Int(lo)), Some(Val::Int(hi))) => Alts::Range {
+                        lo,
+                        next: (lo <= hi).then_some(lo),
+                        hi,
+                    },
+                    _ => Alts::Spent,
                 };
-                for x in lo..=hi {
-                    if g.over() {
-                        break;
-                    }
-                    if unify_args(&args[2..], &[Val::Int(x)], subst, &mut bound) {
-                        part(g, rule, i, Part::Rank((x - lo) as u32));
-                        ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                    }
-                    for x in bound.drain(..) {
-                        subst[x as usize] = None;
-                    }
-                }
-                return;
             }
-            let sols = solutions(g, *b, &vals);
-            if *negated {
-                if !sols.iter().any(|s| {
-                    args.iter()
-                        .zip(s)
-                        .all(|(a, v)| arg_val(a, subst) == Some(*v))
-                }) {
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                }
-                return;
-            }
-            for (rank, sol) in sols.iter().enumerate() {
-                if unify_args(args, sol, subst, &mut bound) {
-                    part(g, rule, i, Part::Rank(rank as u32));
-                    ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                }
-                for x in bound.drain(..) {
-                    subst[x as usize] = None;
-                }
+            Alts::Solutions {
+                sols: solutions(g, *b, &vals),
+                next: 0,
             }
         }
         ILit::Collect(c) => {
@@ -3356,36 +3263,266 @@ fn ground_body(
             {
                 let result = g.term_of(v);
                 g.fail(lists::not_a_list(&c.text, &result));
-                return;
+                return Alts::Spent;
             }
             let shared = resolve(&c.shared, subst);
-            let Some(lists) = collect(g, c, &shared) else {
-                return;
+            match collect(g, c, &shared) {
+                Some(lists) => Alts::Lists { lists, next: 0 },
+                None => Alts::Spent,
+            }
+        }
+        _ => Alts::Once,
+    }
+}
+
+/// Takes literal `i`'s next alternative left in `alts`: binds its
+/// variables, on the trail, and adds its body literal. False where none is
+/// left.
+fn take(
+    g: &mut Grounder,
+    rule: &IRule,
+    i: usize,
+    alts: &mut Alts,
+    subst: &mut [Option<Val>],
+    trail: &mut Vec<u32>,
+    body_atoms: &mut Vec<GLit>,
+) -> bool {
+    match alts {
+        Alts::Spent => false,
+        Alts::Once => {
+            *alts = Alts::Spent;
+            take_once(g, rule, i, subst, trail, body_atoms)
+        }
+        Alts::Tuples {
+            candidates,
+            next,
+            bound,
+        } => {
+            let ILit::Pos(p, args) = &rule.body[i] else {
+                unreachable!("tuples of a positive literal")
             };
-            let mut bound = Vec::new();
-            for (list, cond) in lists {
-                if unify_args(std::slice::from_ref(&c.result), &[list], subst, &mut bound) {
-                    match cond {
-                        None => {
-                            part(g, rule, i, Part::None);
-                            ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                        }
-                        Some((positive, a)) => {
-                            let (p, l) = match positive {
-                                true => (Part::Atom(a), GLit::Pos(a)),
-                                false => (Part::Neg(a), GLit::Neg(a)),
-                            };
-                            part(g, rule, i, p);
-                            body_atoms.push(l);
-                            ground_body(g, rule, i + 1, delta, subst, body_atoms);
-                            body_atoms.pop();
-                        }
+            let p = *p as usize;
+            let control = g.preds[p].control;
+            while let Some(&t) = candidates.get(*next) {
+                *next += 1;
+                let rel = &g.rels[p];
+                let tuple = rel.tuple(t);
+                if !bound.iter().all(|(pos, v)| tuple[*pos] == *v) {
+                    continue;
+                }
+                let mark = trail.len();
+                let id = rel.ids[t];
+                let fixed = g.fixed(id);
+                if !unify_args(args, tuple, subst, trail) || fixed == Some(false) {
+                    unbind(subst, trail, mark);
+                    continue;
+                }
+                if control || fixed == Some(true) {
+                    part(g, rule, i, Part::None);
+                } else {
+                    part(g, rule, i, Part::Atom(id));
+                    body_atoms.push(GLit::Pos(id));
+                }
+                return true;
+            }
+            false
+        }
+        Alts::Range { lo, next, hi } => {
+            let ILit::Builtin(_, args, _) = &rule.body[i] else {
+                unreachable!("the range of between/3")
+            };
+            while let Some(x) = next.take() {
+                *next = (x < *hi).then(|| x + 1);
+                let mark = trail.len();
+                if unify_args(&args[2..], &[Val::Int(x)], subst, trail) {
+                    part(g, rule, i, Part::Rank((x - *lo) as u32));
+                    return true;
+                }
+                unbind(subst, trail, mark);
+            }
+            false
+        }
+        Alts::Solutions { sols, next } => {
+            let ILit::Builtin(_, args, _) = &rule.body[i] else {
+                unreachable!("the solutions of a built-in")
+            };
+            while let Some(sol) = sols.get(*next) {
+                let rank = *next;
+                *next += 1;
+                let mark = trail.len();
+                if unify_args(args, sol, subst, trail) {
+                    part(g, rule, i, Part::Rank(rank as u32));
+                    return true;
+                }
+                unbind(subst, trail, mark);
+            }
+            false
+        }
+        Alts::Lists { lists, next } => {
+            let ILit::Collect(c) = &rule.body[i] else {
+                unreachable!("the lists of a findall")
+            };
+            while let Some(&(list, cond)) = lists.get(*next) {
+                *next += 1;
+                let mark = trail.len();
+                if !unify_args(std::slice::from_ref(&c.result), &[list], subst, trail) {
+                    unbind(subst, trail, mark);
+                    continue;
+                }
+                match cond {
+                    None => part(g, rule, i, Part::None),
+                    Some((true, a)) => {
+                        part(g, rule, i, Part::Atom(a));
+                        body_atoms.push(GLit::Pos(a));
+                    }
+                    Some((false, a)) => {
+                        part(g, rule, i, Part::Neg(a));
+                        body_atoms.push(GLit::Neg(a));
                     }
                 }
-                for x in bound.drain(..) {
-                    subst[x as usize] = None;
+                return true;
+            }
+            false
+        }
+    }
+}
+
+/// Takes the one alternative of literal `i` ([`Alts::Once`]), if it has
+/// one. Where it has none the walk unbinds what this bound.
+fn take_once(
+    g: &mut Grounder,
+    rule: &IRule,
+    i: usize,
+    subst: &mut [Option<Val>],
+    trail: &mut Vec<u32>,
+    body_atoms: &mut Vec<GLit>,
+) -> bool {
+    match &rule.body[i] {
+        ILit::Pos(p, args) => {
+            let p = *p;
+            let Some(id) = with_resolved(args, subst, |vals| g.lookup_atom(p, vals)) else {
+                return false;
+            };
+            let fixed = g.fixed(id);
+            if fixed == Some(false) {
+                return false;
+            }
+            if g.preds[p as usize].control || fixed == Some(true) {
+                part(g, rule, i, Part::None);
+            } else {
+                part(g, rule, i, Part::Atom(id));
+                body_atoms.push(GLit::Pos(id));
+            }
+            true
+        }
+        ILit::Neg(p, args) => {
+            if g.current_stratum.contains(p) && !g.complete(*p, args, subst) {
+                // Same recursive component: possibility unknown yet.
+                let id = with_resolved(args, subst, |vals| g.placeholder_atom(*p, vals));
+                part(g, rule, i, Part::Neg(id));
+                body_atoms.push(GLit::Neg(id));
+                return true;
+            }
+            match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
+                // An atom true in every world: the literal is false. Kept
+                // as a literal, it would not stop a demand, whose rule
+                // drops its body: cplint's left-corner grammar demanded
+                // every derivation of a goal's third clause behind
+                // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
+                Some(id) if g.fixed(id) == Some(true) || g.certain(id) => false,
+                Some(id) if g.fixed(id) == Some(false) => {
+                    part(g, rule, i, Part::None);
+                    true
+                }
+                // Possible atom: keep the negative literal.
+                Some(id) => {
+                    part(g, rule, i, Part::Neg(id));
+                    body_atoms.push(GLit::Neg(id));
+                    true
+                }
+                // Impossible atom: the literal is true.
+                None => {
+                    part(g, rule, i, Part::None);
+                    true
                 }
             }
         }
+        ILit::Switch(p, args) => {
+            let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
+            part(g, rule, i, Part::Atom(id));
+            body_atoms.push(GLit::Pos(id));
+            true
+        }
+        ILit::NegSwitch(p, args) => {
+            let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
+            part(g, rule, i, Part::Neg(id));
+            body_atoms.push(GLit::Neg(id));
+            true
+        }
+        ILit::Cmp(op, a, b) => {
+            let arithmetic = op.arithmetic();
+            match (side(g, a, subst, arithmetic), side(g, b, subst, arithmetic)) {
+                (Some(x), Some(y)) => compare(g, *op, x, y),
+                (None, Some(y)) if *op == CmpOp::Eq => match a.as_arg() {
+                    Some(Arg::Var(v)) => {
+                        bind(subst, trail, *v, y);
+                        true
+                    }
+                    _ => false,
+                },
+                (Some(x), None) if *op == CmpOp::Eq => match b.as_arg() {
+                    Some(Arg::Var(v)) => {
+                        bind(subst, trail, *v, x);
+                        true
+                    }
+                    _ => false,
+                },
+                // Undefined arithmetic (or an unbound side) fails the literal.
+                _ => false,
+            }
+        }
+        ILit::Is(v, e) => {
+            let Some(x) = eval_num(g, e, subst).map(|n| n.rounded().val()) else {
+                return false;
+            };
+            match v {
+                Arg::Var(var) => match subst[*var as usize] {
+                    None => {
+                        bind(subst, trail, *var, x);
+                        true
+                    }
+                    Some(b) => b == x,
+                },
+                Arg::Val(c) => *c == x,
+            }
+        }
+        // Taken apart where the term is bound, built from its bound
+        // arguments otherwise.
+        ILit::Build(target, name, args) => match arg_val(target, subst) {
+            Some(Val::Fn(id)) => {
+                let key = g.terms.keys.list(id as usize);
+                key[0] == Val::Sym(*name) && key.len() == 1 + args.len() && {
+                    let vals: Vec<Val> = key[1..].to_vec();
+                    unify_args(args, &vals, subst, trail)
+                }
+            }
+            Some(_) => false,
+            None => {
+                let vals = resolve(args, subst);
+                let v = g.intern_fn(*name, &vals, true);
+                unify_args(std::slice::from_ref(target), &[v], subst, trail)
+            }
+        },
+        // A negated built-in holds where no solution matches its arguments.
+        ILit::Builtin(b, args, _) => {
+            let vals: Vec<Option<Val>> = args.iter().map(|a| arg_val(a, subst)).collect();
+            !solutions(g, *b, &vals).iter().any(|s| {
+                args.iter()
+                    .zip(s)
+                    .all(|(a, v)| arg_val(a, subst) == Some(*v))
+            })
+        }
+        // enter() gives a findall its lists as alternatives (Alts::Lists).
+        ILit::Collect(_) => unreachable!("a findall is taken from its lists"),
     }
 }
