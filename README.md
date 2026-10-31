@@ -296,7 +296,7 @@ and Q9, and paths of two edges in random graphs.
        alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **607 of 634** networks: bnlearn's, the large ones and
+tddlog answers **609 of 636** networks: bnlearn's, the large ones and
 the Roulette and noDice papers' versions among them, Ace's, the noisy-or
 networks, and the networks of the UAI 2022 competition and of Ihler's
 collection whose factors are conditional probability tables
@@ -305,12 +305,12 @@ classic networks).
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 414 | 34 h | 1.3 h | 23× |
+| Ace | 416 | 34 h | 1.3 h | 23× |
 | TensorInference.jl | 323 | 56 h | 1.5 h | 34× |
 | Merlin | 293 | 57 h | 1.5 h | 34× |
 | libDAI | 291 | 58 h | 1.5 h | 33× |
-| pyAgrum | 263 | 62 h | 1.5 h | 37× |
-| 14 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Scallop, Psi, Geni | 43 to 236 | over 19 h each | 2 min to 1.5 h | at least 42× |
+| pyAgrum | 263 | 63 h | 1.5 h | 37× |
+| 14 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Scallop, Psi, Geni | 43 to 238 | over 19 h each | 2 min to 1.5 h | at least 42× |
 
 - Where others win: the networks named BN of Ihler's collection. tddlog
   runs out of time on seven that pyAgrum or Merlin answers in 0.3 to 2.1 s,
@@ -326,7 +326,7 @@ PSouffle was given 11 of the networks and answers 6.
        alt="Markov networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **245 of 292** networks, those of the UAI 2022
+tddlog answers **243 of 290** networks, those of the UAI 2022
 competition and of Ihler's collection whose factors are not conditional
 probability tables over an acyclic graph: object detection,
 segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
@@ -334,11 +334,11 @@ the rus networks, weighted CSPs, and pedigree and diagnosis networks.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| TensorInference.jl | 198 | 9.7 h | 2.6 h | 2.6× |
-| libDAI | 180 | 14 h | 1.4 h | 17× |
-| Merlin | 171 | 14 h | 1.6 h | 11× |
-| pyAgrum | 170 | 14 h | 1.4 h | 13× |
-| pgmpy | 117 | 23 h | 1.4 h | 29× |
+| TensorInference.jl | 198 | 9.3 h | 2.6 h | 2.5× |
+| libDAI | 180 | 13 h | 1.4 h | 16× |
+| Merlin | 171 | 13 h | 1.6 h | 11× |
+| pyAgrum | 170 | 13 h | 1.4 h | 13× |
+| pgmpy | 117 | 22 h | 1.4 h | 28× |
 
 - Where others win: six partition functions of the UAI 2022 final set,
   five of them protein networks, and Ihler's pedigree50 run out of time
