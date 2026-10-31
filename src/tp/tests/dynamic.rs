@@ -40,8 +40,12 @@ fn every_example_answers_the_same_on_a_vtree_searched_at_every_step() {
     for entry in std::fs::read_dir("examples").expect("the examples directory") {
         let path = entry.expect("an entry").path();
         // unsound.pl has no answer to compare; tests/it/examples.rs checks that
-        // it is refused.
-        if path.extension().is_none_or(|e| e != "pl") || path.ends_with("unsound.pl") {
+        // it is refused. chain.pl takes arguments, with which
+        // tests/it/examples.rs runs it.
+        if path.extension().is_none_or(|e| e != "pl")
+            || path.ends_with("unsound.pl")
+            || path.ends_with("chain.pl")
+        {
             continue;
         }
         let program =

@@ -247,6 +247,26 @@ command line takes the format from the file's extension
 `bif`, `hugin`, `xdsl`, `uai`), with a network's evidence file as its
 contents; a network's options given for another format are refused.
 
+A ProbLog program or an LPAD may take arguments, the values after its
+file on the command line (`ReadOptions::arguments` in the library and
+the bindings), as a shell script does: each place `$N` of its text takes
+the term that argument N writes, before the LPAD reader or the parser
+reads the text (`syntax/arguments.rs`), so that one program serves every
+size, probability, query and observation. The lexer finds the places
+(`$` and digits), outside comments and quoted atoms as it reads them
+everywhere, in a scan of its own before the parse; a place the parse
+meets, in a program given no arguments, is an error on its line. Each
+argument is parsed as a term first, and one with an operator at its top
+takes its place in parentheses (`1/3` as `(1/3)`); a space keeps it
+apart from a neighbour it would run into (`5-$1` of `-3` as `5- -3`).
+A place without an argument, an argument without a place, an argument
+that is not a term, and arguments for a Dice program or a network are
+refused. `tddlog --program` prints the program with its arguments in
+place, which any system that reads ProbLog then reads. The files a
+program consults are read after its arguments took their places, and
+their own places take none. The example queries of an LPAD sit in a
+comment and take no arguments.
+
 A source that holds the directive `:- begin_lpad.` (or cplint's other
 spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and
 `syntax/lpad.rs` reads it as a ProbLog program, which the parser then

@@ -15,12 +15,19 @@
 //! body.` and `evidence(p(X)) :- body.`. No cut or `assert`. The grounder
 //! grounds a program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
+//!
+//! A place `$N` (`$1`, `$2`, ...) outside comments and quoted atoms takes
+//! the program's argument N, a term, before the program is read:
+//! [`crate::read`] takes the arguments ([`crate::network::ReadOptions`]),
+//! as the command line takes the values after the program's file.
 
+mod arguments;
 pub mod dice;
 mod lexer;
 pub mod lpad;
 mod parser;
 
+pub(crate) use arguments::bind;
 pub use parser::{Consult, ParseError, consults, parse_program};
 
 use std::cmp::Ordering;

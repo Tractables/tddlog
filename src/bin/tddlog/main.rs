@@ -16,13 +16,19 @@ use tddlog::{Format, Input, Options, Progress, Strategy};
 use stats::{ground_line, print_stats};
 
 const USAGE: &str = "\
-usage: tddlog [options] <program.pl | program.dice | network>
+usage: tddlog [options] <program.pl | program.dice | network> [argument ...]
 
 Prints one `atom:<tab>probability` line per query, like ProbLog. A network
 file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
 read as a program of one annotated disjunction per row of its tables, a
 Dice program (.dice) as the program its symbolic evaluation writes, and a
 program that holds `:- begin_lpad.` as an LPAD written for cplint.
+
+The arguments after a ProbLog program or an LPAD take the places $1, $2,
+... in its text, outside comments and quoted atoms, each read as a term:
+`tddlog walk.pl 100 0.3` reads `between(1, $1, I)` as `between(1, 100, I)`
+and `$2::step.` as `0.3::step.`. Each argument must have its place, and
+each place its argument.
 
 options:
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)
@@ -69,7 +75,8 @@ options:
                                         sum, for a file that writes its tables in percent or as
                                         weights
   --program                             print the program a network, a Dice program or an LPAD
-                                        is read as and exit
+                                        is read as, or a program with its arguments in place,
+                                        and exit
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error
@@ -92,6 +99,8 @@ enum Request {
 
 struct Args {
     file: String,
+    /// The values after the file, which take its places `$1`, `$2`, ...
+    arguments: Vec<String>,
     strategy: Strategy,
     ground_only: bool,
     stats: bool,
@@ -111,6 +120,7 @@ struct Args {
 fn parse_args() -> Result<Request, String> {
     let mut args = std::env::args().skip(1);
     let mut file = None;
+    let mut arguments = Vec::new();
     let mut strategy = None;
     let mut precision = None;
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
@@ -143,15 +153,17 @@ fn parse_args() -> Result<Request, String> {
             }
             option @ "--rescale" => once(&mut rescale, (), option)?,
             option @ "--program" => once(&mut program_only, (), option)?,
-            other if other.starts_with('-') => {
+            // A negative number is an argument.
+            other
+                if other.starts_with('-')
+                    && !other[1..].starts_with(|c: char| c.is_ascii_digit()) =>
+            {
                 return Err(format!("unknown option `{other}`\n{USAGE}"));
             }
-            other => {
-                if file.is_some() {
-                    return Err(format!("only one program file is accepted\n{USAGE}"));
-                }
-                file = Some(other.to_string());
-            }
+            other => match file {
+                None => file = Some(other.to_string()),
+                Some(_) => arguments.push(other.to_string()),
+            },
         }
     }
     let file = file.ok_or_else(|| USAGE.to_string())?;
@@ -214,6 +226,7 @@ fn parse_args() -> Result<Request, String> {
     let precision = precision.unwrap_or(6);
     Ok(Request::Run(Args {
         file,
+        arguments,
         strategy,
         ground_only,
         stats,
@@ -280,6 +293,7 @@ fn main() -> ExitCode {
         queries: args.queries.clone(),
         evidence,
         rescale: args.rescale,
+        arguments: args.arguments.clone(),
     };
     let started = Instant::now();
     let mut input = match tddlog::read(&data, args.format, &options) {
@@ -293,21 +307,23 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    // A ProbLog program's own text, with the files it consults in their
-    // directives' places.
-    if let Cow::Borrowed(text) = input.program {
-        input.program = match tddlog::consult(text, &args.file) {
-            Ok(program) => program,
+    // A ProbLog program's text, its arguments in place, with the files it
+    // consults in their directives' places. An LPAD's program has no
+    // directives.
+    if args.format == Format::Problog {
+        match tddlog::consult(&input.program, &args.file) {
+            Ok(Cow::Borrowed(_)) => {}
+            Ok(Cow::Owned(program)) => input.program = Cow::Owned(program),
             Err(e) => {
                 eprintln!("{}: {e}", args.file);
                 return ExitCode::FAILURE;
             }
-        };
+        }
     }
     front.text_secs = started.elapsed().as_secs_f64();
     // An LPAD's example queries that its program leaves out are named, and
-    // `--program` prints the program a network, a Dice program, an LPAD or
-    // a program that consults files is read as.
+    // `--program` prints the program a network, a Dice program, an LPAD, a
+    // program given arguments or a program that consults files is read as.
     for note in &input.left_out {
         eprintln!("{}: {note}", args.file);
     }
@@ -315,8 +331,8 @@ fn main() -> ExitCode {
         let Cow::Owned(program) = &input.program else {
             eprintln!(
                 "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
-                 program (.dice), an LPAD (a program that holds `:- begin_lpad.`) or a program \
-                 that consults files, and {} is none of them",
+                 program (.dice), an LPAD (a program that holds `:- begin_lpad.`), a program \
+                 given arguments or a program that consults files, and {} is none of them",
                 args.file
             );
             return ExitCode::from(2);

@@ -22,6 +22,7 @@ fn read(path: &str, queries: Queries, evidence: Option<&str>, rescale: bool) -> 
         evidence: evidence
             .map(|e| Evidence::of_path(e, evidence_data.as_deref().unwrap()).unwrap()),
         rescale,
+        ..ReadOptions::default()
     };
     let format = Format::of_path(path).unwrap();
     network::read(&data, format, &options)

@@ -112,11 +112,16 @@ against the probabilities worked out by hand.
   `evidence` is the text of its evidence file, an Ace `.inst` file or,
   for a UAI network, a UAI `.evid` file. For a UAI `MARKOV` network,
   `P(e)` is the partition function given the evidence.
+- `arguments` in the options, `num_arguments` strings, are a ProbLog
+  program's or an LPAD's arguments, the values the command line takes
+  after the program's file: each the text of a term that takes the
+  places `$1`, `$2`, ... of the program.
 - `tddlog_solve` returns `TDDLOG_OK` or an error status, and
   `tddlog_last_error_message()` the message the command line prints:
   `TDDLOG_ERROR_INVALID_INPUT` for a null pointer, an unknown format or
-  strategy, evidence for a program that is not a network, or options
-  that ask for nothing;
+  strategy, evidence for a program that is not a network, arguments for
+  one that is not a ProbLog program or an LPAD, an argument that is not
+  a term or that no place takes, or options that ask for nothing;
   `TDDLOG_ERROR_PARSE`, `TDDLOG_ERROR_GROUND` and `TDDLOG_ERROR_COMPILE`
   for a program tddlog cannot answer; `TDDLOG_ERROR_PANIC` for a bug.
 - The answers are in the order of the program's queries, each as ProbLog

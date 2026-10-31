@@ -59,6 +59,32 @@ test("the program, its format and the strategy go on the heap and every allocati
   assert.equal(freed.length, 4);
 });
 
+test("a program's arguments go on the heap as an array of pointers, and are freed", () => {
+  const freed = [];
+  const heap = new Uint8Array(1024);
+  let next = 16;
+  const text = (at) => new TextDecoder().decode(heap.subarray(at, heap.indexOf(0, at)));
+  const solver = {
+    HEAPU8: heap,
+    _malloc: (n) => { const at = next; next += n; return at; },
+    _free: (ptr) => freed.push(ptr),
+    _tddlog_solve_json: (program, format, observed, strategy, evidence, list, count) => {
+      assert.equal(text(program), "$2::a($1). query(a($1)).");
+      assert.equal(count, 2);
+      const view = new DataView(heap.buffer);
+      assert.deepEqual([0, 1].map((k) => text(view.getUint32(list + 4 * k, true))), ["7", "0.3"]);
+      return 8;
+    },
+    _tddlog_string_free: (ptr) => freed.push(ptr),
+    UTF8ToString: () => '{"answers":[],"evidence":null}',
+  };
+  tddlogRuntime.solve(solver, "$2::a($1). query(a($1)).", "auto", false, "problog", null, ["7", "0.3"]);
+  // The program, its format, the strategy, two arguments, their array and
+  // the result.
+  assert.equal(freed.length, 7);
+  assert.throws(() => tddlogRuntime.solve(solver, "", "auto", false, "problog", null, [7]), /array of strings/);
+});
+
 test("a module that aborts is reported, with the reason it wrote", async () => {
   const freed = [];
   const solver = {

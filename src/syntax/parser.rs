@@ -99,30 +99,36 @@ pub fn consults(src: &str) -> Result<Vec<Consult>, ParseError> {
     parse(src, Some(Vec::new())).map(|(_, consults)| consults.expect("read"))
 }
 
+/// How `text`, a program's argument ([`super::arguments`]), reads as a
+/// term: `Ok(true)` where it is one with no operator at its top, which
+/// takes a place `$N` as it is written, and `Ok(false)` where it is one
+/// with an operator at its top, which takes it in parentheses.
+pub(crate) fn argument(text: &str) -> Result<bool, ParseError> {
+    let mut p = Parser::new(text, None);
+    let start = p.mark();
+    let primary = matches!(p.primary(), Ok((_, 0))) && p.at(Tok::Eof);
+    let read = match primary {
+        true => Ok(()),
+        false => {
+            p.rewind(start);
+            p.term(1200).and_then(|_| match p.peek() {
+                Tok::Eof => Ok(()),
+                other => p.err(format!("unexpected {}", p.lexer.show(other))),
+            })
+        }
+    };
+    // The lexer's error, where it stopped, comes first, as in a parse.
+    match p.lexer.error() {
+        Some(e) => Err(e.into()),
+        None => read.map(|()| primary),
+    }
+}
+
 fn parse(
     src: &str,
     consults: Option<Vec<Consult>>,
 ) -> Result<(Program, Option<Vec<Consult>>), ParseError> {
-    let eof = || Spanned {
-        tok: Tok::Eof,
-        line: 1,
-    };
-    let mut p = Parser {
-        lexer: Lexer::new(src),
-        ahead: [eof(), eof()],
-        cur: false,
-        anon: 0,
-        aggregates: 0,
-        group: 0,
-        lits: Vec::new(),
-        terms: Vec::new(),
-        args: Vec::new(),
-        heads: Vec::new(),
-        expected: 0,
-        consults,
-    };
-    p.bump();
-    p.bump();
+    let mut p = Parser::new(src, consults);
     let mut prog = Program::default();
     let mut parsed = Ok(());
     while !p.at(Tok::Eof) {
@@ -292,6 +298,31 @@ fn special(name: &str, arity: usize) -> bool {
 }
 
 impl<'a> Parser<'a> {
+    /// A parser at the start of `src`, its first two tokens read.
+    fn new(src: &'a str, consults: Option<Vec<Consult>>) -> Self {
+        let eof = || Spanned {
+            tok: Tok::Eof,
+            line: 1,
+        };
+        let mut p = Parser {
+            lexer: Lexer::new(src),
+            ahead: [eof(), eof()],
+            cur: false,
+            anon: 0,
+            aggregates: 0,
+            group: 0,
+            lits: Vec::new(),
+            terms: Vec::new(),
+            args: Vec::new(),
+            heads: Vec::new(),
+            expected: 0,
+            consults,
+        };
+        p.bump();
+        p.bump();
+        p
+    }
+
     fn peek(&self) -> Tok<'a> {
         self.ahead[usize::from(self.cur)].tok
     }

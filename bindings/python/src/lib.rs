@@ -142,13 +142,22 @@ impl Solution {
 /// ``P(e)``, compiling the evidence no query depends on rather than dropping
 /// it. ``queries=False`` leaves out the program's queries, as
 /// ``--no-queries`` does, and needs ``evidence_probability=True``.
+/// ``arguments``, a list of strings, are a ProbLog program's or an LPAD's
+/// arguments, the values the command line takes after the program's
+/// file: each the text of a term that takes the places ``$1``, ``$2``,
+/// ... of the program, as in
+/// ``solve("$1::a. query(a).", arguments=["0.3"])``.
 ///
 /// An unknown ``format`` or ``vtree``, ``evidence`` for a program that is
-/// not a network, or options that ask for nothing raise ``ValueError``; a
+/// not a network, ``arguments`` for one that is not a ProbLog program or
+/// an LPAD, an argument that is not a term or that no place takes, or
+/// options that ask for nothing raise ``ValueError``; a place without an
+/// argument raises ``tddlog.ParseError``; a
 /// program tddlog cannot answer raises a subclass of ``tddlog.Error``. The
 /// interpreter lock is released for the whole run.
 #[pyfunction]
-#[pyo3(signature = (program, *, format = "problog", evidence = None, vtree = "auto", evidence_probability = false, queries = true))]
+#[pyo3(signature = (program, *, format = "problog", evidence = None, vtree = "auto", evidence_probability = false, queries = true, arguments = None))]
+#[allow(clippy::too_many_arguments)]
 fn solve(
     py: Python<'_>,
     program: &str,
@@ -157,6 +166,7 @@ fn solve(
     vtree: &str,
     evidence_probability: bool,
     queries: bool,
+    arguments: Option<Vec<String>>,
 ) -> PyResult<Solution> {
     let format = format
         .parse::<tddlog::Format>()
@@ -171,6 +181,7 @@ fn solve(
         },
         evidence: evidence.map(|e| format.evidence(e.as_bytes())),
         rescale: false,
+        arguments: arguments.unwrap_or_default(),
     };
     let options = tddlog::Options {
         strategy,

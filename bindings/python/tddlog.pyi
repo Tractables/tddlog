@@ -42,4 +42,5 @@ def solve(
     vtree: str = "auto",
     evidence_probability: bool = False,
     queries: bool = True,
+    arguments: list[str] | None = None,
 ) -> Solution: ...

@@ -24,7 +24,9 @@ pub type TddlogStatus = i32;
 pub const TDDLOG_OK: i32 = 0;
 /// The arguments broke a documented contract: a null pointer, a format or
 /// vtree strategy that is not UTF-8 or is unknown, evidence for a program
-/// that is not a network, or options that ask for nothing.
+/// that is not a network, program arguments for one that is not a ProbLog
+/// program or an LPAD, a program argument that is not UTF-8, is not a term
+/// or has no place, or options that ask for nothing.
 pub const TDDLOG_ERROR_INVALID_INPUT: i32 = 1;
 /// The program is not in the language or the format it is said to be in.
 pub const TDDLOG_ERROR_PARSE: i32 = 2;
@@ -64,6 +66,13 @@ pub struct TddlogOptions {
     /// command line's `--evidence` reads it: an Ace `.inst` file, or a UAI
     /// `.evid` file for a UAI network. Null for none.
     pub evidence: *const c_char,
+    /// The arguments of a ProbLog program or an LPAD, as the command line
+    /// takes them after the program's file: `num_arguments` NUL-terminated
+    /// strings, each the text of a term that takes the places `$1`, `$2`,
+    /// ... of the program. Null for none.
+    pub arguments: *const *const c_char,
+    /// The number of strings `arguments` points to.
+    pub num_arguments: usize,
 }
 
 /// The answers to a program's queries, and `P(e)` where it was asked for.
@@ -123,7 +132,7 @@ pub extern "C" fn tddlog_last_error_message() -> *const c_char {
 }
 
 /// The defaults: `"auto"`, the queries answered, no `P(e)`, a ProbLog
-/// program without an evidence file.
+/// program without an evidence file or arguments.
 #[unsafe(no_mangle)]
 pub extern "C" fn tddlog_options_default() -> TddlogOptions {
     TddlogOptions {
@@ -132,6 +141,8 @@ pub extern "C" fn tddlog_options_default() -> TddlogOptions {
         queries: true,
         format: std::ptr::null(),
         evidence: std::ptr::null(),
+        arguments: std::ptr::null(),
+        num_arguments: 0,
     }
 }
 
@@ -146,8 +157,9 @@ pub extern "C" fn tddlog_options_default() -> TddlogOptions {
 ///
 /// `program` must point to a NUL-terminated string, `options` must be null or
 /// point to one `TddlogOptions` whose `vtree`, `format` and `evidence` are
-/// each null or a NUL-terminated string, and `out` must point to storage for
-/// one pointer.
+/// each null or a NUL-terminated string and whose `arguments` is null or
+/// points to `num_arguments` NUL-terminated strings, and `out` must point to
+/// storage for one pointer.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn tddlog_solve(
     program: *const c_char,
@@ -175,6 +187,10 @@ pub unsafe extern "C" fn tddlog_solve(
         true => None,
         false => Some(unsafe { CStr::from_ptr(options.evidence) }.to_bytes()),
     };
+    let Some(arguments) = (unsafe { program_arguments(options.arguments, options.num_arguments) })
+    else {
+        return TDDLOG_ERROR_INVALID_INPUT;
+    };
     let read = tddlog::network::ReadOptions {
         queries: match options.queries {
             true => tddlog::network::Queries::All,
@@ -182,6 +198,7 @@ pub unsafe extern "C" fn tddlog_solve(
         },
         evidence: evidence.map(|e| format.evidence(e)),
         rescale: false,
+        arguments,
     };
     let options = tddlog::Options {
         strategy,
@@ -331,6 +348,44 @@ unsafe fn bytes<'a>(pointer: *const c_char, what: &str) -> Option<&'a [u8]> {
         return None;
     }
     Some(unsafe { CStr::from_ptr(pointer) }.to_bytes())
+}
+
+/// The `count` strings at `pointer`, none where `count` is 0, recording why
+/// not where `pointer` is null for some or one of them is null or not
+/// UTF-8.
+///
+/// # Safety
+///
+/// `pointer` must be null or point to `count` pointers, each null or to a
+/// NUL-terminated string.
+unsafe fn program_arguments(pointer: *const *const c_char, count: usize) -> Option<Vec<String>> {
+    if count == 0 {
+        return Some(Vec::new());
+    }
+    if pointer.is_null() {
+        fail(
+            TDDLOG_ERROR_INVALID_INPUT,
+            "options->arguments must not be null where options->num_arguments is not 0",
+        );
+        return None;
+    }
+    let pointers = unsafe { std::slice::from_raw_parts(pointer, count) };
+    let mut read = Vec::with_capacity(count);
+    for (k, &argument) in pointers.iter().enumerate() {
+        let what = format!("options->arguments[{k}]");
+        let text = unsafe { bytes(argument, &what) }?;
+        match std::str::from_utf8(text) {
+            Ok(text) => read.push(text.to_string()),
+            Err(e) => {
+                fail(
+                    TDDLOG_ERROR_INVALID_INPUT,
+                    &format!("{what} is not UTF-8: {e}"),
+                );
+                return None;
+            }
+        }
+    }
+    Some(read)
 }
 
 /// What the name at `pointer` names, the default where it is null,

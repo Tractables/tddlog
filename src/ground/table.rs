@@ -642,7 +642,9 @@ mod tests {
         let mut seen = 0;
         for entry in std::fs::read_dir(dir).expect("examples") {
             let path = entry.expect("an entry").path();
-            if path.extension().is_none_or(|e| e != "pl") {
+            // chain.pl takes arguments, with which tests/it/examples.rs
+            // runs it.
+            if path.extension().is_none_or(|e| e != "pl") || path.ends_with("chain.pl") {
                 continue;
             }
             let source = std::fs::read_to_string(&path).expect("reads");

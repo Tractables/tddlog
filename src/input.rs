@@ -117,18 +117,28 @@ impl Input<'_> {
 
 /// Read `data`, an input in `format`, as the program tddlog answers.
 ///
-/// A ProbLog program is its own text, which must be UTF-8; an LPAD, a
-/// Dice program and a network are read as the programs their modules
-/// write. `options` say how a network is read: its queries, its evidence
-/// and whether its rows are rescaled. For any other input they must be
-/// the defaults, but for the queries, which may be left out
-/// ([`Queries::None`]) as [`crate::Options::queries`] leaves them out.
+/// A ProbLog program is its own text, which must be UTF-8, with its
+/// arguments in their places `$1`, `$2`, ... where it is given any; an
+/// LPAD, with its arguments in place, a Dice program and a network are
+/// read as the programs their modules write. `options` say how a network
+/// is read: its queries, its evidence and whether its rows are rescaled.
+/// For any other input they must be the defaults, but for the queries,
+/// which may be left out ([`Queries::None`]) as
+/// [`crate::Options::queries`] leaves them out. The arguments
+/// ([`ReadOptions::arguments`]) are for a ProbLog program or an LPAD
+/// alone.
 pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result<Input<'a>, Error> {
     let input = |program, left_out| Input {
         program,
         log10_offset: None,
         left_out,
     };
+    if !options.arguments.is_empty() && format != Format::Problog {
+        return Err(Error::Options(format!(
+            "{}, and the input is {format}",
+            network::ARGUMENTS
+        )));
+    }
     let network = match format {
         Format::Network(network) => network,
         Format::Problog | Format::Dice => {
@@ -146,14 +156,15 @@ pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result
                 )));
             }
             let text = utf8(data)?;
-            return Ok(match format {
-                Format::Dice => input(Cow::Owned(syntax::dice::read(text)?), Vec::new()),
-                _ => match syntax::lpad::read(text).transpose()? {
-                    None => input(Cow::Borrowed(text), Vec::new()),
-                    // `--program` prints it as a file, with its last line's
-                    // newline.
-                    Some(lpad) => input(Cow::Owned(lpad.program + "\n"), lpad.left_out),
-                },
+            if format == Format::Dice {
+                return Ok(input(Cow::Owned(syntax::dice::read(text)?), Vec::new()));
+            }
+            let text = syntax::bind(text, &options.arguments)?;
+            return Ok(match syntax::lpad::read(&text).transpose()? {
+                None => input(text, Vec::new()),
+                // `--program` prints it as a file, with its last line's
+                // newline.
+                Some(lpad) => input(Cow::Owned(lpad.program + "\n"), lpad.left_out),
             });
         }
     };

@@ -27,8 +27,10 @@ const tddlogRuntime = {
   },
 
   // The answers of `program`, text in `format` (a network's with `observed`
-  // the text of its evidence file, or null), under `strategy`, with P(e)
-  // where `evidence` is true, as the object src/main.rs writes:
+  // the text of its evidence file, or null; a ProbLog program's or an
+  // LPAD's with `args` the strings that take its places $1, $2, ...), under
+  // `strategy`, with P(e) where `evidence` is true, as the object
+  // src/main.rs writes:
   //   answers   [{query, probability}] in the program's order, or null where
   //             the evidence is inconsistent;
   //   evidence  {probability, log10, z} where P(e) was asked for, else null;
@@ -39,14 +41,16 @@ const tddlogRuntime = {
   //   groundSeconds, compiling (the program handed to the last compile),
   //   notes (on the run as a whole) and parts (each part's run: the trial
   //   that answered, its sizes in pairs and its seconds).
-  solve(module, program, strategy, evidence, format = "problog", observed = null) {
+  solve(module, program, strategy, evidence, format = "problog", observed = null, args = []) {
     if (typeof evidence !== "boolean") throw new Error("evidence must be true or false");
+    if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) throw new Error("args must be an array of strings");
     const encoder = new TextEncoder();
     // ccall's string conversion uses the stack, which cannot hold large
     // programs; every string goes on the heap, and a missing evidence file
     // is a null pointer.
-    const texts = [program, format, observed, strategy].map((text) => (text === null ? null : encoder.encode(text + "\0")));
+    const texts = [program, format, observed, strategy, ...args].map((text) => (text === null ? null : encoder.encode(text + "\0")));
     const at = [];
+    let list = 0;
     let output = 0;
     try {
       for (const bytes of texts) {
@@ -55,12 +59,21 @@ const tddlogRuntime = {
         at.push(ptr);
         if (ptr) module.HEAPU8.set(bytes, ptr);
       }
-      output = module._tddlog_solve_json(...at, evidence ? 1 : 0) >>> 0;
+      // The arguments' pointers, four bytes each, little-endian, as wasm32
+      // lays out an array of them.
+      if (args.length) {
+        list = module._malloc(4 * args.length) >>> 0;
+        if (!list) throw new Error("could not allocate the arguments");
+        const heap = new DataView(module.HEAPU8.buffer, module.HEAPU8.byteOffset);
+        at.slice(4).forEach((ptr, k) => heap.setUint32(list + 4 * k, ptr, true));
+      }
+      output = module._tddlog_solve_json(...at.slice(0, 4), evidence ? 1 : 0, list, args.length) >>> 0;
       if (!output) throw new Error("the solver returned nothing");
       return JSON.parse(module.UTF8ToString(output));
     } finally {
       if (output) module._tddlog_string_free(output);
       for (const ptr of at) if (ptr) module._free(ptr);
+      if (list) module._free(list);
     }
   },
 

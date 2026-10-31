@@ -747,6 +747,27 @@ fn dice() {
     );
 }
 
+/// A program whose size, probability and query are its arguments: a chain
+/// reaches node k with the probability that its first k links are up,
+/// p^k, computed by hand.
+#[test]
+fn chain() {
+    let data = std::fs::read("examples/chain.pl").unwrap();
+    for (n, p, k) in [(10, 0.9f64, 4), (3, 0.5, 3), (12, 0.25, 0)] {
+        let options = tddlog::network::ReadOptions {
+            arguments: vec![n.to_string(), p.to_string(), k.to_string()],
+            ..Default::default()
+        };
+        let input = tddlog::read(&data, tddlog::Format::Problog, &options).unwrap();
+        let file = format!("chain.pl {n} {p} {k}");
+        check_text(
+            &file,
+            &input.program,
+            &[(&format!("reach({k})"), p.powi(k))],
+        );
+    }
+}
+
 /// A Bayesian network read as a program (`tddlog --program`; bnlearn's
 /// cancer network, leaf marginals); ProbLog's answers.
 #[test]

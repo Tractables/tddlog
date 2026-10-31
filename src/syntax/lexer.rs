@@ -364,6 +364,29 @@ pub(crate) struct Lexer<'a> {
     /// The first error, where the scan stopped: from there on the tokens
     /// are the end of the input, on the error's line.
     error: Option<LexError>,
+    /// The places `$N` met, in a scan for them ([`places`]); `None` in a
+    /// parse, where a place is an error.
+    places: Option<Vec<Place>>,
+}
+
+/// A place `$N` of a program's argument ([`places`]): its bytes in the
+/// source and its line.
+pub(crate) struct Place {
+    pub(crate) at: std::ops::Range<usize>,
+    pub(crate) line: usize,
+}
+
+/// The places `$N` (`$` and digits) of `src` outside its comments and
+/// quoted atoms, in order, as the lexer reads the source. The error is the
+/// lexer's first, where the scan stops.
+pub(crate) fn places(src: &str) -> Result<Vec<Place>, LexError> {
+    let mut lexer = Lexer::new(src);
+    lexer.places = Some(Vec::new());
+    while lexer.token().tok != Tok::Eof {}
+    match lexer.error() {
+        Some(e) => Err(e),
+        None => Ok(lexer.places.unwrap_or_default()),
+    }
 }
 
 impl<'a> Lexer<'a> {
@@ -377,6 +400,7 @@ impl<'a> Lexer<'a> {
             shift: 64 - 6,
             quoted: String::new(),
             error: None,
+            places: None,
         };
         for word in kw::ALL {
             lexer.place(word.as_bytes());
@@ -833,6 +857,19 @@ impl<'a> Lexer<'a> {
                 } else {
                     return Some(self.fail(line, format!("unexpected character `{ch}`")));
                 }
+            }
+            // A place `$N` of the program's argument N, which takes its
+            // place before the program is parsed: in a scan for the
+            // places, recorded and passed over, and in a parse, a place
+            // left without an argument.
+            b'$' if at(i + 1).is_some_and(|d| d.is_ascii_digit()) => {
+                let end = i + 1 + b[i + 1..].iter().take_while(|d| d.is_ascii_digit()).count();
+                let Some(places) = &mut self.places else {
+                    return Some(self.fail(line, format!("`{}` has no argument", &src[i..end])));
+                };
+                places.push(Place { at: i..end, line });
+                i = end;
+                None
             }
             // punctuation and operators
             _ => {

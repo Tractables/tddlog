@@ -515,9 +515,24 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 
 <section class="card prose" id="command-line">
   <h2>The command line</h2>
-  <p><code>tddlog [options] program.pl</code> prints one
+  <p><code>tddlog [options] program.pl [argument ...]</code> prints one
   <code>atom:&lt;tab&gt;probability</code> line per query, in the program's
-  order, as ProbLog does. The options:</p>
+  order, as ProbLog does. The arguments after a ProbLog program or an
+  LPAD take its places <code>$1</code>, <code>$2</code>, ..., outside
+  comments and quoted atoms, each read as a term (a number, an atom, a
+  list or a compound), as a shell script's arguments do. One program then
+  serves every size, probability, query and observation:</p>
+<pre data-lang="prolog">$2::link(I) :- between(1, $1, I).
+reach(0).
+reach(I) :- between(1, $1, I), J is I - 1, reach(J), link(I).
+query(reach($3)).</pre>
+  <p>is <code>examples/chain.pl</code>, and <code>tddlog
+  examples/chain.pl 10 0.9 4</code> answers it for a chain of 10 links of
+  probability 0.9, queried at node 4. A place without an argument, an
+  argument without a place and an argument that is not a term are
+  errors. <code>tddlog --program examples/chain.pl 10 0.9 4</code> prints
+  the program with the arguments in place, for a system that does not
+  take them. The options:</p>
   <dl>
     <dt><code>--vtree &lt;strategy&gt;</code></dt>
     <dd>The vtree, the tree over the probabilistic facts that shapes the
@@ -715,7 +730,8 @@ print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
   Python 3.10 or later. <code>solve</code> takes the
   options as keywords (<code>format</code>, <code>evidence</code>,
   <code>vtree</code>, <code>evidence_probability</code>,
-  <code>queries</code>), and an error
+  <code>queries</code>, and <code>arguments</code>, a list of the
+  program's arguments as strings), and an error
   is an exception of its own: <code>tddlog.ParseError</code>,
   <code>GroundingError</code> or <code>CompilationError</code>. The
   <a href="../python/">Python page</a> has the rest.</p>
@@ -733,8 +749,10 @@ for (size_t i = 0; i &lt; tddlog_solution_num_answers(solution); i++)
            tddlog_solution_probability(solution, i));
 tddlog_solution_free(solution);</pre>
   <p><code>options.format</code> names the input's format (NULL for
-  ProbLog) and <code>options.evidence</code> holds a network's evidence
-  file (NULL for none). The C library installs with CMake, as a CMake
+  ProbLog), <code>options.evidence</code> holds a network's evidence
+  file (NULL for none), and <code>options.arguments</code> points to
+  <code>options.num_arguments</code> strings, the program's arguments.
+  The C library installs with CMake, as a CMake
   package and a pkg-config file; the <a href="../c/">C page</a> covers
   building, linking and the header.</p>
 </section>

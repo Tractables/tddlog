@@ -129,7 +129,8 @@ impl<'a> Evidence<'a> {
     }
 }
 
-/// How a network is read.
+/// How an input is read ([`crate::read`]): a network's queries, evidence
+/// file and rows, and a program's arguments.
 #[derive(Clone, Debug)]
 pub struct ReadOptions<'a> {
     /// The variables the program queries.
@@ -139,15 +140,21 @@ pub struct ReadOptions<'a> {
     /// Divide every row by its sum, for a file that writes its tables in
     /// percent or as weights, as Ace's `-Xnormalize` does on reading.
     pub rescale: bool,
+    /// The arguments of a ProbLog program or an LPAD, each the text of a
+    /// term that takes the places `$1`, `$2`, ... of the program
+    /// ([`crate::syntax`]), as the values after the program's file do on
+    /// the command line. Refused for a network or a Dice program.
+    pub arguments: Vec<String>,
 }
 
-/// Every variable queried, no evidence, the rows as written.
+/// Every variable queried, no evidence, the rows as written, no arguments.
 impl Default for ReadOptions<'_> {
     fn default() -> Self {
         ReadOptions {
             queries: Queries::All,
             evidence: None,
             rescale: false,
+            arguments: Vec::new(),
         }
     }
 }
@@ -163,11 +170,18 @@ pub struct NetworkProgram {
     pub log10_offset: Option<f64>,
 }
 
+/// Why arguments are refused for an input that is not a ProbLog program
+/// or an LPAD ([`ReadOptions::arguments`]).
+pub(crate) const ARGUMENTS: &str = "arguments ($1, $2, ...) are for a ProbLog program or an LPAD";
+
 /// The program of the network file whose contents are `data`, in
 /// `format`, read under `options`.
 pub fn read(data: &[u8], format: Format, options: &ReadOptions) -> Result<NetworkProgram, String> {
     if let (Some(Evidence::Uai(_)), false) = (options.evidence, format == Format::Uai) {
         return Err("UAI evidence (.evid) is for a .uai network".into());
+    }
+    if !options.arguments.is_empty() {
+        return Err(ARGUMENTS.into());
     }
     let read = match format {
         Format::Bif => Read::of(bif::parse(&text(data))?),

@@ -91,6 +91,20 @@ with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
 0.28 × 0.7 = 0.196, and P(burglary | John calls) = 0.1 × 0.7 / 0.196 =
 0.357143.
 
+A program can take values from the command line: the arguments after its
+file take its places `$1`, `$2`, ... (outside comments and quoted
+atoms), each read as a term, so that one program serves every size,
+probability, query and observation. In
+[examples/chain.pl](examples/chain.pl) they are the length of a chain,
+the probability of each link and the node queried, and `--program`
+prints the program with them in place:
+
+```text
+$ tddlog examples/chain.pl 10 0.9 4
+reach(4):       0.656100
+$ tddlog --program examples/chain.pl 20 0.9 7 > chain_20.pl
+```
+
 The [guide] describes the language and the command line, with worked
 examples that open in the [playground].
 [examples/](examples/) lists every example program by what it shows.

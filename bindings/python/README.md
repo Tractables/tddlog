@@ -86,6 +86,12 @@ observed = open("tests/networks/asia_leaves.inst").read()
 solution = tddlog.solve(network, format="hugin", evidence=observed)
 ```
 
+`arguments` are a ProbLog program's or an LPAD's arguments, the values
+the command line takes after the program's file: a list of strings, each
+the text of a term that takes the places `$1`, `$2`, ... of the program,
+as in `tddlog.solve(open("examples/chain.pl").read(), arguments=["10",
+"0.9", "4"])`.
+
 For a UAI `MARKOV` network, `evidence_probability` is the partition
 function given the evidence. A
 program tddlog cannot answer raises `tddlog.ParseError`,
