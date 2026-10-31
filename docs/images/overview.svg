@@ -181,7 +181,7 @@ L 557.046288 69.225469
     <g id="ytick_15">
      <g id="line2d_25"/>
      <g id="text_20">
-      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="139.984" y="508.916531" transform="rotate(-0, 139.984, 508.916531)">13 others</text>
+      <text style="fill: #1f2328; font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="139.984" y="508.916531" transform="rotate(-0, 139.984, 508.916531)">14 others</text>
      </g>
     </g>
     <g id="ytick_16">
@@ -823,7 +823,7 @@ z
    </g>
    <g id="text_98">
     <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(200.016 501.176502)">Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer,</text>
-    <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(200.016 513.333123)">SPPL, noDice, Psi, Geni: each more than 24 h in total</text>
+    <text style="fill: #59636e; font: 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" transform="translate(200.016 513.333123)">SPPL, noDice, Psi, Geni, Scallop: each more than 9.0 h in total</text>
    </g>
    <g id="text_99">
     <text style="fill: #0d6670; font: 700 12.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="617.184" y="507.806687" transform="rotate(-0, 617.184, 507.806687)">≥460×</text>

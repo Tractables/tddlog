@@ -301,7 +301,7 @@ benchmarks also have).
 | Merlin | 186 | 21 h | 2 min | 425× |
 | TensorInference.jl | 184 | 24 h | 2 min | 530× |
 | libDAI | 179 | 22 h | 2 min | 458× |
-| 13 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Psi, Geni | 43 to 170 | over 24 h each | 2 min | at least 460× |
+| 14 others: Roulette, pyAgrum, Pluck, aspmc, PITA, pgmpy, Dice, ProbLog, Genfer, SPPL, noDice, Psi, Geni, Scallop | 4 to 170 | over 9.0 h each | 7.8 s to 2 min | at least 460× |
 
 PSouffle was given 10 of the networks and answers 6.
 
@@ -396,7 +396,7 @@ on every program it is given, natively or through a translation.
 | pyAgrum | 714 | 191 h | 5.9 h | 43× |
 | Merlin | 701 | 197 h | 6.1 h | 37× |
 | TensorInference.jl | 693 | 206 h | 6.8 h | 34× |
-| 17 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi | 88 to 630 | over 16 h each | 45 min to 7.4 h | at least 20× |
+| 18 others: Alea.jl, pgmpy, Roulette, ProbLog, PITA, Storm, Pluck, Dice, aspmc, PRISM, ProvSQL, PSouffle, noDice, Genfer, Geni, SPPL, Psi, Scallop | 14 to 630 | over 16 h each | 45 min to 7.4 h | at least 20× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
