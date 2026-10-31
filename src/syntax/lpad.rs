@@ -15,7 +15,9 @@
 //! those the LPAD's bodies name, and those they name in turn, are kept as
 //! they are, and `db(Goal)` is written `Goal`. The rest (plots, samplers and
 //! other programs over the LPAD) is left out, as are the directives and
-//! goals but for PITA's depth bound ([`bounded`]). The example queries `?- prob(Q, P).` in the file become
+//! goals but for PITA's depth bound ([`bounded`]); a source written for
+//! PITA(IND), whose assumptions tddlog's inference does not take, is
+//! refused ([`settings`]). The example queries `?- prob(Q, P).` in the file become
 //! `query(Q).`, and `?- prob(Q, E, P).` becomes `query(Q).` and an
 //! `evidence(L).` for each literal `L` of the conjunction `E`. A program
 //! holds one set of evidence: the queries asked under the evidence of the
@@ -100,7 +102,7 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             }
         }
     }
-    let depth = depth_bound(clauses).map_err(|(at, msg)| ParseError {
+    let depth = settings(clauses).map_err(|(at, msg)| ParseError {
         line: raw.line(source, at),
         msg,
     })?;
@@ -593,10 +595,14 @@ fn annotation(p: Written) -> Result<String, String> {
 }
 
 /// The depth PITA's depth bound asks the queries at, where the source
-/// sets the bound (`:- set_pita(depth_bound, true).`, or
-/// `set_pitaind`'s): the depth it sets (`:- set_pita(depth, N).`), 5 by
-/// default, as PITA's.
-fn depth_bound(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)> {
+/// sets the bound (`:- set_pita(depth_bound, true).`): the depth it sets
+/// (`:- set_pita(depth, N).`), 5 by default, as PITA's. A source written
+/// for PITA(IND) (`:- pitaind.`) is refused: it asks for the probabilities
+/// PITA computes under the assumption that a conjunction's literals are
+/// independent and a disjunction's independent or, under `set_pitaind(or,
+/// exc)`, exclusive, which differ from the program's where the assumption
+/// does not hold.
+fn settings(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)> {
     let (mut bound, mut depth) = (false, 5);
     for &(at, c) in clauses {
         let Some(goal) = c.strip_prefix(":-").map(trim) else {
@@ -606,8 +612,18 @@ fn depth_bound(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)
             continue;
         };
         match (name, args.as_slice()) {
-            ("set_pita" | "set_pitaind", ["depth_bound", v]) => bound = *v == "true",
-            ("set_pita" | "set_pitaind", ["depth", v]) => {
+            ("pitaind" | "set_pitaind", _) | ("use_module", ["library(pitaind)"]) => {
+                return Err((
+                    at,
+                    format!(
+                        "`{goal}`: PITA(IND) assumes a conjunction's literals independent and a \
+                         disjunction's independent or exclusive; tddlog's inference is exact and \
+                         does not take these assumptions"
+                    ),
+                ));
+            }
+            ("set_pita", ["depth_bound", v]) => bound = *v == "true",
+            ("set_pita", ["depth", v]) => {
                 depth = v
                     .parse()
                     .map_err(|_| (at, format!("PITA's depth `{v}`, not a count")))?;
@@ -1098,6 +1114,24 @@ mod tests {
             .unwrap_err();
         assert_eq!(e.line, 2);
         assert!(e.msg.contains("PITA's depth `a`"), "{}", e.msg);
+    }
+
+    #[test]
+    fn a_source_written_for_pita_ind_is_refused() {
+        for directive in [
+            ":- use_module(library(pitaind)).",
+            ":- pitaind.",
+            ":- set_pitaind(or,exc).",
+        ] {
+            let source = format!("\n{directive}\n:- begin_lpad.\na:0.5.\n:- end_lpad.\n");
+            let e = read(&source).unwrap().unwrap_err();
+            assert_eq!(e.line, 2, "{directive}");
+            assert!(
+                e.msg.contains("tddlog's inference is exact"),
+                "{directive}: {}",
+                e.msg
+            );
+        }
     }
 
     #[test]

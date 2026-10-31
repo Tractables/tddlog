@@ -268,7 +268,12 @@ and on standard error, and left out. A clause the program cannot write
 (a disjunctive head with no probability or with two heads without one, a
 head without one beside a flexible probability, a probability that is not
 a finite number; under the depth bound, a flexible probability or a call
-of the LPAD's predicates inside another goal) is refused on its line. The
+of the LPAD's predicates inside another goal) is refused on its line. So
+is a source written for PITA(IND) (`:- pitaind.`), on the directive's
+line: it asks for the probabilities PITA computes under the assumption
+that a conjunction's literals are independent and a disjunction's
+independent or exclusive (`set_pitaind(or, exc)`), which tddlog's exact
+inference does not take. The
 reader finds the clauses in the text and writes the program that the
 Python script it replaced (`lpad2problog.py`, now on the baselines
 branch) wrote: the clauses end at a `.` before white space outside
