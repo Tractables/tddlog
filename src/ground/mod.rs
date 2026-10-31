@@ -302,10 +302,12 @@ fn ground_norm(
     // reach a test, a `\=` or a negation say, before a literal written
     // after it binds the test's variables, which ProbLog makes as the
     // terms stand there and the other routes on the values bound later
-    // ([`modes`]).
+    // ([`modes`]). One whose queries reach an arithmetic literal or a call
+    // of a goal with a variable free there is refused, as ProbLog stops
+    // on it.
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
-    } else if modes::tests_unbound(norm) {
+    } else if modes::tests_unbound(norm)? {
         engine::topdown::ground(norm, bound)?
     } else {
         let plain = engine::safe(norm);

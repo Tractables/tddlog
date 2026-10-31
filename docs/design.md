@@ -676,7 +676,11 @@ are skipped. Several steps have a program in `examples/` that shows them.
    routes place it after the literals that bind its variables and make it
    on each value they bind. The calls are followed from the queries, the
    evidence and the query rules, each argument bound where the literals
-   before the call have bound all its variables.
+   before the call have bound all its variables. The same reading refuses
+   a program whose queries reach an arithmetic comparison, an `is` or a
+   call of a goal with a variable free there, one that neither the call
+   nor a literal before it can have bound, which ProbLog stops on; the
+   bottom-up routes would evaluate it on the values bound later.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in

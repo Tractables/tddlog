@@ -462,6 +462,34 @@ fn equality_builds_terms_and_is_evaluates_them() {
 }
 
 #[test]
+fn arithmetic_on_a_variable_free_where_problog_reaches_it_is_refused() {
+    // ProbLog evaluates a body from left to right and stops on an
+    // arithmetic literal over a free variable; the bottom-up routes would
+    // evaluate it after the literals that bind it.
+    for (source, free) in [
+        ("p(X) :- X > 1, between(1, 3, X). query(p(_)).", "X is free"),
+        ("q(Y) :- Y is X + 1, X = 2. query(q(_)).", "X is free"),
+        (
+            "0.5::s(1). r(N) :- N =:= 1, s(N). query(r(_)).",
+            "N is free",
+        ),
+        ("t :- call(G), G = true. query(t).", "G is free"),
+    ] {
+        let e = refusal(source);
+        assert!(e.contains(free), "{source}: {e}");
+    }
+    // Bound by the call, or by a literal before it, or by a call that
+    // passes a partial term, it is evaluated.
+    assert_answers(
+        "0.5::s(1). r(N) :- N =:= 1, s(N). b(X) :- between(1, 3, X), X > 1.
+         len([], 0). len([_|T], N) :- len(T, M), N is M + 1.
+         l(N) :- len([_, _], N).
+         query(r(1)). query(b(_)). query(l(_)).",
+        &[("r(1)", 0.5), ("b(2)", 1.0), ("b(3)", 1.0), ("l(2)", 1.0)],
+    );
+}
+
+#[test]
 fn hexadecimal_integers_are_read_as_problog_reads_them() {
     // ProbLog's test hex_numbers.pl, its clause `Q :- ...` given a head.
     assert_answers(
