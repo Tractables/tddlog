@@ -15,9 +15,9 @@
 //! those the LPAD's bodies name, and those they name in turn, are kept as
 //! they are, and `db(Goal)` is written `Goal`. The rest (plots, samplers and
 //! other programs over the LPAD) is left out, as are the directives and
-//! goals but for PITA's depth bound ([`bounded`]); a source written for
-//! PITA(IND), whose assumptions tddlog's inference does not take, is
-//! refused ([`settings`]). The example queries `?- prob(Q, P).` in the file become
+//! goals but for PITA's depth bound; a source written for PITA(IND), whose
+//! assumptions tddlog's inference does not take, is refused. The example
+//! queries `?- prob(Q, P).` in the file become
 //! `query(Q).`, and `?- prob(Q, E, P).` becomes `query(Q).` and an
 //! `evidence(L).` for each literal `L` of the conjunction `E`. A program
 //! holds one set of evidence: the queries asked under the evidence of the

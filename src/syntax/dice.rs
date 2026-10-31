@@ -42,7 +42,7 @@
 //! tuple.
 //!
 //! A list is held as Dice holds one (its `lib/Passes.ml`): a pair of its
-//! length, an integer of 4 bits, and exactly [`LIST_LENGTH`] elements as
+//! length, an integer of 4 bits, and exactly 10 elements as
 //! nested pairs, those past the length its type's default value (false,
 //! zero). `x :: xs` keeps the first 9 elements of `xs`, its length capped
 //! at 10; `head` and `tail` of an empty list observe false on their path.
