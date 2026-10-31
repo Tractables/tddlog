@@ -1664,6 +1664,9 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |_| one(vec![l]))
         }
+        // A value is never a variable.
+        Builtin::Var => Vec::new(),
+        Builtin::Nonvar => one(vec![vals[0].expect("mode")]),
         // `T =.. L`: the list of a term's name and arguments, `[T]` for an
         // atom or a number; or the term of such a list.
         Builtin::Univ => match vals {

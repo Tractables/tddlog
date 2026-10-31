@@ -969,9 +969,12 @@ impl fmt::Display for CmpOp {
 }
 
 /// A predicate of ProbLog's `library(lists)`, or one of its built-ins
-/// `between/3`, `plus/3`, `compare/3`, `is_list/1` and `=../2`, which the grounder
+/// `between/3`, `plus/3`, `compare/3`, `is_list/1`, `var/1`, `nonvar/1` and
+/// `=../2`, which the grounder
 /// evaluates on ground arguments where the program defines no predicate of
-/// its name and arity. `append/2`, `subset/2`, `intersection/3`,
+/// its name and arity; the type tests `is_list/1`, `var/1` and `nonvar/1`
+/// read a term with variables as it stands where they are called, on the
+/// top-down route. `append/2`, `subset/2`, `intersection/3`,
 /// `union/3`, `subtract/3`, `delete/3` and `flatten/2`, which the library
 /// writes as clauses, give the answers of those clauses.
 /// `'$callable'/4` is the grounder's own, the test before a call of a goal
@@ -1002,6 +1005,8 @@ pub(crate) enum Builtin {
     Plus,
     Compare,
     IsList,
+    Var,
+    Nonvar,
     EnumGroups,
     Univ,
     /// `'$callable'(G, N, Callable, Unknown)`: whether `call/(N + 1)` can
@@ -1013,7 +1018,7 @@ pub(crate) enum Builtin {
 }
 
 /// Each built-in, by its name and arity.
-const BUILTINS: [(&str, usize, Builtin); 27] = [
+const BUILTINS: [(&str, usize, Builtin); 29] = [
     ("member", 2, Builtin::Member),
     ("memberchk", 2, Builtin::Memberchk),
     ("select", 3, Builtin::Select),
@@ -1038,6 +1043,8 @@ const BUILTINS: [(&str, usize, Builtin); 27] = [
     ("plus", 3, Builtin::Plus),
     ("compare", 3, Builtin::Compare),
     ("is_list", 1, Builtin::IsList),
+    ("var", 1, Builtin::Var),
+    ("nonvar", 1, Builtin::Nonvar),
     ("enum_groups", 3, Builtin::EnumGroups),
     ("=..", 2, Builtin::Univ),
     ("$callable", 4, Builtin::Callable),
@@ -1075,6 +1082,8 @@ impl Builtin {
                         | Builtin::Plus
                         | Builtin::Compare
                         | Builtin::IsList
+                        | Builtin::Var
+                        | Builtin::Nonvar
                         | Builtin::Univ
                         | Builtin::Callable
                 )
@@ -1085,8 +1094,9 @@ impl Builtin {
     /// flags: the list it reads (the third of `append/3`'s or both others),
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,
     /// the two lists or the list and the item the set predicates and
-    /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, or the
-    /// terms `compare/3` orders, either side of `=../2`, or all of
+    /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, the
+    /// term `var/1` and `nonvar/1` test, the terms `compare/3` orders,
+    /// either side of `=../2`, or all of
     /// `'$callable'/4`'s. It then binds the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
@@ -1102,6 +1112,8 @@ impl Builtin {
             | Builtin::AppendLists
             | Builtin::Flatten
             | Builtin::IsList
+            | Builtin::Var
+            | Builtin::Nonvar
             | Builtin::EnumGroups => bound[0],
             Builtin::Append => bound[2] || (bound[0] && bound[1]),
             Builtin::Subset

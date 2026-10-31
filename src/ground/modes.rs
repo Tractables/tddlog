@@ -2,7 +2,7 @@
 //! left to right and makes each test on the terms as they stand when it
 //! is reached: `X \= a` fails while `X` is unbound, `\+ p(X)` holds only
 //! where no `p(_)` does, a findall collects the solutions of every value
-//! of a variable still unbound. The bottom-up routes place a test where
+//! of a variable still unbound, `var(X)` holds while `X` is unbound. The bottom-up routes place a test where
 //! its variables are bound ([`super::schedule`]), which reads it on each
 //! value a literal written after it binds. The two agree where the
 //! queries' calls reach every test with its variables bound; a program
@@ -34,8 +34,9 @@ enum Arg {
 /// called as ProbLog calls it, makes a test that a variable no literal
 /// before it has bound reads otherwise than the bottom-up routes: a `\=`,
 /// an identity `==` or `\==`, a comparison on the standard order (`@<`,
-/// `compare/3`), a negation, or a findall whose goal shares the variable
-/// with the rest of the rule. A call's pattern binds the arguments that
+/// `compare/3`), a type test (`var/1`, `nonvar/1`, `is_list/1`), a
+/// negation, or a findall whose goal shares the variable with the rest of
+/// the rule. A call's pattern binds the arguments that
 /// the call's literals before it have bound, as the magic-set rewrite's
 /// do ([`super::magic`]), here in the order of the source.
 ///
@@ -157,6 +158,9 @@ fn unbound_test<'a>(
                 b,
             ) => unbound(&[a, b]),
             Literal::Builtin(Builtin::Compare, args, _) => unbound(&[&args[1], &args[2]]),
+            Literal::Builtin(Builtin::Var | Builtin::Nonvar | Builtin::IsList, args, _) => {
+                unbound(&[&args[0]])
+            }
             Literal::Neg(_) | Literal::Builtin(_, _, true) => read_elsewhere(i, &v),
             Literal::Collect(c) => unbound(&c.shared.iter().collect::<Vec<_>>()),
             _ => false,

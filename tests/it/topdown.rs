@@ -293,3 +293,29 @@ fn a_negation_called_with_variables_holds_where_none_of_its_answers_does() {
     let e = refusal(&format!("{program} query(t(_)). query(t(1))."));
     assert!(e.contains("a negation of a call with variables"), "{e}");
 }
+
+#[test]
+fn var_and_nonvar_test_a_term_as_it_stands_where_they_are_called() {
+    // ProbLog's answers, one query at a time. v(X) called with X free
+    // takes its first clause, a; called with X bound, its second, b(X).
+    // n(X) tests X after b(X) has bound it, m(Y) a compound term, and u(X)
+    // negates a test that holds while X is free.
+    let program = "0.3::a. 0.6::b(1). 0.7::b(2).
+         v(X) :- var(X), a, X = 1.
+         v(X) :- nonvar(X), b(X).
+         n(X) :- b(X), var(X).
+         m(Y) :- nonvar(f(Y)), b(Y).
+         u(X) :- \\+ var(X), b(X).";
+    assert_answers(
+        &format!("{program} query(v(_)). query(n(_)). query(m(_)). query(u(_))."),
+        &[("v(1)", 0.3), ("m(1)", 0.6), ("m(2)", 0.7)],
+    );
+    assert_answers(
+        &format!("{program} query(v(1)). query(v(2))."),
+        &[("v(1)", 0.6), ("v(2)", 0.7)],
+    );
+    // Asked together, the two calls answer v(1) by proofs of their own,
+    // which one atom cannot hold.
+    let e = refusal(&format!("{program} query(v(_)). query(v(1))."));
+    assert!(e.contains("var/1 of a term with variables"), "{e}");
+}

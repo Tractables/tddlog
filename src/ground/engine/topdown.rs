@@ -32,11 +32,12 @@
 //!   identity or a `\=` of terms that unify and are not identical breaks
 //!   that: it compares otherwise once a call binds their variables, and
 //!   ProbLog answers by what each call proved. So does a negation of a
-//!   call with variables, which reads fewer answers once they are bound.
-//!   Such a comparison or negation is made as ProbLog makes it, and the
-//!   program is refused where an atom is an answer of two calls one of
-//!   which made one on variables of its call, or called with them a call
-//!   that did, directly or not.
+//!   call with variables, which reads fewer answers once they are bound,
+//!   and a type test (`var/1`, `nonvar/1`, `is_list/1`) of a variable.
+//!   Such a comparison, negation or test is made as ProbLog makes it,
+//!   and the program is refused where an atom is an answer of two calls
+//!   one of which made one on variables of its call, or called with them
+//!   a call that did, directly or not.
 //! - `=../2` builds a term from a list of fixed length that may hold
 //!   variables, or the list of a term with variables, as ProbLog's does.
 //! - A negation reads the answers of its call, whose table is complete:
@@ -488,14 +489,22 @@ impl<'a> TopDown<'a> {
     /// Whether `t` is a variable, a list or a list whose tail is a
     /// variable: what a findall's result may be bound to.
     fn listlike(&mut self, t: &T) -> bool {
+        match self.list_end(t) {
+            T::X(_) => true,
+            T::G(v) => self.g.items(v).is_some(),
+            T::F(..) => false,
+        }
+    }
+
+    /// `t` past the list cells with variables it starts with: a variable,
+    /// a ground term, or a compound term that is no list cell.
+    fn list_end(&mut self, t: &T) -> T {
         let (_, cons) = self.g.list_syms();
         let mut t = self.deref(t);
         loop {
             match t {
-                T::X(_) => return true,
-                T::G(v) => return self.g.items(v).is_some(),
                 T::F(f, args) if f == cons && args.len() == 2 => t = self.deref(&args[1]),
-                T::F(..) => return false,
+                t => return t,
             }
         }
     }
@@ -1394,6 +1403,8 @@ impl<'a> TopDown<'a> {
             self.length(args, rule, i)?
         } else if b == Builtin::Univ {
             self.univ(args)?
+        } else if matches!(b, Builtin::Var | Builtin::Nonvar | Builtin::IsList) {
+            self.type_test(b, &args[0], rule)?
         } else if b == Builtin::Callable {
             // A goal with variables in it: its name and arity are bound.
             let (name, k) = match self.deref(&args[0]) {
@@ -1424,6 +1435,30 @@ impl<'a> TopDown<'a> {
         } else {
             vec![args.to_vec()]
         })
+    }
+
+    /// `var/1`, `nonvar/1` or `is_list/1` of a term with variables, as
+    /// ProbLog tests it, on the term as it stands: `is_list/1` holds for a
+    /// list whose tail is a variable, but not for a variable. Where the
+    /// variable the test reads is one of the table's call, a call that
+    /// binds more of the same atom may test it otherwise
+    /// ([`Self::call_dependent`]).
+    fn type_test(&mut self, b: Builtin, t: &T, rule: &Rule) -> Result<Vec<Vec<T>>, GroundError> {
+        let t = self.deref(t);
+        let read = match b {
+            Builtin::IsList => self.list_end(&t),
+            _ => t.clone(),
+        };
+        let free = matches!(t, T::X(_));
+        let holds = match b {
+            Builtin::Var => free,
+            Builtin::Nonvar => !free,
+            _ => !free && self.listlike(&t),
+        };
+        if matches!(read, T::X(_)) && self.of_call(std::slice::from_ref(&read))? {
+            self.call_dependent(rule, &format!("{b} of a term with variables"));
+        }
+        Ok(if holds { vec![vec![t]] } else { Vec::new() })
     }
 
     /// length/2 of a list whose items or tail are variables: its length,

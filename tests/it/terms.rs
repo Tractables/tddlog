@@ -347,8 +347,25 @@ fn plus_compare_and_is_list_answer_as_problog_s_built_ins() {
             ("cmp_007(>)", 1.0),
         ],
     );
-    // A partial list is a list to ProbLog; tddlog reads ground terms only.
-    assert!(refusal("q :- is_list([a|T]). query(q).").contains("is_list"));
+    // A list whose tail is a variable is a list to ProbLog, and a variable
+    // is not: the test reads the term as it stands where it is called,
+    // whatever binds its tail after it.
+    assert_answers(
+        "0.3::a.
+         is_list_002 :- is_list([a, b|E]).
+         l3 :- a, is_list([a|E]).
+         l4(E) :- is_list([a|E]), E = [].
+         l5 :- is_list(E).
+         l6 :- is_list([a|E]), E = e.
+         query(is_list_002). query(l3). query(l4(_)). query(l5). query(l6).",
+        &[
+            ("is_list_002", 1.0),
+            ("l3", 0.3),
+            ("l4([])", 1.0),
+            ("l5", 0.0),
+            ("l6", 1.0),
+        ],
+    );
 }
 
 #[test]

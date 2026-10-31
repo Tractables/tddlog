@@ -198,9 +198,11 @@ The parser reads ProbLog without cut:
   reverse/2, sum_list/2, max_list/2, min_list/2, sort/2, subset/2,
   intersection/3, union/3, subtract/3, delete/3, flatten/2 and
   enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3,
-  is_list/1 and `=..`/2, in ProbLog's modes and order of solutions, on
-  ground arguments (`=..` also on a term or a list of fixed length that
-  hold variables);
+  is_list/1, var/1, nonvar/1 and `=..`/2, in ProbLog's modes and order
+  of solutions, on ground arguments (`=..` also on a term or a list of
+  fixed length that hold variables, and the type tests is_list/1, var/1
+  and nonvar/1 on a term as it stands where they are called: a list
+  whose tail is a variable is a list, a variable is not);
 - the predicates ProbLog's libraries write as clauses, in those clauses,
   which the grounder adds where the program calls them
   (`ground/library.rs`): the random selections select_uniform/4 and
@@ -652,11 +654,13 @@ are skipped. Several steps have a program in `examples/` that shows them.
    every world (`reverse([], L, L)`) and refused where it holds in some
    only. A comparison `\=`, `==` or `\==` of terms with variables that
    unify and are not identical is made as ProbLog makes it, as the terms
-   stand at the call (`\=` and `==` fail, `\==` holds). Where their
-   variables are the call's, a call that binds more of the same atom may
-   compare them otherwise; the calls of a predicate share the atoms of
-   their answers, so the program is refused where an atom is the answer
-   of two calls one of which made such a comparison, or called with
+   stand at the call (`\=` and `==` fail, `\==` holds), and so is a type
+   test (`var/1`, `nonvar/1`, `is_list/1`) of a term with variables.
+   Where their variables are the call's, a call that binds more of the
+   same atom may compare or test them otherwise; the calls of a predicate
+   share the atoms of their answers, so the program is refused where an
+   atom is the answer of two calls one of which made such a comparison
+   or test, or called with
    variables of its own call, directly or not, a call that did. The
    resolution emits the ground instances of the clauses it
    used, which the grounder then grounds as a program without variables;
@@ -689,8 +693,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    findall in a cycle of calls is refused on either route. So, first of
    all, is a program whose queries reach a test before the literals
    written after it bind its variables (`modes.rs`): a `\=`, an identity,
-   a comparison on the standard order, a negation, or a findall whose
-   goal shares the variable with the rest of the rule. ProbLog resolves
+   a comparison on the standard order, a type test, a negation, or a
+   findall whose goal shares the variable with the rest of the rule. ProbLog resolves
    a body from left to right and makes such a test on the terms as they
    stand there (`member(A, [H|T]) :- A \= H, ...` called with `A` holding
    a variable fails wherever `A` unifies with `H`), where the other
