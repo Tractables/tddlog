@@ -206,8 +206,7 @@ impl QueryEvaluation {
             let i = v.0 as usize;
             (weights.pos[i], weights.neg[i], weights.one[i]) = (pos, neg, 1.0);
         }
-        // The walk sums out what no later join reads, and no query: the
-        // first run holds the queries' variables before the first join.
+        // The walk sums out what no later join and no query reads.
         let mut walk = EvidenceWalk::new(observed, &backend.vtree());
         walk.sum_out(backend.vtree(), &weights);
         let settled = &compiled.for_queries.settled;
@@ -869,6 +868,7 @@ fn query_reads(
 ) -> Result<Vec<VarId>, tididi::OperationError> {
     let on_evidence = |v: VarId| on_evidence.is_none_or(|vars| vars.contains(&v));
     let indicator_of = gp.encoding.first_copies();
+    let mut seen = FxHashSet::default();
     let mut vars = Vec::new();
     for &(_, id, _) in &gp.queries {
         let Some(a) = id else { continue };
@@ -886,6 +886,9 @@ fn query_reads(
             continue;
         }
         let t = compiled.for_queries.templates.get(&a).map_or(a, |t| t.atom);
+        if !seen.insert(t) {
+            continue;
+        }
         if let Some(f) = compiled.formulas[t as usize].as_deref() {
             let scope = compiled.scope_of(t);
             vars.extend(
@@ -1760,6 +1763,7 @@ mod tests {
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            state.walk.sum_out(backend.vtree(), &state.weights);
             state.walk.min_sum_pairs(0);
             let (answers, sizes) = state.run(&gp, &backend, &compiled, None).unwrap();
             let answers = answers.unwrap();

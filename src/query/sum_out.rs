@@ -37,7 +37,6 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use num_rational::BigRational;
-use rustc_hash::FxHashMap;
 use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, TddLevel, WeightStore};
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
@@ -46,10 +45,6 @@ use super::Formula;
 use crate::eval::Probabilities;
 use crate::tp::backend::Part;
 use crate::tp::{CompileError, TddBackend, VtreeScope};
-
-/// The variables the kept weight stores may cover, all told: some 50 MB
-/// of rational weights.
-const STORED_VARS: usize = 1 << 18;
 
 /// Where queries read variables after the walk, a finished subtree is
 /// summed out only when the join's operands hold at least this many pairs
@@ -224,12 +219,6 @@ pub(super) struct SumOut {
     /// pairs a finished subtree holds for a join to sum it out.
     has_queries: bool,
     min_pairs: usize,
-    /// The weight stores of the scopes joined on, by their vtree's address,
-    /// each with its scope, which keeps the address its own; and their
-    /// variables, all told. A store is built once a scope and copied empty
-    /// (`WeightStore::empty_like`, which shares its table) for each join.
-    stores: FxHashMap<usize, (VtreeScope, WeightStore)>,
-    stored_vars: usize,
     /// `targets`' buffers, per node of the scope: the positions under it,
     /// and the result's variables under it where it is finished.
     ends: Vec<(u32, u32)>,
@@ -261,8 +250,6 @@ impl SumOut {
             rat: vec![None; w.pos.len()],
             has_queries: false,
             min_pairs: MIN_QUERY_SUM_PAIRS,
-            stores: FxHashMap::default(),
-            stored_vars: 0,
             ends: Vec::new(),
             own: Vec::new(),
             top_idx: Vec::new(),
@@ -424,20 +411,31 @@ impl SumOut {
         pairs: usize,
         last: bool,
     ) -> Vec<VtreeIdx> {
-        let min = if self.has_queries { self.min_pairs } else { 0 };
-        let tree = scope.vtree();
-        let exact = scope
-            .vars()
-            .map_or(tree.num_vars() as usize, <[VarId]>::len)
-            == self.merged.len();
         let (small, large, small_is_a) = if self.support[a].len() <= self.support[b].len() {
             (&self.support[a], &self.support[b], true)
         } else {
             (&self.support[b], &self.support[a], false)
         };
+        let (small_weighted, large_weighted) = if small_is_a {
+            (fa.0.weights().is_some(), fb.0.weights().is_some())
+        } else {
+            (fb.0.weights().is_some(), fa.0.weights().is_some())
+        };
+        let already_weighted = small_weighted || large_weighted;
+        let min = if self.has_queries && !already_weighted {
+            self.min_pairs
+        } else {
+            0
+        };
+        let tree = scope.vtree();
+        let exact = scope
+            .vars()
+            .map_or(tree.num_vars() as usize, <[VarId]>::len)
+            == self.merged.len();
         if pairs == 0
             || pairs < min
             || last && self.has_queries && min > 0
+            || !self.merged.iter().any(|v| self.holders[v.0 as usize] == 1)
             || min > 0
                 && (!small.iter().any(|v| self.holders[v.0 as usize] == 1)
                     || !large.iter().any(|v| self.holders[v.0 as usize] == 1))
@@ -478,6 +476,16 @@ impl SumOut {
         ends.resize(n, (0, 0));
         own.clear();
         own.resize(n, None);
+        let can_finish = |mask: u8| -> bool {
+            if min > 0 {
+                mask == 3
+            } else {
+                !matches!(
+                    (mask, small_weighted, large_weighted),
+                    (1, true, _) | (2, _, true)
+                )
+            }
+        };
         let mut found = Vec::new();
         for t in tree.bottomup() {
             if tree.node(t).is_leaf() {
@@ -511,7 +519,7 @@ impl SumOut {
             };
             let (mine, mask) = (ml + mr, kl | kr);
             own[t.idx()] = Some((mine, mask));
-            if mine > 0 && (min == 0 || mask == 3) {
+            if mine > 0 && can_finish(mask) {
                 let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
                 if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
                     found.push(t);
@@ -523,7 +531,7 @@ impl SumOut {
             top_idx.clear();
             top_idx.resize(n, u32::MAX);
             let (a_bit, b_bit) = if small_is_a { (1u8, 2u8) } else { (2u8, 1u8) };
-            let mut kept_found = Vec::new();
+            let mut triggered = false;
             let mut group = Vec::new();
             let mut top_leaves = Vec::new();
             let mut stack = Vec::new();
@@ -619,10 +627,25 @@ impl SumOut {
                     }
                 }
                 if sum >= min {
-                    kept_found.extend_from_slice(&group);
+                    triggered = true;
+                    break;
                 }
             }
-            found = kept_found;
+            found.clear();
+            if triggered {
+                for t in tree.bottomup() {
+                    if !tree.node(t).is_leaf()
+                        && let Some((mine, _)) = own[t.idx()]
+                        && mine > 0
+                    {
+                        let (lo, hi) = ends[t.idx()];
+                        let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
+                        if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
+                            found.push(t);
+                        }
+                    }
+                }
+            }
             self.top_idx = top_idx;
         }
         if !exact {
@@ -638,14 +661,8 @@ impl SumOut {
         found
     }
 
-    /// The facts' weights on `scope`, by its local variables: an empty
-    /// store over the scope's table, built the first time the scope is
-    /// joined on. The tables kept hold at most [`STORED_VARS`] variables.
+    /// The facts' weights on `scope`, by its local variables.
     fn store_for(&mut self, scope: &VtreeScope) -> WeightStore {
-        let key = Arc::as_ptr(scope.vtree()) as usize;
-        if let Some((_, store)) = self.stores.get(&key) {
-            return store.empty_like();
-        }
         let n = scope.vars().map_or(self.pos.len() - 1, <[VarId]>::len);
         let mut w_neg = Vec::with_capacity(n);
         let mut w_pos = Vec::with_capacity(n);
@@ -669,22 +686,14 @@ impl SumOut {
                 }
             }
         }
-        let store = WeightStore::new(
+        WeightStore::new(
             RationalWeights::from_polarities(LiteralWeights {
                 negative: w_neg,
                 positive: w_pos,
             })
             .expect("equal polarity column lengths"),
             Arithmetic::ScaledFloat,
-        );
-        if self.stored_vars + n > STORED_VARS {
-            self.stores.clear();
-            self.stored_vars = 0;
-        }
-        self.stored_vars += n;
-        let empty = store.empty_like();
-        self.stores.insert(key, (scope.clone(), store));
-        empty
+        )
     }
 
     /// Both operands on `scope`: one that carries weights copied there with
@@ -701,8 +710,19 @@ impl SumOut {
         second: Option<&[VarId]>,
         scope: &VtreeScope,
     ) -> Result<(Tdd, Tdd), Refused> {
-        let store =
-            (fa.0.weights().is_some() || fb.0.weights().is_some()).then(|| self.store_for(scope));
+        let store = if fa.0.weights().is_none() && fb.0.weights().is_none() {
+            None
+        } else if fa.1.same(scope)
+            && let Some(w) = fa.0.weights()
+        {
+            Some(w.empty_like())
+        } else if fb.1.same(scope)
+            && let Some(w) = fb.0.weights()
+        {
+            Some(w.empty_like())
+        } else {
+            Some(self.store_for(scope))
+        };
         // The weighted operand first: a copy refused moves nothing.
         let swapped = fa.0.weights().is_none() && fb.0.weights().is_some();
         let (fa, fb, first, second) = if swapped {
@@ -803,40 +823,22 @@ impl SumOut {
         targets: &[VtreeIdx],
     ) -> Result<Tdd, Refused> {
         let (mut a, b) = self.place_both(backend, fa, first, fb, second, scope)?;
+        let already_weighted = a.weights().is_some() || b.weights().is_some();
+        let min = if self.has_queries && !already_weighted {
+            self.min_pairs
+        } else {
+            0
+        };
         let mut targets: Vec<VtreeIdx> = targets
             .iter()
             .copied()
             .filter(|&t| !a.level(t).is_marginal() && !b.level(t).is_marginal())
             .collect();
-        let min = if self.has_queries { self.min_pairs } else { 0 };
-        if min > 0 && !targets.is_empty() {
-            let tree = scope.vtree();
-            let mut is_target = vec![false; tree.num_nodes()];
-            for &t in &targets {
-                is_target[t.idx()] = true;
-            }
-            let top = |mut t: VtreeIdx| {
-                while let Some(p) = tree.node(t).parent()
-                    && is_target[p.idx()]
-                {
-                    t = p;
-                }
-                t
-            };
-            let mut by_top: FxHashMap<VtreeIdx, Vec<VtreeIdx>> = FxHashMap::default();
-            for &t in &targets {
-                by_top.entry(top(t)).or_default().push(t);
-            }
-            let mut kept = Vec::new();
-            for (_, group) in by_top {
-                if pairs_at(&a, &group) + pairs_at(&b, &group) >= min {
-                    kept.extend(group);
-                }
-            }
-            targets = kept;
+        if min > 0 && pairs_at(&a, &targets) + pairs_at(&b, &targets) < min {
+            targets.clear();
         }
         if targets.is_empty() {
-            if a.weights().is_some() || b.weights().is_some() {
+            if already_weighted {
                 self.weighted += 1;
             }
             return backend.engine.and_restoring(a, b).map_err(|refused| {
@@ -849,7 +851,7 @@ impl SumOut {
             });
         }
         self.summing += 1;
-        let added_weights = a.weights().is_none() && b.weights().is_none();
+        let added_weights = !already_weighted;
         if added_weights {
             let store = self.store_for(scope);
             if let Err(e) = a.set_weights(store) {
@@ -859,6 +861,21 @@ impl SumOut {
                     (b, scope.clone()).into(),
                 )));
             }
+        }
+        let armed = backend.engine.limits().armed();
+        let can_resume =
+            armed.stop_rules().unconditional.is_some() || armed.stop_rules().after_pairs.is_some();
+        if !can_resume {
+            return backend
+                .engine
+                .and_marginalizing(a, b, &targets)
+                .map_err(|e| {
+                    Box::new((
+                        e.into(),
+                        (backend.zero(scope), scope.clone()).into(),
+                        (backend.zero(scope), scope.clone()).into(),
+                    ))
+                });
         }
         // Borrowed operands are read in place and left as they were, so a
         // refusal hands them back without a copy.

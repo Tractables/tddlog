@@ -662,32 +662,7 @@ impl Factoring<'_> {
             let common = self.scratch.borrow_mut().common(&with, shared);
             let stripped = || std::iter::once(shared).chain(common.iter().copied());
             let with = self.scratch.borrow_mut().strip(with, stripped());
-            // The stripped bodies' scope is `own` less the stripped fact
-            // literals' variables, which no body left mentions (a body
-            // with a literal and its complement was dropped on entry);
-            // with a derived literal among them it is `own`, as
-            // `scope_over` would say, without its scan of the bodies.
-            let inner = match own.vars() {
-                Some(held)
-                    if with
-                        .iter()
-                        .flatten()
-                        .all(|&l| self.fact_literal(l).is_some()) =>
-                {
-                    let mut gone: Vec<VarId> = stripped()
-                        .filter_map(|l| self.fact_literal(l))
-                        .map(|f| f.var)
-                        .collect();
-                    gone.sort_unstable();
-                    let rest: Vec<VarId> = held
-                        .iter()
-                        .copied()
-                        .filter(|v| gone.binary_search(v).is_err())
-                        .collect();
-                    self.narrowed(&own, held, &rest)?
-                }
-                _ => own.clone(),
-            };
+            let inner = self.scope_over(&with, &[], &own)?;
             // ⋁_{r∋L} (body_r \ L \ M), on `inner` until an operation
             // needs it on `own`.
             let mut positive: Formula = (self.positive_bodies(with, &inner)?, inner);
