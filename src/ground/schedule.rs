@@ -33,7 +33,9 @@
 //! atoms written before it ([`Order::Source`]).
 
 use crate::syntax::{CmpOp, Literal, Term};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::cmp::Reverse;
+use std::collections::{BTreeSet, BinaryHeap};
 
 /// Variables of a literal, each once, in order of first occurrence.
 pub(crate) fn literal_vars(l: &Literal) -> Vec<String> {
@@ -130,6 +132,12 @@ pub(crate) enum Order {
 /// ordered. On success returns the order, as positions in `body`, and
 /// updates `bound` with everything the body binds. On failure gives the
 /// position of the stuck literal.
+///
+/// Each literal's variables are read once, and binding one updates only
+/// the literals that read it, so that a body of `n` literals takes about
+/// `n log n` steps: a test of a wide number bit by bit has a literal for
+/// each bit, and ranking every atom left after each one placed took
+/// `n^2`.
 pub(crate) fn schedule_body(
     body: &[Literal],
     bound: &mut FxHashSet<String>,
@@ -137,89 +145,33 @@ pub(crate) fn schedule_body(
     order: Order,
 ) -> Result<Vec<usize>, usize> {
     let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && !switch(i);
-    let mut pending: Vec<usize> = Vec::with_capacity(body.len());
-    pending.extend((0..body.len()).filter(|&i| !binding(i) && !switch(i)));
-    // A findall waits for the variables of its result that an atom written
-    // before it binds: ProbLog calls it with them bound, and stops where
-    // the result is then no list.
-    let waits: Vec<Vec<String>> = (0..body.len())
-        .map(|i| {
-            let Literal::Collect(c) = &body[i] else {
-                return Vec::new();
-            };
-            let mut vs = Vec::new();
-            c.result.vars_into(&mut vs);
-            vs.retain(|v| (0..i).any(|j| binding(j) && literal_vars(&body[j]).contains(v)));
-            vs
-        })
+    let atoms: Vec<usize> = (0..body.len()).filter(|&i| binding(i)).collect();
+    let pending: Vec<usize> = (0..body.len())
+        .filter(|&i| !binding(i) && !switch(i))
         .collect();
-    let mut out: Vec<usize> = Vec::with_capacity(body.len());
-    // The literals before position `before`, in source order, that their
-    // variables allow.
-    let release = |bound: &mut FxHashSet<String>,
-                   pending: &mut Vec<usize>,
-                   out: &mut Vec<usize>,
-                   before: usize| loop {
-        let mut progressed = false;
-        let mut i = 0;
-        while i < pending.len() && pending[i] < before {
-            let l = &body[pending[i]];
-            let unbound: Vec<String> = literal_vars(l)
-                .into_iter()
-                .filter(|v| !bound.contains(v))
-                .collect();
-            if waits[pending[i]].iter().all(|v| bound.contains(v)) && ready(l, &unbound, bound) {
-                out.push(pending.remove(i));
-                progressed = true;
-            } else {
-                i += 1;
-            }
-        }
-        if !progressed {
-            break;
-        }
-    };
-    let mut atoms: Vec<usize> = (0..body.len()).filter(|&i| binding(i)).collect();
+    let mut s = Schedule::new(body, bound, &atoms, pending);
     // In the order of the source a literal waits for the atoms written
     // before it, as a call in ProbLog's resolution does: a demand it makes
-    // reads them. Otherwise it goes as early as its variables allow.
-    let before = |atoms: &[usize]| match order {
-        Order::Source => atoms.first().copied().unwrap_or(usize::MAX),
+    // reads them. Otherwise it goes as early as its variables allow. With
+    // `k` atoms placed, the source order places `atoms[k]` next.
+    let before = |k: usize| match order {
+        Order::Source => atoms.get(k).copied().unwrap_or(usize::MAX),
         _ => usize::MAX,
     };
-    release(bound, &mut pending, &mut out, before(&atoms));
-    while !atoms.is_empty() {
-        // A lookup first, then the atom that shares the most bound
-        // variables, the first in source order among equals: one that
-        // shares none, after some are bound, would pair each of its tuples
-        // with each binding so far.
-        let rank = |l: usize| {
-            let vars = literal_vars(&body[l]);
-            let shared = vars.iter().filter(|&v| bound.contains(v)).count();
-            (shared == vars.len(), shared)
+    s.release(bound, before(0));
+    for (k, &next) in atoms.iter().enumerate() {
+        let l = match order {
+            Order::Source => next,
+            Order::From(first) if s.atom[first] && !s.placed[first] => first,
+            _ => s.best(),
         };
-        let first = match order {
-            Order::From(first) => atoms.iter().position(|&l| l == first),
-            _ => None,
-        };
-        let k = match (order, first) {
-            (_, Some(k)) => k,
-            (Order::Source, _) => 0,
-            _ => (0..atoms.len())
-                .rev()
-                .max_by_key(|&k| rank(atoms[k]))
-                .expect("an atom left"),
-        };
-        let l = atoms.remove(k);
-        for v in literal_vars(&body[l]) {
-            bound.insert(v);
-        }
-        out.push(l);
-        release(bound, &mut pending, &mut out, before(&atoms));
+        s.place(l, bound);
+        s.release(bound, before(k + 1));
     }
-    if let Some(&stuck) = pending.first() {
+    if let Some(&stuck) = s.pending.iter().find(|&&l| !s.placed[l]) {
         return Err(stuck);
     }
+    let mut out = s.out;
     for i in (0..body.len()).filter(|&i| switch(i)) {
         if literal_vars(&body[i]).iter().any(|v| !bound.contains(v)) {
             return Err(i);
@@ -227,6 +179,180 @@ pub(crate) fn schedule_body(
         out.push(i);
     }
     Ok(out)
+}
+
+/// A body as [`schedule_body`] orders it: its literals' variables,
+/// numbered, and what binding each variable changes.
+struct Schedule<'a> {
+    body: &'a [Literal],
+    /// Each literal's variables ([`literal_vars`]), and their numbers.
+    vars: Vec<Vec<String>>,
+    numbers: Vec<Vec<u32>>,
+    /// Whether each variable, by number, is bound.
+    is_bound: Vec<bool>,
+    /// The literals that read each variable, by number.
+    readers: Vec<Vec<usize>>,
+    /// Whether each literal is an atom that binds, and whether it is placed.
+    atom: Vec<bool>,
+    placed: Vec<bool>,
+    /// Of each atom, how many of its variables are bound.
+    shared: Vec<usize>,
+    /// The atoms by rank: a lookup first, then the atom that shares the
+    /// most bound variables, the first in source order among equals. One
+    /// that shares none, after some are bound, would pair each of its
+    /// tuples with each binding so far. Each change of a count pushes the
+    /// new rank, and an entry that is no longer its atom's is passed over.
+    ranks: BinaryHeap<(bool, usize, Reverse<usize>)>,
+    /// The other literals, each placed as early as its variables allow, in
+    /// source order; `waiting` holds, by place in `pending`, those whose
+    /// variables were bound since they were last found not ready.
+    pending: Vec<usize>,
+    place_of: Vec<usize>,
+    waiting: BTreeSet<usize>,
+    /// Of each findall, the variables of its result that an atom written
+    /// before it binds: ProbLog calls it with them bound, and stops where
+    /// the result is then no list. It waits for them.
+    waits: Vec<Vec<String>>,
+    out: Vec<usize>,
+}
+
+impl<'a> Schedule<'a> {
+    fn new(
+        body: &'a [Literal],
+        bound: &FxHashSet<String>,
+        atoms: &[usize],
+        pending: Vec<usize>,
+    ) -> Self {
+        let vars: Vec<Vec<String>> = body.iter().map(literal_vars).collect();
+        let mut number: FxHashMap<&str, u32> = FxHashMap::default();
+        let mut is_bound = Vec::new();
+        let mut numbers = Vec::with_capacity(body.len());
+        for vs in &vars {
+            let mut row = Vec::with_capacity(vs.len());
+            for v in vs {
+                let n = *number.entry(v.as_str()).or_insert_with(|| {
+                    is_bound.push(bound.contains(v));
+                    is_bound.len() as u32 - 1
+                });
+                row.push(n);
+            }
+            numbers.push(row);
+        }
+        let mut readers = vec![Vec::new(); is_bound.len()];
+        for (l, row) in numbers.iter().enumerate() {
+            for &v in row {
+                readers[v as usize].push(l);
+            }
+        }
+        let shared = numbers
+            .iter()
+            .map(|row| row.iter().filter(|&&v| is_bound[v as usize]).count())
+            .collect();
+        let mut atom = vec![false; body.len()];
+        for &l in atoms {
+            atom[l] = true;
+        }
+        let mut place_of = vec![usize::MAX; body.len()];
+        for (p, &l) in pending.iter().enumerate() {
+            place_of[l] = p;
+        }
+        let waits = (0..body.len())
+            .map(|i| {
+                let Literal::Collect(c) = &body[i] else {
+                    return Vec::new();
+                };
+                let mut vs = Vec::new();
+                c.result.vars_into(&mut vs);
+                vs.retain(|v| (0..i).any(|j| atom[j] && vars[j].contains(v)));
+                vs
+            })
+            .collect();
+        let mut s = Schedule {
+            body,
+            vars,
+            numbers,
+            is_bound,
+            readers,
+            atom,
+            placed: vec![false; body.len()],
+            shared,
+            ranks: BinaryHeap::new(),
+            waiting: (0..pending.len()).collect(),
+            pending,
+            place_of,
+            waits,
+            out: Vec::with_capacity(body.len()),
+        };
+        s.ranks = atoms.iter().map(|&l| s.rank(l)).collect();
+        s
+    }
+
+    fn rank(&self, l: usize) -> (bool, usize, Reverse<usize>) {
+        let shared = self.shared[l];
+        (shared == self.numbers[l].len(), shared, Reverse(l))
+    }
+
+    /// The atom of the highest rank not placed.
+    fn best(&mut self) -> usize {
+        while let Some((_, shared, Reverse(l))) = self.ranks.pop() {
+            if !self.placed[l] && shared == self.shared[l] {
+                return l;
+            }
+        }
+        unreachable!("an atom left")
+    }
+
+    /// Places literal `l`, whose variables are then all bound.
+    fn place(&mut self, l: usize, bound: &mut FxHashSet<String>) {
+        self.placed[l] = true;
+        self.out.push(l);
+        for k in 0..self.numbers[l].len() {
+            let v = self.numbers[l][k] as usize;
+            if self.is_bound[v] {
+                continue;
+            }
+            self.is_bound[v] = true;
+            bound.insert(self.vars[l][k].clone());
+            for r in 0..self.readers[v].len() {
+                let r = self.readers[v][r];
+                if self.placed[r] {
+                    continue;
+                }
+                if self.atom[r] {
+                    self.shared[r] += 1;
+                    self.ranks.push(self.rank(r));
+                } else if self.place_of[r] != usize::MAX {
+                    self.waiting.insert(self.place_of[r]);
+                }
+            }
+        }
+    }
+
+    /// Places every pending literal before position `before` that is
+    /// ready, in source order, until none is: those after the one placed in
+    /// the same pass, those before it in the next. The others stay waiting.
+    fn release(&mut self, bound: &mut FxHashSet<String>, before: usize) {
+        let end = self.pending.partition_point(|&l| l < before);
+        while self.waiting.range(..end).next().is_some() {
+            let mut from = 0;
+            while let Some(&p) = self.waiting.range(from..end).next() {
+                self.waiting.remove(&p);
+                from = p + 1;
+                let l = self.pending[p];
+                if !self.waits[l].iter().all(|v| bound.contains(v)) {
+                    continue;
+                }
+                let unbound: Vec<String> = self.vars[l]
+                    .iter()
+                    .filter(|v| !bound.contains(*v))
+                    .cloned()
+                    .collect();
+                if ready(&self.body[l], &unbound, bound) {
+                    self.place(l, bound);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
