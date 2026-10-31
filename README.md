@@ -140,9 +140,8 @@ bindings take the text with its format's name. A front end of one's own
 writes the program's text, as [examples/sprinkler.rs](examples/sprinkler.rs)
 does from Rust data.
 
-Not yet read: cut, if-then-else, `assert`, strings, `library(collect)`
-and a findall in a cycle of calls in ProbLog; `/`, `%` and `sample` in
-Dice.
+Not yet read: cut, if-then-else, `assert`, strings and a findall in a
+cycle of calls in ProbLog; `/`, `%` and `sample` in Dice.
 
 ## Inside the engine
 

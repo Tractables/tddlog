@@ -235,8 +235,12 @@ The parser reads ProbLog without cut:
   refused;
 - `findall/3`, `all/3` and `all_or_none/3`, over probabilistic goals
   too: in each world the list of the solutions whose proofs hold there,
-  once per proof and in ProbLog's order (`all/3` and `all_or_none/3`
-  once per solution, `all/3` false where there is none); a goal that is
+  once per proof (`all/3` and `all_or_none/3` once per solution, `all/3`
+  false where there is none), in ProbLog's order for a deterministic
+  goal; over a probabilistic goal the order follows tddlog's proofs, not
+  ProbLog's engine, so a program that reads the list's order (`nth1/3`,
+  its head) may answer differently, while order-free uses (`length/2`,
+  `sum_list/2`, `member/2`, `sort/2`) agree; a goal that is
   a variable is read as a body, a conjunction or a disjunction included,
   as ProbLog reads it; `forall(C, A)`, which is `\+ (C, \+ A)`;
 - `library(aggregate)`'s aggregates, `h(G1, ..., Gn, f<V>) :- Body`, as
@@ -406,11 +410,17 @@ term's structure and the compile does not change. A grounding that
 builds terms deeper than 10 000 does not end and is refused. A findall
 over a probabilistic goal is a distribution over lists
 (`ground/engine/lists.rs`): its goal's solutions are expanded into their
-proofs, conjunctions of probabilistic facts and negations, in ProbLog's
-order, and the lists are built through the proofs one at a time, each
-state of the list so far an atom with a rule for each way to it, so that
-the states that reach one list merge. A findall whose goal reads its own
-clause is refused, as is one past 2^16 proofs of an atom or 2^16 lists.
+proofs, conjunctions of probabilistic facts and negations, and the lists
+are built through the proofs one at a time, each state of the list so far
+an atom with a rule for each way to it, so that the states that reach one
+list merge. A findall whose goal reads its own clause is refused, as is
+one past 2^16 proofs of an atom or 2^16 lists. The proofs that hold in every world come first, in the order resolution
+finds them, then the others by the order their literals were first read.
+ProbLog instead sorts them by the newest node each reads in a formula of
+its own, whose nodes its engine numbers as it makes them: certain facts,
+built-in calls, a conjunction per proof and the nodes of branches that
+fail. tddlog keeps no such numbering, so the two orders can differ where
+a goal mixes certain and probabilistic reads.
 Rules must be range restricted, but for variables a demand binds; a body
 is reordered so that binding literals come first and switches last, as
 they bind nothing and reject no binding (`ground/schedule.rs`, shared by

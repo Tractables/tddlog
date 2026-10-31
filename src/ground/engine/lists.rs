@@ -7,10 +7,14 @@
 //! there. A proof is a conjunction of the probabilistic facts and the
 //! negations it reads, the derived atoms it reads expanded into their own
 //! proofs ([`proofs`]). The proofs that hold in every world come first, in
-//! the order resolution finds them; then the others, in the order ProbLog
-//! made their formulas' nodes: a proof of one literal where its atom was
-//! first read, a proof of several where its conjunction was made, after
-//! its literals ([`lists`]).
+//! the order resolution finds them; then the others, a proof of one
+//! literal where its atom was first read, a proof of several where its
+//! conjunction was made, after its literals ([`lists`]). That is
+//! ProbLog's order for a deterministic goal. Over a probabilistic one,
+//! ProbLog sorts the proofs by the newest node each reads, numbering every
+//! node its engine makes (certain facts, built-in calls, the nodes of
+//! branches that fail), which tddlog does not keep, so the orders can
+//! differ there.
 //!
 //! The lists are built through the proofs in that order, one state of the
 //! list so far at a time: each proof that holds in some worlds only splits
@@ -265,9 +269,9 @@ fn lists(
     what: &str,
 ) -> Result<Vec<Listed>, GroundError> {
     if !gather.once() {
-        // ProbLog's order: the proofs that hold in every world first, then
-        // the others by the node of each, numbered as made: an atom where
-        // it was first read, a conjunction after its literals.
+        // The proofs that hold in every world first, then the others by
+        // the node of each, numbered as made: an atom where it was first
+        // read, a conjunction after its literals.
         // A negation alone is its atom's node negated, which ProbLog's
         // sort puts before every other, the last made first.
         let mut made: FxHashMap<u32, i64> = FxHashMap::default();
