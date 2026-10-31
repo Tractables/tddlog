@@ -19,7 +19,10 @@
 //!   still being resolved reads the answers found so far. The first call
 //!   of such a cycle then resolves its clauses again, and so do the calls
 //!   of the cycle it reaches, until no table gains an answer (linear
-//!   tabling). Its tables are then complete.
+//!   tabling). Its tables are then complete. A table found in a cycle
+//!   stays in it until the cycle's first call completes: resolved again,
+//!   it may read only tables made after it, which its own resolution
+//!   alone would take for a cycle of its own.
 //! - An answer is an atom of the ground program, an answer with variables
 //!   too, its variables named, as ProbLog gives it a node of its own: it
 //!   holds for every value of them. A query answered so is refused, since
@@ -775,9 +778,12 @@ impl<'a> TopDown<'a> {
                 "the top-down grounding nests calls deeper than {MAX_NESTING}, at {goal}"
             )));
         }
+        // A table already found in a cycle starts from the cycle's first
+        // table: whatever it reads this time, it is not taken for the first
+        // table of a cycle of its own and completed before that one is.
         self.frames.push(Frame {
             table: t,
-            low: t,
+            low: self.tables[t as usize].low,
             looped: false,
         });
         self.tables[t as usize].state = State::Active;

@@ -621,7 +621,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    resolution with a table per call up to variants, every switch
    possible, a recursive component completed by linear tabling (its
    leader re-evaluates the component's calls until none has a new
-   answer). An answer with variables in it is kept where it holds in
+   answer, and only the leader completes it: a call found in the
+   component stays in it when it is re-evaluated). An answer with variables in it is kept where it holds in
    every world (`reverse([], L, L)`) and refused where it holds in some
    only. The resolution emits the ground instances of the clauses it
    used, which the grounder then grounds as a program without variables;
