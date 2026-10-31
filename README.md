@@ -261,10 +261,9 @@ examples.
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
-- Where others win: ProbLog answers 22 of its tutorial's 115 programs
-  that tddlog does not, each in under 2 s. Nineteen of them used what
-  tddlog did not read yet when they ran, and on three it ran out of time
-  or memory.
+- Where others win: ProbLog answers 2 of its tutorial's 115 programs
+  that tddlog does not: pcfg_5, whose `=..` tddlog does not read yet,
+  and numberguessing_1, which uses ProbLog's `subquery/3`.
 
 ### Probabilistic database queries
 
