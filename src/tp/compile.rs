@@ -937,9 +937,7 @@ impl Compilation {
             .map(|v| v.0 as usize + 1)
             .max()
             .unwrap_or(0);
-        if let Some(p) = projected.as_mut()
-            && (gp.encoding.is_empty() || !gp.encoding.segments.is_empty())
-        {
+        if let Some(p) = projected.as_mut() {
             let mut pinned = Vec::new();
             for ind in &gp.encoding.indicators {
                 if let Some(v) = var_of[ind.var as usize] {
@@ -1348,7 +1346,8 @@ impl Compilation {
         let single_atom = match self.sccs[i].as_slice() {
             &[a] if p.keep_global > 1
                 && self.fixpoint.sizes[a as usize] > 1
-                && self.dying.dies_after[a as usize] > i as u32 =>
+                && self.dying.dies_after[a as usize] > i as u32
+                && self.dying.dies_after[a as usize] != u32::MAX =>
             {
                 Some(a)
             }
