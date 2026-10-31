@@ -180,14 +180,8 @@ impl Compiled {
                 if self.stored_positive(a) == positive {
                     backend.embed_ref(f, self.scope_of(a), scope)
                 } else {
-                    self.taken_literal_formula(
-                        backend,
-                        scope,
-                        a,
-                        backend.copy(f)?,
-                        positive,
-                        (negations, source),
-                    )
+                    let f = negations.negate(backend, source, &**f)?;
+                    backend.embed(f, self.scope_of(a), scope)
                 }
             }
             None => {
@@ -205,8 +199,8 @@ impl Compiled {
     }
 
     /// [`literal_formula`](Self::literal_formula) of derived atom `a` from
-    /// `f`, its stored formula taken from [`Compiled::formulas`] or a copy
-    /// of it: `f` itself or its negation, embedded onto `scope`.
+    /// `f`, its stored formula taken from [`Compiled::formulas`]: `f` itself
+    /// or its negation, embedded onto `scope`.
     pub(crate) fn taken_literal_formula(
         &self,
         backend: &TddBackend,
