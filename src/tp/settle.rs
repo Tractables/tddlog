@@ -483,7 +483,6 @@ fn expand(compiled: &mut Compiled, cut: &Cut) {
 /// where it comes before them.
 struct Links<'a> {
     cut: &'a Cut,
-    held: Vec<Tdd>,
     of: FxHashMap<VarId, usize>,
     reads: Vec<Vec<usize>>,
     rank: Vec<usize>,
@@ -496,34 +495,33 @@ impl<'a> Links<'a> {
     /// other's copies in a cycle, which no order of composition sums out.
     fn new(
         backend: &TddBackend,
-        compiled: &Compiled,
+        compiled: &mut Compiled,
         cut: &'a Cut,
         negations: &mut Negations,
     ) -> Result<Option<Self>, CompileError> {
-        let held = cut
-            .links
-            .iter()
-            .map(|&(l, value)| {
-                compiled.literal_formula(
-                    backend,
-                    compiled.scope_of(l),
-                    l,
-                    value,
-                    (&mut *negations, NegationSource::Evidence),
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        for &(l, value) in &cut.links {
+            if compiled.stored_positive(l) != value {
+                let f = compiled.formulas[l as usize]
+                    .as_ref()
+                    .expect("a cut's link has a formula");
+                let negated = negations.negate(backend, NegationSource::Evidence, &**f)?;
+                compiled.formulas[l as usize] = Some(Arc::new(negated));
+                compiled.positive[l as usize] = value;
+            }
+        }
         let of: FxHashMap<VarId, usize> = cut.vars.iter().copied().collect();
         let reads = cut
             .links
             .iter()
-            .zip(&held)
             .enumerate()
-            .map(|(i, (&(l, _), link))| {
+            .map(|(i, &(l, _))| {
                 let support;
                 let vars = match compiled.scope_of(l).vars() {
                     Some(vars) => vars,
                     None => {
+                        let link = compiled.formulas[l as usize]
+                            .as_ref()
+                            .expect("a cut's link has a formula");
                         support = link.support()?;
                         &support[..]
                     }
@@ -543,7 +541,6 @@ impl<'a> Links<'a> {
         };
         Ok(Some(Links {
             cut,
-            held,
             of,
             reads,
             rank,
@@ -558,7 +555,11 @@ impl<'a> Links<'a> {
         i: usize,
         scope: &VtreeScope,
     ) -> Result<Tdd, CompileError> {
-        backend.embed_ref(&self.held[i], compiled.scope_of(self.cut.links[i].0), scope)
+        let l = self.cut.links[i].0;
+        let f = compiled.formulas[l as usize]
+            .as_ref()
+            .expect("a cut's link has a formula");
+        backend.embed_ref(f, compiled.scope_of(l), scope)
     }
 
     /// The links that tie the copies `reads`, and those that tie the copies
@@ -626,7 +627,7 @@ fn pairs(backend: &TddBackend, compiled: &Compiled, a: AtomId) -> usize {
 /// `None` where the names pay for them.
 fn others_composed(
     backend: &TddBackend,
-    compiled: &Compiled,
+    compiled: &mut Compiled,
     cut: &Cut,
     others: &[Reader],
     work: u64,
@@ -672,7 +673,7 @@ fn others_composed(
 /// `None` where the names pay for them.
 fn asked_composed(
     backend: &TddBackend,
-    compiled: &Compiled,
+    compiled: &mut Compiled,
     cut: &Cut,
     asked: &[Reader],
     evidence: usize,
@@ -786,7 +787,7 @@ fn joint(
 ) -> Result<Option<usize>, CompileError> {
     let scope = over(backend, compiled, links.cut.links.iter().map(|&(l, _)| l))?;
     let mut acc: Option<Tdd> = None;
-    for i in 0..links.held.len() {
+    for i in 0..links.cut.links.len() {
         let link = links.on(backend, compiled, i, &scope)?;
         let next = match acc {
             None => link,

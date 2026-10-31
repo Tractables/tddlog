@@ -1,9 +1,11 @@
-//! Summing out the evidence walk's finished subtrees, where only `P(e)` is
-//! wanted.
+//! Summing out the evidence walk's finished subtrees.
 //!
-//! Where no query reads the evidence formula (`--no-queries`), the walk's
-//! result is only counted, and a variable can be summed out of a join's
-//! result once no later join can read it. A subtree `t` of the result's
+//! The walk's result is counted, and the queries read only some of its
+//! variables after it: a query's own variable, a fact's or an indicator
+//! copy's, or those its formula depends on. Every other variable can be
+//! summed out of a join's result once no later join can read it; the
+//! queries' variables are held as a slot holds them, and never are
+//! ([`SumOut::hold_for_queries`]). A subtree `t` of the result's
 //! scope is finished where the global node over its leaves, `g`, holds no
 //! variable another slot holds: no later join can then put another
 //! operand's variable under the image of `t`, and every later scope has
@@ -23,16 +25,19 @@
 //! the parent reads and drops, and only the topmost finished subtrees reach
 //! the result's weight store. The result carries the facts' weights; a
 //! later join with it places it with the weights (`Engine::embed_over`)
-//! and conjoins weighted, and the walk's last result is counted by its
-//! weighted value.
+//! and conjoins weighted. The walk's last result is counted by its
+//! weighted value where no query reads it, and otherwise by the count up
+//! and down, which reads a summed level's values as its column
+//! (`crate::eval::Counted`).
 //! The UAI 2022 PR protein networks 1bxv and 1jer held 2.1 and 4.3 GB at
 //! their peak instead of 10.1 and 15.1 GB in signed logs and maximal
 //! subtrees.
 
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use num_rational::BigRational;
-use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, WeightStore};
+use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, TddLevel, WeightStore};
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
 
@@ -41,21 +46,38 @@ use crate::eval::Probabilities;
 use crate::tp::backend::Part;
 use crate::tp::{CompileError, TddBackend, VtreeScope};
 
+/// Where queries read variables after the walk, a finished subtree is
+/// summed out only when the join's operands hold at least this many pairs
+/// under it: smaller subtrees do not repay turning the walk's accumulator
+/// weighted.
+const MIN_QUERY_SUM_PAIRS: usize = 1_000_000;
+
 /// A join refused: the error, and both operands.
 type Refused = Box<(CompileError, Part, Part)>;
 
-/// The finished subtrees of the walk's joins, and the facts' weights to
-/// sum them out under (see the module documentation).
-pub(super) struct SumOut {
-    /// Per slot, the program variables of the observations conjoined into
-    /// it, ascending.
-    support: Vec<Vec<VarId>>,
-    /// The global vtree's leaves from left to right: each program
-    /// variable's position, each node's positions `[lo, hi)`, each node's
-    /// depth, and for position `k`, the node whose children split `k` from
-    /// `k + 1`; `shallowest[j][k]` is the shallowest of those over `k ..
-    /// k + 2^j`. The global node over positions `lo < hi` is the
-    /// shallowest split between them.
+fn level_pairs(level: &TddLevel) -> usize {
+    if level.is_marginal() {
+        0
+    } else if let Some(d) = level.implicit() {
+        d.pairs()
+    } else {
+        (0..level.nodes().len())
+            .map(|i| level.pair_count_at(i))
+            .sum()
+    }
+}
+
+fn pairs_at(f: &Tdd, nodes: &[VtreeIdx]) -> usize {
+    nodes.iter().map(|&t| level_pairs(f.level(t))).sum()
+}
+
+/// The global vtree's leaves from left to right, built on the first join
+/// that looks for finished subtrees: each program variable's position,
+/// each node's positions `[lo, hi)`, each node's depth, and for position
+/// `k`, the node whose children split `k` from `k + 1`; `shallowest[j][k]`
+/// is the shallowest of those over `k .. k + 2^j`. The global node over
+/// positions `lo < hi` is the shallowest split between them.
+struct TreeIndex {
     position: Vec<u32>,
     range: Vec<(u32, u32)>,
     depth: Vec<u32>,
@@ -64,26 +86,15 @@ pub(super) struct SumOut {
     shallowest: Vec<Vec<u32>>,
     /// A Fenwick tree over positions: the slots holding each variable.
     held: Vec<i64>,
-    /// The facts' weights, by program variable less one.
-    weights: Vec<LiteralWeights<BigRational>>,
-    /// The join begun: its result's variables, and the variables its
-    /// operands share, whose holdings it dropped.
-    merged: Vec<VarId>,
-    shared: Vec<VarId>,
-    /// The joins that summed out as they were built, and the other joins
-    /// with an operand that carries weights.
-    pub(super) summing: usize,
-    pub(super) weighted: usize,
+    var_mask: Vec<u8>,
 }
 
-impl SumOut {
-    /// On the global vtree `tree`, with the facts' weights `w`.
-    pub(super) fn new(tree: &tididi::Vtree, w: &Probabilities) -> Self {
-        let rational = |x: f64| BigRational::from_float(x).expect("a weight is finite");
+impl TreeIndex {
+    fn new(tree: &tididi::Vtree, holders: &[u32]) -> Self {
         let n = tree.num_nodes();
         let mut range = vec![(0u32, 0u32); n];
         let mut depth = vec![0u32; n];
-        let mut leaf_at = Vec::new();
+        let mut leaf_at = Vec::with_capacity(tree.num_vars() as usize);
         let mut position = vec![0u32; tree.num_vars() as usize + 1];
         // Left before right, each node's range closed after its children's.
         let mut stack = vec![(tree.root(), false)];
@@ -131,30 +142,31 @@ impl SumOut {
             shallowest.push(level);
             span *= 2;
         }
-        let weights = (1..w.pos.len())
-            .map(|v| LiteralWeights {
-                negative: rational(w.neg[v]),
-                positive: rational(w.pos[v]),
-            })
-            .collect();
-        SumOut {
-            support: Vec::new(),
+        let mut held = vec![0i64; leaves + 1];
+        for (v, &h) in holders.iter().enumerate().skip(1) {
+            if h != 0 {
+                held[position[v] as usize + 1] = i64::from(h);
+            }
+        }
+        for i in 1..held.len() {
+            let j = i + (i & i.wrapping_neg());
+            if j < held.len() {
+                held[j] += held[i];
+            }
+        }
+        TreeIndex {
             position,
             range,
             depth,
             split,
             leaf_at,
             shallowest,
-            held: vec![0; leaves + 1],
-            weights,
-            merged: Vec::new(),
-            shared: Vec::new(),
-            summing: 0,
-            weighted: 0,
+            held,
+            var_mask: vec![0; tree.num_vars() as usize + 1],
         }
     }
 
-    fn hold(&mut self, v: VarId, delta: i64) {
+    fn add(&mut self, v: VarId, delta: i64) {
         let mut i = self.position[v.0 as usize] as usize + 1;
         while i < self.held.len() {
             self.held[i] += delta;
@@ -187,6 +199,92 @@ impl SumOut {
             x
         }
     }
+}
+
+/// The finished subtrees of the walk's joins, and the facts' weights to
+/// sum them out under (see the module documentation).
+pub(super) struct SumOut {
+    /// Per slot, the program variables of the observations conjoined into
+    /// it, ascending.
+    support: Vec<Vec<VarId>>,
+    tree: Arc<tididi::Vtree>,
+    index: Option<TreeIndex>,
+    /// By program variable, the slots holding it.
+    holders: Vec<u32>,
+    /// The facts' weights, by program variable.
+    pos: Vec<f64>,
+    neg: Vec<f64>,
+    rat: Vec<Option<LiteralWeights<BigRational>>>,
+    /// Whether any query holds variables after the walk, and the least
+    /// pairs a finished subtree holds for a join to sum it out.
+    has_queries: bool,
+    min_pairs: usize,
+    /// `targets`' buffers, per node of the scope: the positions under it,
+    /// and the result's variables under it where it is finished.
+    ends: Vec<(u32, u32)>,
+    own: Vec<Option<(u32, u8)>>,
+    top_idx: Vec<u32>,
+    f_seen: Vec<u32>,
+    f_gen: u32,
+    /// The join begun: its result's variables, and the variables its
+    /// operands share, whose holdings it dropped.
+    merged: Vec<VarId>,
+    shared: Vec<VarId>,
+    /// The joins that summed out as they were built, and the other joins
+    /// with an operand that carries weights.
+    pub(super) summing: usize,
+    pub(super) weighted: usize,
+}
+
+impl SumOut {
+    /// On the global vtree `tree`, with the facts' weights `w`.
+    pub(super) fn new(tree: Arc<tididi::Vtree>, w: &Probabilities) -> Self {
+        let holders = vec![0; tree.num_vars() as usize + 1];
+        SumOut {
+            support: Vec::new(),
+            tree,
+            index: None,
+            holders,
+            pos: w.pos.clone(),
+            neg: w.neg.clone(),
+            rat: vec![None; w.pos.len()],
+            has_queries: false,
+            min_pairs: MIN_QUERY_SUM_PAIRS,
+            ends: Vec::new(),
+            own: Vec::new(),
+            top_idx: Vec::new(),
+            f_seen: Vec::new(),
+            f_gen: 0,
+            merged: Vec::new(),
+            shared: Vec::new(),
+            summing: 0,
+            weighted: 0,
+        }
+    }
+
+    fn hold(&mut self, v: VarId, delta: i64) {
+        let h = &mut self.holders[v.0 as usize];
+        *h = h
+            .checked_add_signed(delta as i32)
+            .expect("a variable's holdings are never negative");
+        if let Some(idx) = &mut self.index {
+            idx.add(v, delta);
+        }
+    }
+
+    /// The variables `vars` are read after the walk (by the queries): no
+    /// subtree over one of them is ever finished.
+    pub(super) fn hold_for_queries(&mut self, vars: &[VarId]) {
+        self.has_queries |= !vars.is_empty();
+        for &v in vars {
+            self.hold(v, 1);
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn set_min_pairs(&mut self, min: usize) {
+        self.min_pairs = min;
+    }
 
     /// Slot `id` holds an observation on `scope`.
     pub(super) fn observe(&mut self, id: usize, scope: &VtreeScope) {
@@ -216,21 +314,45 @@ impl SumOut {
             self.support.resize_with(need, Vec::new);
         }
         let (x, y) = (&self.support[a], &self.support[b]);
-        let (mut merged, mut shared) = (Vec::with_capacity(x.len() + y.len()), Vec::new());
+        let (mut merged, mut shared) = (
+            std::mem::take(&mut self.merged),
+            std::mem::take(&mut self.shared),
+        );
+        merged.clear();
+        shared.clear();
+        merged.reserve(x.len() + y.len());
         let (mut i, mut j) = (0, 0);
-        while i < x.len() || j < y.len() {
-            if j == y.len() || (i < x.len() && x[i] < y[j]) {
-                merged.push(x[i]);
-                i += 1;
-            } else if i == x.len() || y[j] < x[i] {
-                merged.push(y[j]);
-                j += 1;
+        while i < x.len() && j < y.len() {
+            if x[i] < y[j] {
+                if x.len() - i > 64 {
+                    let k = i + x[i..].partition_point(|&v| v < y[j]);
+                    merged.extend_from_slice(&x[i..k]);
+                    i = k;
+                } else {
+                    merged.push(x[i]);
+                    i += 1;
+                }
+            } else if y[j] < x[i] {
+                if y.len() - j > 64 {
+                    let k = j + y[j..].partition_point(|&v| v < x[i]);
+                    merged.extend_from_slice(&y[j..k]);
+                    j = k;
+                } else {
+                    merged.push(y[j]);
+                    j += 1;
+                }
             } else {
                 merged.push(x[i]);
                 shared.push(x[i]);
                 i += 1;
                 j += 1;
             }
+        }
+        if i < x.len() {
+            merged.extend_from_slice(&x[i..]);
+        }
+        if j < y.len() {
+            merged.extend_from_slice(&y[j..]);
         }
         for &v in &shared {
             self.hold(v, -1);
@@ -240,9 +362,12 @@ impl SumOut {
     }
 
     pub(super) fn undo(&mut self) {
-        for v in std::mem::take(&mut self.shared) {
+        let mut shared = std::mem::take(&mut self.shared);
+        for &v in &shared {
             self.hold(v, 1);
         }
+        shared.clear();
+        self.shared = shared;
         self.merged.clear();
     }
 
@@ -251,9 +376,15 @@ impl SumOut {
         if self.support.len() <= out {
             self.support.resize_with(out + 1, Vec::new);
         }
-        self.support[a] = Vec::new();
-        self.support[b] = Vec::new();
-        self.support[out] = std::mem::take(&mut self.merged);
+        let reuse = if self.support[a].capacity() >= self.support[b].capacity() {
+            self.support[b].clear();
+            std::mem::take(&mut self.support[a])
+        } else {
+            self.support[a].clear();
+            std::mem::take(&mut self.support[b])
+        };
+        self.support[out] = std::mem::replace(&mut self.merged, reuse);
+        self.merged.clear();
         self.shared.clear();
     }
 
@@ -264,25 +395,117 @@ impl SumOut {
     /// only the maximal ones: each level under a target then folds its
     /// cells into values as it is built, instead of holding them as pairs
     /// until the target above it is folded.
-    pub(super) fn targets(&self, scope: &VtreeScope, pairs: usize) -> Vec<VtreeIdx> {
-        if pairs == 0 {
+    ///
+    /// Only a node each of whose variables only the result holds, or none
+    /// does, can be finished, and the global node over it is looked up only
+    /// for those: a join whose scope is its operands' variables, fewer than
+    /// two of them held only by the result, has no target at all.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn targets(
+        &mut self,
+        a: usize,
+        b: usize,
+        scope: &VtreeScope,
+        fa: &Formula,
+        fb: &Formula,
+        pairs: usize,
+        last: bool,
+    ) -> Vec<VtreeIdx> {
+        let (small, large, small_is_a) = if self.support[a].len() <= self.support[b].len() {
+            (&self.support[a], &self.support[b], true)
+        } else {
+            (&self.support[b], &self.support[a], false)
+        };
+        let (small_weighted, large_weighted) = if small_is_a {
+            (fa.0.weights().is_some(), fb.0.weights().is_some())
+        } else {
+            (fb.0.weights().is_some(), fa.0.weights().is_some())
+        };
+        let already_weighted = small_weighted || large_weighted;
+        let min = if self.has_queries && !already_weighted {
+            self.min_pairs
+        } else {
+            0
+        };
+        let tree = scope.vtree();
+        let exact = scope
+            .vars()
+            .map_or(tree.num_vars() as usize, <[VarId]>::len)
+            == self.merged.len();
+        if pairs == 0
+            || pairs < min
+            || last && self.has_queries && min > 0
+            || !self.merged.iter().any(|v| self.holders[v.0 as usize] == 1)
+            || min > 0
+                && (!small.iter().any(|v| self.holders[v.0 as usize] == 1)
+                    || !large.iter().any(|v| self.holders[v.0 as usize] == 1))
+            || (exact || min > 0)
+                && self
+                    .merged
+                    .iter()
+                    .filter(|v| self.holders[v.0 as usize] == 1)
+                    .nth(1)
+                    .is_none()
+        {
             return Vec::new();
         }
-        let tree = scope.vtree();
+        let idx = self
+            .index
+            .get_or_insert_with(|| TreeIndex::new(&self.tree, &self.holders));
+        if !exact {
+            for &v in large {
+                idx.var_mask[v.0 as usize] = 2;
+            }
+        }
+        for &v in small {
+            idx.var_mask[v.0 as usize] = 1;
+        }
+        for &v in &self.shared {
+            idx.var_mask[v.0 as usize] = 3;
+        }
         let global = |local: VarId| match scope.vars() {
             Some(vars) => vars[local.0 as usize - 1],
             None => local,
         };
         let n = tree.num_nodes();
-        let mut ends = vec![(0u32, 0u32); n];
-        let mut own = vec![0i64; n];
-        let mut finished = vec![false; n];
+        let (mut ends, mut own) = (
+            std::mem::take(&mut self.ends),
+            std::mem::take(&mut self.own),
+        );
+        ends.clear();
+        ends.resize(n, (0, 0));
+        own.clear();
+        own.resize(n, None);
+        let can_finish = |mask: u8| -> bool {
+            if min > 0 {
+                mask == 3
+            } else {
+                !matches!(
+                    (mask, small_weighted, large_weighted),
+                    (1, true, _) | (2, _, true)
+                )
+            }
+        };
+        let mut found = Vec::new();
         for t in tree.bottomup() {
             if tree.node(t).is_leaf() {
-                let v = global(tree.leaf_var(t));
-                let p = self.position[v.0 as usize];
+                let v = global(tree.leaf_var(t)).0 as usize;
+                let p = idx.position[v];
                 ends[t.idx()] = (p, p);
-                own[t.idx()] = i64::from(self.merged.binary_search(&v).is_ok());
+                let m = idx.var_mask[v];
+                let mine = u32::from(exact || m != 0);
+                if self.holders[v] == mine {
+                    own[t.idx()] = Some((
+                        mine,
+                        if m == 0 && !exact {
+                            0
+                        } else if m != 0 {
+                            m
+                        } else {
+                            2
+                        },
+                    ));
+                }
                 continue;
             }
             let (l, r) = tree.children(t);
@@ -291,26 +514,184 @@ impl SumOut {
                 ends[l.idx()].1.max(ends[r.idx()].1),
             );
             ends[t.idx()] = (lo, hi);
-            own[t.idx()] = own[l.idx()] + own[r.idx()];
-            let (glo, ghi) = self.range[self.over(lo, hi).idx()];
-            finished[t.idx()] = self.held_before(ghi) - self.held_before(glo) == own[t.idx()];
+            let Some(((ml, kl), (mr, kr))) = own[l.idx()].zip(own[r.idx()]) else {
+                continue;
+            };
+            let (mine, mask) = (ml + mr, kl | kr);
+            own[t.idx()] = Some((mine, mask));
+            if mine > 0 && can_finish(mask) {
+                let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
+                if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
+                    found.push(t);
+                }
+            }
         }
-        tree.bottomup()
-            .filter(|&t| finished[t.idx()] && !tree.node(t).is_leaf())
-            .collect()
+        if min > 0 && !found.is_empty() {
+            let mut top_idx = std::mem::take(&mut self.top_idx);
+            top_idx.clear();
+            top_idx.resize(n, u32::MAX);
+            let (a_bit, b_bit) = if small_is_a { (1u8, 2u8) } else { (2u8, 1u8) };
+            let mut triggered = false;
+            let mut group = Vec::new();
+            let mut top_leaves = Vec::new();
+            let mut stack = Vec::new();
+            for &top in found.iter().rev() {
+                if top_idx[top.idx()] != u32::MAX {
+                    continue;
+                }
+                group.clear();
+                top_leaves.clear();
+                stack.push((top, false));
+                while let Some((u, done)) = stack.pop() {
+                    if tree.node(u).is_leaf() {
+                        let v = global(tree.leaf_var(u));
+                        let m = idx.var_mask[v.0 as usize];
+                        let m = if m == 0 && !exact {
+                            0
+                        } else if m != 0 {
+                            m
+                        } else {
+                            2
+                        };
+                        if m != 0 {
+                            top_leaves.push((v, m));
+                        }
+                    } else if done {
+                        if u == top {
+                            group.push(u);
+                        } else if let Some((mine, _)) = own[u.idx()]
+                            && mine > 0
+                        {
+                            let (lo, hi) = ends[u.idx()];
+                            let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
+                            if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
+                                group.push(u);
+                            }
+                        }
+                    } else {
+                        top_idx[u.idx()] = 0;
+                        let (l, r) = tree.children(u);
+                        stack.push((u, true));
+                        stack.push((r, false));
+                        stack.push((l, false));
+                    }
+                }
+                let mut sum = 0usize;
+                for (f, bit) in [(fa, a_bit), (fb, b_bit)] {
+                    if sum >= min {
+                        break;
+                    }
+                    if f.1.same(scope) {
+                        for &u in &group {
+                            sum += level_pairs(f.0.level(u));
+                            if sum >= min {
+                                break;
+                            }
+                        }
+                    } else {
+                        let ftree = f.1.vtree();
+                        let fvars = f.1.vars();
+                        self.f_gen = self.f_gen.wrapping_add(1).max(1);
+                        let stamp = self.f_gen;
+                        if self.f_seen.len() < ftree.num_nodes() {
+                            self.f_seen.resize(ftree.num_nodes(), 0);
+                        }
+                        let mut reached = 0usize;
+                        for &(v, m) in &top_leaves {
+                            if m & bit == 0 {
+                                continue;
+                            }
+                            let lv = match fvars {
+                                Some(vs) => match vs.binary_search(&v) {
+                                    Ok(i) => VarId(i as u32 + 1),
+                                    Err(_) => continue,
+                                },
+                                None => v,
+                            };
+                            let Some(mut cur) = ftree.leaf_of(lv) else {
+                                continue;
+                            };
+                            while let Some(p) = ftree.node(cur).parent() {
+                                if self.f_seen[p.idx()] != stamp {
+                                    self.f_seen[p.idx()] = stamp;
+                                    break;
+                                }
+                                reached += 1;
+                                if sum < min {
+                                    sum += level_pairs(f.0.level(p));
+                                }
+                                cur = p;
+                            }
+                        }
+                        sum += 2 * group.len().saturating_sub(reached);
+                    }
+                }
+                if sum >= min {
+                    triggered = true;
+                    break;
+                }
+            }
+            found.clear();
+            if triggered {
+                for t in tree.bottomup() {
+                    if !tree.node(t).is_leaf()
+                        && let Some((mine, _)) = own[t.idx()]
+                        && mine > 0
+                    {
+                        let (lo, hi) = ends[t.idx()];
+                        let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
+                        if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
+                            found.push(t);
+                        }
+                    }
+                }
+            }
+            self.top_idx = top_idx;
+        }
+        if !exact {
+            for &v in &self.merged {
+                idx.var_mask[v.0 as usize] = 0;
+            }
+        } else {
+            for &v in small {
+                idx.var_mask[v.0 as usize] = 0;
+            }
+        }
+        (self.ends, self.own) = (ends, own);
+        found
     }
 
     /// The facts' weights on `scope`, by its local variables.
-    fn store_for(&self, scope: &VtreeScope) -> WeightStore {
-        let table = match scope.vars() {
-            Some(vars) => vars
-                .iter()
-                .map(|v| self.weights[v.0 as usize - 1].clone())
-                .collect::<Vec<_>>(),
-            None => self.weights.clone(),
+    fn store_for(&mut self, scope: &VtreeScope) -> WeightStore {
+        let n = scope.vars().map_or(self.pos.len() - 1, <[VarId]>::len);
+        let mut w_neg = Vec::with_capacity(n);
+        let mut w_pos = Vec::with_capacity(n);
+        let mut push_var = |v: usize| {
+            let lw = self.rat[v].get_or_insert_with(|| LiteralWeights {
+                negative: BigRational::from_float(self.neg[v]).expect("a weight is finite"),
+                positive: BigRational::from_float(self.pos[v]).expect("a weight is finite"),
+            });
+            w_neg.push(lw.negative.clone());
+            w_pos.push(lw.positive.clone());
         };
+        match scope.vars() {
+            Some(vars) => {
+                for v in vars {
+                    push_var(v.0 as usize);
+                }
+            }
+            None => {
+                for v in 1..self.pos.len() {
+                    push_var(v);
+                }
+            }
+        }
         WeightStore::new(
-            RationalWeights::from_literals(&table),
+            RationalWeights::from_polarities(LiteralWeights {
+                negative: w_neg,
+                positive: w_pos,
+            })
+            .expect("equal polarity column lengths"),
             Arithmetic::ScaledFloat,
         )
     }
@@ -321,15 +702,27 @@ impl SumOut {
     /// scope it was left on.
     #[allow(clippy::too_many_arguments)]
     fn place_both(
-        &self,
+        &mut self,
         backend: &TddBackend,
         fa: Formula,
         first: Option<&[VarId]>,
         fb: Formula,
         second: Option<&[VarId]>,
         scope: &VtreeScope,
-        store: &WeightStore,
     ) -> Result<(Tdd, Tdd), Refused> {
+        let store = if fa.0.weights().is_none() && fb.0.weights().is_none() {
+            None
+        } else if fa.1.same(scope)
+            && let Some(w) = fa.0.weights()
+        {
+            Some(w.empty_like())
+        } else if fb.1.same(scope)
+            && let Some(w) = fb.0.weights()
+        {
+            Some(w.empty_like())
+        } else {
+            Some(self.store_for(scope))
+        };
         // The weighted operand first: a copy refused moves nothing.
         let swapped = fa.0.weights().is_none() && fb.0.weights().is_some();
         let (fa, fb, first, second) = if swapped {
@@ -355,7 +748,7 @@ impl SumOut {
                         &t,
                         scope.vtree(),
                         |v| map[v.0 as usize - 1],
-                        Some(store.empty_like()),
+                        Some(store.as_ref().unwrap().empty_like()),
                     ) {
                         Ok((g, _)) => Ok((g, scope.clone())),
                         Err(e) => Err(Box::new((e.into(), (t, own)))),
@@ -404,8 +797,7 @@ impl SumOut {
         scope: &VtreeScope,
     ) -> Result<Tdd, Refused> {
         self.weighted += 1;
-        let store = self.store_for(scope);
-        let (a, b) = self.place_both(backend, fa, first, fb, second, scope, &store)?;
+        let (a, b) = self.place_both(backend, fa, first, fb, second, scope)?;
         backend.engine.and_restoring(a, b).map_err(|refused| {
             let (f, g) = (refused.f.into_owned(), refused.g.into_owned());
             Box::new((
@@ -430,30 +822,70 @@ impl SumOut {
         scope: &VtreeScope,
         targets: &[VtreeIdx],
     ) -> Result<Tdd, Refused> {
-        let store = self.store_for(scope);
-        let (mut a, b) = self.place_both(backend, fa, first, fb, second, scope, &store)?;
-        self.summing += 1;
-        if a.weights().is_none()
-            && b.weights().is_none()
-            && let Err(e) = a.set_weights(store.empty_like())
-        {
-            return Err(Box::new((
-                CompileError::Tdd(OperationError::from(e)),
-                (a, scope.clone()).into(),
-                (b, scope.clone()).into(),
-            )));
-        }
-        let targets: Vec<VtreeIdx> = targets
+        let (mut a, b) = self.place_both(backend, fa, first, fb, second, scope)?;
+        let already_weighted = a.weights().is_some() || b.weights().is_some();
+        let min = if self.has_queries && !already_weighted {
+            self.min_pairs
+        } else {
+            0
+        };
+        let mut targets: Vec<VtreeIdx> = targets
             .iter()
             .copied()
             .filter(|&t| !a.level(t).is_marginal() && !b.level(t).is_marginal())
             .collect();
+        if min > 0 && pairs_at(&a, &targets) + pairs_at(&b, &targets) < min {
+            targets.clear();
+        }
+        if targets.is_empty() {
+            if already_weighted {
+                self.weighted += 1;
+            }
+            return backend.engine.and_restoring(a, b).map_err(|refused| {
+                let (f, g) = (refused.f.into_owned(), refused.g.into_owned());
+                Box::new((
+                    refused.error.into(),
+                    (f, scope.clone()).into(),
+                    (g, scope.clone()).into(),
+                ))
+            });
+        }
+        self.summing += 1;
+        let added_weights = !already_weighted;
+        if added_weights {
+            let store = self.store_for(scope);
+            if let Err(e) = a.set_weights(store) {
+                return Err(Box::new((
+                    CompileError::Tdd(OperationError::from(e)),
+                    (a, scope.clone()).into(),
+                    (b, scope.clone()).into(),
+                )));
+            }
+        }
+        let armed = backend.engine.limits().armed();
+        let can_resume =
+            armed.stop_rules().unconditional.is_some() || armed.stop_rules().after_pairs.is_some();
+        if !can_resume {
+            return backend
+                .engine
+                .and_marginalizing(a, b, &targets)
+                .map_err(|e| {
+                    Box::new((
+                        e.into(),
+                        (backend.zero(scope), scope.clone()).into(),
+                        (backend.zero(scope), scope.clone()).into(),
+                    ))
+                });
+        }
         // Borrowed operands are read in place and left as they were, so a
         // refusal hands them back without a copy.
         backend
             .engine
             .and_marginalizing(&a, &b, &targets)
             .map_err(|e| {
+                if added_weights {
+                    let _ = a.take_weights();
+                }
                 Box::new((
                     e.into(),
                     (a, scope.clone()).into(),
