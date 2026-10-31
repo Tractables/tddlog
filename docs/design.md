@@ -607,7 +607,19 @@ are skipped. Several steps have a program in `examples/` that shows them.
    one binding pattern share a demand, which can close a loop through a
    findall's goal that the calls themselves do not close (ProbLog's urn
    tutorial calls `select_uniform/4` to count the balls and to draw one).
-   A findall in a cycle of calls is refused on either route.
+   So is a stratified program whose rewrite loses a negation that bounds
+   a demand. A demand rule does not read a negation of a derived
+   predicate, which would make the magic predicates depend on it
+   negatively; where such a negation filters a demand of its reader's
+   recursion (the dice tutorial's walk under `\+ member(Now, Seen)`), or
+   the rewrite puts the negated predicate's demand inside that recursion
+   (the taxonomy tutorial), the demand grows without end. Only a program
+   that builds values (terms, numbers by `is`, lists) can grow it so; one
+   whose values are its constants is ground from its finite rewrite as
+   before (PSouffle's taint analyses). ProbLog's
+   grounding completes the negated call and ends the branch where its
+   answer is true in every world, and so does the top-down route. A
+   findall in a cycle of calls is refused on either route.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in

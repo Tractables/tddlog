@@ -295,7 +295,9 @@ fn ground_norm(
     // call of a term with variables in it or an answer that leaves a
     // variable unbound, is resolved top-down from its queries
     // ([`engine::topdown`]), as is one whose rewrite reads a findall inside
-    // a recursion that only the demand makes.
+    // a recursion that only the demand makes, and a stratified one whose
+    // rewrite loses a negation that bounds a demand
+    // ([`magic::Rewritten::top_down`]).
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
     } else {
@@ -311,8 +313,9 @@ fn ground_norm(
         if let Some(gp) = levelled {
             gp
         } else {
-            match magic::rewrite(norm).filter(engine::safe) {
-                Some(magic) => match engine::ground_normalized(&magic, bound) {
+            match magic::rewrite(norm).filter(|r| engine::safe(&r.program)) {
+                Some(r) if r.top_down => engine::topdown::ground(norm, bound)?,
+                Some(r) => match engine::ground_normalized(&r.program, bound) {
                     Ok(gp) => gp,
                     Err(
                         e @ (GroundError::OverBound
@@ -710,7 +713,7 @@ mod tests {
             let program = crate::syntax::parse_program(&source).expect("parses");
             let norm =
                 super::normalize::normalize(&program, Default::default()).expect("normalizes");
-            let magic = super::magic::rewrite(&norm).expect("rewrites");
+            let magic = super::magic::rewrite(&norm).expect("rewrites").program;
             let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
             gp.atoms
                 .iter()
@@ -736,7 +739,7 @@ mod tests {
         let program = crate::syntax::parse_program(source).expect("parses");
         let (lowered, _) = super::terms::lower(&program).expect("lowers");
         let norm = super::normalize::normalize(&lowered, Default::default()).expect("normalizes");
-        let magic = super::magic::rewrite(&norm).expect("rewrites");
+        let magic = super::magic::rewrite(&norm).expect("rewrites").program;
         let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
         let eq: Vec<super::AtomId> = gp
             .rules

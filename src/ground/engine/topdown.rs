@@ -8,7 +8,8 @@
 //! and shared between its arguments (`reverse([], L, L)`, whose `L` the
 //! caller binds later), is neither: no demand makes such a rule safe, in
 //! the rewritten program or in the plain one. Such a program is resolved
-//! here. SLD resolution runs in the order of the source, every call is
+//! here, as is one whose demand a negation bounds that the rewrite cannot
+//! read ([`Rewritten::top_down`](super::super::magic::Rewritten::top_down)). SLD resolution runs in the order of the source, every call is
 //! tabled by its variant, and every probabilistic choice is taken as
 //! possible. Each clause instance proved under ground answers is a ground
 //! rule, and the engine grounds those rules as it grounds any program
@@ -28,7 +29,10 @@
 //!   identity or a `\=` of terms that unify and are not identical breaks
 //!   that: it compares otherwise once a call binds their variables, and
 //!   ProbLog answers by what each call proved. It is refused.
-//! - A negation is of a ground call whose table is complete.
+//! - A negation is of a ground call whose table is complete. It fails
+//!   where the call's answer is true in every world (a certain fact, or an
+//!   answer proved from such atoms alone), and the branch ends there, as
+//!   in ProbLog's grounding.
 //! - `is/2`, the comparisons and the list built-ins are the engine's
 //!   ([`super::solutions`]), on the values of ground terms. Prolog's
 //!   `length/2` also makes a list of fresh variables.
@@ -236,6 +240,9 @@ struct TopDown<'a> {
     /// The ground atoms, by predicate and values, and the ground rules.
     atoms: Vec<(u32, Box<[Val]>)>,
     atom_ix: FxHashMap<(u32, Box<[Val]>), u32>,
+    /// By atom, whether it is an answer true in every world: a clause
+    /// instance proved it from such atoms alone.
+    sure: Vec<bool>,
     ground: Vec<GroundRule>,
     ground_ix: FxHashSet<GroundRule>,
     /// The derivations of the atoms of counted predicates and of lists, by
@@ -273,6 +280,7 @@ impl<'a> TopDown<'a> {
             fact_ix: FxHashMap::default(),
             atoms: Vec::new(),
             atom_ix: FxHashMap::default(),
+            sure: Vec::new(),
             ground: Vec::new(),
             ground_ix: FxHashSet::default(),
             derivations: FxHashMap::default(),
@@ -681,8 +689,15 @@ impl<'a> TopDown<'a> {
         }
         let a = self.atoms.len() as u32;
         self.atoms.push((p, vals.clone()));
+        self.sure.push(false);
         self.atom_ix.insert((p, vals), a);
         Ok(a)
+    }
+
+    /// Whether atom `a` is true in every world: a certain fact, a switch
+    /// of probability one, or an answer proved from such atoms.
+    fn always(&mut self, a: u32) -> bool {
+        self.sure[a as usize] || lists::Source::truth(self, a) == Some(true)
     }
 
     /// Counts `n` more terms against the bound.
@@ -895,10 +910,14 @@ impl<'a> TopDown<'a> {
                                 self.norm.rules[rule.at]
                             )));
                         }
-                        // The call is ground, and so is its one answer.
-                        match self.tables[u as usize].answers.first() {
+                        // The call is ground, and so is its one answer. A
+                        // negation of an answer true in every world fails,
+                        // as in ProbLog's grounding: `\+ member(X, Seen)`
+                        // ends a walk that would otherwise grow its list.
+                        match self.tables[u as usize].answers.first().map(|&(_, a)| a) {
                             None => next(self, None, steps)?,
-                            Some(&(_, a)) => next(self, Some(Step::Neg(a)), steps)?,
+                            Some(a) if self.always(a) => {}
+                            Some(a) => next(self, Some(Step::Neg(a)), steps)?,
                         }
                     }
                     Kind::Facts(f) => {
@@ -906,12 +925,16 @@ impl<'a> TopDown<'a> {
                             next(self, None, steps)?;
                         } else {
                             let a = self.atom(p, vals)?;
-                            next(self, Some(Step::Neg(a)), steps)?;
+                            if !self.always(a) {
+                                next(self, Some(Step::Neg(a)), steps)?;
+                            }
                         }
                     }
                     Kind::Switch => {
                         let a = self.atom(p, vals)?;
-                        next(self, Some(Step::Neg(a)), steps)?;
+                        if !self.always(a) {
+                            next(self, Some(Step::Neg(a)), steps)?;
+                        }
                     }
                     Kind::Undefined => next(self, None, steps)?,
                 }
@@ -1284,6 +1307,19 @@ impl<'a> TopDown<'a> {
         let a = self.atom(p, vals)?;
         if !self.preds[p as usize].driver {
             self.emit(a, group, steps)?;
+        }
+        // An answer proved from atoms true in every world is one too; it
+        // counts as new, so that a cycle is resolved again for the
+        // negations that read it.
+        if !self.sure[a as usize]
+            && steps.iter().all(|s| match *s {
+                Step::Pos(b) => self.always(b),
+                Step::Neg(_) => false,
+                Step::Rank(_) => true,
+            })
+        {
+            self.sure[a as usize] = true;
+            self.added += 1;
         }
         let table = &mut self.tables[t as usize];
         if table.known.contains(&key) {

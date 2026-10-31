@@ -32,8 +32,10 @@
 //!
 //! The rewrite can make a stratified program non-stratified (demand for a
 //! lower-stratum atom may pass through a recursive predicate of a higher
-//! stratum). The caller checks stratification and falls back to the plain
-//! program in that case.
+//! stratum), and a demand rule does not read a negation of a derived
+//! predicate. Where either loses a negation that bounds a demand in a
+//! program that builds values, [`Rewritten::top_down`] says so and the
+//! caller resolves the program top-down.
 //!
 //! Which route a program takes is decided before any of it is ground, by
 //! whether its rules are safe ([`super::engine::safe`]: every variable bound
@@ -268,7 +270,7 @@ fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
 /// relations it reads, where the program has 50 atoms that matter. A
 /// predicate demanded both free and with some argument bound is therefore
 /// rewritten again with every demand of it read as its free demand.
-pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
+pub(crate) fn rewrite(norm: &NormProgram) -> Option<Rewritten> {
     let (out, done) = demand(norm, &FxHashSet::default())?;
     // Whether each predicate is demanded free, and with some argument bound.
     let mut patterns: FxHashMap<(&Name, usize), (bool, bool)> = FxHashMap::default();
@@ -291,10 +293,106 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
     demand(norm, &free).map(|(out, _)| out)
 }
 
+/// The rewritten program, and whether the program is resolved top-down
+/// instead: where it builds values ([`builds_values`]) and a negation of a predicate the program stratifies below
+/// its reader filters a demand of the reader's own recursion, or the
+/// rewrite puts the negated predicate's demand inside that recursion. ProbLog's
+/// resolution completes the negated call and drops the call after it
+/// where the negation fails in every world; the rewrite cannot read the
+/// negation there, so it filters no demand, and a walk that grows a list
+/// under `\+ member(X, Seen)` (the tutorial's dice and taxonomy) is
+/// demanded without end.
+pub(crate) struct Rewritten {
+    pub(crate) program: NormProgram,
+    pub(crate) top_down: bool,
+}
+
+/// Whether a rule of `rules` makes a value the program does not write: a
+/// term by unification, a number by `is`, a list by a built-in or a
+/// findall. Without one, the values are the program's constants and its
+/// rewrite is a finite program, ground bottom-up whatever negation its
+/// demand rules leave out: PSouffle's taint analyses, whose rewrite puts a
+/// negated predicate's demand inside the points-to recursion, ground so in
+/// about a second and took up to 47 s top-down.
+fn builds_values(rules: &[Clause]) -> bool {
+    use crate::syntax::CmpOp;
+    let made = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
+    rules.iter().any(|r| {
+        r.body.iter().any(|l| match l {
+            Literal::Is(..) | Literal::Builtin(..) | Literal::Collect(_) | Literal::Findall(_) => {
+                true
+            }
+            Literal::Cmp(CmpOp::Eq, a, b) => made(a) || made(b),
+            _ => false,
+        }) || r.heads.iter().any(|h| h.atom.args.iter().any(made))
+    })
+}
+
+/// A negation a demand rule does not read: the demand's predicate and the
+/// negated one.
+type Unread = ((Name, usize), (Name, usize));
+
+/// Whether no rule of `rules`, and no negative dependency of `unread` (a
+/// demand's predicate on a predicate it does not read negated) whose demand
+/// derives itself, negates a predicate that depends on the rule's head. A
+/// demand that no recursion of its own derives is as bounded without the
+/// negation as with it: on the UW-CSE programs `taught_by` demands
+/// `position(B, faculty)` for each professor `B` under `\+
+/// aux1_taught_by(A, B)`, which reads `position` again, and the rewrite
+/// grounds them as it did.
+fn stratified(rules: &[Clause], unread: &[Unread]) -> bool {
+    let mut ids: FxHashMap<Sig, usize> = FxHashMap::default();
+    fn id<'n>(ids: &mut FxHashMap<Sig<'n>, usize>, sig: Sig<'n>) -> usize {
+        let n = ids.len();
+        *ids.entry(sig).or_insert(n)
+    }
+    let mut edges = Vec::new();
+    let mut negated = Vec::new();
+    for c in rules {
+        let h = id(&mut ids, c.heads[0].atom.signature());
+        for l in &c.body {
+            match l {
+                Literal::Pos(a) => edges.push((h, id(&mut ids, a.signature()))),
+                Literal::Neg(a) => negated.push((h, id(&mut ids, a.signature()))),
+                Literal::Collect(c) => edges.push((h, id(&mut ids, (&*c.aux, c.arity)))),
+                _ => {}
+            }
+        }
+    }
+    edges.extend_from_slice(&negated);
+    let crossing = |edges: &[(usize, usize)], negated: &[(usize, usize)]| {
+        let component = super::deps::strongly_connected(ids.len(), edges);
+        let all = negated.iter().all(|&(h, q)| component[h] != component[q]);
+        (all, component)
+    };
+    let (all, component) = crossing(&edges, &negated);
+    if !all {
+        return false;
+    }
+    let mut size: FxHashMap<usize, usize> = FxHashMap::default();
+    for &c in &component {
+        *size.entry(c).or_default() += 1;
+    }
+    let recursive = |d: usize| {
+        component[d] != usize::MAX && (size[&component[d]] > 1 || edges.contains(&(d, d)))
+    };
+    let more: Vec<(usize, usize)> = unread
+        .iter()
+        .filter_map(|((d, k), (n, j))| Some((*ids.get(&(d, *k))?, *ids.get(&(n, *j))?)))
+        .filter(|&(d, _)| recursive(d))
+        .collect();
+    if more.is_empty() {
+        return true;
+    }
+    edges.extend_from_slice(&more);
+    negated.extend_from_slice(&more);
+    crossing(&edges, &negated).0
+}
+
 /// The rewrite of `norm` ([`rewrite`]), in which a demand of a predicate of
 /// `free` with some argument bound is its demand with none, and the
 /// predicates and patterns it demands.
-fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormProgram, Demands)> {
+fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(Rewritten, Demands)> {
     let rules_of = norm.rules_by_sig();
     let given = given(norm, &rules_of);
     let facts = norm
@@ -322,6 +420,7 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
         control: FxHashSet::default(),
         done: Demands::default(),
         work: Vec::new(),
+        unread: Vec::new(),
     };
     d.seeds(&mut w);
     while let Some((atom, adornment)) = w.work.pop() {
@@ -333,7 +432,16 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormPr
         }
     }
     w.out.control = w.control;
-    Some((w.out, w.done))
+    let top_down = builds_values(&norm.rules)
+        && stratified(&norm.rules, &[])
+        && !stratified(&w.out.rules, &w.unread);
+    Some((
+        Rewritten {
+            program: w.out,
+            top_down,
+        },
+        w.done,
+    ))
 }
 
 /// What [`demand`] reads of the program: its rules by predicate, the
@@ -349,13 +457,15 @@ struct Demand<'a> {
 
 /// What [`demand`] has written: the rewritten program, the given
 /// predicates reached, whose rules or facts are in it, the magic
-/// predicates, and the demands taken and those still to take.
+/// predicates, the demands taken and those still to take, and the
+/// negations the demands do not read ([`Rewritten::top_down`]).
 struct Written {
     out: NormProgram,
     read: FxHashSet<(Name, usize)>,
     control: FxHashSet<(Name, usize)>,
     done: Demands,
     work: Vec<(Atom, Adornment)>,
+    unread: Vec<Unread>,
 }
 
 impl Demand<'_> {
@@ -505,8 +615,10 @@ impl Demand<'_> {
         // Walk the schedule, emitting magic rules for body atoms with rules.
         let mut bound_so_far = bound.clone();
         // After the guard, the body literals that bind: the positions in
-        // the body, the literals copied only into a magic rule.
+        // the body, the literals copied only into a magic rule; and the
+        // negations of derived predicates, which no demand reads.
         let mut prefix: Vec<usize> = Vec::new();
+        let mut unread: Vec<usize> = Vec::new();
         for (&i, lit) in ordered.iter().map(|i| (i, &rule.body[*i])) {
             // A findall demands its goal's solutions for the values of the
             // variables it shares.
@@ -522,13 +634,26 @@ impl Demand<'_> {
             if let Some(a) = body_atom {
                 if self.derived(a) {
                     let sub = self.adorn(a, &bound_so_far);
-                    let bearing = bearing(&rule.body, &prefix, &bound_args(a, &sub));
-                    let mut body = Vec::with_capacity(1 + bearing.len());
+                    let args = bound_args(a, &sub);
+                    let kept = bearing(&rule.body, &prefix, &args);
+                    let mut body = Vec::with_capacity(1 + kept.len());
                     body.push(guard.clone());
-                    body.extend(bearing.iter().map(|&j| rule.body[j].clone()));
-                    w.out
-                        .rules
-                        .push(Clause::rule(magic_atom(a, &sub), body, u32::MAX));
+                    body.extend(kept.iter().map(|&j| rule.body[j].clone()));
+                    let demand = magic_atom(a, &sub);
+                    if !unread.is_empty() {
+                        let all: Vec<usize> = prefix.iter().chain(&unread).copied().collect();
+                        for j in bearing(&rule.body, &all, &args) {
+                            if let Literal::Neg(n) = &rule.body[j]
+                                && unread.contains(&j)
+                            {
+                                w.unread.push((
+                                    (demand.name.clone(), demand.args.len()),
+                                    (n.name.clone(), n.args.len()),
+                                ));
+                            }
+                        }
+                    }
+                    w.out.rules.push(Clause::rule(demand, body, u32::MAX));
                     w.work.push((a.clone(), sub));
                 } else if self.given.contains(&a.signature()) {
                     w.work.push((a.clone(), Vec::new()));
@@ -540,6 +665,7 @@ impl Demand<'_> {
             // (they would add negative dependencies to the magic
             // predicates) and switches bind nothing.
             match lit {
+                Literal::Neg(a) if self.derived(a) => unread.push(i),
                 Literal::Neg(a) if !self.given.contains(&a.signature()) => {}
                 Literal::Pos(a) if self.is_switch(a) => {}
                 _ => prefix.push(i),
@@ -581,7 +707,7 @@ mod tests {
         let p =
             parse_program("0.6::w(T) :- T > 0, P is T - 1, w(P).\nw(0).\nquery(w(3)).\n").unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(text.contains(&"'$m_w_b'(3).".to_string()), "{text:?}");
         assert!(
@@ -609,7 +735,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             !text
@@ -639,7 +765,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(!text.iter().any(|t| t.contains("$m_e")), "{text:?}");
         let facts: Vec<(&str, usize)> = m
@@ -667,7 +793,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             !text
@@ -695,7 +821,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let gp = crate::ground::engine::ground_normalized(&m, None).unwrap();
         let atoms: Vec<String> = gp.atoms.iter().map(|a| a.to_string()).collect();
         assert!(atoms.contains(&"q(b,1)".to_string()), "{atoms:?}");
@@ -715,7 +841,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             text.contains(&"'$m_c_bf'(X) :- '$m_h_b'(X), a(X).".to_string()),
@@ -730,6 +856,36 @@ mod tests {
     /// A demand that binds an argument the body reads only as the value of
     /// an `is` grounds that rule under the demand without it, which the
     /// demand feeds; a rule that reads the argument keeps it.
+    /// The demand of a walk that grows its list under `\\+ mem(X, Seen)`
+    /// derives itself, and the rewrite cannot read the negation: the
+    /// program is resolved top-down. A demand that no recursion derives
+    /// is bounded without the negation, and the rewrite is ground; so is
+    /// one that a recursion derives in a program that builds no values,
+    /// whose rewrite is finite.
+    #[test]
+    fn a_negation_the_demand_leaves_out_routes_top_down_under_a_recursive_demand() {
+        let top_down = |source: &str| {
+            let p = parse_program(source).unwrap();
+            let (lowered, _) = crate::ground::terms::lower(&p).unwrap();
+            let n = normalize(&lowered, Default::default()).unwrap();
+            rewrite(&n).unwrap().top_down
+        };
+        assert!(top_down(
+            "mem(X, [X|_]).\nmem(X, [_|T]) :- mem(X, T).\nd(1).\nd(2).\n\
+             w(S, S).\nw(S, L) :- d(X), \\+ mem(X, S), w([X|S], L).\nquery(w([], _)).\n"
+        ));
+        assert!(!top_down(
+            "prof(p).\nstud(s).\nta(c, s).\ncourse(c).\n0.5::pos(B) :- prof(B).\n\
+             adv(A, B) :- stud(A), prof(B), \\+ pos(B).\naux(A, B) :- ta(A, C), adv(C, B).\n\
+             t(A, B) :- course(A), prof(B), \\+ aux(A, B), pos(B).\nquery(t(c, p)).\n"
+        ));
+        assert!(!top_down(
+            "e(1, 2).\ne(2, 3).\ns(3).\nq(1).\n0.5::st(M) :- s(M).\n\
+             lv(V) :- e(V, M), \\+ st(M).\npt(X) :- q(X).\n\
+             pt(Y) :- pt(X), e(X, Y), lv(Y).\nquery(pt(_)).\n"
+        ));
+    }
+
     #[test]
     fn a_binding_read_only_by_is_is_dropped() {
         let p = parse_program(
@@ -738,7 +894,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             text.contains(&"'$m_s_bf'(K) :- '$m_s_bb'(K,S).".to_string()),
