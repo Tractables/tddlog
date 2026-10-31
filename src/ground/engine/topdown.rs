@@ -31,16 +31,19 @@
 //!   sound where an answer is proved alike whatever the call bound. An
 //!   identity or a `\=` of terms that unify and are not identical breaks
 //!   that: it compares otherwise once a call binds their variables, and
-//!   ProbLog answers by what each call proved. Such a comparison is made
-//!   as ProbLog makes it, and the program is refused where an atom is an
-//!   answer of two calls one of which made one on variables of its call,
-//!   or called with them a call that did, directly or not.
+//!   ProbLog answers by what each call proved. So does a negation of a
+//!   call with variables, which reads fewer answers once they are bound.
+//!   Such a comparison or negation is made as ProbLog makes it, and the
+//!   program is refused where an atom is an answer of two calls one of
+//!   which made one on variables of its call, or called with them a call
+//!   that did, directly or not.
 //! - `=../2` builds a term from a list of fixed length that may hold
 //!   variables, or the list of a term with variables, as ProbLog's does.
-//! - A negation is of a ground call whose table is complete. It fails
-//!   where the call's answer is true in every world (a certain fact, or an
-//!   answer proved from such atoms alone), and the branch ends there, as
-//!   in ProbLog's grounding.
+//! - A negation reads the answers of its call, whose table is complete:
+//!   it holds where none of them does, and fails where one is true in
+//!   every world (a certain fact, or an answer proved from such atoms
+//!   alone), and the branch ends there, as in ProbLog's grounding. Called
+//!   with variables, as ProbLog calls it, it reads every answer.
 //! - `is/2`, the comparisons and the list built-ins are the engine's
 //!   ([`super::solutions`]), on the values of ground terms. Prolog's
 //!   `length/2` also makes a list of fresh variables.
@@ -818,7 +821,8 @@ impl<'a> TopDown<'a> {
     }
 
     /// Refuses the program where a table that compared terms with variables
-    /// of its call ([`Self::compare`]), or that called such a table with
+    /// of its call ([`Self::compare`]) or negated a call with them, or that
+    /// called such a table with
     /// variables of its own call, directly or not, answers an atom that
     /// another table answers too. The calls of a
     /// predicate share the atoms of their answers, each atom's rules those
@@ -856,7 +860,7 @@ impl<'a> TopDown<'a> {
                     let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
                     let atom = Atom::new(self.preds[p as usize].name.clone(), args);
                     return Err(GroundError::Unsupported(format!(
-                        "{why}, which a call that binds them compares otherwise: {atom} is \
+                        "{why}, which a call that binds them makes otherwise: {atom} is \
                          an answer of two calls, which ProbLog proves apart"
                     )));
                 }
@@ -1017,45 +1021,33 @@ impl<'a> TopDown<'a> {
             Lit::Call(p, args, true) => {
                 let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
                 let p = *p;
-                let vals = self.values(p, &args, rule, "a negation")?;
-                match self.preds[p as usize].kind {
-                    Kind::Rules => {
-                        let u = self.call(p, &args)?;
-                        if self.tables[u as usize].state != State::Complete {
-                            let goal = self.show(p, &args);
-                            return Err(GroundError::Unsupported(format!(
-                                "\\+{goal}: a negation in a cycle of calls, in {}",
-                                self.norm.rules[rule.at]
-                            )));
-                        }
-                        // The call is ground, and so is its one answer. A
-                        // negation of an answer true in every world fails,
-                        // as in ProbLog's grounding: `\+ member(X, Seen)`
-                        // ends a walk that would otherwise grow its list.
-                        match self.tables[u as usize].answers.first().map(|&(_, a)| a) {
-                            None => next(self, None, steps)?,
-                            Some(a) if self.always(a) => {}
-                            Some(a) => next(self, Some(Step::Neg(a)), steps)?,
-                        }
+                if self.preds[p as usize].kind == Kind::Switch {
+                    let vals = self.values(p, &args, rule, "a negation")?;
+                    let a = self.atom(p, vals)?;
+                    if !self.always(a) {
+                        next(self, Some(Step::Neg(a)), steps)?;
                     }
-                    Kind::Facts(f) => {
-                        if self.fact_matches(p, f, &args).is_empty() {
-                            next(self, None, steps)?;
-                        } else {
-                            let a = self.atom(p, vals)?;
-                            if !self.always(a) {
-                                next(self, Some(Step::Neg(a)), steps)?;
-                            }
-                        }
-                    }
-                    Kind::Switch => {
-                        let a = self.atom(p, vals)?;
-                        if !self.always(a) {
-                            next(self, Some(Step::Neg(a)), steps)?;
-                        }
-                    }
-                    Kind::Undefined => next(self, None, steps)?,
+                    return Ok(());
                 }
+                // The negation holds where none of the call's answers does,
+                // and fails where one is true in every world, as in
+                // ProbLog's grounding: `\+ member(X, Seen)` ends a walk that
+                // would otherwise grow its list. A call with variables, as
+                // ProbLog makes it, may have several answers.
+                // Where a variable of the table's call is free there, a
+                // call that binds it reads fewer answers.
+                let full = self.full_all(&args)?;
+                if full.iter().any(|a| !matches!(a, T::G(_))) && self.of_call(&full)? {
+                    self.call_dependent(rule, "a negation of a call with variables");
+                }
+                let Some(answers) = self.negated(p, &args, rule)? else {
+                    return Ok(());
+                };
+                let n = steps.len();
+                steps.extend(answers.into_iter().map(Step::Neg));
+                let r = self.body(t, rule, base, i + 1, call, steps);
+                steps.truncate(n);
+                r?;
             }
             Lit::Unify(a, b) => {
                 let (a, b) = (Self::inst(a, base), Self::inst(b, base));
@@ -1213,6 +1205,47 @@ impl<'a> TopDown<'a> {
         )))
     }
 
+    /// The atoms of the answers of the call of `p`, a predicate of rules or
+    /// facts, with `args`, which a negation in `rule` reads; `None` where
+    /// one is true in every world.
+    fn negated(
+        &mut self,
+        p: u32,
+        args: &[T],
+        rule: &Rule,
+    ) -> Result<Option<Vec<u32>>, GroundError> {
+        let mut atoms = Vec::new();
+        match self.preds[p as usize].kind {
+            Kind::Rules => {
+                let u = self.call(p, args)?;
+                if self.tables[u as usize].state != State::Complete {
+                    let goal = self.show(p, args);
+                    return Err(GroundError::Unsupported(format!(
+                        "\\+{goal}: a negation in a cycle of calls, in {}",
+                        self.norm.rules[rule.at]
+                    )));
+                }
+                atoms.extend(self.tables[u as usize].answers.iter().map(|&(_, a)| a));
+            }
+            Kind::Facts(f) => {
+                for vals in self.fact_matches(p, f, args) {
+                    let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
+                    let mark = self.mark();
+                    let unifies = self.unify_all(args, &tuple);
+                    self.undo(mark);
+                    if unifies {
+                        atoms.push(self.atom(p, vals)?);
+                    }
+                }
+            }
+            Kind::Switch | Kind::Undefined => {}
+        }
+        if atoms.iter().any(|&a| self.always(a)) {
+            return Ok(None);
+        }
+        Ok(Some(atoms))
+    }
+
     /// The tuples of the facts of `p`, the facts at place `f` of the
     /// program, that may match `args`: those of the value of its first
     /// ground argument, or all.
@@ -1271,14 +1304,7 @@ impl<'a> TopDown<'a> {
                 return Ok(same == (op == CmpOp::Identical));
             }
             if self.of_call(&[a, b])? {
-                let Some(f) = self.frames.last() else {
-                    unreachable!("a clause is resolved for a table")
-                };
-                self.tables[f.table as usize].compared = true;
-                if self.compared.is_none() {
-                    let c = &self.norm.rules[rule.at];
-                    self.compared = Some(format!("{c}: {op} of terms with variables"));
-                }
+                self.call_dependent(rule, &format!("{op} of terms with variables"));
             }
             return Ok(op == CmpOp::NotIdentical);
         }
@@ -1299,6 +1325,22 @@ impl<'a> TopDown<'a> {
             (Some(x), Some(y)) => compare(&mut self.g, op, x, y),
             _ => false,
         })
+    }
+
+    /// Marks the table being resolved, whose clause `rule` made `what` on
+    /// terms that hold a variable of its call: a call that binds more of
+    /// the same atom may make it otherwise, so that an answer the table
+    /// proves may be proved otherwise by another call of its atom
+    /// ([`Self::shared`]).
+    fn call_dependent(&mut self, rule: &Rule, what: &str) {
+        let Some(f) = self.frames.last() else {
+            unreachable!("a clause is resolved for a table")
+        };
+        self.tables[f.table as usize].compared = true;
+        if self.compared.is_none() {
+            let c = &self.norm.rules[rule.at];
+            self.compared = Some(format!("{c}: {what}"));
+        }
     }
 
     /// The solutions of the built-in `b` over `args`, each its arguments'

@@ -260,3 +260,36 @@ fn a_comparison_of_terms_with_variables_is_made_as_problog_makes_it() {
         &[("w([0])", 0.5), ("w([0])", 0.5)],
     );
 }
+
+#[test]
+fn a_negation_called_with_variables_holds_where_none_of_its_answers_does() {
+    // ProbLog's answers, one query at a time. t(X), w and f(X) negate a goal
+    // over X while X is free: no c(X) holds together with a, 0.7 + 0.3 *
+    // 0.5 * 0.4, whichever X d(X) binds after it; forall(c(X), a) where X is
+    // free holds where a does or no c(X) does, 1 - 0.7 * (1 - 0.5 * 0.4).
+    // A call that binds X first, t(1), reads the one answer c(1).
+    let program = "0.3::a. 0.5::c(1). 0.6::c(2). d(1). d(2).
+         t(X) :- \\+ (c(X), a), d(X).
+         w :- \\+ (c(X), a), d(X).
+         f(X) :- forall(c(X), a), d(X).";
+    let free = 0.7 + 0.3 * 0.5 * 0.4;
+    let all = 1.0 - 0.7 * (1.0 - 0.5 * 0.4);
+    assert_answers(
+        &format!("{program} query(t(_)). query(w). query(f(_))."),
+        &[
+            ("t(1)", free),
+            ("t(2)", free),
+            ("w", free),
+            ("f(1)", all),
+            ("f(2)", all),
+        ],
+    );
+    assert_answers(
+        &format!("{program} query(t(1))."),
+        &[("t(1)", 1.0 - 0.3 * 0.5)],
+    );
+    // Asked together, the two calls answer t(1) by proofs of their own,
+    // which one atom cannot hold.
+    let e = refusal(&format!("{program} query(t(_)). query(t(1))."));
+    assert!(e.contains("a negation of a call with variables"), "{e}");
+}
