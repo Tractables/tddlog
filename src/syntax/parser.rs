@@ -874,6 +874,8 @@ impl<'a> Parser<'a> {
                     all: false,
                 })))
             }
+            // `T =.. L`, a built-in the grounder evaluates.
+            ("=..", 2) => Ok(Literal::Pos(Atom::new(name, args))),
             ("->", 2) => self.err("if-then-else is not supported"),
             (",", 2) | (";", 2) => {
                 // A parenthesised body the body reading gave up on: its

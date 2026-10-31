@@ -55,6 +55,7 @@ pub(crate) enum Op {
     Backslash,
     Arrow,
     Colon,
+    Univ,
 }
 
 impl Op {
@@ -88,6 +89,7 @@ impl Op {
             Op::Backslash => "\\",
             Op::Arrow => "->",
             Op::Colon => ":",
+            Op::Univ => "=..",
         }
     }
 }
@@ -846,6 +848,7 @@ impl<'a> Lexer<'a> {
                     (b'>', Some(b'='), _) => (Tok::Op(Op::Ge), 2),
                     (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::ArithEq), 3),
                     (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::ArithNe), 3),
+                    (b'=', Some(b'.'), Some(b'.')) => (Tok::Op(Op::Univ), 3),
                     (b'@', Some(b'='), Some(b'<')) => (Tok::Op(Op::TermLe), 3),
                     (b'@', Some(b'>'), Some(b'=')) => (Tok::Op(Op::TermGe), 3),
                     (b'@', Some(b'<'), _) => (Tok::Op(Op::TermLt), 2),

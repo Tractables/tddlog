@@ -194,9 +194,10 @@ The parser reads ProbLog without cut:
   memberchk/2, select/3, append/2,3, length/2, nth0/3, nth1/3, last/2,
   reverse/2, sum_list/2, max_list/2, min_list/2, sort/2, subset/2,
   intersection/3, union/3, subtract/3, delete/3, flatten/2 and
-  enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3
-  and is_list/1, in ProbLog's modes and order of solutions, on ground
-  arguments;
+  enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3,
+  is_list/1 and `=..`/2, in ProbLog's modes and order of solutions, on
+  ground arguments (`=..` also on a term or a list of fixed length that
+  hold variables);
 - the predicates ProbLog's libraries write as clauses, in those clauses,
   which the grounder adds where the program calls them
   (`ground/library.rs`): the random selections select_uniform/4 and

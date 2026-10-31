@@ -32,6 +32,8 @@
 //!   identity or a `\=` of terms that unify and are not identical breaks
 //!   that: it compares otherwise once a call binds their variables, and
 //!   ProbLog answers by what each call proved. It is refused.
+//! - `=../2` builds a term from a list of fixed length that may hold
+//!   variables, or the list of a term with variables, as ProbLog's does.
 //! - A negation is of a ground call whose table is complete. It fails
 //!   where the call's answer is true in every world (a certain fact, or an
 //!   answer proved from such atoms alone), and the branch ends there, as
@@ -1217,6 +1219,9 @@ impl<'a> TopDown<'a> {
                 .into_iter()
                 .map(|s| s.into_iter().map(T::G).collect())
                 .collect();
+            if let Some(e) = self.g.error.take() {
+                return Err(e);
+            }
             if probe != b {
                 let first = sols.iter().position(|s| self.unifiable(args, s));
                 sols = first.map(|k| vec![sols.swap_remove(k)]).unwrap_or_default();
@@ -1224,6 +1229,8 @@ impl<'a> TopDown<'a> {
             sols
         } else if b == Builtin::Length {
             self.length(args, rule, i)?
+        } else if b == Builtin::Univ {
+            self.univ(args)?
         } else {
             return Err(self.unbound(rule, i));
         };
@@ -1282,6 +1289,65 @@ impl<'a> TopDown<'a> {
                 T::F(cons, Rc::new([x, rest]))
             });
         Ok(vec![vec![list, T::G(Val::Int(n as i64))]])
+    }
+
+    /// `T =.. L` where a side holds variables, as ProbLog's `=..` reads it:
+    /// a compound `T` gives the list of its name and arguments, and a free
+    /// `T` is the term of `L`, a list of fixed length whose first item is
+    /// an atom where it has more than one; that list may hold variables.
+    fn univ(&mut self, args: &[T]) -> Result<Vec<Vec<T>>, GroundError> {
+        let (nil, cons) = self.g.list_syms();
+        let list = |items: Vec<T>| {
+            items
+                .into_iter()
+                .rev()
+                .fold(T::G(Val::Sym(nil)), |rest, x| {
+                    T::F(cons, Rc::new([x, rest]))
+                })
+        };
+        match self.deref(&args[0]) {
+            T::F(name, xs) => {
+                let items = std::iter::once(T::G(Val::Sym(name)))
+                    .chain(xs.iter().cloned())
+                    .collect();
+                return Ok(vec![vec![args[0].clone(), list(items)]]);
+            }
+            T::G(_) => unreachable!("a ground term is the engine's"),
+            T::X(_) => {}
+        }
+        let error = |me: &mut Self, why: &str| {
+            let l = me.show_term(&args[1]);
+            GroundError::Unsupported(format!("_ =.. {l}: {why} (ProbLog's call mode error)"))
+        };
+        let mut items: Vec<T> = Vec::new();
+        let mut tail = args[1].clone();
+        loop {
+            match self.deref(&tail) {
+                T::F(c, ht) if c == cons && ht.len() == 2 => {
+                    items.push(ht[0].clone());
+                    tail = ht[1].clone();
+                }
+                T::G(v) => {
+                    let (spine, tails) = self.g.spine(v, cons);
+                    if tails.last() != Some(&Val::Sym(nil)) {
+                        return Err(error(self, "no list"));
+                    }
+                    items.extend(spine.into_iter().map(T::G));
+                    break;
+                }
+                T::X(_) => return Err(error(self, "a list of no fixed length")),
+                T::F(..) => return Err(error(self, "no list")),
+            }
+        }
+        let term = match items.as_slice() {
+            [] => return Err(error(self, "an empty list")),
+            [t] => t.clone(),
+            [first, rest @ ..] => match self.deref(first) {
+                T::G(Val::Sym(name)) => T::F(name, rest.into()),
+                _ => return Err(error(self, "its first item is no atom")),
+            },
+        };
+        Ok(vec![vec![term, args[1].clone()]])
     }
 
     /// An answer of table `t` from the instance of a clause of `group`

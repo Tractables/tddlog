@@ -1664,6 +1664,45 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |_| one(vec![l]))
         }
+        // `T =.. L`: the list of a term's name and arguments, `[T]` for an
+        // atom or a number; or the term of such a list.
+        Builtin::Univ => match vals {
+            [Some(t), _] => {
+                let parts = match *t {
+                    Val::Fn(id) => g.terms.keys.list(id as usize).to_vec(),
+                    v => vec![v],
+                };
+                let l = g.make_list(&parts, nil);
+                one(vec![*t, l])
+            }
+            [None, Some(l)] => match univ(g, *l) {
+                Ok(t) => one(vec![t, *l]),
+                Err(e) => {
+                    g.fail(e);
+                    Vec::new()
+                }
+            },
+            _ => unreachable!("mode"),
+        },
+    }
+}
+
+/// The term `T` of `T =.. l` for a ground `l`: its only item, or the
+/// compound of its first item, an atom, over the others. ProbLog's call
+/// mode error otherwise.
+fn univ(g: &mut Grounder, l: Val) -> Result<Val, GroundError> {
+    let error = |g: &mut Grounder, why: &str| {
+        GroundError::Unsupported(format!(
+            "_ =.. {}: {why} (ProbLog's call mode error)",
+            g.term_of(l)
+        ))
+    };
+    match g.items(l).as_deref() {
+        Some([t]) => Ok(*t),
+        Some([Val::Sym(name), args @ ..]) if !args.is_empty() => Ok(g.intern_fn(*name, args, true)),
+        Some([]) => Err(error(g, "an empty list")),
+        Some(_) => Err(error(g, "its first item is no atom")),
+        None => Err(error(g, "no list")),
     }
 }
 

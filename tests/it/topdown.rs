@@ -190,3 +190,40 @@ fn identities_of_terms_with_variables_are_read_where_no_call_changes_them() {
     );
     assert!(e.contains("of terms with variables"), "{e}");
 }
+
+#[test]
+fn univ_builds_and_takes_apart_terms_with_variables() {
+    // The lists of terms with variables the queries ask for have the
+    // program resolved top-down. sh(T) builds node(L, R) before kid/2 binds
+    // L and R where T is free, and takes T apart where the query's
+    // node(_, _) binds it; leaf(U) is the term of a list of one item.
+    let program = "0.5::pick(a); 0.5::pick(b).
+         kid(X, X).
+         mk(X, T) :- T =.. [node, L, R], kid(X, L), kid(X, R).
+         sh(T) :- pick(X), mk(X, T).
+         leaf(U) :- pick(X), U =.. [X].
+         two(T, U, [T, U]).
+         v(L) :- two(T, U, L), sh(T), sh(U).
+         w(L) :- two(T, U, L), sh(T), leaf(U).";
+    assert_answers(
+        &format!("{program} query(v([_, _])). query(w([node(_, _), _]))."),
+        &[
+            ("v([node(a,a), node(a,a)])", 0.5),
+            ("v([node(a,a), node(b,b)])", 0.0),
+            ("v([node(b,b), node(a,a)])", 0.0),
+            ("v([node(b,b), node(b,b)])", 0.5),
+            ("w([node(a,a), a])", 0.5),
+            ("w([node(a,a), b])", 0.0),
+            ("w([node(b,b), a])", 0.0),
+            ("w([node(b,b), b])", 0.5),
+        ],
+    );
+    // A list of no fixed length, or whose first item is no atom, gives no
+    // term: ProbLog's call mode error.
+    for body in ["T =.. [f|_]", "T =.. [1, a]"] {
+        let e = refusal(&format!(
+            "0.5::f. w(T) :- f, {body}. one(X, [X]). u(L) :- one(T, L), w(T). query(u([_]))."
+        ));
+        assert!(e.contains("ProbLog's call mode error"), "{body}: {e}");
+    }
+}

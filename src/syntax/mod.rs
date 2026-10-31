@@ -289,7 +289,7 @@ fn infix(name: &str) -> Option<(u16, Assoc)> {
         "->" => (1050, Xfy),
         "," => (1000, Xfy),
         "=" | "\\=" | "==" | "\\==" | "@<" | "@>" | "@=<" | "@>=" | "is" | "=:=" | "=\\=" | "<"
-        | ">" | "=<" | ">=" => (700, Xfx),
+        | ">" | "=<" | ">=" | "=.." => (700, Xfx),
         ":" => (600, Xfy),
         "+" | "-" | "/\\" | "\\/" | "xor" => (500, Yfx),
         "*" | "/" | "//" | "mod" | "rem" | "<<" | ">>" => (400, Yfx),
@@ -967,7 +967,7 @@ impl fmt::Display for CmpOp {
 }
 
 /// A predicate of ProbLog's `library(lists)`, or one of its built-ins
-/// `between/3`, `plus/3`, `compare/3` and `is_list/1`, which the grounder
+/// `between/3`, `plus/3`, `compare/3`, `is_list/1` and `=../2`, which the grounder
 /// evaluates on ground arguments where the program defines no predicate of
 /// its name and arity. `append/2`, `subset/2`, `intersection/3`,
 /// `union/3`, `subtract/3`, `delete/3` and `flatten/2`, which the library
@@ -999,10 +999,11 @@ pub(crate) enum Builtin {
     Compare,
     IsList,
     EnumGroups,
+    Univ,
 }
 
 /// Each built-in, by its name and arity.
-const BUILTINS: [(&str, usize, Builtin); 25] = [
+const BUILTINS: [(&str, usize, Builtin); 26] = [
     ("member", 2, Builtin::Member),
     ("memberchk", 2, Builtin::Memberchk),
     ("select", 3, Builtin::Select),
@@ -1028,6 +1029,7 @@ const BUILTINS: [(&str, usize, Builtin); 25] = [
     ("compare", 3, Builtin::Compare),
     ("is_list", 1, Builtin::IsList),
     ("enum_groups", 3, Builtin::EnumGroups),
+    ("=..", 2, Builtin::Univ),
 ];
 
 impl Builtin {
@@ -1058,7 +1060,11 @@ impl Builtin {
             e.0 == name
                 && !matches!(
                     e.2,
-                    Builtin::Between | Builtin::Plus | Builtin::Compare | Builtin::IsList
+                    Builtin::Between
+                        | Builtin::Plus
+                        | Builtin::Compare
+                        | Builtin::IsList
+                        | Builtin::Univ
                 )
         })
     }
@@ -1068,7 +1074,8 @@ impl Builtin {
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,
     /// the two lists or the list and the item the set predicates and
     /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, or the
-    /// terms `compare/3` orders. It then binds the others.
+    /// terms `compare/3` orders, or either side of `=../2`. It then binds
+    /// the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
             Builtin::Member | Builtin::Memberchk | Builtin::Select | Builtin::Nth0 => bound[1],
@@ -1093,6 +1100,7 @@ impl Builtin {
             | Builtin::Between => bound[0] && bound[1],
             Builtin::Plus => bound.iter().filter(|&&b| b).count() >= 2,
             Builtin::Compare => bound[1] && bound[2],
+            Builtin::Univ => bound[0] || bound[1],
         }
     }
 }
