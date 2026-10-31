@@ -445,43 +445,53 @@ impl Network {
         let tables = self.tables()?;
         let atoms = self.atoms()?;
         let start = out.len();
-        let mut row = Vec::new();
+        let (mut row, mut head) = (Vec::new(), String::new());
         for v in self.topological(&tables) {
             let t = tables[v];
             let (k, m) = (self.values[v].len(), t.parents.len());
+            // The last row's numbers: a row as the last one has its head.
+            let mut last = None;
             for (r, probs) in t.probs.chunks(k).enumerate() {
-                row.clear();
-                row.extend_from_slice(probs);
                 let key = &t.keys[r * m..(r + 1) * m];
-                rows::normalized(&mut row).map_err(|e| {
-                    let at: Vec<&str> = key
+                if last != Some(probs) {
+                    last = Some(probs);
+                    row.clear();
+                    row.extend_from_slice(probs);
+                    rows::normalized(&mut row).map_err(|e| {
+                        let at: Vec<&str> = key
+                            .iter()
+                            .zip(&t.parents)
+                            .map(|(&u, &p)| self.values[p][u as usize].as_str())
+                            .collect();
+                        format!("{} given ({}): {e}", self.names[v], at.join(", "))
+                    })?;
+                    head.clear();
+                    let heads: Vec<(f64, usize)> = row
                         .iter()
-                        .zip(&t.parents)
-                        .map(|(&u, &p)| self.values[p][u as usize].as_str())
+                        .enumerate()
+                        .filter(|(_, p)| **p > 0.0)
+                        .map(|(u, &p)| (p, u))
                         .collect();
-                    format!("{} given ({}): {e}", self.names[v], at.join(", "))
-                })?;
-                let heads: Vec<(f64, usize)> = row
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, p)| **p > 0.0)
-                    .map(|(u, &p)| (p, u))
-                    .collect();
-                match heads[..] {
-                    // No value under this row: no rule.
-                    [] => continue,
-                    [(p, u)] if (p - 1.0).abs() < 1e-9 => out.push_str(&atoms[v][u]),
-                    _ => {
-                        for (j, &(p, u)) in heads.iter().enumerate() {
-                            if j > 0 {
-                                out.push_str("; ");
+                    match heads[..] {
+                        // No value under this row: no rule.
+                        [] => {}
+                        [(p, u)] if (p - 1.0).abs() < 1e-9 => head.push_str(&atoms[v][u]),
+                        _ => {
+                            for (j, &(p, u)) in heads.iter().enumerate() {
+                                if j > 0 {
+                                    head.push_str("; ");
+                                }
+                                rows::write_float(&mut head, p);
+                                head.push_str("::");
+                                head.push_str(&atoms[v][u]);
                             }
-                            rows::write_float(out, p);
-                            out.push_str("::");
-                            out.push_str(&atoms[v][u]);
                         }
                     }
                 }
+                if head.is_empty() {
+                    continue;
+                }
+                out.push_str(&head);
                 for (j, (&u, &p)) in key.iter().zip(&t.parents).enumerate() {
                     out.push_str(if j == 0 { " :- " } else { ", " });
                     out.push_str(&atoms[p][u as usize]);

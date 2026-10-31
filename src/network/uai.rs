@@ -227,14 +227,23 @@ fn conditional_tables(
             .collect()
     };
     let mut candidates: Vec<Vec<usize>> = Vec::with_capacity(n);
+    let (mut row, mut last) = (Vec::new(), Vec::new());
     for (scope, table) in scopes.iter().zip(tables) {
         let strides = strides_of(scope);
         let found: Vec<usize> = (0..scope.len())
             .filter(|&i| {
                 let (k, stride) = (sizes[scope[i]], strides[i]);
+                last.clear();
                 (0..table.len()).filter(|r| r / stride % k == 0).all(|r| {
-                    let row: Vec<f64> = (0..k).map(|x| table[r + stride * x]).collect();
-                    sums_to_one(&row)
+                    row.clear();
+                    row.extend((0..k).map(|x| table[r + stride * x]));
+                    // A row as the last one passed, as a table of one
+                    // distinct entry's rows all are, passes.
+                    if row == last {
+                        return true;
+                    }
+                    std::mem::swap(&mut row, &mut last);
+                    sums_to_one(&last)
                 })
             })
             .collect();
