@@ -76,13 +76,17 @@ pub(crate) struct Cones {
     held: Vec<Held>,
     /// The component each component was last read into.
     read_into: Vec<usize>,
+    /// Per 1-based variable (`0` unused), how many unreleased components
+    /// hold it in their cone plus how many unstarted components mention it
+    /// directly in their rules, plus two if it may not be collapsed.
+    holders: Vec<u32>,
 }
 
 enum Held {
     Released,
     Sparse(Vec<VarId>),
     Dense(Box<[u64]>),
-    OverLimit,
+    OverLimit(Box<[u64]>),
 }
 
 impl Cones {
@@ -94,6 +98,123 @@ impl Cones {
             touched: Vec::new(),
             held: (0..components).map(|_| Held::Released).collect(),
             read_into: vec![usize::MAX; components],
+            holders: Vec::new(),
+        }
+    }
+
+    /// Initialize [`holders`](Self::holders) over `num_vars` variables from
+    /// `gp`'s rules across `sccs` and the variables `pinned` that may not be
+    /// collapsed.
+    pub(crate) fn init_holders(
+        &mut self,
+        gp: &GroundProgram,
+        by_head: &RulesByHead,
+        sccs: &[Vec<AtomId>],
+        var_of: &[Option<VarId>],
+        num_vars: usize,
+        pinned: impl IntoIterator<Item = VarId>,
+    ) {
+        self.holders.clear();
+        self.holders.resize(num_vars + 1, 0);
+        for v in pinned {
+            let idx = v.0 as usize;
+            if idx < self.holders.len() {
+                self.holders[idx] = self.holders[idx].saturating_add(2);
+            }
+        }
+        for scc in sccs {
+            for &a in scc {
+                for &ri in &by_head[a as usize] {
+                    for l in &gp.rules[ri].body {
+                        let b = l.atom() as usize;
+                        if matches!(gp.kinds[b], AtomKind::Fact(_)) {
+                            let v = var_of[b].expect("every fact has a variable").0 as usize - 1;
+                            let word = &mut self.acc[v / 64];
+                            if *word == 0 {
+                                self.touched.push(v / 64);
+                            }
+                            *word |= 1 << (v % 64);
+                        }
+                    }
+                }
+            }
+            for &k in &self.touched {
+                let mut w = self.acc[k];
+                self.acc[k] = 0;
+                while w != 0 {
+                    let bit = w.trailing_zeros() as usize;
+                    self.holders[k * 64 + bit + 1] += 1;
+                    w &= w - 1;
+                }
+            }
+            self.touched.clear();
+        }
+    }
+
+    /// Whether every variable in `vars` (a subset of an unreleased
+    /// component's cone) is held by that component alone, mentioned by no
+    /// unstarted component's rules, and not pinned.
+    pub(crate) fn is_private(&self, vars: &[VarId]) -> bool {
+        !self.holders.is_empty() && vars.iter().all(|&v| self.holders[v.0 as usize] == 1)
+    }
+
+    /// If component `ci`'s held cone has at least two variables and every
+    /// variable in it is private ([`is_private`](Self::is_private)), return
+    /// its first variable.
+    pub(crate) fn private_cone(&self, ci: usize) -> Option<VarId> {
+        if self.holders.is_empty() {
+            return None;
+        }
+        match &self.held[ci] {
+            Held::Sparse(vars) if vars.len() >= 2 && self.is_private(vars) => Some(vars[0]),
+            Held::Dense(words) | Held::OverLimit(words) => {
+                let mut first = None;
+                let mut count = 0usize;
+                for (k, &w0) in words.iter().enumerate() {
+                    let mut w = w0;
+                    while w != 0 {
+                        let bit = w.trailing_zeros() as usize;
+                        let v = k * 64 + bit + 1;
+                        if self.holders[v] != 1 {
+                            return None;
+                        }
+                        if first.is_none() {
+                            first = Some(VarId(v as u32));
+                        }
+                        count += 1;
+                        w &= w - 1;
+                    }
+                }
+                (count >= 2).then_some(first).flatten()
+            }
+            _ => None,
+        }
+    }
+
+    /// Decrement [`holders`](Self::holders) for the cone of component `ci`
+    /// and mark it [`Held::Released`].
+    fn drop_held(&mut self, ci: usize) {
+        match std::mem::replace(&mut self.held[ci], Held::Released) {
+            Held::Released => {}
+            Held::Sparse(old) => {
+                if !self.holders.is_empty() {
+                    for v in old {
+                        self.holders[v.0 as usize] -= 1;
+                    }
+                }
+            }
+            Held::Dense(words) | Held::OverLimit(words) => {
+                if !self.holders.is_empty() {
+                    for (k, &w0) in words.iter().enumerate() {
+                        let mut w = w0;
+                        while w != 0 {
+                            let bit = w.trailing_zeros() as usize;
+                            self.holders[k * 64 + bit + 1] -= 1;
+                            w &= w - 1;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -116,6 +237,7 @@ impl Cones {
             touched,
             held,
             read_into,
+            holders,
         } = self;
         let blocks = *blocks;
         let set = |acc: &mut [u64], touched: &mut Vec<usize>, v: usize| {
@@ -125,46 +247,67 @@ impl Cones {
             }
             *word |= 1 << (v % 64);
         };
+        for &a in &sccs[ci] {
+            for &ri in &by_head[a as usize] {
+                for l in &gp.rules[ri].body {
+                    let b = l.atom() as usize;
+                    if matches!(gp.kinds[b], AtomKind::Fact(_)) {
+                        let v = var_of[b].expect("every fact has a variable").0 as usize - 1;
+                        set(acc, touched, v);
+                    }
+                }
+            }
+        }
+        if !holders.is_empty() {
+            for &k in touched.iter() {
+                let mut w = acc[k];
+                while w != 0 {
+                    let bit = w.trailing_zeros() as usize;
+                    holders[k * 64 + bit + 1] -= 1;
+                    w &= w - 1;
+                }
+            }
+        }
         let mut whole = false;
         let mut over = false;
         'rules: for &a in &sccs[ci] {
             for &ri in &by_head[a as usize] {
                 for l in &gp.rules[ri].body {
                     let b = l.atom() as usize;
-                    match gp.kinds[b] {
-                        AtomKind::Fact(_) => {
-                            let v = var_of[b].expect("every fact has a variable").0 as usize - 1;
-                            set(acc, touched, v);
+                    if matches!(gp.kinds[b], AtomKind::Derived) {
+                        let cj = comp_of[b] as usize;
+                        debug_assert!(
+                            cj <= ci,
+                            "components come in dependency order, so a body atom's \
+                             component is this one or an earlier one",
+                        );
+                        if cj == ci || std::mem::replace(&mut read_into[cj], ci) == ci {
+                            continue;
                         }
-                        AtomKind::Derived => {
-                            let cj = comp_of[b] as usize;
-                            debug_assert!(
-                                cj <= ci,
-                                "components come in dependency order, so a body atom's \
-                                 component is this one or an earlier one",
-                            );
-                            if cj == ci || std::mem::replace(&mut read_into[cj], ci) == ci {
-                                continue;
+                        match &held[cj] {
+                            Held::Sparse(vars) => {
+                                for &v in vars {
+                                    set(acc, touched, v.0 as usize - 1);
+                                }
                             }
-                            match &held[cj] {
-                                Held::Sparse(vars) => {
-                                    for &v in vars {
-                                        set(acc, touched, v.0 as usize - 1);
-                                    }
+                            Held::Dense(words) => {
+                                for (w, &d) in acc.iter_mut().zip(words.iter()) {
+                                    *w |= d;
                                 }
-                                Held::Dense(words) => {
-                                    for (w, &d) in acc.iter_mut().zip(words.iter()) {
-                                        *w |= d;
-                                    }
-                                    whole = true;
-                                }
-                                Held::OverLimit => {
-                                    over = true;
+                                whole = true;
+                            }
+                            Held::OverLimit(words) => {
+                                over = true;
+                                if holders.is_empty() {
                                     break 'rules;
                                 }
-                                Held::Released => panic!(
-                                    "component {ci} reads the cone of component {cj}, released"
-                                ),
+                                for (w, &d) in acc.iter_mut().zip(words.iter()) {
+                                    *w |= d;
+                                }
+                                whole = true;
+                            }
+                            Held::Released => {
+                                panic!("component {ci} reads the cone of component {cj}, released")
                             }
                         }
                     }
@@ -203,8 +346,27 @@ impl Cones {
             }
             vars
         });
+        if !holders.is_empty() {
+            match &cone {
+                Some(vars) => {
+                    for &v in vars {
+                        holders[v.0 as usize] += 1;
+                    }
+                }
+                None => {
+                    for &k in touched.iter() {
+                        let mut w = acc[k];
+                        while w != 0 {
+                            let bit = w.trailing_zeros() as usize;
+                            holders[k * 64 + bit + 1] += 1;
+                            w &= w - 1;
+                        }
+                    }
+                }
+            }
+        }
         held[ci] = match &cone {
-            None => Held::OverLimit,
+            None => Held::OverLimit(acc.clone().into_boxed_slice()),
             Some(vars) if vars.len() >= blocks => Held::Dense(acc.clone().into_boxed_slice()),
             Some(vars) => Held::Sparse(vars.clone()),
         };
@@ -219,6 +381,12 @@ impl Cones {
     /// one worked out for it: the variables its formulas turned out to
     /// depend on, which the components that read it union in instead.
     pub(crate) fn narrow(&mut self, ci: usize, vars: &[VarId]) {
+        self.drop_held(ci);
+        if !self.holders.is_empty() {
+            for &v in vars {
+                self.holders[v.0 as usize] += 1;
+            }
+        }
         self.held[ci] = if vars.len() >= self.blocks {
             let mut words = vec![0u64; self.blocks];
             for v in vars {
@@ -234,7 +402,7 @@ impl Cones {
     /// Forget the cone of component `ci`, which no component still to be
     /// worked out reads.
     pub(crate) fn release(&mut self, ci: usize) {
-        self.held[ci] = Held::Released;
+        self.drop_held(ci);
     }
 }
 

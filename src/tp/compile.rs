@@ -757,6 +757,8 @@ pub(crate) struct Compilation {
     spent: bool,
     /// What the query phase takes over ([`Compiled::for_queries`]).
     for_queries: ForQueries,
+    /// Probabilities of the facts and any collapsed private derived atoms.
+    fact_weights: Probabilities,
     stats: CompileStats,
     /// Calls per operation kind ([`Op`]).
     counts: std::cell::RefCell<[usize; 5]>,
@@ -877,6 +879,9 @@ pub(crate) struct ForQueries {
     /// reads any more.
     pub(crate) dropped: FxHashSet<AtomId>,
     pub(crate) released: Vec<VarId>,
+    /// Variables standing in for closed derived atoms over private dying
+    /// facts, with their positive and negative probabilities.
+    pub(crate) reweighed: Vec<(VarId, f64, f64)>,
     /// The cuts whose names were kept and expanded.
     pub(crate) settled: super::settle::Settled,
 }
@@ -924,7 +929,7 @@ impl Compilation {
                 .collect(),
         );
         let comp_of = cone::component_of(n, &sccs);
-        let (projected, projection_stats) = Projected::new(&sccs, &var_of, projection);
+        let (mut projected, projection_stats) = Projected::new(&sccs, &var_of, projection);
         let scopes = vec![backend.global(); sccs.len()];
         let num_vars = var_of
             .iter()
@@ -932,14 +937,54 @@ impl Compilation {
             .map(|v| v.0 as usize + 1)
             .max()
             .unwrap_or(0);
+        if let Some(p) = projected.as_mut() {
+            let mut pinned = Vec::new();
+            for ind in &gp.encoding.indicators {
+                if let Some(v) = var_of[ind.var as usize] {
+                    pinned.push(v);
+                }
+            }
+            for &(_, id, _) in gp.queries.iter().chain(&gp.evidence) {
+                if let Some(a) = id
+                    && let Some(v) = var_of[a as usize]
+                {
+                    pinned.push(v);
+                }
+            }
+            for (a, &c) in comp_of.iter().enumerate() {
+                if c == u32::MAX {
+                    for &ri in &by_head[a] {
+                        for l in &gp.rules[ri].body {
+                            if let Some(v) = var_of[l.atom() as usize] {
+                                pinned.push(v);
+                            }
+                        }
+                    }
+                } else if let Some((v, _)) = equivalence(gp, &by_head[a])
+                    && let Some(v) = var_of[v as usize]
+                {
+                    pinned.push(v);
+                }
+            }
+            p.cones
+                .init_holders(gp, &by_head, &sccs, &var_of, num_vars, pinned);
+        }
         let encoded = Encoded::new(gp, &var_of, num_vars);
+        let mut fact_weights = Probabilities::from_program(gp, &var_of, backend.vtree().num_vars());
+        for ind in &gp.encoding.indicators {
+            if let Some(v) = var_of[ind.var as usize] {
+                let idx = v.0 as usize;
+                (
+                    fact_weights.pos[idx],
+                    fact_weights.neg[idx],
+                    fact_weights.one[idx],
+                ) = (0.5, 0.5, 1.0);
+            }
+        }
         let queried: Option<(FxHashSet<AtomId>, Probabilities)> =
             gp.evidence.is_empty().then(|| {
                 let atoms = gp.queries.iter().filter_map(|&(_, id, _)| id).collect();
-                (
-                    atoms,
-                    Probabilities::from_program(gp, &var_of, backend.vtree().num_vars()),
-                )
+                (atoms, fact_weights.clone())
             });
         let dying = Dying::new(gp, &by_head, &sccs, &comp_of, queried, answers);
         // Room for an entry for each atom the compile gives a formula.
@@ -989,6 +1034,7 @@ impl Compilation {
                 ties,
                 ..ForQueries::default()
             },
+            fact_weights,
             stats,
             counts: std::cell::RefCell::new([0usize; 5]),
             negations: std::cell::RefCell::new(Negations::default()),
@@ -1147,7 +1193,7 @@ impl Compilation {
                 if finished {
                     self.next += 1;
                     self.drop_dying(backend, self.next - 1)?;
-                    self.narrow(backend, self.next - 1)?;
+                    self.narrow(gp, backend, self.next - 1)?;
                 }
                 self.search(backend, None)?;
                 if finished {
@@ -1288,11 +1334,34 @@ impl Compilation {
     /// on it. The components that read it then start from the union of
     /// what their parts depend on ([`cone::Cones::narrow`]). A support at
     /// the global limit keeps the scope it has.
-    fn narrow(&mut self, backend: &TddBackend, i: usize) -> Result<(), CompileError> {
-        let Some(p) = self.projected.as_mut() else {
+    fn narrow(
+        &mut self,
+        gp: &GroundProgram,
+        backend: &TddBackend,
+        i: usize,
+    ) -> Result<(), CompileError> {
+        let Some(p) = self.projected.as_ref() else {
             return Ok(());
         };
-        let scc = &self.sccs[i];
+        let single_atom = match self.sccs[i].as_slice() {
+            &[a] if p.keep_global > 1
+                && self.fixpoint.formulas[a as usize]
+                    .as_ref()
+                    .is_some_and(|f| backend.size(f) > 1)
+                && !self.dying.answers.contains_key(&a)
+                && !self.for_queries.ties.values().any(|t| t.reference == a)
+                && equivalence(gp, &self.by_head[a as usize]).is_none() =>
+            {
+                Some(a)
+            }
+            _ => None,
+        };
+        if let Some(a) = single_atom
+            && let Some(v_rep) = p.cones.private_cone(i)
+            && self.try_collapse_private(backend, i, a, v_rep)?
+        {
+            return Ok(());
+        }
         let scope = &self.scopes[i];
         if scope.len() < NARROW_FROM {
             return Ok(());
@@ -1300,7 +1369,7 @@ impl Compilation {
         let formulas = &self.fixpoint.formulas;
         let mut vars = Vec::new();
         let mut held = false;
-        for &a in scc {
+        for &a in &self.sccs[i] {
             if let Some(f) = &formulas[a as usize] {
                 held = true;
                 for v in backend.engine.support(f)? {
@@ -1318,6 +1387,17 @@ impl Compilation {
             // (`cone::Cones::of`).
             vars.push(scope.vars().map_or(VarId(1), |vars| vars[0]));
         }
+        if let Some(a) = single_atom
+            && vars.len() >= 2
+            && self.projected.as_ref().unwrap().cones.is_private(&vars)
+            && self.try_collapse_private(backend, i, a, vars[0])?
+        {
+            return Ok(());
+        }
+        let p = self.projected.as_mut().unwrap();
+        let scc = &self.sccs[i];
+        let scope = &self.scopes[i];
+        let formulas = &self.fixpoint.formulas;
         if 2 * vars.len() > scope.len() || vars.len() >= p.keep_global {
             return Ok(());
         }
@@ -1351,6 +1431,77 @@ impl Compilation {
         p.narrowed(i, &vars, &into, built);
         self.scopes[i] = into;
         Ok(())
+    }
+
+    /// Replace a finished derived atom `a` of component `i` whose support
+    /// variables are all private to `i` and dead after `i` with a 1-pair
+    /// positive literal over `v_rep` on the 1-variable scope `&[v_rep]`,
+    /// reweighing `v_rep` to `(P(a), P(\+a))`.
+    fn try_collapse_private(
+        &mut self,
+        backend: &TddBackend,
+        i: usize,
+        a: AtomId,
+        v_rep: VarId,
+    ) -> Result<bool, CompileError> {
+        let Some(f) = &self.fixpoint.formulas[a as usize] else {
+            return Ok(false);
+        };
+        let scope = &self.scopes[i];
+        let w = self.fact_weights.restrict(scope.vars());
+        let positive = self.fixpoint.positive.borrow()[a as usize];
+        let m = crate::eval::mass(backend.engine, f, &w, &mut self.for_queries.recounts)?.to_f64();
+        let c = crate::eval::complement(m, || -> Result<f64, CompileError> {
+            if let Some(cached) = &self.fixpoint.lambda_cache.borrow()[a as usize] {
+                return Ok(crate::eval::mass(
+                    backend.engine,
+                    cached,
+                    &w,
+                    &mut self.for_queries.recounts,
+                )?
+                .to_f64());
+            }
+            let neg = self
+                .negations
+                .borrow_mut()
+                .negate(backend, NegationSource::Query, &**f)?;
+            Ok(
+                crate::eval::mass(backend.engine, &neg, &w, &mut self.for_queries.recounts)?
+                    .to_f64(),
+            )
+        })?;
+        let (p_pos, p_neg) = if positive { (m, c) } else { (c, m) };
+        if !(p_pos > f64::MIN_POSITIVE && p_neg > f64::MIN_POSITIVE && p_pos < 1.0 && p_neg < 1.0) {
+            return Ok(false);
+        }
+        let rep_slice = [v_rep];
+        let p = self.projected.as_mut().expect("projected compilation");
+        let into = p.live(&rep_slice);
+        let built = into.is_none();
+        let into = match into {
+            Some(s) => s,
+            None => backend.scope(&rep_slice)?,
+        };
+        let g = backend.literal(&into, tididi::Literal::pos(v_rep))?;
+        let size = backend.size(&g);
+        self.fixpoint.live = self.fixpoint.live - self.fixpoint.sizes[a as usize] + size;
+        self.fixpoint.sizes[a as usize] = size;
+        self.fixpoint.formulas[a as usize] = Some(Arc::new(g));
+        self.fixpoint.positive.get_mut()[a as usize] = true;
+        self.fixpoint.lambda_cache.get_mut()[a as usize] = None;
+        p.narrowed(i, &rep_slice, &into, built);
+        self.scopes[i] = into;
+        let idx = v_rep.0 as usize;
+        (
+            self.fact_weights.pos[idx],
+            self.fact_weights.neg[idx],
+            self.fact_weights.one[idx],
+        ) = (p_pos, p_neg, 1.0);
+        if let Some((_, qw)) = &mut self.dying.queried {
+            (qw.pos[idx], qw.neg[idx], qw.one[idx]) = (p_pos, p_neg, 1.0);
+        }
+        self.for_queries.reweighed.push((v_rep, p_pos, p_neg));
+        Ok(true)
     }
 
     /// Hand out the formulas in their polarities. The compilation

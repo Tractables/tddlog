@@ -960,7 +960,7 @@ impl TddBackend<'_> {
         }
         let yc = to[c.idx()].get(yc as usize).copied().unwrap_or(yc);
         let (xc, yc) = (NodeIdx(xc), NodeIdx(yc));
-        let pairs = if v_left {
+        let mut pairs = if v_left {
             [
                 ChildPair::new(POS_LEAF_IDX, xc),
                 ChildPair::new(NEG_LEAF_IDX, yc),
@@ -971,6 +971,7 @@ impl TddBackend<'_> {
                 ChildPair::new(yc, NEG_LEAF_IDX),
             ]
         };
+        pairs.sort_unstable_by_key(|p| (p.left.raw(), p.right.raw()));
         let node = b.push(self.engine, root, &pairs)?;
         Ok(Some(
             b.finish(TddNodeId {
@@ -1279,7 +1280,7 @@ mod tests {
         }
         let side = |k: usize, i: u32| to[k][c.idx()].get(i as usize).copied().unwrap_or(i);
         let (xc, yc) = (NodeIdx(side(0, xc)), NodeIdx(side(1, yc)));
-        let pairs = if v_left {
+        let mut pairs = if v_left {
             [
                 ChildPair::new(POS_LEAF_IDX, xc),
                 ChildPair::new(NEG_LEAF_IDX, yc),
@@ -1290,6 +1291,7 @@ mod tests {
                 ChildPair::new(yc, NEG_LEAF_IDX),
             ]
         };
+        pairs.sort_unstable_by_key(|p| (p.left.raw(), p.right.raw()));
         let node = b.push(engine, root, &pairs).unwrap();
         Some(
             b.finish(TddNodeId {

@@ -296,3 +296,69 @@ query(b).
         }
     }
 }
+
+/// Two disjoint sub-programs `left_sub` and `right_sub` over private
+/// probabilistic facts feed into `top :- left_sub, \+right_sub.`. Under cone
+/// projection each sub-formula collapses to a single reweighed variable once
+/// its internal dependencies die, shrinking `top`'s support to two variables
+/// while keeping the exact hand-computed probabilities.
+#[test]
+fn private_closed_subcones_collapse_to_one_literal() {
+    let source = "\
+0.6::l1. 0.7::l2. 0.8::l3.
+left_sub :- l1, l2.
+left_sub :- l2, l3.
+0.5::r1. 0.4::r2. 0.3::r3.
+right_sub :- r1, r2.
+right_sub :- \\+r2, r3.
+top :- left_sub, \\+right_sub.
+query(top).
+query(left_sub).
+query(right_sub).
+";
+    // P(left_sub) = P(l2) * (P(l1) + (1 - P(l1)) * P(l3))
+    //             = 0.7 * (0.6 + 0.4 * 0.8) = 0.7 * 0.92 = 0.644
+    // P(right_sub) = P(r1)*P(r2) + (1 - P(r2))*P(r3)
+    //              = 0.5 * 0.4 + 0.6 * 0.3 = 0.20 + 0.18 = 0.38
+    // P(top) = P(left_sub) * (1 - P(right_sub)) = 0.644 * 0.62 = 0.39928
+    let want = [
+        ("top", 0.644 * 0.62),
+        ("left_sub", 0.644),
+        ("right_sub", 0.38),
+    ];
+    for projection in PROJECTIONS {
+        let got = answers(source, projection);
+        assert_eq!(got.len(), want.len());
+        for ((atom, p), (name, expected)) in got.iter().zip(want) {
+            assert_eq!(atom, name, "{projection}: query order");
+            assert!(
+                (p - expected).abs() < 1e-9,
+                "{projection}: {atom} = {p} but expected {expected}"
+            );
+        }
+    }
+    let gp = crate::ground::ground(
+        &crate::syntax::parse_program(source).unwrap(),
+        &Default::default(),
+    )
+    .unwrap();
+    let order = crate::vtree::facts_in_order(&gp);
+    let vars: Vec<VarId> = (1..=order.len() as u32).map(VarId).collect();
+    let vtree = Arc::new(tididi::Vtree::linear_from_order(&vars).unwrap());
+    for formulation in [Formulation::Primal, Formulation::Dual] {
+        for projection in [Projection::default(), Projection::Cones { max_share: 1.0 }] {
+            vtree.context().run(|engine| {
+                let backend = crate::tp::TddBackend::new(engine, vtree.clone());
+                let var_of = crate::tp::fact_variables(&gp, &order);
+                let compiled =
+                    crate::tp::compile(&gp, var_of, formulation, &backend, projection, None)
+                        .unwrap();
+                assert_eq!(
+                    compiled.for_queries.reweighed.len(),
+                    2,
+                    "{formulation:?} under {projection}: both closed sub-programs collapsed"
+                );
+            });
+        }
+    }
+}
