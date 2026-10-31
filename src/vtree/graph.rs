@@ -292,7 +292,24 @@ impl FillGraph {
 /// of least degree (ties to the lower number) until no edge is left; the
 /// bound is the largest least degree met on the way. Where a decomposition
 /// is as narrow as this, no search finds a narrower one.
-pub(super) fn minor_min_width(num_vertices: usize, edges: &[(u32, u32)]) -> usize {
+///
+/// The bound cannot pass the width of a decomposition, so the contractions
+/// stop where it reaches `width`, that of one at hand. The least degree,
+/// the first bound, is read off the edges, which are distinct: on the
+/// clique of a rule body of `k` atoms it is already `k - 1`, and the
+/// contractions would cost `k^2 log k`.
+pub(super) fn minor_min_width(num_vertices: usize, edges: &[(u32, u32)], width: usize) -> usize {
+    let mut degree = vec![0; num_vertices];
+    for &(u, v) in edges {
+        if u != v {
+            degree[u as usize] += 1;
+            degree[v as usize] += 1;
+        }
+    }
+    let least = degree.into_iter().min().unwrap_or(0);
+    if least >= width {
+        return least;
+    }
     let mut adjacent: Vec<FxHashSet<u32>> = vec![FxHashSet::default(); num_vertices];
     for &(u, v) in edges {
         if u != v {
@@ -306,6 +323,9 @@ pub(super) fn minor_min_width(num_vertices: usize, edges: &[(u32, u32)]) -> usiz
     let mut bound = 0;
     while let Some((degree, v)) = by_degree.pop_first() {
         bound = bound.max(degree);
+        if bound >= width {
+            break;
+        }
         let Some(&u) = adjacent[v as usize]
             .iter()
             .min_by_key(|&&w| (adjacent[w as usize].len(), w))
@@ -904,12 +924,12 @@ mod tests {
                 .flat_map(|u| (u + 1..n).map(move |v| (u, v)))
                 .collect()
         };
-        assert_eq!(minor_min_width(6, &clique(6)), 5);
+        assert_eq!(minor_min_width(6, &clique(6), usize::MAX), 5);
         let cycle: Vec<(u32, u32)> = (0..8).map(|u| (u, (u + 1) % 8)).collect();
-        assert_eq!(minor_min_width(8, &cycle), 2);
+        assert_eq!(minor_min_width(8, &cycle, usize::MAX), 2);
         let path: Vec<(u32, u32)> = (0..7).map(|u| (u, u + 1)).collect();
-        assert_eq!(minor_min_width(8, &path), 1);
-        assert_eq!(minor_min_width(3, &[]), 0);
+        assert_eq!(minor_min_width(8, &path, usize::MAX), 1);
+        assert_eq!(minor_min_width(3, &[], usize::MAX), 0);
         // The 4 x 4 grid has treewidth 4; the bound is at most that.
         let mut grid = Vec::new();
         for r in 0..4u32 {
@@ -922,8 +942,12 @@ mod tests {
                 }
             }
         }
-        let bound = minor_min_width(16, &grid);
+        let bound = minor_min_width(16, &grid, usize::MAX);
         assert!((2..=4).contains(&bound), "{bound}");
+        // Stopped at the width of a decomposition, the bound is the same:
+        // it cannot pass that width.
+        assert_eq!(minor_min_width(6, &clique(6), 5), 5);
+        assert_eq!(minor_min_width(16, &grid, 4), bound);
     }
 
     #[test]

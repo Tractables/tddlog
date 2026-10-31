@@ -1362,9 +1362,9 @@ impl Decompositions {
         let narrowable = wide
             && units < 2 * budget_units
             && min_fill.treewidth() as usize
-                > *self
-                    .lower_bound
-                    .get_or_insert_with(|| minor_min_width(num_items, &edges));
+                > *self.lower_bound.get_or_insert_with(|| {
+                    minor_min_width(num_items, &edges, min_fill.treewidth() as usize)
+                });
         if narrowable {
             self.search_cost += 2 * budget_units;
         }
