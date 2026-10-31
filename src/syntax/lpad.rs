@@ -325,7 +325,7 @@ fn switches(
                     .collect::<Result<Vec<_>, _>>()
             })
             .transpose()
-            .map_err(&error)?
+            .map_err(error)?
             .and_then(|ps| ps.into_iter().collect::<Option<Vec<f64>>>())
             .filter(|ps| ps.iter().all(|p| (0.0..=1.0).contains(p)))
             .ok_or_else(|| error("the probabilities are not a list of numbers".into()))?;
@@ -361,7 +361,7 @@ fn switches(
         }
         let mut heads = Vec::with_capacity(probs.len());
         for (p, v) in probs.into_iter().zip(items) {
-            let p = annotation(Written::Number(p)).map_err(&error)?;
+            let p = annotation(Written::Number(p)).map_err(error)?;
             heads.push(format!("{p}::msw({s}, {v})"));
         }
         out.push(format!("{}.", heads.join("; ")));
