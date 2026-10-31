@@ -1515,6 +1515,34 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             });
             best.map_or_else(Vec::new, |m| one(vec![l, m]))
         }
+        // The pairs `(G, V)` of a list by their groups `G`, in the order of
+        // each group's first pair, a group with its values in order, as
+        // ProbLog's library(lists) groups them.
+        Builtin::EnumGroups => {
+            let l = vals[0].expect("mode");
+            let Some(pairs) = g.items(l) else {
+                return Vec::new();
+            };
+            let mut groups: Vec<(Val, Vec<Val>)> = Vec::new();
+            let mut index: FxHashMap<Val, usize> = FxHashMap::default();
+            for p in pairs {
+                let Val::Fn(id) = p else {
+                    return Vec::new();
+                };
+                let &[_, k, v, ..] = g.terms.keys.list(id as usize) else {
+                    return Vec::new();
+                };
+                let at = *index.entry(k).or_insert_with(|| {
+                    groups.push((k, Vec::new()));
+                    groups.len() - 1
+                });
+                groups[at].1.push(v);
+            }
+            groups
+                .into_iter()
+                .map(|(k, vs)| vec![l, k, g.make_list(&vs, nil)])
+                .collect()
+        }
         // The items in the standard order of terms, equal ones once.
         Builtin::Sort => {
             let l = vals[0].expect("mode");

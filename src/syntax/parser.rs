@@ -43,6 +43,9 @@ struct Parser<'a> {
     cur: bool,
     /// Counter for `_` anonymous variables, made unique per clause.
     anon: usize,
+    /// The aggregates `f<V>` read in the clause at hand
+    /// ([`Parser::aggregate`]).
+    aggregates: usize,
     /// Source clause counter, the `group` of the clauses it produces.
     group: u32,
     /// The literals of the conjunctions being read, the arguments of the
@@ -109,6 +112,7 @@ fn parse(
         ahead: [eof(), eof()],
         cur: false,
         anon: 0,
+        aggregates: 0,
         group: 0,
         lits: Vec::new(),
         terms: Vec::new(),
@@ -123,7 +127,15 @@ fn parse(
     let mut parsed = Ok(());
     while !p.at(Tok::Eof) {
         p.anon = 0;
+        p.aggregates = 0;
+        let line = p.line();
         parsed = p.clause(&mut prog);
+        if parsed.is_ok() && p.aggregates != 0 {
+            parsed = Err(ParseError {
+                line,
+                msg: AGGREGATE_ONLY.into(),
+            });
+        }
         if parsed.is_err() {
             break;
         }
@@ -202,6 +214,54 @@ impl Body {
                             .any(|d| !matches!(d, Body::Lits(l) if l.is_empty())))
             }),
         }
+    }
+}
+
+/// The name of the term `'$aggregate'(f, V)` the parser reads `f<V>` as,
+/// until the clause whose head it ends is rewritten ([`Parser::aggregate`]).
+const AGGREGATE: &str = "$aggregate";
+
+/// The error of an aggregate `f<V>` read elsewhere.
+const AGGREGATE_ONLY: &str = "an aggregate f<V> is read only as the last argument of a clause's \
+                              one head, not annotated";
+
+/// `t` with its variables renamed apart from those of the clause it is
+/// read in: `X` is `X$`.
+fn renamed(t: &Term) -> Term {
+    match t {
+        Term::Var(v) => Term::Var(format!("{v}$")),
+        Term::Compound(c) if !t.is_ground() => {
+            Compound::term(c.name.clone(), c.args.iter().map(renamed).collect())
+        }
+        _ => t.clone(),
+    }
+}
+
+/// `l` with its variables renamed apart ([`renamed`]).
+fn renamed_literal(l: &Literal) -> Literal {
+    let atom = |a: &Atom| {
+        Atom::new(
+            a.name.clone(),
+            a.args.iter().map(renamed).collect::<Vec<_>>(),
+        )
+    };
+    match l {
+        Literal::Pos(a) => Literal::Pos(atom(a)),
+        Literal::Neg(a) => Literal::Neg(atom(a)),
+        Literal::Cmp(op, a, b) => Literal::Cmp(*op, renamed(a), renamed(b)),
+        Literal::Is(a, b) => Literal::Is(renamed(a), renamed(b)),
+        Literal::Findall(fa) => Literal::Findall(Box::new(Findall {
+            template: renamed(&fa.template),
+            goal: fa
+                .goal
+                .iter()
+                .map(|alt| alt.iter().map(renamed_literal).collect())
+                .collect(),
+            result: renamed(&fa.result),
+            interleaved: fa.interleaved,
+            all: fa.all,
+        })),
+        Literal::Builtin(..) | Literal::Collect(_) => unreachable!("made by the grounder"),
     }
 }
 
@@ -339,13 +399,16 @@ impl<'a> Parser<'a> {
                 prog,
             );
         }
-        let heads = self.heads()?;
-        let body = if self.at(Tok::Neck) {
+        let mut heads = self.heads()?;
+        let mut body = if self.at(Tok::Neck) {
             self.bump();
             self.body()?
         } else {
             Body::Lits(Vec::new())
         };
+        if self.aggregates > 0 {
+            body = self.aggregate(&mut heads, body)?;
+        }
         self.expect(Tok::Dot)?;
         let group = self.group;
         match body {
@@ -427,14 +490,16 @@ impl<'a> Parser<'a> {
                 Ok(())
             }
             // The list predicates are built in ([`super::Builtin`]), and the
-            // grounder adds the clauses of those of the two libraries that are
-            // written as clauses.
+            // grounder adds the clauses of those of the libraries that are
+            // written as clauses: library(aggregate)'s where it is loaded.
             ("use_module", 1) => {
                 let t = self.args.pop().expect("an argument").into_term();
                 match t.as_compound() {
                     Some((library, [Term::Const(name)]))
-                        if &**library == "library" && matches!(&**name, "lists" | "apply") =>
+                        if &**library == "library"
+                            && matches!(&**name, "lists" | "apply" | "aggregate") =>
                     {
+                        prog.aggregate |= &**name == "aggregate";
                         Ok(())
                     }
                     _ => self.err(format!("unsupported directive use_module({t})")),
@@ -590,6 +655,86 @@ impl<'a> Parser<'a> {
             atom,
             negated,
         })
+    }
+
+    /// ProbLog's aggregate `h(G1, ..., Gn, f<V>) :- Body`, its one head
+    /// not annotated, or the same in a scope `S:h(...)`, as
+    /// library(aggregate)'s aggregate/5 computes it: the head `h(G1, ...,
+    /// Gn, R)` over the body `all(([G1, ..., Gn], V), Body, L),
+    /// enum_groups(L, [G1, ..., Gn], Vs), f(Vs, R)`. The solutions of the
+    /// body are grouped by `[G1, ..., Gn]`, and `R` is `f` of the values
+    /// `V` of a group. aggregate/5 calls the body with its variables free,
+    /// and the all/3 reads it with them renamed apart ([`renamed`]).
+    fn aggregate(&mut self, heads: &mut [HeadChoice], body: Body) -> Result<Body, ParseError> {
+        let once = self.aggregates == 1;
+        self.aggregates = 0;
+        let [head] = heads else {
+            return self.err(AGGREGATE_ONLY);
+        };
+        if !once || head.prob.is_some() || head.negated {
+            return self.err(AGGREGATE_ONLY);
+        }
+        // The groups, the function and the variable of the aggregate in the
+        // last of `args`.
+        let split = |args: &[Term]| match args.split_last() {
+            Some((last, groups)) => match last.as_compound() {
+                Some((m, [Term::Const(f), v])) if &**m == AGGREGATE => {
+                    Some((groups.to_vec(), f.clone(), v.clone()))
+                }
+                _ => None,
+            },
+            None => None,
+        };
+        let r = Term::Var("$R".into());
+        let with_r = |groups: &[Term]| groups.iter().chain([&r]).cloned().collect::<Vec<_>>();
+        let atom = &head.atom;
+        let (groups, f, v, atom) = match atom.args.as_slice() {
+            [s, Term::Compound(c)] if &*atom.name == ":" && split(&c.args).is_some() => {
+                let (groups, f, v) = split(&c.args).expect("an aggregate");
+                let scoped = Compound::term(c.name.clone(), with_r(&groups));
+                let atom = Atom::new(atom.name.clone(), vec![s.clone(), scoped]);
+                (groups, f, v, atom)
+            }
+            args => match split(args) {
+                Some((groups, f, v)) => {
+                    let atom = Atom::new(atom.name.clone(), with_r(&groups));
+                    (groups, f, v, atom)
+                }
+                None => return self.err(AGGREGATE_ONLY),
+            },
+        };
+        head.atom = atom;
+        let (cons, nil) = (self.lexer.intern(CONS), Term::Const(self.lexer.intern(NIL)));
+        let list = |items: Vec<Term>| {
+            items
+                .into_iter()
+                .rev()
+                .fold(nil.clone(), |t, x| Compound::term(cons.clone(), vec![x, t]))
+        };
+        let pair = vec![list(groups.iter().map(renamed).collect()), renamed(&v)];
+        let interleaved = body.interleaved();
+        let goal = body
+            .dnf()
+            .iter()
+            .map(|alt| alt.iter().map(renamed_literal).collect())
+            .collect();
+        let (l, vs) = (Term::Var("$L".into()), Term::Var("$Vs".into()));
+        let collect = Findall {
+            template: Compound::term(self.lexer.intern(","), pair),
+            goal,
+            result: l.clone(),
+            interleaved,
+            all: true,
+        };
+        let groups = Atom::new(
+            self.lexer.intern("enum_groups"),
+            vec![l, list(groups), vs.clone()],
+        );
+        Ok(Body::Lits(vec![
+            Literal::Findall(Box::new(collect)),
+            Literal::Pos(groups),
+            Literal::Pos(Atom::new(f, vec![vs, r])),
+        ]))
     }
 
     // body := conj (';' conj)*
@@ -853,6 +998,27 @@ impl<'a> Parser<'a> {
                 },
                 0,
             ));
+        }
+        // `f<V>`, ProbLog's aggregate ([`Parser::aggregate`]).
+        if let (Tok::Name(id), Tok::Op(Op::Lt)) = (self.peek(), self.peek2()) {
+            let m = self.mark();
+            self.bump();
+            self.bump();
+            if let Tok::Var(v) = self.peek()
+                && v != "_"
+                && matches!(self.peek2(), Tok::Op(Op::Gt))
+            {
+                let args = vec![
+                    Term::Const(self.lexer.name(id).clone()),
+                    Term::Var(v.to_owned()),
+                ];
+                self.bump();
+                self.bump();
+                self.aggregates += 1;
+                let name = self.lexer.intern(AGGREGATE);
+                return Ok((PTerm::Term(Compound::term(name, args)), 0));
+            }
+            self.rewind(m);
         }
         if let Some(t) = self.flat_term() {
             return Ok((PTerm::Term(t), 0));
@@ -1304,6 +1470,51 @@ mod tests {
         assert!(!p.queries[0].1);
         let p = parse_program("p(a, - b).\n").unwrap();
         assert_eq!(p.clauses[0].heads[0].atom.to_string(), "p(a,-b)");
+    }
+
+    /// An aggregate `f<V>` ends a head, in a scope too: the clause collects
+    /// the solutions of its body, renamed apart, with all/3, groups them by
+    /// the head's other arguments and applies `f` to a group's values. It
+    /// is refused anywhere else.
+    #[test]
+    fn aggregates_end_heads() {
+        let p = parse_program(
+            ":- use_module(library(aggregate)).\n\
+             d(D, avg<S>) :- p(X, S), q(X, D).\n\
+             s:t(max<S>) :- p(_, S) ; r(S).\n",
+        )
+        .unwrap();
+        assert!(p.aggregate);
+        let c = &p.clauses[0];
+        assert_eq!(c.heads[0].atom.to_string(), "d(D,$R)");
+        let Literal::Findall(fa) = &c.body[0] else {
+            panic!("an all/3");
+        };
+        assert!(fa.all);
+        assert_eq!(fa.template.to_string(), "([D$], S$)");
+        let goal: Vec<String> = fa.goal[0].iter().map(Literal::to_string).collect();
+        assert_eq!(goal, ["p(X$,S$)", "q(X$,D$)"]);
+        assert_eq!(c.body[1].to_string(), "enum_groups($L,[D],$Vs)");
+        assert_eq!(c.body[2].to_string(), "avg($Vs,$R)");
+        let c = &p.clauses[1];
+        assert_eq!(c.heads[0].atom.to_string(), "s:t($R)");
+        let Literal::Findall(fa) = &c.body[0] else {
+            panic!("an all/3");
+        };
+        assert_eq!(fa.goal.len(), 2);
+        for src in [
+            "p(avg<X>, Y) :- q(X, Y).\n",
+            "0.5::p(avg<X>) :- q(X).\n",
+            "p(avg<X>) ; r(avg<X>) :- q(X).\n",
+            "p :- q(avg<X>).\n",
+            "query(p(avg<X>)).\n",
+        ] {
+            let err = parse_program(src).unwrap_err().to_string();
+            assert!(err.contains("aggregate f<V>"), "{src}: {err}");
+        }
+        // Otherwise `<` and `>` compare.
+        let p = parse_program("p(X) :- a < b, X > 1, a < X.\n").unwrap();
+        assert_eq!(p.clauses[0].body.len(), 3);
     }
 
     #[test]

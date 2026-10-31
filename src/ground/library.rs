@@ -7,6 +7,8 @@
 //! `library(lists)`'s random selections and `library(apply)`'s maplist/2
 //! to /5, foldl/4 to /6, include/3, exclude/3 and partition/4. The helpers
 //! are named apart from the program's predicates.
+//! A program that loads `library(aggregate)` gets those of [`AGGREGATE`]
+//! too, the functions of its aggregates.
 //!
 //! `call(G, A1, ..., An)` calls `G` with the arguments added. Where `G` is
 //! written as an atom or a compound, it is that predicate's call. Where it
@@ -85,10 +87,34 @@ foldl(P, [L1|LR1], [L2|LR2], [L3|LR3], L0, RR) :-
     call(P, L1, L2, L3, L0, R), foldl(P, LR1, LR2, LR3, R, RR).
 ";
 
-/// [`LIBRARY`] read.
-fn library() -> &'static Program {
+/// The predicates `library(aggregate)` writes as clauses, as it writes
+/// them, for a program that loads it: the functions of its aggregates
+/// `f<V>`, which `aggregate/5` calls on the values of a group.
+const AGGREGATE: &str = r"
+avg(L, Avg) :- sum(L, Sum), length(L, Count), Avg is Sum / Count.
+sum(L, Sum) :- sum(L, 0, Sum).
+min([H|T], Min) :- min(T, H, Min).
+max([H|T], Max) :- max(T, H, Max).
+sum([], Acc, Acc).
+sum([X|T], Acc, Sum) :- Acc1 is Acc + X, sum(T, Acc1, Sum).
+min([], Acc, Acc).
+min([X|T], Acc, Min) :- X < Acc, min(T, X, Min).
+min([X|T], Acc, Min) :- X >= Acc, min(T, Acc, Min).
+max([], Acc, Acc).
+max([X|T], Acc, Max) :- X >= Acc, max(T, X, Max).
+max([X|T], Acc, Max) :- X < Acc, max(T, Acc, Max).
+";
+
+/// [`LIBRARY`] read, with [`AGGREGATE`] where `aggregate` says so.
+fn library(aggregate: bool) -> &'static Program {
     static READ: OnceLock<Program> = OnceLock::new();
-    READ.get_or_init(|| crate::syntax::parse_program(LIBRARY).expect("the library parses"))
+    static WITH_AGGREGATE: OnceLock<Program> = OnceLock::new();
+    let parse = |text: &str| crate::syntax::parse_program(text).expect("the library parses");
+    if aggregate {
+        WITH_AGGREGATE.get_or_init(|| parse(&format!("{LIBRARY}{AGGREGATE}")))
+    } else {
+        READ.get_or_init(|| parse(LIBRARY))
+    }
 }
 
 /// The signatures of the heads of `program`'s clauses.
@@ -119,7 +145,7 @@ fn is_call(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> bool {
 /// `None` where it has neither.
 pub(super) fn added(program: &Program) -> Option<Program> {
     let defined: FxHashSet<(&str, usize)> = heads(program).collect();
-    let library = library();
+    let library = library(program.aggregate);
     // The library's predicates the program does not define, their arities
     // by name.
     let mut offered: FxHashMap<&'static str, Vec<usize>> = FxHashMap::default();

@@ -193,27 +193,34 @@ The parser reads ProbLog without cut:
 - the list predicates of ProbLog's library, built in: member/2,
   memberchk/2, select/3, append/2,3, length/2, nth0/3, nth1/3, last/2,
   reverse/2, sum_list/2, max_list/2, min_list/2, sort/2, subset/2,
-  intersection/3, union/3, subtract/3, delete/3 and flatten/2, and
-  ProbLog's built-ins between/3, plus/3, compare/3 and is_list/1, in
-  ProbLog's modes and order of solutions, on ground arguments;
+  intersection/3, union/3, subtract/3, delete/3, flatten/2 and
+  enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3
+  and is_list/1, in ProbLog's modes and order of solutions, on ground
+  arguments;
 - the predicates ProbLog's libraries write as clauses, in those clauses,
   which the grounder adds where the program calls them
   (`ground/library.rs`): the random selections select_uniform/4 and
   select_weighted/4,5, and
   `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
-  and partition/4; and `call/N`, whose goal names a predicate the program
-  defines;
+  and partition/4, and where the program loads it, `library(aggregate)`'s
+  avg/2, sum/2, min/2 and max/2; and `call/N`, whose goal names a
+  predicate the program defines;
 - `findall/3`, `all/3` and `forall/2`, over probabilistic goals too: in
   each world the list of the solutions whose proofs hold there, once per
   proof and in ProbLog's order (`all/3` once per solution);
+- `library(aggregate)`'s aggregates, `h(G1, ..., Gn, f<V>) :- Body`, as
+  its aggregate/5 computes them: all/3 of the solutions of the body,
+  grouped by `[G1, ..., Gn]` with enum_groups/3, and `f` of the values
+  `V` of a group, in each world (`syntax/parser.rs`);
 - `query/1` (also `query(\+a)`) and `evidence/1,2`, and their rules
   `query(pattern) :- body.` and `evidence(pattern, v) :- body.`, whose
   pattern's instances under each grounding of the body are queries or
   evidence;
-- the directives `use_module(library(lists))` and
-  `use_module(library(apply))`, `unknown(fail)`, under which a predicate
-  without clauses is false (one of ProbLog's built-ins or library
-  predicates that tddlog does not evaluate stays refused), and
+- the directives `use_module(library(lists))`,
+  `use_module(library(apply))` and `use_module(library(aggregate))`,
+  `unknown(fail)`, under which a predicate without clauses is false (one
+  of ProbLog's built-ins or library predicates that tddlog does not
+  evaluate stays refused), and
   `consult(File)`, which the file's program replaces in a program read
   from a file (`consult`, `input.rs`).
 

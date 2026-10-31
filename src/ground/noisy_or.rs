@@ -484,6 +484,7 @@ mod tests {
             evidence: program.evidence.clone(),
             interleaved: Vec::new(),
             unknown_fails: program.unknown_fails,
+            aggregate: program.aggregate,
         };
         let rows = ground_rows(&p)
             .unwrap_or_else(|| panic!("the rewritten program is table-shaped:\n{p}"));

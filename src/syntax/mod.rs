@@ -998,10 +998,11 @@ pub(crate) enum Builtin {
     Plus,
     Compare,
     IsList,
+    EnumGroups,
 }
 
 /// Each built-in, by its name and arity.
-const BUILTINS: [(&str, usize, Builtin); 24] = [
+const BUILTINS: [(&str, usize, Builtin); 25] = [
     ("member", 2, Builtin::Member),
     ("memberchk", 2, Builtin::Memberchk),
     ("select", 3, Builtin::Select),
@@ -1026,6 +1027,7 @@ const BUILTINS: [(&str, usize, Builtin); 24] = [
     ("plus", 3, Builtin::Plus),
     ("compare", 3, Builtin::Compare),
     ("is_list", 1, Builtin::IsList),
+    ("enum_groups", 3, Builtin::EnumGroups),
 ];
 
 impl Builtin {
@@ -1080,7 +1082,8 @@ impl Builtin {
             | Builtin::Sort
             | Builtin::AppendLists
             | Builtin::Flatten
-            | Builtin::IsList => bound[0],
+            | Builtin::IsList
+            | Builtin::EnumGroups => bound[0],
             Builtin::Append => bound[2] || (bound[0] && bound[1]),
             Builtin::Subset
             | Builtin::Intersection
@@ -1360,6 +1363,10 @@ pub struct Program {
     /// `:- unknown(fail).`: a predicate without clauses is false, as
     /// ProbLog reads it under that flag, rather than refused.
     pub(crate) unknown_fails: bool,
+    /// `:- use_module(library(aggregate)).`: the predicates of that
+    /// library, which it writes as clauses (`avg/2`, `sum/2`, `min/2` and
+    /// `max/2`), are the library's where the program does not define them.
+    pub(crate) aggregate: bool,
 }
 
 impl Program {
@@ -1377,6 +1384,9 @@ impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.unknown_fails {
             writeln!(f, ":- unknown(fail).")?;
+        }
+        if self.aggregate {
+            writeln!(f, ":- use_module(library(aggregate)).")?;
         }
         for c in &self.clauses {
             writeln!(f, "{c}")?;
