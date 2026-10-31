@@ -358,9 +358,30 @@ fn bad_and_inert_options_exit_with_status_two() {
             &["--bogus", "examples/alarm.pl"],
             "unknown option `--bogus`",
         ),
+        // The values after the file are the program's arguments.
         (
             &["examples/alarm.pl", "examples/dice.pl"],
-            "only one program file",
+            "argument 1, `examples/dice.pl`, is not a term",
+        ),
+        (
+            &["examples/alarm.pl", "-3"],
+            "argument 1, `-3`, is given, and the program has no `$1`",
+        ),
+        (
+            &["examples/chain.pl", "10", "0.9", "4", "x"],
+            "argument 4, `x`, is given, and the program has no `$4`",
+        ),
+        (
+            &["examples/chain.pl", "10", "0.9", "f("],
+            "argument 3, `f(`, is not a term: unexpected end of input",
+        ),
+        (
+            &["tests/dice/walk.dice", "3"],
+            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is dice",
+        ),
+        (
+            &["examples/asia.net", "3"],
+            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is hugin",
         ),
         (
             &["--vtree", "closed", "--vtree", "td", "examples/alarm.pl"],
@@ -415,6 +436,76 @@ fn bad_and_inert_options_exit_with_status_two() {
         assert_eq!(out.status.code(), Some(2), "{args:?}: {stderr}");
         assert!(stderr.contains(message), "{args:?}: {stderr}");
         assert!(out.stdout.is_empty(), "{args:?}");
+    }
+}
+
+/// A program run with arguments prints, byte for byte, what the program
+/// with the values written in its places prints, and `--program` prints
+/// that program: a size, a probability, a query and an observation, under
+/// both values of the observation. A walk of six steps, each up with
+/// probability 0.3, is at height 2 when two steps are up: given that the
+/// first is up, one of the other five, 5 * 0.3 * 0.7^4 = 0.36015; given
+/// that it is not, two of them, 10 * 0.3^2 * 0.7^3 = 0.3087.
+#[test]
+fn arguments_take_their_places_as_the_values_written_in() {
+    let program = "\
+% A walk of $1 steps, each up with probability $2: '$1' is quoted.
+$2::up(T) :- between(1, $1, T).
+at(0, 0).
+at(T, X) :- between(1, $1, T), S is T - 1, at(S, Y), up(T), X is Y + 1.
+at(T, X) :- between(1, $1, T), S is T - 1, at(S, X), \\+up(T).
+evidence(up($4), $5).
+query(at($1, $3)).
+query(a('$1')).
+a('$1').
+";
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR"));
+    let path = dir.join("cli_arguments.pl");
+    std::fs::write(&path, program).unwrap();
+    for (observed, expected) in [("true", "0.360150"), ("false", "0.308700")] {
+        let values = ["6", "0.3", "2", "1", observed];
+        let mut written = String::new();
+        for (k, line) in program.lines().enumerate() {
+            let mut line = line.to_string();
+            if k > 0 {
+                for (n, value) in values.iter().enumerate().rev() {
+                    line = line.replace(&format!("${}", n + 1), value);
+                }
+                line = line.replace("'6'", "'$1'");
+            }
+            written += &line;
+            written.push('\n');
+        }
+        let written_path = dir.join(format!("cli_arguments_{observed}.pl"));
+        std::fs::write(&written_path, &written).unwrap();
+        let mut args = vec![path.to_str().unwrap()];
+        args.extend(values);
+        let out = tddlog(&args);
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert_eq!(
+            stdout(&out),
+            format!("at(6,2):\t{expected}\na('$1'):\t1.000000\n")
+        );
+        assert_eq!(out.stdout, tddlog(&[written_path.to_str().unwrap()]).stdout);
+        let mut printed = vec!["--program"];
+        printed.extend(&args);
+        assert_eq!(stdout(&tddlog(&printed)), written);
+    }
+    // A place without an argument is the program's error, on its line.
+    for args in [&[][..], &["6"]] {
+        let mut all = vec![path.to_str().unwrap()];
+        all.extend(args);
+        let out = tddlog(&all);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(1), "{stderr}");
+        assert!(
+            stderr.contains("line 2: `$2` has no argument"),
+            "{args:?}: {stderr}"
+        );
     }
 }
 

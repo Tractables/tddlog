@@ -26,7 +26,9 @@
 /**
  * The arguments broke a documented contract: a null pointer, a format or
  * vtree strategy that is not UTF-8 or is unknown, evidence for a program
- * that is not a network, or options that ask for nothing.
+ * that is not a network, program arguments for one that is not a ProbLog
+ * program or an LPAD, a program argument that is not UTF-8, is not a term
+ * or has no place, or options that ask for nothing.
  */
 #define TDDLOG_ERROR_INVALID_INPUT 1
 
@@ -96,6 +98,17 @@ typedef struct TddlogOptions {
    * `.evid` file for a UAI network. Null for none.
    */
   const char *evidence;
+  /**
+   * The arguments of a ProbLog program or an LPAD, as the command line
+   * takes them after the program's file: `num_arguments` NUL-terminated
+   * strings, each the text of a term that takes the places `$1`, `$2`,
+   * ... of the program. Null for none.
+   */
+  const char *const *arguments;
+  /**
+   * The number of strings `arguments` points to.
+   */
+  size_t num_arguments;
 } TddlogOptions;
 
 /**
@@ -126,7 +139,7 @@ const char *tddlog_last_error_message(void);
 
 /**
  * The defaults: `"auto"`, the queries answered, no `P(e)`, a ProbLog
- * program without an evidence file.
+ * program without an evidence file or arguments.
  */
 struct TddlogOptions tddlog_options_default(void);
 
@@ -142,8 +155,9 @@ struct TddlogOptions tddlog_options_default(void);
  *
  * `program` must point to a NUL-terminated string, `options` must be null or
  * point to one `TddlogOptions` whose `vtree`, `format` and `evidence` are
- * each null or a NUL-terminated string, and `out` must point to storage for
- * one pointer.
+ * each null or a NUL-terminated string and whose `arguments` is null or
+ * points to `num_arguments` NUL-terminated strings, and `out` must point to
+ * storage for one pointer.
  */
 TddlogStatus tddlog_solve(const char *program,
                           const struct TddlogOptions *options,

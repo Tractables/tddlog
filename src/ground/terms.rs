@@ -20,6 +20,10 @@
 //!   and its other variables, a clause per alternative of `G`; and a
 //!   [`Collect`] that lists the template values of the tuples with the
 //!   shared variables' values;
+//! - `findall(_, G, [])`, which holds where `G` has no solution and which
+//!   `\+ G` and `forall/2` are read as, becomes the negation of an
+//!   auxiliary predicate `'$nt<k>'` over the variables `G` shares with the
+//!   clause, a clause per alternative of `G`;
 //! - a negated atom with variables of its own, which no other literal and
 //!   no head reads (`\+ p(X, _)`, true where `p(X, Y)` holds for no `Y`),
 //!   becomes the negation of an auxiliary predicate `'$nt<k>'` over its
@@ -275,6 +279,16 @@ const PROBLOG_PREDICATES: &[&str] = &[
     "zip",
 ];
 
+/// Whether `name/arity` is a built-in of ProbLog's or a predicate of its
+/// libraries `lists` and `apply` ([`PROBLOG_PREDICATES`]), one tddlog
+/// evaluates, or an operator (`=/2`, `is/2`, `\+/1`).
+pub(super) fn problog_builtin(name: &str, arity: usize) -> bool {
+    PROBLOG_PREDICATES.contains(&name)
+        || Builtin::of(name, arity).is_some()
+        || matches!(name, "is" | "not")
+        || !name.starts_with(char::is_alphabetic)
+}
+
 /// Refuses what ProbLog stops on with its "No clauses found": a query or an
 /// observation of a predicate that no clause defines, and a call of one
 /// that is not a built-in tddlog evaluates, in a clause of a predicate the
@@ -291,7 +305,12 @@ const PROBLOG_PREDICATES: &[&str] = &[
 /// `lists` and `apply` ([`PROBLOG_PREDICATES`]) that tddlog does not
 /// evaluate, which ProbLog would run.
 fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError> {
-    let refused = |name: &str| !program.unknown_fails || PROBLOG_PREDICATES.contains(&name);
+    // A call of a goal that is a variable is tested where it is made
+    // ([`super::library`]).
+    let refused = |name: &str| {
+        (!program.unknown_fails || PROBLOG_PREDICATES.contains(&name))
+            && !super::library::is_call_name(name)
+    };
     let mut reached: FxHashSet<(&str, usize)> = FxHashSet::default();
     let mut stack: Vec<(&str, usize)> = Vec::new();
     let asked = [("query", &program.queries), ("evidence", &program.evidence)]
@@ -307,12 +326,8 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
         let sig = a.signature();
         if !defined.contains_key(&sig) && refused(sig.0) {
             let sign = if positive { "" } else { "\\+" };
-            let body = match Builtin::of(sig.0, sig.1) {
-                Some(_) => " (tddlog evaluates this built-in in a clause's body only)",
-                None => "",
-            };
             return Err(GroundError::NoClauses(format!(
-                "{}/{}, asked in {what}({sign}{a}){body}",
+                "{}/{}, asked in {what}({sign}{a})",
                 sig.0, sig.1
             )));
         }
@@ -717,6 +732,11 @@ impl Lowering<'_, '_> {
                     let b = self.flatten(&b, &mut out);
                     out.push(Literal::Cmp(op, a, b));
                 }
+                Literal::Findall(fa) if no_solution(&fa) => {
+                    let after = vars[i + 1..n].iter().flatten();
+                    let outside: FxHashSet<&String> = before.iter().chain(after).collect();
+                    out.push(self.none(*fa, |v| outside.contains(v), work));
+                }
                 Literal::Findall(fa) => {
                     let after: Vec<String> = vars[i + 1..n].iter().flatten().cloned().collect();
                     let mut collect = self.findall(*fa, &before, &after, work)?;
@@ -743,6 +763,35 @@ impl Lowering<'_, '_> {
             }
         }
         Ok(Some(out))
+    }
+
+    /// `findall(_, G, [])`, which holds where `G` has no solution (`\+ G`,
+    /// `forall/2`), as the negation of an auxiliary predicate over the
+    /// variables of `G` that are `outside` it, whose clauses, `G`'s
+    /// alternatives, are pushed on `work`. The goal's other variables are
+    /// its own: ProbLog's call leaves them free. The grounder reads it as
+    /// any negated atom, top-down where ProbLog's calls reach it with one
+    /// of the others free ([`super::modes`]).
+    fn none(
+        &mut self,
+        fa: Findall,
+        outside: impl Fn(&String) -> bool,
+        work: &mut Vec<Clause>,
+    ) -> Literal {
+        let mut shared = Vec::new();
+        for l in fa.goal.iter().flatten() {
+            l.vars_into(&mut shared);
+        }
+        shared.retain(|v| outside(v));
+        self.aux += 1;
+        let head = Atom::new(
+            format!("{NEGATION_PREFIX}{}", self.aux),
+            shared.into_iter().map(Term::Var).collect::<Vec<_>>(),
+        );
+        for alt in fa.goal {
+            work.push(Clause::rule(head.clone(), alt, u32::MAX));
+        }
+        Literal::Neg(head)
     }
 
     /// The [`Collect`] of `fa`, its auxiliary clauses pushed on `work`.
@@ -832,7 +881,7 @@ impl Lowering<'_, '_> {
             arity,
             shared: shared.into_iter().map(Term::Var).collect(),
             result: fa.result,
-            all: fa.all,
+            gather: fa.gather,
             text,
         })
     }
@@ -984,6 +1033,12 @@ fn binds(l: &Literal, out: &mut Vec<String>) {
         Literal::Findall(f) => f.result.vars_into(out),
         _ => l.vars_into(out),
     }
+}
+
+/// Whether `fa` is `findall(_, G, [])`, which holds where `G` has no
+/// solution ([`Lowering::none`]).
+fn no_solution(fa: &Findall) -> bool {
+    fa.gather.empty() && matches!(&fa.result, Term::Const(c) if &**c == NIL)
 }
 
 /// Whether `t` is a variable, a list or a list whose tail is a variable:

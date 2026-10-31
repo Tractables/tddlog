@@ -15,13 +15,21 @@
 //! body.` and `evidence(p(X)) :- body.`. No cut or `assert`. The grounder
 //! grounds a program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
+//!
+//! A place `$N` (`$1`, `$2`, ...) outside comments and quoted atoms takes
+//! the program's argument N, a term, before the program is read:
+//! [`crate::read`] takes the arguments ([`crate::network::ReadOptions`]),
+//! as the command line takes the values after the program's file.
 
+mod arguments;
 pub mod dice;
 mod lexer;
 pub mod lpad;
 mod parser;
 
+pub(crate) use arguments::bind;
 pub use parser::{Consult, ParseError, consults, parse_program};
+pub(crate) use parser::{construct, goal_literal};
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -289,7 +297,9 @@ fn infix(name: &str) -> Option<(u16, Assoc)> {
         "->" => (1050, Xfy),
         "," => (1000, Xfy),
         "=" | "\\=" | "==" | "\\==" | "@<" | "@>" | "@=<" | "@>=" | "is" | "=:=" | "=\\=" | "<"
-        | ">" | "=<" | ">=" => (700, Xfx),
+        | ">" | "=<" | ">=" | "=.." => (700, Xfx),
+        // library(collect)'s `CodeBlock => Collector`.
+        "=>" => (700, Yfx),
         ":" => (600, Xfy),
         "+" | "-" | "/\\" | "\\/" | "xor" => (500, Yfx),
         "*" | "/" | "//" | "mod" | "rem" | "<<" | ">>" => (400, Yfx),
@@ -606,12 +616,14 @@ fn needs_quotes(s: &str) -> bool {
     match chars.next() {
         Some(c) if c.is_ascii_lowercase() => !chars.all(|c| c.is_alphanumeric() || c == '_'),
         // The empty list, `;`, `!` and names of symbol characters (`\+`,
-        // `:-`) print bare.
+        // `:-`) but `.` print bare.
         _ => {
             !(s == NIL
                 || s == ";"
                 || s == "!"
-                || (!s.is_empty() && s.chars().all(|c| "+-*/\\^<>=~:.?@#&$".contains(c))))
+                || (!s.is_empty()
+                    && s != "."
+                    && s.chars().all(|c| "+-*/\\^<>=~:.?@#&$".contains(c))))
         }
     }
 }
@@ -967,11 +979,16 @@ impl fmt::Display for CmpOp {
 }
 
 /// A predicate of ProbLog's `library(lists)`, or one of its built-ins
-/// `between/3`, `plus/3`, `compare/3` and `is_list/1`, which the grounder
+/// `between/3`, `plus/3`, `compare/3`, `is_list/1`, `var/1`, `nonvar/1` and
+/// `=../2`, which the grounder
 /// evaluates on ground arguments where the program defines no predicate of
-/// its name and arity. `append/2`, `subset/2`, `intersection/3`,
+/// its name and arity; the type tests `is_list/1`, `var/1` and `nonvar/1`
+/// read a term with variables as it stands where they are called, on the
+/// top-down route. `append/2`, `subset/2`, `intersection/3`,
 /// `union/3`, `subtract/3`, `delete/3` and `flatten/2`, which the library
 /// writes as clauses, give the answers of those clauses.
+/// `'$callable'/4` is the grounder's own, the test before a call of a goal
+/// that is a variable ([`crate::ground`]'s `library`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum Builtin {
     Member,
@@ -998,11 +1015,20 @@ pub(crate) enum Builtin {
     Plus,
     Compare,
     IsList,
+    Var,
+    Nonvar,
     EnumGroups,
+    Univ,
+    /// `'$callable'(G, N, Callable, Unknown)`: whether `call/(N + 1)` can
+    /// call the goal `G` with `N` arguments added, a goal of the name and
+    /// arity of an item `Name/Arity` of the list `Callable`; ProbLog's
+    /// error where the predicate has no clauses, or, where `Unknown` is
+    /// `fail` (`:- unknown(fail).`), failure unless it is a built-in.
+    Callable,
 }
 
 /// Each built-in, by its name and arity.
-const BUILTINS: [(&str, usize, Builtin); 25] = [
+const BUILTINS: [(&str, usize, Builtin); 29] = [
     ("member", 2, Builtin::Member),
     ("memberchk", 2, Builtin::Memberchk),
     ("select", 3, Builtin::Select),
@@ -1027,7 +1053,11 @@ const BUILTINS: [(&str, usize, Builtin); 25] = [
     ("plus", 3, Builtin::Plus),
     ("compare", 3, Builtin::Compare),
     ("is_list", 1, Builtin::IsList),
+    ("var", 1, Builtin::Var),
+    ("nonvar", 1, Builtin::Nonvar),
     ("enum_groups", 3, Builtin::EnumGroups),
+    ("=..", 2, Builtin::Univ),
+    ("$callable", 4, Builtin::Callable),
 ];
 
 impl Builtin {
@@ -1058,7 +1088,14 @@ impl Builtin {
             e.0 == name
                 && !matches!(
                     e.2,
-                    Builtin::Between | Builtin::Plus | Builtin::Compare | Builtin::IsList
+                    Builtin::Between
+                        | Builtin::Plus
+                        | Builtin::Compare
+                        | Builtin::IsList
+                        | Builtin::Var
+                        | Builtin::Nonvar
+                        | Builtin::Univ
+                        | Builtin::Callable
                 )
         })
     }
@@ -1067,8 +1104,10 @@ impl Builtin {
     /// flags: the list it reads (the third of `append/3`'s or both others),
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,
     /// the two lists or the list and the item the set predicates and
-    /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, or the
-    /// terms `compare/3` orders. It then binds the others.
+    /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, the
+    /// term `var/1` and `nonvar/1` test, the terms `compare/3` orders,
+    /// either side of `=../2`, or all of
+    /// `'$callable'/4`'s. It then binds the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
             Builtin::Member | Builtin::Memberchk | Builtin::Select | Builtin::Nth0 => bound[1],
@@ -1083,6 +1122,8 @@ impl Builtin {
             | Builtin::AppendLists
             | Builtin::Flatten
             | Builtin::IsList
+            | Builtin::Var
+            | Builtin::Nonvar
             | Builtin::EnumGroups => bound[0],
             Builtin::Append => bound[2] || (bound[0] && bound[1]),
             Builtin::Subset
@@ -1093,6 +1134,8 @@ impl Builtin {
             | Builtin::Between => bound[0] && bound[1],
             Builtin::Plus => bound.iter().filter(|&&b| b).count() >= 2,
             Builtin::Compare => bound[1] && bound[2],
+            Builtin::Univ => bound[0] || bound[1],
+            Builtin::Callable => bound.iter().all(|&b| b),
         }
     }
 }
@@ -1103,9 +1146,55 @@ impl fmt::Display for Builtin {
     }
 }
 
-/// `findall(Template, Goal, Result)` as read, or `all/3`: the goal's
+/// Which of ProbLog's findalls a findall is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) enum Gather {
+    /// findall/3: a solution once per proof, and the empty list where
+    /// there is none.
+    Findall,
+    /// all/3: each solution once, and no empty list.
+    All,
+    /// all_or_none/3: each solution once, and the empty list where there
+    /// is none.
+    AllOrNone,
+}
+
+impl Gather {
+    /// The findall of `name/3`.
+    pub(crate) fn of(name: &str) -> Option<Gather> {
+        Some(match name {
+            "findall" => Gather::Findall,
+            "all" => Gather::All,
+            "all_or_none" => Gather::AllOrNone,
+            _ => return None,
+        })
+    }
+
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Gather::Findall => "findall",
+            Gather::All => "all",
+            Gather::AllOrNone => "all_or_none",
+        }
+    }
+
+    /// Whether it lists each solution once, by its atom.
+    pub(crate) fn once(self) -> bool {
+        self != Gather::Findall
+    }
+
+    /// Whether it gives the empty list where there is no solution.
+    pub(crate) fn empty(self) -> bool {
+        self != Gather::All
+    }
+}
+
+/// `findall(Template, Goal, Result)` as read, or `all/3` or
+/// `all_or_none/3` ([`Gather`]): the goal's
 /// alternatives, each a conjunction. The grounder lowers it to a
-/// [`Collect`].
+/// [`Collect`], or, where the result is `[]`, to a negation. A negated goal
+/// that is not an atom, `\+ Goal`, is read as `findall(true, Goal, [])`,
+/// and `forall(C, A)` as `\+ (C, \+ A)`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Findall {
     pub(crate) template: Term,
@@ -1114,8 +1203,7 @@ pub(crate) struct Findall {
     /// Whether a disjunction of the goal comes after another literal
     /// ([`Program::interleaved`]).
     pub(crate) interleaved: bool,
-    /// all/3: each solution once, and no empty list.
-    pub(crate) all: bool,
+    pub(crate) gather: Gather,
 }
 
 /// A findall lowered by the grounder: `result` is the list of the template
@@ -1128,8 +1216,7 @@ pub(crate) struct Collect {
     pub(crate) arity: usize,
     pub(crate) shared: Vec<Term>,
     pub(crate) result: Term,
-    /// all/3: each solution once, and no empty list.
-    pub(crate) all: bool,
+    pub(crate) gather: Gather,
     /// The findall as written, for the errors that name it.
     pub(crate) text: Arc<str>,
 }
@@ -1207,7 +1294,8 @@ impl fmt::Display for Literal {
                 write_term(f, e, 699)
             }
             Literal::Findall(fa) => {
-                f.write_str(if fa.all { "all(" } else { "findall(" })?;
+                f.write_str(fa.gather.name())?;
+                f.write_str("(")?;
                 write_term(f, &fa.template, 999)?;
                 f.write_str(",(")?;
                 for (k, alt) in fa.goal.iter().enumerate() {
@@ -1367,6 +1455,11 @@ pub struct Program {
     /// library, which it writes as clauses (`avg/2`, `sum/2`, `min/2` and
     /// `max/2`), are the library's where the program does not define them.
     pub(crate) aggregate: bool,
+    /// `:- use_module(library(collect)).`: `CodeBlock => Collector` calls
+    /// the collector's predicate `collect_<name>` on the code block, and
+    /// that library's `collect_list/3,4` are the library's where the
+    /// program does not define them.
+    pub(crate) collect: bool,
 }
 
 impl Program {
@@ -1387,6 +1480,9 @@ impl fmt::Display for Program {
         }
         if self.aggregate {
             writeln!(f, ":- use_module(library(aggregate)).")?;
+        }
+        if self.collect {
+            writeln!(f, ":- use_module(library(collect)).")?;
         }
         for c in &self.clauses {
             writeln!(f, "{c}")?;

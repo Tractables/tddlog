@@ -693,15 +693,16 @@ EXACT['gen_hwf.py'] = ('lit', lambda path: ['lit_exact.py', 'hwf', path, '--prec
 # ProbLog's repository (data/problog, Apache 2.0), each its own reference
 # in the comment that states its expected answers. cplintpita: cplint's
 # examples written for PITA (data/cplint, Artistic 2.0), read as LPADs,
-# ProbLog's answers one query at a time their reference; left out are
-# those that no system answers as the harness gives them (msw/2 in coinmsw
-# and coinmsw_memo, prob/2 in meta and metacomb, and markov_chaindb,
-# pcfglrdb and var_objdb, which no system nor the reference answers in
-# time), persons, whose LPAD tddlog's reader refuses, and eruption_tab,
-# eruption's copy. threedie: PITA's three-sided die thrown until a 3
-# (Riguzzi and Swift, ICLP 2010, Fig. 3; cplint's threesideddice.pl),
-# asked on(N,1), (2/3)^N/3, N up to where a double still holds it (PITA
-# and ProbLog stop between 100 and 1000).
+# ProbLog's answers one query at a time their reference (markov_chaindb,
+# pcfglrdb and var_objdb bounded at PITA's depth, as `tddlog --program`
+# writes them); left out are meta and metacomb, which no system answers as
+# the harness gives them (prob/2 inside the program), and the copies
+# coinmsw_memo (coinmsw with memo mode set) and eruption_tab (eruption
+# tabled); with them cplint on SWISH's examples that are not copies of the
+# pack's (data/swish, Simplified BSD), cplint_swish_<name>. threedie: PITA's three-sided die thrown until a 3 (Riguzzi and
+# Swift, ICLP 2010, Fig. 3; cplint's threesideddice.pl), asked on(N,1),
+# (2/3)^N/3, N up to where a double still holds it (PITA and ProbLog stop
+# between 100 and 1000).
 PROBLOGTUT = {
     'advanced/10_urnballmodel': [1],
     'basic/01_coins': [1, 2, 3],
@@ -747,12 +748,15 @@ PROBLOGEX = ['3_tossing_coin', '4_bayesian_net', '4_1_bayesian_net', '5_bayesian
              'negation', 'swap', 'add', 'generated']
 for name in PROBLOGEX:
     LIT[f'problogex_{name}'] = ('problogex', ['gen_problogex.py', name])
-CPLINTPITA = ['alarm', 'bag_game', 'coin', 'coin2', 'dice', 'earthquake', 'epidemic', 'eruption', 'event_calculus',
-              'flexprob', 'jail', 'light', 'markov_factor', 'markov_network', 'mendel', 'mendelc', 'mln', 'monty',
-              'multiple_paths', 'multiple_paths_simple', 'path', 'pathdb', 'pcfg', 'simpson', 'sneezing', 'testdb',
-              'threesideddice', 'trigger', 'viral']
+CPLINTPITA = ['alarm', 'bag_game', 'coin', 'coin2', 'coinmsw', 'dice', 'earthquake', 'epidemic', 'eruption',
+              'event_calculus', 'flexprob', 'jail', 'light', 'markov_chaindb', 'markov_factor', 'markov_network',
+              'mendel', 'mendelc', 'mln', 'monty', 'multiple_paths', 'multiple_paths_simple', 'path', 'pathdb',
+              'pcfg', 'pcfglrdb', 'persons', 'simpson', 'sneezing', 'testdb', 'threesideddice', 'trigger',
+              'var_objdb', 'viral']
 for name in CPLINTPITA:
     LIT[f'cplint_{name}'] = ('cplintpita', ['gen_cplint.py', name])
+for name in ['admission', 'smoking', 'sneezing_simple', 'viraltab']:
+    LIT[f'cplint_swish_{name}'] = ('cplintpita', ['gen_cplint.py', name, 'swish'])
 for n in [10, 100, 300, 1000, 1500]:
     LIT[f'threedie{n}'] = ('threedie', ['gen_threedie.py', str(n)])
 for script in ['gen_problogtut.py', 'gen_cplint.py']:
@@ -1039,7 +1043,7 @@ def original(gargs, variant):
     if gargs[0] == 'dice2problog.py':
         return gargs[1]
     if gargs[0] == 'gen_cplint.py':
-        return os.path.join(ROOT, 'data', 'cplint', gargs[1] + '.pl')
+        return os.path.join(ROOT, 'data', (gargs[2:] or ['cplint'])[0], gargs[1] + '.pl')   # gen_cplint.py NAME [swish]
     return None
 
 

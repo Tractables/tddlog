@@ -172,8 +172,10 @@ name.
 The parser reads ProbLog without cut:
 
 - constants, integers, floats, variables and compound terms, lists
-  `[a, b | T]` among them, with ProbLog's operators (`N - 1` is the term
-  `-(N,1)`, and an operator alone is an atom, as in `[+, -]`);
+  `[a, b | T]` among them (also written `.(a, .(b, T))`; quoted,
+  `'.'(a, T)` is a term of the name `.`), with ProbLog's operators
+  (`N - 1` is the term `-(N,1)`, and an operator alone is an atom, as in
+  `[+, -]`);
 - probabilistic facts `p::a.`, probabilistic rules `p::h :- b.`,
   annotated disjunctions `p1::h1; p2::h2 :- b.`, and negative heads
   `\+h :- b.` (ProbLog's `p$pos`/`p$neg` reading);
@@ -183,7 +185,8 @@ The parser reads ProbLog without cut:
 - body disjunctions `;` and parentheses, split into clauses that share
   one switch group;
 - negation as failure, `\+` or `not`, also of an atom with variables
-  of its own (`\+ p(X, _)`: no `p(X, Y)` for any `Y`);
+  of its own (`\+ p(X, _)`: no `p(X, Y)` for any `Y`) and of a goal
+  (`\+ (a, \+ b ; c)`), which holds where the goal has no solution;
 - unification `=` and `\=`, the comparisons of terms `== \== @< @> @=<
   @>=` in ProbLog's standard order, the arithmetic comparisons `< > =< >=
   =:= =\=`, and `is` with ProbLog's arithmetic, which is Python's: `//`
@@ -194,20 +197,52 @@ The parser reads ProbLog without cut:
   memberchk/2, select/3, append/2,3, length/2, nth0/3, nth1/3, last/2,
   reverse/2, sum_list/2, max_list/2, min_list/2, sort/2, subset/2,
   intersection/3, union/3, subtract/3, delete/3, flatten/2 and
-  enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3
-  and is_list/1, in ProbLog's modes and order of solutions, on ground
-  arguments;
+  enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3,
+  is_list/1, var/1, nonvar/1 and `=..`/2, in ProbLog's modes and order
+  of solutions, on ground arguments (`=..` also on a term or a list of
+  fixed length that hold variables, append/2 on a list of fixed length
+  of terms with variables joined into a ground list, and the type tests
+  is_list/1, var/1 and nonvar/1 on a term as it stands where they are
+  called: a list whose tail is a variable is a list, a variable is not);
+  a query or an evidence of one of them asks for its answers;
 - the predicates ProbLog's libraries write as clauses, in those clauses,
   which the grounder adds where the program calls them
   (`ground/library.rs`): the random selections select_uniform/4 and
   select_weighted/4,5, and
   `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
   and partition/4, and where the program loads it, `library(aggregate)`'s
-  avg/2, sum/2, min/2 and max/2; and `call/N`, whose goal names a
-  predicate the program defines;
-- `findall/3`, `all/3` and `forall/2`, over probabilistic goals too: in
-  each world the list of the solutions whose proofs hold there, once per
-  proof and in ProbLog's order (`all/3` once per solution);
+  avg/2, sum/2, min/2 and max/2, aggregate/5 and enum_groups/4, and
+  `library(collect)`'s `=>`, where `Body => G/f(A1, ..., An)` calls
+  `collect_f(Body, G, A1, ..., An)` and `Body => f(A1, ..., An)` calls
+  `collect_f(Body, none, A1, ..., An)`, with the library's collect_list/3,4
+  and collectgroup/4; and `call/N`, and a body's goal that is a variable,
+  whose goal names a predicate the program defines, or a built-in or a
+  construct (a negation, a comparison, `is`, `true`, `fail`) whose name
+  the program writes as an argument with fewer arguments than the call
+  gives it. A goal that names neither is refused where the grounding
+  reaches it, as ProbLog refuses it (its `UnknownClause`), or fails under
+  `:- unknown(fail).`; so is a goal that is a conjunction or a
+  disjunction, which ProbLog's call/1 looks up as a predicate `,/2` or
+  `;/2`;
+- `clause/2` and `clause/3`, where the program names them, over the
+  program's clauses as ProbLog lists them (`syntax/parser.rs`): `true`
+  the body of a fact, 1.0 the probability where none is written, and
+  the head, the body and the probability unified apart, as ProbLog
+  unifies them, so that a variable the head binds stays free in the
+  body and its answer, holding a variable, is refused. ProbLog lists an
+  annotated disjunction, a probabilistic rule and a loaded library's
+  clauses as clauses of its own making; a program with one of them is
+  refused;
+- `findall/3`, `all/3` and `all_or_none/3`, over probabilistic goals
+  too: in each world the list of the solutions whose proofs hold there,
+  once per proof (`all/3` and `all_or_none/3` once per solution, `all/3`
+  false where there is none), in ProbLog's order for a deterministic
+  goal; over a probabilistic goal the order follows tddlog's proofs, not
+  ProbLog's engine, so a program that reads the list's order (`nth1/3`,
+  its head) may answer differently, while order-free uses (`length/2`,
+  `sum_list/2`, `member/2`, `sort/2`) agree; a goal that is
+  a variable is read as a body, a conjunction or a disjunction included,
+  as ProbLog reads it; `forall(C, A)`, which is `\+ (C, \+ A)`;
 - `library(aggregate)`'s aggregates, `h(G1, ..., Gn, f<V>) :- Body`, as
   its aggregate/5 computes them: all/3 of the solutions of the body,
   grouped by `[G1, ..., Gn]` with enum_groups/3, and `f` of the values
@@ -217,7 +252,8 @@ The parser reads ProbLog without cut:
   pattern's instances under each grounding of the body are queries or
   evidence;
 - the directives `use_module(library(lists))`,
-  `use_module(library(apply))` and `use_module(library(aggregate))`,
+  `use_module(library(apply))`, `use_module(library(aggregate))` and
+  `use_module(library(collect))`,
   `unknown(fail)`, under which a predicate without clauses is false (one
   of ProbLog's built-ins or library predicates that tddlog does not
   evaluate stays refused), and
@@ -233,6 +269,26 @@ command line takes the format from the file's extension
 (`Format::of_path`), and the bindings take its name (`problog`, `dice`,
 `bif`, `hugin`, `xdsl`, `uai`), with a network's evidence file as its
 contents; a network's options given for another format are refused.
+
+A ProbLog program or an LPAD may take arguments, the values after its
+file on the command line (`ReadOptions::arguments` in the library and
+the bindings), as a shell script does: each place `$N` of its text takes
+the term that argument N writes, before the LPAD reader or the parser
+reads the text (`syntax/arguments.rs`), so that one program serves every
+size, probability, query and observation. The lexer finds the places
+(`$` and digits), outside comments and quoted atoms as it reads them
+everywhere, in a scan of its own before the parse; a place the parse
+meets, in a program given no arguments, is an error on its line. Each
+argument is parsed as a term first, and one with an operator at its top
+takes its place in parentheses (`1/3` as `(1/3)`); a space keeps it
+apart from a neighbour it would run into (`5-$1` of `-3` as `5- -3`).
+A place without an argument, an argument without a place, an argument
+that is not a term, and arguments for a Dice program or a network are
+refused. `tddlog --program` prints the program with its arguments in
+place, which any system that reads ProbLog then reads. The files a
+program consults are read after its arguments took their places, and
+their own places take none. The example queries of an LPAD sit in a
+comment and take no arguments.
 
 A source that holds the directive `:- begin_lpad.` (or cplint's other
 spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and
@@ -258,7 +314,19 @@ clause's heads is made once for each instance of the clause, as PITA
 makes it, whatever the depth: a switch `'$choice_N'` over the clause's
 variables, which each head's clause reads after its body. cplint's
 examples bound grammars and walks that way whose programs have no end
-without it (`pcfglrdb`, `var_objdb`). The file's example
+without it (`pcfglrdb`, `var_objdb`). PRISM's switches are read as
+annotated disjunctions: `:- set_sw(S, [p1, ..., pn]).` with the fact
+`values(T, [v1, ..., vn])` of which `S` is an instance writes `p1::msw(S,
+v1); ...; pn::msw(S, vn).`, one choice for each instance of `S`, which is
+what PITA makes under `:- set_pita(prism_memoization, true).`. By default
+PITA makes a new choice at each call of `msw/2`; the two agree where each
+instance of a switch is called once in the evaluation of each query, and
+the reader refuses a program where it cannot show that: it follows the
+calls from each query and the evidence, and requires the clause of each
+call `msw(S, V)` to be of a predicate called in one way and not
+recursive, the literals before the call to be calls of the LPAD's
+predicates (which PITA tables, each answer once) or tests, with what they
+bind in `S`, and no two calls' switches to unify. The file's example
 queries become queries: `?- prob(Q, P).` is `query(Q).`, and `?- prob(Q,
 E, P).` is `query(Q).` with an `evidence(L).` for each literal `L` of the
 conjunction `E`. A program has one set of evidence, that of the first
@@ -268,7 +336,9 @@ and on standard error, and left out. A clause the program cannot write
 (a disjunctive head with no probability or with two heads without one, a
 head without one beside a flexible probability, a probability that is not
 a finite number; under the depth bound, a flexible probability or a call
-of the LPAD's predicates inside another goal) is refused on its line. So
+of the LPAD's predicates inside another goal; a switch whose values or
+probabilities cannot be read, or one that two directives set) is refused
+on its line. So
 is a source written for PITA(IND) (`:- pitaind.`), on the directive's
 line: it asks for the probabilities PITA computes under the assumption
 that a conjunction's literals are independent and a disjunction's
@@ -328,7 +398,10 @@ binds the parts a call binds (a count passed in, another passed out); the
 goal of a findall becomes an auxiliary predicate whose tuples are its
 solutions, and a negated atom with variables that nothing else in its
 clause reads becomes the negation of an auxiliary predicate over its
-other variables, defined by the atom. A ground compound is a value: the
+other variables, defined by the atom. A negated goal is read as a findall
+whose list is empty, `findall(true, G, [])`, and becomes the negation of
+an auxiliary predicate over the variables the goal shares with its
+clause, a clause per alternative of the goal. A ground compound is a value: the
 engine interns each one once, its name and its arguments' values end to
 end in one buffer as a relation's tuples are, and builds the term only
 where an atom is printed or terms are compared; the ground program's
@@ -337,11 +410,17 @@ term's structure and the compile does not change. A grounding that
 builds terms deeper than 10 000 does not end and is refused. A findall
 over a probabilistic goal is a distribution over lists
 (`ground/engine/lists.rs`): its goal's solutions are expanded into their
-proofs, conjunctions of probabilistic facts and negations, in ProbLog's
-order, and the lists are built through the proofs one at a time, each
-state of the list so far an atom with a rule for each way to it, so that
-the states that reach one list merge. A findall whose goal reads its own
-clause is refused, as is one past 2^16 proofs of an atom or 2^16 lists.
+proofs, conjunctions of probabilistic facts and negations, and the lists
+are built through the proofs one at a time, each state of the list so far
+an atom with a rule for each way to it, so that the states that reach one
+list merge. A findall whose goal reads its own clause is refused, as is
+one past 2^16 proofs of an atom or 2^16 lists. The proofs that hold in every world come first, in the order resolution
+finds them, then the others by the order their literals were first read.
+ProbLog instead sorts them by the newest node each reads in a formula of
+its own, whose nodes its engine numbers as it makes them: certain facts,
+built-in calls, a conjunction per proof and the nodes of branches that
+fail. tddlog keeps no such numbering, so the two orders can differ where
+a goal mixes certain and probabilistic reads.
 Rules must be range restricted, but for variables a demand binds; a body
 is reordered so that binding literals come first and switches last, as
 they bind nothing and reject no binding (`ground/schedule.rs`, shared by
@@ -418,8 +497,12 @@ every row by its sum first, for Ace's tables in percent or as weights.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
 a conditional table of one variable of its scope, one function per
-variable and the child relation acyclic (Promedus, Pedigree), is that
-Bayesian network. In any other, every variable gets a uniform prior times
+variable and the child relation acyclic (Promedus, Pedigree, and the UAI
+2006 networks written as `MARKOV` files), is that Bayesian network. A
+table's row over its child's values counts where the rule above divides
+it or keeps it as summing to one (`rows::sums_to_one`), so that a file
+rounded to six decimals reads as its `BAYES` writing would, and its rows
+are then divided as that writing's are. In any other, every variable gets a uniform prior times
 its unary factors, normalized, and every other factor `f` becomes a
 variable `fJ` of one value, observed, whose row for each assignment of the
 factor's scope is its entry over its largest; a constant factor is left
@@ -624,7 +707,17 @@ are skipped. Several steps have a program in `examples/` that shows them.
    answer, and only the leader completes it: a call found in the
    component stays in it when it is re-evaluated). An answer with variables in it is kept where it holds in
    every world (`reverse([], L, L)`) and refused where it holds in some
-   only. The resolution emits the ground instances of the clauses it
+   only. A comparison `\=`, `==` or `\==` of terms with variables that
+   unify and are not identical is made as ProbLog makes it, as the terms
+   stand at the call (`\=` and `==` fail, `\==` holds), and so is a type
+   test (`var/1`, `nonvar/1`, `is_list/1`) of a term with variables.
+   Where their variables are the call's, a call that binds more of the
+   same atom may compare or test them otherwise; the calls of a predicate
+   share the atoms of their answers, so the program is refused where an
+   atom is the answer of two calls one of which made such a comparison
+   or test, or called with
+   variables of its own call, directly or not, a call that did. The
+   resolution emits the ground instances of the clauses it
    used, which the grounder then grounds as a program without variables;
    they count against the grounding bound, and a call or a term with
    variables nested deeper than 1 000 gives the grounding up with the
@@ -639,13 +732,35 @@ are skipped. Several steps have a program in `examples/` that shows them.
    negatively; where such a negation filters a demand of its reader's
    recursion (the dice tutorial's walk under `\+ member(Now, Seen)`), or
    the rewrite puts the negated predicate's demand inside that recursion
-   (the taxonomy tutorial), the demand grows without end. Only a program
-   that builds values (terms, numbers by `is`, lists) can grow it so; one
-   whose values are its constants is ground from its finite rewrite as
-   before (PSouffle's taint analyses). ProbLog's
+   (the taxonomy tutorial), the demand grows without end. Only a
+   recursion that negates a derived predicate and builds values (terms,
+   numbers by `is`, lists) from variables that only its own atoms bind can
+   grow it so, and only where its derivations are not bounded by a level,
+   an argument that each recursive call moves by a constant step within
+   values that atoms outside the recursion give. A recursion that builds
+   its values from atoms outside it (the time index `S is T - 1` under
+   `time(T)` of examples/larger/robot.pl) or counts along a level (`K is
+   J + 1` where `Q is P + 1` under `peg(P)`, examples/larger/mastermind.pl)
+   is ground from its finite rewrite as before, as is a program whose
+   values are its constants (PSouffle's taint analyses). ProbLog's
    grounding completes the negated call and ends the branch where its
    answer is true in every world, and so does the top-down route. A
-   findall in a cycle of calls is refused on either route.
+   findall in a cycle of calls is refused on either route. So, first of
+   all, is a program whose queries reach a test before the literals
+   written after it bind its variables (`modes.rs`): a `\=`, an identity,
+   a comparison on the standard order, a type test, a negation, or a
+   findall whose goal shares the variable with the rest of the rule. ProbLog resolves
+   a body from left to right and makes such a test on the terms as they
+   stand there (`member(A, [H|T]) :- A \= H, ...` called with `A` holding
+   a variable fails wherever `A` unifies with `H`), where the other
+   routes place it after the literals that bind its variables and make it
+   on each value they bind. The calls are followed from the queries, the
+   evidence and the query rules, each argument bound where the literals
+   before the call have bound all its variables. The same reading refuses
+   a program whose queries reach an arithmetic comparison, an `is` or a
+   call of a goal with a variable free there, one that neither the call
+   nor a literal before it can have bound, which ProbLog stops on; the
+   bottom-up routes would evaluate it on the values bound later.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in
@@ -1373,7 +1488,24 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   first boundary after a derived atom whose width is at most twice the
   facts since the cut, and runs until those facts double; the cut is the
   narrowest boundary in the window, and a window whose narrowest boundary
-  is wider than `WIDEST` (20) has none. A reader after a cut reads the
+  is wider than `WIDEST` (20) has none. The facts keep the order the
+  program states them in, the variable order its exporter chose, each as
+  late as that order allows (before the first rule that reads it or a
+  fact stated after it), and each derived atom goes at its last rule, so
+  that the cuts follow the circuit rather than where its file states the
+  facts: Roulette's circuits state every flip before every gate, and are
+  cut as the same circuit stated gate by gate.
+  A body that reads more than `WIDEST` atoms
+  crosses every boundary in its span with all it has read before it, so
+  it is first written as a chain along the order, each link the
+  conjunction of the link before and the body's next literal, its rule
+  placed where that literal is: a hidden
+  Markov model's joint query, the conjunction of every step's state, then
+  crosses each boundary as one atom. A body is read through its views
+  (atoms of one rule that one body reads) for this, so that a conjunction
+  is chained alike however its gates associate it: Roulette conjoins the
+  states from the last step back, which put every gate of the joint at the
+  end of the order. A reader after a cut reads the
   atoms crossing it through indicator copies, the segments between the
   cuts being the units, and each segment's copies are laid out at its
   start, before its facts. A formula then holds its own segment's facts
@@ -1573,17 +1705,23 @@ it may have spent by the end of its turn, at first its weight times
 `FIRST_PAIRS` times `WORK_PER_PAIR` (2^28) units. Each attempt goes to
 the trial whose target is least for its weight, the first in the
 candidates' order on a tie, so the trials take their first turns in
-order and later ones in proportion to their weights. The attempt may
-spend the target less what the trial has spent; once the trial has spent
-its target, the target doubles until it leaves the trial more than twice
-the work the stop lost. A stop loses the work since the phase last kept a
-step (a component, an atom's update, an observation, a join, an answer;
-`TddBackend::kept`), and the next attempt does that step again from its
-start. Where steps are small that is nothing, and the target doubles once;
-where one step outweighs a turn, each try of it has at least twice the
-work of the last, so the work it wastes is at most what it finally takes
+order and later ones in proportion to their weights. The attempt's turn
+ends at the first step its phase keeps once it has spent the target less
+what the trial has spent (`TddBackend::pause`): a component, an atom's
+update, a body of a loop of clauses, an observation, a join, an answer.
+The next attempt goes on from that step, and the turn loses nothing. An
+operation still in flight at twice the turn's work is stopped by the
+engine, the guard against one operation that outweighs a turn, and loses
+the work since the phase last kept a step (`TddBackend::kept`): the next
+attempt does that step again from its start. Once the trial has spent its
+target, the target doubles until it leaves the trial more than twice the
+work the stop lost: once after a turn that ended at a step, and where one
+step outweighs a turn, so that each try of it has at least twice the work
+of the last and the work it wastes is at most what it finally takes
 (rus_20_40, whose last join of 3.3 G units was otherwise stopped at
-2.1 G and given 2.1 G again).
+2.1 G and given 2.1 G again). Ended inside an operation, as turns once
+were, every turn started its loop of clauses over (TPC-H's q7, whose
+formula is one loop of hundreds of bodies), or the walk's join under way.
 
 An attempt may complete formulas of up to its watch in pairs: a sixteenth
 of the target (`WORK_PER_HELD_PAIR`), `FIRST_PAIRS` at least, or more
@@ -1718,13 +1856,16 @@ tididi's fallible copy (`TddBackend::copy`), so a copy the allocator
 cannot serve is a refusal too: `Tdd`'s `Clone` would abort the process.
 
 **Resumption.** A stopped compile keeps every finished component, and
-within a cyclic component its rounds so far (`tp::Compilation`). The
-component it stopped in starts over, but a loop of clauses over facts
-alone that the watch refused is kept, reduced in full, and the trial's
-next attempt, however many turns later, takes it rather than build it
-again (`clauses::Refused`); the loop is no larger than the attempt's node
-cap, twice its watch. This serves a component whose formula is one loop
-over a whole lineage (TPC-H's q18). A stopped query phase keeps its
+within a cyclic component its rounds so far (`tp::Compilation`). An
+acyclic component it stopped in starts over, but for one loop of clauses
+held for the next run (`clauses::Held`): a loop the turn ended in, before
+its next body, which the trial's next attempt goes on with once it has
+built the component up to it again; or a loop over facts alone that the
+watch refused, reduced in full, which the next attempt takes rather than
+build again. Either is no larger than the attempt's node cap, twice its
+watch, and is held however many turns later the next attempt comes. This
+serves a component whose formula is one loop over a whole lineage
+(TPC-H's q7 and q18). A stopped query phase keeps its
 finished conjunctions, a pending reduction or count, and its answers
 (`QueryEvaluation`); a resumable conjunction keeps its operands until
 `and` succeeds, since `and` consumes them on failure. Both phases go

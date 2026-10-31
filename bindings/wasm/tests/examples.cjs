@@ -67,6 +67,15 @@ const TOLERANCE = 1e-9;
   const again = runtime.solve(solver, fs.readFileSync(path.join(root, "examples/alarm.pl"), "utf8"), "auto", false);
   assert.equal(again.answers.length, 3);
   console.log("ok refusals");
+
+  // A program's arguments take its places $1, $2, ...: examples/chain.pl
+  // with a chain of 10 links of 0.9, queried at node 4, is 0.9^4.
+  const chain = fs.readFileSync(path.join(root, "examples/chain.pl"), "utf8");
+  const bound = runtime.solve(solver, chain, "auto", false, "problog", null, ["10", "0.9", "4"]);
+  assert.equal(bound.answers.length, 1);
+  assert.ok(Math.abs(bound.answers[0].probability - 0.6561) < 1e-12, JSON.stringify(bound));
+  assert.match(runtime.solve(solver, chain, "auto", false, "problog", null, ["10", "0.9"]).error ?? "", /`\$3` has no argument/);
+  console.log("ok arguments");
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

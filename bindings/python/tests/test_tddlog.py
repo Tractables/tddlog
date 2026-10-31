@@ -210,6 +210,22 @@ def test_option_errors():
         tddlog.solve(ALARM, queries=False)
 
 
+def test_arguments_take_their_places():
+    # examples/chain.pl: a chain of 10 links of 0.9 reaches node 4 with
+    # probability 0.9^4, computed by hand.
+    chain = (REPOSITORY / "examples" / "chain.pl").read_text()
+    answers = tddlog.solve(chain, arguments=["10", "0.9", "4"]).answers
+    assert answers == {"reach(4)": pytest.approx(0.9**4, abs=1e-12)}
+    with pytest.raises(tddlog.ParseError, match=r"`\$3` has no argument"):
+        tddlog.solve(chain, arguments=["10", "0.9"])
+    with pytest.raises(ValueError, match=r"the program has no `\$4`"):
+        tddlog.solve(chain, arguments=["10", "0.9", "4", "5"])
+    with pytest.raises(ValueError, match="is not a term"):
+        tddlog.solve(chain, arguments=["10", "0.9", "f("])
+    with pytest.raises(ValueError, match="for a ProbLog program or an LPAD"):
+        tddlog.solve("let x = flip 0.5 in x", format="dice", arguments=["1"])
+
+
 def test_threads_solve_concurrently():
     source = (PROBLOG / "8_smokers_network.pl").read_text()
     expected = expected_outcome(source)

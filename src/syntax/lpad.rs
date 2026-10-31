@@ -15,9 +15,11 @@
 //! those the LPAD's bodies name, and those they name in turn, are kept as
 //! they are, and `db(Goal)` is written `Goal`. The rest (plots, samplers and
 //! other programs over the LPAD) is left out, as are the directives and
-//! goals but for PITA's depth bound; a source written for PITA(IND), whose
-//! assumptions tddlog's inference does not take, is refused. The example
-//! queries `?- prob(Q, P).` in the file become
+//! goals but for PITA's depth bound and PRISM's switches,
+//! `:- set_sw(S, Ps).`, read as annotated disjunctions of `msw/2`; a
+//! source written for PITA(IND), whose assumptions tddlog's inference
+//! does not take, is refused. The example queries `?- prob(Q, P).` in the
+//! file become
 //! `query(Q).`, and `?- prob(Q, E, P).` becomes `query(Q).` and an
 //! `evidence(L).` for each literal `L` of the conjunction `E`. A program
 //! holds one set of evidence: the queries asked under the evidence of the
@@ -37,9 +39,9 @@
 //! and brackets, and the names a body mentions are the words outside
 //! quotes that start with a lower-case letter.
 
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::{Builtin, ParseError};
+use super::{Atom, Builtin, CONS, Compound, Literal, NIL, ParseError, Program, Term};
 use crate::network::rows::{fsum, write_float};
 
 /// An LPAD read as a ProbLog program.
@@ -102,10 +104,11 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             }
         }
     }
-    let depth = settings(clauses).map_err(|(at, msg)| ParseError {
+    let at_line = |(at, msg): (usize, String)| ParseError {
         line: raw.line(source, at),
         msg,
-    })?;
+    };
+    let (depth, memo) = settings(clauses).map_err(at_line)?;
     // The LPAD's predicates, which take the depth under PITA's bound.
     let predicates: FxHashSet<(String, usize)> = read
         .iter()
@@ -145,6 +148,27 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             }
             _ => out.push(convert_clause(c).map_err(error)?),
         }
+    }
+    // PRISM's switches, as annotated disjunctions.
+    let set_sw = directives(clauses, "set_sw");
+    if let Some(&(at, _)) = set_sw.first() {
+        if depth.is_some() {
+            return Err(at_line((
+                at,
+                "PRISM's switches under PITA's depth bound".into(),
+            )));
+        }
+        let mut values = Vec::new();
+        for ((c, _, at), _) in read.iter().zip(&kept).filter(|(_, keep)| **keep) {
+            match head_name(c) {
+                Some("values") if !c.contains(":-") => values.push(c.as_str()),
+                Some("values" | "msw") => {
+                    return Err(at_line((*at, format!("`{c}` beside PRISM's switches"))));
+                }
+                _ => {}
+            }
+        }
+        out.extend(switches(&set_sw, &values).map_err(at_line)?);
     }
     // One program holds one set of evidence: that of the first query not
     // asked under an intervention.
@@ -224,10 +248,212 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             left_out.push(note);
         }
     }
-    Ok(Lpad {
-        program: out.join("\n"),
-        left_out,
-    })
+    let program = out.join("\n");
+    // PITA's default makes a new choice at each call of msw/2.
+    if let Some(&(at, _)) = set_sw.first()
+        && !memo
+        && let Ok(read) = super::parse_program(&program)
+    {
+        calls_once(&read, &predicates).map_err(|why| {
+            at_line((
+                at,
+                format!(
+                    "PRISM's msw/2 under PITA's default, which makes a new choice at each \
+                     call: {why}; tddlog reads a switch as one choice, as PITA does under \
+                     `:- set_pita(prism_memoization, true).`, and reads the default where \
+                     each switch is called once"
+                ),
+            ))
+        })?;
+    }
+    Ok(Lpad { program, left_out })
+}
+
+/// The arguments of the directives `:- name(..).` among `clauses`, each
+/// with where it starts.
+fn directives<'a>(clauses: &[(usize, &'a str)], name: &str) -> Vec<(usize, Vec<&'a str>)> {
+    clauses
+        .iter()
+        .filter_map(|&(at, c)| {
+            let (n, args) = atom_parts(trim(c.strip_prefix(":-")?))?;
+            (n == name).then_some((at, args))
+        })
+        .collect()
+}
+
+/// The annotated disjunctions of PRISM's switches as cplint's PITA reads
+/// them: the directive `:- set_sw(S, [p1, ..., pn]).` gives the switch
+/// `S` the values of the fact `values(T, [v1, ..., vn])` of which `S` is
+/// an instance, and `msw(S, V)` holds where `S` takes the value `V`:
+/// `p1::msw(S, v1); ...; pn::msw(S, vn).`, each instance of `S` a choice
+/// of its own. A switch without such a fact, with two, or with a fact
+/// that holds only some of its instances, two directives for one
+/// instance, and probabilities that are not numbers summing to one are
+/// refused.
+fn switches(
+    set_sw: &[(usize, Vec<&str>)],
+    values: &[&str],
+) -> Result<Vec<String>, (usize, String)> {
+    let mut text: String = values.iter().map(|v| format!("{v}.\n")).collect();
+    for (at, args) in set_sw {
+        match args.as_slice() {
+            [s, _] => text.push_str(&format!("'$sw'({s}).\n")),
+            _ => return Err((*at, "set_sw/1, which sets no probabilities".into())),
+        }
+    }
+    let read = super::parse_program(&text)
+        .map_err(|e| (set_sw[0].0, format!("PRISM's switches: {}", e.msg)))?;
+    let facts = |name: &str| -> Vec<&Atom> {
+        read.clauses
+            .iter()
+            .map(|c| &c.heads[0].atom)
+            .filter(|a| &*a.name == name)
+            .collect()
+    };
+    let (facts, sws) = (facts("values"), facts("$sw"));
+    let mut out = Vec::new();
+    for (k, ((at, args), sw)) in set_sw.iter().zip(&sws).enumerate() {
+        let s = &sw.args[0];
+        let error = |why: String| (*at, format!("`set_sw({s}, {})`: {why}", args[1]));
+        let probs = trim(args[1])
+            .strip_prefix('[')
+            .and_then(|l| l.strip_suffix(']'))
+            .map(|l| {
+                split_top(l, b',')
+                    .into_iter()
+                    .map(number)
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .transpose()
+            .map_err(error)?
+            .and_then(|ps| ps.into_iter().collect::<Option<Vec<f64>>>())
+            .filter(|ps| ps.iter().all(|p| (0.0..=1.0).contains(p)))
+            .ok_or_else(|| error("the probabilities are not a list of numbers".into()))?;
+        if (fsum(&probs) - 1.0).abs() > 1e-6 {
+            return Err(error("the probabilities do not sum to one".into()));
+        }
+        if let Some(other) = sws[..k].iter().find(|o| unifiable(&o.args[0], s)) {
+            return Err(error(format!("{} is set too", other.args[0])));
+        }
+        let of: Vec<&&Atom> = facts
+            .iter()
+            .filter(|v| v.args.len() == 2 && unifiable(&v.args[0], s))
+            .collect();
+        let [v] = of.as_slice() else {
+            return Err(error(format!("{} facts values({s}, _)", of.len())));
+        };
+        let mut binds = FxHashMap::default();
+        if !matches(&v.args[0], s, &mut binds) {
+            return Err(error(format!(
+                "values/2 gives {} only some of its values",
+                v.args[0]
+            )));
+        }
+        let items = list_items(&v.args[1])
+            .filter(|items| items.iter().all(|t| t.is_ground()))
+            .ok_or_else(|| error(format!("the values {} are no list of constants", v.args[1])))?;
+        if items.len() != probs.len() {
+            return Err(error(format!(
+                "{} values and {} probabilities",
+                items.len(),
+                probs.len()
+            )));
+        }
+        let mut heads = Vec::with_capacity(probs.len());
+        for (p, v) in probs.into_iter().zip(items) {
+            let p = annotation(Written::Number(p)).map_err(error)?;
+            heads.push(format!("{p}::msw({s}, {v})"));
+        }
+        out.push(format!("{}.", heads.join("; ")));
+    }
+    Ok(out)
+}
+
+/// The items of the list `t`, where it is a proper list.
+fn list_items(mut t: &Term) -> Option<Vec<&Term>> {
+    let mut items = Vec::new();
+    loop {
+        match t {
+            Term::Const(c) if &**c == NIL => return Some(items),
+            Term::Compound(c) if &*c.name == CONS && c.args.len() == 2 => {
+                items.push(&c.args[0]);
+                t = &c.args[1];
+            }
+            _ => return None,
+        }
+    }
+}
+
+/// Whether the terms `a` and `b`, their variables named apart, unify.
+/// The switches are read before grounding, on the source's terms; the
+/// grounder's unifiers work on its interned terms (`ground/engine.rs`,
+/// `ground/engine/topdown.rs`) or write a unification as literals
+/// (`ground/terms.rs`), so this and [`matches`] are the source terms' own.
+fn unifiable(a: &Term, b: &Term) -> bool {
+    fn apart(t: &Term) -> Term {
+        match t {
+            Term::Var(v) => Term::Var(format!("#{v}")),
+            Term::Compound(c) => Compound::term(c.name.clone(), c.args.iter().map(apart).collect()),
+            t => t.clone(),
+        }
+    }
+    fn walk(t: &Term, s: &FxHashMap<String, Term>) -> Term {
+        let mut t = t.clone();
+        while let Term::Var(v) = &t {
+            match s.get(v) {
+                Some(u) => t = u.clone(),
+                None => break,
+            }
+        }
+        t
+    }
+    fn unify(a: &Term, b: &Term, s: &mut FxHashMap<String, Term>) -> bool {
+        let (a, b) = (walk(a, s), walk(b, s));
+        match (&a, &b) {
+            (Term::Var(x), Term::Var(y)) if x == y => true,
+            (Term::Var(x), _) => {
+                s.insert(x.clone(), b);
+                true
+            }
+            (_, Term::Var(y)) => {
+                s.insert(y.clone(), a);
+                true
+            }
+            (Term::Compound(c), Term::Compound(d)) => {
+                c.name == d.name
+                    && c.args.len() == d.args.len()
+                    && c.args
+                        .iter()
+                        .zip(d.args.iter())
+                        .all(|(x, y)| unify(x, y, s))
+            }
+            _ => a == b,
+        }
+    }
+    unify(a, &apart(b), &mut FxHashMap::default())
+}
+
+/// Whether the term `s` is an instance of the term `t`, its variables
+/// bound in `m` as they are matched.
+fn matches(t: &Term, s: &Term, m: &mut FxHashMap<String, Term>) -> bool {
+    match (t, s) {
+        (Term::Var(v), _) => match m.get(v) {
+            Some(u) => u == s,
+            None => {
+                m.insert(v.clone(), s.clone());
+                true
+            }
+        },
+        (Term::Compound(c), Term::Compound(d)) => {
+            c.name == d.name
+                && c.args.len() == d.args.len()
+                && c.args
+                    .iter()
+                    .zip(d.args.iter())
+                    .all(|(x, y)| matches(x, y, m))
+        }
+        _ => t == s,
+    }
 }
 
 /// Whether the clause `c` is a marker: `Some(true)` for `:- begin_lpad`
@@ -594,16 +820,293 @@ fn annotation(p: Written) -> Result<String, String> {
     })
 }
 
+/// Why PITA's default reading of `msw/2`, a new choice at each call, may
+/// differ from one choice for each instance of a switch, the annotated
+/// disjunctions [`switches`] writes; `Ok` where it cannot. It cannot where,
+/// in PITA's evaluation of each query under the evidence, which tables the
+/// predicates of the LPAD (`tabled`), each instance of a switch is called
+/// once:
+/// - the clause of a call `msw(S, V)` has one head, of a predicate called
+///   in one way: by the query or an observation alone, or, not recursive,
+///   from one place in a clause of such a predicate, with arguments that
+///   the call binds or that nothing before the place does;
+/// - the literals before the call are calls of the LPAD's predicates,
+///   whose answers PITA tables once each, or tests and evaluations, and
+///   what they bind and the call does not is in `S`, which they ground;
+/// - no two calls of `msw/2` have switches that unify, and none is under a
+///   negation or in a findall.
+fn calls_once(program: &Program, tabled: &FxHashSet<(String, usize)>) -> Result<(), String> {
+    if !program.query_rules.is_empty() {
+        return Err("a query rule".into());
+    }
+    let calls = Calls::of(program);
+    for (q, _) in &program.queries {
+        let roots: Vec<&Atom> = std::iter::once(q)
+            .chain(program.evidence.iter().map(|(a, _)| a))
+            .collect();
+        calls.check(&roots, tabled)?;
+    }
+    Ok(())
+}
+
+type Pred<'a> = (&'a str, usize);
+
+/// A call in a clause's body: the clause, the place in the body, the atom,
+/// and whether a findall makes it, once for each solution of its goal.
+struct Call<'p> {
+    clause: usize,
+    at: usize,
+    atom: &'p Atom,
+    repeated: bool,
+}
+
+/// The calls of a program's clauses ([`calls_once`]).
+struct Calls<'p> {
+    program: &'p Program,
+    by_head: FxHashMap<Pred<'p>, Vec<usize>>,
+    calls: Vec<Call<'p>>,
+}
+
+impl<'p> Calls<'p> {
+    fn of(program: &'p Program) -> Self {
+        fn atoms<'p>(
+            body: &'p [Literal],
+            at: Option<usize>,
+            out: &mut Vec<(usize, &'p Atom, bool)>,
+        ) {
+            for (i, l) in body.iter().enumerate() {
+                let place = at.unwrap_or(i);
+                match l {
+                    Literal::Pos(a) | Literal::Neg(a) => out.push((place, a, at.is_some())),
+                    Literal::Findall(f) => {
+                        for conj in &f.goal {
+                            atoms(conj, Some(place), out);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let mut by_head: FxHashMap<Pred, Vec<usize>> = FxHashMap::default();
+        let mut calls = Vec::new();
+        for (k, c) in program.clauses.iter().enumerate() {
+            for h in &c.heads {
+                let ks = by_head.entry(h.atom.signature()).or_default();
+                if ks.last() != Some(&k) {
+                    ks.push(k);
+                }
+            }
+            let mut out = Vec::new();
+            atoms(&c.body, None, &mut out);
+            calls.extend(out.into_iter().map(|(at, atom, repeated)| Call {
+                clause: k,
+                at,
+                atom,
+                repeated,
+            }));
+        }
+        Calls {
+            program,
+            by_head,
+            calls,
+        }
+    }
+
+    /// The clauses of the predicates `from` reaches through the calls of
+    /// their clauses.
+    fn reach(&self, mut from: Vec<Pred<'p>>) -> FxHashSet<usize> {
+        let (mut seen, mut clauses) = (FxHashSet::default(), FxHashSet::default());
+        while let Some(p) = from.pop() {
+            if seen.insert(p) {
+                for &k in self.by_head.get(&p).into_iter().flatten() {
+                    clauses.insert(k);
+                    from.extend(
+                        self.calls
+                            .iter()
+                            .filter(|c| c.clause == k)
+                            .map(|c| c.atom.signature()),
+                    );
+                }
+            }
+        }
+        clauses
+    }
+
+    fn recursive(&self, p: Pred<'p>) -> bool {
+        let callees = self
+            .calls
+            .iter()
+            .filter(|c| {
+                self.program.clauses[c.clause]
+                    .heads
+                    .iter()
+                    .any(|h| h.atom.signature() == p)
+            })
+            .map(|c| c.atom.signature())
+            .collect();
+        self.reach(callees).into_iter().any(|k| {
+            self.program.clauses[k]
+                .heads
+                .iter()
+                .any(|h| h.atom.signature() == p)
+        })
+    }
+
+    /// How the evaluation of `roots`, which reaches the clauses `reached`,
+    /// calls `p`, where it calls it in one way: each argument bound or not.
+    fn way(
+        &self,
+        p: Pred<'p>,
+        roots: &[&'p Atom],
+        reached: &FxHashSet<usize>,
+        ways: &mut FxHashMap<Pred<'p>, Option<Vec<bool>>>,
+    ) -> Option<Vec<bool>> {
+        if let Some(w) = ways.get(&p) {
+            return w.clone();
+        }
+        ways.insert(p, None);
+        let asked: Vec<&&Atom> = roots.iter().filter(|a| a.signature() == p).collect();
+        let sites: Vec<&Call> = self
+            .calls
+            .iter()
+            .filter(|c| reached.contains(&c.clause) && c.atom.signature() == p)
+            .collect();
+        let w = match (asked.as_slice(), sites.as_slice()) {
+            ([a], []) => Some(a.args.iter().map(Term::is_ground).collect()),
+            ([], [site]) if !site.repeated && !self.recursive(p) => {
+                let c = &self.program.clauses[site.clause];
+                match c.heads.as_slice() {
+                    [head] => self
+                        .way(head.atom.signature(), roots, reached, ways)
+                        .and_then(|w| {
+                            let bound = bound(&head.atom, &w);
+                            let before = before(&c.body[..site.at]);
+                            let mut vs = Vec::new();
+                            site.atom.vars_into(&mut vs);
+                            vs.iter()
+                                .all(|v| bound.contains(v) || !before.contains(v))
+                                .then(|| {
+                                    site.atom
+                                        .args
+                                        .iter()
+                                        .map(|t| term_vars(t).iter().all(|v| bound.contains(v)))
+                                        .collect()
+                                })
+                        }),
+                    _ => None,
+                }
+            }
+            _ => None,
+        };
+        ways.insert(p, w.clone());
+        w
+    }
+
+    /// [`calls_once`] for the evaluation of `roots`.
+    fn check(&self, roots: &[&'p Atom], tabled: &FxHashSet<(String, usize)>) -> Result<(), String> {
+        let reached = self.reach(roots.iter().map(|a| a.signature()).collect());
+        let mut ways = FxHashMap::default();
+        let mut switches: Vec<&Term> = Vec::new();
+        for call in &self.calls {
+            if !reached.contains(&call.clause) || call.atom.signature() != ("msw", 2) {
+                continue;
+            }
+            let c = &self.program.clauses[call.clause];
+            let lit = &c.body[call.at];
+            if call.repeated || !matches!(lit, Literal::Pos(_)) {
+                return Err(format!("msw/2 under a negation or in a findall, in `{c}`"));
+            }
+            let [head] = c.heads.as_slice() else {
+                return Err(format!(
+                    "msw/2 in the body of `{c}`, an annotated disjunction"
+                ));
+            };
+            let p = head.atom.signature();
+            let Some(w) = self.way(p, roots, &reached, &mut ways) else {
+                return Err(format!(
+                    "{}/{}, whose clause `{c}` calls it, can be called in more than one way",
+                    p.0, p.1
+                ));
+            };
+            let bound = bound(&head.atom, &w);
+            for l in &c.body[..call.at] {
+                let once = match l {
+                    Literal::Pos(a) => {
+                        a.signature() == ("msw", 2)
+                            || tabled.contains(&(a.name.to_string(), a.args.len()))
+                    }
+                    Literal::Cmp(..) | Literal::Is(..) => true,
+                    _ => false,
+                };
+                if !once {
+                    return Err(format!(
+                        "`{l}` before `{lit}` in `{c}` can give a solution twice"
+                    ));
+                }
+            }
+            let before = before(&c.body[..call.at]);
+            let s = &call.atom.args[0];
+            let in_s = term_vars(s);
+            if let Some(v) = before
+                .iter()
+                .find(|v| !bound.contains(*v) && !in_s.contains(v))
+            {
+                return Err(format!("`{lit}` in `{c}` is called for each value of {v}"));
+            }
+            if let Some(v) = in_s
+                .iter()
+                .find(|v| !bound.contains(*v) && !before.contains(*v))
+            {
+                return Err(format!("the switch of `{lit}` in `{c}` has {v} free"));
+            }
+            if let Some(o) = switches.iter().find(|o| unifiable(o, s)) {
+                return Err(format!(
+                    "two calls of msw/2 can call the switch of both {o} and {s}"
+                ));
+            }
+            switches.push(s);
+        }
+        Ok(())
+    }
+}
+
+/// The variables of `head` in the arguments a call binds (`way`).
+fn bound(head: &Atom, way: &[bool]) -> FxHashSet<String> {
+    head.args
+        .iter()
+        .zip(way)
+        .filter(|(_, b)| **b)
+        .flat_map(|(t, _)| term_vars(t))
+        .collect()
+}
+
+/// The variables of the literals `body`.
+fn before(body: &[Literal]) -> FxHashSet<String> {
+    let mut out = Vec::new();
+    for l in body {
+        l.vars_into(&mut out);
+    }
+    out.into_iter().collect()
+}
+
+fn term_vars(t: &Term) -> Vec<String> {
+    let mut out = Vec::new();
+    t.vars_into(&mut out);
+    out
+}
+
 /// The depth PITA's depth bound asks the queries at, where the source
 /// sets the bound (`:- set_pita(depth_bound, true).`): the depth it sets
-/// (`:- set_pita(depth, N).`), 5 by default, as PITA's. A source written
+/// (`:- set_pita(depth, N).`), 5 by default, as PITA's; and whether PITA
+/// makes one choice for each instance of a PRISM switch
+/// (`:- set_pita(prism_memoization, true).`, [`switches`]). A source written
 /// for PITA(IND) (`:- pitaind.`) is refused: it asks for the probabilities
 /// PITA computes under the assumption that a conjunction's literals are
 /// independent and a disjunction's independent or, under `set_pitaind(or,
 /// exc)`, exclusive, which differ from the program's where the assumption
 /// does not hold.
-fn settings(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)> {
-    let (mut bound, mut depth) = (false, 5);
+fn settings(clauses: &[(usize, &str)]) -> Result<(Option<u32>, bool), (usize, String)> {
+    let (mut bound, mut depth, mut memo) = (false, 5, false);
     for &(at, c) in clauses {
         let Some(goal) = c.strip_prefix(":-").map(trim) else {
             continue;
@@ -623,6 +1126,7 @@ fn settings(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)> {
                 ));
             }
             ("set_pita", ["depth_bound", v]) => bound = *v == "true",
+            ("set_pita", ["prism_memoization", v]) => memo = *v == "true",
             ("set_pita", ["depth", v]) => {
                 depth = v
                     .parse()
@@ -631,7 +1135,7 @@ fn settings(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)> {
             _ => {}
         }
     }
-    Ok(bound.then_some(depth))
+    Ok((bound.then_some(depth), memo))
 }
 
 /// The ProbLog clauses of the LPAD clause `clause`, the LPAD's `number`th,
@@ -1143,5 +1647,107 @@ mod tests {
             program(":- begin_lpad.\na:0.5 :- X = '\\%'.\n"),
             "0.5::a :- X = '\\%'."
         );
+    }
+
+    /// cplint's coinmsw.pl, PRISM's switches under PITA's default.
+    const COIN: &str = "values(throw(_),[heads,tails]).
+:- set_sw(throw(fair),[0.5,0.5]).
+:- set_sw(throw(biased),[0.6,0.4]).
+values(fairness,[fair,biased]).
+:- set_sw(fairness,[0.9,0.1]).
+res(Coin,R):- toss(Coin),fairness(Coin,Fairness),msw(throw(Fairness),R).
+fairness(_Coin,Fairness):-msw(fairness,Fairness).
+toss(coin).
+";
+
+    #[test]
+    fn prisms_switches_are_annotated_disjunctions() {
+        assert_eq!(
+            program(&lpad(COIN)),
+            "values(throw(_),[heads,tails]).
+values(fairness,[fair,biased]).
+res(Coin,R) :- toss(Coin),fairness(Coin,Fairness),msw(throw(Fairness),R).
+fairness(_Coin,Fairness) :- msw(fairness,Fairness).
+toss(coin).
+0.5::msw(throw(fair), heads); 0.5::msw(throw(fair), tails).
+0.6::msw(throw(biased), heads); 0.4::msw(throw(biased), tails).
+0.9::msw(fairness, fair); 0.1::msw(fairness, biased)."
+        );
+        // A switch with a variable: a choice for each instance.
+        assert_eq!(
+            program(&lpad(
+                "values(flu(_), [1, 0]).\n:- set_sw(flu(_X), [0.7, 0.3]).\ns(X) :- f(X), msw(flu(X), 1).\nf(bob).\n"
+            )),
+            "values(flu(_), [1, 0]).\ns(X) :- f(X), msw(flu(X), 1).\nf(bob).\n0.7::msw(flu(_X), 1); 0.3::msw(flu(_X), 0)."
+        );
+    }
+
+    #[test]
+    fn under_pitas_default_a_switch_called_twice_is_refused() {
+        let refused = |body: &str, memo: bool| {
+            let memo = if memo {
+                ":- set_pita(prism_memoization, true).\n"
+            } else {
+                ""
+            };
+            read(&format!("{memo}{}?- prob(q, P).\n", lpad(body)))
+                .unwrap()
+                .err()
+                .map(|e| e.msg)
+        };
+        let coin = "values(c, [h, t]).\n:- set_sw(c, [0.6, 0.4]).\n";
+        for body in [
+            // Twice in one derivation, by two calls and by one.
+            "q :- msw(c, h), msw(c, h).\n",
+            "q :- member(_, [1, 2]), msw(c, h).\n",
+            "q :- r(1), r(2).\nr(_) :- msw(c, h).\n",
+            // In two derivations of one answer.
+            "q :- msw(c, h).\nq :- msw(c, t).\n",
+            "q :- r.\nr :- msw(c, h).\nq :- r.\n",
+            // In a recursion.
+            "q :- r(2).\nr(0).\nr(N) :- N > 0, msw(c, h), M is N - 1, r(M).\n",
+        ] {
+            let e = refused(&format!("{coin}{body}"), false).unwrap_or_else(|| panic!("{body}"));
+            assert!(e.contains("under PITA's default"), "{body}: {e}");
+            assert_eq!(refused(&format!("{coin}{body}"), true), None, "{body}");
+        }
+        // Each instance called once.
+        for body in [
+            "q :- msw(c, h).\n",
+            "q :- r(X), msw(d(X), h).\nr(1). r(2).\nvalues(d(_), [h, t]).\n:- set_sw(d(_), [0.5, 0.5]).\n",
+        ] {
+            assert_eq!(refused(&format!("{coin}{body}"), false), None, "{body}");
+        }
+        assert_eq!(refused(&lpad(COIN), false), None);
+    }
+
+    #[test]
+    fn a_switch_whose_values_cannot_be_read_is_refused() {
+        for (body, why) in [
+            (":- set_sw(c, [0.6, 0.4]).\n", "0 facts values(c, _)"),
+            (
+                "values(c, [h]).\n:- set_sw(c, [0.6, 0.4]).\n",
+                "1 values and 2 probabilities",
+            ),
+            (
+                "values(c, [h, t]).\n:- set_sw(c, [0.6, 0.6]).\n",
+                "do not sum to one",
+            ),
+            (
+                "values(c, [h, t]).\n:- set_sw(c, uniform).\n",
+                "not a list of numbers",
+            ),
+            (
+                "values(c(a), [h, t]).\n:- set_sw(c(_), [0.5, 0.5]).\n",
+                "only some of its values",
+            ),
+            (
+                "values(c(_), [h, t]).\n:- set_sw(c(_), [0.5, 0.5]).\n:- set_sw(c(a), [0.5, 0.5]).\n",
+                "is set too",
+            ),
+        ] {
+            let e = read(&lpad(body)).unwrap().unwrap_err();
+            assert!(e.msg.contains(why), "{body}: {}", e.msg);
+        }
     }
 }

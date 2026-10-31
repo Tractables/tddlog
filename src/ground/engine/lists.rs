@@ -7,10 +7,14 @@
 //! there. A proof is a conjunction of the probabilistic facts and the
 //! negations it reads, the derived atoms it reads expanded into their own
 //! proofs ([`proofs`]). The proofs that hold in every world come first, in
-//! the order resolution finds them; then the others, in the order ProbLog
-//! made their formulas' nodes: a proof of one literal where its atom was
-//! first read, a proof of several where its conjunction was made, after
-//! its literals ([`lists`]).
+//! the order resolution finds them; then the others, a proof of one
+//! literal where its atom was first read, a proof of several where its
+//! conjunction was made, after its literals ([`lists`]). That is
+//! ProbLog's order for a deterministic goal. Over a probabilistic one,
+//! ProbLog sorts the proofs by the newest node each reads, numbering every
+//! node its engine makes (certain facts, built-in calls, the nodes of
+//! branches that fail), which tddlog does not keep, so the orders can
+//! differ there.
 //!
 //! The lists are built through the proofs in that order, one state of the
 //! list so far at a time: each proof that holds in some worlds only splits
@@ -34,6 +38,7 @@ use std::rc::Rc;
 use rustc_hash::FxHashMap;
 
 use super::{GroundError, Val};
+use crate::syntax::Gather;
 
 /// The predicate of the atoms the lists are built of, a state each.
 pub(super) const LISTS: &str = "$fl";
@@ -222,17 +227,17 @@ fn too_many(src: &mut impl Source, a: u32, what: &str) -> GroundError {
 
 /// The lists of a findall whose goal has the solutions `answers`, each its
 /// template's value and the atom that answers it, in the order found;
-/// `all` and `what` as [`lists`] reads them.
+/// `gather` and `what` as [`lists`] reads them.
 pub(super) fn collect(
     src: &mut impl Source,
     answers: &[(Val, u32)],
-    all: bool,
+    gather: Gather,
     what: &str,
 ) -> Result<Vec<Listed>, GroundError> {
     let mut found: Vec<(Val, Proof)> = Vec::with_capacity(answers.len());
     for &(v, a) in answers {
         let proofs = proofs(src, a, what)?;
-        if all {
+        if gather.once() {
             // all/3 reads each solution once, as its atom.
             if let Some(first) = proofs.first() {
                 let lits: Rc<[Lit]> = if proofs.iter().any(|p| p.lits.is_empty()) {
@@ -248,24 +253,25 @@ pub(super) fn collect(
         }
     }
     found.sort_by(|x, y| x.1.key.cmp(&y.1.key));
-    lists(src, found, all, what)
+    lists(src, found, gather, what)
 }
 
 /// The lists the solutions `found` give, each with the literal that says
 /// in which worlds (none where it is the one list): `found` holds each
 /// solution's template value and one proof, in the order of resolution;
-/// `all` lists them as all/3 does, each a solution once, by its atom, and
-/// no empty list. `what` names the findall, for an error.
+/// `gather` says whether each is a solution once, by its atom, as all/3
+/// and all_or_none/3 list them, and whether the empty list is one. `what`
+/// names the findall, for an error.
 fn lists(
     src: &mut impl Source,
     mut found: Vec<(Val, Proof)>,
-    all: bool,
+    gather: Gather,
     what: &str,
 ) -> Result<Vec<Listed>, GroundError> {
-    if !all {
-        // ProbLog's order: the proofs that hold in every world first, then
-        // the others by the node of each, numbered as made: an atom where
-        // it was first read, a conjunction after its literals.
+    if !gather.once() {
+        // The proofs that hold in every world first, then the others by
+        // the node of each, numbered as made: an atom where it was first
+        // read, a conjunction after its literals.
         // A negation alone is its atom's node negated, which ProbLog's
         // sort puts before every other, the last made first.
         let mut made: FxHashMap<u32, i64> = FxHashMap::default();
@@ -410,7 +416,7 @@ fn lists(
     }
     Ok(states
         .into_iter()
-        .filter(|(items, _, _)| !(all && items.is_empty()))
+        .filter(|(items, _, _)| gather.empty() || !items.is_empty())
         .map(|(items, _, cond)| (src.list(&items), cond))
         .collect())
 }

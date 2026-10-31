@@ -148,6 +148,28 @@ fn an_lpad() {
     assert!((p - 0.1).abs() < 1e-12, "P(e) = {p}");
 }
 
+/// An LPAD's arguments take their places before it is read: coin.cplint.pl
+/// with the biased coin's probabilities in places is read, given them, as
+/// the LPAD with them written in (whose answers [`an_lpad`] checks), and
+/// its example queries, in a comment, are not places.
+#[test]
+fn an_lpad_with_arguments() {
+    let written = String::from_utf8(file("tests/lpad/coin.cplint.pl")).unwrap();
+    let source = written.replace(
+        "heads(Coin):0.6 ; tails(Coin):0.4",
+        "heads(Coin):$1 ; tails(Coin):$2",
+    );
+    let source = source.replace("% 0.6", "% $1");
+    assert_ne!(source, written);
+    let options = ReadOptions {
+        arguments: vec!["0.6".into(), "0.4".into()],
+        ..ReadOptions::default()
+    };
+    let bound = tddlog::read(source.as_bytes(), Format::Problog, &options).unwrap();
+    let read = tddlog::read(written.as_bytes(), Format::Problog, &ReadOptions::default()).unwrap();
+    assert_eq!(bound.program, read.program);
+}
+
 /// A ProbLog program is its own text, and its queries may be left out.
 #[test]
 fn a_problog_program_is_its_own_text() {

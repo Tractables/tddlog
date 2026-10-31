@@ -31,11 +31,20 @@
 //!   sound where an answer is proved alike whatever the call bound. An
 //!   identity or a `\=` of terms that unify and are not identical breaks
 //!   that: it compares otherwise once a call binds their variables, and
-//!   ProbLog answers by what each call proved. It is refused.
-//! - A negation is of a ground call whose table is complete. It fails
-//!   where the call's answer is true in every world (a certain fact, or an
-//!   answer proved from such atoms alone), and the branch ends there, as
-//!   in ProbLog's grounding.
+//!   ProbLog answers by what each call proved. So does a negation of a
+//!   call with variables, which reads fewer answers once they are bound,
+//!   and a type test (`var/1`, `nonvar/1`, `is_list/1`) of a variable.
+//!   Such a comparison, negation or test is made as ProbLog makes it,
+//!   and the program is refused where an atom is an answer of two calls
+//!   one of which made one on variables of its call, or called with them
+//!   a call that did, directly or not.
+//! - `=../2` builds a term from a list of fixed length that may hold
+//!   variables, or the list of a term with variables, as ProbLog's does.
+//! - A negation reads the answers of its call, whose table is complete:
+//!   it holds where none of them does, and fails where one is true in
+//!   every world (a certain fact, or an answer proved from such atoms
+//!   alone), and the branch ends there, as in ProbLog's grounding. Called
+//!   with variables, as ProbLog calls it, it reads every answer.
 //! - `is/2`, the comparisons and the list built-ins are the engine's
 //!   ([`super::solutions`]), on the values of ground terms. Prolog's
 //!   `length/2` also makes a list of fresh variables.
@@ -60,7 +69,7 @@ use super::lists::{self, Step};
 use super::{GroundError, Grounder, Prob, Val, Weights, compare, ground_normalized, solutions};
 use crate::ground::GroundProgram;
 use crate::ground::normalize::{Driver, NormProgram};
-use crate::syntax::{Args, Atom, Builtin, Clause, CmpOp, Compound, Literal, Name, Term};
+use crate::syntax::{Args, Atom, Builtin, Clause, CmpOp, Compound, Gather, Literal, Name, Term};
 
 /// The deepest nesting of calls resolved, and of a term with variables:
 /// each level takes a few frames of the stack. A ground term is bound by
@@ -113,7 +122,7 @@ struct Collect {
     aux: u32,
     shared: Box<[Tpl]>,
     result: Tpl,
-    all: bool,
+    gather: Gather,
     text: Arc<str>,
 }
 
@@ -176,6 +185,9 @@ struct Table {
     low: u32,
     /// The pass it was last resolved in.
     pass: u32,
+    /// Whether its resolution compared terms with variables that a call
+    /// that binds them compares otherwise ([`TopDown::compare`]).
+    compared: bool,
 }
 
 /// A table being resolved: the first table of a cycle it reached, and
@@ -184,6 +196,19 @@ struct Frame {
     table: u32,
     low: u32,
     looped: bool,
+    /// The call's terms as the clause being resolved for it instantiated
+    /// them ([`TopDown::of_call`]).
+    call: Vec<T>,
+}
+
+/// Pushes the variables of `t` to `out`, `t`'s bound variables replaced
+/// ([`TopDown::full`]).
+fn vars_of(t: &T, out: &mut Vec<u32>) {
+    match t {
+        T::G(_) => {}
+        T::X(x) => out.push(*x),
+        T::F(_, args) => args.iter().for_each(|a| vars_of(a, out)),
+    }
 }
 
 /// Whether the terms `a` and `b`, their bound variables replaced
@@ -215,6 +240,7 @@ pub(crate) fn ground(
     for d in &norm.drivers {
         td.driver(d, &mut queries, &mut evidence)?;
     }
+    td.shared()?;
     let out = td.program(norm, queries, evidence);
     ground_normalized(&out, bound)
 }
@@ -231,6 +257,11 @@ struct TopDown<'a> {
     trail: Vec<u32>,
     tables: Vec<Table>,
     table_ix: FxHashMap<(u32, Key), u32>,
+    /// The tables each table's resolution called, as `(caller, callee)`.
+    reads: FxHashSet<(u32, u32)>,
+    /// The first comparison of terms with variables that a call that binds
+    /// them compares otherwise, as written, where one was made.
+    compared: Option<String>,
     /// The tables that are not complete, in the order made.
     open: Vec<u32>,
     frames: Vec<Frame>,
@@ -275,6 +306,8 @@ impl<'a> TopDown<'a> {
             trail: Vec::new(),
             tables: Vec::new(),
             table_ix: FxHashMap::default(),
+            reads: FxHashSet::default(),
+            compared: None,
             open: Vec::new(),
             frames: Vec::new(),
             pass: 0,
@@ -374,7 +407,7 @@ impl<'a> TopDown<'a> {
                     aux: self.pred(&k.aux, k.arity),
                     shared: k.shared.iter().map(|t| self.tpl(t, &mut vars)).collect(),
                     result: self.tpl(&k.result, &mut vars),
-                    all: k.all,
+                    gather: k.gather,
                     text: k.text.clone(),
                 })),
                 Literal::Findall(_) => unreachable!("a findall is lowered before grounding"),
@@ -456,14 +489,22 @@ impl<'a> TopDown<'a> {
     /// Whether `t` is a variable, a list or a list whose tail is a
     /// variable: what a findall's result may be bound to.
     fn listlike(&mut self, t: &T) -> bool {
+        match self.list_end(t) {
+            T::X(_) => true,
+            T::G(v) => self.g.items(v).is_some(),
+            T::F(..) => false,
+        }
+    }
+
+    /// `t` past the list cells with variables it starts with: a variable,
+    /// a ground term, or a compound term that is no list cell.
+    fn list_end(&mut self, t: &T) -> T {
         let (_, cons) = self.g.list_syms();
         let mut t = self.deref(t);
         loop {
             match t {
-                T::X(_) => return true,
-                T::G(v) => return self.g.items(v).is_some(),
                 T::F(f, args) if f == cons && args.len() == 2 => t = self.deref(&args[1]),
-                T::F(..) => return false,
+                t => return t,
             }
         }
     }
@@ -720,7 +761,16 @@ impl<'a> TopDown<'a> {
         let Some(key) = Self::key(&args) else {
             return Err(self.too_deep(p, "call"));
         };
+        // The caller's table reads this one where a call that binds more
+        // of the caller's atom would call it otherwise.
+        let caller = match self.frames.last().map(|f| f.table) {
+            Some(c) if self.of_call(&args)? => Some(c),
+            _ => None,
+        };
         if let Some(&t) = self.table_ix.get(&(p, key.clone())) {
+            if let Some(c) = caller {
+                self.reads.insert((c, t));
+            }
             match self.tables[t as usize].state {
                 State::Complete => {}
                 State::Active => self.reads(t),
@@ -748,11 +798,84 @@ impl<'a> TopDown<'a> {
             state: State::Active,
             low: t,
             pass: self.pass,
+            compared: false,
         });
+        if let Some(c) = caller {
+            self.reads.insert((c, t));
+        }
         self.table_ix.insert((p, key), t);
         self.open.push(t);
         self.resolve_table(t)?;
         Ok(t)
+    }
+
+    /// Whether the terms `ts`, their bound variables replaced, hold a
+    /// variable of the call of the table being resolved, as the clause at
+    /// hand has bound it: one that a call that binds more of the same atom
+    /// would have bound.
+    fn of_call(&mut self, ts: &[T]) -> Result<bool, GroundError> {
+        let mut vars = Vec::new();
+        ts.iter().for_each(|t| vars_of(t, &mut vars));
+        let Some(f) = self.frames.last() else {
+            return Ok(false);
+        };
+        if vars.is_empty() {
+            return Ok(false);
+        }
+        let mut own = Vec::new();
+        for t in f.call.clone() {
+            vars_of(&self.full(&t)?, &mut own);
+        }
+        Ok(vars.iter().any(|x| own.contains(x)))
+    }
+
+    /// Refuses the program where a table that compared terms with variables
+    /// of its call ([`Self::compare`]) or negated a call with them, or that
+    /// called such a table with
+    /// variables of its own call, directly or not, answers an atom that
+    /// another table answers too. The calls of a
+    /// predicate share the atoms of their answers, each atom's rules those
+    /// of every call that proved it; ProbLog gives each call's answer a
+    /// node of its own. The two agree where every call proves an answer
+    /// alike, which such a comparison does not ensure: `fill(A) :- A ==
+    /// unknown` fails for the call `fill(A)` and holds for `fill(unknown)`.
+    fn shared(&mut self) -> Result<(), GroundError> {
+        let Some(why) = self.compared.clone() else {
+            return Ok(());
+        };
+        let mut callers: FxHashMap<u32, Vec<u32>> = FxHashMap::default();
+        for &(caller, callee) in &self.reads {
+            callers.entry(callee).or_default().push(caller);
+        }
+        let mut marked: Vec<bool> = self.tables.iter().map(|t| t.compared).collect();
+        let mut work: Vec<u32> = (0..marked.len() as u32)
+            .filter(|&t| marked[t as usize])
+            .collect();
+        while let Some(t) = work.pop() {
+            for &c in callers.get(&t).map_or(&[][..], Vec::as_slice) {
+                if !marked[c as usize] {
+                    marked[c as usize] = true;
+                    work.push(c);
+                }
+            }
+        }
+        // By atom, the first table that answers it.
+        let mut first: FxHashMap<u32, u32> = FxHashMap::default();
+        for (t, table) in self.tables.iter().enumerate() {
+            for &(_, a) in &table.answers {
+                let u = *first.entry(a).or_insert(t as u32);
+                if u != t as u32 && (marked[t] || marked[u as usize]) {
+                    let (p, vals) = self.atoms[a as usize].clone();
+                    let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
+                    let atom = Atom::new(self.preds[p as usize].name.clone(), args);
+                    return Err(GroundError::Unsupported(format!(
+                        "{why}, which a call that binds them makes otherwise: {atom} is \
+                         an answer of two calls, which ProbLog proves apart"
+                    )));
+                }
+            }
+        }
+        Ok(())
     }
 
     /// The table being resolved read the table that is not complete of a
@@ -785,6 +908,7 @@ impl<'a> TopDown<'a> {
             table: t,
             low: self.tables[t as usize].low,
             looped: false,
+            call: Vec::new(),
         });
         self.tables[t as usize].state = State::Active;
         loop {
@@ -828,6 +952,7 @@ impl<'a> TopDown<'a> {
             let mark = self.mark();
             let key = self.tables[t as usize].call.clone();
             let call = self.unkey(&key, rule.args.len());
+            self.frames.last_mut().expect("a frame").call = call.clone();
             let base = self.binds.len() as u32;
             self.binds
                 .resize(self.binds.len() + rule.vars as usize, None);
@@ -905,45 +1030,33 @@ impl<'a> TopDown<'a> {
             Lit::Call(p, args, true) => {
                 let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
                 let p = *p;
-                let vals = self.values(p, &args, rule, "a negation")?;
-                match self.preds[p as usize].kind {
-                    Kind::Rules => {
-                        let u = self.call(p, &args)?;
-                        if self.tables[u as usize].state != State::Complete {
-                            let goal = self.show(p, &args);
-                            return Err(GroundError::Unsupported(format!(
-                                "\\+{goal}: a negation in a cycle of calls, in {}",
-                                self.norm.rules[rule.at]
-                            )));
-                        }
-                        // The call is ground, and so is its one answer. A
-                        // negation of an answer true in every world fails,
-                        // as in ProbLog's grounding: `\+ member(X, Seen)`
-                        // ends a walk that would otherwise grow its list.
-                        match self.tables[u as usize].answers.first().map(|&(_, a)| a) {
-                            None => next(self, None, steps)?,
-                            Some(a) if self.always(a) => {}
-                            Some(a) => next(self, Some(Step::Neg(a)), steps)?,
-                        }
+                if self.preds[p as usize].kind == Kind::Switch {
+                    let vals = self.values(p, &args, rule, "a negation")?;
+                    let a = self.atom(p, vals)?;
+                    if !self.always(a) {
+                        next(self, Some(Step::Neg(a)), steps)?;
                     }
-                    Kind::Facts(f) => {
-                        if self.fact_matches(p, f, &args).is_empty() {
-                            next(self, None, steps)?;
-                        } else {
-                            let a = self.atom(p, vals)?;
-                            if !self.always(a) {
-                                next(self, Some(Step::Neg(a)), steps)?;
-                            }
-                        }
-                    }
-                    Kind::Switch => {
-                        let a = self.atom(p, vals)?;
-                        if !self.always(a) {
-                            next(self, Some(Step::Neg(a)), steps)?;
-                        }
-                    }
-                    Kind::Undefined => next(self, None, steps)?,
+                    return Ok(());
                 }
+                // The negation holds where none of the call's answers does,
+                // and fails where one is true in every world, as in
+                // ProbLog's grounding: `\+ member(X, Seen)` ends a walk that
+                // would otherwise grow its list. A call with variables, as
+                // ProbLog makes it, may have several answers.
+                // Where a variable of the table's call is free there, a
+                // call that binds it reads fewer answers.
+                let full = self.full_all(&args)?;
+                if full.iter().any(|a| !matches!(a, T::G(_))) && self.of_call(&full)? {
+                    self.call_dependent(rule, "a negation of a call with variables");
+                }
+                let Some(answers) = self.negated(p, &args, rule)? else {
+                    return Ok(());
+                };
+                let n = steps.len();
+                steps.extend(answers.into_iter().map(Step::Neg));
+                let r = self.body(t, rule, base, i + 1, call, steps);
+                steps.truncate(n);
+                r?;
             }
             Lit::Unify(a, b) => {
                 let (a, b) = (Self::inst(a, base), Self::inst(b, base));
@@ -1012,15 +1125,31 @@ impl<'a> TopDown<'a> {
 
     /// The lists of the findall `c` of `rule`, its variables from `base`,
     /// each with the literal of the worlds where it is the list: its goal
-    /// called with the shared variables' terms, which must be ground, and
-    /// its table complete.
+    /// called with the shared variables' terms, and its table complete. A
+    /// shared variable free at the call stays free, as ProbLog's findall
+    /// leaves it, and the lists then depend on the call where the variable
+    /// is the call's.
     fn collect(&mut self, c: &Collect, base: u32, rule: &Rule) -> Result<Lists, GroundError> {
         let shared: Vec<T> = c.shared.iter().map(|a| Self::inst(a, base)).collect();
-        let vals = self.values(c.aux, &shared, rule, "a findall")?;
-        if let Some(l) = self.collected.get(&(c.aux, vals.clone())) {
+        let shared = self.full_all(&shared)?;
+        let ground: Option<Box<[Val]>> = shared
+            .iter()
+            .map(|t| match t {
+                T::G(v) => Some(*v),
+                _ => None,
+            })
+            .collect();
+        if ground.is_none() && self.of_call(&shared)? {
+            self.call_dependent(rule, "a findall over a goal with variables");
+        }
+        let vals = ground.unwrap_or_default();
+        if let Some(l) = self.collected.get(&(c.aux, vals.clone()))
+            && vals.len() == shared.len()
+        {
             return Ok(l.clone());
         }
         let mut answers: Vec<(Val, u32)> = Vec::new();
+        let shared_len = shared.len();
         if self.preds[c.aux as usize].kind == Kind::Rules {
             let arity = self.preds[c.aux as usize].arity;
             let mut args = shared;
@@ -1035,7 +1164,7 @@ impl<'a> TopDown<'a> {
                     c.text, self.norm.rules[rule.at]
                 )));
             }
-            let k = vals.len();
+            let k = shared_len;
             for (key, a) in self.tables[u as usize].answers.clone() {
                 let mark = self.mark();
                 let answer = self.unkey(&key, arity);
@@ -1052,7 +1181,7 @@ impl<'a> TopDown<'a> {
                 answers.push((v, a));
             }
         }
-        let l: Rc<[_]> = lists::collect(self, &answers, c.all, &c.text)?.into();
+        let l: Rc<[_]> = lists::collect(self, &answers, c.gather, &c.text)?.into();
         if let Some(e) = self.g.error.take() {
             return Err(e);
         }
@@ -1060,7 +1189,9 @@ impl<'a> TopDown<'a> {
             return Err(GroundError::OutOfMemory);
         }
         self.grow(l.len())?;
-        self.collected.insert((c.aux, vals), l.clone());
+        if vals.len() == shared_len {
+            self.collected.insert((c.aux, vals), l.clone());
+        }
         Ok(l)
     }
 
@@ -1099,6 +1230,47 @@ impl<'a> TopDown<'a> {
             "{}: {what} called with variables, {goal}",
             self.norm.rules[rule.at]
         )))
+    }
+
+    /// The atoms of the answers of the call of `p`, a predicate of rules or
+    /// facts, with `args`, which a negation in `rule` reads; `None` where
+    /// one is true in every world.
+    fn negated(
+        &mut self,
+        p: u32,
+        args: &[T],
+        rule: &Rule,
+    ) -> Result<Option<Vec<u32>>, GroundError> {
+        let mut atoms = Vec::new();
+        match self.preds[p as usize].kind {
+            Kind::Rules => {
+                let u = self.call(p, args)?;
+                if self.tables[u as usize].state != State::Complete {
+                    let goal = self.show(p, args);
+                    return Err(GroundError::Unsupported(format!(
+                        "\\+{goal}: a negation in a cycle of calls, in {}",
+                        self.norm.rules[rule.at]
+                    )));
+                }
+                atoms.extend(self.tables[u as usize].answers.iter().map(|&(_, a)| a));
+            }
+            Kind::Facts(f) => {
+                for vals in self.fact_matches(p, f, args) {
+                    let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
+                    let mark = self.mark();
+                    let unifies = self.unify_all(args, &tuple);
+                    self.undo(mark);
+                    if unifies {
+                        atoms.push(self.atom(p, vals)?);
+                    }
+                }
+            }
+            Kind::Switch | Kind::Undefined => {}
+        }
+        if atoms.iter().any(|&a| self.always(a)) {
+            return Ok(None);
+        }
+        Ok(Some(atoms))
     }
 
     /// The tuples of the facts of `p`, the facts at place `f` of the
@@ -1147,17 +1319,21 @@ impl<'a> TopDown<'a> {
         let (a, b) = (self.full(a)?, self.full(b)?);
         if matches!(op, CmpOp::Ne | CmpOp::Identical | CmpOp::NotIdentical) {
             // Terms that are identical, or that do not unify, compare
-            // alike whatever a call binds; the others do not, and an answer
-            // proved by them would hold for some calls of its atom only.
+            // alike whatever a call binds. The others compare as ProbLog
+            // compares them, as they are: they unify and are not
+            // identical. Where they hold a variable of the table's call, a
+            // call that binds more of the same atom may compare them
+            // otherwise, and the table is marked: an answer it proves may
+            // be proved otherwise by another call of its atom
+            // ([`Self::shared`]).
             let same = identical(&a, &b);
-            if !same && self.unifiable(&[a], &[b]) {
-                let c = &self.norm.rules[rule.at];
-                return Err(GroundError::Unsupported(format!(
-                    "{c}: {op} of terms with variables, which a call that binds them \
-                     compares otherwise"
-                )));
+            if same || !self.unifiable(std::slice::from_ref(&a), std::slice::from_ref(&b)) {
+                return Ok(same == (op == CmpOp::Identical));
             }
-            return Ok(same == (op == CmpOp::Identical));
+            if self.of_call(&[a, b])? {
+                self.call_dependent(rule, &format!("{op} of terms with variables"));
+            }
+            return Ok(op == CmpOp::NotIdentical);
         }
         let (T::G(x), T::G(y)) = (&a, &b) else {
             let c = &self.norm.rules[rule.at];
@@ -1176,6 +1352,22 @@ impl<'a> TopDown<'a> {
             (Some(x), Some(y)) => compare(&mut self.g, op, x, y),
             _ => false,
         })
+    }
+
+    /// Marks the table being resolved, whose clause `rule` made `what` on
+    /// terms that hold a variable of its call: a call that binds more of
+    /// the same atom may make it otherwise, so that an answer the table
+    /// proves may be proved otherwise by another call of its atom
+    /// ([`Self::shared`]).
+    fn call_dependent(&mut self, rule: &Rule, what: &str) {
+        let Some(f) = self.frames.last() else {
+            unreachable!("a clause is resolved for a table")
+        };
+        self.tables[f.table as usize].compared = true;
+        if self.compared.is_none() {
+            let c = &self.norm.rules[rule.at];
+            self.compared = Some(format!("{c}: {what}"));
+        }
     }
 
     /// The solutions of the built-in `b` over `args`, each its arguments'
@@ -1217,6 +1409,9 @@ impl<'a> TopDown<'a> {
                 .into_iter()
                 .map(|s| s.into_iter().map(T::G).collect())
                 .collect();
+            if let Some(e) = self.g.error.take() {
+                return Err(e);
+            }
             if probe != b {
                 let first = sols.iter().position(|s| self.unifiable(args, s));
                 sols = first.map(|k| vec![sols.swap_remove(k)]).unwrap_or_default();
@@ -1224,6 +1419,31 @@ impl<'a> TopDown<'a> {
             sols
         } else if b == Builtin::Length {
             self.length(args, rule, i)?
+        } else if b == Builtin::Univ {
+            self.univ(args)?
+        } else if matches!(b, Builtin::Var | Builtin::Nonvar | Builtin::IsList) {
+            self.type_test(b, &args[0], rule)?
+        } else if b == Builtin::AppendLists {
+            self.cuts(args, rule, i)?
+        } else if b == Builtin::Callable {
+            // A goal with variables in it: its name and arity are bound.
+            let (name, k) = match self.deref(&args[0]) {
+                T::F(name, xs) => (name, xs.len()),
+                T::X(_) => return Err(self.unbound(rule, i)),
+                T::G(_) => unreachable!("a ground goal is the engine's"),
+            };
+            let test: Vec<Val> = args[1..]
+                .iter()
+                .map(|a| match self.deref(a) {
+                    T::G(v) => v,
+                    _ => unreachable!("the library writes constants"),
+                })
+                .collect();
+            if super::callable(&mut self.g, name, k, &test)? {
+                vec![args.to_vec()]
+            } else {
+                Vec::new()
+            }
         } else {
             return Err(self.unbound(rule, i));
         };
@@ -1235,6 +1455,97 @@ impl<'a> TopDown<'a> {
         } else {
             vec![args.to_vec()]
         })
+    }
+
+    /// `var/1`, `nonvar/1` or `is_list/1` of a term with variables, as
+    /// ProbLog tests it, on the term as it stands: `is_list/1` holds for a
+    /// list whose tail is a variable, but not for a variable. Where the
+    /// variable the test reads is one of the table's call, a call that
+    /// binds more of the same atom may test it otherwise
+    /// ([`Self::call_dependent`]).
+    fn type_test(&mut self, b: Builtin, t: &T, rule: &Rule) -> Result<Vec<Vec<T>>, GroundError> {
+        let t = self.deref(t);
+        let read = match b {
+            Builtin::IsList => self.list_end(&t),
+            _ => t.clone(),
+        };
+        let free = matches!(t, T::X(_));
+        let holds = match b {
+            Builtin::Var => free,
+            Builtin::Nonvar => !free,
+            _ => !free && self.listlike(&t),
+        };
+        if matches!(read, T::X(_)) && self.of_call(std::slice::from_ref(&read))? {
+            self.call_dependent(rule, &format!("{b} of a term with variables"));
+        }
+        Ok(if holds { vec![vec![t]] } else { Vec::new() })
+    }
+
+    /// append/2 of a list of a fixed number of terms with variables in
+    /// them, joined into a ground list: each way to cut that list into as
+    /// many pieces, the last one its tail, in the order ProbLog's library
+    /// finds them, which cuts the last piece off first, from the shortest
+    /// list before it. The caller unifies the pieces with the terms.
+    fn cuts(&mut self, args: &[T], rule: &Rule, i: usize) -> Result<Vec<Vec<T>>, GroundError> {
+        let (nil, cons) = self.g.list_syms();
+        let T::G(joined) = self.deref(&args[1]) else {
+            return Err(self.unbound(rule, i));
+        };
+        let mut k = 0;
+        let mut t = self.deref(&args[0]);
+        loop {
+            match t {
+                T::F(c, ht) if c == cons && ht.len() == 2 => {
+                    k += 1;
+                    t = self.deref(&ht[1]);
+                }
+                T::G(v) => match self.g.items(v) {
+                    Some(xs) => {
+                        k += xs.len();
+                        break;
+                    }
+                    None => return Ok(Vec::new()),
+                },
+                T::X(_) => return Err(self.unbound(rule, i)),
+                T::F(..) => return Ok(Vec::new()),
+            }
+        }
+        let (items, tails) = self.g.spine(joined, cons);
+        if k == 0 {
+            let none = T::G(Val::Sym(nil));
+            return Ok(if joined == Val::Sym(nil) {
+                vec![vec![none, T::G(joined)]]
+            } else {
+                Vec::new()
+            });
+        }
+        // The places of the cuts, the last one outermost.
+        fn places(pieces: usize, end: usize) -> Vec<Vec<usize>> {
+            if pieces == 1 {
+                return vec![Vec::new()];
+            }
+            (0..=end)
+                .flat_map(|last| {
+                    places(pieces - 1, last).into_iter().map(move |mut c| {
+                        c.push(last);
+                        c
+                    })
+                })
+                .collect()
+        }
+        let mut sols = Vec::new();
+        for cut in places(k, items.len()) {
+            let mut pieces = Vec::with_capacity(k);
+            let mut from = 0;
+            for &to in &cut {
+                pieces.push(self.g.make_list(&items[from..to], Val::Sym(nil)));
+                from = to;
+            }
+            pieces.push(tails[from]);
+            let lists = self.g.make_list(&pieces, Val::Sym(nil));
+            sols.push(vec![T::G(lists), T::G(joined)]);
+        }
+        Ok(sols)
     }
 
     /// length/2 of a list whose items or tail are variables: its length,
@@ -1282,6 +1593,65 @@ impl<'a> TopDown<'a> {
                 T::F(cons, Rc::new([x, rest]))
             });
         Ok(vec![vec![list, T::G(Val::Int(n as i64))]])
+    }
+
+    /// `T =.. L` where a side holds variables, as ProbLog's `=..` reads it:
+    /// a compound `T` gives the list of its name and arguments, and a free
+    /// `T` is the term of `L`, a list of fixed length whose first item is
+    /// an atom where it has more than one; that list may hold variables.
+    fn univ(&mut self, args: &[T]) -> Result<Vec<Vec<T>>, GroundError> {
+        let (nil, cons) = self.g.list_syms();
+        let list = |items: Vec<T>| {
+            items
+                .into_iter()
+                .rev()
+                .fold(T::G(Val::Sym(nil)), |rest, x| {
+                    T::F(cons, Rc::new([x, rest]))
+                })
+        };
+        match self.deref(&args[0]) {
+            T::F(name, xs) => {
+                let items = std::iter::once(T::G(Val::Sym(name)))
+                    .chain(xs.iter().cloned())
+                    .collect();
+                return Ok(vec![vec![args[0].clone(), list(items)]]);
+            }
+            T::G(_) => unreachable!("a ground term is the engine's"),
+            T::X(_) => {}
+        }
+        let error = |me: &mut Self, why: &str| {
+            let l = me.show_term(&args[1]);
+            GroundError::Unsupported(format!("_ =.. {l}: {why} (ProbLog's call mode error)"))
+        };
+        let mut items: Vec<T> = Vec::new();
+        let mut tail = args[1].clone();
+        loop {
+            match self.deref(&tail) {
+                T::F(c, ht) if c == cons && ht.len() == 2 => {
+                    items.push(ht[0].clone());
+                    tail = ht[1].clone();
+                }
+                T::G(v) => {
+                    let (spine, tails) = self.g.spine(v, cons);
+                    if tails.last() != Some(&Val::Sym(nil)) {
+                        return Err(error(self, "no list"));
+                    }
+                    items.extend(spine.into_iter().map(T::G));
+                    break;
+                }
+                T::X(_) => return Err(error(self, "a list of no fixed length")),
+                T::F(..) => return Err(error(self, "no list")),
+            }
+        }
+        let term = match items.as_slice() {
+            [] => return Err(error(self, "an empty list")),
+            [t] => t.clone(),
+            [first, rest @ ..] => match self.deref(first) {
+                T::G(Val::Sym(name)) => T::F(name, rest.into()),
+                _ => return Err(error(self, "its first item is no atom")),
+            },
+        };
+        Ok(vec![vec![term, args[1].clone()]])
     }
 
     /// An answer of table `t` from the instance of a clause of `group`

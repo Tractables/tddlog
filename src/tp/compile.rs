@@ -647,12 +647,13 @@ pub(crate) struct Horizon {
     pub(crate) mark: u64,
 }
 
-/// A compilation that can stop at an oversize formula and go on later under
-/// a larger watch, keeping every component finished so far: `auto`
+/// A compilation that can stop at an oversize formula or at the end of a
+/// turn and go on later, keeping every component finished so far: `auto`
 /// raises a trial's watch turn by turn, and a turn need not compile the
-/// trial from the start again. The component
-/// where a run stops is reset and starts over in the next run: its
-/// intermediate results are lost, the other components' formulas are not.
+/// trial from the start again. An acyclic component where a run stops is
+/// reset and starts over in the next run, but for the loop of clauses it
+/// stopped in, which the next run goes on with (`clauses::Held`); the
+/// other components' formulas are kept.
 pub(crate) struct Compilation {
     /// Where a run stops between components on its projected finish
     /// ([`Horizon`]), set by its caller before each run.
@@ -989,17 +990,25 @@ impl Compilation {
     /// size in pairs: an atom formula that ends up larger, or an
     /// intermediate result of an atom update that is larger, stops the
     /// compilation with [`CompileError::Oversize`]. Pairs produced inside a
-    /// single engine operation are the engine's limits' business. After an
-    /// error the compilation stands at the component that failed, ready
-    /// for another run: a cyclic component at the atom update that failed,
-    /// with its rounds so far, the others from their start. A run without a watch is the last: the last read of a
-    /// formula takes it rather than copying it ([`last_reads`]), so after
-    /// an error there is no other run. A dynamic compile's rounds run under
-    /// [`GUARD`]'s watch instead, until they take a formula.
+    /// single engine operation are the engine's limits' business. A run
+    /// under a watch also ends where its turn does, at the next component,
+    /// atom update or body of a loop of clauses ([`TddBackend::pause`]).
+    /// After an error the compilation stands at the component that failed,
+    /// ready for another run: a cyclic component at the atom update that
+    /// failed, with its rounds so far, the others from their start, which
+    /// the next run builds again up to a loop held where the turn ended or
+    /// the watch refused it (`clauses::Held`), and goes on with that loop.
+    /// Either way the next run reads the component's atoms again. A run
+    /// without a watch is the last: the last read of a formula takes it
+    /// rather than copying it ([`last_reads`]), so after an error there is
+    /// no other run. A dynamic compile's rounds run under [`GUARD`]'s watch
+    /// instead, until they take a formula.
     ///
     /// # Panics
     ///
-    /// When a run without a watch failed before.
+    /// When a run without a watch failed before, or a run without a watch
+    /// has a turn to end: it takes formulas, which a run that goes on after
+    /// it would read again.
     pub(crate) fn run(
         &mut self,
         gp: &GroundProgram,
@@ -1010,9 +1019,13 @@ impl Compilation {
             !self.spent,
             "a compile whose run without a watch failed cannot go on"
         );
+        assert!(
+            watch.is_some() || !backend.in_turn(),
+            "a run without a watch takes formulas and has no turn to end"
+        );
         let start = Instant::now();
         let work = backend.work_units();
-        let refused = self.memo.get_mut().stats.refused;
+        let holds = self.memo.get_mut().holds();
         if let Some(dynamic) = self.dynamic.as_mut() {
             dynamic.resumed = dynamic.since.is_some();
         }
@@ -1030,6 +1043,7 @@ impl Compilation {
             let mut factor = GUARD;
             while self.next < self.sccs.len() {
                 backend.kept();
+                backend.pause()?;
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next
                     && let Some(scope) = p.start(
@@ -1097,11 +1111,11 @@ impl Compilation {
             self.reset(self.next);
         }
         self.spent = result.is_err() && watch.is_none();
-        // A run keeps only the loop the watch refused it: one kept by an
-        // earlier run and not taken by this one is not where it stopped
-        // (`clauses::Refused`).
-        if self.memo.get_mut().stats.refused == refused {
-            self.memo.get_mut().forget_refused();
+        // A run keeps only the loop it stopped in: one held by an earlier
+        // run and not taken by this one is not where it stopped
+        // (`clauses::Held`).
+        if self.memo.get_mut().holds() == holds {
+            self.memo.get_mut().forget_held();
         }
         self.stats.seconds += start.elapsed().as_secs_f64();
         self.stats.work_units += backend.work_units() - work;
@@ -1847,6 +1861,7 @@ impl Compilation {
             *midway = true;
         }
         while let Some(&(r, a)) = dirty.first() {
+            backend.pause()?;
             let folded: Vec<u64> = by_head[a as usize]
                 .iter()
                 .map(|&ri| seen.borrow()[ri])
@@ -1936,8 +1951,8 @@ impl Compilation {
         // double what the search sizes and rotates, and change the vtree
         // it finds for the formulas themselves.
         self.fixpoint.lambda_cache.borrow_mut().clear();
-        // A loop the watch refused is not among the formulas it moves.
-        self.memo.get_mut().forget_refused();
+        // A loop held for the next run is not among the formulas it moves.
+        self.memo.get_mut().forget_held();
         let mut members = self.fixpoint.formulas.formulas_mut();
         members.extend(refused.as_mut());
         let budget = dynamic.budget(now, self.next, self.sccs.len() - self.next);

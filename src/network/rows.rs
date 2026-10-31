@@ -39,28 +39,53 @@ const SINGLE: f64 = 1.0 / 16_777_216.0;
 /// decides whether a row of sum one up to its last bits is divided
 /// ([`fsum`]).
 pub(super) fn normalized(row: &mut [f64]) -> Result<(), String> {
-    if let Some(&p) = row.iter().find(|p| !p.is_finite() || **p < 0.0) {
-        return Err(format!("{p} is not a probability"));
-    }
-    let total = fsum(row);
-    let divide = if (row.len() == 1 && total <= 1.0) || (1.0 - ROUNDING..=1.0).contains(&total) {
-        // A row of one entry in [0, 1], whose gap from one is at least a unit
-        // in its last place, more than its slack; or binary rounding under
-        // one.
-        false
-    } else if total < 1.0 {
-        explained(row, false)
-    } else if total - 1.0 <= (row.len() + 1) as f64 * SINGLE || explained(row, true) {
-        true
-    } else {
-        return Err(format!("probabilities sum to {total}"));
-    };
-    if divide {
+    if let Sum::Rounded(total) = sum(row)? {
         for p in row {
             *p /= total;
         }
     }
     Ok(())
+}
+
+/// Whether `row` sums to one up to the rounding [`normalized`] divides
+/// out: a `MARKOV` file's function is a conditional table where every
+/// row of the child's values does (`uai.rs`), so that a file whose
+/// tables are rounded to their decimals is read as the Bayesian network
+/// it is, as its `BAYES` writing would be.
+pub(super) fn sums_to_one(row: &[f64]) -> bool {
+    matches!(sum(row), Ok(Sum::One | Sum::Rounded(_)))
+}
+
+/// How a row's sum stands to one ([`normalized`]).
+enum Sum {
+    /// One, or within [`ROUNDING`] under it.
+    One,
+    /// The sum, off one by the rounding of the entries.
+    Rounded(f64),
+    /// Short of one by more than rounding: the rest is left to no value.
+    Short,
+}
+
+fn sum(row: &[f64]) -> Result<Sum, String> {
+    if let Some(&p) = row.iter().find(|p| !p.is_finite() || **p < 0.0) {
+        return Err(format!("{p} is not a probability"));
+    }
+    let total = fsum(row);
+    if (1.0 - ROUNDING..=1.0).contains(&total) {
+        Ok(Sum::One)
+    } else if total < 1.0 {
+        // A row of one entry in [0, 1] has a gap from one of at least a
+        // unit in its last place, more than its slack.
+        Ok(if row.len() > 1 && explained(row, false) {
+            Sum::Rounded(total)
+        } else {
+            Sum::Short
+        })
+    } else if total - 1.0 <= (row.len() + 1) as f64 * SINGLE || explained(row, true) {
+        Ok(Sum::Rounded(total))
+    } else {
+        Err(format!("probabilities sum to {total}"))
+    }
 }
 
 /// Whether the decimals the entries of `row` mean ([`Decimal::meant`]) sum
@@ -144,14 +169,28 @@ impl Decimal {
                 exp: 0,
             };
         }
+        // The shortest text that reads back as `x` is the search's answer
+        // where it has 12 significant digits or fewer: a shorter decimal
+        // within two units in the last place would be within 2.5 units of
+        // it, and two decimals of at most 12 digits differ by at least
+        // 10^-12 of their size, far more. The search formats and parses
+        // `x` once for each number of digits up to the answer's.
+        let shortest = format!("{x:e}");
+        if Decimal::significant(&shortest) <= 12 {
+            return Decimal::parse(&shortest);
+        }
         let ulp = f64::from_bits(x.to_bits() + 1) - x;
         (1..=12)
             .map(|digits| format!("{x:.*e}", digits - 1))
             .find(|text| (text.parse::<f64>().expect("a decimal") - x).abs() <= 2.0 * ulp)
-            .map_or_else(
-                || Decimal::parse(&format!("{x:e}")),
-                |text| Decimal::parse(&text),
-            )
+            .map_or_else(|| Decimal::parse(&shortest), |text| Decimal::parse(&text))
+    }
+
+    /// The significant digits of `d.ddde±x`, as Rust writes a double's
+    /// shortest text.
+    fn significant(text: &str) -> usize {
+        let mantissa = text.split_once('e').map_or(text, |(m, _)| m);
+        mantissa.bytes().filter(u8::is_ascii_digit).count()
     }
 
     /// The decimal `d.ddde±x` that Rust writes, without trailing zeros.
@@ -453,6 +492,45 @@ mod tests {
         assert_eq!(row(&[1.0, 0.0]).unwrap(), [1.0, 0.0]);
         assert_eq!(row(&[0.1, 0.2, 0.7]).unwrap(), [0.1, 0.2, 0.7]);
         assert_eq!(row(&[1.0 - 1e-10]).unwrap(), [1.0 - 1e-10]);
+    }
+
+    #[test]
+    fn the_shortest_text_of_twelve_digits_is_the_searched_decimal() {
+        // The search alone, which `Decimal::meant` skips where the shortest
+        // text has 12 significant digits or fewer.
+        let searched = |x: f64| {
+            let ulp = f64::from_bits(x.to_bits() + 1) - x;
+            let d = (1..=12)
+                .map(|digits| format!("{x:.*e}", digits - 1))
+                .find(|t| (t.parse::<f64>().unwrap() - x).abs() <= 2.0 * ulp)
+                .map_or_else(|| Decimal::parse(&format!("{x:e}")), |t| Decimal::parse(&t));
+            (d.mantissa, d.digits, d.exp)
+        };
+        // Decimals of 1 to 12 digits at many scales, and their neighbours a
+        // unit or two in the last place away, from a fixed sequence.
+        let mut state = 0x2545_f491_4f6c_dd1du64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for _ in 0..20_000 {
+            let digits = 1 + next() % 12;
+            let mantissa = next() % 10u64.pow(digits as u32);
+            let exp = -((next() % 30) as i32);
+            let x: f64 = format!("{mantissa}e{exp}").parse().unwrap();
+            for y in [
+                x,
+                f64::from_bits(x.to_bits() + 1),
+                f64::from_bits(x.to_bits() + 2),
+            ] {
+                if y > 0.0 {
+                    let d = Decimal::meant(y);
+                    assert_eq!((d.mantissa, d.digits, d.exp), searched(y), "{y:e}");
+                }
+            }
+        }
     }
 
     #[test]

@@ -3,7 +3,7 @@
 
 use super::lexer::{LexError, Lexer, Op, Spanned, Tok, kw};
 use super::{
-    Annotation, Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice,
+    Annotation, Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, Gather, HeadChoice,
     Literal, NIL, Name, Program, QueryRule, Term, infix_op, prefix_op,
 };
 use std::fmt;
@@ -99,30 +99,36 @@ pub fn consults(src: &str) -> Result<Vec<Consult>, ParseError> {
     parse(src, Some(Vec::new())).map(|(_, consults)| consults.expect("read"))
 }
 
+/// How `text`, a program's argument ([`super::arguments`]), reads as a
+/// term: `Ok(true)` where it is one with no operator at its top, which
+/// takes a place `$N` as it is written, and `Ok(false)` where it is one
+/// with an operator at its top, which takes it in parentheses.
+pub(crate) fn argument(text: &str) -> Result<bool, ParseError> {
+    let mut p = Parser::new(text, None);
+    let start = p.mark();
+    let primary = matches!(p.primary(), Ok((_, 0))) && p.at(Tok::Eof);
+    let read = match primary {
+        true => Ok(()),
+        false => {
+            p.rewind(start);
+            p.term(1200).and_then(|_| match p.peek() {
+                Tok::Eof => Ok(()),
+                other => p.err(format!("unexpected {}", p.lexer.show(other))),
+            })
+        }
+    };
+    // The lexer's error, where it stopped, comes first, as in a parse.
+    match p.lexer.error() {
+        Some(e) => Err(e.into()),
+        None => read.map(|()| primary),
+    }
+}
+
 fn parse(
     src: &str,
     consults: Option<Vec<Consult>>,
 ) -> Result<(Program, Option<Vec<Consult>>), ParseError> {
-    let eof = || Spanned {
-        tok: Tok::Eof,
-        line: 1,
-    };
-    let mut p = Parser {
-        lexer: Lexer::new(src),
-        ahead: [eof(), eof()],
-        cur: false,
-        anon: 0,
-        aggregates: 0,
-        group: 0,
-        lits: Vec::new(),
-        terms: Vec::new(),
-        args: Vec::new(),
-        heads: Vec::new(),
-        expected: 0,
-        consults,
-    };
-    p.bump();
-    p.bump();
+    let mut p = Parser::new(src, consults);
     let mut prog = Program::default();
     let mut parsed = Ok(());
     while !p.at(Tok::Eof) {
@@ -141,10 +147,124 @@ fn parse(
         }
         p.group += 1;
     }
-    match p.lexer.error() {
-        Some(e) => Err(e.into()),
-        None => parsed.map(|()| (prog, p.consults)),
+    if let Some(e) = p.lexer.error() {
+        return Err(e.into());
     }
+    parsed?;
+    if p.consults.is_none() && p.lexer.spells("clause") {
+        clause_facts(src, p.group, &mut prog)?;
+    }
+    Ok((prog, p.consults))
+}
+
+/// ProbLog's clause/2 and clause/3, where the program names either and
+/// defines neither. They read the program's clauses as terms, which the
+/// program read from `src` does not keep, so `src` is read again, each
+/// clause as a term ([`Parser::clause_term`]), into a fact
+/// `clause(Head, Body, P)` per clause, in the program's order and of
+/// groups from `group` on; and `clause(H, B) :- clause(H, B, _)`.
+///
+/// ProbLog unifies a call with each of a clause's head, body and
+/// probability apart: a variable the head binds stays free in the body
+/// (`clause(c(1), B)` of `c(X) :- a(X), b(X)` gives `B = (a(X), b(X))`).
+/// The fact's three terms have their variables named apart likewise, so
+/// that such an answer holds a variable and is refused, as answers with
+/// variables are. ProbLog lists an annotated disjunction or a
+/// probabilistic rule as clauses of its own making, and the clauses of a
+/// library the program loads: a program with either is refused.
+fn clause_facts(src: &str, mut group: u32, prog: &mut Program) -> Result<(), ParseError> {
+    let defines = |arity: usize| {
+        prog.clauses.iter().any(|c| {
+            c.heads
+                .iter()
+                .any(|h| &*h.atom.name == "clause" && h.atom.args.len() == arity)
+        })
+    };
+    if defines(2) || defines(3) {
+        return Ok(());
+    }
+    let mut p = Parser::new(src, None);
+    let (mut facts, mut named, mut refused) = (Vec::new(), false, None);
+    while !p.at(Tok::Eof) {
+        p.anon = 0;
+        let line = p.line();
+        match p.clause_term()? {
+            ClauseTerm::Listed(fact) => {
+                named |= fact.iter().any(names_clause);
+                facts.push(fact);
+            }
+            ClauseTerm::Rewritten => {
+                refused.get_or_insert((
+                    line,
+                    "an annotated disjunction, a probabilistic rule or a probability that is \
+                     not a number, which ProbLog lists as clauses of its own making",
+                ));
+            }
+            ClauseTerm::Directive(t) => {
+                if matches!(t.as_compound(), Some((name, _)) if &**name == "use_module") {
+                    refused.get_or_insert((
+                        line,
+                        "a library, whose clauses ProbLog lists too and tddlog does not hold",
+                    ));
+                }
+            }
+        }
+    }
+    if !named {
+        return Ok(());
+    }
+    if let Some((line, what)) = refused {
+        return Err(ParseError {
+            line,
+            msg: format!("clause/2,3 in a program with {what}"),
+        });
+    }
+    let name = p.lexer.intern("clause");
+    for [head, body, prob] in facts {
+        let (body, prob) = (renamed(&body), renamed(&renamed(&prob)));
+        let fact = Atom::new(name.clone(), vec![head, body, prob]);
+        prog.clauses.push(Clause::rule(fact, Vec::new(), group));
+        group += 1;
+    }
+    let (h, b) = (Term::Var("H".into()), Term::Var("B".into()));
+    let all = Atom::new(
+        name.clone(),
+        vec![h.clone(), b.clone(), Term::Var("_P".into())],
+    );
+    prog.clauses.push(Clause::rule(
+        Atom::new(name, vec![h, b]),
+        vec![Literal::Pos(all)],
+        group,
+    ));
+    Ok(())
+}
+
+/// Whether `t` holds a compound `clause/2` or `clause/3`.
+fn names_clause(t: &Term) -> bool {
+    let mut stack = vec![t];
+    while let Some(t) = stack.pop() {
+        if let Term::Compound(c) = t {
+            if &*c.name == "clause" && matches!(c.args.len(), 2 | 3) {
+                return true;
+            }
+            stack.extend(c.args.iter());
+        }
+    }
+    false
+}
+
+/// A clause read as a term, for ProbLog's clause/2,3 ([`clause_facts`]).
+enum ClauseTerm {
+    /// A directive, `:- T.`, as `T`.
+    Directive(Term),
+    /// A clause that clause/3 lists as written, a rule without a
+    /// probability or a fact: its head, its body (`true` for a fact) and
+    /// its probability (1.0 where none is written).
+    Listed([Term; 3]),
+    /// An annotated disjunction or a probabilistic rule, which ProbLog
+    /// lists as clauses of its own making, or a fact whose probability is
+    /// not a number.
+    Rewritten,
 }
 
 /// Body syntax tree before flattening to disjunctive normal form.
@@ -217,6 +337,154 @@ impl Body {
     }
 }
 
+/// The literal that holds where `goal` has no solution, `\+ goal`:
+/// `findall(true, goal, [])`, which the grounder lowers to the negation of
+/// an auxiliary predicate.
+fn none_of(goal: Body) -> Literal {
+    Literal::Findall(Box::new(Findall {
+        template: Term::Const("true".into()),
+        interleaved: goal.interleaved(),
+        goal: goal.dnf(),
+        result: Term::Const(super::NIL.into()),
+        gather: Gather::Findall,
+    }))
+}
+
+/// The literal a term written as a goal is, or why it is none. A variable
+/// is the goal `call(G)`.
+fn literal_of(t: PTerm) -> Result<Literal, String> {
+    let (name, mut args) = match t {
+        PTerm::Atom(name, args) if !special(&name, args.len()) => {
+            return Ok(Literal::Pos(Atom { name, args }));
+        }
+        PTerm::Atom(name, args) => (name, Vec::from(args)),
+        PTerm::Term(Term::Compound(c)) => (c.name.clone(), c.args.to_vec()),
+        PTerm::Term(Term::Const(c)) => {
+            return Ok(match &*c {
+                "true" => Literal::Cmp(CmpOp::Eq, Term::Int(0), Term::Int(0)),
+                "fail" | "false" => Literal::Cmp(CmpOp::Ne, Term::Int(0), Term::Int(0)),
+                _ => Literal::Pos(Atom::new(c, Args::default())),
+            });
+        }
+        PTerm::Term(v @ Term::Var(_)) => return Ok(Literal::Pos(Atom::new("call", vec![v]))),
+        PTerm::Term(other) => return Err(format!("expected a literal, found {other}")),
+    };
+    match (&*name, args.len()) {
+        ("is", 2) => {
+            let e = args.pop().expect("two arguments");
+            let v = args.pop().expect("two arguments");
+            Ok(Literal::Is(v, e))
+        }
+        (op, 2) if CmpOp::of(op).is_some() => {
+            let b = args.pop().expect("two arguments");
+            let a = args.pop().expect("two arguments");
+            Ok(Literal::Cmp(CmpOp::of(op).expect("a comparison"), a, b))
+        }
+        ("\\+" | "not", 1) => negation(args.pop().expect("an argument")),
+        (name, 3) if Gather::of(name).is_some() => {
+            let result = args.pop().expect("three arguments");
+            // A goal that is a variable is the body its term is where the
+            // findall is called, as ProbLog makes it a clause's body.
+            let goal = match args.pop().expect("three arguments") {
+                v @ Term::Var(_) => {
+                    Body::Lits(vec![Literal::Pos(Atom::new(FINDALL_GOAL, vec![v]))])
+                }
+                t => goal(t)?,
+            };
+            let template = args.pop().expect("three arguments");
+            let interleaved = goal.interleaved();
+            Ok(Literal::Findall(Box::new(Findall {
+                template,
+                goal: goal.dnf(),
+                result,
+                interleaved,
+                gather: Gather::of(name).expect("a findall"),
+            })))
+        }
+        // forall(C, A) holds where (C, \+ A) has no solution.
+        ("forall", 2) => {
+            let unless = negation(args.pop().expect("two arguments"))?;
+            let goal = goal(args.pop().expect("two arguments"))?;
+            Ok(none_of(Body::And(vec![goal, Body::Lits(vec![unless])])))
+        }
+        // `T =.. L`, a built-in the grounder evaluates.
+        ("=..", 2) => Ok(Literal::Pos(Atom::new(name, args))),
+        ("->", 2) => Err("if-then-else is not supported".into()),
+        (",", 2) | (";", 2) => {
+            // A parenthesised body the body reading gave up on: its first
+            // part that is not a literal says why.
+            goal(Compound::term(name.clone(), args))?;
+            Err("expected a literal, found a conjunction".into())
+        }
+        (op, n) if special(op, n) => {
+            let t = Compound::term(name.clone(), args);
+            Err(format!("expected a literal, found {t}"))
+        }
+        _ => Ok(Literal::Pos(Atom::new(name, args))),
+    }
+}
+
+/// The literal `\+ t`: a negated atom, the opposite comparison, or
+/// otherwise (a conjunction, a disjunction, a negation, `is`, a findall)
+/// [`none_of`] the goal.
+fn negation(t: Term) -> Result<Literal, String> {
+    if !matches!(t.as_compound(), Some((n, [_, _])) if matches!(&**n, "," | ";")) {
+        match literal_of(PTerm::Term(t.clone()))? {
+            Literal::Pos(a) => return Ok(Literal::Neg(a)),
+            Literal::Cmp(op, a, b) => return Ok(Literal::Cmp(op.negated(), a, b)),
+            _ => {}
+        }
+    }
+    Ok(none_of(goal(t)?))
+}
+
+/// The body a goal term is: conjunctions and disjunctions of literals.
+fn goal(t: Term) -> Result<Body, String> {
+    match t.as_compound() {
+        Some((name, [a, b])) if &**name == "," => {
+            let mut conjuncts = Vec::new();
+            for part in [a, b] {
+                match goal(part.clone())? {
+                    Body::And(cs) => conjuncts.extend(cs),
+                    other => conjuncts.push(other),
+                }
+            }
+            Ok(Body::And(conjuncts))
+        }
+        Some((name, [a, b])) if &**name == ";" => Ok(Body::Or(
+            Box::new(goal(a.clone())?),
+            Box::new(goal(b.clone())?),
+        )),
+        _ if matches!(t, Term::Int(_) | Term::Float(_)) => {
+            Err(format!("a goal must be an atom, found {t}"))
+        }
+        _ => Ok(Body::Lits(vec![literal_of(PTerm::Term(t))?])),
+    }
+}
+
+/// The literal a term called as a goal is (`call/N`'s goal with its
+/// arguments added): a comparison, `is`, a negation, a findall or an atom,
+/// as where it is written in a body; `None` for a conjunction, a
+/// disjunction or anything else that is not one literal.
+pub(crate) fn goal_literal(t: Term) -> Option<Literal> {
+    match t.as_compound() {
+        Some((name, [_, _])) if matches!(&**name, "," | ";") => None,
+        _ => literal_of(PTerm::Term(t)).ok(),
+    }
+}
+
+/// Whether a goal named `name` of `arity` arguments is a control
+/// construct or a literal other than an atom ([`special`]), not a
+/// predicate's call: `true`, `fail`, `false` too.
+pub(crate) fn construct(name: &str, arity: usize) -> bool {
+    special(name, arity) || (arity == 0 && matches!(name, "true" | "fail" | "false"))
+}
+
+/// The predicate of the grounder's library clauses (`ground/library.rs`)
+/// that calls the goal a findall's goal that is a variable holds: a
+/// conjunction or a disjunction of goals, or a goal `call/1` calls.
+const FINDALL_GOAL: &str = "$findall_goal";
+
 /// The name of the term `'$aggregate'(f, V)` the parser reads `f<V>` as,
 /// until the clause whose head it ends is rewritten ([`Parser::aggregate`]).
 const AGGREGATE: &str = "$aggregate";
@@ -259,7 +527,7 @@ fn renamed_literal(l: &Literal) -> Literal {
                 .collect(),
             result: renamed(&fa.result),
             interleaved: fa.interleaved,
-            all: fa.all,
+            gather: fa.gather,
         })),
         Literal::Builtin(..) | Literal::Collect(_) => unreachable!("made by the grounder"),
     }
@@ -267,18 +535,99 @@ fn renamed_literal(l: &Literal) -> Literal {
 
 /// Whether a literal named `name` of `arity` arguments is read other than
 /// as an atom: a comparison, `is`, a negation, an operator, `findall/3`,
-/// `all/3`, `forall/2`. A scope `S:A` is an atom of the predicate `:/2`,
-/// as ProbLog reads it without its library(scope).
+/// `all/3`, `all_or_none/3`, `forall/2`. A scope `S:A` is an atom of the predicate `:/2`,
+/// as ProbLog reads it without its library(scope), and `B => C` one of
+/// `=>/2`, which library(collect) defines.
 fn special(name: &str, arity: usize) -> bool {
     match arity {
         1 => name == "not" || prefix_op(name).is_some(),
-        2 => (name != ":" && infix_op(name).is_some()) || name == "forall",
-        3 => name == "findall" || name == "all",
+        2 => (!matches!(name, ":" | "=>") && infix_op(name).is_some()) || name == "forall",
+        3 => Gather::of(name).is_some(),
         _ => false,
     }
 }
 
 impl<'a> Parser<'a> {
+    /// A parser at the start of `src`, its first two tokens read, which
+    /// reads the program, or its `consult/1` directives where `consults`
+    /// is given.
+    fn new(src: &'a str, consults: Option<Vec<Consult>>) -> Self {
+        let eof = || Spanned {
+            tok: Tok::Eof,
+            line: 1,
+        };
+        let mut p = Parser {
+            lexer: Lexer::new(src),
+            ahead: [eof(), eof()],
+            cur: false,
+            anon: 0,
+            aggregates: 0,
+            group: 0,
+            lits: Vec::new(),
+            terms: Vec::new(),
+            args: Vec::new(),
+            heads: Vec::new(),
+            expected: 0,
+            consults,
+        };
+        p.bump();
+        p.bump();
+        p
+    }
+
+    /// The clause at hand as a term, for ProbLog's clause/2,3
+    /// ([`clause_facts`]).
+    fn clause_term(&mut self) -> Result<ClauseTerm, ParseError> {
+        if self.at(Tok::Neck) {
+            self.bump();
+            let t = self.term(1200)?.into_term();
+            self.expect(Tok::Dot)?;
+            return Ok(ClauseTerm::Directive(t));
+        }
+        let mut heads = 0;
+        let (mut head, mut prob);
+        loop {
+            heads += 1;
+            prob = match (self.peek(), self.peek2()) {
+                (Tok::Float(x), Tok::DoubleColon) => Some(Some(Term::Float(F64::rounded(x)))),
+                (Tok::Int(i), Tok::DoubleColon) => Some(Some(Term::Int(i))),
+                _ => None,
+            };
+            if prob.is_some() {
+                self.bump();
+                self.bump();
+            }
+            head = self.term(999)?.into_term();
+            if prob.is_none() && self.at(Tok::DoubleColon) {
+                // A probability that is not a number.
+                self.bump();
+                head = self.term(999)?.into_term();
+                prob = Some(None);
+            }
+            if !self.at(Tok::Semi) {
+                break;
+            }
+            self.bump();
+        }
+        let body = if self.at(Tok::Neck) {
+            self.bump();
+            Some(self.term(1200)?.into_term())
+        } else {
+            None
+        };
+        self.expect(Tok::Dot)?;
+        Ok(match (heads, prob, body) {
+            (1, None, body) => {
+                let body = body.unwrap_or_else(|| Term::Const(self.lexer.intern("true")));
+                ClauseTerm::Listed([head, body, Term::Float(F64::rounded(1.0))])
+            }
+            (1, Some(Some(p)), None) => {
+                ClauseTerm::Listed([head, Term::Const(self.lexer.intern("true")), p])
+            }
+            _ => ClauseTerm::Rewritten,
+        })
+    }
+
     fn peek(&self) -> Tok<'a> {
         self.ahead[usize::from(self.cur)].tok
     }
@@ -491,15 +840,17 @@ impl<'a> Parser<'a> {
             }
             // The list predicates are built in ([`super::Builtin`]), and the
             // grounder adds the clauses of those of the libraries that are
-            // written as clauses: library(aggregate)'s where it is loaded.
+            // written as clauses: library(aggregate)'s and
+            // library(collect)'s where they are loaded.
             ("use_module", 1) => {
                 let t = self.args.pop().expect("an argument").into_term();
                 match t.as_compound() {
                     Some((library, [Term::Const(name)]))
                         if &**library == "library"
-                            && matches!(&**name, "lists" | "apply" | "aggregate") =>
+                            && matches!(&**name, "lists" | "apply" | "aggregate" | "collect") =>
                     {
                         prog.aggregate |= &**name == "aggregate";
+                        prog.collect |= &**name == "collect";
                         Ok(())
                     }
                     _ => self.err(format!("unsupported directive use_module({t})")),
@@ -724,7 +1075,7 @@ impl<'a> Parser<'a> {
             goal,
             result: l.clone(),
             interleaved,
-            all: true,
+            gather: Gather::All,
         };
         let groups = Atom::new(
             self.lexer.intern("enum_groups"),
@@ -811,122 +1162,7 @@ impl<'a> Parser<'a> {
 
     fn literal(&mut self) -> Result<Literal, ParseError> {
         let t = self.term(999)?;
-        self.literal_of(t)
-    }
-
-    /// The literal a term written as a goal is.
-    fn literal_of(&self, t: PTerm) -> Result<Literal, ParseError> {
-        let (name, mut args) = match t {
-            PTerm::Atom(name, args) if !special(&name, args.len()) => {
-                return Ok(Literal::Pos(Atom { name, args }));
-            }
-            PTerm::Atom(name, args) => (name, Vec::from(args)),
-            PTerm::Term(Term::Compound(c)) => (c.name.clone(), c.args.to_vec()),
-            PTerm::Term(Term::Const(c)) => {
-                return Ok(match &*c {
-                    "true" => Literal::Cmp(CmpOp::Eq, Term::Int(0), Term::Int(0)),
-                    "fail" | "false" => Literal::Cmp(CmpOp::Ne, Term::Int(0), Term::Int(0)),
-                    _ => Literal::Pos(Atom::new(c, Args::default())),
-                });
-            }
-            PTerm::Term(other) => return self.err(format!("expected a literal, found {other}")),
-        };
-        match (&*name, args.len()) {
-            ("is", 2) => {
-                let e = args.pop().expect("two arguments");
-                let v = args.pop().expect("two arguments");
-                Ok(Literal::Is(v, e))
-            }
-            (op, 2) if CmpOp::of(op).is_some() => {
-                let b = args.pop().expect("two arguments");
-                let a = args.pop().expect("two arguments");
-                Ok(Literal::Cmp(CmpOp::of(op).expect("a comparison"), a, b))
-            }
-            ("\\+" | "not", 1) => self.negation(args.pop().expect("an argument")),
-            ("findall" | "all", 3) => {
-                let result = args.pop().expect("three arguments");
-                let goal = self.goal(args.pop().expect("three arguments"))?;
-                let template = args.pop().expect("three arguments");
-                let interleaved = goal.interleaved();
-                Ok(Literal::Findall(Box::new(Findall {
-                    template,
-                    goal: goal.dnf(),
-                    result,
-                    interleaved,
-                    all: &*name == "all",
-                })))
-            }
-            // forall(C, A) holds where (C, \+ A) has no solution:
-            // findall(_, (C, \+ A), []).
-            ("forall", 2) => {
-                let unless = self.negation(args.pop().expect("two arguments"))?;
-                let goal = self.goal(args.pop().expect("two arguments"))?;
-                let interleaved = goal.interleaved();
-                let mut alts = goal.dnf();
-                for alt in &mut alts {
-                    alt.push(unless.clone());
-                }
-                Ok(Literal::Findall(Box::new(Findall {
-                    template: Term::Const("true".into()),
-                    goal: alts,
-                    result: Term::Const(super::NIL.into()),
-                    interleaved,
-                    all: false,
-                })))
-            }
-            ("->", 2) => self.err("if-then-else is not supported"),
-            (",", 2) | (";", 2) => {
-                // A parenthesised body the body reading gave up on: its
-                // first part that is not a literal says why.
-                self.goal(Compound::term(name.clone(), args))?;
-                self.err("expected a literal, found a conjunction")
-            }
-            (op, n) if special(op, n) => {
-                let t = Compound::term(name.clone(), args);
-                self.err(format!("expected a literal, found {t}"))
-            }
-            _ => Ok(Literal::Pos(Atom::new(name, args))),
-        }
-    }
-
-    /// The literal `\+ t`.
-    fn negation(&self, t: Term) -> Result<Literal, ParseError> {
-        const COMPOUND: &str =
-            "negation of a negation or a compound goal is not supported; define a predicate for it";
-        if matches!(t.as_compound(), Some((n, [_, _])) if matches!(&**n, "," | ";")) {
-            return self.err(COMPOUND);
-        }
-        match self.literal_of(PTerm::Term(t))? {
-            Literal::Pos(a) => Ok(Literal::Neg(a)),
-            Literal::Cmp(op, a, b) => Ok(Literal::Cmp(op.negated(), a, b)),
-            Literal::Is(..) => self.err("negation of `is` is not supported"),
-            Literal::Findall(_) => self.err("negation of findall/3 is not supported"),
-            _ => self.err(COMPOUND),
-        }
-    }
-
-    /// The body a goal term is: conjunctions and disjunctions of literals.
-    fn goal(&self, t: Term) -> Result<Body, ParseError> {
-        match t.as_compound() {
-            Some((name, [a, b])) if &**name == "," => {
-                let mut conjuncts = Vec::new();
-                for part in [a, b] {
-                    match self.goal(part.clone())? {
-                        Body::And(cs) => conjuncts.extend(cs),
-                        other => conjuncts.push(other),
-                    }
-                }
-                Ok(Body::And(conjuncts))
-            }
-            Some((name, [a, b])) if &**name == ";" => Ok(Body::Or(
-                Box::new(self.goal(a.clone())?),
-                Box::new(self.goal(b.clone())?),
-            )),
-            _ if matches!(t, Term::Var(_) | Term::Int(_) | Term::Float(_)) => {
-                self.err(format!("a goal must be an atom, found {t}"))
-            }
-            _ => Ok(Body::Lits(vec![self.literal_of(PTerm::Term(t))?])),
-        }
+        literal_of(t).or_else(|msg| self.err(msg))
     }
 
     /// Parse an atom: a head, or the atom of a query or of evidence.
@@ -1046,12 +1282,34 @@ impl<'a> Parser<'a> {
                 return Ok((t, 0));
             }
             Tok::LBracket => return Ok((self.list()?, 0)),
+            Tok::Dot if self.at2(Tok::LParen) => {
+                self.bump();
+                self.bump();
+                let dot = self.lexer.intern(".");
+                let t = self.arguments(dot)?;
+                return Ok((self.cell(t), 0));
+            }
             other => return self.err(format!("unexpected {}", self.lexer.show(other))),
         };
         self.bump();
         let arg = self.term(p)?.into_term();
         let name = self.lexer.intern(name);
         Ok((PTerm::Term(Compound::term(name, vec![arg])), p))
+    }
+
+    /// `t`, where it is `.(H, T)`, ProbLog's other writing of the list
+    /// `[H | T]`, as that list. Quoted, `'.'(H, T)` is a term of the name
+    /// `.`, as in ProbLog.
+    fn cell(&mut self, t: PTerm) -> PTerm {
+        match t {
+            PTerm::Atom(name, args) if &*name == "." && args.len() == 2 => {
+                PTerm::Atom(self.lexer.intern(CONS), args)
+            }
+            PTerm::Term(Term::Compound(c)) if &*c.name == "." && c.args.len() == 2 => {
+                PTerm::Term(Compound::term(self.lexer.intern(CONS), c.args.to_vec()))
+            }
+            t => t,
+        }
     }
 
     /// A list, `[` at hand: `[]`, `[a, b]` or `[a, b | T]`.
@@ -1343,6 +1601,13 @@ mod tests {
         assert_eq!(p.clauses[0].heads[0].atom.to_string(), "ops([+, -, *, /])");
         assert_eq!(p.clauses[1].heads[0].atom.to_string(), "p([N, + | T],-,-X)");
         assert_eq!(p.clauses[1].body[0].to_string(), "q(N,T,X,/)");
+        // `.(H, T)` is the list `[H | T]`, and `'.'(H, T)` a term of the
+        // name `.`, as in ProbLog.
+        let p = parse_program("p(.(a,.(b,[]))). q('.'(X, T)) :- r(.(f(X), [])).\n").unwrap();
+        assert_eq!(p.clauses[0].heads[0].atom.to_string(), "p([a, b])");
+        assert_eq!(p.clauses[1].heads[0].atom.to_string(), "q('.'(X,T))");
+        assert_eq!(p.clauses[1].body[0].to_string(), "r([f(X)])");
+        assert!(parse_program(".a.\n").is_err());
     }
 
     #[test]
@@ -1457,9 +1722,12 @@ mod tests {
             err("foo :- X + 1."),
             "line 1: expected a literal, found X+1"
         );
+        // A negated goal: where the goal has no solution.
+        let p = parse_program("foo :- \\+ (a, b ; \\+ c), \\+ X is 1.\n").unwrap();
+        let body: Vec<String> = p.clauses[0].body.iter().map(|l| l.to_string()).collect();
         assert_eq!(
-            err("foo :- \\+ (a, b)."),
-            "line 1: negation of a negation or a compound goal is not supported; define a predicate for it"
+            body,
+            ["findall(true,(a,b;\\+c),[])", "findall(true,(X is 1),[])"]
         );
         // A compound argument, `\+` and an atom named `not` inside query/1
         // and evidence/2, read with the anonymous variables in order.
@@ -1490,7 +1758,7 @@ mod tests {
         let Literal::Findall(fa) = &c.body[0] else {
             panic!("an all/3");
         };
-        assert!(fa.all);
+        assert_eq!(fa.gather, Gather::All);
         assert_eq!(fa.template.to_string(), "([D$], S$)");
         let goal: Vec<String> = fa.goal[0].iter().map(Literal::to_string).collect();
         assert_eq!(goal, ["p(X$,S$)", "q(X$,D$)"]);

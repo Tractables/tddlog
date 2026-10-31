@@ -12,9 +12,9 @@ use crate::{QueryResult, eval, query};
 pub(crate) type Answers = (Option<Vec<QueryResult>>, query::QuerySizes);
 
 /// A program's compile and query phase on one vtree. A call that stops,
-/// at its watch or at the engine's limits, keeps what it built: the
-/// components finished, or the evidence conjunctions and answers
-/// completed, and the next call goes on from there. A run of one layout
+/// at its watch, at the end of its turn or at the engine's limits, keeps
+/// what it built: the components finished, or the evidence conjunctions
+/// and answers completed, and the next call goes on from there. A run of one layout
 /// makes one call without a watch (`crate::solve`), `auto` one per attempt
 /// of a trial (`src/auto/`), without a watch only for a trial left alone,
 /// which an error retires. A call without a watch is the last: the last

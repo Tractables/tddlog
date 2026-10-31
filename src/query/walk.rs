@@ -1004,10 +1004,12 @@ impl EvidenceWalk {
     ) -> Result<Option<Formula>, CompileError> {
         let tree = &backend.vtree();
         while self.next_observed < self.observed.len() {
+            backend.pause()?;
             self.observe_next(backend, compiled, scopes, sizes)?;
         }
         loop {
             while let Some(join) = self.joins.front() {
+                backend.pause()?;
                 let (a, b, out) = match *join {
                     Join::Two(a, b, out) => (a, b, out),
                     Join::Smallest(..) => {

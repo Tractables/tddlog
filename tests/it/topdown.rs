@@ -190,3 +190,132 @@ fn identities_of_terms_with_variables_are_read_where_no_call_changes_them() {
     );
     assert!(e.contains("of terms with variables"), "{e}");
 }
+
+#[test]
+fn univ_builds_and_takes_apart_terms_with_variables() {
+    // The lists of terms with variables the queries ask for have the
+    // program resolved top-down. sh(T) builds node(L, R) before kid/2 binds
+    // L and R where T is free, and takes T apart where the query's
+    // node(_, _) binds it; leaf(U) is the term of a list of one item.
+    let program = "0.5::pick(a); 0.5::pick(b).
+         kid(X, X).
+         mk(X, T) :- T =.. [node, L, R], kid(X, L), kid(X, R).
+         sh(T) :- pick(X), mk(X, T).
+         leaf(U) :- pick(X), U =.. [X].
+         two(T, U, [T, U]).
+         v(L) :- two(T, U, L), sh(T), sh(U).
+         w(L) :- two(T, U, L), sh(T), leaf(U).";
+    assert_answers(
+        &format!("{program} query(v([_, _])). query(w([node(_, _), _]))."),
+        &[
+            ("v([node(a,a), node(a,a)])", 0.5),
+            ("v([node(a,a), node(b,b)])", 0.0),
+            ("v([node(b,b), node(a,a)])", 0.0),
+            ("v([node(b,b), node(b,b)])", 0.5),
+            ("w([node(a,a), a])", 0.5),
+            ("w([node(a,a), b])", 0.0),
+            ("w([node(b,b), a])", 0.0),
+            ("w([node(b,b), b])", 0.5),
+        ],
+    );
+    // A list of no fixed length, or whose first item is no atom, gives no
+    // term: ProbLog's call mode error.
+    for body in ["T =.. [f|_]", "T =.. [1, a]"] {
+        let e = refusal(&format!(
+            "0.5::f. w(T) :- f, {body}. one(X, [X]). u(L) :- one(T, L), w(T). query(u([_]))."
+        ));
+        assert!(e.contains("ProbLog's call mode error"), "{body}: {e}");
+    }
+}
+
+#[test]
+fn a_comparison_of_terms_with_variables_is_made_as_problog_makes_it() {
+    // count(s, N) \= count(s, 0) fails while N is free, as in ProbLog:
+    // member/2 written so stops at the first count of s. No other call of
+    // member/2 or get/2 answers their atoms. The query of a list with a
+    // variable in it, which one/2 answers with a variable, has the program
+    // resolved top-down.
+    assert_answers(
+        "0.5::f.
+         member(A, [A|_]).
+         member(A, [H|T]) :- A \\= H, member(A, T).
+         get(X, N) :- member(count(X, N), [count(s, 0), count(m, 1), count(s, 2)]).
+         one(X, [X]).
+         w(L) :- one(N, L), f, get(s, N).
+         query(w([_])).",
+        &[("w([0])", 0.5)],
+    );
+    // The calls w([_]) and w([0]) both answer w([0]); each calls get(s, N)
+    // with N a variable of its own clause, not of its call, so that both
+    // prove w([0]) alike and share its atom.
+    assert_answers(
+        "0.5::f.
+         member(A, [A|_]).
+         member(A, [H|T]) :- A \\= H, member(A, T).
+         get(X, N) :- member(count(X, N), [count(s, 0), count(m, 1), count(s, 2)]).
+         one(X, [X]).
+         w(L) :- one(_, L), get(s, N), f, L = [N].
+         query(w([_])).
+         query(w([0])).",
+        &[("w([0])", 0.5), ("w([0])", 0.5)],
+    );
+}
+
+#[test]
+fn a_negation_called_with_variables_holds_where_none_of_its_answers_does() {
+    // ProbLog's answers, one query at a time. t(X), w and f(X) negate a goal
+    // over X while X is free: no c(X) holds together with a, 0.7 + 0.3 *
+    // 0.5 * 0.4, whichever X d(X) binds after it; forall(c(X), a) where X is
+    // free holds where a does or no c(X) does, 1 - 0.7 * (1 - 0.5 * 0.4).
+    // A call that binds X first, t(1), reads the one answer c(1).
+    let program = "0.3::a. 0.5::c(1). 0.6::c(2). d(1). d(2).
+         t(X) :- \\+ (c(X), a), d(X).
+         w :- \\+ (c(X), a), d(X).
+         f(X) :- forall(c(X), a), d(X).";
+    let free = 0.7 + 0.3 * 0.5 * 0.4;
+    let all = 1.0 - 0.7 * (1.0 - 0.5 * 0.4);
+    assert_answers(
+        &format!("{program} query(t(_)). query(w). query(f(_))."),
+        &[
+            ("t(1)", free),
+            ("t(2)", free),
+            ("w", free),
+            ("f(1)", all),
+            ("f(2)", all),
+        ],
+    );
+    assert_answers(
+        &format!("{program} query(t(1))."),
+        &[("t(1)", 1.0 - 0.3 * 0.5)],
+    );
+    // Asked together, the two calls answer t(1) by proofs of their own,
+    // which one atom cannot hold.
+    let e = refusal(&format!("{program} query(t(_)). query(t(1))."));
+    assert!(e.contains("a negation of a call with variables"), "{e}");
+}
+
+#[test]
+fn var_and_nonvar_test_a_term_as_it_stands_where_they_are_called() {
+    // ProbLog's answers, one query at a time. v(X) called with X free
+    // takes its first clause, a; called with X bound, its second, b(X).
+    // n(X) tests X after b(X) has bound it, m(Y) a compound term, and u(X)
+    // negates a test that holds while X is free.
+    let program = "0.3::a. 0.6::b(1). 0.7::b(2).
+         v(X) :- var(X), a, X = 1.
+         v(X) :- nonvar(X), b(X).
+         n(X) :- b(X), var(X).
+         m(Y) :- nonvar(f(Y)), b(Y).
+         u(X) :- \\+ var(X), b(X).";
+    assert_answers(
+        &format!("{program} query(v(_)). query(n(_)). query(m(_)). query(u(_))."),
+        &[("v(1)", 0.3), ("m(1)", 0.6), ("m(2)", 0.7)],
+    );
+    assert_answers(
+        &format!("{program} query(v(1)). query(v(2))."),
+        &[("v(1)", 0.6), ("v(2)", 0.7)],
+    );
+    // Asked together, the two calls answer v(1) by proofs of their own,
+    // which one atom cannot hold.
+    let e = refusal(&format!("{program} query(v(_)). query(v(1))."));
+    assert!(e.contains("var/1 of a term with variables"), "{e}");
+}

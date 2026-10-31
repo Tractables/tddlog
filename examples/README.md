@@ -32,6 +32,7 @@ those and a few more, the larger programs below among them.
 | [dice_evidence.pl](dice_evidence.pl), [dice_murder.pl](dice_murder.pl) | Dice programs as tddlog's Dice reader reads them (`tddlog --program`) |
 | [alea_dice.jl](alea_dice.jl), [alea_dice.pl](alea_dice.pl) | an Alea.jl program and the circuit Alea.jl builds for it, which `scripts/alea2problog.jl` writes |
 | [query_beside_evidence.pl](query_beside_evidence.pl) | a query's formula beside evidence it does not read |
+| [chain.pl](chain.pl) | a program whose size, probability and query are the arguments that follow it on the command line, in its places `$1`, `$2` and `$3`: `tddlog examples/chain.pl 10 0.9 4` |
 
 ## Larger programs
 

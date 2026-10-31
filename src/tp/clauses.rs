@@ -114,37 +114,66 @@ pub(super) struct ClauseMemo {
     entries: FxHashMap<ClauseKey, Vec<Kept>>,
     /// The pairs of the formulas kept.
     pairs: usize,
-    /// The loop the watch refused in the run that stopped on it, for the
-    /// next run to take ([`Refused`]).
-    refused: Option<Refused>,
+    /// The loop where the last run stopped, for the next run to go on
+    /// with ([`Held`]).
+    held: Option<Held>,
     pub(super) stats: ClauseMemoStats,
 }
 
-/// A loop of clauses over facts alone, built level by level from true
-/// (`TddBackend::none_of`), that the watch refused, reduced in full; and
-/// what it was built from: its head, its scope, the variables, cubes and
-/// groups. The compile resets the component it stopped in, and the next
-/// run, under a larger watch, would build the loop again for the same work
-/// (on TPC-H q18 one loop covers the whole lineage). The next run takes it
-/// instead ([`ClauseMemo::retake`]), on the
-/// scope it was built on: a scope narrowed to the bodies' facts is
-/// projected anew in each run, and the next run's narrowing to the same
-/// facts takes the loop's ([`ClauseMemo::refused_scope`]). Held until the
-/// next run, which in `auto` is the trial's next attempt, however many
-/// rounds later: no operation of a bounded attempt outputs more than twice
-/// its watch in nodes, so a waiting trial holds no more than that beside
-/// its finished formulas. A vtree search drops it, since it moves the
+/// The loop of clauses where the last run stopped, for the next run to go
+/// on with, and what it is the loop of: its head, its scope, its groups and
+/// bodies, and whether it began from a formula (`one_by_one`'s `start`).
+///
+/// A loop of bodies of facts alone built level by level from true
+/// (`TddBackend::none_of`) that the watch refused is held whole, reduced in
+/// full. The compile resets the component it stopped in, and the next run,
+/// under a larger watch, would build the loop again for the same work (on
+/// TPC-H q18 one loop covers the whole lineage). A loop at the end of its
+/// turn is held before its next body ([`TddBackend::pause`]), and the next
+/// run, which builds the component up to the loop again, goes on with it
+/// from there: TPC-H q7's formula is one loop of hundreds of bodies, which a
+/// stop inside an operation started over in every attempt.
+///
+/// The next run takes it on the scope it was built on: a scope narrowed to
+/// the bodies' facts is projected anew in each run, and the next run's
+/// narrowing to the same facts takes the loop's ([`ClauseMemo::held_scope`]).
+/// Held until the next run, which in `auto` is the trial's next attempt,
+/// however many rounds later: no operation of a bounded attempt outputs more
+/// than twice its watch in nodes, so a waiting trial holds no more than that
+/// beside its finished formulas. A vtree search drops it, since it moves the
 /// formulas the compile holds and not this one.
-struct Refused {
+struct Held {
     head: AtomId,
     /// The program's vtree when the loop was built; a scope projected from
-    /// it to the same variables is the loop's own ([`ClauseMemo::refused_scope`]).
+    /// it to the same variables is the loop's own ([`ClauseMemo::held_scope`]).
     global: std::sync::Arc<tididi::Vtree>,
     scope: VtreeScope,
-    vars: Vec<VarId>,
-    cubes: Vec<Vec<tididi::Literal>>,
-    groups: Vec<(Vec<VarId>, bool)>,
-    f: Tdd,
+    groups: Vec<AtMostOne>,
+    bodies: Vec<Vec<GLit>>,
+    started: bool,
+    at: Stopped,
+}
+
+/// Where a [`Held`] loop stopped.
+enum Stopped {
+    /// Built whole, and refused by the watch.
+    Refused(Tdd),
+    /// At the end of its turn, before a body.
+    Paused(Loop),
+}
+
+/// A loop of clauses part way through its bodies (`Factoring::clauses`):
+/// the next body, the formula so far (`None` while it is true), what the
+/// bodies so far told of the variables' exclusions, and the contraction
+/// schedule's state.
+struct Loop {
+    next: usize,
+    acc: Option<Formula>,
+    exclusive: Exclusive,
+    uncontracted: usize,
+    every: usize,
+    settled_nodes: usize,
+    read_due: u64,
 }
 
 /// A loop the [`ClauseMemo`] keeps: the loop, its scope, the slot of each
@@ -186,46 +215,69 @@ impl ClauseMemo {
         Ok(())
     }
 
-    /// The loop the watch refused in the last run, where it is the loop of
-    /// `cubes` and `groups` over `vars` on `scope` for `head` ([`Refused`]).
-    fn retake(
+    /// The loop where the last run stopped, where it is the loop of
+    /// `groups` and `bodies` for `head` on `scope`, begun from a formula or
+    /// not as `started` says ([`Held`]); a held loop it is not stays held.
+    fn take_held(
         &mut self,
         head: AtomId,
         scope: &VtreeScope,
-        vars: &[VarId],
-        cubes: &[Vec<tididi::Literal>],
-        groups: &[(Vec<VarId>, bool)],
-    ) -> Option<Tdd> {
-        let r = self.refused.take_if(|r| {
-            r.head == head
-                && std::sync::Arc::ptr_eq(r.scope.vtree(), scope.vtree())
-                && r.scope.vars() == scope.vars()
-                && r.vars == vars
-                && r.cubes == cubes
-                && r.groups == groups
+        groups: &[AtMostOne],
+        bodies: &[Vec<GLit>],
+        started: bool,
+    ) -> Option<Stopped> {
+        let held = self.held.take_if(|h| {
+            h.head == head
+                && std::sync::Arc::ptr_eq(h.scope.vtree(), scope.vtree())
+                && h.scope.vars() == scope.vars()
+                && h.started == started
+                && h.groups == groups
+                && h.bodies == bodies
         })?;
-        self.stats.retaken += 1;
-        Some(r.f)
+        match held.at {
+            Stopped::Refused(_) => self.stats.retaken += 1,
+            Stopped::Paused(_) => self.stats.resumed += 1,
+        }
+        Some(held.at)
     }
 
-    /// The scope the loop the watch refused was built on, where it is the
-    /// projection of the program's vtree to `vars`: a scope projected
-    /// anew is another vtree, which the loop is not on, so the next run
-    /// takes this one ([`Refused`]).
-    pub(super) fn refused_scope(&self, backend: &TddBackend, vars: &[VarId]) -> Option<VtreeScope> {
-        let r = self.refused.as_ref()?;
-        (r.scope.vars() == Some(vars) && std::sync::Arc::ptr_eq(&r.global, &backend.vtree()))
-            .then(|| r.scope.clone())
+    /// Holds `held`, where the run stops ([`Held`]).
+    fn hold(&mut self, held: Held) {
+        match held.at {
+            Stopped::Refused(_) => self.stats.refused += 1,
+            Stopped::Paused(_) => self.stats.paused += 1,
+        }
+        self.held = Some(held);
     }
 
-    /// Drops the loop the watch refused ([`Refused`]).
-    pub(super) fn forget_refused(&mut self) {
-        self.refused = None;
+    /// The loops held so far, refused or paused: a run that holds none
+    /// leaves the count as it found it.
+    pub(super) fn holds(&self) -> usize {
+        self.stats.refused + self.stats.paused
     }
 
-    /// The formula of the loop the watch refused, taken out.
+    /// The scope the held loop was built on, where it is the projection
+    /// of the program's vtree to `vars`: a scope projected anew is another
+    /// vtree, which the loop is not on, so the next run takes this one
+    /// ([`Held`]).
+    pub(super) fn held_scope(&self, backend: &TddBackend, vars: &[VarId]) -> Option<VtreeScope> {
+        let h = self.held.as_ref()?;
+        (h.scope.vars() == Some(vars) && std::sync::Arc::ptr_eq(&h.global, &backend.vtree()))
+            .then(|| h.scope.clone())
+    }
+
+    /// Drops the held loop ([`Held`]).
+    pub(super) fn forget_held(&mut self) {
+        self.held = None;
+    }
+
+    /// The formula of the loop the watch refused, taken out; a loop held
+    /// otherwise is dropped.
     pub(super) fn take_refused(&mut self) -> Option<Tdd> {
-        self.refused.take().map(|r| r.f)
+        match self.held.take()?.at {
+            Stopped::Refused(f) => Some(f),
+            Stopped::Paused(_) => None,
+        }
     }
 }
 
@@ -326,30 +378,27 @@ impl Factoring<'_> {
         Ok(f)
     }
 
-    /// `f`, the loop of `cubes` and `groups` over `vars` on `scope`, built
-    /// from true, through the watch; a loop the watch refuses is kept for the
-    /// next run ([`Refused`]).
+    /// `f`, the loop of `groups` and `bodies` on `scope`, built from true,
+    /// through the watch; a loop the watch refuses is held for the next
+    /// run ([`Held`]).
     fn kept_if_refused(
         &self,
         f: Tdd,
         scope: &VtreeScope,
-        vars: Vec<VarId>,
-        cubes: Vec<Vec<tididi::Literal>>,
-        groups: Vec<(Vec<VarId>, bool)>,
+        groups: &[AtMostOne],
+        bodies: &[Vec<GLit>],
     ) -> Result<Tdd, CompileError> {
         match (self.checked)(f)? {
             Ok(f) => Ok(f),
             Err((f, pairs)) => {
-                let mut memo = self.memo.borrow_mut();
-                memo.stats.refused += 1;
-                memo.refused = Some(Refused {
+                self.memo.borrow_mut().hold(Held {
                     head: self.head,
                     global: self.backend.vtree(),
                     scope: scope.clone(),
-                    vars,
-                    cubes,
-                    groups,
-                    f,
+                    groups: groups.to_vec(),
+                    bodies: bodies.to_vec(),
+                    started: false,
+                    at: Stopped::Refused(f),
                 });
                 Err(CompileError::Oversize {
                     atom: self.head,
@@ -743,20 +792,6 @@ impl Factoring<'_> {
                 .collect();
             (vars, cubes, local_groups)
         };
-        // The loop the watch refused in the run before, the same one
-        // ([`Refused`]).
-        let retaken = if acc.is_some() {
-            None
-        } else {
-            self.memo
-                .borrow_mut()
-                .retake(self.head, scope, &vars, &cubes, &local_groups)
-        };
-        if let Some(f) = retaken {
-            return self
-                .kept_if_refused(f, scope, vars, cubes, local_groups)
-                .map(Some);
-        }
         // A table's link ([`super::rows`]) is the set of its models,
         // built in one pass where there are no more of them than
         // literals in its bodies and groups. A link of more spreads the
@@ -796,9 +831,7 @@ impl Factoring<'_> {
             memo.stats.left_out += left_out;
             drop(memo);
             let Some(acc) = acc.take() else {
-                return self
-                    .kept_if_refused(f, scope, vars, cubes, local_groups)
-                    .map(Some);
+                return self.kept_if_refused(f, scope, groups, bodies).map(Some);
             };
             let acc = self.backend.and(acc, f)?;
             return (self.watched)(acc, self.head).map(Some);
@@ -809,7 +842,8 @@ impl Factoring<'_> {
 
     /// `start ∧ ⋀_r ¬body_r` on `scope`, conjoined into `start` a body at a
     /// time, the rules of pairs with them; `start` is true when there is
-    /// none.
+    /// none. A loop the last run held, the same one, is taken instead
+    /// ([`Held`]).
     pub(super) fn one_by_one(
         &mut self,
         bodies: Vec<Vec<GLit>>,
@@ -817,7 +851,6 @@ impl Factoring<'_> {
         scope: &VtreeScope,
         start: Option<Tdd>,
     ) -> Result<Tdd, CompileError> {
-        let mut acc = start;
         let (mut groups, bodies) = self.at_most_one(bodies, pairs);
         if self.seeds {
             let siblings = self.sibling_groups(&bodies, &groups);
@@ -826,7 +859,21 @@ impl Factoring<'_> {
                 groups.extend(siblings);
             }
         }
-        let mut exclusive = Exclusive::new(&groups);
+        let held =
+            self.memo
+                .borrow_mut()
+                .take_held(self.head, scope, &groups, &bodies, start.is_some());
+        match held {
+            Some(Stopped::Refused(f)) => return self.kept_if_refused(f, scope, &groups, &bodies),
+            // The formula so far holds `start`.
+            Some(Stopped::Paused(at)) => {
+                return self.clauses(bodies, groups, start.is_some(), scope, at);
+            }
+            None => {}
+        }
+        let started = start.is_some();
+        let mut acc = start;
+        let exclusive = Exclusive::new(&groups);
         // Bodies of facts alone, with the groups, built in one pass where
         // that can be done ([`Self::level_by_level`]).
         if bodies
@@ -842,8 +889,8 @@ impl Factoring<'_> {
         // the first body's negation is the formula (`and_term`). The
         // or-route needs a formula other than true: from true it builds the
         // product it would avoid.
-        for (mut lits, exactly) in groups {
-            let group = self.one_of(scope, &mut lits, exactly)?;
+        for (lits, exactly) in &groups {
+            let group = self.one_of(scope, &mut lits.clone(), *exactly)?;
             let f = acc.unwrap_or_else(|| self.backend.one(scope));
             let f = self.backend.and_on((f, scope.clone()), group, scope)?;
             (self.count)(Op::And, 1);
@@ -852,9 +899,7 @@ impl Factoring<'_> {
         // The formula, on `scope` but where it is a body's negation alone,
         // on the body's own scope (`and_term`), until an operation needs
         // it on `scope`.
-        let mut acc: Option<Formula> = acc.map(|f| (f, scope.clone()));
-        let mut uncontracted = 0;
-        let mut every = CLAUSES_PER_CONTRACTION;
+        let acc: Option<Formula> = acc.map(|f| (f, scope.clone()));
         // The formula's nodes after its last contraction. `and_clause`
         // charges the work clock the clause, not the levels it rebuilds, so
         // neither the watch nor the schedule sees a run that splits elements
@@ -862,15 +907,56 @@ impl Factoring<'_> {
         // where it stands (pdb30's `td` loop otherwise grows to a thousand
         // times its formula's pairs between contractions).
         // While the formula is true it is `one`'s, read where `one` is built.
-        let mut settled_nodes = acc.as_ref().map_or(0, |f| self.backend.nodes(&f.0));
+        let settled_nodes = acc.as_ref().map_or(0, |f| self.backend.nodes(&f.0));
+        let at = Loop {
+            next: 0,
+            acc,
+            exclusive,
+            uncontracted: 0,
+            every: CLAUSES_PER_CONTRACTION,
+            settled_nodes,
+            // The work clock at which the formula is next read, for the
+            // contraction schedule and the watch.
+            read_due: 0,
+        };
+        self.clauses(bodies, groups, started, scope, at)
+    }
+
+    /// The loop of [`Self::one_by_one`] over `bodies`, of which the formula
+    /// holds `groups`, and `start` where it is `started`, from where `at`
+    /// stands. At the end of its turn, once it has conjoined a body, it is
+    /// held before its next body ([`Held`]).
+    fn clauses(
+        &mut self,
+        bodies: Vec<Vec<GLit>>,
+        groups: Vec<AtMostOne>,
+        started: bool,
+        scope: &VtreeScope,
+        mut at: Loop,
+    ) -> Result<Tdd, CompileError> {
         // The clauses conjoined since they were last counted: a run is
         // counted at the next contraction, the next body with a derived
         // literal, or the end.
         let mut run = 0;
-        // The work clock at which the formula is next read, for the
-        // contraction schedule and the watch.
-        let mut read_due = 0;
-        for body in bodies {
+        // A loop taken back conjoins a body before its turn may end: the
+        // run built the component up to it again, which it does not keep.
+        let first = at.next;
+        while at.next < bodies.len() {
+            if at.next > first && self.backend.turn_over() {
+                (self.count)(Op::And, run);
+                self.memo.borrow_mut().hold(Held {
+                    head: self.head,
+                    global: self.backend.vtree(),
+                    scope: scope.clone(),
+                    groups,
+                    bodies,
+                    started,
+                    at: Stopped::Paused(at),
+                });
+                return Err(self.backend.end_turn());
+            }
+            let body = &bodies[at.next];
+            at.next += 1;
             // A body of one derived literal is negated by reading the
             // literal of the other sign, the atom's stored formula or the
             // negation of it the compile keeps, rather than by building the
@@ -883,11 +969,11 @@ impl Factoring<'_> {
             {
                 (self.count)(Op::And, std::mem::take(&mut run));
                 let nb = (self.part)(l.negated(), 1, scope)?;
-                let mut f = self.and_term(acc.take(), nb, scope)?;
-                settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
+                let mut f = self.and_term(at.acc.take(), nb, scope)?;
+                at.settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
                 f.0 = (self.watched)(f.0, self.head)?;
                 let zero = self.backend.is_zero(&f.0);
-                acc = Some(f);
+                at.acc = Some(f);
                 if zero {
                     break;
                 }
@@ -909,7 +995,7 @@ impl Factoring<'_> {
                 .iter()
                 .filter(|&&l| self.fact_literal(l).is_none())
                 .count();
-            for &l in &body {
+            for &l in body {
                 if let Some(f) = self.fact_literal(l) {
                     fact_lits.push(f);
                     continue;
@@ -922,7 +1008,7 @@ impl Factoring<'_> {
                 derived_left -= 1;
                 if derived_left == 0
                     && !pending.is_empty()
-                    && let Some(formula) = &acc
+                    && let Some(formula) = &at.acc
                 {
                     let c = self.collapse(&mut pending, scope)?;
                     match self.last_product(formula, c, f, scope)? {
@@ -941,11 +1027,11 @@ impl Factoring<'_> {
             if dead {
                 continue; // body false: ¬body = true
             }
-            let left_out = exclusive.leave_out(&mut fact_lits);
+            let left_out = at.exclusive.leave_out(&mut fact_lits);
             if left_out > 0 {
                 self.memo.borrow_mut().stats.left_out += left_out;
             }
-            let formula = acc.take();
+            let formula = at.acc.take();
             let f = match (conj, split) {
                 (_, Some((a, b))) => {
                     (self.count)(Op::And, std::mem::take(&mut run));
@@ -955,7 +1041,7 @@ impl Factoring<'_> {
                         self.or_route(scope, formula, a, b, &fact_lits)?,
                         scope.clone(),
                     );
-                    settled_nodes = self.backend.nodes(&acc.0);
+                    at.settled_nodes = self.backend.nodes(&acc.0);
                     acc.0 = (self.watched)(acc.0, self.head)?;
                     acc
                 }
@@ -969,14 +1055,14 @@ impl Factoring<'_> {
                         Some(f) => (self.placed(f, scope)?, scope.clone()),
                         None => {
                             let one = self.backend.one(scope);
-                            settled_nodes = self.backend.nodes(&one);
+                            at.settled_nodes = self.backend.nodes(&one);
                             (one, scope.clone())
                         }
                     };
                     acc.0 = self.backend.and_clause(scope, acc.0, &clause)?;
-                    exclusive.take_pair(&fact_lits);
-                    uncontracted += 1;
-                    let grown = self.backend.nodes(&acc.0) > 2 * settled_nodes;
+                    at.exclusive.take_pair(&fact_lits);
+                    at.uncontracted += 1;
+                    let grown = self.backend.nodes(&acc.0) > 2 * at.settled_nodes;
                     // The watch reads the whole formula, which a clause
                     // does not touch outside its spine; it is read where
                     // the contraction has just walked it, and the store
@@ -987,18 +1073,18 @@ impl Factoring<'_> {
                     // contractions reads the formula
                     // before and after one to see what it freed, and is
                     // kept to the same reads.
-                    if uncontracted == every || grown {
-                        uncontracted = 0;
+                    if at.uncontracted == at.every || grown {
+                        at.uncontracted = 0;
                         (self.count)(Op::And, std::mem::take(&mut run));
-                        let before = (self.backend.work_units() >= read_due)
+                        let before = (self.backend.work_units() >= at.read_due)
                             .then(|| self.backend.size(&acc.0));
                         self.backend.minimize(&mut acc.0, Reduce::Contract)?;
                         (self.count)(Op::Minimize, 1);
-                        settled_nodes = self.backend.nodes(&acc.0);
+                        at.settled_nodes = self.backend.nodes(&acc.0);
                         if let Some(before) = before {
                             let size = self.backend.size(&acc.0);
-                            every = if size * 10 > before * 9 {
-                                (every * 2).min(MAX_CLAUSES_PER_CONTRACTION)
+                            at.every = if size * 10 > before * 9 {
+                                (at.every * 2).min(MAX_CLAUSES_PER_CONTRACTION)
                             } else {
                                 CLAUSES_PER_CONTRACTION
                             };
@@ -1007,10 +1093,10 @@ impl Factoring<'_> {
                             {
                                 acc.0 = (self.watched)(acc.0, self.head)?;
                             }
-                            read_due = self.backend.work_units() + size as u64;
+                            at.read_due = self.backend.work_units() + size as u64;
                         }
                         if grown {
-                            every = CLAUSES_PER_CONTRACTION;
+                            at.every = CLAUSES_PER_CONTRACTION;
                         }
                     }
                     acc
@@ -1034,19 +1120,19 @@ impl Factoring<'_> {
                     };
                     let nb = (c.0.with_cow(|f| (self.negate)(self.term, f))?, c.1);
                     let mut acc = self.and_term(formula, nb.into(), scope)?;
-                    settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
+                    at.settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
                     acc.0 = (self.watched)(acc.0, self.head)?;
                     acc
                 }
             };
             let zero = self.backend.is_zero(&f.0);
-            acc = Some(f);
+            at.acc = Some(f);
             if zero {
                 break;
             }
         }
         (self.count)(Op::And, run);
-        let acc = self.formula(acc, scope);
+        let acc = self.formula(at.acc, scope);
         self.placed(acc, scope)
     }
 

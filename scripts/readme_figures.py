@@ -494,6 +494,33 @@ def misses(cat):
     return dict(collections.Counter(v for _, v in column(cat, 'tddlog') if not answered(v)))
 
 
+def ahead(cat):
+    """The native systems that answer as many of a type's instances as
+    tddlog, or take no more total time than it over the instances they are
+    given and either answers. The README's sentence under the overview says
+    that on every type of program tddlog answers more instances than each
+    native system, in less total time; a system here makes it false."""
+    if cat['key'] == ALL:
+        return []
+    mine = cat['answers']['tddlog']
+    return [x for x in cat['native'] if cat['answers'][x] >= mine
+            or x in cat['vs'] and cat['vs'][x]['tddlog_total'] >= cat['vs'][x]['total']]
+
+
+def wins(cat):
+    """{native system: {family group: the instances it answers and tddlog
+    does not}}, the families' groups as the data orders them, for the
+    README's "Where others win" bullets, whose counts and names come from
+    it."""
+    j, me = {x: 4 + cat['systems'].index(x) for x in cat['native']}, 4 + cat['systems'].index('tddlog')
+    out = {}
+    for x in cat['native']:
+        by = {g['key']: [cat['rows'][i][1] for i in g['rows']
+                         if answered(cat['rows'][i][j[x]]) and not answered(cat['rows'][i][me])] for g in cat['groups']}
+        out[x] = {g: names for g, names in by.items() if names}
+    return out
+
+
 def within(cat, systems, limits=(1, 2, 10)):
     """{limit: {system: the instances it answers within limit seconds}}."""
     return {t: {s: sum(answered(v) and clamp(v) <= t for _, v in column(cat, s)) for s in systems} for t in limits}
@@ -552,8 +579,13 @@ def main():
         res['named'], res['others'] = cat['named'], cat['others']
         res['not_drawn'] = {s: cat['given'][s] for s in cat['systems'] if s not in cat['drawn']}
         res['tddlog_failures'] = misses(cat)
+        res['wins'], res['groups'] = wins(cat), {g['key']: len(g['rows']) for g in cat['groups']}
         res['within'] = within(cat, cat['drawn'])
         res['table'] = table(cat, names)
+        res['ahead'] = ahead(cat)
+        if res['ahead']:
+            print(f"README.md: the sentence under the overview no longer holds for {cat['title']}: "
+                  + ', '.join(names[x] for x in res['ahead']), file=sys.stderr)
         numbers[cat['key']] = res
     overview(data, names, col, out)
     json.dump(dict(categories=numbers), sys.stdout, indent=1, ensure_ascii=False)

@@ -269,6 +269,56 @@ static void check_accessors(void) {
   tddlog_solution_free(NULL);
 }
 
+/* A program's arguments in its places $1, $2, ...: a chain of three links of
+   probability 0.9 reaches its end with probability 0.9^3. */
+static void check_arguments(void) {
+  static const char chain[] =
+      "$2::link(I) :- between(1, $1, I).\n"
+      "reach(0).\n"
+      "reach(I) :- between(1, $1, I), J is I - 1, reach(J), link(I).\n"
+      "query(reach($1)).\n";
+  const char *arguments[] = {"3", "0.9"};
+  TddlogOptions options = tddlog_options_default();
+  options.arguments = arguments;
+  options.num_arguments = 2;
+  TddlogSolution *solution = NULL;
+  CHECK(tddlog_solve(chain, &options, &solution) == TDDLOG_OK, "%s", tddlog_last_error_message());
+  if (solution) {
+    CHECK(fabs(answer(solution, "reach(3)") - 0.729) < 1e-12, "reach(3) is 0.9^3");
+    tddlog_solution_free(solution);
+  }
+  /* One argument short, one too many, one that is not a term, a null one,
+     and arguments for a network. */
+  const char *extra[] = {"3", "0.9", "x"};
+  const char *broken[] = {"3", "f("};
+  const char *null[] = {"3", NULL};
+  struct {
+    const char *const *arguments;
+    size_t count;
+    const char *format;
+    TddlogStatus status;
+    const char *message;
+  } cases[] = {
+      {arguments, 1, NULL, TDDLOG_ERROR_PARSE, "`$2` has no argument"},
+      {extra, 3, NULL, TDDLOG_ERROR_INVALID_INPUT, "the program has no `$3`"},
+      {broken, 2, NULL, TDDLOG_ERROR_INVALID_INPUT, "is not a term"},
+      {null, 2, NULL, TDDLOG_ERROR_INVALID_INPUT, "options->arguments[1] must not be null"},
+      {NULL, 2, NULL, TDDLOG_ERROR_INVALID_INPUT, "options->arguments must not be null"},
+      {arguments, 2, "bif", TDDLOG_ERROR_INVALID_INPUT, "for a ProbLog program or an LPAD"},
+  };
+  for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+    options.arguments = cases[i].arguments;
+    options.num_arguments = cases[i].count;
+    options.format = cases[i].format;
+    TddlogStatus status = tddlog_solve(chain, &options, &solution);
+    CHECK(status == cases[i].status, "arguments case %zu: status %d, not %d (%s)", i, status,
+          cases[i].status, tddlog_last_error_message());
+    CHECK(strstr(tddlog_last_error_message(), cases[i].message) != NULL,
+          "arguments case %zu: the message `%s` does not say `%s`", i,
+          tddlog_last_error_message(), cases[i].message);
+  }
+}
+
 static void check_errors(void) {
   TddlogOptions options = tddlog_options_default();
   /* Not a solution: a failing call overwrites it with NULL. */
@@ -319,6 +369,7 @@ int main(int argc, char **argv) {
     check_formats(tests);
   }
   check_accessors();
+  check_arguments();
   check_errors();
   if (failures) {
     fprintf(stderr, "%d checks failed\n", failures);

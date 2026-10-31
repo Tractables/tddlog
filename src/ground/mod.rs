@@ -72,6 +72,7 @@ mod interned;
 mod library;
 mod linear;
 mod magic;
+mod modes;
 mod negation;
 mod noisy_or;
 mod normalize;
@@ -297,9 +298,17 @@ fn ground_norm(
     // ([`engine::topdown`]), as is one whose rewrite reads a findall inside
     // a recursion that only the demand makes, and a stratified one whose
     // rewrite loses a negation that bounds a demand
-    // ([`magic::Rewritten::top_down`]).
+    // ([`magic::Rewritten::top_down`]). So is a program whose queries
+    // reach a test, a `\=` or a negation say, before a literal written
+    // after it binds the test's variables, which ProbLog makes as the
+    // terms stand there and the other routes on the values bound later
+    // ([`modes`]). One whose queries reach an arithmetic literal or a call
+    // of a goal with a variable free there is refused, as ProbLog stops
+    // on it.
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
+    } else if modes::tests_unbound(norm)? {
+        engine::topdown::ground(norm, bound)?
     } else {
         let plain = engine::safe(norm);
         let levelled = if plain {

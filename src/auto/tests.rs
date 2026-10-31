@@ -465,14 +465,15 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
 
 #[test]
 fn settling_past_its_budget_is_the_trials_work() {
-    // At 120 steps `program`'s first attempt compiles and stops while it
-    // settles its names, past the budget, the compile's work: past it each
-    // cut still reads its readers before it keeps its names. Uncharged,
-    // that work tripped the run's stop before the trial had spent its
-    // turn, and the stop read as one by size: the watch doubled and the
-    // work did not, and each attempt settled a few cuts more (watches of
-    // 2^16 and 2^17 pairs, where no formula holds 2^15). Charged to the
-    // trial, the stop is one by work, and no trial's watch moves.
+    // At 120 steps `program`'s first attempt compiles and settles its
+    // names past the budget, the compile's work: past it each cut still
+    // reads its readers before it keeps its names. Its turn ends at the
+    // query phase's first step. Uncharged, that work moved the end of the
+    // turn and the run's stop past what the trial had spent, and a stop
+    // read as one by size: the watch doubled and the work did not, and
+    // each attempt settled a few cuts more (watches of 2^16 and 2^17
+    // pairs, where no formula holds 2^15). Charged to the trial, the stop
+    // is one by work, and no trial's watch moves.
     let steps = 120;
     let gp = diamond_loop(steps);
     let run = run_with_watch(
@@ -488,7 +489,8 @@ fn settling_past_its_budget_is_the_trials_work() {
         notes
             .iter()
             .any(|n| n.starts_with("trial: program indicators=off,")
-                && n.contains(", phase=query, stopped,")),
+                && n.contains(", phase=query, steps 0/")
+                && n.contains(", stopped, ")),
         "{notes:#?}"
     );
     assert!(
@@ -909,7 +911,7 @@ fn a_loop_the_watch_refused_is_taken_in_the_trials_next_attempt() {
     // every trial's formula, one loop of clauses over the whole lineage,
     // is refused whole, as TPC-H q18's are. `td`, first, keeps its loop,
     // and its next attempt, under a watch that holds it, takes the loop
-    // rather than build it again; `td` finishes.
+    // rather than build it again and finishes the compile; `td` finishes.
     let (gp, p) = lineage_of_orders(10, 4, 5);
     let td = Kind::Td;
     assert_eq!(candidates(&gp), vec![td, Kind::Dynamic, Kind::Closed]);
@@ -929,7 +931,7 @@ fn a_loop_the_watch_refused_is_taken_in_the_trials_next_attempt() {
         .collect();
     assert!(trials.len() >= 2, "{:#?}", run.vtree_notes);
     assert!(trials[0].contains(", components 0/1, size,"), "{trials:#?}");
-    assert!(trials[1].contains(", components 1/1, "), "{trials:#?}");
+    assert!(trials[1].contains(", phase=query, "), "{trials:#?}");
     assert_eq!(run.stats.clause_memo.retaken, 1);
     assert_eq!(run.stats.clause_memo.built, 1, "the loop was built twice");
     let answers = run.results.unwrap();

@@ -20,7 +20,11 @@ fn main() {}
 /// `uai`), a network's with `evidence` the text of its evidence file (null
 /// for none), under the vtree strategy named `strategy` (as `--vtree`
 /// takes it; `auto` is the default), with `P(e)` where
-/// `evidence_probability` is 1, and return the JSON text of the result
+/// `evidence_probability` is 1, a ProbLog program's or an LPAD's
+/// arguments the `num_arguments` strings at `arguments` (null for none;
+/// each the text of a term that takes the places `$1`, `$2`, ... of the
+/// program, as the command line takes the values after the program's
+/// file), and return the JSON text of the result
 /// (`runtime.js` documents its fields), or of `{"error": ...}` where the
 /// program or the options are refused or the run fails. The caller
 /// releases the string with [`tddlog_string_free`].
@@ -32,7 +36,8 @@ fn main() {}
 /// # Safety
 ///
 /// `program`, `format` and `strategy` must point to NUL-terminated
-/// strings, and `evidence` must be null or point to one.
+/// strings, `evidence` must be null or point to one, and `arguments` must
+/// be null or point to `num_arguments` pointers to NUL-terminated strings.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn tddlog_solve_json(
     program: *const c_char,
@@ -40,12 +45,39 @@ pub unsafe extern "C" fn tddlog_solve_json(
     evidence: *const c_char,
     strategy: *const c_char,
     evidence_probability: u32,
+    arguments: *const *const c_char,
+    num_arguments: u32,
 ) -> *mut c_char {
     if program.is_null() || format.is_null() || strategy.is_null() {
         return into_c_string(error_json(
             "no program, no format or no strategy",
             &Partial::default(),
         ));
+    }
+    // SAFETY: the caller guarantees `num_arguments` pointers at `arguments`.
+    let pointers = match (arguments.is_null(), num_arguments) {
+        (_, 0) => &[][..],
+        (true, _) => {
+            return into_c_string(error_json(
+                "no arguments, and num_arguments is not 0",
+                &Partial::default(),
+            ));
+        }
+        (false, n) => unsafe { std::slice::from_raw_parts(arguments, n as usize) },
+    };
+    let mut read = Vec::with_capacity(pointers.len());
+    for &argument in pointers {
+        // SAFETY: the caller guarantees NUL-terminated strings.
+        let text = (!argument.is_null()).then(|| unsafe { CStr::from_ptr(argument) }.to_str());
+        match text {
+            Some(Ok(text)) => read.push(text.to_string()),
+            _ => {
+                return into_c_string(error_json(
+                    "an argument is null or not UTF-8",
+                    &Partial::default(),
+                ));
+            }
+        }
     }
     // SAFETY: the caller guarantees NUL-terminated strings.
     let (program, format, strategy) = unsafe {
@@ -65,7 +97,14 @@ pub unsafe extern "C" fn tddlog_solve_json(
     // A panic reaching Emscripten aborts the module, and every later call on
     // it fails; the panic hook has written the details to the console.
     let json = catch_unwind(AssertUnwindSafe(|| {
-        run(program, format, evidence, strategy, evidence_probability)
+        run(
+            program,
+            format,
+            evidence,
+            strategy,
+            evidence_probability,
+            read,
+        )
     }))
     .unwrap_or_else(|payload| {
         let message = payload
@@ -113,6 +152,7 @@ fn run(
     evidence: Option<&[u8]>,
     strategy: &str,
     evidence_probability: u32,
+    arguments: Vec<String>,
 ) -> String {
     let mut partial = Partial::default();
     let format: Format = match format.parse() {
@@ -135,6 +175,7 @@ fn run(
     };
     let read = ReadOptions {
         evidence: evidence.map(|e| format.evidence(e)),
+        arguments,
         ..ReadOptions::default()
     };
     let input = match tddlog::read(program, format, &read) {
@@ -333,10 +374,34 @@ mod tests {
         strategy: &str,
         evidence_probability: u32,
     ) -> String {
+        solve_with(
+            program,
+            format,
+            evidence,
+            strategy,
+            evidence_probability,
+            &[],
+        )
+    }
+
+    /// [`solve_in`] of a program given `arguments`.
+    fn solve_with(
+        program: &[u8],
+        format: &str,
+        evidence: Option<&[u8]>,
+        strategy: &str,
+        evidence_probability: u32,
+        arguments: &[&str],
+    ) -> String {
         let program = CString::new(program).unwrap();
         let format = CString::new(format).unwrap();
         let evidence = evidence.map(|e| CString::new(e).unwrap());
         let strategy = CString::new(strategy).unwrap();
+        let arguments: Vec<CString> = arguments
+            .iter()
+            .map(|a| CString::new(*a).unwrap())
+            .collect();
+        let pointers: Vec<*const c_char> = arguments.iter().map(|a| a.as_ptr()).collect();
         // SAFETY: each is NUL-terminated or null, and the result is freed
         // once read.
         unsafe {
@@ -346,6 +411,8 @@ mod tests {
                 evidence.as_ref().map_or(std::ptr::null(), |e| e.as_ptr()),
                 strategy.as_ptr(),
                 evidence_probability,
+                pointers.as_ptr(),
+                pointers.len() as u32,
             );
             let text = CStr::from_ptr(out).to_str().unwrap().to_string();
             tddlog_string_free(out);
@@ -421,6 +488,21 @@ mod tests {
             solve_in(b"0.5::a. query(a).", "problog", Some(b""), "auto", 0)
                 .starts_with("{\"error\":\"options error: an evidence file is for a network")
         );
+    }
+
+    /// examples/chain.pl, given a chain of 10 links of 0.9 and node 4,
+    /// reaches it with probability 0.9^4; a place without an argument is
+    /// an error.
+    #[test]
+    fn arguments_take_their_places() {
+        let chain = file("examples/chain.pl");
+        let out = solve_with(&chain, "problog", None, "auto", 0, &["10", "0.9", "4"]);
+        assert!(
+            out.starts_with("{\"answers\":[{\"query\":\"reach(4)\",\"probability\":0.6561"),
+            "{out}"
+        );
+        let out = solve_with(&chain, "problog", None, "auto", 0, &["10", "0.9"]);
+        assert!(out.contains("`$3` has no argument"), "{out}");
     }
 
     #[test]

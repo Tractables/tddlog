@@ -72,7 +72,7 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
     );
     let m = &s.clause_memo;
     eprintln!(
-        "compile clause memo: {} of {} clause loops copied, {} kept loops of another shape passed over, {} kept ({} pairs); {} literals left out, {} loops held their sibling groups; {} built level by level ({} from their models), {} fell back, {} kept after the watch refused them ({} taken again); {} bodies by the or-route ({} of them after a product given up); {} readers' links tied to another's copies",
+        "compile clause memo: {} of {} clause loops copied, {} kept loops of another shape passed over, {} kept ({} pairs); {} literals left out, {} loops held their sibling groups; {} built level by level ({} from their models), {} fell back, {} kept after the watch refused them ({} taken again), {} held at the end of a turn ({} gone on with); {} bodies by the or-route ({} of them after a product given up); {} readers' links tied to another's copies",
         m.copies,
         m.lookups,
         m.passed,
@@ -85,6 +85,8 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
         m.fell_back,
         m.refused,
         m.retaken,
+        m.paused,
+        m.resumed,
         m.or_routes,
         m.given_up,
         s.tied

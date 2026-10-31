@@ -747,6 +747,27 @@ fn dice() {
     );
 }
 
+/// A program whose size, probability and query are its arguments: a chain
+/// reaches node k with the probability that its first k links are up,
+/// p^k, computed by hand.
+#[test]
+fn chain() {
+    let data = std::fs::read("examples/chain.pl").unwrap();
+    for (n, p, k) in [(10, 0.9f64, 4), (3, 0.5, 3), (12, 0.25, 0)] {
+        let options = tddlog::network::ReadOptions {
+            arguments: vec![n.to_string(), p.to_string(), k.to_string()],
+            ..Default::default()
+        };
+        let input = tddlog::read(&data, tddlog::Format::Problog, &options).unwrap();
+        let file = format!("chain.pl {n} {p} {k}");
+        check_text(
+            &file,
+            &input.program,
+            &[(&format!("reach({k})"), p.powi(k))],
+        );
+    }
+}
+
 /// A Bayesian network read as a program (`tddlog --program`; bnlearn's
 /// cancer network, leaf marginals); ProbLog's answers.
 #[test]
@@ -1393,6 +1414,37 @@ mod lpad {
                 ("trait(carl)", 0.196),
                 ("sampled(carl)", 0.5),
                 ("big_family", 0.9),
+            ],
+        );
+    }
+
+    /// PRISM's switches under PITA's default, each called once, with the
+    /// answers computed by hand in the program's comments, which PITA
+    /// gives too.
+    #[test]
+    fn msw() {
+        check(
+            "../tests/lpad/msw.cplint.pl",
+            &[
+                ("res(coin,heads)", 0.51),
+                ("res(coin,tails)", 0.49),
+                ("sneezing(bob)", 0.94),
+            ],
+        );
+    }
+
+    /// PRISM's switches under PITA's memoization: one choice for each
+    /// instance of a switch, with the answers computed by hand in the
+    /// program's comments, which PITA gives too.
+    #[test]
+    fn msw_memo() {
+        check(
+            "../tests/lpad/msw_memo.cplint.pl",
+            &[
+                ("two_heads", 0.6),
+                ("mixed", 0.0),
+                ("same(2)", 0.09),
+                ("again(2)", 0.3),
             ],
         );
     }

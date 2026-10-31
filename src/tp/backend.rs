@@ -160,6 +160,9 @@ pub(crate) struct TddBackend<'a> {
     /// The work clock where the phase under way last kept a step
     /// ([`TddBackend::kept`]).
     kept_at: Cell<u64>,
+    /// The work clock at which `auto`'s turn ends ([`TddBackend::pause`]),
+    /// `None` outside a turn.
+    turn_end: Cell<Option<u64>>,
 }
 
 /// When a minimization between operations runs tididi's full plan, and
@@ -233,6 +236,21 @@ pub(crate) struct KeptProjector {
     projector: Projector,
 }
 
+/// The run's stop and the end of its turn moved later
+/// ([`TddBackend::stop_later`]), until dropped.
+pub(crate) struct Later<'b> {
+    _stop: Option<tididi::limits::LimitScope<'b>>,
+    turn_end: &'b Cell<Option<u64>>,
+    work: u64,
+}
+
+impl Drop for Later<'_> {
+    fn drop(&mut self) {
+        self.turn_end
+            .set(self.turn_end.get().map(|at| at.saturating_sub(self.work)));
+    }
+}
+
 impl<'a> TddBackend<'a> {
     pub(crate) fn new(engine: &'a Engine, vtree: Arc<Vtree>) -> Self {
         Self::resume(engine, vtree, None)
@@ -256,6 +274,7 @@ impl<'a> TddBackend<'a> {
             projector: RefCell::new(projector),
             none_of: RefCell::default(),
             kept_at: Cell::new(engine.limits().work_units()),
+            turn_end: Cell::new(None),
         }
     }
 
@@ -1048,19 +1067,26 @@ impl TddBackend<'_> {
             at,
         ))
     }
-    /// The run's stop in work units moved `work` units later, held while
-    /// the scope lives; `None` where the run has no such stop.
-    pub(crate) fn stop_later(&self, work: u64) -> Option<tididi::limits::LimitScope<'_>> {
+    /// The run's stop in work units, and the end of its turn
+    /// ([`Self::pause`]), moved `work` units later while the result lives.
+    pub(crate) fn stop_later(&self, work: u64) -> Later<'_> {
         let limits = self.engine.limits();
         let rules = limits.armed().stop_rules();
-        let Some(StopAt::WorkUnits(u)) = rules.unconditional else {
-            return None;
+        let stop = match rules.unconditional {
+            Some(StopAt::WorkUnits(u)) => Some(limits.edit(|c| {
+                c.with_stop_rules(
+                    rules.with_unconditional(Some(StopAt::WorkUnits(u.saturating_add(work)))),
+                )
+            })),
+            _ => None,
         };
-        Some(limits.edit(|c| {
-            c.with_stop_rules(
-                rules.with_unconditional(Some(StopAt::WorkUnits(u.saturating_add(work)))),
-            )
-        }))
+        self.turn_end
+            .set(self.turn_end.get().map(|at| at.saturating_add(work)));
+        Later {
+            _stop: stop,
+            turn_end: &self.turn_end,
+            work,
+        }
     }
     pub(crate) fn or(&self, a: Tdd, b: Tdd) -> Result<Tdd, CompileError> {
         Ok(self.engine.or(a, b)?)
@@ -1164,6 +1190,45 @@ impl TddBackend<'_> {
     /// ([`Self::kept`]): what a stop now loses.
     pub(crate) fn lost(&self) -> u64 {
         self.work_units().saturating_sub(self.kept_at.get())
+    }
+
+    /// Ends `auto`'s turn at the first step kept once the work clock has
+    /// reached `at` ([`Self::pause`]).
+    pub(crate) fn end_turn_at(&self, at: u64) {
+        self.turn_end.set(Some(at));
+    }
+
+    /// Whether the backend runs a turn with an end ([`Self::end_turn_at`]).
+    pub(crate) fn in_turn(&self) -> bool {
+        self.turn_end.get().is_some()
+    }
+
+    /// Whether the turn under way has reached its end.
+    pub(crate) fn turn_over(&self) -> bool {
+        self.turn_end
+            .get()
+            .is_some_and(|at| self.work_units() >= at)
+    }
+
+    /// A stop, where the turn under way has reached its end, at a step the
+    /// phase has kept: between components, atom updates, the bodies of a
+    /// loop of clauses, the evidence walk's observations and joins, and
+    /// answers. The phase goes on from that step in the trial's next
+    /// attempt, and the stop loses nothing ([`Self::lost`]). The run's stop
+    /// in work units, past the turn's end, is the guard against one
+    /// operation that runs far past it, and loses that operation.
+    pub(crate) fn pause(&self) -> Result<(), CompileError> {
+        if self.turn_over() {
+            return Err(self.end_turn());
+        }
+        Ok(())
+    }
+
+    /// The stop of [`Self::pause`], where the phase has kept what it holds
+    /// and the turn is over.
+    pub(crate) fn end_turn(&self) -> CompileError {
+        self.kept();
+        CompileError::Tdd(OperationError::Stopped)
     }
 
     /// Search for a global vtree on which `members` are smaller, sweeping

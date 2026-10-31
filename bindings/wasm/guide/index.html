@@ -231,7 +231,13 @@ query(total(_)).</pre>
   unless the program defines its own.
   <code>findall/3</code> collects the solutions of a deterministic goal in
   ProbLog's order, and its list may then be counted, summed or sorted
-  under probabilistic facts, as <code>total</code> above. tddlog grounds
+  under probabilistic facts, as <code>total</code> above. Over a
+  probabilistic goal its answer is a distribution over lists, each
+  solution listed once per proof; the order of such a list follows
+  tddlog's proofs, not ProbLog's engine, so a program that reads the
+  order (<code>nth1/3</code>, the list's head) may answer differently,
+  while order-free uses (<code>length/2</code>, <code>sum_list/2</code>,
+  <code>member/2</code>, <code>sort/2</code>) agree. tddlog grounds
   the program to one without terms, which it compiles as any other: a
   term is a value of the grounding.</p>
 
@@ -257,9 +263,8 @@ query(path(1,X)).                    % each path(1,X) that can hold</pre>
     clauses, which ProbLog refuses too: a misspelt name stops tddlog
     rather than read as false, though a call that no query and no
     observation reaches is left alone;</li>
-    <li>a <code>findall/3</code> over a probabilistic goal, whose answer
-    in ProbLog is a distribution over lists, over a recursive goal, or
-    with a solution that has two proofs, which ProbLog lists twice;</li>
+    <li>a <code>findall/3</code> in a cycle of calls, whose goal calls
+    the findall again;</li>
     <li>a grounding that does not end, as
     <code>nat(s(X)) :- nat(X).</code> asked for every
     <code>nat(X)</code>;</li>
@@ -515,9 +520,24 @@ compilation error: atom a is undefined in the well-founded model of some possibl
 
 <section class="card prose" id="command-line">
   <h2>The command line</h2>
-  <p><code>tddlog [options] program.pl</code> prints one
+  <p><code>tddlog [options] program.pl [argument ...]</code> prints one
   <code>atom:&lt;tab&gt;probability</code> line per query, in the program's
-  order, as ProbLog does. The options:</p>
+  order, as ProbLog does. The arguments after a ProbLog program or an
+  LPAD take its places <code>$1</code>, <code>$2</code>, ..., outside
+  comments and quoted atoms, each read as a term (a number, an atom, a
+  list or a compound), as a shell script's arguments do. One program then
+  serves every size, probability, query and observation:</p>
+<pre data-lang="problog">$2::link(I) :- between(1, $1, I).
+reach(0).
+reach(I) :- between(1, $1, I), J is I - 1, reach(J), link(I).
+query(reach($3)).</pre>
+  <p>is <code>examples/chain.pl</code>, and <code>tddlog
+  examples/chain.pl 10 0.9 4</code> answers it for a chain of 10 links of
+  probability 0.9, queried at node 4. A place without an argument, an
+  argument without a place and an argument that is not a term are
+  errors. <code>tddlog --program examples/chain.pl 10 0.9 4</code> prints
+  the program with the arguments in place, for a system that does not
+  take them. The options:</p>
   <dl>
     <dt><code>--vtree &lt;strategy&gt;</code></dt>
     <dd>The vtree, the tree over the probabilistic facts that shapes the
@@ -715,7 +735,8 @@ print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
   Python 3.10 or later. <code>solve</code> takes the
   options as keywords (<code>format</code>, <code>evidence</code>,
   <code>vtree</code>, <code>evidence_probability</code>,
-  <code>queries</code>), and an error
+  <code>queries</code>, and <code>arguments</code>, a list of the
+  program's arguments as strings), and an error
   is an exception of its own: <code>tddlog.ParseError</code>,
   <code>GroundingError</code> or <code>CompilationError</code>. The
   <a href="../python/">Python page</a> has the rest.</p>
@@ -733,8 +754,10 @@ for (size_t i = 0; i &lt; tddlog_solution_num_answers(solution); i++)
            tddlog_solution_probability(solution, i));
 tddlog_solution_free(solution);</pre>
   <p><code>options.format</code> names the input's format (NULL for
-  ProbLog) and <code>options.evidence</code> holds a network's evidence
-  file (NULL for none). The C library installs with CMake, as a CMake
+  ProbLog), <code>options.evidence</code> holds a network's evidence
+  file (NULL for none), and <code>options.arguments</code> points to
+  <code>options.num_arguments</code> strings, the program's arguments.
+  The C library installs with CMake, as a CMake
   package and a pkg-config file; the <a href="../c/">C page</a> covers
   building, linking and the header.</p>
 </section>

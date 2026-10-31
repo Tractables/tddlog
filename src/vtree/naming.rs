@@ -33,6 +33,10 @@
 //! Where no boundary is narrow, nothing is named and the layout is the
 //! order's.
 //!
+//! A body that reads more than [`WIDEST`] atoms crosses every boundary in
+//! its span with everything it has read before it, so no cut there could
+//! be narrow; it is first written as a chain along the order ([`chained`]).
+//!
 //! Whether a cut's names pay is settled on the compiled program
 //! ([`crate::tp::settle`]): where the joint of a cut's links is larger than
 //! what the formulas reading its copies would hold with them expanded, the
@@ -41,8 +45,9 @@
 use rustc_hash::FxHashSet;
 
 use crate::ground::deps::{Deps, fan_in};
-use crate::ground::{AtomId, GroundProgram};
+use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, GroundRule};
 use crate::indicators;
+use crate::syntax::{Atom, Term};
 
 /// The widest cut named. The evidence holds the joint of a cut's names,
 /// up to `2^width` pairs a level there, where the expanded formulas each
@@ -51,6 +56,9 @@ use crate::indicators;
 /// watch `auto` puts on a trial's diagrams. The widest cuts that helped
 /// were 17 (link grids at side 16) and 14 (weather at 12 factories).
 const WIDEST: usize = 20;
+
+/// The name of a link of a chained body ([`chained`]).
+const NAME: &str = "$cj";
 
 /// `program`'s layout of `gp`: its facts in the order a right-linear vtree
 /// reads them last to first, and where the order has narrow cuts, the
@@ -71,6 +79,15 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
     if !gp.encoding.is_empty() {
         return Laid { facts, named: None };
     }
+    let chained = chained(gp, deps, &order);
+    let chained_deps = chained.as_ref().map(Deps::of);
+    let links = chained
+        .as_ref()
+        .map_or(0, |c| c.num_atoms() - gp.num_atoms());
+    let (gp, deps, order) = match (&chained, &chained_deps) {
+        (Some(c), Some(d)) => (c, d, positions(c, fan_in)),
+        _ => (gp, deps, order),
+    };
     let (at, boundaries) = profile(gp, &order);
     let cuts = cuts(&boundaries);
     if cuts.is_empty() {
@@ -137,26 +154,200 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
     laid.extend(next.map(|c| c.2));
     named.encoding.segments = units;
     let atoms: FxHashSet<AtomId> = named.encoding.indicators.iter().map(|i| i.atom).collect();
-    let note = format!(
+    let mut note = format!(
         "naming: {} cuts, widest {}, {} copies of {} atoms",
         cuts.len(),
         cuts.iter().map(|c| c.width).max().unwrap_or(0),
         named.encoding.indicators.len(),
         atoms.len()
     );
+    if links > 0 {
+        note += &format!(", wide bodies chained by {links} links");
+    }
     Laid {
         facts: laid,
         named: Some((named, note)),
     }
 }
 
-/// Every atom of `gp`, fact or derived, in the trial's order. The file's:
-/// a fact where the program states it, a derived atom at its last rule.
-/// The ground program keeps no text positions, but the grounder numbers
-/// atoms as the program names them and keeps its rules in program order,
-/// so a fact goes before the first rule that names an atom numbered after
-/// it. With `fan_in`, the fan-in order, the deepest roots first
-/// ([`fan_in`]): each atom after what it reads.
+/// `gp` with each body that reads more atoms than [`WIDEST`] written as a
+/// chain along `order`, or `None` where no body is that wide. Such a body
+/// crosses every boundary in its span with all it has read before it, so
+/// no cut there can be narrow: a hidden Markov model's joint query, the
+/// conjunction of its states, keeps the states of every step alive to the
+/// end. As a chain, each link the conjunction of the link before and the
+/// body's next literal in the order, it crosses each boundary as one atom,
+/// and the cuts name the link and the step's state there.
+///
+/// A body is read through its views first: a derived atom of one rule
+/// that one body reads, positively, and that is neither queried nor
+/// observed, is its own body there, so that a conjunction is chained along
+/// the order however its gates associate it. Roulette's joint query
+/// conjoins the states from the last step back, each gate reading the
+/// state of its step and the gate after it, which puts every gate at the
+/// end of the order and every state across the boundaries up to there.
+/// The views a chained body reads are left out with their rules.
+fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundProgram> {
+    let n = gp.num_atoms();
+    let mut reads = vec![0u32; n];
+    for r in &gp.rules {
+        for l in &r.body {
+            reads[l.atom() as usize] += 1;
+        }
+    }
+    for (_, a, _) in gp.queries.iter().chain(&gp.evidence) {
+        if let Some(a) = a {
+            reads[*a as usize] = u32::MAX;
+        }
+    }
+    let one_rule = |a: AtomId| match &deps.by_head[a as usize][..] {
+        &[ri] if !gp.rules[ri].pairs => Some(ri),
+        _ => None,
+    };
+    // An acyclic atom's rules read atoms of earlier components only.
+    let mut view = vec![false; n];
+    for scc in &deps.sccs {
+        if let &[a] = scc.as_slice()
+            && reads[a as usize] == 1
+            && let Some(ri) = one_rule(a)
+            && gp.rules[ri].body.iter().all(|l| l.atom() != a)
+        {
+            view[a as usize] = true;
+        }
+    }
+    let is_view = |l: &GLit| l.is_positive() && view[l.atom() as usize];
+    // The literals each atom of one rule stands for, read through views,
+    // counted in dependency order.
+    let mut width = vec![1usize; n];
+    for scc in &deps.sccs {
+        for &a in scc {
+            if let Some(ri) = one_rule(a) {
+                width[a as usize] = gp.rules[ri]
+                    .body
+                    .iter()
+                    .map(|l| {
+                        if is_view(l) {
+                            width[l.atom() as usize]
+                        } else {
+                            1
+                        }
+                    })
+                    .sum();
+            }
+        }
+    }
+    let wide = |r: &GroundRule| {
+        !r.pairs
+            && r.body
+                .iter()
+                .map(|l| {
+                    if is_view(l) {
+                        width[l.atom() as usize]
+                    } else {
+                        1
+                    }
+                })
+                .sum::<usize>()
+                > WIDEST
+    };
+    // Readers before the views they read: a view a wide body takes in is
+    // not chained on its own.
+    let mut taken = vec![false; n];
+    let mut flat: Vec<Option<Vec<GLit>>> = vec![None; gp.rules.len()];
+    for scc in deps.sccs.iter().rev() {
+        for &h in scc {
+            if taken[h as usize] {
+                continue;
+            }
+            for &ri in &deps.by_head[h as usize] {
+                if !wide(&gp.rules[ri]) {
+                    continue;
+                }
+                let mut body = Vec::new();
+                let mut stack = gp.rules[ri].body.clone();
+                while let Some(l) = stack.pop() {
+                    if is_view(&l) {
+                        taken[l.atom() as usize] = true;
+                        let v = one_rule(l.atom()).expect("a view has one rule");
+                        stack.extend_from_slice(&gp.rules[v].body);
+                    } else {
+                        body.push(l);
+                    }
+                }
+                body.sort_unstable();
+                body.dedup();
+                flat[ri] = Some(body);
+            }
+        }
+    }
+    if flat.iter().all(Option::is_none) {
+        return None;
+    }
+    let mut at = vec![0usize; n];
+    for (p, &a) in order.iter().enumerate() {
+        at[a as usize] = p;
+    }
+    // Each link's rule goes where its literal is placed ([`positions`]):
+    // after a derived literal's last rule, before a fact's first reader,
+    // never after the body it is chained from. Keys of `3 * rule`, before,
+    // `3 * rule + 1`, the rule itself, and `3 * rule + 2`, after, sorted
+    // stably, keep the rules' own order and each chain's.
+    let (first_read, last_rule) = rule_places(gp);
+    let mut out = gp.without_rules();
+    let mut rules: Vec<(usize, GroundRule)> = Vec::with_capacity(gp.rules.len());
+    let mut links = 0;
+    for (ri, (r, body)) in gp.rules.iter().zip(flat).enumerate() {
+        if taken[r.head as usize] {
+            continue;
+        }
+        let key = 3 * ri + 1;
+        let Some(mut body) = body else {
+            rules.push((key, r.clone()));
+            continue;
+        };
+        // Literals read twice through views count once.
+        if body.len() <= WIDEST {
+            rules.push((key, GroundRule::new(r.head, body)));
+            continue;
+        }
+        body.sort_by_key(|l| at[l.atom() as usize]);
+        let (&last, inner) = body.split_last().expect("a wide body");
+        let mut link = inner[0];
+        let mut placed = 0;
+        for &l in &inner[1..] {
+            let a = out.atoms.len() as AtomId;
+            out.atoms.push(Atom::new(NAME, vec![Term::Int(links)]));
+            out.kinds.push(AtomKind::Derived);
+            links += 1;
+            let i = l.atom() as usize;
+            let at_l = match last_rule[i] {
+                usize::MAX => 3 * first_read[i],
+                lr => 3 * lr + 2,
+            };
+            placed = at_l.clamp(placed, key);
+            rules.push((placed, GroundRule::new(a, vec![link, l])));
+            link = GLit::Pos(a);
+        }
+        rules.push((key, GroundRule::new(r.head, vec![link, last])));
+    }
+    rules.sort_by_key(|&(key, _)| key);
+    out.rules = rules.into_iter().map(|(_, r)| r).collect();
+    Some(out)
+}
+
+/// Every atom of `gp`, fact or derived, in the trial's order. The facts
+/// keep the order the program states them in, the variable order its
+/// author or exporter chose, and each goes as late as that order allows:
+/// before the first rule that reads it or a fact stated after it. A
+/// derived atom goes at its last rule. Where a file states each fact right
+/// before the gate that first reads it (Alea's), this is the file's
+/// order; where it states every fact before every rule (Roulette's
+/// circuits, Alea's exported ones), the gates are interleaved with the
+/// facts as far as the facts' order allows, and the same circuit is cut
+/// alike however it is written. The facts after every rule's readers come
+/// after the rules, and the derived atoms with no rule last. With `fan_in`,
+/// the fan-in order, the deepest roots first ([`fan_in`]): each atom after
+/// what it reads.
 pub(super) fn positions(gp: &GroundProgram, fan_in_order: bool) -> Vec<AtomId> {
     let n = gp.num_atoms();
     if fan_in_order {
@@ -165,21 +356,20 @@ pub(super) fn positions(gp: &GroundProgram, fan_in_order: bool) -> Vec<AtomId> {
         order.sort_unstable_by_key(|&a| place[a as usize]);
         return order;
     }
-    let mut last_rule = vec![usize::MAX; n];
-    for (ri, r) in gp.rules.iter().enumerate() {
-        last_rule[r.head as usize] = ri;
-    }
+    let (first_read, last_rule) = rule_places(gp);
     let facts: Vec<AtomId> = gp.facts().map(|(a, _)| a).collect();
+    // The rule each fact goes before: the first that reads it or a fact
+    // after it.
+    let mut slot = vec![usize::MAX; facts.len()];
+    let mut next = usize::MAX;
+    for (s, &f) in slot.iter_mut().zip(&facts).rev() {
+        next = next.min(first_read[f as usize]);
+        *s = next;
+    }
     let mut order = Vec::with_capacity(n);
-    let (mut f, mut named) = (0, 0);
+    let mut f = 0;
     for (ri, r) in gp.rules.iter().enumerate() {
-        named = r
-            .body
-            .iter()
-            .map(|l| l.atom())
-            .chain([r.head])
-            .fold(named, |m, a| m.max(a + 1));
-        while f < facts.len() && facts[f] < named {
+        while f < facts.len() && slot[f] <= ri {
             order.push(facts[f]);
             f += 1;
         }
@@ -188,11 +378,28 @@ pub(super) fn positions(gp: &GroundProgram, fan_in_order: bool) -> Vec<AtomId> {
         }
     }
     order.extend_from_slice(&facts[f..]);
-    // Derived atoms with no rule, last.
     order.extend(
         (0..n as AtomId).filter(|&a| !gp.is_fact(a) && last_rule[a as usize] == usize::MAX),
     );
     order
+}
+
+/// Per atom, the first rule of `gp` that reads it and its own last rule,
+/// `usize::MAX` for none: what [`positions`] places a fact before and a
+/// derived atom at.
+fn rule_places(gp: &GroundProgram) -> (Vec<usize>, Vec<usize>) {
+    let n = gp.num_atoms();
+    let (mut first_read, mut last_rule) = (vec![usize::MAX; n], vec![usize::MAX; n]);
+    for (ri, r) in gp.rules.iter().enumerate() {
+        last_rule[r.head as usize] = ri;
+        for l in &r.body {
+            let f = &mut first_read[l.atom() as usize];
+            if *f == usize::MAX {
+                *f = ri;
+            }
+        }
+    }
+    (first_read, last_rule)
 }
 
 /// A boundary of an order that a cut may take: one after a derived atom,
@@ -303,31 +510,176 @@ mod tests {
         .expect("grounds")
     }
 
+    /// Where a program states its facts.
+    #[derive(Clone, Copy, Debug)]
+    enum Facts {
+        First,
+        WithTheirStep,
+        Last,
+    }
+
     /// A chain of steps, each reading its own two facts and the step
     /// before: one atom crosses each step's boundary, and every step is a
-    /// segment of its own.
-    fn chain(steps: usize) -> String {
-        let mut src = String::from("0.5::s0.\n");
+    /// segment of its own. Its facts stated as `facts` says.
+    fn chain_written(steps: usize, facts: Facts) -> String {
+        let fact = |i: usize| format!("0.3::a{i}. 0.6::b{i}.\n");
+        let rules = |i: usize| format!("s{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n", p = i - 1);
+        let mut src = String::new();
+        if !matches!(facts, Facts::Last) {
+            src += "0.5::s0.\n";
+        }
+        if matches!(facts, Facts::First) {
+            src.extend((1..steps).map(fact));
+        }
         for i in 1..steps {
-            src += &format!(
-                "0.3::a{i}. 0.6::b{i}. s{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n",
-                p = i - 1
-            );
+            if matches!(facts, Facts::WithTheirStep) {
+                src += &fact(i);
+            }
+            src += &rules(i);
+        }
+        if matches!(facts, Facts::Last) {
+            src += "0.5::s0.\n";
+            src.extend((1..steps).map(fact));
         }
         src + &format!("query(s{}).", steps - 1)
     }
 
+    fn chain(steps: usize) -> String {
+        chain_written(steps, Facts::WithTheirStep)
+    }
+
     #[test]
-    fn the_file_order_puts_each_atom_after_its_last_rule_and_each_fact_where_stated() {
-        let gp = grounded(&chain(4));
-        let names: Vec<String> = positions(&gp, false)
-            .iter()
-            .map(|&a| gp.atoms[a as usize].to_string())
-            .collect();
+    fn a_chain_is_ordered_alike_wherever_its_facts_are_stated() {
+        for facts in [Facts::First, Facts::WithTheirStep, Facts::Last] {
+            let gp = grounded(&chain_written(4, facts));
+            let names: Vec<String> = positions(&gp, false)
+                .iter()
+                .map(|&a| gp.atoms[a as usize].to_string())
+                .collect();
+            assert_eq!(
+                names,
+                ["s0", "a1", "b1", "s1", "a2", "b2", "s2", "a3", "b3", "s3"],
+                "facts {facts:?}"
+            );
+        }
+    }
+
+    /// The facts keep the order the program states them in, each as late
+    /// as its first reader and the facts stated after it allow.
+    #[test]
+    fn the_facts_keep_their_order_each_as_late_as_it_may_go() {
+        let names = |steps: &[usize]| {
+            let mut src = String::from("0.5::s0.\n");
+            for i in steps {
+                src += &format!("0.3::a{i}. 0.6::b{i}.\n");
+            }
+            for i in 1..4 {
+                src += &format!("s{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n", p = i - 1);
+            }
+            let gp = grounded(&(src + "query(s3)."));
+            positions(&gp, false)
+                .iter()
+                .map(|&a| gp.atoms[a as usize].to_string())
+                .collect::<Vec<_>>()
+        };
         assert_eq!(
-            names,
-            ["s0", "a1", "b1", "s1", "a2", "b2", "s2", "a3", "b3", "s3"]
+            names(&[3, 2, 1]),
+            ["s0", "a3", "b3", "a2", "b2", "a1", "b1", "s1", "s2", "s3"]
         );
+        assert_eq!(
+            names(&[1, 3, 2]),
+            ["s0", "a1", "b1", "s1", "a3", "b3", "a2", "b2", "s2", "s3"]
+        );
+    }
+
+    /// The same chain is cut alike wherever its program states its facts:
+    /// the cuts follow the circuit, not the file.
+    #[test]
+    fn a_chain_is_cut_alike_wherever_its_facts_are_stated() {
+        let notes: Vec<String> = [Facts::First, Facts::WithTheirStep, Facts::Last]
+            .into_iter()
+            .map(|facts| {
+                let gp = grounded(&chain_written(8, facts));
+                let laid = lay_out(&gp, &Deps::of(&gp), false);
+                laid.named.expect("named").1
+            })
+            .collect();
+        assert!(notes[0].contains("6 cuts, widest 1"), "{notes:?}");
+        assert!(notes.iter().all(|n| *n == notes[0]), "{notes:?}");
+    }
+
+    /// How a joint over a chain's states is written.
+    #[derive(Clone, Copy, Debug)]
+    enum Joint {
+        /// One body reading every state.
+        Body,
+        /// Gates from the first step on, each reading the gate before.
+        Forward,
+        /// Gates from the last step back, each reading the gate after
+        /// (Roulette's).
+        Backward,
+    }
+
+    /// `chain(steps)`, its facts stated first, with `joint` the
+    /// conjunction of every state, written as `joint` says, and queried.
+    fn joint_written(steps: usize, joint: Joint) -> String {
+        let mut src = chain_written(steps, Facts::First);
+        src.truncate(src.rfind("query(").expect("a query"));
+        let last = steps - 1;
+        match joint {
+            Joint::Body => {
+                let states: Vec<String> = (0..steps).map(|i| format!("s{i}")).collect();
+                src += &format!("joint :- {}.\n", states.join(", "));
+            }
+            Joint::Forward => {
+                src += "j0 :- s0.\n";
+                for i in 1..last {
+                    src += &format!("j{i} :- j{p}, s{i}.\n", p = i - 1);
+                }
+                src += &format!("joint :- j{p}, s{last}.\n", p = last - 1);
+            }
+            Joint::Backward => {
+                src += &format!("j{last} :- s{last}.\n");
+                for i in (1..last).rev() {
+                    src += &format!("j{i} :- s{i}, j{n}.\n", n = i + 1);
+                }
+                src += "joint :- s0, j1.\n";
+            }
+        }
+        src + "query(joint)."
+    }
+
+    /// A conjunction of more states than a cut is named for is cut after
+    /// every step, however its gates associate it, in the file's order and
+    /// in the fan-in order. The fan-in walk enters the chain at its end and
+    /// each link's body before the step's state, so it meets the states
+    /// from the first: entered at the last state, it would place every
+    /// step's first fact before the second's (the facts are stated first,
+    /// and the grounder lists them first in a body).
+    #[test]
+    fn a_joint_is_cut_alike_however_its_gates_associate_it() {
+        let notes: Vec<String> = [Joint::Body, Joint::Forward, Joint::Backward]
+            .into_iter()
+            .flat_map(|joint| {
+                let gp = ground(
+                    &parse_program(&joint_written(30, joint)).expect("parses"),
+                    &GroundOptions {
+                        views: false,
+                        ..GroundOptions::default()
+                    },
+                )
+                .expect("grounds");
+                [false, true].map(|fan_in| {
+                    let laid = lay_out(&gp, &Deps::of(&gp), fan_in);
+                    laid.named.expect("named").1
+                })
+            })
+            .collect();
+        assert!(
+            notes[0].contains("29 cuts, widest 2") && notes[0].contains("chained by 28 links"),
+            "{notes:?}"
+        );
+        assert!(notes.iter().all(|n| *n == notes[0]), "{notes:?}");
     }
 
     #[test]

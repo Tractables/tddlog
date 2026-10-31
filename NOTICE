@@ -10,6 +10,9 @@ programs and data, under their own terms:
 - data/cplint: example and dataset files from cplint
   (https://github.com/friguzzi/cplint) and cplint_datasets
   (https://github.com/friguzzi/cplint_datasets), Artistic License 2.0.
+- data/swish: example programs of cplint on SWISH
+  (https://github.com/friguzzi/swish), Simplified BSD License
+  (data/swish/LICENSE).
 - data/dice: the baseline programs of Dice
   (https://github.com/SHoltzen/dice, benchmarks/baselines/), Apache
   License 2.0.

@@ -261,10 +261,14 @@ pub struct ClauseMemoStats {
     /// (`TddBackend::of_models`).
     pub from_models: usize,
     /// Loops built level by level that the watch refused and the compile
-    /// kept (`clauses::Refused`).
+    /// held (`clauses::Held`).
     pub refused: usize,
     /// Refused loops the next run took rather than build them again.
     pub retaken: usize,
+    /// Loops held part way at the end of their turn (`clauses::Held`).
+    pub paused: usize,
+    /// Paused loops the next run went on with.
+    pub resumed: usize,
     /// Bodies conjoined by the or-route (`Factoring::or_route`).
     pub or_routes: usize,
     /// Or-route bodies whose product was given up first.

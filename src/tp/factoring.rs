@@ -353,7 +353,7 @@ pub(super) struct Factoring<'a> {
     pub(super) watched: &'a dyn Fn(Tdd, AtomId) -> Result<Tdd, CompileError>,
     /// `watched` that hands back the formula the watch refused, reduced in
     /// full, with its pairs, for the [`ClauseMemo`] to keep for the next
-    /// run ([`ClauseMemo::retake`]).
+    /// run (`clauses::Held`).
     pub(super) checked: &'a dyn Fn(Tdd) -> Result<Checked<Tdd>, CompileError>,
     /// The pairs `watched` lets through.
     pub(super) watch: Option<usize>,
@@ -577,9 +577,9 @@ impl Factoring<'_> {
         {
             return Ok(parent.clone());
         }
-        // A loop the watch refused on this projection in the run before
-        // is taken on the scope it was built on ([`ClauseMemo::retake`]).
-        if let Some(scope) = self.memo.borrow().refused_scope(self.backend, vars) {
+        // A loop the run before held on this projection is taken on the
+        // scope it was built on (`clauses::Held`).
+        if let Some(scope) = self.memo.borrow().held_scope(self.backend, vars) {
             return Ok(scope);
         }
         self.backend.subscope(parent, vars)

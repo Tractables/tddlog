@@ -23,7 +23,8 @@ use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::by_hash::ByHash;
 use crate::syntax::{
-    Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Literal, NIL, Name, Term, term_cmp,
+    Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Gather, Literal, NIL, Name, Term,
+    term_cmp,
 };
 
 mod lists;
@@ -355,7 +356,7 @@ struct ICollect {
     aux: PredId,
     shared: Vec<Arg>,
     result: Arg,
-    all: bool,
+    gather: Gather,
     text: Arc<str>,
 }
 
@@ -1228,7 +1229,7 @@ fn compile_rule<'a>(
                     aux,
                     shared,
                     result,
-                    all: c.all,
+                    gather: c.gather,
                     text: c.text.clone(),
                 })));
             }
@@ -1664,6 +1665,117 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |_| one(vec![l]))
         }
+        // A value is never a variable.
+        Builtin::Var => Vec::new(),
+        Builtin::Nonvar => one(vec![vals[0].expect("mode")]),
+        // `T =.. L`: the list of a term's name and arguments, `[T]` for an
+        // atom or a number; or the term of such a list.
+        Builtin::Univ => match vals {
+            [Some(t), _] => {
+                let parts = match *t {
+                    Val::Fn(id) => g.terms.keys.list(id as usize).to_vec(),
+                    v => vec![v],
+                };
+                let l = g.make_list(&parts, nil);
+                one(vec![*t, l])
+            }
+            [None, Some(l)] => match univ(g, *l) {
+                Ok(t) => one(vec![t, *l]),
+                Err(e) => {
+                    g.fail(e);
+                    Vec::new()
+                }
+            },
+            _ => unreachable!("mode"),
+        },
+        // The test before a call of a goal that is a variable.
+        Builtin::Callable => {
+            let vals: Vec<Val> = vals.iter().map(|v| v.expect("mode")).collect();
+            let goal = match vals[0] {
+                Val::Sym(name) => Some((name, 0)),
+                Val::Fn(id) => match g.terms.keys.list(id as usize) {
+                    [Val::Sym(name), args @ ..] => Some((*name, args.len())),
+                    _ => unreachable!("a term's key starts with its name"),
+                },
+                Val::Int(_) | Val::Float(_) => None,
+            };
+            let outcome = match goal {
+                Some((name, k)) => callable(g, name, k, &vals[1..]),
+                None => Err(GroundError::Unsupported(format!(
+                    "call/N of {}, which is no goal (ProbLog's type error)",
+                    g.term_of(vals[0])
+                ))),
+            };
+            match outcome {
+                Ok(true) => one(vals),
+                Ok(false) => Vec::new(),
+                Err(e) => {
+                    g.fail(e);
+                    Vec::new()
+                }
+            }
+        }
+    }
+}
+
+/// Whether `call/(n + 1)` calls the goal of the name `name` and `k`
+/// arguments that `'$callable'(G, n, Callable, Unknown)` tests
+/// ([`Builtin::Callable`]), whose arguments after the goal are `test`:
+/// where an item `name/k` of the list `Callable` says that the program
+/// defines it. ProbLog stops on another goal, with its `UnknownClause`
+/// where no clause defines it, unless `Unknown` is `fail`
+/// (`:- unknown(fail).`), where it fails. tddlog calls a built-in only
+/// where it is written, not through a variable, and refuses it.
+fn callable(g: &mut Grounder, name: u32, k: usize, test: &[Val]) -> Result<bool, GroundError> {
+    let &[Val::Int(n), list, Val::Sym(unknown)] = test else {
+        unreachable!("the library writes the test")
+    };
+    let items = g.items(list).expect("the library writes a list");
+    let listed = items.iter().any(|&item| match item {
+        Val::Fn(id) => {
+            let key = g.terms.keys.list(id as usize);
+            key[1] == Val::Sym(name) && key[2] == Val::Int(k as i64)
+        }
+        _ => false,
+    });
+    if listed {
+        return Ok(true);
+    }
+    let pred = g.syms.names[name as usize].clone();
+    let arity = k + n as usize;
+    // ProbLog's call/N finds no clauses for a conjunction or a
+    // disjunction.
+    let builtin = super::terms::problog_builtin(&pred, arity) && !matches!(&*pred, "," | ";");
+    if !builtin && &*g.syms.names[unknown as usize] == "fail" {
+        return Ok(false);
+    }
+    let through = format!("called through call/{}", n + 1);
+    Err(if builtin {
+        GroundError::Unsupported(format!(
+            "{pred}/{arity}, a built-in {through}, which tddlog calls only where the program \
+             writes its name"
+        ))
+    } else {
+        GroundError::NoClauses(format!("{pred}/{arity}, {through}"))
+    })
+}
+
+/// The term `T` of `T =.. l` for a ground `l`: its only item, or the
+/// compound of its first item, an atom, over the others. ProbLog's call
+/// mode error otherwise.
+fn univ(g: &mut Grounder, l: Val) -> Result<Val, GroundError> {
+    let error = |g: &mut Grounder, why: &str| {
+        GroundError::Unsupported(format!(
+            "_ =.. {}: {why} (ProbLog's call mode error)",
+            g.term_of(l)
+        ))
+    };
+    match g.items(l).as_deref() {
+        Some([t]) => Ok(*t),
+        Some([Val::Sym(name), args @ ..]) if !args.is_empty() => Ok(g.intern_fn(*name, args, true)),
+        Some([]) => Err(error(g, "an empty list")),
+        Some(_) => Err(error(g, "its first item is no atom")),
+        None => Err(error(g, "no list")),
     }
 }
 
@@ -1685,7 +1797,7 @@ fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Vec<lists::
         .filter(|&t| rel.tuple(t)[..k] == *shared)
         .map(|t| (rel.tuple(t)[k], rel.ids[t]))
         .collect();
-    match lists::collect(g, &answers, c.all, &c.text) {
+    match lists::collect(g, &answers, c.gather, &c.text) {
         Ok(l) => Some(l),
         Err(e) => {
             g.fail(e);
