@@ -1435,7 +1435,24 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   first boundary after a derived atom whose width is at most twice the
   facts since the cut, and runs until those facts double; the cut is the
   narrowest boundary in the window, and a window whose narrowest boundary
-  is wider than `WIDEST` (20) has none. A reader after a cut reads the
+  is wider than `WIDEST` (20) has none. The facts keep the order the
+  program states them in, the variable order its exporter chose, each as
+  late as that order allows (before the first rule that reads it or a
+  fact stated after it), and each derived atom goes at its last rule, so
+  that the cuts follow the circuit rather than where its file states the
+  facts: Roulette's circuits state every flip before every gate, and are
+  cut as the same circuit stated gate by gate.
+  A body that reads more than `WIDEST` atoms
+  crosses every boundary in its span with all it has read before it, so
+  it is first written as a chain along the order, each link the
+  conjunction of the link before and the body's next literal, its rule
+  placed where that literal is: a hidden
+  Markov model's joint query, the conjunction of every step's state, then
+  crosses each boundary as one atom. A body is read through its views
+  (atoms of one rule that one body reads) for this, so that a conjunction
+  is chained alike however its gates associate it: Roulette conjoins the
+  states from the last step back, which put every gate of the joint at the
+  end of the order. A reader after a cut reads the
   atoms crossing it through indicator copies, the segments between the
   cuts being the units, and each segment's copies are laid out at its
   start, before its facts. A formula then holds its own segment's facts

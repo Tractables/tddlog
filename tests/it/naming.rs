@@ -9,7 +9,11 @@
 //! less than the joint of its links; so are those of a collector that
 //! draws two different coupons at a time (noDice's coupon), whose copies
 //! of one draw's coupon a clause table defines, under one link that the
-//! program observes false. And on cuts of Roulette's insurance and
+//! program observes false. A chain queried on the joint of its states,
+//! more than a cut is named for, is named alike whether the program states
+//! each step's facts with its rules or every fact first, and its joint in
+//! one body or as Roulette's circuits conjoin it, gate by gate from the
+//! last step back. And on cuts of Roulette's insurance and
 //! hailfinder networks whose links read copies of their own cut or that a
 //! tie stands on, the answers equal ProbLog's.
 
@@ -400,6 +404,125 @@ fn coupon_answers_and_evidence_are_the_forward_pass() {
         assert!(
             expanded || draws < 8,
             "{what}: the readers hold less than the joint of the links"
+        );
+    }
+}
+
+/// A Markov chain of `steps` states and a query on their joint, as in a
+/// hidden Markov model's joint query: `s_0` holds with probability one
+/// half, and `s_t` stays true with probability 0.9 (`a_t`) and turns true
+/// with 0.6 (`b_t`); `joint` reads a literal of every state, `s_t` or,
+/// every third step, its negation, more atoms than a cut is named for.
+/// Written as `writing` says.
+fn joint_chain(steps: usize, writing: Writing, extra: &str) -> String {
+    let fact = |t: usize| format!("0.9::a_{t}. 0.6::b_{t}.\n");
+    let rules = |t: usize| {
+        let p = t - 1;
+        format!("s_{t} :- s_{p}, a_{t}. s_{t} :- \\+s_{p}, b_{t}.\n")
+    };
+    let state = |t: usize| {
+        let sign = if joint_value(t) { "" } else { "\\+" };
+        format!("{sign}s_{t}")
+    };
+    let mut src = String::from("0.5::s_0.\n");
+    if writing == Writing::StepByStep {
+        src.extend((1..steps).map(|t| fact(t) + &rules(t)));
+    } else {
+        src.extend((1..steps).map(fact));
+        src.extend((1..steps).map(rules));
+    }
+    if writing == Writing::Roulette {
+        // Gates from the last step back, each reading the gate after it.
+        let last = steps - 1;
+        src += &format!("j_{last} :- {}.\n", state(last));
+        for t in (1..last).rev() {
+            src += &format!("j_{t} :- {}, j_{n}.\n", state(t), n = t + 1);
+        }
+        src += &format!("joint :- {}, j_1.\n", state(0));
+    } else {
+        let body: Vec<String> = (0..steps).map(state).collect();
+        src += &format!("joint :- {}.\n", body.join(", "));
+    }
+    src + extra
+}
+
+/// How [`joint_chain`] is written.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Writing {
+    /// Each step's facts with its rules, and `joint` one body.
+    StepByStep,
+    /// Every fact before every rule, and `joint` one body.
+    FactsFirst,
+    /// Every fact before every rule, as Roulette's circuits state them,
+    /// and `joint` a chain of gates from the last step back, as Roulette
+    /// conjoins the states.
+    Roulette,
+}
+
+/// The value `joint` reads of step `t`'s state.
+fn joint_value(t: usize) -> bool {
+    t % 3 != 1
+}
+
+/// The probability of `joint`, along the chain's transitions.
+fn joint_chain_exact(steps: usize) -> f64 {
+    (1..steps).fold(0.5, |p, t| {
+        let stays = if joint_value(t - 1) { 0.9 } else { 0.6 };
+        p * if joint_value(t) { stays } else { 1.0 - stays }
+    })
+}
+
+#[test]
+fn a_joint_over_a_chain_is_cut_however_it_is_written() {
+    for steps in [8, 24] {
+        let want = joint_chain_exact(steps);
+        let middle = steps / 2;
+        let mut copies = Vec::new();
+        for writing in [Writing::StepByStep, Writing::FactsFirst, Writing::Roulette] {
+            let what = format!("joint chain {steps}, {writing:?}");
+            check(
+                &what,
+                &joint_chain(steps, writing, "query(joint).\n"),
+                want,
+                1.0,
+            );
+            // The joint observed: P(e) is its probability, and a state is
+            // the value the joint reads of it.
+            let value = if joint_value(middle) { 1.0 } else { 0.0 };
+            check(
+                &what,
+                &joint_chain(
+                    steps,
+                    writing,
+                    &format!("evidence(joint).\nquery(s_{middle}).\n"),
+                ),
+                value,
+                want,
+            );
+            let options = common::options(
+                Strategy::Trial(Kind::Program { fan_in: false }),
+                Projection::default(),
+            );
+            let run = common::run(&joint_chain(steps, writing, "query(joint).\n"), &options)
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            copies.push(run.ground.encoding.indicators.len());
+        }
+        // Where the joint reads more states than a cut is named for (20),
+        // it is chained along the order, through Roulette's gates as well,
+        // and `program` names a state at each step's cut however the
+        // program is written. A narrower joint is not rewritten, and
+        // Roulette's gates, each after the gate of the step after it, are
+        // cut where they fall.
+        if steps <= 20 {
+            continue;
+        }
+        assert!(
+            copies.iter().all(|&c| c == copies[0]),
+            "joint chain {steps}: {copies:?}"
+        );
+        assert!(
+            copies[0] >= steps / 2,
+            "joint chain {steps}: {copies:?} copies"
         );
     }
 }
