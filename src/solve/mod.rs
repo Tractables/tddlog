@@ -1,4 +1,5 @@
-//! The one answer path: parse, ground, the `decision` trial, the check
+//! The one answer path: parse, ground, the programs `auto` is handed
+//! ready (`auto::ready`, its `decision` trial's among them), the check
 //! whether the queries are answered in parts, each part's run, and the
 //! answers put back in the order of the program's queries ([`solve`]);
 //! and one ground program's run ([`solve_ground`]).
@@ -139,7 +140,7 @@ pub struct Solution {
 /// `options`.
 ///
 /// Under `auto`, a large circuit is ground again and conditioned on its
-/// guards (`decision_trial`), for `decision`, the first trial, where it is
+/// guards (`auto::ready`), for `decision`, the first trial, where it is
 /// one (`auto::decides`), and for `program`, `closed` and `td` where it is
 /// not (`auto::Programs`). The queries are answered in groups,
 /// each on the part of the program it and the evidence depend on, where
@@ -186,44 +187,34 @@ fn solve_split(
     progress(Progress::Grounded {
         seconds: start.elapsed().as_secs_f64(),
     });
-    // Its time is counted as the first part's rewrite's. It differs from
-    // `ground` where the grounding inlined any atom, a view's or a chain's.
+    // Its time is counted as the first part's rewrite's.
     let start = Instant::now();
-    let mut written = kept
-        .filter(|_| ground.stats.inlined + ground.stats.chained > 0 || auto::may_decide(&ground))
-        .map(|kept| ground::finish_kept(kept, &Kind::Decision.ground_options(ground_options)));
-    let decision = decision_trial(written.as_ref(), &ground);
+    let (mut ready, guarded) = auto::ready(&ground, kept, ground_options);
     let decided_seconds = start.elapsed().as_secs_f64();
-    let decides = decision
-        .as_ref()
-        .and_then(|d| d.program.as_ref())
-        .is_some_and(|c| auto::decides(c, &ground));
-    if let Some(d) = &decision {
+    let decides = ready.decides(&ground);
+    if let Some(guarded) = guarded {
         let tried = if decides { "a trial" } else { "no trial" };
         progress(Progress::Note(format!(
-            "decision: finished again, {} atoms conditioned on their guards for {} derived, {tried}, {decided_seconds:.3}s",
-            d.guarded,
+            "decision: finished again, {guarded} atoms conditioned on their guards for {} derived, {tried}, {decided_seconds:.3}s",
             auto::derived_unmerged(&ground)
         )));
     }
-    let mut conditioned = decision.and_then(|d| d.program);
     let answering = if decides {
         Answering::Whole(None)
     } else {
         split_check(&ground, bounds, options.strategy)
     };
-    let (parts, places, mut laid) = match answering {
+    let (parts, places) = match answering {
         Answering::Split(split) => {
             progress(Progress::Note(split.note));
-            // The conditioned and the written programs are the whole
-            // program's.
-            conditioned = None;
-            written = None;
-            (split.parts, split.queries, None)
+            // What `auto` is handed ready is the whole program's.
+            ready = auto::Ready::default();
+            (split.parts, split.queries)
         }
         Answering::Whole(laid) => {
+            ready.laid = laid;
             let queries = (0..ground.num_queries()).collect();
-            (vec![ground], vec![queries], laid)
+            (vec![ground], vec![queries])
         }
     };
     let mut answers: Vec<Option<QueryResult>> = (0..places.iter().map(Vec::len).sum())
@@ -243,13 +234,7 @@ fn solve_split(
         let mut run = match options.strategy {
             Strategy::Auto => {
                 progress(Progress::Compiling(&part));
-                auto::run(
-                    part,
-                    projection,
-                    laid.take(),
-                    conditioned.take(),
-                    written.take(),
-                )?
+                auto::run(part, projection, std::mem::take(&mut ready))?
             }
             Strategy::Trial(kind) => {
                 let prepared = kind.prepare(part)?;
@@ -330,7 +315,7 @@ fn parsed(source: &str, options: &Options) -> Result<Program, Error> {
 pub fn solve_ground(ground: GroundProgram, options: &Options) -> Result<Run, Error> {
     let (projection, first_pairs) = options.checked()?;
     match options.strategy {
-        Strategy::Auto => auto::run(ground, projection, None, None, None),
+        Strategy::Auto => auto::run(ground, projection, auto::Ready::default()),
         Strategy::Trial(kind) => run_prepared(kind.prepare(ground)?, kind, projection, first_pairs),
     }
 }
@@ -455,46 +440,6 @@ fn split_check(gp: &GroundProgram, bounds: &SplitBounds, strategy: Strategy) -> 
         ));
     }
     Answering::Split(split)
-}
-
-/// A program finished again for `auto` ([`decision_trial`]): how many
-/// atoms the conditioning on guards made, and the program conditioned on
-/// its guards, where the conditioning recorded decisions.
-struct DecisionTrial {
-    guarded: usize,
-    program: Option<GroundProgram>,
-}
-
-/// The program that `auto`'s `decision` trial compiles beside `ground`,
-/// or, where `decision` is no trial, that `program`, `closed` and `td`
-/// compile in its place (`auto::Programs`): `written`, `ground` as ground
-/// with its views in place ([`ground::ground_keeping`],
-/// [`Kind::ground_options`]), rewritten for `decision` ([`Kind::rewrite`]),
-/// where `ground` is large and the conditioning on guards applies to it
-/// and gets under way there (`auto::may_decide`), and kept where the
-/// conditioning recorded decisions and made enough atoms for a trial to
-/// take it (`auto::takes_conditioned`); `None` where the program is not
-/// rewritten. `closed` takes less work on it: bb_altermu2_w11 2.29 G units
-/// against 14.4 G. The full weekend circuit of the bit-blasting paper
-/// (98 303 flips) runs out of memory under every other layout of the
-/// program as ground and compiles under `decision` in 533 M work units.
-fn decision_trial(
-    written: Option<&GroundProgram>,
-    ground: &GroundProgram,
-) -> Option<DecisionTrial> {
-    let written = written.filter(|_| auto::may_decide(ground))?;
-    // `Kind::Decision.rewrite`, which `written`, read through no
-    // indicator, takes in full, finished again only where a trial takes
-    // it.
-    let decided = ground::guarded_where(Kind::eliminated(written.clone()), |made| {
-        auto::takes_conditioned(made, ground)
-    });
-    let guarded = match &decided {
-        Ok(gp) => gp.stats.guarded,
-        Err(gp) => gp.stats.guarded,
-    };
-    let program = decided.ok().filter(|gp| gp.stats.decisions.is_some());
-    Some(DecisionTrial { guarded, program })
 }
 
 /// `ground` compiled as it is, without `kind`'s rewrite, under

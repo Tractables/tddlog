@@ -1,7 +1,7 @@
 """Dice programs as Pluck programs (scripts/dice2pluck.py) and how bench.py
 reads what Pluck prints.
 
-Every Dice program of data/dice and data/nodice that dice2problog.py
+Every Dice program of data/dice and data/nodice (test_nodice.dice_programs) that dice2problog.py
 translates translates here, except where it has recursion, with its
 parentheses balanced and a query for each component. Where Pluck is
 installed (PLUCK, bench.py's `--pluck` template, e.g. `env
@@ -27,6 +27,7 @@ sys.path.insert(0, str(scripts))
 import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
+from test_nodice import dice_programs  # noqa: E402
 import dice2pluck  # noqa: E402
 import dice2problog  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
@@ -62,7 +63,7 @@ def pluck_answers(text, qs):
 
 class Dice2PluckTests(unittest.TestCase):
     def test_the_baseline_programs_translate(self):
-        paths = sorted((data / 'dice').glob('*.dice')) + sorted((data / 'nodice').glob('*.dice'))
+        paths = dice_programs()
         for path in paths:
             with self.subTest(name=path.name):
                 try:

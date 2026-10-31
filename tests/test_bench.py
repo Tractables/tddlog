@@ -126,6 +126,18 @@ class DiceTests(unittest.TestCase):
         self.assertEqual(bench.dice_marginals(rows, 2), [0.475, 0.475])
         self.assertIsNone(bench.dice_marginals(rows, 3))
 
+    def test_nodices_runtimes_are_not_values(self):
+        # noDice's table of a returned pair (its ladder-N-p), then its runtimes
+        rows = bench.parse_dice('================[ Maximum Probabilities (noDice) ]================\n'
+                                'Value   Probability\n(true, true)    0.000999\n(true, false)   0.498251\n'
+                                '(false, true)   0.498251\n(false, false)  0.002499\n\n'
+                                '================[ Runtimes ]================\nTask                    Time (seconds)\n'
+                                'Compilation     0.569023\nModel Checking  0.000029\nnoDice (total)  0.569052\n')
+        self.assertEqual(rows, {'(true,true)': 0.000999, '(true,false)': 0.498251, '(false,true)': 0.498251,
+                                '(false,false)': 0.002499})
+        for p in bench.dice_marginals(rows, 2):
+            self.assertAlmostEqual(p, 0.49925, places=12)
+
     def test_values_that_are_not_boolean_tuples_have_no_marginals(self):
         rows = bench.parse_dice('Value\tProbability\t\n0\t0.25\t\n1\t0.75\t\n')
         self.assertEqual(rows, {'0': 0.25, '1': 0.75})
@@ -144,7 +156,7 @@ class PplTests(unittest.TestCase):
     def test_the_suite_names_programs_that_exist(self):
         spec = bench.instances(self.args())
         self.assertEqual({family for family, _ in spec.values()}, {'arith', 'hybit', 'pluck', 'nodice'})
-        self.assertEqual(len(spec), 65)
+        self.assertEqual(len(spec), 120)
         for name, (family, gargs) in spec.items():
             self.assertTrue(Path(gargs[1]).is_file(), name)
             self.assertEqual(gargs[0], 'dice2problog.py' if family == 'nodice' else 'alea_bench.jl')
@@ -297,11 +309,11 @@ class PplTests(unittest.TestCase):
         self.assertRegex(runs[1], r'\(query \(list \(cadr (\S+)\) \(car \1\)\) complement\?\)')
         self.assertIn('(report-int 1 (list-ref pmfs 0) 2)', runs[1])
 
-    def test_a_chain_whose_translations_pass_the_limit_is_the_translators_failure(self):
-        # dice2prism.py's translations of a chain took longer than the time
-        # limit: no engine of the checker runs on it, and each engine's
-        # record is dice2prism.py's error, no program handed to the checker,
-        # as one translation past the limit is.
+    def test_a_chain_whose_translations_pass_their_bound_is_the_harness_time_out(self):
+        # dice2prism.py's translations of a chain took longer than their
+        # bound: no engine of the checker runs on it, and each engine's
+        # record is the harness's time-out, no program handed to the
+        # checker, as one translation past the bound is.
         clock = [0.0]
 
         def translation(args, script, argv):
@@ -311,20 +323,23 @@ class PplTests(unittest.TestCase):
                 patch.object(bench, 'translation', side_effect=translation) as made, \
                 patch.object(bench, 'timed') as timed:
             for variant in ('hybrid', 'sparse'):
-                comps, r = bench.checker_masses('prism', variant)(self.args(), 'p', '/p.dice', False, 30.0)
+                comps, r = bench.checker_masses('prism', variant)(self.args(translation_timeout=30.0), 'p', '/p.dice',
+                                                                  False, 30.0)
                 self.assertIsNone(comps)
-                self.assertEqual(r['status'], 'error', r)
-                self.assertTrue(r['error'].startswith('dice2prism.py: '), r)
+                self.assertEqual((r['status'], r['harness']), ('error', 'timeout'), r)
+                self.assertTrue(r['error'].startswith('dice2prism.py: the translations took 40 s, past their bound'), r)
         self.assertEqual(made.call_count, 1)
         timed.assert_not_called()
 
     def test_a_system_run_by_component_has_its_translations_bounded(self):
         # Geni on a program of three Boolean components, each translation
-        # 12 s and each run 1 s, with a 30 s limit: two components translate
-        # and run, the third's translation passes the limit of the
-        # translations (36 s), and the record is dice2geni.py's error with
-        # the runs' 2 s; a first translation of 40 s hands Geni nothing.
-        for step, ran in [(12.0, 2), (40.0, 0)]:
+        # 12 s and each run 1 s, with a 30 s bound on the translations: two
+        # components translate and run, the third's translation passes the
+        # bound (36 s), and the record is the harness's time-out with the
+        # runs' 2 s; a first translation of 40 s hands Geni nothing. By
+        # default the bound is four times the time limit, which the
+        # translations, not the system's time, do not count against.
+        for step, ran, bound in [(12.0, 2, 30.0), (40.0, 0, 30.0), (40.0, 3, None)]:
             clock = [0.0]
 
             def translation(args, script, argv):
@@ -338,13 +353,17 @@ class PplTests(unittest.TestCase):
                     patch.object(bench, 'program_command', return_value=['geni']), \
                     patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 1.0, 'stdout': ''}) as timed:
                 masses = bench.by_component('geni', 'dice2geni.py', 'gir', lambda n: [], lambda out, n: {0: 0.5, 1: 0.5})
-                comps, r = masses(self.args(dir=d), 'p', '/p.dice', False, 30.0)
-            self.assertIsNone(comps)
-            self.assertEqual(r['status'], 'error', r)
-            self.assertTrue(r['error'].startswith('dice2geni.py: the translation of 3 components passed the time limit'), r)
+                comps, r = masses(self.args(dir=d, translation_timeout=bound), 'p', '/p.dice', False, 30.0)
             self.assertEqual(timed.call_count, ran)
+            self.assertEqual([c.args[1] for c in timed.call_args_list], [30.0, 29.0, 28.0][:ran])
+            if bound is None:
+                self.assertEqual((len(comps), r), (3, {'seconds': 3.0}))
+                continue
+            self.assertIsNone(comps)
+            self.assertEqual((r['status'], r['harness']), ('error', 'timeout'), r)
+            self.assertTrue(r['error'].startswith('dice2geni.py: the translation of 3 components passed its bound '
+                                                  'of 30 s'), r)
             self.assertEqual(r['seconds'], float(ran))
-            self.assertEqual([c.args[1] for c in timed.call_args_list], [30.0, 29.0][:ran])
 
     def test_a_program_the_language_cannot_express_is_unsupported(self):
         refused = SimpleNamespace(returncode=bench.REFUSED, stdout='', stderr='cannot express the program: recursion')
@@ -525,10 +544,19 @@ class RouletteTests(unittest.TestCase):
                          (f'{data}/caesar.rkt', ['25', '--no-complement']))
         # The complement applies to caesar's query alone.
         self.assertIsNone(bench.roulette_program(args, 'rl_motivating_1000', 'nocomplement'))
+        # extexp drops it where nocomplement does and runs every program.
+        self.assertEqual(bench.roulette_program(args, 'rl_caesar_25', 'extexp'),
+                         (f'{data}/caesar.rkt', ['25', '--no-complement']))
+        self.assertEqual(bench.roulette_program(args, 'rl_motivating_1000', 'extexp'),
+                         (f'{data}/motivating.rkt', ['1000']))
+        x = self.args(roulette_extexp='xracket {file}')
+        self.assertEqual(bench.roulette_command(x, 'extexp', 'p.rkt'), ['xracket', 'p.rkt'])
+        self.assertEqual(bench.roulette_command(x, 'rsdd', 'p.rkt'), ['racket', 'p.rkt'])
         self.assertEqual(bench.roulette_program(args, 'rl_hmm_smoothing_joint_100', 'rsdd'),
                          ('rb/hmm.rkt', ['roulette', 'smoothing-joint', '100']))
         self.assertEqual(bench.roulette_program(args, 'rl_bn_alarm', 'rsdd'), (f'{data}/bayes.rkt', ['alarm']))
-        for program in ['motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware', 'bayes']:
+        for program in ['motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware', 'hardware-bitwidth',
+                        'bayes']:
             self.assertTrue(Path(data, f'{program}.rkt').exists(), program)
 
     def run_roulette(self, name, path, out):
@@ -608,6 +636,10 @@ class RouletteTests(unittest.TestCase):
             bench.run(run_args(roulette_variants=['rsdd', 'nocomplement']))
         with self.assertRaisesRegex(SystemExit, 'observe nothing, outside the roulette suite and --pr, and none'):
             bench.run(run_args(roulette_variants=['rsdd', 'bayes']))
+        with self.assertRaisesRegex(SystemExit, 'give both or neither'):
+            bench.run(run_args(roulette_variants=['rsdd', 'extexp']))
+        with self.assertRaisesRegex(SystemExit, 'give both or neither'):
+            bench.run(run_args(roulette_extexp='xracket {file}'))
 
         def parsed(cmd, **given):
             fields = dict(cmd=cmd, suite='roulette', ace_benchmarks=None, uai_benchmarks=None,
@@ -639,8 +671,13 @@ class SkipTests(unittest.TestCase):
         self.assertEqual(series('bb_GPA', 'bb_GPA_w19'), 'bb_GPA')
         self.assertEqual(series('arith', 'arith_gcd_small'), 'arith_gcd')
         self.assertEqual(series('nodice', 'nodice_coupon2-12-obs'), 'nodice_coupon2')
+        self.assertEqual(series('nodice', 'nodice_coupon2-2-obs'), 'nodice_coupon2')
+        self.assertEqual(series('nodice', 'nodice_brp1024-2'), 'nodice_brp')
+        self.assertEqual(series('nodice', 'nodice_diamond-100-p'), 'nodice_diamond')
+        self.assertEqual(series('nodice', 'nodice_ladder-1-p'), 'nodice_ladder')
         self.assertEqual(series('dice_scaled', 'dice_ladder_k400'), 'dice_ladder')
-        for family, name in [('arith', 'arith_book'), ('nodice', 'nodice_alarm'), ('hybit', 'hybit_pi'),
+        for family, name in [('arith', 'arith_book'), ('nodice', 'nodice_alarm'), ('nodice', 'nodice_uf20-0990'),
+                             ('nodice', 'nodice_3sat-0'), ('hybit', 'hybit_pi'),
                              ('dice', 'dice_alarm'), ('bn', 'bn_asia'), ('bnev', 'bn_asia_ev'), ('bn', 'rl_bn_alarm'),
                              ('aceblockmap', 'ace_blockmap_05_01'), ('uaipromedus', 'uai_promedus_30')]:
             self.assertIsNone(series(family, name), name)
@@ -784,6 +821,19 @@ class RotateTests(unittest.TestCase):
                                tddlog='tddlog', timeout=1, no_skip=True, exact=False, ace='', merlin='',
                                ganak='', pr=False, rotate=0)
         with self.assertRaisesRegex(SystemExit, '--rotate'):
+            bench.run(args)
+
+    def test_systems_keeps_the_named_systems(self):
+        # tddlog and ProbLog given, tddlog alone run: one system, which --rotate cannot order
+        args = SimpleNamespace(suite='standard', only=['bn_asia'], families=[], strategies=['auto'], kbs=['ddnnf'],
+                               pita='', aspmc='', scallop='', dice='', dir='bench', out='results.jsonl',
+                               tddlog='tddlog', timeout=1, no_skip=True, exact=False, ace='', merlin='',
+                               ganak='', pr=False, rotate=0, systems=['tddlog'])
+        with self.assertRaisesRegex(SystemExit, '--rotate'):
+            bench.run(args)
+        args.systems = ['pita']
+        with self.assertRaisesRegex(SystemExit, '--systems pita: not one of the systems the other options run '
+                                                r'\(tddlog, problog\)'):
             bench.run(args)
 
 
@@ -968,13 +1018,17 @@ class AspmcTests(unittest.TestCase):
         self.assertEqual(bench.parse_aspmc('[RESULT] aspmc: bench_e: 0.0\n'
                                            '[RESULT] aspmc: bench_qe_q: 0.0\n'), 'inconsistent')
 
-    def test_an_observation_with_a_body_is_refused_before_launch(self):
+    def test_an_observation_with_a_body_goes_to_the_ground_program(self):
+        # aspmc is not launched on the program; its ground program is asked for
         with patch('builtins.open', mock_open(read_data='0.5::obs. evidence(obs) :- true.')), \
-                patch.object(bench.os, 'makedirs'), patch.object(bench, 'timed') as run:
-            result = bench.run_aspmc(SimpleNamespace(dir='bench', aspmc='python3', timeout=1),
-                                     'coin', 'coin.pl')
+                patch.object(bench.os, 'makedirs'), \
+                patch.object(bench, 'timed', return_value={'status': 'error', 'seconds': 0.1,
+                                                           'error': 'no'}) as run:
+            result = bench.run_aspmc(SimpleNamespace(dir='bench', aspmc='python3', timeout=1,
+                                                     tddlog='tddlog'), 'coin', 'coin.pl')
             self.assertEqual(result['status'], 'error')
-            run.assert_not_called()
+            self.assertEqual(result['stats'], {'aspmc_route': 'ground'})
+            run.assert_called_once_with(['tddlog', '--ground', 'coin.pl'], 1)
 
     def test_a_program_with_evidence_is_run_conditioned(self):
         with tempfile.TemporaryDirectory() as d:
@@ -1108,13 +1162,16 @@ class FetchTests(unittest.TestCase):
 
     def test_the_manifest_names_the_bnlearn_networks_and_psouffles_programs_by_their_sha256(self):
         files = bench.fetched()
-        self.assertEqual(len(files), 22 + 15 + 38 + 1)
+        # the tutorial: 36 pages; Ihler's collection: 115 + 213 networks with
+        # their evidence, 21 + 3 + 18 without
+        self.assertEqual(len(files), 22 + 15 + 38 + 36 + 2 * (115 + 213) + 21 + 3 + 18)
         for path, (sha, url) in files.items():
             self.assertRegex(sha, '^[0-9a-f]{64}$')
             self.assertTrue(url.startswith('https://'), url)
             self.assertIn(os.path.relpath(os.path.dirname(path), bench.ROOT),
                           ['data/bn', 'data/bn-large', 'data/psouffle/taint', 'data/psouffle/side_channel',
-                           'data/problog-tutorial'])
+                           'data/problog-tutorial']
+                          + [f'data/uai-ihler/{g}' for g in ['BN', 'pedigree', 'Grids', 'classics', 'promedas']])
 
     def fetch(self, d, rows):
         manifest = os.path.join(d, 'fetch.txt')
@@ -1605,6 +1662,23 @@ class MerlinTests(unittest.TestCase):
         self.assertEqual(bench.parse_evidence_probability('evidence is inconsistent\nP(e):\t0.0e0\tlog10 -inf\n'),
                          -bench.math.inf)
 
+    def test_a_bayesian_networks_program_states_that_z_is_p_e(self):
+        for kind, offset in [('BAYES', 0.0), ('MARKOV', None)]:
+            with scratch_dir('uai-kind-') as d:
+                net = os.path.join(d, 'n.uai')
+                with open(net, 'w') as f:
+                    f.write(f'{kind}\n1\n2\n1\n1 0\n\n2\n 0.4 0.6\n')
+
+                def write(args, name, argv):
+                    with open(os.path.join(d, name + '.pl'), 'w') as f:
+                        f.write('0.4::v_0.\n')
+                with patch.object(bench, 'write_program', write), \
+                        patch.object(bench, 'program_args', return_value=[]), \
+                        patch.object(bench.subprocess, 'run'):
+                    bench.gen_network(SimpleNamespace(dir=d, pr=False, cnf=False), 'n', ['gen_bn.py', net])
+                with open(os.path.join(d, 'n.pl')) as f:
+                    self.assertEqual(bench.gen_bn.read_offset(f.read()), offset)
+
     def test_ganak_counts_the_weighted_cnf_gen_writes(self):
         """`gen` writes each UAI network's weighted CNF with its evidence
         beside the program (`gen_bn.py --cnf`), and `run --pr --ganak`
@@ -1846,6 +1920,32 @@ class MerlinTests(unittest.TestCase):
             bench.takes_networks(SimpleNamespace(pr=False), spec, [], 'merlin')
 
 
+class AnswersCheckTests(unittest.TestCase):
+    def test_a_query_problog_prints_with_its_variables_at_0_checks_its_instances(self):
+        """problogtut_basic_08_rule_probs_4: ProbLog derives no instance of
+        different_color(X,Y) and prints the query with its variables at 0;
+        tddlog grounds its instances over the domain, each of them 0."""
+        ref = {'system': 'exact', 'variant': 'problog1', 'answers': {'red(a)': 0.7, 'different_color(X3,X4)': 0.0}}
+        rec = {'system': 'tddlog', 'variant': 'auto', 'answers': {
+            'red(a)': 0.7, 'different_color(a,a)': 0.0, 'different_color(a,b)': 0.0, 'other(a,b)': 0.4}}
+        self.assertEqual(bench.answers_check(rec, ref), (True, 0.0, 2))
+        rec['answers']['different_color(a,b)'] = 0.1
+        right, worst, n = bench.answers_check(rec, ref)
+        self.assertEqual((right, n), (False, 2))
+        self.assertAlmostEqual(worst, 0.1)
+        # a query at more than 0 is compared as it is written
+        ref['answers']['different_color(X3,X4)'] = 0.5
+        self.assertEqual(bench.answers_check(rec, ref)[2], 1)
+
+    def test_the_instances_of_a_query_with_variables(self):
+        # a repeated variable binds one value; a variable below an argument is not read
+        self.assertEqual(bench.instances_of('p(X,X,b)', ['p(a,a,b)', 'p(a,c,b)', 'p(a,a,c)', 'q(a,a,b)', 'p(a,a)']),
+                         ['p(a,a,b)'])
+        self.assertEqual(bench.instances_of('p(_,_)', ['p(a,b)', 'p(f(a,b),[c,d])']), ['p(a,b)', 'p(f(a,b),[c,d])'])
+        self.assertIsNone(bench.instances_of('p(a,f(X))', ['p(a,f(b))']))
+        self.assertIsNone(bench.instances_of('p', ['p']))
+
+
 class ReferenceCheckTests(unittest.TestCase):
     """On the uai suite a baseline's answer that the reference contradicts
     is a failed run (`check_against_reference`), and under --pr the systems
@@ -1902,7 +2002,7 @@ class ReferenceCheckTests(unittest.TestCase):
         the clique tree run for real; ProbLog (a stub) is asked P(e) of
         the program's P(e) program; Ace (a stub) prints P(e) to six
         digits, twice too large, or as zero, and its marginals as the clique
-        tree's."""
+        tree's; Scallop (a stub) is asked P(e) as ProbLog is."""
         import bn_exact
         regress = SOURCE / 'tests' / 'regress'
         real = bench.timed
@@ -1978,14 +2078,33 @@ class ReferenceCheckTests(unittest.TestCase):
             self.assertEqual(bench.queries(problog[0][-1]), [bench.PE_QUERY])
             observed = re.findall(r'^evidence\((.*)\)\.$', program, re.M)
             self.assertIn(f'{bench.PE_QUERY} :- {", ".join(observed)}.', asked)
-            # Ace reads the .inst files, which gen --pr does not write; Scallop approximates
+            # Scallop (a stub) is asked P(e) as ProbLog is: the ground program of the P(e) program
+            scallop = []
+
+            def timed_scallop(cmd, timeout, cwd=None, env=None):
+                if cmd[0] == sys.executable:   # bn_exact.py
+                    return real(cmd, timeout, cwd, env)
+                scallop.append(cmd)
+                if cmd[1] == '--ground':
+                    return {'status': 'ok', 'seconds': 0.25, 'stderr': '',
+                            'stdout': f'0.5::a.\n{bench.PE_QUERY} :- a.\nquery({bench.PE_QUERY}).\n'}
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': f'q0: {{{pe!r}::()}}\n', 'stderr': ''}
+            Path(args.out).unlink(missing_ok=True)
+            with patch.object(bench, 'timed', timed_scallop), redirect_stdout(io.StringIO()):
+                bench.run(SimpleNamespace(**{**vars(args), 'kbs': [], 'ace': '', 'scallop': 'scli'}))
+            records = {(r['system'], r['variant']): r
+                       for r in map(bench.json.loads, Path(args.out).read_text().splitlines())}
+            s = records[('scallop', bench.SCALLOP_VARIANT)]
+            self.assertEqual((s['status'], s['pr_ref']), ('ok', 'exact:cliquetree'))
+            self.assertAlmostEqual(s['log10_z'], bench.math.log10(165), places=12)
+            self.assertNotIn('answers', s)
+            self.assertEqual(scallop[0], ['tddlog', '--ground', str(Path(d) / 'uai_markov.pe.pl')])
+            # Ace reads the .inst files, which gen --pr does not write
             pr_dir = Path(d) / 'pr'
             with redirect_stdout(io.StringIO()):
                 bench.gen(SimpleNamespace(**{**selection, 'dir': str(pr_dir)}, pr=True))
             with self.assertRaisesRegex(SystemExit, r'has none \(gen --pr writes none\)'):
                 bench.run(SimpleNamespace(**{**vars(args), 'dir': str(pr_dir), 'kbs': []}))
-            with self.assertRaisesRegex(SystemExit, "--scallop's top-k proofs"):
-                bench.run(SimpleNamespace(**{**vars(args), 'scallop': 'scli'}))
 
 
 class ProcessTests(unittest.TestCase):
@@ -2132,18 +2251,23 @@ class TableTests(unittest.TestCase):
             for name in ['grid40', 'external-instance']:
                 self.assertIn('| ' + name + ' |', output.getvalue())
 
-    def test_default_table_separates_scallop_approximation(self):
+    def test_table_separates_an_approximation(self):
+        """A system named by --approx (an old record of Scallop's top-10
+        proofs) gets a column of its own; by default every system is exact,
+        Scallop's top-k proofs at SCALLOP_K among them."""
         systems = [('tddlog', 'auto'), ('problog', 'ddnnf'), ('scallop', 'topk10')]
         rows = {('dice_twocoins', system, variant): {
                     'system': system, 'variant': variant, 'status': 'ok', 'seconds': 1,
                     'answers': {'firstcoin': 0.5 if system == 'scallop' else 1 / 3},
                 } for system, variant in systems}
-        output = io.StringIO()
-        with patch.object(sys, 'argv', ['bench.py', 'table', 'results.jsonl']), \
-                patch.object(bench, 'load', return_value=(rows, systems)), redirect_stdout(output):
-            bench.main()
-        self.assertIn('approximate: max diff', output.getvalue())
-        self.assertIn('| 0.0e+00 (problog:ddnnf) | 1.7e-01 |', output.getvalue())
+        for argv, shown in [(['--approx', 'scallop:topk10'], '| 0.0e+00 (problog:ddnnf) | 1.7e-01 |'),
+                            ([], '| 1.7e-01 (problog:ddnnf) |')]:
+            output = io.StringIO()
+            with patch.object(sys, 'argv', ['bench.py', 'table', 'results.jsonl'] + argv), \
+                    patch.object(bench, 'load', return_value=(rows, systems)), redirect_stdout(output):
+                bench.main()
+            self.assertEqual('approximate: max diff' in output.getvalue(), bool(argv))
+            self.assertIn(shown, output.getvalue())
 
     def test_an_answer_that_is_not_a_number_is_no_match(self):
         systems = [('tddlog', 'auto'), ('exact', 'cliquetree')]
@@ -2221,6 +2345,44 @@ class TableTests(unittest.TestCase):
         self.assertIn('| 1.0e-12 (ace:auto) |', output.getvalue())
 
 
+class ScallopTests(unittest.TestCase):
+    """Scallop runs its top-k proofs at the largest k its command line
+    takes, usize::MAX, where no proof is dropped and the answer is exact
+    (docs/baselines.md section 3): one variant, named by that k."""
+
+    def run_scallop(self, variant, out):
+        calls = []
+
+        def timed(cmd, timeout, cwd=None, env=None):
+            calls.append(cmd)
+            if cmd[1] == '--ground':
+                return {'status': 'ok', 'seconds': 0.25, 'stdout': '0.5::a.\n0.5::b.\nc :- a.\nc :- b.\nquery(c).\n'
+                        'evidence(a, false).\n', 'stderr': ''}
+            return {'status': 'ok', 'seconds': 1.0, 'stdout': out, 'stderr': ''}
+        with tempfile.TemporaryDirectory() as d:
+            args = SimpleNamespace(dir=d, tddlog='tddlog', scallop='scli', timeout=10.0)
+            with patch.object(bench, 'timed', timed):
+                r = bench.run_scallop(args, 'p', str(Path(d) / 'p.pl'), variant)
+        return r, calls
+
+    def test_the_largest_k_is_the_one_variant(self):
+        self.assertEqual(bench.SCALLOP_K, 18446744073709551615)   # usize::MAX, scli's -k
+        self.assertEqual(bench.SCALLOP_VARIANT, 'allproofs')
+        r, calls = self.run_scallop(bench.SCALLOP_VARIANT, 'e: {0.5::()}\nq0e: {0.25::()}\n')
+        self.assertEqual(calls[1][:5], ['scli', '-p', 'topkproofs', '-k', '18446744073709551615'])
+        # the grounding's seconds and Scallop's; P(c | not a) = P(c, not a) / P(not a)
+        self.assertEqual(r['seconds'], 1.25)
+        self.assertEqual(r['answers'], {'c': 0.5})
+
+    def test_another_k_is_refused(self):
+        with self.assertRaisesRegex(SystemExit, 'unknown Scallop variant topk1000'):
+            self.run_scallop('topk1000', '')
+
+    def test_no_proof_is_an_answer_of_zero(self):
+        r, _ = self.run_scallop(bench.SCALLOP_VARIANT, 'e: {0.5::()}\nq0e: {}\n')
+        self.assertEqual(r['answers'], {'c': 0.0})
+
+
 class Ground2ScallopTests(unittest.TestCase):
     def test_a_name_of_two_arities_is_two_relations(self):
         import ground2scallop
@@ -2230,6 +2392,63 @@ class Ground2ScallopTests(unittest.TestCase):
         self.assertIn('type r_hmm__1(String)', scl)
         self.assertIn('rel r_hmm__1("x") = r_hmm("x", "y", "z", "w")', scl)
         self.assertIn('rel r_hmm("x", "y", "z", "w") = r_a()', scl)
+
+    # A loop's steps, s(2) reading the negation of s(1): a relation that reads
+    # its own negation, which Scallop refuses to stratify, though the ground
+    # atoms form no cycle. P(s(3)) = 1 - P(s(2)) = 1 - 0.7 * 0.6 = 0.58.
+    LADDER = ('0.3::f1.\n0.6::f2.\ns(1) :- f1.\ns(2) :- \\+s(1), f2.\ns(3) :- \\+s(2).\n'
+              't(a) :- t(b).\nt(b) :- f1.\nt(b) :- t(a).\nquery(s(3)).\nquery(t(a)).\n')
+    # what the translation wrote before it split such a relation by atom
+    UNSPLIT = ('// query q0 s(3)\ntype r_f1()\ntype r_f2()\ntype r_s(String)\ntype q0()\nrel 0.3::r_f1()\n'
+               'rel 0.6::r_f2()\nrel r_s("1") = r_f1()\nrel r_s("2") = not r_s("1"), r_f2()\n'
+               'rel r_s("3") = not r_s("2")\nrel q0() = r_s("3")\nquery q0\n')
+
+    def test_a_relation_on_a_negative_cycle_is_written_atom_by_atom(self):
+        import ground2scallop
+        scl = ground2scallop.translate(self.LADDER)
+        self.assertNotIn('r_s(', scl)
+        for line in ('type r_s__g0()', 'rel r_s__g0() = r_f1()', 'rel r_s__g1() = not r_s__g0(), r_f2()',
+                     'rel r_s__g2() = not r_s__g1()', 'rel q0() = r_s__g2()'):
+            self.assertIn(line, scl.splitlines())
+        # a recursion without negation keeps its relation
+        self.assertIn('type r_t(String)', scl)
+        self.assertIn('rel r_t("a") = r_t("b")', scl)
+        self.assertEqual(ground2scallop.negative_cycles([(('r_t', ('"a"',)), [(False, ('r_t', ('"b"',)))])]), set())
+
+    def test_a_small_probability_is_written_without_an_exponent(self):
+        import ground2scallop
+        scl = ground2scallop.translate('1e-08::a.\n2.5E-5::b.\n0.5::c.\nquery(a).\n')
+        for line in ('rel 0.00000001::r_a()', 'rel 0.000025::r_b()', 'rel 0.5::r_c()'):
+            self.assertIn(line, scl.splitlines())
+        self.assertEqual(float(ground2scallop.probability('1e-300')), 1e-300)
+
+    # Scallop's scli, as the runners give it (SCLI=PATH)
+    SCLI = os.environ.get('SCLI', '')
+
+    @unittest.skipUnless(SCLI and os.access(SCLI, os.X_OK), 'no Scallop: SCLI names no scli')
+    def test_scallop_answers_the_loop_it_refused_unsplit(self):
+        import subprocess
+        import ground2scallop
+        with tempfile.TemporaryDirectory() as d:
+            def scli(text):
+                path = os.path.join(d, 'p.scl')
+                with open(path, 'w') as f:
+                    f.write(text)
+                return subprocess.run([self.SCLI, '-p', 'topkproofs', '-k', str(bench.SCALLOP_K), path],
+                                      capture_output=True, text=True, timeout=60)
+            r = scli(self.UNSPLIT)
+            self.assertIn('Cannot stratify program', r.stdout + r.stderr)
+            scl = ground2scallop.translate(self.LADDER)
+            r = scli(scl)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            answers = bench.parse_scallop(r.stdout, scl)
+            self.assertAlmostEqual(answers['s(3)'], 0.58, places=12)
+            self.assertAlmostEqual(answers['t(a)'], 0.3, places=12)
+            # Scallop refused `1e-08::` as a syntax error (sc1u's promedus and or_chain networks)
+            scl = ground2scallop.translate('1e-08::a.\n0.5::b.\nc :- a.\nc :- b.\nquery(c).\n')
+            r = scli(scl)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertAlmostEqual(bench.parse_scallop(r.stdout, scl)['c'], 0.5 + 0.5e-08, places=15)
 
 
 class PitaTests(unittest.TestCase):

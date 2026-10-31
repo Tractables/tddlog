@@ -1,7 +1,7 @@
 """Dice programs as Roulette programs (scripts/dice2roulette.py) and how
 bench.py reads what they print.
 
-Every Dice program of data/dice, data/nodice and the networks gen_bn.py
+Every Dice program of data/dice, data/nodice (test_nodice.dice_programs) and the networks gen_bn.py
 writes translates, with its parentheses balanced, its flips in the
 program's order, and every function it calls defined before the call.
 Where Roulette is installed (ROULETTE_RACKET, the command that runs
@@ -26,6 +26,7 @@ import source_tree  # noqa: E402
 from source_tree import SOURCE  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
+from test_nodice import dice_programs  # noqa: E402
 import dice2problog  # noqa: E402
 import dice2roulette  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
@@ -71,7 +72,7 @@ def run(code, *args):
 
 class Dice2RouletteTests(unittest.TestCase):
     def test_the_baseline_programs_translate(self):
-        paths = sorted((data / 'dice').glob('*.dice')) + sorted((data / 'nodice').glob('*.dice'))
+        paths = dice_programs()
         for path in paths:
             with self.subTest(name=path.name):
                 try:

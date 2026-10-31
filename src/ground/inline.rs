@@ -97,133 +97,160 @@ struct Rule {
 /// (`simplify::compact`), so the structure is the program's no more where
 /// any was.
 pub(super) fn views(gp: &mut GroundProgram, structure: &Structure) -> usize {
-    let n = gp.num_atoms();
-    let mut kept = vec![false; n];
-    for a in gp.named_atoms() {
-        kept[a as usize] = true;
-    }
-    let seen = seen(gp);
-    // Members of an exclusive set, and whether its set goes whole: the
-    // branches of a choice, of several predicates, each an atom of one rule
-    // read once. The values of one predicate are a network variable's
-    // (bn_munin's copies of a variable, each value read once by the next
-    // copy, cost auto twice the work inlined).
-    let (mut in_set, mut whole) = (vec![false; n], vec![false; n]);
-    let predicate = |a: AtomId| (&*gp.atoms[a as usize].name, gp.atoms[a as usize].args.len());
-    for set in &structure.sets {
-        let one_predicate = set.iter().all(|&a| predicate(a) == predicate(set[0]));
-        let branch = |a: AtomId| seen[a as usize].single() && !kept[a as usize];
-        let all = !one_predicate && set.iter().all(|&a| branch(a));
-        for &a in set {
-            in_set[a as usize] = true;
-            whole[a as usize] = all;
-        }
-    }
-    let view = |a: usize| {
-        let s = &seen[a];
-        !kept[a]
-            && gp.kinds[a] == AtomKind::Derived
-            && s.read_positively()
-            && ((s.over_facts && !in_set[a]) || (s.single() && (!in_set[a] || whole[a])))
-    };
-    if !(0..n).any(view) {
+    let Some(views) = Views::of(gp, structure) else {
         return 0;
-    }
-    // The recursive predicates some atom of which is shared: read in
-    // several bodies or negated.
-    let shared: FxHashSet<(&str, usize)> = (0..n)
-        .filter(|&a| seen[a].reads > 1 || seen[a].negated)
-        .map(|a| gp.atoms[a].signature())
-        .collect();
-    let mut chain = vec![false; n];
-    for (a, recursive) in recursive_predicates(gp).into_iter().enumerate() {
-        kept[a] |= recursive
-            && (shared.contains(&gp.atoms[a].signature()) || gp.atoms[a].name.starts_with('$'));
-        chain[a] = recursive && !kept[a];
-    }
-    let bound = CHAIN_GROWTH * gp.rules.iter().map(|r| r.body.len()).max().unwrap_or(0);
-    let mut rules: Vec<Rule> = gp
-        .rules
-        .iter()
-        .enumerate()
-        .map(|(i, r)| Rule {
-            head: r.head,
-            body: r.body.clone(),
-            key: vec![i as u32],
-            live: true,
-        })
-        .collect();
-    let mut by_head: Vec<Vec<u32>> = vec![Vec::new(); n];
-    // The rules each atom is read in, once per rule, dead ones among them.
-    let mut read_in: Vec<Vec<u32>> = vec![Vec::new(); n];
-    for (i, r) in rules.iter().enumerate() {
-        by_head[r.head as usize].push(i as u32);
-        for l in &r.body {
-            read_in[l.atom() as usize].push(i as u32);
-        }
-    }
-    for list in &mut read_in {
-        list.dedup();
-    }
-    let is_fact = |a: AtomId| matches!(gp.kinds[a as usize], AtomKind::Fact(_));
+    };
+    let mut rules = Rules::of(gp);
     let mut substitution = Substitution {
-        mark: vec![0; n],
-        sign: vec![false; n],
+        mark: vec![0; gp.num_atoms()],
+        sign: vec![false; gp.num_atoms()],
         stamp: 0,
     };
     let mut inlined = 0;
     let mut chained = 0;
     for &a in structure.sccs.iter().flatten() {
-        if kept[a as usize] {
+        if views.kept[a as usize] {
             continue;
         }
-        let readers: Vec<u32> = read_in[a as usize]
-            .iter()
-            .copied()
-            .filter(|&ri| rules[ri as usize].live)
+        let readers = rules.live(&rules.read_in[a as usize]);
+        let own = rules.live(&rules.by_head[a as usize]);
+        if !views.inlines(gp, &rules, a, &readers, &own) {
+            continue;
+        }
+        rules.inline(a, &own, &readers, &mut substitution);
+        inlined += 1;
+        chained += usize::from(views.chain[a as usize]);
+    }
+    if inlined == 0 {
+        return 0;
+    }
+    gp.rules = rules.finish();
+    simplify::compact(gp);
+    gp.stats.inlined += inlined - chained;
+    gp.stats.chained += chained;
+    inlined
+}
+
+/// Which atoms [`views`] may inline, as the module doc says.
+struct Views {
+    /// The atoms that stay: those the program names, and those of a
+    /// recursive predicate that is one of the grounder's own or some atom
+    /// of which is shared.
+    kept: Vec<bool>,
+    /// The members of exclusive sets, and whether a member's set goes
+    /// whole.
+    in_set: Vec<bool>,
+    whole: Vec<bool>,
+    /// The atoms of chains: of a recursive predicate, and not kept.
+    chain: Vec<bool>,
+    /// The longest body a reader of a chain's atom may come out with.
+    bound: usize,
+}
+
+impl Views {
+    /// `None` where no atom is a view.
+    fn of(gp: &GroundProgram, structure: &Structure) -> Option<Views> {
+        let n = gp.num_atoms();
+        let mut kept = vec![false; n];
+        for a in gp.named_atoms() {
+            kept[a as usize] = true;
+        }
+        let seen = seen(gp);
+        // Members of an exclusive set, and whether its set goes whole: the
+        // branches of a choice, of several predicates, each an atom of one
+        // rule read once. The values of one predicate are a network
+        // variable's (bn_munin's copies of a variable, each value read once
+        // by the next copy, cost auto twice the work inlined).
+        let (mut in_set, mut whole) = (vec![false; n], vec![false; n]);
+        let predicate = |a: AtomId| (&*gp.atoms[a as usize].name, gp.atoms[a as usize].args.len());
+        for set in &structure.sets {
+            let one_predicate = set.iter().all(|&a| predicate(a) == predicate(set[0]));
+            let branch = |a: AtomId| seen[a as usize].single() && !kept[a as usize];
+            let all = !one_predicate && set.iter().all(|&a| branch(a));
+            for &a in set {
+                in_set[a as usize] = true;
+                whole[a as usize] = all;
+            }
+        }
+        let view = |a: usize| {
+            let s = &seen[a];
+            !kept[a]
+                && gp.kinds[a] == AtomKind::Derived
+                && s.read_positively()
+                && ((s.over_facts && !in_set[a]) || (s.single() && (!in_set[a] || whole[a])))
+        };
+        if !(0..n).any(view) {
+            return None;
+        }
+        // The recursive predicates some atom of which is shared: read in
+        // several bodies or negated.
+        let shared: FxHashSet<(&str, usize)> = (0..n)
+            .filter(|&a| seen[a].reads > 1 || seen[a].negated)
+            .map(|a| gp.atoms[a].signature())
             .collect();
+        let mut chain = vec![false; n];
+        for (a, recursive) in recursive_predicates(gp).into_iter().enumerate() {
+            kept[a] |= recursive
+                && (shared.contains(&gp.atoms[a].signature()) || gp.atoms[a].name.starts_with('$'));
+            chain[a] = recursive && !kept[a];
+        }
+        let bound = CHAIN_GROWTH * gp.rules.iter().map(|r| r.body.len()).max().unwrap_or(0);
+        Some(Views {
+            kept,
+            in_set,
+            whole,
+            chain,
+            bound,
+        })
+    }
+
+    /// Whether atom `a`, not kept, read in the live rules `readers` and
+    /// the head of the live rules `own`, is inlined: read positively, it
+    /// is one rule's read once or it reads facts alone and is in no
+    /// exclusive set, a chain's readers stay within the bound, and the
+    /// literals it adds stay within [`GROWTH`] times its rules' and its
+    /// readers'.
+    fn inlines(
+        &self,
+        gp: &GroundProgram,
+        rules: &Rules,
+        a: AtomId,
+        readers: &[u32],
+        own: &[u32],
+    ) -> bool {
+        let body = |ri: u32| &rules.rules[ri as usize].body;
         let (mut uses, mut negative) = (0, false);
-        for &ri in &readers {
-            for l in &rules[ri as usize].body {
+        for &ri in readers {
+            for l in body(ri) {
                 if l.atom() == a {
                     uses += 1;
                     negative |= !l.is_positive();
                 }
             }
         }
-        let own: Vec<u32> = by_head[a as usize]
-            .iter()
-            .copied()
-            .filter(|&ri| rules[ri as usize].live)
-            .collect();
         if negative || uses == 0 || own.is_empty() {
-            continue;
+            return false;
         }
-        let substituted = uses == 1 && own.len() == 1 && (!in_set[a as usize] || whole[a as usize]);
+        let (in_set, whole) = (self.in_set[a as usize], self.whole[a as usize]);
+        let substituted = uses == 1 && own.len() == 1 && (!in_set || whole);
+        let is_fact = |a: AtomId| matches!(gp.kinds[a as usize], AtomKind::Fact(_));
         if !substituted
-            && (in_set[a as usize]
+            && (in_set
                 || !own
                     .iter()
-                    .all(|&ri| rules[ri as usize].body.iter().all(|l| is_fact(l.atom()))))
+                    .all(|&ri| body(ri).iter().all(|l| is_fact(l.atom()))))
         {
-            continue; // a value of a network variable, or it reads a derived atom that stays
+            return false; // a value of a network variable, or it reads a derived atom that stays
         }
-        let own_literals: usize = own.iter().map(|&ri| rules[ri as usize].body.len()).sum();
-        let reader_literals: usize = readers
-            .iter()
-            .map(|&ri| rules[ri as usize].body.len())
-            .sum();
-        if chain[a as usize] {
-            let own_max = own
-                .iter()
-                .map(|&ri| rules[ri as usize].body.len())
-                .max()
-                .unwrap_or(0);
+        let own_literals: usize = own.iter().map(|&ri| body(ri).len()).sum();
+        let reader_literals: usize = readers.iter().map(|&ri| body(ri).len()).sum();
+        if self.chain[a as usize] {
+            let own_max = own.iter().map(|&ri| body(ri).len()).max().unwrap_or(0);
             if readers
                 .iter()
-                .any(|&ri| rules[ri as usize].body.len() - 1 + own_max > bound)
+                .any(|&ri| body(ri).len() - 1 + own_max > self.bound)
             {
-                continue;
+                return false;
             }
         }
         let added = if uses == 1 {
@@ -233,36 +260,88 @@ pub(super) fn views(gp: &mut GroundProgram, structure: &Structure) -> usize {
             // Each reader takes a copy of the body in place of the atom.
             (uses - 1) * own_literals.saturating_sub(1)
         } else {
-            continue;
+            return false;
         };
-        if added > GROWTH * (own_literals + reader_literals) {
-            continue;
+        added <= GROWTH * (own_literals + reader_literals)
+    }
+}
+
+/// The rules as the inlining goes, dead ones among them, with the rules of
+/// each head and the rules each atom is read in, once per rule.
+struct Rules {
+    rules: Vec<Rule>,
+    by_head: Vec<Vec<u32>>,
+    read_in: Vec<Vec<u32>>,
+}
+
+impl Rules {
+    fn of(gp: &GroundProgram) -> Rules {
+        let n = gp.num_atoms();
+        let rules: Vec<Rule> = gp
+            .rules
+            .iter()
+            .enumerate()
+            .map(|(i, r)| Rule {
+                head: r.head,
+                body: r.body.clone(),
+                key: vec![i as u32],
+                live: true,
+            })
+            .collect();
+        let mut by_head: Vec<Vec<u32>> = vec![Vec::new(); n];
+        let mut read_in: Vec<Vec<u32>> = vec![Vec::new(); n];
+        for (i, r) in rules.iter().enumerate() {
+            by_head[r.head as usize].push(i as u32);
+            for l in &r.body {
+                read_in[l.atom() as usize].push(i as u32);
+            }
         }
+        for list in &mut read_in {
+            list.dedup();
+        }
+        Rules {
+            rules,
+            by_head,
+            read_in,
+        }
+    }
+
+    /// The live rules among `list`.
+    fn live(&self, list: &[u32]) -> Vec<u32> {
+        list.iter()
+            .copied()
+            .filter(|&ri| self.rules[ri as usize].live)
+            .collect()
+    }
+
+    /// Atom `a`, the head of the rules `own`, replaced by their bodies in
+    /// the rules `readers`, each reader followed by the rules made from it.
+    fn inline(&mut self, a: AtomId, own: &[u32], readers: &[u32], substitution: &mut Substitution) {
         let bodies: Vec<Vec<GLit>> = own
             .iter()
-            .map(|&ri| rules[ri as usize].body.clone())
+            .map(|&ri| self.rules[ri as usize].body.clone())
             .collect();
-        for &ri in &own {
-            rules[ri as usize].live = false;
+        for &ri in own {
+            self.rules[ri as usize].live = false;
         }
-        for &ri in &readers {
-            rules[ri as usize].live = false;
+        for &ri in readers {
+            self.rules[ri as usize].live = false;
             let (head, reader, key) = {
-                let r = &rules[ri as usize];
+                let r = &self.rules[ri as usize];
                 (r.head, r.body.clone(), r.key.clone())
             };
             for (j, body) in bodies.iter().enumerate() {
                 let Some(lits) = substitution.of(&reader, a, body) else {
                     continue;
                 };
-                let id = rules.len() as u32;
-                by_head[head as usize].push(id);
+                let id = self.rules.len() as u32;
+                self.by_head[head as usize].push(id);
                 for l in &lits {
-                    read_in[l.atom() as usize].push(id);
+                    self.read_in[l.atom() as usize].push(id);
                 }
                 let mut key = key.clone();
                 key.push(j as u32);
-                rules.push(Rule {
+                self.rules.push(Rule {
                     head,
                     body: lits,
                     key,
@@ -270,29 +349,23 @@ pub(super) fn views(gp: &mut GroundProgram, structure: &Structure) -> usize {
                 });
             }
         }
-        inlined += 1;
-        chained += usize::from(chain[a as usize]);
     }
-    if inlined == 0 {
-        return 0;
+
+    /// The live rules, each at its place, without the repeats that two
+    /// readers of one view can come out as.
+    fn finish(self) -> Vec<GroundRule> {
+        let mut live: Vec<Rule> = self.rules.into_iter().filter(|r| r.live).collect();
+        live.sort_by(|x, y| x.key.cmp(&y.key));
+        let mut seen: FxHashSet<(AtomId, Vec<GLit>)> = FxHashSet::default();
+        live.into_iter()
+            .filter(|r| {
+                let mut body = r.body.clone();
+                body.sort_unstable();
+                seen.insert((r.head, body))
+            })
+            .map(|r| GroundRule::new(r.head, r.body))
+            .collect()
     }
-    let mut live: Vec<Rule> = rules.into_iter().filter(|r| r.live).collect();
-    live.sort_by(|x, y| x.key.cmp(&y.key));
-    // Two readers of one view can come out the same rule.
-    let mut seen: FxHashSet<(AtomId, Vec<GLit>)> = FxHashSet::default();
-    gp.rules = live
-        .into_iter()
-        .filter(|r| {
-            let mut body = r.body.clone();
-            body.sort_unstable();
-            seen.insert((r.head, body))
-        })
-        .map(|r| GroundRule::new(r.head, r.body))
-        .collect();
-    simplify::compact(gp);
-    gp.stats.inlined += inlined - chained;
-    gp.stats.chained += chained;
-    inlined
 }
 
 /// A body under construction: each atom's sign where `stamp` marks it.

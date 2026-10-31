@@ -88,12 +88,13 @@ pub struct Defined {
     pub support: SupportStats,
     /// The facts eliminated.
     pub eliminated: usize,
-    /// The clauses before and after.
+    /// The clauses before.
     pub clauses: usize,
+    /// The clauses after.
     pub left: usize,
-    /// The searches for implied clauses before the support and after the
-    /// elimination.
+    /// The search for implied clauses before the support.
     pub implied: ImpliedStats,
+    /// The search for implied clauses after the elimination.
     pub implied_after: ImpliedStats,
 }
 

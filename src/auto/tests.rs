@@ -1480,70 +1480,84 @@ fn memory_goes_to_the_trial_that_has_spent_the_most_once() {
     // and once: refused again, or behind a trial that has spent as much,
     // it is retired, and the run fails with the refusal. So a refusal
     // discards less work than the refused trial has spent, and the trials
-    // cannot free each other for ever. At 3 KiB, `program` and `closed`
-    // are freed for `families:0`, retired at its next refusal, and
-    // `closed` for `program` (on bb_spacex_w17, freed for `families:0`,
-    // which had spent less, `program` did its 2 G units again).
-    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
-    let failed = run_within(
-        Programs {
-            ground: gp,
-            written: None,
-            conditioned: None,
-            decision: false,
-        },
-        vec![
-            Kind::Program { fan_in: false },
-            Kind::Closed,
-            Kind::Families { search: false },
-        ],
-        Projection::default(),
-        Watch {
-            first_pairs: 1,
-            memory_bytes: Some(3 << 10),
-            ..Watch::default()
-        },
-        None,
-    );
-    assert!(refused(&failed));
-    let Err(Error::Trials { notes, .. }) = failed else {
-        unreachable!()
-    };
+    // cannot free each other for ever. Under some budgets of 1 to 4 KiB,
+    // `program` and `closed` are freed for `families:0`, retired at its
+    // next refusal, and `closed` for `program` (on bb_spacex_w17, freed for
+    // `families:0`, which had spent less, `program` did its 2 G units
+    // again). Which budgets do so moves with the memory tididi's
+    // operations take and with the turns, so several are tried. The rules
+    // (each release frees only trials that have spent less than the
+    // refused one, no trial is freed for twice, and a run that fails has
+    // retired every trial) are checked at every budget, and one budget
+    // must free memory twice, so that the second release is checked too.
     let units = |s: &str| -> Vec<u64> {
         s.split(" units)")
             .filter_map(|p| p.rsplit('(').next()?.parse().ok())
             .collect()
     };
-    let released: Vec<&String> = notes
-        .iter()
-        .filter(|n| n.starts_with("released: "))
-        .collect();
-    assert!(released.len() >= 2, "{notes:#?}");
-    for note in &released {
-        let (freed, refused) = note.split_once(" for ").unwrap();
-        let (freed, refused) = (units(freed), units(refused));
-        assert!(
-            !freed.is_empty() && refused.len() == 1 && freed.iter().all(|&f| f < refused[0]),
-            "{notes:#?}"
+    let mut most = 0;
+    for budget in (4..16).map(|k| k << 8) {
+        let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+        let result = run_within(
+            Programs {
+                ground: gp,
+                written: None,
+                conditioned: None,
+                decision: false,
+            },
+            vec![
+                Kind::Program { fan_in: false },
+                Kind::Closed,
+                Kind::Families { search: false },
+            ],
+            Projection::default(),
+            Watch {
+                first_pairs: 1,
+                memory_bytes: Some(budget),
+                ..Watch::default()
+            },
+            None,
         );
-    }
-    for trial in [
-        "families:0 indicators=all",
-        "closed indicators=off",
-        "program indicators=off",
-    ] {
-        let freed = released
+        let failed = result.is_err();
+        assert!(!failed || refused(&result), "budget {budget}");
+        let notes = match result {
+            Ok(run) => run.vtree_notes,
+            Err(Error::Trials { notes, .. }) => notes,
+            Err(_) => unreachable!(),
+        };
+        let released: Vec<&String> = notes
             .iter()
-            .filter(|n| n.contains(&format!(" for {trial} (")))
-            .count();
-        assert!(freed <= 1, "{notes:#?}");
-        assert!(
-            notes
+            .filter(|n| n.starts_with("released: "))
+            .collect();
+        most = most.max(released.len());
+        for note in &released {
+            let (freed, refused) = note.split_once(" for ").unwrap();
+            let (freed, refused) = (units(freed), units(refused));
+            assert!(
+                !freed.is_empty() && refused.len() == 1 && freed.iter().all(|&f| f < refused[0]),
+                "{notes:#?}"
+            );
+        }
+        for trial in [
+            "families:0 indicators=all",
+            "closed indicators=off",
+            "program indicators=off",
+        ] {
+            let freed = released
                 .iter()
-                .any(|n| n.starts_with(&format!("retired: {trial} "))),
-            "{notes:#?}"
-        );
+                .filter(|n| n.contains(&format!(" for {trial} (")))
+                .count();
+            assert!(freed <= 1, "{notes:#?}");
+            assert!(
+                !failed
+                    || notes
+                        .iter()
+                        .any(|n| n.starts_with(&format!("retired: {trial} "))),
+                "{notes:#?}"
+            );
+        }
     }
+    assert!(most >= 2);
 }
 
 #[test]
@@ -1827,7 +1841,7 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
         crate::ground::ground(&crate::syntax::parse_program(source).unwrap(), &options).unwrap();
     let gp = crate::indicators::introduce(&gp);
     assert!(!gp.encoding.is_empty());
-    let run = run(gp, Projection::default(), None, None, None).unwrap();
+    let run = run(gp, Projection::default(), Ready::default()).unwrap();
     assert!(!run.ground.encoding.is_empty());
     let answers = run.results.unwrap();
     assert!(

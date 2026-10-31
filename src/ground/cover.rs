@@ -26,7 +26,7 @@
 //! ([`crate::indicators::introduce`]) takes rows that all read one
 //! atom of each of the same tables (bn_barley_ev runs out of memory so).
 
-use rustc_hash::FxHashMap;
+use crate::by_hash::ByHash;
 
 use super::tables::Tables;
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, RulesByHead};
@@ -143,7 +143,7 @@ fn group_of(n: usize, group: &[(u32, u32)], l: GLit) -> Option<(usize, usize)> {
     }
 }
 
-/// No term, at the end of a chain in [`Merge`].
+/// No body, for a group no body has read yet ([`Group`]).
 const NONE: u32 = u32::MAX;
 
 /// The bodies whose disjunction [`Merge::valid`] decides, and the terms
@@ -161,10 +161,9 @@ struct Merge {
     /// derives each: the leaves of merging ([`Merge::valid`]), derived as
     /// given, and then the terms the search came to.
     terms: Vec<(usize, usize, bool)>,
-    /// The last term with each hash, the exclusive or of its literals'
-    /// ([`GLit::mixed`]), and per term the one before it with the same hash.
-    by_hash: FxHashMap<u64, u32>,
-    same_hash: Vec<u32>,
+    /// The terms by their hash, the exclusive or of their literals'
+    /// ([`GLit::mixed`]).
+    by_hash: ByHash,
     /// The leaves, as ranges of `order` with what each weighs
     /// ([`weight`]); and their literals, each with its group's key ([`key`]),
     /// each leaf's in the order of their keys.
@@ -352,7 +351,6 @@ impl Merge {
         }
         self.terms.clear();
         self.by_hash.clear();
-        self.same_hash.clear();
         self.leaves.clear();
         self.order.clear();
         self.groups.clear();
@@ -438,22 +436,15 @@ impl Merge {
 
     /// The term `term` of hash `hash`, if it has been decided.
     fn find(&self, term: &[GLit], hash: u64) -> Option<u32> {
-        let mut t = *self.by_hash.get(&hash)?;
-        while t != NONE {
+        self.by_hash.find(hash, |t| {
             let (start, end, _) = self.terms[t as usize];
-            if self.lits[start..end] == *term {
-                return Some(t);
-            }
-            t = self.same_hash[t as usize];
-        }
-        None
+            self.lits[start..end] == *term
+        })
     }
 
     /// Decide the term `lits[start..end]` of hash `hash`.
     fn add(&mut self, start: usize, end: usize, hash: u64, derived: bool) {
-        let last = self.by_hash.entry(hash).or_insert(NONE);
-        self.same_hash.push(*last);
-        *last = self.terms.len() as u32;
+        self.by_hash.push(hash);
         self.terms.push((start, end, derived));
     }
 

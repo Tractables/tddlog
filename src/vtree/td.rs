@@ -414,7 +414,7 @@ pub(super) fn td_forest(
             return Ok(None);
         }
         widths.push(min_degree.treewidth());
-        let bound = minor_min_width(num_atoms, &edges);
+        let bound = minor_min_width(num_atoms, &edges, min_degree.treewidth() as usize);
         if min_degree.treewidth() as usize <= bound {
             return Ok(Some((min_degree, bound, false, 0, units, widths)));
         }

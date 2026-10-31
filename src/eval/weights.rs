@@ -15,11 +15,12 @@ use super::*;
 /// ([`crate::indicators`]).
 #[derive(Clone, Debug)]
 pub struct Probabilities {
-    /// The weights of `x`, of `¬x` and of both, indexed by `VarId.0`;
-    /// index 0 unused. Both is kept apart so that a fact's is exactly one,
-    /// whatever `p + (1 - p)` rounds to.
+    /// The weights of `x`, indexed by `VarId.0`; index 0 unused.
     pub pos: Vec<f64>,
+    /// The weights of `¬x`, indexed alike.
     pub neg: Vec<f64>,
+    /// The weights of `x` and `¬x` together, indexed alike: kept apart so
+    /// that a fact's is exactly one, whatever `p + (1 - p)` rounds to.
     pub one: Vec<f64>,
 }
 
@@ -51,7 +52,8 @@ impl Probabilities {
     }
 
     /// This table on a projected scope: local variable `i + 1` takes the
-    /// weights of the program's variable `vars[i]`.
+    /// weights of the program's variable `vars[i]`. `None` is the whole
+    /// program, on which it is this table.
     ///
     /// A fact a formula does not mention contributes `p + (1 - p) = 1` to
     /// its weighted model count, so dropping it from the vtree leaves the
@@ -60,7 +62,10 @@ impl Probabilities {
     /// is dropped from a count: the query phase counts every formula
     /// together with the links of all of them, which mention them all.
     #[must_use]
-    pub(crate) fn restrict(&self, vars: &[VarId]) -> Probabilities {
+    pub(crate) fn restrict(&self, vars: Option<&[VarId]>) -> Probabilities {
+        let Some(vars) = vars else {
+            return self.clone();
+        };
         // Index 0 is unused, as in `from_program`.
         let pos = std::iter::once(0.5)
             .chain(vars.iter().map(|v| self.pos[v.0 as usize]))
@@ -88,7 +93,7 @@ impl Probabilities {
 }
 
 /// The engine's evaluation of a diagram in `V`s, a node's value the sum of
-/// its pairs' products settled, as [`count`]'s pass up computes it. The
+/// its pairs' products settled, as [`fn@count`]'s pass up computes it. The
 /// engine hands the algebra one node at a time, not a level, so every
 /// value an evaluation settles is noted in one range, and the evaluation
 /// is exact when the products of that range with itself are: every
@@ -100,6 +105,7 @@ pub struct Weighing<'a, V> {
 }
 
 impl<'a, V: Value> Weighing<'a, V> {
+    /// An evaluation under `weights` that has settled no value yet.
     pub fn new(weights: &'a Probabilities) -> Self {
         Weighing {
             weights,
@@ -168,7 +174,7 @@ pub(crate) fn complement<E>(m: f64, count: impl FnOnce() -> Result<f64, E>) -> R
 
 /// The weighted count of `f` under `w` by the engine's evaluation in
 /// floats, which the engine's work clock is charged for; where that is not
-/// exact, by [`count`]'s pass up in [`Count`]s, which is not charged, and
+/// exact, by [`fn@count`]'s pass up in [`Count`]s, which is not charged, and
 /// `recounts` counts it.
 pub(crate) fn mass(
     engine: &tididi::Engine,

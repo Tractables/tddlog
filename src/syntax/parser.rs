@@ -3,8 +3,8 @@
 
 use super::lexer::{LexError, Lexer, Op, Spanned, Tok, kw};
 use super::{
-    Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice, Literal, NIL, Name,
-    Program, QueryRule, Term, infix_op, prefix_op,
+    Annotation, Args, Assoc, Atom, CONS, Clause, CmpOp, Compound, F64, Findall, HeadChoice,
+    Literal, NIL, Name, Program, QueryRule, Term, infix_op, prefix_op,
 };
 use std::fmt;
 
@@ -43,6 +43,9 @@ struct Parser<'a> {
     cur: bool,
     /// Counter for `_` anonymous variables, made unique per clause.
     anon: usize,
+    /// The aggregates `f<V>` read in the clause at hand
+    /// ([`Parser::aggregate`]).
+    aggregates: usize,
     /// Source clause counter, the `group` of the clauses it produces.
     group: u32,
     /// The literals of the conjunctions being read, the arguments of the
@@ -55,6 +58,20 @@ struct Parser<'a> {
     terms: Vec<Term>,
     args: Vec<PTerm>,
     heads: Vec<HeadChoice>,
+    /// The line of the last token [`Parser::expect`] moved past: at a
+    /// clause's start, the end of the clause before it.
+    expected: usize,
+    /// The `consult/1` directives read, where the program is read for them
+    /// ([`consults`]); `None` where they are refused ([`parse_program`]).
+    consults: Option<Vec<Consult>>,
+}
+
+/// A directive `:- consult(File).`: the file it names, and its first and
+/// last lines, on which it stands alone.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Consult {
+    pub file: String,
+    pub lines: (usize, usize),
 }
 
 /// Where a speculative parse started ([`Parser::mark`]).
@@ -70,8 +87,22 @@ struct Mark<'a> {
 }
 
 /// The ProbLog program `src`. Another input, an LPAD among them, is read
-/// as a program first ([`crate::read`]).
+/// as a program first ([`crate::read`]). A `consult/1` directive is
+/// refused: the files it names are read in its place first
+/// ([`crate::consult`]).
 pub fn parse_program(src: &str) -> Result<Program, ParseError> {
+    parse(src, None).map(|(program, _)| program)
+}
+
+/// The `consult/1` directives of the ProbLog program `src`, in order.
+pub fn consults(src: &str) -> Result<Vec<Consult>, ParseError> {
+    parse(src, Some(Vec::new())).map(|(_, consults)| consults.expect("read"))
+}
+
+fn parse(
+    src: &str,
+    consults: Option<Vec<Consult>>,
+) -> Result<(Program, Option<Vec<Consult>>), ParseError> {
     let eof = || Spanned {
         tok: Tok::Eof,
         line: 1,
@@ -81,11 +112,14 @@ pub fn parse_program(src: &str) -> Result<Program, ParseError> {
         ahead: [eof(), eof()],
         cur: false,
         anon: 0,
+        aggregates: 0,
         group: 0,
         lits: Vec::new(),
         terms: Vec::new(),
         args: Vec::new(),
         heads: Vec::new(),
+        expected: 0,
+        consults,
     };
     p.bump();
     p.bump();
@@ -93,7 +127,15 @@ pub fn parse_program(src: &str) -> Result<Program, ParseError> {
     let mut parsed = Ok(());
     while !p.at(Tok::Eof) {
         p.anon = 0;
+        p.aggregates = 0;
+        let line = p.line();
         parsed = p.clause(&mut prog);
+        if parsed.is_ok() && p.aggregates != 0 {
+            parsed = Err(ParseError {
+                line,
+                msg: AGGREGATE_ONLY.into(),
+            });
+        }
         if parsed.is_err() {
             break;
         }
@@ -101,7 +143,7 @@ pub fn parse_program(src: &str) -> Result<Program, ParseError> {
     }
     match p.lexer.error() {
         Some(e) => Err(e.into()),
-        None => parsed.map(|()| prog),
+        None => parsed.map(|()| (prog, p.consults)),
     }
 }
 
@@ -175,13 +217,63 @@ impl Body {
     }
 }
 
+/// The name of the term `'$aggregate'(f, V)` the parser reads `f<V>` as,
+/// until the clause whose head it ends is rewritten ([`Parser::aggregate`]).
+const AGGREGATE: &str = "$aggregate";
+
+/// The error of an aggregate `f<V>` read elsewhere.
+const AGGREGATE_ONLY: &str = "an aggregate f<V> is read only as the last argument of a clause's \
+                              one head, not annotated";
+
+/// `t` with its variables renamed apart from those of the clause it is
+/// read in: `X` is `X$`.
+fn renamed(t: &Term) -> Term {
+    match t {
+        Term::Var(v) => Term::Var(format!("{v}$")),
+        Term::Compound(c) if !t.is_ground() => {
+            Compound::term(c.name.clone(), c.args.iter().map(renamed).collect())
+        }
+        _ => t.clone(),
+    }
+}
+
+/// `l` with its variables renamed apart ([`renamed`]).
+fn renamed_literal(l: &Literal) -> Literal {
+    let atom = |a: &Atom| {
+        Atom::new(
+            a.name.clone(),
+            a.args.iter().map(renamed).collect::<Vec<_>>(),
+        )
+    };
+    match l {
+        Literal::Pos(a) => Literal::Pos(atom(a)),
+        Literal::Neg(a) => Literal::Neg(atom(a)),
+        Literal::Cmp(op, a, b) => Literal::Cmp(*op, renamed(a), renamed(b)),
+        Literal::Is(a, b) => Literal::Is(renamed(a), renamed(b)),
+        Literal::Findall(fa) => Literal::Findall(Box::new(Findall {
+            template: renamed(&fa.template),
+            goal: fa
+                .goal
+                .iter()
+                .map(|alt| alt.iter().map(renamed_literal).collect())
+                .collect(),
+            result: renamed(&fa.result),
+            interleaved: fa.interleaved,
+            all: fa.all,
+        })),
+        Literal::Builtin(..) | Literal::Collect(_) => unreachable!("made by the grounder"),
+    }
+}
+
 /// Whether a literal named `name` of `arity` arguments is read other than
-/// as an atom: a comparison, `is`, a negation, an operator, `findall/3`.
+/// as an atom: a comparison, `is`, a negation, an operator, `findall/3`,
+/// `all/3`, `forall/2`. A scope `S:A` is an atom of the predicate `:/2`,
+/// as ProbLog reads it without its library(scope).
 fn special(name: &str, arity: usize) -> bool {
     match arity {
         1 => name == "not" || prefix_op(name).is_some(),
-        2 => infix_op(name).is_some(),
-        3 => name == "findall",
+        2 => (name != ":" && infix_op(name).is_some()) || name == "forall",
+        3 => name == "findall" || name == "all",
         _ => false,
     }
 }
@@ -243,6 +335,7 @@ impl<'a> Parser<'a> {
     /// ([`Parser::at`]).
     fn expect(&mut self, tok: Tok) -> Result<(), ParseError> {
         if self.at(tok) {
+            self.expected = self.line();
             self.bump();
             Ok(())
         } else {
@@ -256,12 +349,17 @@ impl<'a> Parser<'a> {
 
     fn clause(&mut self, prog: &mut Program) -> Result<(), ParseError> {
         if self.at(Tok::Neck) {
+            let (first, before) = (self.line(), self.expected);
             self.bump();
             let t = self.term(1200)?;
+            let last = self.line();
             self.expect(Tok::Dot)?;
             let Some((name, args)) = t.into_compound() else {
                 return self.err("unsupported directive");
             };
+            if &*name == "consult" {
+                return self.consult(args, before, (first, last));
+            }
             let start = self.args.len();
             self.args.extend(args);
             return self.directive(&name, start, prog);
@@ -276,19 +374,19 @@ impl<'a> Parser<'a> {
             let start = self.args.len();
             self.argument_list()?;
             if self.at(Tok::Neck) {
-                // `query(p(X)) :- body.`: a query rule.
+                // `query(p(X)) :- body.` or `evidence(p(X)) :- body.`: a
+                // query rule.
                 self.bump();
                 let body = self.body()?;
                 self.expect(Tok::Dot)?;
-                if id != kw::QUERY || self.args.len() - start != 1 {
-                    return self.err("only query/1 may have a body");
-                }
-                let t = self.args.pop().expect("an argument");
-                let (pattern, positive) = self.signed_atom(t, "query/1")?;
+                let evidence = id == kw::EVIDENCE;
+                let (pattern, positive) =
+                    self.asked(if evidence { "evidence" } else { "query" }, start)?;
                 for alt in body.dnf() {
                     prog.query_rules.push(QueryRule {
                         pattern: pattern.clone(),
                         positive,
+                        evidence,
                         body: alt,
                     });
                 }
@@ -301,13 +399,16 @@ impl<'a> Parser<'a> {
                 prog,
             );
         }
-        let heads = self.heads()?;
-        let body = if self.at(Tok::Neck) {
+        let mut heads = self.heads()?;
+        let mut body = if self.at(Tok::Neck) {
             self.bump();
             self.body()?
         } else {
             Body::Lits(Vec::new())
         };
+        if self.aggregates > 0 {
+            body = self.aggregate(&mut heads, body)?;
+        }
         self.expect(Tok::Dot)?;
         let group = self.group;
         match body {
@@ -336,6 +437,38 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
+    /// The directive `consult(args)` on `lines`, after a clause that ends
+    /// on line `before`, read where the parse reads them.
+    fn consult(
+        &mut self,
+        args: Vec<PTerm>,
+        before: usize,
+        lines: (usize, usize),
+    ) -> Result<(), ParseError> {
+        let file = match <[PTerm; 1]>::try_from(args) {
+            Ok([t]) => match t.into_term() {
+                Term::Const(file) => file.to_string(),
+                t => return self.err(format!("consult({t}): the file is named by an atom")),
+            },
+            Err(args) => return self.err(format!("unsupported directive consult/{}", args.len())),
+        };
+        if self.consults.is_none() {
+            return self.err(format!(
+                "consult({file}) reads a file: give tddlog the program as a file, \
+                 which it reads with the files it consults"
+            ));
+        }
+        // The directive is replaced by its file's lines.
+        if before == lines.0 || (!self.at(Tok::Eof) && self.line() == lines.1) {
+            return self.err(format!("consult({file}) must stand on lines of its own"));
+        }
+        self.consults
+            .as_mut()
+            .expect("read")
+            .push(Consult { file, lines });
+        Ok(())
+    }
+
     /// The directive `name` over the arguments from `start` on in
     /// [`Parser::args`], taken from there.
     fn directive(
@@ -347,39 +480,41 @@ impl<'a> Parser<'a> {
         let arity = self.args.len() - start;
         match (name, arity) {
             ("query", 1) => {
-                let t = self.args.pop().expect("an argument");
-                let (q, pos) = self.signed_atom(t, "query/1")?;
-                prog.queries.push((q, pos));
+                let q = self.asked(name, start)?;
+                prog.queries.push(q);
                 Ok(())
             }
-            ("evidence", 1) => {
-                let t = self.args.pop().expect("an argument");
-                let (a, pol) = self.signed_atom(t, "evidence")?;
-                prog.evidence.push((a, pol));
+            ("evidence", 1 | 2) => {
+                let e = self.asked(name, start)?;
+                prog.evidence.push(e);
                 Ok(())
             }
-            ("evidence", 2) => {
-                let value = self.args.pop().expect("an argument");
-                let t = self.args.pop().expect("an argument");
-                let (a, pol) = self.signed_atom(t, "evidence")?;
-                let v = match value {
-                    PTerm::Term(Term::Const(s)) if &*s == "true" => true,
-                    PTerm::Term(Term::Const(s)) if &*s == "false" => false,
-                    _ => return self.err("evidence/2 expects true or false"),
-                };
-                prog.evidence.push((a, pol == v));
-                Ok(())
-            }
-            // The list predicates are built in ([`super::Builtin`]).
+            // The list predicates are built in ([`super::Builtin`]), and the
+            // grounder adds the clauses of those of the libraries that are
+            // written as clauses: library(aggregate)'s where it is loaded.
             ("use_module", 1) => {
                 let t = self.args.pop().expect("an argument").into_term();
                 match t.as_compound() {
-                    Some((library, [Term::Const(lists)]))
-                        if &**library == "library" && &**lists == "lists" =>
+                    Some((library, [Term::Const(name)]))
+                        if &**library == "library"
+                            && matches!(&**name, "lists" | "apply" | "aggregate") =>
                     {
+                        prog.aggregate |= &**name == "aggregate";
                         Ok(())
                     }
                     _ => self.err(format!("unsupported directive use_module({t})")),
+                }
+            }
+            // ProbLog's flag for a call of a predicate without clauses:
+            // an error, its default, or a failure.
+            ("unknown", 1) => {
+                let t = self.args.pop().expect("an argument").into_term();
+                match &t {
+                    Term::Const(flag) if matches!(&**flag, "error" | "fail") => {
+                        prog.unknown_fails = &**flag == "fail";
+                        Ok(())
+                    }
+                    _ => self.err(format!("unsupported directive unknown({t})")),
                 }
             }
             _ => self.err(format!("unsupported directive {name}/{arity}")),
@@ -387,6 +522,29 @@ impl<'a> Parser<'a> {
     }
 
     /// An atom or `\+ atom`, as `(atom, positive)`.
+    /// The atom and sign that `query(A)`, `evidence(A)` or `evidence(A, V)`
+    /// asks, its arguments on [`Parser::args`] from `start`, taken from
+    /// there: the sign of `\+` in `A`, and for evidence its value `V`.
+    fn asked(&mut self, name: &str, start: usize) -> Result<(Atom, bool), ParseError> {
+        let value = match (name, self.args.len() - start) {
+            ("query", 1) | ("evidence", 1) => true,
+            ("evidence", 2) => match self.args.pop().expect("an argument") {
+                PTerm::Term(Term::Const(s)) if &*s == "true" => true,
+                PTerm::Term(Term::Const(s)) if &*s == "false" => false,
+                _ => return self.err("evidence/2 expects true or false"),
+            },
+            (_, arity) => return self.err(format!("unsupported directive {name}/{arity}")),
+        };
+        let t = self.args.pop().expect("an argument");
+        let what = if name == "query" {
+            "query/1"
+        } else {
+            "evidence"
+        };
+        let (a, sign) = self.signed_atom(t, what)?;
+        Ok((a, sign == value))
+    }
+
     fn signed_atom(&self, t: PTerm, what: &str) -> Result<(Atom, bool), ParseError> {
         let negated = matches!(t.functor(), Some((n, 1)) if n == "\\+" || n == "not");
         let (t, pos) = if negated {
@@ -414,45 +572,77 @@ impl<'a> Parser<'a> {
     }
 
     fn head(&mut self) -> Result<HeadChoice, ParseError> {
-        // `P::atom` where P is a number or a fraction `a/b`.
+        // `P::atom`: a number, or a term read up to `::`, which is the
+        // head itself where no `::` follows.
         let prob = match (self.peek(), self.peek2()) {
             (Tok::Float(p), Tok::DoubleColon) => {
                 self.bump();
                 self.bump();
-                Some(p)
+                Annotation::Number(p)
             }
             (Tok::Int(p), Tok::DoubleColon) => {
                 self.bump();
                 self.bump();
-                Some(p as f64)
+                Annotation::Number(p as f64)
             }
-            (Tok::Int(a), Tok::Op(Op::Slash)) => {
-                self.bump();
-                self.bump();
-                let b = match self.bump() {
-                    Tok::Int(b) if b != 0 => b,
-                    Tok::Float(b) if b != 0.0 => return self.fraction_tail(a as f64, b),
-                    _ => return self.err("expected a nonzero denominator"),
-                };
-                self.expect(Tok::DoubleColon)?;
-                Some(a as f64 / b as f64)
-            }
-            (Tok::Name(kw::T), Tok::LParen) => {
-                let save = self.mark();
-                let _ = self.term(999)?;
-                if self.at(Tok::DoubleColon) {
-                    return self.err("learnable probabilities t(...) are not supported");
+            (Tok::Naf, _) => return self.negated_head(None),
+            _ => {
+                let t = self.term(999)?;
+                if !self.at(Tok::DoubleColon) {
+                    let line = self.line();
+                    let atom = t.into_atom().ok_or_else(|| ParseError {
+                        line,
+                        msg: "expected an atom".into(),
+                    })?;
+                    return Ok(HeadChoice {
+                        prob: None,
+                        atom,
+                        negated: false,
+                    });
                 }
-                self.rewind(save);
-                None
+                self.bump();
+                self.annotation(t.into_term())?
             }
-            _ => None,
         };
-        if let Some(p) = prob
+        if let Annotation::Number(p) = prob
             && !(0.0..=1.0 + 1e-12).contains(&p)
         {
             return self.err(format!("probability {p} out of range"));
         }
+        self.negated_head(Some(prob))
+    }
+
+    /// The probability a term before `::` writes: a number, or a fraction
+    /// `a/b` of two, as a number; `t(...)`, a learnable probability, is
+    /// refused; any other term is a flexible probability.
+    fn annotation(&self, t: Term) -> Result<Annotation, ParseError> {
+        let number = |t: &Term| match t {
+            Term::Int(i) => Some(*i as f64),
+            Term::Float(x) => Some(x.0),
+            _ => None,
+        };
+        if let Some(p) = number(&t) {
+            return Ok(Annotation::Number(p));
+        }
+        match t.as_compound() {
+            Some((name, [a, b])) if &**name == "/" => {
+                if let (Some(a), Some(b)) = (number(a), number(b)) {
+                    if b == 0.0 {
+                        return self.err("expected a nonzero denominator");
+                    }
+                    return Ok(Annotation::Number(a / b));
+                }
+            }
+            Some((name, [_])) if &**name == "t" => {
+                return self.err("learnable probabilities t(...) are not supported");
+            }
+            _ => {}
+        }
+        Ok(Annotation::Flexible(t))
+    }
+
+    /// The head after its probability, if any: `\+atom` or `atom`.
+    fn negated_head(&mut self, prob: Option<Annotation>) -> Result<HeadChoice, ParseError> {
         let negated = if self.at(Tok::Naf) {
             self.bump();
             true
@@ -467,14 +657,84 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn fraction_tail(&mut self, a: f64, b: f64) -> Result<HeadChoice, ParseError> {
-        self.expect(Tok::DoubleColon)?;
-        let atom = self.atom()?;
-        Ok(HeadChoice {
-            prob: Some(a / b),
-            atom,
-            negated: false,
-        })
+    /// ProbLog's aggregate `h(G1, ..., Gn, f<V>) :- Body`, its one head
+    /// not annotated, or the same in a scope `S:h(...)`, as
+    /// library(aggregate)'s aggregate/5 computes it: the head `h(G1, ...,
+    /// Gn, R)` over the body `all(([G1, ..., Gn], V), Body, L),
+    /// enum_groups(L, [G1, ..., Gn], Vs), f(Vs, R)`. The solutions of the
+    /// body are grouped by `[G1, ..., Gn]`, and `R` is `f` of the values
+    /// `V` of a group. aggregate/5 calls the body with its variables free,
+    /// and the all/3 reads it with them renamed apart ([`renamed`]).
+    fn aggregate(&mut self, heads: &mut [HeadChoice], body: Body) -> Result<Body, ParseError> {
+        let once = self.aggregates == 1;
+        self.aggregates = 0;
+        let [head] = heads else {
+            return self.err(AGGREGATE_ONLY);
+        };
+        if !once || head.prob.is_some() || head.negated {
+            return self.err(AGGREGATE_ONLY);
+        }
+        // The groups, the function and the variable of the aggregate in the
+        // last of `args`.
+        let split = |args: &[Term]| match args.split_last() {
+            Some((last, groups)) => match last.as_compound() {
+                Some((m, [Term::Const(f), v])) if &**m == AGGREGATE => {
+                    Some((groups.to_vec(), f.clone(), v.clone()))
+                }
+                _ => None,
+            },
+            None => None,
+        };
+        let r = Term::Var("$R".into());
+        let with_r = |groups: &[Term]| groups.iter().chain([&r]).cloned().collect::<Vec<_>>();
+        let atom = &head.atom;
+        let (groups, f, v, atom) = match atom.args.as_slice() {
+            [s, Term::Compound(c)] if &*atom.name == ":" && split(&c.args).is_some() => {
+                let (groups, f, v) = split(&c.args).expect("an aggregate");
+                let scoped = Compound::term(c.name.clone(), with_r(&groups));
+                let atom = Atom::new(atom.name.clone(), vec![s.clone(), scoped]);
+                (groups, f, v, atom)
+            }
+            args => match split(args) {
+                Some((groups, f, v)) => {
+                    let atom = Atom::new(atom.name.clone(), with_r(&groups));
+                    (groups, f, v, atom)
+                }
+                None => return self.err(AGGREGATE_ONLY),
+            },
+        };
+        head.atom = atom;
+        let (cons, nil) = (self.lexer.intern(CONS), Term::Const(self.lexer.intern(NIL)));
+        let list = |items: Vec<Term>| {
+            items
+                .into_iter()
+                .rev()
+                .fold(nil.clone(), |t, x| Compound::term(cons.clone(), vec![x, t]))
+        };
+        let pair = vec![list(groups.iter().map(renamed).collect()), renamed(&v)];
+        let interleaved = body.interleaved();
+        let goal = body
+            .dnf()
+            .iter()
+            .map(|alt| alt.iter().map(renamed_literal).collect())
+            .collect();
+        let (l, vs) = (Term::Var("$L".into()), Term::Var("$Vs".into()));
+        let collect = Findall {
+            template: Compound::term(self.lexer.intern(","), pair),
+            goal,
+            result: l.clone(),
+            interleaved,
+            all: true,
+        };
+        let groups = Atom::new(
+            self.lexer.intern("enum_groups"),
+            vec![l, list(groups), vs.clone()],
+        );
+        Ok(Body::Lits(vec![
+            Literal::Findall(Box::new(collect)),
+            Literal::Pos(groups),
+            Literal::Pos(Atom::new(f, vec![vs, r])),
+        ]))
     }
 
     // body := conj (';' conj)*
@@ -583,7 +843,7 @@ impl<'a> Parser<'a> {
                 Ok(Literal::Cmp(CmpOp::of(op).expect("a comparison"), a, b))
             }
             ("\\+" | "not", 1) => self.negation(args.pop().expect("an argument")),
-            ("findall", 3) => {
+            ("findall" | "all", 3) => {
                 let result = args.pop().expect("three arguments");
                 let goal = self.goal(args.pop().expect("three arguments"))?;
                 let template = args.pop().expect("three arguments");
@@ -593,6 +853,25 @@ impl<'a> Parser<'a> {
                     goal: goal.dnf(),
                     result,
                     interleaved,
+                    all: &*name == "all",
+                })))
+            }
+            // forall(C, A) holds where (C, \+ A) has no solution:
+            // findall(_, (C, \+ A), []).
+            ("forall", 2) => {
+                let unless = self.negation(args.pop().expect("two arguments"))?;
+                let goal = self.goal(args.pop().expect("two arguments"))?;
+                let interleaved = goal.interleaved();
+                let mut alts = goal.dnf();
+                for alt in &mut alts {
+                    alt.push(unless.clone());
+                }
+                Ok(Literal::Findall(Box::new(Findall {
+                    template: Term::Const("true".into()),
+                    goal: alts,
+                    result: Term::Const(super::NIL.into()),
+                    interleaved,
+                    all: false,
                 })))
             }
             ("->", 2) => self.err("if-then-else is not supported"),
@@ -719,6 +998,27 @@ impl<'a> Parser<'a> {
                 },
                 0,
             ));
+        }
+        // `f<V>`, ProbLog's aggregate ([`Parser::aggregate`]).
+        if let (Tok::Name(id), Tok::Op(Op::Lt)) = (self.peek(), self.peek2()) {
+            let m = self.mark();
+            self.bump();
+            self.bump();
+            if let Tok::Var(v) = self.peek()
+                && v != "_"
+                && matches!(self.peek2(), Tok::Op(Op::Gt))
+            {
+                let args = vec![
+                    Term::Const(self.lexer.name(id).clone()),
+                    Term::Var(v.to_owned()),
+                ];
+                self.bump();
+                self.bump();
+                self.aggregates += 1;
+                let name = self.lexer.intern(AGGREGATE);
+                return Ok((PTerm::Term(Compound::term(name, args)), 0));
+            }
+            self.rewind(m);
         }
         if let Some(t) = self.flat_term() {
             return Ok((PTerm::Term(t), 0));
@@ -930,7 +1230,7 @@ mod tests {
         assert_eq!(p.queries.len(), 1);
         assert_eq!(p.evidence.len(), 2);
         assert!(!p.evidence[1].1);
-        assert_eq!(p.clauses[0].heads[0].prob, Some(0.3));
+        assert_eq!(p.clauses[0].heads[0].mass(), Some(0.3));
         assert_eq!(p.clauses[6].body.len(), 3);
         let text = p.to_string();
         let p2 = parse_program(&text).unwrap();
@@ -971,7 +1271,7 @@ mod tests {
             "1/3::a <- true.\np(X) :- q(Y), X is Y*2+1, X > -3, X =:= 7, Z is 2 ** -1 / 4.\n",
         )
         .unwrap();
-        assert!((p.clauses[0].heads[0].prob.unwrap() - 1.0 / 3.0).abs() < 1e-12);
+        assert!((p.clauses[0].heads[0].mass().unwrap() - 1.0 / 3.0).abs() < 1e-12);
         let c = &p.clauses[1];
         assert_eq!(c.body.len(), 5);
         assert_eq!(c.body[1].to_string(), "X is Y*2+1");
@@ -980,6 +1280,35 @@ mod tests {
         assert_eq!(c.body[4].to_string(), "Z is 2**-1/4");
         let p = parse_program("p(X) :- X is (1 + 2) * 3 - 4 - 5 mod 2.\n").unwrap();
         assert_eq!(p.clauses[0].body[0].to_string(), "X is (1+2)*3-4-5 mod 2");
+    }
+
+    #[test]
+    fn a_term_before_the_double_colon_is_a_probability() {
+        let p = parse_program(
+            "P::h(X) :- w(X, P).\n1 / W::g(X); 0.5::k :- w(X, W).\n(1 / 4)::a. 0.5::\\+b.\n",
+        )
+        .unwrap();
+        let flexible = |c: usize, h: usize| match &p.clauses[c].heads[h].prob {
+            Some(Annotation::Flexible(t)) => t.to_string(),
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(flexible(0, 0), "P");
+        assert_eq!(flexible(1, 0), "1/W");
+        assert_eq!(p.clauses[1].heads[1].mass(), Some(0.5));
+        assert_eq!(p.clauses[2].heads[0].mass(), Some(0.25));
+        assert!(p.clauses[3].heads[0].negated);
+        let text = p.to_string();
+        assert_eq!(parse_program(&text).unwrap().to_string(), text);
+        for (source, error) in [
+            ("t(0.5)::a.", "learnable"),
+            ("t(_)::a :- b.", "learnable"),
+            ("1/0::a.", "nonzero denominator"),
+            ("1/0.5::a.", "probability 2 out of range"),
+            ("1.5::a.", "out of range"),
+        ] {
+            let e = parse_program(source).unwrap_err();
+            assert!(e.msg.contains(error), "{source}: {}", e.msg);
+        }
     }
 
     #[test]
@@ -1006,7 +1335,8 @@ mod tests {
         assert_eq!(fa.template.to_string(), "X-Y");
         assert_eq!(fa.goal.len(), 2);
         assert!(!fa.interleaved);
-        assert!(parse_program(":- use_module(library(apply)).\n").is_err());
+        assert!(parse_program(":- use_module(library(apply)).\n").is_ok());
+        assert!(parse_program(":- use_module(library(assert)).\n").is_err());
         // An operator alone is an atom; before a term, a prefix operator.
         let p =
             parse_program("ops([+, -, *, /]). p([N, +|T], -, - X) :- q(N, T, X, /).\n").unwrap();
@@ -1035,6 +1365,29 @@ mod tests {
         assert_eq!(p.query_rules[0].pattern.to_string(), "p(X)");
         assert_eq!(p.query_rules[0].body.len(), 2);
         assert!(matches!(p.query_rules[0].body[1], Literal::Neg(_)));
+        // Evidence rules, the value as evidence/2 gives it.
+        let p = parse_program(
+            "evidence(p(X)) :- a(X).\nevidence(q(X), false) :- a(X).\nevidence(\\+r(X)) :- a(X).\n",
+        )
+        .unwrap();
+        let rules: Vec<(String, bool, bool)> = p
+            .query_rules
+            .iter()
+            .map(|r| (r.pattern.to_string(), r.positive, r.evidence))
+            .collect();
+        assert_eq!(
+            rules,
+            [
+                ("p(X)".to_string(), true, true),
+                ("q(X)".to_string(), false, true),
+                ("r(X)".to_string(), false, true)
+            ]
+        );
+        assert_eq!(parse_program(&p.to_string()).unwrap(), p);
+        let e = parse_program("evidence(p(X), maybe) :- a(X).").unwrap_err();
+        assert!(e.msg.contains("true or false"), "{}", e.msg);
+        let e = parse_program("query(p(X), true) :- a(X).").unwrap_err();
+        assert!(e.msg.contains("query/2"), "{}", e.msg);
     }
 
     #[test]
@@ -1117,6 +1470,51 @@ mod tests {
         assert!(!p.queries[0].1);
         let p = parse_program("p(a, - b).\n").unwrap();
         assert_eq!(p.clauses[0].heads[0].atom.to_string(), "p(a,-b)");
+    }
+
+    /// An aggregate `f<V>` ends a head, in a scope too: the clause collects
+    /// the solutions of its body, renamed apart, with all/3, groups them by
+    /// the head's other arguments and applies `f` to a group's values. It
+    /// is refused anywhere else.
+    #[test]
+    fn aggregates_end_heads() {
+        let p = parse_program(
+            ":- use_module(library(aggregate)).\n\
+             d(D, avg<S>) :- p(X, S), q(X, D).\n\
+             s:t(max<S>) :- p(_, S) ; r(S).\n",
+        )
+        .unwrap();
+        assert!(p.aggregate);
+        let c = &p.clauses[0];
+        assert_eq!(c.heads[0].atom.to_string(), "d(D,$R)");
+        let Literal::Findall(fa) = &c.body[0] else {
+            panic!("an all/3");
+        };
+        assert!(fa.all);
+        assert_eq!(fa.template.to_string(), "([D$], S$)");
+        let goal: Vec<String> = fa.goal[0].iter().map(Literal::to_string).collect();
+        assert_eq!(goal, ["p(X$,S$)", "q(X$,D$)"]);
+        assert_eq!(c.body[1].to_string(), "enum_groups($L,[D],$Vs)");
+        assert_eq!(c.body[2].to_string(), "avg($Vs,$R)");
+        let c = &p.clauses[1];
+        assert_eq!(c.heads[0].atom.to_string(), "s:t($R)");
+        let Literal::Findall(fa) = &c.body[0] else {
+            panic!("an all/3");
+        };
+        assert_eq!(fa.goal.len(), 2);
+        for src in [
+            "p(avg<X>, Y) :- q(X, Y).\n",
+            "0.5::p(avg<X>) :- q(X).\n",
+            "p(avg<X>) ; r(avg<X>) :- q(X).\n",
+            "p :- q(avg<X>).\n",
+            "query(p(avg<X>)).\n",
+        ] {
+            let err = parse_program(src).unwrap_err().to_string();
+            assert!(err.contains("aggregate f<V>"), "{src}: {err}");
+        }
+        // Otherwise `<` and `>` compare.
+        let p = parse_program("p(X) :- a < b, X > 1, a < X.\n").unwrap();
+        assert_eq!(p.clauses[0].body.len(), 3);
     }
 
     #[test]

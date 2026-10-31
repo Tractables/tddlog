@@ -13,7 +13,7 @@
 //! bottom-up grounder ([`super::engine`]) evaluates the tables in the order
 //! its stratification visits them, each row's rules in turn; a table of
 //! facts alone is its facts ([`super::normalize::Facts`]), atoms without a
-//! switch or a rule. [`ground_rows`]
+//! switch or a rule. [`Shape::ground`]
 //! builds the grounder's output directly: the same atoms in the same order,
 //! the same rules with the same bodies, the same queries and evidence. It
 //! skips the normalized program, the grounder's rule compilation and body
@@ -34,7 +34,7 @@ use rustc_hash::FxHashMap;
 use super::normalize::{head_total, switch_name, switch_probabilities};
 use super::program::{KeptRules, Lists};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
-use crate::syntax::{Atom, Clause, Literal, Program, Term, same_name};
+use crate::syntax::{Atom, Clause, HeadChoice, Literal, Program, Term, same_name};
 
 /// The grounder's output for `program` where it is table-shaped (above),
 /// before simplification; `None` where it is not.
@@ -53,11 +53,12 @@ pub(super) struct Switched<'a> {
     group: u32,
 }
 
-/// Whether `clause` is a row of a table: probabilities that sum to one at
-/// most ([`head_total`]), or one head and none.
+/// Whether `clause` is a row of a table: probabilities, numbers, that sum to
+/// one at most ([`head_total`]), or one head and none.
 fn row(clause: &Clause) -> bool {
     if probabilistic(clause) {
-        head_total(&clause.heads).is_ok()
+        let masses: Option<Vec<f64>> = clause.heads.iter().map(HeadChoice::mass).collect();
+        masses.is_some_and(|m| head_total(&m).is_ok())
     } else {
         clause.heads.len() == 1
     }

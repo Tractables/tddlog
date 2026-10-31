@@ -15,14 +15,13 @@ pub(crate) mod kw {
 
     pub(crate) const QUERY: NameId = 0;
     pub(crate) const EVIDENCE: NameId = 1;
-    pub(crate) const T: NameId = 2;
-    pub(crate) const NOT: NameId = 3;
-    pub(crate) const IS: NameId = 4;
-    pub(crate) const MOD: NameId = 5;
-    pub(crate) const REM: NameId = 6;
-    pub(crate) const XOR: NameId = 7;
+    pub(crate) const NOT: NameId = 2;
+    pub(crate) const IS: NameId = 3;
+    pub(crate) const MOD: NameId = 4;
+    pub(crate) const REM: NameId = 5;
+    pub(crate) const XOR: NameId = 6;
     /// The names, each at its place.
-    pub(super) const ALL: [&str; 8] = ["query", "evidence", "t", "not", "is", "mod", "rem", "xor"];
+    pub(super) const ALL: [&str; 7] = ["query", "evidence", "not", "is", "mod", "rem", "xor"];
 }
 
 /// An operator written with symbols: a comparison or an arithmetic one.
@@ -55,6 +54,7 @@ pub(crate) enum Op {
     Shr,
     Backslash,
     Arrow,
+    Colon,
 }
 
 impl Op {
@@ -87,6 +87,7 @@ impl Op {
             Op::Shr => ">>",
             Op::Backslash => "\\",
             Op::Arrow => "->",
+            Op::Colon => ":",
         }
     }
 }
@@ -668,6 +669,22 @@ impl<'a> Lexer<'a> {
     fn number_token(&mut self, start: usize) -> Tok<'a> {
         let src = self.src;
         let b = src.as_bytes();
+        // ProbLog's hexadecimal integers, `0x10`.
+        if b[start] == b'0'
+            && b.get(start + 1) == Some(&b'x')
+            && b.get(start + 2).is_some_and(u8::is_ascii_hexdigit)
+        {
+            let digits = b[start + 2..]
+                .iter()
+                .take_while(|d| d.is_ascii_hexdigit())
+                .count();
+            let i = start + 2 + digits;
+            self.i = i;
+            return match i64::from_str_radix(&src[start + 2..i], 16) {
+                Ok(v) => Tok::Int(v),
+                Err(_) => self.fail(self.line, format!("bad integer `{}`", &src[start..i])),
+            };
+        }
         let number = number(b, start);
         let i = number.end;
         self.i = i;
@@ -820,6 +837,7 @@ impl<'a> Lexer<'a> {
                 let (tok, len) = match (c, at(i + 1), at(i + 2)) {
                     (b':', Some(b'-'), _) | (b'<', Some(b'-'), _) => (Tok::Neck, 2),
                     (b':', Some(b':'), _) => (Tok::DoubleColon, 2),
+                    (b':', _, _) => (Tok::Op(Op::Colon), 1),
                     (b'\\', Some(b'='), Some(b'=')) => (Tok::Op(Op::NotIdentical), 3),
                     (b'\\', Some(b'='), _) => (Tok::Op(Op::Ne), 2),
                     (b'\\', Some(b'+'), _) => (Tok::Naf, 2),

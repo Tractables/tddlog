@@ -17,9 +17,20 @@ atom becomes a nullary relation `q<i>`, and with evidence two more, `e()`
 and `qe<i>()` for the query and the evidence together: Scallop does not
 condition, so the harness divides. The query names are listed in a comment
 at the top, `// query q<i> <atom>`, which is how the harness maps them back.
+
+Scallop stratifies negation by relation, and refuses a program where a
+relation reads its own negation through its rules ("Cannot stratify
+program"), although the ground atoms may form no such cycle: a loop's step
+`s(2) :- \\+ s(1), ...` reads the step before it. Every relation on a cycle
+of the relations' dependencies that runs through a negation is therefore
+written atom by atom, each of its ground atoms a nullary relation of its
+own (`r_s__g<k>()`), so that Scallop's relations depend on each other as the
+ground atoms do. The program means the same: its rules are ground, and the
+split is a renaming of their atoms.
 """
 import re
 import sys
+from decimal import Decimal
 
 import source_tree  # noqa: F401  (the source tree's converters)
 from lpad2problog import split_clauses, split_top, strip_comments
@@ -40,7 +51,8 @@ def const(c):
 
 
 def atom(text, arities):
-    """A ground atom as a Scallop atom, recording its relation's arity."""
+    """A ground atom as its relation and its arguments, Scallop constants,
+    recording the relation's arity."""
     text = text.strip()
     m = re.match(r"^('(?:[^']|\\')*'|[^(]+)\s*(\((.*)\))?$", text)
     if not m:
@@ -52,15 +64,66 @@ def atom(text, arities):
     if arities.setdefault(rel, len(args)) != len(args):
         rel = f'{rel}__{len(args)}'
         arities.setdefault(rel, len(args))
-    return f"{rel}({', '.join(args)})"
+    return rel, tuple(args)
 
 
 def literal(text, arities):
+    """A body literal as (negated, atom)."""
     text = text.strip()
     if text.startswith('\\+'):
-        return 'not ' + atom(text[2:], arities)
-    return atom(text, arities)
+        return True, atom(text[2:], arities)
+    return False, atom(text, arities)
 
+
+def negative_cycles(rules):
+    """The relations on a cycle of the dependencies of rules' heads on their
+    bodies that runs through a negation: every relation of a strongly
+    connected component inside which a body literal is negated."""
+    graph = {}
+    for (head, _), body in rules:
+        graph.setdefault(head, set()).update(rel for _, (rel, _) in body)
+    # Tarjan's components, iteratively (a long loop is a deep recursion)
+    index, low, comp, stack, on, n = {}, {}, {}, [], set(), 0
+    for root in list(graph):
+        if root in index:
+            continue
+        work = [(root, iter(graph.get(root, ())))]
+        index[root] = low[root] = n
+        n += 1
+        stack.append(root)
+        on.add(root)
+        while work:
+            v, it = work[-1]
+            w = next(it, None)
+            if w is None:
+                work.pop()
+                if work:
+                    low[work[-1][0]] = min(low[work[-1][0]], low[v])
+                if low[v] == index[v]:
+                    while True:
+                        x = stack.pop()
+                        on.discard(x)
+                        comp[x] = v
+                        if x == v:
+                            break
+            elif w not in index:
+                index[w] = low[w] = n
+                n += 1
+                stack.append(w)
+                on.add(w)
+                work.append((w, iter(graph.get(w, ()))))
+            elif w in on:
+                low[v] = min(low[v], index[w])
+    cyclic = {comp[head] for (head, _), body in rules for neg, (rel, _) in body if neg and comp[head] == comp[rel]}
+    return {r for r, c in comp.items() if c in cyclic}
+
+
+
+def probability(text):
+    """A fact's probability as Scallop reads it: a decimal without an exponent
+    (Scallop's grammar has no `1e-08`), of the fewest digits that give the
+    same float back."""
+    return format(Decimal(repr(float(text))), 'f')
 
 def translate(text):
     arities, facts, rules, queries, evidence = {}, [], [], [], []
@@ -75,30 +138,50 @@ def translate(text):
             parts = split_top(m.group(1), ',')
             truth = parts[-1].strip() if len(parts) > 1 else 'true'
             lit = ','.join(parts[:-1]) if len(parts) > 1 else parts[0]
-            evidence.append(literal(lit, arities) if truth == 'true' else 'not ' + atom(lit, arities))
+            neg, a = literal(lit, arities)
+            evidence.append((neg != (truth != 'true'), a))
             continue
         head, body = split_neck(clause)
         parts = split_top(head, ':')
         if len(parts) == 3 and parts[1] == '':
             if body is not None:
                 raise ValueError(f'a probabilistic rule in a ground program: {clause}')
-            facts.append(f'rel {float(parts[0]):.17g}::{atom(parts[2], arities)}')
+            facts.append((probability(parts[0]) + '::', atom(parts[2], arities)))
         elif body is None:
-            facts.append(f'rel {atom(head, arities)}')
+            facts.append(('', atom(head, arities)))
         else:
-            lits = [literal(b, arities) for b in split_top(body, ',')]
-            rules.append(f"rel {atom(head, arities)} = {', '.join(lits)}")
+            lits = [literal(b, arities) for b in split_top(body, ',')]   # the body first, as before
+            rules.append((atom(head, arities), lits))
+    qatoms = [atom(q, arities) for q in queries]
+    split, names = negative_cycles(rules), {}
+
+    def show(a):
+        """An atom as Scallop reads it: of a split relation, its own nullary relation."""
+        rel, args = a
+        if rel not in split:
+            return f"{rel}({', '.join(args)})"
+        if a not in names:
+            k = len(names)
+            while f'{rel}__g{k}' in arities:
+                k += 1
+            names[a] = f'{rel}__g{k}'
+        return names[a] + '()'
+
+    shown = lambda lits: ', '.join(('not ' if neg else '') + show(a) for neg, a in lits)
+    body = [f'rel {p}{show(a)}' for p, a in facts] + [f'rel {show(h)} = {shown(b)}' for h, b in rules]
+    qs = [(f'q{i}', show(a)) for i, a in enumerate(qatoms)]
+    ev = shown(evidence)
     out = [f'// query q{i} {q}' for i, q in enumerate(queries)]
-    qs = [(f'q{i}', atom(q, arities)) for i, q in enumerate(queries)]
-    out += [f"type {r}({', '.join(['String'] * n)})" for r, n in sorted(arities.items())]
+    out += [f"type {r}({', '.join(['String'] * n)})" for r, n in sorted(arities.items()) if r not in split]
+    out += [f'type {r}()' for r in sorted(names.values())]
     out += ['type ' + q + '()' for q, _ in qs]
-    out += facts + rules
+    out += body
     for q, a in qs:
         out.append(f'rel {q}() = {a}')
     if evidence:
-        out += ['type e()', f"rel e() = {', '.join(evidence)}"]
+        out += ['type e()', f'rel e() = {ev}']
         for q, a in qs:
-            out += [f'type {q}e()', f"rel {q}e() = {a}, {', '.join(evidence)}"]
+            out += [f'type {q}e()', f'rel {q}e() = {a}, {ev}']
         out += ['query e'] + [f'query {q}e' for q, _ in qs]
     else:
         out += [f'query {q}' for q, _ in qs]

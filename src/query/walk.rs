@@ -31,6 +31,22 @@
 //! conjoins factors of different nodes without what lies between them,
 //! and their products grow.
 //!
+//! Where the walk sums out what no later join reads (`super::sum_out`), a
+//! factor put off holds its variables until it meets the result, so no
+//! subtree over them is finished and none is summed: the result keeps
+//! what it would have summed, and its pairs multiply with each factor that
+//! meets it. Putting nothing off there loses where a factor joined at its
+//! node brings in variables that a factor higher up also reads, which put
+//! off the two would have met first (1aie of the UAI 2022 PR set under
+//! `families:0`, 29 s with put-offs against 230 s without). So a summing
+//! walk puts items off, and `auto` starts it over once, putting nothing
+//! off, where it is refused memory or outgrows an index
+//! (`crate::evaluation::Evaluation::walk_again`): on the PR proteins under
+//! `families:0` at 29.59 GB, 1cxy, 1fas, 1nkd and 1svy were refused near
+//! the end of the walk with put-offs, and answer without (the root
+//! formulas of 2rta, 1vfy and 1a7w held 4.85e9, 2.79e9 and 586 M pairs
+//! with put-offs, 274 M, 203 M and 34 M without).
+//!
 //! A join also walks every level of the scope it is built on, the union
 //! of its operands', whatever their pairs: a factor of a few pairs joined
 //! into a result over hundreds of variables pays for all of them. The
@@ -162,10 +178,10 @@ use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
 
 use super::sum_out::SumOut;
-use super::{Formula, PendingFormula, QuerySizes};
+use super::{Formula, QuerySizes, Scopes};
 use crate::ground::AtomId;
 use crate::tp::backend::FullSchedule;
-use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend, VtreeScope};
+use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend};
 
 /// The evidence phase puts a node's smaller items off while they total under
 /// 1/PUT_OFF_BELOW of its largest (see the module doc).
@@ -215,6 +231,13 @@ impl Join {
             Join::Smallest(items, _) => items.contains(&slot),
         }
     }
+}
+
+/// A join's result kept across a size stop, and whether it was reduced
+/// since: the walk resumes from it rather than joining again.
+struct PendingFormula {
+    formula: Formula,
+    reduced: bool,
 }
 
 /// A child's put-off factors conjoined among themselves into `product`,
@@ -413,6 +436,10 @@ pub(super) struct EvidenceWalk {
     /// Where only the evidence formula's count is wanted, what the joins
     /// sum out (`super::sum_out`).
     sum_out: Option<SumOut>,
+    /// Whether a node may put items off, and the nodes that put any off
+    /// (module doc; [`EvidenceWalk::put_nothing_off`]).
+    put_off: bool,
+    pub(super) put_offs: usize,
     pub(super) done: bool,
     /// The joins finished, each of which makes one formula of two: the
     /// walk makes one of the observed factors in one fewer.
@@ -465,6 +492,8 @@ impl EvidenceWalk {
             full_due_on: 0,
             in_full: FxHashMap::default(),
             sum_out: None,
+            put_off: true,
+            put_offs: 0,
             completed_joins: 0,
             #[cfg(test)]
             reassociated: 0,
@@ -485,7 +514,7 @@ impl EvidenceWalk {
     /// here on, for its last read in `observed` to negate or embed in place
     /// of a copy, but for the atoms of ties and those `read_after` names,
     /// whose formulas are read after the walk or by a tie
-    /// ([`crate::tp::tie`]). A read that fails may have consumed its
+    /// (`tp/tie.rs`). A read that fails may have consumed its
     /// formula, and the walk cannot go on after an error.
     pub(super) fn take_last_reads(
         &mut self,
@@ -512,6 +541,18 @@ impl EvidenceWalk {
     /// weights `w`, where no query reads the evidence formula.
     pub(super) fn sum_out(&mut self, tree: &tididi::Vtree, w: &crate::eval::Probabilities) {
         self.sum_out = Some(SumOut::new(tree, w));
+    }
+
+    /// Whether a walk that puts nothing off may start over in place of
+    /// this one (module doc): it sums out and has put items off.
+    pub(super) fn walks_again(&self) -> bool {
+        self.sum_out.is_some() && self.put_offs > 0
+    }
+
+    /// No node puts items off, for a walk that has not started.
+    pub(super) fn put_nothing_off(&mut self) {
+        debug_assert!(self.next_node == 0, "the walk has started");
+        self.put_off = false;
     }
 
     /// The joins finished, and all the walk makes: one fewer than the
@@ -881,6 +922,12 @@ impl EvidenceWalk {
         (vars.len() <= SHARED_UP_TO).then(|| vars.into())
     }
 
+    /// Whether a node below the root passes its largest item, `main`, up
+    /// and puts off the others, `rest` pairs (see the module doc).
+    fn puts_off(&self, rest: usize, main: usize) -> bool {
+        self.put_off && PUT_OFF_BELOW * rest < self.charged(main)
+    }
+
     /// What the put-off test charges slot `id`: its pairs, and
     /// [`LEVEL_PAIRS`] per node of its scope's vtree.
     fn charged(&self, id: usize) -> usize {
@@ -939,371 +986,39 @@ impl EvidenceWalk {
             } else {
                 let rest = others.iter().sum::<usize>()
                     + children.iter().map(|b| b.put_off_size).sum::<usize>();
-                PUT_OFF_BELOW * rest < self.charged(main)
+                self.puts_off(rest, main)
             };
         if kept { Vec::new() } else { waiting }
     }
 
+    /// Runs the walk on from where it stopped: places the observations,
+    /// then joins the planned conjunctions and plans each node's in turn,
+    /// bottom up, until the root's result is the evidence formula.
     pub(super) fn run(
         &mut self,
         backend: &TddBackend,
         compiled: &Compiled,
-        own_scope: &impl Fn(AtomId) -> Result<VtreeScope, CompileError>,
-        scope_over: &impl Fn(&[VarId]) -> Result<VtreeScope, CompileError>,
+        scopes: &Scopes,
         sizes: &mut QuerySizes,
         watch: Option<usize>,
     ) -> Result<Option<Formula>, CompileError> {
         let tree = &backend.vtree();
         while self.next_observed < self.observed.len() {
-            let (a, value) = self.observed[self.next_observed];
-            // A link tied to another reader's copies goes where the link
-            // would have, and weighs what the link would: the plan below
-            // reads its items' pairs, and the readers' links are one loop
-            // with the copies renamed. Weighed by their own pairs, ties
-            // would be passed up where the links are joined, and conjoined
-            // among themselves without the links they stand on
-            // (`crate::tp::tie`).
-            let (own, node, formula, pairs) = match compiled.for_queries.ties.get(&a) {
-                Some(tie) => {
-                    debug_assert!(!value, "a clause table's link is observed false");
-                    let mut vars = tie.vars();
-                    vars.dedup();
-                    let own = scope_over(&vars)?;
-                    let formula = tie.formula(backend, &own)?;
-                    let pairs = compiled.formulas[tie.reference as usize]
-                        .as_ref()
-                        .map_or(0, |f| backend.size(f))
-                        .max(backend.size(&formula));
-                    (own, tie.node(backend), formula, pairs)
-                }
-                None => {
-                    // A formula taken lives on its atom's scope, which
-                    // `own_scope` gives an atom with a stored formula.
-                    let taken = self.taken.remove(&self.next_observed);
-                    let own = match taken {
-                        Some(_) => compiled.scope_of(a).clone(),
-                        None => own_scope(a)?,
-                    };
-                    let node = backend.lowest_over(&own);
-                    let negations = (&mut sizes.negations, NegationSource::Evidence);
-                    let formula = match taken {
-                        Some(f) => {
-                            compiled.taken_literal_formula(backend, &own, a, f, value, negations)?
-                        }
-                        None => compiled.literal_formula(backend, &own, a, value, negations)?,
-                    };
-                    let pairs = backend.size(&formula);
-                    (own, node, formula, pairs)
-                }
-            };
-            if let Some(so) = &mut self.sum_out {
-                so.observe(self.slots.len(), &own);
-            }
-            let id = self.slot(Some((formula, own)), pairs);
-            self.at[node.idx()].push(id);
-            self.next_observed += 1;
+            self.observe_next(backend, compiled, scopes, sizes)?;
         }
         loop {
-            while let Some(join) = self.joins.front_mut() {
-                let (a, b, out) = match join {
-                    Join::Two(a, b, out) => (*a, *b, *out),
-                    Join::Smallest(items, out) => {
-                        let out = *out;
-                        let mut items = std::mem::take(items);
-                        self.joins.pop_front();
-                        items.sort_by_key(|&id| self.slot_pairs[id]);
-                        // A waiting result about to meet a partial product
-                        // is joined first, and the order taken on its size.
-                        if items.len() > 2
-                            && let Some(&wait) =
-                                items[..2].iter().find(|id| self.waiting.contains_key(id))
-                        {
-                            let (x, y) = self.waiting.remove(&wait).unwrap();
-                            self.joins.push_front(Join::Smallest(items, out));
-                            self.joins.push_front(Join::Two(x, y, wait));
-                            continue;
-                        }
-                        let (a, b) = (items[0], items[1]);
-                        let into = if items.len() == 2 {
-                            out
-                        } else {
-                            let shared = self.shared.get(&out).cloned();
-                            let into = self.planned(shared.as_ref());
-                            if let Some(&id) = self.batch_of.get(&out) {
-                                self.batch_of.insert(into, id);
-                            }
-                            into
-                        };
-                        if items.len() > 2 {
-                            items.splice(..2, [into]);
-                            self.joins.push_front(Join::Smallest(items, out));
-                        }
-                        self.joins.push_front(Join::Two(a, b, into));
+            while let Some(join) = self.joins.front() {
+                let (a, b, out) = match *join {
+                    Join::Two(a, b, out) => (a, b, out),
+                    Join::Smallest(..) => {
+                        self.split_smallest();
                         continue;
                     }
                 };
-                if self.pending.is_none() {
-                    let last = self.joins.len() == 1 && self.next_node == self.nodes.len();
-                    if let Some((wait, other)) = [(a, b), (b, a)]
-                        .into_iter()
-                        .find(|(w, _)| self.waiting.contains_key(w))
-                    {
-                        let (x, y) = self.waiting.remove(&wait).unwrap();
-                        let (zx, zy, zo) = (
-                            self.slot_pairs[x],
-                            self.slot_pairs[y],
-                            self.slot_pairs[other],
-                        );
-                        if last && !self.waiting.contains_key(&other) && zo < zx && zo < zy {
-                            let (larger, smaller) = if zx >= zy { (x, y) } else { (y, x) };
-                            let t = self.slot(None, 0);
-                            self.joins.pop_front();
-                            self.joins.push_front(Join::Two(t, smaller, out));
-                            self.joins.push_front(Join::Two(other, larger, t));
-                            #[cfg(test)]
-                            {
-                                self.reassociated += 1;
-                            }
-                        } else {
-                            self.joins.push_front(Join::Two(x, y, wait));
-                        }
-                        continue;
-                    }
-                    // A cap under the stop the attempt runs under already: on
-                    // a node's last join, or on a join of a batch whose
-                    // target is there to take its operands instead, at the
-                    // larger of the floor and what a join with the target
-                    // is charged.
-                    let floor = self
-                        .defer_growth
-                        .saturating_mul((self.slot_pairs[a] + self.slot_pairs[b]) as u64);
-                    let batch = self
-                        .batch_of
-                        .get(&out)
-                        .copied()
-                        .filter(|&id| self.slots[self.batches[id].target].is_some());
-                    let floor = match batch {
-                        #[cfg(test)]
-                        Some(id) if self.give_up_batches => {
-                            self.unbatch(id);
-                            continue;
-                        }
-                        Some(id) => floor.max(self.charged(self.batches[id].target) as u64),
-                        None => floor,
-                    };
-                    let cap = (!last
-                        && (batch.is_some()
-                            || self.slot_pairs[a] >= self.defer_from
-                                && self.slot_pairs[b] >= self.defer_from
-                                && self.last_joins.contains(&out)))
-                    .then(|| backend.engine.limits().armed().stop_rules())
-                    .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
-                    let (_, sa) = self.slots[a].as_ref().unwrap();
-                    let (_, sb) = self.slots[b].as_ref().unwrap();
-                    let shared = self.shared.get(&out).filter(|_| !sa.same(sb));
-                    // Both are ascending and distinct: merged, not sorted, and
-                    // each operand's renaming onto the union read off the
-                    // merge.
-                    let merged = !sa.same(sb)
-                        && shared.is_none()
-                        && match (sa.vars(), sb.vars()) {
-                            (Some(x), Some(y)) => {
-                                self.union.merge(x, y);
-                                true
-                            }
-                            _ => false,
-                        };
-                    let scope = if sa.same(sb) {
-                        sa.clone()
-                    } else if let Some(vars) = shared {
-                        scope_over(vars)?
-                    } else if merged {
-                        scope_over(&self.union.vars)?
-                    } else {
-                        backend.global()
-                    };
-                    let (first, second) = match merged {
-                        true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
-                        false => (None, None),
-                    };
-                    // The walk keeps its operands until a result exists.
-                    // `and_onto` moves them onto the join's scope and gives
-                    // them back when stopped, each on the scope it was left
-                    // on; a pair refused after its moves goes back on the
-                    // join's scope, which the retry then needs none for. The
-                    // cap's pair floor is for the conjunction: the moves put
-                    // no pair in flight, so it cannot stop them.
-                    let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
-                    // Where only the evidence's count is wanted, the join
-                    // sums out what no later join reads (`SumOut`); an
-                    // operand that carries the facts' weights makes a
-                    // weighted join.
-                    let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
-                    let pairs = self.slot_pairs[a] + self.slot_pairs[b];
-                    let targets = match &mut self.sum_out {
-                        Some(so) => {
-                            so.begin(a, b);
-                            so.targets(&scope, pairs)
-                        }
-                        None => Vec::new(),
-                    };
-                    let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty())
-                    {
-                        (Some(so), _, false) => {
-                            so.and_marginalizing(backend, fa, first, fb, second, &scope, &targets)
-                        }
-                        (Some(so), true, true) => {
-                            so.and_onto(backend, fa, first, fb, second, &scope)
-                        }
-                        _ => backend.and_onto(fa, first, fb, second, &scope),
-                    };
-                    let attempt = match cap {
-                        Some(outer) => {
-                            let _cap = backend.engine.limits().edit(|c| {
-                                c.with_stop_rules(
-                                    StopRules::default()
-                                        .with_unconditional(outer.unconditional)
-                                        .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
-                                )
-                            });
-                            join(fa, fb)
-                        }
-                        None => join(fa, fb),
-                    };
-                    if attempt.is_err()
-                        && let Some(so) = &mut self.sum_out
-                    {
-                        so.undo();
-                    }
-                    let formula = match attempt {
-                        Ok(formula) => formula,
-                        Err(refused)
-                            if matches!(refused.0, CompileError::Tdd(OperationError::Stopped))
-                                && refused.1.1.same(&scope)
-                                && refused.2.1.same(&scope)
-                                && cap.is_some_and(|outer| {
-                                    !reached(outer.unconditional, backend)
-                                }) =>
-                        {
-                            // Past the cap: the operands go into the batch's
-                            // target, or wait on the join's scope.
-                            let (_, fa, fb) = *refused;
-                            self.slots[a] = Some(fa.owned(backend)?);
-                            self.slots[b] = Some(fb.owned(backend)?);
-                            if let Some(id) = batch {
-                                self.unbatch(id);
-                                continue;
-                            }
-                            self.slot_pairs[out] = usize::try_from(floor).unwrap_or(usize::MAX);
-                            self.last_joins.remove(&out);
-                            self.waiting.insert(out, (a, b));
-                            self.joins.pop_front();
-                            continue;
-                        }
-                        Err(refused) => {
-                            let (e, fa, fb) = *refused;
-                            self.slots[a] = Some(fa.owned(backend)?);
-                            self.slots[b] = Some(fb.owned(backend)?);
-                            return Err(e);
-                        }
-                    };
-                    self.pending = Some(PendingFormula {
-                        formula: (formula, scope),
-                        reduced: false,
-                    });
-                    self.slots[a] = None;
-                    self.slots[b] = None;
+                if self.pending.is_none() && !self.try_join(a, b, out, backend, scopes)? {
+                    continue;
                 }
-                let pending = self.pending.as_mut().unwrap();
-                // The walk's last join makes the evidence formula, which only
-                // counting reads, and counting needs no reduced diagram: it
-                // stays as the conjunction left it (a full reduction there
-                // can spend the rest of the round's work). Nor is it held to
-                // the watch: what is left of the attempt is counting it, which
-                // costs less than the reduction a stop would have paid for.
-                //
-                // The other joins' results are pruned after every join and
-                // minimized in full on the walk's own schedule
-                // (`FullSchedule`, kept here since a trial's backend does not
-                // outlive the trial): the stride widens while the full plan
-                // frees nothing at all, and it runs again at once wherever it
-                // frees a pair. The full plan after every join costs over half
-                // the conjunctions' work for a few freed pairs; the prune alone lets
-                // twins compound (dice_digitRecognition, where most joins
-                // leave some).
-                //
-                // The schedule counts joins, and the full plan's twin search
-                // costs as much as its result is large: a seventeenth join
-                // can be the walk's largest. Where the full plan last freed
-                // nothing, a result over [`FULL_GROWTH`] times the one it
-                // was last due on is pruned instead, and the schedule goes
-                // on as after a full plan that freed nothing.
-                //
-                // A result over the watch is measured as the schedule left
-                // it: a full plan there frees next to nothing and never
-                // brings a result under the watch.
-                //
-                // The last result of a given-up batch's chain, and a batch's
-                // product that holds fewer pairs than its target, are
-                // minimized in full off the schedule (see the module
-                // documentation).
-                let last = self.joins.len() == 1 && self.next_node == self.nodes.len();
-                // A count visits every node of every level: the result's
-                // size is counted once, after its reduction, which the full
-                // plan's yield reads too.
-                let mut counted = None;
-                let settle = match self.in_full.remove(&out) {
-                    Some(None) => true,
-                    Some(Some(target)) => {
-                        backend.size(&pending.formula.0) < self.slot_pairs[target]
-                    }
-                    None => false,
-                };
-                if !pending.reduced && !last {
-                    let f = &mut pending.formula.0;
-                    if settle {
-                        backend.minimize(f, Reduce::Settled)?;
-                        counted = Some(backend.size(f));
-                    } else {
-                        match self.full.full_is_due().then(|| backend.size(f)) {
-                            // Passed over, the full plan counts as one
-                            // that freed nothing.
-                            Some(before)
-                                if !self.full_freed && before > FULL_GROWTH * self.full_due_on =>
-                            {
-                                self.full_due_on = before;
-                                backend.minimize(f, Reduce::Prune)?;
-                                self.full.observed(0, 0);
-                            }
-                            Some(before) => {
-                                self.full_due_on = before;
-                                backend.minimize(f, Reduce::Settled)?;
-                                let after = backend.size(f);
-                                self.full.observed(before - after, 0);
-                                self.full_freed = after < before;
-                                counted = Some(after);
-                            }
-                            None => {
-                                backend.minimize(f, Reduce::Prune)?;
-                                self.full.took_partial();
-                            }
-                        }
-                    }
-                }
-                pending.reduced = true;
-                let size = counted.unwrap_or_else(|| backend.size(&pending.formula.0));
-                if let Some(so) = &mut self.sum_out {
-                    so.commit(a, b, out);
-                }
-                self.slots[out] = Some(self.pending.take().unwrap().formula);
-                self.slot_pairs[out] = size;
-                self.shared.remove(&out);
-                self.batch_of.remove(&out);
-                self.joins.pop_front();
-                self.completed_joins += 1;
-                // Commit even an oversized result before yielding. The next
-                // call checks the saved high-water mark before using it.
-                sizes.record(size, if last { None } else { watch })?;
+                self.finish_join(a, b, out, backend, sizes, watch)?;
             }
             let Some(&node) = self.nodes.get(self.next_node) else {
                 let main = self.built[tree.root().idx()]
@@ -1333,132 +1048,526 @@ impl EvidenceWalk {
                 }
             }
             self.next_node += 1;
-            let fresh = self.slots.len();
-            let mut items: Vec<(usize, usize)> = std::mem::take(&mut self.at[node.idx()])
-                .into_iter()
-                .map(|id| (id, self.slot_pairs[id]))
-                .collect();
-            let own = items.len();
-            let mut put_off = Vec::new();
-            if !tree.node(node).is_leaf() {
-                let (l, r) = tree.children(node);
-                for c in [l, r] {
-                    if let Some(b) = self.built[c.idx()].take() {
-                        items.push((b.main, self.slot_pairs[b.main]));
-                        put_off.push((b.put_off, b.put_off_size, b.groups));
+            self.plan_node(tree, node, backend);
+        }
+    }
+
+    /// Whether the front join is the walk's last: no join waits behind it
+    /// and every node is planned.
+    fn at_last_join(&self) -> bool {
+        self.joins.len() == 1 && self.next_node == self.nodes.len()
+    }
+
+    /// Puts the next observation's formula in a slot of the lowest node
+    /// over its scope.
+    fn observe_next(
+        &mut self,
+        backend: &TddBackend,
+        compiled: &Compiled,
+        scopes: &Scopes,
+        sizes: &mut QuerySizes,
+    ) -> Result<(), CompileError> {
+        let (a, value) = self.observed[self.next_observed];
+        // A link tied to another reader's copies goes where the link would
+        // have, and weighs what the link would: the plan below reads its items'
+        // pairs, and the readers' links are one loop with the copies renamed.
+        // Weighed by their own pairs, ties would be passed up where the links
+        // are joined, and conjoined among themselves without the links they
+        // stand on (`crate::tp::tie`).
+        let (own, node, formula, pairs) = match compiled.for_queries.ties.get(&a) {
+            Some(tie) => {
+                debug_assert!(!value, "a clause table's link is observed false");
+                let mut vars = tie.vars();
+                vars.dedup();
+                let own = scopes.over(&vars)?;
+                let formula = tie.formula(backend, &own)?;
+                let pairs = compiled.formulas[tie.reference as usize]
+                    .as_ref()
+                    .map_or(0, |f| backend.size(f))
+                    .max(backend.size(&formula));
+                (own, tie.node(backend), formula, pairs)
+            }
+            None => {
+                // A formula taken lives on its atom's scope, which
+                // [`Scopes::own`] gives an atom with a stored formula.
+                let taken = self.taken.remove(&self.next_observed);
+                let own = match taken {
+                    Some(_) => compiled.scope_of(a).clone(),
+                    None => scopes.own(a)?,
+                };
+                let node = backend.lowest_over(&own);
+                let negations = (&mut sizes.negations, NegationSource::Evidence);
+                let formula = match taken {
+                    Some(f) => {
+                        compiled.taken_literal_formula(backend, &own, a, f, value, negations)?
+                    }
+                    None => compiled.literal_formula(backend, &own, a, value, negations)?,
+                };
+                let pairs = backend.size(&formula);
+                (own, node, formula, pairs)
+            }
+        };
+        if let Some(so) = &mut self.sum_out {
+            so.observe(self.slots.len(), &own);
+        }
+        let id = self.slot(Some((formula, own)), pairs);
+        self.at[node.idx()].push(id);
+        self.next_observed += 1;
+        backend.kept();
+        Ok(())
+    }
+
+    /// Splits the front join, of several slots smallest first, into the
+    /// join of its two smallest and the join of their product with the
+    /// rest.
+    fn split_smallest(&mut self) {
+        let Some(Join::Smallest(mut items, out)) = self.joins.pop_front() else {
+            unreachable!("the front join is of several slots");
+        };
+        items.sort_by_key(|&id| self.slot_pairs[id]);
+        // A waiting result about to meet a partial product is joined first, and
+        // the order taken on its size.
+        if items.len() > 2
+            && let Some(&wait) = items[..2].iter().find(|id| self.waiting.contains_key(id))
+        {
+            let (x, y) = self.waiting.remove(&wait).unwrap();
+            self.joins.push_front(Join::Smallest(items, out));
+            self.joins.push_front(Join::Two(x, y, wait));
+            return;
+        }
+        let (a, b) = (items[0], items[1]);
+        let into = if items.len() == 2 {
+            out
+        } else {
+            let shared = self.shared.get(&out).cloned();
+            let into = self.planned(shared.as_ref());
+            if let Some(&id) = self.batch_of.get(&out) {
+                self.batch_of.insert(into, id);
+            }
+            into
+        };
+        if items.len() > 2 {
+            items.splice(..2, [into]);
+            self.joins.push_front(Join::Smallest(items, out));
+        }
+        self.joins.push_front(Join::Two(a, b, into));
+    }
+
+    /// Tries the front join, of slots `a` and `b` into `out`, and whether
+    /// its result is pending: where it waits instead, or was planned anew,
+    /// the walk goes on with the joins in front.
+    fn try_join(
+        &mut self,
+        a: usize,
+        b: usize,
+        out: usize,
+        backend: &TddBackend,
+        scopes: &Scopes,
+    ) -> Result<bool, CompileError> {
+        let last = self.at_last_join();
+        if let Some((wait, other)) = [(a, b), (b, a)]
+            .into_iter()
+            .find(|(w, _)| self.waiting.contains_key(w))
+        {
+            let (x, y) = self.waiting.remove(&wait).unwrap();
+            let (zx, zy, zo) = (
+                self.slot_pairs[x],
+                self.slot_pairs[y],
+                self.slot_pairs[other],
+            );
+            if last && !self.waiting.contains_key(&other) && zo < zx && zo < zy {
+                let (larger, smaller) = if zx >= zy { (x, y) } else { (y, x) };
+                let t = self.slot(None, 0);
+                self.joins.pop_front();
+                self.joins.push_front(Join::Two(t, smaller, out));
+                self.joins.push_front(Join::Two(other, larger, t));
+                #[cfg(test)]
+                {
+                    self.reassociated += 1;
+                }
+            } else {
+                self.joins.push_front(Join::Two(x, y, wait));
+            }
+            return Ok(false);
+        }
+        // A cap under the stop the attempt runs under already: on a node's last
+        // join, or on a join of a batch whose target is there to take its
+        // operands instead, at the larger of the floor and what a join with the
+        // target is charged.
+        let floor = self
+            .defer_growth
+            .saturating_mul((self.slot_pairs[a] + self.slot_pairs[b]) as u64);
+        let batch = self
+            .batch_of
+            .get(&out)
+            .copied()
+            .filter(|&id| self.slots[self.batches[id].target].is_some());
+        let floor = match batch {
+            #[cfg(test)]
+            Some(id) if self.give_up_batches => {
+                self.unbatch(id);
+                return Ok(false);
+            }
+            Some(id) => floor.max(self.charged(self.batches[id].target) as u64),
+            None => floor,
+        };
+        let cap = (!last
+            && (batch.is_some()
+                || self.slot_pairs[a] >= self.defer_from
+                    && self.slot_pairs[b] >= self.defer_from
+                    && self.last_joins.contains(&out)))
+        .then(|| backend.engine.limits().armed().stop_rules())
+        .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
+        let (_, sa) = self.slots[a].as_ref().unwrap();
+        let (_, sb) = self.slots[b].as_ref().unwrap();
+        let shared = self.shared.get(&out).filter(|_| !sa.same(sb));
+        // Both are ascending and distinct: merged, not sorted, and each
+        // operand's renaming onto the union read off the merge.
+        let merged = !sa.same(sb)
+            && shared.is_none()
+            && match (sa.vars(), sb.vars()) {
+                (Some(x), Some(y)) => {
+                    self.union.merge(x, y);
+                    true
+                }
+                _ => false,
+            };
+        let scope = if sa.same(sb) {
+            sa.clone()
+        } else if let Some(vars) = shared {
+            scopes.over(vars)?
+        } else if merged {
+            scopes.over(&self.union.vars)?
+        } else {
+            backend.global()
+        };
+        let (first, second) = match merged {
+            true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
+            false => (None, None),
+        };
+        // The walk keeps its operands until a result exists. `and_onto` moves
+        // them onto the join's scope and gives them back when stopped, each on
+        // the scope it was left on; a pair refused after its moves goes back on
+        // the join's scope, which the retry then needs none for. The cap's pair
+        // floor is for the conjunction: the moves put no pair in flight, so it
+        // cannot stop them.
+        let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
+        // Where only the evidence's count is wanted, the join sums out what no
+        // later join reads (`SumOut`); an operand that carries the facts'
+        // weights makes a weighted join.
+        let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
+        let pairs = self.slot_pairs[a] + self.slot_pairs[b];
+        let targets = match &mut self.sum_out {
+            Some(so) => {
+                so.begin(a, b);
+                so.targets(&scope, pairs)
+            }
+            None => Vec::new(),
+        };
+        let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
+            (Some(so), _, false) => {
+                so.and_marginalizing(backend, fa, first, fb, second, &scope, &targets)
+            }
+            (Some(so), true, true) => so.and_onto(backend, fa, first, fb, second, &scope),
+            _ => backend.and_onto(fa, first, fb, second, &scope),
+        };
+        // A join that sums out its whole scope makes a weight: the nodes it
+        // emits are folded away level by level, and neither the attempt's
+        // node cap nor its pair floor measures what it holds. It runs under
+        // the work stop and the memory budget alone (rus_20_40's last join,
+        // 3.3 G units, was cut short six times by the cap and the work stop
+        // in turn and built again each time).
+        let whole = targets.contains(&scope.vtree().root());
+        let attempt = match cap {
+            Some(outer) => {
+                let _cap = backend.engine.limits().edit(|c| {
+                    c.with_stop_rules(
+                        StopRules::default()
+                            .with_unconditional(outer.unconditional)
+                            .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
+                    )
+                });
+                join(fa, fb)
+            }
+            None if whole => {
+                let _uncapped = backend.engine.limits().edit(|c| {
+                    let stop = c.stop_rules().with_after_pairs(None);
+                    c.with_output_node_cap(None).with_stop_rules(stop)
+                });
+                join(fa, fb)
+            }
+            None => join(fa, fb),
+        };
+        if attempt.is_err()
+            && let Some(so) = &mut self.sum_out
+        {
+            so.undo();
+        }
+        let formula = match attempt {
+            Ok(formula) => formula,
+            Err(refused)
+                if matches!(refused.0, CompileError::Tdd(OperationError::Stopped))
+                    && refused.1.1.same(&scope)
+                    && refused.2.1.same(&scope)
+                    && cap.is_some_and(|outer| !reached(outer.unconditional, backend)) =>
+            {
+                // Past the cap: the operands go into the batch's target, or
+                // wait on the join's scope.
+                let (_, fa, fb) = *refused;
+                self.slots[a] = Some(fa.owned(backend)?);
+                self.slots[b] = Some(fb.owned(backend)?);
+                backend.kept();
+                if let Some(id) = batch {
+                    self.unbatch(id);
+                    return Ok(false);
+                }
+                self.slot_pairs[out] = usize::try_from(floor).unwrap_or(usize::MAX);
+                self.last_joins.remove(&out);
+                self.waiting.insert(out, (a, b));
+                self.joins.pop_front();
+                return Ok(false);
+            }
+            Err(refused) => {
+                let (e, fa, fb) = *refused;
+                self.slots[a] = Some(fa.owned(backend)?);
+                self.slots[b] = Some(fb.owned(backend)?);
+                return Err(e);
+            }
+        };
+        self.pending = Some(PendingFormula {
+            formula: (formula, scope),
+            reduced: false,
+        });
+        self.slots[a] = None;
+        self.slots[b] = None;
+        backend.kept();
+        Ok(true)
+    }
+
+    /// Reduces the pending result of the front join, of slots `a` and `b`,
+    /// and puts it in slot `out`.
+    ///
+    /// The walk's last join makes the evidence formula, which only counting
+    /// reads, and counting needs no reduced diagram: it stays as the
+    /// conjunction left it (a full reduction there can spend the rest of the
+    /// round's work). Nor is it held to the watch: what is left of the attempt
+    /// is counting it, which costs less than the reduction a stop would have
+    /// paid for.
+    ///
+    /// The other joins' results are pruned after every join and minimized in
+    /// full on the walk's own schedule (`FullSchedule`, kept here since a
+    /// trial's backend does not outlive the trial): the stride widens while the
+    /// full plan frees nothing at all, and it runs again at once wherever it
+    /// frees a pair. The full plan after every join costs over half the
+    /// conjunctions' work for a few freed pairs; the prune alone lets twins
+    /// compound (dice_digitRecognition, where most joins leave some).
+    ///
+    /// The schedule counts joins, and the full plan's twin search costs as much
+    /// as its result is large: a seventeenth join can be the walk's largest.
+    /// Where the full plan last freed nothing, a result over [`FULL_GROWTH`]
+    /// times the one it was last due on is pruned instead, and the schedule
+    /// goes on as after a full plan that freed nothing.
+    ///
+    /// A result over the watch is measured as the schedule left it: a full plan
+    /// there frees next to nothing and never brings a result under the watch.
+    ///
+    /// The last result of a given-up batch's chain, and a batch's product that
+    /// holds fewer pairs than its target, are minimized in full off the
+    /// schedule (see the module documentation).
+    fn finish_join(
+        &mut self,
+        a: usize,
+        b: usize,
+        out: usize,
+        backend: &TddBackend,
+        sizes: &mut QuerySizes,
+        watch: Option<usize>,
+    ) -> Result<(), CompileError> {
+        let last = self.at_last_join();
+        let pending = self.pending.as_mut().unwrap();
+        // A count visits every node of every level: the result's size is
+        // counted once, after its reduction, which the full plan's yield reads
+        // too.
+        let mut counted = None;
+        let settle = match self.in_full.remove(&out) {
+            Some(None) => true,
+            Some(Some(target)) => backend.size(&pending.formula.0) < self.slot_pairs[target],
+            None => false,
+        };
+        if !pending.reduced && !last {
+            let f = &mut pending.formula.0;
+            if settle {
+                backend.minimize(f, Reduce::Settled)?;
+                counted = Some(backend.size(f));
+            } else {
+                match self.full.full_is_due().then(|| backend.size(f)) {
+                    // Passed over, the full plan counts as one that freed
+                    // nothing.
+                    Some(before) if !self.full_freed && before > FULL_GROWTH * self.full_due_on => {
+                        self.full_due_on = before;
+                        backend.minimize(f, Reduce::Prune)?;
+                        self.full.observed(0, 0);
+                    }
+                    Some(before) => {
+                        self.full_due_on = before;
+                        backend.minimize(f, Reduce::Settled)?;
+                        let after = backend.size(f);
+                        self.full.observed(before - after, 0);
+                        self.full_freed = after < before;
+                        counted = Some(after);
+                    }
+                    None => {
+                        backend.minimize(f, Reduce::Prune)?;
+                        self.full.took_partial();
                     }
                 }
             }
-            let Some((largest, size)) = items
-                .iter()
-                .enumerate()
-                .map(|(i, &(_, z))| (i, z))
-                .rev()
-                .max_by_key(|&(_, z)| z)
-            else {
-                continue;
-            };
-            let rest = items.iter().map(|&(_, z)| z).sum::<usize>() - size
-                + put_off.iter().map(|&(_, z, _)| z).sum::<usize>();
-            if node != tree.root() && PUT_OFF_BELOW * rest < self.charged(items[largest].0) {
-                let (main, _) = items.remove(largest);
-                let mut groups = Vec::new();
-                for &group in put_off.iter().flat_map(|(_, _, groups)| groups) {
-                    push_group(&mut groups, group);
+        }
+        pending.reduced = true;
+        let size = counted.unwrap_or_else(|| backend.size(&pending.formula.0));
+        if let Some(so) = &mut self.sum_out {
+            so.commit(a, b, out);
+        }
+        self.slots[out] = Some(self.pending.take().unwrap().formula);
+        self.slot_pairs[out] = size;
+        self.shared.remove(&out);
+        self.batch_of.remove(&out);
+        self.joins.pop_front();
+        self.completed_joins += 1;
+        backend.kept();
+        // Commit even an oversized result before yielding. The next call checks
+        // the saved high-water mark before using it.
+        sizes.record(size, if last { None } else { watch })?;
+        Ok(())
+    }
+
+    /// Plans the joins of `node`'s own factors and its children's results,
+    /// or passes its largest up with the rest put off.
+    fn plan_node(&mut self, tree: &tididi::Vtree, node: VtreeIdx, backend: &TddBackend) {
+        let fresh = self.slots.len();
+        let mut items: Vec<(usize, usize)> = std::mem::take(&mut self.at[node.idx()])
+            .into_iter()
+            .map(|id| (id, self.slot_pairs[id]))
+            .collect();
+        let own = items.len();
+        let mut put_off = Vec::new();
+        if !tree.node(node).is_leaf() {
+            let (l, r) = tree.children(node);
+            for c in [l, r] {
+                if let Some(b) = self.built[c.idx()].take() {
+                    items.push((b.main, self.slot_pairs[b.main]));
+                    put_off.push((b.put_off, b.put_off_size, b.groups));
                 }
+            }
+        }
+        let Some((largest, size)) = items
+            .iter()
+            .enumerate()
+            .map(|(i, &(_, z))| (i, z))
+            .rev()
+            .max_by_key(|&(_, z)| z)
+        else {
+            return;
+        };
+        let rest = items.iter().map(|&(_, z)| z).sum::<usize>() - size
+            + put_off.iter().map(|&(_, z, _)| z).sum::<usize>();
+        if node != tree.root() && self.puts_off(rest, items[largest].0) {
+            let (main, _) = items.remove(largest);
+            let mut groups = Vec::new();
+            for &group in put_off.iter().flat_map(|(_, _, groups)| groups) {
+                push_group(&mut groups, group);
+            }
+            push_group(
+                &mut groups,
+                Group {
+                    len: items.len(),
+                    pairs: items.iter().map(|&(_, z)| z).sum(),
+                },
+            );
+            let mut rest_factors = VecDeque::new();
+            for (factors, _, _) in put_off {
+                rest_factors = concat(rest_factors, factors);
+            }
+            rest_factors.extend(items.into_iter().map(|(f, _)| f));
+            self.put_offs += usize::from(!rest_factors.is_empty());
+            self.built[node.idx()] = Some(Built {
+                main,
+                put_off: rest_factors,
+                put_off_size: rest,
+                groups,
+            });
+            return;
+        }
+        // Below the root, the node's own factors are conjoined with the largest
+        // child's put-off factors, a batch of that child, and what the node
+        // built besides the largest is joined into it once; in the balanced
+        // pairing it met a partial product at every round. At the root the own
+        // factors may span the whole vtree, and their product alone grows past
+        // what the child constrains. So the root sets its largest child aside
+        // only where the child's put-offs weigh at least the own factors, or
+        // where it has none.
+        let own_size: usize = items[..own].iter().map(|&(_, z)| z).sum();
+        let largest_child = (own..items.len()).max_by_key(|&i| items[i].1);
+        let aside = if node == tree.root() {
+            largest_child.filter(|&i| own_size <= put_off[i - own].1 || put_off[i - own].1 == 0)
+        } else {
+            largest_child
+        };
+        let mut step = Vec::with_capacity(items.len());
+        let mut items = items.into_iter().map(|(f, _)| f).enumerate();
+        let mut mine: Vec<usize> = items.by_ref().take(own).map(|(_, f)| f).collect();
+        if aside.is_none() {
+            step.append(&mut mine);
+        }
+        let mut largest = None;
+        for ((i, main), (mut factors, _, mut groups)) in items.zip(put_off) {
+            if Some(i) == aside {
+                // The own factors are put off into the batch of the child set
+                // aside, one more group, as a node that passes its largest up
+                // puts its other items off.
+                largest = Some(main);
                 push_group(
                     &mut groups,
                     Group {
-                        len: items.len(),
-                        pairs: items.iter().map(|&(_, z)| z).sum(),
+                        len: mine.len(),
+                        pairs: own_size,
                     },
                 );
-                let mut rest_factors = VecDeque::new();
-                for (factors, _, _) in put_off {
-                    rest_factors = concat(rest_factors, factors);
-                }
-                rest_factors.extend(items.into_iter().map(|(f, _)| f));
-                self.built[node.idx()] = Some(Built {
-                    main,
-                    put_off: rest_factors,
-                    put_off_size: rest,
-                    groups,
-                });
-                continue;
-            }
-            // Below the root, the node's own factors are conjoined with the
-            // largest child's put-off factors, a batch of that child, and
-            // what the node built besides the largest is joined into it
-            // once; in the balanced pairing it met a partial product at
-            // every round. At the root the own factors may span the whole
-            // vtree, and their product alone grows past what the child
-            // constrains. So the root sets its largest child aside only
-            // where the child's put-offs weigh at least the own factors, or
-            // where it has none.
-            let own_size: usize = items[..own].iter().map(|&(_, z)| z).sum();
-            let largest_child = (own..items.len()).max_by_key(|&i| items[i].1);
-            let aside = if node == tree.root() {
-                largest_child.filter(|&i| own_size <= put_off[i - own].1 || put_off[i - own].1 == 0)
+                factors.extend(std::mem::take(&mut mine));
+                let (factors, groups) = self.by_part(node, factors, groups, backend);
+                step.extend(self.conjoin_put_off(factors, &groups, main));
+            } else if factors.is_empty() {
+                step.push(main);
             } else {
-                largest_child
-            };
-            let mut step = Vec::with_capacity(items.len());
-            let mut items = items.into_iter().map(|(f, _)| f).enumerate();
-            let mut mine: Vec<usize> = items.by_ref().take(own).map(|(_, f)| f).collect();
-            if aside.is_none() {
-                step.append(&mut mine);
+                let mut batch = vec![main];
+                let (factors, groups) = self.by_part(node, factors, groups, backend);
+                batch.extend(self.conjoin_put_off(factors, &groups, main));
+                step.extend(self.conjoin(batch));
             }
-            let mut largest = None;
-            for ((i, main), (mut factors, _, mut groups)) in items.zip(put_off) {
-                if Some(i) == aside {
-                    // The own factors are put off into the batch of the
-                    // child set aside, one more group, as a node that
-                    // passes its largest up puts its other items off.
-                    largest = Some(main);
-                    push_group(
-                        &mut groups,
-                        Group {
-                            len: mine.len(),
-                            pairs: own_size,
-                        },
-                    );
-                    factors.extend(std::mem::take(&mut mine));
-                    let (factors, groups) = self.by_part(node, factors, groups, backend);
-                    step.extend(self.conjoin_put_off(factors, &groups, main));
-                } else if factors.is_empty() {
-                    step.push(main);
-                } else {
-                    let mut batch = vec![main];
-                    let (factors, groups) = self.by_part(node, factors, groups, backend);
-                    batch.extend(self.conjoin_put_off(factors, &groups, main));
-                    step.extend(self.conjoin(batch));
-                }
-            }
-            // The largest set aside meets what the node built besides it
-            // smallest first, as their sizes come out, rather than after
-            // their product.
-            if let Some(main) = largest {
-                step.insert(0, main);
-                if step.len() > 2 {
-                    let out = self.slot(None, 0);
-                    self.joins.push_back(Join::Smallest(step, out));
-                    step = vec![out];
-                }
-            }
-            let main = self.conjoin(step);
-            if let Some(main) = main
-                && main >= fresh
-                && node != tree.root()
-            {
-                self.last_joins.insert(main);
-            }
-            self.built[node.idx()] = main.map(|main| Built {
-                main,
-                put_off: VecDeque::new(),
-                put_off_size: 0,
-                groups: Vec::new(),
-            });
         }
+        // The largest set aside meets what the node built besides it smallest
+        // first, as their sizes come out, rather than after their product.
+        if let Some(main) = largest {
+            step.insert(0, main);
+            if step.len() > 2 {
+                let out = self.slot(None, 0);
+                self.joins.push_back(Join::Smallest(step, out));
+                step = vec![out];
+            }
+        }
+        let main = self.conjoin(step);
+        if let Some(main) = main
+            && main >= fresh
+            && node != tree.root()
+        {
+            self.last_joins.insert(main);
+        }
+        self.built[node.idx()] = main.map(|main| Built {
+            main,
+            put_off: VecDeque::new(),
+            put_off_size: 0,
+            groups: Vec::new(),
+        });
     }
 }
 

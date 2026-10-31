@@ -43,10 +43,11 @@ Writes, as SVG:
                     under them, ordered by answers, each system's answers
                     and tddlog's speed-up over it.
 
-The JSON printed is {categories, own}: for each category, the numbers its
+The JSON printed is {categories}: for each category, the numbers its
 text quotes and `table`, the lines of the README's table of its native
-systems (all programs: every system); and `own`, the lines of the
-README's table of each system on its own benchmarks.
+systems (all programs: every system). Each system on its own benchmarks
+is the results page's table alone; the README leaves it out (the owner,
+2026-10-30).
 
 The cactus plots' time axes are linear, from 0 to the category's longest
 time limit; the scatter plots' are logarithmic from 0.2 s, shorter runs
@@ -82,6 +83,7 @@ DASH, DOT, DASHDOT = (0, (6, 3)), (0, (1.5, 2.5)), (0, (7, 3, 2, 3))
 COLOURS = {
     'tddlog': (TDDLOG, '-'),
     'problog': ('#b35c00', '-'), 'pita': ('#7f3f00', DASH), 'aspmc': ('#c4720f', DOT), 'psouffle': ('#a0522d', DASHDOT),
+    'scallop': ('#d9480f', DASH),
     'ace': ('#1f5fa8', '-'), 'merlin': ('#3b7dd8', DASH), 'agrum': ('#173f73', DOT), 'pgmpy': ('#6186d2', '-'),
     'libdai': ('#2c4f9e', DASHDOT), 'tensorinference': ('#4f6fd0', DASH),
     'dice': ('#6a3fc0', DASH), 'alea': ('#a8327a', '-'), 'roulette': ('#8f5fd6', '-'), 'nodice': ('#4b2a8f', DOT),
@@ -526,20 +528,6 @@ def table(cat, names):
     return lines
 
 
-def own(data, names):
-    """The README's table of each system on its own benchmarks (the data's
-    own), rule 16: its answers and tddlog's, each with its total time over
-    the instances either answers, and tddlog's speed-up."""
-    lines = ['| System | Its benchmarks | Instances | The system | tddlog | tddlog faster |', '|---|---|--:|--:|--:|--:|']
-    for o in data['own']:
-        v, about = o['vs'], o['about']
-        if about.startswith('the '):     # the data's words continue a sentence; a name keeps its case
-            about = 'T' + about[1:]
-        lines.append(f"| {names[o['system']]} | {about} | {o['instances']} | {v['answers']} in "
-                     f"{seconds(v['total'])} | {v['tddlog_answers']} in {seconds(v['tddlog_total'])} | {faster(v)} |")
-    return lines
-
-
 def main():
     args = [a for a in sys.argv[1:] if a != '--png']
     path = os.path.join(SOURCE, 'bindings', 'wasm', 'results', 'categories.json')
@@ -568,7 +556,7 @@ def main():
         res['table'] = table(cat, names)
         numbers[cat['key']] = res
     overview(data, names, col, out)
-    json.dump(dict(categories=numbers, own=own(data, names)), sys.stdout, indent=1, ensure_ascii=False)
+    json.dump(dict(categories=numbers), sys.stdout, indent=1, ensure_ascii=False)
     print()
 
 

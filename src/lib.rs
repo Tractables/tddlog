@@ -13,7 +13,7 @@
 //!
 //! # A first program
 //!
-//! [`solve`] takes a program's text and [`Options`], the command line's
+//! [`fn@solve`] takes a program's text and [`Options`], the command line's
 //! options, and returns a [`Solution`]: the answers to the program's
 //! queries, in their order, and `P(e)`, the probability of the evidence,
 //! where it was asked for. Its third argument receives what `--stats`
@@ -79,7 +79,7 @@
 //! the immediate-consequence operator, one strongly connected component at
 //! a time; and [`query`]
 //! conjoins the evidence and counts each query against it, with the
-//! weighted counts of [`eval`]. [`solve`] runs them under a [`Strategy`]:
+//! weighted counts of [`eval`]. [`fn@solve`] runs them under a [`Strategy`]:
 //! `auto`, the default, runs trials of layouts ([`Kind`]) under bounds
 //! that double until one finishes.
 //! [docs/design.md](https://github.com/Tractables/tddlog/blob/main/docs/design.md)
@@ -89,6 +89,7 @@
 #![doc(html_favicon_url = "https://tractables.github.io/tddlog/favicon.svg")]
 
 mod auto;
+mod by_hash;
 mod cubes;
 mod disjoint;
 pub mod eval;
@@ -108,7 +109,7 @@ pub mod vtree;
 use std::sync::Arc;
 
 pub use ground::{GroundOptions, GroundProgram};
-pub use input::{Format, Input, read};
+pub use input::{Format, Input, consult, read};
 pub use query::QueryResult;
 pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground};
 pub use strategy::Strategy;
@@ -119,7 +120,10 @@ use tp::CompileStats;
 
 /// Everything the driver needs to report.
 pub struct Run {
+    /// The program compiled: the ground program as [`Run::kind`] rewrote
+    /// it ([`Kind::rewrite`]), with the copies its layout made.
     pub ground: GroundProgram,
+    /// The vtree the formulas were compiled on.
     pub vtree: Arc<tididi::Vtree>,
     /// The layout the vtree came from (for `auto`, the trial that
     /// finished), which fixed the program's rewrite and the formulation.
@@ -146,6 +150,7 @@ pub struct Run {
     /// What conjoining the evidence and the queries built: with indicators,
     /// the conjunction of their links is here.
     pub query_sizes: query::QuerySizes,
+    /// What the compile that made the answers counted, over its runs.
     pub stats: CompileStats,
     /// `None` when the evidence is inconsistent.
     pub results: Option<Vec<QueryResult>>,
@@ -161,15 +166,21 @@ pub struct Run {
     pub(crate) spent: auto::Spent,
 }
 
+/// Why a program was not answered.
 #[derive(Debug)]
 pub enum Error {
+    /// The program does not parse.
     Parse(syntax::ParseError),
     /// A network file that cannot be read as a program ([`network::read`]).
     Network(String),
+    /// The program cannot be ground.
     Ground(ground::GroundError),
+    /// The strategy could not lay out a vtree for the program, or `auto`
+    /// had no trial left to try.
     Vtree(String),
     /// [`Options`] that ask for nothing, or for what the strategy cannot do.
     Options(String),
+    /// The compile or the query phase failed.
     Compile(tp::CompileError),
     /// `auto`'s trials ended without an answer: the error that ended the
     /// last of them, and the notes the trials left so far (the `trial:`,

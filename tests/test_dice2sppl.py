@@ -2,7 +2,7 @@
 scripts/dice_ir.py, run by scripts/sppl_dice.py) and how bench.py reads
 what sppl_dice.py prints.
 
-Every Dice program of data/dice and data/nodice that dice2problog.py
+Every Dice program of data/dice and data/nodice (test_nodice.dice_programs) that dice2problog.py
 translates translates here, except where it has recursion. Where SPPL is
 installed (SPPL, a Python that has the sppl package, e.g.
 `$HOME/local/sppl/venv/bin/python`), the translated programs run, and their
@@ -25,6 +25,7 @@ sys.path.insert(0, str(scripts))
 import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
+from test_nodice import dice_programs  # noqa: E402
 import dice2problog  # noqa: E402
 import dice2sppl  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
@@ -58,7 +59,7 @@ def sppl_answers(text, qs):
 
 class Dice2SpplTests(unittest.TestCase):
     def test_the_baseline_programs_translate(self):
-        paths = sorted((data / 'dice').glob('*.dice')) + sorted((data / 'nodice').glob('*.dice'))
+        paths = dice_programs()
         for path in paths:
             with self.subTest(name=path.name):
                 try:

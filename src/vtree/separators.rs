@@ -37,7 +37,7 @@ use std::cmp::Reverse;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::ground::{AtomId, FactCopy, GroundProgram};
+use crate::ground::{AtomId, FactCopy, GLit, GroundProgram, RulesByHead};
 
 use super::forest::halves;
 use super::td::Rooted;
@@ -226,6 +226,34 @@ impl Units {
         units
     }
 
+    /// The candidates: the two halves of each split with two facts or more
+    /// on each side.
+    fn candidates(&self) -> Vec<bool> {
+        let mut candidate = vec![false; self.unit.len()];
+        for &(l, r) in &self.splits {
+            if self.facts[l] >= 2 && self.facts[r] >= 2 {
+                candidate[l] = true;
+                candidate[r] = true;
+            }
+        }
+        candidate
+    }
+
+    /// The nearest of the `candidate` units at or above each unit.
+    fn up(&self, candidate: &[bool]) -> Vec<usize> {
+        let mut up = vec![usize::MAX; self.unit.len()];
+        for &u in &self.preorder {
+            up[u] = if candidate[u] {
+                u
+            } else if self.parent[u] != usize::MAX {
+                up[self.parent[u]]
+            } else {
+                usize::MAX
+            };
+        }
+        up
+    }
+
     /// Whether unit `x` is in unit `u`'s subtree.
     fn within(&self, x: usize, u: usize) -> bool {
         x != usize::MAX
@@ -267,118 +295,234 @@ pub(super) fn plan(
 ) -> Plan {
     let n = gp.num_atoms();
     let units = Units::of(rooted);
-    let count = units.unit.len();
-    let mut candidate = vec![false; count];
-    for &(l, r) in &units.splits {
-        if units.facts[l] >= 2 && units.facts[r] >= 2 {
-            candidate[l] = true;
-            candidate[r] = true;
-        }
-    }
+    let candidate = units.candidates();
     let candidates = candidate.iter().filter(|&&c| c).count();
-    // The unit each fact is laid in, and each copy, after the facts.
-    let mut at = vec![usize::MAX; n];
-    for (b, facts) in rooted.introduced.iter().enumerate() {
-        for &a in facts {
-            at[a as usize] = b;
-        }
-    }
-    // The nearest candidate at or above each unit.
-    let mut up = vec![usize::MAX; count];
-    for &u in &units.preorder {
-        up[u] = if candidate[u] {
-            u
-        } else if units.parent[u] != usize::MAX {
-            up[units.parent[u]]
-        } else {
-            usize::MAX
-        };
-    }
-
-    // The atoms the walk conjoins, every derived atom but the copies of
-    // facts the conditioning made, and the facts each reads, through those
-    // copies. `reads[start[h]..start[h + 1]]` are atom `h`'s, each with the
-    // atom it reads the fact through now.
     let copy_of = gp.copies_of_facts();
     let by_head = gp.rules_by_head();
-    let resolve = |a: AtomId| copy_of[a as usize].map_or(a, |l| l.atom());
-    let mut start = vec![0usize; n + 1];
-    let mut reads: Vec<(AtomId, AtomId)> = Vec::new();
-    let mut seen = vec![usize::MAX; n];
-    for h in 0..n {
-        start[h] = reads.len();
-        if gp.is_fact(h as AtomId) || copy_of[h].is_some() {
+    let mut reads = Reads::of(gp, rooted, &units, &copy_of, &by_head);
+    let crossing = reads.crossing(&units, &units.up(&candidate));
+    let mut copies: Vec<FactCopy> = Vec::new();
+    // The fact each copy is of.
+    let mut origin: Vec<AtomId> = Vec::new();
+    let mut atop: Vec<Vec<AtomId>> = vec![Vec::new(); units.unit.len()];
+    let (mut copied, mut read) = (0, 0);
+    for &(l, r) in &units.splits {
+        if !candidate[l] {
             continue;
         }
-        for &ri in &by_head[h] {
-            for l in &gp.rules[ri].body {
-                let f = resolve(l.atom());
-                if gp.is_fact(f) && seen[f as usize] != h {
-                    seen[f as usize] = h;
-                    reads.push((f, f));
-                }
+        // The left half's copies, by what they copy.
+        let mut left: FxHashMap<AtomId, AtomId> = FxHashMap::default();
+        for (k, u) in [l, r].into_iter().enumerate() {
+            // The right half is planned after the left half's copies.
+            let (s_least, s_most, bound) = reads.bounds(&units, &by_head, &crossing[u], u);
+            if !rule.may_take(s_least, s_most, bound, units.facts[u]) {
+                continue;
             }
-        }
-    }
-    start[n] = reads.len();
-    // Each atom's reads by the preorder place of the unit they lie in,
-    // ascending (none where a read lies in no unit), so that the reads
-    // inside a unit, a range of the preorder, are counted by two searches.
-    let place = |a: AtomId, at: &[usize]| match at[a as usize] {
-        usize::MAX => usize::MAX,
-        x => units.pre[x],
-    };
-    let mut places: Vec<usize> = reads.iter().map(|&(_, a)| place(a, &at)).collect();
-    for h in 0..n {
-        places[start[h]..start[h + 1]].sort_unstable();
-    }
-    // The candidates each atom crosses: those on the way up from a unit of
-    // one of its facts that do not hold all of them.
-    let mut crossing: Vec<Vec<AtomId>> = vec![Vec::new(); count];
-    let mut mark = vec![usize::MAX; count];
-    for h in 0..n {
-        let facts = &reads[start[h]..start[h + 1]];
-        if facts.len() < 2 {
-            continue;
-        }
-        let stray = facts.iter().any(|&(f, _)| at[f as usize] == usize::MAX);
-        let places = || {
-            facts
-                .iter()
-                .filter_map(|&(f, _)| units.pre.get(at[f as usize]).copied())
-        };
-        let (lo, hi) = (places().min().unwrap_or(0), places().max().unwrap_or(0));
-        for &(f, _) in facts {
-            let mut y = match at[f as usize] {
-                usize::MAX => usize::MAX,
-                x => up[x],
+            read += 1;
+            let s = reads.side(gp, &units, &copy_of, &by_head, &crossing[u], u);
+            if !rule.takes(
+                s.outside.len(),
+                s.inside.len(),
+                s.parts.len(),
+                units.facts[u],
+            ) {
+                continue;
+            }
+            copied += 1;
+            let original = |a: AtomId, origin: &[AtomId]| {
+                if (a as usize) < n {
+                    a
+                } else {
+                    origin[a as usize - n]
+                }
             };
-            while y != usize::MAX {
-                if !stray && units.pre[y] <= lo && hi < units.pre[y] + units.size[y] {
-                    break;
-                }
-                if mark[y] != h {
-                    mark[y] = h;
-                    crossing[y].push(h as AtomId);
-                }
-                y = match units.parent[y] {
-                    usize::MAX => usize::MAX,
-                    p => up[p],
+            let mut separator: Vec<(AtomId, Vec<AtomId>)> = s.outside.into_iter().collect();
+            separator.sort_by_key(|&(a, _)| (Reverse(position[original(a, &origin) as usize]), a));
+            let mut moved: Vec<AtomId> = Vec::new();
+            for (a, readers) in separator {
+                let new = (n + copies.len()) as AtomId;
+                let equals = if k == 0 {
+                    a
+                } else {
+                    left.get(&a).copied().unwrap_or(a)
                 };
+                if k == 0 {
+                    left.insert(a, new);
+                }
+                reads.redirect(&readers, a, new);
+                moved.extend_from_slice(&readers);
+                origin.push(original(a, &origin));
+                reads.at.push(u);
+                atop[u].push(new);
+                copies.push(FactCopy {
+                    replaces: a,
+                    equals,
+                    readers,
+                });
             }
+            reads.replace(&units, moved);
+        }
+    }
+    let mut laid = Atop::default();
+    for (u, atoms) in atop.into_iter().enumerate() {
+        if atoms.is_empty() {
+            continue;
+        }
+        match units.unit[u] {
+            Unit::Bag(b) => laid.bags.insert(b, atoms),
+            Unit::Group(b, lo, hi) => laid.groups.insert((b, lo, hi), atoms),
+        };
+    }
+    Plan {
+        copies,
+        atop: laid,
+        candidates,
+        copied,
+        read,
+    }
+}
+
+/// What the atoms the walk conjoins read, and where it lies: the facts each
+/// derived atom reads (every derived atom but the copies of facts the
+/// conditioning made, through which it reads their facts), each through
+/// the copy of it planned so far, and the unit each fact and copy lies in.
+struct Reads {
+    /// `reads[start[h]..start[h + 1]]` are atom `h`'s, each with the atom
+    /// it reads the fact through now.
+    start: Vec<usize>,
+    reads: Vec<(AtomId, AtomId)>,
+    /// Each atom's reads by the preorder place of the unit they lie in,
+    /// ascending (none where a read lies in no unit), so that the reads
+    /// inside a unit, a range of the preorder, are counted by two searches.
+    places: Vec<usize>,
+    /// The unit each fact is laid in, and each copy, after the facts.
+    at: Vec<usize>,
+}
+
+impl Reads {
+    fn of(
+        gp: &GroundProgram,
+        rooted: &Rooted,
+        units: &Units,
+        copy_of: &[Option<GLit>],
+        by_head: &RulesByHead,
+    ) -> Reads {
+        let n = gp.num_atoms();
+        let mut at = vec![usize::MAX; n];
+        for (b, facts) in rooted.introduced.iter().enumerate() {
+            for &a in facts {
+                at[a as usize] = b;
+            }
+        }
+        let resolve = |a: AtomId| copy_of[a as usize].map_or(a, |l| l.atom());
+        let mut start = vec![0usize; n + 1];
+        let mut reads: Vec<(AtomId, AtomId)> = Vec::new();
+        let mut seen = vec![usize::MAX; n];
+        for h in 0..n {
+            start[h] = reads.len();
+            if gp.is_fact(h as AtomId) || copy_of[h].is_some() {
+                continue;
+            }
+            for &ri in &by_head[h] {
+                for l in &gp.rules[ri].body {
+                    let f = resolve(l.atom());
+                    if gp.is_fact(f) && seen[f as usize] != h {
+                        seen[f as usize] = h;
+                        reads.push((f, f));
+                    }
+                }
+            }
+        }
+        start[n] = reads.len();
+        let mut reads = Reads {
+            start,
+            reads,
+            places: Vec::new(),
+            at,
+        };
+        reads.places = reads
+            .reads
+            .iter()
+            .map(|&(_, a)| reads.place(units, a))
+            .collect();
+        for h in 0..n {
+            reads.places[reads.start[h]..reads.start[h + 1]].sort_unstable();
+        }
+        reads
+    }
+
+    /// Atom `h`'s reads.
+    fn of_atom(&self, h: usize) -> &[(AtomId, AtomId)] {
+        &self.reads[self.start[h]..self.start[h + 1]]
+    }
+
+    /// The preorder place of the unit `a` lies in, `usize::MAX` for none.
+    fn place(&self, units: &Units, a: AtomId) -> usize {
+        match self.at[a as usize] {
+            usize::MAX => usize::MAX,
+            x => units.pre[x],
         }
     }
 
-    // Bounds on what [`Side`] counts for unit `u`, from the reads of each
-    // crossing atom inside it: `|S|` is at least the most reads one atom
-    // makes outside and at most their sum, `I` at most the reads inside, and
-    // `K` at most the crossing atoms' rules. A program whose one atom reads
-    // every fact crosses every unit, and its side is the program.
-    let bounds = |u: usize, places: &[usize]| {
+    /// The candidates each atom crosses: those on the way up from a unit of
+    /// one of its facts (`up`, [`Units::up`]) that do not hold all of them.
+    fn crossing(&self, units: &Units, up: &[usize]) -> Vec<Vec<AtomId>> {
+        let count = units.unit.len();
+        let mut crossing: Vec<Vec<AtomId>> = vec![Vec::new(); count];
+        let mut mark = vec![usize::MAX; count];
+        for h in 0..self.start.len() - 1 {
+            let facts = self.of_atom(h);
+            if facts.len() < 2 {
+                continue;
+            }
+            let at = &self.at;
+            let stray = facts.iter().any(|&(f, _)| at[f as usize] == usize::MAX);
+            let places = || {
+                facts
+                    .iter()
+                    .filter_map(|&(f, _)| units.pre.get(at[f as usize]).copied())
+            };
+            let (lo, hi) = (places().min().unwrap_or(0), places().max().unwrap_or(0));
+            for &(f, _) in facts {
+                let mut y = match at[f as usize] {
+                    usize::MAX => usize::MAX,
+                    x => up[x],
+                };
+                while y != usize::MAX {
+                    if !stray && units.pre[y] <= lo && hi < units.pre[y] + units.size[y] {
+                        break;
+                    }
+                    if mark[y] != h {
+                        mark[y] = h;
+                        crossing[y].push(h as AtomId);
+                    }
+                    y = match units.parent[y] {
+                        usize::MAX => usize::MAX,
+                        p => up[p],
+                    };
+                }
+            }
+        }
+        crossing
+    }
+
+    /// Bounds on what [`Side`] counts for unit `u`, crossed by the atoms
+    /// `crossing`, from the reads of each inside it: `|S|` is at least the
+    /// most reads one atom makes outside and at most their sum, `I` at most
+    /// the reads inside, and `K` at most the crossing atoms' rules. A
+    /// program whose one atom reads every fact crosses every unit, and its
+    /// side is the program.
+    fn bounds(
+        &self,
+        units: &Units,
+        by_head: &RulesByHead,
+        crossing: &[AtomId],
+        u: usize,
+    ) -> (usize, usize, usize) {
         let (lo, hi) = (units.pre[u], units.pre[u] + units.size[u]);
         let (mut s_least, mut s_most, mut inside, mut parts) = (0, 0, 0, 0);
-        for &h in &crossing[u] {
-            let p = &places[start[h as usize]..start[h as usize + 1]];
+        for &h in crossing {
+            let p = &self.places[self.start[h as usize]..self.start[h as usize + 1]];
             let i = p.partition_point(|&x| x < hi) - p.partition_point(|&x| x < lo);
             if i == 0 || i == p.len() {
                 continue;
@@ -389,12 +533,23 @@ pub(super) fn plan(
             parts += by_head[h as usize].len();
         }
         (s_least, s_most, inside.min(parts))
-    };
-    let side = |u: usize, reads: &[(AtomId, AtomId)], at: &[usize]| {
+    }
+
+    /// What unit `u`, crossed by the atoms `crossing`, shares with the rest
+    /// ([`Side`]).
+    fn side(
+        &self,
+        gp: &GroundProgram,
+        units: &Units,
+        copy_of: &[Option<GLit>],
+        by_head: &RulesByHead,
+        crossing: &[AtomId],
+        u: usize,
+    ) -> Side {
         let mut side = Side::default();
-        for &h in &crossing[u] {
-            let entries = &reads[start[h as usize]..start[h as usize + 1]];
-            let is_in = |a: AtomId| units.within(at[a as usize], u);
+        for &h in crossing {
+            let entries = self.of_atom(h as usize);
+            let is_in = |a: AtomId| units.within(self.at[a as usize], u);
             if !entries.iter().any(|&(_, a)| is_in(a)) || entries.iter().all(|&(_, a)| is_in(a)) {
                 continue;
             }
@@ -428,100 +583,31 @@ pub(super) fn plan(
             }
         }
         side
-    };
+    }
 
-    let mut copies: Vec<FactCopy> = Vec::new();
-    // The fact each copy is of.
-    let mut origin: Vec<AtomId> = Vec::new();
-    let mut atop: Vec<Vec<AtomId>> = vec![Vec::new(); count];
-    let (mut copied, mut read) = (0, 0);
-    for &(l, r) in &units.splits {
-        if !candidate[l] {
-            continue;
-        }
-        // The left half's copies, by what they copy.
-        let mut left: FxHashMap<AtomId, AtomId> = FxHashMap::default();
-        for (k, u) in [l, r].into_iter().enumerate() {
-            // The right half is planned after the left half's copies.
-            let (s_least, s_most, bound) = bounds(u, &places);
-            if !rule.may_take(s_least, s_most, bound, units.facts[u]) {
-                continue;
-            }
-            read += 1;
-            let s = side(u, &reads, &at);
-            if !rule.takes(
-                s.outside.len(),
-                s.inside.len(),
-                s.parts.len(),
-                units.facts[u],
-            ) {
-                continue;
-            }
-            copied += 1;
-            let original = |a: AtomId, origin: &[AtomId]| {
-                if (a as usize) < n {
-                    a
-                } else {
-                    origin[a as usize - n]
+    /// The reads of `readers` through `a` made through its copy `new`.
+    fn redirect(&mut self, readers: &[AtomId], a: AtomId, new: AtomId) {
+        for &h in readers {
+            for e in &mut self.reads[self.start[h as usize]..self.start[h as usize + 1]] {
+                if e.1 == a {
+                    e.1 = new;
                 }
-            };
-            let mut separator: Vec<(AtomId, Vec<AtomId>)> = s.outside.into_iter().collect();
-            separator.sort_by_key(|&(a, _)| (Reverse(position[original(a, &origin) as usize]), a));
-            let mut moved: Vec<AtomId> = Vec::new();
-            for (a, readers) in separator {
-                let new = (n + copies.len()) as AtomId;
-                let equals = if k == 0 {
-                    a
-                } else {
-                    left.get(&a).copied().unwrap_or(a)
-                };
-                if k == 0 {
-                    left.insert(a, new);
-                }
-                for &h in &readers {
-                    for e in &mut reads[start[h as usize]..start[h as usize + 1]] {
-                        if e.1 == a {
-                            e.1 = new;
-                        }
-                    }
-                }
-                moved.extend_from_slice(&readers);
-                origin.push(original(a, &origin));
-                at.push(u);
-                atop[u].push(new);
-                copies.push(FactCopy {
-                    replaces: a,
-                    equals,
-                    readers,
-                });
-            }
-            moved.sort_unstable();
-            moved.dedup();
-            for h in moved {
-                let (from, to) = (start[h as usize], start[h as usize + 1]);
-                for j in from..to {
-                    places[j] = place(reads[j].1, &at);
-                }
-                places[from..to].sort_unstable();
             }
         }
     }
-    let mut laid = Atop::default();
-    for (u, atoms) in atop.into_iter().enumerate() {
-        if atoms.is_empty() {
-            continue;
+
+    /// The places of the reads of the atoms `moved` again, after
+    /// [`Reads::redirect`] moved some of them to copies.
+    fn replace(&mut self, units: &Units, mut moved: Vec<AtomId>) {
+        moved.sort_unstable();
+        moved.dedup();
+        for h in moved {
+            let (from, to) = (self.start[h as usize], self.start[h as usize + 1]);
+            for j in from..to {
+                self.places[j] = self.place(units, self.reads[j].1);
+            }
+            self.places[from..to].sort_unstable();
         }
-        match units.unit[u] {
-            Unit::Bag(b) => laid.bags.insert(b, atoms),
-            Unit::Group(b, lo, hi) => laid.groups.insert((b, lo, hi), atoms),
-        };
-    }
-    Plan {
-        copies,
-        atop: laid,
-        candidates,
-        copied,
-        read,
     }
 }
 

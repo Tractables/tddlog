@@ -10,12 +10,16 @@ use super::{CompileError, TddBackend};
 /// Statistics of a compilation run.
 #[derive(Clone, Debug, Default)]
 pub struct CompileStats {
+    /// Strongly connected components of the derived atoms' dependencies,
+    /// each compiled as one.
     pub components: usize,
+    /// Components compiled by a fixpoint: those that read themselves.
     pub cyclic_components: usize,
     /// Total number of operator applications to single atoms.
     pub atom_updates: usize,
     /// Iterations over cyclic components, summed.
     pub iterations: usize,
+    /// Most iterations over one cyclic component.
     pub max_iterations: usize,
     /// Largest formula (in pairs) seen for any atom, intermediate iterates
     /// included.
@@ -33,6 +37,7 @@ pub struct CompileStats {
     /// Readers' links of clause tables tied to another reader's copies,
     /// whose own formulas the compile did not build (`ForQueries::ties`).
     pub tied: usize,
+    /// Seconds the compile took, summed over its runs.
     pub seconds: f64,
     /// Number of operations of each kind: conjunctions, disjunctions,
     /// minimizations, equivalence tests, negations.
@@ -72,19 +77,24 @@ pub(super) enum Op {
 /// summed.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SearchStats {
+    /// Searches run.
     pub searches: usize,
     /// Searches that shrank their formulas by less than a tenth.
     pub weak: usize,
+    /// Moves probed, abandoned ones included.
     pub probes: usize,
+    /// Moves kept.
     pub accepts: usize,
-    /// Live pairs of the formulas searched over, before and after, summed
+    /// Live pairs of the formulas searched over before each search, summed
     /// over the searches.
     pub pairs_before: usize,
+    /// Live pairs of those formulas after each search, summed.
     pub pairs_after: usize,
     /// Work units the searches' probes charged, their restarts included.
     pub work_units: u64,
-    /// Restarts begun after the searches' descents, and those kept.
+    /// Restarts begun after the searches' descents.
     pub restarts: usize,
+    /// Restarts whose result was kept.
     pub restarts_kept: usize,
 }
 
@@ -119,6 +129,7 @@ pub enum NegationSource {
 }
 
 impl NegationSource {
+    /// Every source, in the order [`Negations`] counts them.
     pub const ALL: [NegationSource; 8] = [
         NegationSource::Lambda,
         NegationSource::Term,
@@ -130,6 +141,7 @@ impl NegationSource {
         NegationSource::Query,
     ];
 
+    /// The source's name, as `--stats` prints it.
     pub fn name(self) -> &'static str {
         match self {
             NegationSource::Lambda => "lambda",
@@ -148,8 +160,11 @@ impl NegationSource {
 /// units the negations charged, summed. Machine independent.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct NegationCount {
+    /// Negations taken.
     pub calls: usize,
+    /// Pairs of their operands, summed.
     pub pairs: usize,
+    /// Work units they charged, summed.
     pub work_units: u64,
 }
 
@@ -159,10 +174,12 @@ pub struct NegationCount {
 pub struct Negations([NegationCount; NegationSource::ALL.len()]);
 
 impl Negations {
+    /// The negations of `source`.
     pub fn of(&self, source: NegationSource) -> NegationCount {
         self.0[source as usize]
     }
 
+    /// The negations of every source, summed.
     pub fn total(&self) -> NegationCount {
         self.0
             .iter()
@@ -217,13 +234,16 @@ pub struct ProjectionStats {
 /// What the `ClauseMemo` and the clause loops did.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ClauseMemoStats {
-    /// Loops looked up, loops copied, and loops kept with their pairs.
+    /// Loops looked up.
     pub lookups: usize,
+    /// Loops a lookup found and copied.
     pub copies: usize,
     /// Kept loops a lookup passed over, their scope's shape not its own
     /// (`scope_shape`).
     pub passed: usize,
+    /// Loops kept.
     pub kept: usize,
+    /// Pairs of the loops kept, summed.
     pub pairs: usize,
     /// Negative literals the loops left out of bodies, each implied by a
     /// positive one where the loop's formula holds
@@ -232,20 +252,21 @@ pub struct ClauseMemoStats {
     /// Loops that held the at-most-one of the sibling groups their bodies
     /// read (`Factoring::seeds`).
     pub seeded: usize,
-    /// Loops of bodies of facts alone built level by level, and those
-    /// whose builder gave up for the clause loop (`TddBackend::none_of`).
+    /// Loops of bodies of facts alone built level by level
+    /// (`TddBackend::none_of`).
     pub built: usize,
+    /// Loops whose level-by-level builder gave up for the clause loop.
     pub fell_back: usize,
     /// Of the loops built, the links of tables built from their models
     /// (`TddBackend::of_models`).
     pub from_models: usize,
     /// Loops built level by level that the watch refused and the compile
-    /// kept, and those the next run took rather than build them again
-    /// (`clauses::Refused`).
+    /// kept (`clauses::Refused`).
     pub refused: usize,
+    /// Refused loops the next run took rather than build them again.
     pub retaken: usize,
-    /// Bodies conjoined by the or-route (`Factoring::or_route`), and of
-    /// them those whose product was given up first.
+    /// Bodies conjoined by the or-route (`Factoring::or_route`).
     pub or_routes: usize,
+    /// Or-route bodies whose product was given up first.
     pub given_up: usize,
 }

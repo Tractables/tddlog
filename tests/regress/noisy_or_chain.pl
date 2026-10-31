@@ -2,10 +2,9 @@
 % UAI 2022 or_chain networks (src/ground/noisy_or.rs). x1 and x2 chain f1
 % over d1, d2 and d3; y1 chains f2 over d4 and d5; f3 is a noisy-or of d5
 % and d6 with a leak, f4 a noisy-or of d6. f1, f2 and f4 are observed
-% present and f3 absent, so f3 stays a table and d5 and d6 keep both
-% values. y1, not observed, is written over d5; f4, observed, stays a
-% table over d6. ProbLog 2.3.0 and enumeration of the 64 disease states in
-% rationals: P(e) = 0.0048892872971448, P(d2(v_1) | e) =
+% present and f3 absent, which is f3's present value observed false: every
+% table is written as a noisy-or. ProbLog 2.3.0 and enumeration of the 64
+% disease states in rationals: P(e) = 0.0048892872971448, P(d2(v_1) | e) =
 % 0.35459094930658464, P(d4(v_1) | e) = 0.5876331336451859,
 % P(d5(v_1) | e) = 0.19447122066033104. tests/it/evidence_probability.rs.
 0.9::d1(v_0); 0.1::d1(v_1).

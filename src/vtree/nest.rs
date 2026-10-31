@@ -78,6 +78,10 @@ impl Rows {
 /// their own, or `Err` with its facts and its rows, laid on the spine.
 type Part = Result<Vec<usize>, (Vec<AtomId>, Vec<usize>)>;
 
+/// The parts of a group's rows ([`parts_of`]), by the least of their
+/// members: each part's members and its own copies.
+type PartsByRoot = FxHashMap<usize, (Vec<usize>, Vec<AtomId>)>;
+
 /// Whether the parts `items` of the rows `members` go side by side
 /// ([`nest`]): each part needs a copy that every one of its rows reads
 /// positively and no row of another part does, and every copy of `bottom`
@@ -199,224 +203,17 @@ pub(super) fn nest(
     members: Vec<usize>,
     scratch: &mut NestScratch,
 ) -> Option<usize> {
-    // Whether every head reads `facts` under one context of copies, the
-    // rules `readers`. Then a head's facts decide among its rows alone, and
-    // a tree of them has a class per row.
-    // Each head's context is marked by the head, `context_of`, not kept in
-    // a map made for each call.
-    fn one_context(
-        rows: &Rows,
-        mark: &mut AtomMarks,
-        context_of: &mut AtomMarks,
-        facts: &[AtomId],
-        readers: &[usize],
-    ) -> bool {
-        mark.next();
-        for &f in facts {
-            mark.set(f, 0);
-        }
-        context_of.next();
-        readers
-            .iter()
-            .filter(|&&i| rows.facts(i).iter().any(|&f| mark.get(f).is_some()))
-            .all(|&i| {
-                let x = rows.context[i];
-                rows.heads(i).iter().all(|&h| match context_of.get(h) {
-                    Some(y) => y == x,
-                    None => {
-                        context_of.set(h, x);
-                        true
-                    }
-                })
-            })
-    }
-    fn spine(
-        forest: &mut Forest,
-        rows: &Rows,
-        scratch: &mut NestScratch,
-        facts: &[AtomId],
-        readers: &[usize],
-        mut acc: Option<usize>,
-    ) -> Option<usize> {
-        if let Some(below) = acc
-            && !facts.is_empty()
-            && one_context(rows, &mut scratch.mark, &mut scratch.seen, facts, readers)
-        {
-            let leaves: Vec<usize> = facts.iter().map(|&f| forest.leaf(f)).collect();
-            let facts = forest.balanced(&leaves).unwrap();
-            return Some(forest.join(below, facts));
-        }
-        for &f in facts {
-            let leaf = forest.leaf(f);
-            acc = Some(match acc {
-                None => leaf,
-                Some(rest) => forest.join(leaf, rest),
-            });
-        }
-        acc
-    }
-    // The distinct contexts of the members, in the order they first come,
-    // each with the number of members that read it.
-    let distinct = scratch.contexts_of(rows, &members);
-    // The copies the members read that are not placed yet, ascending, and
-    // the number of members reading each copy, in one pass over their
-    // contexts rather than a scan of every row for each copy.
-    scratch.count.next();
-    let mut copies: Vec<AtomId> = Vec::new();
-    for &(x, n) in &distinct {
-        let mut last = None;
-        for &(c, _) in rows.context_copies(x) {
-            if last != Some(c) {
-                let count = scratch.count.get(c);
-                if count.is_none() && !scratch.placed(c) {
-                    copies.push(c);
-                }
-                scratch.count.set(c, count.unwrap_or(0) + n);
-                last = Some(c);
-            }
-        }
-    }
-    copies.sort_unstable();
+    let (copies, common) = copies_of(rows, scratch, &members);
     if copies.is_empty() {
         let facts = scratch.facts_of(rows, &members);
         return spine(forest, rows, scratch, &facts, &members, None);
     }
-    let common: Vec<AtomId> = copies
-        .iter()
-        .copied()
-        .filter(|&c| scratch.count.get(c) == Some(members.len() as u32))
-        .collect();
     scratch.common.next();
     for &c in &common {
         scratch.common.set(c, 0);
     }
-    // The contexts each fact is read under, and the facts read under two or
-    // more that exclude each other, rows of one table: a fact's first
-    // context by the row it came from, and the rest only for the facts
-    // that have more than one.
-    scratch.first.next();
-    let mut contexts: FxHashMap<AtomId, Vec<u32>> = FxHashMap::default();
-    for &i in &members {
-        let x = rows.context[i];
-        for &f in rows.facts(i) {
-            if scratch.placed(f) {
-                continue;
-            }
-            match scratch.first.get(f) {
-                None => scratch.first.set(f, x),
-                Some(y) if y == x => {}
-                Some(y) => {
-                    let seen = contexts.entry(f).or_insert_with(|| vec![y]);
-                    if !seen.contains(&x) {
-                        seen.push(x);
-                    }
-                }
-            }
-        }
-    }
-    let clash = |x: &[(AtomId, bool)], y: &[(AtomId, bool)]| {
-        let (mut i, mut j) = (0, 0);
-        while i < x.len() && j < y.len() {
-            match x[i].0.cmp(&y[j].0) {
-                std::cmp::Ordering::Less => i += 1,
-                std::cmp::Ordering::Greater => j += 1,
-                std::cmp::Ordering::Equal if x[i].1 != y[j].1 => return true,
-                std::cmp::Ordering::Equal => (i, j) = (i + 1, j + 1),
-            }
-        }
-        false
-    };
-    scratch.shared.next();
-    let mut any_shared = false;
-    for (&f, cs) in &contexts {
-        let context = |x: u32| rows.context_copies(x);
-        if cs
-            .iter()
-            .enumerate()
-            .all(|(k, &x)| cs[k + 1..].iter().all(|&y| clash(context(x), context(y))))
-        {
-            scratch.shared.set(f, 0);
-            any_shared = true;
-        }
-    }
-    // The parts: the rules joined by a fact read in one context or a copy
-    // not all of them read. The members of one context read the same such
-    // copies, so a context's copies are joined at its first member, and its
-    // other members to that one where it has any. Each such copy is read in
-    // one part alone, one of the part's own copies, and is kept with the
-    // first member to read it.
-    let mut parent: Vec<usize> = (0..members.len()).collect();
-    let mut own_copies: Vec<(AtomId, usize)> = Vec::new();
-    scratch.first.next();
-    scratch.context.next();
-    for (j, &i) in members.iter().enumerate() {
-        for &f in rows.facts(i) {
-            if scratch.placed(f) || scratch.shared.get(f).is_some() {
-                continue;
-            }
-            match scratch.first.get(f) {
-                None => scratch.first.set(f, j as u32),
-                Some(k) => {
-                    union(&mut parent, j, k as usize);
-                }
-            }
-        }
-        let x = rows.context[i];
-        match scratch.context.get(x) {
-            Some(u32::MAX) => {}
-            Some(k) => {
-                union(&mut parent, j, k as usize);
-            }
-            None => {
-                let mut own = false;
-                for &(c, _) in rows.context_copies(x) {
-                    if scratch.placed(c) || scratch.common.get(c).is_some() {
-                        continue;
-                    }
-                    own = true;
-                    match scratch.first.get(c) {
-                        None => {
-                            scratch.first.set(c, j as u32);
-                            own_copies.push((c, j));
-                        }
-                        Some(k) => {
-                            union(&mut parent, j, k as usize);
-                        }
-                    }
-                }
-                scratch
-                    .context
-                    .set(x, if own { j as u32 } else { u32::MAX });
-            }
-        }
-    }
-    // Each part's members, in a list sized by a count of them, its root
-    // the least of them ([`union`]), and its own copies. The parts then go
-    // into a map by root, in the order of their roots, and come out in the
-    // map's order, which the copies at the bottom follow: one insertion a
-    // part.
-    let roots: Vec<usize> = (0..members.len()).map(|j| find(&mut parent, j)).collect();
-    let mut size = vec![0usize; members.len()];
-    for &root in &roots {
-        size[root] += 1;
-    }
-    let mut lists: Vec<(usize, Vec<usize>, Vec<AtomId>)> = Vec::new();
-    let mut list_of = vec![usize::MAX; members.len()];
-    for (j, &m) in members.iter().enumerate() {
-        let root = roots[j];
-        if root == j {
-            list_of[j] = lists.len();
-            lists.push((j, Vec::with_capacity(size[j]), Vec::new()));
-        }
-        lists[list_of[root]].1.push(m);
-    }
-    for (c, j) in own_copies {
-        lists[list_of[roots[j]]].2.push(c);
-    }
-    let mut parts: FxHashMap<usize, (Vec<usize>, Vec<AtomId>)> = FxHashMap::default();
-    for (root, list, own) in lists {
-        parts.insert(root, (list, own));
-    }
+    let any_shared = mark_shared(rows, scratch, &members);
+    let (roots, parts) = parts_of(rows, scratch, &members);
     if common.is_empty() && parts.len() == 1 {
         let items: Vec<usize> = copies.iter().map(|&c| forest.leaf(c)).collect();
         let acc = forest.balanced(&items);
@@ -426,68 +223,9 @@ pub(super) fn nest(
         let facts = scratch.facts_of(rows, &members);
         return spine(forest, rows, scratch, &facts, &members, acc);
     }
-    // The shared facts read in two parts, placed above them; none where
-    // no fact is shared, as on the networks, whose members' facts are then
-    // not read for it.
-    scratch.first.next();
-    let mut hoisted: Vec<AtomId> = Vec::new();
-    if any_shared {
-        for (j, &m) in members.iter().enumerate() {
-            let root = roots[j] as u32;
-            for &f in rows.facts(m) {
-                if scratch.shared.get(f).is_none() {
-                    continue;
-                }
-                match scratch.first.get(f) {
-                    None => scratch.first.set(f, root),
-                    Some(r) if r != root => hoisted.push(f),
-                    Some(_) => {}
-                }
-            }
-        }
-    }
-    hoisted.sort_unstable_by_key(|&f| scratch.rank.get(f).expect("a row's facts are its group's"));
-    hoisted.dedup();
-    for &f in &hoisted {
-        scratch.place(f);
-    }
-    let below = |scratch: &NestScratch, i: usize| {
-        rows.copies(i)
-            .iter()
-            .copied()
-            .filter(|&(c, _)| scratch.common.get(c).is_some())
-            .collect::<Vec<_>>()
-    };
-    let mut bottom = common.clone();
-    // Each part on the spine: its facts, or the rules of a block of its own.
-    let mut items: Vec<(u32, usize, Part)> = Vec::new();
-    // A part is keyed by the rank of its first fact; only a part on the
-    // spine needs its facts listed and sorted.
-    for (part, mut own) in parts.into_values() {
-        own.sort_unstable();
-        let alike = |scratch: &mut NestScratch| {
-            let first = below(scratch, part[0]);
-            scratch.contexts_of(rows, &part).iter().all(|&(x, _)| {
-                x == rows.context[part[0]] || {
-                    let copies = rows.context_copies(x);
-                    copies
-                        .iter()
-                        .filter(|&&(c, _)| scratch.common.get(c).is_some())
-                        .eq(first.iter())
-                }
-            })
-        };
-        if !own.is_empty() && alike(scratch) {
-            items.push((scratch.first_rank(rows, &part), part[0], Ok(part)));
-        } else {
-            let facts = scratch.facts_of(rows, &part);
-            let first = facts.first().map_or(u32::MAX, |&f| {
-                scratch.rank.get(f).expect("a row's facts are its group's")
-            });
-            bottom.extend(own);
-            items.push((first, part[0], Err((facts, part))));
-        }
-    }
+    let hoisted = hoisted(rows, scratch, &members, &roots, any_shared);
+    let mut bottom = common;
+    let mut items = items_of(rows, scratch, parts, &mut bottom);
     // The parts of a split table ([`crate::indicators`]) go in the order of
     // their first rules, the order in which their copies of the other
     // parents are tied: a tie between parts apart in the layout is a class
@@ -544,6 +282,330 @@ pub(super) fn nest(
         }
     }
     spine(forest, rows, scratch, &hoisted, &members, acc)
+}
+
+/// Whether every head reads `facts` under one context of copies, the
+/// rules `readers`. Then a head's facts decide among its rows alone, and a
+/// tree of them has a class per row. Each head's context is marked by the
+/// head, `context_of`, not kept in a map made for each call.
+fn one_context(
+    rows: &Rows,
+    mark: &mut AtomMarks,
+    context_of: &mut AtomMarks,
+    facts: &[AtomId],
+    readers: &[usize],
+) -> bool {
+    mark.next();
+    for &f in facts {
+        mark.set(f, 0);
+    }
+    context_of.next();
+    readers
+        .iter()
+        .filter(|&&i| rows.facts(i).iter().any(|&f| mark.get(f).is_some()))
+        .all(|&i| {
+            let x = rows.context[i];
+            rows.heads(i).iter().all(|&h| match context_of.get(h) {
+                Some(y) => y == x,
+                None => {
+                    context_of.set(h, x);
+                    true
+                }
+            })
+        })
+}
+
+/// `facts` above `acc`: where there is something below and every head of
+/// the rules `readers` reads them under one context ([`one_context`]), in a
+/// balanced tree to its right; else on a right-linear spine, the first
+/// deepest.
+fn spine(
+    forest: &mut Forest,
+    rows: &Rows,
+    scratch: &mut NestScratch,
+    facts: &[AtomId],
+    readers: &[usize],
+    mut acc: Option<usize>,
+) -> Option<usize> {
+    if let Some(below) = acc
+        && !facts.is_empty()
+        && one_context(rows, &mut scratch.mark, &mut scratch.seen, facts, readers)
+    {
+        let leaves: Vec<usize> = facts.iter().map(|&f| forest.leaf(f)).collect();
+        let facts = forest.balanced(&leaves).unwrap();
+        return Some(forest.join(below, facts));
+    }
+    for &f in facts {
+        let leaf = forest.leaf(f);
+        acc = Some(match acc {
+            None => leaf,
+            Some(rest) => forest.join(leaf, rest),
+        });
+    }
+    acc
+}
+
+/// The copies the rows `members` read that are not placed yet, ascending,
+/// and those of them every member reads, from the number of members
+/// reading each copy (`scratch.count`), in one pass over their distinct
+/// contexts rather than a scan of every row for each copy.
+fn copies_of(
+    rows: &Rows,
+    scratch: &mut NestScratch,
+    members: &[usize],
+) -> (Vec<AtomId>, Vec<AtomId>) {
+    // The distinct contexts of the members, in the order they first come,
+    // each with the number of members that read it.
+    let distinct = scratch.contexts_of(rows, members);
+    scratch.count.next();
+    let mut copies: Vec<AtomId> = Vec::new();
+    for &(x, n) in &distinct {
+        let mut last = None;
+        for &(c, _) in rows.context_copies(x) {
+            if last != Some(c) {
+                let count = scratch.count.get(c);
+                if count.is_none() && !scratch.placed(c) {
+                    copies.push(c);
+                }
+                scratch.count.set(c, count.unwrap_or(0) + n);
+                last = Some(c);
+            }
+        }
+    }
+    copies.sort_unstable();
+    let common = copies
+        .iter()
+        .copied()
+        .filter(|&c| scratch.count.get(c) == Some(members.len() as u32))
+        .collect();
+    (copies, common)
+}
+
+/// Marks in `scratch.shared` the facts of the rows `members` that are read
+/// under two or more contexts that exclude each other, rows of one table
+/// ([`nest`]), and whether there is one. A fact's first context is kept by
+/// the row it came from, and the rest only for the facts that have more
+/// than one.
+fn mark_shared(rows: &Rows, scratch: &mut NestScratch, members: &[usize]) -> bool {
+    scratch.first.next();
+    let mut contexts: FxHashMap<AtomId, Vec<u32>> = FxHashMap::default();
+    for &i in members {
+        let x = rows.context[i];
+        for &f in rows.facts(i) {
+            if scratch.placed(f) {
+                continue;
+            }
+            match scratch.first.get(f) {
+                None => scratch.first.set(f, x),
+                Some(y) if y == x => {}
+                Some(y) => {
+                    let seen = contexts.entry(f).or_insert_with(|| vec![y]);
+                    if !seen.contains(&x) {
+                        seen.push(x);
+                    }
+                }
+            }
+        }
+    }
+    let clash = |x: &[(AtomId, bool)], y: &[(AtomId, bool)]| {
+        let (mut i, mut j) = (0, 0);
+        while i < x.len() && j < y.len() {
+            match x[i].0.cmp(&y[j].0) {
+                std::cmp::Ordering::Less => i += 1,
+                std::cmp::Ordering::Greater => j += 1,
+                std::cmp::Ordering::Equal if x[i].1 != y[j].1 => return true,
+                std::cmp::Ordering::Equal => (i, j) = (i + 1, j + 1),
+            }
+        }
+        false
+    };
+    scratch.shared.next();
+    let mut any_shared = false;
+    for (&f, cs) in &contexts {
+        let context = |x: u32| rows.context_copies(x);
+        if cs
+            .iter()
+            .enumerate()
+            .all(|(k, &x)| cs[k + 1..].iter().all(|&y| clash(context(x), context(y))))
+        {
+            scratch.shared.set(f, 0);
+            any_shared = true;
+        }
+    }
+    any_shared
+}
+
+/// The parts of the rows `members`: each member's part, by the least
+/// member of it ([`union`]), and each part's members and own copies by
+/// that member.
+///
+/// The rules are joined by a fact read in one context or a copy not all
+/// of them read. The members of one context read the same such copies, so
+/// a context's copies are joined at its first member, and its other
+/// members to that one where it has any. Each such copy is read in one
+/// part alone, one of the part's own copies, and is kept with the first
+/// member to read it.
+fn parts_of(
+    rows: &Rows,
+    scratch: &mut NestScratch,
+    members: &[usize],
+) -> (Vec<usize>, PartsByRoot) {
+    let mut parent: Vec<usize> = (0..members.len()).collect();
+    let mut own_copies: Vec<(AtomId, usize)> = Vec::new();
+    scratch.first.next();
+    scratch.context.next();
+    for (j, &i) in members.iter().enumerate() {
+        for &f in rows.facts(i) {
+            if scratch.placed(f) || scratch.shared.get(f).is_some() {
+                continue;
+            }
+            match scratch.first.get(f) {
+                None => scratch.first.set(f, j as u32),
+                Some(k) => {
+                    union(&mut parent, j, k as usize);
+                }
+            }
+        }
+        let x = rows.context[i];
+        match scratch.context.get(x) {
+            Some(u32::MAX) => {}
+            Some(k) => {
+                union(&mut parent, j, k as usize);
+            }
+            None => {
+                let mut own = false;
+                for &(c, _) in rows.context_copies(x) {
+                    if scratch.placed(c) || scratch.common.get(c).is_some() {
+                        continue;
+                    }
+                    own = true;
+                    match scratch.first.get(c) {
+                        None => {
+                            scratch.first.set(c, j as u32);
+                            own_copies.push((c, j));
+                        }
+                        Some(k) => {
+                            union(&mut parent, j, k as usize);
+                        }
+                    }
+                }
+                scratch
+                    .context
+                    .set(x, if own { j as u32 } else { u32::MAX });
+            }
+        }
+    }
+    // Each part's members, in a list sized by a count of them, and its own
+    // copies. The parts then go into a map by root, in the order of their
+    // roots, and come out in the map's order, which the copies at the
+    // bottom follow: one insertion a part.
+    let roots: Vec<usize> = (0..members.len()).map(|j| find(&mut parent, j)).collect();
+    let mut size = vec![0usize; members.len()];
+    for &root in &roots {
+        size[root] += 1;
+    }
+    let mut lists: Vec<(usize, Vec<usize>, Vec<AtomId>)> = Vec::new();
+    let mut list_of = vec![usize::MAX; members.len()];
+    for (j, &m) in members.iter().enumerate() {
+        let root = roots[j];
+        if root == j {
+            list_of[j] = lists.len();
+            lists.push((j, Vec::with_capacity(size[j]), Vec::new()));
+        }
+        lists[list_of[root]].1.push(m);
+    }
+    for (c, j) in own_copies {
+        lists[list_of[roots[j]]].2.push(c);
+    }
+    let mut parts = PartsByRoot::default();
+    for (root, list, own) in lists {
+        parts.insert(root, (list, own));
+    }
+    (roots, parts)
+}
+
+/// The shared facts ([`mark_shared`]) read in two parts of the rows
+/// `members`, by the members' parts `roots`, in their rank order and
+/// placed, to go above the parts; none where `any_shared` says no fact is
+/// shared, as on the networks, whose members' facts are then not read for
+/// it.
+fn hoisted(
+    rows: &Rows,
+    scratch: &mut NestScratch,
+    members: &[usize],
+    roots: &[usize],
+    any_shared: bool,
+) -> Vec<AtomId> {
+    scratch.first.next();
+    let mut hoisted: Vec<AtomId> = Vec::new();
+    if any_shared {
+        for (j, &m) in members.iter().enumerate() {
+            let root = roots[j] as u32;
+            for &f in rows.facts(m) {
+                if scratch.shared.get(f).is_none() {
+                    continue;
+                }
+                match scratch.first.get(f) {
+                    None => scratch.first.set(f, root),
+                    Some(r) if r != root => hoisted.push(f),
+                    Some(_) => {}
+                }
+            }
+        }
+    }
+    hoisted.sort_unstable_by_key(|&f| scratch.rank.get(f).expect("a row's facts are its group's"));
+    hoisted.dedup();
+    for &f in &hoisted {
+        scratch.place(f);
+    }
+    hoisted
+}
+
+/// Each part on the spine ([`nest`]), keyed by the rank of its first fact
+/// and its first member: its rules in a block of their own, where they all
+/// read the copies below alike and read copies of their own, or else its
+/// facts, its own copies added to `bottom`. Only a part on the spine needs
+/// its facts listed and sorted.
+fn items_of(
+    rows: &Rows,
+    scratch: &mut NestScratch,
+    parts: PartsByRoot,
+    bottom: &mut Vec<AtomId>,
+) -> Vec<(u32, usize, Part)> {
+    let below = |scratch: &NestScratch, i: usize| {
+        rows.copies(i)
+            .iter()
+            .copied()
+            .filter(|&(c, _)| scratch.common.get(c).is_some())
+            .collect::<Vec<_>>()
+    };
+    let mut items: Vec<(u32, usize, Part)> = Vec::new();
+    for (part, mut own) in parts.into_values() {
+        own.sort_unstable();
+        let alike = |scratch: &mut NestScratch| {
+            let first = below(scratch, part[0]);
+            scratch.contexts_of(rows, &part).iter().all(|&(x, _)| {
+                x == rows.context[part[0]] || {
+                    let copies = rows.context_copies(x);
+                    copies
+                        .iter()
+                        .filter(|&&(c, _)| scratch.common.get(c).is_some())
+                        .eq(first.iter())
+                }
+            })
+        };
+        if !own.is_empty() && alike(scratch) {
+            items.push((scratch.first_rank(rows, &part), part[0], Ok(part)));
+        } else {
+            let facts = scratch.facts_of(rows, &part);
+            let first = facts.first().map_or(u32::MAX, |&f| {
+                scratch.rank.get(f).expect("a row's facts are its group's")
+            });
+            bottom.extend(own);
+            items.push((first, part[0], Err((facts, part))));
+        }
+    }
+    items
 }
 
 /// Values by index (an atom, a context of [`Rows`], or a group of the

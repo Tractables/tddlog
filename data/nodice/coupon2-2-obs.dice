@@ -1,0 +1,15 @@
+fun draw (have: (bool, bool) ) {
+    let draw1 = uniform(2, 0, 2) in
+    let draw2 = uniform(2, 0, 2) in
+
+    let t = observe(draw1 != draw2) in
+
+    let r0 = (fst have) || (draw1 == int(2, 0)) || (draw2 == int(2, 0)) in
+    let r1 = (snd have) || (draw1 == int(2, 1)) || (draw2 == int(2, 1)) in
+    (r0, r1)
+}
+
+let h0 = (false, false) in
+let h1 = draw(h0) in
+let h = draw(h0) in
+(fst h) && (snd h)

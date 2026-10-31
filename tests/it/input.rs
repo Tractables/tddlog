@@ -2,7 +2,8 @@
 //! `tddlog::solve`), as the bindings call it: a Dice program against
 //! Dice's answers, a network with its evidence file against ProbLog's, a
 //! Markov network's partition function against enumeration, an LPAD
-//! against cplint's, and the refusals.
+//! against cplint's, a program that consults files (`tddlog::consult`),
+//! and the refusals.
 
 use std::borrow::Cow;
 
@@ -226,4 +227,68 @@ fn refusals() {
     let bif = Format::Network(tddlog::network::Format::Bif);
     let read = tddlog::read(b"network x {", bif, &Default::default());
     assert!(matches!(read, Err(Error::Network(_))), "{read:?}");
+}
+
+#[test]
+fn a_program_with_the_files_it_consults() {
+    // As ProbLog consults them: in the directive's place, each file once,
+    // as named or with `.pl`, in the directory of the file that names it.
+    // ProbLog's own tests consult.pl and consult_nested.pl are under
+    // tests/problog/.
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("consult");
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    let write = |name: &str, text: &str| {
+        let path = dir.join(name);
+        std::fs::write(&path, text).unwrap();
+        path.to_str().unwrap().to_string()
+    };
+    write(
+        "sub/two.pl",
+        "a(2).\n:- consult('../main.pl').\n:- consult(three).\n",
+    );
+    write("sub/three", "a(3).\n");
+    let main = write(
+        "main.pl",
+        "a(1).\n:- consult('sub/two').\n:- consult(\n    'sub/three').\na(4).\n\
+         q(L) :- findall(X, a(X), L).\nquery(q(_)).\n",
+    );
+    let text = std::fs::read_to_string(&main).unwrap();
+    let program = tddlog::consult(&text, &main).unwrap();
+    let solution = tddlog::solve(&program, &Options::default(), &mut |_| {}).unwrap();
+    let answers: Vec<String> = solution
+        .answers
+        .unwrap()
+        .iter()
+        .map(|a| format!("{a} {}", a.probability))
+        .collect();
+    assert_eq!(answers, ["q([1, 2, 3, 4]) 1"]);
+    // A program that consults nothing is its own text.
+    assert!(matches!(
+        tddlog::consult("a. query(a).", &main),
+        Ok(Cow::Borrowed(_))
+    ));
+    let refused = |text: &str| tddlog::consult(text, &main).unwrap_err().to_string();
+    let e = refused("a.\n:- consult(missing).\n");
+    assert!(
+        e.starts_with("line 2: consult(missing): cannot read"),
+        "{e}"
+    );
+    let e = refused("a. :- consult('sub/three').\n");
+    assert!(e.contains("must stand on lines of its own"), "{e}");
+    write("sub/nested.pl", "a(5).\n:- consult(nothere).\n");
+    let e = refused("\n:- consult('sub/nested').\n");
+    assert!(
+        e.starts_with("line 2: in ")
+            && e.contains("nested.pl, which it consults: line 2: consult(nothere): cannot read"),
+        "{e}"
+    );
+    // Given as text, the program has no file to consult from.
+    let Err(e) = tddlog::solve(
+        ":- consult(sub).\nquery(a).",
+        &Options::default(),
+        &mut |_| {},
+    ) else {
+        panic!("not refused");
+    };
+    assert!(e.to_string().contains("consult(sub) reads a file"), "{e}");
 }

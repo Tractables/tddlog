@@ -3,7 +3,7 @@
 //! solver ([`super::sat`]), with the clauses of two literals the solver
 //! holds at the end.
 //!
-//! The conditioning ([`super::condition`]) hands over the clauses its unit
+//! The conditioning ([`super::super::condition`]) hands over the clauses its unit
 //! propagation leaves over facts. Every world the evidence allows satisfies
 //! them, so a literal true in all their models is true in every such world,
 //! and so is a clause the solver learns or proves from them: the facts it

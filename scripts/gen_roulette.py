@@ -75,12 +75,26 @@ Families (the artifact's file; its sizes; the size here):
                the bit vector 1 (natural->bv of -1 sets bit 0 only), so
                the counter counts up to 2^BW and wraps to 0. The loop runs
                on FUEL: entered with none left, it ends the run with no
-               result. The distribution of the total, res(T) for T = 0 ..
-               2^BW - 1, and res(2^BW) for a run out of fuel. The size is
-               FUEL; BW = 2 and n = FUEL
+               result. The distribution of the total as Roulette prints
+               it: res(T) for each total T a run can end with (the
+               reference's states), and res(L), L one past the largest
+               of them, for a run out of fuel (at BW = 2 every total of
+               0 .. 3, and res(4)). The size is FUEL; BW = 2 and n = FUEL
                - 2 as in the artifact's fuel ladder (n saturates at 2^BW -
                1). A write's reset is overwritten at once and is left out.
                The cells are bit vectors, added as bvadd adds them.
+  hardware-bitwidth
+               the same with n = 2 and FUEL 3, as in the artifact's
+               bit-width ladder (bit widths 5 to 20). The size is BW. The
+               ProbLog program is written once over the iterations and the
+               bits, width(BW) a fact, as Roulette's program takes BW as a
+               parameter: a cell's bits are atoms with the bit as an
+               argument, so that a reader finds the constant high bits
+               itself, and the program does not grow with BW (unrolled,
+               it took about 47 lines a bit). The artifact's third
+               ladder, n from 5 to 20 at BW = 2 and FUEL 3, is left out:
+               `(int n)` saturates at 2^BW - 1 = 3, so every n of it is
+               the same program.
 
 The ProbLog programs state the facts in the order Roulette creates its
 flips and hold its bit vectors as bits, not one atom a value; the queries
@@ -107,8 +121,11 @@ KEY = [0.038461538] * 26
 FAIL = 0.0001
 HMM_QUERIES = ['marginal-likelihood', 'filtering-marginal', 'smoothing-marginal', 'filtering-joint',
                'smoothing-joint']
-FAMILIES = ['motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware'] + [f'hmm-{q}' for q in HMM_QUERIES]
+FAMILIES = ['motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware', 'hardware-bitwidth'] + \
+    [f'hmm-{q}' for q in HMM_QUERIES]
 HW_BW = 2
+# The artifact's ladders of hardware.rkt: a size's (bit width, n, fuel).
+HARDWARE = {'hardware': lambda fuel: (HW_BW, max(0, fuel - 2), fuel), 'hardware-bitwidth': lambda bw: (bw, 2, 3)}
 PERTURB = 0.0001
 
 
@@ -423,19 +440,29 @@ def network(k):
     return pl, dice
 
 
-def hardware_start(fuel, bw=HW_BW):
-    return min(max(0, fuel - 2), 2 ** bw - 1)
+def hardware_start(bw, n):
+    """`(int n)`: n, or 2^bw - 1 past it."""
+    return n if n.bit_length() <= bw else 2 ** bw - 1
 
 
-def hardware(fuel, bw=HW_BW):
-    mod, c0 = 2 ** bw, hardware_start(fuel, bw)
-    pl = [f'% Roulette hardware.rkt, bit width {bw}, n = {max(0, fuel - 2)}, fuel {fuel}: t(J, K) and c(J, K),',
-          '% bit K of the total and the counter entering the loop with J iterations done, on(J) while',
-          '% it runs; z(J, R) resets a cell before the R-th read of iteration J: counter (test, d),',
-          '% total (u), counter (sum, g), counter (step, f); x(J) leaves the loop at iteration J.']
+HARDWARE_COMMENT = [
+    '% bit K of the total and the counter entering the loop with J iterations done, on(J) while',
+    '% it runs; z(J, R) resets a cell before the R-th read of iteration J: counter (test, d),',
+    '% total (u), counter (sum, g), counter (step, f); x(J) leaves the loop at iteration J.']
+
+
+def hardware_unrolled(bw, n, fuel):
+    """The ProbLog program of hardware.rkt at bit width bw, unrolled: a
+    rule for each iteration and bit, the constants folded here (the fuel
+    ladder's programs, at bw 2, as they were run)."""
+    c0 = hardware_start(bw, n)
+    totals, out_of_fuel = hardware_queries(bw, n, fuel)
+    pl = [f'% Roulette hardware.rkt, bit width {bw}, n = {n}, fuel {fuel}: t(J, K) and c(J, K),'] + \
+        HARDWARE_COMMENT
     for j in range(fuel):
         pl += [f'{PERTURB}::z({j},{r}).' for r in range(1, 5)]
-    total, counter, on, leave = [False] * bw, [bool(c0 >> k & 1) for k in range(bw)], True, []
+    total, counter = [False] * bw, [bool(c0 >> k & 1) for k in range(bw)]
+    on, leave = True, []
     for j in range(fuel):
         def read(name, bits, r):
             return [gate(pl, f'{name}({j},{k})', [[b, f'\\+z({j},{r})']]) for k, b in enumerate(bits)]
@@ -452,12 +479,72 @@ def hardware(fuel, bw=HW_BW):
     # The total the loop left with.
     done = gate(pl, 'done', [[x] for x, _ in leave])
     result = [gate(pl, f'r({k})', [[x, bits[k]] for x, bits in leave]) for k in range(bw)]
-    for t in range(mod):
+    for t in totals:
         gate(pl, f'res({t})', [[done] + equals(result, t)], keep=True)
-    gate(pl, f'res({mod})', [[on]], keep=True)
-    pl += [f'query(res({t})).' for t in range(mod + 1)]
-    # Unrolled: `on` while the loop runs, `done` once it has ended with
-    # the total `r`; the value the total, or 2^bw without fuel.
+    gate(pl, f'res({out_of_fuel})', [[on]], keep=True)
+    pl += [f'query(res({t})).' for t in totals + [out_of_fuel]]
+    return pl
+
+
+def hardware_first_order(bw, n, fuel):
+    """The ProbLog program of hardware.rkt at bit width bw, written once
+    over the iterations J and the bits K, as Roulette's program takes the
+    bit width and the fuel as parameters, width(BW) and fuel(FUEL) here:
+    the program does not grow with either. A cell's bits are atoms with the
+    bit as an argument, so that a reader grounds the bits a run can set and
+    finds the constant high bits itself. The sums ripple their carries up
+    to bit BW - 1 and drop the last, as bvadd does. A total's query reads
+    the bits below the largest total's, and `hi`, any bit above them."""
+    c0 = hardware_start(bw, n)
+    totals, out_of_fuel = hardware_queries(bw, n, fuel)
+    low = min(bw, max(totals, default=0).bit_length())
+    pl = [f'% Roulette hardware.rkt, bit width {bw}, n = {n}, fuel {fuel}: t(J, K) and c(J, K),'] + \
+        HARDWARE_COMMENT + [
+        '% tx(J, K) and tc(J, K): the sum bit without the carry, and the carry into it, of the',
+        '% total; cc(J, K) the carry of the counter (+ 1); r(K) the total at exit.',
+        f'width({bw}).', f'fuel({fuel}).', 'step(0).', 'step(J1) :- step(J), fuel(F), J1 is J + 1, J1 < F.']
+    pl += [f'{PERTURB}::z(J,{r}) :- step(J).' for r in range(1, 5)]
+    pl += [f'c(0,{k}).' for k in range(c0.bit_length()) if c0 >> k & 1] + ['on(0).']
+    pl += ['d(J,K) :- step(J), c(J,K), \\+z(J,1).',
+           'nz(J) :- d(J,_).',
+           'x(J) :- step(J), on(J), \\+nz(J).',
+           'on(J1) :- step(J), J1 is J + 1, on(J), nz(J).',
+           'u(J,K) :- step(J), t(J,K), \\+z(J,2).',
+           'g(J,K) :- d(J,K), \\+z(J,3).',
+           'f(J,K) :- g(J,K), \\+z(J,4).',
+           # the total := u + g
+           'tx(J1,K) :- step(J), J1 is J + 1, u(J,K), \\+g(J,K).',
+           'tx(J1,K) :- step(J), J1 is J + 1, g(J,K), \\+u(J,K).',
+           'tc(J1,K1) :- step(J), J1 is J + 1, u(J,K), g(J,K), K1 is K + 1, width(W), K1 < W.',
+           'tc(J,K1) :- tc(J,K), tx(J,K), K1 is K + 1, width(W), K1 < W.',
+           't(J,K) :- tx(J,K), \\+tc(J,K).',
+           't(J,K) :- tc(J,K), \\+tx(J,K).',
+           # the counter := f + 1
+           'c(J1,0) :- step(J), J1 is J + 1, \\+f(J,0).',
+           'cc(J1,1) :- step(J), J1 is J + 1, f(J,0), width(W), 1 < W.',
+           'cc(J,K1) :- cc(J,K), P is J - 1, f(P,K), K1 is K + 1, width(W), K1 < W.',
+           'c(J1,K) :- step(J), J1 is J + 1, f(J,K), K > 0, \\+cc(J1,K).',
+           'c(J,K) :- cc(J,K), P is J - 1, \\+f(P,K).',
+           # the total the loop left with
+           'done :- x(_).',
+           'r(K) :- x(J), t(J,K).']
+    high = ['\\+hi'] if bw > low else []
+    if high:
+        pl.append(f'hi :- r(K), K >= {low}.')
+    for t in totals:
+        pl.append(f'res({t}) :- ' + ', '.join(['done'] + equals([f'r({k})' for k in range(low)], t) + high) + '.')
+    pl.append(f'res({out_of_fuel}) :- fuel(F), on(F).')
+    pl += [f'query(res({t})).' for t in totals + [out_of_fuel]]
+    return pl
+
+
+def hardware_dice(bw, n, fuel):
+    """The Dice program of hardware.rkt at bit width bw, unrolled: `on`
+    while the loop runs, `done` once it has ended with the total `r`; the
+    value the index of the total's query, or that of res(out_of_fuel), the
+    last, without fuel."""
+    c0 = hardware_start(bw, n)
+    totals, _ = hardware_queries(bw, n, fuel)
     w = f'int({bw}, 0)'
     dice = [f'let t0 = {w} in', f'let c0 = int({bw}, {c0}) in', 'let on0 = true in', 'let done0 = false in',
             f'let r0 = {w} in']
@@ -472,18 +559,22 @@ def hardware(fuel, bw=HW_BW):
                  f'let t{i} = u{i} + g{i} in',
                  f'let z{i}d = flip {PERTURB} in', f'let f{i} = if z{i}d then {w} else g{i} in',
                  f'let c{i} = f{i} + int({bw}, 1) in']
-    out = f'int({bw + 1}, {mod})'
-    for t in range(mod - 1, -1, -1):
-        out = f'(if r{fuel} == int({bw}, {t}) then int({bw + 1}, {t}) else {out})'
-    dice.append(f'if done{fuel} then {out} else int({bw + 1}, {mod})')
-    return pl, dice
+    width = len(totals).bit_length()
+    out = f'int({width}, {len(totals)})'
+    for k in range(len(totals) - 1, -1, -1):
+        out = f'(if r{fuel} == int({bw}, {totals[k]}) then int({width}, {k}) else {out})'
+    dice.append(f'if done{fuel} then {out} else int({width}, {len(totals)})')
+    return dice
 
 
 def program(family, size):
     if family.startswith('hmm-'):
         return hmm(family[4:], size)
+    if family in HARDWARE:
+        pl = hardware_first_order if family == 'hardware-bitwidth' else hardware_unrolled
+        return pl(*HARDWARE[family](size)), hardware_dice(*HARDWARE[family](size))
     return {'motivating': motivating, 'diamond': diamond, 'ladder': ladder, 'caesar': caesar,
-            'network': network, 'hardware': hardware}[family](size)
+            'network': network}[family](size)
 
 
 # --- reference answers -----------------------------------------------------
@@ -576,8 +667,8 @@ def reference(family, size):
         out = {f'm({n},{v})': Log(dist.get(v, 0.0)) for v in range(16)}
         out[f'm({n},16)'] = Log(lost)
         return out
-    if family == 'hardware':
-        return hardware_reference(n)
+    if family in HARDWARE:
+        return hardware_reference(*HARDWARE[family](n))
     raise SystemExit(f'unknown family {family}')
 
 
@@ -607,27 +698,63 @@ def hmm_reference(query, n):
     return forward(need) / forward(set())
 
 
-def hardware_reference(fuel, bw=HW_BW):
-    mod = 2 ** bw
-    states = {(0, hardware_start(fuel, bw)): 1.0}
-    res = [0.0] * mod
+def hardware_step(t, c, mod):
+    """One iteration entered with total t and counter c, for each outcome
+    of its reads' resets: (P, the total the run ends with or None, the next
+    state (total, counter) or None)."""
     z = PERTURB
+    for c1, q1 in ((0, z), (c, 1 - z)):
+        if c1 == 0:
+            yield q1, t, None
+            continue
+        for t2, q2 in ((0, z), (t, 1 - z)):
+            for c2, q3 in ((0, z), (c1, 1 - z)):
+                for c3, q4 in ((0, z), (c2, 1 - z)):
+                    yield q1 * q2 * q3 * q4, None, ((t2 + c2) % mod, (c3 + 1) % mod)
+
+
+def hardware_totals(bw, n, fuel):
+    """The totals a run can end with, smallest first, from the sets of
+    states entering each iteration, which repeat after a few iterations."""
+    states, seen, totals = {(0, hardware_start(bw, n))}, set(), set()
+    for _ in range(fuel):
+        if frozenset(states) in seen:
+            break
+        seen.add(frozenset(states))
+        new = set()
+        for t, c in states:
+            for _, end, nxt in hardware_step(t, c, 2 ** bw):
+                if nxt is None:
+                    totals.add(end)
+                else:
+                    new.add(nxt)
+        states = new
+    return sorted(totals)
+
+
+def hardware_queries(bw, n, fuel):
+    """The totals a run can end with and the label of a run out of fuel,
+    one past the largest of them: the values Roulette prints."""
+    totals = hardware_totals(bw, n, fuel)
+    return totals, (totals[-1] + 1 if totals else 0)
+
+
+def hardware_reference(bw, n, fuel):
+    """The distribution of the total, over the states (total, counter)
+    entering each iteration."""
+    states, res = {(0, hardware_start(bw, n)): 1.0}, {}
     for _ in range(fuel):
         new = {}
         for (t, c), q in states.items():
-            for c1, q1 in ((0, z), (c, 1 - z)):
-                if c1 == 0:
-                    res[t] += q * q1
-                    continue
-                for t2, q2 in ((0, z), (t, 1 - z)):
-                    for c2, q3 in ((0, z), (c1, 1 - z)):
-                        s = (t2 + c2) % mod
-                        for c3, q4 in ((0, z), (c2, 1 - z)):
-                            key = (s, (c3 + 1) % mod)
-                            new[key] = new.get(key, 0.0) + q * q1 * q2 * q3 * q4
+            for p, end, nxt in hardware_step(t, c, 2 ** bw):
+                if nxt is None:
+                    res[end] = res.get(end, 0.0) + q * p
+                else:
+                    new[nxt] = new.get(nxt, 0.0) + q * p
         states = new
-    out = {f'res({t})': Log(r) for t, r in enumerate(res)}
-    out[f'res({mod})'] = Log(sum(states.values()))
+    totals, label = hardware_queries(bw, n, fuel)
+    out = {f'res({t})': Log(res.get(t, 0.0)) for t in totals}
+    out[f'res({label})'] = Log(sum(states.values()))
     return out
 
 

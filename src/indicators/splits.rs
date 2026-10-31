@@ -348,7 +348,7 @@ struct Unit<'a> {
 /// copies, are a row; a split goes by those atoms, so every part is made
 /// of whole rows. A row keeps the facts its rules read, each once: the
 /// rules of a row of a table read its switches over and over, each value's
-/// rule those of the values before it ([`crate::ground::normalize`]), and
+/// rule those of the values before it (the grounder's normalization), and
 /// the parts' costs read every literal of every rule.
 #[derive(Default)]
 struct RowIndex {
@@ -550,6 +550,54 @@ impl Unit<'_> {
                 }))
     }
 
+    /// The rules of each value of the set `s`, the values in the order
+    /// `rules` read them, where each of `rules` reads one value of `s`
+    /// through a copy and they read two values or more; `value_of` is
+    /// scratch. The values are numbered as they come, not looked up in a
+    /// map from value to part for each rule of each candidate. Each rule's
+    /// value is numbered first, and the values' rules counted, and each
+    /// value's list is made at its size once every rule reads one value,
+    /// not grown a rule at a time for candidates a later rule rules out.
+    fn values_of(
+        &mut self,
+        s: usize,
+        rules: &[usize],
+        value_of: &mut Vec<u32>,
+    ) -> Option<Vec<(AtomId, Vec<usize>)>> {
+        let mut sizes: Vec<(AtomId, usize)> = Vec::new();
+        value_of.clear();
+        self.distinct.start();
+        // A rule's reads are sorted, those of `s` one run, found by a
+        // search and not a pass over all of them.
+        let every = rules.iter().all(|&ri| {
+            let read = &self.reads[ri];
+            let at = read.partition_point(|&(t, _, _)| t < s);
+            match (read.get(at), read.get(at + 1)) {
+                (Some(&(t, a, true)), next) if t == s && next.is_none_or(|&(u, _, _)| u != s) => {
+                    let j = self.distinct.number(a, sizes.len());
+                    if j == sizes.len() {
+                        sizes.push((a, 0));
+                    }
+                    sizes[j].1 += 1;
+                    value_of.push(j as u32);
+                    true
+                }
+                _ => false,
+            }
+        });
+        if !every || sizes.len() < 2 {
+            return None;
+        }
+        let mut values: Vec<(AtomId, Vec<usize>)> = sizes
+            .iter()
+            .map(|&(a, size)| (a, Vec::with_capacity(size)))
+            .collect();
+        for (&ri, &j) in rules.iter().zip(value_of.iter()) {
+            values[j as usize].1.push(ri);
+        }
+        Some(values)
+    }
+
     /// How to split `rules`, which read one value of each set in `path`,
     /// given what they cost whole where that is known.
     fn plan(&mut self, rules: &[usize], path: &mut Vec<usize>, whole: Option<usize>) -> Plan {
@@ -567,45 +615,9 @@ impl Unit<'_> {
         let mut best: Option<Candidate> = None;
         let mut value_of: Vec<u32> = Vec::with_capacity(rules.len());
         for s in candidates {
-            // The rules of each value, the values numbered as they come,
-            // not a map from value to part looked up for each rule of each
-            // candidate. Each rule's value is numbered first, and the
-            // values' rules counted, and each value's list is made at its
-            // size once every rule reads one value, not grown a rule at a
-            // time for candidates a later rule rules out.
-            let mut sizes: Vec<(AtomId, usize)> = Vec::new();
-            value_of.clear();
-            self.distinct.start();
-            // A rule's reads are sorted, those of `s` one run, found by a
-            // search and not a pass over all of them.
-            let every = rules.iter().all(|&ri| {
-                let read = &self.reads[ri];
-                let at = read.partition_point(|&(t, _, _)| t < s);
-                match (read.get(at), read.get(at + 1)) {
-                    (Some(&(t, a, true)), next)
-                        if t == s && next.is_none_or(|&(u, _, _)| u != s) =>
-                    {
-                        let j = self.distinct.number(a, sizes.len());
-                        if j == sizes.len() {
-                            sizes.push((a, 0));
-                        }
-                        sizes[j].1 += 1;
-                        value_of.push(j as u32);
-                        true
-                    }
-                    _ => false,
-                }
-            });
-            if !every || sizes.len() < 2 {
+            let Some(values) = self.values_of(s, rules, &mut value_of) else {
                 continue;
-            }
-            let mut values: Vec<(AtomId, Vec<usize>)> = sizes
-                .iter()
-                .map(|&(a, size)| (a, Vec::with_capacity(size)))
-                .collect();
-            for (&ri, &j) in rules.iter().zip(&value_of) {
-                values[j as usize].1.push(ri);
-            }
+            };
             let k = values.len();
             let own_value = top
                 && self.own_value

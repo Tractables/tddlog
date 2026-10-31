@@ -162,10 +162,12 @@ fn gates_of_one_rule_are_stored_as_their_conjunctions() {
     // stores μ_w, and its body y reads μ_y, the other negation; the primal
     // negates ⋀_r ¬body_r of w as well. The queries are counted where the
     // compile drops their formulas, x, y and z positive and w negative
-    // under the dual.
+    // under the dual. y reads a, which x implies, so that z reads x and
+    // not a alone: unfolded under b, \+x would be \+a
+    // (src/ground/negation.rs).
     let source = "0.3::a. 0.6::b. 0.2::c.
         x :- a, b.
-        y :- x, \\+c.
+        y :- a, x, \\+c.
         z :- \\+x, b.
         w :- y.
         w :- c.

@@ -55,6 +55,7 @@ pub use stats::{
     ClauseMemoStats, CompileStats, NegationCount, NegationSource, Negations, ProjectionStats,
     SearchStats,
 };
+pub(crate) use template::Template;
 
 use std::fmt;
 

@@ -30,6 +30,11 @@ computes its answers by a method that shares nothing with tddlog's:
                every other
     hwf        the sum over the sequences of operators of the distributions of
                the formula's terms, summed from the right
+    expected   the answers a program of ProbLog's repository states in its
+               comment `%Expected outcome:` (ProbLog's own test expectations)
+    threedie   (2/3)^N / 3, the closed form
+    pgrid      a dynamic program over the grid's nodes, its state whether the
+               source reaches each node of the frontier
 
 Prints `q:\tp` per query, in the order of the query facts, as tddlog does,
 or `evidence is inconsistent`.
@@ -204,15 +209,25 @@ def noisyor(text):
     for d, p in prior.items():
         states[d] = [True, False]
         tables[d] = ([d], np.array([p, 1 - p]))
+    evidence = [(f, v == 'true') for f, v in facts(text, r'evidence\(finding\((\w+)\),(true|false)\)\.')]
+    absent = {f for f, v in evidence if not v}
     for f, q in leak.items():
         ds = causes.get(f, [])
+        if f in absent:
+            # A finding observed absent factorizes (Heckerman's Quickscore):
+            # P(f = false | ds) = (1 - q) times 1 - p for each present cause,
+            # a factor on each cause alone, multiplied into its prior; the
+            # constant 1 - q cancels in the posterior.
+            for d, p in ds:
+                tables[d] = ([d], tables[d][1] * np.array([1 - p, 1.0]))
+            continue
         t = np.zeros([2] * len(ds) + [2])
         for key in np.ndindex(*[2] * len(ds)):
             off = (1 - q) * math.prod(1 - p for (_, p), k in zip(ds, key) if k == 0)
             t[key] = [1 - off, off]
         states[f] = [True, False]
         tables[f] = ([d for d, _ in ds] + [f], t)
-    evidence = [(f, v == 'true') for f, v in facts(text, r'evidence\(finding\((\w+)\),(true|false)\)\.')]
+    evidence = [(f, v) for f, v in evidence if f not in absent]
     res = calibrate(states, tables, evidence)
     if res is None:
         return None
@@ -673,6 +688,92 @@ def hwf(text):
 FAMILIES.update({'hwf': hwf})
 
 
+def expected(text):
+    """The answers a program of ProbLog's repository states in its comment
+    `%Expected outcome:`, one `% ATOM PROBABILITY` line each (gen_problogex.py),
+    in their order: ProbLog's own test expectations."""
+    lines = text.splitlines()
+    start = next(i for i, line in enumerate(lines) if re.match(r'\s*%\s*Expected outcome:', line))
+    answers = {}
+    for line in lines[start + 1:]:
+        m = re.fullmatch(r'\s*%\s*(\S.*?)\s+([0-9.eE+-]+)\s*', line)
+        if not m:
+            break
+        answers[m.group(1).replace(' ', '')] = float(m.group(2))
+    if not answers:
+        raise SystemExit('lit_exact: no expected outcome')
+    return answers
+
+
+FAMILIES.update({'expected': expected})
+
+
+def threedie(text):
+    """PITA's three-sided die (gen_threedie.py): throw N follows N throws
+    that showed 1 or 2, each with probability 2/3, and shows 1 with 1/3."""
+    (n,) = facts(text, r'query\(on\((\d+),1\)\)\.')[0]
+    return {f'on({n},1)': (2 / 3) ** int(n) / 3}
+
+
+FAMILIES.update({'threedie': threedie})
+
+
+def pgrid(text):
+    """ProbLog2's probabilistic grid (gen_pgrid.py): the probability that
+    the query's source reaches its target, by a dynamic program over the
+    nodes in the order of their rows and columns, every edge going forward
+    in it. Its state is the joint distribution of whether the source reaches
+    each node of the last row's frontier (a node per column, the current
+    row's to the left of the node at hand, the row above's from it on) and
+    the node above-left of it; a node is reached when an edge from a reached
+    predecessor is present, and its edges are used once, so given the state
+    it is reached with probability 1 - prod(1 - p) over its reached
+    predecessors. The state's bits, column k at bit k and the node
+    above-left at bit w, are axes of the distribution reshaped, so that a
+    node's step moves eight slices of it."""
+    edges = {((int(a), int(b)), (int(c), int(e))): float(p) for p, a, b, c, e in
+             facts(text, r'([0-9.]+)::edge\(n_(\d+)_(\d+),n_(\d+)_(\d+)\)\.')}
+    for (x, y), (u, v) in edges:
+        if (u - x, v - y) not in ((1, 0), (0, 1), (1, 1)):
+            raise SystemExit(f'lit_exact: an edge that does not go right or down: n_{x}_{y} to n_{u}_{v}')
+    ((a, b, c, e),) = facts(text, r'query\(path\(n_(\d+)_(\d+),n_(\d+)_(\d+)\)\)\.')
+    a, b, c, e = int(a), int(b), int(c), int(e)
+    n = max(max(u, x) for (x, _), (u, _) in edges)
+    w = n - a + 1                       # the columns a to n; bit w is the node above-left
+    dist = np.zeros(1 << (w + 1))
+    dist[0] = 1.0
+    for y in range(b, e + 1):
+        for x in range(a, n + 1):
+            k = x - a
+            # axes: bit w, bits w-1..k+1, bit k (the node above), bit k-1
+            # (the node to the left), bits k-2..0
+            shape = (2, 1 << (w - 1 - k), 2, 2 if k else 1, 1 << (k - 1) if k else 1)
+            old = dist.reshape(shape)
+            new = np.zeros(shape)
+            up = edges.get(((x, y - 1), (x, y)), 0.0)
+            # the first column's left and above-left nodes are left of the source: unreached
+            left = edges.get(((x - 1, y), (x, y)), 0.0) if k else 0.0
+            diag = edges.get(((x - 1, y - 1), (x, y)), 0.0) if k else 0.0
+            for above_left in (0, 1):
+                for above in (0, 1):
+                    for to_left in range(shape[3]):
+                        if (x, y) == (a, b):
+                            p = 1.0
+                        else:
+                            p = 1 - (1 - up * above) * (1 - left * to_left) * (1 - diag * above_left)
+                        part = old[above_left, :, above, to_left, :]
+                        # the node above becomes the next node's above-left
+                        new[above, :, 1, to_left, :] += p * part
+                        new[above, :, 0, to_left, :] += (1 - p) * part
+            dist = new.reshape(-1)
+            if (x, y) == (c, e):
+                return {f'path(n_{a}_{b},n_{c}_{e})': float(new[:, :, 1, :, :].sum())}
+    raise SystemExit('lit_exact: the target is not below and right of the source')
+
+
+FAMILIES.update({'pgrid': pgrid})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('family', choices=sorted(FAMILIES))
@@ -684,7 +785,8 @@ def main():
     if answers is None:
         print('evidence is inconsistent')
         return
-    for q in queries(text):
+    # `expected` states its answers to queries with variables: every one, in order.
+    for q in (answers if a.family == 'expected' else queries(text)):
         if q not in answers:
             sys.exit(f'lit_exact: no answer for {q}')
         # Fixed point would print an answer under 1e-precision as 0 (dnahmm's).

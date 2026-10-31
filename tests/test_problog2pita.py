@@ -68,6 +68,38 @@ class TranslationTests(unittest.TestCase):
             {f'g{n}/0'})
         self.assertIn(f':- table g{n}/0.', problog2pita.program(text))
 
+    def test_a_negated_head_is_written_as_tddlog_normalizes_it(self):
+        # the ProbLog tutorial's basic/10_inhibitioneffects 2 and 9: PITA has
+        # no negated heads
+        text = ('0.5::c1. 0.5::c2.\n0.3::e1 :- c1.\n0.2::\\+e1 :- c2.\ne :- e1.\n'
+                'evidence(c1,true).\nquery(e).\n')
+        self.assertEqual(self.clauses(text), [
+            'c1:0.5.', 'c2:0.5.', 'problog2pita_pos_e1:0.3 :- c1.', 'problog2pita_neg_e1:0.2 :- c2.', 'e :- e1.',
+            'e1 :- problog2pita_pos_e1, \\+ problog2pita_neg_e1.'])
+        text = ('person(a).\n0.1::contact(X,Y) :- person(X), person(Y).\n0.1::resistant(X) :- person(X).\n'
+                'inf(a).\n0.6::inf(X) :- contact(X,Y), inf(Y).\n0.33::\\+inf(X) :- resistant(X).\nquery(inf(_)).\n')
+        lines = problog2pita.program(text).split('\n')
+        self.assertIn('inf(X0) :- problog2pita_pos_inf(X0), \\+ problog2pita_neg_inf(X0).', lines)
+        self.assertIn('problog2pita_pos_inf(a).', lines)
+        self.assertIn(':- table inf/1.', lines)
+        self.assertIn(':- table problog2pita_pos_inf/1.', lines)
+
+    def test_a_predicate_named_like_a_builtin_is_renamed(self):
+        # tutslides/01_basic 3: PITA asked prob(break, P) ran SWI's break/0
+        text = 'throws(john).\n0.5::throws(mary).\n0.8 :: break :- throws(mary).\nquery(break).\n'
+        self.assertEqual(self.clauses(text), ['throws(john).', 'throws(mary):0.5.',
+                                              'problog2pita_break:0.8 :- throws(mary).'])
+        main = problog2pita.program(text, driver=True).split('main :-')[1]
+        self.assertIn('Q = problog2pita_break', main)
+        self.assertIn("atomic_list_concat(Qs, 'problog2pita_', Q0)", main)
+        # a built-in the program only calls keeps its name
+        self.assertIn('a :- member(1,[1]).', self.clauses('a :- member(1,[1]).\n'))
+
+    def test_pita_reads_its_own_program_with_a_driver(self):
+        lpad = ':- use_module(library(pita)).\n:- pita.\n:- begin_lpad.\nheads:0.5.\n:- end_lpad.\n'
+        self.assertEqual(problog2pita.own(lpad, '0.5::heads.\nquery(heads).\n'),
+                         lpad + '\nmain :-\n    forall((Q = heads, prob(Q, P)), format("~q:\\t~w~n", [Q, P])).\n')
+
 
 if __name__ == '__main__':
     unittest.main()

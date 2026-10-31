@@ -4,14 +4,14 @@
     bench.py gen  [--dir bench] [--cnf] [--pr] [--alea CMD] [--tddlog BIN] [SELECTION]
     bench.py run  [--dir bench] [--out results.jsonl] [--tddlog BIN] [--problog BIN]
                   [--strategies s1,s2] [--kbs ddnnf,sdd,fsdd] [--dice CMD] [--alea CMD] [--timeout S]
-                  [--pita SWIPL] [--pita-packs DIR] [--aspmc PYTHON] [--scallop SCLI] [--scallop-k 3,1000]
+                  [--pita SWIPL] [--pita-packs DIR] [--aspmc PYTHON] [--scallop SCLI]
                   [--exact] [--ace DIR [--ace-variants auto,...] [--ace-heap 8g] [--ace-java JAVA]]
                   [--merlin BIN] [--agrum PYTHON] [--pgmpy PYTHON] [--libdai BIN] [--tensorinference JULIA]
                   [--provsql DIR] [--storm PYTHON] [--prism DIR] [--weather-models DIR]
                   [--ganak BIN] [--sharpsat-td BIN [--sharpsat-td-decot 1,10]] [--pr]
-                  [--roulette CMD [--roulette-variants rsdd,nocomplement,bayes]]
+                  [--roulette CMD [--roulette-variants rsdd,nocomplement,bayes,extexp] [--roulette-extexp CMD]]
                   [--no-skip] [--cpus 2,4,6,...] [--rotate R] [--mem-cap SIZE] [SELECTION]
-    bench.py table results.jsonl... [--ref problog:ddnnf,...] [--approx scallop,...] [--pr-ref exact:cliquetree,...]
+    bench.py table results.jsonl... [--ref problog:ddnnf,...] [--approx SYSTEM:VARIANT,...] [--pr-ref exact:cliquetree,...]
     bench.py compare --before a.jsonl --after b.jsonl [--systems tddlog:auto,...]
     bench.py fetch
 
@@ -85,7 +85,10 @@ the other suites on the Dice program behind an instance translated by
 rsdd,nocomplement` it also queries caesar and the translated programs
 without Roulette's complement (`roulette:nocomplement`), and with `bayes`
 it runs a Bayesian network that observes nothing as the artifact runs its
-own networks (`roulette:bayes`, `roulette_bif`).
+own networks (`roulette:bayes`, `roulette_bif`). `extexp` runs `rsdd` on
+the Roulette of `--roulette-extexp CMD`, patched so that rsdd counts with
+an extended exponent, caesar and the translated programs without the
+complement (`roulette:extexp`; docs/baselines.md, section 11).
 
 `--suite ppl` is the benchmark programs of the Dice and Alea.jl papers and
 of later papers (`PPL`): Dice programs (`nodice`), which run as a `dice`
@@ -106,8 +109,8 @@ functions as well (the UAI PR task): each tddlog strategy `s` runs as
 Merlin's PR task and the counters do, on the program ground for its
 evidence alone (in a Bayesian network, the ancestors of the observed
 variables); the clique tree with `--evidence-probability`, and Merlin a
-second time as `merlin:bte-pr` (`-t PR`). ProbLog, PITA and aspmc, which
-print no P(e), are asked it as the probability of a query that holds when
+second time as `merlin:bte-pr` (`-t PR`). ProbLog, PITA, aspmc and Scallop,
+which print no P(e), are asked it as the probability of a query that holds when
 the evidence does (`pe_program`), and Ace runs as for the marginals. A
 record then holds `log10_z`, the base-10 logarithm of Z: for tddlog, which
 reads the network, its `Z:` line for a Markov network and its P(e) for a
@@ -194,11 +197,15 @@ for n in [4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30]:
 for n, k in [(6, 2), (10, 3), (15, 3), (20, 3), (50, 3), (100, 3), (200, 3),
              (1000, 3), (3000, 3), (10000, 3), (30000, 3)]:
     SPEC[f's{n}'] = ('smokers', ['gen_smokers.py', str(n), '--friends-per', str(k), '--seed', '1'])
-# The same network with mutual friendships: each random pair written in
-# both directions, a cycle on every edge. Its sizes grow by about three
-# until no system answers one: none answers ssym30 within 300 s.
-for n in [10, 30]:
-    SPEC[f'ssym{n}'] = ('symsmokers', ['gen_smokers.py', str(n), '--friends-per', '3', '--seed', '1', '--symmetric'])
+# The same network with mutual friendships: each pair of friends written in
+# both directions, a cycle on every edge. Its sizes are nested (--nested):
+# each is the one before with two more people and their friendships, so
+# each contains the one before. They grow by two from 4 to 16, the first
+# size no system answers: tddlog answers 14 people and runs out of memory
+# at 16. (The earlier ssymN drew a new graph for each size.)
+for n in [4, 6, 8, 10, 12, 14, 16]:
+    SPEC[f'nsym{n}'] = ('symsmokers', ['gen_smokers.py', str(n), '--friends-per', '3', '--seed', '1', '--symmetric',
+                                       '--nested'])
 for n in [2, 3, 4, 5, 6, 8, 10, 20, 80, 640, 2560]:
     SPEC[f'uwcse{n}'] = ('uwcse', ['gen_uwcse.py', str(n)])
 for q in [10, 50, 200, 500, 1000, 2000, 4000, 8000]:
@@ -276,7 +283,12 @@ for name in ['caesar-iter', 'simpleCaesar', 'ladder', 'diamond', 'pmc2', 'pmc1']
 #     Compilation for Inference in Discrete Probabilistic Programs" (PLDI
 #     2025), ported to Alea.jl;
 #   - nodice: the purely probabilistic Dice programs of Gürtler and
-#     Kaminski's noDice (OOPSLA 2026), translated by dice2problog.py.
+#     Kaminski's noDice (OOPSLA 2026), translated by dice2problog.py:
+#     its Table 1's (the coupon collector from 10 coupons, the networks,
+#     3sat-0) and the artifact's others (the coupon collector from 2,
+#     the bounded retransmission protocol, uniform 3-SAT of 20 and 50
+#     variables, diamonds and ladders), each program's sizes smallest
+#     first (data/nodice/README.md).
 # An Alea.jl program's instance is the Boolean circuit Alea builds for it,
 # written by alea_bench.jl as a ProbLog program and as Dice programs
 # (`gen` runs it under `--alea`).
@@ -289,9 +301,13 @@ HYBIT = ['pi', 'weekend', 'spacex', 'GPA', 'tug_of_war', 'altermu2', 'conjugate_
          'normal_mixture_theta', 'normal_mixture_mu1', 'normal_mixture_mu2', 'zeroone_w1', 'zeroone_w2',
          'coinBias', 'addFun_sum', 'clickGraph', 'trueskill', 'clinicalTrial1', 'clinicalTrial2', 'addFun_max']
 PLUCK = ['hmm', 'pcfg', 'string_editing', 'sorted_list']
-NODICE = ['coupon2-10-obs', 'coupon2-11-obs', 'coupon2-12-obs', 'coupon2-13-obs', 'coupon2-14-obs',
-          'coupon2-16-obs', 'coupon2-18-obs', 'coupon2-20-obs',
-          'survey', 'hepar2', 'insurance', 'water', 'alarm', '3sat-0']
+NODICE = ([f'coupon2-{n}-obs' for n in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20]] +
+          ['survey', 'hepar2', 'insurance', 'water', 'alarm', '3sat-0'] +
+          [f'uf20-0{n}' for n in range(990, 1000)] + ['uf50-0999'] +
+          [f'brp{n}-2' for n in [4, 6, 8, 10, 16, 64, 256, 1024, 4096, 16384]] +
+          [f'diamond-{n}-p' for n in [1, 100, 200, 300, 400, 500, 700, 800, 900, 1000, 2000, 3000, 4000, 5000,
+                                      10000]] +
+          [f'ladder-{n}-p' for n in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]])
 PPL = {}
 for family, names in [('arith', ARITH), ('hybit', HYBIT), ('pluck', PLUCK)]:
     for name in names:
@@ -424,7 +440,9 @@ RL_SIZES = {'motivating': RL_LADDER + [3000000, 9000000], 'diamond': RL_LADDER +
             **{f'hmm-{q}': [100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000, 3000000]
                for q in ['filtering-marginal', 'smoothing-marginal', 'filtering-joint', 'smoothing-joint']},
             'network': [10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000],
-            'hardware': [10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000]}
+            'hardware': [10, 30, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000],
+            'hardware-bitwidth': [5, 10, 20, 50, 100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000,
+                                  3000000, 10000000]}
 # The artifact's networks, smallest first, and the variable it queries.
 RL_NETWORKS = [('cancer', 'Xray'), ('survey', 'T'), ('alarm', 'PRESS'), ('insurance', 'PropCost'),
                ('hepar2', 'itching'), ('hailfinder', 'R5Fcst'), ('water', 'CBODD_12_45'),
@@ -582,7 +600,7 @@ for g, w in [(4, 4), (4, 6), (6, 6), (10, 6), (5, 10), (6, 8), (16, 6), (32, 6),
 for n, t in [(6, 10), (10, 10), (14, 10), (18, 20), (22, 40), (45, 40), (180, 40), (240, 40)]:
     LIT[f'sickness{n}_{t}'] = ('sickness', ['gen_sickness.py', str(n), str(t), '--seed', '1'])
 for d, f in [(6, 9), (8, 12), (10, 15), (15, 22), (20, 30), (30, 45), (60, 90), (120, 180), (240, 360),
-             (360, 540)]:
+             (300, 450), (360, 540)]:
     LIT[f'noisyor{d}_{f}'] = ('noisyor', ['gen_noisyor.py', str(d), str(f), '--seed', '1'])
 for c, pegs, r in [(4, 4, 8), (6, 4, 8), (8, 4, 8), (10, 4, 8), (4, 5, 8), (6, 5, 8), (8, 5, 8),
                    (8, 8, 8), (16, 5, 8), (32, 5, 8), (64, 5, 8)]:
@@ -664,6 +682,93 @@ for n in [3, 5, 7, 9, 11]:
 EXACT['gen_hwf.py'] = ('lit', lambda path: ['lit_exact.py', 'hwf', path, '--precision', '17'])
 
 
+# The third literature scan's programs: the
+# systems' own, each a program of its own (COLLECTIONS) but threedie and
+# pgrid. problogtut: the ProbLog tutorial's programs that ask marginals, as
+# the pages write them (gen_problogtut.py; the pages are fetched, no
+# licence), all but the three of the aProbLog page, whose semirings are not
+# probabilities, basic/03_dice's third, which ProbLog refuses (a query left
+# non-ground), and six copies of problogex's; their reference is ProbLog's,
+# one query at a time (problog_each.py). problogex: the example programs of
+# ProbLog's repository (data/problog, Apache 2.0), each its own reference
+# in the comment that states its expected answers. cplintpita: cplint's
+# examples written for PITA (data/cplint, Artistic 2.0), read as LPADs,
+# ProbLog's answers one query at a time their reference; left out are
+# those that no system answers as the harness gives them (msw/2 in coinmsw
+# and coinmsw_memo, prob/2 in meta and metacomb, and markov_chaindb,
+# pcfglrdb and var_objdb, which no system nor the reference answers in
+# time), persons, whose LPAD tddlog's reader refuses, and eruption_tab,
+# eruption's copy. threedie: PITA's three-sided die thrown until a 3
+# (Riguzzi and Swift, ICLP 2010, Fig. 3; cplint's threesideddice.pl),
+# asked on(N,1), (2/3)^N/3, N up to where a double still holds it (PITA
+# and ProbLog stop between 100 and 1000).
+PROBLOGTUT = {
+    'advanced/10_urnballmodel': [1],
+    'basic/01_coins': [1, 2, 3],
+    'basic/02_bayes': [4],
+    'basic/03_dice': [1, 2, 4, 5, 6, 7, 8, 9],
+    'basic/05_smokers': [1],
+    'basic/08_rule_probs': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'basic/09_higherorderfunctions': [1, 2, 3, 4, 5],
+    'basic/10_inhibitioneffects': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    'tutslides/01_basic': [1, 2, 3, 4],
+    'tutslides/02_more': [1, 2, 3, 4],
+    'tutslides/03_stochmem': [1, 2],
+    'tutslides/04_bayesian_learning': [1],
+    'tutslides/05_complexity': [1],
+    'tutslides/06_smart_students': [1, 2, 3],
+    'various/01_montyhall': [1, 2],
+    'various/02_bousi': [1, 2],
+    'various/03_crowds': [1],
+    'various/04_nampally': [1, 2, 3],
+    'various/05_numberguessing': [1],
+    'various/06_hmm': [1, 2, 3],
+    'various/06_pcfg': [1, 2, 3, 4, 5],
+    'various/06_slp': [1],
+    'various/07_ppdatalog': [1, 2, 3, 4, 5, 6, 7],
+    'various/08_bayesian_dataflow': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    'various/09_airflap': [1],
+    'various/10_causalpower': [1, 2],
+    'various/10_prism': [3, 5, 6, 7, 8, 9],
+    'various/11_semweb': [1],
+    'various/12_pingpong': [1],
+    'various/13_incomplete_info': [1, 2, 3, 4],
+    'various/14_robot_key': [1, 2],
+    'various/15_spaghetti': [1],
+    'various/16_cplogic': [1, 2],
+    'various/17_taxonomy': [1],
+}
+for page, ks in PROBLOGTUT.items():
+    for k in ks:
+        LIT[f'problogtut_{page.replace("/", "_")}_{k}'] = ('problogtut', ['gen_problogtut.py', page, str(k)])
+PROBLOGEX = ['3_tossing_coin', '4_bayesian_net', '4_1_bayesian_net', '5_bayesian_net', '6_hmm_weather',
+             '7_probabilistic_graph', '8_smokers_network', '9_packing_problem', '10_cards', '11_ads_numerical',
+             '12_holidays', 'coin', 'smokers_or', 'advars_smokers', 'advars_smokers_alt', 'tc_1', 'tc_2', 'tc_3',
+             'negation', 'swap', 'add', 'generated']
+for name in PROBLOGEX:
+    LIT[f'problogex_{name}'] = ('problogex', ['gen_problogex.py', name])
+CPLINTPITA = ['alarm', 'bag_game', 'coin', 'coin2', 'dice', 'earthquake', 'epidemic', 'eruption', 'event_calculus',
+              'flexprob', 'jail', 'light', 'markov_factor', 'markov_network', 'mendel', 'mendelc', 'mln', 'monty',
+              'multiple_paths', 'multiple_paths_simple', 'path', 'pathdb', 'pcfg', 'simpson', 'sneezing', 'testdb',
+              'threesideddice', 'trigger', 'viral']
+for name in CPLINTPITA:
+    LIT[f'cplint_{name}'] = ('cplintpita', ['gen_cplint.py', name])
+for n in [10, 100, 300, 1000, 1500]:
+    LIT[f'threedie{n}'] = ('threedie', ['gen_threedie.py', str(n)])
+for script in ['gen_problogtut.py', 'gen_cplint.py']:
+    EXACT[script] = ('problog1', lambda path: ['problog_each.py', path])
+EXACT['gen_problogex.py'] = ('lit', lambda path: ['lit_exact.py', 'expected', path, '--precision', '17'])
+EXACT['gen_threedie.py'] = ('lit', lambda path: ['lit_exact.py', 'threedie', path, '--precision', '17'])
+# ProbLog2's probabilistic grid (Fierens et al., TPLP 2015, Section 9.1 and
+# 9.2.1, Fig. 5): its 16 x 16 grid asked a path over distance D, ProbLog2
+# at about 110 s at D = 10 in the paper and beyond its 300 s after (at 120
+# s on a lab box ProbLog stops between D = 4 and 6, PITA between 6 and 8),
+# then larger grids corner to corner, 18 x 18 and 20 x 20.
+for n, d in [(16, 4), (16, 5), (16, 6), (16, 7), (16, 8), (16, 10), (16, 12), (16, 15), (18, 17), (20, 19)]:
+    LIT[f'pgrid{n}_{d}'] = ('pgrid', ['gen_pgrid.py', str(n), str(d)])
+EXACT['gen_pgrid.py'] = ('lit', lambda path: ['lit_exact.py', 'pgrid', path, '--precision', '17'])
+
+
 # TPC-H as a tuple-independent probabilistic database (gen_tpch.py), the
 # workload of SPROUT and of dissociation: each Boolean query alone, a
 # family of its own, at scale factors from 0.001 to 1, instance
@@ -725,11 +830,14 @@ def instances(args):
 # The families of different programs, each with the pattern that matches the
 # sizes of a program among them (its group names the program; the sizes are
 # listed smallest first): Alea.jl's arithmetic programs, noDice's coupon
-# collector, and bench_one.py's scaled Dice loops. The taint family's apps
+# collector, bounded retransmission protocol, diamonds and ladders (its
+# networks and 3-SAT formulas are none a size of another), and
+# bench_one.py's scaled Dice loops. The taint family's apps
 # are one analysis of fifteen programs, none a size of another, and so are
 # the side-channel family's cases, whose rules differ from case to case.
 COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None, 'taint': None, 'sidechannel': None,
-               'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_coupon2)-\d+-obs',
+               'problogtut': None, 'problogex': None, 'cplintpita': None,
+               'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_(?:coupon2|brp|diamond|ladder))-?\d+-(?:obs|2|p)',
                'dice_scaled': r'(dice_.+)_k\d+'}
 
 
@@ -973,6 +1081,27 @@ def gen_network(args, name, gargs):
         subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), *gargs[1:], *pr, *side],
                        stdout=subprocess.DEVNULL, check=True)
     write_program(args, name, program_args(args, name, gargs))
+    if uai_kind(net) == 'BAYES':
+        # A Bayesian network's Z is P(e): its program states log10 Z -
+        # log10 P(e) = 0 on its first line, as a Markov network's states its
+        # offset, so that `program_offset` reads log10 Z from any system's P(e).
+        pl = os.path.join(args.dir, name + '.pl')
+        with open(pl) as f:
+            text = f.read()
+        if gen_bn.read_offset(text) is None:
+            with open(pl + '.part', 'w') as f:
+                f.write(gen_bn.offset_line(0.0) + text)
+            os.replace(pl + '.part', pl)
+
+
+def uai_kind(path):
+    """BAYES or MARKOV, the first word of a UAI model file; None for a file
+    in another format."""
+    if not path.endswith('.uai'):
+        return None
+    with open(path) as f:
+        words = f.read(64).split()
+    return words[0] if words else None
 
 
 def write_program(args, name, argv):
@@ -1019,8 +1148,17 @@ def fetch(args):
             if hashlib.sha256(data).hexdigest() != sha:
                 bad.append(f'{rel}: its SHA-256 is not that of {url}')
             continue
-        with urllib.request.urlopen(url, timeout=args.timeout) as r:
-            data = r.read()
+        # a few tries: one of the hosts of Ihler's collection presents another
+        # host's certificate, and the next connection reaches another
+        for attempt in range(6):
+            try:
+                with urllib.request.urlopen(url, timeout=args.timeout) as r:
+                    data = r.read()
+                break
+            except OSError:
+                if attempt == 5:
+                    raise
+                time.sleep(2 + 2 * attempt)
         got = hashlib.sha256(data).hexdigest()
         if got != sha:
             bad.append(f'{url}: SHA-256 {got}, not {sha}; not written')
@@ -1171,7 +1309,7 @@ DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', '
 # probability that a network's program returns true where it
 # returns the conjunction of the observations (`dice_source`), with the
 # program's query `bench_pe` naming it.
-PE_SYSTEMS = ('problog', 'pita', 'aspmc', *DICE_SYSTEMS, 'storm', 'prism')
+PE_SYSTEMS = ('problog', 'pita', 'aspmc', 'scallop', *DICE_SYSTEMS, 'storm', 'prism')
 PE_QUERY = 'bench_pe'
 
 
@@ -1262,22 +1400,62 @@ def answer_right(a, r, ea=0.0, er=0.0):
     return d <= CHECK_NOISE or (d <= CHECK_TOL + ea + er and d <= CHECK_REL * abs(r) + ea + er)
 
 
+def atom_args(q):
+    """(name, top-level arguments) of the atom q as ProbLog prints it; (q, []) for a constant."""
+    m = re.fullmatch(r'([^(]+)\((.*)\)', q)
+    if not m:
+        return q, []
+    args, depth, cur = [], 0, ''
+    for c in m.group(2):
+        if c == ',' and depth == 0:
+            args.append(cur.strip()); cur = ''
+            continue
+        depth += (c in '([') - (c in ')]')
+        cur += c
+    return m.group(1), args + [cur.strip()]
+
+
+def instances_of(q, keys):
+    """The keys of `keys` that are ground instances of the atom q, whose
+    arguments include variables (ProbLog prints a query none of whose
+    instances it derives with its variables: different_color(X3,X4)); None
+    where q has no variable as an argument."""
+    name, args = atom_args(q)
+    var = [bool(re.fullmatch(r'[A-Z_]\w*', x)) for x in args]
+    if not any(var):
+        return None
+    out = []
+    for k in keys:
+        n, xs = atom_args(k)
+        if n != name or len(xs) != len(args):
+            continue
+        bound = {}
+        if all(bound.setdefault(p, x) == x if v and p != '_' else v or p == x for p, x, v in zip(args, xs, var)):
+            out.append(k)
+    return out
+
+
 def answers_check(rec, ref):
     """(right, the largest difference, the queries compared) of record rec's
     answers against reference ref's, over the queries both answer; None where
-    they share none. Answers that are not a dict (the evidence inconsistent
-    to the system) are right where both are equal."""
+    they share none. A reference's query with variables at 0 (ProbLog derives
+    none of its instances) is compared with each of rec's instances of it,
+    which must be 0 too (tddlog grounds them over the domain). Answers that
+    are not a dict (the evidence inconsistent to the system) are right where
+    both are equal."""
     a, b = rec.get('answers'), ref.get('answers')
     if not isinstance(a, dict) or not isinstance(b, dict):
         return (a == b, 0.0 if a == b else math.inf, 1) if a is not None and b is not None else None
     qs = [q for q in b if q in a]
-    if not qs:
+    zero = {q: ks for q in b if q not in a and b[q] == 0 for ks in [instances_of(q, a)] if ks}
+    pairs = [(q, q) for q in qs] + [(k, q) for q, ks in zero.items() for k in ks]
+    if not pairs:
         return None
-    right = all(answer_right(a[q], b[q], printed_error(rec['system'], rec.get('variant'), a[q]),
-                             printed_error(ref['system'], ref.get('variant'), b[q])) for q in qs)
-    worst = max(answer_diff(a[q], b[q]) if all(isinstance(x, (int, float)) for x in (a[q], b[q]))
-                else (0.0 if a[q] == b[q] else math.inf) for q in qs)
-    return right, worst, len(qs)
+    right = all(answer_right(a[k], b[q], printed_error(rec['system'], rec.get('variant'), a[k]),
+                             printed_error(ref['system'], ref.get('variant'), b[q])) for k, q in pairs)
+    worst = max(answer_diff(a[k], b[q]) if all(isinstance(x, (int, float)) for x in (a[k], b[q]))
+                else (0.0 if a[k] == b[q] else math.inf) for k, q in pairs)
+    return right, worst, len(qs) + len(zero)
 
 
 def reference_answers(rec):
@@ -1657,15 +1835,21 @@ def queries(path):
     return [m.group(1) for m in re.finditer(r'^query\((.*)\)\.\s*(?:%.*)?$', open(path).read(), re.M)]
 
 
+DICE_VALUE = re.compile(r'true|false|-?\d+|\(.*\)|\[.*\]')
+
+
 def parse_dice(out):
     """Dice's table: one row per value of the returned expression, a tuple's
-    value written `(true, false)`."""
+    value written `(true, false)`. Only rows whose first column is a value
+    count: noDice prints its runtimes after the table (`Compilation
+    0.569023`, `noDice (total) 0.569052`), which made a returned tuple's
+    rows read as no tuple table (dice_marginals)."""
     rows = {}
     for line in out.splitlines():
         f = line.rsplit(None, 1)
-        if len(f) == 2 and f[0] != 'Value':
+        if len(f) == 2 and DICE_VALUE.fullmatch(v := re.sub(r'\s+', '', f[0])):
             try:
-                rows[re.sub(r'\s+', '', f[0])] = float(f[1])
+                rows[v] = float(f[1])
             except ValueError:
                 pass
     return rows
@@ -1890,9 +2074,10 @@ def run_alea(args, name, path):
     (`dice_source`), translated by dice2alea.py, or on the Alea.jl program
     of an instance written from one (`run_alea_program`): a network as one
     program whose value is the tuple of its queried variables, all answered
-    by one `pr`. The translation is not timed, but bounded by the timeout (an
-    error past it, so that a lane cannot stall); the seconds are the Julia process's,
-    and `inproc_seconds` what it reports for building the program and `pr`
+    by one `pr`. The translation is not timed, but bounded by
+    translation_bound (a harness time-out past it, so that a lane cannot
+    stall); the seconds are the Julia process's, and `inproc_seconds` what
+    it reports for building the program and `pr`
     (`jit_seconds` of it Julia's compilation)."""
     family, gargs = instances(args)[name]
     if gargs[0] == 'alea_bench.jl':
@@ -1903,9 +2088,9 @@ def run_alea(args, name, path):
     jl = os.path.abspath(os.path.join(args.dir, f'{name}.alea.jl'))
     try:
         t = subprocess.run([sys.executable, os.path.join(HERE, 'dice2alea.py'), source], capture_output=True,
-                           text=True, timeout=args.timeout)
+                           text=True, timeout=translation_bound(args))
     except subprocess.TimeoutExpired:
-        return {'status': 'error', 'seconds': 0, 'error': f'dice2alea.py: no translation within {args.timeout:g} s'}
+        return harness_timeout_record('dice2alea.py', f'no translation within {translation_bound(args):g} s')
     if t.returncode != 0:
         return {'status': 'error', 'seconds': 0, 'error': 'dice2alea.py: ' + t.stderr.strip()[-2000:]}
     with open(jl, 'w') as f:
@@ -2033,13 +2218,17 @@ def roulette_program(args, name, variant):
     prints each component's distribution (`roulette K VALUE P`). Under the
     variant `nocomplement` caesar and the translated programs query with
     `(query e #f)` (data/roulette/caesar.rkt, dice2roulette.py); None for
-    the artifact's other programs, which it does not apply to."""
+    the artifact's other programs, which it does not apply to. The variant
+    `extexp` queries so too: its counts hold past the doubles' range, but
+    the complement, one minus the other values' and the failed evidence's
+    counts, still cancels to nothing once the evidence's probability is
+    below a double's precision."""
     if variant == 'bayes':
         made = roulette_bif(args, name)
         return None if made is None else (os.path.join(ROULETTE_DATA, 'bif.rkt'), [made[0], made[1]])
     if args.suite != 'roulette':
         return os.path.abspath(os.path.join(args.dir, f'{name}.roulette.rkt')), \
-            ['--no-complement'] if variant == 'nocomplement' else []
+            ['--no-complement'] if variant in ('nocomplement', 'extexp') else []
     family, gargs = instances(args)[name]
     if variant == 'nocomplement' and gargs[:2] != ['gen_roulette.py', 'caesar']:
         return None
@@ -2048,32 +2237,38 @@ def roulette_program(args, name, variant):
     program, size = gargs[1], gargs[2]
     if program.startswith('hmm-'):
         return os.path.join(args.roulette_benchmarks, 'hmm.rkt'), ['roulette', program[4:], size]
-    return os.path.join(ROULETTE_DATA, program + '.rkt'), [size] + (['--no-complement'] if variant == 'nocomplement' else [])
+    # Of the drivers, caesar's alone takes --no-complement.
+    return os.path.join(ROULETTE_DATA, program + '.rkt'), \
+        [size] + (['--no-complement'] if variant in ('nocomplement', 'extexp') and program == 'caesar' else [])
 
 
-def roulette_command(args, prog, *words):
-    """The `--roulette` template on program `prog`; with words, Racket
-    runs them on it instead (`-l- raco make`)."""
+def roulette_command(args, variant, prog, *words):
+    """The `--roulette` template on program `prog` (`--roulette-extexp`'s
+    under the variant `extexp`); with words, Racket runs them on it instead
+    (`-l- raco make`)."""
     file = ' '.join(words + (prog,))
-    return args.roulette.format(file=file, dir=os.path.dirname(prog), base=os.path.basename(prog)).split()
+    template = getattr(args, 'roulette_extexp', '') if variant == 'extexp' else args.roulette
+    return template.format(file=file, dir=os.path.dirname(prog), base=os.path.basename(prog)).split()
 
 
-def roulette_translate(args, source, rkt, joint=False):
+def roulette_translate(args, source, rkt, variant, joint=False):
     """The Dice program `source` translated by dice2roulette.py (with
-    `--joint` where `joint`) into rkt and compiled by `raco make`, as the
-    artifact's programs are before they run: neither is timed, both are
-    bounded by the timeout. An error record where either fails, else
-    None."""
+    `--joint` where `joint`) into rkt and compiled by `raco make` (the
+    variant's Racket), as the artifact's programs are before they run:
+    neither is timed, the
+    translation is bounded by translation_bound and the compile by the
+    timeout. An error record where either fails, else None."""
     try:
         t = subprocess.run([sys.executable, os.path.join(HERE, 'dice2roulette.py'), source]
-                           + (['--joint'] if joint else []), capture_output=True, text=True, timeout=args.timeout)
+                           + (['--joint'] if joint else []), capture_output=True, text=True,
+                           timeout=translation_bound(args))
     except subprocess.TimeoutExpired:
-        return {'status': 'error', 'seconds': 0, 'error': f'dice2roulette.py: no translation within {args.timeout:g} s'}
+        return harness_timeout_record('dice2roulette.py', f'no translation within {translation_bound(args):g} s')
     if t.returncode != 0:
         return {'status': 'error', 'seconds': 0, 'error': 'dice2roulette.py: ' + t.stderr.strip()[-2000:]}
     with open(rkt, 'w') as f:
         f.write(t.stdout)
-    c = timed(roulette_command(args, rkt, '-l-', 'raco', 'make'), args.timeout)
+    c = timed(roulette_command(args, variant, rkt, '-l-', 'raco', 'make'), args.timeout)
     if c['status'] != 'ok':
         return {'status': 'error', 'seconds': 0, 'error': f"raco make: {c['status']} {c.get('error', '')[-2000:]}"}
     return None
@@ -2084,10 +2279,10 @@ def roulette_masses(args, label, source, joint, budget, variant):
     asks it: the distributions of its value's components, and its seconds
     and `inproc_seconds`."""
     rkt = os.path.abspath(os.path.join(args.dir, label.removesuffix('.dice') + '.roulette.rkt'))
-    err = roulette_translate(args, source, rkt, joint)
+    err = roulette_translate(args, source, rkt, variant, joint)
     if err:
         return None, err
-    r = timed(roulette_command(args, rkt) + (['--no-complement'] if variant == 'nocomplement' else []), budget)
+    r = timed(roulette_command(args, variant, rkt) + (['--no-complement'] if variant in ('nocomplement', 'extexp') else []), budget)
     if r['status'] != 'ok':
         return None, r
     m = ROULETTE_TIME.search(r['stdout'])
@@ -2114,17 +2309,17 @@ def run_roulette(args, name, path, variant):
                               roulette_masses(a, label, source, joint, budget, variant))
     prog, rest = roulette_program(args, name, variant)
     if variant == 'bayes':
-        c = timed(roulette_command(args, prog, '-l-', 'raco', 'make'), args.timeout)
+        c = timed(roulette_command(args, variant, prog, '-l-', 'raco', 'make'), args.timeout)
         if c['status'] != 'ok':
             return {'status': 'error', 'seconds': 0, 'error': f"raco make: {c['status']} {c.get('error', '')[-2000:]}"}
     elif args.suite != 'roulette':
         source = dice_source(args, name)
         if source is None:
             return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for {name}'}
-        err = roulette_translate(args, source, prog)
+        err = roulette_translate(args, source, prog, variant)
         if err:
             return err
-    r = timed(roulette_command(args, prog) + rest, args.timeout)
+    r = timed(roulette_command(args, variant, prog) + rest, args.timeout)
     if r['status'] != 'ok':
         return r
     printed, values, stats, last = {}, {}, {}, None
@@ -2141,9 +2336,11 @@ def run_roulette(args, name, path, variant):
         elif len(f) == 3 and f[0] == 'roulette_v':
             values[f[1]] = float(f[2])
         elif len(f) == 1:
+            # hmm.rkt prints its answer as Racket does: an exact rational
+            # under the variant extexp.
             try:
-                last = float(f[0])
-            except ValueError:
+                last = float(fractions.Fraction(f[0]))
+            except (ValueError, ZeroDivisionError):
                 pass
     if variant == 'bayes':
         pass
@@ -2194,14 +2391,47 @@ def program_command(args, name, file):
 REFUSED = 3
 
 
+# A harness translator's time-out: a translation into a system's language
+# (`translation`, by_component's and checker_masses' bounds on them) that
+# did not finish. The system never got the program, and the translation's
+# time is not charged to it, so the record is the harness's error and
+# not the system's failure. Such a record
+# carries `harness: 'timeout'`; older ones are known by their text.
+HARNESS_TIMEOUT = re.compile(r'\S+\.py: (no translation within |the translation of \d+ components passed the time '
+                             r'limit|the translations took \d+ s, beyond the time limit)')
+
+
+def harness_timeout(rec):
+    """Whether rec is a harness translator's time-out (HARNESS_TIMEOUT)."""
+    return rec.get('status') == 'error' and (rec.get('harness') == 'timeout'
+                                             or bool(HARNESS_TIMEOUT.match(rec.get('error') or '')))
+
+
+def translation_bound(args):
+    """The seconds the harness's translations of an instance into a
+    system's language may take: --translation-timeout, by default four
+    times --timeout. A translation written only to hand a program to one
+    system is not charged to it, so the time limit does not bound it."""
+    bound = getattr(args, 'translation_timeout', None)
+    return 4 * args.timeout if bound is None else bound
+
+
+def harness_timeout_record(script, what):
+    """The record of a harness translation past its bound (translation_bound).
+    The system never got the program, so the record is the harness's
+    error, `harness: 'timeout'`, not the system's failure."""
+    return {'status': 'error', 'harness': 'timeout', 'seconds': 0, 'error': f'{script}: {what}'}
+
+
 def translation(args, script, argv):
-    """(the output of `script ARGV`, None) bounded by the timeout, or (None,
-    the record of its failure)."""
+    """(the output of `script ARGV`, None) bounded by translation_bound, or
+    (None, the record of its failure)."""
+    bound = translation_bound(args)
     try:
         t = subprocess.run([sys.executable, str(source_tree.script(script)), *argv], capture_output=True, text=True,
-                           timeout=args.timeout)
+                           timeout=bound)
     except subprocess.TimeoutExpired:
-        return None, {'status': 'error', 'seconds': 0, 'error': f'{script}: no translation within {args.timeout:g} s'}
+        return None, harness_timeout_record(script, f'no translation within {bound:g} s')
     if t.returncode != 0:
         status = 'unsupported' if t.returncode == REFUSED else 'error'
         return None, {'status': status, 'seconds': 0, 'error': f'{script}: ' + t.stderr.strip()[-2000:]}
@@ -2293,9 +2523,10 @@ def by_component(system, script, ext, flags, masses_of):
     masses_of(stdout, n) reads a run's {value: probability}, which must
     cover the n values. The record's seconds are the runs', as for every
     translated system; the translations, one translator process a
-    component, are bounded by a time limit of their own, since a program of
-    thousands of components translates for hours: past it the record is the
-    translator's error, unanswered."""
+    component, are bounded together by translation_bound, not by the time
+    limit, since a program of thousands of components translates for
+    hours: past it the record is the harness's time-out
+    (harness_timeout_record), not the system's failure."""
     def masses(args, label, source, joint, budget):
         j = ['--joint'] if joint else []
         t0 = time.time()
@@ -2313,10 +2544,10 @@ def by_component(system, script, ext, flags, masses_of):
             if err:
                 return None, {**err, 'seconds': total}
             made += time.time() - t0
-            if made > args.timeout:
-                return None, {'status': 'error', 'seconds': total,
-                              'error': f'{script}: the translation of {len(lines)} components passed the time limit '
-                                       f'({k + 1} took {made:.0f} s)'}
+            if made > translation_bound(args):
+                return None, {**harness_timeout_record(
+                    script, f'the translation of {len(lines)} components passed its bound of '
+                            f'{translation_bound(args):g} s ({k + 1} took {made:.0f} s)'), 'seconds': total}
             r = timed(program_command(args, system, file) + flags(n), max(0.0, budget - total))
             total += r['seconds']
             if r['status'] != 'ok':
@@ -2758,18 +2989,22 @@ program_system('nodice', "noDice (Gürtler and Kaminski, OOPSLA 2026) on the Dic
                lambda args, name, path: run_dice(args, name, path, 'nodice'))
 
 
-def run_pita(args, name, path):
-    """PITA (cplint) on the LPAD translation of the program. One swipl
-    process consults the program and asks `prob/2` for every query, so the
-    seconds cover parsing, transformation and every query, as the other
-    systems' do. PITA answers one query at a time and shares nothing between
-    them, which is the shape of the system, not of the harness. Its tables
-    may fill the run's address-space limit (`ulimit -v`), not only SWI's
-    default table space of 1 GB, so that the memory limit binds, as it does
-    for the other systems."""
+def run_pita(args, name, path, own=None):
+    """PITA (cplint) on the LPAD translation of the program, or where the
+    instance is an LPAD written for PITA (`own`, cplint's examples) on that
+    program as it is, with a driver that asks the converted program's
+    queries (`problog2pita.own`; rule 15: its own system's program is the
+    model). One swipl process consults the program and asks `prob/2` for
+    every query, so the seconds cover parsing, transformation and every
+    query, as the other systems' do. PITA answers one query at a time and
+    shares nothing between them, which is the shape of the system, not of
+    the harness. Its tables may fill the run's address-space limit (`ulimit
+    -v`), not only SWI's default table space of 1 GB, so that the memory
+    limit binds, as it does for the other systems."""
     lpad = os.path.join(args.dir, name + '.lpad.pl')
     with open(lpad, 'w') as f:
-        f.write(problog2pita.program(open(path).read(), driver=True))
+        f.write(problog2pita.own(open(own).read(), open(path).read()) if own
+                else problog2pita.program(open(path).read(), driver=True))
     packs = ['-g', f"attach_packs('{args.pita_packs}',[duplicate(replace)])"] if args.pita_packs else []
     limit = address_space_limit()
     space = ['-g', f'set_prolog_flag(table_space, {limit})'] if limit else []
@@ -2861,7 +3096,97 @@ def aspmc_is(text):
     return ASPMC_IS.sub(r'\1 = ', text)
 
 
+# aspmc's ProbLog front end refuses much of what ProbLog reads: fractions as
+# probabilities (`1/3::`), lists, facts and queries with variables (its
+# grounder clingo's "unsafe variables"); it refused 109 of the ProbLog
+# tutorial's 122 programs. A program it
+# refuses so is given to it again as the ground program tddlog prints
+# (`tddlog --ground`, as Scallop reads it), every predicate and constant
+# renamed to a plain name (`aspmc_ground`); the grounding is part of that
+# run's time, and the refused run's is not.
+ASPMC_REFUSED = re.compile(r'lark\.exceptions\.|RuntimeError: (?:parsing failed|grounding stopped because of errors)'
+                           r'|error: (?:unsafe variables|syntax error)|which aspmc cannot be asked')
+
+
+def aspmc_ground(text):
+    """(program, names) of a ground ProbLog program as `tddlog --ground`
+    prints it: the program with predicate i named `p<i>` and constant j
+    `c<j>` (an integer kept), in the syntax aspmc reads, and the original of
+    each renamed atom, without blanks, by its new name."""
+    from lpad2problog import split_clauses, split_top, strip_comments
+    preds, consts, names = {}, {}, {}
+
+    def term(t):
+        t = re.sub(r'\s+', '', t)
+        return t if re.fullmatch(r'-?\d+', t) else consts.setdefault(t, f'c{len(consts)}')
+
+    def atom(t):
+        t = t.strip()
+        m = re.fullmatch(r"('(?:[^'\\]|\\.)*'|[^(]+?)\s*(?:\((.*)\))?", t, re.S)
+        if not m:
+            raise ValueError(f'not a ground atom: {t}')
+        args = split_top(m.group(2), ',') if m.group(2) is not None else []
+        new = preds.setdefault((m.group(1).strip(), len(args)), f'p{len(preds)}')
+        new += f"({','.join(term(a) for a in args)})" if args else ''
+        names[new] = re.sub(r'\s+', '', t)
+        return new
+
+    def literal(t):
+        t = t.strip()
+        return '\\+' + atom(t[2:]) if t.startswith('\\+') else atom(t)
+
+    lines = []
+    for clause in split_clauses(strip_comments(text)):
+        clause = ' '.join(clause.split())
+        m = re.fullmatch(r'(query|evidence)\((.*)\)', clause)
+        if m and m.group(1) == 'query':
+            lines.append(f'query({atom(m.group(2))}).')
+            continue
+        if m:
+            parts = split_top(m.group(2), ',')
+            truth = parts[-1].strip() if len(parts) > 1 else 'true'
+            lit = (','.join(parts[:-1]) if len(parts) > 1 else parts[0]).strip()
+            if lit.startswith('\\+'):
+                lit, truth = lit[2:], {'true': 'false', 'false': 'true'}[truth]
+            lines.append(f'evidence({atom(lit)},{truth}).')
+            continue
+        head, body = problog2pita.split_neck(clause)
+        parts = split_top(head, ':')
+        head = f'{parts[0].strip()}::{atom(parts[2])}' if len(parts) == 3 and parts[1] == '' else atom(head)
+        lines.append(f'{head}.' if body is None else f"{head} :- {', '.join(literal(b) for b in split_top(body, ','))}.")
+    return '\n'.join(lines) + '\n', names
+
+
 def run_aspmc(args, name, path):
+    """aspmc on the ProbLog program (`aspmc_run`), and where it refuses the
+    program (ASPMC_REFUSED) on its ground program (`aspmc_ground`), the
+    record marked `aspmc_route: ground`."""
+    r = aspmc_run(args, name, path)
+    if r['status'] != 'error' or not ASPMC_REFUSED.search(str(r.get('error', ''))):
+        return r
+    g = timed([args.tddlog, '--ground', path], args.timeout)
+    if g['status'] != 'ok':
+        g.pop('stdout', None)
+        return {**g, 'stats': {'aspmc_route': 'ground'}}
+    try:
+        program, names = aspmc_ground(g.pop('stdout'))
+    except ValueError as e:
+        return {'status': 'error', 'seconds': g['seconds'], 'error': str(e), 'stats': {'aspmc_route': 'ground'}}
+    ground = os.path.join(args.dir, 'aspmc-' + name, name + '.ground.pl')
+    os.makedirs(os.path.dirname(ground), exist_ok=True)
+    with open(ground, 'w') as f:
+        f.write(program)
+    rargs = argparse.Namespace(**{**vars(args), 'timeout': max(1.0, args.timeout - g['seconds'])})
+    r = aspmc_run(rargs, name, ground)
+    r['seconds'] += g['seconds']
+    r.setdefault('stats', {})['aspmc_route'] = 'ground'
+    if isinstance(r.get('answers'), dict):
+        r['answers'] = {names.get(q, q): p for q, p in r['answers'].items()}
+    return r
+
+
+def aspmc_run(args, name, path):
+
     """aspmc on the ProbLog program, with its evidence asked as queries
     (`aspmc_conditioned`) where it has any, and its probabilities and `is`
     in the notation it reads (`aspmc_numbers`, `aspmc_is`). It writes
@@ -2922,14 +3247,29 @@ def parse_scallop(out, scl):
     return res
 
 
+# Scallop's top-k proofs (`-p topkproofs -k K`) keep the K most probable
+# proofs of each tuple and count the weighted models of that DNF exactly: an
+# SDD built from it (docs/baselines.md section 3). At K = usize::MAX, the
+# largest its command line takes, no proof is ever dropped: the truncation
+# after a disjunction or a conjunction keeps every clause, and a negation
+# expands the whole product of its CNF. The answer is then exact, and the
+# harness runs Scallop so alone, as the variant `allproofs` (k unbounded).
+SCALLOP_K = 2 ** 64 - 1
+SCALLOP_VARIANT = 'allproofs'
+
+
+def scallop_variant(system, variant):
+    """A record's or a call's variant, Scallop's top-k at SCALLOP_K named
+    SCALLOP_VARIANT: a run before the variant had its name wrote the same
+    command as topk followed by K."""
+    return SCALLOP_VARIANT if system == 'scallop' and variant == f'topk{SCALLOP_K}' else variant
+
+
 def run_scallop(args, name, path, variant):
     """Scallop on the ground program tddlog prints (`ground2scallop.py`),
-    under the top-k-proofs provenance with k from the variant `topk<k>`.
-    The seconds are the grounding's and Scallop's together. The answer is
-    exact only when k is at least the number of proofs of every tuple on
-    the way (`docs/baselines.md`); below that it is a lower bound."""
-    k = re.fullmatch(r'topk(\d+)', variant)
-    if not k:
+    under the top-k-proofs provenance at k = SCALLOP_K, which is exact.
+    The seconds are the grounding's and Scallop's together."""
+    if variant != SCALLOP_VARIANT:
         raise SystemExit(f'unknown Scallop variant {variant}')
     g = timed([args.tddlog, '--ground', path], args.timeout)
     if g['status'] != 'ok':
@@ -2938,7 +3278,7 @@ def run_scallop(args, name, path, variant):
     scl_path = os.path.join(args.dir, name + '.scl')
     with open(scl_path, 'w') as f:
         f.write(scl)
-    r = timed([args.scallop, '-p', 'topkproofs', '-k', k.group(1), scl_path],
+    r = timed([args.scallop, '-p', 'topkproofs', '-k', str(SCALLOP_K), scl_path],
               max(1.0, args.timeout - g['seconds']))
     r['seconds'] += g['seconds']
     if r['status'] == 'ok':
@@ -3881,10 +4221,10 @@ def checker_masses(system, variant):
     the components (`--components`) and writes a model and its properties
     for each, which the checker builds once and answers. The translations
     are not timed, as no system's are, but their seconds over all the
-    engines are bounded by the time limit: past it the engine is not run,
-    and its record is the translator's failure, as one translation past the
-    limit is (translation): an error of dice2prism.py, a chain too large to
-    write and no program handed to the checker."""
+    engines are bounded by translation_bound: past it the engine is not
+    run, and its record is the harness's time-out, as one translation past
+    the bound is (translation): a chain too large to write, no program
+    handed to the checker."""
     def masses(args, label, source, joint, budget):
         j = ['--joint'] if joint else []
         made = CHAINS.setdefault((label, source, joint), {'seconds': 0.0})
@@ -3897,10 +4237,10 @@ def checker_masses(system, variant):
             return made[key]
 
         def slow():
-            if made['seconds'] <= args.timeout:
+            if made['seconds'] <= translation_bound(args):
                 return None
-            return {'status': 'error', 'seconds': 0,
-                    'error': f'dice2prism.py: the translations took {made["seconds"]:.0f} s, beyond the time limit'}
+            return harness_timeout_record('dice2prism.py', f'the translations took {made["seconds"]:.0f} s, past '
+                                                           f'their bound of {translation_bound(args):g} s')
         listing, err = once('listing', lambda: translation(args, 'dice2prism.py', [source, '--components'] + j))
         if err:
             return None, err
@@ -4143,13 +4483,11 @@ def run(args):
             raise SystemExit(f'--pr compares the partition functions of the {" and ".join(["uai", *EXTRA_SUITES])} '
                              f'suite{"s" if EXTRA_SUITES else ""}, and the suite is ' + args.suite)
         if not (args.strategies or args.exact or args.merlin or args.ganak or getattr(args, 'sharpsat_td', '')
-                or args.ace or args.kbs or args.pita or args.aspmc or any(getattr(args, s, '') for s in UAI_SYSTEMS)):
+                or args.ace or args.kbs or args.pita or args.aspmc or args.scallop
+                or any(getattr(args, s, '') for s in UAI_SYSTEMS)):
             raise SystemExit('--pr compares the partition functions of tddlog, --exact, --ace, --merlin, --agrum, '
-                             '--pgmpy, --libdai, --tensorinference, --kbs, --pita, --aspmc, --ganak and '
+                             '--pgmpy, --libdai, --tensorinference, --kbs, --pita, --aspmc, --scallop, --ganak and '
                              '--sharpsat-td, and none is run')
-        if args.scallop:
-            raise SystemExit("--scallop's top-k proofs approximate the queries' probabilities, and --pr compares "
-                             'exact partition functions')
     if args.suite in EXTRA_SUITES:
         if not args.pr:
             raise SystemExit(f'the {args.suite} programs ask no query: their task is the weighted model count (--pr)')
@@ -4199,15 +4537,18 @@ def run(args):
     if args.aspmc:
         systems.append(('aspmc', 'sharpsat-td'))
     if args.scallop:
-        systems += [('scallop', f'topk{k}') for k in args.scallop_k]
+        systems.append(('scallop', SCALLOP_VARIANT))
     if args.dice:
         systems.append(('dice', 'bdd'))
     if getattr(args, 'alea', ''):
         systems.append(('alea', 'cudd'))
     if getattr(args, 'roulette', ''):
-        unknown = [v for v in args.roulette_variants if v not in ('rsdd', 'nocomplement', 'bayes')]
+        unknown = [v for v in args.roulette_variants if v not in ('rsdd', 'nocomplement', 'bayes', 'extexp')]
         if unknown:
-            raise SystemExit(f'--roulette-variants {unknown[0]}: the variants are rsdd, nocomplement and bayes')
+            raise SystemExit(f'--roulette-variants {unknown[0]}: the variants are rsdd, nocomplement, bayes and extexp')
+        if ('extexp' in args.roulette_variants) != bool(getattr(args, 'roulette_extexp', '')):
+            raise SystemExit('--roulette-variants extexp runs the Racket of --roulette-extexp, and that Racket '
+                             'runs only the variant extexp: give both or neither')
         if 'nocomplement' in args.roulette_variants and \
                 not any(roulette_program(args, n, 'nocomplement') for n in names):
             raise SystemExit('--roulette-variants nocomplement changes the query of caesar and of the '
@@ -4227,6 +4568,9 @@ def run(args):
             raise SystemExit('--exact answers the networks, the literature families, tpch, biomine, roulette, geni and uwcse, '
                              'and none is selected')
         systems += [('exact', v) for v in variants]
+        if 'problog1' in variants:
+            # problog_each.py's ProbLog, one query at a time
+            os.environ['BENCH_PROBLOG'] = os.path.abspath(args.problog)
     if args.ace:
         takes_networks(args, spec, names, 'ace')
         networks = [n for n in names if spec[n][1][0] == 'gen_bn.py']
@@ -4269,6 +4613,15 @@ def run(args):
         systems.append(('ganak', 'wmc'))
     if getattr(args, 'sharpsat_td', ''):
         systems += [('sharpsat-td', f'decot{s}') for s in args.sharpsat_td_decot]
+    # --systems: a timed run's job of one system on a program's sizes (the
+    # skip rule is a system's own), the other options as the whole run's
+    chosen = getattr(args, 'systems', [])
+    unknown = [s for s in chosen if s not in {s for s, _ in systems}]
+    if unknown:
+        raise SystemExit(f'--systems {unknown[0]}: not one of the systems the other options run '
+                         f'({", ".join(dict.fromkeys(s for s, _ in systems))})')
+    if chosen:
+        systems = [(s, v) for s, v in systems if s in chosen]
     rotate = getattr(args, 'rotate', None)
     if rotate is not None and len(systems) < 2:
         raise SystemExit('--rotate orders the systems of an instance, and there is one')
@@ -4383,11 +4736,12 @@ def run_job(args, spec, systems, out, lock, names):
             elif system == 'alea':
                 r = run_alea(rargs, name, rpath)
             elif system == 'pita':
-                r = run_pita(args, name, src)
+                own = original(spec[name][1], '') if spec[name][1][0] == 'gen_cplint.py' else None
+                r = run_pita(args, name, src, own)
             elif system == 'aspmc':
                 r = run_aspmc(args, name, src)
             elif system == 'scallop':
-                r = run_scallop(args, name, path, variant)
+                r = run_scallop(args, name, src, variant)
             elif system == 'ace':
                 r = run_ace(rargs, name, rpath, variant)
             elif system == 'merlin':
@@ -4779,9 +5133,8 @@ def main():
     r.add_argument('--pita', default='', help='swipl binary with the cplint pack; empty = not run')
     r.add_argument('--pita-packs', default='', help='pack directory to attach before consulting')
     r.add_argument('--aspmc', default='', help='python with aspmc importable; empty = not run')
-    r.add_argument('--scallop', default='', help='the scli binary; empty = not run')
-    r.add_argument('--scallop-k', default='1000', type=lambda s: s.split(','),
-                   help='the k of each top-k-proofs run, comma separated')
+    r.add_argument('--scallop', default='', help='the scli binary, run with its top-k proofs at the largest k '
+                   '(SCALLOP_K), which are exact; empty = not run')
     r.add_argument('--ace', default='', help="Ace 3.0's directory (ace.jar, inflib.jar, jdom.jar, c2d_linux); "
                    'empty = not run')
     r.add_argument('--ace-variants', type=lambda s: s.split(','),
@@ -4818,7 +5171,14 @@ def main():
                    help="Roulette's runs, comma separated: rsdd (the artifact's, the default), nocomplement "
                    "(caesar's and the translated programs' query without the complement, `(query e #f)`) and "
                    "bayes (a Bayesian network that observes nothing, as the artifact runs its own networks: "
-                   "benchmark/bayes.rkt on its BIF file, one queried variable at a time)")
+                   "benchmark/bayes.rkt on its BIF file, one queried variable at a time) and extexp (the "
+                   "variant rsdd on --roulette-extexp's Roulette, whose rsdd counts with an extended exponent, caesar and the "
+                   "translated programs without the complement, as nocomplement)")
+    r.add_argument('--roulette-extexp', default='',
+                   help="command template, as --roulette's, for Racket with the Roulette whose rsdd counts in a "
+                   "double mantissa and a 64-bit exponent and whose engine returns the count as an exact rational "
+                   "(docs/baselines.md, section 11), so that a probability of evidence below the "
+                   "doubles' range does not answer 0; run by --roulette-variants extexp")
     for opt, ps in PROGRAM_SYSTEMS.items():
         r.add_argument('--' + opt, default='', help=ps['help'] + '; empty = not run')
     r.add_argument('--geni-benchmarks', default=os.path.expanduser('~/local/geni/src/bench/ICFP'),
@@ -4835,9 +5195,13 @@ def main():
     r.add_argument('--pr', action='store_true',
                    help='on --suite uai, the partition function as well: tddlog with --evidence-probability '
                    '--no-queries (P(e) alone), the clique tree with --evidence-probability, Merlin under -t PR '
-                   '(merlin:bte-pr), Ace from the P(e) it prints, ProbLog, PITA and aspmc asked P(e) as a query, and '
+                   '(merlin:bte-pr), Ace from the P(e) it prints, ProbLog, PITA, aspmc and Scallop asked P(e) as a query, and '
                    '--ganak and --sharpsat-td on the weighted CNF of the network')
     r.add_argument('--timeout', type=float, default=300)
+    r.add_argument('--translation-timeout', type=float,
+                   help='seconds the translations of an instance into a system\'s language may take '
+                   '(dice2genfer.py, dice2prism.py and the like, which are not timed): past them the '
+                   'record is the harness\'s time-out, not the system\'s failure; by default 4 x --timeout')
     for p in [g, r]:
         p.add_argument('--suite', choices=['standard', 'indicators', 'large', 'lit', 'ace', 'uai', 'tpch', 'biomine',
                                            'ppl', 'bitblast', 'roulette', 'geni', *EXTRA_SUITES], default='standard')
@@ -4857,6 +5221,8 @@ def main():
         p.add_argument('--only', default='', type=lambda s: s.split(',') if s else [])
     r.add_argument('--no-skip', action='store_true',
                    help='run every size of a program even after a smaller one ran out of time or memory')
+    r.add_argument('--systems', default=[], type=lambda s: s.split(',') if s else [],
+                   help='run only these of the systems the other options give (tddlog, problog, exact, ...)')
     r.add_argument('--rotate', type=int, default=None, help="rotate the systems' order on each instance by a "
                    "checksum of its name plus R (repetition R of a timed run)")
     r.add_argument('--mem-cap', type=memcap.size,
@@ -4882,9 +5248,10 @@ def main():
     t.add_argument('--pr-ref', default='exact:cliquetree,merlin:bte-pr,ganak:wmc',
                    help='references for log10 Z, in order of preference; the column is printed where a record '
                    'holds one (run --pr)')
-    t.add_argument('--approx', default='scallop', type=lambda s: s.split(',') if s else [],
-                   help='systems or system:variant names that approximate; their difference from the '
-                   'reference gets a column of its own instead of entering the exact one (default: scallop)')
+    t.add_argument('--approx', default='', type=lambda s: s.split(',') if s else [],
+                   help='systems or system:variant names that approximate (the records of Scallop\'s top-k '
+                   'proofs at a k below SCALLOP_K, scallop:topk10 say); their difference from the reference '
+                   'gets a column of its own instead of entering the exact one')
     t.set_defaults(fn=table)
     c = sub.add_parser('compare')
     c.add_argument('--before', nargs='+', required=True)

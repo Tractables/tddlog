@@ -32,6 +32,12 @@ the attribution above.
   submodules, as the artifact's `-m rsdd` runs them) and print the
   distribution: `m(K,V)` and `m(K,16)` for a lost message; `res(T)` and
   `res(4)` for a run out of fuel.
+- `hardware-bitwidth.rkt BW`: `hardware.rkt` on the artifact's bit-width
+  ladder (`-p (BW 2 3)`), printing `res(T)` and, for a run out of fuel,
+  `res(L)`, L one past the largest total printed, as gen_roulette.py
+  labels it. The artifact's third ladder (`-p (2 n 3)`, n from 5 to 20)
+  is not run: at bit width 2 `(int n)` saturates at 3, so every n of it
+  is the same program.
 - `bayes.rkt NAME`: the network NAME of the artifact's `benchmark/main.rkt`
   (its .bif file, queried variable and variable order, read from
   main.rkt) under `benchmark/bayes.rkt`, its distribution printed as

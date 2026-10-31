@@ -4,9 +4,9 @@
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use std::hash::BuildHasher;
 
-use super::{Bits, CopyOf, PartId, Sets};
+use super::{Bits, Copies, PartId, Sets};
+use crate::by_hash::ByHash;
 use crate::ground::{AtomId, GLit, GroundProgram, GroundRule};
-use crate::syntax::Term;
 
 /// A table whose readers' links hold clauses.
 pub(super) struct ClauseTable {
@@ -121,17 +121,13 @@ pub(super) fn outside_codes(
 pub(super) fn clause_tables(
     gp: &GroundProgram,
     sets: &Sets,
-    copy: &FxHashMap<(AtomId, usize, PartId), AtomId>,
-    copy_of: &CopyOf,
-    copies: &[(AtomId, AtomId, Vec<Term>)],
-    tie: &[AtomId],
+    copies: &Copies,
 ) -> (Vec<ClauseTable>, Vec<bool>) {
     // The copy whose link holds each atom's formula, per reader unit, with
     // the part it is of.
     let mut first: FxHashMap<(AtomId, usize), (usize, PartId)> = FxHashMap::default();
-    for (i, &(k, var, _)) in copies.iter().enumerate() {
-        if tie[i] == k {
-            let &(_, u, p) = copy_of.get(var).expect("a copy");
+    for (i, &(k, u, p)) in copies.keys.iter().enumerate() {
+        if copies.tie[i] == k {
             first.insert((k, u), (i, p));
         }
     }
@@ -163,7 +159,7 @@ pub(super) fn clause_tables(
     // tables, so the sets are checked until no more become tables.
     let mut table = vec![false; exclusive.len()];
     let mut firing: Vec<Vec<usize>> = vec![Vec::new(); exclusive.len()];
-    let mut inputs = Inputs::new(gp.atoms.len(), sets, copy, copy_of);
+    let mut inputs = Inputs::new(gp.atoms.len(), sets, copies);
     let mut buffers = Buffers::default();
     loop {
         let mut more = false;
@@ -440,14 +436,10 @@ struct Inputs {
 }
 
 impl Inputs {
-    fn new(
-        atoms: usize,
-        sets: &Sets,
-        copy: &FxHashMap<(AtomId, usize, PartId), AtomId>,
-        copy_of: &CopyOf,
-    ) -> Inputs {
+    fn new(atoms: usize, sets: &Sets, copies: &Copies) -> Inputs {
         let exclusive = sets.exclusive;
-        let mut keys: Vec<(usize, usize, PartId)> = copy_of
+        let copy = &copies.copy;
+        let mut keys: Vec<(usize, usize, PartId)> = copies
             .keys
             .iter()
             .map(|&(b, u, p)| match sets.of(b) {
@@ -470,10 +462,7 @@ impl Inputs {
                 size += 2;
                 continue;
             }
-            if sets.bit_atoms[s]
-                .first()
-                .is_some_and(|&b| copy.contains_key(&(b, u, p)))
-            {
+            if copies.in_binary(&sets.bit_atoms[s], u, p) {
                 for (j, &b) in sets.bit_atoms[s].iter().enumerate() {
                     of[copy[&(b, u, p)] as usize] = (i as u32, j as u32);
                 }
@@ -513,15 +502,13 @@ type InputRead = (u32, u32, Option<u32>, Vec<u32>, (u32, u32));
 /// The buffers [`partition`] keeps from one call to the next rather than
 /// allocating per call and growing rule by rule: the rows, the first
 /// `rows_len` of `rows` the call's, each kept in a buffer an earlier call
-/// left; the last row with each hash and per row the one before it with
-/// the same hash; what a rule reads of the inputs and its row; its cube,
+/// left; the rows by hash; what a rule reads of the inputs and its row; its cube,
 /// the cubes end to end with their rows; and the rules that can hold.
 #[derive(Default)]
 struct Buffers {
     rows: Vec<Vec<(u32, Allowed)>>,
     rows_len: usize,
-    row_by: FxHashMap<u64, u32>,
-    same_row: Vec<u32>,
+    row_by: ByHash,
     read: Vec<InputRead>,
     row: Vec<(u32, Allowed)>,
     cube: Vec<GLit>,
@@ -559,7 +546,6 @@ fn partition(
         rows,
         rows_len,
         row_by,
-        same_row,
         read,
         row,
         cube,
@@ -571,12 +557,10 @@ fn partition(
         (usize::MAX, _) => 2,
         (s, present) => present + u32::from(present < exclusive[s].len() as u32 || !table[s]),
     };
-    // The rows, each kept once, and the last row with each hash with per
-    // row the one before it with the same hash, rather than a map keyed by
-    // the rows, which holds a second copy of each.
+    // The rows, each kept once, by hash, rather than a map keyed by the
+    // rows, which holds a second copy of each.
     *rows_len = 0;
     row_by.clear();
-    same_row.clear();
     firing.clear();
     // What the rule at hand allows of each input it reads, kept as the one
     // state a positive literal names and the states negative ones rule out,
@@ -724,17 +708,11 @@ fn partition(
         let r = match last {
             Some(r) if rows[r] == *row => r,
             _ => {
-                let with_hash = row_by
-                    .entry(FxBuildHasher.hash_one(row.as_slice()))
-                    .or_insert(u32::MAX);
-                let mut r = *with_hash;
-                while r != u32::MAX && rows[r as usize] != *row {
-                    r = same_row[r as usize];
-                }
-                if r == u32::MAX {
-                    r = *rows_len as u32;
-                    same_row.push(*with_hash);
-                    *with_hash = r;
+                let (r, new) = row_by.find_or_push(FxBuildHasher.hash_one(row.as_slice()), |r| {
+                    rows[r as usize] == *row
+                });
+                if new {
+                    debug_assert_eq!(r as usize, *rows_len, "a row numbered in order");
                     // The row goes into a buffer of its own, and the row's
                     // buffer takes the one it leaves, cleared for the next
                     // rule.

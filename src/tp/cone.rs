@@ -263,6 +263,23 @@ mod tests {
         (gp, sccs, cones)
     }
 
+    /// The component of the derived atom written `name`.
+    fn component(gp: &GroundProgram, sccs: &[Vec<AtomId>], name: &str) -> usize {
+        sccs.iter()
+            .position(|scc| {
+                scc.iter()
+                    .any(|&x| gp.atoms[x as usize].to_string() == name)
+            })
+            .unwrap_or_else(|| {
+                let all: Vec<String> = sccs
+                    .iter()
+                    .flatten()
+                    .map(|&x| gp.atoms[x as usize].to_string())
+                    .collect();
+                panic!("no component for {name}; the derived atoms are {all:?}")
+            })
+    }
+
     #[test]
     fn a_chain_grows_its_cone_one_fact_at_a_time() {
         // c depends on b depends on a, one fresh fact each. Every body has
@@ -276,21 +293,7 @@ mod tests {
              c :- b, f3.\n\
              query(c).\n",
         );
-        let named = |name: &str| {
-            sccs.iter()
-                .position(|scc| {
-                    scc.iter()
-                        .any(|&x| gp.atoms[x as usize].to_string() == name)
-                })
-                .unwrap_or_else(|| {
-                    let all: Vec<String> = sccs
-                        .iter()
-                        .flatten()
-                        .map(|&x| gp.atoms[x as usize].to_string())
-                        .collect();
-                    panic!("no component for {name}; the derived atoms are {all:?}")
-                })
-        };
+        let named = |name: &str| component(&gp, &sccs, name);
         assert_eq!(cones[named("a")].len(), 2);
         assert_eq!(cones[named("b")].len(), 3);
         assert_eq!(cones[named("c")].len(), 4);
@@ -316,21 +319,7 @@ mod tests {
              b :- f2, g2.\n\
              query(a). query(b).\n",
         );
-        let named = |name: &str| {
-            sccs.iter()
-                .position(|scc| {
-                    scc.iter()
-                        .any(|&x| gp.atoms[x as usize].to_string() == name)
-                })
-                .unwrap_or_else(|| {
-                    let all: Vec<String> = sccs
-                        .iter()
-                        .flatten()
-                        .map(|&x| gp.atoms[x as usize].to_string())
-                        .collect();
-                    panic!("no component for {name}; the derived atoms are {all:?}")
-                })
-        };
+        let named = |name: &str| component(&gp, &sccs, name);
         let (a, b) = (&cones[named("a")], &cones[named("b")]);
         assert_eq!(a.len(), 2);
         assert_eq!(b.len(), 2);

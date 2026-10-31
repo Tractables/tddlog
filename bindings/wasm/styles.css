@@ -645,6 +645,7 @@ footer {
   --s-pita: #7f3f00;
   --s-aspmc: #c4720f;
   --s-psouffle: #a0522d;
+  --s-scallop: #d9480f;
   --s-ace: #1f5fa8;
   --s-merlin: #3b7dd8;
   --s-agrum: #173f73;
@@ -674,6 +675,7 @@ footer {
     --s-pita: #c8742a;
     --s-aspmc: #f2b066;
     --s-psouffle: #d9956a;
+    --s-scallop: #ff8a4c;
     --s-ace: #5b9be8;
     --s-merlin: #8cbcf2;
     --s-agrum: #4a7fd0;
@@ -703,6 +705,7 @@ footer {
   --s-pita: #c8742a;
   --s-aspmc: #f2b066;
   --s-psouffle: #d9956a;
+  --s-scallop: #ff8a4c;
   --s-ace: #5b9be8;
   --s-merlin: #8cbcf2;
   --s-agrum: #4a7fd0;
@@ -730,6 +733,7 @@ footer {
 .s-pita { --s: var(--s-pita); --d: 6 3; --sws: dashed; }
 .s-aspmc { --s: var(--s-aspmc); --d: 1.5 2.5; --sws: dotted; }
 .s-psouffle { --s: var(--s-psouffle); --d: 7 3 2 3; --sws: dashed; }
+.s-scallop { --s: var(--s-scallop); --d: 6 3; --sws: dashed; }
 .s-ace { --s: var(--s-ace); }
 .s-merlin { --s: var(--s-merlin); --d: 6 3; --sws: dashed; }
 .s-agrum { --s: var(--s-agrum); --d: 1.5 2.5; --sws: dotted; }

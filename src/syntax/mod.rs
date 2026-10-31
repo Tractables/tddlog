@@ -3,14 +3,17 @@
 //! Supported: constants (atoms, quoted strings, integers, floats),
 //! variables and compound terms, lists among them (`[a, b | T]`);
 //! probabilistic facts `p::a.` and rules `p::h :- body.`; annotated
-//! disjunctions `p1::a; p2::b :- body.`; negative heads `\+h :- body.`;
-//! disjunctions and parentheses in bodies; negation as failure (`\+` or
-//! `not`); unification `=` and the comparisons of terms; `is` and the
-//! arithmetic comparisons with ProbLog's arithmetic; the list predicates of
-//! ProbLog's `library(lists)`, `between/3`, and `findall/3` over a
-//! deterministic goal; `query/1`, query patterns `query(p(X)) :- body.`,
-//! and `evidence/1,2`. No cut, `call/N` or `assert`. The grounder grounds a
-//! program to the Datalog fragment the rest of the crate reads
+//! disjunctions `p1::a; p2::b :- body.`; flexible probabilities, a term
+//! that the body binds or an arithmetic expression over its variables
+//! (`P::h(X) :- w(X, P).`, `1/W::h(X) :- w(X, W).`); negative heads
+//! `\+h :- body.`; disjunctions and parentheses in bodies; negation as
+//! failure (`\+` or `not`); unification `=` and the comparisons of terms;
+//! `is` and the arithmetic comparisons with ProbLog's arithmetic; the
+//! predicates of ProbLog's `library(lists)` and `library(apply)`,
+//! `between/3`, `call/N` and `findall/3` over a deterministic goal;
+//! `query/1` and `evidence/1,2`, and their patterns `query(p(X)) :-
+//! body.` and `evidence(p(X)) :- body.`. No cut or `assert`. The grounder
+//! grounds a program to the Datalog fragment the rest of the crate reads
 //! ([`crate::ground`]). docs/design.md, "Language", gives the details.
 
 pub mod dice;
@@ -18,7 +21,7 @@ mod lexer;
 pub mod lpad;
 mod parser;
 
-pub use parser::{ParseError, parse_program};
+pub use parser::{Consult, ParseError, consults, parse_program};
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -756,7 +759,18 @@ impl Atom {
 }
 
 impl fmt::Display for Atom {
+    /// As ProbLog prints the atom: an operator's, `scope:a` among them,
+    /// as the term it is.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let operator = match self.args.len() {
+            1 => printed_prefix(&self.name).is_some(),
+            2 => printed_infix(&self.name).is_some(),
+            _ => false,
+        };
+        if operator {
+            let t = Compound::term(self.name.clone(), self.args.iter().cloned().collect());
+            return write_term(f, &t, 1200);
+        }
         write_const(f, &self.name)?;
         if !self.args.is_empty() {
             f.write_str("(")?;
@@ -952,14 +966,19 @@ impl fmt::Display for CmpOp {
     }
 }
 
-/// A predicate of ProbLog's `library(lists)`, or `between/3`, which the
-/// grounder evaluates on ground arguments where the program defines no
-/// predicate of its name and arity.
+/// A predicate of ProbLog's `library(lists)`, or one of its built-ins
+/// `between/3`, `plus/3`, `compare/3` and `is_list/1`, which the grounder
+/// evaluates on ground arguments where the program defines no predicate of
+/// its name and arity. `append/2`, `subset/2`, `intersection/3`,
+/// `union/3`, `subtract/3`, `delete/3` and `flatten/2`, which the library
+/// writes as clauses, give the answers of those clauses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum Builtin {
     Member,
     Memberchk,
+    Select,
     Append,
+    AppendLists,
     Length,
     Nth0,
     Nth1,
@@ -969,63 +988,90 @@ pub(crate) enum Builtin {
     MaxList,
     MinList,
     Sort,
+    Subset,
+    Intersection,
+    Union,
+    Subtract,
+    Delete,
+    Flatten,
     Between,
+    Plus,
+    Compare,
+    IsList,
+    EnumGroups,
 }
 
+/// Each built-in, by its name and arity.
+const BUILTINS: [(&str, usize, Builtin); 25] = [
+    ("member", 2, Builtin::Member),
+    ("memberchk", 2, Builtin::Memberchk),
+    ("select", 3, Builtin::Select),
+    ("append", 3, Builtin::Append),
+    ("append", 2, Builtin::AppendLists),
+    ("length", 2, Builtin::Length),
+    ("nth0", 3, Builtin::Nth0),
+    ("nth1", 3, Builtin::Nth1),
+    ("last", 2, Builtin::Last),
+    ("reverse", 2, Builtin::Reverse),
+    ("sum_list", 2, Builtin::SumList),
+    ("max_list", 2, Builtin::MaxList),
+    ("min_list", 2, Builtin::MinList),
+    ("sort", 2, Builtin::Sort),
+    ("subset", 2, Builtin::Subset),
+    ("intersection", 3, Builtin::Intersection),
+    ("union", 3, Builtin::Union),
+    ("subtract", 3, Builtin::Subtract),
+    ("delete", 3, Builtin::Delete),
+    ("flatten", 2, Builtin::Flatten),
+    ("between", 3, Builtin::Between),
+    ("plus", 3, Builtin::Plus),
+    ("compare", 3, Builtin::Compare),
+    ("is_list", 1, Builtin::IsList),
+    ("enum_groups", 3, Builtin::EnumGroups),
+];
+
 impl Builtin {
+    fn entry(self) -> &'static (&'static str, usize, Builtin) {
+        BUILTINS.iter().find(|e| e.2 == self).expect("listed")
+    }
+
     pub(crate) fn name(self) -> &'static str {
-        match self {
-            Builtin::Member => "member",
-            Builtin::Memberchk => "memberchk",
-            Builtin::Append => "append",
-            Builtin::Length => "length",
-            Builtin::Nth0 => "nth0",
-            Builtin::Nth1 => "nth1",
-            Builtin::Last => "last",
-            Builtin::Reverse => "reverse",
-            Builtin::SumList => "sum_list",
-            Builtin::MaxList => "max_list",
-            Builtin::MinList => "min_list",
-            Builtin::Sort => "sort",
-            Builtin::Between => "between",
-        }
+        self.entry().0
     }
 
     pub(crate) fn arity(self) -> usize {
-        match self {
-            Builtin::Append | Builtin::Nth0 | Builtin::Nth1 | Builtin::Between => 3,
-            _ => 2,
-        }
+        self.entry().1
     }
 
     /// The built-in `name/arity`.
     pub(crate) fn of(name: &str, arity: usize) -> Option<Builtin> {
-        let b = match name {
-            "member" => Builtin::Member,
-            "memberchk" => Builtin::Memberchk,
-            "append" => Builtin::Append,
-            "length" => Builtin::Length,
-            "nth0" => Builtin::Nth0,
-            "nth1" => Builtin::Nth1,
-            "last" => Builtin::Last,
-            "reverse" => Builtin::Reverse,
-            "sum_list" => Builtin::SumList,
-            "max_list" => Builtin::MaxList,
-            "min_list" => Builtin::MinList,
-            "sort" => Builtin::Sort,
-            "between" => Builtin::Between,
-            _ => return None,
-        };
-        (b.arity() == arity).then_some(b)
+        BUILTINS
+            .iter()
+            .find(|e| e.0 == name && e.1 == arity)
+            .map(|e| e.2)
+    }
+
+    /// Whether `name` is the name of a predicate of `library(lists)` the
+    /// grounder evaluates.
+    pub(crate) fn in_lists(name: &str) -> bool {
+        BUILTINS.iter().any(|e| {
+            e.0 == name
+                && !matches!(
+                    e.2,
+                    Builtin::Between | Builtin::Plus | Builtin::Compare | Builtin::IsList
+                )
+        })
     }
 
     /// Whether the built-in runs with the arguments bound that `bound`
     /// flags: the list it reads (the third of `append/3`'s or both others),
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,
-    /// or the bounds of `between/3`. It then binds the others.
+    /// the two lists or the list and the item the set predicates and
+    /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, or the
+    /// terms `compare/3` orders. It then binds the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
-            Builtin::Member | Builtin::Memberchk | Builtin::Nth0 => bound[1],
+            Builtin::Member | Builtin::Memberchk | Builtin::Select | Builtin::Nth0 => bound[1],
             Builtin::Nth1 => bound[0] && bound[1],
             Builtin::Length
             | Builtin::Last
@@ -1033,9 +1079,20 @@ impl Builtin {
             | Builtin::MaxList
             | Builtin::MinList
             | Builtin::Reverse
-            | Builtin::Sort => bound[0],
+            | Builtin::Sort
+            | Builtin::AppendLists
+            | Builtin::Flatten
+            | Builtin::IsList
+            | Builtin::EnumGroups => bound[0],
             Builtin::Append => bound[2] || (bound[0] && bound[1]),
-            Builtin::Between => bound[0] && bound[1],
+            Builtin::Subset
+            | Builtin::Intersection
+            | Builtin::Union
+            | Builtin::Subtract
+            | Builtin::Delete
+            | Builtin::Between => bound[0] && bound[1],
+            Builtin::Plus => bound.iter().filter(|&&b| b).count() >= 2,
+            Builtin::Compare => bound[1] && bound[2],
         }
     }
 }
@@ -1046,8 +1103,9 @@ impl fmt::Display for Builtin {
     }
 }
 
-/// `findall(Template, Goal, Result)` as read: the goal's alternatives,
-/// each a conjunction. The grounder lowers it to a [`Collect`].
+/// `findall(Template, Goal, Result)` as read, or `all/3`: the goal's
+/// alternatives, each a conjunction. The grounder lowers it to a
+/// [`Collect`].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Findall {
     pub(crate) template: Term,
@@ -1056,6 +1114,8 @@ pub(crate) struct Findall {
     /// Whether a disjunction of the goal comes after another literal
     /// ([`Program::interleaved`]).
     pub(crate) interleaved: bool,
+    /// all/3: each solution once, and no empty list.
+    pub(crate) all: bool,
 }
 
 /// A findall lowered by the grounder: `result` is the list of the template
@@ -1068,6 +1128,8 @@ pub(crate) struct Collect {
     pub(crate) arity: usize,
     pub(crate) shared: Vec<Term>,
     pub(crate) result: Term,
+    /// all/3: each solution once, and no empty list.
+    pub(crate) all: bool,
     /// The findall as written, for the errors that name it.
     pub(crate) text: Arc<str>,
 }
@@ -1145,7 +1207,7 @@ impl fmt::Display for Literal {
                 write_term(f, e, 699)
             }
             Literal::Findall(fa) => {
-                f.write_str("findall(")?;
+                f.write_str(if fa.all { "all(" } else { "findall(" })?;
                 write_term(f, &fa.template, 999)?;
                 f.write_str(",(")?;
                 for (k, alt) in fa.goal.iter().enumerate() {
@@ -1177,15 +1239,37 @@ impl fmt::Display for Literal {
     }
 }
 
+/// A head's probability: a number, or a flexible probability, a term whose
+/// variables the clause binds (`P::h(X) :- w(X, P).`, `1/W::h(X) :- w(X,
+/// W).`), which is a number in each ground instance of the clause.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum Annotation {
+    Number(f64),
+    Flexible(Term),
+}
+
 /// One head alternative of a clause with its probability annotation.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct HeadChoice {
     /// `None` for a deterministic head.
-    pub(crate) prob: Option<f64>,
+    pub(crate) prob: Option<Annotation>,
     pub(crate) atom: Atom,
     /// A negative head literal `\+atom`: when the body holds, the atom is
     /// made false (ProbLog's "negative head literals").
     pub(crate) negated: bool,
+}
+
+impl HeadChoice {
+    /// The head's mass among its clause's heads: its probability, or one
+    /// for a head without one; `None` for a flexible probability, which
+    /// only a ground instance of the clause knows.
+    pub(crate) fn mass(&self) -> Option<f64> {
+        match &self.prob {
+            None => Some(1.0),
+            Some(Annotation::Number(p)) => Some(*p),
+            Some(Annotation::Flexible(_)) => None,
+        }
+    }
 }
 
 /// A clause: one or more (annotated) heads and a body.
@@ -1222,8 +1306,13 @@ impl fmt::Display for Clause {
             if i > 0 {
                 f.write_str("; ")?;
             }
-            if let Some(p) = h.prob {
-                write!(f, "{p}::")?;
+            match &h.prob {
+                None => {}
+                Some(Annotation::Number(p)) => write!(f, "{p}::")?,
+                Some(Annotation::Flexible(t)) => {
+                    write_term(f, t, 999)?;
+                    f.write_str("::")?;
+                }
             }
             if h.negated {
                 f.write_str("\\+")?;
@@ -1244,11 +1333,14 @@ impl fmt::Display for Clause {
 }
 
 /// `query(pattern) :- body.`: every instance of `pattern` under a grounding
-/// of `body` is a query.
+/// of `body` is a query; `evidence(pattern, v) :- body.` makes each one
+/// evidence instead.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct QueryRule {
     pub(crate) pattern: Atom,
+    /// The query's sign (`query(\+a)`), or the evidence's value.
     pub(crate) positive: bool,
+    pub(crate) evidence: bool,
     pub(crate) body: Vec<Literal>,
 }
 
@@ -1268,6 +1360,13 @@ pub struct Program {
     /// which Prolog's resolution tries them (`a(X), (b ; c)` tries `b`
     /// then `c` for each `X`).
     pub(crate) interleaved: Vec<u32>,
+    /// `:- unknown(fail).`: a predicate without clauses is false, as
+    /// ProbLog reads it under that flag, rather than refused.
+    pub(crate) unknown_fails: bool,
+    /// `:- use_module(library(aggregate)).`: the predicates of that
+    /// library, which it writes as clauses (`avg/2`, `sum/2`, `min/2` and
+    /// `max/2`), are the library's where the program does not define them.
+    pub(crate) aggregate: bool,
 }
 
 impl Program {
@@ -1276,13 +1375,19 @@ impl Program {
     /// depends on is left out (`--no-queries`).
     pub fn without_queries(mut self) -> Program {
         self.queries.clear();
-        self.query_rules.clear();
+        self.query_rules.retain(|r| r.evidence);
         self
     }
 }
 
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.unknown_fails {
+            writeln!(f, ":- unknown(fail).")?;
+        }
+        if self.aggregate {
+            writeln!(f, ":- use_module(library(aggregate)).")?;
+        }
         for c in &self.clauses {
             writeln!(f, "{c}")?;
         }
@@ -1297,8 +1402,12 @@ impl fmt::Display for Program {
             }
         }
         for r in &self.query_rules {
-            let sign = if r.positive { "" } else { "\\+" };
-            write!(f, "query({sign}{}) :- ", r.pattern)?;
+            if r.evidence {
+                write!(f, "evidence({},{}) :- ", r.pattern, r.positive)?;
+            } else {
+                let sign = if r.positive { "" } else { "\\+" };
+                write!(f, "query({sign}{}) :- ", r.pattern)?;
+            }
             for (i, l) in r.body.iter().enumerate() {
                 if i > 0 {
                     f.write_str(", ")?;

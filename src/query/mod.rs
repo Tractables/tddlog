@@ -20,7 +20,8 @@ use tididi::vtree::{VarId, VtreeIdx};
 use crate::eval::{Count, Counted, Counts, Probabilities, Value};
 use crate::ground::{AtomId, GroundProgram};
 use crate::tp::{
-    CompileError, Compiled, Formula, NegationSource, Negations, ScopeTable, TddBackend, VtreeScope,
+    CompileError, Compiled, Formula, NegationSource, Negations, ScopeTable, TddBackend, Template,
+    VtreeScope,
 };
 use walk::EvidenceWalk;
 
@@ -234,6 +235,20 @@ impl QueryEvaluation {
         }
     }
 
+    /// The phase, not yet run, with an evidence walk that puts nothing off
+    /// (`walk`'s module doc).
+    pub(crate) fn putting_nothing_off(mut self) -> Self {
+        self.walk.put_nothing_off();
+        self
+    }
+
+    /// Whether the phase may start over with a walk that puts nothing off
+    /// ([`crate::evaluation::Evaluation::walk_again`]): its walk sums out,
+    /// has put items off, and holds no formula taken from the compile.
+    pub(crate) fn walks_again(&self) -> bool {
+        self.walk.walks_again() && !self.took
+    }
+
     /// The steps of the phase finished, and all of them: the evidence
     /// walk's joins, then the queries answered.
     pub(crate) fn progress(&self) -> (usize, usize) {
@@ -313,369 +328,95 @@ impl QueryEvaluation {
             .engine
             .limits()
             .edit(|c| c.with_sparse_route(QUERY_ROUTE));
-        let sizes = &mut self.sizes;
+        let QueryEvaluation {
+            weights,
+            scopes,
+            indicator_of,
+            impossible,
+            walk,
+            evidence,
+            mass,
+            counted,
+            out,
+            pending_query,
+            sizes,
+            ..
+        } = self;
         // A result that exceeded the previous watch was saved. It may only
         // feed further operations once the new allowance admits it.
         sizes.record(sizes.largest, watch)?;
-        if self.impossible {
+        if *impossible {
             return Ok((None, *sizes));
         }
-        let global_weights = &self.weights;
-        let weights_for = |scope: &VtreeScope| match scope.vars() {
-            None => global_weights.clone(),
-            Some(vars) => global_weights.restrict(vars),
+        let scopes = Scopes {
+            backend,
+            compiled,
+            table: scopes,
         };
-        // The variables an atom's formula may mention: its component's scope for
-        // a derived atom, the fact itself for a fact, whatever the projection
-        // (a literal on the whole program costs a level per variable to build
-        // and to count, for each query of a fact). `None` is the whole
-        // program, which absorbs everything.
-        let atom_vars = |a: AtomId| -> Option<Vec<VarId>> {
-            if compiled.formulas[a as usize].is_some() {
-                compiled.scope_of(a).vars().map(<[VarId]>::to_vec)
-            } else {
-                compiled.var_of[a as usize].map(|v| vec![v])
-            }
-        };
-        // Scopes the query phase builds are interned like the compiler's, and
-        // the compiler's are put in first: two formulas end up on one vtree
-        // allocation whenever they hold the same variables, which is what makes
-        // an embed between them free.
-        let scopes = &self.scopes;
-        // The scope over `vars`, ascending and distinct.
-        let scope_over = |vars: &[VarId]| -> Result<VtreeScope, CompileError> {
-            if vars.is_empty() {
-                return Ok(backend.global());
-            }
-            if let Some(scope) = scopes.borrow().get(vars) {
-                return Ok(scope);
-            }
-            let scope = backend.scope(vars)?;
-            scopes.borrow_mut().insert(&scope);
-            Ok(scope)
-        };
-        // The scope over `vars` in any order; `None` is the whole program.
-        let scope_for = |vars: Option<Vec<VarId>>| -> Result<VtreeScope, CompileError> {
-            let Some(mut vars) = vars else {
-                return Ok(backend.global());
-            };
-            vars.sort_unstable();
-            vars.dedup();
-            scope_over(&vars)
-        };
-        // The smallest scope an atom's formula already lives on.
-        let own_scope = |a: AtomId| -> Result<VtreeScope, CompileError> {
-            if compiled.formulas[a as usize].is_some() {
-                Ok(compiled.scope_of(a).clone())
-            } else {
-                scope_for(atom_vars(a))
-            }
-        };
-
-        if !self.walk.done {
+        if !walk.done {
             let t = Instant::now();
-            let walked = self
-                .walk
-                .run(backend, compiled, &own_scope, &scope_over, sizes, watch);
+            let walked = walk.run(backend, compiled, &scopes, sizes, watch);
             sizes.walk_seconds += t.elapsed().as_secs_f64();
-            self.evidence = walked?;
+            *evidence = walked?;
         }
-        // A query atom with a variable of its own on the evidence's scope, a
-        // fact or an atom read through an indicator, is a literal of the
-        // evidence formula: `P(q | e) = WMC(e AND x) / WMC(e)`, and one pass
-        // down the evidence formula gives that count for every variable at
-        // once ([`crate::eval::Counted::with_literal`]). With indicators the
-        // evidence holds every link, and the formula of a query is counted
-        // against all of it otherwise, once per query.
-        let indicator_of = &self.indicator_of;
-        let literal_of = |a: AtomId, scope: &VtreeScope| -> Option<usize> {
-            let fact = if gp.is_fact(a) {
-                a
-            } else {
-                *indicator_of.get(&a)?
-            };
-            let v = compiled.var_of[fact as usize]?;
-            match scope.vars() {
-                None => Some(v.0 as usize),
-                Some(vars) => vars.iter().position(|&w| w == v).map(|i| i + 1),
+        let evidence = match evidence {
+            None => None,
+            Some((e, scope)) => {
+                // The evidence's weights, restricted to its scope once: every
+                // literal query reads them.
+                let w = weights.restrict(scope.vars());
+                sizes.evidence = backend.size(e);
+                sizes.evidence_implicit = backend.implicit_size(e);
+                sizes.record(sizes.evidence, None)?;
+                if mass.is_none() {
+                    let t = Instant::now();
+                    *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
+                    sizes.count_seconds += t.elapsed().as_secs_f64();
+                }
+                let mass = mass.unwrap();
+                // Only a mass that is zero as a count: in a float the
+                // probability of a thousand observations is zero too.
+                if mass.is_zero() {
+                    sizes.routes = counted
+                        .as_ref()
+                        .map(CountedEvidence::routes)
+                        .unwrap_or_default();
+                    return Ok((None, *sizes));
+                }
+                Some(Evidence {
+                    e,
+                    scope,
+                    weights: w,
+                    mass,
+                })
             }
         };
-        // The evidence's weights, restricted to its scope once: every literal
-        // query reads them.
-        let e_w = self.evidence.as_ref().map(|(_, scope)| weights_for(scope));
-        if let Some((e, scope)) = &self.evidence {
-            let w = e_w.as_ref().unwrap();
-            sizes.evidence = backend.size(e);
-            sizes.evidence_implicit = backend.implicit_size(e);
-            sizes.record(sizes.evidence, None)?;
-            if self.mass.is_none() {
-                // The mass is the count's pass up, with or without queries:
-                // its levels under powers of two keep a count in floats that
-                // the engine's evaluation, one range for the whole diagram,
-                // would take again in `Count`s. The queries read the pass
-                // down too, which is taken when one reads it.
-                let t = Instant::now();
-                if e.has_marginal_level() {
-                    // The walk summed the evidence out as it built it: its
-                    // value is the mass, a scaled float.
-                    let value = backend
-                        .engine
-                        .weighted_value(e)?
-                        .expect("a summed-out evidence formula carries its weights");
-                    let mass = value
-                        .as_scaled()
-                        .expect("the walk sums out in scaled floats");
-                    self.mass = Some(match mass.mantissa() {
-                        0.0 => Count::ZERO,
-                        m => Count::new(m).shifted(mass.exponent()),
-                    });
-                } else {
-                    if self.counted.is_none() {
-                        let c = CountedEvidence::new(e, scope, w, &mut sizes.recounts)?;
-                        sizes.grid_pairs = c.counted.grid_pairs();
-                        self.counted = Some(c);
-                    }
-                    self.mass = Some(self.counted.as_ref().unwrap().total(e));
-                }
-                sizes.count_seconds += t.elapsed().as_secs_f64();
-            }
-            // Only a mass that is zero as a count: in a float the
-            // probability of a thousand observations is zero too.
-            if self.mass.unwrap().is_zero() {
-                sizes.routes = self
-                    .counted
-                    .as_ref()
-                    .map(CountedEvidence::routes)
-                    .unwrap_or_default();
-                return Ok((None, *sizes));
-            }
-        }
-        let counted = &mut self.counted;
-        let evidence = self
-            .evidence
-            .as_ref()
-            .map(|(e, scope)| (e, scope, self.mass.unwrap()));
-        // The stored formula of a query atom is counted as it is. A query of
-        // the other polarity is `1 - m` from the stored formula's count `m`,
-        // or where that is too small to keep its digits, the count of the
-        // complement's formula (`eval::complement`). A fact's literal and a
-        // literal of the evidence are counted in the polarity asked.
-        let out = &mut self.out;
-        // A query that is not a literal of the evidence is answered by
-        // counting `q AND e` without building it (`eval::conjunction_count`):
-        // each query's formula is walked against the counted evidence from
-        // the level of its cone, its variables the evidence does not hold
-        // summed inside it. Conjoining each query with the whole evidence
-        // formula, minimizing and counting the product is most of the run
-        // on networks with many queries.
+        let mut answers = Answers {
+            gp,
+            backend,
+            compiled,
+            scopes: &scopes,
+            weights,
+            indicator_of,
+            watch,
+            evidence,
+            counted,
+            pending_query,
+            sizes,
+        };
         for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
-            // A literal's count reads the pass down, walked by the first
-            // literal under each level.
-            let t = Instant::now();
-            let literal = match (id, &evidence, counted.as_mut()) {
-                (Some(a), Some((e, e_scope, mass)), Some(c)) => literal_of(*a, e_scope)
-                    .map(|x| -> Result<f64, tididi::OperationError> {
-                        let var = VarId(x as u32);
-                        let leaf = e
-                            .vtree()
-                            .leaf_of(var)
-                            .expect("a scope's variables are its leaves");
-                        let w = e_w.as_ref().unwrap();
-                        loop {
-                            let p = match &c.counted {
-                                Counts::Plain(plain) => {
-                                    literal_ratio(plain, e, leaf, var, *positive, w, *mass)?
-                                }
-                                Counts::Wide(wide) => {
-                                    literal_ratio(wide, e, leaf, var, *positive, w, *mass)?
-                                }
-                            };
-                            match p {
-                                Some(p) => break Ok(p),
-                                None => c.widen(&mut sizes.recounts)?,
-                            }
-                        }
-                    })
-                    .transpose()?,
-                _ => None,
-            };
-            if literal.is_some() {
-                sizes.count_seconds += t.elapsed().as_secs_f64();
-            }
-            let p = match (id, literal) {
-                (None, _) => {
+            let p = match id {
+                None => {
                     if *positive {
                         0.0
                     } else {
                         1.0
                     }
                 }
-                (Some(_), Some(p)) => p,
-                // Counted by the compile where it dropped the formula.
-                (Some(a), None) if compiled.for_queries.counted.contains_key(a) => {
-                    let (atom, negation) = compiled.for_queries.counted[a];
-                    if *positive { atom } else { negation }
-                }
-                (Some(a), None) => {
-                    // A query answered through a template counts the
-                    // template's formula under the probabilities it gives.
-                    let template = compiled.for_queries.templates.get(a);
-                    let a = &template.map_or(*a, |t| t.atom);
-                    let weights_of = |scope: &VtreeScope| {
-                        let w = weights_for(scope);
-                        match template {
-                            Some(t) => t.weights(&w, &compiled.var_of, scope),
-                            None => w,
-                        }
-                    };
-                    let stored = compiled.formulas[*a as usize].as_deref();
-                    // The polarity of the formula counted first: the stored
-                    // formula's, or for a fact the polarity asked.
-                    let first = if stored.is_some() {
-                        compiled.stored_positive(*a)
-                    } else {
-                        *positive
-                    };
-                    let pending_query = &mut self.pending_query;
-                    // `P(l | e)` for the literal `l` of polarity `polarity` on
-                    // `a`, from the formula of `l`: the stored formula where
-                    // its polarity is `polarity`, its negation otherwise, a
-                    // literal for a fact.
-                    let mut count = |polarity: bool| -> Result<f64, CompileError> {
-                        let t = Instant::now();
-                        let mass = match &evidence {
-                            None => {
-                                // Nothing to conjoin: the formula is counted where it
-                                // was built.
-                                if pending_query
-                                    .as_ref()
-                                    .is_none_or(|p| p.positive != polarity)
-                                {
-                                    sizes.products += 1;
-                                    let formula = match stored {
-                                        Some(_) if compiled.stored_positive(*a) == polarity => None,
-                                        _ => {
-                                            let scope = own_scope(*a)?;
-                                            Some((
-                                                compiled.literal_formula(
-                                                    backend,
-                                                    &scope,
-                                                    *a,
-                                                    polarity,
-                                                    (&mut sizes.negations, NegationSource::Query),
-                                                )?,
-                                                scope,
-                                            ))
-                                        }
-                                    };
-                                    *pending_query = Some(PendingQuery {
-                                        formula,
-                                        positive: polarity,
-                                    });
-                                }
-                                let (f, scope) = match &pending_query.as_ref().unwrap().formula {
-                                    Some((f, scope)) => (f, scope),
-                                    None => (
-                                        stored.expect("the stored polarity's formula is stored"),
-                                        compiled.scope_of(*a),
-                                    ),
-                                };
-                                sizes.record(backend.size(f), watch)?;
-                                crate::eval::mass(
-                                    backend.engine,
-                                    f,
-                                    &weights_of(scope),
-                                    &mut sizes.recounts,
-                                )?
-                                .to_f64()
-                            }
-                            Some((e, e_scope, e_mass)) => {
-                                sizes.products += 1;
-                                let c = counted
-                                    .as_mut()
-                                    .expect("the evidence is counted where a query reads it");
-                                // The query formula is counted where it was built; the
-                                // walk reads its embedding onto the evidence's scope
-                                // off the map of its variables.
-                                let (own, literal);
-                                let (q, q_scope) = match stored {
-                                    Some(f) if compiled.stored_positive(*a) == polarity => {
-                                        (f, compiled.scope_of(*a))
-                                    }
-                                    _ => {
-                                        own = own_scope(*a)?;
-                                        literal = compiled.literal_formula(
-                                            backend,
-                                            &own,
-                                            *a,
-                                            polarity,
-                                            (&mut sizes.negations, NegationSource::Query),
-                                        )?;
-                                        (&literal, &own)
-                                    }
-                                };
-                                let q_w = weights_of(q_scope);
-                                let e_vtree = e.vtree();
-                                let leaf_in_e = |v: VarId| {
-                                    let global =
-                                        q_scope.vars().map_or(v, |vars| vars[v.0 as usize - 1]);
-                                    let local = e_scope.local_of(global)?;
-                                    Some(
-                                        e_vtree
-                                            .leaf_of(local)
-                                            .expect("a scope's variables are its leaves"),
-                                    )
-                                };
-                                // The walk's multiply-adds charged to the engine's
-                                // work clock, so a trial's work budget covers them,
-                                // once: a walk again in counts is not charged.
-                                let host =
-                                    |units: u64| backend.engine.limits().poll_host_work(units);
-                                let mut charged = false;
-                                loop {
-                                    let p = match &c.counted {
-                                        Counts::Plain(plain) => joint_ratio(
-                                            e,
-                                            plain,
-                                            &c.spans,
-                                            q,
-                                            &q_w,
-                                            &leaf_in_e,
-                                            *e_mass,
-                                            &mut charged,
-                                            &host,
-                                        )?,
-                                        Counts::Wide(wide) => joint_ratio(
-                                            e,
-                                            wide,
-                                            &c.spans,
-                                            q,
-                                            &q_w,
-                                            &leaf_in_e,
-                                            *e_mass,
-                                            &mut charged,
-                                            &host,
-                                        )?,
-                                    };
-                                    match p {
-                                        Some(p) => break p,
-                                        None => c.widen(&mut sizes.recounts)?,
-                                    }
-                                }
-                            }
-                        };
-                        sizes.product_seconds += t.elapsed().as_secs_f64();
-                        Ok(mass)
-                    };
-                    let m = count(first)?;
-                    if first == *positive {
-                        m
-                    } else {
-                        crate::eval::complement(m, || count(*positive))?
-                    }
-                }
+                Some(a) => answers.probability(*a, *positive)?,
             };
-            self.pending_query = None;
+            *answers.pending_query = None;
+            backend.kept();
             out.push(QueryResult {
                 atom: atom.clone(),
                 positive: *positive,
@@ -688,6 +429,360 @@ impl QueryEvaluation {
             .unwrap_or_default();
         Ok((Some(std::mem::take(out)), *sizes))
     }
+}
+
+/// The scopes the query phase builds formulas on, interned like the
+/// compiler's, and the compiler's put in first: two formulas end up on one
+/// vtree allocation whenever they hold the same variables, which is what
+/// makes an embed between them free.
+struct Scopes<'a> {
+    backend: &'a TddBackend<'a>,
+    compiled: &'a Compiled,
+    table: &'a RefCell<ScopeTable>,
+}
+
+impl Scopes<'_> {
+    /// The scope over `vars`, ascending and distinct.
+    fn over(&self, vars: &[VarId]) -> Result<VtreeScope, CompileError> {
+        if vars.is_empty() {
+            return Ok(self.backend.global());
+        }
+        if let Some(scope) = self.table.borrow().get(vars) {
+            return Ok(scope);
+        }
+        let scope = self.backend.scope(vars)?;
+        self.table.borrow_mut().insert(&scope);
+        Ok(scope)
+    }
+
+    /// The smallest scope the formula of atom `a` lives on: its component's
+    /// for a derived atom, the fact itself for a fact, whatever the
+    /// projection (a literal on the whole program costs a level per
+    /// variable to build and to count, for each query of a fact), and the
+    /// whole program for an atom of neither.
+    fn own(&self, a: AtomId) -> Result<VtreeScope, CompileError> {
+        if self.compiled.formulas[a as usize].is_some() {
+            return Ok(self.compiled.scope_of(a).clone());
+        }
+        match self.compiled.var_of[a as usize] {
+            Some(v) => self.over(&[v]),
+            None => Ok(self.backend.global()),
+        }
+    }
+}
+
+/// The evidence formula on its scope, with its weights there and its mass.
+struct Evidence<'a> {
+    e: &'a Tdd,
+    scope: &'a VtreeScope,
+    weights: Probabilities,
+    mass: Count,
+}
+
+/// The mass of the evidence formula `e` on `scope` under its weights `w`.
+/// The mass is the count's pass up, with or without queries: its levels
+/// under powers of two keep a count in floats that the engine's
+/// evaluation, one range for the whole diagram, would take again in
+/// `Count`s. The count is kept in `counted`, as the queries read its pass
+/// down too, which is taken when one reads it.
+fn evidence_mass(
+    backend: &TddBackend,
+    e: &Tdd,
+    scope: &VtreeScope,
+    w: &Probabilities,
+    counted: &mut Option<CountedEvidence>,
+    sizes: &mut QuerySizes,
+) -> Result<Count, CompileError> {
+    if e.has_marginal_level() {
+        // The walk summed the evidence out as it built it: its value is the
+        // mass, a scaled float.
+        let value = backend
+            .engine
+            .weighted_value(e)?
+            .expect("a summed-out evidence formula carries its weights");
+        let mass = value
+            .as_scaled()
+            .expect("the walk sums out in scaled floats");
+        return Ok(match mass.mantissa() {
+            0.0 => Count::ZERO,
+            m => Count::new(m).shifted(mass.exponent()),
+        });
+    }
+    if counted.is_none() {
+        let c = CountedEvidence::new(e, scope, w, &mut sizes.recounts)?;
+        sizes.grid_pairs = c.counted.grid_pairs();
+        *counted = Some(c);
+    }
+    Ok(counted.as_ref().unwrap().total(e))
+}
+
+/// What answering the queries of one run reads, and what it keeps between
+/// runs: the counted evidence, a query's formula built and the sizes.
+///
+/// A query atom with a variable of its own on the evidence's scope, a fact
+/// or an atom read through an indicator, is a literal of the evidence
+/// formula: `P(q | e) = WMC(e AND x) / WMC(e)`, and one pass down the
+/// evidence formula gives that count for every variable at once
+/// ([`crate::eval::Counted::with_literal`]). With indicators the evidence
+/// holds every link, and the formula of a query is counted against all of
+/// it otherwise, once per query.
+///
+/// A query that is not a literal of the evidence is answered by counting
+/// `q AND e` without building it (`eval::conjunction_count`): each query's
+/// formula is walked against the counted evidence from the level of its
+/// cone, its variables the evidence does not hold summed inside it.
+/// Conjoining each query with the whole evidence formula, minimizing and
+/// counting the product is most of the run on networks with many queries.
+struct Answers<'a> {
+    gp: &'a GroundProgram,
+    backend: &'a TddBackend<'a>,
+    compiled: &'a Compiled,
+    scopes: &'a Scopes<'a>,
+    weights: &'a Probabilities,
+    indicator_of: &'a FxHashMap<AtomId, AtomId>,
+    watch: Option<usize>,
+    evidence: Option<Evidence<'a>>,
+    counted: &'a mut Option<CountedEvidence>,
+    pending_query: &'a mut Option<PendingQuery>,
+    sizes: &'a mut QuerySizes,
+}
+
+impl Answers<'_> {
+    /// `P(l | e)` for the literal `l` of polarity `positive` on `a`.
+    ///
+    /// The stored formula of a query atom is counted as it is. A query of
+    /// the other polarity is `1 - m` from the stored formula's count `m`,
+    /// or where that is too small to keep its digits, the count of the
+    /// complement's formula (`eval::complement`). A fact's literal and a
+    /// literal of the evidence are counted in the polarity asked.
+    fn probability(&mut self, a: AtomId, positive: bool) -> Result<f64, CompileError> {
+        // A literal's count reads the pass down, walked by the first
+        // literal under each level.
+        let t = Instant::now();
+        if let Some(p) = self.literal(a, positive)? {
+            self.sizes.count_seconds += t.elapsed().as_secs_f64();
+            return Ok(p);
+        }
+        // Counted by the compile where it dropped the formula.
+        if let Some(&(atom, negation)) = self.compiled.for_queries.counted.get(&a) {
+            return Ok(if positive { atom } else { negation });
+        }
+        // A query answered through a template counts the template's formula
+        // under the probabilities it gives.
+        let template = self.compiled.for_queries.templates.get(&a);
+        let a = template.map_or(a, |t| t.atom);
+        // The polarity of the formula counted first: the stored formula's,
+        // or for a fact the polarity asked.
+        let first = if self.compiled.formulas[a as usize].is_some() {
+            self.compiled.stored_positive(a)
+        } else {
+            positive
+        };
+        let m = self.count(a, template, first)?;
+        if first == positive {
+            Ok(m)
+        } else {
+            crate::eval::complement(m, || self.count(a, template, positive))
+        }
+    }
+
+    /// `P(l | e)` for the literal `l` of polarity `positive` on `a`, where
+    /// `a` has a variable of its own on the evidence's scope.
+    fn literal(&mut self, a: AtomId, positive: bool) -> Result<Option<f64>, CompileError> {
+        let Some(ev) = &self.evidence else {
+            return Ok(None);
+        };
+        let fact = if self.gp.is_fact(a) {
+            a
+        } else if let Some(&copy) = self.indicator_of.get(&a) {
+            copy
+        } else {
+            return Ok(None);
+        };
+        let Some(v) = self.compiled.var_of[fact as usize] else {
+            return Ok(None);
+        };
+        let local = match ev.scope.vars() {
+            None => Some(v.0 as usize),
+            Some(vars) => vars.iter().position(|&w| w == v).map(|i| i + 1),
+        };
+        let (Some(x), Some(c)) = (local, self.counted.as_mut()) else {
+            return Ok(None);
+        };
+        let var = VarId(x as u32);
+        let leaf =
+            ev.e.vtree()
+                .leaf_of(var)
+                .expect("a scope's variables are its leaves");
+        loop {
+            let p = match &c.counted {
+                Counts::Plain(plain) => {
+                    literal_ratio(plain, ev.e, leaf, var, positive, &ev.weights, ev.mass)?
+                }
+                Counts::Wide(wide) => {
+                    literal_ratio(wide, ev.e, leaf, var, positive, &ev.weights, ev.mass)?
+                }
+            };
+            match p {
+                Some(p) => return Ok(Some(p)),
+                None => c.widen(&mut self.sizes.recounts)?,
+            }
+        }
+    }
+
+    /// `P(l | e)` for the literal `l` of polarity `polarity` on `a`, from
+    /// the formula of `l` ([`Self::formula`]), under the probabilities
+    /// `template` gives where it answers the query.
+    fn count(
+        &mut self,
+        a: AtomId,
+        template: Option<&Template>,
+        polarity: bool,
+    ) -> Result<f64, CompileError> {
+        let t = Instant::now();
+        let mass = if self.evidence.is_none() {
+            self.count_alone(a, template, polarity)?
+        } else {
+            self.count_against(a, template, polarity)?
+        };
+        self.sizes.product_seconds += t.elapsed().as_secs_f64();
+        Ok(mass)
+    }
+
+    /// `P(l)`, with nothing to conjoin: the formula of `l` counted where it
+    /// was built, and kept across a size stop.
+    fn count_alone(
+        &mut self,
+        a: AtomId,
+        template: Option<&Template>,
+        polarity: bool,
+    ) -> Result<f64, CompileError> {
+        if self
+            .pending_query
+            .as_ref()
+            .is_none_or(|p| p.positive != polarity)
+        {
+            self.sizes.products += 1;
+            let formula = self.formula(a, polarity)?;
+            *self.pending_query = Some(PendingQuery {
+                formula,
+                positive: polarity,
+            });
+        }
+        let (f, scope) = match &self.pending_query.as_ref().unwrap().formula {
+            Some((f, scope)) => (f, scope),
+            None => stored(self.compiled, a),
+        };
+        let w = self.weights_on(scope, template);
+        self.sizes.record(self.backend.size(f), self.watch)?;
+        Ok(crate::eval::mass(self.backend.engine, f, &w, &mut self.sizes.recounts)?.to_f64())
+    }
+
+    /// `P(l | e)`: the formula of `l` counted where it was built, walked
+    /// against the counted evidence, which reads its embedding onto the
+    /// evidence's scope off the map of its variables.
+    fn count_against(
+        &mut self,
+        a: AtomId,
+        template: Option<&Template>,
+        polarity: bool,
+    ) -> Result<f64, CompileError> {
+        self.sizes.products += 1;
+        let built = self.formula(a, polarity)?;
+        let (q, q_scope) = match &built {
+            Some((f, scope)) => (f, scope),
+            None => stored(self.compiled, a),
+        };
+        let q_w = self.weights_on(q_scope, template);
+        let ev = self.evidence.as_ref().unwrap();
+        let c = self
+            .counted
+            .as_mut()
+            .expect("the evidence is counted where a query reads it");
+        let e_vtree = ev.e.vtree();
+        let leaf_in_e = |v: VarId| {
+            let global = q_scope.vars().map_or(v, |vars| vars[v.0 as usize - 1]);
+            let local = ev.scope.local_of(global)?;
+            Some(
+                e_vtree
+                    .leaf_of(local)
+                    .expect("a scope's variables are its leaves"),
+            )
+        };
+        // The walk's multiply-adds charged to the engine's work clock, so a
+        // trial's work budget covers them, once: a walk again in counts is
+        // not charged.
+        let host = |units: u64| self.backend.engine.limits().poll_host_work(units);
+        let mut charged = false;
+        loop {
+            let p = match &c.counted {
+                Counts::Plain(plain) => joint_ratio(
+                    ev.e,
+                    plain,
+                    &c.spans,
+                    q,
+                    &q_w,
+                    &leaf_in_e,
+                    ev.mass,
+                    &mut charged,
+                    &host,
+                )?,
+                Counts::Wide(wide) => joint_ratio(
+                    ev.e,
+                    wide,
+                    &c.spans,
+                    q,
+                    &q_w,
+                    &leaf_in_e,
+                    ev.mass,
+                    &mut charged,
+                    &host,
+                )?,
+            };
+            match p {
+                Some(p) => return Ok(p),
+                None => c.widen(&mut self.sizes.recounts)?,
+            }
+        }
+    }
+
+    /// The formula of the literal of polarity `polarity` on `a`, and its
+    /// scope: `None` where it is `a`'s stored formula, read in place; its
+    /// negation otherwise, or a literal for a fact.
+    fn formula(&mut self, a: AtomId, polarity: bool) -> Result<Option<Formula>, CompileError> {
+        if self.compiled.formulas[a as usize].is_some()
+            && self.compiled.stored_positive(a) == polarity
+        {
+            return Ok(None);
+        }
+        let scope = self.scopes.own(a)?;
+        let f = self.compiled.literal_formula(
+            self.backend,
+            &scope,
+            a,
+            polarity,
+            (&mut self.sizes.negations, NegationSource::Query),
+        )?;
+        Ok(Some((f, scope)))
+    }
+
+    /// The weights on `scope`, under the probabilities `template` gives
+    /// where it answers the query.
+    fn weights_on(&self, scope: &VtreeScope, template: Option<&Template>) -> Probabilities {
+        let w = self.weights.restrict(scope.vars());
+        match template {
+            Some(t) => t.weights(&w, &self.compiled.var_of, scope),
+            None => w,
+        }
+    }
+}
+
+/// The stored formula of `a` in `compiled`, and its scope.
+fn stored(compiled: &Compiled, a: AtomId) -> (&Tdd, &VtreeScope) {
+    let f = compiled.formulas[a as usize]
+        .as_deref()
+        .expect("the stored polarity's formula is stored");
+    (f, compiled.scope_of(a))
 }
 
 /// The evidence formula counted up and down once, on its own scope: its
@@ -784,11 +879,6 @@ fn joint_ratio<V: Value>(
         crate::eval::conjunction_count(e, c, spans, q, &q_counted, leaf_in_e, poll)?;
     *charged = true;
     Ok(exact.then(|| joint.ratio(mass)))
-}
-
-struct PendingFormula {
-    formula: Formula,
-    reduced: bool,
 }
 
 /// A query's formula kept across a size stop, and the polarity of the
@@ -1148,6 +1238,57 @@ mod tests {
             }
             let _ = state.run(&gp, &backend, &compiled, None);
         });
+    }
+
+    #[test]
+    fn a_join_that_sums_out_its_scope_runs_past_the_caps() {
+        // Two observations and no query: the walk's one join sums out its
+        // whole scope into P(e), and a cap of one emitted node and a stop
+        // past one pair, which a join that keeps its result is held to,
+        // do not cut it short. P(a, b) = P(f1) + P(¬f1) P(f0) P(f2).
+        let source = "0.5::f(0). 0.5::f(1). 0.5::f(2).
+            a :- f(0). a :- f(1). b :- f(1). b :- f(2).
+            evidence(a,true). evidence(b,true).";
+        let gp = crate::ground::ground(
+            &crate::syntax::parse_program(source).unwrap(),
+            &GroundOptions {
+                detach: false,
+                ..GroundOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(gp.evidence.len(), 2);
+        let (
+            crate::vtree::Layout {
+                vtree: tree, order, ..
+            },
+            _,
+        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
+        let (mass, sizes) = tree.context().run(|engine| {
+            let backend = TddBackend::new(engine, tree.clone());
+            let compiled = compile(
+                &gp,
+                fact_variables(&gp, &order),
+                Formulation::Primal,
+                &backend,
+                Projection::Off,
+                None,
+            )
+            .unwrap();
+            let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            let limit = LimitConfig::none()
+                .with_output_node_cap(Some(1))
+                .with_stop_rules(
+                    StopRules::default().with_after_pairs(Some((1, StopAt::WorkUnits(0)))),
+                );
+            let _guard = engine.limits().scope(limit);
+            let result = state.run(&gp, &backend, &compiled, None);
+            let (_, sizes) = result.unwrap_or_else(|e| panic!("{e} at {:?}", state.progress()));
+            (state.evidence_mass(), sizes)
+        });
+        assert_eq!(sizes.summing_joins, 1);
+        let p = (gp.weight * mass).normalized().to_f64();
+        assert!((p - 0.625).abs() < 1e-12, "P(e) = {p}");
     }
 
     #[test]

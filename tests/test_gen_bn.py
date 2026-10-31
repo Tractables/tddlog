@@ -169,23 +169,37 @@ class EvidencePoolTests(unittest.TestCase):
 class RowTests(unittest.TestCase):
     def test_a_gap_that_rounding_explains_is_rescaled(self):
         for row in ([0.3333333] * 3, [0.333] * 3, [0.3333334, 0.3333334, 0.3333333], [0.12345678, 0.43209877, 0.44444444],
-                    [0.9999, 9.999e-05]):
+                    [0.9999, 9.999e-05],
+                    # rows of the UAI classics, computed in single precision
+                    # and written to eight decimals (diagnose_a, diagnose_b)
+                    [0.99800204, 0.001998], [0.99400605, 0.005994], [0.94297521, 0.05702495],
+                    [0.99999408, 0.0000057, 0.0000003],
+                    # two halves rounded up, over one by the slack: the UAI
+                    # 2006 networks (BN_133, BN_17), and at four or seven decimals
+                    [0.160598, 0.839403], [0.450006, 0.549995], [0.5, 0.501], [0.9, 0.101],
+                    [0.9999999, 0.0000002]):
             self.assertAlmostEqual(math.fsum(gen_bn.normalized(row, 'x')), 1.0, places=15, msg=row)
 
     def test_a_gap_that_rounding_does_not_explain_is_the_tables(self):
         self.assertEqual(gen_bn.normalized([0.5, 0.499], 'x'), [0.5, 0.499])
         self.assertEqual(gen_bn.normalized([0.999], 'x'), [0.999])
         self.assertEqual(gen_bn.normalized([0.3333333, 0.3333333, 0.333333], 'x'), [0.3333333, 0.3333333, 0.333333])
-        with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.001'):
-            gen_bn.normalized([0.9, 0.101], 'x')
+        self.assertEqual(gen_bn.normalized([0.4, 0.5], 'x'), [0.4, 0.5])
+        # over one by 0.002, past the slack of 0.001
+        with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.002'):
+            gen_bn.normalized([0.9, 0.102], 'x')
+        # over one by 2e-7, past 3 · 2⁻²⁴ for two entries and the slack of 1e-7
+        with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.0000002'):
+            gen_bn.normalized([0.9999998, 0.0000004], 'x')
+        with self.assertRaises(SystemExit):
+            gen_bn.normalized([0.3, 0.7000002], 'x')
 
     def test_an_excess_of_binary_rounding_is_rescaled(self):
         # Two doubles that sum to 1.0000000000000003 in the decimals they
-        # mean, more than the slack of their own digits allows.
-        row = [0.3, 0.7000000000000003]
-        self.assertAlmostEqual(math.fsum(gen_bn.normalized(row, 'x')), 1.0, places=15)
-        with self.assertRaisesRegex(SystemExit, 'x: probabilities sum to 1.000000002'):
-            gen_bn.normalized([0.3, 0.700000002], 'x')
+        # mean, more than the slack of their own digits allows, and a row
+        # over one by 2e-9, within 3 · 2⁻²⁴.
+        for row in ([0.3, 0.7000000000000003], [0.3, 0.700000002]):
+            self.assertAlmostEqual(math.fsum(gen_bn.normalized(row, 'x')), 1.0, places=15, msg=row)
 
     def test_a_row_that_sums_to_one_keeps_its_numbers(self):
         self.assertEqual(gen_bn.normalized([0.2, 0.8], 'x'), [0.2, 0.8])
@@ -565,6 +579,18 @@ class FormatTests(unittest.TestCase):
         for v, probs in {'x0': ['2/11', '9/11'], 'x1': ['5/33', '28/33']}.items():
             for u, p in enumerate(probs):
                 self.assertAlmostEqual(mass[v][u] / math.fsum(mass[v]), float(Fraction(p)), places=14)
+
+    def test_a_parent_of_one_value_has_a_row_for_each_of_its_hugin_states(self):
+        """A variable of one value (the pedigrees') has two states in the
+        Hugin file, and the table of its child a row for each."""
+        uai = 'MARKOV\n2\n1 2\n2\n1 0\n2 0 1\n\n1\n 1.0\n2\n 0.3 0.7\n'
+        network, _, _ = gen_bn.parse(self.scratch('one.uai', uai.encode()))
+        order, variables, tables = gen_bn.parse(self.scratch('one.net', gen_bn.write_hugin(network).encode()))
+        self.assertEqual(len(variables['x0']), 2)
+        self.assertTrue(variables['x0'][1].startswith('not_'))
+        self.assertEqual(list(tables['x0'][1].values()), [[1.0, 0.0]])
+        self.assertEqual(sorted(tables['x1'][1]), sorted((u,) for u in variables['x0']))
+        self.assertEqual(list(tables['x1'][1].values()), [[0.3, 0.7], [0.3, 0.7]])
 
     def test_a_bif_network_written_as_hugin_reads_back_the_same(self):
         """`write_hugin` of a BIF network, the file Ace reads for Roulette's

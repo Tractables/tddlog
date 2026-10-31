@@ -1,0 +1,68 @@
+
+fun channelL () {
+    flip 0.99 
+}
+
+
+fun receiver (SEN_FR:int(9), REC_FR:int(9)) {
+    let state = 
+    if SEN_FR != REC_FR then REC_FR + int(9,1) else REC_FR
+    in
+    (channelL(), state)
+}
+
+
+fun channelK (SEN_FR:int(9), REC_FR:int(9)) {
+    if flip 0.98 
+    then (true, receiver(SEN_FR, REC_FR) ) 
+    else (false, (false, REC_FR) )
+}
+
+
+fun send_frame (SEN_FR:int(9), REC_FR:int(9)) {
+
+    let x = channelK(SEN_FR, REC_FR) in
+    let ack_received = (fst x) && (fst (snd x)) in 
+    let REC_FR = snd (snd x) in
+
+    let x = if ack_received then x else channelK(SEN_FR, REC_FR) in
+    let ack_received = (fst x) && (fst (snd x)) in 
+    let REC_FR = snd (snd x) in
+
+    let x = if ack_received then x else channelK(SEN_FR, REC_FR) in
+    let ack_received = (fst x) && (fst (snd x)) in 
+    let REC_FR = snd (snd x) in
+
+    (ack_received, REC_FR)
+}
+
+fun step(state: (bool, (int(9), int(9) )) ) {
+    let ack_received = fst state in
+    let SEN_FR = fst (snd state) in 
+    let REC_FR = snd (snd state) in 
+
+    if !ack_received then state 
+    else 
+    let x = send_frame(SEN_FR, REC_FR) in
+    (
+        fst x,
+        (SEN_FR + int(9,1), (snd x))
+    )
+}
+
+//send 16 frames
+let init = (true, (int(9,1), int(9,0))) in
+let final = iterate(step, init, 256) in
+
+let ack_received = fst final in
+let sen_frame = fst (snd final) in
+let rec_frame = snd (snd final) in
+
+ack_received
+
+// the probability the sender reports an uncertainty on the success of the transmission
+// ( (!ack_received) && (sen_frame == int(9,16)) )
+
+// rec_frame
+
+

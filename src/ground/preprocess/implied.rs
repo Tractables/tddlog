@@ -72,18 +72,20 @@ const CONFLICTS_PER_CALL: u64 = 100;
 /// What the search did.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ImpliedStats {
-    /// The clauses tried by propagation, those of them searched, those
-    /// found implied either way, and those not searched for the budget;
-    /// the clauses passed over because clauses known to stay join each
-    /// pair of their variables.
+    /// The clauses tried by propagation.
     pub tried: u64,
+    /// The clauses tried that were searched.
     pub searched: u64,
+    /// The clauses found implied, either way.
     pub implied: u64,
+    /// The clauses not searched, for the budget.
     pub untried: u64,
+    /// The clauses passed over because clauses known to stay join each
+    /// pair of their variables.
     pub joined: u64,
-    /// The searches' conflicts; the solvers' propagation steps, and the
-    /// literals loaded into them.
+    /// The searches' conflicts.
     pub conflicts: u64,
+    /// The solvers' propagation steps, and the literals loaded into them.
     pub ticks: u64,
 }
 

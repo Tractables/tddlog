@@ -8,17 +8,17 @@
 
 use std::hash::BuildHasher;
 
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::FxBuildHasher;
+
+use crate::by_hash::ByHash;
 
 pub(super) struct Interned<T> {
     items: Vec<T>,
     /// Where each list starts in `items`; the next list's start, or the
     /// end of `items` for the last, ends it.
     starts: Vec<usize>,
-    /// The last list with each hash, and per list the one before it with
-    /// the same hash.
-    by_hash: FxHashMap<u64, u32>,
-    same_hash: Vec<u32>,
+    /// The lists by the hash of their items.
+    by_hash: ByHash,
 }
 
 impl<T> Default for Interned<T> {
@@ -26,10 +26,15 @@ impl<T> Default for Interned<T> {
         Interned {
             items: Vec::new(),
             starts: Vec::new(),
-            by_hash: FxHashMap::default(),
-            same_hash: Vec::new(),
+            by_hash: ByHash::default(),
         }
     }
+}
+
+/// List `i` of the lists that `starts` places in `items`.
+fn list<'a, T>(items: &'a [T], starts: &[usize], i: usize) -> &'a [T] {
+    let end = starts.get(i + 1).copied().unwrap_or(items.len());
+    &items[starts[i]..end]
 }
 
 impl<T: Copy + Eq + std::hash::Hash> Interned<T> {
@@ -37,8 +42,7 @@ impl<T: Copy + Eq + std::hash::Hash> Interned<T> {
         Interned {
             items: Vec::new(),
             starts: Vec::with_capacity(lists),
-            by_hash: FxHashMap::with_capacity_and_hasher(lists, Default::default()),
-            same_hash: Vec::with_capacity(lists),
+            by_hash: ByHash::with_capacity(lists),
         }
     }
 
@@ -49,50 +53,33 @@ impl<T: Copy + Eq + std::hash::Hash> Interned<T> {
 
     /// List `i`.
     pub(super) fn list(&self, i: usize) -> &[T] {
-        let end = self.starts.get(i + 1).copied().unwrap_or(self.items.len());
-        &self.items[self.starts[i]..end]
+        list(&self.items, &self.starts, i)
     }
 
     /// The number of `list`, where it is one of the lists.
     pub(super) fn get(&self, list: &[T]) -> Option<u32> {
-        let mut b = *self.by_hash.get(&FxBuildHasher.hash_one(list))?;
-        while b != u32::MAX {
-            if self.list(b as usize) == list {
-                return Some(b);
-            }
-            b = self.same_hash[b as usize];
-        }
-        None
+        self.by_hash.find(FxBuildHasher.hash_one(list), |b| {
+            self.list(b as usize) == list
+        })
     }
 
     /// The number of `list`, numbered anew if it is new, and whether it is.
-    /// Its hash is looked up once, and a new list takes the entry found,
-    /// rather than looked up and then inserted: nearly every body is new.
+    /// Its hash is looked up once ([`ByHash::find_or_push`]): nearly every
+    /// body is new.
     pub(super) fn id(&mut self, list: &[T]) -> (u32, bool) {
         let Interned {
             items,
             starts,
             by_hash,
-            same_hash,
         } = self;
-        let last = by_hash
-            .entry(FxBuildHasher.hash_one(list))
-            .or_insert(u32::MAX);
-        let mut b = *last;
-        while b != u32::MAX {
-            let start = starts[b as usize];
-            let end = starts.get(b as usize + 1).copied().unwrap_or(items.len());
-            if items[start..end] == *list {
-                return (b, false);
-            }
-            b = same_hash[b as usize];
+        let (id, new) = by_hash.find_or_push(FxBuildHasher.hash_one(list), |b| {
+            self::list(items, starts, b as usize) == list
+        });
+        if new {
+            starts.push(items.len());
+            items.extend_from_slice(list);
         }
-        let id = starts.len() as u32;
-        starts.push(items.len());
-        items.extend_from_slice(list);
-        same_hash.push(*last);
-        *last = id;
-        (id, true)
+        (id, new)
     }
 
     /// Whether the allocator gave room for `lists` more lists of `items`
@@ -100,7 +87,6 @@ impl<T: Copy + Eq + std::hash::Hash> Interned<T> {
     pub(super) fn try_reserve(&mut self, lists: usize, items: usize) -> bool {
         self.items.try_reserve(items).is_ok()
             && self.starts.try_reserve(lists).is_ok()
-            && self.same_hash.try_reserve(lists).is_ok()
-            && self.by_hash.try_reserve(lists).is_ok()
+            && self.by_hash.try_reserve(lists)
     }
 }

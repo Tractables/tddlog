@@ -12,7 +12,7 @@
 //! yields a magic rule `m_q^β(bound args of q) :- m_p^α(...), <preceding
 //! literals>`, following the left-to-right scheduling of
 //! [`super::schedule`], of those literals the ones that bear on the bound
-//! arguments of `q`. The atoms themselves are not renamed, so the copies for
+//! arguments of `q` and the tests of what they bind. The atoms themselves are not renamed, so the copies for
 //! different patterns derive into the same predicate; every atom derived is in
 //! the original model, and every atom the queries depend on is derived. A
 //! given predicate, one of ground facts ([`super::normalize::Facts`]) or
@@ -32,12 +32,26 @@
 //!
 //! The rewrite can make a stratified program non-stratified (demand for a
 //! lower-stratum atom may pass through a recursive predicate of a higher
-//! stratum). The caller checks stratification and falls back to the plain
-//! program in that case.
+//! stratum), and a demand rule does not read a negation of a derived
+//! predicate. Where either loses a negation that bounds a demand in a
+//! program that builds values, [`Rewritten::top_down`] says so and the
+//! caller resolves the program top-down.
+//!
+//! Which route a program takes is decided before any of it is ground, by
+//! whether its rules are safe ([`super::engine::safe`]: every variable bound
+//! by a positive body atom, in some order of the body). A program the
+//! rewrite leaves with an unsafe rule is one whose demand a binding pattern
+//! cannot carry: a query of a term with variables in it (`seen([_,_,_])`,
+//! `length(L, 3)`), whose pattern binds no argument, or a fact or rule that
+//! answers with a variable (`reverse([], L, L)`, `0.5::bit(T, 0)` with `T`
+//! bound only by the caller). Where the plain program is unsafe too, no
+//! demand makes it safe, and the program is resolved top-down from its
+//! queries instead ([`super::engine::topdown`]), as ProbLog grounds every
+//! program.
 
 use std::sync::Arc;
 
-use super::normalize::{Facts, NormProgram, Sig};
+use super::normalize::{Driver, Facts, NormProgram, Sig};
 use super::schedule::{Order, literal_vars, schedule_body};
 use crate::syntax::{Atom, Clause, Literal, Name, Term};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -146,7 +160,7 @@ fn usable(rule: &Clause, adornment: &Adornment) -> Option<Adornment> {
 /// Whether no rule of `norm` has a variable. Queries and evidence may still
 /// be patterns; the grounder resolves those against the possible atoms.
 pub(crate) fn is_ground(norm: &NormProgram) -> bool {
-    norm.query_drivers.is_empty() && norm.rules.iter().all(ground_clause)
+    norm.drivers.is_empty() && norm.rules.iter().all(ground_clause)
 }
 
 /// Whether neither the heads nor the body of `c` has a variable.
@@ -208,13 +222,24 @@ fn given<'a>(
 
 /// The literals of `prefix`, positions in `body`, that bear on the values
 /// of `args`: those that share a variable with them, or with a literal
-/// that does, in their order. Another literal only asks that some values
-/// of its own satisfy it, which a demand need not ask: on PSouffle's
-/// side-channel analyses the demand of `equal_assign` with no argument
-/// bound was derived again from each of the 437 million pairs of an
-/// `xor_assign_right` and a `share` before it, 20 s for each of eight
-/// rules.
-fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
+/// that does, in their order, and the tests of what those literals and
+/// the guard bind (`guard`, the head's variables the demand binds). Another
+/// literal only asks that some values of its own satisfy it, which a demand
+/// need not ask: on PSouffle's side-channel analyses the demand of
+/// `equal_assign` with no argument bound was derived again from each of the
+/// 437 million pairs of an `xor_assign_right` and a `share` before it, 20 s
+/// for each of eight rules. A test (a comparison, an `is`, a built-in, a
+/// negation of a given predicate) joins nothing and only rejects demands,
+/// as ProbLog's resolution stops at it before the call: the tutorial's
+/// rejection loop `loop1(G, N, R, T) :- G >= N, loop2(0, 1, NG, NN, T, TT),
+/// loop1(NG, NN, R, TT)` demanded `loop2` at every later time `T` without
+/// its test `G >= N` on the guard's variables.
+fn bearing(
+    body: &[Literal],
+    prefix: &[usize],
+    args: &[Term],
+    guard: &FxHashSet<String>,
+) -> Vec<usize> {
     let mut reached: FxHashSet<String> = FxHashSet::default();
     for t in args {
         let mut vs = Vec::new();
@@ -232,6 +257,15 @@ fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
                 grew = true;
                 reached.extend(vs.iter().cloned());
             }
+        }
+    }
+    for (k, vs) in vars.iter().enumerate() {
+        let test = matches!(
+            body[prefix[k]],
+            Literal::Cmp(..) | Literal::Is(..) | Literal::Builtin(..) | Literal::Neg(_)
+        );
+        if test && vs.iter().all(|v| reached.contains(v) || guard.contains(v)) {
+            kept[k] = true;
         }
     }
     prefix
@@ -256,7 +290,7 @@ fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
 /// relations it reads, where the program has 50 atoms that matter. A
 /// predicate demanded both free and with some argument bound is therefore
 /// rewritten again with every demand of it read as its free demand.
-pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
+pub(crate) fn rewrite(norm: &NormProgram) -> Option<Rewritten> {
     let (out, done) = demand(norm, &FxHashSet::default())?;
     // Whether each predicate is demanded free, and with some argument bound.
     let mut patterns: FxHashMap<(&Name, usize), (bool, bool)> = FxHashMap::default();
@@ -279,207 +313,407 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<NormProgram> {
     demand(norm, &free).map(|(out, _)| out)
 }
 
+/// The rewritten program, and whether the program is resolved top-down
+/// instead: where it builds values ([`builds_values`]) and a negation of a predicate the program stratifies below
+/// its reader filters a demand of the reader's own recursion, or the
+/// rewrite puts the negated predicate's demand inside that recursion. ProbLog's
+/// resolution completes the negated call and drops the call after it
+/// where the negation fails in every world; the rewrite cannot read the
+/// negation there, so it filters no demand, and a walk that grows a list
+/// under `\+ member(X, Seen)` (the tutorial's dice and taxonomy) is
+/// demanded without end.
+pub(crate) struct Rewritten {
+    pub(crate) program: NormProgram,
+    pub(crate) top_down: bool,
+}
+
+/// Whether a rule of `rules` makes a value the program does not write: a
+/// term by unification, a number by `is`, a list by a built-in or a
+/// findall. Without one, the values are the program's constants and its
+/// rewrite is a finite program, ground bottom-up whatever negation its
+/// demand rules leave out: PSouffle's taint analyses, whose rewrite puts a
+/// negated predicate's demand inside the points-to recursion, ground so in
+/// about a second and took up to 47 s top-down.
+fn builds_values(rules: &[Clause]) -> bool {
+    use crate::syntax::CmpOp;
+    let made = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
+    rules.iter().any(|r| {
+        r.body.iter().any(|l| match l {
+            Literal::Is(..) | Literal::Builtin(..) | Literal::Collect(_) | Literal::Findall(_) => {
+                true
+            }
+            Literal::Cmp(CmpOp::Eq, a, b) => made(a) || made(b),
+            _ => false,
+        }) || r.heads.iter().any(|h| h.atom.args.iter().any(made))
+    })
+}
+
+/// A negation a demand rule does not read: the demand's predicate and the
+/// negated one.
+type Unread = ((Name, usize), (Name, usize));
+
+/// Whether no rule of `rules`, and no negative dependency of `unread` (a
+/// demand's predicate on a predicate it does not read negated) whose demand
+/// derives itself, negates a predicate that depends on the rule's head. A
+/// demand that no recursion of its own derives is as bounded without the
+/// negation as with it: on the UW-CSE programs `taught_by` demands
+/// `position(B, faculty)` for each professor `B` under `\+
+/// aux1_taught_by(A, B)`, which reads `position` again, and the rewrite
+/// grounds them as it did.
+fn stratified(rules: &[Clause], unread: &[Unread]) -> bool {
+    let mut ids: FxHashMap<Sig, usize> = FxHashMap::default();
+    fn id<'n>(ids: &mut FxHashMap<Sig<'n>, usize>, sig: Sig<'n>) -> usize {
+        let n = ids.len();
+        *ids.entry(sig).or_insert(n)
+    }
+    let mut edges = Vec::new();
+    let mut negated = Vec::new();
+    for c in rules {
+        let h = id(&mut ids, c.heads[0].atom.signature());
+        for l in &c.body {
+            match l {
+                Literal::Pos(a) => edges.push((h, id(&mut ids, a.signature()))),
+                Literal::Neg(a) => negated.push((h, id(&mut ids, a.signature()))),
+                Literal::Collect(c) => edges.push((h, id(&mut ids, (&*c.aux, c.arity)))),
+                _ => {}
+            }
+        }
+    }
+    edges.extend_from_slice(&negated);
+    let crossing = |edges: &[(usize, usize)], negated: &[(usize, usize)]| {
+        let component = super::deps::strongly_connected(ids.len(), edges);
+        let all = negated.iter().all(|&(h, q)| component[h] != component[q]);
+        (all, component)
+    };
+    let (all, component) = crossing(&edges, &negated);
+    if !all {
+        return false;
+    }
+    let mut size: FxHashMap<usize, usize> = FxHashMap::default();
+    for &c in &component {
+        *size.entry(c).or_default() += 1;
+    }
+    let recursive = |d: usize| {
+        component[d] != usize::MAX && (size[&component[d]] > 1 || edges.contains(&(d, d)))
+    };
+    let more: Vec<(usize, usize)> = unread
+        .iter()
+        .filter_map(|((d, k), (n, j))| Some((*ids.get(&(d, *k))?, *ids.get(&(n, *j))?)))
+        .filter(|&(d, _)| recursive(d))
+        .collect();
+    if more.is_empty() {
+        return true;
+    }
+    edges.extend_from_slice(&more);
+    negated.extend_from_slice(&more);
+    crossing(&edges, &negated).0
+}
+
 /// The rewrite of `norm` ([`rewrite`]), in which a demand of a predicate of
 /// `free` with some argument bound is its demand with none, and the
 /// predicates and patterns it demands.
-fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(NormProgram, Demands)> {
+fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(Rewritten, Demands)> {
     let rules_of = norm.rules_by_sig();
-    let is_switch = |a: &Atom| norm.switches.contains_key(&(a.name.clone(), a.args.len()));
     let given = given(norm, &rules_of);
-    let facts: FxHashMap<Sig, &Arc<Facts>> = norm
+    let facts = norm
         .facts
         .iter()
         .map(|(_, f)| ((&*f.name, f.arity), f))
         .collect();
-    // An atom of a predicate with rules, not given, which a demand reaches.
-    let derived = |a: &Atom| {
-        let sig = a.signature();
-        rules_of.contains_key(&sig) && !given.contains(&sig) && !is_switch(a)
+    let d = Demand {
+        norm,
+        free,
+        rules_of,
+        given,
+        facts,
     };
-    // The given predicates reached, whose rules or facts are in `out`.
-    let mut read: FxHashSet<(Name, usize)> = FxHashSet::default();
+    let mut w = Written {
+        out: NormProgram {
+            switches: norm.switches.clone(),
+            queries: norm.queries.clone(),
+            evidence: norm.evidence.clone(),
+            drivers: norm.drivers.clone(),
+            counted: norm.counted.clone(),
+            ..Default::default()
+        },
+        read: FxHashSet::default(),
+        control: FxHashSet::default(),
+        done: Demands::default(),
+        work: Vec::new(),
+        unread: Vec::new(),
+    };
+    d.seeds(&mut w);
+    while let Some((atom, adornment)) = w.work.pop() {
+        let sig = atom.signature();
+        if d.given.contains(&sig) {
+            d.given_reached(&atom, &mut w);
+        } else if d.derived(&atom) && w.done.insert((atom.name.clone(), sig.1, adornment.clone())) {
+            d.demanded(&atom, &adornment, &mut w)?;
+        }
+    }
+    w.out.control = w.control;
+    let top_down = builds_values(&norm.rules)
+        && stratified(&norm.rules, &[])
+        && !stratified(&w.out.rules, &w.unread);
+    Some((
+        Rewritten {
+            program: w.out,
+            top_down,
+        },
+        w.done,
+    ))
+}
 
-    let mut out = NormProgram {
-        switches: norm.switches.clone(),
-        queries: norm.queries.clone(),
-        evidence: norm.evidence.clone(),
-        query_drivers: norm.query_drivers.clone(),
-        counted: norm.counted.clone(),
-        ..Default::default()
-    };
-    let mut control: FxHashSet<(Name, usize)> = FxHashSet::default();
-    let mut done = Demands::default();
-    let mut work: Vec<(Atom, Adornment)> = Vec::new();
-    let adorn = |atom: &Atom, bound: &FxHashSet<String>| {
-        if free.contains(&(atom.name.clone(), atom.args.len())) {
+/// What [`demand`] reads of the program: its rules by predicate, the
+/// predicates given ([`given`]) and the facts of each, and the predicates
+/// whose demands are free.
+struct Demand<'a> {
+    norm: &'a NormProgram,
+    free: &'a FxHashSet<(Name, usize)>,
+    rules_of: FxHashMap<Sig<'a>, Vec<usize>>,
+    given: FxHashSet<Sig<'a>>,
+    facts: FxHashMap<Sig<'a>, &'a Arc<Facts>>,
+}
+
+/// What [`demand`] has written: the rewritten program, the given
+/// predicates reached, whose rules or facts are in it, the magic
+/// predicates, the demands taken and those still to take, and the
+/// negations the demands do not read ([`Rewritten::top_down`]).
+struct Written {
+    out: NormProgram,
+    read: FxHashSet<(Name, usize)>,
+    control: FxHashSet<(Name, usize)>,
+    done: Demands,
+    work: Vec<(Atom, Adornment)>,
+    unread: Vec<Unread>,
+}
+
+impl Demand<'_> {
+    fn is_switch(&self, a: &Atom) -> bool {
+        self.norm
+            .switches
+            .contains_key(&(a.name.clone(), a.args.len()))
+    }
+
+    /// Whether `a` is of a predicate with rules, not given, which a demand
+    /// reaches.
+    fn derived(&self, a: &Atom) -> bool {
+        let sig = a.signature();
+        self.rules_of.contains_key(&sig) && !self.given.contains(&sig) && !self.is_switch(a)
+    }
+
+    /// The pattern of `atom` with the variables `bound` bound, none where
+    /// its predicate's demands are free.
+    fn adorn(&self, atom: &Atom, bound: &FxHashSet<String>) -> Adornment {
+        if self.free.contains(&(atom.name.clone(), atom.args.len())) {
             vec![false; atom.args.len()]
         } else {
             adornment_of(atom, bound)
         }
-    };
-
-    // Seeds: query and evidence atoms, with constants bound; query-rule
-    // drivers with nothing bound.
-    let seed = |atom: &Atom, out: &mut NormProgram, work: &mut Vec<(Atom, Adornment)>| {
-        let adornment = adorn(atom, &FxHashSet::default());
-        if derived(atom) {
-            out.rules
-                .push(Clause::rule(magic_atom(atom, &adornment), vec![], u32::MAX));
-        }
-        work.push((atom.clone(), adornment));
-    };
-    for (q, _) in &norm.queries {
-        seed(q, &mut out, &mut work);
-    }
-    for (e, _) in &norm.evidence {
-        seed(e, &mut out, &mut work);
-    }
-    for (driver, pattern, _) in &norm.query_drivers {
-        seed(driver, &mut out, &mut work);
-        // Every true driver instance demands the pattern instance it names:
-        // m_pattern(bound args) :- driver(vars). The pattern's variables are
-        // the driver's arguments, so all of them are bound.
-        let bound: FxHashSet<String> = literal_vars(&Literal::Pos(driver.clone()))
-            .into_iter()
-            .collect();
-        let sub = adorn(pattern, &bound);
-        if derived(pattern) {
-            out.rules.push(Clause::rule(
-                magic_atom(pattern, &sub),
-                vec![Literal::Pos(driver.clone())],
-                u32::MAX,
-            ));
-        }
-        work.push((pattern.clone(), sub));
     }
 
-    while let Some((atom, adornment)) = work.pop() {
+    /// A demand of `atom` in the pattern `adornment` wherever `body` holds:
+    /// its magic rule where `atom` is derived, and the demand to take.
+    fn seed(&self, atom: &Atom, adornment: Adornment, body: Vec<Literal>, w: &mut Written) {
+        if self.derived(atom) {
+            w.out
+                .rules
+                .push(Clause::rule(magic_atom(atom, &adornment), body, u32::MAX));
+        }
+        w.work.push((atom.clone(), adornment));
+    }
+
+    /// The demands the rewrite starts from: the query and evidence atoms,
+    /// with constants bound; the query rules' drivers with nothing bound.
+    fn seeds(&self, w: &mut Written) {
+        let none = FxHashSet::default();
+        for (q, _) in &self.norm.queries {
+            self.seed(q, self.adorn(q, &none), Vec::new(), w);
+        }
+        for (e, _) in &self.norm.evidence {
+            self.seed(e, self.adorn(e, &none), Vec::new(), w);
+        }
+        for Driver {
+            atom: driver,
+            pattern,
+            ..
+        } in &self.norm.drivers
+        {
+            self.seed(driver, self.adorn(driver, &none), Vec::new(), w);
+            // Every true driver instance demands the pattern instance it
+            // names: m_pattern(bound args) :- driver(vars). The pattern's
+            // variables are the driver's arguments, so all of them are
+            // bound.
+            let bound: FxHashSet<String> = literal_vars(&Literal::Pos(driver.clone()))
+                .into_iter()
+                .collect();
+            let body = vec![Literal::Pos(driver.clone())];
+            self.seed(pattern, self.adorn(pattern, &bound), body, w);
+        }
+    }
+
+    /// The given predicate of `atom` reached: its facts, or its rules and
+    /// the atoms they read, written the first time.
+    fn given_reached(&self, atom: &Atom, w: &mut Written) {
         let sig = atom.signature();
-        if given.contains(&sig) {
-            if read.insert((atom.name.clone(), sig.1)) {
-                if let Some(&f) = facts.get(&sig) {
-                    out.facts.push((out.rules.len(), f.clone()));
-                    continue;
-                }
-                for &ri in &rules_of[&sig] {
-                    let rule = &norm.rules[ri];
-                    for l in &rule.body {
-                        if let Literal::Pos(a) | Literal::Neg(a) = l {
-                            work.push((a.clone(), Vec::new()));
-                        }
-                    }
-                    out.rules.push(rule.clone());
+        if !w.read.insert((atom.name.clone(), sig.1)) {
+            return;
+        }
+        if let Some(&f) = self.facts.get(&sig) {
+            w.out.facts.push((w.out.rules.len(), f.clone()));
+            return;
+        }
+        for &ri in &self.rules_of[&sig] {
+            let rule = &self.norm.rules[ri];
+            for l in &rule.body {
+                if let Literal::Pos(a) | Literal::Neg(a) = l {
+                    w.work.push((a.clone(), Vec::new()));
                 }
             }
-            continue;
+            w.out.rules.push(rule.clone());
         }
-        if !derived(&atom) {
-            continue;
-        }
-        if !done.insert((atom.name.clone(), sig.1, adornment.clone())) {
-            continue;
-        }
+    }
+
+    /// The derived `atom` demanded in the pattern `adornment`, for the
+    /// first time: its rules under the demand. `None` where a rule cannot
+    /// be scheduled.
+    fn demanded(&self, atom: &Atom, adornment: &Adornment, w: &mut Written) -> Option<()> {
+        let sig = atom.signature();
         // The demand's magic predicate, named once for all the rules it
         // guards, rather than the name made, the adornment copied and the
         // literals of the prefix copied per rule: TPC-H's tuples are each a
         // rule of one predicate.
-        let magic = magic_name(sig.0, &adornment);
-        control.insert((magic.clone(), adornment.iter().filter(|b| **b).count()));
-        for &ri in &rules_of[&sig] {
-            let rule = &norm.rules[ri];
-            let head = &rule.heads[0].atom;
-            // A rule that cannot use some of the demand's bindings is
-            // grounded under the demand without them, which this demand
-            // feeds.
-            if let Some(kept) = usable(rule, &adornment) {
-                out.rules.push(Clause::rule(
-                    magic_atom(head, &kept),
-                    vec![Literal::Pos(magic_atom(head, &adornment))],
-                    u32::MAX,
-                ));
-                work.push((head.clone(), kept));
-                continue;
-            }
-            // Head variables bound by the demand.
-            let mut bound: FxHashSet<String> = FxHashSet::default();
-            for (t, b) in head.args.iter().zip(&adornment) {
-                if let Term::Var(v) = t
-                    && *b
-                {
-                    bound.insert(v.clone());
-                }
-            }
-            let guard = Literal::Pos(Atom::new(magic.clone(), bound_args(head, &adornment)));
-            let ordered = schedule_body(
-                &rule.body,
-                &mut bound.clone(),
-                |i| matches!(&rule.body[i], Literal::Pos(a) | Literal::Neg(a) if is_switch(a)),
-                Order::Source,
-            )
-            .ok()?;
-            // Walk the schedule, emitting magic rules for body atoms with rules.
-            let mut bound_so_far = bound.clone();
-            // After the guard, the body literals that bind: the positions
-            // in the body, the literals copied only into a magic rule.
-            let mut prefix: Vec<usize> = Vec::new();
-            for (&i, lit) in ordered.iter().map(|i| (i, &rule.body[*i])) {
-                // A findall demands its goal's solutions for the values of
-                // the variables it shares.
-                let read;
-                let body_atom = match lit {
-                    Literal::Pos(a) | Literal::Neg(a) => Some(a),
-                    Literal::Collect(c) => {
-                        read = c.pattern();
-                        Some(&read)
-                    }
-                    _ => None,
-                };
-                if let Some(a) = body_atom {
-                    if derived(a) {
-                        let sub = adorn(a, &bound_so_far);
-                        let bearing = bearing(&rule.body, &prefix, &bound_args(a, &sub));
-                        let mut body = Vec::with_capacity(1 + bearing.len());
-                        body.push(guard.clone());
-                        body.extend(bearing.iter().map(|&j| rule.body[j].clone()));
-                        out.rules
-                            .push(Clause::rule(magic_atom(a, &sub), body, u32::MAX));
-                        work.push((a.clone(), sub));
-                    } else if given.contains(&a.signature()) {
-                        work.push((a.clone(), Vec::new()));
-                    }
-                }
-                // Positive literals and deterministic filters join the prefix,
-                // and so do negations of given predicates, whose atoms are
-                // all known before any demand is; other negative literals do
-                // not (they would add negative dependencies to the magic
-                // predicates) and switches bind nothing.
-                match lit {
-                    Literal::Neg(a) if !given.contains(&a.signature()) => {}
-                    Literal::Pos(a) if is_switch(a) => {}
-                    _ => prefix.push(i),
-                }
-                for v in literal_vars(lit) {
-                    bound_so_far.insert(v);
-                }
-            }
-            let mut body = Vec::with_capacity(1 + ordered.len());
-            body.push(guard);
-            // A counted rule keeps its literals in the order of the source,
-            // by which its derivations are ordered.
-            if norm.counted.contains(&(head.name.clone(), head.args.len())) {
-                body.extend(rule.body.iter().cloned());
-            } else {
-                body.extend(ordered.iter().map(|&i| rule.body[i].clone()));
-            }
-            out.rules.push(Clause {
-                heads: rule.heads.clone(),
-                body,
-                group: rule.group,
-            });
+        let magic = magic_name(sig.0, adornment);
+        w.control
+            .insert((magic.clone(), adornment.iter().filter(|b| **b).count()));
+        for &ri in &self.rules_of[&sig] {
+            self.rule(&self.norm.rules[ri], adornment, &magic, w)?;
         }
+        Some(())
     }
-    out.control = control;
-    Some((out, done))
+
+    /// `rule` under the demand of its head in the pattern `adornment`,
+    /// whose magic predicate is `magic`: guarded by it, with a magic rule
+    /// for each derived atom it reads, demanded with what the literals
+    /// before it bind. `None` where it cannot be scheduled.
+    fn rule(
+        &self,
+        rule: &Clause,
+        adornment: &Adornment,
+        magic: &Name,
+        w: &mut Written,
+    ) -> Option<()> {
+        let head = &rule.heads[0].atom;
+        // A rule that cannot use some of the demand's bindings is grounded
+        // under the demand without them, which this demand feeds.
+        if let Some(kept) = usable(rule, adornment) {
+            w.out.rules.push(Clause::rule(
+                magic_atom(head, &kept),
+                vec![Literal::Pos(magic_atom(head, adornment))],
+                u32::MAX,
+            ));
+            w.work.push((head.clone(), kept));
+            return Some(());
+        }
+        // Head variables bound by the demand.
+        let mut bound: FxHashSet<String> = FxHashSet::default();
+        for (t, b) in head.args.iter().zip(adornment) {
+            if let Term::Var(v) = t
+                && *b
+            {
+                bound.insert(v.clone());
+            }
+        }
+        let guard = Literal::Pos(Atom::new(magic.clone(), bound_args(head, adornment)));
+        let ordered = schedule_body(
+            &rule.body,
+            &mut bound.clone(),
+            |i| matches!(&rule.body[i], Literal::Pos(a) | Literal::Neg(a) if self.is_switch(a)),
+            Order::Source,
+        )
+        .ok()?;
+        // Walk the schedule, emitting magic rules for body atoms with rules.
+        let mut bound_so_far = bound.clone();
+        // After the guard, the body literals that bind: the positions in
+        // the body, the literals copied only into a magic rule; and the
+        // negations of derived predicates, which no demand reads.
+        let mut prefix: Vec<usize> = Vec::new();
+        let mut unread: Vec<usize> = Vec::new();
+        for (&i, lit) in ordered.iter().map(|i| (i, &rule.body[*i])) {
+            // A findall demands its goal's solutions for the values of the
+            // variables it shares.
+            let read;
+            let body_atom = match lit {
+                Literal::Pos(a) | Literal::Neg(a) => Some(a),
+                Literal::Collect(c) => {
+                    read = c.pattern();
+                    Some(&read)
+                }
+                _ => None,
+            };
+            if let Some(a) = body_atom {
+                if self.derived(a) {
+                    let sub = self.adorn(a, &bound_so_far);
+                    let args = bound_args(a, &sub);
+                    let kept = bearing(&rule.body, &prefix, &args, &bound);
+                    let mut body = Vec::with_capacity(1 + kept.len());
+                    body.push(guard.clone());
+                    body.extend(kept.iter().map(|&j| rule.body[j].clone()));
+                    let demand = magic_atom(a, &sub);
+                    if !unread.is_empty() {
+                        let all: Vec<usize> = prefix.iter().chain(&unread).copied().collect();
+                        for j in bearing(&rule.body, &all, &args, &bound) {
+                            if let Literal::Neg(n) = &rule.body[j]
+                                && unread.contains(&j)
+                            {
+                                w.unread.push((
+                                    (demand.name.clone(), demand.args.len()),
+                                    (n.name.clone(), n.args.len()),
+                                ));
+                            }
+                        }
+                    }
+                    w.out.rules.push(Clause::rule(demand, body, u32::MAX));
+                    w.work.push((a.clone(), sub));
+                } else if self.given.contains(&a.signature()) {
+                    w.work.push((a.clone(), Vec::new()));
+                }
+            }
+            // Positive literals and deterministic filters join the prefix,
+            // and so do negations of given predicates, whose atoms are all
+            // known before any demand is; other negative literals do not
+            // (they would add negative dependencies to the magic
+            // predicates) and switches bind nothing.
+            match lit {
+                Literal::Neg(a) if self.derived(a) => unread.push(i),
+                Literal::Neg(a) if !self.given.contains(&a.signature()) => {}
+                Literal::Pos(a) if self.is_switch(a) => {}
+                _ => prefix.push(i),
+            }
+            for v in literal_vars(lit) {
+                bound_so_far.insert(v);
+            }
+        }
+        let mut body = Vec::with_capacity(1 + ordered.len());
+        body.push(guard);
+        // A counted rule keeps its literals in the order of the source, by
+        // which its derivations are ordered.
+        if self
+            .norm
+            .counted
+            .contains(&(head.name.clone(), head.args.len()))
+        {
+            body.extend(rule.body.iter().cloned());
+        } else {
+            body.extend(ordered.iter().map(|&i| rule.body[i].clone()));
+        }
+        w.out.rules.push(Clause {
+            heads: rule.heads.clone(),
+            body,
+            group: rule.group,
+        });
+        Some(())
+    }
 }
 
 #[cfg(test)]
@@ -493,7 +727,7 @@ mod tests {
         let p =
             parse_program("0.6::w(T) :- T > 0, P is T - 1, w(P).\nw(0).\nquery(w(3)).\n").unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(text.contains(&"'$m_w_b'(3).".to_string()), "{text:?}");
         assert!(
@@ -521,7 +755,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             !text
@@ -551,7 +785,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(!text.iter().any(|t| t.contains("$m_e")), "{text:?}");
         let facts: Vec<(&str, usize)> = m
@@ -579,7 +813,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             !text
@@ -607,7 +841,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let gp = crate::ground::engine::ground_normalized(&m, None).unwrap();
         let atoms: Vec<String> = gp.atoms.iter().map(|a| a.to_string()).collect();
         assert!(atoms.contains(&"q(b,1)".to_string()), "{atoms:?}");
@@ -627,7 +861,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             text.contains(&"'$m_c_bf'(X) :- '$m_h_b'(X), a(X).".to_string()),
@@ -642,6 +876,36 @@ mod tests {
     /// A demand that binds an argument the body reads only as the value of
     /// an `is` grounds that rule under the demand without it, which the
     /// demand feeds; a rule that reads the argument keeps it.
+    /// The demand of a walk that grows its list under `\\+ mem(X, Seen)`
+    /// derives itself, and the rewrite cannot read the negation: the
+    /// program is resolved top-down. A demand that no recursion derives
+    /// is bounded without the negation, and the rewrite is ground; so is
+    /// one that a recursion derives in a program that builds no values,
+    /// whose rewrite is finite.
+    #[test]
+    fn a_negation_the_demand_leaves_out_routes_top_down_under_a_recursive_demand() {
+        let top_down = |source: &str| {
+            let p = parse_program(source).unwrap();
+            let (lowered, _) = crate::ground::terms::lower(&p).unwrap();
+            let n = normalize(&lowered, Default::default()).unwrap();
+            rewrite(&n).unwrap().top_down
+        };
+        assert!(top_down(
+            "mem(X, [X|_]).\nmem(X, [_|T]) :- mem(X, T).\nd(1).\nd(2).\n\
+             w(S, S).\nw(S, L) :- d(X), \\+ mem(X, S), w([X|S], L).\nquery(w([], _)).\n"
+        ));
+        assert!(!top_down(
+            "prof(p).\nstud(s).\nta(c, s).\ncourse(c).\n0.5::pos(B) :- prof(B).\n\
+             adv(A, B) :- stud(A), prof(B), \\+ pos(B).\naux(A, B) :- ta(A, C), adv(C, B).\n\
+             t(A, B) :- course(A), prof(B), \\+ aux(A, B), pos(B).\nquery(t(c, p)).\n"
+        ));
+        assert!(!top_down(
+            "e(1, 2).\ne(2, 3).\ns(3).\nq(1).\n0.5::st(M) :- s(M).\n\
+             lv(V) :- e(V, M), \\+ st(M).\npt(X) :- q(X).\n\
+             pt(Y) :- pt(X), e(X, Y), lv(Y).\nquery(pt(_)).\n"
+        ));
+    }
+
     #[test]
     fn a_binding_read_only_by_is_is_dropped() {
         let p = parse_program(
@@ -650,7 +914,7 @@ mod tests {
         )
         .unwrap();
         let n = normalize(&p, Default::default()).unwrap();
-        let m = rewrite(&n).unwrap();
+        let m = rewrite(&n).unwrap().program;
         let text: Vec<String> = m.rules.iter().map(|r| r.to_string()).collect();
         assert!(
             text.contains(&"'$m_s_bf'(K) :- '$m_s_bb'(K,S).".to_string()),

@@ -28,7 +28,8 @@ from test_dice2problog import exact  # noqa: E402
 # keeps no state between a loop's steps, so its time grows exponentially).
 SIZES = [('motivating', 1), ('motivating', 3), ('motivating', 6), ('diamond', 3), ('diamond', 5),
          ('ladder', 3), ('ladder', 5), ('caesar', 1), ('caesar', 2), ('caesar', 3), ('network', 1),
-         ('network', 2), ('network', 3), ('hardware', 1), ('hardware', 2), ('hardware', 3), ('hardware', 4)] + \
+         ('network', 2), ('network', 3), ('hardware', 1), ('hardware', 2), ('hardware', 3), ('hardware', 4),
+         ('hardware-bitwidth', 2), ('hardware-bitwidth', 5)] + \
         [(f'hmm-{q}', n) for q in gen_roulette.HMM_QUERIES for n in (1, 3, 4, 5)]
 
 # Roulette's answers (the artifact's programs through data/roulette/'s
@@ -38,6 +39,9 @@ ROULETTE = {
     ('hardware', 5): {'res(0)': 0.00010001999899848953, 'res(1)': 9.989007097339569e-5,
                       'res(2)': 9.990005098448052e-5, 'res(3)': 0.9997000699750082,
                       'res(4)': 1.1990403549192487e-7},
+    ('hardware-bitwidth', 5): {'res(0)': 0.00010001000099948902, 'res(1)': 9.997999900047792e-9,
+                               'res(2)': 9.998999700056022e-5, 'res(3)': 1.999000199979561e-8,
+                               'res(5)': 9.994001499798916e-5, 'res(6)': 0.9997000299990001},
     ('network', 5): {'m(5,0)': 2.900390625000001e-10, 'm(5,7)': 0.006003916488696291,
                      'm(5,15)': 0.9510506940708986, 'm(5,16)': 0.024751246878125025},
     ('hmm-smoothing-joint', 4): {'q': 0.19408598591176313},
@@ -69,8 +73,11 @@ def dice_answers(family, n, dist):
         return {f'key({k})': pr((k, 64)) for k in range(26)}
     if family == 'network':
         return {f'm({n},{v})': pr((v, 32)) for v in range(17)}
-    if family == 'hardware':
-        return {f'res({t})': pr((t, 8)) for t in range(5)}
+    if family in gen_roulette.HARDWARE:
+        # the k-th query's index, the last one's a run out of fuel
+        totals, out_of_fuel = gen_roulette.hardware_queries(*gen_roulette.HARDWARE[family](n))
+        size = 2 ** len(totals).bit_length()
+        return {f'res({t})': pr((k, size)) for k, t in enumerate(totals + [out_of_fuel])}
     raise AssertionError(family)
 
 
@@ -114,7 +121,10 @@ class GenRouletteTests(unittest.TestCase):
             self.assertEqual(queries, [a for a in gen_roulette.reference(family, n) if a != 'P(e)'], family)
 
     def test_the_committed_programs_are_what_the_script_writes(self):
-        files = sorted(programs.glob('*.pl'))
+        # The directory also holds circuits Roulette builds, written by
+        # another script.
+        files = sorted(f for f in programs.glob('*.pl')
+                       if f.read_text().startswith('% gen_roulette.py '))
         self.assertEqual({f.read_text().split()[2] for f in files}, set(gen_roulette.FAMILIES))
         for f in files:
             _, _, family, size = f.read_text().split('\n', 1)[0].split()

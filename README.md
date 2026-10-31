@@ -75,7 +75,7 @@ and the counters) and for the records made before the switch.
 |---|---|---|---|---|---|
 | ProbLog | 2.3.0, PySDD 1.0.6, pyeda 0.29.0 | the program suites and Geni's programs; a reference on the others | the program itself | `--problog`, `--kbs ddnnf,sdd,fsdd` | 1 |
 | PITA | the cplint pack on SWI-Prolog 9.2.9 | the program suites | `problog2pita.py` | `--pita`, `--pita-packs` | 2 |
-| Scallop | scallop-core 0.2.5, top-k proofs (approximate) | the program suites | `ground2scallop.py` | `--scallop`, `--scallop-k 10,1000` | 3 |
+| Scallop | scallop-core 0.2.5, top-k proofs at the largest k, every proof kept (exact) | the program suites | `ground2scallop.py` | `--scallop` | 3 |
 | Dice | 1.0, the binary of the sholtzen/dice image | `data/dice`, the networks, `data/nodice`, the circuits of `data/alea`, Geni's and Roulette's programs | the program, or `gen_bn.py --format dice`, `alea_bench.jl export`, `gen_geni.py`, `gen_roulette.py` | `--dice` | 4 |
 | Alea.jl | cf5e5b8 on Julia 1.11.9, CUDD 3.0.0 | the Dice programs above; the programs of `data/alea` | `dice2alea.py`; `alea_bench.jl run` | `--alea` | 5 |
 | aspmc | 1.1.1, sharpSAT-TD | the program suites; with evidence, the evidence asked as queries | the program itself | `--aspmc` | 6 |
@@ -136,7 +136,7 @@ name the baselines:
 
 ```
 PROGRAMS=(--kbs ddnnf,sdd,fsdd --problog "$PROBLOG" --pita "$SWIPL" --pita-packs "$PITA_PACKS"
-          --aspmc "$ASPMC_PYTHON" --scallop "$SCLI" --scallop-k 10,1000)
+          --aspmc "$ASPMC_PYTHON" --scallop "$SCLI")
 NETWORKS=(--ace "$ACE_DIR" --ace-variants auto,forceC2d --ace-heap "$ACE_HEAP" --merlin "$MERLIN")
 COUNTERS=(--ganak "$GANAK" --sharpsat-td "$SHARPSAT_TD" --sharpsat-td-decot 1,10)
 JULIA="julia --startup-file=no --threads=1 --gcthreads=1 --project=$ALEA_JL {file}"

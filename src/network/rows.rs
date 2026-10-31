@@ -2,31 +2,42 @@
 //! written, and how a probability is written in the program.
 //!
 //! A row of a table sums to one, and a file's decimals round it: bnlearn's
-//! pathfinder writes `0.3333333` three times, and the tables of a ground
-//! network are computed in doubles, so that some of Ace's rows sum to
-//! `1.00000000000000008`. Such a row is divided by its sum. A gap that the
-//! rounding of the entries does not explain, `0.9, 0.099` say, is the
+//! pathfinder writes `0.3333333` three times, and the networks of the UAI
+//! 2006 evaluation write `0.160598, 0.839403`, two halves rounded up; the
+//! tables of a ground network are computed in doubles, so that some of
+//! Ace's rows sum to `1.00000000000000008`, or in single precision, so
+//! that diagnose_b of the UAI classics writes `0.94297521, 0.05702495`,
+//! which sum to `1.00000016`. Such a row is divided by its sum. A gap that
+//! the rounding of the entries does not explain, `0.9, 0.099` say, is the
 //! table's own: short of one, the rest is left to no value, as ProbLog
 //! reads an annotated disjunction; over one, it is an error.
 
 use std::cmp::Ordering;
 
-/// The most a row's sum may differ from one and still be taken as binary
-/// rounding, the grounder's own tolerance for a row.
+/// The most a row's sum may fall short of one and still be taken as the
+/// binary rounding of doubles, the grounder's own tolerance for a row.
 const ROUNDING: f64 = 1e-9;
+
+/// The unit roundoff of single precision, 2^-24.
+const SINGLE: f64 = 1.0 / 16_777_216.0;
 
 /// `row` as the program writes it: divided by its sum where the sum
 /// differs from one by rounding, as read otherwise; an error for a row
 /// that sums to more than one by more than rounding explains, or that
 /// holds a negative or not finite entry.
 ///
-/// A sum within [`ROUNDING`] of one is binary rounding: over one, the row
-/// is divided by it, and under it, kept, so that rows that sum to one but
-/// for the last bits keep their numbers. A sum further from one is
-/// rounding where the gap is under the row's slack ([`explained`]), and
-/// the row is divided by it; otherwise a shortfall is kept and an excess
-/// is an error. The sum is `math.fsum`'s, which decides whether a row of
-/// sum one up to its last bits is divided ([`fsum`]).
+/// A sum within [`ROUNDING`] under one is binary rounding, and the row is
+/// kept, so that rows that sum to one but for the last bits keep their
+/// numbers. A sum further under one is rounding where the gap is under the
+/// row's slack ([`explained`]), and the row is divided by it; otherwise the
+/// shortfall is kept. A sum over one is rounding where the gap is at most
+/// the slack, which two halves rounded up reach, or at most `n + 1` times
+/// [`SINGLE`] for a row of `n` entries, the error of a row computed in
+/// single precision: its entries rounded there and divided by their sum,
+/// of `n - 1` rounded additions. The row is then divided by its sum, and
+/// otherwise the excess is an error. The sum is `math.fsum`'s, which
+/// decides whether a row of sum one up to its last bits is divided
+/// ([`fsum`]).
 pub(super) fn normalized(row: &mut [f64]) -> Result<(), String> {
     if let Some(&p) = row.iter().find(|p| !p.is_finite() || **p < 0.0) {
         return Err(format!("{p} is not a probability"));
@@ -37,10 +48,10 @@ pub(super) fn normalized(row: &mut [f64]) -> Result<(), String> {
         // in its last place, more than its slack; or binary rounding under
         // one.
         false
-    } else if (total > 1.0 && total <= 1.0 + ROUNDING) || explained(row) {
-        true
     } else if total < 1.0 {
-        false
+        explained(row, false)
+    } else if total - 1.0 <= (row.len() + 1) as f64 * SINGLE || explained(row, true) {
+        true
     } else {
         return Err(format!("probabilities sum to {total}"));
     };
@@ -61,7 +72,11 @@ pub(super) fn normalized(row: &mut [f64]) -> Result<(), String> {
 /// may be off by the larger of half a unit in the row's finest decimal
 /// place and half a unit in the most significant digits any entry of the
 /// row has (a zero entry by the first), and the slack is the sum of these.
-fn explained(row: &[f64]) -> bool {
+/// A gap equal to the slack, every entry rounded by half a unit the same
+/// way, counts only where `ties`: for an excess, which is otherwise an
+/// error, and not for a shortfall, which is otherwise the table's (`0.5,
+/// 0.499` leaves 0.001 to no value).
+fn explained(row: &[f64], ties: bool) -> bool {
     let written: Vec<Decimal> = row.iter().map(|&p| Decimal::meant(p)).collect();
     let nonzero = || written.iter().filter(|d| d.digits > 0);
     let Some(place) = nonzero().map(|d| d.exp).min() else {
@@ -96,7 +111,11 @@ fn explained(row: &[f64]) -> bool {
         Ordering::Less => one.minus(&sum),
         _ => sum.minus(&one),
     };
-    gap.cmp(&slack) == Ordering::Less
+    match gap.cmp(&slack) {
+        Ordering::Less => true,
+        Ordering::Equal => ties,
+        Ordering::Greater => false,
+    }
 }
 
 /// A nonnegative decimal `mantissa · 10^exp` with `digits` significant
@@ -381,6 +400,21 @@ mod tests {
             &[0.12345678, 0.43209877, 0.44444444],
             &[0.9999, 9.999e-05],
             &[0.3, 0.7000000000000003],
+            &[0.3, 0.700000002],
+            // Rows of the UAI classics, computed in single precision and
+            // written to eight decimals: over one by up to 1.6e-7, within
+            // 3 · 2^-24 for two entries (diagnose_a, diagnose_b).
+            &[0.99800204, 0.001998],
+            &[0.99400605, 0.005994],
+            &[0.94297521, 0.05702495],
+            &[0.99999408, 0.0000057, 0.0000003],
+            // Two halves rounded up, over one by the slack: the UAI 2006
+            // networks (BN_133, BN_17), and at four or seven decimals.
+            &[0.160598, 0.839403],
+            &[0.450006, 0.549995],
+            &[0.5, 0.501],
+            &[0.9, 0.101],
+            &[0.9999999, 0.0000002],
         ] {
             let out = row(r).unwrap();
             assert!((fsum(&out) - 1.0).abs() < 1e-15, "{r:?}");
@@ -399,8 +433,17 @@ mod tests {
         ] {
             assert_eq!(row(r).unwrap(), r);
         }
-        assert!(row(&[0.9, 0.101]).unwrap_err().contains("sum to 1.001"));
-        assert!(row(&[0.3, 0.700000002]).is_err());
+        // Over one by 0.002, past the slack of 0.001 (a unit in the third
+        // decimal for two entries).
+        assert!(row(&[0.9, 0.102]).unwrap_err().contains("sum to 1.002"));
+        // Over one by 2e-7, past single precision's 3 · 2^-24 for two
+        // entries and the decimals' slack of 1e-7.
+        assert!(
+            row(&[0.9999998, 0.0000004])
+                .unwrap_err()
+                .contains("sum to 1.0000002")
+        );
+        assert!(row(&[0.3, 0.7000002]).is_err());
         assert!(row(&[0.5, -0.5]).is_err());
     }
 
@@ -439,7 +482,7 @@ mod tests {
             ],
             &[0.0, 0.99273709, 0.007262920000000001],
         ] {
-            assert!(explained(r), "{r:?}");
+            assert!(explained(r, false), "{r:?}");
         }
     }
 
@@ -448,8 +491,8 @@ mod tests {
         // The places of 0.3333333 and 1e-300 are 293 digits apart, and the
         // gap of 1e-7 - 1e-300 is still under the slack of 1.5e-7.
         let thirds = [0.3333333, 0.3333333, 0.3333333, 1e-300];
-        assert!(explained(&thirds));
-        assert!(!explained(&[0.3333333, 0.3333333, 0.333333, 1e-300]));
+        assert!(explained(&thirds, false));
+        assert!(!explained(&[0.3333333, 0.3333333, 0.333333, 1e-300], true));
         assert_ne!(row(&thirds).unwrap(), thirds);
         let n = Natural::scaled(5, 40);
         let mut m = Natural::scaled(1, 40);

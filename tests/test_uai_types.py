@@ -38,6 +38,13 @@ class Types(unittest.TestCase):
         third = 0.3333333
         self.assertEqual(self.kind([[0]], [[third, third, third]], cards=(3,))[0], 'bayesian')
 
+    def test_rounding_of_each_entry_of_a_longer_row(self):
+        # Ihler's diagnose_a: a row of four entries written with five decimals sums to 1.00001.
+        table = [0.08824, 0.44118, 0.44118, 0.02941, 0.25, 0.25, 0.25, 0.25]
+        self.assertEqual(self.kind([[0], [0, 1]], [[0.3, 0.7], table], cards=(2, 4))[0], 'bayesian')
+        off = [0.08824, 0.44118, 0.44118, 0.02944] + table[4:]
+        self.assertEqual(self.kind([[0], [0, 1]], [[0.3, 0.7], off], cards=(2, 4))[0], 'markov')
+
     def test_a_table_that_does_not_sum_to_one(self):
         self.assertEqual(self.kind([[0], [0, 1]], [[0.3, 0.7], [0.9, 0.3, 0.2, 0.8]])[0], 'markov')
 

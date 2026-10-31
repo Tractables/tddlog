@@ -1,3 +1,4 @@
+:- use_module(library(lists)).
 parent(ann, bob).
 parent(bob, carl).
 0.5::sampled(X) :- person(X).

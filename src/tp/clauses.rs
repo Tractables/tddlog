@@ -687,6 +687,126 @@ impl Factoring<'_> {
         Ok(acc)
     }
 
+    /// `acc ∧ ⋀_r ¬body_r` with `groups`, of `bodies` of facts alone, built
+    /// level by level (`TddBackend::none_of`) rather than a clause at a
+    /// time, whose `and_clause` rebuilds the clause's spine (on bn_barley,
+    /// many times the tables' pairs), or from its models where it is a
+    /// table's ([`super::rows`]). `None` where the builder gives up past
+    /// [`NONE_OF_STEPS_PER_LITERAL`] and the clause loop takes over; `acc`
+    /// is taken only where the formula is built.
+    fn level_by_level(
+        &mut self,
+        bodies: &[Vec<GLit>],
+        groups: &[AtMostOne],
+        exclusive: &Exclusive,
+        scope: &VtreeScope,
+        acc: &mut Option<Tdd>,
+    ) -> Result<Option<Tdd>, CompileError> {
+        let mut taken = exclusive.clone();
+        let mut left_out = 0;
+        let cubes: Vec<Vec<tididi::Literal>> = bodies
+            .iter()
+            .map(|body| {
+                let mut lits = Vec::with_capacity(body.len());
+                lits.extend(body.iter().filter_map(|&l| self.fact_literal(l)));
+                left_out += taken.leave_out(&mut lits);
+                taken.take_pair(&lits);
+                lits
+            })
+            .collect();
+        let size = cubes.iter().map(Vec::len).sum::<usize>()
+            + groups.iter().map(|(g, _)| g.len()).sum::<usize>();
+        // The cubes and groups over the variables they read, the k-th
+        // of them local variable k + 1.
+        let (vars, cubes, local_groups) = {
+            let mut scratch = self.scratch.borrow_mut();
+            let vars = scratch.ranked(
+                cubes
+                    .iter()
+                    .flatten()
+                    .chain(groups.iter().flat_map(|(g, _)| g))
+                    .map(|l| l.var),
+                |i, _| i as u32 + 1,
+            );
+            let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
+            let cubes: Vec<Vec<tididi::Literal>> = cubes
+                .iter()
+                .map(|c| {
+                    c.iter()
+                        .map(|l| tididi::Literal::new(local(l.var), l.sign))
+                        .collect()
+                })
+                .collect();
+            let local_groups: Vec<(Vec<VarId>, bool)> = groups
+                .iter()
+                .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
+                .collect();
+            (vars, cubes, local_groups)
+        };
+        // The loop the watch refused in the run before, the same one
+        // ([`Refused`]).
+        let retaken = if acc.is_some() {
+            None
+        } else {
+            self.memo
+                .borrow_mut()
+                .retake(self.head, scope, &vars, &cubes, &local_groups)
+        };
+        if let Some(f) = retaken {
+            return self
+                .kept_if_refused(f, scope, vars, cubes, local_groups)
+                .map(Some);
+        }
+        // A table's link ([`super::rows`]) is the set of its models,
+        // built in one pass where there are no more of them than
+        // literals in its bodies and groups. A link of more spreads the
+        // switches of each row over the others' values, and builds
+        // slower than level by level. The copies the head ties
+        // ([`crate::indicators`]) that no group holds are the bits of
+        // a value read in binary.
+        let models = if vars.len() >= 2 {
+            let mut grouped = vec![false; vars.len() + 1];
+            for v in local_groups.iter().flat_map(|(g, _)| g) {
+                grouped[v.0 as usize] = true;
+            }
+            let outputs: Vec<VarId> = (1..=vars.len())
+                .filter(|&k| !grouped[k] && self.link_of[vars[k - 1].0 as usize] == self.head)
+                .map(|k| VarId(k as u32))
+                .collect();
+            super::rows::table_models(&cubes, &local_groups, &outputs, vars.len(), size)
+        } else {
+            None
+        };
+        let from_models = models.is_some();
+        let built = match models {
+            Some(models) => Some(self.backend.of_models(scope, &vars, &models)?),
+            None => self.backend.none_of(
+                scope,
+                &vars,
+                &cubes,
+                &local_groups,
+                NONE_OF_STEPS_PER_LITERAL.saturating_mul(size as u64),
+            )?,
+        };
+        (self.count)(Op::And, 1);
+        let mut memo = self.memo.borrow_mut();
+        if let Some(f) = built {
+            memo.stats.built += 1;
+            memo.stats.from_models += usize::from(from_models);
+            memo.stats.left_out += left_out;
+            drop(memo);
+            let Some(acc) = acc.take() else {
+                return self
+                    .kept_if_refused(f, scope, vars, cubes, local_groups)
+                    .map(Some);
+            };
+            let acc = self.backend.and(acc, f)?;
+            return (self.watched)(acc, self.head).map(Some);
+        }
+        memo.stats.fell_back += 1;
+        Ok(None)
+    }
+
     /// `start ∧ ⋀_r ¬body_r` on `scope`, conjoined into `start` a body at a
     /// time, the rules of pairs with them; `start` is true when there is
     /// none.
@@ -697,7 +817,6 @@ impl Factoring<'_> {
         scope: &VtreeScope,
         start: Option<Tdd>,
     ) -> Result<Tdd, CompileError> {
-        let started = start.is_some();
         let mut acc = start;
         let (mut groups, bodies) = self.at_most_one(bodies, pairs);
         if self.seeds {
@@ -708,114 +827,15 @@ impl Factoring<'_> {
             }
         }
         let mut exclusive = Exclusive::new(&groups);
-        // Bodies of facts alone, with the groups, built level by level
-        // (`TddBackend::none_of`) rather than a clause at a time, whose
-        // `and_clause` rebuilds the clause's spine (on bn_barley, many
-        // times the tables' pairs). The builder gives up past
-        // [`NONE_OF_STEPS_PER_LITERAL`] and the loop takes over.
+        // Bodies of facts alone, with the groups, built in one pass where
+        // that can be done ([`Self::level_by_level`]).
         if bodies
             .iter()
             .flatten()
             .all(|&l| self.fact_literal(l).is_some())
+            && let Some(f) = self.level_by_level(&bodies, &groups, &exclusive, scope, &mut acc)?
         {
-            let mut taken = exclusive.clone();
-            let mut left_out = 0;
-            let cubes: Vec<Vec<tididi::Literal>> = bodies
-                .iter()
-                .map(|body| {
-                    let mut lits = Vec::with_capacity(body.len());
-                    lits.extend(body.iter().filter_map(|&l| self.fact_literal(l)));
-                    left_out += taken.leave_out(&mut lits);
-                    taken.take_pair(&lits);
-                    lits
-                })
-                .collect();
-            let size = cubes.iter().map(Vec::len).sum::<usize>()
-                + groups.iter().map(|(g, _)| g.len()).sum::<usize>();
-            // The cubes and groups over the variables they read, the k-th
-            // of them local variable k + 1.
-            let (vars, cubes, local_groups) = {
-                let mut scratch = self.scratch.borrow_mut();
-                let vars = scratch.ranked(
-                    cubes
-                        .iter()
-                        .flatten()
-                        .chain(groups.iter().flat_map(|(g, _)| g))
-                        .map(|l| l.var),
-                    |i, _| i as u32 + 1,
-                );
-                let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
-                let cubes: Vec<Vec<tididi::Literal>> = cubes
-                    .iter()
-                    .map(|c| {
-                        c.iter()
-                            .map(|l| tididi::Literal::new(local(l.var), l.sign))
-                            .collect()
-                    })
-                    .collect();
-                let local_groups: Vec<(Vec<VarId>, bool)> = groups
-                    .iter()
-                    .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
-                    .collect();
-                (vars, cubes, local_groups)
-            };
-            // The loop the watch refused in the run before, the same one
-            // ([`Refused`]).
-            let retaken = if started {
-                None
-            } else {
-                self.memo
-                    .borrow_mut()
-                    .retake(self.head, scope, &vars, &cubes, &local_groups)
-            };
-            if let Some(f) = retaken {
-                return self.kept_if_refused(f, scope, vars, cubes, local_groups);
-            }
-            // A table's link ([`super::rows`]) is the set of its models,
-            // built in one pass where there are no more of them than
-            // literals in its bodies and groups. A link of more spreads the
-            // switches of each row over the others' values, and builds
-            // slower than level by level. The copies the head ties
-            // ([`crate::indicators`]) that no group holds are the bits of
-            // a value read in binary.
-            let models = if vars.len() >= 2 {
-                let mut grouped = vec![false; vars.len() + 1];
-                for v in local_groups.iter().flat_map(|(g, _)| g) {
-                    grouped[v.0 as usize] = true;
-                }
-                let outputs: Vec<VarId> = (1..=vars.len())
-                    .filter(|&k| !grouped[k] && self.link_of[vars[k - 1].0 as usize] == self.head)
-                    .map(|k| VarId(k as u32))
-                    .collect();
-                super::rows::table_models(&cubes, &local_groups, &outputs, vars.len(), size)
-            } else {
-                None
-            };
-            let from_models = models.is_some();
-            let built = match models {
-                Some(models) => Some(self.backend.of_models(scope, &vars, &models)?),
-                None => self.backend.none_of(
-                    scope,
-                    &vars,
-                    &cubes,
-                    &local_groups,
-                    NONE_OF_STEPS_PER_LITERAL.saturating_mul(size as u64),
-                )?,
-            };
-            (self.count)(Op::And, 1);
-            let mut memo = self.memo.borrow_mut();
-            if let Some(f) = built {
-                memo.stats.built += 1;
-                memo.stats.from_models += usize::from(from_models);
-                memo.stats.left_out += left_out;
-                drop(memo);
-                let Some(acc) = acc else {
-                    return self.kept_if_refused(f, scope, vars, cubes, local_groups);
-                };
-                let acc = self.backend.and(acc, f)?;
-                return (self.watched)(acc, self.head);
-            }
-            memo.stats.fell_back += 1;
+            return Ok(f);
         }
         // The formula is `None` while it is true, so that `one` is built only
         // for an operation that reads it, mostly a clause conjoined into it:

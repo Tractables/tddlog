@@ -1,7 +1,6 @@
 //! Lists of literals numbered as multisets.
 
-use rustc_hash::FxHashMap;
-
+use crate::by_hash::ByHash;
 use crate::ground::GLit;
 
 /// Lists of literals numbered in the order they are first seen, two lists
@@ -15,15 +14,11 @@ pub(crate) struct Multisets {
     lits: Vec<GLit>,
     /// Where each list ends in `lits`, after a 0.
     ends: Vec<usize>,
-    /// The last list with each hash, and per list the one before it with
-    /// the same hash.
-    by_hash: FxHashMap<u64, u32>,
-    same_hash: Vec<u32>,
+    /// The lists by their hash.
+    by_hash: ByHash,
     /// A count per literal, zero between comparisons.
     count: Vec<i32>,
 }
-
-const NONE: u32 = u32::MAX;
 
 impl Multisets {
     /// No lists, of literals over atoms below `num_atoms`.
@@ -31,15 +26,14 @@ impl Multisets {
         Multisets {
             lits: Vec::new(),
             ends: vec![0],
-            by_hash: FxHashMap::default(),
-            same_hash: Vec::new(),
+            by_hash: ByHash::default(),
             count: vec![0; 2 * num_atoms],
         }
     }
 
     /// How many lists there are.
     pub(crate) fn len(&self) -> usize {
-        self.same_hash.len()
+        self.by_hash.len()
     }
 
     /// List `id` as first given.
@@ -52,72 +46,67 @@ impl Multisets {
         self.lits.clear();
         self.ends.truncate(1);
         self.by_hash.clear();
-        self.same_hash.clear();
     }
 
     /// The number of the list equal to `lits` as a multiset, if there is one.
     pub(crate) fn find(&mut self, lits: &[GLit]) -> Option<u32> {
-        let last = self.by_hash.get(&Self::hash(lits)).copied().unwrap_or(NONE);
-        let id = self.first_same(last, lits);
-        (id != NONE).then_some(id)
+        let Multisets {
+            lits: all,
+            ends,
+            by_hash,
+            count,
+        } = self;
+        by_hash.find(Self::hash(lits), |id| same(all, ends, count, id, lits))
     }
 
     /// The number of `lits` as a multiset, numbered anew if it is new, and
     /// whether it is.
     pub(crate) fn id(&mut self, lits: &[GLit]) -> (u32, bool) {
-        let h = Self::hash(lits);
-        let last = self.by_hash.get(&h).copied().unwrap_or(NONE);
-        let id = self.first_same(last, lits);
-        if id != NONE {
-            return (id, false);
+        let Multisets {
+            lits: all,
+            ends,
+            by_hash,
+            count,
+        } = self;
+        let (id, new) =
+            by_hash.find_or_push(Self::hash(lits), |id| same(all, ends, count, id, lits));
+        if new {
+            all.extend_from_slice(lits);
+            ends.push(all.len());
         }
-        let id = self.same_hash.len() as u32;
-        self.lits.extend_from_slice(lits);
-        self.ends.push(self.lits.len());
-        self.same_hash.push(last);
-        self.by_hash.insert(h, id);
-        (id, true)
+        (id, new)
     }
 
     fn hash(lits: &[GLit]) -> u64 {
         lits.iter().fold(0u64, |h, &l| h.wrapping_add(l.mixed()))
     }
+}
 
-    /// The first list equal to `lits` on the chain from `id`, or `NONE`.
-    fn first_same(&mut self, mut id: u32, lits: &[GLit]) -> u32 {
-        while id != NONE && !self.same(id, lits) {
-            id = self.same_hash[id as usize];
-        }
-        id
+/// Whether list `id` of the lists that `ends` places in `lits` holds the
+/// literals of `y` as often each, counted in `count`, which it leaves at
+/// zero.
+fn same(lits: &[GLit], ends: &[usize], count: &mut [i32], id: u32, y: &[GLit]) -> bool {
+    let x = &lits[ends[id as usize]..ends[id as usize + 1]];
+    if x.len() != y.len() {
+        return false;
     }
-
-    /// Whether list `id` holds the literals of `y` as often each.
-    fn same(&mut self, id: u32, y: &[GLit]) -> bool {
-        let Multisets {
-            lits, ends, count, ..
-        } = self;
-        let x = &lits[ends[id as usize]..ends[id as usize + 1]];
-        if x.len() != y.len() {
-            return false;
-        }
-        if x == y {
-            return true;
-        }
-        let slot = |l: GLit| 2 * l.atom() as usize + l.is_positive() as usize;
-        for &l in x {
-            count[slot(l)] += 1;
-        }
-        for &l in y {
-            count[slot(l)] -= 1;
-        }
-        // Each literal of `x` as often in `y`, and as many literals in all,
-        // leaves none of `y` over.
-        let same = x.iter().all(|&l| count[slot(l)] == 0);
-        for &l in x.iter().chain(y) {
-            count[slot(l)] = 0;
-        }
-        same
+    if x == y {
+        return true;
     }
+    let slot = |l: GLit| 2 * l.atom() as usize + l.is_positive() as usize;
+    for &l in x {
+        count[slot(l)] += 1;
+    }
+    for &l in y {
+        count[slot(l)] -= 1;
+    }
+    // Each literal of `x` as often in `y`, and as many literals in all,
+    // leaves none of `y` over.
+    let same = x.iter().all(|&l| count[slot(l)] == 0);
+    for &l in x.iter().chain(y) {
+        count[slot(l)] = 0;
+    }
+    same
 }
 
 #[cfg(test)]

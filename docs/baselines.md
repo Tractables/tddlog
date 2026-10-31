@@ -22,11 +22,11 @@ builds:
 |---|---|---|---|
 | ProbLog 2.3.0 | yes (`ddnnf`, `sdd`, `fsdd`, `bdd`) | programs | `--problog`, `--kbs` |
 | PITA / cplint (SWI-Prolog 9.2.9) | yes | programs, through `problog2pita.py` | `--pita`, `--pita-packs` |
-| Scallop | no (top-k proofs) | ground programs, through `ground2scallop.py` | `--scallop`, `--scallop-k` |
+| Scallop 0.2.5 | yes (top-k proofs at the largest k, every proof kept: `allproofs`) | ground programs, through `ground2scallop.py` | `--scallop` |
 | Dice | yes | Dice programs and networks; other programs through `ground2net.py` | `--dice` |
 | Alea.jl (Julia 1.11.9) | yes | Dice programs and networks, through `dice2alea.py` | `--alea` |
 | aspmc 1.1.1 | yes | programs, the evidence asked as queries | `--aspmc` |
-| Ace 3.0 | yes | networks; other programs through `ground2net.py` (section 23) | `--ace`, `--ace-variants`, `--ace-heap`, `--ace-java` |
+| Ace 3.0 | yes | Bayesian networks; Markov networks translated to Bayesian networks; other programs through `ground2net.py` (section 23) | `--ace`, `--ace-variants`, `--ace-heap`, `--ace-java` |
 | Merlin 1.7.0 | yes (`bte`, `cte`) | UAI files; other programs through `ground2net.py` | `--merlin` |
 | pyAgrum (aGrUM) | yes (junction tree, Shafer-Shenoy on Markov networks) | UAI files | `--agrum` |
 | pgmpy | yes (variable elimination) | UAI files | `--pgmpy` |
@@ -52,7 +52,15 @@ builds:
 `scripts/bn_exact.py` (a clique tree over the rows `gen_bn.py` writes, the
 reference for the networks, where ProbLog finishes only sachs),
 `lit_exact.py`, `tpch_exact.py`, `reliability_exact.py` and
-`gen_roulette.py --reference-of`. A baseline
+`gen_roulette.py --reference-of`. Two more give the references of sizes
+that only tddlog answers, beside the runs' records: `uwcse_exact.py`,
+lifted over the students (uwcse2560), and `smokers_exact.py`, a dynamic program over the set of
+smokers in 3^n steps, for `gen_smokers.py`'s programs of up to 20 people
+(the nested symmetric smokers nsym10 to nsym16). `smokers_exact.py` gives
+ProbLog's answers on s6, s10, s15 and three symmetric programs of 6 to 8
+people to 5e-9 (ProbLog's eight digits), aspmc's on the plain symmetric
+program of 10 people to 4e-16, and tddlog's on the plain ones of 11 to 16
+people to 2e-14 (`tests/test_smokers_exact.py`). A baseline
 whose option is empty is not run:
 
 ```
@@ -76,8 +84,9 @@ installed ones):
 | Tessa | exact model checker for the weather factory in JAX; needs Python 3.12 with its own stormpy build and was not installed in the time of this run |
 
 `bench.py table` takes the first of `--ref` that finished as the reference
-answer and the first of `--pr-ref` for log10 Z; `--approx` (Scallop by
-default) gets a column of its own.
+answer and the first of `--pr-ref` for log10 Z; `--approx SYSTEM:VARIANT`
+(Scallop's records at a smaller k, from before 2026-10-29) gets a column of
+its own.
 
 tddlog's time includes the conversion of a program from its original
 language into the file tddlog reads: the ProbLog program of a Dice or
@@ -380,19 +389,54 @@ CARGO_TARGET_DIR=$PREFIX/cargo-target cargo +nightly build --release --bin scli
 `scli file.scl -p <provenance> -k <k>` prints one line per relation,
 `name: {tag::tuple, ...}`.
 
-### Not exact
+### Exact at the largest k
 
-Scallop offers no exact probabilistic inference out of the box:
+Scallop compiles no program's formula. Every probabilistic provenance
+tags each tuple with proofs (or clauses) during the fixpoint, and only
+at the output turns a tuple's DNF into an SDD, built bottom-up over a
+balanced vtree of that formula's variables, and evaluates it in a
+semiring: `AsBooleanFormula::wmc`
+(`core/src/runtime/provenance/common/as_boolean_formula.rs:10-20`;
+`lib/sdd/src/bottom_up.rs:20-27`, `vtree.rs:74-83`, `sdd.rs:153-179`),
+the algebraic model counting of its papers. No provenance that its
+command line or its Python API (`etc/scallopy/src/context.rs:134-344`)
+names compiles the program instead. Scallop is compared as the proof
+enumeration method it is (the owner, 2026-10-29: "If not yeah we should
+just compare to them as a kind of proof enumeration technique"), with
+every proof kept:
 
-- `topkproofs` keeps the k most probable proofs of each tuple
-  (`retain_top_k`) and computes an exact WMC over that subset of the DNF:
-  a lower bound, exact only once k reaches the number of proofs on the
-  way. Negation goes through `cnf2dnf_k`, also capped at k. The default k
-  is 3. Five independent facts deriving one head (true answer 0.96875)
-  give 0.5, 0.75, 0.875 at k = 1, 2, 3.
-- `proofs` keeps every proof but applies no WMC; `prob_proofs`, the exact
-  one, is dead code with no CLI name.
-- `minmaxprob` and `addmultprob` are approximations.
+- `topkproofs` keeps the k most probable proofs of each tuple. At k =
+  usize::MAX = 2^64 - 1, the largest `-k` takes (a usize,
+  `etc/scli/src/main.rs:26-27`), none is dropped: `retain_top_k` sorts
+  and truncates to k (`common/dnf_context.rs:32-41`); a negation's
+  `cnf2dnf_k` expands the whole product of its CNF (70-193); addition is
+  a union and the fixpoint stops when a tag no longer changes
+  (`saturated` is `t_old == t_new`, `probabilistic/top_k_proofs.rs:117-119`),
+  so the fixpoint holds every proof. Only an empty DNF is discarded
+  (101-103), and `retain_no_conflict` drops only the clauses that break
+  a declared exclusive disjunction, which `ground2scallop.py` never
+  declares. Nothing is sized by k up front. The default scheduler is the
+  least fixpoint (`env/scheduling.rs:102-105`) with no iteration limit
+  unless `--iter_limit` is given (`main.rs:37-39`, 147). The answer is
+  the SDD's weighted model count in f64, printed in full
+  (`dynamic/output_collection.rs:80-91`).
+- `prob_proofs` (`probabilistic/prob_proofs.rs`) is the same DNF of
+  proofs and the same SDD (153, 195), unfinished: `negate`, `minus` and
+  `saturated` are `unimplemented!()` (180-190), and addition concatenates
+  without removing duplicates (66-69). The fixpoint calls `saturated`
+  whenever a tuple is derived again (`statics/relation.rs:227`,
+  `env/schedulers/utils.rs:45`), so a recursive program or a negation
+  panics. It has no command line name and scallopy names none either; a
+  four-line patch to `scli` would expose it, and where it ran it would
+  compute what `topkproofs` at the largest k does. It is not patched in.
+- `proofs` keeps every proof but applies no WMC; `minmaxprob`,
+  `addmultprob`, `topbottomkclauses` and the `diff*` family are bounds,
+  approximations or top-k sets of clauses.
+
+Its cost grows with the proofs: removing duplicates from a DNF is
+quadratic in its clauses (`dnf_formula.rs:69-84`), a conjunction forms
+the full product (60-67), a negation the full product of its CNF, and
+the SDD's evaluation is not memoized (`sdd.rs:161-178`).
 
 A probability on a rule is a fresh random variable per derivation: `0.95
 :: alarm() :- earthquake() or burglary()` gives `1-(1-0.05*0.95)(1-0.90*0.95)
@@ -403,15 +447,57 @@ A probability on a rule is a fresh random variable per derivation: `0.95
 `scripts/ground2scallop.py` translates the ground program `tddlog
 --ground` prints, where annotated disjunctions and rule probabilities are
 already independent switch facts, so the per-derivation semantics never
-arises. `bench.py run --scallop <scli> --scallop-k 3,1000` runs one
-variant `topk<k>` per k (by default 1000), and for a program with evidence
-divides `q<i>e` by `e`, since Scallop does not condition. The seconds
-include the grounding.
+arises. `bench.py run --scallop <scli>` runs the one variant `allproofs`:
+`scli -p topkproofs -k 18446744073709551615 FILE.scl` (`SCALLOP_K`), and
+for a program with evidence divides `q<i>e` by `e`, since Scallop does
+not condition. The seconds include the grounding. Scallop's answers are
+checked against the reference as every exact system's are. Under `--pr`
+it is asked P(e) as ProbLog, PITA and aspmc are, the probability of the
+query `bench_pe` of the network's P(e) program (`pe_program`).
 
-The error reaches zero only on the smallest programs; from bn_asia up,
-the k that would make it exact runs out of time first (a conjunction of
-two k-proof DNFs forms k² products before it truncates). Scallop is in the
-harness as the approximation it is (`--approx`), not as an exact baseline.
+It is given every suite whose programs tddlog grounds (the owner,
+2026-10-29: "I would love to include Scallop in our evaluation wherever
+we can"), each beside tddlog auto in the same lanes, under the skip
+rule, its programs captured in the same job:
+
+- the standard suite's programs and networks, the
+  literature suite, TPC-H, Biomine, Ace's and the large networks, the
+  UAI MAR set (marginals and partition function) and the two PR sets
+  (P(e)), as the ProbLog family's tables give them (rd1_docs.py's
+  `SC_TABLES`, cross tables of every kind);
+- the PPL suites: the Dice paper's programs, networks and loops,
+  the scaled loops, Alea.jl's circuits and noDice's programs, Roulette's
+  programs, the bit-blasted circuits and Geni's programs, each as the
+  ProbLog program the ProbLog family reads.
+
+Scallop stratifies negation by relation: where a relation reads its own
+negation, as a loop's step reads the step before it under one ProbLog
+predicate, it stops with "Cannot stratify program: negative cycle
+detected" and answers nothing, although the ground atoms form no such
+cycle. `ground2scallop.py` therefore writes every relation of a strongly
+connected component of the relations' dependencies with a negation inside
+it atom by atom, one nullary relation per ground atom, a renaming of the
+ground rules' atoms (40 programs were refused so: the Dice loops
+`dice_ladder` and `dice_pmc1`/`dice_pmc2`, Roulette's hardware, ladder,
+network and hidden Markov models; their families were rerun with the
+split). A ground program whose atoms do form a cycle through a
+negation is still refused, a failed run.
+
+The model counting competition's CNFs (internal) ask no query and are
+not given to it, as to the rest of the ProbLog family.
+
+Until 2026-10-29 the harness ran it at k = 1000 (and 10), as an
+approximation (`--approx`) left out of the public tables, where the
+error reached zero only on the smallest programs; the release run's
+records of those k (the standard, literature and network suites, TPC-H
+and Biomine) are dropped by the processing (`rel/rerun.py`).
+
+Scallop stratifies negation by relation and refuses a program whose
+relation reads its own negation, even where the ground atoms do not
+(threedie10 of the third literature scan, in the smoke of 2026-10-30:
+`Cannot stratify program: negative cycle detected between predicate
+r_on and r_on`). The refusal is Scallop's error and counts as a failure
+(rule 15).
 
 ---
 
@@ -693,7 +779,7 @@ Alea (a command template like `--alea`).
 
 `bench.py --suite ppl` holds the benchmark programs of the papers on
 Dice and Alea.jl, and of later papers that compare with them, that are
-exact inference on a discrete (or bit-blasted) program: 62 instances in
+exact inference on a discrete (or bit-blasted) program: 120 instances in
 four families. The survey of 2026-10-11:
 
 | paper | artifact (license) | programs | here |
@@ -702,7 +788,7 @@ four families. The survey of 2026-10-11:
 | Cao et al., "Scaling Integer Arithmetic in Probabilistic Programs", UAI 2023 | Tractables/Alea.jl branch `arithmetic` 7e9ff23 (Apache-2.0) | Table 1's 25 programs (book, tugofwar, caesar, ranking, radar, Floyd-Warshall, linext, triangle, gcd, disease, luhn), integers of 2 to 20 bits | `arith`: all 25 and caesar_huge, disease_large, plankton (`data/alea/arith`) |
 | Garg et al., "Bit Blasting Probabilistic Programs", PLDI 2024 | Alea.jl branch `hybit` 96b69a5 (Apache-2.0); Zenodo 10.5281/zenodo.10901544 (CC-BY-4.0) | Table 2's 19 programs, continuous distributions as fixed-point numbers of 8 to 25 bits and 16 to 4 096 pieces | `hybit`: all 19 at the bits and pieces of the paper's HyBit column (`data/alea/hybit`) |
 | Bowers et al., "Stochastic Lazy Knowledge Compilation for Inference in Discrete Probabilistic Programs" (Pluck), PLDI 2025 | Zenodo 10.5281/zenodo.15051140 (CC-BY-4.0) | Table 1 against Dice.jl: the Dice paper's networks, diamond and ladder; four sequence models (HMM, PCFG, string editing, sorted lists) on inductive types | `pluck`: the four sequence models' Dice.jl programs ported to Alea.jl (`data/alea/pluck`) |
-| Gürtler and Kaminski, noDice, OOPSLA 2026 | Zenodo 10.5281/zenodo.18739789 (CC-BY-4.0, code Apache-2.0) | Table 1's Dice programs, some with nondeterminism (`nflip`) | `nodice`: the 11 without `nflip` (`data/nodice`) |
+| Gürtler and Kaminski, noDice, OOPSLA 2026 | Zenodo 10.5281/zenodo.18739789 (CC-BY-4.0, code Apache-2.0) | Table 1's Dice programs, some with nondeterminism (`nflip`); the artifact's `benchmarks/nodice/` holds more programs and sizes than Table 1 | `nodice`: the 11 without `nflip` (`data/nodice`); the artifact's other programs without `nflip` from 2026-10-30 (below) |
 
 The `arith`, `hybit` and `pluck` programs are Alea.jl programs: Alea
 runs them, and tddlog, ProbLog and Dice run the circuit Alea builds for
@@ -724,8 +810,33 @@ them (below). The `nodice` ones are Dice programs, translated by
   fairness programs) are in Slice's own language with continuous
   distributions and become Dice programs only through Slice's OCaml
   discretizer, which the artifact does not run ahead of time. Open.
-- noDice's other programs choose nondeterministically (`nflip`), which
-  no system here has.
+- noDice's programs that choose nondeterministically (`nflip`: Runway,
+  CouponNdet, Network, Rabin, the `-Ndet` networks, 3sat-25 to 3sat-100
+  and the `diamond/` directory), which no system here has; its `toy/`
+  programs; and `bayesian/reorder/`, the five networks again in another
+  variable order.
+
+This line said until 2026-10-30 that all of noDice's other programs use
+`nflip`, and that was wrong. The survey took noDice's Table 1 for its
+artifact, and the artifact's `benchmarks/nodice/` holds purely
+probabilistic programs that Table 1 does not list: the coupon collector
+at 2 to 9 coupons, the bounded retransmission protocol (`brp/`), uniform
+random 3-SAT of 20 variables (`3sat-20/`) and SATLIB's uf50-0999 whole,
+and diamonds and ladders by length (`diamond-prob/`, `ladder-prob/`).
+The literature scans after it (2026-10-25 and 10-29) looked for logic
+programs and networks and did not read the functional programs' artifacts
+again, so the gap stayed until a census of the programs tddlog reads
+(2026-10-30) found these. They are in the `nodice` family since that day
+(data/nodice/README.md): the coupon collector's smaller sizes, brp
+(the artifact's 4 to 16 frames and, written in its pattern, 64 to 16 384,
+until no system answers), the eleven 3-SAT formulas, and the diamonds
+and ladders in noDice's own writing, a function called once per
+diamond or rung, beside the Dice loops' and Roulette's writings of the
+same models. Of the other surveyed artifacts, Alea.jl's, Geni's and
+Roulette's were read directory by directory and have no such gap; the
+corners left were Roulette's hardware program at other bit widths, in
+the roulette suite since the same day (section 11), noDice's PRISM
+models (`storm/`) and Genfer's `prodigy/` programs.
 
 `bench.py --suite bitblast` runs the bit-blasting paper's programs on
 ladders of size: each Table 2 program (`data/alea/hybit`) at the paper's
@@ -1336,11 +1447,111 @@ Roulette's own `(time ...)` of building and querying the program, without
 Racket's start and loading, is kept as `inproc_seconds`. A value Roulette
 leaves out of its distribution answers 0.
 
+The hardware program runs on two of the artifact's three ladders: fuel
+(`rl_hardware`, bit width 2, n = fuel - 2) and bit width
+(`rl_hardware_bitwidth`, n = 2, fuel 3, from the artifact's 5 to 20 bits
+on up). Its third ladder, n from 5 to 20 at bit width 2, is one program:
+`(int n)` saturates at 2^2 - 1 = 3. The programs ask what Roulette
+prints, the probability of each total a run can end with and of a run out
+of fuel; at bit width 2 that is every total, and on the bit-width ladder
+the few small totals of three iterations, not one query for each of the
+2^BW values a total could hold. On the bit-width ladder the ProbLog
+program is written once over the iterations and the bits, with the bit
+width a fact, `width(BW)`, as Roulette's program takes it as a parameter:
+a cell's bits are atoms with the bit as an argument, so that tddlog and
+the ProbLog family find the constant high bits themselves, as Roulette
+does. Each rule whose head is at iteration J + 1 binds J first, so that
+ProbLog's top-down evaluation never negates an atom it is still
+evaluating. Unrolled, a rule for each bit, the program took about 47
+lines and 187 bytes a bit (178 MB at 100000 bits); it grounded to 119
+rules at every width, but reading and grounding the file took tddlog
+22 s and 7 GB at 100000 bits. Written once, it grounds to 56 rules at
+every width, and tddlog answers in under 0.01 s up to 10^7 bits. The
+ladder runs to 10^7 bits, where Roulette takes 703 s (60 s at 10^6,
+190 s at 3 x 10^6).
+
 `--roulette-variants rsdd,nocomplement` adds caesar queried with `(query
 e #f)`. Roulette's default `query` takes one value's probability as one
 minus the others', which loses that value once the evidence's
 probability is below about 1e-16 (caesar from 25 letters on prints 0 for
 the most likely key); `nocomplement` gives every value to 1e-13.
+
+`--roulette-variants extexp` (with `--roulette-extexp CMD`) runs a second
+Roulette whose counts do not underflow. rsdd counts in doubles, so that a
+probability of evidence below 2^-1074 is 0 and the query answers 0 for
+every value: the Dice programs caesar-iter at 3000 characters (P(e) =
+2.0e-904) and simpleCaesar at 300 (4.0e-1215), and the hmm marginal
+likelihood from about 915 steps. The owner asked whether this underflow
+can be avoided. rsdd has no log or extended-range semiring and Roulette
+no option for one, so the variant patches both. rsdd (camoy/rsdd
+b1f7e241, the head of `more-ffi`) gets a semiring of reals held as a
+double mantissa in [0.5, 1) and a 64-bit binary exponent, and the FFI
+functions `new_wmc_params_ext`, `wmc_param_ext_set_weight` and
+`bdd_wmc_ext`. Roulette's engine (roulette-lib/engine/rsdd.rkt) counts
+through them and returns each count as the exact rational
+mantissa * 2^exponent, which the query normalizes exactly. The flips'
+weights are the doubles the artifact gives rsdd. The exponent extends the
+range, not the precision: the complement, one minus the counts of the
+other values and of the failed evidence, still cancels to nothing below
+a double's precision, so the variant queries caesar and the translated
+programs without it, as `nocomplement` does.
+
+The variant's installation is a second one beside the artifact's, under
+its own PREFIX: the same Racket and packages, the engine patched, and
+rsdd built from source with the patch, with its feature `ffi` (as the
+artifact's Dockerfile builds it) and with rand's feature `small_rng`
+(rsdd uses it, and with no Cargo.lock today's resolution of rand no
+longer enables it). Its `librsdd.so` goes into the add-on library
+directory after `raco setup`, whose run of Roulette's pre-installer
+would replace it with the 404 page its download URL now answers.
+
+Checked on 2026-10-30, untimed: caesar-iter at 3000 answers key 2 with
+probability 1, as tddlog does, in 25 s (Roulette alone answers 0 for
+every key, in 23 s); simpleCaesar at 300 answers key 1 with 1 and the
+others 5.5453459302e-293, tddlog's answers to the digits printed, in
+60 s; the hmm marginal likelihood at 900 and 1000 steps is
+9.6367125937e-312 and 2.6631817413e-346, the reference's
+9.63671259356e-312 and 2.66318174129e-346 within the reference's own
+precision (sums of logarithms over a thousand steps); caesar at 200
+letters gives each key the reference's answer to a relative 1.5e-12. On
+the smallest size of every other program of the suite and on four
+translated Dice programs it answers what Roulette alone answers, to
+1.7e-16.
+
+tddlog's scripts/roulette2problog.rkt runs a Roulette program with
+tddlog as its backend: Roulette evaluates the program as it does, with
+an engine that records the circuit instead of calling rsdd, and the
+exporter writes the circuit as one ProbLog program for every query, or
+with `--tddlog TDDLOG` hands it to tddlog and prints the program's
+output as Roulette does. The two routes are timed alike. Roulette alone
+runs the program `raco make` compiled, untimed; the exporter's `--make`
+compiles the same modules in its own language into its cache, untimed
+at the same place. The timed run of the export covers Racket's start,
+the program's evaluation and the writing of the circuit, and tddlog's
+count of that circuit is timed after it; the two are kept apart and
+summed.
+
+Timed on 2026-10-30 (one server, 34 lanes of 29 GB, a 600 s limit, the arms
+of an instance back to back in one lane; tddlog 5743153b): every
+program of `--suite roulette` on its ladder, the nine networks and the
+22 Dice programs of data/dice translated. Over the 91 instances both
+answer, Roulette alone takes 812 s, the export 487 s and tddlog's count
+368 s (856 s together), the backend run 860 s. The export with tddlog
+answers larger sizes than Roulette alone on seven ladders: caesar 20000
+(Roulette 5000), diamond 300000 (10000), hardware fuel 1000 (300), the
+hmm filtering and smoothing marginals 300000 (3000), ladder 300000
+(10000), motivating 1000000 (10000) and network 30000 (300). Roulette
+stops there with a segmentation fault (diamond, ladder, motivating,
+caesar) or rsdd's failed allocation of 6 GB (network, hardware, hmm).
+Both reach the same sizes on the bit-width ladder (3000000 bits, where
+Racket's evaluation of the program takes the time and the count 0.1 s)
+and on the hmm joints (3000). tddlog's count is slower than rsdd's on
+the hmm joints (94 s against 44 s for filtering over their sizes, 84 s
+against 41 s for smoothing), pmc1 (52 s against 10 s) and pmc2 (10 s
+against 2.6 s). The backend run answers each of the 68 instances with a
+reference as the reference does, to 4e-13; Roulette alone answers 0.62
+off the hmm filtering marginal at 1000 and 3000 steps (0.45 off the
+smoothing marginal), and extexp answers them as the reference.
 
 The reference is `--exact` (`exact:dp`): `gen_roulette.py --reference-of`
 computes each program's answers by a dynamic program over the model's
@@ -2207,22 +2418,32 @@ the same model) has the class of the program it is written from.
 | psi | bitblast | `bb_linreg_` | own | Psi's R2 linear regression, as Psi's own program |
 | sppl | bitblast | `bb_markov_` | own | SPPL's hierarchical Markov switching model (PLDI 2021) |
 | psouffle | lit | `taint_` | own | the Android taint analyses of PSouffle's evaluation (FMCAD 2026) |
-| tddlog | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | native | the network itself, read by tddlog's network reader (BIF, Hugin, GeNIe, UAI) |
+| problog | lit | `problogtut_` | own | the ProbLog tutorial's programs that ask marginals |
+| problog | lit | `problogex_` | own | the example programs of ProbLog's repository |
+| problog | lit | `pcfg` | own | the ProbLog tutorial's probabilistic context-free grammar, in its two encodings |
+| pita | lit | `(cplint_\|threedie\|dnahmm)` | own | cplint's examples written for PITA, PITA's three-sided die (ICLP 2010) and its DNA HMM (TPLP 2011) |
+| pita | std | `uwcse` | own | cplint's UW-CSE grown in students, as PITA's evaluation grows it (ICLP 2010) |
+| problog | lit | `(sickness\|mastermind)` | own | the dynamic ProbLog programs of Vlasselaer et al. (IJAR 2016) |
+| problog | lit | `pgrid` | own | the probabilistic grid of ProbLog2's evaluation (Fierens et al., TPLP 2015) |
+| tddlog | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | the network itself, read by tddlog's network reader (BIF, Hugin, GeNIe, UAI) |
 | tddlog | roulette | `rl_bn_` | native | the Roulette paper's Bayesian networks, read by tddlog's network reader |
 | ace | std_bn, large | all | native | a Hugin network, Ace's own input (a + in a number dropped where Ace's reader refuses one) |
 | ace | dice | `bn_` | native | the Dice paper's Bayesian networks, as Hugin networks |
-| ace | uai, uai_pr, uaipr, uaitpr | `uai_bn_31$` | translated | a Bayesian network by its structure whose tables sum to one within 1e-5 (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it for Ace as a Markov network, a node per factor, observed |
-| ace | uai, uai_pr, uaipr, uaitpr | bayesian (`data/uai_types.tsv`) | native | a Bayesian network of the UAI sets converted to a Hugin file (gen_bn.py), the same variables and tables, as Ace reads a UAI file only as a Bayesian network |
-| ace | uai, uai_pr, uaipr, uaitpr | all | translated | a Markov network written as a Bayesian network for Ace (gen_bn.py write_hugin): a node per factor, observed |
+| ace | uaiihler | `uai_bn_(1[68]\|2[02468]\|3[02468]\|40\|7[0-35-7])$` | translated | a Bayesian network by its structure, whose tables sum to one within the rounding of their entries (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it for Ace as a Markov network, a node per factor, observed |
+| ace | uai, uai_pr, uaipr, uaitpr | `uai_bn_31$` | translated | a Bayesian network by its structure, whose tables sum to one within the rounding of their entries (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it for Ace as a Markov network, a node per factor, observed |
+| ace | uai, uai_pr, uaipr, uaitpr, uaiihler | bayesian (`data/uai_types.tsv`) | native | a Bayesian network of the UAI sets converted to a Hugin file (gen_bn.py), the same variables and tables, as Ace reads a UAI file only as a Bayesian network |
+| ace | uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Markov network written as a Bayesian network for Ace (gen_bn.py write_hugin): a node per factor, observed |
 | ace | roulette | `rl_bn_` | native | the Roulette paper's BIF networks converted to Hugin files (gen_bn.py), the same variables and tables, as Ace reads no BIF file |
-| merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr | all | native | a UAI network, the tool's own input |
+| merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | a UAI network, the tool's own input |
 | merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | native | the network converted to a UAI file (gen_bn.py --uai), the same variables and tables |
 | merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai), the same variables and tables |
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
-| problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
+| problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
-| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
 | tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
+| tddlog | lit | `cplint_` | native | cplint's example, an LPAD, read by tddlog's LPAD reader |
+| tddlog, problog, pita, aspmc | lit | `cplint_` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
 | tddlog | std, dice | `dice_(?!(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder))` | native | the Dice paper's program, read by tddlog's Dice reader |
 | tddlog | ppl | `nodice_` | native | noDice's programs, which are Dice programs, read by tddlog's Dice reader |
@@ -2230,6 +2451,7 @@ the same model) has the class of the program it is written from.
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
 | psouffle | std, lit, tpch, biomine | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
+| scallop | std, lit, tpch, biomine, std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler, dice, ppl, bitblast, roulette, geni | all | translated | the ground program tddlog --ground prints of the ProbLog program (under --pr, of its P(e) program), as Scallop relations and rules (ground2scallop.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
@@ -2474,6 +2696,20 @@ Elsewhere it stops on CUDD's allocation (`bddOr returned NULL`,
 `Cudd_bddAnd failed`), runs past the limit, or is refused by the
 translation (pedigree's 14 programs and bloodtype: their annotated
 disjunctions inside a recursion).
+
+On the third literature scan's problogex_3_tossing_coin (the smoke of
+2026-10-30, ls3rs) it answers someHeads 0.0 where ProbLog and tddlog
+answer 0.9744, on a translation that is the program rule for rule:
+
+```
+0.6::heads(C) :- coin(C).
+someHeads() :- heads(_).
+query(someHeads()).
+```
+
+with `coin` an input relation of four rows of probability 1.0. The cause
+is not known; the answer is kept as PSouffle's and counts as wrong (rule
+15).
 
 Not given: the networks (`gen_bn.py`'s programs, std_bn and the network
 suites) and the probabilistic functional programs, for lack of time in

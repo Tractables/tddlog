@@ -204,7 +204,7 @@ pub(super) fn families_weighted(lead: Kind, laid: Option<&Trial>) -> bool {
 /// matters ([`shape::nothing_to_order`]): only an order of the
 /// facts themselves can help, and its trial is `dynamic`: the min-fill
 /// vtree, searched by rotations between the compile's steps
-/// ([`tp::Compilation::dynamic`]), unprojected, since the component's cone
+/// ([`crate::tp::Compilation::dynamic`]), unprojected, since the component's cone
 /// is most of the facts. The search beats the static min-fill vtree it
 /// starts from on the larger random graphs; `td` does no better than
 /// min-fill there, and its decomposer's least budget costs seconds on
@@ -227,7 +227,7 @@ pub(super) fn families_weighted(lead: Kind, laid: Option<&Trial>) -> bool {
 /// Where every rule reads facts alone, or copies of facts
 /// ([`shape::reads_facts_alone`]), the atoms have no direction and `td`
 /// comes first, then `dynamic` and `closed`. `td`'s vtree there is its
-/// decomposition folded ([`vtree::build`]) and its compile is projected, so
+/// decomposition folded ([`crate::vtree::build`]) and its compile is projected, so
 /// the evidence walk conjoins each observation at the lowest vtree node
 /// over its facts. `dynamic` starts from a fold too, but compiles
 /// unprojected: every formula is on the global scope, and the walk conjoins

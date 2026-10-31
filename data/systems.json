@@ -184,6 +184,14 @@
       "notgiven": "The networks and the probabilistic functional programs, for lack of time in this release; the programs its language cannot express (lists, function symbols, disjunctive bodies, division, negation through recursion).",
       "cite": {"authors": "Xuyang Li, Jiahao Xia, Ahmed Adnan and Jingbo Wang", "title": "PSoufflé: Scaling Exact Probabilistic Logic Inference for Program Analysis", "venue": "FMCAD", "year": 2026},
       "link": "https://github.com/psouffle-lang/psouffle"
+    },
+    "scallop": {
+      "about": "A Datalog language for neurosymbolic programming whose provenance semirings tag each tuple: for probabilities its top-k proofs keep the k most probable proofs of each tuple and count the weighted models of their disjunction with an SDD.",
+      "version": "Scallop 0.2.5 (668bfb6)",
+      "settings": "The ground program tddlog --ground prints, as Scallop relations and rules (ground2scallop.py), under its top-k proofs (-p topkproofs) at the largest k its command line takes, 2^64 - 1, so that no proof is dropped and the answer is exact (allproofs); its time includes the grounding. Scallop does not condition: with evidence the harness divides the probability of the query and the evidence by that of the evidence, and for a partition function it is asked the probability of the evidence as a query, as ProbLog is.",
+      "notgiven": "",
+      "cite": {"authors": "Ziyang Li, Jiani Huang and Mayur Naik", "title": "Scallop: A Language for Neurosymbolic Programming", "venue": "PLDI", "year": 2023},
+      "link": "https://github.com/scallop-lang/scallop"
     }
   }
 }

@@ -1,4 +1,4 @@
-//! The two passes of a count over one diagram ([`count`], [`Counted`]),
+//! The two passes of a count over one diagram ([`fn@count`], [`Counted`]),
 //! and the count of the conjunction of two diagrams, one on a projection
 //! of the other's vtree, without building it ([`conjunction_count`]).
 
@@ -94,7 +94,9 @@ impl Route {
 /// zero is not walked, and its pairs not counted.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Routes {
+    /// The pairs of the passes up, by route.
     pub up: [usize; ROUTES],
+    /// The pairs of the passes down, by route.
     pub down: [usize; ROUTES],
 }
 

@@ -48,6 +48,23 @@ fn normalize(term: &str) -> String {
     term.chars().filter(|c| !c.is_whitespace()).collect()
 }
 
+/// Whether the term written `term` has a variable as an argument or an
+/// item: a name that begins with a capital or `_`, outside quotes.
+fn has_variable(term: &str) -> bool {
+    let mut quoted = false;
+    let mut prev = ' ';
+    for c in term.chars() {
+        if c == '\'' {
+            quoted = !quoted;
+        } else if !quoted && matches!(prev, '(' | ',' | '[' | '|') && (c.is_uppercase() || c == '_')
+        {
+            return true;
+        }
+        prev = c;
+    }
+    false
+}
+
 fn check(path: &Path, strategy: Strategy, projection: Projection) -> Vec<String> {
     check_with(path, false, strategy, projection, Rows::Apart, None)
 }
@@ -67,7 +84,8 @@ fn check_with(
     let src = std::fs::read_to_string(path).unwrap();
     let expected = expected_outcomes(&src);
     let options = rows.options();
-    let ground = tddlog::syntax::parse_program(&src)
+    let ground = tddlog::consult(&src, path.to_str().expect("a path"))
+        .and_then(|src| tddlog::syntax::parse_program(&src))
         .map_err(tddlog::Error::from)
         .and_then(|program| Ok(tddlog::ground::ground(&program, &options)?))
         .map(|ground| {
@@ -122,6 +140,10 @@ fn check_with(
     for (term, p) in expected {
         let got = results.iter().find(|r| normalize(&r.to_string()) == term);
         match got {
+            // A query with variables that nothing answers: ProbLog prints the
+            // query, its variables renamed, with probability 0, and tddlog
+            // prints no row.
+            None if p == 0.0 && has_variable(&term) => {}
             None => problems.push(format!("{}: {term} missing", path.display())),
             Some(r) if (r.probability - p).abs() > 1e-6 => problems.push(format!(
                 "{}: {term} expected {p}, got {}",

@@ -25,27 +25,31 @@
 //!   becomes the negation of an auxiliary predicate `'$nt<k>'` over its
 //!   other variables, defined by the atom.
 //!
-//! Before any of it, a query, an observation or a call of a predicate that
-//! has no clauses is refused where the queries and the evidence reach it,
-//! as ProbLog refuses it ([`check_defined`]).
+//! Before any of it, the program gets the clauses of the library
+//! predicates it calls, and its calls of `call/N` are written as calls of
+//! predicates ([`super::library`]). Then a query, an observation or a call
+//! of a predicate that has no clauses is refused where the queries and the
+//! evidence reach it, as ProbLog refuses it ([`check_defined`]).
 //!
 //! The predicates a findall reads, its cone, are counted: the engine lists
-//! the solutions in the order of resolution from their derivations, and
-//! refuses a solution with more than one derivation, which ProbLog lists
-//! once per proof ([`super::engine`]). The cone's clauses get groups of
-//! their own, one per clause and alternative, in the order of the source.
-//! A cone that is recursive, reads the findall's own clause or has a
-//! disjunction after another literal (whose alternatives would be listed in
-//! another order than resolution's) is refused.
+//! the solutions once per proof, as ProbLog does, in the order of
+//! resolution from their derivations, and in each world the solutions
+//! whose proofs hold there ([`super::engine`]'s `lists`). The cone's
+//! clauses get groups of their own, one per clause and alternative, in the
+//! order of the source. A cone that reads the findall's own clause, or has
+//! a disjunction after another literal (whose alternatives would be listed
+//! in another order than resolution's), is refused. `all(T, G, R)` is
+//! lowered as a findall, and lists each solution once.
 
 use std::borrow::Cow;
 use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::engine::GroundError;
+use super::engine::{GroundError, not_a_list};
 use crate::syntax::{
-    Atom, Builtin, CONS, Clause, CmpOp, Collect, Compound, Findall, Literal, Name, Program, Term,
+    Atom, Builtin, CONS, Clause, CmpOp, Collect, Compound, Findall, Literal, NIL, Name, Program,
+    Term,
 };
 
 /// The prefix of the auxiliary predicates of findalls.
@@ -61,6 +65,10 @@ pub(crate) type Pred = (Name, usize);
 /// `program` lowered, and the predicates of the cones of its findalls;
 /// the program itself, borrowed, where it has nothing to lower.
 pub(crate) fn lower(program: &Program) -> Result<(Cow<'_, Program>, FxHashSet<Pred>), GroundError> {
+    if let Some(with) = super::library::added(program) {
+        let (lowered, cone) = lower(&with)?;
+        return Ok((Cow::Owned(lowered.into_owned()), cone));
+    }
     // A compound term with variables; a call that may be of a built-in,
     // unless the program defines its predicate.
     let compound = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
@@ -154,6 +162,119 @@ fn by_head(program: &Program) -> ByHead<'_> {
     out
 }
 
+/// The names of ProbLog's built-ins and of the predicates of its libraries
+/// `lists` and `apply`, sorted.
+const PROBLOG_PREDICATES: &[&str] = &[
+    "all",
+    "all_or_none",
+    "append",
+    "arg",
+    "atom",
+    "atom_number",
+    "atomic",
+    "between",
+    "call",
+    "call_in_scope",
+    "call_nc",
+    "callable",
+    "clause",
+    "cmd_args",
+    "compare",
+    "compound",
+    "consult",
+    "convlist",
+    "create_scope",
+    "dbreference",
+    "debugprint",
+    "delete",
+    "enum_groups",
+    "error",
+    "exclude",
+    "fail",
+    "false",
+    "find_scope",
+    "findall",
+    "flatten",
+    "float",
+    "foldl",
+    "forall",
+    "functor",
+    "ground",
+    "ground_list",
+    "groupby",
+    "head",
+    "include",
+    "integer",
+    "intersection",
+    "is_list",
+    "is_set",
+    "last",
+    "length",
+    "list_to_set",
+    "make_list",
+    "maplist",
+    "max_list",
+    "max_member",
+    "member",
+    "memberchk",
+    "memberchk_ground",
+    "min_list",
+    "min_member",
+    "module",
+    "nextto",
+    "nl",
+    "nocache",
+    "nonvar",
+    "nth0",
+    "nth1",
+    "number",
+    "numbervars",
+    "numlist",
+    "once",
+    "partition",
+    "permutation",
+    "plus",
+    "possible",
+    "prefix",
+    "previous",
+    "primitive",
+    "proper_length",
+    "rational",
+    "reverse",
+    "same_length",
+    "sample",
+    "sample_uniform1",
+    "scanl",
+    "select",
+    "select_uniform",
+    "select_weighted",
+    "selectchk",
+    "simple",
+    "sort",
+    "sub_list",
+    "subquery",
+    "subquery_in_scope",
+    "subset",
+    "subsumes_chk",
+    "subsumes_term",
+    "subtract",
+    "succ",
+    "sum_list",
+    "true",
+    "try_call",
+    "union",
+    "unknown",
+    "unzip",
+    "use_module",
+    "value",
+    "var",
+    "varnumbers",
+    "write",
+    "writeln",
+    "writenl",
+    "zip",
+];
+
 /// Refuses what ProbLog stops on with its "No clauses found": a query or an
 /// observation of a predicate that no clause defines, and a call of one
 /// that is not a built-in tddlog evaluates, in a clause of a predicate the
@@ -164,7 +285,13 @@ fn by_head(program: &Program) -> ByHead<'_> {
 /// so it also answers a program whose call comes after a literal that
 /// never holds, or in a clause whose head unifies with no call; tddlog
 /// refuses those too.
+///
+/// Under `:- unknown(fail).` a predicate without clauses is false, as in
+/// ProbLog, unless it is one of ProbLog's built-ins or of its libraries
+/// `lists` and `apply` ([`PROBLOG_PREDICATES`]) that tddlog does not
+/// evaluate, which ProbLog would run.
 fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError> {
+    let refused = |name: &str| !program.unknown_fails || PROBLOG_PREDICATES.contains(&name);
     let mut reached: FxHashSet<(&str, usize)> = FxHashSet::default();
     let mut stack: Vec<(&str, usize)> = Vec::new();
     let asked = [("query", &program.queries), ("evidence", &program.evidence)]
@@ -178,7 +305,7 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
         );
     for (what, a, positive) in asked {
         let sig = a.signature();
-        if !defined.contains_key(&sig) {
+        if !defined.contains_key(&sig) && refused(sig.0) {
             let sign = if positive { "" } else { "\\+" };
             let body = match Builtin::of(sig.0, sig.1) {
                 Some(_) => " (tddlog evaluates this built-in in a clause's body only)",
@@ -200,13 +327,13 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
         ))
     };
     for r in &program.query_rules {
-        if let Some(a) = first_undefined(&r.body, defined, &mut reached, &mut stack) {
+        if let Some(a) = first_undefined(&r.body, defined, &refused, &mut reached, &mut stack) {
             return Err(called(a, &format!("a query rule for {}", r.pattern)));
         }
     }
     while let Some(sig) = stack.pop() {
         for c in defined.get(&sig).into_iter().flatten() {
-            if let Some(a) = first_undefined(&c.body, defined, &mut reached, &mut stack) {
+            if let Some(a) = first_undefined(&c.body, defined, &refused, &mut reached, &mut stack) {
                 return Err(called(a, c));
             }
         }
@@ -214,12 +341,14 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
     Ok(())
 }
 
-/// The first atom `body` calls whose predicate has no clauses and is not a
-/// built-in tddlog evaluates; each predicate with clauses that it calls is
-/// pushed on `stack` the first time it is `reached`.
+/// The first atom `body` calls whose predicate has no clauses, is not a
+/// built-in tddlog evaluates and is `refused` by name; each predicate with
+/// clauses that it calls is pushed on `stack` the first time it is
+/// `reached`.
 fn first_undefined<'p>(
     body: &'p [Literal],
     defined: &ByHead<'p>,
+    refused: &dyn Fn(&str) -> bool,
     reached: &mut FxHashSet<(&'p str, usize)>,
     stack: &mut Vec<(&'p str, usize)>,
 ) -> Option<&'p Atom> {
@@ -230,7 +359,7 @@ fn first_undefined<'p>(
             if reached.insert(sig) {
                 stack.push(sig);
             }
-        } else if missing.is_none() && Builtin::of(sig.0, sig.1).is_none() {
+        } else if missing.is_none() && Builtin::of(sig.0, sig.1).is_none() && refused(sig.0) {
             missing = Some(a);
         }
     });
@@ -346,7 +475,7 @@ fn spread_plan(program: &Program) -> FxHashMap<Pred, Vec<Option<usize>>> {
 }
 
 /// Each atom `body` calls, in findalls' goals too.
-fn calls<'a>(body: &'a [Literal], f: &mut impl FnMut(&'a Atom)) {
+pub(super) fn calls<'a>(body: &'a [Literal], f: &mut impl FnMut(&'a Atom)) {
     for l in body {
         match l {
             Literal::Pos(a) | Literal::Neg(a) => f(a),
@@ -361,7 +490,7 @@ fn calls<'a>(body: &'a [Literal], f: &mut impl FnMut(&'a Atom)) {
 }
 
 /// [`calls`], each atom changed by `f`.
-fn calls_mut(body: &mut [Literal], f: &impl Fn(&mut Atom)) {
+pub(super) fn calls_mut(body: &mut [Literal], f: &impl Fn(&mut Atom)) {
     for l in body {
         match l {
             Literal::Pos(a) | Literal::Neg(a) => f(a),
@@ -628,6 +757,9 @@ impl Lowering<'_, '_> {
     ) -> Result<Collect, GroundError> {
         let text: Arc<str> = Literal::Findall(Box::new(fa.clone())).to_string().into();
         let refuse = |why: String| Err(GroundError::Refused(format!("{text}: {why}")));
+        if !listlike(&fa.result) {
+            return Err(not_a_list(&text, &fa.result));
+        }
         if fa.interleaved {
             return refuse(
                 "a disjunction after another literal of the goal, whose solutions ProbLog lists in another order"
@@ -700,6 +832,7 @@ impl Lowering<'_, '_> {
             arity,
             shared: shared.into_iter().map(Term::Var).collect(),
             result: fa.result,
+            all: fa.all,
             text,
         })
     }
@@ -760,18 +893,21 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
             Some(w)
         },
         |comp| {
-            if cyclic.is_none()
-                && comp.iter().any(|&p| reached[p])
-                && (comp.len() > 1 || out[comp[0]].contains(&comp[0]))
-            {
-                cyclic = Some(comp[0]);
+            // A findall in a cycle reads its own clause, whose list is not
+            // known before the goal's solutions are.
+            let own = comp
+                .iter()
+                .copied()
+                .find(|&p| names[p].0.starts_with(FINDALL_PREFIX));
+            if cyclic.is_none() && (comp.len() > 1 || out[comp[0]].contains(&comp[0])) {
+                cyclic = own;
             }
         },
     );
     if let Some(p) = cyclic {
         let (name, arity) = names[p];
         return Err(GroundError::Refused(format!(
-            "findall over a recursive goal: {name}/{arity} is recursive or reads the findall's own clause"
+            "findall over a goal that reads the findall's own clause, through {name}/{arity}"
         )));
     }
     let cone: FxHashSet<Pred> = (0..n)
@@ -847,5 +983,17 @@ fn binds(l: &Literal, out: &mut Vec<String>) {
     match l {
         Literal::Findall(f) => f.result.vars_into(out),
         _ => l.vars_into(out),
+    }
+}
+
+/// Whether `t` is a variable, a list or a list whose tail is a variable:
+/// what a findall's result may be written as.
+fn listlike(t: &Term) -> bool {
+    match t {
+        Term::Var(_) => true,
+        Term::Const(c) => &**c == NIL,
+        _ => {
+            matches!(t.as_compound(), Some((name, [_, tail])) if &**name == CONS && listlike(tail))
+        }
     }
 }

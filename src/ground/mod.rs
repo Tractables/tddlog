@@ -23,13 +23,17 @@
 //!    - `simplify`: no certain atom is left, equal atoms are merged, every
 //!      atom is relevant to a query or an observation, facts are read as
 //!      variables, and the numbering is compact.
+//!    - `noisy_or`: a table of one atom, written as rules that read its
+//!      parents and facts of their own, written as its noisy-or where it
+//!      is one.
 //!    - `condition::settle`: evidence that unit propagation settles
 //!      without the exclusive sets, which leaves nothing for the next
 //!      passes; they are skipped then.
 //!    - Otherwise `exclusive` finds the program's structure (its rules by
 //!      head, components and exclusive sets), which each of these passes
 //!      reads and hands on, updated or found anew where the pass changed
-//!      the program: `inline` (views, then atoms with equal rules merged,
+//!      the program: `negation` (negated atoms unfolded under their
+//!      rules), `inline` (views, then atoms with equal rules merged,
 //!      `simplify`), `contexts` (choices read through a fact per context),
 //!      `classes` (row classes), `share` (switch sharing), `cover` (atoms
 //!      certain by cover) and `condition` (what the evidence implies, with
@@ -65,8 +69,10 @@ mod fact_copies;
 pub(crate) mod guards;
 mod inline;
 mod interned;
+mod library;
 mod linear;
 mod magic;
+mod negation;
 mod noisy_or;
 mod normalize;
 mod preprocess;
@@ -180,7 +186,7 @@ pub fn ground(program: &Program, opts: &GroundOptions) -> Result<GroundProgram, 
 /// its views are inlined, where that holds at least `keep` derived atoms:
 /// what [`finish_kept`] finishes under options that differ in
 /// [`GroundOptions::views`] alone, as `auto`'s `decision` trial does
-/// (`solve::decision_trial`), without grounding and simplifying the
+/// (`auto::ready`), without grounding and simplifying the
 /// program again. Where the bound-end grounding is kept, the kept program
 /// is its own.
 pub(crate) fn ground_keeping(
@@ -191,7 +197,11 @@ pub(crate) fn ground_keeping(
     // Compound terms, list predicates and findalls are written as the
     // Datalog the rest reads, with three built-in literals ([`terms`]).
     let (program, counted) = terms::lower(program)?;
-    let program: &Program = &program;
+    // The heads of the annotated disjunctions in one order that each keeps
+    // ([`normalize::ordered_heads`]), so that rows of one distribution
+    // written in other orders are found alike.
+    let ordered = normalize::ordered_heads(&program);
+    let program: &Program = ordered.as_ref().unwrap_or(&program);
     // A table-shaped program, a Bayesian network as one annotated
     // disjunction per row, is ground as written and its grounding is known
     // without the generic steps ([`table`]). Its noisy-or tables are first
@@ -206,13 +216,16 @@ pub(crate) fn ground_keeping(
         } else {
             None
         } {
-            Some((written, n)) => {
-                let shape = shape.rewritten(program, &written);
+            Some(rewritten) => {
+                let shape = shape.rewritten(program, &rewritten.written);
                 let order = shape
                     .evaluation_order()
                     .expect("tables written as noisy-ors read no more than they did");
                 let mut gp = shape.ground(program, &order);
-                gp.stats.noisy_or = n;
+                if let Some(evidence) = &rewritten.evidence {
+                    noisy_or::observe(&mut gp, evidence);
+                }
+                gp.stats.noisy_or = rewritten.count;
                 gp
             }
             None => shape.ground(program, &order),
@@ -274,27 +287,56 @@ fn ground_norm(
     // a time index, is grounded level by level and not rewritten: its
     // demand runs down the levels (`T0 is T - 1`) and makes a chain one
     // stratum without them ([`engine::ground_by_levels`]). Where that
-    // grounding fails (past the bound, or a rule that only the demand
-    // makes safe), the rewrite is tried.
+    // grounding fails (past the bound), the rewrite is tried.
+    // The route is chosen before any of the program is ground, by whether
+    // its rules are safe ([`engine::safe`]): the plain program's for the
+    // levels, the rewritten program's for the rewrite, then the plain
+    // program's again. A program whose demand no rewrite makes safe, a
+    // call of a term with variables in it or an answer that leaves a
+    // variable unbound, is resolved top-down from its queries
+    // ([`engine::topdown`]), as is one whose rewrite reads a findall inside
+    // a recursion that only the demand makes, and a stratified one whose
+    // rewrite loses a negation that bounds a demand
+    // ([`magic::Rewritten::top_down`]).
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
-    } else if let Some(gp) = match engine::ground_by_levels(norm, bound) {
-        Err(e @ (GroundError::OutOfMemory | GroundError::Refused(_))) => return Err(e),
-        levelled => levelled.ok().flatten(),
-    } {
-        gp
     } else {
-        match magic::rewrite(norm) {
-            Some(magic) => match engine::ground_normalized(&magic, bound) {
-                Ok(gp) => gp,
-                Err(
-                    e @ (GroundError::OverBound
-                    | GroundError::OutOfMemory
-                    | GroundError::Refused(_)),
-                ) => return Err(e),
-                Err(_) => engine::ground_normalized(norm, bound)?,
-            },
-            None => engine::ground_normalized(norm, bound)?,
+        let plain = engine::safe(norm);
+        let levelled = if plain {
+            match engine::ground_by_levels(norm, bound) {
+                Err(e @ (GroundError::OutOfMemory | GroundError::Refused(_))) => return Err(e),
+                levelled => levelled.ok().flatten(),
+            }
+        } else {
+            None
+        };
+        if let Some(gp) = levelled {
+            gp
+        } else {
+            match magic::rewrite(norm).filter(|r| engine::safe(&r.program)) {
+                Some(r) if r.top_down => engine::topdown::ground(norm, bound)?,
+                Some(r) => match engine::ground_normalized(&r.program, bound) {
+                    Ok(gp) => gp,
+                    Err(
+                        e @ (GroundError::OverBound
+                        | GroundError::OutOfMemory
+                        | GroundError::Refused(_)),
+                    ) => return Err(e),
+                    // Where neither grounds, the rewritten program's error
+                    // is the one to give.
+                    Err(e) if plain => engine::ground_normalized(norm, bound).map_err(|_| e)?,
+                    // The demand of two calls of one predicate can close a
+                    // loop through a findall that the program does not
+                    // have, which its resolution from the queries does not
+                    // close.
+                    Err(e @ GroundError::Unsupported(_)) => {
+                        engine::topdown::ground(norm, bound).map_err(|_| e)?
+                    }
+                    Err(e) => return Err(e),
+                },
+                None if plain => engine::ground_normalized(norm, bound)?,
+                None => engine::topdown::ground(norm, bound)?,
+            }
         }
     };
     let size = gp.size();
@@ -369,6 +411,15 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
     simplify::merge_equal_atoms(&mut gp);
     simplify::restrict_to_relevant(&mut gp);
     simplify::alias_fact_atoms(&mut gp);
+    // A table of one atom written as rules, each row with facts of its own,
+    // is written as its noisy-or where it is one ([`noisy_or`]).
+    if opts.noisy_or {
+        let written = noisy_or::rows_as_noisy_ors(&mut gp);
+        if written > 0 {
+            gp.stats.noisy_or += written;
+            simplify::restrict_to_relevant(&mut gp);
+        }
+    }
     // Evidence that the propagation settles without the exclusive sets
     // leaves nothing for the passes that read them, which are then not
     // run.
@@ -380,7 +431,16 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
             gp.structure = OnceLock::new();
             Stage::Settled(settled)
         }
-        None => Stage::Structured(Structure::of(&gp)),
+        None => {
+            let mut structure = Structure::of(&gp);
+            let unfolded = negation::unfold(&mut gp, &structure);
+            if unfolded > 0 {
+                gp.stats.unfolded += unfolded;
+                simplify::restrict_to_relevant(&mut gp);
+                structure = Structure::of(&gp);
+            }
+            Stage::Structured(structure)
+        }
     };
     Simplified { gp, stage }
 }
@@ -530,7 +590,7 @@ pub(crate) fn without_linear_recursion(mut gp: GroundProgram) -> GroundProgram {
 /// is not the grounder's default: on uwcse it takes the tables' structure
 /// apart, and every layout's work grows a hundredfold and more. A program
 /// already conditioned, its decisions recorded, is returned as it is:
-/// `auto` hands one to every trial (`solve::decision_trial`).
+/// `auto` hands one to every trial (`auto::ready`).
 pub(crate) fn guarded(gp: GroundProgram) -> GroundProgram {
     guarded_where(gp, |_| true).unwrap_or_else(|gp| *gp)
 }
@@ -653,7 +713,7 @@ mod tests {
             let program = crate::syntax::parse_program(&source).expect("parses");
             let norm =
                 super::normalize::normalize(&program, Default::default()).expect("normalizes");
-            let magic = super::magic::rewrite(&norm).expect("rewrites");
+            let magic = super::magic::rewrite(&norm).expect("rewrites").program;
             let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
             gp.atoms
                 .iter()
@@ -679,7 +739,7 @@ mod tests {
         let program = crate::syntax::parse_program(source).expect("parses");
         let (lowered, _) = super::terms::lower(&program).expect("lowers");
         let norm = super::normalize::normalize(&lowered, Default::default()).expect("normalizes");
-        let magic = super::magic::rewrite(&norm).expect("rewrites");
+        let magic = super::magic::rewrite(&norm).expect("rewrites").program;
         let gp = super::engine::ground_normalized(&magic, None).expect("grounds");
         let eq: Vec<super::AtomId> = gp
             .rules

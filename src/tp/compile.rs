@@ -25,7 +25,7 @@ use crate::ground::deps::Deps;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, RulesByHead, deps};
 
 /// The compiled program.
-pub struct Compiled {
+pub(crate) struct Compiled {
     /// Variable of each fact atom.
     pub(crate) var_of: Vec<Option<VarId>>,
     /// Formula of each derived atom (`None` for facts, whose formula is the
@@ -59,7 +59,7 @@ pub struct Compiled {
 /// does not take it shares ([`Read::Shared`]) for a conjunction to read in
 /// place; no read outlives the atom update that made it.
 #[derive(Default)]
-pub struct Formulas {
+pub(crate) struct Formulas {
     /// Where each atom's entry is in `held`, plus one; 0 for an atom given
     /// none yet.
     at: Vec<u32>,
@@ -81,7 +81,7 @@ impl Formulas {
     }
 
     /// Each atom's formula or none, in the atoms' order.
-    pub fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
         self.at.iter().map(|&i| {
             if i == 0 {
                 &self.none
@@ -229,7 +229,7 @@ impl Compiled {
 }
 
 /// Assign vtree variables to the facts: `var_of[a]` for each fact atom.
-pub fn fact_variables(gp: &GroundProgram, order: &[AtomId]) -> Vec<Option<VarId>> {
+pub(crate) fn fact_variables(gp: &GroundProgram, order: &[AtomId]) -> Vec<Option<VarId>> {
     let mut var_of = vec![None; gp.num_atoms()];
     for (i, &a) in order.iter().enumerate() {
         debug_assert!(gp.is_fact(a));
@@ -358,7 +358,7 @@ const TAKEN: u32 = u32::MAX;
 /// Per atom, how many times the last component that reads its formula
 /// reads it, where that component is one acyclic atom's: once at most for
 /// each body of that atom's rules the atom is in, a rule of pairs counted
-/// by its pairs ([`GroundRule::bodies`]); 0 for every other atom. A read of
+/// by its pairs ([`crate::ground::GroundRule::bodies`]); 0 for every other atom. A read of
 /// one literal for several bodies at once (the factoring's shared
 /// literals) says how many it stands for, and a body the compile drops or
 /// stops reading leaves its reads uncounted, so the count reaches 0 at the
@@ -816,7 +816,7 @@ pub(crate) struct ForQueries {
     /// The readers' links of clause tables tied to another reader's copies
     /// ([`ties`]), whose own formulas are not built.
     pub(crate) ties: FxHashMap<AtomId, Tie>,
-    /// The links of the names expanded ([`super::settle`]), which the
+    /// The links of the names expanded ([`fn@super::settle`]), which the
     /// evidence leaves out, and the copies they tied, which no formula
     /// reads any more.
     pub(crate) dropped: FxHashSet<AtomId>,
@@ -1029,6 +1029,7 @@ impl Compilation {
             // live formulas together.
             let mut factor = GUARD;
             while self.next < self.sccs.len() {
+                backend.kept();
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next
                     && let Some(scope) = p.start(
@@ -1165,9 +1166,7 @@ impl Compilation {
                 && let Some(f) = &self.fixpoint.formulas[a as usize]
             {
                 let scope = &self.scopes[self.comp_of[a as usize] as usize];
-                let w = scope
-                    .vars()
-                    .map_or_else(|| weights.clone(), |vars| weights.restrict(vars));
+                let w = weights.restrict(scope.vars());
                 // The complement's formula, negated once for the atom and the
                 // templates it answers, where one of them needs it. The
                 // counts are of the atom and its negation, in that order.
@@ -1904,6 +1903,7 @@ impl Compilation {
                 }
             }
             dirty.remove(&(r, a));
+            backend.kept();
         }
         *dirty = std::mem::take(next);
         *midway = false;

@@ -26,3 +26,21 @@ systems (`scripts/lpad2problog.py` did before tddlog's reader replaced it).
 - `hmmpos.pl`: a hidden Markov model for part-of-speech tagging (Torbjorn
   Lager's, adapted to MCINTYRE by Fabrizio Riguzzi), each choice of a tag
   indexed by the tags before it, input of `scripts/gen_hmmpos.py`.
+
+The `cplintpita` benchmark family is cplint's examples written for PITA
+(`:- use_module(library(pita))` with `?- prob(...)` queries), copied from
+`prolog/examples/` at the same commit, each read as it is by tddlog's LPAD
+reader and converted by `tddlog --program` for the other systems
+(`scripts/gen_cplint.py`): alarm, bag_game, coin, coin2, dice, earthquake,
+epidemic, eruption, event_calculus, flexprob, jail, light, markov_factor,
+markov_network, mendel, mendelc, mln, monty, multiple_paths,
+multiple_paths_simple, path, pathdb, pcfg, simpson, sneezing, testdb,
+threesideddice, trigger and viral. Left out: bloodtype (the standard
+suite's), uwcse3s, uwcse4s and uwcse_inf (the uwcse family's), hmm
+(dnahmm's), the MAP and MPE versions coin_mpe, mendel_map and mendel_mpe,
+eruption_tab (eruption with tabling, the same program), and those no
+system answers as the benchmark harness gives them: coinmsw and
+coinmsw_memo (PRISM's msw/2), meta and metacomb (prob/2 inside the
+program), markov_chaindb, pcfglrdb and var_objdb (which no system nor
+ProbLog's reference answers in time), and persons (whose LPAD tddlog's reader
+refuses: a probability computed in the body, `P is F+M`).

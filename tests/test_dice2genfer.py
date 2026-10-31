@@ -1,7 +1,7 @@
 """Dice programs as Genfer programs (scripts/dice2genfer.py, over
 scripts/dice_ir.py) and how bench.py reads what Genfer prints.
 
-Every Dice program of data/dice and data/nodice that dice2problog.py
+Every Dice program of data/dice and data/nodice (test_nodice.dice_programs) that dice2problog.py
 translates translates here, except where it has recursion, with a program
 for each component of its value. Where Genfer is installed (GENFER, the
 command that runs it, e.g. `$HOME/local/genfer/bin/genfer`), the
@@ -25,6 +25,7 @@ sys.path.insert(0, str(scripts))
 import source_tree  # noqa: E402,F401  (the source tree's scripts and tests)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bench  # noqa: E402
+from test_nodice import dice_programs  # noqa: E402
 import dice2genfer  # noqa: E402
 import dice2problog  # noqa: E402
 import dice_ir  # noqa: E402
@@ -73,7 +74,7 @@ def genfer_answers(text, qs):
 
 class Dice2GenferTests(unittest.TestCase):
     def test_the_baseline_programs_translate(self):
-        paths = sorted((data / 'dice').glob('*.dice')) + sorted((data / 'nodice').glob('*.dice'))
+        paths = dice_programs()
         for path in paths:
             with self.subTest(name=path.name):
                 text = path.read_text()

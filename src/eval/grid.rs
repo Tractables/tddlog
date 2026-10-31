@@ -785,6 +785,18 @@ impl Grid {
         }
     }
 
+    /// What place `c` of dimension `d` adds to the slots of `out`, `x` and
+    /// `y` under `steps`: for a listed dimension, the offset `c` of the
+    /// grid's `list`; for any other, `c` of its steps.
+    fn place(&self, pass: Pass, steps: &[[isize; 3]], d: usize, c: usize) -> [isize; 3] {
+        if self.dims[d].listed {
+            let (l, r) = self.list[c];
+            pass.of(0, l, r)
+        } else {
+            steps[d].map(|s| s * c as isize)
+        }
+    }
+
     /// Calls `f` at every place of the dimensions `dims`, innermost first,
     /// as an odometer counts them from `base`, with the slots of the
     /// place's first pair in `out`, `x` and `y` (each dimension's `steps`),
@@ -809,14 +821,7 @@ impl Grid {
             .iter()
             .map(|&d| {
                 let dim = &self.dims[d];
-                let place = |c: usize| -> [isize; 3] {
-                    if dim.listed {
-                        let (l, r) = self.list[c];
-                        pass.of(0, l, r)
-                    } else {
-                        steps[d].map(|s| s * c as isize)
-                    }
-                };
+                let place = |c: usize| self.place(pass, steps, d, c);
                 let delta = (1..=dim.radix).map(|c| {
                     let (to, from) = (place(c % dim.radix), place(c - 1));
                     [0, 1, 2].map(|a| to[a] - from[a])
@@ -1376,16 +1381,8 @@ impl Grid {
     ) -> Vec<[isize; 2]> {
         let mut out = vec![[0isize; 2]];
         for &d in summed {
-            let dim = &self.dims[d];
-            let place = |c: usize| -> [isize; 3] {
-                if dim.listed {
-                    let (l, r) = self.list[c];
-                    pass.of(0, l, r)
-                } else {
-                    steps[d].map(|s| s * c as isize)
-                }
-            };
-            out = (0..dim.radix)
+            let place = |c: usize| self.place(pass, steps, d, c);
+            out = (0..self.dims[d].radix)
                 .flat_map(|c| {
                     out.iter()
                         .map(move |o| [o[0] + place(c)[1], o[1] + place(c)[2]])

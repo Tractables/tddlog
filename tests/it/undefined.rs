@@ -75,12 +75,12 @@ fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
     // clauses, they would be false.
     for source in [
         "0.3::c. a :- c, write(hello). query(a).",
-        "q. p :- call(q). query(p).",
-        "s(X) :- plus(1, 2, X). query(s(_)).",
-        "t(L) :- select(a, [a, b], L). query(t(_)).",
+        "q. p :- once(q). query(p).",
+        "s(X) :- succ(1, X). query(s(_)).",
+        "t :- nextto(a, b, [a, b]). query(t).",
         "u :- findall(X, (member(X, [1, 2]), integer(X)), _). query(u).",
-        // Asked directly, as ProbLog's append.pl and clause_pred.pl ask.
-        "query(append([[1], [2]], [1, 2])).",
+        // Asked directly, as ProbLog's clause_pred.pl asks.
+        "query(nextto(a, b, [a, b])).",
         "a :- b(X). query(clause(a, b(Y))).",
     ] {
         let e = refusal(source);
@@ -98,6 +98,29 @@ fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
         "select(X, [X|T], T). t(L) :- select(a, [a, b], L). query(t(_)).",
         &[("t([b])", 1.0)],
     );
+}
+
+#[test]
+fn under_unknown_fail_a_predicate_without_clauses_is_false() {
+    // As ProbLog's tests 00_trivial_undefined_failed.pl and
+    // 00_trivial_undefined2_failed.pl (under tests/problog/) answer.
+    assert_answers(
+        ":- unknown(fail). 0.3::c. a :- c, b. n :- c, \\+ b. query(a). query(n). query(d).",
+        &[("a", 0.0), ("n", 0.3), ("d", 0.0)],
+    );
+    // ProbLog would run its own built-ins and library predicates.
+    for source in [
+        ":- unknown(fail). 0.3::c. a :- c, write(hello). query(a).",
+        ":- unknown(fail). :- use_module(library(lists)). t :- nextto(a, b, [a, b]). query(t).",
+    ] {
+        let e = refusal(source);
+        assert!(e.contains("no clauses for"), "{source}: {e}");
+    }
+    // `error` is ProbLog's default; it has no other flag.
+    let e = refusal(":- unknown(error). query(d).");
+    assert!(e.contains("no clauses for d/0"), "{e}");
+    let e = refusal(":- unknown(warning). query(d).");
+    assert!(e.contains("unsupported directive unknown(warning)"), "{e}");
 }
 
 #[test]

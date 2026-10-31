@@ -1,6 +1,6 @@
 //! Noisy-or tables: a table of two values over parents of two values whose
 //! one value is a noisy-or of the parents, written as that noisy-or where
-//! nothing reads, observes or asks its other value.
+//! nothing reads or asks its other value.
 //!
 //! A Bayesian network written one annotated disjunction per row
 //! (`tddlog --program` of a network) holds a table `x` of values `b` and `c` over
@@ -24,10 +24,12 @@
 //! which gives each row its distribution, each parent being exactly one of
 //! its two values in every world, and `x(c)` is not written: the rewrite
 //! is taken only where nothing reads `x(c)` once the readers taken are
-//! rewritten too, and no query or observation names it, and for a table
-//! observed only where its parents are taken (below). A root, a table of
-//! no parents, is a leak alone, a probabilistic fact. Every other atom
-//! keeps its distribution, jointly with the others.
+//! rewritten too, and no query names it, and for a table observed only
+//! where its parents are taken (below). An observation of `x(c)` is one
+//! of `x(b)`, negated: each world holds exactly one of the two, and a
+//! diagnosis network's findings are often observed absent so. A root, a
+//! table of no parents, is a leak alone, a probabilistic fact. Every
+//! other atom keeps its distribution, jointly with the others.
 //!
 //! The rewrite is what lets the later steps see an or: the rows read each
 //! parent at both values, as an exclusive set, and nothing inlines a
@@ -57,6 +59,14 @@
 //! narrows the decomposition (the PR set's mastermind networks). The
 //! or_chain networks have all their tables taken either way.
 //!
+//! A table taken observed at its absent value goes further: the
+//! observation, all of its causes off, reaches every table taken below
+//! it, and each of those is taken only where its parents are, as an
+//! observed table is. A diagnosis network's findings observed absent read
+//! diseases, which are taken; the PR set's mastermind networks observe
+//! gates absent over gates that stay, and written over them 31 of the 38
+//! compiled differently, with 2.5 times the work in all.
+//!
 //! Taken where the program is table-shaped, its tables read from the
 //! [`Shape`] the table path grounds ([`super::table`]), each table a
 //! predicate whose head atoms are its values, and its rows sum to one up
@@ -65,16 +75,46 @@
 //! too, and takes the table path: its shape is made from the program's
 //! ([`Shape::rewritten`]) with each table taken written at its first
 //! clause.
+//!
+//! **Tables of one atom.** A two-valued variable written as one atom `x`,
+//! its other value `\+x`, and its table as one rule per row,
+//!
+//! ```text
+//! p_1::x :- y_1, \+y_2.   p_2::x :- \+y_1, y_2.   ...
+//! ```
+//!
+//! each row reading every parent once, as a literal of either sign, is no
+//! table-shaped program: the grounder reads it through the generic steps,
+//! and each row is a rule whose body is the row's literals and the facts
+//! of its own that the normalization of `p_i::` made, read by no other
+//! rule. The same noisy-or is found there, on the ground program
+//! ([`rows_as_noisy_ors`]): a derived atom, in no cycle, whose two or more
+//! rules read the same two or more parents and each a different
+//! assignment of them, the rest of each body facts no other rule reads
+//! and no query or observation names, is a table of `x` over its parents,
+//! a row missing an assignment being one where `x` is false, and where
+//! `x` is its noisy-or (`\+x` the absent value) its rules are written as
+//! the noisy-or's, each fact a new one. `x` stays an atom, its readers,
+//! queries and observations as they were, since the facts its rules read
+//! were its rows' own. A table of one parent is left as it is: its
+//! noisy-or has as many rules and facts as its rows.
+
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::normalize::SUM_TOLERANCE;
 use super::table::{Shape, Switched};
-use crate::syntax::{Atom, Clause, HeadChoice, Literal, Program};
+use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
+use crate::syntax::{Annotation, Atom, Clause, HeadChoice, Literal, Program, Term};
 
 /// How far an entry of a table may be from the noisy-or's.
 const TOLERANCE: f64 = 1e-12;
 
 /// The most parents of a table taken: one row per assignment.
 const MOST_PARENTS: usize = 16;
+
+/// A table of one atom: its parents and its rows by assignment, as
+/// [`one_atom_rows`] reads them.
+type AtomTable = (Vec<AtomId>, Vec<[f64; 2]>);
 
 /// A table's noisy-or form: its absent value `c`, the row `u*` (bit `i` the
 /// value of parent `i`) and `L`; each parent's `q` is read off the rows
@@ -117,15 +157,22 @@ impl Rows<'_> {
 /// its body reads (`None` for the leak, which reads none).
 pub(super) type Written = Vec<(Clause, Option<usize>)>;
 
+/// The noisy-or tables of a program written as noisy-ors ([`rewrite`]).
+pub(super) struct Rewritten {
+    /// Per table taken, its clauses.
+    pub(super) written: Vec<Option<Written>>,
+    /// How many tables were taken.
+    pub(super) count: usize,
+    /// The program's evidence, an observation of the absent value of a
+    /// table taken written as one of its present value, negated; `None`
+    /// where no observation is of an absent value.
+    pub(super) evidence: Option<Vec<(Atom, bool)>>,
+}
+
 /// The noisy-or tables of `program`, of the tables `shape` in the
 /// evaluation order `order` (each after the tables it reads), written as
-/// noisy-ors: per table taken its clauses, and how many tables were taken;
-/// `None` where there is none to write.
-pub(super) fn rewrite(
-    shape: &Shape,
-    order: &[usize],
-    program: &Program,
-) -> Option<(Vec<Option<Written>>, usize)> {
+/// noisy-ors; `None` where there is none to write.
+pub(super) fn rewrite(shape: &Shape, order: &[usize], program: &Program) -> Option<Rewritten> {
     let n = shape.predicates();
     // The candidates: the tables of two values whose parents are
     // candidates, each with its values. A table's parents are the
@@ -169,18 +216,106 @@ pub(super) fn rewrite(
         return None;
     }
 
-    // The values something reads, asks or observes: of the tables not
-    // rewritten every value their rows read, of those rewritten the
-    // parents' values away from `u*`.
+    let chosen = choose(shape, order, program, &value, &rows, &dists);
+    let count = chosen.iter().flatten().count();
+    if count == 0 {
+        return None;
+    }
+    let written = (0..n)
+        .map(|t| {
+            let f = chosen[t]?;
+            let r = rows[t].as_ref().expect("a table taken has rows");
+            Some(write(t, r, f, &values, &dists))
+        })
+        .collect();
+    // An observation of a taken table's absent value, as one of its
+    // present value.
+    let present = |a: &Atom| {
+        let p = shape.predicate_of(a)?;
+        let f = chosen[p]?;
+        (value(p, a)? == f.absent)
+            .then(|| values[p].expect("a table taken has values")[1 - f.absent])
+    };
+    let evidence = program
+        .evidence
+        .iter()
+        .any(|(a, _)| present(a).is_some())
+        .then(|| {
+            program
+                .evidence
+                .iter()
+                .map(|(a, v)| match present(a) {
+                    Some(b) => (b.clone(), !v),
+                    None => (a.clone(), *v),
+                })
+                .collect()
+        });
+    Some(Rewritten {
+        written,
+        count,
+        evidence,
+    })
+}
+
+/// `gp`, ground from a program whose noisy-or tables [`rewrite`] wrote,
+/// observing as `evidence`, [`Rewritten::evidence`], says: each
+/// observation `gp` holds of an absent value moved to the present value,
+/// negated, its atom numbered as `gp` numbers it.
+pub(super) fn observe(gp: &mut GroundProgram, evidence: &[(Atom, bool)]) {
+    let moved: FxHashSet<&Atom> = evidence
+        .iter()
+        .zip(&gp.evidence)
+        .filter(|((a, _), (b, _, _))| a != b)
+        .map(|((a, _), _)| a)
+        .collect();
+    let mut id: FxHashMap<&Atom, AtomId> = FxHashMap::default();
+    for (i, a) in gp.atoms.iter().enumerate() {
+        if moved.contains(a) {
+            id.insert(a, i as AtomId);
+        }
+    }
+    let observed: Vec<(Atom, Option<AtomId>, bool)> = evidence
+        .iter()
+        .zip(&gp.evidence)
+        .map(|((a, v), e)| {
+            if moved.contains(a) {
+                (a.clone(), id.get(a).copied(), *v)
+            } else {
+                e.clone()
+            }
+        })
+        .collect();
+    gp.evidence = observed;
+}
+
+/// The form each table of `rows` is taken in, `None` for a table not taken:
+/// the absent value of each taken is one nothing reads or asks,
+/// once the tables not taken read every value their rows read and those
+/// taken the parents' values away from `u*`; and a table observed is taken
+/// only where its parents are.
+fn choose(
+    shape: &Shape,
+    order: &[usize],
+    program: &Program,
+    value: &impl Fn(usize, &Atom) -> Option<usize>,
+    rows: &[Option<Rows>],
+    dists: &[[f64; 2]],
+) -> Vec<Option<Form>> {
+    let n = shape.predicates();
     let mut needed = vec![0u8; n];
-    let mut observed = vec![false; n];
+    let mut observed = vec![0u8; n];
     let asked = program.queries.iter().map(|(a, _)| (a, false));
     for (a, evidence) in asked.chain(program.evidence.iter().map(|(a, _)| (a, true))) {
         if let Some(p) = shape.predicate_of(a)
             && let Some(v) = value(p, a)
         {
-            needed[p] |= 1 << v;
-            observed[p] |= evidence;
+            // An observation of either value is one of the value written;
+            // a form whose absent value is not observed comes first.
+            if evidence {
+                observed[p] |= 1 << v;
+            } else {
+                needed[p] |= 1 << v;
+            }
         }
     }
     let mut chosen: Vec<Option<Form>> = vec![None; n];
@@ -204,31 +339,68 @@ pub(super) fn rewrite(
     }
     // Needs only grow and tables only leave, so this ends; each table
     // taken keeps a form whose absent value nothing needs, and one
-    // observed has its parents taken (above).
+    // observed or under an observation of an absent value has its parents
+    // taken (above). A table is under such an observation where a table
+    // taken observed at the value its form leaves out reads it, or a
+    // table taken under one does.
     let mut changed = true;
     while changed {
         changed = false;
+        let mut under = vec![false; n];
         for &t in order.iter().rev() {
             if !taken[t] {
                 continue;
             }
             let r = rows[t].as_ref().expect("a table taken has rows");
             let open = |f: &Form| needed[t] & (1 << f.absent) == 0;
-            let form = if !observed[t] || r.parents.iter().all(|&p| taken[p]) {
-                if chosen[t].as_ref().is_some_and(open) {
-                    continue;
+            // How many parents a form of an observed table would leave with
+            // no form open: the table would not be taken then.
+            let blocked = |f: &Form| {
+                let dist = r.dist(dists);
+                r.parents
+                    .iter()
+                    .enumerate()
+                    .filter(|&(i, &p)| {
+                        let need = needed[p] | 1 << (f.base >> i & 1 ^ 1);
+                        f.q(dist, i) < 1.0
+                            && !(taken[p]
+                                && rows[p].as_ref().is_some_and(|rp| {
+                                    rp.forms
+                                        .iter()
+                                        .flatten()
+                                        .any(|g| need & (1 << g.absent) == 0)
+                                }))
+                    })
+                    .count()
+            };
+            let watched = observed[t] != 0 || under[t];
+            let form = if !watched || r.parents.iter().all(|&p| taken[p]) {
+                match chosen[t] {
+                    Some(f) if open(&f) => Some(f),
+                    _ => {
+                        changed = true;
+                        let mut forms = r.forms.iter().flatten().filter(|f| open(f));
+                        if watched {
+                            forms
+                                .min_by_key(|f| (blocked(f), observed[t] >> f.absent & 1))
+                                .copied()
+                        } else {
+                            forms.next().copied()
+                        }
+                    }
                 }
-                r.forms.iter().flatten().find(|f| open(f)).copied()
             } else {
+                changed = true;
                 None
             };
-            changed = true;
             match form {
                 Some(f) => {
-                    let dist = r.dist(&dists);
+                    let dist = r.dist(dists);
+                    let below = under[t] || observed[t] >> f.absent & 1 == 1;
                     for (i, &p) in r.parents.iter().enumerate() {
                         if f.q(dist, i) < 1.0 {
                             needed[p] |= 1 << (f.base >> i & 1 ^ 1);
+                            under[p] |= below;
                         }
                     }
                     chosen[t] = Some(f);
@@ -241,64 +413,63 @@ pub(super) fn rewrite(
             }
         }
     }
-    let count = taken.iter().filter(|&&t| t).count();
-    if count == 0 {
-        return None;
-    }
+    chosen
+}
 
-    // Each table taken as clauses: the row u* as written gives the leak;
-    // where c is certain there, each flipped row as written gives its cause.
-    let written = (0..n)
-        .map(|t| {
-            let f = chosen[t]?;
-            let r = rows[t].as_ref().expect("a table taken has rows");
-            let dist = r.dist(&dists);
-            let of = |p: usize| values[p].expect("a table taken and its parents are candidates");
-            let present = of(t)[1 - f.absent];
-            let head = |p: f64| {
-                vec![HeadChoice {
-                    prob: (p < 1.0).then_some(p),
-                    atom: present.clone(),
-                    negated: false,
-                }]
-            };
-            let leak = dist[f.base][1 - f.absent];
-            let mut out = Vec::with_capacity(r.parents.len() + 1);
-            if leak > 0.0 {
-                out.push((
-                    Clause {
-                        heads: head(leak),
-                        body: Vec::new(),
-                        group: 0,
-                    },
-                    None,
-                ));
-            }
-            for (k, &p) in r.parents.iter().enumerate() {
-                let q = f.q(dist, k);
-                if q >= 1.0 {
-                    continue;
-                }
-                let flipped = f.base ^ 1 << k;
-                let cause = if f.leak == 1.0 {
-                    dist[flipped][1 - f.absent]
-                } else {
-                    1.0 - q
-                };
-                let active = of(p)[f.base >> k & 1 ^ 1].clone();
-                out.push((
-                    Clause {
-                        heads: head(cause),
-                        body: vec![Literal::Pos(active)],
-                        group: 0,
-                    },
-                    Some(p),
-                ));
-            }
-            Some(out)
-        })
-        .collect();
-    Some((written, count))
+/// Table `t` of the rows `r`, taken in the form `f`, as clauses: the row
+/// `u*` as written gives the leak; where `c` is certain there, each
+/// flipped row as written gives its cause.
+fn write(
+    t: usize,
+    r: &Rows,
+    f: Form,
+    values: &[Option<[&Atom; 2]>],
+    dists: &[[f64; 2]],
+) -> Written {
+    let dist = r.dist(dists);
+    let of = |p: usize| values[p].expect("a table taken and its parents are candidates");
+    let present = of(t)[1 - f.absent];
+    let head = |p: f64| {
+        vec![HeadChoice {
+            prob: (p < 1.0).then_some(Annotation::Number(p)),
+            atom: present.clone(),
+            negated: false,
+        }]
+    };
+    let leak = dist[f.base][1 - f.absent];
+    let mut out = Vec::with_capacity(r.parents.len() + 1);
+    if leak > 0.0 {
+        out.push((
+            Clause {
+                heads: head(leak),
+                body: Vec::new(),
+                group: 0,
+            },
+            None,
+        ));
+    }
+    for (k, &p) in r.parents.iter().enumerate() {
+        let q = f.q(dist, k);
+        if q >= 1.0 {
+            continue;
+        }
+        let flipped = f.base ^ 1 << k;
+        let cause = if f.leak == 1.0 {
+            dist[flipped][1 - f.absent]
+        } else {
+            1.0 - q
+        };
+        let active = of(p)[f.base >> k & 1 ^ 1].clone();
+        out.push((
+            Clause {
+                heads: head(cause),
+                body: vec![Literal::Pos(active)],
+                group: 0,
+            },
+            Some(p),
+        ));
+    }
+    out
 }
 
 /// The two values of the table of `clauses`, its distinct head atoms in
@@ -369,7 +540,7 @@ fn table_rows<'s>(
         }
         let mut d = [0.0f64; 2];
         for h in &clause.heads {
-            d[value_of(values, &h.atom)?] += h.prob.unwrap_or(1.0);
+            d[value_of(values, &h.atom)?] += h.mass()?;
         }
         let total = d[0] + d[1];
         if (total - 1.0).abs() > SUM_TOLERANCE {
@@ -411,6 +582,172 @@ fn noisy_or_forms(dist: &[[f64; 2]]) -> [Option<Form>; 2] {
     forms
 }
 
+/// The tables of one atom of `gp` written as noisy-ors (above, "Tables of
+/// one atom"): how many were. Their rows' facts are left unread, for the
+/// relevance cut to take out.
+pub(super) fn rows_as_noisy_ors(gp: &mut GroundProgram) -> usize {
+    let n = gp.num_atoms();
+    // How many literals read each atom, a named atom counted as read
+    // twice: a fact read once and named by nothing is a row's own.
+    let mut reads = vec![0u8; n];
+    for l in gp.rules.iter().flat_map(|r| &r.body) {
+        let k = &mut reads[l.atom() as usize];
+        *k = k.saturating_add(1);
+    }
+    for a in gp.named_atoms() {
+        reads[a as usize] = 2;
+    }
+    let own = |l: GLit| reads[l.atom() as usize] == 1 && gp.is_fact(l.atom());
+    let by_head = gp.rules_by_head();
+    let mut found: Vec<(AtomId, AtomTable, Form)> = Vec::new();
+    for (x, rules) in by_head.iter().enumerate() {
+        if rules.len() < 2 {
+            continue;
+        }
+        let x = x as AtomId;
+        if let Some((parents, dist)) = one_atom_rows(gp, x, rules, &own)
+            && let [Some(f), _] = noisy_or_forms(&dist)
+        {
+            found.push((x, (parents, dist), f));
+        }
+    }
+    if found.is_empty() {
+        return 0;
+    }
+    // A table's parents do not depend on it where it is in no cycle.
+    let mut cyclic = vec![false; n];
+    for c in super::deps::derived_sccs(gp, &by_head) {
+        if super::deps::is_cyclic(gp, &by_head, &c) {
+            for a in c {
+                cyclic[a as usize] = true;
+            }
+        }
+    }
+    found.retain(|(x, ..)| !cyclic[*x as usize]);
+    if found.is_empty() {
+        return 0;
+    }
+    let mut dropped = vec![false; gp.rules.len()];
+    let mut written = Vec::new();
+    for (x, (parents, dist), f) in &found {
+        for &ri in &by_head[*x as usize] {
+            dropped[ri] = true;
+        }
+        let fact = |gp: &mut GroundProgram, w: Prob| {
+            let k = gp.num_atoms() as i64;
+            let name = &gp.atoms[*x as usize];
+            let mut args = name.args.as_slice().to_vec();
+            args.push(Term::Int(k));
+            gp.atoms
+                .push(Atom::new(format!("{}$noisy_or", name.name), args));
+            gp.kinds.push(AtomKind::Fact(w));
+            k as AtomId
+        };
+        // The leak, `x` where it is likeliest absent; each parent at its
+        // value away from that row, as in the table path's [`write`].
+        let leak = dist[f.base][1];
+        if leak > 0.0 {
+            let l = fact(
+                gp,
+                Prob {
+                    p: leak,
+                    not: dist[f.base][0],
+                },
+            );
+            written.push(GroundRule::new(*x, vec![GLit::Pos(l)]));
+        }
+        for (k, &p) in parents.iter().enumerate() {
+            let q = f.q(dist, k);
+            if q >= 1.0 {
+                continue;
+            }
+            let flipped = f.base ^ 1 << k;
+            let w = if f.leak == 1.0 {
+                Prob {
+                    p: dist[flipped][1],
+                    not: dist[flipped][0],
+                }
+            } else {
+                Prob { p: 1.0 - q, not: q }
+            };
+            let active = GLit::new(p, f.base >> k & 1 == 0);
+            let body = if w.not == 0.0 {
+                vec![active]
+            } else {
+                vec![active, GLit::Pos(fact(gp, w))]
+            };
+            written.push(GroundRule::new(*x, body));
+        }
+    }
+    let mut i = 0;
+    gp.rules.retain(|_| {
+        i += 1;
+        !dropped[i - 1]
+    });
+    gp.rules.extend(written);
+    gp.structure = std::sync::OnceLock::new();
+    found.len()
+}
+
+/// The parents of the rules `rules` of `x` in `gp` and their rows, by
+/// assignment (bit `i` the sign of parent `i`): the probabilities of `x`
+/// false and true, a row no rule has `x` false; `None` unless every rule
+/// reads every parent once and a different assignment, the rest of its
+/// body facts of its own (`own`) whose weights sum to one.
+fn one_atom_rows(
+    gp: &GroundProgram,
+    x: AtomId,
+    rules: &[usize],
+    own: &impl Fn(GLit) -> bool,
+) -> Option<AtomTable> {
+    let mut parents: Vec<AtomId> = gp.rules[rules[0]]
+        .body
+        .iter()
+        .filter(|&&l| !own(l))
+        .map(|l| l.atom())
+        .collect();
+    parents.sort_unstable();
+    let m = parents.len();
+    if !(2..=MOST_PARENTS).contains(&m)
+        || rules.len() > 1 << m
+        || parents.windows(2).any(|w| w[0] == w[1])
+        || parents.contains(&x)
+    {
+        return None;
+    }
+    let mut dist = vec![[1.0, 0.0]; 1 << m];
+    let mut taken = vec![false; 1 << m];
+    for &ri in rules {
+        if gp.rules[ri].pairs {
+            return None;
+        }
+        let (mut key, mut seen) = (0usize, 0usize);
+        let mut row = Prob::TRUE;
+        for &l in &gp.rules[ri].body {
+            if own(l) {
+                let AtomKind::Fact(w) = gp.kinds[l.atom() as usize] else {
+                    unreachable!("a row's own atom is a fact")
+                };
+                row = Prob::cube([row, w.literal(l.is_positive())]);
+                continue;
+            }
+            let k = parents.binary_search(&l.atom()).ok()?;
+            if seen >> k & 1 == 1 {
+                return None;
+            }
+            seen |= 1 << k;
+            key |= usize::from(l.is_positive()) << k;
+        }
+        let total = row.p + row.not;
+        if seen != (1 << m) - 1 || taken[key] || (total - 1.0).abs() > SUM_TOLERANCE {
+            return None;
+        }
+        taken[key] = true;
+        dist[key] = [row.not / total, row.p / total];
+    }
+    Some((parents, dist))
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -432,9 +769,13 @@ mod tests {
     /// rewritten grounds as the program rewritten does.
     fn rewritten_alike(program: &Program) -> Option<(Program, usize)> {
         let shape = Shape::of(program)?;
-        let (written, n) = rewrite(&shape, &shape.evaluation_order()?, program)?;
+        let Rewritten {
+            written,
+            count: n,
+            evidence,
+        } = rewrite(&shape, &shape.evaluation_order()?, program)?;
         // The program written out: each table taken at its first clause,
-        // the clauses numbered in order.
+        // the clauses numbered in order, observing what `rewrite` says.
         let mut clauses = Vec::new();
         let mut done = vec![false; written.len()];
         for clause in &program.clauses {
@@ -456,14 +797,19 @@ mod tests {
             clauses,
             query_rules: Vec::new(),
             queries: program.queries.clone(),
-            evidence: program.evidence.clone(),
+            evidence: evidence.clone().unwrap_or_else(|| program.evidence.clone()),
             interleaved: Vec::new(),
+            unknown_fails: program.unknown_fails,
+            aggregate: program.aggregate,
         };
         let rows = ground_rows(&p)
             .unwrap_or_else(|| panic!("the rewritten program is table-shaped:\n{p}"));
         let shape = shape.rewritten(program, &written);
         let order = shape.evaluation_order().expect("no cycle");
-        let gp = shape.ground(program, &order);
+        let mut gp = shape.ground(program, &order);
+        if let Some(evidence) = &evidence {
+            observe(&mut gp, evidence);
+        }
         assert_eq!(gp.atoms, rows.atoms, "atoms of\n{p}");
         assert_eq!(gp.kinds, rows.kinds, "kinds of\n{p}");
         assert_eq!(gp.rules, rows.rules, "rules of\n{p}");
@@ -514,14 +860,8 @@ evidence(f(v_1),true).
 0.7::x(v_0); 0.3::x(v_1) :- d(v_0).
 0.2::x(v_0); 0.8::x(v_1) :- d(v_1).
 ";
-        // Observed at both values, or asked at both: x keeps its table,
-        // and d is read at both values.
-        assert_eq!(
-            rewritten(&format!(
-                "{table}evidence(x(v_0)).\nevidence(x(v_1),false).\n"
-            )),
-            None
-        );
+        // Asked at both values: x keeps its table, and d is read at both
+        // values.
         assert_eq!(
             rewritten(&format!("{table}query(x(v_0)).\nquery(x(v_1)).\n")),
             None
@@ -544,6 +884,32 @@ query(z(v_1)).
             text,
             "0.1::d(v_1).\n0.3::x(v_1).\n0.7142857142857142::x(v_1) :- d(v_1).\nquery(x(v_1)).\n"
         );
+    }
+
+    #[test]
+    fn an_observation_of_the_absent_value_is_one_of_the_present_value_negated() {
+        // x observed at v_0, its absent value, at both values, or at v_1
+        // false: written as its noisy-or, observed at v_1 false, as a
+        // diagnosis program observes a finding absent.
+        let table = "\
+0.9::d(v_0); 0.1::d(v_1).
+0.7::x(v_0); 0.3::x(v_1) :- d(v_0).
+0.2::x(v_0); 0.8::x(v_1) :- d(v_1).
+";
+        let written = "0.1::d(v_1).\n0.3::x(v_1).\n0.7142857142857142::x(v_1) :- d(v_1).\n";
+        for evidence in [
+            "evidence(x(v_0)).\n",
+            "evidence(x(v_0)).\nevidence(x(v_1),false).\n",
+            "evidence(x(v_1),false).\n",
+        ] {
+            let (text, n) = rewritten(&format!("{table}{evidence}query(d(v_1)).\n"))
+                .unwrap_or_else(|| panic!("{evidence}: rewritten"));
+            assert_eq!(n, 2, "{evidence}");
+            assert!(
+                text.starts_with(written) && text.contains("evidence(x(v_1),false).\n"),
+                "{evidence}: {text}"
+            );
+        }
     }
 
     #[test]
@@ -592,6 +958,11 @@ query(d(v_1)).
                 && text.contains("0.9::d(v_0); 0.1::d(v_1).\n"),
             "{text}"
         );
+        // Observed absent, w is under its observation, and so is y, which
+        // it reads: y reads d, which stays, and stays a table; w, whose
+        // parent stays, stays too, and e and z with them.
+        let absent = read.replace("evidence(w(v_1)).", "evidence(w(v_0)).");
+        assert_eq!(rewritten(&format!("{tables}{absent}")), None);
     }
 
     /// `program` with each name held anew, shared with no other atom.

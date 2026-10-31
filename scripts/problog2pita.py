@@ -50,22 +50,101 @@ RESERVED = frozenset((
     'argbar add_query_var debug_cudd_var andc').split())
 PREFIX = 'problog2pita_'
 _NAME = re.compile(r"(?<![\w$'])([a-z][a-zA-Z0-9_]*)(?![\w'])")
+# The predicates PITA calls as plain Prolog wherever a program names them
+# (cplint's swi_builtin/1: SWI-Prolog's built-ins and the exports of
+# library(lists) and library(apply)), as name/arity. A program that defines
+# one has it renamed as RESERVED's names are: the ProbLog tutorial's
+# tutslides/01_basic 3 defines `break/0`, and PITA asked `prob(break, P)`
+# called SWI's break/0 and answered 1 for 0.76.
+SWI_BUILTIN = frozenset((
+    'abort/0 break/0 fail/0 false/0 garbage_collect/0 halt/0 listing/0 nl/0 nodebug/0 notrace/0 prolog/0 '
+    'repeat/0 seen/0 told/0 trace/0 true/0 tracing/0 debugging/0 statistics/0 version/0 ttyflush/0 '
+    'atom/1 atomic/1 callable/1 compound/1 float/1 integer/1 number/1 var/1 nonvar/1 ground/1 is_list/1 '
+    'string/1 write/1 print/1 writeln/1 writeq/1 write_canonical/1 read/1 halt/1 tab/1 nl/1 call/1 not/1 '
+    'ignore/1 once/1 consult/1 ensure_loaded/1 assert/1 asserta/1 assertz/1 retract/1 retractall/1 '
+    'abolish/1 see/1 tell/1 erase/1 listing/1 format/1 get_char/1 put_char/1 '
+    'write/2 tab/2 format/2 length/2 msort/2 sort/2 keysort/2 succ/2 copy_term/2 forall/2 compare/3 '
+    'char_code/2 atom_length/2 atom_chars/2 atom_codes/2 atom_number/2 atom_string/2 number_codes/2 '
+    'string_chars/2 string_codes/2 term_to_atom/2 term_variables/2 nb_getval/2 b_getval/2 nb_setval/2 '
+    'b_setval/2 atomic_list_concat/2 call/2 call/3 call/4 call/5 between/3 plus/3 functor/3 arg/3 '
+    'findall/3 bagof/3 setof/3 format/3 atom_concat/3 atomic_list_concat/3 string_concat/3 sort/4 '
+    'predsort/3 sub_atom/5 '
+    'append/2 append/3 member/2 memberchk/2 delete/3 subtract/3 intersection/3 union/3 subset/2 '
+    'select/3 selectchk/3 select/4 nth0/3 nth1/3 nth0/4 nth1/4 last/2 reverse/2 permutation/2 flatten/2 '
+    'sum_list/2 sumlist/2 max_list/2 min_list/2 numlist/3 list_to_set/2 max_member/2 min_member/2 '
+    'nextto/3 proper_length/2 exclude/3 include/3 partition/4 maplist/2 maplist/3 maplist/4 maplist/5 '
+    'foldl/4 foldl/5 foldl/6').split())
 
 
-def rename(text):
-    """`text` with every atom that PITA keeps for itself (RESERVED) given
-    PREFIX, and whether there was one. Atoms are renamed wherever they
-    appear, as predicates and as constants alike, which keeps the program's
-    meaning; the driver strips PREFIX from the queries it prints."""
+def rename(text, names=()):
+    """`text` with every atom that PITA keeps for itself (RESERVED, and
+    `names`) given PREFIX, and whether there was one. Atoms are renamed
+    wherever they appear, as predicates and as constants alike, which keeps
+    the program's meaning; the driver strips PREFIX from the queries it
+    prints."""
     hit = False
+    names = RESERVED | frozenset(names)
 
     def sub(m):
         nonlocal hit
-        if m.group(1) in RESERVED:
+        if m.group(1) in names:
             hit = True
             return PREFIX + m.group(1)
         return m.group(1)
     return _NAME.sub(sub, text), hit
+
+
+def head_atom(disjunct):
+    """(label, atom, negated) of a head disjunct `p::a`, `p::\\+a`, `a` or
+    `\\+a`; the label is `p::` or empty."""
+    d = disjunct.strip()
+    parts = split_top(d, ':')
+    label, atom = (parts[0].strip() + '::', parts[2].strip()) if len(parts) == 3 and parts[1] == '' else ('', d)
+    negated = atom.startswith('\\+')
+    return label, atom[2:].strip() if negated else atom, negated
+
+
+def defined(text):
+    """The predicates (name/arity) the clauses of a ProbLog program define,
+    and those of them some clause defines with a negated head."""
+    out, negated = set(), set()
+    for clause in split_clauses(strip_comments(text)):
+        clause = ' '.join(clause.split())
+        if clause.startswith(':-'):
+            continue
+        head, _ = split_neck(clause)
+        if re.fullmatch(r'(query|evidence)\(.*\)', head.strip()):
+            continue
+        for d in split_top(head, ';'):
+            _, atom, neg = head_atom(d)
+            f = functor(atom)
+            if f:
+                out.add(f)
+                if neg:
+                    negated.add(f)
+    return out, negated
+
+
+# PITA has no negated heads (`0.2::\+e1 :- c2.`, the ProbLog tutorial's
+# basic/10_inhibitioneffects, wrong on six programs). A predicate p that
+# has them is written as tddlog's normalization writes it
+# (src/ground/normalize.rs) and ProbLog reads it: its positive clauses
+# define POS+p, its negated ones NEG+p, and p(X..) :- POS+p(X..), \+ NEG+p(X..).
+POS, NEG = PREFIX + 'pos_', PREFIX + 'neg_'
+
+
+def polar_head(head, negated):
+    """`head` with each disjunct of a predicate in `negated` named POS+p
+    or NEG+p by its sign."""
+    out = []
+    for d in split_top(head, ';'):
+        label, atom, neg = head_atom(d)
+        if functor(atom) in negated:
+            atom = (NEG if neg else POS) + atom
+        elif neg:
+            atom = '\\+' + atom
+        out.append(label + atom)
+    return ' ; '.join(out)
 
 
 def split_neck(clause):
@@ -202,11 +281,14 @@ def translate(text):
     the query terms in program order, `evidence` a list of goals to
     conjoin."""
     clauses, queries, evidence, rules, facts = [], [], [], [], {}
+    _, negated = defined(text)
     for clause in split_clauses(strip_comments(text)):
         clause = ' '.join(clause.split())
         if clause.startswith(':-'):
             continue  # a directive of the ProbLog program, not of the LPAD
         head, body = split_neck(clause)
+        if negated and not re.fullmatch(r'(query|evidence)\(.*\)', head.strip()):
+            head = polar_head(head, negated)
         m = re.fullmatch(r'query\((.*)\)', head.strip())
         if m:
             # `query(Q) :- Body.` asks Q for every solution of Body over the
@@ -224,8 +306,6 @@ def translate(text):
                 atom, truth = m.group(1).strip(), 'true'
             evidence.append(atom if truth == 'true' else f'\\+ ({atom})')
             continue
-        if body is None and ':' not in split_top(head, ':')[0:1][0][:0] + '':
-            pass
         if body is not None:
             for d in split_top(head, ';'):
                 parts = split_top(d, ':')
@@ -240,6 +320,11 @@ def translate(text):
         if body is None:
             head = certain_fact(head)
         clauses.append(f'{head}.' if body is None else f'{head} :- {body.strip()}.')
+    for f in sorted(negated):
+        name, n = f.rsplit('/', 1)
+        args = f"({','.join(f'X{i}' for i in range(int(n)))})" if int(n) else ''
+        clauses.append(f'{name}{args} :- {POS}{name}{args}, \\+ {NEG}{name}{args}.')
+        rules.append((f, [POS + f, NEG + f]))
     tables = [f':- table {p}.' for p in sorted(recursive(rules))]
     return tables + clauses, queries, evidence, facts
 
@@ -262,33 +347,50 @@ def generator(body, facts):
     return renamed, copies
 
 
+def main_lines(queries, evidence, renamed, facts):
+    """main/0, which asks every query, after the copies of the facts its
+    queries' bodies enumerate (`generator`), as lines."""
+    lines = []
+    goal = 'prob(Q, P)' if not evidence else f"prob(Q, ({', '.join(evidence)}), P)"
+    show = 'format("~q:\\t~w~n", [Q, P])'
+    if renamed:
+        # one argument of forall/2
+        show = (f"(term_to_atom(Q, Q0), atomic_list_concat(Qs, '{PREFIX}', Q0), atomic_list_concat(Qs, Q1), "
+                'format("~w:\\t~w~n", [Q1, P]))')
+    enumerators = []
+    for term, body in queries:
+        if body is None:
+            enumerators.append(f'Q = {term}')
+        else:
+            gen, copies = generator(body, facts)
+            lines += copies
+            enumerators.append(f'{gen}, Q = {term}')
+    lines.append('main :-')
+    # prob/2 backtracks over the instances of a query with variables:
+    # each is printed, as ProbLog asks every instance of such a query.
+    lines += [f'    forall(({e}, {goal}), {show}),' for e in enumerators[:-1]]
+    lines.append(f'    forall(({enumerators[-1]}, {goal}), {show}).' if enumerators else '    true.')
+    return lines
+
+
 def program(text, driver=False):
-    text, renamed = rename(text)
+    text, renamed = rename(text, {f.split('/')[0] for f in defined(text)[0] if f in SWI_BUILTIN})
     clauses, queries, evidence, facts = translate(text)
     lines = [':- use_module(library(pita)).', ':- pita.', ':- begin_lpad.']
     lines += clauses
     lines.append(':- end_lpad.')
     if driver:
-        goal = 'prob(Q, P)' if not evidence else f"prob(Q, ({', '.join(evidence)}), P)"
-        show = 'format("~q:\\t~w~n", [Q, P])'
-        if renamed:
-            # one argument of forall/2
-            show = (f"(term_to_atom(Q, Q0), atomic_list_concat(Qs, '{PREFIX}', Q0), atomic_list_concat(Qs, Q1), "
-                    'format("~w:\\t~w~n", [Q1, P]))')
-        enumerators = []
-        for term, body in queries:
-            if body is None:
-                enumerators.append(f'Q = {term}')
-            else:
-                renamed, copies = generator(body, facts)
-                lines += copies
-                enumerators.append(f'{renamed}, Q = {term}')
-        lines.append('main :-')
-        # prob/2 backtracks over the instances of a query with variables:
-        # each is printed, as ProbLog asks every instance of such a query.
-        lines += [f'    forall(({e}, {goal}), {show}),' for e in enumerators[:-1]]
-        lines.append(f'    forall(({enumerators[-1]}, {goal}), {show}).' if enumerators else '    true.')
+        lines += main_lines(queries, evidence, renamed, facts)
     return '\n'.join(lines) + '\n'
+
+
+def own(lpad, text):
+    """PITA's own program `lpad`, an LPAD written for it (cplint's
+    examples), as it is, with main/0 asking the queries of `text`, the
+    ProbLog program converted from it: where a system's own program is the
+    model, that system reads it (rule 15)."""
+    _, queries, evidence, facts = translate(text)
+    return lpad.rstrip('\n') + '\n\n' + '\n'.join(main_lines(queries, evidence, False, facts)) + '\n'
 
 
 def main():

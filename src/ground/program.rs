@@ -5,6 +5,7 @@
 use std::fmt;
 use std::sync::{Arc, OnceLock};
 
+use crate::by_hash::ByHash;
 use crate::eval::Count;
 use crate::syntax::Atom;
 
@@ -126,24 +127,22 @@ impl std::ops::Deref for RuleBody<'_> {
     }
 }
 
-/// The ground rules kept so far, each once, by hash: the last kept with
-/// each hash, and per rule kept its index and the one kept before it with
-/// the same hash. A rule is kept without a second copy of it: a set of the
+/// The ground rules kept so far, each once, by hash, each by its index in
+/// the rules. A rule is kept without a second copy of it: a set of the
 /// rules themselves cost a copy of each, ace_blockmap_22_03's 182 k
-/// deterministic rows among them ([`table`]).
+/// deterministic rows among them ([`super::table`]).
 #[derive(Default)]
 pub(super) struct KeptRules {
-    by_hash: rustc_hash::FxHashMap<u64, u32>,
-    kept: Vec<(u32, u32)>,
+    by_hash: ByHash,
+    /// Per rule kept, its index in the rules.
+    kept: Vec<u32>,
 }
 
 impl KeptRules {
     /// Room for `n` rules kept.
     pub(super) fn with_capacity(n: usize) -> Self {
-        let mut by_hash = rustc_hash::FxHashMap::default();
-        by_hash.reserve(n);
         KeptRules {
-            by_hash,
+            by_hash: ByHash::with_capacity(n),
             kept: Vec::with_capacity(n),
         }
     }
@@ -152,34 +151,21 @@ impl KeptRules {
     /// `rules`; where it is none, it is kept as the next of `rules`, which
     /// the caller pushes it onto.
     pub(super) fn keep(&mut self, rules: &[GroundRule], rule: &GroundRule) -> bool {
-        use std::collections::hash_map::Entry;
         use std::hash::BuildHasher;
+        let KeptRules { by_hash, kept } = self;
         let h = rustc_hash::FxBuildHasher.hash_one(rule);
-        // One probe of the table, for the rules of the hash and for the
-        // rule's place.
-        let entry = self.by_hash.entry(h);
-        let last = match &entry {
-            Entry::Occupied(o) => *o.get(),
-            Entry::Vacant(_) => u32::MAX,
-        };
-        let mut k = last;
-        while k != u32::MAX {
-            let (r, before) = self.kept[k as usize];
-            if rules[r as usize] == *rule {
-                return false;
-            }
-            k = before;
+        let (_, new) = by_hash.find_or_push(h, |k| rules[kept[k as usize] as usize] == *rule);
+        if new {
+            kept.push(rules.len() as u32);
         }
-        entry.insert_entry(self.kept.len() as u32);
-        self.kept.push((rules.len() as u32, last));
-        true
+        new
     }
 }
 
 /// A fact's weights, true and false. They sum to one, and each is a number
 /// of its own: the weight false is not taken as `1 - p` from the weight
 /// true. A switch of an annotated disjunction is true with `p_i / S_i` and
-/// false with `S_{i+1} / S_i` ([`chain_weights`]), and where the heads after
+/// false with `S_{i+1} / S_i` ([`super::normalize::chain_weights`]), and where the heads after
 /// head `i` hold under the rounding of `p_i / S_i` against one, `1 - p_i /
 /// S_i` is zero and their mass is lost.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -327,6 +313,9 @@ pub struct GroundStats {
     pub swept: super::SweepStats,
     /// How many tables the grounder wrote as noisy-ors (`noisy_or`).
     pub noisy_or: usize,
+    /// How many negated derived atoms the grounder unfolded under the
+    /// rules that read them, rules dropped among them (`negation`).
+    pub unfolded: usize,
     /// How many facts the grounder made to read choices through, one per
     /// context (`contexts`).
     pub contexts: usize,

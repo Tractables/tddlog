@@ -18,7 +18,7 @@ use crate::cubes::{Merged, merge_complements};
 /// right, as ranges of its level's arenas, up to the last leaf a node
 /// above may read ([`kept_bits`]); and its node.
 ///
-/// A class that a lift passed up as it was ([`lift`]) keeps its values
+/// A class that a lift passed up as it was ([`Level::lifted`]) keeps its values
 /// from the leaf `lo` on, and those of the leaves before it, which the
 /// lifts took in, are `defaults`' ([`Level::normalize`]). Its key's hash
 /// is kept for the lifts, which look classes up on a level they extend,

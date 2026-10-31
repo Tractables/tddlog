@@ -37,8 +37,11 @@ pub struct Encoding {
 /// when a clause of the table fails, which the program observes false.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Indicator {
+    /// The derived atom.
     pub atom: AtomId,
+    /// The fact its readers read in its place.
     pub var: AtomId,
+    /// The derived atom that ties `var` to it.
     pub link: AtomId,
 }
 

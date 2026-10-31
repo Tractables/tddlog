@@ -119,7 +119,7 @@ impl ScopeTable {
 /// A hash of the shape of `vtree` up to mirrors, local variable `v` at a
 /// leaf read as its slot, `slots[v - 1]`; `hashes` holds one per node.
 ///
-/// [`TddBackend::transport`] from a scope with slots `from_slots` onto one
+/// [`super::TddBackend::transport`] from a scope with slots `from_slots` onto one
 /// with slots `slots`, by the map the clause memo makes, which sends local
 /// variable `k + 1` to the variable in slot `from_slots[k]`, succeeds only
 /// where the two hash the same, whatever the trees:

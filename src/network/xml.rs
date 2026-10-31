@@ -16,7 +16,7 @@ pub(super) struct Element {
 }
 
 impl Element {
-    pub fn attribute(&self, name: &str) -> Option<&str> {
+    pub(crate) fn attribute(&self, name: &str) -> Option<&str> {
         self.attributes
             .iter()
             .find(|(n, _)| n == name)
@@ -24,7 +24,7 @@ impl Element {
     }
 
     /// The first child of that name.
-    pub fn child(&self, name: &str) -> Option<&Element> {
+    pub(crate) fn child(&self, name: &str) -> Option<&Element> {
         self.children.iter().find(|c| c.name == name)
     }
 }

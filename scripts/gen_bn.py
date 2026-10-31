@@ -574,11 +574,15 @@ def write_hugin(network):
     is (`parse_uai`), gets a second value `not_<value>` holding the rest
     of each row, so that every row sums to one as a Bayesian network's
     must; observing the first value then weighs each assignment of the
-    factor's scope by its row as the program's evidence does."""
+    factor's scope by its row as the program's evidence does. A
+    variable of the network with one value (the pedigrees have them) gets
+    the second value too, of probability zero, and the tables it is a
+    parent of repeat for that value the rows of its one value."""
     order, variables, tables = network
     quote = lambda s: '"' + s.replace('"', '') + '"'
     lines = ['net', '{', '}']
     states = {v: variables[v] + ([f'not_{variables[v][0]}'] if len(variables[v]) == 1 else []) for v in order}
+    keyed = {v: variables[v] * (len(states[v]) // len(variables[v])) for v in order}   # a key per state
     for v in order:
         lines += [f'node {v}', '{', f'  states = ({" ".join(quote(u) for u in states[v])});', '}']
     for v in order:
@@ -592,7 +596,7 @@ def write_hugin(network):
                 if len(variables[v]) == 1:
                     probs = [probs[0], max(0.0, 1.0 - probs[0])]
                 return '(' + ' '.join(repr(float(p)) for p in probs) + ')'
-            return '(' + ' '.join(nest(depth + 1, key + (u,)) for u in variables[parents[depth]]) + ')'
+            return '(' + ' '.join(nest(depth + 1, key + (u,)) for u in keyed[parents[depth]]) + ')'
         given = f' | {" ".join(parents)}' if parents else ''
         lines += [f'potential ({v}{given})', '{', f'  data = {nest(0, ())};', '}']
     return '\n'.join(lines) + '\n'
@@ -663,19 +667,25 @@ def normalized(probs, where):
     # is left to no value as written; over one, it is an error. A shortfall
     # below 10⁻⁹, the grounder's own tolerance for a row's last value, is
     # left as written, so that rows that sum to one but for binary rounding
-    # keep their numbers. An excess below 10⁻⁹ is binary rounding too, of
-    # the products and complements a ground network's tables are computed
-    # with (rows that sum to 1.00000000000000027), and is rescaled.
+    # keep their numbers. An excess is rounding where it is at most the
+    # slack, which two halves rounded up reach (the UAI 2006 networks'
+    # `0.160598, 0.839403`), or at most (n + 1) 2⁻²⁴ for a row of n
+    # entries, the error of a row computed in single precision (the UAI
+    # classics' `0.94297521, 0.05702495`) and of the products and
+    # complements a ground network's tables are computed with in doubles;
+    # it is rescaled. This is tddlog's network reader's rule
+    # (src/network/rows.rs), so that the program below is the one
+    # `tddlog --program` prints.
     total = math.fsum(probs)
+    if (len(probs) == 1 and total <= 1) or 1 - 1e-9 <= total <= 1:
+        return probs
     exact, slack = rounding_slack(probs)
-    if abs(exact - 1) >= slack:
-        if exact > 1 + Decimal('1e-9'):
-            sys.exit(f'{where}: probabilities sum to {exact}')
-        if exact < 1:
+    if total < 1:
+        if abs(exact - 1) >= slack:
             return probs
-    if total > 1 or total < 1 - 1e-9:
-        probs = [p / total for p in probs]   # rounding in the file
-    return probs
+    elif total - 1 > (len(probs) + 1) * 2.0 ** -24 and abs(exact - 1) > slack:
+        sys.exit(f'{where}: probabilities sum to {exact}')
+    return [p / total for p in probs]   # rounding in the file
 
 
 def rescaled(network):

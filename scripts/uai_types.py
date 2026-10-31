@@ -11,7 +11,8 @@ are conditional probability tables over an acyclic graph:
 
   - there are as many factors as variables;
   - each factor can be given a child: a scope variable over which its
-    table sums to 1 for every configuration of the others (within TOL);
+    table sums to 1 for every configuration of the others (within TOL a
+    term);
   - the factors can be given distinct children, so that each variable is
     the child of exactly one table (a matching of factors to variables);
   - the parent graph, from the other scope variables of a variable's table
@@ -31,7 +32,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bench  # noqa: E402  (uai_suite: the instances and files of a suite)
 
-TOL = 1e-5  # a table's rows are written with a few digits: 0.3333333 three times
+# A table's entries are written with five or more decimals, each off by at most half a
+# unit of the fifth: a row of k entries sums to 1 within k times TOL (0.3333333 three
+# times; Ihler's diagnose_a, 0.08824 0.44118 0.44118 0.02941, 1.00001).
+TOL = 5e-6
 
 
 def parse(text):
@@ -77,7 +81,7 @@ def sums_to_one(cards, scope, table, j):
     for start in range(len(table)):
         if (start // stride) % k:
             continue
-        if abs(sum(table[start + t * stride] for t in range(k)) - 1) > TOL:
+        if abs(sum(table[start + t * stride] for t in range(k)) - 1) > k * TOL:
             return False
     return True
 
