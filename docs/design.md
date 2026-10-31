@@ -263,7 +263,19 @@ clause's heads is made once for each instance of the clause, as PITA
 makes it, whatever the depth: a switch `'$choice_N'` over the clause's
 variables, which each head's clause reads after its body. cplint's
 examples bound grammars and walks that way whose programs have no end
-without it (`pcfglrdb`, `var_objdb`). The file's example
+without it (`pcfglrdb`, `var_objdb`). PRISM's switches are read as
+annotated disjunctions: `:- set_sw(S, [p1, ..., pn]).` with the fact
+`values(T, [v1, ..., vn])` of which `S` is an instance writes `p1::msw(S,
+v1); ...; pn::msw(S, vn).`, one choice for each instance of `S`, which is
+what PITA makes under `:- set_pita(prism_memoization, true).`. By default
+PITA makes a new choice at each call of `msw/2`; the two agree where each
+instance of a switch is called once in the evaluation of each query, and
+the reader refuses a program where it cannot show that: it follows the
+calls from each query and the evidence, and requires the clause of each
+call `msw(S, V)` to be of a predicate called in one way and not
+recursive, the literals before the call to be calls of the LPAD's
+predicates (which PITA tables, each answer once) or tests, with what they
+bind in `S`, and no two calls' switches to unify. The file's example
 queries become queries: `?- prob(Q, P).` is `query(Q).`, and `?- prob(Q,
 E, P).` is `query(Q).` with an `evidence(L).` for each literal `L` of the
 conjunction `E`. A program has one set of evidence, that of the first
@@ -273,7 +285,9 @@ and on standard error, and left out. A clause the program cannot write
 (a disjunctive head with no probability or with two heads without one, a
 head without one beside a flexible probability, a probability that is not
 a finite number; under the depth bound, a flexible probability or a call
-of the LPAD's predicates inside another goal) is refused on its line. So
+of the LPAD's predicates inside another goal; a switch whose values or
+probabilities cannot be read, or one that two directives set) is refused
+on its line. So
 is a source written for PITA(IND) (`:- pitaind.`), on the directive's
 line: it asks for the probabilities PITA computes under the assumption
 that a conjunction's literals are independent and a disjunction's

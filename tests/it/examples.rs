@@ -1397,6 +1397,37 @@ mod lpad {
         );
     }
 
+    /// PRISM's switches under PITA's default, each called once, with the
+    /// answers computed by hand in the program's comments, which PITA
+    /// gives too.
+    #[test]
+    fn msw() {
+        check(
+            "../tests/lpad/msw.cplint.pl",
+            &[
+                ("res(coin,heads)", 0.51),
+                ("res(coin,tails)", 0.49),
+                ("sneezing(bob)", 0.94),
+            ],
+        );
+    }
+
+    /// PRISM's switches under PITA's memoization: one choice for each
+    /// instance of a switch, with the answers computed by hand in the
+    /// program's comments, which PITA gives too.
+    #[test]
+    fn msw_memo() {
+        check(
+            "../tests/lpad/msw_memo.cplint.pl",
+            &[
+                ("two_heads", 0.6),
+                ("mixed", 0.0),
+                ("same(2)", 0.09),
+                ("again(2)", 0.3),
+            ],
+        );
+    }
+
     /// PITA's depth bound, with the answers computed by hand in the
     /// program's comment, which PITA gives too.
     #[test]
