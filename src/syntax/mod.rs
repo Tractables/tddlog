@@ -29,6 +29,7 @@ mod parser;
 
 pub(crate) use arguments::bind;
 pub use parser::{Consult, ParseError, consults, parse_program};
+pub(crate) use parser::{construct, goal_literal};
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -297,6 +298,8 @@ fn infix(name: &str) -> Option<(u16, Assoc)> {
         "," => (1000, Xfy),
         "=" | "\\=" | "==" | "\\==" | "@<" | "@>" | "@=<" | "@>=" | "is" | "=:=" | "=\\=" | "<"
         | ">" | "=<" | ">=" | "=.." => (700, Xfx),
+        // library(collect)'s `CodeBlock => Collector`.
+        "=>" => (700, Yfx),
         ":" => (600, Xfy),
         "+" | "-" | "/\\" | "\\/" | "xor" => (500, Yfx),
         "*" | "/" | "//" | "mod" | "rem" | "<<" | ">>" => (400, Yfx),
@@ -1143,7 +1146,51 @@ impl fmt::Display for Builtin {
     }
 }
 
-/// `findall(Template, Goal, Result)` as read, or `all/3`: the goal's
+/// Which of ProbLog's findalls a findall is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) enum Gather {
+    /// findall/3: a solution once per proof, and the empty list where
+    /// there is none.
+    Findall,
+    /// all/3: each solution once, and no empty list.
+    All,
+    /// all_or_none/3: each solution once, and the empty list where there
+    /// is none.
+    AllOrNone,
+}
+
+impl Gather {
+    /// The findall of `name/3`.
+    pub(crate) fn of(name: &str) -> Option<Gather> {
+        Some(match name {
+            "findall" => Gather::Findall,
+            "all" => Gather::All,
+            "all_or_none" => Gather::AllOrNone,
+            _ => return None,
+        })
+    }
+
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Gather::Findall => "findall",
+            Gather::All => "all",
+            Gather::AllOrNone => "all_or_none",
+        }
+    }
+
+    /// Whether it lists each solution once, by its atom.
+    pub(crate) fn once(self) -> bool {
+        self != Gather::Findall
+    }
+
+    /// Whether it gives the empty list where there is no solution.
+    pub(crate) fn empty(self) -> bool {
+        self != Gather::All
+    }
+}
+
+/// `findall(Template, Goal, Result)` as read, or `all/3` or
+/// `all_or_none/3` ([`Gather`]): the goal's
 /// alternatives, each a conjunction. The grounder lowers it to a
 /// [`Collect`], or, where the result is `[]`, to a negation. A negated goal
 /// that is not an atom, `\+ Goal`, is read as `findall(true, Goal, [])`,
@@ -1156,8 +1203,7 @@ pub(crate) struct Findall {
     /// Whether a disjunction of the goal comes after another literal
     /// ([`Program::interleaved`]).
     pub(crate) interleaved: bool,
-    /// all/3: each solution once, and no empty list.
-    pub(crate) all: bool,
+    pub(crate) gather: Gather,
 }
 
 /// A findall lowered by the grounder: `result` is the list of the template
@@ -1170,8 +1216,7 @@ pub(crate) struct Collect {
     pub(crate) arity: usize,
     pub(crate) shared: Vec<Term>,
     pub(crate) result: Term,
-    /// all/3: each solution once, and no empty list.
-    pub(crate) all: bool,
+    pub(crate) gather: Gather,
     /// The findall as written, for the errors that name it.
     pub(crate) text: Arc<str>,
 }
@@ -1249,7 +1294,8 @@ impl fmt::Display for Literal {
                 write_term(f, e, 699)
             }
             Literal::Findall(fa) => {
-                f.write_str(if fa.all { "all(" } else { "findall(" })?;
+                f.write_str(fa.gather.name())?;
+                f.write_str("(")?;
                 write_term(f, &fa.template, 999)?;
                 f.write_str(",(")?;
                 for (k, alt) in fa.goal.iter().enumerate() {
@@ -1409,6 +1455,11 @@ pub struct Program {
     /// library, which it writes as clauses (`avg/2`, `sum/2`, `min/2` and
     /// `max/2`), are the library's where the program does not define them.
     pub(crate) aggregate: bool,
+    /// `:- use_module(library(collect)).`: `CodeBlock => Collector` calls
+    /// the collector's predicate `collect_<name>` on the code block, and
+    /// that library's `collect_list/3,4` are the library's where the
+    /// program does not define them.
+    pub(crate) collect: bool,
 }
 
 impl Program {
@@ -1429,6 +1480,9 @@ impl fmt::Display for Program {
         }
         if self.aggregate {
             writeln!(f, ":- use_module(library(aggregate)).")?;
+        }
+        if self.collect {
+            writeln!(f, ":- use_module(library(collect)).")?;
         }
         for c in &self.clauses {
             writeln!(f, "{c}")?;

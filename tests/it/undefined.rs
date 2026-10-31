@@ -144,12 +144,6 @@ fn a_goal_called_through_call_that_names_no_predicate_is_refused() {
     );
     let e = refusal("0.3::r(1). q :- member(G, [r, s]), \\+ call(G, 1). query(q).");
     assert!(e.contains("no clauses for s/1"), "{e}");
-    // A goal of a built-in: ProbLog calls it, tddlog refuses it.
-    let e = refusal("q :- G = member(a), call(G, [a]). query(q).");
-    assert!(
-        e.contains("member/2, a built-in called through call/2"),
-        "{e}"
-    );
     // Under `:- unknown(fail).` the goal without clauses fails, as in
     // ProbLog.
     assert_answers(&format!(":- unknown(fail). {source}"), &[("q(1)", 0.3)]);

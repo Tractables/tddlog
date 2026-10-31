@@ -56,6 +56,7 @@ pub(crate) enum Op {
     Arrow,
     Colon,
     Univ,
+    Collect,
 }
 
 impl Op {
@@ -90,6 +91,7 @@ impl Op {
             Op::Arrow => "->",
             Op::Colon => ":",
             Op::Univ => "=..",
+            Op::Collect => "=>",
         }
     }
 }
@@ -886,6 +888,7 @@ impl<'a> Lexer<'a> {
                     (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::ArithEq), 3),
                     (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::ArithNe), 3),
                     (b'=', Some(b'.'), Some(b'.')) => (Tok::Op(Op::Univ), 3),
+                    (b'=', Some(b'>'), _) => (Tok::Op(Op::Collect), 2),
                     (b'@', Some(b'='), Some(b'<')) => (Tok::Op(Op::TermLe), 3),
                     (b'@', Some(b'>'), Some(b'=')) => (Tok::Op(Op::TermGe), 3),
                     (b'@', Some(b'<'), _) => (Tok::Op(Op::TermLt), 2),

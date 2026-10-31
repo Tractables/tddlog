@@ -184,16 +184,24 @@ fn unbound_test<'a>(
 /// binds it; the value of an `is` whose expression is bound; the arguments
 /// of a built-in that runs with those bound ([`Builtin::runs`]); a
 /// findall's result. A variable `=` makes a term, or that a built-in reads
-/// but cannot bind, may hold a term.
+/// but cannot bind, may hold a term, and the variables of a compound `=`
+/// matches against a variable that may hold one may hold its parts.
 fn bind(lit: &Literal, v: &mut Vars) {
     match lit {
         Literal::Pos(a) => v.bound.extend(vars_of_atom(a)),
         Literal::Cmp(CmpOp::Eq, a, b) => {
             for (x, t) in [(a, b), (b, a)] {
-                if let Term::Var(x) = x
-                    && (!matches!(t, Term::Var(_)) || !v.free(&vars(t)[0]))
-                {
-                    v.touched.insert(x.clone());
+                let held = !matches!(t, Term::Var(y) if v.free(y));
+                match x {
+                    Term::Var(x) if held => {
+                        v.touched.insert(x.clone());
+                    }
+                    // A compound takes the parts of a term a variable may
+                    // hold.
+                    Term::Compound(_) if held && matches!(t, Term::Var(_)) => {
+                        v.touched.extend(vars(x));
+                    }
+                    _ => {}
                 }
             }
             v.pending.push((a.clone(), b.clone()));

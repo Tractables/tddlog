@@ -23,7 +23,8 @@ use super::schedule::{Order, literal_vars, schedule_body};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::by_hash::ByHash;
 use crate::syntax::{
-    Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Literal, NIL, Name, Term, term_cmp,
+    Args, Atom, Builtin, CONS, Clause, CmpOp, Compound, F64, Gather, Literal, NIL, Name, Term,
+    term_cmp,
 };
 
 mod lists;
@@ -355,7 +356,7 @@ struct ICollect {
     aux: PredId,
     shared: Vec<Arg>,
     result: Arg,
-    all: bool,
+    gather: Gather,
     text: Arc<str>,
 }
 
@@ -1228,7 +1229,7 @@ fn compile_rule<'a>(
                     aux,
                     shared,
                     result,
-                    all: c.all,
+                    gather: c.gather,
                     text: c.text.clone(),
                 })));
             }
@@ -1742,14 +1743,17 @@ fn callable(g: &mut Grounder, name: u32, k: usize, test: &[Val]) -> Result<bool,
     }
     let pred = g.syms.names[name as usize].clone();
     let arity = k + n as usize;
-    let builtin = super::terms::problog_builtin(&pred, arity);
+    // ProbLog's call/N finds no clauses for a conjunction or a
+    // disjunction.
+    let builtin = super::terms::problog_builtin(&pred, arity) && !matches!(&*pred, "," | ";");
     if !builtin && &*g.syms.names[unknown as usize] == "fail" {
         return Ok(false);
     }
     let through = format!("called through call/{}", n + 1);
     Err(if builtin {
         GroundError::Unsupported(format!(
-            "{pred}/{arity}, a built-in {through}, which tddlog calls only where it is written"
+            "{pred}/{arity}, a built-in {through}, which tddlog calls only where the program \
+             writes its name"
         ))
     } else {
         GroundError::NoClauses(format!("{pred}/{arity}, {through}"))
@@ -1793,7 +1797,7 @@ fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Vec<lists::
         .filter(|&t| rel.tuple(t)[..k] == *shared)
         .map(|t| (rel.tuple(t)[k], rel.ids[t]))
         .collect();
-    match lists::collect(g, &answers, c.all, &c.text) {
+    match lists::collect(g, &answers, c.gather, &c.text) {
         Ok(l) => Some(l),
         Err(e) => {
             g.fail(e);

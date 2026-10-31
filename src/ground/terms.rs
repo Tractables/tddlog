@@ -881,7 +881,7 @@ impl Lowering<'_, '_> {
             arity,
             shared: shared.into_iter().map(Term::Var).collect(),
             result: fa.result,
-            all: fa.all,
+            gather: fa.gather,
             text,
         })
     }
@@ -1038,7 +1038,7 @@ fn binds(l: &Literal, out: &mut Vec<String>) {
 /// Whether `fa` is `findall(_, G, [])`, which holds where `G` has no
 /// solution ([`Lowering::none`]).
 fn no_solution(fa: &Findall) -> bool {
-    !fa.all && matches!(&fa.result, Term::Const(c) if &**c == NIL)
+    fa.gather.empty() && matches!(&fa.result, Term::Const(c) if &**c == NIL)
 }
 
 /// Whether `t` is a variable, a list or a list whose tail is a variable:

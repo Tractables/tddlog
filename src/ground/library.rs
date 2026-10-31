@@ -15,21 +15,27 @@
 //! built-in's name that calls it.
 //!
 //! `call(G, A1, ..., An)` calls `G` with the arguments added. Where `G` is
-//! written as an atom or a compound, it is that predicate's call. Where it
-//! is a variable, it is a call of `'$call<n>'(G, A1, ..., An)`, which has a
-//! clause `'$call<n>'(p(B1, ..., Bk), A1, ..., An) :- p(B1, ..., Bk, A1,
-//! ..., An)` (its first argument `p` where `k = 0`) for each predicate
-//! `p/(k + n)` that the program defines and names in an argument, the
-//! predicates a goal it builds can name. Each such clause is read in every
-//! mode of the calls of `call/N`: one whose body is safe only for the
-//! goal's own callers (a fact with a variable that only a caller binds)
-//! makes the grounding refuse the program, as an unsafe rule. The call is
-//! preceded by the test `'$callable'(G, n, Callable, Unknown)`
-//! ([`Builtin::Callable`]), `Callable` the list of those predicates'
+//! written as an atom or a compound of a predicate or a built-in, it is
+//! that call. Where it is a variable or a construct (a conjunction, a
+//! disjunction, a negation, a comparison, `is`, a findall, `true`, `fail`;
+//! [`construct`]), it is a call of `'$call<n>'(G, A1, ..., An)`, which has
+//! a clause `'$call<n>'(p(B1, ..., Bk), A1, ..., An) :- p(B1, ..., Bk, A1,
+//! ..., An)` (its first argument `p` where `k = 0`) for each predicate or
+//! built-in `p/(k + n)` that the program names in an argument, the goals
+//! a goal it builds can name. A construct named so has the clauses of the
+//! goal it is ([`goal_literal`]): a conjunction `'$call0'((B1, B2)) :-
+//! call(B1), call(B2)`, a disjunction one of each alternative, `true` a
+//! fact, `fail` none. A variable written as a goal, in a body or in a
+//! findall's or a negation's goal, is `call/1` of it. Each such clause is
+//! read in every mode of the calls of `call/N`: one whose body is safe
+//! only for the goal's own callers (a fact with a variable that only a
+//! caller binds) makes the grounding refuse the program, as an unsafe
+//! rule. The call is preceded by the test `'$callable'(G, n, Callable,
+//! Unknown)` ([`Builtin::Callable`]), `Callable` the list of those goals'
 //! names and arities less `n`: a goal bound to anything else has no
 //! clause, which ProbLog stops on (its `UnknownClause`), or, where the
 //! program says `:- unknown(fail).`, fails, unless it names a built-in,
-//! which tddlog does not call through a variable.
+//! which tddlog calls through a variable only where the program names it.
 
 use std::cell::RefCell;
 use std::sync::OnceLock;
@@ -37,7 +43,10 @@ use std::sync::OnceLock;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::terms::{calls, calls_mut};
-use crate::syntax::{Atom, Builtin, CONS, Clause, Compound, Literal, NIL, Name, Program, Term};
+use crate::syntax::{
+    Atom, Builtin, CONS, Clause, Compound, Literal, NIL, Name, Program, Term, construct,
+    goal_literal,
+};
 
 /// The library's clauses. A random selection is made as ProbLog makes it,
 /// of the same random variables: each item in turn is chosen with its
@@ -94,12 +103,29 @@ foldl(P, [L1|LR1], [L2|LR2], L0, RR) :-
 foldl(_, [], [], [], RR, RR).
 foldl(P, [L1|LR1], [L2|LR2], [L3|LR3], L0, RR) :-
     call(P, L1, L2, L3, L0, R), foldl(P, LR1, LR2, LR3, R, RR).
+
+'$findall_goal'((A, B)) :- '$findall_goal'(A), '$findall_goal'(B).
+'$findall_goal'((A ; _)) :- '$findall_goal'(A).
+'$findall_goal'((_ ; B)) :- '$findall_goal'(B).
+'$findall_goal'(G) :- G \= (_, _), G \= (_ ; _), call(G).
+
+enum_groups(Groups, Values, Group, GroupValues) :-
+    '$lists_zip'(Groups, Values, Pairs), enum_groups(Pairs, Group, GroupValues).
+'$lists_zip'([], [], []).
+'$lists_zip'([G|Gs], [V|Vs], [(G,V)|Ps]) :- '$lists_zip'(Gs, Vs, Ps).
 ";
 
 /// The predicates `library(aggregate)` writes as clauses, as it writes
-/// them, for a program that loads it: the functions of its aggregates
-/// `f<V>`, which `aggregate/5` calls on the values of a group.
+/// them, for a program that loads it: `aggregate/5` and the functions of
+/// its aggregates `f<V>`, which `aggregate/5` calls on the values of a
+/// group.
 const AGGREGATE: &str = r"
+aggregate(AggFunc, Var, Group, Body, (Group, Result)) :-
+    all([Group, Body, Var], Body, L),
+    maplist(nth0(0), L, LG),
+    maplist(nth0(2), L, LV),
+    enum_groups(LG, LV, Group, Values),
+    call(AggFunc, Values, Result).
 avg(L, Avg) :- sum(L, Sum), length(L, Count), Avg is Sum / Count.
 sum(L, Sum) :- sum(L, 0, Sum).
 min([H|T], Min) :- min(T, H, Min).
@@ -114,16 +140,33 @@ max([X|T], Acc, Max) :- X >= Acc, max(T, X, Max).
 max([X|T], Acc, Max) :- X < Acc, max(T, Acc, Max).
 ";
 
-/// [`LIBRARY`] read, with [`AGGREGATE`] where `aggregate` says so.
-fn library(aggregate: bool) -> &'static Program {
-    static READ: OnceLock<Program> = OnceLock::new();
-    static WITH_AGGREGATE: OnceLock<Program> = OnceLock::new();
-    let parse = |text: &str| crate::syntax::parse_program(text).expect("the library parses");
-    if aggregate {
-        WITH_AGGREGATE.get_or_init(|| parse(&format!("{LIBRARY}{AGGREGATE}")))
-    } else {
-        READ.get_or_init(|| parse(LIBRARY))
-    }
+/// The predicates `library(collect)` writes as clauses, as it writes them,
+/// for a program that loads it. Its `CodeBlock => Collector`, which calls
+/// `collect_<name>` of the collector's name, is read where it is written
+/// ([`collector`]).
+const COLLECT: &str = r"
+collectgroup(CodeBlock, AggVar, GroupBy, Values) :-
+    all_or_none((GroupBy, AggVar), CodeBlock, List1),
+    enum_groups(List1, GroupBy, Values).
+collect_list(CodeBlock, Y, Result) :- collect_list(CodeBlock, none, Y, Result).
+collect_list(CodeBlock, GB, Y, Result) :- collectgroup(CodeBlock, Y, GB, Result).
+";
+
+/// [`LIBRARY`] read, with [`AGGREGATE`] and [`COLLECT`] where `program`
+/// loads them.
+fn library(program: &Program) -> &'static Program {
+    static READ: [OnceLock<Program>; 4] = [const { OnceLock::new() }; 4];
+    let (aggregate, collect) = (program.aggregate, program.collect);
+    READ[usize::from(aggregate) + 2 * usize::from(collect)].get_or_init(|| {
+        let mut text = LIBRARY.to_string();
+        if aggregate {
+            text.push_str(AGGREGATE);
+        }
+        if collect {
+            text.push_str(COLLECT);
+        }
+        crate::syntax::parse_program(&text).expect("the library parses")
+    })
 }
 
 /// The signatures of the heads of `program`'s clauses.
@@ -153,8 +196,10 @@ fn is_call(a: &Atom, defined: &FxHashSet<(&str, usize)>) -> bool {
 /// does not define, and its calls of `call/N` written as the module says;
 /// `None` where it has neither.
 pub(super) fn added(program: &Program) -> Option<Program> {
+    let collected = collectors(program);
+    let program = collected.as_ref().unwrap_or(program);
     let defined: FxHashSet<(&str, usize)> = heads(program).collect();
-    let library = library(program.aggregate);
+    let library = library(program);
     // The library's predicates the program does not define, their arities
     // by name.
     let mut offered: FxHashMap<&'static str, Vec<usize>> = FxHashMap::default();
@@ -182,14 +227,49 @@ pub(super) fn added(program: &Program) -> Option<Program> {
             reach(a, &mut wanted, &mut stack);
         });
     }
-    while let Some(sig) = stack.pop() {
-        for c in library
+    let clauses = |sig: Sig| {
+        library
             .clauses
             .iter()
-            .filter(|c| c.heads[0].atom.signature() == sig)
-        {
-            calls(&c.body, &mut |a| reach(a, &mut wanted, &mut stack));
+            .filter(move |c| c.heads[0].atom.signature() == sig)
+    };
+    let drain = |wanted: &mut FxHashSet<Sig>, stack: &mut Vec<Sig>| {
+        while let Some(sig) = stack.pop() {
+            for c in clauses(sig) {
+                calls(&c.body, &mut |a| reach(a, wanted, stack));
+            }
         }
+    };
+    drain(&mut wanted, &mut stack);
+    // Where the program or the library's clauses it reaches call call/N, a
+    // goal can name the library's predicates named in an argument.
+    loop {
+        let reached = || wanted.iter().flat_map(|&sig| clauses(sig));
+        let mut calls_n = any_call;
+        for c in reached() {
+            calls(&c.body, &mut |a| calls_n |= is_call(a, &defined));
+        }
+        if !calls_n {
+            break;
+        }
+        let mut named = argument_names(program.clauses.iter(), Some(program));
+        named.extend(argument_names(reached(), None));
+        let named: FxHashSet<&str> = named.into_iter().map(|(p, _)| p).collect();
+        let mut more: Vec<Sig> = offered
+            .iter()
+            .filter(|(name, _)| named.contains(*name))
+            .flat_map(|(&name, arities)| arities.iter().map(move |&m| (name, m)))
+            .filter(|sig| !wanted.contains(sig))
+            .collect();
+        if more.is_empty() {
+            break;
+        }
+        more.sort_unstable();
+        for sig in more {
+            wanted.insert(sig);
+            stack.push(sig);
+        }
+        drain(&mut wanted, &mut stack);
     }
     // The built-ins the queries and the evidence ask about.
     let mut asked: Vec<(&str, usize, Builtin)> = Vec::new();
@@ -208,7 +288,7 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         }
     }
     if wanted.is_empty() && !any_call && asked.is_empty() {
-        return None;
+        return collected;
     }
     // The clauses added in groups of their own, which share no switch with
     // the program's.
@@ -237,7 +317,9 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         group += 1;
     }
     // The calls of call/N, and the numbers of arguments added to a goal that
-    // is a variable.
+    // is a variable or a construct.
+    let dispatched =
+        |name: &str, arity: usize| !defined.contains(&(name, arity)) && construct(name, arity);
     let added: RefCell<FxHashSet<usize>> = RefCell::default();
     let write = |a: &mut Atom| {
         if !is_call(a, &defined) {
@@ -246,9 +328,11 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         let (goal, extra) = a.args.split_first().expect("call/N has a goal");
         let n = extra.len();
         let (name, mut args): (Name, Vec<Term>) = match goal {
-            Term::Const(p) => (p.clone(), Vec::new()),
-            Term::Compound(c) => (c.name.clone(), c.args.to_vec()),
-            Term::Var(_) => {
+            Term::Const(p) if !dispatched(p, n) => (p.clone(), Vec::new()),
+            Term::Compound(c) if !dispatched(&c.name, c.args.len() + n) => {
+                (c.name.clone(), c.args.to_vec())
+            }
+            Term::Var(_) | Term::Const(_) | Term::Compound(_) => {
                 added.borrow_mut().insert(n);
                 (call_name(n).into(), vec![goal.clone()])
             }
@@ -264,42 +348,86 @@ pub(super) fn added(program: &Program) -> Option<Program> {
     for r in &mut with.query_rules {
         calls_mut(&mut r.body, &write);
     }
-    let mut added: Vec<usize> = added.into_inner().into_iter().collect();
-    added.sort_unstable();
-    if !added.is_empty() {
-        let named = argument_names(&with);
-        let mut preds: Vec<(Name, usize)> = Vec::new();
+    if !added.borrow().is_empty() {
+        // The goals a goal it builds can name: the predicates it defines,
+        // named in an argument, and the terms written in an argument, in
+        // the order of their names, that are a built-in's or a construct's
+        // goal with the arguments added.
+        let written = argument_names(with.clauses.iter(), Some(&with));
+        let named: FxHashSet<&str> = written.iter().map(|&(p, _)| p).collect();
+        let mut goals: Vec<(Name, usize)> = Vec::new();
         let mut seen: FxHashSet<(Name, usize)> = FxHashSet::default();
         for h in with.clauses.iter().flat_map(|c| &c.heads) {
             let p = (h.atom.name.clone(), h.atom.args.len());
             if !p.0.starts_with('$') && named.contains(&*p.0) && seen.insert(p.clone()) {
-                preds.push(p);
+                goals.push(p);
             }
         }
+        let mut terms: Vec<(Name, usize)> = written
+            .into_iter()
+            .filter(|(p, _)| !p.starts_with('$'))
+            .map(|(p, k)| (p.into(), k))
+            .collect();
+        terms.sort_unstable();
+        // The clauses of '$call<n>', for each number n of arguments added,
+        // and the goals each can be given, which its test lists.
         let var = |prefix: &str, i: usize| Term::Var(format!("{prefix}{i}"));
-        for &n in &added {
-            for (p, m) in preds.iter().filter(|(_, m)| *m >= n) {
+        let mut listed: Vec<(usize, Vec<(Name, usize)>)> = Vec::new();
+        loop {
+            let next = added
+                .borrow()
+                .iter()
+                .copied()
+                .filter(|n| listed.iter().all(|e| e.0 != *n))
+                .min();
+            let Some(n) = next else {
+                break;
+            };
+            let mut callable = Vec::new();
+            let others = terms.iter().map(|(p, k)| (p, k + n)).filter(|&(p, m)| {
+                (Builtin::of(p, m).is_some() || construct(p, m)) && !defined.contains(&(&**p, m))
+            });
+            let preds = goals.iter().filter(|(_, m)| *m >= n).map(|(p, m)| (p, *m));
+            for (p, m) in preds.chain(others) {
                 let bound: Vec<Term> = (0..m - n).map(|i| var("B", i)).collect();
-                let goal = if bound.is_empty() {
-                    Term::Const(p.clone())
-                } else {
-                    Compound::term(p.clone(), bound.clone())
+                let term = |p: &Name, args: Vec<Term>| {
+                    if args.is_empty() {
+                        Term::Const(p.clone())
+                    } else {
+                        Compound::term(p.clone(), args)
+                    }
                 };
-                let extra = (0..n).map(|i| var("A", i));
+                let goal = term(p, bound.clone());
+                let all: Vec<Term> = bound
+                    .into_iter()
+                    .chain((0..n).map(|i| var("A", i)))
+                    .collect();
+                let bodies: Vec<Vec<Literal>> = if !dispatched(p, m) {
+                    vec![vec![Literal::Pos(Atom::new(p.clone(), all.clone()))]]
+                } else {
+                    match (&**p, m) {
+                        ("true", 0) => vec![Vec::new()],
+                        ("fail" | "false", 0) => Vec::new(),
+                        _ => match goal_literal(term(p, all.clone())) {
+                            Some(l) => vec![vec![l]],
+                            None => continue,
+                        },
+                    }
+                };
                 let head = Atom::new(
                     call_name(n),
                     std::iter::once(goal)
-                        .chain(extra.clone())
+                        .chain(all[all.len() - n..].iter().cloned())
                         .collect::<Vec<_>>(),
                 );
-                let body = Atom::new(
-                    p.clone(),
-                    bound.into_iter().chain(extra).collect::<Vec<_>>(),
-                );
-                with.clauses
-                    .push(Clause::rule(head, vec![Literal::Pos(body)], group));
-                group += 1;
+                for mut body in bodies {
+                    calls_mut(&mut body, &write);
+                    with.clauses.push(Clause::rule(head.clone(), body, group));
+                    group += 1;
+                }
+                callable.push((p.clone(), m - n));
             }
+            listed.push((n, callable));
         }
         // The test before each call of a goal that is a variable.
         let unknown = if program.unknown_fails {
@@ -308,19 +436,19 @@ pub(super) fn added(program: &Program) -> Option<Program> {
             "error"
         };
         let unknown = Term::Const(unknown.into());
-        let tests: FxHashMap<String, Literal> = added
+        let tests: FxHashMap<String, Literal> = listed
             .iter()
-            .map(|&n| {
-                let callable = preds.iter().filter(|(_, m)| *m >= n).rev().fold(
-                    Term::Const(NIL.into()),
-                    |rest, (p, m)| {
+            .map(|&(n, ref goals)| {
+                let callable = goals
+                    .iter()
+                    .rev()
+                    .fold(Term::Const(NIL.into()), |rest, (p, k)| {
                         let item = Compound::term(
                             "/".into(),
-                            vec![Term::Const(p.clone()), Term::Int((m - n) as i64)],
+                            vec![Term::Const(p.clone()), Term::Int(*k as i64)],
                         );
                         Compound::term(CONS.into(), vec![item, rest])
-                    },
-                );
+                    });
                 let test = Literal::Builtin(
                     Builtin::Callable,
                     vec![
@@ -349,6 +477,50 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         }
     }
     Some(with)
+}
+
+/// `program` with library(collect)'s calls `CodeBlock => Collector` read
+/// as the calls its clauses of `'=>'/2` build: `collect_c(CodeBlock, G,
+/// A1, ..., An)` for a collector `G/c(A1, ..., An)`, `collect_c(CodeBlock,
+/// none, A1, ..., An)` for a collector `c(A1, ..., An)`; `None` where the
+/// program does not load the library or makes no such call. A collector
+/// that is a variable is left a call of `'=>'/2`, which has no clauses.
+fn collectors(program: &Program) -> Option<Program> {
+    if !program.collect || heads(program).any(|sig| sig == ("=>", 2)) {
+        return None;
+    }
+    let changed = std::cell::Cell::new(false);
+    let collector = |a: &mut Atom| {
+        let [block, collector] = &*a.args else {
+            return;
+        };
+        if &*a.name != "=>" {
+            return;
+        }
+        let (group, c) = match collector.as_compound() {
+            Some((slash, [g, c])) if &**slash == "/" => (g.clone(), c),
+            _ => (Term::Const("none".into()), collector),
+        };
+        let (name, args) = match c {
+            Term::Const(name) => (name, &[][..]),
+            Term::Compound(c) => (&c.name, &c.args[..]),
+            _ => return,
+        };
+        let args: Vec<Term> = [block.clone(), group]
+            .into_iter()
+            .chain(args.iter().cloned())
+            .collect();
+        *a = Atom::new(format!("collect_{name}"), args);
+        changed.set(true);
+    };
+    let mut with = program.clone();
+    for c in &mut with.clauses {
+        calls_mut(&mut c.body, &collector);
+    }
+    for r in &mut with.query_rules {
+        calls_mut(&mut r.body, &collector);
+    }
+    changed.get().then_some(with)
 }
 
 /// `body` with the `test` of each call it makes, in it or in a findall's
@@ -384,9 +556,13 @@ pub(super) fn is_call_name(name: &str) -> bool {
         .is_some_and(|n| n.parse::<usize>().is_ok())
 }
 
-/// The names of the constants and compounds in the arguments of
-/// `program`'s atoms, comparisons and findalls.
-fn argument_names(program: &Program) -> FxHashSet<&str> {
+/// The names and arities of the constants and compounds in the arguments
+/// of the atoms, comparisons and findalls of `clauses` and, where it is
+/// given, of `program`'s queries, evidence and query rules.
+fn argument_names<'p>(
+    clauses: impl Iterator<Item = &'p Clause>,
+    program: Option<&'p Program>,
+) -> FxHashSet<(&'p str, usize)> {
     let mut terms: Vec<&Term> = Vec::new();
     fn literals<'p>(body: &'p [Literal], terms: &mut Vec<&'p Term>) {
         for l in body {
@@ -404,27 +580,29 @@ fn argument_names(program: &Program) -> FxHashSet<&str> {
             }
         }
     }
-    for c in &program.clauses {
+    for c in clauses {
         for h in &c.heads {
             terms.extend(h.atom.args.iter());
         }
         literals(&c.body, &mut terms);
     }
-    for r in &program.query_rules {
-        terms.extend(r.pattern.args.iter());
-        literals(&r.body, &mut terms);
-    }
-    for (a, _) in program.queries.iter().chain(&program.evidence) {
-        terms.extend(a.args.iter());
+    if let Some(program) = program {
+        for r in &program.query_rules {
+            terms.extend(r.pattern.args.iter());
+            literals(&r.body, &mut terms);
+        }
+        for (a, _) in program.queries.iter().chain(&program.evidence) {
+            terms.extend(a.args.iter());
+        }
     }
     let mut names = FxHashSet::default();
     while let Some(t) = terms.pop() {
         match t {
             Term::Const(c) => {
-                names.insert(&**c);
+                names.insert((&**c, 0));
             }
             Term::Compound(c) => {
-                names.insert(&*c.name);
+                names.insert((&*c.name, c.args.len()));
                 terms.extend(c.args.iter());
             }
             Term::Int(_) | Term::Var(_) | Term::Float(_) => {}

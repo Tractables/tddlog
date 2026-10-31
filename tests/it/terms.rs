@@ -507,6 +507,87 @@ fn call_and_the_apply_library_call_the_goals_they_are_given() {
 }
 
 #[test]
+fn call_calls_the_built_ins_and_constructs_a_program_names() {
+    // As ProbLog calls them: a built-in given part of its arguments, a
+    // negation, `is`, a comparison, `true`, `fail`, a body's goal that is a
+    // variable, a findall's goal that is a variable and holds an atom, a
+    // conjunction or a disjunction, and ProbLog's test aggregate_satisfy.pl's
+    // way of stating a constraint.
+    let (a1, a2, a3) = (0.4, 0.5, 0.3);
+    let (n1, n2, n3) = (1.0 - a1, 1.0 - a2, 1.0 - a3);
+    assert_answers(
+        ":- use_module(library(apply)). :- use_module(library(lists)).
+         0.4::a(1). 0.5::a(2). 0.3::a(3).
+         b(X) :- G = between(1, 3), call(G, X), a(X).
+         e :- G = (\\+ a(1)), call(G).
+         f(L) :- maplist(nth0(0), [[x, y], [z]], L).
+         g(X) :- G = (X is 2 + 3), call(G).
+         h :- C = (2 < 3), call(C), a(3).
+         i(L) :- G = a(Y), findall(Y, G, L).
+         j :- G = true, call(G).
+         k :- G = fail, \\+ call(G).
+         l(X) :- G = a(X), G.
+         m(L) :- G = (a(X), X > 1), findall(X, G, L).
+         n(L) :- G = (X = 5 ; a(X)), findall(X, G, L).
+         domain(X, D) :- call(D, X).
+         constraint(C) :- call(C).
+         s([X, Y]) :- domain(X, between(1, 3)), domain(Y, between(1, 3)),
+             constraint(X + Y =:= 4), constraint(X < Y), a(X).
+         query(b(_)). query(e). query(f(_)). query(g(_)). query(h). query(i(_)).
+         query(j). query(k). query(l(_)). query(m(_)). query(n(_)).
+         query(s(_)).",
+        &[
+            ("b(1)", a1),
+            ("b(2)", a2),
+            ("b(3)", a3),
+            ("e", n1),
+            ("f([x, z])", 1.0),
+            ("g(5)", 1.0),
+            ("h", a3),
+            ("i([])", n1 * n2 * n3),
+            ("i([1])", a1 * n2 * n3),
+            ("i([1, 2])", a1 * a2 * n3),
+            ("i([1, 2, 3])", a1 * a2 * a3),
+            ("i([1, 3])", a1 * n2 * a3),
+            ("i([2])", n1 * a2 * n3),
+            ("i([2, 3])", n1 * a2 * a3),
+            ("i([3])", n1 * n2 * a3),
+            ("j", 1.0),
+            ("k", 1.0),
+            ("l(1)", a1),
+            ("l(2)", a2),
+            ("l(3)", a3),
+            ("m([])", n2 * n3),
+            ("m([2])", a2 * n3),
+            ("m([2, 3])", a2 * a3),
+            ("m([3])", n2 * a3),
+            ("n([5])", n1 * n2 * n3),
+            ("n([5, 1])", a1 * n2 * n3),
+            ("n([5, 1, 2])", a1 * a2 * n3),
+            ("n([5, 1, 2, 3])", a1 * a2 * a3),
+            ("n([5, 1, 3])", a1 * n2 * a3),
+            ("n([5, 2])", n1 * a2 * n3),
+            ("n([5, 2, 3])", n1 * a2 * a3),
+            ("n([5, 3])", n1 * n2 * a3),
+            ("s([1, 3])", a1),
+        ],
+    );
+    // ProbLog's call/1, and a negation of a goal, find no clauses for a
+    // conjunction or a disjunction.
+    for (op, source) in [
+        (",", "c :- G = (a(1), a(2)), call(G)."),
+        (";", "c :- G = (a(1) ; a(2)), call(G)."),
+        (",", "c :- G = (a(1), a(2)), \\+ G."),
+    ] {
+        let e = refusal(&format!("0.4::a(1). 0.5::a(2). {source} query(c)."));
+        assert!(
+            e.contains(&format!("no clauses for {op}/2, called through call/1")),
+            "{e}"
+        );
+    }
+}
+
+#[test]
 fn equality_builds_terms_and_is_evaluates_them() {
     // `=` unifies terms: `3 - 1` is a term, which `is` and `=:=` evaluate.
     assert_answers(

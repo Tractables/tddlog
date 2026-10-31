@@ -211,16 +211,25 @@ The parser reads ProbLog without cut:
   select_weighted/4,5, and
   `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
   and partition/4, and where the program loads it, `library(aggregate)`'s
-  avg/2, sum/2, min/2 and max/2; and `call/N`, whose goal names a
-  predicate the program defines. A goal that names no such predicate is
-  refused where the grounding reaches it, as ProbLog refuses it (its
-  `UnknownClause`), or fails under `:- unknown(fail).`; a goal that names
-  a built-in is refused, since tddlog calls built-ins only where they are
-  written;
-- `findall/3` and `all/3`, over probabilistic goals too: in each world
-  the list of the solutions whose proofs hold there, once per proof and
-  in ProbLog's order (`all/3` once per solution); `forall(C, A)`, which
-  is `\+ (C, \+ A)`;
+  avg/2, sum/2, min/2 and max/2, aggregate/5 and enum_groups/4, and
+  `library(collect)`'s `=>`, where `Body => G/f(A1, ..., An)` calls
+  `collect_f(Body, G, A1, ..., An)` and `Body => f(A1, ..., An)` calls
+  `collect_f(Body, none, A1, ..., An)`, with the library's collect_list/3,4
+  and collectgroup/4; and `call/N`, and a body's goal that is a variable,
+  whose goal names a predicate the program defines, or a built-in or a
+  construct (a negation, a comparison, `is`, `true`, `fail`) whose name
+  the program writes as an argument with fewer arguments than the call
+  gives it. A goal that names neither is refused where the grounding
+  reaches it, as ProbLog refuses it (its `UnknownClause`), or fails under
+  `:- unknown(fail).`; so is a goal that is a conjunction or a
+  disjunction, which ProbLog's call/1 looks up as a predicate `,/2` or
+  `;/2`;
+- `findall/3`, `all/3` and `all_or_none/3`, over probabilistic goals
+  too: in each world the list of the solutions whose proofs hold there,
+  once per proof and in ProbLog's order (`all/3` and `all_or_none/3`
+  once per solution, `all/3` false where there is none); a goal that is
+  a variable is read as a body, a conjunction or a disjunction included,
+  as ProbLog reads it; `forall(C, A)`, which is `\+ (C, \+ A)`;
 - `library(aggregate)`'s aggregates, `h(G1, ..., Gn, f<V>) :- Body`, as
   its aggregate/5 computes them: all/3 of the solutions of the body,
   grouped by `[G1, ..., Gn]` with enum_groups/3, and `f` of the values
@@ -230,7 +239,8 @@ The parser reads ProbLog without cut:
   pattern's instances under each grounding of the body are queries or
   evidence;
 - the directives `use_module(library(lists))`,
-  `use_module(library(apply))` and `use_module(library(aggregate))`,
+  `use_module(library(apply))`, `use_module(library(aggregate))` and
+  `use_module(library(collect))`,
   `unknown(fail)`, under which a predicate without clauses is false (one
   of ProbLog's built-ins or library predicates that tddlog does not
   evaluate stays refused), and

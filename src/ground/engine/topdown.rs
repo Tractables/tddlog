@@ -69,7 +69,7 @@ use super::lists::{self, Step};
 use super::{GroundError, Grounder, Prob, Val, Weights, compare, ground_normalized, solutions};
 use crate::ground::GroundProgram;
 use crate::ground::normalize::{Driver, NormProgram};
-use crate::syntax::{Args, Atom, Builtin, Clause, CmpOp, Compound, Literal, Name, Term};
+use crate::syntax::{Args, Atom, Builtin, Clause, CmpOp, Compound, Gather, Literal, Name, Term};
 
 /// The deepest nesting of calls resolved, and of a term with variables:
 /// each level takes a few frames of the stack. A ground term is bound by
@@ -122,7 +122,7 @@ struct Collect {
     aux: u32,
     shared: Box<[Tpl]>,
     result: Tpl,
-    all: bool,
+    gather: Gather,
     text: Arc<str>,
 }
 
@@ -407,7 +407,7 @@ impl<'a> TopDown<'a> {
                     aux: self.pred(&k.aux, k.arity),
                     shared: k.shared.iter().map(|t| self.tpl(t, &mut vars)).collect(),
                     result: self.tpl(&k.result, &mut vars),
-                    all: k.all,
+                    gather: k.gather,
                     text: k.text.clone(),
                 })),
                 Literal::Findall(_) => unreachable!("a findall is lowered before grounding"),
@@ -1125,15 +1125,31 @@ impl<'a> TopDown<'a> {
 
     /// The lists of the findall `c` of `rule`, its variables from `base`,
     /// each with the literal of the worlds where it is the list: its goal
-    /// called with the shared variables' terms, which must be ground, and
-    /// its table complete.
+    /// called with the shared variables' terms, and its table complete. A
+    /// shared variable free at the call stays free, as ProbLog's findall
+    /// leaves it, and the lists then depend on the call where the variable
+    /// is the call's.
     fn collect(&mut self, c: &Collect, base: u32, rule: &Rule) -> Result<Lists, GroundError> {
         let shared: Vec<T> = c.shared.iter().map(|a| Self::inst(a, base)).collect();
-        let vals = self.values(c.aux, &shared, rule, "a findall")?;
-        if let Some(l) = self.collected.get(&(c.aux, vals.clone())) {
+        let shared = self.full_all(&shared)?;
+        let ground: Option<Box<[Val]>> = shared
+            .iter()
+            .map(|t| match t {
+                T::G(v) => Some(*v),
+                _ => None,
+            })
+            .collect();
+        if ground.is_none() && self.of_call(&shared)? {
+            self.call_dependent(rule, "a findall over a goal with variables");
+        }
+        let vals = ground.unwrap_or_default();
+        if let Some(l) = self.collected.get(&(c.aux, vals.clone()))
+            && vals.len() == shared.len()
+        {
             return Ok(l.clone());
         }
         let mut answers: Vec<(Val, u32)> = Vec::new();
+        let shared_len = shared.len();
         if self.preds[c.aux as usize].kind == Kind::Rules {
             let arity = self.preds[c.aux as usize].arity;
             let mut args = shared;
@@ -1148,7 +1164,7 @@ impl<'a> TopDown<'a> {
                     c.text, self.norm.rules[rule.at]
                 )));
             }
-            let k = vals.len();
+            let k = shared_len;
             for (key, a) in self.tables[u as usize].answers.clone() {
                 let mark = self.mark();
                 let answer = self.unkey(&key, arity);
@@ -1165,7 +1181,7 @@ impl<'a> TopDown<'a> {
                 answers.push((v, a));
             }
         }
-        let l: Rc<[_]> = lists::collect(self, &answers, c.all, &c.text)?.into();
+        let l: Rc<[_]> = lists::collect(self, &answers, c.gather, &c.text)?.into();
         if let Some(e) = self.g.error.take() {
             return Err(e);
         }
@@ -1173,7 +1189,9 @@ impl<'a> TopDown<'a> {
             return Err(GroundError::OutOfMemory);
         }
         self.grow(l.len())?;
-        self.collected.insert((c.aux, vals), l.clone());
+        if vals.len() == shared_len {
+            self.collected.insert((c.aux, vals), l.clone());
+        }
         Ok(l)
     }
 
