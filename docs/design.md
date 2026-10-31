@@ -542,7 +542,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 2 | `linear.rs` | right-linear recursion grounded from its bound end |
 | 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
 | 4 | `engine.rs` | stratified semi-naive bottom-up grounding |
-| 5 | `simplify.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; tables of one atom written as noisy-ors |
+| 5 | `simplify.rs`, `values.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; variables held as bits written over their values; tables of one atom written as noisy-ors |
 | 6 | `exclusive.rs`, `negation.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; negated atoms unfolded; views; equal gates; choices read under exclusive contexts |
 | 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
 | 8 | `cover.rs` | atoms certain by cover |
@@ -824,6 +824,43 @@ are skipped. Several steps have a program in `examples/` that shows them.
    becomes the fact and the others are read as it, to a fixpoint: an
    undirected edge `conn(a,b) :- edge(a,b)`, `conn(b,a) :- edge(a,b)` is
    one variable.
+
+   Then **variables held as bits** written as tables over their values
+   (`values::bits_as_values`). Dice draws a `discrete` bit by bit, a
+   flip per ratio under a chain of conditionals on its parents' values,
+   and its comparisons are cubes over the bits; a network written with
+   its values as binary codes sets each bit from a chain of switches per
+   row. Ground, such a program names no value, and the exclusive sets,
+   row classes, cover and families layout below find no table: the
+   compile carries the bits, the comparisons and the guards as atoms of
+   their own. The pass finds the variables on the ground program from
+   their readers: atoms that no query names and that every rule reading
+   one reads all of, outside the variable's own rules. Each such set
+   owns the atoms that only its rules read, through their rules (its
+   private gates, its flips and switches), and its bits that what it
+   owns does not connect are separate variables. A variable is written
+   where it owns a fact, so that it is a draw of its own and not a
+   function of its inputs, and its readers test two of its values or
+   more: its rules and the views it reads are expanded over the cone's
+   inputs (Shannon, constants propagated), each leaf a row, and over the
+   variable's facts for the row's distribution over the codes. The rows
+   are written as annotated disjunctions are ground, an atom per value
+   and a switch chain per row under the parents' values, each bit the
+   disjunction of the values that set it, and a reader's cube over the
+   bits the value it spells. A variable of one bit is written so where
+   its rows read a variable written so. A number whose bits an adder
+   reads one at a time is not read as values and stays. Variables whose
+   cones share inputs are written together or not at all. A variable
+   one of whose atoms reads one of its bits both ways draws its lower
+   bits under the values of the higher ones, as a trie (the index
+   Alea.jl draws for a decision list); its flips are the guards the
+   `decision` layout conditions on, and it is left as written, with the
+   variables written together with it. The expansion is bounded by the
+   cone's literals and a row's sum by what a row of the variable can
+   write; it stops as soon as it passes a bound, the variable then left
+   as written, and a cone without inputs whose rules alone pass its
+   row's bound is not expanded. The pass as a whole is bounded by the
+   program's literals.
 
    Then **tables of one atom** written as noisy-ors
    (`noisy_or::rows_as_noisy_ors`). A two-valued variable written by hand

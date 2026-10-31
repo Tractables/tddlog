@@ -1565,12 +1565,18 @@ impl Tree<'_> {
 mod tests {
     use crate::GroundOptions;
 
+    /// `source` ground with its views in place, as `decision` grounds it,
+    /// and conditioned where `guards`. The selector and the branch that
+    /// reads it are left as written: the tests' if-then-elses that read
+    /// their selector again are variables of two bits, which the grounder
+    /// otherwise writes over their values (`values`).
     fn ground(source: &str, guards: bool) -> crate::GroundProgram {
         let program = crate::syntax::parse_program(source).expect("parses");
         let gp = crate::ground::ground(
             &program,
             &GroundOptions {
                 views: false,
+                values: false,
                 ..GroundOptions::default()
             },
         )

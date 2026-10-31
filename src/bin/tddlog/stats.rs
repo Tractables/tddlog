@@ -230,6 +230,12 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.noisy_or
         ));
     }
+    if g.stats.values > 0 {
+        line.push_str(&format!(
+            "; {} variables written over their values",
+            g.stats.values
+        ));
+    }
     if g.stats.unfolded > 0 {
         line.push_str(&format!("; {} negated atoms unfolded", g.stats.unfolded));
     }

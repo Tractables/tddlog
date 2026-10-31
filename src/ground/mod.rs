@@ -23,6 +23,9 @@
 //!    - `simplify`: no certain atom is left, equal atoms are merged, every
 //!      atom is relevant to a query or an observation, facts are read as
 //!      variables, and the numbering is compact.
+//!    - `values`: a variable held as bits, which its readers test
+//!      together, written as a table over its values, an atom per value
+//!      and its rows switch chains, as annotated disjunctions are ground.
 //!    - `noisy_or`: a table of one atom, written as rules that read its
 //!      parents and facts of their own, written as its noisy-or where it
 //!      is one.
@@ -90,6 +93,7 @@ mod table;
 pub(crate) mod tables;
 pub(crate) mod terms;
 mod unread;
+mod values;
 
 pub use aig::SweepStats;
 pub use condition::{Backbones, Conditioned};
@@ -159,6 +163,11 @@ pub struct GroundOptions {
     /// by default; off where the program's tables are wanted as the
     /// conditioning's rewrite leaves them.
     pub renormalize: bool,
+    /// Write the variables held as bits as tables over their values
+    /// ([`values`]). Always on; off only in the tests of the passes after
+    /// it, whose programs it would write over their values.
+    #[cfg(test)]
+    pub(crate) values: bool,
 }
 
 impl Default for GroundOptions {
@@ -172,6 +181,8 @@ impl Default for GroundOptions {
             defined: true,
             contexts: true,
             renormalize: true,
+            #[cfg(test)]
+            values: true,
         }
     }
 }
@@ -420,6 +431,20 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
     simplify::merge_equal_atoms(&mut gp);
     simplify::restrict_to_relevant(&mut gp);
     simplify::alias_fact_atoms(&mut gp);
+    // A variable held as bits that its readers test together is written as
+    // a table over its values ([`values`]).
+    #[cfg(test)]
+    let written = if opts.values {
+        values::bits_as_values(&mut gp)
+    } else {
+        0
+    };
+    #[cfg(not(test))]
+    let written = values::bits_as_values(&mut gp);
+    if written > 0 {
+        gp.stats.values += written;
+        simplify::restrict_to_relevant(&mut gp);
+    }
     // A table of one atom written as rules, each row with facts of its own,
     // is written as its noisy-or where it is one ([`noisy_or`]).
     if opts.noisy_or {
@@ -652,7 +677,13 @@ mod tests {
              query(z).",
             include_str!("../../examples/linear_path.pl"),
         ];
-        let first = GroundOptions::default();
+        // The first program's `m` and `s` are a variable of two bits,
+        // which the grounder would write over its values, its view `v`
+        // with it (`values`).
+        let first = GroundOptions {
+            values: false,
+            ..GroundOptions::default()
+        };
         let again = GroundOptions {
             views: false,
             ..first
