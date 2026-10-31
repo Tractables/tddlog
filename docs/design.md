@@ -600,7 +600,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    used, which the grounder then grounds as a program without variables;
    they count against the grounding bound, and a call or a term with
    variables nested deeper than 1 000 gives the grounding up with the
-   goal that reached it.
+   goal that reached it. A program whose rewrite reads a findall inside a
+   recursion is resolved top-down too: two calls of one predicate with
+   one binding pattern share a demand, which can close a loop through a
+   findall's goal that the calls themselves do not close (ProbLog's urn
+   tutorial calls `select_uniform/4` to count the balls and to draw one).
+   A findall in a cycle of calls is refused on either route.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in

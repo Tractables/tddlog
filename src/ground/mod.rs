@@ -288,7 +288,8 @@ fn ground_norm(
     // program's again. A program whose demand no rewrite makes safe, a
     // call of a term with variables in it or an answer that leaves a
     // variable unbound, is resolved top-down from its queries
-    // ([`engine::topdown`]).
+    // ([`engine::topdown`]), as is one whose rewrite reads a findall inside
+    // a recursion that only the demand makes.
     let gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
     } else {
@@ -315,6 +316,13 @@ fn ground_norm(
                     // Where neither grounds, the rewritten program's error
                     // is the one to give.
                     Err(e) if plain => engine::ground_normalized(norm, bound).map_err(|_| e)?,
+                    // The demand of two calls of one predicate can close a
+                    // loop through a findall that the program does not
+                    // have, which its resolution from the queries does not
+                    // close.
+                    Err(e @ GroundError::Unsupported(_)) => {
+                        engine::topdown::ground(norm, bound).map_err(|_| e)?
+                    }
                     Err(e) => return Err(e),
                 },
                 None if plain => engine::ground_normalized(norm, bound)?,
