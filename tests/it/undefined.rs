@@ -86,12 +86,10 @@ fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
         let e = refusal(source);
         assert!(e.contains("no clauses for"), "{source}: {e}");
     }
-    // A query of a list predicate tddlog evaluates in a body: ProbLog
-    // answers it, tddlog refuses it rather than answer 0.
-    let e = refusal(":- use_module(library(lists)). query(member(1, [1, 2])).");
-    assert!(
-        e.contains("no clauses for member/2") && e.contains("in a clause's body only"),
-        "{e}"
+    // A query of a list predicate tddlog evaluates: ProbLog answers it.
+    assert_answers(
+        ":- use_module(library(lists)). query(member(1, [1, 2])).",
+        &[("member(1,[1, 2])", 1.0)],
     );
     // A program's own predicate of that name is its own.
     assert_answers(

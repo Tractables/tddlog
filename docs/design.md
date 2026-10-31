@@ -200,9 +200,11 @@ The parser reads ProbLog without cut:
   enum_groups/3, and ProbLog's built-ins between/3, plus/3, compare/3,
   is_list/1, var/1, nonvar/1 and `=..`/2, in ProbLog's modes and order
   of solutions, on ground arguments (`=..` also on a term or a list of
-  fixed length that hold variables, and the type tests is_list/1, var/1
-  and nonvar/1 on a term as it stands where they are called: a list
-  whose tail is a variable is a list, a variable is not);
+  fixed length that hold variables, append/2 on a list of fixed length
+  of terms with variables joined into a ground list, and the type tests
+  is_list/1, var/1 and nonvar/1 on a term as it stands where they are
+  called: a list whose tail is a variable is a list, a variable is not);
+  a query or an evidence of one of them asks for its answers;
 - the predicates ProbLog's libraries write as clauses, in those clauses,
   which the grounder adds where the program calls them
   (`ground/library.rs`): the random selections select_uniform/4 and

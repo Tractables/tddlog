@@ -369,6 +369,36 @@ fn plus_compare_and_is_list_answer_as_problog_s_built_ins() {
 }
 
 #[test]
+fn append_2_cuts_a_list_into_lists_with_variables_in_them() {
+    // ProbLog's test append.pl, which asks append/2 itself, and append/2
+    // in a body over a list that holds a variable while it is called.
+    assert_answers(
+        ":- use_module(library(lists)).
+         query(append([[1], [2, 3], [4]], [1, 2, 3, 4])).
+         query(append([_, _], [1, 2, 3])).",
+        &[
+            ("append([[1], [2, 3], [4]],[1, 2, 3, 4])", 1.0),
+            ("append([[], [1, 2, 3]],[1, 2, 3])", 1.0),
+            ("append([[1], [2, 3]],[1, 2, 3])", 1.0),
+            ("append([[1, 2], [3]],[1, 2, 3])", 1.0),
+            ("append([[1, 2, 3], []],[1, 2, 3])", 1.0),
+        ],
+    );
+    assert_answers(
+        "0.3::c.
+         t(A) :- c, append([A, _], [1, 2]).
+         u(B) :- append([[1], [B|_], _], [1, 2, 3]).
+         query(t(_)). query(u(_)).",
+        &[
+            ("t([])", 0.3),
+            ("t([1])", 0.3),
+            ("t([1, 2])", 0.3),
+            ("u(2)", 1.0),
+        ],
+    );
+}
+
+#[test]
 fn the_lists_library_s_clauses_concatenate_compare_and_flatten() {
     // As the clauses of ProbLog's library(lists) answer; its test
     // specific/bug_keep_order.pl (under tests/problog/) uses subset/2,

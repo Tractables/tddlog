@@ -1405,6 +1405,8 @@ impl<'a> TopDown<'a> {
             self.univ(args)?
         } else if matches!(b, Builtin::Var | Builtin::Nonvar | Builtin::IsList) {
             self.type_test(b, &args[0], rule)?
+        } else if b == Builtin::AppendLists {
+            self.cuts(args, rule, i)?
         } else if b == Builtin::Callable {
             // A goal with variables in it: its name and arity are bound.
             let (name, k) = match self.deref(&args[0]) {
@@ -1459,6 +1461,73 @@ impl<'a> TopDown<'a> {
             self.call_dependent(rule, &format!("{b} of a term with variables"));
         }
         Ok(if holds { vec![vec![t]] } else { Vec::new() })
+    }
+
+    /// append/2 of a list of a fixed number of terms with variables in
+    /// them, joined into a ground list: each way to cut that list into as
+    /// many pieces, the last one its tail, in the order ProbLog's library
+    /// finds them, which cuts the last piece off first, from the shortest
+    /// list before it. The caller unifies the pieces with the terms.
+    fn cuts(&mut self, args: &[T], rule: &Rule, i: usize) -> Result<Vec<Vec<T>>, GroundError> {
+        let (nil, cons) = self.g.list_syms();
+        let T::G(joined) = self.deref(&args[1]) else {
+            return Err(self.unbound(rule, i));
+        };
+        let mut k = 0;
+        let mut t = self.deref(&args[0]);
+        loop {
+            match t {
+                T::F(c, ht) if c == cons && ht.len() == 2 => {
+                    k += 1;
+                    t = self.deref(&ht[1]);
+                }
+                T::G(v) => match self.g.items(v) {
+                    Some(xs) => {
+                        k += xs.len();
+                        break;
+                    }
+                    None => return Ok(Vec::new()),
+                },
+                T::X(_) => return Err(self.unbound(rule, i)),
+                T::F(..) => return Ok(Vec::new()),
+            }
+        }
+        let (items, tails) = self.g.spine(joined, cons);
+        if k == 0 {
+            let none = T::G(Val::Sym(nil));
+            return Ok(if joined == Val::Sym(nil) {
+                vec![vec![none, T::G(joined)]]
+            } else {
+                Vec::new()
+            });
+        }
+        // The places of the cuts, the last one outermost.
+        fn places(pieces: usize, end: usize) -> Vec<Vec<usize>> {
+            if pieces == 1 {
+                return vec![Vec::new()];
+            }
+            (0..=end)
+                .flat_map(|last| {
+                    places(pieces - 1, last).into_iter().map(move |mut c| {
+                        c.push(last);
+                        c
+                    })
+                })
+                .collect()
+        }
+        let mut sols = Vec::new();
+        for cut in places(k, items.len()) {
+            let mut pieces = Vec::with_capacity(k);
+            let mut from = 0;
+            for &to in &cut {
+                pieces.push(self.g.make_list(&items[from..to], Val::Sym(nil)));
+                from = to;
+            }
+            pieces.push(tails[from]);
+            let lists = self.g.make_list(&pieces, Val::Sym(nil));
+            sols.push(vec![T::G(lists), T::G(joined)]);
+        }
+        Ok(sols)
     }
 
     /// length/2 of a list whose items or tail are variables: its length,

@@ -326,12 +326,8 @@ fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError>
         let sig = a.signature();
         if !defined.contains_key(&sig) && refused(sig.0) {
             let sign = if positive { "" } else { "\\+" };
-            let body = match Builtin::of(sig.0, sig.1) {
-                Some(_) => " (tddlog evaluates this built-in in a clause's body only)",
-                None => "",
-            };
             return Err(GroundError::NoClauses(format!(
-                "{}/{}, asked in {what}({sign}{a}){body}",
+                "{}/{}, asked in {what}({sign}{a})",
                 sig.0, sig.1
             )));
         }

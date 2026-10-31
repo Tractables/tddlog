@@ -10,6 +10,10 @@
 //! A program that loads `library(aggregate)` gets those of [`AGGREGATE`]
 //! too, the functions of its aggregates.
 //!
+//! A query or an evidence of a built-in ([`Builtin`]) that the program
+//! does not define asks for its answers: the program gets a clause of the
+//! built-in's name that calls it.
+//!
 //! `call(G, A1, ..., An)` calls `G` with the arguments added. Where `G` is
 //! written as an atom or a compound, it is that predicate's call. Where it
 //! is a variable, it is a call of `'$call<n>'(G, A1, ..., An)`, which has a
@@ -187,7 +191,23 @@ pub(super) fn added(program: &Program) -> Option<Program> {
             calls(&c.body, &mut |a| reach(a, &mut wanted, &mut stack));
         }
     }
-    if wanted.is_empty() && !any_call {
+    // The built-ins the queries and the evidence ask about.
+    let mut asked: Vec<(&str, usize, Builtin)> = Vec::new();
+    let patterns = program
+        .queries
+        .iter()
+        .chain(&program.evidence)
+        .map(|(a, _)| a);
+    for a in patterns.chain(program.query_rules.iter().map(|r| &r.pattern)) {
+        let (name, arity) = a.signature();
+        if let Some(b) = Builtin::of(name, arity)
+            && !defined.contains(&(name, arity))
+            && !asked.iter().any(|e| e.2 == b)
+        {
+            asked.push((name, arity, b));
+        }
+    }
+    if wanted.is_empty() && !any_call && asked.is_empty() {
         return None;
     }
     // The clauses added in groups of their own, which share no switch with
@@ -207,6 +227,14 @@ pub(super) fn added(program: &Program) -> Option<Program> {
             group = group.max(c.group + 1);
             with.clauses.push(c);
         }
+    }
+    // A built-in asked about is defined by a clause that calls it.
+    for (name, arity, b) in asked {
+        let vars: Vec<Term> = (0..arity).map(|i| Term::Var(format!("A{i}"))).collect();
+        let head = Atom::new(name, vars.clone());
+        let body = vec![Literal::Builtin(b, vars, false)];
+        with.clauses.push(Clause::rule(head, body, group));
+        group += 1;
     }
     // The calls of call/N, and the numbers of arguments added to a goal that
     // is a variable.
