@@ -12,7 +12,7 @@
 //! yields a magic rule `m_q^β(bound args of q) :- m_p^α(...), <preceding
 //! literals>`, following the left-to-right scheduling of
 //! [`super::schedule`], of those literals the ones that bear on the bound
-//! arguments of `q`. The atoms themselves are not renamed, so the copies for
+//! arguments of `q` and the tests of what they bind. The atoms themselves are not renamed, so the copies for
 //! different patterns derive into the same predicate; every atom derived is in
 //! the original model, and every atom the queries depend on is derived. A
 //! given predicate, one of ground facts ([`super::normalize::Facts`]) or
@@ -222,13 +222,24 @@ fn given<'a>(
 
 /// The literals of `prefix`, positions in `body`, that bear on the values
 /// of `args`: those that share a variable with them, or with a literal
-/// that does, in their order. Another literal only asks that some values
-/// of its own satisfy it, which a demand need not ask: on PSouffle's
-/// side-channel analyses the demand of `equal_assign` with no argument
-/// bound was derived again from each of the 437 million pairs of an
-/// `xor_assign_right` and a `share` before it, 20 s for each of eight
-/// rules.
-fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
+/// that does, in their order, and the tests of what those literals and
+/// the guard bind (`guard`, the head's variables the demand binds). Another
+/// literal only asks that some values of its own satisfy it, which a demand
+/// need not ask: on PSouffle's side-channel analyses the demand of
+/// `equal_assign` with no argument bound was derived again from each of the
+/// 437 million pairs of an `xor_assign_right` and a `share` before it, 20 s
+/// for each of eight rules. A test (a comparison, an `is`, a built-in, a
+/// negation of a given predicate) joins nothing and only rejects demands,
+/// as ProbLog's resolution stops at it before the call: the tutorial's
+/// rejection loop `loop1(G, N, R, T) :- G >= N, loop2(0, 1, NG, NN, T, TT),
+/// loop1(NG, NN, R, TT)` demanded `loop2` at every later time `T` without
+/// its test `G >= N` on the guard's variables.
+fn bearing(
+    body: &[Literal],
+    prefix: &[usize],
+    args: &[Term],
+    guard: &FxHashSet<String>,
+) -> Vec<usize> {
     let mut reached: FxHashSet<String> = FxHashSet::default();
     for t in args {
         let mut vs = Vec::new();
@@ -246,6 +257,15 @@ fn bearing(body: &[Literal], prefix: &[usize], args: &[Term]) -> Vec<usize> {
                 grew = true;
                 reached.extend(vs.iter().cloned());
             }
+        }
+    }
+    for (k, vs) in vars.iter().enumerate() {
+        let test = matches!(
+            body[prefix[k]],
+            Literal::Cmp(..) | Literal::Is(..) | Literal::Builtin(..) | Literal::Neg(_)
+        );
+        if test && vs.iter().all(|v| reached.contains(v) || guard.contains(v)) {
+            kept[k] = true;
         }
     }
     prefix
@@ -635,14 +655,14 @@ impl Demand<'_> {
                 if self.derived(a) {
                     let sub = self.adorn(a, &bound_so_far);
                     let args = bound_args(a, &sub);
-                    let kept = bearing(&rule.body, &prefix, &args);
+                    let kept = bearing(&rule.body, &prefix, &args, &bound);
                     let mut body = Vec::with_capacity(1 + kept.len());
                     body.push(guard.clone());
                     body.extend(kept.iter().map(|&j| rule.body[j].clone()));
                     let demand = magic_atom(a, &sub);
                     if !unread.is_empty() {
                         let all: Vec<usize> = prefix.iter().chain(&unread).copied().collect();
-                        for j in bearing(&rule.body, &all, &args) {
+                        for j in bearing(&rule.body, &all, &args, &bound) {
                             if let Literal::Neg(n) = &rule.body[j]
                                 && unread.contains(&j)
                             {

@@ -549,10 +549,16 @@ are skipped. Several steps have a program in `examples/` that shows them.
    adorned copies `h :- $m_h(bound args), body` plus demand rules, seeded
    from the queries and evidence. A demand rule reads the literals before
    its atom that bear on the atom's bound arguments, those that share a
-   variable with them or with a literal that does: another only asks that
+   variable with them or with a literal that does, and the tests (a
+   comparison, an `is`, a built-in, a negation of a given predicate) of
+   what those literals and the guard bind: another literal only asks that
    some values of its own satisfy it (on PSouffle's side-channel analyses
    the demand of `equal_assign` with no argument bound was derived again
-   from each of 437 million pairs before it). The rewrite only restricts which ground
+   from each of 437 million pairs before it), and a test only rejects
+   demands, as ProbLog's resolution stops at it (the tutorial's rejection
+   loop `loop1(G, N, R, T) :- G >= N, loop2(0, 1, NG, NN, T, TT), ...`
+   demanded `loop2` at every later `T` without its test on the guard's
+   variables). The rewrite only restricts which ground
    atoms are produced; the control predicates' tuples have no atoms and do
    not reach the compiler. A
    recursive component with internal negation is ground as it is, its
