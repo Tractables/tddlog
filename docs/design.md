@@ -661,7 +661,18 @@ are skipped. Several steps have a program in `examples/` that shows them.
    values are its constants (PSouffle's taint analyses). ProbLog's
    grounding completes the negated call and ends the branch where its
    answer is true in every world, and so does the top-down route. A
-   findall in a cycle of calls is refused on either route.
+   findall in a cycle of calls is refused on either route. So, first of
+   all, is a program whose queries reach a test before the literals
+   written after it bind its variables (`modes.rs`): a `\=`, an identity,
+   a comparison on the standard order, a negation, or a findall whose
+   goal shares the variable with the rest of the rule. ProbLog resolves
+   a body from left to right and makes such a test on the terms as they
+   stand there (`member(A, [H|T]) :- A \= H, ...` called with `A` holding
+   a variable fails wherever `A` unifies with `H`), where the other
+   routes place it after the literals that bind its variables and make it
+   on each value they bind. The calls are followed from the queries, the
+   evidence and the query rules, each argument bound where the literals
+   before the call have bound all its variables.
 4. **Bottom-up grounding** (`engine.rs`). Predicates are stratified by the
    SCCs of the dependency graph and each stratum is evaluated semi-naively
    with every switch assumed true, which yields exactly the atoms true in
