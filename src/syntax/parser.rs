@@ -1047,12 +1047,34 @@ impl<'a> Parser<'a> {
                 return Ok((t, 0));
             }
             Tok::LBracket => return Ok((self.list()?, 0)),
+            Tok::Dot if self.at2(Tok::LParen) => {
+                self.bump();
+                self.bump();
+                let dot = self.lexer.intern(".");
+                let t = self.arguments(dot)?;
+                return Ok((self.cell(t), 0));
+            }
             other => return self.err(format!("unexpected {}", self.lexer.show(other))),
         };
         self.bump();
         let arg = self.term(p)?.into_term();
         let name = self.lexer.intern(name);
         Ok((PTerm::Term(Compound::term(name, vec![arg])), p))
+    }
+
+    /// `t`, where it is `.(H, T)`, ProbLog's other writing of the list
+    /// `[H | T]`, as that list. Quoted, `'.'(H, T)` is a term of the name
+    /// `.`, as in ProbLog.
+    fn cell(&mut self, t: PTerm) -> PTerm {
+        match t {
+            PTerm::Atom(name, args) if &*name == "." && args.len() == 2 => {
+                PTerm::Atom(self.lexer.intern(CONS), args)
+            }
+            PTerm::Term(Term::Compound(c)) if &*c.name == "." && c.args.len() == 2 => {
+                PTerm::Term(Compound::term(self.lexer.intern(CONS), c.args.to_vec()))
+            }
+            t => t,
+        }
     }
 
     /// A list, `[` at hand: `[]`, `[a, b]` or `[a, b | T]`.
@@ -1344,6 +1366,13 @@ mod tests {
         assert_eq!(p.clauses[0].heads[0].atom.to_string(), "ops([+, -, *, /])");
         assert_eq!(p.clauses[1].heads[0].atom.to_string(), "p([N, + | T],-,-X)");
         assert_eq!(p.clauses[1].body[0].to_string(), "q(N,T,X,/)");
+        // `.(H, T)` is the list `[H | T]`, and `'.'(H, T)` a term of the
+        // name `.`, as in ProbLog.
+        let p = parse_program("p(.(a,.(b,[]))). q('.'(X, T)) :- r(.(f(X), [])).\n").unwrap();
+        assert_eq!(p.clauses[0].heads[0].atom.to_string(), "p([a, b])");
+        assert_eq!(p.clauses[1].heads[0].atom.to_string(), "q('.'(X,T))");
+        assert_eq!(p.clauses[1].body[0].to_string(), "r([f(X)])");
+        assert!(parse_program(".a.\n").is_err());
     }
 
     #[test]

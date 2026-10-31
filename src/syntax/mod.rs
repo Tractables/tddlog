@@ -606,12 +606,14 @@ fn needs_quotes(s: &str) -> bool {
     match chars.next() {
         Some(c) if c.is_ascii_lowercase() => !chars.all(|c| c.is_alphanumeric() || c == '_'),
         // The empty list, `;`, `!` and names of symbol characters (`\+`,
-        // `:-`) print bare.
+        // `:-`) but `.` print bare.
         _ => {
             !(s == NIL
                 || s == ";"
                 || s == "!"
-                || (!s.is_empty() && s.chars().all(|c| "+-*/\\^<>=~:.?@#&$".contains(c))))
+                || (!s.is_empty()
+                    && s != "."
+                    && s.chars().all(|c| "+-*/\\^<>=~:.?@#&$".contains(c))))
         }
     }
 }
