@@ -937,7 +937,9 @@ impl Compilation {
             .map(|v| v.0 as usize + 1)
             .max()
             .unwrap_or(0);
-        if let Some(p) = projected.as_mut() {
+        if let Some(p) = projected.as_mut()
+            && (gp.encoding.is_empty() || !gp.encoding.segments.is_empty())
+        {
             let mut pinned = Vec::new();
             for ind in &gp.encoding.indicators {
                 if let Some(v) = var_of[ind.var as usize] {
@@ -1345,12 +1347,8 @@ impl Compilation {
         };
         let single_atom = match self.sccs[i].as_slice() {
             &[a] if p.keep_global > 1
-                && self.fixpoint.formulas[a as usize]
-                    .as_ref()
-                    .is_some_and(|f| backend.size(f) > 1)
-                && !self.dying.answers.contains_key(&a)
-                && !self.for_queries.ties.values().any(|t| t.reference == a)
-                && equivalence(gp, &self.by_head[a as usize]).is_none() =>
+                && self.fixpoint.sizes[a as usize] > 1
+                && self.dying.dies_after[a as usize] > i as u32 =>
             {
                 Some(a)
             }
@@ -1358,7 +1356,7 @@ impl Compilation {
         };
         if let Some(a) = single_atom
             && let Some(v_rep) = p.cones.private_cone(i)
-            && self.try_collapse_private(backend, i, a, v_rep)?
+            && self.try_collapse_private(gp, backend, i, a, v_rep)?
         {
             return Ok(());
         }
@@ -1390,7 +1388,7 @@ impl Compilation {
         if let Some(a) = single_atom
             && vars.len() >= 2
             && self.projected.as_ref().unwrap().cones.is_private(&vars)
-            && self.try_collapse_private(backend, i, a, vars[0])?
+            && self.try_collapse_private(gp, backend, i, a, vars[0])?
         {
             return Ok(());
         }
@@ -1439,11 +1437,18 @@ impl Compilation {
     /// reweighing `v_rep` to `(P(a), P(\+a))`.
     fn try_collapse_private(
         &mut self,
+        gp: &GroundProgram,
         backend: &TddBackend,
         i: usize,
         a: AtomId,
         v_rep: VarId,
     ) -> Result<bool, CompileError> {
+        if self.dying.answers.contains_key(&a)
+            || self.for_queries.ties.values().any(|t| t.reference == a)
+            || equivalence(gp, &self.by_head[a as usize]).is_some()
+        {
+            return Ok(false);
+        }
         let Some(f) = &self.fixpoint.formulas[a as usize] else {
             return Ok(false);
         };

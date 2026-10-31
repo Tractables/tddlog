@@ -80,10 +80,14 @@ pub(crate) struct Cones {
     /// hold it in their cone plus how many unstarted components mention it
     /// directly in their rules, plus two if it may not be collapsed.
     holders: Vec<u32>,
+    /// Unreleased components over the global limit whose variables are not
+    /// tracked in [`holders`](Self::holders).
+    over_limit_held: u32,
 }
 
 enum Held {
     Released,
+    OverLimitMany,
     Sparse(Vec<VarId>),
     Dense(Box<[u64]>),
     OverLimit(Box<[u64]>),
@@ -99,6 +103,7 @@ impl Cones {
             held: (0..components).map(|_| Held::Released).collect(),
             read_into: vec![usize::MAX; components],
             holders: Vec::new(),
+            over_limit_held: 0,
         }
     }
 
@@ -155,14 +160,16 @@ impl Cones {
     /// component's cone) is held by that component alone, mentioned by no
     /// unstarted component's rules, and not pinned.
     pub(crate) fn is_private(&self, vars: &[VarId]) -> bool {
-        !self.holders.is_empty() && vars.iter().all(|&v| self.holders[v.0 as usize] == 1)
+        !self.holders.is_empty()
+            && self.over_limit_held == 0
+            && vars.iter().all(|&v| self.holders[v.0 as usize] == 1)
     }
 
     /// If component `ci`'s held cone has at least two variables and every
     /// variable in it is private ([`is_private`](Self::is_private)), return
     /// its first variable.
     pub(crate) fn private_cone(&self, ci: usize) -> Option<VarId> {
-        if self.holders.is_empty() {
+        if self.holders.is_empty() || self.over_limit_held != 0 {
             return None;
         }
         match &self.held[ci] {
@@ -196,6 +203,7 @@ impl Cones {
     fn drop_held(&mut self, ci: usize) {
         match std::mem::replace(&mut self.held[ci], Held::Released) {
             Held::Released => {}
+            Held::OverLimitMany => self.over_limit_held -= 1,
             Held::Sparse(old) => {
                 if !self.holders.is_empty() {
                     for v in old {
@@ -238,6 +246,7 @@ impl Cones {
             held,
             read_into,
             holders,
+            over_limit_held,
         } = self;
         let blocks = *blocks;
         let set = |acc: &mut [u64], touched: &mut Vec<usize>, v: usize| {
@@ -306,6 +315,10 @@ impl Cones {
                                 }
                                 whole = true;
                             }
+                            Held::OverLimitMany => {
+                                over = true;
+                                break 'rules;
+                            }
                             Held::Released => {
                                 panic!("component {ci} reads the cone of component {cj}, released")
                             }
@@ -353,7 +366,7 @@ impl Cones {
                         holders[v.0 as usize] += 1;
                     }
                 }
-                None => {
+                None if blocks <= 2 => {
                     for &k in touched.iter() {
                         let mut w = acc[k];
                         while w != 0 {
@@ -363,10 +376,17 @@ impl Cones {
                         }
                     }
                 }
+                None => {}
             }
         }
         held[ci] = match &cone {
-            None => Held::OverLimit(acc.clone().into_boxed_slice()),
+            None if !holders.is_empty() && blocks <= 2 => {
+                Held::OverLimit(acc.clone().into_boxed_slice())
+            }
+            None => {
+                *over_limit_held += 1;
+                Held::OverLimitMany
+            }
             Some(vars) if vars.len() >= blocks => Held::Dense(acc.clone().into_boxed_slice()),
             Some(vars) => Held::Sparse(vars.clone()),
         };
