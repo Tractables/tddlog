@@ -1552,8 +1552,9 @@ mod roulette {
     }
 
     /// The same interpreter with cells of five bits, n = 2 and three
-    /// units of fuel, every bit of both cells written out: the totals a
-    /// run can end with, and res(6) for a run out of fuel.
+    /// units of fuel, written once over the iterations and the bits with
+    /// the width a fact, as Roulette's program takes it: the totals a run
+    /// can end with, and res(6) for a run out of fuel.
     #[test]
     fn hardware_bitwidth() {
         check(
