@@ -1363,7 +1363,10 @@ mod lpad {
             let lpad = tddlog::syntax::lpad::read(&source)
                 .expect("an LPAD")
                 .unwrap();
-            let written = std::fs::read_to_string(format!("{stem}.pl")).unwrap();
+            // Those the script read.
+            let Ok(written) = std::fs::read_to_string(format!("{stem}.pl")) else {
+                continue;
+            };
             assert_eq!(lpad.program + "\n", written, "{name}");
             read += 1;
         }
@@ -1391,6 +1394,16 @@ mod lpad {
                 ("sampled(carl)", 0.5),
                 ("big_family", 0.9),
             ],
+        );
+    }
+
+    /// PITA's depth bound, with the answers computed by hand in the
+    /// program's comment, which PITA gives too.
+    #[test]
+    fn depth_bound() {
+        check(
+            "../tests/lpad/depth_bound.cplint.pl",
+            &[("small(s(0))", 0.35), ("small(s(s(0)))", 0.0), ("c", 0.5)],
         );
     }
 }

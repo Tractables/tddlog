@@ -248,7 +248,17 @@ clauses, which the LPAD calls through `db(Goal)` or the goal of a
 built-in such as `findall/3`: those the LPAD's bodies name, and those
 they name in turn, are kept, and `db(Goal)` becomes `Goal`; the rest
 (plots and other programs over the LPAD, in Prolog that tddlog does not
-read) is left out with the directives and goals. The file's example
+read) is left out with the directives and goals. PITA's depth bound
+(`:- set_pita(depth_bound, true).`, at the depth `:- set_pita(depth,
+N).` sets, 5 by default) is read: each predicate of the LPAD takes the
+depth as a last argument, a clause with a body holds at a depth `D` of 1
+or more where its body holds at `D - 1`, a fact at every depth, and a
+query or an observation is of its atom at the bound. The choice among a
+clause's heads is made once for each instance of the clause, as PITA
+makes it, whatever the depth: a switch `'$choice_N'` over the clause's
+variables, which each head's clause reads after its body. cplint's
+examples bound grammars and walks that way whose programs have no end
+without it (`pcfglrdb`, `var_objdb`). The file's example
 queries become queries: `?- prob(Q, P).` is `query(Q).`, and `?- prob(Q,
 E, P).` is `query(Q).` with an `evidence(L).` for each literal `L` of the
 conjunction `E`. A program has one set of evidence, that of the first
@@ -257,7 +267,8 @@ evidence or under an intervention is named in a comment of the program
 and on standard error, and left out. A clause the program cannot write
 (a disjunctive head with no probability or with two heads without one, a
 head without one beside a flexible probability, a probability that is not
-a finite number) is refused on its line. The
+a finite number; under the depth bound, a flexible probability or a call
+of the LPAD's predicates inside another goal) is refused on its line. The
 reader finds the clauses in the text and writes the program that the
 Python script it replaced (`lpad2problog.py`, now on the baselines
 branch) wrote: the clauses end at a `.` before white space outside

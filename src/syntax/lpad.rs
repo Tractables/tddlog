@@ -15,7 +15,7 @@
 //! those the LPAD's bodies name, and those they name in turn, are kept as
 //! they are, and `db(Goal)` is written `Goal`. The rest (plots, samplers and
 //! other programs over the LPAD) is left out, as are the directives and
-//! goals. The example queries `?- prob(Q, P).` in the file become
+//! goals but for PITA's depth bound ([`bounded`]). The example queries `?- prob(Q, P).` in the file become
 //! `query(Q).`, and `?- prob(Q, E, P).` becomes `query(Q).` and an
 //! `evidence(L).` for each literal `L` of the conjunction `E`. A program
 //! holds one set of evidence: the queries asked under the evidence of the
@@ -100,6 +100,22 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             }
         }
     }
+    let depth = depth_bound(clauses).map_err(|(at, msg)| ParseError {
+        line: raw.line(source, at),
+        msg,
+    })?;
+    // The LPAD's predicates, which take the depth under PITA's bound.
+    let predicates: FxHashSet<(String, usize)> = read
+        .iter()
+        .filter(|(_, lpad, _)| *lpad)
+        .flat_map(|(c, _, _)| {
+            let head = c.split_once(":-").map_or(c.as_str(), |(h, _)| h);
+            split_top(head, b';').into_iter().filter_map(|h| {
+                let (atom, _) = head_prob(h).ok()?;
+                atom_parts(atom).map(|(n, args)| (n.to_string(), args.len()))
+            })
+        })
+        .collect();
     let mut out = Vec::new();
     // ProbLog loads `library(lists)` where the program asks for it.
     let defined: FxHashSet<&str> = read
@@ -114,11 +130,19 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
     {
         out.push(":- use_module(library(lists)).".to_string());
     }
-    for ((c, _, at), _) in read.iter().zip(&kept).filter(|(_, keep)| **keep) {
-        out.push(convert_clause(c).map_err(|msg| ParseError {
+    let mut number = 0;
+    for ((c, lpad_clause, at), _) in read.iter().zip(&kept).filter(|(_, keep)| **keep) {
+        let error = |msg| ParseError {
             line: raw.line(source, *at),
             msg: format!("{msg} in the LPAD clause `{c}`"),
-        })?);
+        };
+        match depth {
+            Some(_) if *lpad_clause => {
+                number += 1;
+                out.extend(bounded(c, number, &predicates).map_err(error)?);
+            }
+            _ => out.push(convert_clause(c).map_err(error)?),
+        }
     }
     // One program holds one set of evidence: that of the first query not
     // asked under an intervention.
@@ -135,6 +159,44 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
         .filter(|e| !intervened(e))
         .collect();
     let under: &[&str] = observed.first().map_or(&[], |e| e.as_slice());
+    // Under the depth bound a query or an observation of a predicate of
+    // the LPAD is of its atom at the bound.
+    if let Some(depth) = depth {
+        let mut bridged: Vec<(&str, usize)> = Vec::new();
+        let asked_here = asked.iter().filter(|(_, e)| e == under).map(|(q, _)| *q);
+        for lit in under.iter().copied().chain(asked_here) {
+            let atom = lit.strip_prefix("\\+").map_or(lit, |a| unwrapped(trim(a)));
+            let Some((name, args)) = atom_parts(atom) else {
+                continue;
+            };
+            let n = args.len();
+            if !predicates.contains(&(name.to_string(), n)) || bridged.contains(&(name, n)) {
+                continue;
+            }
+            if n > 0 && predicates.contains(&(name.to_string(), n - 1)) {
+                return Err(ParseError {
+                    line: 1,
+                    msg: format!(
+                        "{name}/{n} asked under PITA's depth bound, where {name}/{} takes the depth as {name}/{n}",
+                        n - 1
+                    ),
+                });
+            }
+            bridged.push((name, n));
+            let vars: Vec<String> = (1..=n).map(|k| format!("X{k}")).collect();
+            let at = vars
+                .iter()
+                .cloned()
+                .chain([depth.to_string()])
+                .collect::<Vec<_>>();
+            let head = if n == 0 {
+                name.to_string()
+            } else {
+                format!("{name}({})", vars.join(", "))
+            };
+            out.push(format!("{head} :- {name}({}).", at.join(", ")));
+        }
+    }
     out.extend(under.iter().map(|lit| format!("evidence({lit}).")));
     out.extend(
         asked
@@ -464,13 +526,31 @@ fn convert_clause(clause: &str) -> Result<String, String> {
         Some((h, b)) => (h, format!(" :- {}", trim(b))),
         None => (clause, String::new()),
     };
+    let mut lhs = String::new();
+    for (k, (atom, p)) in heads(head)?.into_iter().enumerate() {
+        if k > 0 {
+            lhs.push_str("; ");
+        }
+        if let Some(p) = p {
+            lhs.push_str(&annotation(p)?);
+            lhs.push_str("::");
+        }
+        lhs.push_str(atom);
+    }
+    Ok(format!("{lhs}{tail}."))
+}
+
+/// The heads of an LPAD clause's head `head`, each with its probability
+/// where any has one, a head without one taking what the others leave; or
+/// what the program cannot write.
+fn heads(head: &str) -> Result<Vec<(&str, Option<Written<'_>>)>, String> {
     let mut heads = split_top(head, b';')
         .into_iter()
         .map(head_prob)
         .collect::<Result<Vec<_>, _>>()?;
     if heads.iter().all(|(_, p)| p.is_none()) {
-        return match heads.as_slice() {
-            [(atom, None)] => Ok(format!("{atom}{tail}.")),
+        return match heads.len() {
+            1 => Ok(heads),
             _ => Err("a disjunctive head without probabilities".into()),
         };
     }
@@ -495,21 +575,232 @@ fn convert_clause(clause: &str) -> Result<String, String> {
         let left = 1.0 - total;
         rest.1 = Some(Written::Number(if left > 0.0 { left } else { 0.0 }));
     }
-    let mut lhs = String::new();
-    for (k, (atom, p)) in heads.iter().enumerate() {
-        if k > 0 {
-            lhs.push_str("; ");
+    Ok(heads)
+}
+
+/// The probability `p` as ProbLog's annotation writes it.
+fn annotation(p: Written) -> Result<String, String> {
+    Ok(match p {
+        Written::Term(t) => t.to_string(),
+        Written::Number(p) if !p.is_finite() => return Err(format!("the probability {p}")),
+        Written::Number(p) if p == p.trunc() => format!("{p:.1}"),
+        Written::Number(p) => {
+            let mut s = String::new();
+            write_float(&mut s, p);
+            s
         }
-        match p.expect("every head has its probability") {
-            Written::Term(t) => lhs.push_str(t),
-            Written::Number(p) if !p.is_finite() => return Err(format!("the probability {p}")),
-            Written::Number(p) if p == p.trunc() => lhs.push_str(&format!("{p:.1}")),
-            Written::Number(p) => write_float(&mut lhs, p),
+    })
+}
+
+/// The depth PITA's depth bound asks the queries at, where the source
+/// sets the bound (`:- set_pita(depth_bound, true).`, or
+/// `set_pitaind`'s): the depth it sets (`:- set_pita(depth, N).`), 5 by
+/// default, as PITA's.
+fn depth_bound(clauses: &[(usize, &str)]) -> Result<Option<u32>, (usize, String)> {
+    let (mut bound, mut depth) = (false, 5);
+    for &(at, c) in clauses {
+        let Some(goal) = c.strip_prefix(":-").map(trim) else {
+            continue;
+        };
+        let Some((name, args)) = atom_parts(goal) else {
+            continue;
+        };
+        match (name, args.as_slice()) {
+            ("set_pita" | "set_pitaind", ["depth_bound", v]) => bound = *v == "true",
+            ("set_pita" | "set_pitaind", ["depth", v]) => {
+                depth = v
+                    .parse()
+                    .map_err(|_| (at, format!("PITA's depth `{v}`, not a count")))?;
+            }
+            _ => {}
         }
-        lhs.push_str("::");
-        lhs.push_str(atom);
     }
-    Ok(format!("{lhs}{tail}."))
+    Ok(bound.then_some(depth))
+}
+
+/// The ProbLog clauses of the LPAD clause `clause`, the LPAD's `number`th,
+/// under PITA's depth bound: each predicate of the LPAD (`lpad`) takes the
+/// depth as its last argument. A clause with a body holds at a depth `D`
+/// of 1 or more where its body holds at `D - 1`, and a fact at every
+/// depth. The choice among a clause's heads is made once for each
+/// instance of the clause, whatever the depth, as PITA makes it: a switch
+/// over the clause's variables (`'$choice_N'`), which each head's clause
+/// reads after its body.
+fn bounded(
+    clause: &str,
+    number: usize,
+    lpad: &FxHashSet<(String, usize)>,
+) -> Result<Vec<String>, String> {
+    let clause = named_apart(clause);
+    let (head, body) = match clause.split_once(":-") {
+        Some((h, b)) => (h, Some(b)),
+        None => (clause.as_str(), None),
+    };
+    let heads = heads(head)?;
+    let vars = variables(&clause);
+    let fresh = |base: &str| {
+        let mut name = base.to_string();
+        while vars.contains(&name.as_str()) {
+            name.push('_');
+        }
+        name
+    };
+    let (d, d1) = (fresh("D"), fresh("D1"));
+    let mut lits = Vec::new();
+    if let Some(body) = body {
+        lits.push(format!("{d} >= 1"));
+        lits.push(format!("{d1} is {d} - 1"));
+        for lit in split_top(body, b',') {
+            lits.push(bounded_literal(trim(lit), &d1, lpad)?);
+        }
+    }
+    // The switch's alternative for the `k`th head.
+    let choice = |k: usize| {
+        let args: Vec<String> = vars
+            .iter()
+            .map(|v| v.to_string())
+            .chain([k.to_string()])
+            .collect();
+        format!("'$choice_{number}'({})", args.join(", "))
+    };
+    let mut out = Vec::new();
+    let probabilistic = heads.iter().any(|(_, p)| p.is_some());
+    if probabilistic {
+        let mut alternatives = Vec::with_capacity(heads.len());
+        for (k, (_, p)) in heads.iter().enumerate() {
+            let p = match p.expect("every head has its probability") {
+                Written::Term(_) => {
+                    return Err("a flexible probability under PITA's depth bound".into());
+                }
+                p => annotation(p)?,
+            };
+            alternatives.push(format!("{p}::{}", choice(k + 1)));
+        }
+        out.push(format!("{}.", alternatives.join("; ")));
+    }
+    let at = if body.is_some() { d.as_str() } else { "_" };
+    for (k, (atom, _)) in heads.iter().enumerate() {
+        let head = with_arg(atom, at).ok_or_else(|| format!("the head `{atom}`, not an atom"))?;
+        let mut lits = lits.clone();
+        if probabilistic {
+            lits.push(choice(k + 1));
+        }
+        out.push(if lits.is_empty() {
+            format!("{head}.")
+        } else {
+            format!("{head} :- {}.", lits.join(", "))
+        });
+    }
+    Ok(out)
+}
+
+/// The body literal `lit` of a clause under the depth bound, its call of
+/// a predicate of the LPAD (`lpad`) at the depth `d`; what it cannot write
+/// where it calls one inside another goal.
+fn bounded_literal(
+    lit: &str,
+    d: &str,
+    lpad: &FxHashSet<(String, usize)>,
+) -> Result<String, String> {
+    let (negated, goal) = match lit.strip_prefix("\\+") {
+        Some(g) => ("\\+ ", unwrapped(trim(g))),
+        None => ("", lit),
+    };
+    if let Some((name, args)) = atom_parts(goal)
+        && lpad.contains(&(name.to_string(), args.len()))
+    {
+        return Ok(format!("{negated}{}", with_arg(goal, d).expect("an atom")));
+    }
+    let mut names = FxHashSet::default();
+    mentioned(lit, &mut names);
+    if lpad.iter().any(|(n, _)| names.contains(n)) {
+        return Err(format!(
+            "a call of the LPAD's predicates inside `{lit}` under PITA's depth bound"
+        ));
+    }
+    Ok(lit.to_string())
+}
+
+/// The name and the arguments of the atom `text`, if it is one.
+fn atom_parts(text: &str) -> Option<(&str, Vec<&str>)> {
+    let text = trim(text);
+    if text.is_empty() {
+        return None;
+    }
+    let name = name_at(text, 0)?;
+    let rest = &text[name.len()..];
+    if rest.is_empty() {
+        return Some((name, Vec::new()));
+    }
+    let inner = balanced(rest.strip_prefix('(')?, 0);
+    (inner.len() + 2 == rest.len())
+        .then(|| (name, split_top(inner, b',').into_iter().map(trim).collect()))
+}
+
+/// The atom `atom` with `arg` as a last argument.
+fn with_arg(atom: &str, arg: &str) -> Option<String> {
+    let (name, args) = atom_parts(atom)?;
+    let args: Vec<&str> = args.into_iter().chain([arg]).collect();
+    Some(format!("{name}({})", args.join(", ")))
+}
+
+/// The variables of `text` outside quotes, each once, in their order.
+fn variables(text: &str) -> Vec<&str> {
+    let mut vars = Vec::new();
+    for (i, len) in words(text) {
+        let w = &text[i..i + len];
+        if (w.starts_with('_') || w.starts_with(|c: char| c.is_uppercase())) && !vars.contains(&w) {
+            vars.push(w);
+        }
+    }
+    vars
+}
+
+/// `clause` with each anonymous variable `_` named apart from the others.
+fn named_apart(clause: &str) -> String {
+    let vars = variables(clause);
+    let mut out = String::with_capacity(clause.len());
+    let (mut last, mut k) = (0, 0);
+    for (i, len) in words(clause) {
+        if &clause[i..i + len] != "_" {
+            continue;
+        }
+        let name = loop {
+            k += 1;
+            let name = format!("_{k}");
+            if !vars.contains(&name.as_str()) {
+                break name;
+            }
+        };
+        out.push_str(&clause[last..i]);
+        out.push_str(&name);
+        last = i + len;
+    }
+    out.push_str(&clause[last..]);
+    out
+}
+
+/// Where each word of `text` outside quotes starts, with its length.
+fn words(text: &str) -> Vec<(usize, usize)> {
+    let mut out = Vec::new();
+    let mut quote = None;
+    let mut chars = text.char_indices().peekable();
+    while let Some((i, c)) = chars.next() {
+        if let Some(q) = quote {
+            if c == q {
+                quote = None;
+            }
+        } else if c == '\'' || c == '"' {
+            quote = Some(c);
+        } else if word(c) && starts_word(text, i) {
+            let len = text[i..].find(|c| !word(c)).unwrap_or(text.len() - i);
+            out.push((i, len));
+            while chars.peek().is_some_and(|&(j, _)| j < i + len) {
+                chars.next();
+            }
+        }
+    }
+    out
 }
 
 /// A head's probability as an LPAD writes it: a number, or a term its body
@@ -738,6 +1029,75 @@ mod tests {
             assert_eq!(e.line, 5, "{clause}");
             assert!(e.msg.contains(error), "{clause}: {}", e.msg);
         }
+    }
+
+    #[test]
+    fn under_pitas_depth_bound_each_predicate_of_the_lpad_takes_the_depth() {
+        let source = ":- set_pita(depth_bound,true).\n:- set_pita(depth,2).\n".to_string()
+            + &lpad(
+                "num(0).\nnum(s(X)):0.5 :- num(X).\nmore(_):0.3.\n\
+                 small(X) :- num(X), \\+ more(X).\np(D) :- small(D), db(q(D)).\n",
+            )
+            + "q(1).\n?- prob(small(s(0)),P).\n?- prob(p(1),P).\n";
+        assert_eq!(
+            program(&source),
+            "num(0, _).\n\
+             0.5::'$choice_2'(X, 1).\n\
+             num(s(X), D) :- D >= 1, D1 is D - 1, num(X, D1), '$choice_2'(X, 1).\n\
+             0.3::'$choice_3'(_1, 1).\n\
+             more(_1, _) :- '$choice_3'(_1, 1).\n\
+             small(X, D) :- D >= 1, D1 is D - 1, num(X, D1), \\+ more(X, D1).\n\
+             p(D, D_) :- D_ >= 1, D1 is D_ - 1, small(D, D1), q(D).\n\
+             q(1).\n\
+             small(X1) :- small(X1, 2).\n\
+             p(X1) :- p(X1, 2).\n\
+             query(small(s(0))).\nquery(p(1))."
+        );
+        // The depth is 5 where the source does not set it, and a
+        // disjunction's heads share one switch.
+        let source = lpad("a:0.2 ; b:0.3 :- c.\nc.\n").replace(
+            ":- begin_lpad.",
+            ":- begin_lpad.\n:- set_pita(depth_bound,true).",
+        ) + "?- prob(a,P).\n";
+        assert_eq!(
+            program(&source),
+            "0.2::'$choice_1'(1); 0.3::'$choice_1'(2).\n\
+             a(D) :- D >= 1, D1 is D - 1, c(D1), '$choice_1'(1).\n\
+             b(D) :- D >= 1, D1 is D - 1, c(D1), '$choice_1'(2).\n\
+             c(_).\n\
+             a :- a(5).\n\
+             query(a)."
+        );
+    }
+
+    #[test]
+    fn what_the_depth_bound_cannot_write_is_refused() {
+        for (clause, error) in [
+            (
+                "a:P :- p(P).",
+                "a flexible probability under PITA's depth bound",
+            ),
+            (
+                "a :- findall(X, p(X), L).",
+                "a call of the LPAD's predicates inside",
+            ),
+            (
+                "a :- (p(1) ; p(2)).",
+                "a call of the LPAD's predicates inside",
+            ),
+        ] {
+            let source = format!(
+                ":- set_pita(depth_bound,true).\n:- begin_lpad.\np(1):0.5.\n{clause}\n:- end_lpad.\n"
+            );
+            let e = read(&source).unwrap().unwrap_err();
+            assert_eq!(e.line, 4, "{clause}");
+            assert!(e.msg.contains(error), "{clause}: {}", e.msg);
+        }
+        let e = read(":- set_pita(depth_bound,true).\n:- set_pita(depth,a).\n:- begin_lpad.\n")
+            .unwrap()
+            .unwrap_err();
+        assert_eq!(e.line, 2);
+        assert!(e.msg.contains("PITA's depth `a`"), "{}", e.msg);
     }
 
     #[test]
