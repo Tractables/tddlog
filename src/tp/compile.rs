@@ -278,6 +278,62 @@ fn equivalence(gp: &GroundProgram, rules: &[usize]) -> Option<(AtomId, AtomId)> 
     .then_some((v.atom(), k.atom()))
 }
 
+/// Place each leaf component (an atom that no rule body reads and that is
+/// in no [`equivalence`] class) right after the last component its rules
+/// read, so that the atoms it reads and, without evidence, its own formula
+/// die as soon as what it depends on is compiled rather than waiting for
+/// the query rules at the end of the file.
+fn order_leaves(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    sccs: Vec<Vec<AtomId>>,
+) -> Vec<Vec<AtomId>> {
+    if !gp.evidence.is_empty() || !gp.encoding.is_empty() {
+        return sccs;
+    }
+    let n = gp.num_atoms();
+    let comp_of = cone::component_of(n, &sccs);
+    let mut read = vec![false; n];
+    for r in &gp.rules {
+        for l in &r.body {
+            read[l.atom() as usize] = true;
+        }
+    }
+    let mut after: Vec<Vec<AtomId>> = vec![Vec::new(); sccs.len()];
+    let mut moved = vec![false; sccs.len()];
+    for (ci, scc) in sccs.iter().enumerate() {
+        let &[a] = scc.as_slice() else { continue };
+        if read[a as usize] || equivalence(gp, &by_head[a as usize]).is_some() {
+            continue;
+        }
+        let last_dep = by_head[a as usize]
+            .iter()
+            .flat_map(|&ri| &gp.rules[ri].body)
+            .filter_map(|l| {
+                let c = comp_of[l.atom() as usize];
+                (c != u32::MAX).then_some(c as usize)
+            })
+            .max();
+        if let Some(d) = last_dep.filter(|&d| d + 1 < ci) {
+            after[d].push(a);
+            moved[ci] = true;
+        }
+    }
+    if !moved.iter().any(|&m| m) {
+        return sccs;
+    }
+    let mut out = Vec::with_capacity(sccs.len());
+    for (ci, scc) in sccs.into_iter().enumerate() {
+        if !moved[ci] {
+            out.push(scc);
+        }
+        for &a in &after[ci] {
+            out.push(vec![a]);
+        }
+    }
+    out
+}
+
 /// Per component, the derived atoms whose formulas nothing reads once it is
 /// finished, and per atom the component after which that is (`u32::MAX`
 /// for an atom kept to the end): the evidence is kept, and the queries of
@@ -856,8 +912,17 @@ impl Compilation {
         }
         // A link tied to another reader's copies is not built either.
         let ties = ties(gp, &by_head, &var_of, backend, projection);
-        let sccs: Vec<Vec<AtomId>> =
-            deps.sccs.iter().filter(|scc| !matches!(scc[..], [a] if templates.contains_key(&a) || ties.contains_key(&a))).cloned().collect();
+        let sccs = order_leaves(
+            gp,
+            &by_head,
+            deps.sccs
+                .iter()
+                .filter(|scc| {
+                    !matches!(scc[..], [a] if templates.contains_key(&a) || ties.contains_key(&a))
+                })
+                .cloned()
+                .collect(),
+        );
         let comp_of = cone::component_of(n, &sccs);
         let (projected, projection_stats) = Projected::new(&sccs, &var_of, projection);
         let scopes = vec![backend.global(); sccs.len()];
@@ -1808,8 +1873,17 @@ impl Compilation {
                 Some(f) => f,
                 None => {
                     let conjoin = !links[a as usize] && conjoined(gp, &by_head[a as usize]);
+                    let settled = conjoin
+                        && matches!(
+                            gp.rules[by_head[a as usize][0]].body.as_slice(),
+                            &[l] if gp.is_fact(l.atom())
+                                || (positive.borrow()[l.atom() as usize] == l.is_positive()
+                                    && scope_of(l.atom()).same(scope))
+                        );
                     let (mut f, _) = apply(a, formulas, false, conjoin)?;
-                    backend.minimize(&mut f, Reduce::Settled)?;
+                    if !settled {
+                        backend.minimize(&mut f, Reduce::Settled)?;
+                    }
                     positive.borrow_mut()[a as usize] |= conjoin;
                     f
                 }

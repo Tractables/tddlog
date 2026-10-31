@@ -215,10 +215,12 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
     for (p, &a) in order.iter().enumerate() {
         at[a as usize] = p as u32;
     }
-    // Each atom's last reader's position.
+    // Each atom's last reader's position, and each head's body literals.
     let mut last = vec![0u32; gp.num_atoms()];
+    let mut weight = vec![0usize; gp.num_atoms()];
     for r in &gp.rules {
         let p = at[r.head as usize];
+        weight[r.head as usize] += r.body.len().max(1);
         for l in &r.body {
             let b = l.atom() as usize;
             last[b] = last[b].max(p);
@@ -235,13 +237,21 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
             change[to] = (change[to].0 - 1, change[to].1 - d);
         }
     }
+    let until = if !gp.evidence.is_empty() && gp.queries.len() == 1 {
+        n
+    } else {
+        order
+            .iter()
+            .rposition(|&a| gp.is_fact(a) || weight[a as usize] > 1)
+            .unwrap_or(0)
+    };
     let mut boundaries = Vec::new();
     let (mut width, mut derived, mut facts) = (0isize, 0isize, 0);
     for (p, &a) in order.iter().enumerate() {
         (width, derived) = (width + change[p].0, derived + change[p].1);
         if gp.is_fact(a) {
             facts += 1;
-        } else if derived > 0 {
+        } else if derived > 0 && p < until {
             boundaries.push(Boundary {
                 after: p,
                 width: width as usize,
