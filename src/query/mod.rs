@@ -200,6 +200,10 @@ impl QueryEvaluation {
             let i = v.0 as usize;
             (weights.pos[i], weights.neg[i], weights.one[i]) = (0.5, 0.5, 1.0);
         }
+        for &(v, pos, neg) in &compiled.for_queries.reweighed {
+            let i = v.0 as usize;
+            (weights.pos[i], weights.neg[i], weights.one[i]) = (pos, neg, 1.0);
+        }
         // Where no query reads the evidence formula, only its count is
         // wanted, and the walk sums out what no later join reads.
         let mut walk = EvidenceWalk::new(observed, &backend.vtree());
