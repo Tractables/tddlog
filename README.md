@@ -102,7 +102,7 @@ inference:
 
 | Input | Read by | Reduced to probabilistic Datalog as |
 |---|---|---|
-| ProbLog programs | tddlog | function symbols and lists ground to constants, with ProbLog's list predicates and `findall/3` over deterministic goals |
+| ProbLog programs | tddlog | function symbols and lists ground to constants, with ProbLog's list predicates, `call/N`, `findall/3`, `all/3` and `forall/2` over probabilistic goals, and `library(aggregate)`'s aggregates |
 | Bayesian networks in BIF, Hugin, GeNIe or UAI, with evidence in Ace's `.inst` or UAI's `.evid` | tddlog, by the file's extension | one annotated disjunction per row of each table |
 | Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
 | Dice programs | tddlog, by the extension `.dice` | each integer as its bits, each operation as rules over them, a loop as recursion over a step index |
@@ -126,9 +126,9 @@ bindings take the text with its format's name. A front end of one's own
 writes the program's text, as [examples/sprinkler.rs](examples/sprinkler.rs)
 does from Rust data.
 
-Not yet read: cut, if-then-else, `call/N`, `assert`, strings and
-probabilities computed in a rule's body in ProbLog, and `findall/3` over
-a probabilistic or recursive goal; `/`, `%` and `sample` in Dice.
+Not yet read: cut, if-then-else, `assert`, strings, `library(collect)`
+and a findall in a cycle of calls in ProbLog; `/`, `%` and `sample` in
+Dice.
 
 ## Inside the engine
 
