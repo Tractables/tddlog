@@ -1684,7 +1684,73 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             },
             _ => unreachable!("mode"),
         },
+        // The test before a call of a goal that is a variable.
+        Builtin::Callable => {
+            let vals: Vec<Val> = vals.iter().map(|v| v.expect("mode")).collect();
+            let goal = match vals[0] {
+                Val::Sym(name) => Some((name, 0)),
+                Val::Fn(id) => match g.terms.keys.list(id as usize) {
+                    [Val::Sym(name), args @ ..] => Some((*name, args.len())),
+                    _ => unreachable!("a term's key starts with its name"),
+                },
+                Val::Int(_) | Val::Float(_) => None,
+            };
+            let outcome = match goal {
+                Some((name, k)) => callable(g, name, k, &vals[1..]),
+                None => Err(GroundError::Unsupported(format!(
+                    "call/N of {}, which is no goal (ProbLog's type error)",
+                    g.term_of(vals[0])
+                ))),
+            };
+            match outcome {
+                Ok(true) => one(vals),
+                Ok(false) => Vec::new(),
+                Err(e) => {
+                    g.fail(e);
+                    Vec::new()
+                }
+            }
+        }
     }
+}
+
+/// Whether `call/(n + 1)` calls the goal of the name `name` and `k`
+/// arguments that `'$callable'(G, n, Callable, Unknown)` tests
+/// ([`Builtin::Callable`]), whose arguments after the goal are `test`:
+/// where an item `name/k` of the list `Callable` says that the program
+/// defines it. ProbLog stops on another goal, with its `UnknownClause`
+/// where no clause defines it, unless `Unknown` is `fail`
+/// (`:- unknown(fail).`), where it fails. tddlog calls a built-in only
+/// where it is written, not through a variable, and refuses it.
+fn callable(g: &mut Grounder, name: u32, k: usize, test: &[Val]) -> Result<bool, GroundError> {
+    let &[Val::Int(n), list, Val::Sym(unknown)] = test else {
+        unreachable!("the library writes the test")
+    };
+    let items = g.items(list).expect("the library writes a list");
+    let listed = items.iter().any(|&item| match item {
+        Val::Fn(id) => {
+            let key = g.terms.keys.list(id as usize);
+            key[1] == Val::Sym(name) && key[2] == Val::Int(k as i64)
+        }
+        _ => false,
+    });
+    if listed {
+        return Ok(true);
+    }
+    let pred = g.syms.names[name as usize].clone();
+    let arity = k + n as usize;
+    let builtin = super::terms::problog_builtin(&pred, arity);
+    if !builtin && &*g.syms.names[unknown as usize] == "fail" {
+        return Ok(false);
+    }
+    let through = format!("called through call/{}", n + 1);
+    Err(if builtin {
+        GroundError::Unsupported(format!(
+            "{pred}/{arity}, a built-in {through}, which tddlog calls only where it is written"
+        ))
+    } else {
+        GroundError::NoClauses(format!("{pred}/{arity}, {through}"))
+    })
 }
 
 /// The term `T` of `T =.. l` for a ground `l`: its only item, or the

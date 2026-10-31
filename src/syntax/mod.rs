@@ -972,6 +972,8 @@ impl fmt::Display for CmpOp {
 /// its name and arity. `append/2`, `subset/2`, `intersection/3`,
 /// `union/3`, `subtract/3`, `delete/3` and `flatten/2`, which the library
 /// writes as clauses, give the answers of those clauses.
+/// `'$callable'/4` is the grounder's own, the test before a call of a goal
+/// that is a variable ([`crate::ground`]'s `library`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum Builtin {
     Member,
@@ -1000,10 +1002,16 @@ pub(crate) enum Builtin {
     IsList,
     EnumGroups,
     Univ,
+    /// `'$callable'(G, N, Callable, Unknown)`: whether `call/(N + 1)` can
+    /// call the goal `G` with `N` arguments added, a goal of the name and
+    /// arity of an item `Name/Arity` of the list `Callable`; ProbLog's
+    /// error where the predicate has no clauses, or, where `Unknown` is
+    /// `fail` (`:- unknown(fail).`), failure unless it is a built-in.
+    Callable,
 }
 
 /// Each built-in, by its name and arity.
-const BUILTINS: [(&str, usize, Builtin); 26] = [
+const BUILTINS: [(&str, usize, Builtin); 27] = [
     ("member", 2, Builtin::Member),
     ("memberchk", 2, Builtin::Memberchk),
     ("select", 3, Builtin::Select),
@@ -1030,6 +1038,7 @@ const BUILTINS: [(&str, usize, Builtin); 26] = [
     ("is_list", 1, Builtin::IsList),
     ("enum_groups", 3, Builtin::EnumGroups),
     ("=..", 2, Builtin::Univ),
+    ("$callable", 4, Builtin::Callable),
 ];
 
 impl Builtin {
@@ -1065,6 +1074,7 @@ impl Builtin {
                         | Builtin::Compare
                         | Builtin::IsList
                         | Builtin::Univ
+                        | Builtin::Callable
                 )
         })
     }
@@ -1074,8 +1084,8 @@ impl Builtin {
     /// with `nth1/3`'s index, as ProbLog's library computes `I - 1` first,
     /// the two lists or the list and the item the set predicates and
     /// `delete/3` read, the bounds of `between/3`, two of `plus/3`'s, or the
-    /// terms `compare/3` orders, or either side of `=../2`. It then binds
-    /// the others.
+    /// terms `compare/3` orders, either side of `=../2`, or all of
+    /// `'$callable'/4`'s. It then binds the others.
     pub(crate) fn runs(self, bound: &[bool]) -> bool {
         match self {
             Builtin::Member | Builtin::Memberchk | Builtin::Select | Builtin::Nth0 => bound[1],
@@ -1101,6 +1111,7 @@ impl Builtin {
             Builtin::Plus => bound.iter().filter(|&&b| b).count() >= 2,
             Builtin::Compare => bound[1] && bound[2],
             Builtin::Univ => bound[0] || bound[1],
+            Builtin::Callable => bound.iter().all(|&b| b),
         }
     }
 }

@@ -275,6 +275,16 @@ const PROBLOG_PREDICATES: &[&str] = &[
     "zip",
 ];
 
+/// Whether `name/arity` is a built-in of ProbLog's or a predicate of its
+/// libraries `lists` and `apply` ([`PROBLOG_PREDICATES`]), one tddlog
+/// evaluates, or an operator (`=/2`, `is/2`, `\+/1`).
+pub(super) fn problog_builtin(name: &str, arity: usize) -> bool {
+    PROBLOG_PREDICATES.contains(&name)
+        || Builtin::of(name, arity).is_some()
+        || matches!(name, "is" | "not")
+        || !name.starts_with(char::is_alphabetic)
+}
+
 /// Refuses what ProbLog stops on with its "No clauses found": a query or an
 /// observation of a predicate that no clause defines, and a call of one
 /// that is not a built-in tddlog evaluates, in a clause of a predicate the
@@ -291,7 +301,12 @@ const PROBLOG_PREDICATES: &[&str] = &[
 /// `lists` and `apply` ([`PROBLOG_PREDICATES`]) that tddlog does not
 /// evaluate, which ProbLog would run.
 fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError> {
-    let refused = |name: &str| !program.unknown_fails || PROBLOG_PREDICATES.contains(&name);
+    // A call of a goal that is a variable is tested where it is made
+    // ([`super::library`]).
+    let refused = |name: &str| {
+        (!program.unknown_fails || PROBLOG_PREDICATES.contains(&name))
+            && !super::library::is_call_name(name)
+    };
     let mut reached: FxHashSet<(&str, usize)> = FxHashSet::default();
     let mut stack: Vec<(&str, usize)> = Vec::new();
     let asked = [("query", &program.queries), ("evidence", &program.evidence)]

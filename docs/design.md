@@ -205,7 +205,11 @@ The parser reads ProbLog without cut:
   `library(apply)`'s maplist/2 to /5, foldl/4 to /6, include/3, exclude/3
   and partition/4, and where the program loads it, `library(aggregate)`'s
   avg/2, sum/2, min/2 and max/2; and `call/N`, whose goal names a
-  predicate the program defines;
+  predicate the program defines. A goal that names no such predicate is
+  refused where the grounding reaches it, as ProbLog refuses it (its
+  `UnknownClause`), or fails under `:- unknown(fail).`; a goal that names
+  a built-in is refused, since tddlog calls built-ins only where they are
+  written;
 - `findall/3`, `all/3` and `forall/2`, over probabilistic goals too: in
   each world the list of the solutions whose proofs hold there, once per
   proof and in ProbLog's order (`all/3` once per solution);

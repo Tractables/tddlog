@@ -1352,6 +1352,25 @@ impl<'a> TopDown<'a> {
             self.length(args, rule, i)?
         } else if b == Builtin::Univ {
             self.univ(args)?
+        } else if b == Builtin::Callable {
+            // A goal with variables in it: its name and arity are bound.
+            let (name, k) = match self.deref(&args[0]) {
+                T::F(name, xs) => (name, xs.len()),
+                T::X(_) => return Err(self.unbound(rule, i)),
+                T::G(_) => unreachable!("a ground goal is the engine's"),
+            };
+            let test: Vec<Val> = args[1..]
+                .iter()
+                .map(|a| match self.deref(a) {
+                    T::G(v) => v,
+                    _ => unreachable!("the library writes constants"),
+                })
+                .collect();
+            if super::callable(&mut self.g, name, k, &test)? {
+                vec![args.to_vec()]
+            } else {
+                Vec::new()
+            }
         } else {
             return Err(self.unbound(rule, i));
         };

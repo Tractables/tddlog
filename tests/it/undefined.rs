@@ -124,6 +124,40 @@ fn under_unknown_fail_a_predicate_without_clauses_is_false() {
 }
 
 #[test]
+fn a_goal_called_through_call_that_names_no_predicate_is_refused() {
+    // ProbLog's test call_notfound.pl: the goal `template7(_, a, 5)` names
+    // template7/3, of which there are no clauses. It was read as false.
+    let e = refusal(
+        "x(X) :- help_w(template7, [a, 5], 1, X).
+         help_w(F2, In, N, X) :- append_vars_to_list(N, In, L), X =.. [F2|L], call(X).
+         append_vars_to_list(0, In, In).
+         append_vars_to_list(N, In, [_|Out]) :- N > 0, NN is N - 1, append_vars_to_list(NN, In, Out).
+         template7(C, a1, M, C).
+         template7(C, a2, M, C).
+         query(x(_)).",
+    );
+    assert!(e.contains("no clauses for template7/3"), "{e}");
+    // A ground goal, on the bottom-up routes, and under a negation.
+    let source = "0.3::r(1). q(X) :- member(G, [r, s]), call(G, X). query(q(_)).";
+    let e = refusal(source);
+    assert!(
+        e.contains("no clauses for s/1, called through call/2"),
+        "{e}"
+    );
+    let e = refusal("0.3::r(1). q :- member(G, [r, s]), \\+ call(G, 1). query(q).");
+    assert!(e.contains("no clauses for s/1"), "{e}");
+    // A goal of a built-in: ProbLog calls it, tddlog refuses it.
+    let e = refusal("q :- G = member(a), call(G, [a]). query(q).");
+    assert!(
+        e.contains("member/2, a built-in called through call/2"),
+        "{e}"
+    );
+    // Under `:- unknown(fail).` the goal without clauses fails, as in
+    // ProbLog.
+    assert_answers(&format!(":- unknown(fail). {source}"), &[("q(1)", 0.3)]);
+}
+
+#[test]
 fn a_call_nothing_asked_reaches_is_answered_as_problog_answers_it() {
     // ProbLog's answers: its resolution never calls `d`.
     assert_answers("0.3::c. b :- d. query(c).", &[("c", 0.3)]);

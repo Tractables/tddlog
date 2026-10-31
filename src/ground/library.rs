@@ -16,11 +16,16 @@
 //! clause `'$call<n>'(p(B1, ..., Bk), A1, ..., An) :- p(B1, ..., Bk, A1,
 //! ..., An)` (its first argument `p` where `k = 0`) for each predicate
 //! `p/(k + n)` that the program defines and names in an argument, the
-//! predicates a goal it builds can name. A goal bound to anything else has
-//! no clause, and the call fails. Each such clause is read in every mode
-//! of the calls of `call/N`: one whose body is safe only for the goal's own
-//! callers (a fact with a variable that only a caller binds) makes the
-//! grounding refuse the program, as an unsafe rule.
+//! predicates a goal it builds can name. Each such clause is read in every
+//! mode of the calls of `call/N`: one whose body is safe only for the
+//! goal's own callers (a fact with a variable that only a caller binds)
+//! makes the grounding refuse the program, as an unsafe rule. The call is
+//! preceded by the test `'$callable'(G, n, Callable, Unknown)`
+//! ([`Builtin::Callable`]), `Callable` the list of those predicates'
+//! names and arities less `n`: a goal bound to anything else has no
+//! clause, which ProbLog stops on (its `UnknownClause`), or, where the
+//! program says `:- unknown(fail).`, fails, unless it names a built-in,
+//! which tddlog does not call through a variable.
 
 use std::cell::RefCell;
 use std::sync::OnceLock;
@@ -28,7 +33,7 @@ use std::sync::OnceLock;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::terms::{calls, calls_mut};
-use crate::syntax::{Atom, Clause, Compound, Literal, Name, Program, Term};
+use crate::syntax::{Atom, Builtin, CONS, Clause, Compound, Literal, NIL, Name, Program, Term};
 
 /// The library's clauses. A random selection is made as ProbLog makes it,
 /// of the same random variables: each item in turn is chosen with its
@@ -244,7 +249,7 @@ pub(super) fn added(program: &Program) -> Option<Program> {
             }
         }
         let var = |prefix: &str, i: usize| Term::Var(format!("{prefix}{i}"));
-        for n in added {
+        for &n in &added {
             for (p, m) in preds.iter().filter(|(_, m)| *m >= n) {
                 let bound: Vec<Term> = (0..m - n).map(|i| var("B", i)).collect();
                 let goal = if bound.is_empty() {
@@ -268,13 +273,87 @@ pub(super) fn added(program: &Program) -> Option<Program> {
                 group += 1;
             }
         }
+        // The test before each call of a goal that is a variable.
+        let unknown = if program.unknown_fails {
+            "fail"
+        } else {
+            "error"
+        };
+        let unknown = Term::Const(unknown.into());
+        let tests: FxHashMap<String, Literal> = added
+            .iter()
+            .map(|&n| {
+                let callable = preds.iter().filter(|(_, m)| *m >= n).rev().fold(
+                    Term::Const(NIL.into()),
+                    |rest, (p, m)| {
+                        let item = Compound::term(
+                            "/".into(),
+                            vec![Term::Const(p.clone()), Term::Int((m - n) as i64)],
+                        );
+                        Compound::term(CONS.into(), vec![item, rest])
+                    },
+                );
+                let test = Literal::Builtin(
+                    Builtin::Callable,
+                    vec![
+                        Term::Var(String::new()),
+                        Term::Int(n as i64),
+                        callable,
+                        unknown.clone(),
+                    ],
+                    false,
+                );
+                (call_name(n), test)
+            })
+            .collect();
+        let test = |a: &Atom| {
+            let mut t = tests.get(&*a.name)?.clone();
+            if let Literal::Builtin(_, args, _) = &mut t {
+                args[0] = a.args[0].clone();
+            }
+            Some(t)
+        };
+        for c in &mut with.clauses {
+            guard(&mut c.body, &test);
+        }
+        for r in &mut with.query_rules {
+            guard(&mut r.body, &test);
+        }
     }
     Some(with)
+}
+
+/// `body` with the `test` of each call it makes, in it or in a findall's
+/// goal, put before the call.
+fn guard(body: &mut Vec<Literal>, test: &impl Fn(&Atom) -> Option<Literal>) {
+    let mut i = 0;
+    while i < body.len() {
+        if let Literal::Findall(fa) = &mut body[i] {
+            for conj in &mut fa.goal {
+                guard(conj, test);
+            }
+        }
+        let t = match &body[i] {
+            Literal::Pos(a) | Literal::Neg(a) => test(a),
+            _ => None,
+        };
+        if let Some(t) = t {
+            body.insert(i, t);
+            i += 1;
+        }
+        i += 1;
+    }
 }
 
 /// The name of the auxiliary predicate of `call/(n + 1)`.
 fn call_name(n: usize) -> String {
     format!("$call{n}")
+}
+
+/// Whether `name` is that of the auxiliary predicate of a `call/N`.
+pub(super) fn is_call_name(name: &str) -> bool {
+    name.strip_prefix("$call")
+        .is_some_and(|n| n.parse::<usize>().is_ok())
 }
 
 /// The names of the constants and compounds in the arguments of
