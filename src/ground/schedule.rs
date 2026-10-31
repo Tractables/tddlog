@@ -29,7 +29,8 @@
 //! are bound, and its result where an atom written before it binds it (it
 //! binds its result). Used by the grounder and by the magic-set rewrite,
 //! which passes the bindings sideways in the same order but for the atoms
-//! that wait ([`schedule_body`]).
+//! that wait ([`schedule_body`]), and in which a literal also waits for the
+//! atoms written before it ([`Order::Source`]).
 
 use crate::syntax::{CmpOp, Literal, Term};
 use rustc_hash::FxHashSet;
@@ -108,7 +109,10 @@ pub(crate) enum Order {
     /// bindings sideways: a demand follows the program's order, which
     /// ProbLog's resolution follows (`observe(Os) :- start(S), walk(Os, 0,
     /// S)` asks `walk` with `S` bound, which its clause `walk([], _, _)`
-    /// needs).
+    /// needs). Every other literal waits for the positive atoms written
+    /// before it, so that the demand it makes reads them: `\+ b(P, B)`
+    /// after `hop(K), P is K - 1` is demanded at the levels `hop` holds, not
+    /// at every level below the one asked, without end.
     Source,
     /// As the grounder joins them: an atom whose variables are all bound
     /// first, else the one that shares the most bound variables.
@@ -150,12 +154,15 @@ pub(crate) fn schedule_body(
         })
         .collect();
     let mut out: Vec<usize> = Vec::with_capacity(body.len());
+    // The literals before position `before`, in source order, that their
+    // variables allow.
     let release = |bound: &mut FxHashSet<String>,
                    pending: &mut Vec<usize>,
-                   out: &mut Vec<usize>| loop {
+                   out: &mut Vec<usize>,
+                   before: usize| loop {
         let mut progressed = false;
         let mut i = 0;
-        while i < pending.len() {
+        while i < pending.len() && pending[i] < before {
             let l = &body[pending[i]];
             let unbound: Vec<String> = literal_vars(l)
                 .into_iter()
@@ -172,8 +179,15 @@ pub(crate) fn schedule_body(
             break;
         }
     };
-    release(bound, &mut pending, &mut out);
     let mut atoms: Vec<usize> = (0..body.len()).filter(|&i| binding(i)).collect();
+    // In the order of the source a literal waits for the atoms written
+    // before it, as a call in ProbLog's resolution does: a demand it makes
+    // reads them. Otherwise it goes as early as its variables allow.
+    let before = |atoms: &[usize]| match order {
+        Order::Source => atoms.first().copied().unwrap_or(usize::MAX),
+        _ => usize::MAX,
+    };
+    release(bound, &mut pending, &mut out, before(&atoms));
     while !atoms.is_empty() {
         // A lookup first, then the atom that shares the most bound
         // variables, the first in source order among equals: one that
@@ -201,7 +215,7 @@ pub(crate) fn schedule_body(
             bound.insert(v);
         }
         out.push(l);
-        release(bound, &mut pending, &mut out);
+        release(bound, &mut pending, &mut out, before(&atoms));
     }
     if let Some(&stuck) = pending.first() {
         return Err(stuck);
@@ -222,17 +236,21 @@ mod tests {
 
     /// The switches, positive or negated, come after every other literal,
     /// in source order; a negative literal that is no switch is placed as
-    /// soon as its variables are bound.
+    /// soon as its variables are bound, and in the order of the source
+    /// after the atoms written before it.
     #[test]
     fn switches_come_last() {
         let p = parse_program("h(X,Y) :- s(X), q(X,Y), \\+ t(X), r(Y), \\+ w(X).\n").unwrap();
-        let order = schedule_body(
-            &p.clauses[0].body,
-            &mut FxHashSet::default(),
-            |i| matches!(i, 0 | 2),
-            Order::Source,
-        );
-        assert_eq!(order, Ok(vec![1, 4, 3, 0, 2]));
+        let order = |order| {
+            schedule_body(
+                &p.clauses[0].body,
+                &mut FxHashSet::default(),
+                |i| matches!(i, 0 | 2),
+                order,
+            )
+        };
+        assert_eq!(order(Order::Join), Ok(vec![1, 4, 3, 0, 2]));
+        assert_eq!(order(Order::Source), Ok(vec![1, 3, 4, 0, 2]));
     }
 
     /// An atom that shares no variable with those bound waits for one
