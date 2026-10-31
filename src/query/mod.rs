@@ -209,7 +209,7 @@ impl QueryEvaluation {
         // The walk sums out what no later join reads, and no query: the
         // first run holds the queries' variables before the first join.
         let mut walk = EvidenceWalk::new(observed, &backend.vtree());
-        walk.sum_out(&backend.vtree(), &weights);
+        walk.sum_out(backend.vtree(), &weights);
         let settled = &compiled.for_queries.settled;
         Self {
             weights,

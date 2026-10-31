@@ -205,6 +205,8 @@ struct Boundary {
     width: usize,
     /// The facts at or before it.
     facts: usize,
+    /// Whether only single-literal rules and no facts follow it.
+    trailing: bool,
 }
 
 /// Each atom's position in `order`, and the boundaries of `order` that a
@@ -216,16 +218,24 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
         at[a as usize] = p as u32;
     }
     // Each atom's last reader's position, and each head's body literals.
-    let mut last = vec![0u32; gp.num_atoms()];
     let mut weight = vec![0usize; gp.num_atoms()];
+    let mut last = vec![0u32; gp.num_atoms()];
     for r in &gp.rules {
-        let p = at[r.head as usize];
         weight[r.head as usize] += r.body.len().max(1);
+        let p = at[r.head as usize];
         for l in &r.body {
             let b = l.atom() as usize;
             last[b] = last[b].max(p);
         }
     }
+    let until = if !gp.evidence.is_empty() && gp.queries.len() == 1 {
+        n
+    } else {
+        order
+            .iter()
+            .rposition(|&a| gp.is_fact(a) || weight[a as usize] > 1)
+            .unwrap_or(0)
+    };
     // The atoms, and the derived atoms, that start and stop crossing at
     // each position.
     let mut change = vec![(0isize, 0isize); n + 1];
@@ -237,25 +247,18 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
             change[to] = (change[to].0 - 1, change[to].1 - d);
         }
     }
-    let until = if !gp.evidence.is_empty() && gp.queries.len() == 1 {
-        n
-    } else {
-        order
-            .iter()
-            .rposition(|&a| gp.is_fact(a) || weight[a as usize] > 1)
-            .unwrap_or(0)
-    };
     let mut boundaries = Vec::new();
     let (mut width, mut derived, mut facts) = (0isize, 0isize, 0);
     for (p, &a) in order.iter().enumerate() {
         (width, derived) = (width + change[p].0, derived + change[p].1);
         if gp.is_fact(a) {
             facts += 1;
-        } else if derived > 0 && p < until {
+        } else if derived > 0 {
             boundaries.push(Boundary {
                 after: p,
                 width: width as usize,
                 facts,
+                trailing: p >= until,
             });
         }
     }
@@ -289,7 +292,7 @@ fn cuts(boundaries: &[Boundary]) -> Vec<Boundary> {
         let best = (i..=end)
             .min_by_key(|&j| (boundaries[j].width, j))
             .expect("a window");
-        if boundaries[best].width > WIDEST {
+        if boundaries[best].width > WIDEST || boundaries[best].trailing {
             i = end + 1;
             continue;
         }

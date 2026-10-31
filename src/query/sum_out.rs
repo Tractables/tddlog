@@ -76,67 +76,30 @@ fn pairs_at(f: &Tdd, nodes: &[VtreeIdx]) -> usize {
     nodes.iter().map(|&t| level_pairs(f.level(t))).sum()
 }
 
-/// The finished subtrees of the walk's joins, and the facts' weights to
-/// sum them out under (see the module documentation).
-pub(super) struct SumOut {
-    /// Per slot, the program variables of the observations conjoined into
-    /// it, ascending.
-    support: Vec<Vec<VarId>>,
-    /// The global vtree's leaves from left to right: each program
-    /// variable's position, each node's positions `[lo, hi)`, each node's
-    /// depth, and for position `k`, the node whose children split `k` from
-    /// `k + 1`; `shallowest[j][k]` is the shallowest of those over `k ..
-    /// k + 2^j`. The global node over positions `lo < hi` is the
-    /// shallowest split between them.
+/// The global vtree's leaves from left to right, built on the first join
+/// that looks for finished subtrees: each program variable's position,
+/// each node's positions `[lo, hi)`, each node's depth, and for position
+/// `k`, the node whose children split `k` from `k + 1`; `shallowest[j][k]`
+/// is the shallowest of those over `k .. k + 2^j`. The global node over
+/// positions `lo < hi` is the shallowest split between them.
+struct TreeIndex {
     position: Vec<u32>,
     range: Vec<(u32, u32)>,
     depth: Vec<u32>,
     split: Vec<VtreeIdx>,
     leaf_at: Vec<VtreeIdx>,
     shallowest: Vec<Vec<u32>>,
-    /// A Fenwick tree over positions: the slots holding each variable;
-    /// and by program variable, the same holdings one at a time.
+    /// A Fenwick tree over positions: the slots holding each variable.
     held: Vec<i64>,
-    holders: Vec<u32>,
-    /// The facts' weights, by program variable.
-    pos: Vec<f64>,
-    neg: Vec<f64>,
-    rat: Vec<Option<LiteralWeights<BigRational>>>,
-    /// Whether any query holds variables after the walk, and the least
-    /// pairs a finished subtree holds for a join to sum it out.
-    has_queries: bool,
-    min_pairs: usize,
-    /// The weight stores of the scopes joined on, by their vtree's address,
-    /// each with its scope, which keeps the address its own; and their
-    /// variables, all told. A store is built once a scope and copied empty
-    /// (`WeightStore::empty_like`, which shares its table) for each join.
-    stores: FxHashMap<usize, (VtreeScope, WeightStore)>,
-    stored_vars: usize,
-    /// `targets`' buffers, per node of the scope: the positions under it,
-    /// and the result's variables under it where it is finished.
-    ends: Vec<(u32, u32)>,
-    own: Vec<Option<(u32, u8)>>,
     var_mask: Vec<u8>,
-    top_idx: Vec<u32>,
-    f_seen: Vec<u32>,
-    f_gen: u32,
-    /// The join begun: its result's variables, and the variables its
-    /// operands share, whose holdings it dropped.
-    merged: Vec<VarId>,
-    shared: Vec<VarId>,
-    /// The joins that summed out as they were built, and the other joins
-    /// with an operand that carries weights.
-    pub(super) summing: usize,
-    pub(super) weighted: usize,
 }
 
-impl SumOut {
-    /// On the global vtree `tree`, with the facts' weights `w`.
-    pub(super) fn new(tree: &tididi::Vtree, w: &Probabilities) -> Self {
+impl TreeIndex {
+    fn new(tree: &tididi::Vtree, holders: &[u32]) -> Self {
         let n = tree.num_nodes();
         let mut range = vec![(0u32, 0u32); n];
         let mut depth = vec![0u32; n];
-        let mut leaf_at = Vec::new();
+        let mut leaf_at = Vec::with_capacity(tree.num_vars() as usize);
         let mut position = vec![0u32; tree.num_vars() as usize + 1];
         // Left before right, each node's range closed after its children's.
         let mut stack = vec![(tree.root(), false)];
@@ -184,41 +147,31 @@ impl SumOut {
             shallowest.push(level);
             span *= 2;
         }
-        SumOut {
-            support: Vec::new(),
+        let mut held = vec![0i64; leaves + 1];
+        for (v, &h) in holders.iter().enumerate().skip(1) {
+            if h != 0 {
+                held[position[v] as usize + 1] = i64::from(h);
+            }
+        }
+        for i in 1..held.len() {
+            let j = i + (i & i.wrapping_neg());
+            if j < held.len() {
+                held[j] += held[i];
+            }
+        }
+        TreeIndex {
             position,
             range,
             depth,
             split,
             leaf_at,
             shallowest,
-            held: vec![0; leaves + 1],
-            holders: vec![0; tree.num_vars() as usize + 1],
-            pos: w.pos.clone(),
-            neg: w.neg.clone(),
-            rat: vec![None; w.pos.len()],
-            has_queries: false,
-            min_pairs: MIN_QUERY_SUM_PAIRS,
-            stores: FxHashMap::default(),
-            stored_vars: 0,
-            ends: Vec::new(),
-            own: Vec::new(),
+            held,
             var_mask: vec![0; tree.num_vars() as usize + 1],
-            top_idx: Vec::new(),
-            f_seen: Vec::new(),
-            f_gen: 0,
-            merged: Vec::new(),
-            shared: Vec::new(),
-            summing: 0,
-            weighted: 0,
         }
     }
 
-    fn hold(&mut self, v: VarId, delta: i64) {
-        let h = &mut self.holders[v.0 as usize];
-        *h = h
-            .checked_add_signed(delta as i32)
-            .expect("a variable's holdings are never negative");
+    fn add(&mut self, v: VarId, delta: i64) {
         let mut i = self.position[v.0 as usize] as usize + 1;
         while i < self.held.len() {
             self.held[i] += delta;
@@ -249,6 +202,86 @@ impl SumOut {
             y
         } else {
             x
+        }
+    }
+}
+
+/// The finished subtrees of the walk's joins, and the facts' weights to
+/// sum them out under (see the module documentation).
+pub(super) struct SumOut {
+    /// Per slot, the program variables of the observations conjoined into
+    /// it, ascending.
+    support: Vec<Vec<VarId>>,
+    tree: Arc<tididi::Vtree>,
+    index: Option<TreeIndex>,
+    /// By program variable, the slots holding it.
+    holders: Vec<u32>,
+    /// The facts' weights, by program variable.
+    pos: Vec<f64>,
+    neg: Vec<f64>,
+    rat: Vec<Option<LiteralWeights<BigRational>>>,
+    /// Whether any query holds variables after the walk, and the least
+    /// pairs a finished subtree holds for a join to sum it out.
+    has_queries: bool,
+    min_pairs: usize,
+    /// The weight stores of the scopes joined on, by their vtree's address,
+    /// each with its scope, which keeps the address its own; and their
+    /// variables, all told. A store is built once a scope and copied empty
+    /// (`WeightStore::empty_like`, which shares its table) for each join.
+    stores: FxHashMap<usize, (VtreeScope, WeightStore)>,
+    stored_vars: usize,
+    /// `targets`' buffers, per node of the scope: the positions under it,
+    /// and the result's variables under it where it is finished.
+    ends: Vec<(u32, u32)>,
+    own: Vec<Option<(u32, u8)>>,
+    top_idx: Vec<u32>,
+    f_seen: Vec<u32>,
+    f_gen: u32,
+    /// The join begun: its result's variables, and the variables its
+    /// operands share, whose holdings it dropped.
+    merged: Vec<VarId>,
+    shared: Vec<VarId>,
+    /// The joins that summed out as they were built, and the other joins
+    /// with an operand that carries weights.
+    pub(super) summing: usize,
+    pub(super) weighted: usize,
+}
+
+impl SumOut {
+    /// On the global vtree `tree`, with the facts' weights `w`.
+    pub(super) fn new(tree: Arc<tididi::Vtree>, w: &Probabilities) -> Self {
+        let holders = vec![0; tree.num_vars() as usize + 1];
+        SumOut {
+            support: Vec::new(),
+            tree,
+            index: None,
+            holders,
+            pos: w.pos.clone(),
+            neg: w.neg.clone(),
+            rat: vec![None; w.pos.len()],
+            has_queries: false,
+            min_pairs: MIN_QUERY_SUM_PAIRS,
+            stores: FxHashMap::default(),
+            stored_vars: 0,
+            ends: Vec::new(),
+            own: Vec::new(),
+            top_idx: Vec::new(),
+            f_seen: Vec::new(),
+            f_gen: 0,
+            merged: Vec::new(),
+            shared: Vec::new(),
+            summing: 0,
+            weighted: 0,
+        }
+    }
+
+    fn hold(&mut self, v: VarId, delta: i64) {
+        let h = &mut self.holders[v.0 as usize];
+        *h = h
+            .checked_add_signed(delta as i32)
+            .expect("a variable's holdings are never negative");
+        if let Some(idx) = &mut self.index {
+            idx.add(v, delta);
         }
     }
 
@@ -389,7 +422,6 @@ impl SumOut {
         fa: &Formula,
         fb: &Formula,
         pairs: usize,
-        weighted: bool,
         last: bool,
     ) -> Vec<VtreeIdx> {
         let min = if self.has_queries { self.min_pairs } else { 0 };
@@ -405,7 +437,7 @@ impl SumOut {
         };
         if pairs == 0
             || pairs < min
-            || last && self.has_queries && min > 0 && !weighted
+            || last && self.has_queries && min > 0
             || min > 0
                 && (!small.iter().any(|v| self.holders[v.0 as usize] == 1)
                     || !large.iter().any(|v| self.holders[v.0 as usize] == 1))
@@ -419,16 +451,19 @@ impl SumOut {
         {
             return Vec::new();
         }
+        let idx = self
+            .index
+            .get_or_insert_with(|| TreeIndex::new(&self.tree, &self.holders));
         if !exact {
             for &v in large {
-                self.var_mask[v.0 as usize] = 2;
+                idx.var_mask[v.0 as usize] = 2;
             }
         }
         for &v in small {
-            self.var_mask[v.0 as usize] = 1;
+            idx.var_mask[v.0 as usize] = 1;
         }
         for &v in &self.shared {
-            self.var_mask[v.0 as usize] = 3;
+            idx.var_mask[v.0 as usize] = 3;
         }
         let global = |local: VarId| match scope.vars() {
             Some(vars) => vars[local.0 as usize - 1],
@@ -447,9 +482,9 @@ impl SumOut {
         for t in tree.bottomup() {
             if tree.node(t).is_leaf() {
                 let v = global(tree.leaf_var(t)).0 as usize;
-                let p = self.position[v];
+                let p = idx.position[v];
                 ends[t.idx()] = (p, p);
-                let m = self.var_mask[v];
+                let m = idx.var_mask[v];
                 let mine = u32::from(exact || m != 0);
                 if self.holders[v] == mine {
                     own[t.idx()] = Some((
@@ -475,19 +510,11 @@ impl SumOut {
                 continue;
             };
             let (mine, mask) = (ml + mr, kl | kr);
-            if min == 0 {
-                let (glo, ghi) = self.range[self.over(lo, hi).idx()];
-                if self.held_before(ghi) - self.held_before(glo) == i64::from(mine) {
-                    own[t.idx()] = Some((mine, mask));
+            own[t.idx()] = Some((mine, mask));
+            if mine > 0 && (min == 0 || mask == 3) {
+                let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
+                if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
                     found.push(t);
-                }
-            } else {
-                own[t.idx()] = Some((mine, mask));
-                if mask == 3 {
-                    let (glo, ghi) = self.range[self.over(lo, hi).idx()];
-                    if self.held_before(ghi) - self.held_before(glo) == i64::from(mine) {
-                        found.push(t);
-                    }
                 }
             }
         }
@@ -510,7 +537,7 @@ impl SumOut {
                 while let Some((u, done)) = stack.pop() {
                     if tree.node(u).is_leaf() {
                         let v = global(tree.leaf_var(u));
-                        let m = self.var_mask[v.0 as usize];
+                        let m = idx.var_mask[v.0 as usize];
                         let m = if m == 0 && !exact {
                             0
                         } else if m != 0 {
@@ -528,8 +555,8 @@ impl SumOut {
                             && mine > 0
                         {
                             let (lo, hi) = ends[u.idx()];
-                            let (glo, ghi) = self.range[self.over(lo, hi).idx()];
-                            if self.held_before(ghi) - self.held_before(glo) == i64::from(mine) {
+                            let (glo, ghi) = idx.range[idx.over(lo, hi).idx()];
+                            if idx.held_before(ghi) - idx.held_before(glo) == i64::from(mine) {
                                 group.push(u);
                             }
                         }
@@ -600,11 +627,11 @@ impl SumOut {
         }
         if !exact {
             for &v in &self.merged {
-                self.var_mask[v.0 as usize] = 0;
+                idx.var_mask[v.0 as usize] = 0;
             }
         } else {
             for &v in small {
-                self.var_mask[v.0 as usize] = 0;
+                idx.var_mask[v.0 as usize] = 0;
             }
         }
         (self.ends, self.own) = (ends, own);

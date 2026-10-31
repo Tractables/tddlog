@@ -539,7 +539,7 @@ impl EvidenceWalk {
 
     /// The joins sum out what no later join reads, under the facts'
     /// weights `w`, and no query ([`Self::hold`]).
-    pub(super) fn sum_out(&mut self, tree: &tididi::Vtree, w: &crate::eval::Probabilities) {
+    pub(super) fn sum_out(&mut self, tree: Arc<tididi::Vtree>, w: &crate::eval::Probabilities) {
         if self.observed.len() > 1 {
             self.sum_out = Some(SumOut::new(tree, w));
         }
@@ -1304,7 +1304,6 @@ impl EvidenceWalk {
                     &fa,
                     &fb,
                     pairs,
-                    weighted,
                     last && self.waiting.is_empty(),
                 )
             }
