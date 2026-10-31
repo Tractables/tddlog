@@ -224,6 +224,15 @@ The parser reads ProbLog without cut:
   `:- unknown(fail).`; so is a goal that is a conjunction or a
   disjunction, which ProbLog's call/1 looks up as a predicate `,/2` or
   `;/2`;
+- `clause/2` and `clause/3`, where the program names them, over the
+  program's clauses as ProbLog lists them (`syntax/parser.rs`): `true`
+  the body of a fact, 1.0 the probability where none is written, and
+  the head, the body and the probability unified apart, as ProbLog
+  unifies them, so that a variable the head binds stays free in the
+  body and its answer, holding a variable, is refused. ProbLog lists an
+  annotated disjunction, a probabilistic rule and a loaded library's
+  clauses as clauses of its own making; a program with one of them is
+  refused;
 - `findall/3`, `all/3` and `all_or_none/3`, over probabilistic goals
   too: in each world the list of the solutions whose proofs hold there,
   once per proof and in ProbLog's order (`all/3` and `all_or_none/3`

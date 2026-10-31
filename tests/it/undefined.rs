@@ -79,9 +79,8 @@ fn a_builtin_of_problogs_that_tddlog_does_not_evaluate_is_refused() {
         "s(X) :- succ(1, X). query(s(_)).",
         "t :- nextto(a, b, [a, b]). query(t).",
         "u :- findall(X, (member(X, [1, 2]), integer(X)), _). query(u).",
-        // Asked directly, as ProbLog's clause_pred.pl asks.
+        // Asked directly.
         "query(nextto(a, b, [a, b])).",
-        "a :- b(X). query(clause(a, b(Y))).",
     ] {
         let e = refusal(source);
         assert!(e.contains("no clauses for"), "{source}: {e}");

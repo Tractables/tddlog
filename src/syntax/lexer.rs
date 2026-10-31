@@ -435,6 +435,13 @@ impl<'a> Lexer<'a> {
         &self.names[id as usize]
     }
 
+    /// Whether the source read so far spells the name `s`.
+    pub(crate) fn spells(&mut self, s: &str) -> bool {
+        let names = self.names.len();
+        self.place(s.as_bytes());
+        self.names.len() == names
+    }
+
     /// The name of text `s`, shared with the names the source spells so:
     /// an operator's or a list's, which the parser names.
     pub(crate) fn intern(&mut self, s: &str) -> Name {

@@ -588,6 +588,56 @@ fn call_calls_the_built_ins_and_constructs_a_program_names() {
 }
 
 #[test]
+fn clause_lists_the_programs_clauses_as_problog_does() {
+    // ProbLog's answers, one query at a time.
+    let program = "0.4::a(1). 0.5::b(1).
+         c(X) :- a(X), \\+ b(X).
+         d(f(X), g(X)) :- a(X).
+         e :- a(1) ; b(1).
+         t(1). t(2).
+         q1(P) :- clause(a(1), true, P).
+         q2(B) :- clause(c(1), B).
+         q3(H) :- clause(H, (a(1) ; b(1))).
+         q4(Y) :- clause(d(f(2), Y), _).
+         q5(B) :- clause(e, B).
+         q6(L) :- findall(X, clause(t(X), true), L).
+         q7(P) :- clause(t(2), true, P).
+         q8 :- clause(e, (a(1) ; b(1))), a(1).";
+    assert_answers(
+        &format!(
+            "{program} query(q1(_)). query(q3(_)). query(q4(_)). query(q5(_)).
+             query(q6(_)). query(q7(_)). query(q8)."
+        ),
+        &[
+            ("q1(0.4)", 1.0),
+            ("q3(e)", 1.0),
+            ("q4(g(2))", 1.0),
+            ("q5(a(1); b(1))", 1.0),
+            ("q6([1, 2])", 1.0),
+            ("q7(1.0)", 1.0),
+            ("q8", 0.4),
+        ],
+    );
+    // ProbLog unifies the head and the body apart: c(1) leaves the body's
+    // X free, an answer with a variable.
+    let e = refusal(&format!("{program} query(q2(_))."));
+    assert!(
+        e.contains("a query answered by a term with variables"),
+        "{e}"
+    );
+    // ProbLog lists an annotated disjunction, a probabilistic rule and a
+    // library's clauses as clauses of its own making.
+    for source in [
+        "0.3::b(1) ; 0.5::b(2) :- a. a. q(B) :- clause(a, B). query(q(_)).",
+        "0.3::r :- a. a. q(B) :- clause(a, B). query(q(_)).",
+        ":- use_module(library(lists)). a. q(B) :- clause(a, B). query(q(_)).",
+    ] {
+        let e = refusal(source);
+        assert!(e.contains("clause/2,3 in a program with"), "{e}");
+    }
+}
+
+#[test]
 fn equality_builds_terms_and_is_evaluates_them() {
     // `=` unifies terms: `3 - 1` is a term, which `is` and `=:=` evaluate.
     assert_answers(

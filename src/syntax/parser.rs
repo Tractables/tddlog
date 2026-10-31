@@ -147,10 +147,124 @@ fn parse(
         }
         p.group += 1;
     }
-    match p.lexer.error() {
-        Some(e) => Err(e.into()),
-        None => parsed.map(|()| (prog, p.consults)),
+    if let Some(e) = p.lexer.error() {
+        return Err(e.into());
     }
+    parsed?;
+    if p.consults.is_none() && p.lexer.spells("clause") {
+        clause_facts(src, p.group, &mut prog)?;
+    }
+    Ok((prog, p.consults))
+}
+
+/// ProbLog's clause/2 and clause/3, where the program names either and
+/// defines neither. They read the program's clauses as terms, which the
+/// program read from `src` does not keep, so `src` is read again, each
+/// clause as a term ([`Parser::clause_term`]), into a fact
+/// `clause(Head, Body, P)` per clause, in the program's order and of
+/// groups from `group` on; and `clause(H, B) :- clause(H, B, _)`.
+///
+/// ProbLog unifies a call with each of a clause's head, body and
+/// probability apart: a variable the head binds stays free in the body
+/// (`clause(c(1), B)` of `c(X) :- a(X), b(X)` gives `B = (a(X), b(X))`).
+/// The fact's three terms have their variables named apart likewise, so
+/// that such an answer holds a variable and is refused, as answers with
+/// variables are. ProbLog lists an annotated disjunction or a
+/// probabilistic rule as clauses of its own making, and the clauses of a
+/// library the program loads: a program with either is refused.
+fn clause_facts(src: &str, mut group: u32, prog: &mut Program) -> Result<(), ParseError> {
+    let defines = |arity: usize| {
+        prog.clauses.iter().any(|c| {
+            c.heads
+                .iter()
+                .any(|h| &*h.atom.name == "clause" && h.atom.args.len() == arity)
+        })
+    };
+    if defines(2) || defines(3) {
+        return Ok(());
+    }
+    let mut p = Parser::new(src, None);
+    let (mut facts, mut named, mut refused) = (Vec::new(), false, None);
+    while !p.at(Tok::Eof) {
+        p.anon = 0;
+        let line = p.line();
+        match p.clause_term()? {
+            ClauseTerm::Listed(fact) => {
+                named |= fact.iter().any(names_clause);
+                facts.push(fact);
+            }
+            ClauseTerm::Rewritten => {
+                refused.get_or_insert((
+                    line,
+                    "an annotated disjunction, a probabilistic rule or a probability that is \
+                     not a number, which ProbLog lists as clauses of its own making",
+                ));
+            }
+            ClauseTerm::Directive(t) => {
+                if matches!(t.as_compound(), Some((name, _)) if &**name == "use_module") {
+                    refused.get_or_insert((
+                        line,
+                        "a library, whose clauses ProbLog lists too and tddlog does not hold",
+                    ));
+                }
+            }
+        }
+    }
+    if !named {
+        return Ok(());
+    }
+    if let Some((line, what)) = refused {
+        return Err(ParseError {
+            line,
+            msg: format!("clause/2,3 in a program with {what}"),
+        });
+    }
+    let name = p.lexer.intern("clause");
+    for [head, body, prob] in facts {
+        let (body, prob) = (renamed(&body), renamed(&renamed(&prob)));
+        let fact = Atom::new(name.clone(), vec![head, body, prob]);
+        prog.clauses.push(Clause::rule(fact, Vec::new(), group));
+        group += 1;
+    }
+    let (h, b) = (Term::Var("H".into()), Term::Var("B".into()));
+    let all = Atom::new(
+        name.clone(),
+        vec![h.clone(), b.clone(), Term::Var("_P".into())],
+    );
+    prog.clauses.push(Clause::rule(
+        Atom::new(name, vec![h, b]),
+        vec![Literal::Pos(all)],
+        group,
+    ));
+    Ok(())
+}
+
+/// Whether `t` holds a compound `clause/2` or `clause/3`.
+fn names_clause(t: &Term) -> bool {
+    let mut stack = vec![t];
+    while let Some(t) = stack.pop() {
+        if let Term::Compound(c) = t {
+            if &*c.name == "clause" && matches!(c.args.len(), 2 | 3) {
+                return true;
+            }
+            stack.extend(c.args.iter());
+        }
+    }
+    false
+}
+
+/// A clause read as a term, for ProbLog's clause/2,3 ([`clause_facts`]).
+enum ClauseTerm {
+    /// A directive, `:- T.`, as `T`.
+    Directive(Term),
+    /// A clause that clause/3 lists as written, a rule without a
+    /// probability or a fact: its head, its body (`true` for a fact) and
+    /// its probability (1.0 where none is written).
+    Listed([Term; 3]),
+    /// An annotated disjunction or a probabilistic rule, which ProbLog
+    /// lists as clauses of its own making, or a fact whose probability is
+    /// not a number.
+    Rewritten,
 }
 
 /// Body syntax tree before flattening to disjunctive normal form.
@@ -434,7 +548,9 @@ fn special(name: &str, arity: usize) -> bool {
 }
 
 impl<'a> Parser<'a> {
-    /// A parser at the start of `src`, its first two tokens read.
+    /// A parser at the start of `src`, its first two tokens read, which
+    /// reads the program, or its `consult/1` directives where `consults`
+    /// is given.
     fn new(src: &'a str, consults: Option<Vec<Consult>>) -> Self {
         let eof = || Spanned {
             tok: Tok::Eof,
@@ -457,6 +573,59 @@ impl<'a> Parser<'a> {
         p.bump();
         p.bump();
         p
+    }
+
+    /// The clause at hand as a term, for ProbLog's clause/2,3
+    /// ([`clause_facts`]).
+    fn clause_term(&mut self) -> Result<ClauseTerm, ParseError> {
+        if self.at(Tok::Neck) {
+            self.bump();
+            let t = self.term(1200)?.into_term();
+            self.expect(Tok::Dot)?;
+            return Ok(ClauseTerm::Directive(t));
+        }
+        let mut heads = 0;
+        let (mut head, mut prob);
+        loop {
+            heads += 1;
+            prob = match (self.peek(), self.peek2()) {
+                (Tok::Float(x), Tok::DoubleColon) => Some(Some(Term::Float(F64::rounded(x)))),
+                (Tok::Int(i), Tok::DoubleColon) => Some(Some(Term::Int(i))),
+                _ => None,
+            };
+            if prob.is_some() {
+                self.bump();
+                self.bump();
+            }
+            head = self.term(999)?.into_term();
+            if prob.is_none() && self.at(Tok::DoubleColon) {
+                // A probability that is not a number.
+                self.bump();
+                head = self.term(999)?.into_term();
+                prob = Some(None);
+            }
+            if !self.at(Tok::Semi) {
+                break;
+            }
+            self.bump();
+        }
+        let body = if self.at(Tok::Neck) {
+            self.bump();
+            Some(self.term(1200)?.into_term())
+        } else {
+            None
+        };
+        self.expect(Tok::Dot)?;
+        Ok(match (heads, prob, body) {
+            (1, None, body) => {
+                let body = body.unwrap_or_else(|| Term::Const(self.lexer.intern("true")));
+                ClauseTerm::Listed([head, body, Term::Float(F64::rounded(1.0))])
+            }
+            (1, Some(Some(p)), None) => {
+                ClauseTerm::Listed([head, Term::Const(self.lexer.intern("true")), p])
+            }
+            _ => ClauseTerm::Rewritten,
+        })
     }
 
     fn peek(&self) -> Tok<'a> {
