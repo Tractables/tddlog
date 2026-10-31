@@ -59,9 +59,12 @@ def read_expected(path):
 
 
 def norm(term):
-    """Normalize a term's text: drop spaces and quotes around simple atoms."""
+    """Normalize a term's text: drop spaces, and quotes around simple atoms
+    and around names of symbol characters, which ProbLog prints as its
+    source or a built-in spelt them (compare/3's '<')."""
     t = re.sub(r'\s+', '', term)
     t = re.sub(r"'([a-z][A-Za-z0-9_]*)'", r'\1', t)
+    t = re.sub(r"'([-+*/^<>=~:.?@#&$]+)'", r'\1', t)
     return t
 
 
