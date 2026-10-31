@@ -385,6 +385,10 @@ fn list_items(mut t: &Term) -> Option<Vec<&Term>> {
 }
 
 /// Whether the terms `a` and `b`, their variables named apart, unify.
+/// The switches are read before grounding, on the source's terms; the
+/// grounder's unifiers work on its interned terms (`ground/engine.rs`,
+/// `ground/engine/topdown.rs`) or write a unification as literals
+/// (`ground/terms.rs`), so this and [`matches`] are the source terms' own.
 fn unifiable(a: &Term, b: &Term) -> bool {
     fn apart(t: &Term) -> Term {
         match t {
