@@ -724,9 +724,11 @@ fn run_within(
             // A formula past the watch: the trial's next attempt holds it.
             Stop::Size(pairs) => t.hold(pairs, first_pairs),
             // Its target spent, the trial's next doubles until it leaves
-            // the trial more than twice the work the stop lost: the step
-            // the stop cut short starts over, and each time it is cut
-            // short its next try has at least twice the work (rus_20_40,
+            // the trial more than twice the work the stop lost. A turn
+            // that ended at a step it kept lost nothing; where the guard
+            // stopped an operation, the step it cut short starts over, and
+            // each time it is cut short its next try has at least twice the
+            // work (rus_20_40,
             // whose last join of 3.3 G units was otherwise stopped at
             // 2.1 G and given 2.1 G again).
             Stop::Work => {
@@ -848,11 +850,14 @@ impl Stop {
 
 /// One attempt of trial `t` within `bounds`: it compiles what is not
 /// compiled yet, then runs the query phase, each resuming where its last
-/// attempt stopped, and may spend the bounds' work, besides what settling
-/// the names of `program` and `decision` spends (`tp::settle`). A formula
-/// it completes past the watch stops it by size; an operation in flight past
-/// twice the watch in nodes, or sixteen times it in pairs, is lost and
-/// built again in a later turn. Its compile stops between components where
+/// attempt stopped. Its turn ends at the first step it keeps once it has
+/// spent the bounds' work, besides what settling the names of `program`
+/// and `decision` spends (`tp::settle`), and the next attempt goes on from
+/// that step (`tp::TddBackend::pause`). An operation still in flight at
+/// twice the work is stopped, and lost. A formula it completes past the
+/// watch stops it by size; an operation in flight past twice the watch in
+/// nodes, or sixteen times it in pairs, is lost and built again in a later
+/// turn. Its compile stops between components where
 /// it is projected to finish more than [`PROJECTED_DOUBLINGS`] doublings
 /// past its target ([`Bounds`], [`tp::Horizon`]): the turn cannot finish
 /// it, and the other trials take theirs before it goes on. Records the
@@ -889,8 +894,12 @@ fn attempt(
         let start_work = engine.limits().work_units();
         let mut limits = LimitConfig::none().with_memory_budget_bytes(memory_bytes);
         if let Some(Bounds { pairs, work, .. }) = bounds {
+            // The turn ends at the first step kept past its work
+            // (`tp::TddBackend::pause`); one operation that runs on to
+            // twice the work is stopped and lost.
+            let guard_at = start_work.saturating_add(work.saturating_mul(2));
             let stop = StopRules::default()
-                .with_unconditional(Some(StopAt::WorkUnits(start_work.saturating_add(work))))
+                .with_unconditional(Some(StopAt::WorkUnits(guard_at)))
                 .with_after_pairs(Some((
                     (pairs as u64).saturating_mul(16),
                     StopAt::WorkUnits(0),
@@ -907,6 +916,9 @@ fn attempt(
             mark: t.target / 2,
         });
         let backend = tp::TddBackend::resume(engine, tree.clone(), kept);
+        if let Some(b) = bounds {
+            backend.end_turn_at(start_work.saturating_add(b.work));
+        }
         let evaluated = t.evaluation.run(
             gp,
             deps,

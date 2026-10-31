@@ -199,7 +199,7 @@ fn a_search_past_its_budget_waits_for_the_compile_to_spend_the_excess() {
 /// The answers of `gp` compiled on the `closed` layout under the watches
 /// in turn and then none, as `auto` resumes a trial round after round,
 /// and the compile's clause memo counts, among them the loops the watch
-/// refused and the runs kept (`clauses::Refused`).
+/// refused and the runs kept (`clauses::Held`).
 fn compile_retaking(
     gp: &GroundProgram,
     watches: impl Iterator<Item = usize>,
@@ -318,5 +318,89 @@ fn a_loop_the_watch_refused_is_taken_by_the_next_run() {
     assert_eq!(
         memo.retaken, memo.refused,
         "a kept loop the next run built again"
+    );
+}
+
+/// A run whose turn ends inside a loop of clauses holds the loop before
+/// its next body, and the next run goes on with it from there rather than
+/// conjoin its bodies again (`clauses::Held`): the runs together spend
+/// about the work of one, and answer as the worlds say. `q`'s loop is of
+/// bodies that read a derived atom each, a disjunction no factoring
+/// shares, and each run's turn ends at the first step it keeps.
+#[test]
+fn a_loop_at_the_end_of_its_turn_goes_on_in_the_next_run() {
+    let n = 12;
+    let p = |i: usize, k: usize| 0.05 + 0.9 * ((i * 7 + k * 3) % 17) as f64 / 17.0;
+    let mut source = String::new();
+    for i in 0..n {
+        source += &format!(
+            "{}::g({i}). {}::h({i}). {}::f({i}).\nr({i}) :- g({i}).\nr({i}) :- h({i}).\n",
+            p(i, 0),
+            p(i, 1),
+            p(i, 2)
+        );
+    }
+    source += "q :- r(I), f(I).\nquery(q).\n";
+    let gp = ground(
+        &parse_program(&source).expect("parses"),
+        &GroundOptions {
+            views: false,
+            ..GroundOptions::default()
+        },
+    )
+    .expect("grounds");
+    let r = |i: usize| 1.0 - (1.0 - p(i, 0)) * (1.0 - p(i, 1));
+    let want = 1.0 - (0..n).map(|i| 1.0 - r(i) * p(i, 2)).product::<f64>();
+    let deps = Deps::of(&gp);
+    let (vtree::Layout { vtree, order, .. }, _) =
+        vtree::build(&gp, &deps, Kind::Closed).expect("builds");
+    // The answer, the compile's work and its clause memo counts, in runs
+    // whose turns end after `turn` work units, or in one run.
+    let compile = |turn: Option<u64>| {
+        vtree.context().run(|engine| {
+            let backend = TddBackend::new(engine, vtree.clone());
+            let var_of = fact_variables(&gp, &order);
+            let mut compilation = Compilation::new(
+                &gp,
+                &deps,
+                var_of,
+                Formulation::Dual,
+                &backend,
+                Projection::default(),
+            )
+            .expect("maps every fact");
+            loop {
+                if let Some(turn) = turn {
+                    backend.end_turn_at(backend.work_units() + turn);
+                }
+                match compilation.run(&gp, &backend, Some(usize::MAX)) {
+                    Ok(()) => break,
+                    Err(CompileError::Tdd(tididi::OperationError::Stopped)) if turn.is_some() => {}
+                    Err(e) => panic!("{e}"),
+                }
+            }
+            let compiled = compilation.finish(&backend).expect("finishes");
+            backend.end_turn_at(u64::MAX);
+            let (results, _) = query_probabilities(&gp, &backend, &compiled).expect("answers");
+            (
+                results.expect("no evidence")[0].probability,
+                compiled.stats.work_units,
+                compiled.stats.clause_memo,
+            )
+        })
+    };
+    let (once, work_once, _) = compile(None);
+    let (paused, work_paused, memo) = compile(Some(1));
+    for p in [once, paused] {
+        assert!((p - want).abs() < 1e-12, "{p} against {want}");
+    }
+    assert!(memo.paused >= n / 2, "{} loops paused", memo.paused);
+    assert_eq!(
+        memo.resumed, memo.paused,
+        "a paused loop the next run began again"
+    );
+    assert!(
+        work_paused <= work_once + work_once / 10,
+        "{work_paused} units in turns against {work_once} in one run"
     );
 }

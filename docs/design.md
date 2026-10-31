@@ -1672,17 +1672,23 @@ it may have spent by the end of its turn, at first its weight times
 `FIRST_PAIRS` times `WORK_PER_PAIR` (2^28) units. Each attempt goes to
 the trial whose target is least for its weight, the first in the
 candidates' order on a tie, so the trials take their first turns in
-order and later ones in proportion to their weights. The attempt may
-spend the target less what the trial has spent; once the trial has spent
-its target, the target doubles until it leaves the trial more than twice
-the work the stop lost. A stop loses the work since the phase last kept a
-step (a component, an atom's update, an observation, a join, an answer;
-`TddBackend::kept`), and the next attempt does that step again from its
-start. Where steps are small that is nothing, and the target doubles once;
-where one step outweighs a turn, each try of it has at least twice the
-work of the last, so the work it wastes is at most what it finally takes
+order and later ones in proportion to their weights. The attempt's turn
+ends at the first step its phase keeps once it has spent the target less
+what the trial has spent (`TddBackend::pause`): a component, an atom's
+update, a body of a loop of clauses, an observation, a join, an answer.
+The next attempt goes on from that step, and the turn loses nothing. An
+operation still in flight at twice the turn's work is stopped by the
+engine, the guard against one operation that outweighs a turn, and loses
+the work since the phase last kept a step (`TddBackend::kept`): the next
+attempt does that step again from its start. Once the trial has spent its
+target, the target doubles until it leaves the trial more than twice the
+work the stop lost: once after a turn that ended at a step, and where one
+step outweighs a turn, so that each try of it has at least twice the work
+of the last and the work it wastes is at most what it finally takes
 (rus_20_40, whose last join of 3.3 G units was otherwise stopped at
-2.1 G and given 2.1 G again).
+2.1 G and given 2.1 G again). Ended inside an operation, as turns once
+were, every turn started its loop of clauses over (TPC-H's q7, whose
+formula is one loop of hundreds of bodies), or the walk's join under way.
 
 An attempt may complete formulas of up to its watch in pairs: a sixteenth
 of the target (`WORK_PER_HELD_PAIR`), `FIRST_PAIRS` at least, or more
@@ -1817,13 +1823,16 @@ tididi's fallible copy (`TddBackend::copy`), so a copy the allocator
 cannot serve is a refusal too: `Tdd`'s `Clone` would abort the process.
 
 **Resumption.** A stopped compile keeps every finished component, and
-within a cyclic component its rounds so far (`tp::Compilation`). The
-component it stopped in starts over, but a loop of clauses over facts
-alone that the watch refused is kept, reduced in full, and the trial's
-next attempt, however many turns later, takes it rather than build it
-again (`clauses::Refused`); the loop is no larger than the attempt's node
-cap, twice its watch. This serves a component whose formula is one loop
-over a whole lineage (TPC-H's q18). A stopped query phase keeps its
+within a cyclic component its rounds so far (`tp::Compilation`). An
+acyclic component it stopped in starts over, but for one loop of clauses
+held for the next run (`clauses::Held`): a loop the turn ended in, before
+its next body, which the trial's next attempt goes on with once it has
+built the component up to it again; or a loop over facts alone that the
+watch refused, reduced in full, which the next attempt takes rather than
+build again. Either is no larger than the attempt's node cap, twice its
+watch, and is held however many turns later the next attempt comes. This
+serves a component whose formula is one loop over a whole lineage
+(TPC-H's q7 and q18). A stopped query phase keeps its
 finished conjunctions, a pending reduction or count, and its answers
 (`QueryEvaluation`); a resumable conjunction keeps its operands until
 `and` succeeds, since `and` consumes them on failure. Both phases go

@@ -193,7 +193,7 @@ struct Budget<'b, 'a> {
     until: u64,
     /// The run's stop moved later by the budget, for as long as the scope
     /// lives ([`TddBackend::stop_later`]).
-    moved_stop: Option<tididi::limits::LimitScope<'b>>,
+    moved_stop: Option<super::backend::Later<'b>>,
 }
 
 impl<'b, 'a> Budget<'b, 'a> {
@@ -203,7 +203,7 @@ impl<'b, 'a> Budget<'b, 'a> {
             backend,
             start,
             until: start + work,
-            moved_stop: backend.stop_later(work),
+            moved_stop: Some(backend.stop_later(work)),
         }
     }
 
@@ -219,7 +219,7 @@ impl<'b, 'a> Budget<'b, 'a> {
         // Dropped first, the old scope gives the run's stop back, which the
         // new one moves by all the budget so far.
         self.moved_stop = None;
-        self.moved_stop = self.backend.stop_later(self.until - self.start);
+        self.moved_stop = Some(self.backend.stop_later(self.until - self.start));
     }
 }
 

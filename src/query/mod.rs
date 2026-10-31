@@ -405,6 +405,7 @@ impl QueryEvaluation {
             sizes,
         };
         for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
+            backend.pause()?;
             let p = match id {
                 None => {
                     if *positive {
