@@ -1124,7 +1124,9 @@ impl fmt::Display for Builtin {
 
 /// `findall(Template, Goal, Result)` as read, or `all/3`: the goal's
 /// alternatives, each a conjunction. The grounder lowers it to a
-/// [`Collect`].
+/// [`Collect`], or, where the result is `[]`, to a negation. A negated goal
+/// that is not an atom, `\+ Goal`, is read as `findall(true, Goal, [])`,
+/// and `forall(C, A)` as `\+ (C, \+ A)`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Findall {
     pub(crate) template: Term,

@@ -142,6 +142,30 @@ fn a_negation_with_variables_of_its_own_holds_where_no_instance_does() {
 }
 
 #[test]
+fn a_negated_goal_holds_where_the_goal_has_no_solution() {
+    // ProbLog's answers, one query at a time. A variable bound before the
+    // negation is the goal's; X in s is the goal's own: s holds where no
+    // c(X) holds together with b, 1 - 0.4 * (1 - 0.5 * 0.4).
+    assert_answers(
+        "0.3::a. 0.4::b. 0.5::c(1). 0.6::c(2).
+         p :- \\+ (a ; b).
+         q :- \\+ (a, b).
+         r(X) :- member(X, [1, 2]), \\+ (c(X), a).
+         u :- \\+ (\\+ a, \\+ b).
+         s :- \\+ (c(X), b).
+         query(p). query(q). query(r(1)). query(r(2)). query(u). query(s).",
+        &[
+            ("p", 0.42),
+            ("q", 0.88),
+            ("r(1)", 0.85),
+            ("r(2)", 0.82),
+            ("u", 0.58),
+            ("s", 0.68),
+        ],
+    );
+}
+
+#[test]
 fn a_left_corner_parser_over_its_derivation_so_far() {
     // cplint's plcg.pl (Sato, Kameya and Kurihara 2008) for S -> S S | a |
     // b: every choice is indexed by the derivation so far, and the third

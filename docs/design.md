@@ -183,7 +183,8 @@ The parser reads ProbLog without cut:
 - body disjunctions `;` and parentheses, split into clauses that share
   one switch group;
 - negation as failure, `\+` or `not`, also of an atom with variables
-  of its own (`\+ p(X, _)`: no `p(X, Y)` for any `Y`);
+  of its own (`\+ p(X, _)`: no `p(X, Y)` for any `Y`) and of a goal
+  (`\+ (a, \+ b ; c)`), which holds where the goal has no solution;
 - unification `=` and `\=`, the comparisons of terms `== \== @< @> @=<
   @>=` in ProbLog's standard order, the arithmetic comparisons `< > =< >=
   =:= =\=`, and `is` with ProbLog's arithmetic, which is Python's: `//`
@@ -210,9 +211,10 @@ The parser reads ProbLog without cut:
   `UnknownClause`), or fails under `:- unknown(fail).`; a goal that names
   a built-in is refused, since tddlog calls built-ins only where they are
   written;
-- `findall/3`, `all/3` and `forall/2`, over probabilistic goals too: in
-  each world the list of the solutions whose proofs hold there, once per
-  proof and in ProbLog's order (`all/3` once per solution);
+- `findall/3` and `all/3`, over probabilistic goals too: in each world
+  the list of the solutions whose proofs hold there, once per proof and
+  in ProbLog's order (`all/3` once per solution); `forall(C, A)`, which
+  is `\+ (C, \+ A)`;
 - `library(aggregate)`'s aggregates, `h(G1, ..., Gn, f<V>) :- Body`, as
   its aggregate/5 computes them: all/3 of the solutions of the body,
   grouped by `[G1, ..., Gn]` with enum_groups/3, and `f` of the values
@@ -347,7 +349,10 @@ binds the parts a call binds (a count passed in, another passed out); the
 goal of a findall becomes an auxiliary predicate whose tuples are its
 solutions, and a negated atom with variables that nothing else in its
 clause reads becomes the negation of an auxiliary predicate over its
-other variables, defined by the atom. A ground compound is a value: the
+other variables, defined by the atom. A negated goal is read as a findall
+whose list is empty, `findall(true, G, [])`, and becomes the negation of
+an auxiliary predicate over the variables the goal shares with its
+clause, a clause per alternative of the goal. A ground compound is a value: the
 engine interns each one once, its name and its arguments' values end to
 end in one buffer as a relation's tuples are, and builds the term only
 where an atom is printed or terms are compared; the ground program's

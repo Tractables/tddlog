@@ -217,6 +217,19 @@ impl Body {
     }
 }
 
+/// The literal that holds where `goal` has no solution, `\+ goal`:
+/// `findall(true, goal, [])`, which the grounder lowers to the negation of
+/// an auxiliary predicate.
+fn none_of(goal: Body) -> Literal {
+    Literal::Findall(Box::new(Findall {
+        template: Term::Const("true".into()),
+        interleaved: goal.interleaved(),
+        goal: goal.dnf(),
+        result: Term::Const(super::NIL.into()),
+        all: false,
+    }))
+}
+
 /// The name of the term `'$aggregate'(f, V)` the parser reads `f<V>` as,
 /// until the clause whose head it ends is rewritten ([`Parser::aggregate`]).
 const AGGREGATE: &str = "$aggregate";
@@ -856,23 +869,11 @@ impl<'a> Parser<'a> {
                     all: &*name == "all",
                 })))
             }
-            // forall(C, A) holds where (C, \+ A) has no solution:
-            // findall(_, (C, \+ A), []).
+            // forall(C, A) holds where (C, \+ A) has no solution.
             ("forall", 2) => {
                 let unless = self.negation(args.pop().expect("two arguments"))?;
                 let goal = self.goal(args.pop().expect("two arguments"))?;
-                let interleaved = goal.interleaved();
-                let mut alts = goal.dnf();
-                for alt in &mut alts {
-                    alt.push(unless.clone());
-                }
-                Ok(Literal::Findall(Box::new(Findall {
-                    template: Term::Const("true".into()),
-                    goal: alts,
-                    result: Term::Const(super::NIL.into()),
-                    interleaved,
-                    all: false,
-                })))
+                Ok(none_of(Body::And(vec![goal, Body::Lits(vec![unless])])))
             }
             // `T =.. L`, a built-in the grounder evaluates.
             ("=..", 2) => Ok(Literal::Pos(Atom::new(name, args))),
@@ -891,20 +892,18 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// The literal `\+ t`.
+    /// The literal `\+ t`: a negated atom, the opposite comparison, or
+    /// otherwise (a conjunction, a disjunction, a negation, `is`, a
+    /// findall) [`none_of`] the goal.
     fn negation(&self, t: Term) -> Result<Literal, ParseError> {
-        const COMPOUND: &str =
-            "negation of a negation or a compound goal is not supported; define a predicate for it";
-        if matches!(t.as_compound(), Some((n, [_, _])) if matches!(&**n, "," | ";")) {
-            return self.err(COMPOUND);
+        if !matches!(t.as_compound(), Some((n, [_, _])) if matches!(&**n, "," | ";")) {
+            match self.literal_of(PTerm::Term(t.clone()))? {
+                Literal::Pos(a) => return Ok(Literal::Neg(a)),
+                Literal::Cmp(op, a, b) => return Ok(Literal::Cmp(op.negated(), a, b)),
+                _ => {}
+            }
         }
-        match self.literal_of(PTerm::Term(t))? {
-            Literal::Pos(a) => Ok(Literal::Neg(a)),
-            Literal::Cmp(op, a, b) => Ok(Literal::Cmp(op.negated(), a, b)),
-            Literal::Is(..) => self.err("negation of `is` is not supported"),
-            Literal::Findall(_) => self.err("negation of findall/3 is not supported"),
-            _ => self.err(COMPOUND),
-        }
+        Ok(none_of(self.goal(t)?))
     }
 
     /// The body a goal term is: conjunctions and disjunctions of literals.
@@ -1459,9 +1458,12 @@ mod tests {
             err("foo :- X + 1."),
             "line 1: expected a literal, found X+1"
         );
+        // A negated goal: where the goal has no solution.
+        let p = parse_program("foo :- \\+ (a, b ; \\+ c), \\+ X is 1.\n").unwrap();
+        let body: Vec<String> = p.clauses[0].body.iter().map(|l| l.to_string()).collect();
         assert_eq!(
-            err("foo :- \\+ (a, b)."),
-            "line 1: negation of a negation or a compound goal is not supported; define a predicate for it"
+            body,
+            ["findall(true,(a,b;\\+c),[])", "findall(true,(X is 1),[])"]
         );
         // A compound argument, `\+` and an atom named `not` inside query/1
         // and evidence/2, read with the anonymous variables in order.
