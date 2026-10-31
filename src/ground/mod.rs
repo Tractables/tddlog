@@ -23,6 +23,9 @@
 //!    - `simplify`: no certain atom is left, equal atoms are merged, every
 //!      atom is relevant to a query or an observation, facts are read as
 //!      variables, and the numbering is compact.
+//!    - `noisy_or`: a table of one atom, written as rules that read its
+//!      parents and facts of their own, written as its noisy-or where it
+//!      is one.
 //!    - `condition::settle`: evidence that unit propagation settles
 //!      without the exclusive sets, which leaves nothing for the next
 //!      passes; they are skipped then.
@@ -402,6 +405,15 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
     simplify::merge_equal_atoms(&mut gp);
     simplify::restrict_to_relevant(&mut gp);
     simplify::alias_fact_atoms(&mut gp);
+    // A table of one atom written as rules, each row with facts of its own,
+    // is written as its noisy-or where it is one ([`noisy_or`]).
+    if opts.noisy_or {
+        let written = noisy_or::rows_as_noisy_ors(&mut gp);
+        if written > 0 {
+            gp.stats.noisy_or += written;
+            simplify::restrict_to_relevant(&mut gp);
+        }
+    }
     // Evidence that the propagation settles without the exclusive sets
     // leaves nothing for the passes that read them, which are then not
     // run.

@@ -440,7 +440,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 2 | `linear.rs` | right-linear recursion grounded from its bound end |
 | 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
 | 4 | `engine.rs` | stratified semi-naive bottom-up grounding |
-| 5 | `simplify.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables |
+| 5 | `simplify.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; tables of one atom written as noisy-ors |
 | 6 | `exclusive.rs`, `negation.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; negated atoms unfolded; views; equal gates; choices read under exclusive contexts |
 | 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
 | 8 | `cover.rs` | atoms certain by cover |
@@ -669,6 +669,25 @@ are skipped. Several steps have a program in `examples/` that shows them.
    becomes the fact and the others are read as it, to a fixpoint: an
    undirected edge `conn(a,b) :- edge(a,b)`, `conn(b,a) :- edge(a,b)` is
    one variable.
+
+   Then **tables of one atom** written as noisy-ors
+   (`noisy_or::rows_as_noisy_ors`). A two-valued variable written by hand
+   is one atom `x`, its other value `\+x`, and its table one rule per row,
+   `p::x :- y1, \+y2`, each row reading every parent once: no
+   table-shaped program, so step 0 does not see it. Ground, each row is a
+   rule whose other literals are facts no other rule reads and no query
+   or observation names, the row's own. A derived atom in no cycle whose
+   two or more rules read the same two or more parents, each at an
+   assignment of its own, the rest of each body such facts, is a table of
+   `x` over the parents (an assignment without a rule has `x` false);
+   where `x` is its noisy-or, its rules are the noisy-or's, over new
+   facts, as in step 0. A table of one parent stays: its noisy-or is as
+   large as its rows, and writing it so only renames its facts.
+   `x` stays an atom, read, asked and observed as before. A diagnosis
+   network written so (`scripts/writings.py`'s rules writing) was read as
+   a table per finding, and every finding, reading the diseases' facts,
+   in one unit; written as noisy-ors, it is the program a user writes as
+   noisy-ors.
 6. **Exclusive sets** (`exclusive.rs`). Two derived atoms are exclusive
    when every pair of their rules has clashing bodies. The sets are the
    values of a network variable; row classes, the cover, the indicators

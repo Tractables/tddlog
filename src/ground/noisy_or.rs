@@ -65,16 +65,44 @@
 //! too, and takes the table path: its shape is made from the program's
 //! ([`Shape::rewritten`]) with each table taken written at its first
 //! clause.
+//!
+//! **Tables of one atom.** A two-valued variable written as one atom `x`,
+//! its other value `\+x`, and its table as one rule per row,
+//!
+//! ```text
+//! p_1::x :- y_1, \+y_2.   p_2::x :- \+y_1, y_2.   ...
+//! ```
+//!
+//! each row reading every parent once, as a literal of either sign, is no
+//! table-shaped program: the grounder reads it through the generic steps,
+//! and each row is a rule whose body is the row's literals and the facts
+//! of its own that the normalization of `p_i::` made, read by no other
+//! rule. The same noisy-or is found there, on the ground program
+//! ([`rows_as_noisy_ors`]): a derived atom, in no cycle, whose two or more
+//! rules read the same two or more parents and each a different
+//! assignment of them, the rest of each body facts no other rule reads
+//! and no query or observation names, is a table of `x` over its parents,
+//! a row missing an assignment being one where `x` is false, and where
+//! `x` is its noisy-or (`\+x` the absent value) its rules are written as
+//! the noisy-or's, each fact a new one. `x` stays an atom, its readers,
+//! queries and observations as they were, since the facts its rules read
+//! were its rows' own. A table of one parent is left as it is: its
+//! noisy-or has as many rules and facts as its rows.
 
 use super::normalize::SUM_TOLERANCE;
 use super::table::{Shape, Switched};
-use crate::syntax::{Annotation, Atom, Clause, HeadChoice, Literal, Program};
+use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
+use crate::syntax::{Annotation, Atom, Clause, HeadChoice, Literal, Program, Term};
 
 /// How far an entry of a table may be from the noisy-or's.
 const TOLERANCE: f64 = 1e-12;
 
 /// The most parents of a table taken: one row per assignment.
 const MOST_PARENTS: usize = 16;
+
+/// A table of one atom: its parents and its rows by assignment, as
+/// [`one_atom_rows`] reads them.
+type AtomTable = (Vec<AtomId>, Vec<[f64; 2]>);
 
 /// A table's noisy-or form: its absent value `c`, the row `u*` (bit `i` the
 /// value of parent `i`) and `L`; each parent's `q` is read off the rows
@@ -434,6 +462,172 @@ fn noisy_or_forms(dist: &[[f64; 2]]) -> [Option<Form>; 2] {
         }
     }
     forms
+}
+
+/// The tables of one atom of `gp` written as noisy-ors (above, "Tables of
+/// one atom"): how many were. Their rows' facts are left unread, for the
+/// relevance cut to take out.
+pub(super) fn rows_as_noisy_ors(gp: &mut GroundProgram) -> usize {
+    let n = gp.num_atoms();
+    // How many literals read each atom, a named atom counted as read
+    // twice: a fact read once and named by nothing is a row's own.
+    let mut reads = vec![0u8; n];
+    for l in gp.rules.iter().flat_map(|r| &r.body) {
+        let k = &mut reads[l.atom() as usize];
+        *k = k.saturating_add(1);
+    }
+    for a in gp.named_atoms() {
+        reads[a as usize] = 2;
+    }
+    let own = |l: GLit| reads[l.atom() as usize] == 1 && gp.is_fact(l.atom());
+    let by_head = gp.rules_by_head();
+    let mut found: Vec<(AtomId, AtomTable, Form)> = Vec::new();
+    for (x, rules) in by_head.iter().enumerate() {
+        if rules.len() < 2 {
+            continue;
+        }
+        let x = x as AtomId;
+        if let Some((parents, dist)) = one_atom_rows(gp, x, rules, &own)
+            && let [Some(f), _] = noisy_or_forms(&dist)
+        {
+            found.push((x, (parents, dist), f));
+        }
+    }
+    if found.is_empty() {
+        return 0;
+    }
+    // A table's parents do not depend on it where it is in no cycle.
+    let mut cyclic = vec![false; n];
+    for c in super::deps::derived_sccs(gp, &by_head) {
+        if super::deps::is_cyclic(gp, &by_head, &c) {
+            for a in c {
+                cyclic[a as usize] = true;
+            }
+        }
+    }
+    found.retain(|(x, ..)| !cyclic[*x as usize]);
+    if found.is_empty() {
+        return 0;
+    }
+    let mut dropped = vec![false; gp.rules.len()];
+    let mut written = Vec::new();
+    for (x, (parents, dist), f) in &found {
+        for &ri in &by_head[*x as usize] {
+            dropped[ri] = true;
+        }
+        let fact = |gp: &mut GroundProgram, w: Prob| {
+            let k = gp.num_atoms() as i64;
+            let name = &gp.atoms[*x as usize];
+            let mut args = name.args.as_slice().to_vec();
+            args.push(Term::Int(k));
+            gp.atoms
+                .push(Atom::new(format!("{}$noisy_or", name.name), args));
+            gp.kinds.push(AtomKind::Fact(w));
+            k as AtomId
+        };
+        // The leak, `x` where it is likeliest absent; each parent at its
+        // value away from that row, as in the table path's [`write`].
+        let leak = dist[f.base][1];
+        if leak > 0.0 {
+            let l = fact(
+                gp,
+                Prob {
+                    p: leak,
+                    not: dist[f.base][0],
+                },
+            );
+            written.push(GroundRule::new(*x, vec![GLit::Pos(l)]));
+        }
+        for (k, &p) in parents.iter().enumerate() {
+            let q = f.q(dist, k);
+            if q >= 1.0 {
+                continue;
+            }
+            let flipped = f.base ^ 1 << k;
+            let w = if f.leak == 1.0 {
+                Prob {
+                    p: dist[flipped][1],
+                    not: dist[flipped][0],
+                }
+            } else {
+                Prob { p: 1.0 - q, not: q }
+            };
+            let active = GLit::new(p, f.base >> k & 1 == 0);
+            let body = if w.not == 0.0 {
+                vec![active]
+            } else {
+                vec![active, GLit::Pos(fact(gp, w))]
+            };
+            written.push(GroundRule::new(*x, body));
+        }
+    }
+    let mut i = 0;
+    gp.rules.retain(|_| {
+        i += 1;
+        !dropped[i - 1]
+    });
+    gp.rules.extend(written);
+    gp.structure = std::sync::OnceLock::new();
+    found.len()
+}
+
+/// The parents of the rules `rules` of `x` in `gp` and their rows, by
+/// assignment (bit `i` the sign of parent `i`): the probabilities of `x`
+/// false and true, a row no rule has `x` false; `None` unless every rule
+/// reads every parent once and a different assignment, the rest of its
+/// body facts of its own (`own`) whose weights sum to one.
+fn one_atom_rows(
+    gp: &GroundProgram,
+    x: AtomId,
+    rules: &[usize],
+    own: &impl Fn(GLit) -> bool,
+) -> Option<AtomTable> {
+    let mut parents: Vec<AtomId> = gp.rules[rules[0]]
+        .body
+        .iter()
+        .filter(|&&l| !own(l))
+        .map(|l| l.atom())
+        .collect();
+    parents.sort_unstable();
+    let m = parents.len();
+    if !(2..=MOST_PARENTS).contains(&m)
+        || rules.len() > 1 << m
+        || parents.windows(2).any(|w| w[0] == w[1])
+        || parents.contains(&x)
+    {
+        return None;
+    }
+    let mut dist = vec![[1.0, 0.0]; 1 << m];
+    let mut taken = vec![false; 1 << m];
+    for &ri in rules {
+        if gp.rules[ri].pairs {
+            return None;
+        }
+        let (mut key, mut seen) = (0usize, 0usize);
+        let mut row = Prob::TRUE;
+        for &l in &gp.rules[ri].body {
+            if own(l) {
+                let AtomKind::Fact(w) = gp.kinds[l.atom() as usize] else {
+                    unreachable!("a row's own atom is a fact")
+                };
+                row = Prob::cube([row, w.literal(l.is_positive())]);
+                continue;
+            }
+            let k = parents.binary_search(&l.atom()).ok()?;
+            if seen >> k & 1 == 1 {
+                return None;
+            }
+            seen |= 1 << k;
+            key |= usize::from(l.is_positive()) << k;
+        }
+        let total = row.p + row.not;
+        if seen != (1 << m) - 1 || taken[key] || (total - 1.0).abs() > SUM_TOLERANCE {
+            return None;
+        }
+        taken[key] = true;
+        dist[key] = [row.not / total, row.p / total];
+    }
+    Some((parents, dist))
 }
 
 #[cfg(test)]

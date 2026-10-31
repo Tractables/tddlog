@@ -292,3 +292,140 @@ fn rows_written_with_their_values_in_other_orders_are_ground_alike() {
         assert_eq!(reversed.to_string(), written.to_string());
     }
 }
+
+/// A diagnosis network written as rules, as `scripts/writings.py` writes
+/// a noisy-or network by hand: roots `a`, `b` and `c` of probabilities
+/// `NOISY_ROOTS`; `f` a noisy-or of the three with a leak, `g` one of `b`
+/// and `c` without, and `h` a table of `a` and `b` that is no noisy-or,
+/// each row a rule `p::x :- ...` that reads every parent, the rows where
+/// `x` has no mass left out. `f` is observed true and `g` false.
+const NOISY_ROOTS: [f64; 3] = [0.3, 0.6, 0.2];
+
+/// The probability of each finding true given the roots' values.
+fn noisy_finding(x: usize, u: [bool; 3]) -> f64 {
+    let inhibit =
+        |q: &[(usize, f64)]| -> f64 { q.iter().filter(|&&(i, _)| u[i]).map(|&(_, q)| q).product() };
+    match x {
+        0 => 1.0 - 0.9 * inhibit(&[(0, 0.4), (1, 0.5), (2, 0.7)]),
+        1 => 1.0 - inhibit(&[(1, 0.2), (2, 0.6)]),
+        _ => [[0.7, 0.2], [0.1, 0.9]][usize::from(u[0])][usize::from(u[1])],
+    }
+}
+
+/// The findings' names and parents.
+const NOISY_FINDINGS: [(&str, &[usize]); 3] = [("f", &[0, 1, 2]), ("g", &[1, 2]), ("h", &[0, 1])];
+
+fn noisy_rules() -> String {
+    let names = ["a", "b", "c"];
+    let mut s = String::new();
+    for (name, p) in names.iter().zip(NOISY_ROOTS) {
+        s += &format!("{p}::{name}.\n");
+    }
+    for (x, (name, parents)) in NOISY_FINDINGS.iter().enumerate() {
+        for row in 0..1usize << parents.len() {
+            let mut u = [false; 3];
+            let mut body = Vec::new();
+            for (k, &i) in parents.iter().enumerate() {
+                u[i] = row >> k & 1 == 1;
+                body.push(if u[i] {
+                    names[i].to_string()
+                } else {
+                    format!("\\+{}", names[i])
+                });
+            }
+            let p = noisy_finding(x, u);
+            if p > 0.0 {
+                s += &format!("{p}::{name} :- {}.\n", body.join(", "));
+            }
+        }
+    }
+    s + "evidence(f).\nevidence(g, false).\nquery(a).\nquery(b).\nquery(c).\nquery(h).\n"
+}
+
+/// P(e) and the queries' probabilities given the evidence, summed over the
+/// worlds of the roots.
+fn noisy_enumerated() -> (f64, Vec<f64>) {
+    let (mut evidence, mut joint) = (0.0, [0.0; 4]);
+    for w in 0..8usize {
+        let u = [w & 1 == 1, w & 2 == 2, w & 4 == 4];
+        let roots: f64 = (0..3)
+            .map(|i| {
+                if u[i] {
+                    NOISY_ROOTS[i]
+                } else {
+                    1.0 - NOISY_ROOTS[i]
+                }
+            })
+            .product();
+        let e = roots * noisy_finding(0, u) * (1.0 - noisy_finding(1, u));
+        evidence += e;
+        for i in 0..3 {
+            if u[i] {
+                joint[i] += e;
+            }
+        }
+        joint[3] += e * noisy_finding(2, u);
+    }
+    (evidence, joint.iter().map(|q| q / evidence).collect())
+}
+
+#[test]
+fn a_noisy_or_written_as_rules_is_ground_as_its_noisy_or() {
+    // f and g are written as their noisy-ors, h as written; P(e) and the
+    // answers are the enumeration's, the rewrite on or off.
+    let source = noisy_rules();
+    let program = tddlog::syntax::parse_program(&source).unwrap();
+    let (want_e, want) = noisy_enumerated();
+    let expected: Vec<(&str, f64)> = ["a", "b", "c", "h"].into_iter().zip(want).collect();
+    for noisy_or in [true, false] {
+        let options = tddlog::ground::GroundOptions {
+            noisy_or,
+            detach: false,
+            ..tddlog::ground::GroundOptions::default()
+        };
+        let gp = tddlog::ground::ground(&program, &options).unwrap();
+        assert_eq!(gp.stats.noisy_or, if noisy_or { 2 } else { 0 }, "{gp}");
+        for strategy in [
+            Strategy::Trial(Kind::Closed),
+            Strategy::Trial(Kind::Td),
+            Strategy::Auto,
+        ] {
+            for projection in [Projection::Off, Projection::default()] {
+                let what = format!("noisy_or {noisy_or}, {strategy:?}, {projection}");
+                let run = tddlog::solve_ground(gp.clone(), &common::options(strategy, projection))
+                    .unwrap_or_else(|e| panic!("{what}: {e}"));
+                let p = run.evidence_probability.expect("nothing detached").to_f64();
+                assert!(
+                    (p - want_e).abs() < 1e-12 * want_e,
+                    "{what}: P(e) = {p} against {want_e}"
+                );
+                assert_answers(
+                    &what,
+                    &run.results.expect("evidence is consistent"),
+                    &expected,
+                    1e-12,
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_noisy_or_written_as_rules_reads_each_parent_once() {
+    // Ground as its noisy-or, f's rules read one root each, g's too, and
+    // h's rows read both of its parents.
+    let gp = common::ground_as_written(&noisy_rules(), Rows::Apart, false);
+    let name = |l: &GLit| gp.atoms[l.atom() as usize].name.to_string();
+    for r in &gp.rules {
+        let roots = r
+            .body
+            .iter()
+            .filter(|l| matches!(&*name(l), "a" | "b" | "c"))
+            .count();
+        match &*gp.atoms[r.head as usize].name {
+            "f" | "g" => assert!(roots <= 1, "{gp}"),
+            "h" => assert_eq!(roots, 2, "{gp}"),
+            _ => {}
+        }
+    }
+}
