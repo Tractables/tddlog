@@ -4,6 +4,7 @@
 ;;
 ;;     racket roulette2problog.rkt PROGRAM.rkt [ARG ...] > PROGRAM.pl
 ;;     racket roulette2problog.rkt --tddlog TDDLOG PROGRAM.rkt [ARG ...]
+;;     racket roulette2problog.rkt --make PROGRAM.rkt
 ;;
 ;; Roulette (Moy, Czenszak, Li, Marshall and Holtzen, "Roulette: A Language
 ;; for Expressive, Exact, and Efficient Discrete Probabilistic Programming",
@@ -24,9 +25,15 @@
 ;; `roulette/example/disrupt/rsdd` replaced by this file's submodule
 ;; `language`, which is the same language whose `query` hands its value and
 ;; the observations to this script instead of rsdd. A module compiled
-;; against Roulette's language is loaded from its source, so that it is
-;; expanded in this one; the others, the artifact's drivers among them, run
-;; compiled. rsdd is never loaded.
+;; against Roulette's language (by `raco make`) is compiled again in this
+;; one; the others, the artifact's drivers among them, run compiled. rsdd is
+;; never loaded. --make does that compilation ahead of the runs, as `raco
+;; make` does Roulette's: it compiles PROGRAM.rkt's modules, and Roulette's
+;; language module with them, into compiled/roulette2problog/ beside their
+;; sources, and a run loads them from there while this file and their
+;; sources are unchanged; without it, each run compiles them anew. It
+;; refuses a program none of whose modules `raco make` has compiled
+;; against Roulette's language.
 ;;
 ;; Without --tddlog, each query's guards are recorded and the query returns
 ;; an empty distribution, the program's own output goes to standard error,
@@ -172,16 +179,16 @@
     (define nodes (circuit-nodes (append guards obs)))
     (define names (make-hasheq))
     (define-values (flips gates)
-      (for/fold ([fs '()] [gs '()] #:result (values (reverse fs) (reverse gs)))
+      (for/fold ([fs '()] [gs '()] [nf 0] [ng 0] #:result (values (reverse fs) (reverse gs)))
                 ([n (in-list nodes)])
         (cond
           [(constant? n)
-           (hash-set! names n (format "f~a" (add1 (length fs))))
-           (values (cons n fs) gs)]
-          [(negated? n) (values fs gs)]
+           (hash-set! names n (format "f~a" (add1 nf)))
+           (values (cons n fs) gs (add1 nf) ng)]
+          [(negated? n) (values fs gs nf ng)]
           [else
-           (hash-set! names n (format "g~a" (add1 (length gs))))
-           (values fs (cons n gs))])))
+           (hash-set! names n (format "g~a" (add1 ng)))
+           (values fs (cons n gs) nf (add1 ng))])))
     (define (lit n [pos #t])
       (match n
         [(expression (== @!) x) (lit x (not pos))]
@@ -321,23 +328,25 @@
   ;; The language submodule is required here so that it is declared (a
   ;; compiled file's submodules are loaded on demand) and is the instance
   ;; the program's requires of Roulette's language are sent to.
-  (require racket/list
+  (require racket/file
+           racket/list
            racket/match
            racket/path
            racket/string
            compiler/compilation-path
+           file/sha1
+           syntax/modread
            (submod ".." export)
            (only-in (submod ".." language)))
 
-  (define USAGE "usage: racket roulette2problog.rkt [--tddlog TDDLOG] PROGRAM.rkt [ARG ...]")
+  (define USAGE "usage: racket roulette2problog.rkt [--make | --tddlog TDDLOG] PROGRAM.rkt [ARG ...]")
 
-  (define-values (tddlog argv)
-    (let ([args (vector->list (current-command-line-arguments))])
-      (cond
-        [(and (pair? args) (equal? (car args) "--tddlog") (pair? (cdr args)))
-         (values (cadr args) (cddr args))]
-        [else (values #f args)])))
-  (when (or (null? argv) (regexp-match? #rx"^-" (car argv)))
+  (define-values (mode tddlog argv)
+    (match (vector->list (current-command-line-arguments))
+      [(list "--tddlog" cmd args ...) (values 'run cmd args)]
+      [(list "--make" args ...) (values 'make #f args)]
+      [args (values 'run #f args)]))
+  (when (or (null? argv) (regexp-match? #rx"^-" (car argv)) (and (eq? mode 'make) (pair? (cdr argv))))
     (eprintf "~a\n" USAGE)
     (exit 2))
 
@@ -377,13 +386,57 @@
          (apply collection-file-path (bytes->path f) (map bytes->path c)))]
       [(? bytes? p) (bytes->path p)]
       [_ #f]))
+  (define (dep-file file) (path-replace-extension (get-compilation-bytecode-file file) #".dep"))
   (define (compiled-against-disrupt? file)
-    (define dep (path-replace-extension (get-compilation-bytecode-file file) #".dep"))
+    (define dep (dep-file file))
     (and (file-exists? dep)
          (let ([deps (call-with-input-file dep read)])
            (for/or ([d (in-list (if (and (list? deps) (> (length deps) 3)) (drop deps 3) '()))])
              (define f (dependency-file d))
              (and f (member (simplify-path f) disrupt-files))))))
+  ;;
+  ;; --make compiles each such module in this file's language once, as
+  ;; `raco make` compiles it in Roulette's, into compiled/roulette2problog/
+  ;; beside its source, keyed by the SHA-1 of this file's source, the
+  ;; module's, its .dep from `raco make` (which holds the SHA-1s of its
+  ;; dependencies) and Racket's version; a run loads it from there while
+  ;; the key holds, and compiles it from source otherwise.
+  (define self-file
+    (let ([n (resolved-module-path-name (variable-reference->resolved-module-path (#%variable-reference)))])
+      (if (pair? n) (car n) n)))
+  (define (cache-files file)
+    (define-values (dir name _dir?) (split-path file))
+    (define zo (build-path dir "compiled" "roulette2problog" (path-add-extension name #".zo")))
+    (values zo (path-add-extension zo #".sha1")))
+  (define (cache-key file)
+    (sha1 (open-input-bytes (bytes-append (file->bytes self-file) #"\0" (file->bytes file) #"\0"
+                                          (file->bytes (dep-file file)) #"\0" (string->bytes/utf-8 (version))))))
+  ;; The program's modules that are compiled in this file's language, and
+  ;; those of them --make compiled; Roulette's language module, compiled
+  ;; with them, is not counted.
+  (define found 0)
+  (define made '())
+  (define (module-code file)
+    (define-values (zo key-file) (cache-files file))
+    (define key (cache-key file))
+    (define program-module? (not (member (simplify-path file) disrupt-files)))
+    (when program-module? (set! found (add1 found)))
+    (cond
+      [(and (file-exists? zo) (file-exists? key-file) (equal? (file->string key-file) key))
+       (parameterize ([read-accept-compiled #t]) (call-with-input-file zo read))]
+      [else
+       (define stx
+         (with-module-reading-parameterization
+           (λ () (call-with-input-file file (λ (in) (port-count-lines! in) (read-syntax file in))))))
+       (define code (compile (check-module-form stx 'ignored file)))
+       (when (eq? mode 'make)
+         (make-directory* (path-only zo))
+         ;; Renamed into place, the code before its key: a run that reads
+         ;; the key reads the code it was written with.
+         (call-with-atomic-output-file zo (λ (out _tmp) (write code out)))
+         (call-with-atomic-output-file key-file (λ (out _tmp) (write-string key out)))
+         (when program-module? (set! made (cons file made))))
+       code]))
   (define original-load (current-load/use-compiled))
   (define (loading file name)
     (cond
@@ -393,11 +446,23 @@
       [else
        (define-values (dir _name _dir?) (split-path file))
        (parameterize ([current-load-relative-directory dir])
-         ((current-load) file name))]))
+         (eval (module-code file)))]))
 
   (define stdout (current-output-port))
   (define (seconds-since t) (/ (- (current-inexact-milliseconds) t) 1000.0))
   (define t0 (current-inexact-milliseconds))
+  (when (eq? mode 'make)
+    (parameterize ([current-module-name-resolver redirecting-resolver]
+                   [current-load/use-compiled loading])
+      (dynamic-require program-mp (void)))
+    (when (zero? found)
+      (raise-user-error 'roulette2problog "~a has no module compiled against Roulette's language (raco make it first)"
+                        (car argv)))
+    (eprintf "roulette2problog: compiled ~a of ~a modules in this file's language~a (~a s)\n"
+             (length made) found
+             (string-append* (for/list ([f (in-list (reverse made))]) (format " ~a" (file-name-from-path f))))
+             (seconds-since t0))
+    (exit 0))
   (parameterize ([current-command-line-arguments (list->vector (cdr argv))]
                  [current-module-name-resolver redirecting-resolver]
                  [current-load/use-compiled loading]
