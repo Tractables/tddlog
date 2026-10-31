@@ -1093,7 +1093,7 @@
     "tddlog":null,
     "speedup":null
    },
-   "losses":[]
+   "losses":["Where others win: ProbLog answers 22 of its tutorial's 115 programs that tddlog does not, each in under 2 s. Nineteen of them used what tddlog did not read yet when they ran, and on three it ran out of time or memory."]
   },
   {
    "key":"database-queries",
@@ -3325,7 +3325,7 @@
     "tddlog":[119.38,5302.958],
     "speedup":42.05
    },
-   "losses":[]
+   "losses":["Where others win: the networks named BN of Ihler's collection. tddlog runs out of time on seven that pyAgrum or Merlin answers in 0.3 to 2.1 s, and on 20 more Merlin, pyAgrum or TensorInference.jl is at least twice as fast, up to 0.3 s against tddlog's 204 s."]
   },
   {
    "key":"markov-networks",
@@ -4110,7 +4110,7 @@
     "tddlog":null,
     "speedup":null
    },
-   "losses":["Where others win: six partition functions of the UAI 2022 final set, five of them protein networks, run out of time or memory. TensorInference.jl answers each in 12 to 45 s."]
+   "losses":["Where others win: six partition functions of the UAI 2022 final set, five of them protein networks, and Ihler's pedigree50 run out of time or memory. TensorInference.jl answers the six in 12 to 45 s and pedigree50 in 133 s."]
   },
   {
    "key":"functional-programs",

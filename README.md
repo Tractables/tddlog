@@ -243,10 +243,13 @@ instance, time and program, and a page for each system.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **310 of 356** ProbLog programs, of 13 families: paths
-in random graphs and in grids, Biomine's paths, smokers, UW-CSE, Cora's
-citation matching, blood types, pedigrees, sickness, Mastermind, MNIST
-addition, Prob-EC's event calculus and taint analyses of Android apps.
+tddlog answers **310 of 356** ProbLog programs, of 25 families: paths
+in random graphs and grids, Biomine's paths, smokers, UW-CSE, Cora's
+citation matching, blood types and pedigrees, sickness, Mastermind,
+MNIST addition and handwritten formulas, Prob-EC's event calculus, taint
+analyses of Android apps, probabilistic grammars, hidden Markov models,
+and the programs of the ProbLog tutorial and of ProbLog's and cplint's
+examples.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -258,6 +261,10 @@ addition, Prob-EC's event calculus and taint analyses of Android apps.
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
+- Where others win: ProbLog answers 22 of its tutorial's 115 programs
+  that tddlog does not, each in under 2 s. Nineteen of them used what
+  tddlog did not read yet when they ran, and on three it ran out of time
+  or memory.
 
 ### Probabilistic database queries
 
@@ -291,10 +298,10 @@ and Q9, and paths of two edges in random graphs.
 
 tddlog answers **607 of 634** networks: bnlearn's, the large ones and
 the Roulette and noDice papers' versions among them, Ace's, the noisy-or
-networks, and the UAI 2022 networks whose factors are conditional
-probability tables (Promedus diagnosis, pedigree, or_chain and BN
-networks, and the blockmap, Mastermind and fs networks that Ace's
-benchmarks also have).
+networks, and the networks of the UAI 2022 competition and of Ihler's
+collection whose factors are conditional probability tables
+(diagnosis, pedigree, BN, blockmap, Mastermind and fs networks, and the
+classic networks).
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -305,7 +312,12 @@ benchmarks also have).
 | pyAgrum | 263 | 62 h | 1.5 h | 37× |
 | 14 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Scallop, Psi, Geni | 43 to 236 | over 19 h each | 2 min to 1.5 h | at least 42× |
 
-PSouffle was given 10 of the networks and answers 6.
+- Where others win: the networks named BN of Ihler's collection. tddlog
+  runs out of time on seven that pyAgrum or Merlin answers in 0.3 to 2.1 s,
+  and on 20 more Merlin, pyAgrum or TensorInference.jl is at least twice
+  as fast, up to 0.3 s against tddlog's 204 s.
+
+PSouffle was given 11 of the networks and answers 6.
 
 ### Markov networks
 
@@ -314,10 +326,11 @@ PSouffle was given 10 of the networks and answers 6.
        alt="Markov networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **245 of 292** networks, the UAI 2022 networks whose
-factors are not conditional probability tables over an acyclic graph:
-object detection, segmentation, grid, DBN, CSP and Alchemy networks,
-protein side chains, the rus networks and weighted CSPs.
+tddlog answers **245 of 292** networks, those of the UAI 2022
+competition and of Ihler's collection whose factors are not conditional
+probability tables over an acyclic graph: object detection,
+segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
+the rus networks, weighted CSPs, and pedigree and diagnosis networks.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
@@ -328,8 +341,9 @@ protein side chains, the rus networks and weighted CSPs.
 | pgmpy | 117 | 23 h | 1.4 h | 29× |
 
 - Where others win: six partition functions of the UAI 2022 final set,
-  five of them protein networks, run out of time or memory.
-  TensorInference.jl answers each in 12 to 45 s.
+  five of them protein networks, and Ihler's pedigree50 run out of time
+  or memory. TensorInference.jl answers the six in 12 to 45 s and
+  pedigree50 in 133 s.
 
 ### Probabilistic functional programs
 
@@ -339,12 +353,13 @@ protein side chains, the rus networks and weighted CSPs.
 </p>
 
 tddlog answers **279 of 315** programs over discrete values with
-conditionals and loops, of 16 families: the Caesar cipher, diamond and
+conditionals and loops, of 17 families: the Caesar cipher, diamond and
 ladder networks, Geni's router grids with failing links or routers and
 its weather factory, hidden Markov models and Pluck's sequence models, a
 Markov chain, a lossy network, contract signing, a perturbed-memory
-interpreter, Cao et al.'s integer programs, the coupon collector, 3-SAT
-and the Dice paper's small programs.
+interpreter, Cao et al.'s integer programs, the coupon collector, 3-SAT,
+the bounded retransmission protocol and the Dice paper's small
+programs.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
