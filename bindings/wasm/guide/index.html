@@ -522,7 +522,7 @@ compilation error: atom a is undefined in the well-founded model of some possibl
   comments and quoted atoms, each read as a term (a number, an atom, a
   list or a compound), as a shell script's arguments do. One program then
   serves every size, probability, query and observation:</p>
-<pre data-lang="prolog">$2::link(I) :- between(1, $1, I).
+<pre data-lang="problog">$2::link(I) :- between(1, $1, I).
 reach(0).
 reach(I) :- between(1, $1, I), J is I - 1, reach(J), link(I).
 query(reach($3)).</pre>
