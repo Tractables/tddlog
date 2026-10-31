@@ -7,9 +7,11 @@
 //! others. A `MARKOV` network that is a Bayesian network as written, each
 //! function a conditional table of one variable of its scope, each
 //! variable the child of one function, and the child relation acyclic (the
-//! UAI suites' Promedus and Pedigree), is read as that network
+//! UAI suites' Promedus and Pedigree, and the networks of the UAI 2006
+//! evaluation that are written as `MARKOV` files), is read as that network
 //! ([`conditional_tables`]): its partition function is one, and its offset
-//! zero. Any other `MARKOV` network's variables get uniform priors, times
+//! zero. A row that sums to one up to the rounding of its decimals counts,
+//! and is divided by its sum as a `BAYES` file's row is. Any other `MARKOV` network's variables get uniform priors, times
 //! their unary factors normalized, and every other factor `f` becomes a
 //! variable `fJ` of one value `ok` whose row for each assignment of its
 //! scope holds the factor's entry divided by its largest, observed. In
@@ -27,7 +29,7 @@
 //! ([`colour_symmetry`]), which leaves `Z` a `k`-th of the network's, and
 //! the offset holds `log10 k` besides.
 
-use super::rows::fsum;
+use super::rows::{fsum, sums_to_one};
 use super::{Network, Read};
 
 /// A UAI file's parts: whether it is `MARKOV`, the domain sizes, the
@@ -203,7 +205,8 @@ fn partition_offset(logs: &[f64]) -> f64 {
 /// A Markov network that is a Bayesian network as written: each function
 /// a conditional table of one variable of its scope (its child: for each
 /// assignment of the others the entries over the child's values sum to one
-/// within 1e-9), each variable the child of one function, and the child
+/// up to the rounding of their decimals, as a `BAYES` table's row,
+/// [`sums_to_one`]), each variable the child of one function, and the child
 /// relation acyclic. Returns each variable's scope, its child last, and its
 /// table in that order; `None` for another network. A function that is a
 /// table of two of its variables, an identity say, takes the child a
@@ -231,7 +234,7 @@ fn conditional_tables(
                 let (k, stride) = (sizes[scope[i]], strides[i]);
                 (0..table.len()).filter(|r| r / stride % k == 0).all(|r| {
                     let row: Vec<f64> = (0..k).map(|x| table[r + stride * x]).collect();
-                    (fsum(&row) - 1.0).abs() <= 1e-9
+                    sums_to_one(&row)
                 })
             })
             .collect();
@@ -500,6 +503,30 @@ mod tests {
         let t = read.network.tables[1].as_ref().unwrap();
         assert_eq!(t.parents, [0]);
         assert_eq!(t.probs, [0.1, 0.9, 0.6, 0.4]);
+    }
+
+    #[test]
+    fn a_markov_file_of_tables_rounded_to_their_decimals_is_the_network() {
+        // x1's row at x0 = 0, 0.160598 and 0.839403, sums to 1.000001: two
+        // halves rounded up, as the UAI 2006 evaluation's networks write.
+        let read = parse(
+            "MARKOV 2 2 2 2 1 0 2 1 0 2 0.2 0.8 4 0.160598 0.6 0.839403 0.4",
+            false,
+        )
+        .unwrap();
+        assert_eq!(read.log10_offset, Some(0.0));
+        assert!(read.forced.is_empty());
+        let t = read.network.tables[1].as_ref().unwrap();
+        assert_eq!(t.parents, [0]);
+        assert_eq!(t.probs, [0.160598, 0.839403, 0.6, 0.4]);
+        // A row short of one by more than its decimals' rounding is a
+        // factor's, not a table's.
+        let read = parse(
+            "MARKOV 2 2 2 2 1 0 2 1 0 2 0.2 0.8 4 0.5 0.6 0.48 0.4",
+            false,
+        )
+        .unwrap();
+        assert_eq!(read.forced, [2]);
     }
 
     #[test]

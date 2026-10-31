@@ -39,28 +39,53 @@ const SINGLE: f64 = 1.0 / 16_777_216.0;
 /// decides whether a row of sum one up to its last bits is divided
 /// ([`fsum`]).
 pub(super) fn normalized(row: &mut [f64]) -> Result<(), String> {
-    if let Some(&p) = row.iter().find(|p| !p.is_finite() || **p < 0.0) {
-        return Err(format!("{p} is not a probability"));
-    }
-    let total = fsum(row);
-    let divide = if (row.len() == 1 && total <= 1.0) || (1.0 - ROUNDING..=1.0).contains(&total) {
-        // A row of one entry in [0, 1], whose gap from one is at least a unit
-        // in its last place, more than its slack; or binary rounding under
-        // one.
-        false
-    } else if total < 1.0 {
-        explained(row, false)
-    } else if total - 1.0 <= (row.len() + 1) as f64 * SINGLE || explained(row, true) {
-        true
-    } else {
-        return Err(format!("probabilities sum to {total}"));
-    };
-    if divide {
+    if let Sum::Rounded(total) = sum(row)? {
         for p in row {
             *p /= total;
         }
     }
     Ok(())
+}
+
+/// Whether `row` sums to one up to the rounding [`normalized`] divides
+/// out: a `MARKOV` file's function is a conditional table where every
+/// row of the child's values does (`uai.rs`), so that a file whose
+/// tables are rounded to their decimals is read as the Bayesian network
+/// it is, as its `BAYES` writing would be.
+pub(super) fn sums_to_one(row: &[f64]) -> bool {
+    matches!(sum(row), Ok(Sum::One | Sum::Rounded(_)))
+}
+
+/// How a row's sum stands to one ([`normalized`]).
+enum Sum {
+    /// One, or within [`ROUNDING`] under it.
+    One,
+    /// The sum, off one by the rounding of the entries.
+    Rounded(f64),
+    /// Short of one by more than rounding: the rest is left to no value.
+    Short,
+}
+
+fn sum(row: &[f64]) -> Result<Sum, String> {
+    if let Some(&p) = row.iter().find(|p| !p.is_finite() || **p < 0.0) {
+        return Err(format!("{p} is not a probability"));
+    }
+    let total = fsum(row);
+    if (1.0 - ROUNDING..=1.0).contains(&total) {
+        Ok(Sum::One)
+    } else if total < 1.0 {
+        // A row of one entry in [0, 1] has a gap from one of at least a
+        // unit in its last place, more than its slack.
+        Ok(if row.len() > 1 && explained(row, false) {
+            Sum::Rounded(total)
+        } else {
+            Sum::Short
+        })
+    } else if total - 1.0 <= (row.len() + 1) as f64 * SINGLE || explained(row, true) {
+        Ok(Sum::Rounded(total))
+    } else {
+        Err(format!("probabilities sum to {total}"))
+    }
 }
 
 /// Whether the decimals the entries of `row` mean ([`Decimal::meant`]) sum

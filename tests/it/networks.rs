@@ -231,6 +231,32 @@ fn a_markov_network_prints_its_partition_function() {
 }
 
 #[test]
+fn a_markov_file_of_rounded_tables_answers_as_its_network() {
+    // tests/networks/rounded.uai holds x0's table and x1's given x0, x1
+    // first in its scope; x1's row at x0 = v_0, 0.160598 and 0.839403,
+    // sums to 1.000001, which six decimals rounded up explain. The file is
+    // read as the Bayesian network, the row divided by its sum: Z is one,
+    // and P(x1 = v_0) = 0.2 * 0.160598 / 1.000001 + 0.8 * 0.6, where the
+    // factors' Z would give 0.5121196 / 1.0000002.
+    let out = tddlog(&[
+        "tests/networks/rounded.uai",
+        "--evidence-probability",
+        "--precision",
+        "15",
+    ]);
+    let (got, log10_z) = answers(&out, "Z");
+    let p = 0.2 * (0.160598 / 1.000001) + 0.8 * 0.6;
+    let expected = [
+        ("x0(v_0)", 0.2),
+        ("x0(v_1)", 0.8),
+        ("x1(v_0)", p),
+        ("x1(v_1)", 1.0 - p),
+    ];
+    assert_close("rounded.uai", &got, &expected, 1e-12);
+    assert!(log10_z.expect("a Z line").abs() < 1e-12, "{log10_z:?}");
+}
+
+#[test]
 fn a_network_answers_as_problog_and_enumeration_do() {
     // markov.uai's marginals by enumeration (tests/regress/markov.pl).
     let out = tddlog(&["tests/regress/markov.uai", "--precision", "12"]);

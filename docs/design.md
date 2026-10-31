@@ -497,8 +497,12 @@ every row by its sum first, for Ace's tables in percent or as weights.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
 a conditional table of one variable of its scope, one function per
-variable and the child relation acyclic (Promedus, Pedigree), is that
-Bayesian network. In any other, every variable gets a uniform prior times
+variable and the child relation acyclic (Promedus, Pedigree, and the UAI
+2006 networks written as `MARKOV` files), is that Bayesian network. A
+table's row over its child's values counts where the rule above divides
+it or keeps it as summing to one (`rows::sums_to_one`), so that a file
+rounded to six decimals reads as its `BAYES` writing would, and its rows
+are then divided as that writing's are. In any other, every variable gets a uniform prior times
 its unary factors, normalized, and every other factor `f` becomes a
 variable `fJ` of one value, observed, whose row for each assignment of the
 factor's scope is its entry over its largest; a constant factor is left

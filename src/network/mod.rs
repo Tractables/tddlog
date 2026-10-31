@@ -22,8 +22,10 @@
 //! The formats, by the file's extension ([`Format::of_path`]): BIF
 //! (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`, its `cpt` nodes),
 //! and the UAI format (`.uai`), whose variables are named `x0`, `x1`, ...
-//! and their values `v_0`, `v_1`, .... A UAI `MARKOV` network's variables
-//! get uniform priors, times their unary factors normalized, and every
+//! and their values `v_0`, `v_1`, .... A UAI `MARKOV` file whose
+//! functions are the conditional tables of a Bayesian network, up to the
+//! rounding of their decimals, is read as that network. Any other `MARKOV`
+//! network's variables get uniform priors, times their unary factors normalized, and every
 //! other factor `f` becomes a variable `fJ` of one value `ok`, observed,
 //! whose row for each assignment of its scope holds the factor's entry
 //! divided by its largest: `P(e)` of the program is then the partition
