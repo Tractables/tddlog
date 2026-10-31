@@ -433,8 +433,8 @@ pub(super) struct EvidenceWalk {
     /// products where they hold fewer pairs than their target's slot
     /// (`Some(target)`; see the module documentation).
     in_full: FxHashMap<usize, Option<usize>>,
-    /// Where only the evidence formula's count is wanted, what the joins
-    /// sum out (`super::sum_out`).
+    /// What the joins sum out (`super::sum_out`): what no later join and
+    /// no query reads.
     sum_out: Option<SumOut>,
     /// Whether a node may put items off, and the nodes that put any off
     /// (module doc; [`EvidenceWalk::put_nothing_off`]).
@@ -538,9 +538,47 @@ impl EvidenceWalk {
     }
 
     /// The joins sum out what no later join reads, under the facts'
-    /// weights `w`, where no query reads the evidence formula.
+    /// weights `w`, and no query ([`Self::hold`]).
     pub(super) fn sum_out(&mut self, tree: &tididi::Vtree, w: &crate::eval::Probabilities) {
-        self.sum_out = Some(SumOut::new(tree, w));
+        if self.observed.len() > 1 {
+            self.sum_out = Some(SumOut::new(tree, w));
+        }
+    }
+
+    pub(super) fn is_summing(&self) -> bool {
+        self.sum_out.is_some()
+    }
+
+    /// The variables `vars` are read after the walk: the joins never sum
+    /// them out.
+    pub(super) fn hold(&mut self, vars: &[VarId]) {
+        if let Some(so) = &mut self.sum_out {
+            so.hold_for_queries(vars);
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn min_sum_pairs(&mut self, min: usize) {
+        if let Some(so) = &mut self.sum_out {
+            so.set_min_pairs(min);
+        }
+    }
+
+    /// The variables of the scope the walk's result lives on, the union of
+    /// its observations' as [`Self::run`] puts them; `None` for the whole
+    /// program.
+    pub(super) fn scope_vars(&self, compiled: &Compiled) -> Option<FxHashSet<VarId>> {
+        let mut vars = FxHashSet::default();
+        for (i, &(a, _)) in self.observed.iter().enumerate() {
+            if let Some(tie) = compiled.for_queries.ties.get(&a) {
+                vars.extend(tie.vars());
+            } else if self.taken.contains_key(&i) || compiled.formulas[a as usize].is_some() {
+                vars.extend(compiled.scope_of(a).vars()?);
+            } else {
+                vars.insert(compiled.var_of[a as usize]?);
+            }
+        }
+        Some(vars)
     }
 
     /// Whether a walk that puts nothing off may start over in place of
@@ -1252,15 +1290,23 @@ impl EvidenceWalk {
         // floor is for the conjunction: the moves put no pair in flight, so it
         // cannot stop them.
         let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
-        // Where only the evidence's count is wanted, the join sums out what no
-        // later join reads (`SumOut`); an operand that carries the facts'
-        // weights makes a weighted join.
+        // The join sums out what no later join and no query reads (`SumOut`);
+        // an operand that carries the facts' weights makes a weighted join.
         let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
         let pairs = self.slot_pairs[a] + self.slot_pairs[b];
         let targets = match &mut self.sum_out {
             Some(so) => {
                 so.begin(a, b);
-                so.targets(&scope, pairs)
+                so.targets(
+                    a,
+                    b,
+                    &scope,
+                    &fa,
+                    &fb,
+                    pairs,
+                    weighted,
+                    last && self.waiting.is_empty(),
+                )
             }
             None => Vec::new(),
         };

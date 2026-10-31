@@ -172,6 +172,8 @@ pub(crate) struct QueryEvaluation {
     /// go on then.
     took: bool,
     spent: bool,
+    /// Whether the walk holds the variables the queries read.
+    held: bool,
 }
 
 impl QueryEvaluation {
@@ -200,12 +202,10 @@ impl QueryEvaluation {
             let i = v.0 as usize;
             (weights.pos[i], weights.neg[i], weights.one[i]) = (0.5, 0.5, 1.0);
         }
-        // Where no query reads the evidence formula, only its count is
-        // wanted, and the walk sums out what no later join reads.
+        // The walk sums out what no later join reads, and no query: the
+        // first run holds the queries' variables before the first join.
         let mut walk = EvidenceWalk::new(observed, &backend.vtree());
-        if gp.queries.iter().all(|(_, id, _)| id.is_none()) {
-            walk.sum_out(&backend.vtree(), &weights);
-        }
+        walk.sum_out(&backend.vtree(), &weights);
         let settled = &compiled.for_queries.settled;
         Self {
             weights,
@@ -224,6 +224,7 @@ impl QueryEvaluation {
             pending_query: None,
             took: false,
             spent: false,
+            held: false,
             sizes: QuerySizes {
                 recounts: compiled.for_queries.recounts,
                 negations: settled.negations,
@@ -339,6 +340,7 @@ impl QueryEvaluation {
             counted,
             out,
             pending_query,
+            held,
             sizes,
             ..
         } = self;
@@ -347,6 +349,14 @@ impl QueryEvaluation {
         sizes.record(sizes.largest, watch)?;
         if *impossible {
             return Ok((None, *sizes));
+        }
+        if !*held {
+            if walk.is_summing() {
+                let on_evidence = walk.scope_vars(compiled);
+                let reads = query_reads(gp, backend, compiled, on_evidence.as_ref())?;
+                walk.hold(&reads);
+            }
+            *held = true;
         }
         let scopes = Scopes {
             backend,
@@ -359,6 +369,10 @@ impl QueryEvaluation {
             sizes.walk_seconds += t.elapsed().as_secs_f64();
             *evidence = walked?;
         }
+        let read = gp
+            .queries
+            .iter()
+            .any(|(_, id, _)| id.is_some_and(|a| !compiled.for_queries.counted.contains_key(&a)));
         let evidence = match evidence {
             None => None,
             Some((e, scope)) => {
@@ -370,7 +384,7 @@ impl QueryEvaluation {
                 sizes.record(sizes.evidence, None)?;
                 if mass.is_none() {
                     let t = Instant::now();
-                    *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
+                    *mass = Some(evidence_mass(backend, e, scope, &w, read, counted, sizes)?);
                     sizes.count_seconds += t.elapsed().as_secs_f64();
                 }
                 let mass = mass.unwrap();
@@ -490,12 +504,14 @@ fn evidence_mass(
     e: &Tdd,
     scope: &VtreeScope,
     w: &Probabilities,
+    read: bool,
     counted: &mut Option<CountedEvidence>,
     sizes: &mut QuerySizes,
 ) -> Result<Count, CompileError> {
-    if e.has_marginal_level() {
-        // The walk summed the evidence out as it built it: its value is the
-        // mass, a scaled float.
+    // Where a query reads the evidence formula, its count up and down is
+    // taken, summed-out levels and all; otherwise the mass alone, which a
+    // formula the walk summed out carries.
+    if e.has_marginal_level() && !read {
         let value = backend
             .engine
             .weighted_value(e)?
@@ -610,6 +626,10 @@ impl Answers<'_> {
             return Ok(None);
         };
         let var = VarId(x as u32);
+        assert!(
+            !summed_over(ev.e, var),
+            "the walk summed out a variable a query reads"
+        );
         let leaf =
             ev.e.vtree()
                 .leaf_of(var)
@@ -693,14 +713,41 @@ impl Answers<'_> {
             Some((f, scope)) => (f, scope),
             None => stored(self.compiled, a),
         };
-        let q_w = self.weights_on(q_scope, template);
+        let mut q_w = self.weights_on(q_scope, template);
         let ev = self.evidence.as_ref().unwrap();
+        // Where the walk summed out what no query reads, a variable of the
+        // query's scope it does not depend on may be summed out of the
+        // evidence: the query sums it to one itself, as it sums a variable
+        // the evidence does not hold.
+        let support: Option<FxHashSet<VarId>> = if ev.e.has_marginal_level() {
+            let s: FxHashSet<VarId> = self.backend.engine.support(q)?.into_iter().collect();
+            for (_, v) in q.vtree().leaf_bottomup() {
+                if !s.contains(&v) {
+                    let i = v.0 as usize;
+                    (q_w.pos[i], q_w.neg[i], q_w.one[i]) = (0.5, 0.5, 1.0);
+                } else {
+                    let global = q_scope.vars().map_or(v, |vars| vars[v.0 as usize - 1]);
+                    assert!(
+                        !ev.scope
+                            .local_of(global)
+                            .is_some_and(|x| summed_over(ev.e, x)),
+                        "the walk summed out a variable a query reads"
+                    );
+                }
+            }
+            Some(s)
+        } else {
+            None
+        };
         let c = self
             .counted
             .as_mut()
             .expect("the evidence is counted where a query reads it");
         let e_vtree = ev.e.vtree();
         let leaf_in_e = |v: VarId| {
+            if support.as_ref().is_some_and(|s| !s.contains(&v)) {
+                return None;
+            }
             let global = q_scope.vars().map_or(v, |vars| vars[v.0 as usize - 1]);
             let local = ev.scope.local_of(global)?;
             Some(
@@ -783,6 +830,74 @@ fn stored(compiled: &Compiled, a: AtomId) -> (&Tdd, &VtreeScope) {
         .as_deref()
         .expect("the stored polarity's formula is stored");
     (f, compiled.scope_of(a))
+}
+
+/// Whether the evidence formula `e` summed its variable `x` out: a level
+/// over `x`'s leaf is marginal.
+fn summed_over(e: &Tdd, x: VarId) -> bool {
+    if !e.has_marginal_level() {
+        return false;
+    }
+    let vtree = e.vtree();
+    let mut t = vtree
+        .leaf_of(x)
+        .expect("a scope's variables are its leaves");
+    while let Some(p) = vtree.node(t).parent() {
+        if e.level(p).is_marginal() {
+            return true;
+        }
+        t = p;
+    }
+    false
+}
+
+/// The variables the queries read off the evidence formula after the
+/// walk. A query with a variable of its own on the evidence's scope, a
+/// fact's or an indicator copy's, reads that variable's count down; any
+/// other reads the variables its formula, or its template's, depends on,
+/// counted against the evidence. A query counted in the compile reads none.
+/// `on_evidence` is the evidence's scope, `None` for the whole program.
+fn query_reads(
+    gp: &GroundProgram,
+    backend: &TddBackend,
+    compiled: &Compiled,
+    on_evidence: Option<&FxHashSet<VarId>>,
+) -> Result<Vec<VarId>, tididi::OperationError> {
+    let on_evidence = |v: VarId| on_evidence.is_none_or(|vars| vars.contains(&v));
+    let indicator_of = gp.encoding.first_copies();
+    let mut vars = Vec::new();
+    for &(_, id, _) in &gp.queries {
+        let Some(a) = id else { continue };
+        let own = if gp.is_fact(a) {
+            Some(a)
+        } else {
+            indicator_of.get(&a).copied()
+        };
+        let own = own.and_then(|x| compiled.var_of[x as usize]);
+        if let Some(v) = own.filter(|&v| on_evidence(v)) {
+            vars.push(v);
+            continue;
+        }
+        if compiled.for_queries.counted.contains_key(&a) {
+            continue;
+        }
+        let t = compiled.for_queries.templates.get(&a).map_or(a, |t| t.atom);
+        if let Some(f) = compiled.formulas[t as usize].as_deref() {
+            let scope = compiled.scope_of(t);
+            vars.extend(
+                backend
+                    .engine
+                    .support(f)?
+                    .into_iter()
+                    .map(|v| scope.vars().map_or(v, |g| g[v.0 as usize - 1])),
+            );
+        } else {
+            vars.extend(compiled.var_of[t as usize]);
+        }
+    }
+    vars.sort_unstable();
+    vars.dedup();
+    Ok(vars)
 }
 
 /// The evidence formula counted up and down once, on its own scope: its
@@ -1641,6 +1756,7 @@ mod tests {
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            state.walk.min_sum_pairs(0);
             let (answers, sizes) = state.run(&gp, &backend, &compiled, None).unwrap();
             let answers = answers.unwrap();
             assert_eq!(answers.len(), n);
@@ -1650,12 +1766,16 @@ mod tests {
                     "{answer:?} {expected}"
                 );
             }
-            // The own factors went into the child's result one at a time, and
-            // no formula of the walk outgrew the evidence; conjoined among
-            // themselves first, the largest is eighteen times the evidence.
+            // The own factors went into the child's result one at a time.
+            // The walk sums the noise out as it goes, and keeps m's bits for
+            // the queries: the evidence is 250 pairs, and the largest
+            // formula of the walk 1 368, half the evidence of 2 738 pairs
+            // without summing; conjoined among themselves first, the
+            // largest is eighteen times that.
             assert!(state.walk.unbatched > 0, "no node's own factors given up");
+            assert!(sizes.summing_joins > 0, "no join summed out");
             assert!(
-                sizes.largest <= sizes.evidence,
+                sizes.largest <= 6 * sizes.evidence,
                 "largest {} evidence {}",
                 sizes.largest,
                 sizes.evidence

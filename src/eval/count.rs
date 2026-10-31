@@ -266,15 +266,13 @@ impl<V: Value> Down<V> {
             .parent()
             .expect("a level spread into has a parent");
         let (l, r) = f.vtree().children(p);
-        let (ld, rd) = (f.level(l).child_decoder(), f.level(r).child_decoder());
         let above = self.exact[p.idx()];
         // An inline value is under no power: a child's column takes terms
-        // under one only where its sibling, if marginal, is under none,
-        // and no level is scaled here where either child is marginal.
-        let uniform = |sibling: VtreeIdx| {
-            !f.level(sibling).child_decoder().is_marginal() || up.exps[sibling.idx()] == 0
-        };
-        let movable = above && !ld.is_marginal() && !rd.is_marginal();
+        // under one only where its sibling, if it holds values inline, is
+        // under none, and no level is scaled here where either child does.
+        // A weight-marginal level's values are a column like any level's.
+        let uniform = |sibling: VtreeIdx| !holds_inline(f, sibling) || up.exps[sibling.idx()] == 0;
+        let movable = above && !holds_inline(f, l) && !holds_inline(f, r);
         let fails = |range: Range, sibling: VtreeIdx| {
             up.exact[sibling.idx()] && (centre_all() || !range.times(up.ranges[sibling.idx()]))
         };
@@ -796,6 +794,38 @@ impl<V: Value> Counted<V> {
     }
 }
 
+/// Whether level `t` of `f` is marginal with its values held in the pairs
+/// that read it rather than in a column of its own: a count-marginal
+/// level. A weight-marginal level's values are a column, under a power of
+/// two like any level's counts.
+pub(super) fn holds_inline(f: &tididi::Tdd, t: tididi::vtree::VtreeIdx) -> bool {
+    let level = f.level(t);
+    level.is_marginal() && !level.is_weight_marginal()
+}
+
+/// The values of the weight-marginal level `t` of `f` as [`Count`]s,
+/// exactly: the walk sums out in scaled floats, a mantissa and a power of
+/// two each.
+pub(super) fn marginal_counts(
+    f: &tididi::Tdd,
+    t: tididi::vtree::VtreeIdx,
+) -> Result<Vec<Count>, tididi::OperationError> {
+    let values = f
+        .weights()
+        .and_then(|w| w.level(t.idx()))
+        .expect("a weight-marginal level's values are in the weight store");
+    collected(
+        values.len(),
+        values.iter().map(|v| {
+            let x = v.as_scaled().expect("the walk sums out in scaled floats");
+            match x.mantissa() {
+                0.0 => Count::ZERO,
+                m => Count::new(m).shifted(x.exponent()),
+            }
+        }),
+    )
+}
+
 /// What a pair's side is worth in a column: the value at the slot it
 /// names, or the value it holds inline.
 #[inline(always)]
@@ -918,6 +948,15 @@ pub(crate) fn count_exact(
     recounts: &mut usize,
 ) -> Result<Counts, tididi::OperationError> {
     let mut plain = Counted::<f64>::leaves(f, w, GRID_MIN_PAIRS)?;
+    if f.vtree()
+        .internal_bottomup()
+        .any(|(t, _, _)| f.level(t).is_weight_marginal() && !plain.exact[t.idx()])
+    {
+        *recounts += 1;
+        let mut wide = Counted::<Count>::leaves(f, w, GRID_MIN_PAIRS)?;
+        wide.up_from(f, 0, false);
+        return Ok(Counts::Wide(wide));
+    }
     let mut from = 0;
     let at = loop {
         let Some(at) = plain.up_from(f, from, true) else {
@@ -1056,7 +1095,34 @@ impl<V: Value> Counted<V> {
         }
         let mut ranges = vec![Range::NEW; n];
         let mut exact = vec![true; n];
+        let mut exps = vec![0; n];
         if !f.is_zero() {
+            // A level the walk summed out holds its values in the weight
+            // store, which the pass up reads as that level's counts, under
+            // a power of their own: in `Count`s as they are, in floats
+            // where they fit one power, and otherwise not exact, which
+            // `count_exact` counts in `Count`s.
+            for (t, _, _) in vtree.internal_bottomup() {
+                if !f.level(t).is_weight_marginal() {
+                    continue;
+                }
+                let counts = marginal_counts(f, t)?;
+                let fit = if V::floats(&[]).is_none() {
+                    Some((
+                        collected(counts.len(), counts.iter().map(|&c| V::from_count(c)))?,
+                        0,
+                    ))
+                } else {
+                    fitted::<V>(&counts)?
+                };
+                match fit {
+                    Some((values, power)) => {
+                        (up[t.idx()], ranges[t.idx()]) = settled(values);
+                        exps[t.idx()] = power;
+                    }
+                    None => exact[t.idx()] = false,
+                }
+            }
             for (leaf, var) in vtree.leaf_bottomup() {
                 let column = &mut up[leaf.idx()];
                 let range = &mut ranges[leaf.idx()];
@@ -1072,7 +1138,7 @@ impl<V: Value> Counted<V> {
         }
         Ok(Counted {
             up,
-            exps: vec![0; n],
+            exps,
             ranges,
             exact,
             down: RefCell::new(Down::new(n)),
@@ -1119,7 +1185,11 @@ impl<V: Value> Counted<V> {
             &mut self.down.get_mut().views,
         );
         for (k, (t, l, r)) in vtree.internal_bottomup().enumerate().skip(from) {
-            let (ld, rd) = (f.level(l).child_decoder(), f.level(r).child_decoder());
+            // A level summed out holds its values from the leaves on
+            // ([`Counted::leaves`]).
+            if f.level(t).is_weight_marginal() {
+                continue;
+            }
             if let View::Untried = views[t.idx()] {
                 views[t.idx()] = match grid_of(f, (t, l, r), self.grid_min) {
                     Some(grid) => {
@@ -1130,12 +1200,12 @@ impl<V: Value> Counted<V> {
                 };
             }
             let below = exact[l.idx()] && exact[r.idx()];
-            // An inline value is under no power: a level reading a marginal
-            // child takes its terms under one only where that child is under
-            // none, and no child of it is scaled here.
-            let uniform = (!ld.is_marginal() || exps[l.idx()] == 0)
-                && (!rd.is_marginal() || exps[r.idx()] == 0);
-            let movable = below && !ld.is_marginal() && !rd.is_marginal();
+            // An inline value is under no power: a level reading a child
+            // that holds values inline takes its terms under one only where
+            // that child is under none, and no child of it is scaled here.
+            let (li, ri) = (holds_inline(f, l), holds_inline(f, r));
+            let uniform = (!li || exps[l.idx()] == 0) && (!ri || exps[r.idx()] == 0);
+            let movable = below && !li && !ri;
             // The children's counts times `2^k` and `2^m`, their powers less
             // the shifts.
             let shift =
@@ -1488,10 +1558,15 @@ pub(crate) fn conjunction_count<V: Value>(
             exact.get(),
         ));
     };
+    // A side into a level the walk summed out names a slot of that
+    // level's values, its column of counts up; the walk reads such a
+    // level only as the side off its path, never as a node.
     fn node(c: ChildRef) -> usize {
+        use tididi::diagram::ValueRef;
         match c {
             ChildRef::Node(n) => n.idx(),
-            ChildRef::Value(_) => unreachable!("no level is summed out"),
+            ChildRef::Value(ValueRef::Slot(k)) => k as usize,
+            ChildRef::Value(ValueRef::Inline(_)) => unreachable!("no value is held inline"),
         }
     }
     /// A level's nodes, each with its pairs as the slots of their children,
