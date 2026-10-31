@@ -639,10 +639,17 @@ are skipped. Several steps have a program in `examples/` that shows them.
    negatively; where such a negation filters a demand of its reader's
    recursion (the dice tutorial's walk under `\+ member(Now, Seen)`), or
    the rewrite puts the negated predicate's demand inside that recursion
-   (the taxonomy tutorial), the demand grows without end. Only a program
-   that builds values (terms, numbers by `is`, lists) can grow it so; one
-   whose values are its constants is ground from its finite rewrite as
-   before (PSouffle's taint analyses). ProbLog's
+   (the taxonomy tutorial), the demand grows without end. Only a
+   recursion that negates a derived predicate and builds values (terms,
+   numbers by `is`, lists) from variables that only its own atoms bind can
+   grow it so, and only where its derivations are not bounded by a level,
+   an argument that each recursive call moves by a constant step within
+   values that atoms outside the recursion give. A recursion that builds
+   its values from atoms outside it (the time index `S is T - 1` under
+   `time(T)` of examples/larger/robot.pl) or counts along a level (`K is
+   J + 1` where `Q is P + 1` under `peg(P)`, examples/larger/mastermind.pl)
+   is ground from its finite rewrite as before, as is a program whose
+   values are its constants (PSouffle's taint analyses). ProbLog's
    grounding completes the negated call and ends the branch where its
    answer is true in every world, and so does the top-down route. A
    findall in a cycle of calls is refused on either route.

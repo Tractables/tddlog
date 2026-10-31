@@ -33,9 +33,9 @@
 //! The rewrite can make a stratified program non-stratified (demand for a
 //! lower-stratum atom may pass through a recursive predicate of a higher
 //! stratum), and a demand rule does not read a negation of a derived
-//! predicate. Where either loses a negation that bounds a demand in a
-//! program that builds values, [`Rewritten::top_down`] says so and the
-//! caller resolves the program top-down.
+//! predicate. Where either loses a negation that bounds a demand, in a
+//! recursion that makes values of its own, [`Rewritten::top_down`] says so
+//! and the caller resolves the program top-down.
 //!
 //! Which route a program takes is decided before any of it is ground, by
 //! whether its rules are safe ([`super::engine::safe`]: every variable bound
@@ -314,7 +314,8 @@ pub(crate) fn rewrite(norm: &NormProgram) -> Option<Rewritten> {
 }
 
 /// The rewritten program, and whether the program is resolved top-down
-/// instead: where it builds values ([`builds_values`]) and a negation of a predicate the program stratifies below
+/// instead: where a recursion makes values of its own ([`negation_bounds`])
+/// and a negation of a predicate the program stratifies below
 /// its reader filters a demand of the reader's own recursion, or the
 /// rewrite puts the negated predicate's demand inside that recursion. ProbLog's
 /// resolution completes the negated call and drops the call after it
@@ -327,25 +328,212 @@ pub(crate) struct Rewritten {
     pub(crate) top_down: bool,
 }
 
-/// Whether a rule of `rules` makes a value the program does not write: a
-/// term by unification, a number by `is`, a list by a built-in or a
-/// findall. Without one, the values are the program's constants and its
-/// rewrite is a finite program, ground bottom-up whatever negation its
-/// demand rules leave out: PSouffle's taint analyses, whose rewrite puts a
-/// negated predicate's demand inside the points-to recursion, ground so in
-/// about a second and took up to 47 s top-down.
-fn builds_values(rules: &[Clause]) -> bool {
+/// Whether a recursion of `norm` makes values of its own and negates a
+/// derived predicate (not `given`): a recursive component of its
+/// predicates one of whose rules builds a value (a term, a number by `is`,
+/// a list by a built-in or a findall) from a variable that no atom outside
+/// the component binds, unless its derivations are bounded by a level
+/// ([`levelled`]), and one of whose rules negates such a predicate. Only
+/// there can a negation bound what the rewrite derives or demands: the
+/// walks of the dice and taxonomy tutorials build their lists from the
+/// lists of the recursion (`next(Now, [Now|Seen], L)`, `d(B, E, [B|L]) :-
+/// e(B, M), d(M, E, L)`) under `\+ member/2`. A recursion that builds its
+/// values from atoms outside it derives and demands finitely many whatever
+/// its negations read, as the time index `S is T - 1` under `time(T)` in
+/// examples/larger/robot.pl; so does one that counts along a level, as
+/// `K is J + 1` in examples/larger/mastermind.pl, where `count(X, C, P, K)`
+/// reads `count(X, C, Q, J)` with `Q is P + 1` under `peg(P)`. So does a
+/// program that builds no values, whose values are its constants:
+/// PSouffle's taint analyses, whose rewrite puts a negated predicate's
+/// demand inside the points-to recursion, ground from it in about a second
+/// and took up to 47 s top-down.
+fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
     use crate::syntax::CmpOp;
-    let made = |t: &Term| matches!(t, Term::Compound(_)) && !t.is_ground();
-    rules.iter().any(|r| {
-        r.body.iter().any(|l| match l {
-            Literal::Is(..) | Literal::Builtin(..) | Literal::Collect(_) | Literal::Findall(_) => {
-                true
+    let mut ids: FxHashMap<Sig, usize> = FxHashMap::default();
+    for c in &norm.rules {
+        let n = ids.len();
+        ids.entry(c.heads[0].atom.signature()).or_insert(n);
+    }
+    let mut edges = Vec::new();
+    for c in &norm.rules {
+        let h = ids[&c.heads[0].atom.signature()];
+        for l in &c.body {
+            let sig = match l {
+                Literal::Pos(a) | Literal::Neg(a) => a.signature(),
+                Literal::Collect(c) => (&*c.aux, c.arity),
+                _ => continue,
+            };
+            if let Some(&b) = ids.get(&sig) {
+                edges.push((h, b));
             }
-            Literal::Cmp(CmpOp::Eq, a, b) => made(a) || made(b),
+        }
+    }
+    let component = super::deps::strongly_connected(ids.len(), &edges);
+    let of = |a: &Atom| ids.get(&a.signature()).map(|&i| component[i]);
+    // The rules of each recursive component.
+    let mut rules: FxHashMap<usize, Vec<&Clause>> = FxHashMap::default();
+    for c in &norm.rules {
+        let k = component[ids[&c.heads[0].atom.signature()]];
+        if edges
+            .iter()
+            .any(|&(h, b)| component[h] == k && component[b] == k)
+        {
+            rules.entry(k).or_default().push(c);
+        }
+    }
+    let known =
+        |t: &Term, outside: &FxHashSet<String>| term_vars(t).iter().all(|v| outside.contains(v));
+    // The variables of `rule`, of the component `k`, whose values atoms
+    // outside `k` give: those of its atoms outside `k`, and those an `is`,
+    // a unification or a built-in computes from them.
+    let outside = |rule: &Clause, k: usize| {
+        let mut outside: FxHashSet<String> = FxHashSet::default();
+        for l in &rule.body {
+            if let Literal::Pos(a) = l
+                && of(a) != Some(k)
+            {
+                a.args.iter().for_each(|t| outside.extend(term_vars(t)));
+            }
+        }
+        loop {
+            let before = outside.len();
+            for l in &rule.body {
+                match l {
+                    Literal::Is(x, e) if known(e, &outside) => outside.extend(term_vars(x)),
+                    Literal::Cmp(CmpOp::Eq, a, b) => {
+                        if known(a, &outside) {
+                            outside.extend(term_vars(b));
+                        } else if known(b, &outside) {
+                            outside.extend(term_vars(a));
+                        }
+                    }
+                    Literal::Builtin(b, args, false) => {
+                        let given: Vec<bool> = args.iter().map(|t| known(t, &outside)).collect();
+                        if b.runs(&given) {
+                            args.iter().for_each(|t| outside.extend(term_vars(t)));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if outside.len() == before {
+                return outside;
+            }
+        }
+    };
+    // Whether `rule`, of the component `k`, builds a value from a variable
+    // not in `outside`.
+    let builds = |rule: &Clause, k: usize, outside: &FxHashSet<String>| {
+        let new = |t: &Term| !known(t, outside);
+        let made = |t: &Term| matches!(t, Term::Compound(_)) && new(t);
+        rule.heads[0].atom.args.iter().any(made)
+            || rule.body.iter().any(|l| match l {
+                Literal::Is(_, e) => new(e),
+                Literal::Cmp(CmpOp::Eq, a, b) => made(a) || made(b),
+                Literal::Builtin(_, args, false) => args.iter().any(new),
+                Literal::Collect(_) | Literal::Findall(_) => true,
+                Literal::Pos(a) if of(a) == Some(k) => a.args.iter().any(made),
+                _ => false,
+            })
+    };
+    let negates = |rule: &Clause| {
+        rule.body.iter().any(|l| match l {
+            Literal::Neg(a) => ids.contains_key(&a.signature()) && !given.contains(&a.signature()),
             _ => false,
-        }) || r.heads.iter().any(|h| h.atom.args.iter().any(made))
+        })
+    };
+    rules.iter().any(|(&k, rs)| {
+        let outsides: Vec<FxHashSet<String>> = rs.iter().map(|r| outside(r, k)).collect();
+        let grows = rs.iter().zip(&outsides).any(|(r, o)| builds(r, k, o))
+            && !levelled(rs, &outsides, |a| of(a) == Some(k));
+        grows && rs.iter().any(|r| negates(r))
     })
+}
+
+/// Whether the rules `rules` of a recursive component, with the variables
+/// `outside` of each whose values atoms outside the component give, read
+/// the component's atoms (`inside`) at a level strictly beyond their
+/// heads', one way for all: an argument position whose variable in the
+/// head of each rule that reads such an atom is in its `outside`, and in
+/// each such atom is the head's plus or minus a constant, as an `is` of
+/// the body sets it (`Q is P + 1` under `peg(P)`). A derivation then
+/// passes each level once at most, and the levels are finitely many.
+fn levelled(
+    rules: &[&Clause],
+    outside: &[FxHashSet<String>],
+    inside: impl Fn(&Atom) -> bool,
+) -> bool {
+    let arity = rules
+        .iter()
+        .map(|r| r.heads[0].atom.args.len())
+        .min()
+        .unwrap_or(0);
+    (0..arity).any(|i| {
+        let mut way = 0;
+        rules.iter().zip(outside).all(|(r, o)| {
+            let read: Vec<&Atom> = r
+                .body
+                .iter()
+                .filter_map(|l| match l {
+                    Literal::Pos(a) | Literal::Neg(a) if inside(a) => Some(a),
+                    _ => None,
+                })
+                .collect();
+            if read.is_empty() {
+                return true;
+            }
+            let Term::Var(vh) = &r.heads[0].atom.args[i] else {
+                return false;
+            };
+            o.contains(vh)
+                && read.iter().all(|a| {
+                    let Term::Var(vb) = &a.args[i] else {
+                        return false;
+                    };
+                    match step(&r.body, vh, vb).map(i64::signum) {
+                        Some(s) if way == 0 || s == way => {
+                            way = s;
+                            true
+                        }
+                        _ => false,
+                    }
+                })
+        })
+    })
+}
+
+/// The step `d` from a head's level `vh` to the level `vb` of an atom of
+/// the rule's `body`, `vb = vh + d` with `d` a constant other than 0, where
+/// an `is` of the body sets one from the other.
+fn step(body: &[Literal], vh: &str, vb: &str) -> Option<i64> {
+    let offset = |e: &Term, from: &str| {
+        let Term::Compound(c) = e else {
+            return None;
+        };
+        match (&*c.name, &c.args[..]) {
+            ("+", [Term::Var(y), Term::Int(n)]) | ("+", [Term::Int(n), Term::Var(y)])
+                if y == from =>
+            {
+                Some(*n)
+            }
+            ("-", [Term::Var(y), Term::Int(n)]) if y == from => Some(-n),
+            _ => None,
+        }
+    };
+    body.iter()
+        .find_map(|l| match l {
+            Literal::Is(Term::Var(x), e) if x == vb => offset(e, vh),
+            Literal::Is(Term::Var(x), e) if x == vh => offset(e, vb).map(|n| -n),
+            _ => None,
+        })
+        .filter(|&d| d != 0)
+}
+
+/// The variables of `t`.
+fn term_vars(t: &Term) -> Vec<String> {
+    let mut vs = Vec::new();
+    t.vars_into(&mut vs);
+    vs
 }
 
 /// A negation a demand rule does not read: the demand's predicate and the
@@ -452,7 +640,7 @@ fn demand(norm: &NormProgram, free: &FxHashSet<(Name, usize)>) -> Option<(Rewrit
         }
     }
     w.out.control = w.control;
-    let top_down = builds_values(&norm.rules)
+    let top_down = negation_bounds(norm, &d.given)
         && stratified(&norm.rules, &[])
         && !stratified(&w.out.rules, &w.unread);
     Some((
@@ -873,15 +1061,16 @@ mod tests {
         );
     }
 
-    /// A demand that binds an argument the body reads only as the value of
-    /// an `is` grounds that rule under the demand without it, which the
-    /// demand feeds; a rule that reads the argument keeps it.
     /// The demand of a walk that grows its list under `\\+ mem(X, Seen)`
     /// derives itself, and the rewrite cannot read the negation: the
-    /// program is resolved top-down. A demand that no recursion derives
-    /// is bounded without the negation, and the rewrite is ground; so is
-    /// one that a recursion derives in a program that builds no values,
-    /// whose rewrite is finite.
+    /// program is resolved top-down, as is a path that grows its list
+    /// under `\\+ mem(B, L)` where the rewrite puts `mem`'s demand inside
+    /// the path's recursion. A demand that no recursion derives is bounded
+    /// without the negation, and the rewrite is ground; so is one that a
+    /// recursion derives in a program that builds no values, whose rewrite
+    /// is finite, one whose recursion builds its values from atoms outside
+    /// it, a time index under `time(T)`, and one that counts along a level,
+    /// `Q is P + 1` under `peg(P)`.
     #[test]
     fn a_negation_the_demand_leaves_out_routes_top_down_under_a_recursive_demand() {
         let top_down = |source: &str| {
@@ -904,8 +1093,26 @@ mod tests {
              lv(V) :- e(V, M), \\+ st(M).\npt(X) :- q(X).\n\
              pt(Y) :- pt(X), e(X, Y), lv(Y).\nquery(pt(_)).\n"
         ));
+        assert!(top_down(
+            "e(a, b).\ne(b, c).\nmem(X, [X|_]).\nmem(X, [_|T]) :- mem(X, T).\nd(B, B, [B]).\n\
+             d(B, E, [B|L]) :- e(B, M), d(M, E, L), \\+ mem(B, L).\n\
+             d(B, E, [M|L]) :- e(M, B), d(M, E, L), \\+ mem(B, L).\n\
+             0.5::s(B, E) :- d(B, E, _).\nquery(s(a, c)).\n"
+        ));
+        assert!(!top_down(
+            "time(T) :- between(1, 3, T).\n0.5::seen(T) :- time(T).\nagrees(0).\n\
+             agrees(T) :- time(T), S is T - 1, agrees(S), \\+ seen(T).\nquery(agrees(3)).\n"
+        ));
+        assert!(!top_down(
+            "peg(P) :- between(1, 3, P).\n0.5::hit(P) :- peg(P).\ncount(4, 0).\n\
+             count(P, K) :- peg(P), Q is P + 1, count(Q, J), hit(P), K is J + 1.\n\
+             count(P, K) :- peg(P), Q is P + 1, count(Q, K), \\+ hit(P).\nquery(count(1, _)).\n"
+        ));
     }
 
+    /// A demand that binds an argument the body reads only as the value of
+    /// an `is` grounds that rule under the demand without it, which the
+    /// demand feeds; a rule that reads the argument keeps it.
     #[test]
     fn a_binding_read_only_by_is_is_dropped() {
         let p = parse_program(
