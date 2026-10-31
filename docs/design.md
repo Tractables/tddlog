@@ -329,7 +329,10 @@ clause is refused, as is one past 2^16 proofs of an atom or 2^16 lists.
 Rules must be range restricted, but for variables a demand binds; a body
 is reordered so that binding literals come first and switches last, as
 they bind nothing and reject no binding (`ground/schedule.rs`, shared by
-the grounder and the magic rewrite). Where the grounder joins a body, the
+the grounder and the magic rewrite). A findall's result and the element
+of a `memberchk/2` wait for the literals written before them that bind
+them: called with a free element, `memberchk/2` binds the list's first
+item. Where the grounder joins a body, the
 next atom is one whose variables are all bound, else the one that shares
 the most bound variables, the first in source order among equals: an
 atom whose variables are all unbound after some are bound would pair

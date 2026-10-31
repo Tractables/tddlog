@@ -25,14 +25,15 @@
 //! side an unbound variable and the other bound (it binds the variable), `V =
 //! f(A1,...,An)` with `V` bound (it binds the `Ai`), `V is E` when `E` is bound
 //! (it binds `V`), a list predicate when the arguments it reads are bound (it
-//! binds the others), a findall when the variables it shares with the clause
-//! are bound, and its result where an atom written before it binds it (it
+//! binds the others; `memberchk/2` also its element where a literal written
+//! before it binds it), a findall when the variables it shares with the clause
+//! are bound, and its result where a literal written before it binds it (it
 //! binds its result). Used by the grounder and by the magic-set rewrite,
 //! which passes the bindings sideways in the same order but for the atoms
 //! that wait ([`schedule_body`]), and in which a literal also waits for the
 //! atoms written before it ([`Order::Source`]).
 
-use crate::syntax::{CmpOp, Literal, Term};
+use crate::syntax::{Builtin, CmpOp, Literal, Term};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Reverse;
 use std::collections::{BTreeSet, BinaryHeap};
@@ -209,9 +210,13 @@ struct Schedule<'a> {
     pending: Vec<usize>,
     place_of: Vec<usize>,
     waiting: BTreeSet<usize>,
-    /// Of each findall, the variables of its result that an atom written
+    /// Of each findall, the variables of its result that a literal written
     /// before it binds: ProbLog calls it with them bound, and stops where
-    /// the result is then no list. It waits for them.
+    /// the result is then no list. It waits for them. So does `memberchk/2`
+    /// for those of its element: called with a free element it binds the
+    /// list's first item, and a join that reaches it before the literals
+    /// that bind the element would keep only the bindings that agree with
+    /// that item.
     waits: Vec<Vec<String>>,
     out: Vec<usize>,
 }
@@ -258,12 +263,13 @@ impl<'a> Schedule<'a> {
         }
         let waits = (0..body.len())
             .map(|i| {
-                let Literal::Collect(c) = &body[i] else {
-                    return Vec::new();
-                };
                 let mut vs = Vec::new();
-                c.result.vars_into(&mut vs);
-                vs.retain(|v| (0..i).any(|j| atom[j] && vars[j].contains(v)));
+                match &body[i] {
+                    Literal::Collect(c) => c.result.vars_into(&mut vs),
+                    Literal::Builtin(Builtin::Memberchk, args, false) => args[0].vars_into(&mut vs),
+                    _ => return vs,
+                }
+                vs.retain(|v| vars[..i].iter().any(|w| w.contains(v)));
                 vs
             })
             .collect();
@@ -407,6 +413,21 @@ mod tests {
             Order::From(2),
         );
         assert_eq!(order, Ok(vec![2, 0, 1, 3]));
+    }
+
+    /// `memberchk/2` waits for the element an atom written before it
+    /// binds, though the list is bound first: a join from `r` would
+    /// otherwise bind `X` to the list's first item.
+    #[test]
+    fn memberchk_waits_for_its_element() {
+        let p = parse_program("h(X, L) :- m(X), memberchk(X, L), r(L).\n").unwrap();
+        let mut body = p.clauses[0].body.clone();
+        let Literal::Pos(a) = &body[1] else {
+            unreachable!("an atom")
+        };
+        body[1] = Literal::Builtin(Builtin::Memberchk, a.args.to_vec(), false);
+        let order = schedule_body(&body, &mut FxHashSet::default(), |_| false, Order::From(2));
+        assert_eq!(order, Ok(vec![2, 0, 1]));
     }
 
     /// The atom that shares the most bound variables comes next: from the
