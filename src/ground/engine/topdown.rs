@@ -31,7 +31,10 @@
 //!   sound where an answer is proved alike whatever the call bound. An
 //!   identity or a `\=` of terms that unify and are not identical breaks
 //!   that: it compares otherwise once a call binds their variables, and
-//!   ProbLog answers by what each call proved. It is refused.
+//!   ProbLog answers by what each call proved. Such a comparison is made
+//!   as ProbLog makes it, and the program is refused where an atom is an
+//!   answer of two calls one of which made one on variables of its call,
+//!   or called with them a call that did, directly or not.
 //! - `=../2` builds a term from a list of fixed length that may hold
 //!   variables, or the list of a term with variables, as ProbLog's does.
 //! - A negation is of a ground call whose table is complete. It fails
@@ -178,6 +181,9 @@ struct Table {
     low: u32,
     /// The pass it was last resolved in.
     pass: u32,
+    /// Whether its resolution compared terms with variables that a call
+    /// that binds them compares otherwise ([`TopDown::compare`]).
+    compared: bool,
 }
 
 /// A table being resolved: the first table of a cycle it reached, and
@@ -186,6 +192,19 @@ struct Frame {
     table: u32,
     low: u32,
     looped: bool,
+    /// The call's terms as the clause being resolved for it instantiated
+    /// them ([`TopDown::of_call`]).
+    call: Vec<T>,
+}
+
+/// Pushes the variables of `t` to `out`, `t`'s bound variables replaced
+/// ([`TopDown::full`]).
+fn vars_of(t: &T, out: &mut Vec<u32>) {
+    match t {
+        T::G(_) => {}
+        T::X(x) => out.push(*x),
+        T::F(_, args) => args.iter().for_each(|a| vars_of(a, out)),
+    }
 }
 
 /// Whether the terms `a` and `b`, their bound variables replaced
@@ -217,6 +236,7 @@ pub(crate) fn ground(
     for d in &norm.drivers {
         td.driver(d, &mut queries, &mut evidence)?;
     }
+    td.shared()?;
     let out = td.program(norm, queries, evidence);
     ground_normalized(&out, bound)
 }
@@ -233,6 +253,11 @@ struct TopDown<'a> {
     trail: Vec<u32>,
     tables: Vec<Table>,
     table_ix: FxHashMap<(u32, Key), u32>,
+    /// The tables each table's resolution called, as `(caller, callee)`.
+    reads: FxHashSet<(u32, u32)>,
+    /// The first comparison of terms with variables that a call that binds
+    /// them compares otherwise, as written, where one was made.
+    compared: Option<String>,
     /// The tables that are not complete, in the order made.
     open: Vec<u32>,
     frames: Vec<Frame>,
@@ -277,6 +302,8 @@ impl<'a> TopDown<'a> {
             trail: Vec::new(),
             tables: Vec::new(),
             table_ix: FxHashMap::default(),
+            reads: FxHashSet::default(),
+            compared: None,
             open: Vec::new(),
             frames: Vec::new(),
             pass: 0,
@@ -722,7 +749,16 @@ impl<'a> TopDown<'a> {
         let Some(key) = Self::key(&args) else {
             return Err(self.too_deep(p, "call"));
         };
+        // The caller's table reads this one where a call that binds more
+        // of the caller's atom would call it otherwise.
+        let caller = match self.frames.last().map(|f| f.table) {
+            Some(c) if self.of_call(&args)? => Some(c),
+            _ => None,
+        };
         if let Some(&t) = self.table_ix.get(&(p, key.clone())) {
+            if let Some(c) = caller {
+                self.reads.insert((c, t));
+            }
             match self.tables[t as usize].state {
                 State::Complete => {}
                 State::Active => self.reads(t),
@@ -750,11 +786,83 @@ impl<'a> TopDown<'a> {
             state: State::Active,
             low: t,
             pass: self.pass,
+            compared: false,
         });
+        if let Some(c) = caller {
+            self.reads.insert((c, t));
+        }
         self.table_ix.insert((p, key), t);
         self.open.push(t);
         self.resolve_table(t)?;
         Ok(t)
+    }
+
+    /// Whether the terms `ts`, their bound variables replaced, hold a
+    /// variable of the call of the table being resolved, as the clause at
+    /// hand has bound it: one that a call that binds more of the same atom
+    /// would have bound.
+    fn of_call(&mut self, ts: &[T]) -> Result<bool, GroundError> {
+        let mut vars = Vec::new();
+        ts.iter().for_each(|t| vars_of(t, &mut vars));
+        let Some(f) = self.frames.last() else {
+            return Ok(false);
+        };
+        if vars.is_empty() {
+            return Ok(false);
+        }
+        let mut own = Vec::new();
+        for t in f.call.clone() {
+            vars_of(&self.full(&t)?, &mut own);
+        }
+        Ok(vars.iter().any(|x| own.contains(x)))
+    }
+
+    /// Refuses the program where a table that compared terms with variables
+    /// of its call ([`Self::compare`]), or that called such a table with
+    /// variables of its own call, directly or not, answers an atom that
+    /// another table answers too. The calls of a
+    /// predicate share the atoms of their answers, each atom's rules those
+    /// of every call that proved it; ProbLog gives each call's answer a
+    /// node of its own. The two agree where every call proves an answer
+    /// alike, which such a comparison does not ensure: `fill(A) :- A ==
+    /// unknown` fails for the call `fill(A)` and holds for `fill(unknown)`.
+    fn shared(&mut self) -> Result<(), GroundError> {
+        let Some(why) = self.compared.clone() else {
+            return Ok(());
+        };
+        let mut callers: FxHashMap<u32, Vec<u32>> = FxHashMap::default();
+        for &(caller, callee) in &self.reads {
+            callers.entry(callee).or_default().push(caller);
+        }
+        let mut marked: Vec<bool> = self.tables.iter().map(|t| t.compared).collect();
+        let mut work: Vec<u32> = (0..marked.len() as u32)
+            .filter(|&t| marked[t as usize])
+            .collect();
+        while let Some(t) = work.pop() {
+            for &c in callers.get(&t).map_or(&[][..], Vec::as_slice) {
+                if !marked[c as usize] {
+                    marked[c as usize] = true;
+                    work.push(c);
+                }
+            }
+        }
+        // By atom, the first table that answers it.
+        let mut first: FxHashMap<u32, u32> = FxHashMap::default();
+        for (t, table) in self.tables.iter().enumerate() {
+            for &(_, a) in &table.answers {
+                let u = *first.entry(a).or_insert(t as u32);
+                if u != t as u32 && (marked[t] || marked[u as usize]) {
+                    let (p, vals) = self.atoms[a as usize].clone();
+                    let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
+                    let atom = Atom::new(self.preds[p as usize].name.clone(), args);
+                    return Err(GroundError::Unsupported(format!(
+                        "{why}, which a call that binds them compares otherwise: {atom} is \
+                         an answer of two calls, which ProbLog proves apart"
+                    )));
+                }
+            }
+        }
+        Ok(())
     }
 
     /// The table being resolved read the table that is not complete of a
@@ -787,6 +895,7 @@ impl<'a> TopDown<'a> {
             table: t,
             low: self.tables[t as usize].low,
             looped: false,
+            call: Vec::new(),
         });
         self.tables[t as usize].state = State::Active;
         loop {
@@ -830,6 +939,7 @@ impl<'a> TopDown<'a> {
             let mark = self.mark();
             let key = self.tables[t as usize].call.clone();
             let call = self.unkey(&key, rule.args.len());
+            self.frames.last_mut().expect("a frame").call = call.clone();
             let base = self.binds.len() as u32;
             self.binds
                 .resize(self.binds.len() + rule.vars as usize, None);
@@ -1149,17 +1259,28 @@ impl<'a> TopDown<'a> {
         let (a, b) = (self.full(a)?, self.full(b)?);
         if matches!(op, CmpOp::Ne | CmpOp::Identical | CmpOp::NotIdentical) {
             // Terms that are identical, or that do not unify, compare
-            // alike whatever a call binds; the others do not, and an answer
-            // proved by them would hold for some calls of its atom only.
+            // alike whatever a call binds. The others compare as ProbLog
+            // compares them, as they are: they unify and are not
+            // identical. Where they hold a variable of the table's call, a
+            // call that binds more of the same atom may compare them
+            // otherwise, and the table is marked: an answer it proves may
+            // be proved otherwise by another call of its atom
+            // ([`Self::shared`]).
             let same = identical(&a, &b);
-            if !same && self.unifiable(&[a], &[b]) {
-                let c = &self.norm.rules[rule.at];
-                return Err(GroundError::Unsupported(format!(
-                    "{c}: {op} of terms with variables, which a call that binds them \
-                     compares otherwise"
-                )));
+            if same || !self.unifiable(std::slice::from_ref(&a), std::slice::from_ref(&b)) {
+                return Ok(same == (op == CmpOp::Identical));
             }
-            return Ok(same == (op == CmpOp::Identical));
+            if self.of_call(&[a, b])? {
+                let Some(f) = self.frames.last() else {
+                    unreachable!("a clause is resolved for a table")
+                };
+                self.tables[f.table as usize].compared = true;
+                if self.compared.is_none() {
+                    let c = &self.norm.rules[rule.at];
+                    self.compared = Some(format!("{c}: {op} of terms with variables"));
+                }
+            }
+            return Ok(op == CmpOp::NotIdentical);
         }
         let (T::G(x), T::G(y)) = (&a, &b) else {
             let c = &self.norm.rules[rule.at];

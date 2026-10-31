@@ -227,3 +227,36 @@ fn univ_builds_and_takes_apart_terms_with_variables() {
         assert!(e.contains("ProbLog's call mode error"), "{body}: {e}");
     }
 }
+
+#[test]
+fn a_comparison_of_terms_with_variables_is_made_as_problog_makes_it() {
+    // count(s, N) \= count(s, 0) fails while N is free, as in ProbLog:
+    // member/2 written so stops at the first count of s. No other call of
+    // member/2 or get/2 answers their atoms. The query of a list with a
+    // variable in it, which one/2 answers with a variable, has the program
+    // resolved top-down.
+    assert_answers(
+        "0.5::f.
+         member(A, [A|_]).
+         member(A, [H|T]) :- A \\= H, member(A, T).
+         get(X, N) :- member(count(X, N), [count(s, 0), count(m, 1), count(s, 2)]).
+         one(X, [X]).
+         w(L) :- one(N, L), f, get(s, N).
+         query(w([_])).",
+        &[("w([0])", 0.5)],
+    );
+    // The calls w([_]) and w([0]) both answer w([0]); each calls get(s, N)
+    // with N a variable of its own clause, not of its call, so that both
+    // prove w([0]) alike and share its atom.
+    assert_answers(
+        "0.5::f.
+         member(A, [A|_]).
+         member(A, [H|T]) :- A \\= H, member(A, T).
+         get(X, N) :- member(count(X, N), [count(s, 0), count(m, 1), count(s, 2)]).
+         one(X, [X]).
+         w(L) :- one(_, L), get(s, N), f, L = [N].
+         query(w([_])).
+         query(w([0])).",
+        &[("w([0])", 0.5), ("w([0])", 0.5)],
+    );
+}

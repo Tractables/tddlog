@@ -625,7 +625,15 @@ are skipped. Several steps have a program in `examples/` that shows them.
    answer, and only the leader completes it: a call found in the
    component stays in it when it is re-evaluated). An answer with variables in it is kept where it holds in
    every world (`reverse([], L, L)`) and refused where it holds in some
-   only. The resolution emits the ground instances of the clauses it
+   only. A comparison `\=`, `==` or `\==` of terms with variables that
+   unify and are not identical is made as ProbLog makes it, as the terms
+   stand at the call (`\=` and `==` fail, `\==` holds). Where their
+   variables are the call's, a call that binds more of the same atom may
+   compare them otherwise; the calls of a predicate share the atoms of
+   their answers, so the program is refused where an atom is the answer
+   of two calls one of which made such a comparison, or called with
+   variables of its own call, directly or not, a call that did. The
+   resolution emits the ground instances of the clauses it
    used, which the grounder then grounds as a program without variables;
    they count against the grounding bound, and a call or a term with
    variables nested deeper than 1 000 gives the grounding up with the
