@@ -243,7 +243,7 @@ instance, time and program, and a page for each system.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **310 of 356** ProbLog programs, of 25 families: paths
+tddlog answers **331 of 356** ProbLog programs, of 25 families: paths
 in random graphs and grids, Biomine's paths, smokers, UW-CSE, Cora's
 citation matching, blood types and pedigrees, sickness, Mastermind,
 MNIST addition and handwritten formulas, Prob-EC's event calculus, taint
@@ -253,11 +253,11 @@ examples.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| ProbLog | 250 | 15 h | 4.1 h | 3.3× |
-| PITA | 211 | 20 h | 2.4 h | 8.3× |
-| aspmc | 191 | 22 h | 27 min | 95× |
-| Scallop | 127 | 31 h | 26 min | too few in common |
-| PSouffle | 105 | 37 h | 27 min | 625× |
+| ProbLog | 251 | 15 h | 47 min | 29× |
+| PITA | 212 | 21 h | 27 min | 169× |
+| aspmc | 209 | 22 h | 27 min | 93× |
+| Scallop | 148 | 31 h | 26 min | too few in common |
+| PSouffle | 105 | 41 h | 27 min | 665× |
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
@@ -402,7 +402,7 @@ program; every other system is given the circuit.
        alt="All programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-tddlog answers **1973 of 2174**: the six types together, every system
+tddlog answers **1994 of 2174**: the six types together, every system
 on every program it is given, natively or through a translation.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
@@ -412,7 +412,7 @@ on every program it is given, natively or through a translation.
 | TensorInference.jl | 890 | 243 h | 8.4 h | 30× |
 | pyAgrum | 866 | 233 h | 7.4 h | 35× |
 | Merlin | 862 | 238 h | 7.6 h | 30× |
-| 18 others: ProbLog, PITA, pgmpy, Alea.jl, aspmc, Roulette, Storm, Pluck, Dice, PRISM, PSouffle, ProvSQL, noDice, Scallop, Genfer, Geni, SPPL, Psi | 88 to 751 | over 16 h each | 45 min to 9.8 h | at least 20× |
+| 18 others: ProbLog, PITA, pgmpy, Alea.jl, aspmc, Roulette, Storm, Pluck, Dice, PRISM, PSouffle, ProvSQL, Scallop, noDice, Genfer, Geni, SPPL, Psi | 88 to 752 | over 16 h each | 45 min to 7.6 h | at least 20× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
