@@ -27,6 +27,7 @@ use crate::syntax::{
 };
 
 mod lists;
+pub(super) use lists::not_a_list;
 pub(super) mod topdown;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -3322,6 +3323,13 @@ fn ground_body(
             }
         }
         ILit::Collect(c) => {
+            if let Some(v) = arg_val(&c.result, subst)
+                && g.items(v).is_none()
+            {
+                let result = g.term_of(v);
+                g.fail(lists::not_a_list(&c.text, &result));
+                return;
+            }
             let shared = resolve(&c.shared, subst);
             let Some(lists) = collect(g, c, &shared) else {
                 return;

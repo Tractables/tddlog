@@ -24,6 +24,10 @@
 //!
 //! all/3 lists each solution once, by the atom that answers it, and fails
 //! where the list would be empty.
+//!
+//! A findall whose result is bound, when it is called, to what is neither a
+//! list nor a list whose tail is a variable gives the grounding up
+//! ([`not_a_list`]), as ProbLog stops on it with a call mode error.
 
 use std::rc::Rc;
 
@@ -39,6 +43,14 @@ pub(super) const MAX_PROOFS: usize = 1 << 16;
 
 /// The most lists a findall's goal may give for one call.
 pub(super) const MAX_LISTS: usize = 1 << 16;
+
+/// The error of the findall `what` called with its result bound to
+/// `result`, which is no list.
+pub(crate) fn not_a_list(what: &str, result: &impl std::fmt::Display) -> GroundError {
+    GroundError::Refused(format!(
+        "{what}: called with its result {result}, which is no list (ProbLog's call mode error)"
+    ))
+}
 
 /// A literal: whether positive, and its atom.
 pub(super) type Lit = (bool, u32);

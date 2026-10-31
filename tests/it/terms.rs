@@ -635,6 +635,22 @@ fn a_findall_tddlog_cannot_list_as_prolog_does_is_refused() {
     }
 }
 
+/// A findall called with its result bound to what is no list stops the
+/// grounding, as ProbLog stops on it with a call mode error: bound by the
+/// query, as in ProbLog's findall5.pl, written so, and bound by a call
+/// resolved top-down.
+#[test]
+fn a_findall_whose_result_is_no_list_is_refused() {
+    for source in [
+        "0.3::a(1). 0.4::a(2). f(L) :- findall(A, a(A), L). query(f(abcdef)).",
+        "0.3::a(1). g :- findall(A, a(A), s(r(23), (17, b))). query(g).",
+        "0.3::a(1). id(L, L). f(M) :- id(L, M), findall(A, a(A), L). query(f(abc)).",
+    ] {
+        let e = refusal(source);
+        assert!(e.contains("which is no list"), "{source}: {e}");
+    }
+}
+
 #[test]
 fn a_grounding_that_builds_ever_deeper_terms_is_refused() {
     let e = refusal("nat(0). nat(s(X)) :- nat(X). query(nat(_)).");

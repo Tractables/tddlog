@@ -442,6 +442,21 @@ impl<'a> TopDown<'a> {
         t
     }
 
+    /// Whether `t` is a variable, a list or a list whose tail is a
+    /// variable: what a findall's result may be bound to.
+    fn listlike(&mut self, t: &T) -> bool {
+        let (_, cons) = self.g.list_syms();
+        let mut t = self.deref(t);
+        loop {
+            match t {
+                T::X(_) => return true,
+                T::G(v) => return self.g.items(v).is_some(),
+                T::F(f, args) if f == cons && args.len() == 2 => t = self.deref(&args[1]),
+                T::F(..) => return false,
+            }
+        }
+    }
+
     fn mark(&self) -> (usize, usize) {
         (self.binds.len(), self.trail.len())
     }
@@ -945,6 +960,11 @@ impl<'a> TopDown<'a> {
                 }
             }
             Lit::Collect(c) => {
+                let result = Self::inst(&c.result, base);
+                if !self.listlike(&result) {
+                    let result = self.show_term(&result);
+                    return Err(lists::not_a_list(&c.text, &result));
+                }
                 for &(list, cond) in self.collect(c, base, rule)?.iter() {
                     let mark = self.mark();
                     if self.unify(&Self::inst(&c.result, base), &T::G(list)) {

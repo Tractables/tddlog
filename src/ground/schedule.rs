@@ -26,9 +26,10 @@
 //! f(A1,...,An)` with `V` bound (it binds the `Ai`), `V is E` when `E` is bound
 //! (it binds `V`), a list predicate when the arguments it reads are bound (it
 //! binds the others), a findall when the variables it shares with the clause
-//! are bound (it binds its result). Used by the grounder and by the magic-set
-//! rewrite, which passes the bindings sideways in the same order but for the
-//! atoms that wait ([`schedule_body`]).
+//! are bound, and its result where an atom written before it binds it (it
+//! binds its result). Used by the grounder and by the magic-set rewrite,
+//! which passes the bindings sideways in the same order but for the atoms
+//! that wait ([`schedule_body`]).
 
 use crate::syntax::{CmpOp, Literal, Term};
 use rustc_hash::FxHashSet;
@@ -134,28 +135,43 @@ pub(crate) fn schedule_body(
     let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && !switch(i);
     let mut pending: Vec<usize> = Vec::with_capacity(body.len());
     pending.extend((0..body.len()).filter(|&i| !binding(i) && !switch(i)));
+    // A findall waits for the variables of its result that an atom written
+    // before it binds: ProbLog calls it with them bound, and stops where
+    // the result is then no list.
+    let waits: Vec<Vec<String>> = (0..body.len())
+        .map(|i| {
+            let Literal::Collect(c) = &body[i] else {
+                return Vec::new();
+            };
+            let mut vs = Vec::new();
+            c.result.vars_into(&mut vs);
+            vs.retain(|v| (0..i).any(|j| binding(j) && literal_vars(&body[j]).contains(v)));
+            vs
+        })
+        .collect();
     let mut out: Vec<usize> = Vec::with_capacity(body.len());
-    let release =
-        |bound: &mut FxHashSet<String>, pending: &mut Vec<usize>, out: &mut Vec<usize>| loop {
-            let mut progressed = false;
-            let mut i = 0;
-            while i < pending.len() {
-                let l = &body[pending[i]];
-                let unbound: Vec<String> = literal_vars(l)
-                    .into_iter()
-                    .filter(|v| !bound.contains(v))
-                    .collect();
-                if ready(l, &unbound, bound) {
-                    out.push(pending.remove(i));
-                    progressed = true;
-                } else {
-                    i += 1;
-                }
+    let release = |bound: &mut FxHashSet<String>,
+                   pending: &mut Vec<usize>,
+                   out: &mut Vec<usize>| loop {
+        let mut progressed = false;
+        let mut i = 0;
+        while i < pending.len() {
+            let l = &body[pending[i]];
+            let unbound: Vec<String> = literal_vars(l)
+                .into_iter()
+                .filter(|v| !bound.contains(v))
+                .collect();
+            if waits[pending[i]].iter().all(|v| bound.contains(v)) && ready(l, &unbound, bound) {
+                out.push(pending.remove(i));
+                progressed = true;
+            } else {
+                i += 1;
             }
-            if !progressed {
-                break;
-            }
-        };
+        }
+        if !progressed {
+            break;
+        }
+    };
     release(bound, &mut pending, &mut out);
     let mut atoms: Vec<usize> = (0..body.len()).filter(|&i| binding(i)).collect();
     while !atoms.is_empty() {

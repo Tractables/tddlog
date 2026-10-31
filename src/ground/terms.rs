@@ -46,9 +46,10 @@ use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::engine::GroundError;
+use super::engine::{GroundError, not_a_list};
 use crate::syntax::{
-    Atom, Builtin, CONS, Clause, CmpOp, Collect, Compound, Findall, Literal, Name, Program, Term,
+    Atom, Builtin, CONS, Clause, CmpOp, Collect, Compound, Findall, Literal, NIL, Name, Program,
+    Term,
 };
 
 /// The prefix of the auxiliary predicates of findalls.
@@ -756,6 +757,9 @@ impl Lowering<'_, '_> {
     ) -> Result<Collect, GroundError> {
         let text: Arc<str> = Literal::Findall(Box::new(fa.clone())).to_string().into();
         let refuse = |why: String| Err(GroundError::Refused(format!("{text}: {why}")));
+        if !listlike(&fa.result) {
+            return Err(not_a_list(&text, &fa.result));
+        }
         if fa.interleaved {
             return refuse(
                 "a disjunction after another literal of the goal, whose solutions ProbLog lists in another order"
@@ -979,5 +983,17 @@ fn binds(l: &Literal, out: &mut Vec<String>) {
     match l {
         Literal::Findall(f) => f.result.vars_into(out),
         _ => l.vars_into(out),
+    }
+}
+
+/// Whether `t` is a variable, a list or a list whose tail is a variable:
+/// what a findall's result may be written as.
+fn listlike(t: &Term) -> bool {
+    match t {
+        Term::Var(_) => true,
+        Term::Const(c) => &**c == NIL,
+        _ => {
+            matches!(t.as_compound(), Some((name, [_, tail])) if &**name == CONS && listlike(tail))
+        }
     }
 }
