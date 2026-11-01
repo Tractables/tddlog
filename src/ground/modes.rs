@@ -54,8 +54,7 @@ pub(crate) fn tests_unbound(norm: &NormProgram) -> Result<bool, GroundError> {
     for d in &norm.drivers {
         work.push((d.atom.signature(), pattern(&d.atom, &none)));
         let mut vars = Vars::default();
-        vars.bound
-            .extend(literal_vars(&Literal::Pos(d.atom.clone())));
+        vars.bound.extend(d.atom.vars());
         work.push((d.pattern.signature(), pattern(&d.pattern, &vars)));
     }
     let mut done: FxHashSet<(Sig, Vec<Arg>)> = FxHashSet::default();
@@ -87,7 +86,7 @@ struct Vars {
 
 impl Vars {
     fn ground(&self, t: &Term) -> bool {
-        vars(t).iter().all(|v| self.bound.contains(v))
+        t.vars().iter().all(|v| self.bound.contains(v))
     }
 
     /// Whether the variable `v` is free: no literal before, nor the call,
@@ -109,8 +108,8 @@ fn unbound_test<'a>(
     let mut v = Vars::default();
     for (t, arg) in head.args.iter().zip(called) {
         match arg {
-            Arg::Bound => v.bound.extend(vars(t)),
-            Arg::Partial => v.touched.extend(vars(t)),
+            Arg::Bound => v.bound.extend(t.vars()),
+            Arg::Partial => v.touched.extend(t.vars()),
             Arg::Free => {}
         }
     }
@@ -122,7 +121,7 @@ fn unbound_test<'a>(
             .into_iter()
             .filter(|x| !v.bound.contains(x))
             .any(|x| {
-                vars_of_atom(head).contains(&x)
+                head.vars().contains(&x)
                     || rule
                         .body
                         .iter()
@@ -133,7 +132,7 @@ fn unbound_test<'a>(
     let mut fires = false;
     for (i, lit) in rule.body.iter().enumerate() {
         let unbound = |ts: &[&Term]| ts.iter().any(|t| !v.ground(t));
-        let free = |ts: &[&Term]| ts.iter().flat_map(|t| vars(t)).find(|x| v.free(x));
+        let free = |ts: &[&Term]| ts.iter().flat_map(|t| t.vars()).find(|x| v.free(x));
         let stops = match lit {
             Literal::Cmp(op, a, b) if op.arithmetic() => free(&[a, b]),
             Literal::Is(_, e) => free(&[e]),
@@ -188,7 +187,7 @@ fn unbound_test<'a>(
 /// matches against a variable that may hold one may hold its parts.
 fn bind(lit: &Literal, v: &mut Vars) {
     match lit {
-        Literal::Pos(a) => v.bound.extend(vars_of_atom(a)),
+        Literal::Pos(a) => v.bound.extend(a.vars()),
         Literal::Cmp(CmpOp::Eq, a, b) => {
             for (x, t) in [(a, b), (b, a)] {
                 let held = !matches!(t, Term::Var(y) if v.free(y));
@@ -199,26 +198,26 @@ fn bind(lit: &Literal, v: &mut Vars) {
                     // A compound takes the parts of a term a variable may
                     // hold.
                     Term::Compound(_) if held && matches!(t, Term::Var(_)) => {
-                        v.touched.extend(vars(x));
+                        v.touched.extend(x.vars());
                     }
                     _ => {}
                 }
             }
             v.pending.push((a.clone(), b.clone()));
         }
-        Literal::Is(x, e) if v.ground(e) => v.bound.extend(vars(x)),
-        Literal::Is(x, _) => v.touched.extend(vars(x)),
+        Literal::Is(x, e) if v.ground(e) => v.bound.extend(x.vars()),
+        Literal::Is(x, _) => v.touched.extend(x.vars()),
         Literal::Builtin(b, args, false) => {
             let given: Vec<bool> = args.iter().map(|t| v.ground(t)).collect();
-            let all = args.iter().flat_map(vars);
+            let all = args.iter().flat_map(Term::vars);
             if b.runs(&given) {
                 v.bound.extend(all);
             } else {
                 v.touched.extend(all);
             }
         }
-        Literal::Collect(c) => v.bound.extend(vars(&c.result)),
-        Literal::Findall(f) => v.bound.extend(vars(&f.result)),
+        Literal::Collect(c) => v.bound.extend(c.result.vars()),
+        Literal::Findall(f) => v.bound.extend(f.result.vars()),
         _ => {}
     }
     // The unifications whose one side is now bound bind the other.
@@ -227,9 +226,9 @@ fn bind(lit: &Literal, v: &mut Vars) {
         let pending = std::mem::take(&mut v.pending);
         for (a, b) in pending {
             if v.ground(&a) {
-                v.bound.extend(vars(&b));
+                v.bound.extend(b.vars());
             } else if v.ground(&b) {
-                v.bound.extend(vars(&a));
+                v.bound.extend(a.vars());
             } else {
                 v.pending.push((a, b));
             }
@@ -251,16 +250,4 @@ fn pattern(atom: &Atom, v: &Vars) -> Vec<Arg> {
             _ => Arg::Partial,
         })
         .collect()
-}
-
-fn vars(t: &Term) -> Vec<String> {
-    let mut out = Vec::new();
-    t.vars_into(&mut out);
-    out
-}
-
-fn vars_of_atom(a: &Atom) -> Vec<String> {
-    let mut out = Vec::new();
-    a.vars_into(&mut out);
-    out
 }

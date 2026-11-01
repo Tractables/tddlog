@@ -385,6 +385,14 @@ struct Counted {
     order: Vec<usize>,
 }
 
+impl Counted {
+    fn new(group: u32, ordered: &[usize]) -> Box<Self> {
+        let mut order: Vec<usize> = (0..ordered.len()).collect();
+        order.sort_by_key(|&k| ordered[k]);
+        Box::new(Counted { group, order })
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 struct IRule {
     head: (PredId, Vec<Arg>),
@@ -729,6 +737,18 @@ impl<'a> Grounder<'a> {
     /// bound, or the allocator refused the grounding more memory.
     fn over(&self) -> bool {
         self.refused || self.size > self.bound || self.demands > self.bound || self.error.is_some()
+    }
+
+    /// An error where the grounding is given up ([`Grounder::over`]).
+    fn check(&mut self) -> Result<(), GroundError> {
+        if !self.over() {
+            return Ok(());
+        }
+        Err(match self.error.take() {
+            Some(e) => e,
+            None if self.refused => GroundError::OutOfMemory,
+            None => GroundError::OverBound,
+        })
     }
 
     /// Gives the grounding up with `e`, unless it is given up already.
@@ -1163,26 +1183,17 @@ fn compile_rule<'a>(
     let mut body: Vec<ILit> = Vec::with_capacity(ordered.len());
     for &i in &ordered {
         match &clause.body[i] {
-            Literal::Pos(a) => {
+            Literal::Pos(a) | Literal::Neg(a) => {
                 // A predicate not yet known is no switch: every switch is
                 // registered before the rules are compiled.
                 let (p, switch) =
                     known[i].unwrap_or_else(|| (g.pred(&a.name, a.args.len(), None), false));
                 let args: Vec<Arg> = a.args.iter().map(|t| var_of(t, &mut vars, g)).collect();
-                body.push(if switch {
-                    ILit::Switch(p, args)
-                } else {
-                    ILit::Pos(p, args)
-                });
-            }
-            Literal::Neg(a) => {
-                let (p, switch) =
-                    known[i].unwrap_or_else(|| (g.pred(&a.name, a.args.len(), None), false));
-                let args: Vec<Arg> = a.args.iter().map(|t| var_of(t, &mut vars, g)).collect();
-                body.push(if switch {
-                    ILit::NegSwitch(p, args)
-                } else {
-                    ILit::Neg(p, args)
+                body.push(match (matches!(&clause.body[i], Literal::Pos(_)), switch) {
+                    (true, true) => ILit::Switch(p, args),
+                    (true, false) => ILit::Pos(p, args),
+                    (false, true) => ILit::NegSwitch(p, args),
+                    (false, false) => ILit::Neg(p, args),
                 });
             }
             // `V = f(A..)`, its arguments flat ([`super::terms`]).
@@ -1248,12 +1259,7 @@ fn compile_rule<'a>(
     g.known = known;
     let counted = counted.then(|| {
         g.preds[head_pred as usize].counted = true;
-        let mut order: Vec<usize> = (0..ordered.len()).collect();
-        order.sort_by_key(|&k| ordered[k]);
-        Box::new(Counted {
-            group: clause.group,
-            order,
-        })
+        Counted::new(clause.group, &ordered)
     });
     Ok(IRule {
         head: (head_pred, head_args),
@@ -1898,14 +1904,7 @@ impl lists::Source for Grounder<'_> {
         lits.sort_unstable();
         lits.dedup();
         self.keep_rule(GroundRule::new(head, lits));
-        if self.over() {
-            return Err(match self.error.take() {
-                Some(e) => e,
-                None if self.refused => GroundError::OutOfMemory,
-                None => GroundError::OverBound,
-            });
-        }
-        Ok(())
+        self.check()
     }
 }
 
@@ -1961,9 +1960,12 @@ fn schedule_rule(
                 clause.body[stuck]
             ))
         })?;
-    let mut head = Vec::new();
-    clause.heads[0].atom.vars_into(&mut head);
-    if head.iter().any(|v| !bound.contains(v)) {
+    if clause.heads[0]
+        .atom
+        .vars()
+        .iter()
+        .any(|v| !bound.contains(v))
+    {
         return Err(GroundError::Unsafe(format!(
             "{clause}: head variable not bound by a positive body atom"
         )));
@@ -2152,15 +2154,7 @@ fn ground_with(
                 _ => evaluate_stratum(&mut g, stratum),
             }
         }
-        if g.over() {
-            return Err(if let Some(e) = g.error.take() {
-                e
-            } else if g.refused {
-                GroundError::OutOfMemory
-            } else {
-                GroundError::OverBound
-            });
-        }
+        g.check()?;
     }
     g.current_stratum.clear();
     // The rules of an atom proved false go, and those of an atom proved
@@ -2968,14 +2962,10 @@ fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
         .iter()
         .map(|&c| rule.body[place[c]].clone())
         .collect();
-    let counted = rule.counted.as_ref().map(|c| {
-        let mut order: Vec<usize> = (0..ordered.len()).collect();
-        order.sort_by_key(|&k| ordered[k]);
-        Box::new(Counted {
-            group: c.group,
-            order,
-        })
-    });
+    let counted = rule
+        .counted
+        .as_ref()
+        .map(|c| Counted::new(c.group, &ordered));
     let at = ordered
         .iter()
         .position(|&c| c == own[i])

@@ -119,11 +119,7 @@ fn usable(rule: &Clause, adornment: &Adornment) -> Option<Adornment> {
     }
     let read = |v: &String| {
         rule.body.iter().any(|l| match l {
-            Literal::Is(Term::Var(w), e) if w == v => {
-                let mut vs = Vec::new();
-                e.vars_into(&mut vs);
-                vs.contains(v)
-            }
+            Literal::Is(Term::Var(w), e) if w == v => e.vars().contains(v),
             other => literal_vars(other).contains(v),
         })
     };
@@ -194,9 +190,7 @@ fn given<'a>(
         literals
             && !head.negated
             && schedule_body(&rule.body, &mut bound, |_| false, Order::Source).is_ok()
-            && literal_vars(&Literal::Pos(head.atom.clone()))
-                .iter()
-                .all(|v| bound.contains(v))
+            && head.atom.vars().iter().all(|v| bound.contains(v))
     };
     let switches: FxHashSet<Sig> = norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
     let mut given: FxHashSet<Sig> = norm
@@ -242,9 +236,7 @@ fn bearing(
 ) -> Vec<usize> {
     let mut reached: FxHashSet<String> = FxHashSet::default();
     for t in args {
-        let mut vs = Vec::new();
-        t.vars_into(&mut vs);
-        reached.extend(vs);
+        reached.extend(t.vars());
     }
     let vars: Vec<Vec<String>> = prefix.iter().map(|&j| literal_vars(&body[j])).collect();
     let mut kept = vec![false; prefix.len()];
@@ -382,7 +374,7 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
         }
     }
     let known =
-        |t: &Term, outside: &FxHashSet<String>| term_vars(t).iter().all(|v| outside.contains(v));
+        |t: &Term, outside: &FxHashSet<String>| t.vars().iter().all(|v| outside.contains(v));
     // The variables of `rule`, of the component `k`, whose values atoms
     // outside `k` give: those of its atoms outside `k`, and those an `is`,
     // a unification or a built-in computes from them.
@@ -392,25 +384,25 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
             if let Literal::Pos(a) = l
                 && of(a) != Some(k)
             {
-                a.args.iter().for_each(|t| outside.extend(term_vars(t)));
+                outside.extend(a.vars());
             }
         }
         loop {
             let before = outside.len();
             for l in &rule.body {
                 match l {
-                    Literal::Is(x, e) if known(e, &outside) => outside.extend(term_vars(x)),
+                    Literal::Is(x, e) if known(e, &outside) => outside.extend(x.vars()),
                     Literal::Cmp(CmpOp::Eq, a, b) => {
                         if known(a, &outside) {
-                            outside.extend(term_vars(b));
+                            outside.extend(b.vars());
                         } else if known(b, &outside) {
-                            outside.extend(term_vars(a));
+                            outside.extend(a.vars());
                         }
                     }
                     Literal::Builtin(b, args, false) => {
                         let given: Vec<bool> = args.iter().map(|t| known(t, &outside)).collect();
                         if b.runs(&given) {
-                            args.iter().for_each(|t| outside.extend(term_vars(t)));
+                            args.iter().for_each(|t| outside.extend(t.vars()));
                         }
                     }
                     _ => {}
@@ -527,13 +519,6 @@ fn step(body: &[Literal], vh: &str, vb: &str) -> Option<i64> {
             _ => None,
         })
         .filter(|&d| d != 0)
-}
-
-/// The variables of `t`.
-fn term_vars(t: &Term) -> Vec<String> {
-    let mut vs = Vec::new();
-    t.vars_into(&mut vs);
-    vs
 }
 
 /// A negation a demand rule does not read: the demand's predicate and the
@@ -732,9 +717,7 @@ impl Demand<'_> {
             // names: m_pattern(bound args) :- driver(vars). The pattern's
             // variables are the driver's arguments, so all of them are
             // bound.
-            let bound: FxHashSet<String> = literal_vars(&Literal::Pos(driver.clone()))
-                .into_iter()
-                .collect();
+            let bound: FxHashSet<String> = driver.vars().into_iter().collect();
             let body = vec![Literal::Pos(driver.clone())];
             self.seed(pattern, self.adorn(pattern, &bound), body, w);
         }

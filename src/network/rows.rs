@@ -1,5 +1,5 @@
 //! The numbers of a table's rows: how a row that does not sum to one is
-//! written, and how a probability is written in the program.
+//! written.
 //!
 //! A row of a table sums to one, and a file's decimals round it: bnlearn's
 //! pathfinder writes `0.3333333` three times, and the networks of the UAI
@@ -336,47 +336,9 @@ pub(crate) fn fsum(xs: &[f64]) -> f64 {
     hi
 }
 
-/// Appends `x` as Python's `repr` writes a float: its shortest digits
-/// that read back as `x` (Rust's), positional for a decimal exponent from
-/// -5 to 15 and scientific with a signed exponent of two digits or more
-/// otherwise (`1e-05`, `0.0001`, `1.0`), so that the program is the one
-/// `gen_bn.py` wrote.
-pub(crate) fn write_float(out: &mut String, x: f64) {
-    crate::syntax::write_float(out, x).expect("a String takes any text");
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn written(x: f64) -> String {
-        let mut s = String::new();
-        write_float(&mut s, x);
-        s
-    }
-
-    #[test]
-    fn a_float_is_written_as_python_writes_its_repr() {
-        for (x, repr) in [
-            (0.5, "0.5"),
-            (1.0, "1.0"),
-            (0.0, "0.0"),
-            (1e-05, "1e-05"),
-            (0.0001, "0.0001"),
-            (1.5e-7, "1.5e-07"),
-            (9.999e-05, "9.999e-05"),
-            (1e16, "1e+16"),
-            (1234567890123456.0, "1234567890123456.0"),
-            (0.30000000000000004, "0.30000000000000004"),
-            (-0.4, "-0.4"),
-            (-1.25e-100, "-1.25e-100"),
-            (123.0, "123.0"),
-            (12.5, "12.5"),
-            (5e-324, "5e-324"),
-        ] {
-            assert_eq!(written(x), repr, "{x:e}");
-        }
-    }
 
     #[test]
     fn fsum_rounds_the_exact_sum() {

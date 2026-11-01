@@ -10,6 +10,7 @@
 //! checks that the script still writes them.
 use std::process::{Command, Output};
 
+use crate::common::assert_close;
 use tddlog::network::{self, Evidence, Format, Queries, ReadOptions};
 
 /// The program a network file reads as, with its queries, its evidence file
@@ -205,15 +206,6 @@ fn answers(out: &Output, label: &str) -> (Vec<(String, f64)>, Option<f64>) {
         }
     }
     (answers, log10)
-}
-
-fn assert_close(what: &str, got: &[(String, f64)], expected: &[(&str, f64)], tolerance: f64) {
-    let got: Vec<(&str, f64)> = got.iter().map(|(a, p)| (a.as_str(), *p)).collect();
-    assert_eq!(got.len(), expected.len(), "{what}: {got:?}");
-    for ((a, p), (b, q)) in got.iter().zip(expected) {
-        assert_eq!(a, b, "{what}");
-        assert!((p - q).abs() < tolerance, "{what}: {a} = {p} against {q}");
-    }
 }
 
 #[test]

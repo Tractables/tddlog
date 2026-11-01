@@ -7,7 +7,9 @@
 
 use std::collections::HashMap;
 
-use super::scan::{names_before_brace, occurrences, probability, skip_space, space, strip};
+use super::scan::{
+    names_before_brace, occurrences, paren_blocks, probability, skip_space, space, strip,
+};
 use super::{Network, Table};
 
 pub(super) fn parse(text: &str) -> Result<Network, String> {
@@ -30,15 +32,8 @@ pub(super) fn parse(text: &str) -> Result<Network, String> {
             None => pos = at + 1,
         }
     }
-    let mut pos = 0;
-    while let Some(at) = occurrences(&text, pos, "probability", false).next() {
-        match block(&text, at + "probability".len()) {
-            Some((head, body, end)) => {
-                read_probability(&mut network, head, body)?;
-                pos = end;
-            }
-            None => pos = at + 1,
-        }
+    for (head, body) in paren_blocks(&text, "probability", false) {
+        read_probability(&mut network, head, body)?;
     }
     Ok(network)
 }
@@ -98,18 +93,6 @@ fn declaration(text: &str, i: usize) -> Option<(&str, &str, usize)> {
     let m = skip_space(text, m + text[m..].strip_prefix(';').map(|_| 1)?);
     let end = m + text[m..].strip_prefix('}').map(|_| 1)?;
     Some((size, &text[k..close], end))
-}
-
-/// The head and body of a match of `\s*\(([^)]*)\)\s*\{([^}]*)\}` at `i`,
-/// and where it ends.
-fn block(text: &str, i: usize) -> Option<(&str, &str, usize)> {
-    let i = skip_space(text, i);
-    let rest = text[i..].strip_prefix('(')?;
-    let close = rest.find(')')?;
-    let j = skip_space(text, i + 1 + close + 1);
-    let k = j + text[j..].strip_prefix('{').map(|_| 1)?;
-    let end = k + text[k..].find('}')?;
-    Some((&rest[..close], &text[k..end], end + 1))
 }
 
 /// Sets a variable's table from a `probability` block: its head, `X |

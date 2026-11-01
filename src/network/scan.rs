@@ -58,6 +58,38 @@ pub(super) fn names_before_brace(s: &str, i: usize) -> Vec<(usize, usize)> {
     ways
 }
 
+/// The head and body of each match of `word\s*\(([^)]*)\)\s*\{([^}]*)\}` in
+/// `text`, in order (`\bword` when `bounded`), as Python's `re.finditer`
+/// finds them.
+pub(super) fn paren_blocks<'a>(
+    text: &'a str,
+    word: &'a str,
+    bounded: bool,
+) -> Vec<(&'a str, &'a str)> {
+    let mut out = Vec::new();
+    let mut pos = 0;
+    while let Some(at) = occurrences(text, pos, word, bounded).next() {
+        match paren_block(text, at + word.len()) {
+            Some((head, body, end)) => {
+                out.push((head, body));
+                pos = end;
+            }
+            None => pos = at + 1,
+        }
+    }
+    out
+}
+
+fn paren_block(text: &str, i: usize) -> Option<(&str, &str, usize)> {
+    let i = skip_space(text, i);
+    let rest = text[i..].strip_prefix('(')?;
+    let close = rest.find(')')?;
+    let j = skip_space(text, i + 1 + close + 1);
+    let k = j + text[j..].strip_prefix('{').map(|_| 1)?;
+    let end = k + text[k..].find('}')?;
+    Some((&rest[..close], &text[k..end], end + 1))
+}
+
 /// The numbers of a Hugin table's data: each match of gen_bn.py's
 /// `[-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?`, read as a
 /// double.

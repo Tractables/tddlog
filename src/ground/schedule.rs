@@ -62,11 +62,7 @@ pub(crate) fn literal_vars(l: &Literal) -> Vec<String> {
 fn bound_term(t: &Term, bound: &FxHashSet<String>) -> bool {
     match t {
         Term::Var(v) => bound.contains(v),
-        Term::Compound(_) => {
-            let mut vs = Vec::new();
-            t.vars_into(&mut vs);
-            vs.iter().all(|v| bound.contains(v))
-        }
+        Term::Compound(_) => t.vars().iter().all(|v| bound.contains(v)),
         _ => true,
     }
 }

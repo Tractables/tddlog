@@ -286,10 +286,38 @@ impl Term {
             }
         }
     }
+
+    /// The variables of the term, each once, in order of first occurrence.
+    pub fn vars(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        self.vars_into(&mut out);
+        out
+    }
+
+    /// The list of `items` ending in `tail`.
+    pub(crate) fn list(
+        items: impl IntoIterator<Item = Term, IntoIter: DoubleEndedIterator>,
+        tail: Term,
+    ) -> Term {
+        let cons: Name = CONS.into();
+        items
+            .into_iter()
+            .rev()
+            .fold(tail, |t, x| Compound::term(cons.clone(), vec![x, t]))
+    }
+}
+
+/// How an infix operator groups: `xfx` neither way, `xfy` to the right,
+/// `yfx` to the left.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Assoc {
+    Xfx,
+    Xfy,
+    Yfx,
 }
 
 /// The infix operators of ProbLog's parser, by name: `(priority, type)`.
-fn infix(name: &str) -> Option<(u16, Assoc)> {
+pub(crate) fn infix_op(name: &str) -> Option<(u16, Assoc)> {
     use Assoc::*;
     Some(match name {
         ":-" => (1200, Xfx),
@@ -310,31 +338,12 @@ fn infix(name: &str) -> Option<(u16, Assoc)> {
 }
 
 /// The prefix operators of ProbLog's parser, by name, and their priority.
-fn prefix(name: &str) -> Option<u16> {
+pub(crate) fn prefix_op(name: &str) -> Option<u16> {
     Some(match name {
         "-" | "+" | "\\" => 200,
         "\\+" => 900,
         _ => return None,
     })
-}
-
-/// How an infix operator groups: `xfx` neither way, `xfy` to the right,
-/// `yfx` to the left.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Assoc {
-    Xfx,
-    Xfy,
-    Yfx,
-}
-
-/// The priority and grouping of the infix operator `name`, for the parser.
-pub(crate) fn infix_op(name: &str) -> Option<(u16, Assoc)> {
-    infix(name)
-}
-
-/// The priority of the prefix operator `name`, for the parser.
-pub(crate) fn prefix_op(name: &str) -> Option<u16> {
-    prefix(name)
 }
 
 /// The infix operators printed infix. ProbLog prints a conjunction and a
@@ -343,7 +352,7 @@ pub(crate) fn prefix_op(name: &str) -> Option<u16> {
 fn printed_infix(name: &str) -> Option<(u16, Assoc)> {
     match name {
         "," | ";" | ":-" => None,
-        _ => infix(name),
+        _ => infix_op(name),
     }
 }
 
@@ -352,7 +361,7 @@ fn printed_infix(name: &str) -> Option<(u16, Assoc)> {
 fn printed_prefix(name: &str) -> Option<u16> {
     match name {
         "\\+" => None,
-        _ => prefix(name),
+        _ => prefix_op(name),
     }
 }
 
@@ -586,6 +595,13 @@ pub(crate) fn write_float(f: &mut impl fmt::Write, x: f64) -> fmt::Result {
     }
 }
 
+/// `x` as [`write_float`] writes it.
+pub(crate) fn float_repr(x: f64) -> String {
+    let mut s = String::new();
+    write_float(&mut s, x).expect("a String takes any text");
+    s
+}
+
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_term(f, self, 1200)
@@ -767,6 +783,12 @@ impl Atom {
         for t in &self.args {
             t.vars_into(out);
         }
+    }
+    /// The variables of the atom, each once, in order of first occurrence.
+    pub fn vars(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        self.vars_into(&mut out);
+        out
     }
 }
 
@@ -1520,15 +1542,6 @@ impl fmt::Display for Program {
 mod tests {
     use super::*;
 
-    /// The list of `items` ending in `tail`.
-    fn list(items: Vec<Term>, tail: Term) -> Term {
-        let cons: Name = CONS.into();
-        items
-            .into_iter()
-            .rev()
-            .fold(tail, |t, x| Compound::term(cons.clone(), vec![x, t]))
-    }
-
     #[test]
     fn a_constant_is_quoted_and_escaped_as_written() {
         for s in [
@@ -1551,19 +1564,29 @@ mod tests {
     fn floats_print_as_python_writes_them() {
         for (x, s) in [
             (2.0, "2.0"),
+            (0.5, "0.5"),
+            (1.0, "1.0"),
+            (0.0, "0.0"),
             (0.1, "0.1"),
             (1200.0, "1200.0"),
+            (123.0, "123.0"),
+            (12.5, "12.5"),
             (0.0001, "0.0001"),
             (0.00001, "1e-05"),
+            (9.999e-05, "9.999e-05"),
             (1e16, "1e+16"),
             (1234567890123456.0, "1234567890123456.0"),
             (1.5e-7, "1.5e-07"),
             (-2.5, "-2.5"),
+            (-0.4, "-0.4"),
             (-0.0, "-0.0"),
             (1e100, "1e+100"),
+            (-1.25e-100, "-1.25e-100"),
+            (5e-324, "5e-324"),
             (0.30000000000000004, "0.30000000000000004"),
         ] {
             assert_eq!(Term::Float(F64(x)).to_string(), s, "{x}");
+            assert_eq!(float_repr(x), s, "{x}");
         }
     }
 
@@ -1575,7 +1598,7 @@ mod tests {
             Term::Const("b".into()),
             Term::Var("X".into()),
         );
-        let list = list(vec![a.clone(), b.clone()], x.clone());
+        let list = Term::list([a.clone(), b.clone()], x.clone());
         assert_eq!(list.to_string(), "[a, b | X]");
         assert_eq!(Term::Const(NIL.into()).to_string(), "[]");
         let (two, three, four) = (Term::Int(2), Term::Int(3), Term::Int(4));
@@ -1627,10 +1650,10 @@ mod tests {
         assert_eq!(or(&a, &or(&b, &d)).to_string(), "a; b; d");
         assert_eq!(c("f", vec![or(&a, &b)]).to_string(), "f(a; b)");
         assert_eq!(c("f", vec![and(&a, &b)]).to_string(), "f((a, b))");
-        let items = list(
-            vec![and(
+        let items = Term::list(
+            [and(
                 &Term::Int(1),
-                &list(vec![Term::Int(1)], Term::Const(NIL.into())),
+                &Term::list([Term::Int(1)], Term::Const(NIL.into())),
             )],
             Term::Const(NIL.into()),
         );
@@ -1672,7 +1695,7 @@ mod tests {
     #[test]
     fn a_long_list_is_compared_and_dropped_without_deep_recursion() {
         let n = 200_000;
-        let long = |k: i64| list((0..n).map(Term::Int).collect(), Term::Int(k));
+        let long = |k: i64| Term::list((0..n).map(Term::Int), Term::Int(k));
         let (x, y) = (long(0), long(0));
         assert_eq!(x, y);
         assert!(long(0) < long(1));

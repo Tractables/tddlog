@@ -71,9 +71,9 @@ use num_rational::BigRational;
 use num_traits::ToPrimitive;
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::ParseError;
 use super::lpad::space;
-use crate::network::rows::{fsum, write_float};
+use super::{ParseError, float_repr};
+use crate::network::rows::fsum;
 
 /// The ProbLog program the Dice program `source` is read as. The error
 /// names the line of the token or expression that the program cannot be
@@ -1074,13 +1074,6 @@ fn discrete_probs(ps: &[f64]) -> Vec<f64> {
     }
 }
 
-/// A probability as Python's `repr` writes it.
-fn repr(p: f64) -> String {
-    let mut s = String::new();
-    write_float(&mut s, p);
-    s
-}
-
 // ---------------------------------------------------------------------
 // The translation
 
@@ -1390,7 +1383,7 @@ impl<'a> Translator<'a> {
             return lit(if p >= 1.0 { "true" } else { "false" });
         }
         let a = self.fresh(name);
-        let p = repr(p);
+        let p = float_repr(p);
         match &self.in_loop {
             Some(step) => {
                 self.lines.push(format!("{p}::{a}{STEP} :- {step}{STEP}."));
@@ -1947,24 +1940,12 @@ impl<'a> Translator<'a> {
             }
             Kind::If(arms, otherwise) => self.conditional(arms, otherwise, env, path, name, line),
             Kind::Call(f, args) => {
-                let Some(&(fun, _)) = self.funs.get(f) else {
-                    return Err(fail(line, format!("unknown function {f}")));
-                };
-                if fun.params.len() != args.len() {
-                    return Err(fail(
-                        line,
-                        format!(
-                            "{f}: {} parameters, {} arguments",
-                            fun.params.len(),
-                            args.len()
-                        ),
-                    ));
-                }
+                let fun = self.fun(f, args.len(), line)?;
                 let mut values = Vec::new();
                 for (p, x) in fun.params.iter().zip(args) {
                     values.push(self.eval(x, env, path, &format!("{f}_{p}"))?);
                 }
-                self.call(f, values, path, name, line)
+                self.call(fun, values, path, name, line)
             }
             Kind::Iterate(f, init, k) => {
                 let init = self.eval(init, env, path, name)?;
@@ -2073,9 +2054,10 @@ impl<'a> Translator<'a> {
         step: &str,
         line: usize,
     ) -> Res<Vec<Value>> {
+        let fun = self.fun(fname, 1, line)?;
         self.in_loop = Some(step.to_string());
         self.observed.clear();
-        let out = self.call(fname, vec![state.clone()], path, name, line);
+        let out = self.call(fun, vec![state.clone()], path, name, line);
         self.in_loop = None;
         let (ends, starts) = (out?.flat(), state.flat());
         let same = |p: &Value, q: &Value| match (p, q) {
@@ -2289,41 +2271,45 @@ impl<'a> Translator<'a> {
         init.rebuild(&mut parts.into_iter())
     }
 
+    fn fun(&self, fname: &'a str, arity: usize, line: usize) -> Res<&'a Fun<'a>> {
+        let Some(&(fun, _)) = self.funs.get(fname) else {
+            return Err(fail(line, format!("unknown function {fname}")));
+        };
+        if fun.params.len() != arity {
+            return Err(fail(
+                line,
+                format!(
+                    "{fname}: {} parameters, {arity} arguments",
+                    fun.params.len()
+                ),
+            ));
+        }
+        Ok(fun)
+    }
+
     fn call(
         &mut self,
-        fname: &'a str,
+        fun: &'a Fun<'a>,
         args: Vec<Value>,
         path: &[Lit],
         name: &str,
         line: usize,
     ) -> Res<Value> {
-        let Some(&(fun, recursive)) = self.funs.get(fname) else {
-            return Err(fail(line, format!("unknown function {fname}")));
-        };
-        if fun.params.len() != args.len() {
-            return Err(fail(
-                line,
-                format!(
-                    "{fname}: {} parameters, {} arguments",
-                    fun.params.len(),
-                    args.len()
-                ),
-            ));
-        }
-        let depth = self.active.get(fname).copied().unwrap_or(0);
+        let (_, recursive) = self.funs[fun.name];
+        let depth = self.active.get(fun.name).copied().unwrap_or(0);
         if recursive && depth > RECURSION_LIMIT {
             // Dice's last copy of a recursive function: `observe false` on
             // this path, and the return type's default value.
             self.observe(lit("false"), path);
-            return self.default(fun.ret.as_ref(), fname, line);
+            return self.default(fun.ret.as_ref(), fun.name, line);
         }
-        self.active.insert(fname, depth + 1);
+        self.active.insert(fun.name, depth + 1);
         let mut env = Env::default();
         for (p, a) in fun.params.iter().zip(args) {
             env = env.bind(p, a);
         }
         let out = self.eval(&fun.body, &env, path, name);
-        self.active.insert(fname, depth);
+        self.active.insert(fun.name, depth);
         out
     }
 

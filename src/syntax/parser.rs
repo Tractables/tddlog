@@ -1055,14 +1055,11 @@ impl<'a> Parser<'a> {
             },
         };
         head.atom = atom;
-        let (cons, nil) = (self.lexer.intern(CONS), Term::Const(self.lexer.intern(NIL)));
-        let list = |items: Vec<Term>| {
-            items
-                .into_iter()
-                .rev()
-                .fold(nil.clone(), |t, x| Compound::term(cons.clone(), vec![x, t]))
-        };
-        let pair = vec![list(groups.iter().map(renamed).collect()), renamed(&v)];
+        let nil = Term::Const(self.lexer.intern(NIL));
+        let pair = vec![
+            Term::list(groups.iter().map(renamed), nil.clone()),
+            renamed(&v),
+        ];
         let interleaved = body.interleaved();
         let goal = body
             .dnf()
@@ -1079,7 +1076,7 @@ impl<'a> Parser<'a> {
         };
         let groups = Atom::new(
             self.lexer.intern("enum_groups"),
-            vec![l, list(groups), vs.clone()],
+            vec![l, Term::list(groups, nil), vs.clone()],
         );
         Ok(Body::Lits(vec![
             Literal::Findall(Box::new(collect)),
@@ -1332,10 +1329,7 @@ impl<'a> Parser<'a> {
             nil
         };
         self.expect(Tok::RBracket)?;
-        let cons = self.lexer.intern(CONS);
-        Ok(PTerm::Term(items.into_iter().rev().fold(tail, |t, x| {
-            Compound::term(cons.clone(), vec![x, t])
-        })))
+        Ok(PTerm::Term(Term::list(items, tail)))
     }
 
     /// The flat term at hand, if it is one, taken: a number, a negative

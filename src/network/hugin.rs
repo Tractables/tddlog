@@ -7,7 +7,9 @@
 //! expressions read it.
 
 use super::Network;
-use super::scan::{fields, names_before_brace, numbers, occurrences, skip_space, space, strip};
+use super::scan::{
+    fields, names_before_brace, numbers, occurrences, paren_blocks, skip_space, space, strip,
+};
 
 pub(super) fn parse(text: &str) -> Result<Network, String> {
     let text = without_comments(text);
@@ -17,15 +19,8 @@ pub(super) fn parse(text: &str) -> Result<Network, String> {
             network.declare(name, values)?;
         }
     }
-    let mut pos = 0;
-    while let Some(at) = occurrences(&text, pos, "potential", true).next() {
-        match potential(&text, at + "potential".len()) {
-            Some((head, body, end)) => {
-                read_potential(&mut network, head, body)?;
-                pos = end;
-            }
-            None => pos = at + 1,
-        }
+    for (head, body) in paren_blocks(&text, "potential", true) {
+        read_potential(&mut network, head, body)?;
     }
     Ok(network)
 }
@@ -115,19 +110,6 @@ fn states(body: &str) -> Option<Vec<String>> {
         return Some(values);
     }
     None
-}
-
-/// The head and body of a match of `potential\s*\(([^)]*)\)\s*\{(.*?)\}`
-/// from `i`, just after the word, and where the match ends.
-fn potential(text: &str, i: usize) -> Option<(&str, &str, usize)> {
-    let i = skip_space(text, i);
-    let rest = text[i..].strip_prefix('(')?;
-    let close = rest.find(')')?;
-    let head = &rest[..close];
-    let j = skip_space(text, i + 1 + close + 1);
-    let body_start = j + text[j..].strip_prefix('{').map(|_| 1)?;
-    let end = body_start + text[body_start..].find('}')?;
-    Some((head, &text[body_start..end], end + 1))
 }
 
 /// Sets a variable's table from a potential's head, `X | P1 P2`, and body.

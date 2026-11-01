@@ -230,7 +230,7 @@ pub fn read(data: &[u8], format: Format, options: &ReadOptions) -> Result<Networ
     let mut program = String::new();
     if let Some(c) = log10_offset {
         program.push_str("% log10 Z - log10 P(e) = ");
-        rows::write_float(&mut program, c);
+        crate::syntax::write_float(&mut program, c).expect("a String takes any text");
         program.push('\n');
     }
     network.write(&mut program, &options.queries, &evidence, options.whole)?;
@@ -317,6 +317,29 @@ impl Network {
             .iter()
             .position(|u| u == value)
             .ok_or_else(|| format!("{} has no value {value}", self.names[v]))
+    }
+
+    /// The observations `pairs` (a variable name and a value name each), a
+    /// variable and a value index each, in the network's order. A variable
+    /// or value the network does not have, or a variable observed twice, is
+    /// an error.
+    fn observations<V: AsRef<str>, U: AsRef<str>>(
+        &self,
+        pairs: impl IntoIterator<Item = (V, U)>,
+    ) -> Result<Vec<(usize, usize)>, String> {
+        let mut given: Vec<Option<usize>> = vec![None; self.names.len()];
+        for (v, u) in pairs {
+            let v = self.variable(v.as_ref())?;
+            let u = self.value(v, u.as_ref())?;
+            if given[v].replace(u).is_some() {
+                return Err(format!("evidence: {} observed twice", self.names[v]));
+            }
+        }
+        Ok(given
+            .into_iter()
+            .enumerate()
+            .filter_map(|(v, u)| Some((v, u?)))
+            .collect())
     }
 
     /// Every assignment of `parents`, the last changing fastest, flat.
@@ -512,7 +535,8 @@ impl Network {
                                 if j > 0 {
                                     head.push_str("; ");
                                 }
-                                rows::write_float(&mut head, p);
+                                crate::syntax::write_float(&mut head, p)
+                                    .expect("a String takes any text");
                                 head.push_str("::");
                                 head.push_str(&atoms[v][u]);
                             }

@@ -75,8 +75,8 @@ options:
                                         sum, for a file that writes its tables in percent or as
                                         weights
   --program                             print the program a network, a Dice program or an LPAD
-                                        is read as, or a program with its arguments in place,
-                                        and exit
+                                        is read as, or a program with its arguments or consulted
+                                        files in place, and exit
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error

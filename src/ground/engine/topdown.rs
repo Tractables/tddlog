@@ -1823,6 +1823,12 @@ impl<'a> TopDown<'a> {
         Ok(())
     }
 
+    fn display_atom(&mut self, a: u32) -> Atom {
+        let (p, vals) = self.atoms[a as usize].clone();
+        let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
+        Atom::new(self.preds[p as usize].name.clone(), args)
+    }
+
     /// The ground program: the rules proved, the program's switches and
     /// facts, and its queries and evidence with the query rules' instances.
     fn program(
@@ -1836,9 +1842,7 @@ impl<'a> TopDown<'a> {
             if let Some(x) = &shown[a as usize] {
                 return x.clone();
             }
-            let (p, vals) = me.atoms[a as usize].clone();
-            let args: Args = vals.iter().map(|&v| me.g.term_of(v)).collect();
-            let x = Atom::new(me.preds[p as usize].name.clone(), args);
+            let x = me.display_atom(a);
             shown[a as usize] = Some(x.clone());
             x
         };
@@ -1918,9 +1922,7 @@ impl lists::Source for TopDown<'_> {
     }
 
     fn show(&mut self, a: u32) -> String {
-        let (p, vals) = self.atoms[a as usize].clone();
-        let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
-        Atom::new(self.preds[p as usize].name.clone(), args).to_string()
+        self.display_atom(a).to_string()
     }
 
     fn fresh(&mut self) -> Result<u32, GroundError> {

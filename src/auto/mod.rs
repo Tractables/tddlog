@@ -219,10 +219,7 @@ pub(crate) fn ready(
     let decided = ground::guarded_where(Kind::eliminated(program.clone()), |made| {
         takes_conditioned(made, ground)
     });
-    let guarded = match &decided {
-        Ok(gp) => gp.stats.guarded,
-        Err(gp) => gp.stats.guarded,
-    };
+    let guarded = decided.as_ref().unwrap_or_else(|gp| gp).stats.guarded;
     let conditioned = decided.ok().filter(|gp| gp.stats.decisions.is_some());
     let ready = Ready {
         written,

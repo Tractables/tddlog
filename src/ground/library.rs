@@ -44,8 +44,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::terms::{calls, calls_mut};
 use crate::syntax::{
-    Atom, Builtin, CONS, Clause, Compound, Literal, NIL, Name, Program, Term, construct,
-    goal_literal,
+    Atom, Builtin, Clause, Compound, Literal, NIL, Name, Program, Term, construct, goal_literal,
 };
 
 /// The library's clauses. A random selection is made as ProbLog makes it,
@@ -439,16 +438,15 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         let tests: FxHashMap<String, Literal> = listed
             .iter()
             .map(|&(n, ref goals)| {
-                let callable = goals
-                    .iter()
-                    .rev()
-                    .fold(Term::Const(NIL.into()), |rest, (p, k)| {
-                        let item = Compound::term(
+                let callable = Term::list(
+                    goals.iter().map(|(p, k)| {
+                        Compound::term(
                             "/".into(),
                             vec![Term::Const(p.clone()), Term::Int(*k as i64)],
-                        );
-                        Compound::term(CONS.into(), vec![item, rest])
-                    });
+                        )
+                    }),
+                    Term::Const(NIL.into()),
+                );
                 let test = Literal::Builtin(
                     Builtin::Callable,
                     vec![

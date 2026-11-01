@@ -471,19 +471,11 @@ pub(super) fn evid(text: &str, network: &Network) -> Result<Vec<(usize, usize)>,
     if count.is_none_or(|c| tokens.len() != 1 + 2 * c) {
         return Err("evidence: not a UAI evidence file of one sample".into());
     }
-    let mut given: Vec<Option<usize>> = vec![None; network.names.len()];
-    for pair in tokens[1..].chunks(2) {
-        let v = network.variable(&format!("x{}", pair[0]))?;
-        let u = network.value(v, pair[1])?;
-        if given[v].replace(u).is_some() {
-            return Err(format!("evidence: x{} observed twice", pair[0]));
-        }
-    }
-    Ok(given
-        .into_iter()
-        .enumerate()
-        .filter_map(|(v, u)| Some((v, u?)))
-        .collect())
+    network.observations(
+        tokens[1..]
+            .chunks(2)
+            .map(|pair| (format!("x{}", pair[0]), pair[1])),
+    )
 }
 
 #[cfg(test)]
