@@ -24,8 +24,9 @@ struct Var {
 
 /// `a` and `b` are roots, `c` reads both, with a row where `c(1)` has no
 /// mass and one where `c(2)` has none; `d` reads `c`, and `e` reads `d`
-/// and `a`, with a row where `e` is false.
-const NET: [Var; 5] = [
+/// and `a`, with a row where `e` is false; `f`, of four values, reads `b`,
+/// and `g` reads `f` and `a`.
+const NET: [Var; 7] = [
     Var {
         name: "a",
         values: 2,
@@ -63,11 +64,45 @@ const NET: [Var; 5] = [
         parents: &[3, 0],
         rows: &[&[0.95, 0.05], &[0.6, 0.4], &[0.3, 0.7], &[0.0, 1.0]],
     },
+    Var {
+        name: "f",
+        values: 4,
+        parents: &[1],
+        rows: &[
+            &[0.1, 0.2, 0.3, 0.4],
+            &[0.4, 0.1, 0.25, 0.25],
+            &[0.25, 0.25, 0.1, 0.4],
+        ],
+    },
+    Var {
+        name: "g",
+        values: 2,
+        parents: &[5, 0],
+        rows: &[
+            &[0.9, 0.1],
+            &[0.8, 0.2],
+            &[0.3, 0.7],
+            &[0.6, 0.4],
+            &[0.5, 0.5],
+            &[0.15, 0.85],
+            &[0.35, 0.65],
+            &[0.7, 0.3],
+        ],
+    },
 ];
 
 /// The evidence and the queries, as (variable, value).
 const EVIDENCE: [(usize, usize); 1] = [(4, 0)];
-const QUERIES: [(usize, usize); 6] = [(1, 1), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1)];
+const QUERIES: [(usize, usize); 8] = [
+    (1, 1),
+    (2, 0),
+    (2, 1),
+    (2, 2),
+    (3, 0),
+    (3, 1),
+    (5, 2),
+    (6, 0),
+];
 
 /// Each row's context: the values of the parents, in order.
 fn contexts(v: &Var) -> Vec<Vec<usize>> {
@@ -586,13 +621,14 @@ fn a_network_written_over_bits_answers_as_the_enumeration() {
 #[test]
 fn a_network_written_over_bits_is_ground_over_its_values() {
     // Every variable is written over its values, each value an atom, but
-    // a in Dice, one fact there; no rule reads a bit of b or c: their
-    // readers read their values.
-    for ((writing, source), written) in over_bits().into_iter().zip([4, 5]) {
+    // a in Dice, one fact there; no rule reads a bit of b, c or f: their
+    // readers read their values, g's those of f through the chain that
+    // Dice reads f's low bit in once its first values are excluded.
+    for ((writing, source), written) in over_bits().into_iter().zip([6, 7]) {
         let gp = common::ground_as_written(&source, Rows::Classes, false);
         assert_eq!(gp.stats.values, written, "{writing}: {gp}");
         let bit = |name: &str| {
-            !name.contains('$') && (name.starts_with("b_b") || name.starts_with("c_b"))
+            !name.contains('$') && ["b_b", "c_b", "f_b"].iter().any(|b| name.starts_with(b))
         };
         for r in &gp.rules {
             for l in &r.body {

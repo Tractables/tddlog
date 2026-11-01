@@ -507,6 +507,22 @@ impl<'a> Units<'a> {
                     random[c] = true;
                 }
             }
+            // The candidates whose classes own a fact, two bits or more
+            // each: the others are found again without those that draw
+            // nothing (a comparison and a guard read together) before
+            // what reads them is read.
+            let mut drawn: Vec<Vec<AtomId>> = (0..n)
+                .filter(|&c| random[c] && of(c).len() > 1)
+                .map(|c| of(c).to_vec())
+                .collect();
+            if drawn.is_empty() {
+                return None;
+            }
+            drawn.sort_unstable_by_key(|c| c[0]);
+            if drawn != candidates {
+                candidates = drawn;
+                continue;
+            }
             let mut kept = vec![false; n];
             let mut variables: Vec<Vec<AtomId>> = Vec::new();
             for c in 0..n {
