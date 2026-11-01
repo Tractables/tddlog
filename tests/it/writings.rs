@@ -25,8 +25,9 @@ struct Var {
 /// `a` and `b` are roots, `c` reads both, with a row where `c(1)` has no
 /// mass and one where `c(2)` has none; `d` reads `c`, and `e` reads `d`
 /// and `a`, with a row where `e` is false; `f`, of four values, reads `b`,
-/// and `g` reads `f` and `a`.
-const NET: [Var; 7] = [
+/// and `g` reads `f` and `a`; `h`, of two values, reads `c`, `f` and `a`,
+/// and only `i`, of eight values, reads it.
+const NET: [Var; 9] = [
     Var {
         name: "a",
         values: 2,
@@ -89,11 +90,51 @@ const NET: [Var; 7] = [
             &[0.7, 0.3],
         ],
     },
+    Var {
+        name: "h",
+        values: 2,
+        parents: &[2, 5, 0],
+        rows: &[
+            &[0.01, 0.99],
+            &[0.02, 0.98],
+            &[0.03, 0.97],
+            &[0.04, 0.96],
+            &[0.05, 0.95],
+            &[0.06, 0.94],
+            &[0.07, 0.93],
+            &[0.08, 0.92],
+            &[0.09, 0.91],
+            &[0.11, 0.89],
+            &[0.12, 0.88],
+            &[0.13, 0.87],
+            &[0.14, 0.86],
+            &[0.16, 0.84],
+            &[0.17, 0.83],
+            &[0.18, 0.82],
+            &[0.19, 0.81],
+            &[0.21, 0.79],
+            &[0.22, 0.78],
+            &[0.23, 0.77],
+            &[0.24, 0.76],
+            &[0.26, 0.74],
+            &[0.27, 0.73],
+            &[0.28, 0.72],
+        ],
+    },
+    Var {
+        name: "i",
+        values: 8,
+        parents: &[7],
+        rows: &[
+            &[0.1, 0.2, 0.1, 0.2, 0.15, 0.05, 0.12, 0.08],
+            &[0.25, 0.05, 0.1, 0.15, 0.05, 0.2, 0.06, 0.14],
+        ],
+    },
 ];
 
 /// The evidence and the queries, as (variable, value).
 const EVIDENCE: [(usize, usize); 1] = [(4, 0)];
-const QUERIES: [(usize, usize); 8] = [
+const QUERIES: [(usize, usize); 10] = [
     (1, 1),
     (2, 0),
     (2, 1),
@@ -102,6 +143,8 @@ const QUERIES: [(usize, usize); 8] = [
     (3, 1),
     (5, 2),
     (6, 0),
+    (8, 3),
+    (8, 5),
 ];
 
 /// Each row's context: the values of the parents, in order.
@@ -623,8 +666,10 @@ fn a_network_written_over_bits_is_ground_over_its_values() {
     // Every variable is written over its values, each value an atom, but
     // a in Dice, one fact there; no rule reads a bit of b, c or f: their
     // readers read their values, g's those of f through the chain that
-    // Dice reads f's low bit in once its first values are excluded.
-    for ((writing, source), written) in over_bits().into_iter().zip([6, 7]) {
+    // Dice reads f's low bit in once its first values are excluded; h,
+    // whose table summed into i's would pass the rows' bound, is written
+    // apart from it and i's rows read its values.
+    for ((writing, source), written) in over_bits().into_iter().zip([8, 9]) {
         let gp = common::ground_as_written(&source, Rows::Classes, false);
         assert_eq!(gp.stats.values, written, "{writing}: {gp}");
         let bit = |name: &str| {

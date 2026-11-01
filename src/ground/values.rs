@@ -96,7 +96,7 @@
 
 use std::sync::OnceLock;
 
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::program::Lists;
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob, deps};
@@ -227,6 +227,7 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
         return 0;
     };
     let order = units.order();
+    work.limit = work.done + GROWTH * WORK_PER_LITERAL * literals + WORK_FLOOR * units.bits.len();
 
     let mut written = Written::new(n);
     let mut cone = Cone::new(n);
@@ -235,53 +236,98 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
         for u in group {
             let i = &units.bits[&u];
             let members = units.members.get(u).expect("a unit has members");
-            if i.len() == 1 {
-                // A variable of one bit is written where it reads one
-                // written, through views.
-                if written.values.is_empty() || !units.reads(members, &written.bit_of) {
-                    continue;
-                }
-            } else if units.decides(members, i) {
+            if i.len() > 1 && units.decides(members, i) {
                 written.undo(mark);
                 continue 'groups;
             }
-            if !cone.of(&units, members, i) || !work.add(cone.literals) {
-                written.undo(mark);
-                continue 'groups;
-            }
-            if i.len() == 1 && !cone.inputs.iter().any(|x| written.bit_of.contains_key(x)) {
-                continue;
-            }
-            if !units.draws_alone(&readers, &cone.inputs) {
-                written.undo(mark);
-                continue 'groups;
-            }
-            let limit = (WORK_PER_LITERAL * cone.literals + WORK_FLOOR).min(work.left());
-            let leaves = cone.rows(&units, limit, &mut work);
+            let mut unit = Unit {
+                gp,
+                units: &units,
+                readers: &readers,
+                cone: &mut cone,
+                written: &mut written,
+                work: &mut work,
+            };
+            let done = unit.write(members, i) || unit.write_apart(members, i);
             if work.left() == 0 {
                 written.undo(mark);
                 break 'groups;
             }
-            let Some(leaves) = leaves else {
-                written.undo(mark);
-                continue 'groups;
-            };
-            if !written.write(gp, u, i, &cone.inputs, &leaves, GROWTH * cone.literals) {
+            if !done {
                 written.undo(mark);
                 continue 'groups;
             }
         }
     }
-    if written.values.is_empty() {
-        return 0;
-    }
-    let mut replaced = vec![false; n];
-    for u in &written.units {
-        for &a in units.members.get(*u).expect("a written unit has members") {
-            replaced[a as usize] = true;
+    written.finish(gp)
+}
+
+/// What writing a unit takes.
+struct Unit<'a> {
+    gp: &'a GroundProgram,
+    units: &'a Units<'a>,
+    readers: &'a Lists<u32>,
+    cone: &'a mut Cone,
+    written: &'a mut Written,
+    work: &'a mut Work,
+}
+
+impl Unit<'_> {
+    /// Writes the unit of `members` and `interface`, a variable of one bit
+    /// only where it reads one written, through views; false where it is
+    /// a fragment or its rows pass their bounds.
+    fn write(&mut self, members: &[AtomId], interface: &[AtomId]) -> bool {
+        let Unit {
+            gp,
+            units,
+            readers,
+            cone,
+            written,
+            work,
+        } = self;
+        let one = interface.len() == 1;
+        if one && (written.values.is_empty() || !units.reads(members, &written.bit_of)) {
+            return true;
         }
+        if !cone.of(units, members, interface) || !work.add(cone.literals) {
+            return false;
+        }
+        if one && !cone.inputs.iter().any(|x| written.bit_of.contains_key(x)) {
+            return true;
+        }
+        if !units.draws_alone(readers, &cone.inputs) {
+            return false;
+        }
+        let limit = (WORK_PER_LITERAL * cone.literals + WORK_FLOOR).min(work.left());
+        let Some(leaves) = cone.rows(units, limit, work) else {
+            return false;
+        };
+        let bound = GROWTH * cone.literals;
+        written.write(gp, members, interface, &cone.inputs, &leaves, bound)
     }
-    written.finish(gp, &replaced)
+
+    /// Writes the unit of `members` and `interface` with its private
+    /// variables apart from it, each read through its values, where it has
+    /// any; whether it did.
+    fn write_apart(&mut self, members: &[AtomId], interface: &[AtomId]) -> bool {
+        let parts = self.units.private(self.readers, members, self.work);
+        if parts.is_empty() {
+            return false;
+        }
+        let mut apart: FxHashSet<AtomId> = FxHashSet::default();
+        for part in &parts {
+            if !self.write(part, &part[..1]) {
+                return false;
+            }
+            apart.extend(part);
+        }
+        let rest: Vec<AtomId> = members
+            .iter()
+            .copied()
+            .filter(|a| !apart.contains(a))
+            .collect();
+        self.write(&rest, interface)
+    }
 }
 
 /// The candidates of `gp`: for each atom of `bit` and `start` that two
@@ -681,6 +727,73 @@ impl<'a> Units<'a> {
                 })
             })
         })
+    }
+
+    /// The variables of one bit that the unit of `members` sums into its
+    /// rows: each gate of it, the readers first, that is none of its bits,
+    /// with the atoms of its class under it (the gate first), where only
+    /// they read those atoms, they hold a fact and they read an atom
+    /// outside the class. A gate that reads nothing outside it is a flip,
+    /// which adds no row.
+    fn private(
+        &self,
+        readers: &Lists<u32>,
+        members: &[AtomId],
+        work: &mut Work,
+    ) -> Vec<Vec<AtomId>> {
+        let gp = self.gp;
+        let mut gates: Vec<AtomId> = members
+            .iter()
+            .copied()
+            .filter(|&a| self.is_gate(a) && !self.is_bit[a as usize])
+            .collect();
+        gates.sort_unstable_by_key(|&a| std::cmp::Reverse(self.rank[a as usize]));
+        let mut taken: FxHashSet<AtomId> = FxHashSet::default();
+        let mut parts = Vec::new();
+        for g in gates {
+            if taken.contains(&g) {
+                continue;
+            }
+            let mut part = vec![g];
+            let mut seen: FxHashSet<AtomId> = FxHashSet::from_iter([g]);
+            let mut outside = false;
+            let mut steps = 0;
+            let mut next = 0;
+            while next < part.len() {
+                for &ri in &self.by_head[part[next] as usize] {
+                    let body = &gp.rules[ri].body;
+                    steps += body.len();
+                    for l in body {
+                        let y = l.atom();
+                        if self.class[y as usize] != self.class[g as usize] {
+                            outside = true;
+                        } else if seen.insert(y) {
+                            part.push(y);
+                        }
+                    }
+                }
+                next += 1;
+            }
+            let private = outside
+                && part[1..].iter().all(|&a| {
+                    steps += readers[a as usize].len();
+                    !self.is_bit[a as usize]
+                        && readers[a as usize]
+                            .iter()
+                            .all(|&ri| seen.contains(&gp.rules[ri as usize].head))
+                })
+                && part
+                    .iter()
+                    .any(|&a| matches!(gp.kinds[a as usize], AtomKind::Fact(_)));
+            if !work.add(steps) {
+                return Vec::new();
+            }
+            if private {
+                taken.extend(&part);
+                parts.push(part);
+            }
+        }
+        parts
     }
 
     /// Whether the cone's draw is its own: each fact it reads that is no
@@ -1472,8 +1585,8 @@ struct Written {
     values: Vec<(Vec<u32>, Vec<AtomId>)>,
     /// The written unit and bit of each interface atom.
     bit_of: FxHashMap<AtomId, (usize, u32)>,
-    /// The units written, by their roots.
-    units: Vec<u32>,
+    /// The atoms the units written hold, whose rules the rows replace.
+    replaced: Vec<AtomId>,
     /// The facts of their interfaces, which their values now define.
     facts: Vec<AtomId>,
     rules: Vec<GroundRule>,
@@ -1487,7 +1600,7 @@ impl Written {
             kinds: Vec::new(),
             values: Vec::new(),
             bit_of: FxHashMap::default(),
-            units: Vec::new(),
+            replaced: Vec::new(),
             facts: Vec::new(),
             rules: Vec::new(),
         }
@@ -1551,30 +1664,30 @@ impl Written {
         [
             self.atoms.len(),
             self.values.len(),
-            self.units.len(),
+            self.replaced.len(),
             self.facts.len(),
             self.rules.len(),
         ]
     }
 
     /// Takes back what was written since `mark`.
-    fn undo(&mut self, [atoms, values, units, facts, rules]: [usize; 5]) {
+    fn undo(&mut self, [atoms, values, replaced, facts, rules]: [usize; 5]) {
         self.atoms.truncate(atoms);
         self.kinds.truncate(atoms);
         self.values.truncate(values);
-        self.units.truncate(units);
+        self.replaced.truncate(replaced);
         self.facts.truncate(facts);
         self.rules.truncate(rules);
         self.bit_of.retain(|_, &mut (w, _)| w < values);
     }
 
-    /// Writes unit `u` of interface `interface` as the rows `leaves` over
-    /// its `inputs`, where they hold at most `limit` literals; whether
-    /// they do.
+    /// Writes the unit of `members` and `interface` as the rows `leaves`
+    /// over its `inputs`, where they hold at most `limit` literals;
+    /// whether they do.
     fn write(
         &mut self,
         gp: &GroundProgram,
-        u: u32,
+        members: &[AtomId],
         interface: &[AtomId],
         inputs: &[AtomId],
         leaves: &[Leaf],
@@ -1666,15 +1779,22 @@ impl Written {
                 self.facts.push(i);
             }
         }
-        self.units.push(u);
+        self.replaced.extend_from_slice(members);
         self.values.push((codes, values));
         true
     }
 
-    /// `gp` with the rules of the atoms `replaced` replaced by the rows
+    /// `gp` with the rules of the atoms the units hold replaced by the rows
     /// written, and the other rules that read a value of a written unit
     /// through its bits reading it; how many units were written.
-    fn finish(self, gp: &mut GroundProgram, replaced: &[bool]) -> usize {
+    fn finish(self, gp: &mut GroundProgram) -> usize {
+        if self.values.is_empty() {
+            return 0;
+        }
+        let mut replaced = vec![false; gp.num_atoms()];
+        for &a in &self.replaced {
+            replaced[a as usize] = true;
+        }
         let old = std::mem::take(&mut gp.rules);
         let mut rules = Vec::with_capacity(old.len() + self.rules.len());
         for mut r in old {
