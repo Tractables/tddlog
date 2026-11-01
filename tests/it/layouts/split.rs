@@ -6,6 +6,25 @@ use crate::common;
 use common::Rows;
 use tddlog::{Kind, Strategy};
 
+const YES: [f64; 5] = [0.125, 0.25, 0.5, 0.75, 0.875];
+
+fn row_dist(n: usize, seed: usize) -> Vec<f64> {
+    let w: Vec<f64> = (0..n)
+        .map(|m| ((seed * 7 + m * 3) % 5 + 1) as f64)
+        .collect();
+    let total: f64 = w.iter().sum();
+    w.iter().map(|x| x / total).collect()
+}
+
+fn ad_heads(name: &str, prefix: &str, probs: &[f64]) -> String {
+    probs
+        .iter()
+        .enumerate()
+        .map(|(i, q)| format!("{q}::{name}({prefix}{i})"))
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
 /// p with n values, r(p), s(p, r) and t(p, r, s), as `fault`, f97, f78 and
 /// f3 of bn_pathfinder, and `leaves` tables c0(p), c1(p), … read by p
 /// alone and by nothing, one unit, of which the first `observed` are
@@ -17,15 +36,8 @@ fn hub(n: usize, leaves: usize, observed: usize) -> (String, Vec<(String, f64)>)
     let prior: Vec<f64> = weight.iter().map(|w| w / total).collect();
     let two = [[0.9, 0.1], [0.3, 0.7]];
     let three = [[0.2, 0.3, 0.5], [0.5, 0.3, 0.2], [0.1, 0.1, 0.8]];
-    let yes = [0.125, 0.25, 0.5, 0.75, 0.875];
     let (rv, sv) = (["a", "b"], ["x", "y", "z"]);
-    let mut source = prior
-        .iter()
-        .enumerate()
-        .map(|(i, q)| format!("{q}::p(v{i})"))
-        .collect::<Vec<_>>()
-        .join("; ")
-        + ".\n";
+    let mut source = ad_heads("p", "v", &prior) + ".\n";
     let mut k = 0;
     let mut r_of = vec![[0.0; 2]; n];
     for (i, d) in r_of.iter_mut().enumerate() {
@@ -60,7 +72,7 @@ fn hub(n: usize, leaves: usize, observed: usize) -> (String, Vec<(String, f64)>)
     let mut likelihood = vec![1.0; n];
     for c in 0..leaves {
         for (i, like) in likelihood.iter_mut().enumerate() {
-            let q = yes[(i * 3 + c) % yes.len()];
+            let q = YES[(i * 3 + c) % YES.len()];
             source += &format!("{q}::c{c}(yes); {}::c{c}(no) :- p(v{i}).\n", 1.0 - q);
             if c < observed {
                 *like *= q;
@@ -100,39 +112,23 @@ fn hub(n: usize, leaves: usize, observed: usize) -> (String, Vec<(String, f64)>)
 /// `dm_4`. Returns the program and the exact P(q | e) of each value of the
 /// last.
 fn chain(n: usize, k: usize, mapped: usize) -> (String, Vec<(String, f64)>) {
-    let row = |seed: usize| -> Vec<f64> {
-        let w: Vec<f64> = (0..n)
-            .map(|m| ((seed * 7 + m * 3) % 5 + 1) as f64)
-            .collect();
-        let total: f64 = w.iter().sum();
-        w.iter().map(|x| x / total).collect()
-    };
-    let yes = [0.125, 0.25, 0.5, 0.75, 0.875];
-    let prior = row(0);
-    let mut source = prior
-        .iter()
-        .enumerate()
-        .map(|(i, q)| format!("{q}::p0(v{i})"))
-        .collect::<Vec<_>>()
-        .join("; ")
-        + ".\n";
-    let mut dist: Vec<f64> = (0..n).map(|i| prior[i] * yes[i % yes.len()]).collect();
+    let prior = row_dist(n, 0);
+    let mut source = ad_heads("p0", "v", &prior) + ".\n";
+    let mut dist: Vec<f64> = (0..n).map(|i| prior[i] * YES[i % YES.len()]).collect();
     for i in 0..n {
-        let q = yes[i % yes.len()];
+        let q = YES[i % YES.len()];
         source += &format!("{q}::leaf(yes); {}::leaf(no) :- p0(v{i}).\n", 1.0 - q);
     }
     source += "evidence(leaf(yes)).\n";
     for j in 1..k {
         let mut next = vec![0.0; n];
         for (i, d) in dist.iter().enumerate() {
-            let r = row(j * n + i);
-            source += &(r
-                .iter()
-                .enumerate()
-                .map(|(m, q)| format!("{q}::p{j}(v{m})"))
-                .collect::<Vec<_>>()
-                .join("; ")
-                + &format!(" :- p{}(v{i}).\n", j - 1));
+            let r = row_dist(n, j * n + i);
+            source += &format!(
+                "{} :- p{}(v{i}).\n",
+                ad_heads(&format!("p{j}"), "v", &r),
+                j - 1
+            );
             for (m, q) in r.iter().enumerate() {
                 next[m] += d * q;
             }
@@ -170,40 +166,23 @@ fn chain(n: usize, k: usize, mapped: usize) -> (String, Vec<(String, f64)>) {
 /// parent. Returns the program and the exact P(q | e) of each value of a
 /// and of c.
 fn grid(na: usize, nb: usize, nd: usize) -> (String, Vec<(String, f64)>) {
-    let dist = |n: usize, seed: usize| -> Vec<f64> {
-        let w: Vec<f64> = (0..n)
-            .map(|m| ((seed * 7 + m * 3) % 5 + 1) as f64)
-            .collect();
-        let total: f64 = w.iter().sum();
-        w.iter().map(|x| x / total).collect()
-    };
-    let yes = [0.125, 0.25, 0.5, 0.75, 0.875];
     let cv = 8;
     let mut source = String::new();
-    let (pa, pb, pd) = (dist(na, 1), dist(nb, 2), dist(nd, 3));
+    let (pa, pb, pd) = (row_dist(na, 1), row_dist(nb, 2), row_dist(nd, 3));
     for (name, prior) in [("a", &pa), ("b", &pb), ("d", &pd)] {
-        source += &(prior
-            .iter()
-            .enumerate()
-            .map(|(i, q)| format!("{q}::{name}(v{i})"))
-            .collect::<Vec<_>>()
-            .join("; ")
-            + ".\n");
+        source += &(ad_heads(name, "v", prior) + ".\n");
     }
     let (mut wa, mut wc) = (vec![0.0; na], vec![0.0; cv]);
     for i in 0..na {
         for (j, &qb) in pb.iter().enumerate() {
             for (l, &qd) in pd.iter().enumerate() {
-                let row = dist(cv, (i * nb + j) * nd + l + 4);
-                source += &(row
-                    .iter()
-                    .enumerate()
-                    .map(|(m, q)| format!("{q}::c(w{m})"))
-                    .collect::<Vec<_>>()
-                    .join("; ")
-                    + &format!(" :- a(v{i}), b(v{j}), d(v{l}).\n"));
+                let row = row_dist(cv, (i * nb + j) * nd + l + 4);
+                source += &format!(
+                    "{} :- a(v{i}), b(v{j}), d(v{l}).\n",
+                    ad_heads("c", "w", &row)
+                );
                 for (m, q) in row.iter().enumerate() {
-                    let w = pa[i] * qb * qd * q * yes[m % yes.len()];
+                    let w = pa[i] * qb * qd * q * YES[m % YES.len()];
                     wa[i] += w;
                     wc[m] += w;
                 }
@@ -211,7 +190,7 @@ fn grid(na: usize, nb: usize, nd: usize) -> (String, Vec<(String, f64)>) {
         }
     }
     for m in 0..cv {
-        let q = yes[m % yes.len()];
+        let q = YES[m % YES.len()];
         source += &format!("{q}::e(yes); {}::e(no) :- c(w{m}).\n", 1.0 - q);
     }
     source += "evidence(e(yes)).\n";
@@ -232,18 +211,26 @@ fn grid(na: usize, nb: usize, nd: usize) -> (String, Vec<(String, f64)>) {
     (source, expected)
 }
 
-/// The run of `source` on the `families` vtree under every indicator,
-/// its answers checked against `expected`, and its largest compiled
-/// formula, largest formula of the query phase and evidence, in pairs.
-fn run(source: &str, expected: &[(String, f64)], what: &str) -> (usize, usize, usize) {
-    let gp = common::ground(source, Rows::Classes, true);
+fn solve_families(
+    gp: tddlog::GroundProgram,
+    expected: &[(String, f64)],
+    what: &str,
+) -> tddlog::Run {
     let strategy = Strategy::Trial(Kind::Families { search: true });
     let run = tddlog::solve_ground(
         gp,
         &common::options(strategy, tddlog::Projection::default()),
     )
     .unwrap_or_else(|e| panic!("{what}: {e}"));
-    common::assert_answers(what, &run.results.unwrap(), expected, 1e-9);
+    common::assert_answers(what, run.results.as_ref().unwrap(), expected, 1e-9);
+    run
+}
+
+/// The run of `source` on the `families` vtree under every indicator,
+/// its answers checked against `expected`, and its largest compiled
+/// formula, largest formula of the query phase and evidence, in pairs.
+fn run(source: &str, expected: &[(String, f64)], what: &str) -> (usize, usize, usize) {
+    let run = solve_families(common::ground(source, Rows::Classes, true), expected, what);
     (
         run.stats.max_pairs,
         run.query_sizes.largest,
@@ -398,18 +385,7 @@ fn the_parts_of_a_part_go_side_by_side() {
                     .any(|a| &*a.name == "$v" && a.args.len() == 4),
                 "{nd}: c's parts are not split again"
             );
-            let strategy = Strategy::Trial(Kind::Families { search: true });
-            let run = tddlog::solve_ground(
-                gp,
-                &common::options(strategy, tddlog::Projection::default()),
-            )
-            .unwrap();
-            common::assert_answers(
-                &format!("d of {nd}"),
-                &run.results.unwrap(),
-                &expected,
-                1e-9,
-            );
+            let run = solve_families(gp, &expected, &format!("d of {nd}"));
             (run.query_sizes.evidence, run.query_sizes.work_units)
         })
         .collect();
@@ -433,7 +409,6 @@ fn spines(dims: &[usize], cv: usize) -> (String, Vec<(String, f64)>) {
         let total: f64 = w.iter().sum();
         w.iter().map(|x| x / total).collect()
     };
-    let yes = [0.125, 0.25, 0.5, 0.75, 0.875];
     let names: Vec<String> = (0..dims.len()).map(|i| format!("a{i}")).collect();
     let priors: Vec<Vec<f64>> = dims
         .iter()
@@ -442,13 +417,7 @@ fn spines(dims: &[usize], cv: usize) -> (String, Vec<(String, f64)>) {
         .collect();
     let mut source = String::new();
     for (name, prior) in names.iter().zip(&priors) {
-        source += &(prior
-            .iter()
-            .enumerate()
-            .map(|(v, q)| format!("{q}::{name}(v{v})"))
-            .collect::<Vec<_>>()
-            .join("; ")
-            + ".\n");
+        source += &(ad_heads(name, "v", prior) + ".\n");
     }
     let rows: usize = dims.iter().product();
     let (mut wa, mut wc) = (vec![0.0; dims[0]], vec![0.0; cv]);
@@ -468,21 +437,15 @@ fn spines(dims: &[usize], cv: usize) -> (String, Vec<(String, f64)>) {
             .join(", ");
         let prior: f64 = values.iter().zip(&priors).map(|(&v, p)| p[v]).product();
         let d = dist(cv, row + dims.len() + 1);
-        source += &(d
-            .iter()
-            .enumerate()
-            .map(|(m, q)| format!("{q}::c(w{m})"))
-            .collect::<Vec<_>>()
-            .join("; ")
-            + &format!(" :- {context}.\n"));
+        source += &format!("{} :- {context}.\n", ad_heads("c", "w", &d));
         for (m, q) in d.iter().enumerate() {
-            let w = prior * q * yes[m % yes.len()];
+            let w = prior * q * YES[m % YES.len()];
             wa[values[0]] += w;
             wc[m] += w;
         }
     }
     for m in 0..cv {
-        let q = yes[m % yes.len()];
+        let q = YES[m % YES.len()];
         source += &format!("{q}::e(yes); {}::e(no) :- c(w{m}).\n", 1.0 - q);
     }
     source += "evidence(e(yes)).\n";
@@ -522,18 +485,7 @@ fn row_classes_select_the_rows_of_a_long_spine() {
                 rewritten && rows == Rows::Classes,
                 "{dims:?}, {rows:?}: c's class atoms"
             );
-            let strategy = Strategy::Trial(Kind::Families { search: true });
-            let run = tddlog::solve_ground(
-                gp,
-                &common::options(strategy, tddlog::Projection::default()),
-            )
-            .unwrap();
-            common::assert_answers(
-                &format!("{dims:?}, {rows:?}"),
-                &run.results.unwrap(),
-                &expected,
-                1e-9,
-            );
+            let run = solve_families(gp, &expected, &format!("{dims:?}, {rows:?}"));
             sizes.push(run.query_sizes.evidence);
         }
         if rewritten {

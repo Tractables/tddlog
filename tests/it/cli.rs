@@ -15,6 +15,14 @@ fn stdout(out: &Output) -> &str {
     std::str::from_utf8(&out.stdout).unwrap()
 }
 
+fn assert_exit(args: &[&str], code: i32, message: &str) {
+    let out = tddlog(args);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(code), "{args:?}: {stderr}");
+    assert!(stderr.contains(message), "{args:?}: {stderr}");
+    assert!(out.stdout.is_empty(), "{args:?}");
+}
+
 #[test]
 fn one_tab_separated_line_per_query_in_query_order() {
     // ProbLog 2.3 prints burglary 0.35714286, earthquake 0.71428571 and
@@ -223,11 +231,7 @@ fn options_that_ask_for_nothing_fail() {
         &["--no-queries", "examples/alarm.pl"][..],
         &["--ground", "--no-queries", "examples/alarm.pl"],
     ] {
-        let out = tddlog(args);
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        assert_eq!(out.status.code(), Some(2), "{args:?}: {stderr}");
-        assert!(stderr.contains("nothing to answer"), "{args:?}: {stderr}");
-        assert!(out.stdout.is_empty(), "{args:?}");
+        assert_exit(args, 2, "nothing to answer");
     }
 }
 
@@ -431,11 +435,7 @@ fn bad_and_inert_options_exit_with_status_two() {
         (&["no/such/file.pl"], "cannot read no/such/file.pl"),
     ];
     for (args, message) in cases {
-        let out = tddlog(args);
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        assert_eq!(out.status.code(), Some(2), "{args:?}: {stderr}");
-        assert!(stderr.contains(message), "{args:?}: {stderr}");
-        assert!(out.stdout.is_empty(), "{args:?}");
+        assert_exit(args, 2, message);
     }
 }
 
@@ -499,13 +499,7 @@ a('$1').
     for args in [&[][..], &["6"]] {
         let mut all = vec![path.to_str().unwrap()];
         all.extend(args);
-        let out = tddlog(&all);
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        assert_eq!(out.status.code(), Some(1), "{stderr}");
-        assert!(
-            stderr.contains("line 2: `$2` has no argument"),
-            "{args:?}: {stderr}"
-        );
+        assert_exit(&all, 1, "line 2: `$2` has no argument");
     }
 }
 

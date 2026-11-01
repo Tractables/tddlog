@@ -64,6 +64,15 @@ fn split_run(
     )
 }
 
+fn ground(source: &str, detach: bool) -> GroundProgram {
+    let program = crate::syntax::parse_program(source).unwrap();
+    let options = GroundOptions {
+        detach,
+        ..GroundOptions::default()
+    };
+    crate::ground::ground(&program, &options).unwrap()
+}
+
 /// [`split_check`]'s parts of `gp` under `bounds` for a run under a
 /// layout other than `auto`, which builds nothing ahead; `None` for the
 /// program whole.
@@ -189,9 +198,8 @@ fn a_part_keeps_every_observation_and_gives_the_programs_evidence_probability() 
 fn a_part_is_what_its_queries_and_the_evidence_depend_on() {
     // BY_HAND's parts: e's reads a, b, c, d and e's facts and not f's; f's
     // reads d, not e's or b's rules but for the evidence's.
-    let program = crate::syntax::parse_program(BY_HAND).unwrap();
-    let ground = crate::ground::ground(&program, &GroundOptions::default()).unwrap();
-    let split = query_parts(&ground, &SplitBounds::EVERY_GROUP, || true).expect("two groups");
+    let gp = ground(BY_HAND, true);
+    let split = query_parts(&gp, &SplitBounds::EVERY_GROUP, || true).expect("two groups");
     assert_eq!(split.queries, vec![vec![0, 1, 2, 3], vec![4]]);
     for (part, (has, lacks)) in split.parts.iter().zip([("e", "f"), ("f", "e")]) {
         let atoms: Vec<String> = part.atoms.iter().map(|a| a.to_string()).collect();
@@ -202,21 +210,19 @@ fn a_part_is_what_its_queries_and_the_evidence_depend_on() {
     }
     // With the default bounds a program this small is not split, nor one
     // whose queries the evidence reads, nor one with a single query.
-    assert!(query_parts(&ground, &SplitBounds::default(), || true).is_none());
-    assert!(split_of(&ground, &SplitBounds::default()).is_none());
+    assert!(query_parts(&gp, &SplitBounds::default(), || true).is_none());
+    assert!(split_of(&gp, &SplitBounds::default()).is_none());
     for source in [
         "0.5::a.\n0.5::c.\n0.5::b :- a.\n0.5::b :- c.\nevidence(b).\nquery(a).\nquery(c).\n",
         "0.5::a.\n0.5::b.\nquery(a).\n",
     ] {
-        let program = crate::syntax::parse_program(source).unwrap();
-        let ground = crate::ground::ground(&program, &GroundOptions::default()).unwrap();
         assert!(
-            query_parts(&ground, &SplitBounds::EVERY_GROUP, || true).is_none(),
+            query_parts(&ground(source, true), &SplitBounds::EVERY_GROUP, || true).is_none(),
             "{source}"
         );
     }
     // A program read through indicators is not split.
-    let indicated = crate::indicators::introduce(&ground);
+    let indicated = crate::indicators::introduce(&gp);
     if !indicated.encoding.is_empty() {
         assert!(query_parts(&indicated, &SplitBounds::EVERY_GROUP, || true).is_none());
     }
@@ -228,20 +234,19 @@ fn the_layouts_estimates_decide_the_split() {
     // EVERY_GROUP, are split where their layouts' estimates may total any
     // multiple of the program's, and not where they must be smaller than
     // it by more than any estimate can be.
-    let program = crate::syntax::parse_program(BY_HAND).unwrap();
-    let ground = crate::ground::ground(&program, &GroundOptions::default()).unwrap();
+    let gp = ground(BY_HAND, true);
     let bounds = |layout_gain| SplitBounds {
         layout_gain,
         ..SplitBounds::EVERY_GROUP
     };
-    let split = split_of(&ground, &bounds(1e-300)).expect("estimated and split");
+    let split = split_of(&gp, &bounds(1e-300)).expect("estimated and split");
     assert_eq!(split.parts.len(), 2);
     assert!(
         split.note.contains("layouts estimated at"),
         "{}",
         split.note
     );
-    assert!(split_of(&ground, &bounds(1e300)).is_none());
+    assert!(split_of(&gp, &bounds(1e300)).is_none());
 }
 
 #[test]
@@ -251,10 +256,9 @@ fn the_further_check_is_asked_of_two_groups_before_the_weights() {
     // too light to split, and the check is asked before that is known. A
     // program with one query has one group, and the check is not asked.
     let parts = |source: &str, bounds: &SplitBounds, worth: bool| {
-        let program = crate::syntax::parse_program(source).unwrap();
-        let ground = crate::ground::ground(&program, &GroundOptions::default()).unwrap();
+        let gp = ground(source, true);
         let asked = std::cell::Cell::new(false);
-        let split = query_parts(&ground, bounds, || {
+        let split = query_parts(&gp, bounds, || {
             asked.set(true);
             worth
         });
@@ -306,15 +310,7 @@ fn the_check_under_auto_splits_as_under_a_layout_and_runs_as_solve_ground() {
     // split is the one under any other layout for every bounds, and a
     // program kept whole runs with the trial as `solve_ground` runs it: the
     // same answers, P(e), attempts, sizes and notes, but for the seconds.
-    let program = crate::syntax::parse_program(BY_HAND).unwrap();
-    let ground = crate::ground::ground(
-        &program,
-        &GroundOptions {
-            detach: false,
-            ..GroundOptions::default()
-        },
-    )
-    .unwrap();
+    let ground = ground(BY_HAND, false);
     let floor_only = SplitBounds {
         min_pairs: 0.0,
         ..SplitBounds::default()

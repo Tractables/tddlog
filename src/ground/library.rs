@@ -341,12 +341,7 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         args.extend(extra.iter().cloned());
         *a = Atom::new(name, args);
     };
-    for c in &mut with.clauses {
-        calls_mut(&mut c.body, &write);
-    }
-    for r in &mut with.query_rules {
-        calls_mut(&mut r.body, &write);
-    }
+    for_each_body(&mut with, |body| calls_mut(body, &write));
     if !added.borrow().is_empty() {
         // The goals a goal it builds can name: the predicates it defines,
         // named in an argument, and the terms written in an argument, in
@@ -467,14 +462,18 @@ pub(super) fn added(program: &Program) -> Option<Program> {
             }
             Some(t)
         };
-        for c in &mut with.clauses {
-            guard(&mut c.body, &test);
-        }
-        for r in &mut with.query_rules {
-            guard(&mut r.body, &test);
-        }
+        for_each_body(&mut with, |body| guard(body, &test));
     }
     Some(with)
+}
+
+fn for_each_body(program: &mut Program, mut f: impl FnMut(&mut Vec<Literal>)) {
+    for c in &mut program.clauses {
+        f(&mut c.body);
+    }
+    for r in &mut program.query_rules {
+        f(&mut r.body);
+    }
 }
 
 /// `program` with library(collect)'s calls `CodeBlock => Collector` read
@@ -512,12 +511,7 @@ fn collectors(program: &Program) -> Option<Program> {
         changed.set(true);
     };
     let mut with = program.clone();
-    for c in &mut with.clauses {
-        calls_mut(&mut c.body, &collector);
-    }
-    for r in &mut with.query_rules {
-        calls_mut(&mut r.body, &collector);
-    }
+    for_each_body(&mut with, |body| calls_mut(body, &collector));
     changed.get().then_some(with)
 }
 

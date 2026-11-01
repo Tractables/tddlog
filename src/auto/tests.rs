@@ -248,15 +248,8 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
 /// `decision` alone ([`Programs::of`], [`same_rewrite`]).
 #[test]
 fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
-    let ground = |src: &str| {
-        crate::ground::ground(
-            &crate::syntax::parse_program(src).expect("parses"),
-            &crate::GroundOptions::default(),
-        )
-        .expect("grounds")
-    };
-    let as_ground = ground("0.5::f0. 0.5::f1. q :- f0, f1. query(q).");
-    let conditioned = ground("0.5::f0. 0.5::f1. q :- f0. q :- f1. query(q).");
+    let as_ground = regress("0.5::f0. 0.5::f1. q :- f0, f1. query(q).");
+    let conditioned = regress("0.5::f0. 0.5::f1. q :- f0. q :- f1. query(q).");
     let program = Kind::Program { fan_in: false };
     let fan_in = Kind::Program { fan_in: true };
     let laid = Kind::Families { search: false };
@@ -289,7 +282,7 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     }
     // The program with its views in place goes to `program` and
     // `program:fanin`, where the conditioned program does not.
-    let written = ground("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q).");
+    let written = regress("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q).");
     for decision in [false, true] {
         let programs = Programs {
             ground: as_ground.clone(),
@@ -327,11 +320,7 @@ fn diamond_loop(steps: usize) -> GroundProgram {
         );
     }
     src += &format!("query(result_{}).\n", 2 * steps - 1);
-    crate::ground::ground(
-        &crate::syntax::parse_program(&src).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap()
+    regress(&src)
 }
 
 #[test]
@@ -546,11 +535,7 @@ fn a_small_compile_cannot_win_before_its_evidence_fits() {
         }
     }
     source.push_str("query(\\+f(12)).\n");
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(&source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
         closed_then_td(),
@@ -576,12 +561,7 @@ fn a_small_compile_cannot_win_before_its_evidence_fits() {
 
 #[test]
 fn competing_rewrites_preserve_the_problog_posteriors() {
-    let source = include_str!("../../examples/bn_split.pl");
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(include_str!("../../examples/bn_split.pl"));
     let expected = [
         ("a(x)", 0.1395817),
         ("a(y)", 0.6352757),
@@ -617,12 +597,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
 
 #[test]
 fn a_trial_with_indicators_ties_tables_by_clauses() {
-    let source = include_str!("../../examples/bn_split.pl");
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(include_str!("../../examples/bn_split.pl"));
     let rewritten: Vec<_> = candidates(&gp)
         .into_iter()
         .filter(|k| k.indicators())
@@ -719,11 +694,7 @@ fn a_program_with_nothing_to_order_matches_problog_round_after_round() {
         path(X,Y) :- edge(X,Y).
         path(X,Y) :- edge(X,Z), path(Z,Y).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(source);
     assert_eq!(candidates(&gp), vec![Kind::Dynamic]);
     // ProbLog 2.3.0.
     let expected = [0.632256, 0.460356, 0.399624, 0.754432, 0.5716992, 0.199812];
@@ -760,11 +731,7 @@ fn a_trial_alone_runs_in_one_unbounded_attempt() {
         path(X,Y) :- edge(X,Y).
         path(X,Y) :- edge(X,Z), path(Z,Y).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(source);
     let run = run_with_watch(gp.clone(), candidates(&gp), Projection::default(), 2, 0).unwrap();
     assert_eq!(run.attempts, 1, "{:?}", run.vtree_notes);
     assert!(
@@ -832,11 +799,7 @@ fn an_operation_lost_in_flight_is_built_again_in_a_later_turn() {
         }
     }
     source.push_str("query(\\+f(40)).\n");
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(&source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
         closed_then_td(),
@@ -968,11 +931,7 @@ fn a_families_trial_that_spends_past_its_estimate_has_overspent_it() {
 
 #[test]
 fn a_searched_layout_that_would_not_search_is_not_built() {
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(include_str!("../../examples/bn_split.pl")).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(include_str!("../../examples/bn_split.pl"));
     let programs = Programs {
         ground: ground::without_linear_recursion(gp),
         written: None,
@@ -1022,11 +981,7 @@ fn a_grid_answers_round_after_round() {
     }
     source +=
         "path(X,Y) :- edge(X,Y).\npath(X,Y) :- edge(X,Z), path(Z,Y).\nquery(path(n0_0,n3_3)).\n";
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(&source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
         candidates(&gp),
@@ -1080,11 +1035,7 @@ fn a_markov_network_answers_round_after_round() {
     for j in 0..n {
         source += &format!("query(y{j}(v_1)).\n");
     }
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(&source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
         candidates(&gp),
@@ -1222,11 +1173,7 @@ fn a_lost_query_operation_is_not_lost_again_under_the_same_bounds() {
     // 0.094006751.
     let source = include_str!("../../examples/uwcse.pl")
         .replace("student(s2).", "student(s2).\nstudent(s3).\nstudent(s4).");
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(&source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
         candidates(&gp),
@@ -1280,11 +1227,7 @@ fn a_dynamic_trial_resumes_on_the_vtree_it_reached() {
         path(X,Y) :- edge(X,Z), path(Z,Y).
         evidence(path(6,7), false).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(source);
     let expected = [
         0.598734046294,
         0.438719152721,
@@ -1324,11 +1267,7 @@ fn a_dynamic_trial_resumes_on_the_vtree_it_reached() {
 fn query_counting_obeys_the_batch_work_limit() {
     // The compile counts `q`; the query phase counts the literal of `a`.
     let source = "0.5::a. 0.4::b. q :- a,b. query(q). query(a).";
-    let gp = crate::ground::ground(
-        &crate::syntax::parse_program(source).unwrap(),
-        &crate::GroundOptions::default(),
-    )
-    .unwrap();
+    let gp = regress(source);
     let (
         vtree::Layout {
             vtree: tree, order, ..
@@ -1475,6 +1414,38 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
     );
 }
 
+fn run_query_beside_evidence(budget: u64) -> (bool, Vec<String>) {
+    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+    let result = run_within(
+        Programs {
+            ground: gp,
+            written: None,
+            conditioned: None,
+            decision: false,
+        },
+        vec![
+            Kind::Program { fan_in: false },
+            Kind::Closed,
+            Kind::Families { search: false },
+        ],
+        Projection::default(),
+        Watch {
+            first_pairs: 1,
+            memory_bytes: Some(budget),
+            ..Watch::default()
+        },
+        None,
+    );
+    let failed = result.is_err();
+    assert!(!failed || refused(&result), "budget {budget}");
+    let notes = match result {
+        Ok(run) => run.vtree_notes,
+        Err(Error::Trials { notes, .. }) => notes,
+        Err(_) => unreachable!(),
+    };
+    (failed, notes)
+}
+
 #[test]
 fn memory_goes_to_the_trial_that_has_spent_the_most_once() {
     // Where no trial fits the budget, the memory others hold is freed for
@@ -1499,34 +1470,7 @@ fn memory_goes_to_the_trial_that_has_spent_the_most_once() {
     };
     let mut most = 0;
     for budget in (4..16).map(|k| k << 8) {
-        let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
-        let result = run_within(
-            Programs {
-                ground: gp,
-                written: None,
-                conditioned: None,
-                decision: false,
-            },
-            vec![
-                Kind::Program { fan_in: false },
-                Kind::Closed,
-                Kind::Families { search: false },
-            ],
-            Projection::default(),
-            Watch {
-                first_pairs: 1,
-                memory_bytes: Some(budget),
-                ..Watch::default()
-            },
-            None,
-        );
-        let failed = result.is_err();
-        assert!(!failed || refused(&result), "budget {budget}");
-        let notes = match result {
-            Ok(run) => run.vtree_notes,
-            Err(Error::Trials { notes, .. }) => notes,
-            Err(_) => unreachable!(),
-        };
+        let (failed, notes) = run_query_beside_evidence(budget);
         let released: Vec<&String> = notes
             .iter()
             .filter(|n| n.starts_with("released: "))
@@ -1576,34 +1520,7 @@ fn a_trial_retired_behind_held_memory_runs_again_once_none_is_left() {
     // so several are tried.
     let mut revivals = 0;
     for budget in (4..16).map(|k| k << 8) {
-        let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
-        let result = run_within(
-            Programs {
-                ground: gp,
-                written: None,
-                conditioned: None,
-                decision: false,
-            },
-            vec![
-                Kind::Program { fan_in: false },
-                Kind::Closed,
-                Kind::Families { search: false },
-            ],
-            Projection::default(),
-            Watch {
-                first_pairs: 1,
-                memory_bytes: Some(budget),
-                ..Watch::default()
-            },
-            None,
-        );
-        let failed = result.is_err();
-        assert!(!failed || refused(&result), "budget {budget}");
-        let notes = match result {
-            Ok(run) => run.vtree_notes,
-            Err(Error::Trials { notes, .. }) => notes,
-            Err(_) => unreachable!(),
-        };
+        let (failed, notes) = run_query_beside_evidence(budget);
         let revived: Vec<usize> = (0..notes.len())
             .filter(|&k| notes[k].starts_with("revived: "))
             .collect();
@@ -1852,12 +1769,15 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
     );
 }
 
+fn close(p: Option<f64>, want: f64) -> bool {
+    p.is_some_and(|p| (p - want).abs() < 1e-9)
+}
+
 #[test]
 fn a_trial_is_projected_from_its_last_doubling() {
     // A share of the components per doubling of its target, over the last
     // doubling: 0.2 from a target of 2^21 units to 2^22, so the 0.6 left
     // takes three more doublings, to 2^25 units.
-    let close = |p: Option<f64>, want: f64| p.is_some_and(|p| (p - want).abs() < 1e-9);
     let mut t = Trial::new(Kind::Closed);
     assert_eq!(t.projected(), None);
     t.progress = vec![(1 << 20, 0.1), (1 << 21, 0.2), (1 << 22, 0.4)];
@@ -1903,7 +1823,6 @@ fn a_first_turn_is_projected_from_half_its_target() {
     // The compile passed half its first target, 2^30 units, with 0.35 of
     // its components and ended the turn with 0.55: 0.2 a doubling, so the
     // 0.45 left takes 2.25 doublings more.
-    let close = |p: Option<f64>, want: f64| p.is_some_and(|p| (p - want).abs() < 1e-9);
     let first_turn = |marked| {
         let mut t = Trial::new(Kind::Closed);
         t.target = 1 << 31;
@@ -1947,7 +1866,6 @@ fn a_first_turn_is_projected_from_half_its_target() {
 fn a_query_phase_is_projected_from_where_it_began() {
     // The compile, recorded at targets of 2^20 and 2^21 units, finishes
     // within the attempt at 2^22, whose query phase is a quarter done.
-    let close = |p: Option<f64>, want: f64| p.is_some_and(|p| (p - want).abs() < 1e-9);
     let compile_then_query = |query_work: u64| {
         let mut t = Trial::new(Kind::Program { fan_in: false });
         for (target, compiled, progress) in [

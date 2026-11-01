@@ -150,6 +150,20 @@ fn table(eng: &Engine, flaw: Flaw) -> (Tdd, VtreeIdx) {
     )
 }
 
+fn golden_weights(n: usize, scale_of: impl Fn(usize) -> f64, neg_factor: f64) -> Probabilities {
+    let mut w = Probabilities {
+        pos: vec![0.5; n],
+        neg: vec![0.5; n],
+        one: vec![1.0; n],
+    };
+    for v in 1..n {
+        let p = (v as f64 * 0.618_033_988_75).fract() * 0.9 + 0.05;
+        let s = scale_of(v);
+        (w.pos[v], w.neg[v], w.one[v]) = (p * s, (1.0 - p) * s * neg_factor, s);
+    }
+    w
+}
+
 /// The count passes over grids give the bits the passes over pairs
 /// give: every count up, every column down and every literal's count,
 /// in floats and in `Count`s, under weights that keep floats in range
@@ -158,19 +172,8 @@ fn table(eng: &Engine, flaw: Flaw) -> (Tdd, VtreeIdx) {
 /// passes run in every way they may run, through every kernel.
 #[test]
 fn grids_count_to_the_bit_of_pairs() {
-    let weights = |scale: f64| {
-        let mut w = Probabilities {
-            pos: vec![0.5; 11],
-            neg: vec![0.5; 11],
-            one: vec![1.0; 11],
-        };
-        for v in 1..=10 {
-            let p = (v as f64 * 0.618_033_988_75).fract() * 0.9 + 0.05;
-            let s = if (5..=9).contains(&v) { scale } else { 1.0 };
-            (w.pos[v], w.neg[v], w.one[v]) = (p * s, (1.0 - p) * s * 0.37, s);
-        }
-        w
-    };
+    let weights =
+        |scale: f64| golden_weights(11, |v| if (5..=9).contains(&v) { scale } else { 1.0 }, 0.37);
     let eng = Engine::new();
     for flaw in [Flaw::None, Flaw::Listed] {
         let (f, t) = table(&eng, flaw);
@@ -196,15 +199,7 @@ fn grids_count_to_the_bit_of_pairs() {
 /// over pairs, in floats and in `Count`s, in every way they may run.
 #[test]
 fn a_sparse_column_walks_its_grid() {
-    let mut w = Probabilities {
-        pos: vec![0.5; 11],
-        neg: vec![0.5; 11],
-        one: vec![1.0; 11],
-    };
-    for v in 1..=10 {
-        let p = (v as f64 * 0.618_033_988_75).fract() * 0.9 + 0.05;
-        (w.pos[v], w.neg[v]) = (p, 1.0 - p);
-    }
+    let mut w = golden_weights(11, |_| 1.0, 1.0);
     w.neg[10] = 0.0;
     let eng = Engine::new();
     let (f, t) = table(&eng, Flaw::None);
@@ -236,15 +231,7 @@ fn a_sparse_column_walks_its_grid() {
 /// through the kernels.
 #[test]
 fn grids_fall_back_to_scalar_loops_without_avx2() {
-    let mut w = Probabilities {
-        pos: vec![0.5; 11],
-        neg: vec![0.5; 11],
-        one: vec![1.0; 11],
-    };
-    for v in 1..=10 {
-        let p = (v as f64 * 0.618_033_988_75).fract() * 0.9 + 0.05;
-        (w.pos[v], w.neg[v]) = (p, 1.0 - p);
-    }
+    let w = golden_weights(11, |_| 1.0, 1.0);
     let eng = Engine::new();
     let (f, _) = table(&eng, Flaw::None);
     let n = f.vtree().num_nodes();
@@ -596,15 +583,7 @@ fn read_bits(
 fn centring_every_level_keeps_the_bits() {
     let eng = Engine::new();
     let (table, _) = table(&eng, Flaw::None);
-    let mut table_w = Probabilities {
-        pos: vec![0.5; 11],
-        neg: vec![0.5; 11],
-        one: vec![1.0; 11],
-    };
-    for v in 1..=10 {
-        let p = (v as f64 * 0.618_033_988_75).fract() * 0.9 + 0.05;
-        (table_w.pos[v], table_w.neg[v], table_w.one[v]) = (p * 1e-20, (1.0 - p) * 0.37e-20, 1e-20);
-    }
+    let table_w = golden_weights(11, |_| 1e-20, 0.37);
     let n = 80u32;
     let vtree = Arc::new(Vtree::balanced(n + 3));
     let cube = Tdd::cube(&vtree, (1..=n as i32).collect::<Vec<_>>()).unwrap();
@@ -899,19 +878,7 @@ fn grid_kernels_count_every_shape_to_the_bit_of_pairs() {
             swap: false,
         },
     ];
-    let weights = |scale: f64| {
-        let n = 14;
-        let mut w = Probabilities {
-            pos: vec![0.5; n],
-            neg: vec![0.5; n],
-            one: vec![1.0; n],
-        };
-        for v in 1..n {
-            let p = (v as f64 * 0.618_033_988_75).fract() * 0.9 + 0.05;
-            (w.pos[v], w.neg[v], w.one[v]) = (p * scale, (1.0 - p) * scale * 0.37, scale);
-        }
-        w
-    };
+    let weights = |scale: f64| golden_weights(14, |_| scale, 0.37);
     let eng = Engine::new();
     let mut ways = 0;
     for table in &tables {

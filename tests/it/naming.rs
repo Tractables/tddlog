@@ -714,6 +714,25 @@ propcost(million) :- thiscarcost(hundredthou).
 propcost(million) :- othercarcost(thousand).
 ";
 
+fn check_answers<S: AsRef<str>>(what: &str, source: &str, want: &[(S, f64)], eps: f64) -> bool {
+    let mut named = false;
+    for strategy in STRATEGIES {
+        let options = common::options(strategy, Projection::default());
+        let run =
+            common::run(source, &options).unwrap_or_else(|e| panic!("{what} {strategy:?}: {e}"));
+        common::assert_answers(
+            &format!("{what} {strategy:?}"),
+            run.results.as_ref().expect("consistent evidence"),
+            want,
+            eps,
+        );
+        if strategy == Strategy::Trial(Kind::Program { fan_in: false }) {
+            named = !run.ground.encoding.is_empty();
+        }
+    }
+    named
+}
+
 /// ProbLog 2.3.0 (`-k sdd`, one query at a time) answers 0.019884864,
 /// 0.0085220844, 0 and 0.016076784; `program` answered 0.019029, 0.008155,
 /// 0 and 0.015402 before the fix.
@@ -728,20 +747,10 @@ fn a_split_tables_ties_read_copies_of_their_own_cut() {
         .map(|q| format!("propcost({q})"))
         .zip([0.019884864, 0.0085220844, 0.0, 0.016076784])
         .collect();
-    for strategy in STRATEGIES {
-        let options = common::options(strategy, Projection::default());
-        let run = common::run(&source, &options)
-            .unwrap_or_else(|e| panic!("insurance's split {strategy:?}: {e}"));
-        common::assert_answers(
-            &format!("insurance's split {strategy:?}"),
-            run.results.as_ref().expect("consistent evidence"),
-            &want,
-            1e-8,
-        );
-        if strategy == Strategy::Trial(Kind::Program { fan_in: false }) {
-            assert!(!run.ground.encoding.is_empty(), "`program` names atoms");
-        }
-    }
+    assert!(
+        check_answers("insurance's split", &source, &want, 1e-8),
+        "`program` names atoms"
+    );
 }
 
 /// Roulette's hailfinder network, cut down to the rules that keep
@@ -830,15 +839,5 @@ fn a_cut_whose_link_a_tie_stands_on() {
         ("r5fcst(sig)", 0.0),
         ("r5fcst(svr)", 0.2510229974258016),
     ];
-    for strategy in STRATEGIES {
-        let options = common::options(strategy, Projection::default());
-        let run = common::run(&source, &options)
-            .unwrap_or_else(|e| panic!("hailfinder's tie {strategy:?}: {e}"));
-        common::assert_answers(
-            &format!("hailfinder's tie {strategy:?}"),
-            run.results.as_ref().expect("consistent evidence"),
-            &want,
-            1e-9,
-        );
-    }
+    check_answers("hailfinder's tie", &source, &want, 1e-9);
 }
