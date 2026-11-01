@@ -1443,72 +1443,7 @@ mod tests {
                 Vtree::join(&leaf, &below).unwrap(),
                 Vtree::join(&below, &leaf).unwrap(),
             ] {
-                let tree = Arc::new(tree);
-                tree.context().run(|engine| {
-                    let backend = TddBackend::new(engine, tree.clone());
-                    let scope = backend.global();
-                    // Both operands settled on the scope below `v` and
-                    // embedded, as the compiler hands them over.
-                    let vars: Vec<VarId> = (1..n).map(VarId).collect();
-                    let own = backend.scope(&vars).unwrap();
-                    let mut x = backend.zero(&own);
-                    for cube in &cubes {
-                        x = backend.or(x, backend.cube(&own, cube).unwrap()).unwrap();
-                    }
-                    backend.minimize(&mut x, Reduce::Settled).unwrap();
-                    let y = backend.negate(x.clone()).unwrap();
-                    let (x, y) = (
-                        backend.embed(x, &own, &scope).unwrap(),
-                        backend.embed(y, &own, &scope).unwrap(),
-                    );
-                    // The negation with its nodes in another order than `x`'s.
-                    let other = reversed(engine, &y);
-                    if x.is_zero() || y.is_zero() {
-                        assert!(backend.select_at_root(&scope, v, &x, &y).unwrap().is_none());
-                        return;
-                    }
-                    let built = backend
-                        .select_at_root(&scope, v, &x, &y)
-                        .unwrap()
-                        .expect("v is a child of the root");
-                    let interned = select_by_interning(&backend, &scope, v, &x, &y)
-                        .expect("v is a child of the root");
-                    assert!(
-                        same_levels(&built, &interned),
-                        "seed {seed}: not the interned diagram"
-                    );
-                    let built = backend
-                        .select_at_root(&scope, v, &x, &other)
-                        .unwrap()
-                        .expect("v is a child of the root");
-                    let interned = select_by_interning(&backend, &scope, v, &x, &other)
-                        .expect("v is a child of the root");
-                    assert!(
-                        same_levels(&built, &interned),
-                        "seed {seed}: not the interned diagram of the other negation"
-                    );
-                    let yes = backend
-                        .and_clause(&scope, x.clone(), &[Literal::pos(v)])
-                        .unwrap();
-                    let no = backend
-                        .and_clause(&scope, y.clone(), &[Literal::neg(v)])
-                        .unwrap();
-                    let mut applied = backend.or(yes, no).unwrap();
-                    backend.minimize(&mut applied, Reduce::Settled).unwrap();
-                    assert!(backend.equivalent(&built, &applied).unwrap(), "seed {seed}");
-                    assert_eq!(
-                        built.pair_count(),
-                        applied.pair_count(),
-                        "seed {seed}: not reduced"
-                    );
-                    let mut settled = built.clone();
-                    backend.minimize(&mut settled, Reduce::Settled).unwrap();
-                    assert_eq!(
-                        settled.pair_count(),
-                        built.pair_count(),
-                        "seed {seed}: settling changed it"
-                    );
-                });
+                assert_root_selection(seed, n, v, &cubes, Arc::new(tree));
             }
             // Under a balanced tree of all of them `v` is no child of the root.
             let tree = Arc::new(Vtree::balanced(n.max(4)));
@@ -1525,6 +1460,80 @@ mod tests {
                 );
             });
         }
+    }
+
+    fn assert_root_selection(
+        seed: u64,
+        n: u32,
+        v: VarId,
+        cubes: &[Vec<Literal>],
+        tree: Arc<Vtree>,
+    ) {
+        tree.context().run(|engine| {
+            let backend = TddBackend::new(engine, tree.clone());
+            let scope = backend.global();
+            // Both operands settled on the scope below `v` and
+            // embedded, as the compiler hands them over.
+            let vars: Vec<VarId> = (1..n).map(VarId).collect();
+            let own = backend.scope(&vars).unwrap();
+            let mut x = backend.zero(&own);
+            for cube in cubes {
+                x = backend.or(x, backend.cube(&own, cube).unwrap()).unwrap();
+            }
+            backend.minimize(&mut x, Reduce::Settled).unwrap();
+            let y = backend.negate(x.clone()).unwrap();
+            let (x, y) = (
+                backend.embed(x, &own, &scope).unwrap(),
+                backend.embed(y, &own, &scope).unwrap(),
+            );
+            // The negation with its nodes in another order than `x`'s.
+            let other = reversed(engine, &y);
+            if x.is_zero() || y.is_zero() {
+                assert!(backend.select_at_root(&scope, v, &x, &y).unwrap().is_none());
+                return;
+            }
+            let built = backend
+                .select_at_root(&scope, v, &x, &y)
+                .unwrap()
+                .expect("v is a child of the root");
+            let interned =
+                select_by_interning(&backend, &scope, v, &x, &y).expect("v is a child of the root");
+            assert!(
+                same_levels(&built, &interned),
+                "seed {seed}: not the interned diagram"
+            );
+            let built = backend
+                .select_at_root(&scope, v, &x, &other)
+                .unwrap()
+                .expect("v is a child of the root");
+            let interned = select_by_interning(&backend, &scope, v, &x, &other)
+                .expect("v is a child of the root");
+            assert!(
+                same_levels(&built, &interned),
+                "seed {seed}: not the interned diagram of the other negation"
+            );
+            let yes = backend
+                .and_clause(&scope, x.clone(), &[Literal::pos(v)])
+                .unwrap();
+            let no = backend
+                .and_clause(&scope, y.clone(), &[Literal::neg(v)])
+                .unwrap();
+            let mut applied = backend.or(yes, no).unwrap();
+            backend.minimize(&mut applied, Reduce::Settled).unwrap();
+            assert!(backend.equivalent(&built, &applied).unwrap(), "seed {seed}");
+            assert_eq!(
+                built.pair_count(),
+                applied.pair_count(),
+                "seed {seed}: not reduced"
+            );
+            let mut settled = built.clone();
+            backend.minimize(&mut settled, Reduce::Settled).unwrap();
+            assert_eq!(
+                settled.pair_count(),
+                built.pair_count(),
+                "seed {seed}: settling changed it"
+            );
+        });
     }
 
     /// `one_of` builds the diagram of exactly one and of at most one of

@@ -1857,37 +1857,9 @@ impl<'a> Translator<'a> {
             },
             &Kind::Binomial(width, n, p) => self.binomial(width, n, p, name, line),
             &Kind::NthBit(width, i, ref x) => {
-                let v = self.eval(x, env, path, name)?;
-                let x = self.integer(&v, name, line)?;
-                if x.width != width || i >= width {
-                    return Err(fail(
-                        line,
-                        format!(
-                            "nth_bit(int({width}, {i}), x): x has {} bits, bit {i} of {width} is asked",
-                            x.width
-                        ),
-                    ));
-                }
-                Ok(Value::Bool(x.bits[(width - 1 - i) as usize].clone()))
+                self.eval_nth_bit((width, i), x, env, path, name, line)
             }
-            Kind::List(items) => {
-                if items.len() > LIST_LENGTH {
-                    return Err(fail(
-                        line,
-                        format!(
-                            "a list of {} elements: Dice's lists hold at most {LIST_LENGTH}",
-                            items.len()
-                        ),
-                    ));
-                }
-                let mut elems = Vec::new();
-                for (k, x) in items.iter().enumerate() {
-                    elems.push(self.eval(x, env, path, &format!("{name}_{}", k + 1))?);
-                }
-                let n = self.constant(items.len() as u64, list_width(), line)?;
-                let t = type_of(&elems[0]);
-                self.list(n, elems, &t, name, line)
-            }
+            Kind::List(items) => self.eval_list(items, env, path, name, line),
             Kind::Nil(t) => match t {
                 Type::List(_) => self.default(Some(t), name, line),
                 _ => Err(fail(
@@ -1923,6 +1895,55 @@ impl<'a> Translator<'a> {
                 self.iterate(f, init, *k, path, name, line)
             }
         }
+    }
+
+    fn eval_nth_bit(
+        &mut self,
+        (width, i): (u64, u64),
+        x: &'a Expr<'a>,
+        env: &Env<'a>,
+        path: &[Lit],
+        name: &str,
+        line: usize,
+    ) -> Res<Value> {
+        let v = self.eval(x, env, path, name)?;
+        let x = self.integer(&v, name, line)?;
+        if x.width != width || i >= width {
+            return Err(fail(
+                line,
+                format!(
+                    "nth_bit(int({width}, {i}), x): x has {} bits, bit {i} of {width} is asked",
+                    x.width
+                ),
+            ));
+        }
+        Ok(Value::Bool(x.bits[(width - 1 - i) as usize].clone()))
+    }
+
+    fn eval_list(
+        &mut self,
+        items: &'a [Expr<'a>],
+        env: &Env<'a>,
+        path: &[Lit],
+        name: &str,
+        line: usize,
+    ) -> Res<Value> {
+        if items.len() > LIST_LENGTH {
+            return Err(fail(
+                line,
+                format!(
+                    "a list of {} elements: Dice's lists hold at most {LIST_LENGTH}",
+                    items.len()
+                ),
+            ));
+        }
+        let mut elems = Vec::new();
+        for (k, x) in items.iter().enumerate() {
+            elems.push(self.eval(x, env, path, &format!("{name}_{}", k + 1))?);
+        }
+        let n = self.constant(items.len() as u64, list_width(), line)?;
+        let t = type_of(&elems[0]);
+        self.list(n, elems, &t, name, line)
     }
 
     fn uniform(&mut self, width: u64, lo: u64, hi: u64, name: &str, line: usize) -> Res<Value> {

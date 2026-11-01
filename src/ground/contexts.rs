@@ -142,9 +142,37 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
         }
         read += 1;
     }
-    if read == 0 {
-        return 0;
+    if read > 0 {
+        apply_choice_rewrites(gp, rewrites, drop_rules);
     }
+    read
+}
+
+fn table_readers(gp: &GroundProgram, tables: &Tables, nt: usize) -> (Vec<Vec<usize>>, Vec<bool>) {
+    let mut readers: Vec<Vec<usize>> = vec![Vec::new(); nt];
+    let mut spoilt = vec![false; nt];
+    for (ri, r) in gp.rules.iter().enumerate() {
+        let mut seen: Vec<usize> = Vec::new();
+        for l in &r.body {
+            if gp.is_fact(l.atom()) {
+                continue;
+            }
+            let t = tables.of(l.atom());
+            if !l.is_positive() || seen.contains(&t) {
+                spoilt[t] = true;
+            }
+            seen.push(t);
+            readers[t].push(ri);
+        }
+    }
+    (readers, spoilt)
+}
+
+fn apply_choice_rewrites(
+    gp: &mut GroundProgram,
+    rewrites: Vec<(usize, usize, Prob)>,
+    mut drop_rules: Vec<bool>,
+) {
     for (ri, k, p) in rewrites {
         if p.p == 0.0 {
             drop_rules[ri] = true;
@@ -162,7 +190,6 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
     let mut dead = drop_rules.iter();
     gp.rules.retain(|_| !*dead.next().unwrap());
     simplify::compact(gp);
-    read
 }
 
 /// How many facts are table `t`'s own: what reading its atoms through

@@ -1367,7 +1367,6 @@ impl<'a> Pass<'a> {
         let mut within: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
         // The paths of `of` that hold each literal, and each atom either
         // way, of those `touched` lists.
-        let index = |l: GLit| 2 * l.atom() as usize + l.is_positive() as usize;
         let (mut counts, mut holds) = (vec![0u32; 2 * n], vec![0u32; n]);
         let mut touched: Vec<GLit> = Vec::new();
         // The distinct cubes of the paths of `of`, each with how many paths
@@ -1385,67 +1384,14 @@ impl<'a> Pass<'a> {
             } else {
                 &own[f as usize]
             };
-            for &k in of {
-                let (_, first, second) = paths[k as usize];
-                let c = if held { first } else { second };
-                if many[c as usize] == 0 {
-                    distinct.push(c);
-                }
-                many[c as usize] += 1;
-            }
-            for &c in &distinct {
-                let m = many[c as usize];
-                for &l in self.cubes.of(c).iter().filter(|l| l.atom() != f) {
-                    if counts[index(l)] == 0 {
-                        touched.push(l);
-                    }
-                    counts[index(l)] += m;
-                }
-            }
-            if held {
-                // A path counts its cube without its own fact, whose
-                // literal goes back out here; the fact of a path of `f`'s
-                // own is `f`, which the counts leave out.
-                for &k in of {
-                    let (g, first, _) = paths[k as usize];
-                    let cube = self.cubes.of(first);
-                    if let Ok(i) = cube.binary_search_by_key(&g, |l| l.atom()) {
-                        counts[index(cube[i])] -= 1;
-                    }
-                }
-            }
-            let mut node: Vec<GLit> = touched
-                .iter()
-                .copied()
-                .filter(|&l| 2 * counts[index(l)] as usize > of.len())
-                .collect();
-            node.sort_unstable_by_key(|l| l.atom());
-            for l in touched.drain(..) {
-                counts[index(l)] = 0;
-            }
-            if held {
-                for &c in &distinct {
-                    let m = many[c as usize];
-                    for &l in self.cubes.of(c) {
-                        if holds[l.atom() as usize] == 0 {
-                            touched.push(l);
-                        }
-                        holds[l.atom() as usize] += m;
-                    }
-                }
-                let mut always: Vec<AtomId> = touched
-                    .iter()
-                    .map(|l| l.atom())
-                    .filter(|&a| a != f && holds[a as usize] as usize == of.len())
-                    .collect();
-                always.sort_unstable();
-                for l in touched.drain(..) {
-                    holds[l.atom() as usize] = 0;
-                }
+            let (node, always) = self.fact_node(
+                (f, held),
+                (paths, of),
+                (&mut counts, &mut holds, &mut touched),
+                (&mut many, &mut distinct),
+            );
+            if let Some(always) = always {
                 within.insert(f, always);
-            }
-            for c in distinct.drain(..) {
-                many[c as usize] = 0;
             }
             nodes.push((f, node, held));
         }
@@ -1468,6 +1414,79 @@ impl<'a> Pass<'a> {
             at.entry(node).or_default().push(f);
         }
         at
+    }
+
+    fn fact_node(
+        &self,
+        (f, held): (AtomId, bool),
+        (paths, of): (&[(AtomId, u32, u32)], &[u32]),
+        (counts, holds, touched): (&mut [u32], &mut [u32], &mut Vec<GLit>),
+        (many, distinct): (&mut [u32], &mut Vec<u32>),
+    ) -> (Vec<GLit>, Option<Vec<AtomId>>) {
+        let index = |l: GLit| 2 * l.atom() as usize + l.is_positive() as usize;
+        for &k in of {
+            let (_, first, second) = paths[k as usize];
+            let c = if held { first } else { second };
+            if many[c as usize] == 0 {
+                distinct.push(c);
+            }
+            many[c as usize] += 1;
+        }
+        for &c in &*distinct {
+            let m = many[c as usize];
+            for &l in self.cubes.of(c).iter().filter(|l| l.atom() != f) {
+                if counts[index(l)] == 0 {
+                    touched.push(l);
+                }
+                counts[index(l)] += m;
+            }
+        }
+        if held {
+            // A path counts its cube without its own fact, whose
+            // literal goes back out here; the fact of a path of `f`'s
+            // own is `f`, which the counts leave out.
+            for &k in of {
+                let (g, first, _) = paths[k as usize];
+                let cube = self.cubes.of(first);
+                if let Ok(i) = cube.binary_search_by_key(&g, |l| l.atom()) {
+                    counts[index(cube[i])] -= 1;
+                }
+            }
+        }
+        let mut node: Vec<GLit> = touched
+            .iter()
+            .copied()
+            .filter(|&l| 2 * counts[index(l)] as usize > of.len())
+            .collect();
+        node.sort_unstable_by_key(|l| l.atom());
+        for l in touched.drain(..) {
+            counts[index(l)] = 0;
+        }
+        let always = held.then(|| {
+            for &c in &*distinct {
+                let m = many[c as usize];
+                for &l in self.cubes.of(c) {
+                    if holds[l.atom() as usize] == 0 {
+                        touched.push(l);
+                    }
+                    holds[l.atom() as usize] += m;
+                }
+            }
+            let mut always: Vec<AtomId> = touched
+                .iter()
+                .map(|l| l.atom())
+                .filter(|&a| a != f && holds[a as usize] as usize == of.len())
+                .collect();
+            always.sort_unstable();
+            for l in touched.drain(..) {
+                holds[l.atom() as usize] = 0;
+            }
+            always
+        });
+        for c in distinct.drain(..) {
+            many[c as usize] = 0;
+        }
+        (node, always)
     }
 }
 

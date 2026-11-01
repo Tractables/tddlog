@@ -155,36 +155,7 @@ pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Opt
             shared.insert(t);
         }
     }
-    // How many switches of each probability each row has had, the fact
-    // the k-th of them becomes, and the merges, by table.
-    let mut seen: FxHashMap<(usize, AtomId, (u64, u64)), usize> = FxHashMap::default();
-    let mut first: FxHashMap<(usize, (u64, u64), usize), AtomId> = FxHashMap::default();
-    let mut merges: FxHashMap<usize, (usize, Vec<(AtomId, AtomId)>)> = FxHashMap::default();
-    for s in 0..n {
-        let (t, row) = (own[s], row_of[s]);
-        let AtomKind::Fact(p) = gp.kinds[s] else {
-            continue;
-        };
-        if !shared.contains(&t) {
-            continue;
-        }
-        let (facts, merged) = merges.entry(t).or_default();
-        *facts += 1;
-        if row == MIXED || row == UNREAD {
-            continue;
-        }
-        let k = seen.entry((t, row, p.bits())).or_default();
-        let to = *first.entry((t, p.bits(), *k)).or_insert(s as AtomId);
-        *k += 1;
-        if to != s as AtomId {
-            merged.push((s as AtomId, to));
-        }
-    }
-    let rename: FxHashMap<AtomId, AtomId> = merges
-        .into_values()
-        .filter(|(facts, merged)| merged.len() * MIN_MERGED >= *facts)
-        .flat_map(|(_, merged)| merged)
-        .collect();
+    let rename = find_switch_merges(gp, &own, &row_of, &shared, (UNREAD, MIXED));
     if rename.is_empty() {
         return None;
     }
@@ -201,6 +172,45 @@ pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Opt
         }
     }
     Some(simplify::compact(gp))
+}
+
+fn find_switch_merges(
+    gp: &GroundProgram,
+    own: &[usize],
+    row_of: &[AtomId],
+    shared: &FxHashSet<usize>,
+    (unread, mixed): (AtomId, AtomId),
+) -> FxHashMap<AtomId, AtomId> {
+    // How many switches of each probability each row has had, the fact
+    // the k-th of them becomes, and the merges, by table.
+    let mut seen: FxHashMap<(usize, AtomId, (u64, u64)), usize> = FxHashMap::default();
+    let mut first: FxHashMap<(usize, (u64, u64), usize), AtomId> = FxHashMap::default();
+    let mut merges: FxHashMap<usize, (usize, Vec<(AtomId, AtomId)>)> = FxHashMap::default();
+    for s in 0..gp.num_atoms() {
+        let (t, row) = (own[s], row_of[s]);
+        let AtomKind::Fact(p) = gp.kinds[s] else {
+            continue;
+        };
+        if !shared.contains(&t) {
+            continue;
+        }
+        let (facts, merged) = merges.entry(t).or_default();
+        *facts += 1;
+        if row == mixed || row == unread {
+            continue;
+        }
+        let k = seen.entry((t, row, p.bits())).or_default();
+        let to = *first.entry((t, p.bits(), *k)).or_insert(s as AtomId);
+        *k += 1;
+        if to != s as AtomId {
+            merged.push((s as AtomId, to));
+        }
+    }
+    merges
+        .into_values()
+        .filter(|(facts, merged)| merged.len() * MIN_MERGED >= *facts)
+        .flat_map(|(_, merged)| merged)
+        .collect()
 }
 
 #[cfg(test)]

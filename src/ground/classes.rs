@@ -587,57 +587,20 @@ fn signature(
     role_ids: &mut FxHashMap<Role, u32>,
     scratch: &mut SignatureScratch,
 ) -> Option<bool> {
+    collect_switch_reads(gp, row_rules, own, t, scratch);
     let SignatureScratch {
         slot,
         of_row,
         reads,
         read_start,
-        at,
         role,
         ids,
         numbers,
         switches,
         rules,
         signature,
+        ..
     } = scratch;
-    if slot.len() < gp.num_atoms() {
-        slot.resize(gp.num_atoms(), u32::MAX);
-    }
-    // The row's switches numbered as its rules first read them, and their
-    // literals by switch: a counting sort.
-    of_row.clear();
-    read_start.clear();
-    read_start.push(0);
-    for &ri in row_rules {
-        for l in gp.rules[ri]
-            .body
-            .iter()
-            .filter(|l| own[l.atom() as usize] == t)
-        {
-            let s = l.atom() as usize;
-            if slot[s] == u32::MAX {
-                slot[s] = of_row.len() as u32;
-                of_row.push(l.atom());
-                read_start.push(0);
-            }
-            read_start[slot[s] as usize + 1] += 1;
-        }
-    }
-    for k in 1..read_start.len() {
-        read_start[k] += read_start[k - 1];
-    }
-    reads.clear();
-    reads.resize(read_start[of_row.len()], 0);
-    at.clear();
-    at.extend_from_slice(&read_start[..of_row.len()]);
-    for &ri in row_rules {
-        let r = &gp.rules[ri];
-        for l in r.body.iter().filter(|l| own[l.atom() as usize] == t) {
-            let k = slot[l.atom() as usize] as usize;
-            reads[at[k]] = u64::from(r.head) << 1 | u64::from(l.is_positive());
-            at[k] += 1;
-        }
-    }
     // Each switch's literals, sorted, are its role. Two switches have one
     // role exactly when they get one number.
     ids.clear();
@@ -699,4 +662,59 @@ fn signature(
         );
     }
     Some(!reads.is_empty())
+}
+
+fn collect_switch_reads(
+    gp: &GroundProgram,
+    row_rules: &[usize],
+    own: &[usize],
+    t: usize,
+    scratch: &mut SignatureScratch,
+) {
+    let SignatureScratch {
+        slot,
+        of_row,
+        reads,
+        read_start,
+        at,
+        ..
+    } = scratch;
+    if slot.len() < gp.num_atoms() {
+        slot.resize(gp.num_atoms(), u32::MAX);
+    }
+    // The row's switches numbered as its rules first read them, and their
+    // literals by switch: a counting sort.
+    of_row.clear();
+    read_start.clear();
+    read_start.push(0);
+    for &ri in row_rules {
+        for l in gp.rules[ri]
+            .body
+            .iter()
+            .filter(|l| own[l.atom() as usize] == t)
+        {
+            let s = l.atom() as usize;
+            if slot[s] == u32::MAX {
+                slot[s] = of_row.len() as u32;
+                of_row.push(l.atom());
+                read_start.push(0);
+            }
+            read_start[slot[s] as usize + 1] += 1;
+        }
+    }
+    for k in 1..read_start.len() {
+        read_start[k] += read_start[k - 1];
+    }
+    reads.clear();
+    reads.resize(read_start[of_row.len()], 0);
+    at.clear();
+    at.extend_from_slice(&read_start[..of_row.len()]);
+    for &ri in row_rules {
+        let r = &gp.rules[ri];
+        for l in r.body.iter().filter(|l| own[l.atom() as usize] == t) {
+            let k = slot[l.atom() as usize] as usize;
+            reads[at[k]] = u64::from(r.head) << 1 | u64::from(l.is_positive());
+            at[k] += 1;
+        }
+    }
 }

@@ -92,7 +92,11 @@ pub(crate) fn propagate_certain(gp: &mut GroundProgram) {
         rule_dead.fill(false);
         propagate(gp, &mut status, &mut rule_dead, live_rules, queue);
     }
-    // Rewrite, the bodies in place.
+    rewrite_certain(gp, &status, &rule_dead);
+}
+
+fn rewrite_certain(gp: &mut GroundProgram, status: &[Status], rule_dead: &[bool]) {
+    let n = gp.atoms.len();
     let old = std::mem::take(&mut gp.rules);
     let mut rules = Vec::with_capacity(old.len());
     let mut has_true_rule = vec![false; n];
@@ -113,9 +117,9 @@ pub(crate) fn propagate_certain(gp: &mut GroundProgram) {
         rules.push(r);
     }
     // A fact that is certain is no longer a random variable.
-    for a in 0..n {
+    for (a, &st) in status.iter().enumerate() {
         if let AtomKind::Fact(_) = gp.kinds[a] {
-            match status[a] {
+            match st {
                 Status::True => {
                     gp.kinds[a] = AtomKind::Derived;
                     if !has_true_rule[a] {

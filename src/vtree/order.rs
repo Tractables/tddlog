@@ -575,13 +575,43 @@ pub(crate) fn search(
     }
     let start_cost = cost_c;
     let mut pos = positions(&order);
+    let (best, best_cost, first_move, best_move, moves, accepted) = anneal_order(
+        &program,
+        &mut scratch,
+        &mut order,
+        &mut pos,
+        &mut cost_c,
+        &mut work,
+    );
+    let note = format!(
+        "order: {} components ({} merged), log2 proxy {start_cost:.1} to {best_cost:.1} \
+         from move {first_move} to {best_move} of {moves} ({accepted} accepted), {} scored, {work} steps",
+        n,
+        program.units.iter().filter(|u| u.len() > 1).count(),
+        program.scored.len()
+    );
+    (
+        best.into_iter().map(|u| program.units[u].clone()).collect(),
+        note,
+    )
+}
+
+fn anneal_order(
+    program: &Program,
+    scratch: &mut Scratch,
+    order: &mut [usize],
+    pos: &mut [usize],
+    cost_c: &mut f64,
+    work: &mut u64,
+) -> (Vec<usize>, f64, usize, usize, usize, usize) {
+    let n = order.len();
     // A move takes a component from position `i` to position `j`, which
     // rewrites `i..=j` and leaves the rest of the order alone, so the loop
     // makes the move in the order it holds and rotates it back when the
     // walk does not take it: two rotations of the range cost less than four
     // copies of the whole order, and most of a long walk's moves are short.
-    let mut best = order.clone();
-    let mut best_cost = cost_c;
+    let mut best = order.to_vec();
+    let mut best_cost = *cost_c;
     let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
     let mut moves = 0;
     let mut accepted = 0;
@@ -592,8 +622,8 @@ pub(crate) fn search(
     // depend on the machine.
     let mut best_move = 0;
     let mut first_move = 0;
-    let mut best_work = work;
-    while moves < MAX_MOVES && work < WORK_BUDGET && work - best_work < STALL_BUDGET && n > 1 {
+    let mut best_work = *work;
+    while moves < MAX_MOVES && *work < WORK_BUDGET && *work - best_work < STALL_BUDGET && n > 1 {
         // A search that has not once beaten the order it started from is on
         // a plateau it does not leave (on the grids the walk accepts most
         // moves and returns its input). Stop and return it now.
@@ -623,36 +653,26 @@ pub(crate) fn search(
         if j == i {
             j = if j < hi { j + 1 } else { j - 1 };
         }
-        rotate_move(&mut order, &mut pos, i, j);
-        let (cost, w) = program.objective(&pos, &mut scratch);
-        work += w;
-        if cost < cost_c || rng.unit() < ((cost_c - cost) / t).exp() {
-            cost_c = cost;
+        rotate_move(order, pos, i, j);
+        let (cost, w) = program.objective(pos, scratch);
+        *work += w;
+        if cost < *cost_c || rng.unit() < ((*cost_c - cost) / t).exp() {
+            *cost_c = cost;
             accepted += 1;
             if cost < best_cost {
-                best_work = work;
+                best_work = *work;
                 best_cost = cost;
-                best.copy_from_slice(&order);
+                best.copy_from_slice(order);
                 best_move = moves;
                 if first_move == 0 {
                     first_move = moves;
                 }
             }
         } else {
-            rotate_move(&mut order, &mut pos, j, i);
+            rotate_move(order, pos, j, i);
         }
     }
-    let note = format!(
-        "order: {} components ({} merged), log2 proxy {start_cost:.1} to {best_cost:.1} \
-         from move {first_move} to {best_move} of {moves} ({accepted} accepted), {} scored, {work} steps",
-        n,
-        program.units.iter().filter(|u| u.len() > 1).count(),
-        program.scored.len()
-    );
-    (
-        best.into_iter().map(|u| program.units[u].clone()).collect(),
-        note,
-    )
+    (best, best_cost, first_move, best_move, moves, accepted)
 }
 
 fn rotate_move(order: &mut [usize], pos: &mut [usize], from: usize, to: usize) {

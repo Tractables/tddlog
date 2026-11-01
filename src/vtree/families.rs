@@ -1435,16 +1435,7 @@ impl Decompositions {
             self.search_cost += 2 * budget_units;
         }
         if self.search && narrowable {
-            let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
-            let bound = self
-                .lower_bound
-                .expect("the bound is computed where the decomposition is narrowable");
-            let (found, units, seconds) =
-                metered(|| portfolio_to_bound(&graph, budget, budget_units, bound));
-            let (td, pushed) = found.ok_or("tree decomposition failed")?;
-            tds.push(td);
-            self.search_seconds += seconds;
-            self.search_units += units.saturating_sub(pushed);
+            tds.push(self.search_numbering(&graph, budget_units)?);
         }
         // The groups eliminated in their numbering's order, where that is
         // narrower than min-fill. A program whose atoms are derived layer
@@ -1483,6 +1474,23 @@ impl Decompositions {
             weights,
             weighted,
         }))
+    }
+
+    fn search_numbering(
+        &mut self,
+        graph: &goatd::Graph,
+        budget_units: u64,
+    ) -> Result<goatd::TreeDecomposition, String> {
+        let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
+        let bound = self
+            .lower_bound
+            .expect("the bound is computed where the decomposition is narrowable");
+        let (found, units, seconds) =
+            metered(|| portfolio_to_bound(graph, budget, budget_units, bound));
+        let (td, pushed) = found.ok_or("tree decomposition failed")?;
+        self.search_seconds += seconds;
+        self.search_units += units.saturating_sub(pushed);
+        Ok(td)
     }
 
     /// Where the portfolio searches the first numbering, `item_at`, and
@@ -1637,40 +1645,64 @@ impl Blocks {
         forest: &mut Forest,
         g: usize,
     ) -> (Option<usize>, Vec<Branch>) {
-        let Blocks {
-            scratch,
-            group_reader,
-            fact_reader,
+        if groups.group_rules[g].is_empty() && groups.groups[g].0.is_empty() {
+            return (forest.balanced_leaves(&groups.groups[g].1), Vec::new());
+        }
+        self.scratch.start(&groups.groups[g].1);
+        self.scratch.mark.next();
+        for &v in &groups.inputs[g] {
+            self.scratch.mark.set(v, 0);
+        }
+        let rules = groups.group_rules[g].len();
+        let mut context_by = ByHash::with_capacity(rules);
+        let mut row_by = ByHash::with_capacity(rules);
+        self.rows.clear();
+        self.row_heads.clear();
+        self.row_hubs.clear();
+        // The context and the row of the rule before.
+        let mut before: Option<(u32, usize)> = None;
+        for &ri in &groups.group_rules[g] {
+            self.add_group_rule(gp, groups, ri, &mut context_by, &mut row_by, &mut before);
+        }
+        // A stable sort keeps each row's heads in the order they were read.
+        self.row_heads.sort_by_key(|&(i, _)| i);
+        let mut at = 0;
+        for i in 0..self.rows.len() {
+            while at < self.row_heads.len() && self.row_heads[at].0 == i {
+                self.rows.heads.push(self.row_heads[at].1);
+                at += 1;
+            }
+            self.rows.head_ends.push(self.rows.heads.len());
+        }
+        let rows: &Rows = &self.rows;
+        self.scratch.context.reserve(rows.num_contexts());
+        let branches = branches_of(
             rows,
-            row_heads,
-            row_hubs,
-            ranked,
-            facts,
-            read,
-            hubs,
-            copies,
-            last_read,
-            last_facts,
-        } = self;
-        let Groups {
-            groups,
-            group_rules,
-            inputs,
-            owner,
-            hub_group,
-            link_of,
-            row_kind,
-            kind,
-            ..
-        } = groups;
-        if group_rules[g].is_empty() && groups[g].0.is_empty() {
-            return (forest.balanced_leaves(&groups[g].1), Vec::new());
+            &groups.owner,
+            &self.row_hubs,
+            g,
+            &mut self.group_reader,
+            &mut self.fact_reader,
+        );
+        if branches.is_empty() {
+            let members = (0..rows.len()).collect();
+            return (nest(forest, rows, members, &mut self.scratch), Vec::new());
         }
-        scratch.start(&groups[g].1);
-        scratch.mark.next();
-        for &v in &inputs[g] {
-            scratch.mark.set(v, 0);
-        }
+        (
+            None,
+            build_branches(forest, rows, &mut self.scratch, branches),
+        )
+    }
+
+    fn add_group_rule(
+        &mut self,
+        gp: &GroundProgram,
+        groups: &Groups,
+        ri: usize,
+        context_by: &mut ByHash,
+        row_by: &mut ByHash,
+        before: &mut Option<(u32, usize)>,
+    ) {
         // Contexts by a hash of their copies and rows by a hash of their
         // facts and context, compared on a match, so that neither is copied
         // to be looked up; each is built in `facts` and `copies` and copied
@@ -1684,87 +1716,59 @@ impl Blocks {
             value.hash(&mut h);
             h.finish()
         }
-        // The contexts and the rows by hash, at most one a rule of the
-        // group, for which they are allocated.
-        let rules = group_rules[g].len();
-        let mut context_by = ByHash::with_capacity(rules);
-        let mut row_by = ByHash::with_capacity(rules);
-        rows.clear();
-        row_heads.clear();
-        row_hubs.clear();
-        // The context and the row of the rule before.
-        let mut before: Option<(u32, usize)> = None;
-        for &ri in &group_rules[g] {
-            let Some((body, left_out)) = row_body(gp, row_kind, ri) else {
-                continue;
-            };
-            scan_rule_literals(
-                (body, left_out),
-                (kind, hub_group, link_of),
-                scratch,
-                ranked,
-                read,
-                hubs,
-                facts,
-            );
-            if facts.is_empty() && read.is_empty() {
-                continue;
-            }
-            let x = match before {
-                Some((x, _)) if read == last_read => x,
-                _ => {
-                    copies.clear();
-                    copies.extend(read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
-                    copies.sort_unstable();
-                    copies.dedup();
-                    let (x, new) = context_by.find_or_push(hash(copies), |x| {
-                        rows.context_copies(x) == copies.as_slice()
-                    });
-                    if new {
-                        rows.contexts.extend_from_slice(copies);
-                        rows.context_ends.push(rows.contexts.len());
-                    }
-                    std::mem::swap(read, last_read);
-                    x
+        let Some((body, left_out)) = row_body(gp, &groups.row_kind, ri) else {
+            return;
+        };
+        scan_rule_literals(
+            (body, left_out),
+            (&groups.kind, &groups.hub_group, &groups.link_of),
+            &self.scratch,
+            &mut self.ranked,
+            &mut self.read,
+            &mut self.hubs,
+            &mut self.facts,
+        );
+        if self.facts.is_empty() && self.read.is_empty() {
+            return;
+        }
+        let x = match *before {
+            Some((x, _)) if self.read == self.last_read => x,
+            _ => {
+                self.copies.clear();
+                self.copies
+                    .extend(self.read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
+                self.copies.sort_unstable();
+                self.copies.dedup();
+                let (x, new) = context_by.find_or_push(hash(&self.copies), |x| {
+                    self.rows.context_copies(x) == self.copies.as_slice()
+                });
+                if new {
+                    self.rows.contexts.extend_from_slice(&self.copies);
+                    self.rows.context_ends.push(self.rows.contexts.len());
                 }
-            };
-            let i = match before {
-                Some((y, i)) if y == x && facts == last_facts => i,
-                _ => {
-                    let (i, new) = row_by.find_or_push(hash(&(&**facts, x)), |i| {
-                        rows.context[i as usize] == x && rows.facts(i as usize) == facts.as_slice()
-                    });
-                    if new {
-                        rows.facts.extend_from_slice(facts);
-                        rows.fact_ends.push(rows.facts.len());
-                        rows.context.push(x);
-                    }
-                    std::mem::swap(facts, last_facts);
-                    i as usize
-                }
-            };
-            before = Some((x, i));
-            row_heads.push((i, gp.rules[ri].head));
-            row_hubs.extend(hubs.iter().map(|&h| (i, h)));
-        }
-        // A stable sort keeps each row's heads in the order they were read.
-        row_heads.sort_by_key(|&(i, _)| i);
-        let mut at = 0;
-        for i in 0..rows.len() {
-            while at < row_heads.len() && row_heads[at].0 == i {
-                rows.heads.push(row_heads[at].1);
-                at += 1;
+                std::mem::swap(&mut self.read, &mut self.last_read);
+                x
             }
-            rows.head_ends.push(rows.heads.len());
-        }
-        let rows: &Rows = rows;
-        scratch.context.reserve(rows.num_contexts());
-        let branches = branches_of(rows, owner, row_hubs, g, group_reader, fact_reader);
-        if branches.is_empty() {
-            let members = (0..rows.len()).collect();
-            return (nest(forest, rows, members, scratch), Vec::new());
-        }
-        (None, build_branches(forest, rows, scratch, branches))
+        };
+        let i = match *before {
+            Some((y, i)) if y == x && self.facts == self.last_facts => i,
+            _ => {
+                let (i, new) = row_by.find_or_push(hash(&(&*self.facts, x)), |i| {
+                    self.rows.context[i as usize] == x
+                        && self.rows.facts(i as usize) == self.facts.as_slice()
+                });
+                if new {
+                    self.rows.facts.extend_from_slice(&self.facts);
+                    self.rows.fact_ends.push(self.rows.facts.len());
+                    self.rows.context.push(x);
+                }
+                std::mem::swap(&mut self.facts, &mut self.last_facts);
+                i as usize
+            }
+        };
+        *before = Some((x, i));
+        self.row_heads.push((i, gp.rules[ri].head));
+        self.row_hubs.extend(self.hubs.iter().map(|&h| (i, h)));
     }
 }
 

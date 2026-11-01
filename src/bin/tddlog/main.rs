@@ -169,8 +169,59 @@ fn parse_args() -> Result<Request, String> {
     let file = file.ok_or_else(|| USAGE.to_string())?;
     let ground_only = ground_only.is_some();
     let stats = stats.is_some();
+    let program_only = program_only.is_some();
+    let format = Format::of_path(&file);
+    validate_mode_flags(
+        &file,
+        format,
+        ground_only,
+        stats,
+        program_only,
+        (
+            precision.is_some(),
+            strategy.is_some(),
+            evidence_probability.is_some(),
+        ),
+        (
+            queries.is_some(),
+            no_queries.is_some(),
+            evidence.is_some(),
+            rescale.is_some(),
+        ),
+    )?;
+    // Without queries, the network is read as the program for P(e) alone.
+    let queries = match (queries, no_queries.is_some()) {
+        (_, true) => Queries::None,
+        (q, false) => q.unwrap_or(Queries::All),
+    };
+    Ok(Request::Run(Args {
+        file,
+        arguments,
+        strategy: strategy.unwrap_or_default(),
+        ground_only,
+        stats,
+        evidence_probability: evidence_probability.is_some(),
+        no_queries: no_queries.is_some(),
+        precision: precision.unwrap_or(6),
+        format,
+        queries,
+        evidence,
+        rescale: rescale.is_some(),
+        program_only,
+    }))
+}
+
+fn validate_mode_flags(
+    file: &str,
+    format: Format,
+    ground_only: bool,
+    stats: bool,
+    program_only: bool,
+    (has_precision, has_strategy, has_ev_prob): (bool, bool, bool),
+    (has_queries, has_no_queries, has_evidence, has_rescale): (bool, bool, bool, bool),
+) -> Result<(), String> {
     if ground_only {
-        for (given, option) in [(stats, "--stats"), (precision.is_some(), "--precision")] {
+        for (given, option) in [(stats, "--stats"), (has_precision, "--precision")] {
             if given {
                 return Err(format!(
                     "--ground stops before the compile, so {option} would do nothing"
@@ -181,12 +232,11 @@ fn parse_args() -> Result<Request, String> {
     if file.ends_with(".gz") {
         return Err(format!("{file} is compressed: gunzip it first"));
     }
-    let format = Format::of_path(&file);
     if !matches!(format, Format::Network(_)) {
         for (given, option) in [
-            (queries.is_some(), "--query"),
-            (evidence.is_some(), "--evidence"),
-            (rescale.is_some(), "--rescale"),
+            (has_queries, "--query"),
+            (has_evidence, "--evidence"),
+            (has_rescale, "--rescale"),
         ] {
             if given {
                 return Err(format!(
@@ -196,19 +246,18 @@ fn parse_args() -> Result<Request, String> {
             }
         }
     }
-    if queries.is_some() && no_queries.is_some() {
+    if has_queries && has_no_queries {
         return Err(
             "--query chooses the queries and --no-queries leaves them out: one of the two".into(),
         );
     }
-    let program_only = program_only.is_some();
     if program_only {
         for (given, option) in [
             (ground_only, "--ground"),
             (stats, "--stats"),
-            (precision.is_some(), "--precision"),
-            (strategy.is_some(), "--vtree"),
-            (evidence_probability.is_some(), "--evidence-probability"),
+            (has_precision, "--precision"),
+            (has_strategy, "--vtree"),
+            (has_ev_prob, "--evidence-probability"),
         ] {
             if given {
                 return Err(format!(
@@ -217,28 +266,7 @@ fn parse_args() -> Result<Request, String> {
             }
         }
     }
-    // Without queries, the network is read as the program for P(e) alone.
-    let queries = match (queries, no_queries.is_some()) {
-        (_, true) => Queries::None,
-        (q, false) => q.unwrap_or(Queries::All),
-    };
-    let strategy = strategy.unwrap_or_default();
-    let precision = precision.unwrap_or(6);
-    Ok(Request::Run(Args {
-        file,
-        arguments,
-        strategy,
-        ground_only,
-        stats,
-        evidence_probability: evidence_probability.is_some(),
-        no_queries: no_queries.is_some(),
-        precision,
-        format,
-        queries,
-        evidence,
-        rescale: rescale.is_some(),
-        program_only,
-    }))
+    Ok(())
 }
 
 /// Sets an option's `value`, failing where the `option` is given twice.
@@ -274,16 +302,6 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let evidence = match (&args.evidence, &evidence) {
-        (Some(path), Some(data)) => match Evidence::of_path(path, data) {
-            Ok(evidence) => Some(evidence),
-            Err(e) => {
-                eprintln!("{e}");
-                return ExitCode::from(2);
-            }
-        },
-        _ => None,
-    };
     let mut front = Front {
         bytes: data.len(),
         read_secs: started.elapsed().as_secs_f64(),
@@ -299,35 +317,8 @@ fn main() -> ExitCode {
     let started = Instant::now();
     let mut input = match tddlog::read(&data, args.format, &options) {
         Ok(input) => input,
-        Err(e @ tddlog::Error::Options(_)) => {
-            eprintln!("{e}");
-            return ExitCode::from(2);
-        }
-        Err(e) => {
-            eprintln!("{}: {e}", args.file);
-            return ExitCode::FAILURE;
-        }
+        Err(code) => return code,
     };
-    // A ProbLog program's text, its arguments in place, with the files it
-    // consults in their directives' places. An LPAD's program has no
-    // directives.
-    if args.format == Format::Problog {
-        match tddlog::consult(&input.program, &args.file) {
-            Ok(Cow::Borrowed(_)) => {}
-            Ok(Cow::Owned(program)) => input.program = Cow::Owned(program),
-            Err(e) => {
-                eprintln!("{}: {e}", args.file);
-                return ExitCode::FAILURE;
-            }
-        }
-    }
-    front.text_secs = started.elapsed().as_secs_f64();
-    // An LPAD's example queries that its program leaves out are named, and
-    // `--program` prints the program a network, a Dice program, an LPAD, a
-    // program given arguments or a program that consults files is read as.
-    for note in &input.left_out {
-        eprintln!("{}: {note}", args.file);
-    }
     if args.program_only {
         let Cow::Owned(program) = &input.program else {
             eprintln!(
@@ -361,6 +352,63 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn prepare_input<'a>(
+    args: &Args,
+    data: &'a [u8],
+    evidence_bytes: Option<&[u8]>,
+    front: &mut Front,
+) -> Result<tddlog::Input<'a>, ExitCode> {
+    let evidence = match (&args.evidence, evidence_bytes) {
+        (Some(path), Some(bytes)) => match Evidence::of_path(path, bytes) {
+            Ok(evidence) => Some(evidence),
+            Err(e) => {
+                eprintln!("{e}");
+                return Err(ExitCode::from(2));
+            }
+        },
+        _ => None,
+    };
+    let options = ReadOptions {
+        queries: args.queries.clone(),
+        evidence,
+        rescale: args.rescale,
+        arguments: args.arguments.clone(),
+    };
+    let started = Instant::now();
+    let mut input = match tddlog::read(data, args.format, &options) {
+        Ok(input) => input,
+        Err(e @ tddlog::Error::Options(_)) => {
+            eprintln!("{e}");
+            return Err(ExitCode::from(2));
+        }
+        Err(e) => {
+            eprintln!("{}: {e}", args.file);
+            return Err(ExitCode::FAILURE);
+        }
+    };
+    // A ProbLog program's text, its arguments in place, with the files it
+    // consults in their directives' places. An LPAD's program has no
+    // directives.
+    if args.format == Format::Problog {
+        match tddlog::consult(&input.program, &args.file) {
+            Ok(Cow::Borrowed(_)) => {}
+            Ok(Cow::Owned(program)) => input.program = Cow::Owned(program),
+            Err(e) => {
+                eprintln!("{}: {e}", args.file);
+                return Err(ExitCode::FAILURE);
+            }
+        }
+    }
+    front.text_secs = started.elapsed().as_secs_f64();
+    // An LPAD's example queries that its program leaves out are named, and
+    // `--program` prints the program a network, a Dice program, an LPAD, a
+    // program given arguments or a program that consults files is read as.
+    for note in &input.left_out {
+        eprintln!("{}: {note}", args.file);
+    }
+    Ok(input)
 }
 
 /// The contents of the file and of its evidence file; the error is a file

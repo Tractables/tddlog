@@ -363,6 +363,30 @@ impl Merge {
         // group at a time, so another body is under no merging that
         // reaches the empty body.
         self.node += 1;
+        self.collect_leaves(&group_of);
+        let mut sum = 0.0;
+        for &(start, end, weight) in &self.leaves {
+            let order = &mut self.order[start as usize..end as usize];
+            for (k, _) in order.iter_mut() {
+                *k = key(&self.groups, *k as u32);
+            }
+            order.sort_unstable_by_key(|&(k, _)| k);
+            sum += weight;
+        }
+        // A term weighs no less than a leaf that holds it, so where every
+        // leaf weighs a normal number, every weight the search takes is a
+        // product of normal numbers and close to its value, and so is
+        // their sum. A leaf of over a thousand literals weighs less, and
+        // the search then splits a term whatever its holders weigh.
+        self.weighed = self
+            .leaves
+            .iter()
+            .all(|&(_, _, weight)| weight >= f64::MIN_POSITIVE);
+        let all = self.holders.len();
+        self.derived(0, 0, 0, all, sum, 1.0)
+    }
+
+    fn collect_leaves(&mut self, group_of: &impl Fn(GLit) -> Option<(usize, usize)>) {
         let call = self.node;
         for k in 0..self.bodies.len() {
             let (start, end) = self.bodies[k];
@@ -411,26 +435,6 @@ impl Merge {
             self.leaves
                 .push((at as u32, self.order.len() as u32, weight));
         }
-        let mut sum = 0.0;
-        for &(start, end, weight) in &self.leaves {
-            let order = &mut self.order[start as usize..end as usize];
-            for (k, _) in order.iter_mut() {
-                *k = key(&self.groups, *k as u32);
-            }
-            order.sort_unstable_by_key(|&(k, _)| k);
-            sum += weight;
-        }
-        // A term weighs no less than a leaf that holds it, so where every
-        // leaf weighs a normal number, every weight the search takes is a
-        // product of normal numbers and close to its value, and so is
-        // their sum. A leaf of over a thousand literals weighs less, and
-        // the search then splits a term whatever its holders weigh.
-        self.weighed = self
-            .leaves
-            .iter()
-            .all(|&(_, _, weight)| weight >= f64::MIN_POSITIVE);
-        let all = self.holders.len();
-        self.derived(0, 0, 0, all, sum, 1.0)
     }
 
     /// The term `term` of hash `hash`, if it has been decided.

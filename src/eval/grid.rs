@@ -1861,60 +1861,86 @@ mod tests {
                     .all(|(a, b)| format!("{a:?}") == format!("{b:?}"))),
                 "shape {s} walked in counts"
             );
-            let ways = grid.variants();
-            let mut kernels = [false; 3];
-            let mut relays_out = [false; 3];
-            for g in &ways {
-                let mut got = [vec![0.0; nodes], vec![0.0; nl], vec![0.0; nr]];
-                let mut ranges = [Range::NEW; 3];
-                let [up, dl, dr] = &mut got;
-                let [ru, rl, rr] = &mut ranges;
-                g.up(&l, &r, up, ru);
-                g.down_into(true, &column, &r, dl, true, rl);
-                g.down_into(false, &column, &l, dr, true, rr);
-                for (p, (g, w)) in got.iter().zip(&want).enumerate() {
-                    assert!(
-                        g.iter().zip(w).all(|(a, b)| a.to_bits() == b.to_bits()),
-                        "shape {s} pass {p} in floats"
-                    );
-                    assert_eq!(
-                        (ranges[p].low.to_bits(), ranges[p].high.to_bits()),
-                        want_ranges[p],
-                        "shape {s} pass {p} settled"
-                    );
-                }
-                let mut got: [Vec<Count>; 3] = [
-                    vec![Count::ZERO; nodes],
-                    vec![Count::ZERO; nl],
-                    vec![Count::ZERO; nr],
-                ];
-                let [up, dl, dr] = &mut got;
-                g.up(&counts(&l), &counts(&r), up, &mut unnoted);
-                g.down_into(true, &counts(&column), &counts(&r), dl, true, &mut unnoted);
-                g.down_into(false, &counts(&column), &counts(&l), dr, true, &mut unnoted);
-                for (p, (g, w)) in got.iter().zip(&want_counts).enumerate() {
-                    assert!(
-                        g.iter()
-                            .zip(w)
-                            .all(|(a, b)| format!("{a:?}") == format!("{b:?}")),
-                        "shape {s} pass {p} in counts"
-                    );
-                }
-                for p in 0..3 {
-                    kernels[p] |= g.kernels()[p];
-                    relays_out[p] |= g.plans[p]
-                        .kernel
-                        .as_ref()
-                        .is_some_and(|k| k.relays[0].is_some());
-                }
-            }
-            assert_eq!(kernels, [true; 3], "shape {s}: {} ways", ways.len());
-            if s == 0 {
+            assert_grid_variants(
+                s,
+                &grid,
+                (nodes, nl, nr),
+                (&l, &r, &column),
+                &want,
+                &want_ranges,
+                &want_counts,
+            );
+        }
+    }
+
+    fn assert_grid_variants(
+        s: usize,
+        grid: &Grid,
+        (nodes, nl, nr): (usize, usize, usize),
+        (l, r, column): (&[f64], &[f64], &[f64]),
+        want: &[Vec<f64>; 3],
+        want_ranges: &[(u64, u64); 3],
+        want_counts: &[Vec<Count>; 3],
+    ) {
+        let counts = |xs: &[f64]| {
+            xs.iter()
+                .map(|&x| Count::new(x * 2f64.powi(200)))
+                .collect::<Vec<Count>>()
+        };
+        let mut unnoted = Range::NEW;
+        let ways = grid.variants();
+        let mut kernels = [false; 3];
+        let mut relays_out = [false; 3];
+        for g in &ways {
+            let mut got = [vec![0.0; nodes], vec![0.0; nl], vec![0.0; nr]];
+            let mut ranges = [Range::NEW; 3];
+            let [up, dl, dr] = &mut got;
+            let [ru, rl, rr] = &mut ranges;
+            g.up(l, r, up, ru);
+            g.down_into(true, column, r, dl, true, rl);
+            g.down_into(false, column, l, dr, true, rr);
+            for (p, (g, w)) in got.iter().zip(want).enumerate() {
                 assert!(
-                    relays_out[1],
-                    "DBN_13's pass into the left child relays its output"
+                    g.iter().zip(w).all(|(a, b)| a.to_bits() == b.to_bits()),
+                    "shape {s} pass {p} in floats"
+                );
+                assert_eq!(
+                    (ranges[p].low.to_bits(), ranges[p].high.to_bits()),
+                    want_ranges[p],
+                    "shape {s} pass {p} settled"
                 );
             }
+            let mut got: [Vec<Count>; 3] = [
+                vec![Count::ZERO; nodes],
+                vec![Count::ZERO; nl],
+                vec![Count::ZERO; nr],
+            ];
+            let [up, dl, dr] = &mut got;
+            g.up(&counts(l), &counts(r), up, &mut unnoted);
+            g.down_into(true, &counts(column), &counts(r), dl, true, &mut unnoted);
+            g.down_into(false, &counts(column), &counts(l), dr, true, &mut unnoted);
+            for (p, (g, w)) in got.iter().zip(want_counts).enumerate() {
+                assert!(
+                    g.iter()
+                        .zip(w)
+                        .all(|(a, b)| format!("{a:?}") == format!("{b:?}")),
+                    "shape {s} pass {p} in counts"
+                );
+            }
+            for p in 0..3 {
+                kernels[p] |= g.kernels()[p];
+                relays_out[p] |= g.plans[p]
+                    .kernel
+                    .as_ref()
+                    .is_some_and(|k| k.relays[0].is_some());
+            }
+        }
+        assert_eq!(kernels, [true; 3], "shape {s}: {} ways", ways.len());
+        if s == 0 {
+            assert!(
+                relays_out[1],
+                "DBN_13's pass into the left child relays its output"
+            );
         }
     }
 

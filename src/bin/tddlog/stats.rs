@@ -285,6 +285,11 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.stepped
         ));
     }
+    append_conditioned_stats(&mut line, g);
+    line
+}
+
+fn append_conditioned_stats(line: &mut String, g: &GroundProgram) {
     let c = g.stats.conditioned;
     if c.facts + c.atoms + c.merged + c.into > 0 {
         line.push_str(&format!(
@@ -335,7 +340,6 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.detached
         ));
     }
-    line
 }
 
 /// The sources that negated anything: calls, operand pairs and work units.

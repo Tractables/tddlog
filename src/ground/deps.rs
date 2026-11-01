@@ -570,6 +570,18 @@ pub(crate) fn fan_in(gp: &GroundProgram, deepest: bool) -> Vec<u32> {
             walk[from..].reverse();
         }
     }
+    place_from_walk(n, first, &after, &done, finished, reads)
+}
+
+fn place_from_walk<'a, I: Iterator<Item = usize>>(
+    n: usize,
+    first: u32,
+    after: &[u32],
+    done: &[u32],
+    mut finished: Vec<usize>,
+    reads: impl Fn(usize) -> I + 'a,
+) -> Vec<u32> {
+    const NONE: u32 = u32::MAX;
     // The list's order, but for the atoms it puts before an atom they
     // read: an atom that reads one this walk placed after the anchor, and
     // then one an earlier walk placed before it, went right after the

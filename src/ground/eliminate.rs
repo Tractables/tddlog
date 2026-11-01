@@ -257,29 +257,7 @@ fn eliminate(
 ) -> bool {
     let n = scc.len();
     let source = n;
-    let local: FxHashMap<AtomId, usize> = scc.iter().enumerate().map(|(i, &a)| (a, i)).collect();
-    // The labels by tail and head; an edge is present where its label is.
-    let mut labels: Vec<FxHashMap<usize, Label>> = vec![FxHashMap::default(); n + 1];
-    for (h, &head) in scc.iter().enumerate() {
-        for &ri in &by_head[head as usize] {
-            let body = &out.gp.rules[ri].body;
-            match body.iter().position(|l| local.contains_key(&l.atom())) {
-                Some(at) => {
-                    let b = local[&body[at].atom()];
-                    if b != h {
-                        let rest: Vec<GLit> = body
-                            .iter()
-                            .enumerate()
-                            .filter(|&(i, _)| i != at)
-                            .map(|(_, l)| *l)
-                            .collect();
-                        add(labels[b].entry(h).or_default(), rest);
-                    }
-                }
-                None => add(labels[source].entry(h).or_default(), body.clone()),
-            }
-        }
-    }
+    let mut labels = build_scc_labels(out.gp, by_head, scc);
     let last: Vec<bool> = scc.iter().map(|&a| needed[a as usize]).collect();
     let Some((order, products)) = elimination_order(&labels, &last, *budget) else {
         return false;
@@ -346,6 +324,39 @@ fn eliminate(
         }
     }
     true
+}
+
+fn build_scc_labels(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    scc: &[AtomId],
+) -> Vec<FxHashMap<usize, Label>> {
+    let n = scc.len();
+    let source = n;
+    let local: FxHashMap<AtomId, usize> = scc.iter().enumerate().map(|(i, &a)| (a, i)).collect();
+    // The labels by tail and head; an edge is present where its label is.
+    let mut labels: Vec<FxHashMap<usize, Label>> = vec![FxHashMap::default(); n + 1];
+    for (h, &head) in scc.iter().enumerate() {
+        for &ri in &by_head[head as usize] {
+            let body = &gp.rules[ri].body;
+            match body.iter().position(|l| local.contains_key(&l.atom())) {
+                Some(at) => {
+                    let b = local[&body[at].atom()];
+                    if b != h {
+                        let rest: Vec<GLit> = body
+                            .iter()
+                            .enumerate()
+                            .filter(|&(i, _)| i != at)
+                            .map(|(_, l)| *l)
+                            .collect();
+                        add(labels[b].entry(h).or_default(), rest);
+                    }
+                }
+                None => add(labels[source].entry(h).or_default(), body.clone()),
+            }
+        }
+    }
+    labels
 }
 
 /// The order the component's nodes go in, the source last and the nodes

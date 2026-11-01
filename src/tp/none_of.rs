@@ -1103,7 +1103,6 @@ fn init_build_state(
     (codes, start, occurs): (Vec<u32>, Vec<u32>, Vec<u32>),
     groups: &[(Vec<VarId>, bool)],
 ) -> BuildSetup {
-    let n = vtree.num_nodes();
     // The cubes with each literal and its place in the cube's, by code;
     // the groups with a variable at each leaf, by leaf number; the node
     // where each group's variables meet, and the groups that must have one
@@ -1123,28 +1122,7 @@ fn init_build_state(
             .enumerate()
             .flat_map(|(g, (vars, _))| vars.iter().map(move |&v| (leaf_number(v), g as u32))),
     );
-    let group_lca: Vec<VtreeIdx> = groups
-        .iter()
-        .map(|(vars, _)| {
-            vars.iter()
-                .map(|&v| {
-                    vtree
-                        .leaf_of(v)
-                        .expect("a group's variables are the vtree's")
-                })
-                .reduce(|m, l| vtree.lca(m, l))
-                .expect("a group has a variable")
-        })
-        .collect();
-    let exact_at = Grouped::new(
-        n,
-        groups
-            .iter()
-            .zip(&group_lca)
-            .enumerate()
-            .filter(|(_, ((_, exactly), _))| *exactly)
-            .map(|(g, (_, meet))| (meet.idx(), g as u32)),
-    );
+    let (group_lca, exact_at) = group_lcas_and_exact(vtree, groups);
     let count = start.len() - 1;
     let private: Vec<(u32, u32)> = start
         .windows(2)
@@ -1194,6 +1172,35 @@ fn init_build_state(
         res,
         forcing,
     }
+}
+
+fn group_lcas_and_exact(
+    vtree: &Vtree,
+    groups: &[(Vec<VarId>, bool)],
+) -> (Vec<VtreeIdx>, Grouped<u32>) {
+    let group_lca: Vec<VtreeIdx> = groups
+        .iter()
+        .map(|(vars, _)| {
+            vars.iter()
+                .map(|&v| {
+                    vtree
+                        .leaf_of(v)
+                        .expect("a group's variables are the vtree's")
+                })
+                .reduce(|m, l| vtree.lca(m, l))
+                .expect("a group has a variable")
+        })
+        .collect();
+    let exact_at = Grouped::new(
+        vtree.num_nodes(),
+        groups
+            .iter()
+            .zip(&group_lca)
+            .enumerate()
+            .filter(|(_, ((_, exactly), _))| *exactly)
+            .map(|(g, (_, meet))| (meet.idx(), g as u32)),
+    );
+    (group_lca, exact_at)
 }
 
 fn build_leaf_level(
@@ -1758,11 +1765,6 @@ fn join(
         shape.kept,
     );
     let (t_lo, right_lo) = (spans[t.idx()].0, spans[r.idx()].0);
-    // A class made here keeps its values up to the node's last leaf a node
-    // above may read: those of the left's leaves its left class keeps, and
-    // where it keeps a leaf on the right, clear bits up to the right's
-    // first and those of the right's leaves it keeps, which its right
-    // class keeps too ([`kept_bits`]).
     let bits = kept[t.idx()] as usize;
     let (left_bits, right_at) = (
         bits.min(kept[l.idx()] as usize),
@@ -1771,13 +1773,6 @@ fn join(
     let right_bits = bits.saturating_sub(right_at);
     pairs.split_residuals(res, cubes, t, spans[t.idx()], right_lo, left, right);
     let exact = exact_at.of(t.idx());
-    // A pair whose right class passes no residual up and sets no group,
-    // and where no cube of the left class's residuals with literals on
-    // the right holds there, makes the class of the left class's
-    // residuals that pass and its groups, or none where those force a
-    // group twice, whatever the right class: it is looked up once per
-    // left class (`alone_of`). On the networks such pairs are mostly a
-    // table's context paired with the two classes of a row's switches.
     pairs.alone_of.clear();
     pairs.alone_of.resize(left.classes.len(), UNKNOWN);
     for (cb, &(bp0, bp1)) in right.classes.iter().zip(pairs.right_split.iter()) {
@@ -1802,14 +1797,13 @@ fn join(
                 continue 'pair;
             }
             let lone = pairs.fresh.is_empty() && bp0 == bp1 && b_ones.is_empty();
-            match pairs.alone_of[ia] {
-                _ if !lone => {}
-                UNKNOWN => {}
-                REFUSED => continue 'pair,
-                k => {
-                    pairs.emitted.push((k, ChildPair::new(ca.node, cb.node)));
-                    continue 'pair;
+            if lone && pairs.alone_of[ia] != UNKNOWN {
+                if pairs.alone_of[ia] != REFUSED {
+                    pairs
+                        .emitted
+                        .push((pairs.alone_of[ia], ChildPair::new(ca.node, cb.node)));
                 }
+                continue 'pair;
             }
             let at = level.residuals.len();
             let Some(h) = merge_residuals_and_hash(

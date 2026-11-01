@@ -359,37 +359,9 @@ impl QueryEvaluation {
             sizes.walk_seconds += t.elapsed().as_secs_f64();
             *evidence = walked?;
         }
-        let evidence = match evidence {
-            None => None,
-            Some((e, scope)) => {
-                // The evidence's weights, restricted to its scope once: every
-                // literal query reads them.
-                let w = weights.restrict(scope.vars());
-                sizes.evidence = backend.size(e);
-                sizes.evidence_implicit = backend.implicit_size(e);
-                sizes.record(sizes.evidence, None)?;
-                if mass.is_none() {
-                    let t = Instant::now();
-                    *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
-                    sizes.count_seconds += t.elapsed().as_secs_f64();
-                }
-                let mass = mass.unwrap();
-                // Only a mass that is zero as a count: in a float the
-                // probability of a thousand observations is zero too.
-                if mass.is_zero() {
-                    sizes.routes = counted
-                        .as_ref()
-                        .map(CountedEvidence::routes)
-                        .unwrap_or_default();
-                    return Ok((None, *sizes));
-                }
-                Some(Evidence {
-                    e,
-                    scope,
-                    weights: w,
-                    mass,
-                })
-            }
+        let Some(evidence) = prepare_evidence(backend, weights, evidence, mass, counted, sizes)?
+        else {
+            return Ok((None, *sizes));
         };
         let mut answers = Answers {
             gp,
@@ -430,6 +402,46 @@ impl QueryEvaluation {
             .unwrap_or_default();
         Ok((Some(std::mem::take(out)), *sizes))
     }
+}
+
+fn prepare_evidence<'a>(
+    backend: &TddBackend<'_>,
+    weights: &Probabilities,
+    evidence: &'a Option<Formula>,
+    mass: &mut Option<Count>,
+    counted: &mut Option<CountedEvidence>,
+    sizes: &mut QuerySizes,
+) -> Result<Option<Option<Evidence<'a>>>, CompileError> {
+    let Some((e, scope)) = evidence else {
+        return Ok(Some(None));
+    };
+    // The evidence's weights, restricted to its scope once: every
+    // literal query reads them.
+    let w = weights.restrict(scope.vars());
+    sizes.evidence = backend.size(e);
+    sizes.evidence_implicit = backend.implicit_size(e);
+    sizes.record(sizes.evidence, None)?;
+    if mass.is_none() {
+        let t = Instant::now();
+        *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
+        sizes.count_seconds += t.elapsed().as_secs_f64();
+    }
+    let mass = mass.unwrap();
+    // Only a mass that is zero as a count: in a float the
+    // probability of a thousand observations is zero too.
+    if mass.is_zero() {
+        sizes.routes = counted
+            .as_ref()
+            .map(CountedEvidence::routes)
+            .unwrap_or_default();
+        return Ok(None);
+    }
+    Ok(Some(Some(Evidence {
+        e,
+        scope,
+        weights: w,
+        mass,
+    })))
 }
 
 /// The scopes the query phase builds formulas on, interned like the
@@ -1344,89 +1356,90 @@ mod tests {
                     ground(source)
                 };
                 for strategy in [Kind::Closed, Kind::Families { search: false }] {
-                    // The families layout lays out indicators, where atoms
-                    // are read through them.
-                    let (
-                        crate::vtree::Layout {
-                            vtree: tree, order, ..
-                        },
-                        _,
-                    ) = match crate::vtree::build(
-                        &gp,
-                        &crate::ground::deps::Deps::of(&gp),
-                        strategy,
-                    ) {
-                        Ok(layout) => layout,
-                        Err(_) if strategy != Kind::Closed => continue,
-                        Err(e) => panic!("{e}"),
-                    };
-                    let compiled = tree.context().run(|engine| {
-                        compile(
-                            &gp,
-                            fact_variables(&gp, &order),
-                            Formulation::Dual,
-                            &TddBackend::new(engine, tree.clone()),
-                            Projection::default(),
-                            None,
-                        )
-                        .unwrap()
-                    });
-                    let (fresh, _) = tree
-                        .context()
-                        .run(|engine| {
-                            query_probabilities(
-                                &gp,
-                                &TddBackend::new(engine, tree.clone()),
-                                &compiled,
-                            )
-                        })
-                        .unwrap();
-                    let fresh = fresh.unwrap();
-                    let mut state = tree.context().run(|engine| {
-                        QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
-                    });
-                    state.walk.defer_from = 1;
-                    state.walk.defer_growth = 1;
-                    let mut budget = 1;
-                    let answers = loop {
-                        let result = tree.context().run(|engine| {
-                            let limit = LimitConfig::none().with_stop_rules(
-                                StopRules::default().with_unconditional(Some(StopAt::WorkUnits(
-                                    engine.limits().work_units() + budget,
-                                ))),
-                            );
-                            let _guard = engine.limits().scope(limit);
-                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
-                        });
-                        match result {
-                            Ok((answers, _)) => break answers.unwrap(),
-                            Err(CompileError::Tdd(OperationError::Stopped)) => budget *= 2,
-                            Err(e) => panic!("{e}"),
-                        }
-                        assert!(
-                            budget < 1 << 24,
-                            "a growing budget must eventually complete"
-                        );
-                    };
-                    assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
-                    reassociated += state.walk.reassociated;
-                    assert_eq!(answers.len(), fresh.len());
-                    for (i, (answer, fresh)) in answers.iter().zip(&fresh).enumerate() {
-                        assert!(
-                            (answer.probability - fresh.probability).abs() < 1e-12,
-                            "{answer:?} {fresh:?} indicators {indicators} {strategy:?}"
-                        );
-                        if let Some(expected) = &expected {
-                            assert!(
-                                (answer.probability - expected[i]).abs() < 1e-12,
-                                "{answer:?} indicators {indicators} {strategy:?}"
-                            );
-                        }
-                    }
+                    reassociated +=
+                        check_waiting_join_strategy(&gp, strategy, expected.as_deref(), indicators);
                 }
             }
         }
         assert!(reassociated > 0, "no last join reassociated");
+    }
+
+    fn check_waiting_join_strategy(
+        gp: &GroundProgram,
+        strategy: Kind,
+        expected: Option<&[f64]>,
+        indicators: bool,
+    ) -> usize {
+        // The families layout lays out indicators, where atoms
+        // are read through them.
+        let (
+            crate::vtree::Layout {
+                vtree: tree, order, ..
+            },
+            _,
+        ) = match crate::vtree::build(gp, &crate::ground::deps::Deps::of(gp), strategy) {
+            Ok(layout) => layout,
+            Err(_) if strategy != Kind::Closed => return 0,
+            Err(e) => panic!("{e}"),
+        };
+        let compiled = tree.context().run(|engine| {
+            compile(
+                gp,
+                fact_variables(gp, &order),
+                Formulation::Dual,
+                &TddBackend::new(engine, tree.clone()),
+                Projection::default(),
+                None,
+            )
+            .unwrap()
+        });
+        let (fresh, _) = tree
+            .context()
+            .run(|engine| {
+                query_probabilities(gp, &TddBackend::new(engine, tree.clone()), &compiled)
+            })
+            .unwrap();
+        let fresh = fresh.unwrap();
+        let mut state = tree.context().run(|engine| {
+            QueryEvaluation::new(gp, &TddBackend::new(engine, tree.clone()), &compiled)
+        });
+        state.walk.defer_from = 1;
+        state.walk.defer_growth = 1;
+        let mut budget = 1;
+        let answers = loop {
+            let result = tree.context().run(|engine| {
+                let limit =
+                    LimitConfig::none().with_stop_rules(StopRules::default().with_unconditional(
+                        Some(StopAt::WorkUnits(engine.limits().work_units() + budget)),
+                    ));
+                let _guard = engine.limits().scope(limit);
+                state.run(gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
+            });
+            match result {
+                Ok((answers, _)) => break answers.unwrap(),
+                Err(CompileError::Tdd(OperationError::Stopped)) => budget *= 2,
+                Err(e) => panic!("{e}"),
+            }
+            assert!(
+                budget < 1 << 24,
+                "a growing budget must eventually complete"
+            );
+        };
+        assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
+        assert_eq!(answers.len(), fresh.len());
+        for (i, (answer, fresh)) in answers.iter().zip(&fresh).enumerate() {
+            assert!(
+                (answer.probability - fresh.probability).abs() < 1e-12,
+                "{answer:?} {fresh:?} indicators {indicators} {strategy:?}"
+            );
+            if let Some(expected) = expected {
+                assert!(
+                    (answer.probability - expected[i]).abs() < 1e-12,
+                    "{answer:?} indicators {indicators} {strategy:?}"
+                );
+            }
+        }
+        state.walk.reassociated
     }
 
     #[test]

@@ -475,30 +475,8 @@ impl Sweep {
 pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     let derived = gp.num_derived();
     let n = gp.atoms.len();
-    let mut kept = vec![false; n];
-    for a in gp.named_atoms() {
-        kept[a as usize] = true;
-    }
-    let mut in_set = vec![false; n];
-    for set in &structure.sets {
-        for &a in set {
-            kept[a as usize] |= structure.atoms_of[structure.predicate_of[a as usize]] > 1;
-            in_set[a as usize] |= set.len() > 1;
-        }
-    }
     let by_head = &structure.by_head;
-    let gates: Vec<AtomId> = structure
-        .sccs
-        .iter()
-        .filter_map(|scc| match *scc.as_slice() {
-            [a] if !by_head[a as usize].is_empty() && !deps::is_cyclic(gp, by_head, scc) => Some(a),
-            _ => None,
-        })
-        .collect();
-    let mut gate = vec![false; n];
-    for &a in &gates {
-        gate[a as usize] = true;
-    }
+    let (gates, gate, kept, in_set) = candidate_gates(gp, structure);
     if !may_merge(gp, by_head, &gates, &gate, &kept) {
         return false;
     }
@@ -530,31 +508,15 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     let (mut body, mut terms) = (Vec::new(), Vec::new());
     let mut merged = 0;
     for &a in &gates {
-        terms.clear();
-        for &ri in &by_head[a as usize] {
-            body.clear();
-            for &l in &gp.rules[ri].body {
-                let x = l.atom() as usize;
-                if lit[x] == NO {
-                    // An input, or false.
-                    debug_assert!(!gate[x], "gate {x} read before it is built");
-                    lit[x] = if gp.kinds[x] == AtomKind::Derived && by_head[x].is_empty() {
-                        FALSE
-                    } else {
-                        let i = g.input();
-                        owner.resize(g.fanins.len(), None);
-                        owner[node(i)] = Some(GLit::Pos(x as AtomId));
-                        if let Some(sweep) = sweep.as_mut().filter(|_| swept[x]) {
-                            sweep.add(&g, node(i));
-                        }
-                        i
-                    };
-                }
-                body.push(lit[x] ^ Lit::from(!l.is_positive()));
-            }
-            terms.push(g.and_all(&mut body) ^ 1);
-        }
-        let mut l = g.and_all(&mut terms) ^ 1;
+        let mut l = build_gate_lit(
+            (gp, by_head),
+            a,
+            (&gate, &swept),
+            &mut g,
+            &mut sweep,
+            (&mut lit, &mut owner),
+            (&mut body, &mut terms),
+        );
         owner.resize(g.fanins.len(), None);
         first_gate.resize(g.fanins.len(), None);
         proved.resize(g.fanins.len(), NO);
@@ -601,6 +563,74 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     gp.stats.merged += merged;
     gp.stats.reduced += derived.saturating_sub(gp.num_derived());
     true
+}
+
+fn candidate_gates(
+    gp: &GroundProgram,
+    structure: &Structure,
+) -> (Vec<AtomId>, Vec<bool>, Vec<bool>, Vec<bool>) {
+    let n = gp.atoms.len();
+    let mut kept = vec![false; n];
+    for a in gp.named_atoms() {
+        kept[a as usize] = true;
+    }
+    let mut in_set = vec![false; n];
+    for set in &structure.sets {
+        for &a in set {
+            kept[a as usize] |= structure.atoms_of[structure.predicate_of[a as usize]] > 1;
+            in_set[a as usize] |= set.len() > 1;
+        }
+    }
+    let by_head = &structure.by_head;
+    let gates: Vec<AtomId> = structure
+        .sccs
+        .iter()
+        .filter_map(|scc| match *scc.as_slice() {
+            [a] if !by_head[a as usize].is_empty() && !deps::is_cyclic(gp, by_head, scc) => Some(a),
+            _ => None,
+        })
+        .collect();
+    let mut gate = vec![false; n];
+    for &a in &gates {
+        gate[a as usize] = true;
+    }
+    (gates, gate, kept, in_set)
+}
+
+fn build_gate_lit(
+    (gp, by_head): (&GroundProgram, &RulesByHead),
+    a: AtomId,
+    (gate, swept): (&[bool], &[bool]),
+    g: &mut Graph,
+    sweep: &mut Option<Sweep>,
+    (lit, owner): (&mut [Lit], &mut Vec<Option<GLit>>),
+    (body, terms): (&mut Vec<Lit>, &mut Vec<Lit>),
+) -> Lit {
+    terms.clear();
+    for &ri in &by_head[a as usize] {
+        body.clear();
+        for &l in &gp.rules[ri].body {
+            let x = l.atom() as usize;
+            if lit[x] == NO {
+                // An input, or false.
+                debug_assert!(!gate[x], "gate {x} read before it is built");
+                lit[x] = if gp.kinds[x] == AtomKind::Derived && by_head[x].is_empty() {
+                    FALSE
+                } else {
+                    let i = g.input();
+                    owner.resize(g.fanins.len(), None);
+                    owner[node(i)] = Some(GLit::Pos(x as AtomId));
+                    if let Some(sweep) = sweep.as_mut().filter(|_| swept[x]) {
+                        sweep.add(g, node(i));
+                    }
+                    i
+                };
+            }
+            body.push(lit[x] ^ Lit::from(!l.is_positive()));
+        }
+        terms.push(g.and_all(body) ^ 1);
+    }
+    g.and_all(terms) ^ 1
 }
 
 /// The atoms the sweep takes: alone in their predicates (a fact by its

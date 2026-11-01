@@ -1533,6 +1533,41 @@ impl EvidenceWalk {
         } else {
             largest_child
         };
+        let (mut step, largest) =
+            self.plan_child_batches(node, (own, own_size, aside), items, put_off, backend);
+        // The largest set aside meets what the node built besides it smallest
+        // first, as their sizes come out, rather than after their product.
+        if let Some(main) = largest {
+            step.insert(0, main);
+            if step.len() > 2 {
+                let out = self.slot(None, 0);
+                self.joins.push_back(Join::Smallest(step, out));
+                step = vec![out];
+            }
+        }
+        let main = self.conjoin(step);
+        if let Some(main) = main
+            && main >= fresh
+            && node != tree.root()
+        {
+            self.last_joins.insert(main);
+        }
+        self.built[node.idx()] = main.map(|main| Built {
+            main,
+            put_off: VecDeque::new(),
+            put_off_size: 0,
+            groups: Vec::new(),
+        });
+    }
+
+    fn plan_child_batches(
+        &mut self,
+        node: VtreeIdx,
+        (own, own_size, aside): (usize, usize, Option<usize>),
+        items: Vec<(usize, usize)>,
+        put_off: Vec<(VecDeque<usize>, usize, Vec<Group>)>,
+        backend: &TddBackend,
+    ) -> (Vec<usize>, Option<usize>) {
         let mut step = Vec::with_capacity(items.len());
         let mut items = items.into_iter().map(|(f, _)| f).enumerate();
         let mut mine: Vec<usize> = items.by_ref().take(own).map(|(_, f)| f).collect();
@@ -1565,29 +1600,7 @@ impl EvidenceWalk {
                 step.extend(self.conjoin(batch));
             }
         }
-        // The largest set aside meets what the node built besides it smallest
-        // first, as their sizes come out, rather than after their product.
-        if let Some(main) = largest {
-            step.insert(0, main);
-            if step.len() > 2 {
-                let out = self.slot(None, 0);
-                self.joins.push_back(Join::Smallest(step, out));
-                step = vec![out];
-            }
-        }
-        let main = self.conjoin(step);
-        if let Some(main) = main
-            && main >= fresh
-            && node != tree.root()
-        {
-            self.last_joins.insert(main);
-        }
-        self.built[node.idx()] = main.map(|main| Built {
-            main,
-            put_off: VecDeque::new(),
-            put_off_size: 0,
-            groups: Vec::new(),
-        });
+        (step, largest)
     }
 
     fn pass_up(

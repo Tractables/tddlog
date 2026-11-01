@@ -399,7 +399,6 @@ pub(super) fn td_forest(
     deps: &Deps,
     copies: Option<&CopyRule>,
 ) -> Result<Option<TdFold>, String> {
-    use goatd::elimination::{Order, Prepared, RunConfig, RunOutcome};
     let num_atoms = gp.num_atoms();
     if num_atoms == 0 || gp.facts().next().is_none() {
         return Ok(None);
@@ -407,59 +406,8 @@ pub(super) fn td_forest(
     let edges = interaction_edges(gp);
     let num_edges = edges.len();
     let budget_units = scaled_budget_units(num_atoms, num_edges);
-    // goatd takes its budget as a `Duration`, so the unit budget goes in
-    // through the calibration its own meter reads the clock by.
-    let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
-    let graph = goatd::Graph::new(num_atoms as u32, edges.clone());
-    let failed = |e: goatd::Error| format!("td: goatd: {e:?}");
-    let (found, units, seconds) = metered(|| -> Result<_, String> {
-        let mut prepared = Prepared::new(&graph, Some(elimination_budget())).map_err(failed)?;
-        let config = RunConfig::default().with_budgets(Some(elimination_budget()), None);
-        // The reductions' and each elimination's units, and each
-        // elimination's width, for `--stats`.
-        let mut units = vec![prepared.preparation().work_units];
-        let mut eliminated = |order| -> Result<(goatd::TreeDecomposition, bool), String> {
-            let before = goatd::meter::units_spent();
-            let outcome = prepared.run(order, TD_SEED, config).map_err(failed)?;
-            units.push(goatd::meter::units_spent() - before);
-            match outcome {
-                RunOutcome::Completed(td) => Ok((td, true)),
-                RunOutcome::CompletedAtDeadline(_, td) => Ok((td, false)),
-                _ => Err("td: goatd returned no decomposition".to_string()),
-            }
-        };
-        let mut widths = Vec::new();
-        let (min_degree, finished) = eliminated(Order::MinDegree)?;
-        if !finished {
-            return Ok(None);
-        }
-        widths.push(min_degree.treewidth());
-        let bound = minor_min_width(num_atoms, &edges, min_degree.treewidth() as usize);
-        if min_degree.treewidth() as usize <= bound {
-            return Ok(Some((min_degree, bound, false, 0, units, widths)));
-        }
-        let (min_fill, _) = eliminated(Order::MinFill)?;
-        widths.push(min_fill.treewidth());
-        if min_fill.treewidth() as usize <= bound {
-            return Ok(Some((min_fill, bound, false, 0, units, widths)));
-        }
-        let narrower = if min_fill.treewidth() < min_degree.treewidth() {
-            min_fill
-        } else {
-            min_degree
-        };
-        if units[0] + units[1] >= 2 * budget_units {
-            return Ok(Some((narrower, bound, false, 0, units, widths)));
-        }
-        let (searched, pushed) = portfolio_to_bound(&graph, budget, budget_units, bound)
-            .ok_or("td: goatd's portfolio failed")?;
-        let td = if searched.treewidth() <= narrower.treewidth() {
-            searched
-        } else {
-            narrower
-        };
-        Ok(Some((td, bound, true, pushed, units, widths)))
-    });
+    let (found, units, seconds) =
+        metered(|| decompose_interaction_graph(num_atoms, &edges, budget_units));
     let Some((td, bound, searched, skipped, elimination_units, widths)) = found? else {
         return Err(format!(
             "td cannot help: min-degree, the cheapest elimination, does not finish within the elimination budget on {num_atoms} vertices \
@@ -524,6 +472,74 @@ pub(super) fn td_forest(
         note,
         copied,
     }))
+}
+
+type DecompositionFound = (
+    goatd::TreeDecomposition,
+    usize,
+    bool,
+    u64,
+    Vec<u64>,
+    Vec<u32>,
+);
+
+fn decompose_interaction_graph(
+    num_atoms: usize,
+    edges: &[(u32, u32)],
+    budget_units: u64,
+) -> Result<Option<DecompositionFound>, String> {
+    use goatd::elimination::{Order, Prepared, RunConfig, RunOutcome};
+    // goatd takes its budget as a `Duration`, so the unit budget goes in
+    // through the calibration its own meter reads the clock by.
+    let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
+    let graph = goatd::Graph::new(num_atoms as u32, edges.to_vec());
+    let failed = |e: goatd::Error| format!("td: goatd: {e:?}");
+    let mut prepared = Prepared::new(&graph, Some(elimination_budget())).map_err(failed)?;
+    let config = RunConfig::default().with_budgets(Some(elimination_budget()), None);
+    // The reductions' and each elimination's units, and each
+    // elimination's width, for `--stats`.
+    let mut units = vec![prepared.preparation().work_units];
+    let mut eliminated = |order| -> Result<(goatd::TreeDecomposition, bool), String> {
+        let before = goatd::meter::units_spent();
+        let outcome = prepared.run(order, TD_SEED, config).map_err(failed)?;
+        units.push(goatd::meter::units_spent() - before);
+        match outcome {
+            RunOutcome::Completed(td) => Ok((td, true)),
+            RunOutcome::CompletedAtDeadline(_, td) => Ok((td, false)),
+            _ => Err("td: goatd returned no decomposition".to_string()),
+        }
+    };
+    let mut widths = Vec::new();
+    let (min_degree, finished) = eliminated(Order::MinDegree)?;
+    if !finished {
+        return Ok(None);
+    }
+    widths.push(min_degree.treewidth());
+    let bound = minor_min_width(num_atoms, edges, min_degree.treewidth() as usize);
+    if min_degree.treewidth() as usize <= bound {
+        return Ok(Some((min_degree, bound, false, 0, units, widths)));
+    }
+    let (min_fill, _) = eliminated(Order::MinFill)?;
+    widths.push(min_fill.treewidth());
+    if min_fill.treewidth() as usize <= bound {
+        return Ok(Some((min_fill, bound, false, 0, units, widths)));
+    }
+    let narrower = if min_fill.treewidth() < min_degree.treewidth() {
+        min_fill
+    } else {
+        min_degree
+    };
+    if units[0] + units[1] >= 2 * budget_units {
+        return Ok(Some((narrower, bound, false, 0, units, widths)));
+    }
+    let (searched, pushed) = portfolio_to_bound(&graph, budget, budget_units, bound)
+        .ok_or("td: goatd's portfolio failed")?;
+    let td = if searched.treewidth() <= narrower.treewidth() {
+        searched
+    } else {
+        narrower
+    };
+    Ok(Some((td, bound, true, pushed, units, widths)))
 }
 
 /// What [`td_forest`] lays out: the fold's forest and its root, the note

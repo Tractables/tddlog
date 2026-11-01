@@ -85,39 +85,14 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
     // atom and the facts of each side.
     let mut largest: Option<(AtomId, Vec<usize>)> = None;
     for (ci, comp) in components.iter().enumerate() {
-        let mut reads: Vec<usize> = Vec::new();
-        let mut new: Vec<AtomId> = Vec::new();
-        // The (block, atom) reads of each rule that reads two blocks or more,
-        // distinct.
-        let mut combinations: Vec<Vec<(usize, AtomId)>> = Vec::new();
-        for &h in comp {
-            for &ri in &by_head[h as usize] {
-                let mut rule_reads: Vec<(usize, AtomId)> = Vec::new();
-                for l in &gp.rules[ri].body {
-                    let a = l.atom();
-                    let ai = a as usize;
-                    if block_of[ai] != usize::MAX && (gp.is_fact(a) || component_of[ai] != ci) {
-                        let b = find(&mut parent, block_of[ai]);
-                        if !reads.contains(&b) {
-                            reads.push(b);
-                        }
-                        rule_reads.push((b, a));
-                    } else if gp.is_fact(a) && !fresh[ai] {
-                        fresh[ai] = true;
-                        first_use[ai] = used;
-                        used += 1;
-                        new.push(a);
-                    }
-                }
-                rule_reads.sort_unstable();
-                rule_reads.dedup();
-                if rule_reads.first().map(|r| r.0) != rule_reads.last().map(|r| r.0)
-                    && !combinations.contains(&rule_reads)
-                {
-                    combinations.push(rule_reads);
-                }
-            }
-        }
+        let (reads, mut new, combinations) = scan_component_reads(
+            gp,
+            by_head,
+            (ci, comp),
+            (&component_of, &block_of),
+            &mut parent,
+            (&mut fresh, &mut first_use, &mut used),
+        );
         let mut paired: Vec<(usize, AtomId)> = combinations.iter().flatten().copied().collect();
         paired.sort_unstable();
         let disjoint = paired.windows(2).all(|w| w[0] != w[1]);
@@ -156,6 +131,24 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
             block_of[a as usize] = b;
         }
     }
+    finish_closed_forest(
+        gp,
+        forest,
+        (&parent, &tree, &block_of),
+        (components.len(), joins, widest, linearized),
+        largest,
+        &search_note,
+    )
+}
+
+fn finish_closed_forest(
+    gp: &GroundProgram,
+    mut forest: Forest,
+    (parent, tree, block_of): (&[usize], &[usize], &[usize]),
+    (num_components, joins, widest, linearized): (usize, usize, usize, usize),
+    largest: Option<(AtomId, Vec<usize>)>,
+    search_note: &str,
+) -> Option<(Forest, usize, String)> {
     let mut tops: Vec<usize> = (0..parent.len())
         .filter(|&b| parent[b] == b)
         .map(|b| tree[b])
@@ -171,9 +164,8 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
     }
     let root = forest.balanced(&tops)?;
     let mut note = format!(
-        "{search_note}\nclosed: {} components, {joins} of them joining two or more blocks (at most {widest}), \
+        "{search_note}\nclosed: {num_components} components, {joins} of them joining two or more blocks (at most {widest}), \
          {unread} blocks at the root, {linearized} pairing joins made right-linear",
-        components.len(),
     );
     if let Some((a, sides)) = largest {
         let sides: Vec<String> = sides.iter().map(|n| n.to_string()).collect();
@@ -184,6 +176,52 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
         );
     }
     Some((forest, root, note))
+}
+
+type ComponentReads = (Vec<usize>, Vec<AtomId>, Vec<Vec<(usize, AtomId)>>);
+
+fn scan_component_reads(
+    gp: &GroundProgram,
+    by_head: &crate::ground::RulesByHead,
+    (ci, comp): (usize, &[AtomId]),
+    (component_of, block_of): (&[usize], &[usize]),
+    parent: &mut [usize],
+    (fresh, first_use, used): (&mut [bool], &mut [usize], &mut usize),
+) -> ComponentReads {
+    let mut reads: Vec<usize> = Vec::new();
+    let mut new: Vec<AtomId> = Vec::new();
+    // The (block, atom) reads of each rule that reads two blocks or more,
+    // distinct.
+    let mut combinations: Vec<Vec<(usize, AtomId)>> = Vec::new();
+    for &h in comp {
+        for &ri in &by_head[h as usize] {
+            let mut rule_reads: Vec<(usize, AtomId)> = Vec::new();
+            for l in &gp.rules[ri].body {
+                let a = l.atom();
+                let ai = a as usize;
+                if block_of[ai] != usize::MAX && (gp.is_fact(a) || component_of[ai] != ci) {
+                    let b = find(parent, block_of[ai]);
+                    if !reads.contains(&b) {
+                        reads.push(b);
+                    }
+                    rule_reads.push((b, a));
+                } else if gp.is_fact(a) && !fresh[ai] {
+                    fresh[ai] = true;
+                    first_use[ai] = *used;
+                    *used += 1;
+                    new.push(a);
+                }
+            }
+            rule_reads.sort_unstable();
+            rule_reads.dedup();
+            if rule_reads.first().map(|r| r.0) != rule_reads.last().map(|r| r.0)
+                && !combinations.contains(&rule_reads)
+            {
+                combinations.push(rule_reads);
+            }
+        }
+    }
+    (reads, new, combinations)
 }
 
 #[cfg(test)]

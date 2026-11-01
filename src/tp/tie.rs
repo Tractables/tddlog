@@ -122,23 +122,7 @@ pub(crate) fn ties(
     let Some(global_from) = projection.global_from(var_of.iter().flatten().count() as u32) else {
         return ties;
     };
-    let mut copies: FxHashMap<AtomId, Vec<(AtomId, VarId)>> = FxHashMap::default();
-    for ind in &gp.encoding.indicators {
-        copies.entry(ind.link).or_default().push((
-            ind.atom,
-            var_of[ind.var as usize].expect("a copy is a fact"),
-        ));
-    }
-    let mut tables: FxHashMap<Vec<AtomId>, Vec<AtomId>> = FxHashMap::default();
-    for (&link, of) in &mut copies {
-        if of.len() >= 2 {
-            of.sort_unstable();
-            tables
-                .entry(of.iter().map(|&(k, _)| k).collect())
-                .or_default()
-                .push(link);
-        }
-    }
+    let (copies, tables) = table_copies(gp, var_of);
     let vtree = backend.vtree();
     // The link each variable was last gathered for: a link's rules read
     // its table's switches and copies over and over, and this finds them
@@ -216,4 +200,28 @@ pub(crate) fn ties(
         }
     }
     ties
+}
+
+type LinkCopies = FxHashMap<AtomId, Vec<(AtomId, VarId)>>;
+type TableLinks = FxHashMap<Vec<AtomId>, Vec<AtomId>>;
+
+fn table_copies(gp: &GroundProgram, var_of: &[Option<VarId>]) -> (LinkCopies, TableLinks) {
+    let mut copies: LinkCopies = FxHashMap::default();
+    for ind in &gp.encoding.indicators {
+        copies.entry(ind.link).or_default().push((
+            ind.atom,
+            var_of[ind.var as usize].expect("a copy is a fact"),
+        ));
+    }
+    let mut tables: TableLinks = FxHashMap::default();
+    for (&link, of) in &mut copies {
+        if of.len() >= 2 {
+            of.sort_unstable();
+            tables
+                .entry(of.iter().map(|&(k, _)| k).collect())
+                .or_default()
+                .push(link);
+        }
+    }
+    (copies, tables)
 }

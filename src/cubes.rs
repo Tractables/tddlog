@@ -307,77 +307,90 @@ impl CubeMerge {
             }
             let made = self.context.len();
             for v in 0..self.vars {
-                self.found.clear();
-                let mut t = self.heads[v].0;
-                while t != u32::MAX {
-                    let (c, i, next) = self.tries[t as usize];
-                    t = next;
-                    let c = c as usize;
-                    if !self.alive[c] {
-                        continue;
-                    }
-                    let x = self.lits[i as usize];
-                    let flipped = self.keys[c]
-                        .wrapping_sub(Self::term(u64::from(x)))
-                        .wrapping_add(Self::term(u64::from(x ^ 1)));
-                    // The two the same but for `x` in `c` and its negation in
-                    // `d`, at the same place since a variable's two literals
-                    // are adjacent.
-                    let d = self.by_key.get(&flipped).map(|&d| d as usize).filter(|&d| {
-                        let (p, q) = (self.lits(c), self.lits(d));
-                        d != c
-                            && self.alive[d]
-                            && self.context[d] == self.context[c]
-                            && p.len() == q.len()
-                            && p.iter()
-                                .zip(q)
-                                .all(|(&a, &b)| if a == x { b == x ^ 1 } else { a == b })
-                    });
-                    let Some(d) = d else {
-                        self.try_next(c, i as usize + 1, first);
-                        continue;
-                    };
-                    if self.context_lits(c).len() + self.lits(c).len() == 1 {
-                        return Merged::ToTrue;
-                    }
-                    self.alive[c] = false;
-                    self.alive[d] = false;
-                    merged = true;
-                    // After the first pass both cubes of a pair try the
-                    // variable where both are fresh, the first in the pass
-                    // finding the other; either makes the same cube.
-                    let by = if !first && d >= fresh.start {
-                        c.min(d)
-                    } else {
-                        c
-                    };
-                    self.found.push((by as u32, c as u32, d as u32, x));
-                }
-                // The cubes made are numbered in the order of the cubes that
-                // found them, each pass's in the order of its variables.
-                if !self.found.is_sorted_by_key(|f| f.0) {
-                    self.found.sort_unstable_by_key(|f| f.0);
-                }
-                for f in 0..self.found.len() {
-                    let (_, c, d, x) = self.found[f];
-                    let (c, d) = (c as usize, d as usize);
-                    let (s, e) = (self.start[c] as usize, self.start[c + 1] as usize);
-                    let at = self.lits.len();
-                    self.lits.extend_from_within(s..e);
-                    let drop = self.lits[at..].binary_search(&x).expect("the cube reads x");
-                    self.lits.remove(at + drop);
-                    self.start.push(self.lits.len() as u32);
-                    self.context.push(self.context[c]);
-                    self.keys
-                        .push(self.keys[c].wrapping_sub(Self::term(u64::from(x))));
-                    self.alive.push(true);
-                    self.from.push(self.from[c].min(self.from[d]));
+                if self.merge_at_var(v, first, fresh.start, &mut merged) {
+                    return Merged::ToTrue;
                 }
             }
             fresh = made..self.context.len();
             first = false;
         }
         if merged { Merged::Yes } else { Merged::No }
+    }
+
+    fn merge_at_var(
+        &mut self,
+        v: usize,
+        first: bool,
+        fresh_start: usize,
+        merged: &mut bool,
+    ) -> bool {
+        self.found.clear();
+        let mut t = self.heads[v].0;
+        while t != u32::MAX {
+            let (c, i, next) = self.tries[t as usize];
+            t = next;
+            let c = c as usize;
+            if !self.alive[c] {
+                continue;
+            }
+            let x = self.lits[i as usize];
+            let flipped = self.keys[c]
+                .wrapping_sub(Self::term(u64::from(x)))
+                .wrapping_add(Self::term(u64::from(x ^ 1)));
+            // The two the same but for `x` in `c` and its negation in
+            // `d`, at the same place since a variable's two literals
+            // are adjacent.
+            let d = self.by_key.get(&flipped).map(|&d| d as usize).filter(|&d| {
+                let (p, q) = (self.lits(c), self.lits(d));
+                d != c
+                    && self.alive[d]
+                    && self.context[d] == self.context[c]
+                    && p.len() == q.len()
+                    && p.iter()
+                        .zip(q)
+                        .all(|(&a, &b)| if a == x { b == x ^ 1 } else { a == b })
+            });
+            let Some(d) = d else {
+                self.try_next(c, i as usize + 1, first);
+                continue;
+            };
+            if self.context_lits(c).len() + self.lits(c).len() == 1 {
+                return true;
+            }
+            self.alive[c] = false;
+            self.alive[d] = false;
+            *merged = true;
+            // After the first pass both cubes of a pair try the
+            // variable where both are fresh, the first in the pass
+            // finding the other; either makes the same cube.
+            let by = if !first && d >= fresh_start {
+                c.min(d)
+            } else {
+                c
+            };
+            self.found.push((by as u32, c as u32, d as u32, x));
+        }
+        // The cubes made are numbered in the order of the cubes that
+        // found them, each pass's in the order of its variables.
+        if !self.found.is_sorted_by_key(|f| f.0) {
+            self.found.sort_unstable_by_key(|f| f.0);
+        }
+        for f in 0..self.found.len() {
+            let (_, c, d, x) = self.found[f];
+            let (c, d) = (c as usize, d as usize);
+            let (s, e) = (self.start[c] as usize, self.start[c + 1] as usize);
+            let at = self.lits.len();
+            self.lits.extend_from_within(s..e);
+            let drop = self.lits[at..].binary_search(&x).expect("the cube reads x");
+            self.lits.remove(at + drop);
+            self.start.push(self.lits.len() as u32);
+            self.context.push(self.context[c]);
+            self.keys
+                .push(self.keys[c].wrapping_sub(Self::term(u64::from(x))));
+            self.alive.push(true);
+            self.from.push(self.from[c].min(self.from[d]));
+        }
+        false
     }
 
     /// Puts cube `c` on the list of the variable of its first literal from
@@ -478,44 +491,13 @@ mod tests {
                     "round {round}: {before:?} {before_start:?} became {codes:?} {start:?}"
                 );
             }
-            let cubes: Vec<&[u32]> = start
-                .windows(2)
-                .map(|w| &codes[w[0] as usize..w[1] as usize])
-                .collect();
-            for (i, a) in cubes.iter().enumerate() {
-                for b in &cubes[i + 1..] {
-                    assert!(merged == Merged::No || a != b, "round {round}: {a:?} twice");
-                    let one_sign = a.len() == b.len()
-                        && a.iter().zip(b.iter()).all(|(x, y)| x / 2 == y / 2)
-                        && a.iter().zip(b.iter()).filter(|(x, y)| x != y).count() == 1;
-                    assert!(!one_sign, "round {round}: {a:?} and {b:?} left");
-                }
-            }
-            assert_eq!(
-                merged == Merged::No,
-                codes == before && start == before_start,
-                "round {round}"
+            assert_merged_cubes(
+                round,
+                (&before, &before_start),
+                (&codes, &start),
+                merged,
+                &origin,
             );
-            if merged == Merged::Yes {
-                // Each cube left is in its origin, and no cube given is
-                // the origin of two.
-                let given: Vec<&[u32]> = before_start
-                    .windows(2)
-                    .map(|w| &before[w[0] as usize..w[1] as usize])
-                    .collect();
-                let mut seen = vec![false; given.len()];
-                for (cube, &o) in cubes.iter().zip(&origin) {
-                    assert!(
-                        !std::mem::replace(&mut seen[o as usize], true),
-                        "round {round}: origin {o} twice"
-                    );
-                    assert!(
-                        cube.iter().all(|x| given[o as usize].contains(x)),
-                        "round {round}: {cube:?} is not in its origin {:?}",
-                        given[o as usize]
-                    );
-                }
-            }
         }
         // The values 1 to 6 over three leaves: 1, 2..=3, 4..=5 and 6.
         let (mut codes, mut start) = (Vec::new(), vec![0u32]);
@@ -540,5 +522,52 @@ mod tests {
             cubes,
             vec![vec![0, 3, 5], vec![1, 2, 4], vec![2, 5], vec![3, 4]]
         );
+    }
+
+    fn assert_merged_cubes(
+        round: usize,
+        (before, before_start): (&[u32], &[u32]),
+        (codes, start): (&[u32], &[u32]),
+        merged: Merged,
+        origin: &[u32],
+    ) {
+        let cubes: Vec<&[u32]> = start
+            .windows(2)
+            .map(|w| &codes[w[0] as usize..w[1] as usize])
+            .collect();
+        for (i, a) in cubes.iter().enumerate() {
+            for b in &cubes[i + 1..] {
+                assert!(merged == Merged::No || a != b, "round {round}: {a:?} twice");
+                let one_sign = a.len() == b.len()
+                    && a.iter().zip(b.iter()).all(|(x, y)| x / 2 == y / 2)
+                    && a.iter().zip(b.iter()).filter(|(x, y)| x != y).count() == 1;
+                assert!(!one_sign, "round {round}: {a:?} and {b:?} left");
+            }
+        }
+        assert_eq!(
+            merged == Merged::No,
+            codes == before && start == before_start,
+            "round {round}"
+        );
+        if merged == Merged::Yes {
+            // Each cube left is in its origin, and no cube given is
+            // the origin of two.
+            let given: Vec<&[u32]> = before_start
+                .windows(2)
+                .map(|w| &before[w[0] as usize..w[1] as usize])
+                .collect();
+            let mut seen = vec![false; given.len()];
+            for (cube, &o) in cubes.iter().zip(origin) {
+                assert!(
+                    !std::mem::replace(&mut seen[o as usize], true),
+                    "round {round}: origin {o} twice"
+                );
+                assert!(
+                    cube.iter().all(|x| given[o as usize].contains(x)),
+                    "round {round}: {cube:?} is not in its origin {:?}",
+                    given[o as usize]
+                );
+            }
+        }
     }
 }

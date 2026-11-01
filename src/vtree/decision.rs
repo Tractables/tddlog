@@ -201,9 +201,48 @@ impl<'a> Tree<'a> {
             out.rules
                 .push(GroundRule::new(atom_of_context[k as usize], body));
         }
+        let rules = self.rewrite_program_rules(
+            (&outside, &inside),
+            (&cut_of, &beside_of),
+            &reads,
+            &var_of,
+            &var_of_context,
+        );
+        let (above, cut_node) = self.place_names(
+            &outside,
+            &rules,
+            out.atoms.len(),
+            (&named_contexts, &var_of_context),
+            (&cut, &cut_var),
+        );
+        out.rules.extend(rules);
+        out.encoding.segments = segments(out.encoding.indicators.len(), &cut_node, beside.len());
+        let note = format!(
+            "naming: {} contexts of the decisions, {} atoms of their tree, {} beside it",
+            named_contexts.len(),
+            cut.len(),
+            beside.len()
+        );
+        Some(Named {
+            gp: out,
+            above,
+            note,
+        })
+    }
+
+    fn rewrite_program_rules(
+        &self,
+        (outside, inside): (&[bool], &[bool]),
+        (cut_of, beside_of): (&[bool], &[bool]),
+        reads: &[Option<u32>],
+        var_of: &FxHashMap<AtomId, AtomId>,
+        var_of_context: &[AtomId],
+    ) -> Vec<GroundRule> {
+        let contexts = &self.decisions.contexts;
+        let decision = &self.decision;
         let mut cube: Vec<GLit> = Vec::new();
-        let mut rules: Vec<GroundRule> = Vec::with_capacity(gp.rules.len());
-        for (ri, r) in gp.rules.iter().enumerate() {
+        let mut rules: Vec<GroundRule> = Vec::with_capacity(self.gp.rules.len());
+        for (ri, r) in self.gp.rules.iter().enumerate() {
             let mut body = r.body.clone();
             if let Some(c) = reads[ri] {
                 cube.clear();
@@ -232,40 +271,16 @@ impl<'a> Tree<'a> {
                 pairs: r.pairs,
             });
         }
-        let (above, cut_node) = self.place_names(
-            &outside,
-            &rules,
-            out.atoms.len(),
-            &named_contexts,
-            &var_of_context,
-            &cut,
-            &cut_var,
-        );
-        out.rules.extend(rules);
-        out.encoding.segments = segments(out.encoding.indicators.len(), &cut_node, beside.len());
-        let note = format!(
-            "naming: {} contexts of the decisions, {} atoms of their tree, {} beside it",
-            named_contexts.len(),
-            cut.len(),
-            beside.len()
-        );
-        Some(Named {
-            gp: out,
-            above,
-            note,
-        })
+        rules
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn place_names(
         &self,
         outside: &[bool],
         rules: &[GroundRule],
         num_atoms: usize,
-        named_contexts: &[u32],
-        var_of_context: &[AtomId],
-        cut: &[AtomId],
-        cut_var: &[AtomId],
+        (named_contexts, var_of_context): (&[u32], &[AtomId]),
+        (cut, cut_var): (&[AtomId], &[AtomId]),
     ) -> (Vec<Vec<AtomId>>, Vec<usize>) {
         let nodes = &self.decisions.nodes;
         let contexts = &self.decisions.contexts;

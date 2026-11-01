@@ -849,10 +849,6 @@ impl Compilation {
         // A query answered through a template is a leaf, a component of its
         // own that nothing reads, and is left out.
         let templates = templates(gp, &by_head);
-        let mut answers: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
-        for (&x, t) in &templates {
-            answers.entry(t.atom).or_default().push(x);
-        }
         // A link tied to another reader's copies is not built either.
         let ties = ties(gp, &by_head, &var_of, backend, projection);
         let sccs: Vec<Vec<AtomId>> =
@@ -867,15 +863,7 @@ impl Compilation {
             .max()
             .unwrap_or(0);
         let encoded = Encoded::new(gp, &var_of, num_vars);
-        let queried: Option<(FxHashSet<AtomId>, Probabilities)> =
-            gp.evidence.is_empty().then(|| {
-                let atoms = gp.queries.iter().filter_map(|&(_, id, _)| id).collect();
-                (
-                    atoms,
-                    Probabilities::from_program(gp, &var_of, backend.vtree().num_vars()),
-                )
-            });
-        let dying = Dying::new(gp, &by_head, &sccs, &comp_of, queried, answers);
+        let dying = Self::init_dying(gp, &by_head, &sccs, &comp_of, &var_of, backend, &templates);
         // Room for an entry for each atom the compile gives a formula.
         let stored = sccs.iter().map(Vec::len).sum();
         let stats = CompileStats {
@@ -927,6 +915,30 @@ impl Compilation {
             counts: std::cell::RefCell::new([0usize; 5]),
             negations: std::cell::RefCell::new(Negations::default()),
         })
+    }
+
+    fn init_dying(
+        gp: &GroundProgram,
+        by_head: &RulesByHead,
+        sccs: &[Vec<AtomId>],
+        comp_of: &[u32],
+        var_of: &[Option<VarId>],
+        backend: &TddBackend,
+        templates: &FxHashMap<AtomId, Template>,
+    ) -> Dying {
+        let mut answers: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
+        for (&x, t) in templates {
+            answers.entry(t.atom).or_default().push(x);
+        }
+        let queried: Option<(FxHashSet<AtomId>, Probabilities)> =
+            gp.evidence.is_empty().then(|| {
+                let atoms = gp.queries.iter().filter_map(|&(_, id, _)| id).collect();
+                (
+                    atoms,
+                    Probabilities::from_program(gp, var_of, backend.vtree().num_vars()),
+                )
+            });
+        Dying::new(gp, by_head, sccs, comp_of, queried, answers)
     }
 
     /// Search for a smaller global vtree between the steps of the compile:
@@ -1032,76 +1044,7 @@ impl Compilation {
         self.marking = self
             .horizon
             .is_some_and(|h| work.saturating_sub(h.origin) < h.mark);
-        let result = (|| {
-            // The component the guard last put back, and how often.
-            let mut guarded = (usize::MAX, 0);
-            // The guard's factor: [`GUARD`], raised for the rest of the run
-            // past a formula it refused that the search left larger than the
-            // live formulas together.
-            let mut factor = GUARD;
-            while self.next < self.sccs.len() {
-                backend.kept();
-                backend.pause()?;
-                if let Some(p) = self.projected.as_mut()
-                    && p.started == self.next
-                    && let Some(scope) = p.start(
-                        gp,
-                        &self.by_head,
-                        &self.sccs[self.next],
-                        &self.var_of,
-                        &self.comp_of,
-                        backend,
-                    )?
-                {
-                    self.scopes[self.next] = scope;
-                }
-                let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
-                // The live pairs the guard's watch is a multiple of, and its
-                // floor.
-                let base = match &self.dynamic {
-                    Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
-                        self.fixpoint.live.max(dynamic.first_pairs),
-                        GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
-                    )),
-                    _ => None,
-                };
-                let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
-                // A round the guard refuses has taken no formula, but has
-                // counted reads down.
-                let reads = guard.map(|_| self.dying.reads_after(self.next));
-                let finished = match self.round(gp, backend, watch, guard) {
-                    Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
-                        guarded = (self.next, tries + 1);
-                        if self.fixpoint.worklist.is_none() {
-                            self.reset(self.next);
-                        }
-                        if let Some(reads) = reads {
-                            self.dying.put_back(self.next, &reads);
-                        }
-                        let refused = self.refused.get_mut().take();
-                        let kept = self.memo.get_mut().take_refused();
-                        let left = self.search(backend, refused.or(kept))?;
-                        if let (Some(left), Some((base, _))) = (left, base)
-                            && left > self.fixpoint.live
-                        {
-                            factor = factor.max(pairs.div_ceil(base.max(1)));
-                        }
-                        continue;
-                    }
-                    r => r?,
-                };
-                if finished {
-                    self.next += 1;
-                    self.drop_dying(backend, self.next - 1)?;
-                    self.narrow(backend, self.next - 1)?;
-                }
-                self.search(backend, None)?;
-                if finished {
-                    self.look_ahead(backend)?;
-                }
-            }
-            Ok(())
-        })();
+        let result = self.run_components(gp, backend, watch);
         // A cyclic component keeps its rounds so far; the others start
         // over.
         if result.is_err() && self.next < self.sccs.len() && self.fixpoint.worklist.is_none() {
@@ -1124,6 +1067,82 @@ impl Compilation {
         self.stats.negations = *self.negations.borrow();
         self.stats.clause_memo = self.memo.borrow().stats;
         result
+    }
+
+    fn run_components(
+        &mut self,
+        gp: &GroundProgram,
+        backend: &TddBackend,
+        watch: Option<usize>,
+    ) -> Result<(), CompileError> {
+        // The component the guard last put back, and how often.
+        let mut guarded = (usize::MAX, 0);
+        // The guard's factor: [`GUARD`], raised for the rest of the run
+        // past a formula it refused that the search left larger than the
+        // live formulas together.
+        let mut factor = GUARD;
+        while self.next < self.sccs.len() {
+            backend.kept();
+            backend.pause()?;
+            if let Some(p) = self.projected.as_mut()
+                && p.started == self.next
+                && let Some(scope) = p.start(
+                    gp,
+                    &self.by_head,
+                    &self.sccs[self.next],
+                    &self.var_of,
+                    &self.comp_of,
+                    backend,
+                )?
+            {
+                self.scopes[self.next] = scope;
+            }
+            let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
+            // The live pairs the guard's watch is a multiple of, and its
+            // floor.
+            let base = match &self.dynamic {
+                Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
+                    self.fixpoint.live.max(dynamic.first_pairs),
+                    GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
+                )),
+                _ => None,
+            };
+            let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
+            // A round the guard refuses has taken no formula, but has
+            // counted reads down.
+            let reads = guard.map(|_| self.dying.reads_after(self.next));
+            let finished = match self.round(gp, backend, watch, guard) {
+                Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
+                    guarded = (self.next, tries + 1);
+                    if self.fixpoint.worklist.is_none() {
+                        self.reset(self.next);
+                    }
+                    if let Some(reads) = reads {
+                        self.dying.put_back(self.next, &reads);
+                    }
+                    let refused = self.refused.get_mut().take();
+                    let kept = self.memo.get_mut().take_refused();
+                    let left = self.search(backend, refused.or(kept))?;
+                    if let (Some(left), Some((base, _))) = (left, base)
+                        && left > self.fixpoint.live
+                    {
+                        factor = factor.max(pairs.div_ceil(base.max(1)));
+                    }
+                    continue;
+                }
+                r => r?,
+            };
+            if finished {
+                self.next += 1;
+                self.drop_dying(backend, self.next - 1)?;
+                self.narrow(backend, self.next - 1)?;
+            }
+            self.search(backend, None)?;
+            if finished {
+                self.look_ahead(backend)?;
+            }
+        }
+        Ok(())
     }
 
     /// Stops the run, between components, where its [`Horizon`] projects

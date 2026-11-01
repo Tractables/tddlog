@@ -211,12 +211,13 @@ fn partition_offset(logs: &[f64]) -> f64 {
 /// table in that order; `None` for another network. A function that is a
 /// table of two of its variables, an identity say, takes the child a
 /// matching of functions to variables gives it.
-#[allow(clippy::type_complexity)]
+type ConditionalTable = (Vec<usize>, Vec<f64>);
+
 fn conditional_tables(
     sizes: &[usize],
     scopes: &[Vec<usize>],
     tables: &[Vec<f64>],
-) -> Option<Vec<(Vec<usize>, Vec<f64>)>> {
+) -> Option<Vec<ConditionalTable>> {
     let n = sizes.len();
     if scopes.len() != n {
         return None;
@@ -252,8 +253,54 @@ fn conditional_tables(
         }
         candidates.push(found);
     }
-    // Kuhn's augmenting paths, functions to the variables they may be the
-    // table of; almost every function has one candidate.
+    let owner = match_functions_to_vars(n, scopes, &candidates)?;
+    let mut out = Vec::with_capacity(n);
+    for (v, f) in owner.iter().enumerate() {
+        let f = f.expect("a perfect matching");
+        let (scope, table) = (&scopes[f], &tables[f]);
+        let at = scope
+            .iter()
+            .position(|&u| u == v)
+            .expect("v is in its scope");
+        let order: Vec<usize> = (0..scope.len()).filter(|&i| i != at).chain([at]).collect();
+        let strides = strides_of(scope);
+        let mut reordered = Vec::with_capacity(table.len());
+        let mut key = vec![0usize; order.len()];
+        for _ in 0..table.len() {
+            reordered.push(
+                table[key
+                    .iter()
+                    .zip(&order)
+                    .map(|(a, &i)| a * strides[i])
+                    .sum::<usize>()],
+            );
+            for j in (0..key.len()).rev() {
+                key[j] += 1;
+                if key[j] < sizes[scope[order[j]]] {
+                    break;
+                }
+                key[j] = 0;
+            }
+        }
+        out.push((
+            order.iter().map(|&i| scope[i]).collect::<Vec<_>>(),
+            reordered,
+        ));
+    }
+    // The child relation is acyclic: a depth-first walk to the parents
+    // meets no variable on its own path.
+    super::parent_postorder(n, |v| &out[v].0[..out[v].0.len() - 1])
+        .1
+        .then_some(out)
+}
+
+/// Kuhn's augmenting paths, functions to the variables they may be the
+/// table of; almost every function has one candidate.
+fn match_functions_to_vars(
+    n: usize,
+    scopes: &[Vec<usize>],
+    candidates: &[Vec<usize>],
+) -> Option<Vec<Option<usize>>> {
     let mut owner: Vec<Option<usize>> = vec![None; n];
     for j in 0..n {
         let mut seen = vec![false; n];
@@ -298,44 +345,7 @@ fn conditional_tables(
             return None;
         }
     }
-    let mut out = Vec::with_capacity(n);
-    for (v, f) in owner.iter().enumerate() {
-        let f = f.expect("a perfect matching");
-        let (scope, table) = (&scopes[f], &tables[f]);
-        let at = scope
-            .iter()
-            .position(|&u| u == v)
-            .expect("v is in its scope");
-        let order: Vec<usize> = (0..scope.len()).filter(|&i| i != at).chain([at]).collect();
-        let strides = strides_of(scope);
-        let mut reordered = Vec::with_capacity(table.len());
-        let mut key = vec![0usize; order.len()];
-        for _ in 0..table.len() {
-            reordered.push(
-                table[key
-                    .iter()
-                    .zip(&order)
-                    .map(|(a, &i)| a * strides[i])
-                    .sum::<usize>()],
-            );
-            for j in (0..key.len()).rev() {
-                key[j] += 1;
-                if key[j] < sizes[scope[order[j]]] {
-                    break;
-                }
-                key[j] = 0;
-            }
-        }
-        out.push((
-            order.iter().map(|&i| scope[i]).collect::<Vec<_>>(),
-            reordered,
-        ));
-    }
-    // The child relation is acyclic: a depth-first walk to the parents
-    // meets no variable on its own path.
-    super::parent_postorder(n, |v| &out[v].0[..out[v].0.len() - 1])
-        .1
-        .then_some(out)
+    Some(owner)
 }
 
 /// The colour symmetry of a Markov network, broken. In a network whose

@@ -109,14 +109,75 @@ impl Cones {
         comp_of: &[u32],
         limit: usize,
     ) -> Option<Vec<VarId>> {
+        let (whole, over) = self.scan_scc_cone(gp, by_head, (ci, scc), var_of, comp_of);
         let Cones {
             blocks,
             acc,
             touched,
             held,
-            read_into,
+            ..
         } = self;
         let blocks = *blocks;
+        // A component whose rules mention no fact at all has a constant
+        // formula. Its scope would then be empty, which is not a vtree, and
+        // giving it a larger one would break the property the embeds rely on:
+        // a cone contains the cone of everything it depends on. Seeding it
+        // with the first variable keeps that property, because every consumer
+        // unions this cone in. A program with no probabilistic fact at all
+        // has no variable to seed with; every cone is then empty and the
+        // caller keeps the global vtree throughout. A cone read whole has
+        // as many variables as there are words, at least one.
+        if !over && blocks > 0 && !whole && touched.is_empty() {
+            acc[0] |= 1;
+            touched.push(0);
+        }
+        if whole {
+            touched.clear();
+            touched.extend(0..blocks);
+        } else {
+            touched.sort_unstable();
+        }
+        let count: usize = touched.iter().map(|&k| acc[k].count_ones() as usize).sum();
+        let cone = (!over && count < limit).then(|| {
+            // The cone's variables, allocated once at their number.
+            let mut vars = Vec::with_capacity(count);
+            for &k in touched.iter() {
+                let mut w = acc[k];
+                while w != 0 {
+                    let bit = w.trailing_zeros() as usize;
+                    vars.push(VarId((k * 64 + bit) as u32 + 1));
+                    w &= w - 1;
+                }
+            }
+            vars
+        });
+        held[ci] = match &cone {
+            None => Held::OverLimit,
+            Some(vars) if vars.len() >= blocks => Held::Dense(acc.clone().into_boxed_slice()),
+            Some(vars) => Held::Sparse(vars.clone()),
+        };
+        for &k in touched.iter() {
+            acc[k] = 0;
+        }
+        touched.clear();
+        cone
+    }
+
+    fn scan_scc_cone(
+        &mut self,
+        gp: &GroundProgram,
+        by_head: &RulesByHead,
+        (ci, scc): (usize, &[AtomId]),
+        var_of: &[Option<VarId>],
+        comp_of: &[u32],
+    ) -> (bool, bool) {
+        let Cones {
+            acc,
+            touched,
+            held,
+            read_into,
+            ..
+        } = self;
         let set = |acc: &mut [u64], touched: &mut Vec<usize>, v: usize| {
             let word = &mut acc[v / 64];
             if *word == 0 {
@@ -170,48 +231,7 @@ impl Cones {
                 }
             }
         }
-        // A component whose rules mention no fact at all has a constant
-        // formula. Its scope would then be empty, which is not a vtree, and
-        // giving it a larger one would break the property the embeds rely on:
-        // a cone contains the cone of everything it depends on. Seeding it
-        // with the first variable keeps that property, because every consumer
-        // unions this cone in. A program with no probabilistic fact at all
-        // has no variable to seed with; every cone is then empty and the
-        // caller keeps the global vtree throughout. A cone read whole has
-        // as many variables as there are words, at least one.
-        if !over && blocks > 0 && !whole && touched.is_empty() {
-            set(acc, touched, 0);
-        }
-        if whole {
-            touched.clear();
-            touched.extend(0..blocks);
-        } else {
-            touched.sort_unstable();
-        }
-        let count: usize = touched.iter().map(|&k| acc[k].count_ones() as usize).sum();
-        let cone = (!over && count < limit).then(|| {
-            // The cone's variables, allocated once at their number.
-            let mut vars = Vec::with_capacity(count);
-            for &k in touched.iter() {
-                let mut w = acc[k];
-                while w != 0 {
-                    let bit = w.trailing_zeros() as usize;
-                    vars.push(VarId((k * 64 + bit) as u32 + 1));
-                    w &= w - 1;
-                }
-            }
-            vars
-        });
-        held[ci] = match &cone {
-            None => Held::OverLimit,
-            Some(vars) if vars.len() >= blocks => Held::Dense(acc.clone().into_boxed_slice()),
-            Some(vars) => Held::Sparse(vars.clone()),
-        };
-        for &k in touched.iter() {
-            acc[k] = 0;
-        }
-        touched.clear();
-        cone
+        (whole, over)
     }
 
     /// Hold `vars`, ascending, as the cone of component `ci` in place of the

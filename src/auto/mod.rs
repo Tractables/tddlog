@@ -974,7 +974,19 @@ fn attempt(
     }
     let seconds = started.elapsed().as_secs_f64();
     ledger.trial_seconds += seconds;
-    let outcome = match &result {
+    record_attempt_note(t, bounds, work, seconds, &result, ledger);
+    result
+}
+
+fn record_attempt_note(
+    t: &Trial,
+    bounds: Option<Bounds>,
+    work: u64,
+    seconds: f64,
+    result: &Result<Answers, tp::CompileError>,
+    ledger: &mut Ledger,
+) {
+    let outcome = match result {
         Ok(_) => "finished",
         Err(tp::CompileError::QueryOversize { .. } | tp::CompileError::Oversize { .. }) => "size",
         Err(tp::CompileError::Projected { .. }) => "projected",
@@ -1009,9 +1021,12 @@ fn attempt(
             None => format!(", steps {done}/{all}"),
         });
     let watch = bounds.map_or("none".to_string(), |b| b.pairs.to_string());
-    ledger.notes.push(format!("trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
-        t.kind, t.kind.indicators_name(), progress.unwrap_or_default()));
-    result
+    ledger.notes.push(format!(
+        "trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
+        t.kind,
+        t.kind.indicators_name(),
+        progress.unwrap_or_default()
+    ));
 }
 
 /// What a run of trials built and no longer reads once it has its

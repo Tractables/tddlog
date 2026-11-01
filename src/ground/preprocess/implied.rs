@@ -132,13 +132,6 @@ pub(in crate::ground) fn implied_clauses(
     for i in (0..clauses.len()).filter(|&i| clauses[i].len() < SHORTEST) {
         settle(i, &mut settled, &mut joins, &mut stats.ticks);
     }
-    // Whether clauses that stay join every pair of the variables of `c`.
-    let joined = |joins: &FxHashSet<u64>, c: &[Lit]| {
-        c.len() <= PAIRED
-            && c.iter()
-                .enumerate()
-                .all(|(k, &a)| c[k + 1..].iter().all(|&b| joins.contains(&key(a, b))))
-    };
     let mut in_window = vec![u32::MAX; clauses.len()];
     let mut assumptions: Vec<Lit> = Vec::new();
     let mut kept: Vec<Lit> = Vec::new();
@@ -153,69 +146,16 @@ pub(in crate::ground) fn implied_clauses(
                 stats.untried = (left.len() - w * WINDOW) as u64;
                 break;
             }
-            for (k, &i) in window.iter().enumerate() {
-                in_window[i] = k as u32;
-            }
-            let guard = |k: usize| 2 * (n + k) as Lit;
-            let mut s = Solver::new(n + window.len());
-            s.keep_assumptions = true;
-            let mut ok = true;
-            for (i, c) in clauses.iter().enumerate() {
-                if !keep[i] {
-                    continue;
-                }
-                stats.ticks += c.len() as u64;
-                ok &= if in_window[i] == u32::MAX {
-                    s.add_clause(c)
-                } else {
-                    let mut g = c.clone();
-                    g.push(guard(in_window[i] as usize) ^ 1);
-                    s.add_clause(&g)
-                };
-            }
-            if !ok {
+            if !run_window(
+                (n, clauses, window),
+                (search, budget, left.len() - w * WINDOW),
+                (&mut keep, &mut settled, &mut joins, &mut in_window),
+                (&mut assumptions, &mut kept),
+                &mut stats,
+            ) {
                 // No model: every clause is implied, and the compile finds
                 // the empty set of models as it is.
                 return (vec![true; clauses.len()], ImpliedStats::default());
-            }
-            s.tick_limit = budget.saturating_sub(stats.ticks);
-            kept.clear();
-            for (k, &i) in window.iter().enumerate() {
-                if s.ticks >= s.tick_limit {
-                    stats.untried = (left.len() - w * WINDOW - k) as u64;
-                    break;
-                }
-                if joined(&joins, &clauses[i]) {
-                    stats.joined += 1;
-                    settle(i, &mut settled, &mut joins, &mut stats.ticks);
-                    kept.push(guard(k));
-                    continue;
-                }
-                assumptions.clear();
-                assumptions.extend((k + 1..window.len()).rev().map(guard));
-                assumptions.extend_from_slice(&kept);
-                assumptions.extend(clauses[i].iter().map(|&l| l ^ 1));
-                let implied = if search {
-                    stats.searched += 1;
-                    s.solve(&assumptions, CONFLICTS_PER_CALL) == Outcome::Unsat
-                } else {
-                    stats.tried += 1;
-                    s.propagation_refutes(&assumptions)
-                };
-                if implied {
-                    keep[i] = false;
-                    stats.implied += 1;
-                } else {
-                    kept.push(guard(k));
-                    if search {
-                        settle(i, &mut settled, &mut joins, &mut stats.ticks);
-                    }
-                }
-            }
-            stats.conflicts += s.conflicts;
-            stats.ticks += s.ticks;
-            for &i in window {
-                in_window[i] = u32::MAX;
             }
             if stats.untried > 0 {
                 break;
@@ -223,6 +163,106 @@ pub(in crate::ground) fn implied_clauses(
         }
     }
     (keep, stats)
+}
+
+fn run_window(
+    (n, clauses, window): (usize, &[Vec<Lit>], &[usize]),
+    (search, budget, left_from_w): (bool, u64, usize),
+    (keep, settled, joins, in_window): (
+        &mut [bool],
+        &mut Vec<bool>,
+        &mut FxHashSet<u64>,
+        &mut [u32],
+    ),
+    (assumptions, kept): (&mut Vec<Lit>, &mut Vec<Lit>),
+    stats: &mut ImpliedStats,
+) -> bool {
+    let key = |a: Lit, b: Lit| {
+        let (a, b) = ((a >> 1) as u64, (b >> 1) as u64);
+        a.min(b) << 32 | a.max(b)
+    };
+    let settle =
+        |i: usize, settled: &mut Vec<bool>, joins: &mut FxHashSet<u64>, ticks: &mut u64| {
+            settled[i] = true;
+            let c = &clauses[i];
+            if c.len() <= PAIRED {
+                *ticks += (c.len() * (c.len() - 1) / 2) as u64;
+                for (k, &a) in c.iter().enumerate() {
+                    for &b in &c[k + 1..] {
+                        joins.insert(key(a, b));
+                    }
+                }
+            }
+        };
+    let joined = |joins: &FxHashSet<u64>, c: &[Lit]| {
+        c.len() <= PAIRED
+            && c.iter()
+                .enumerate()
+                .all(|(k, &a)| c[k + 1..].iter().all(|&b| joins.contains(&key(a, b))))
+    };
+    for (k, &i) in window.iter().enumerate() {
+        in_window[i] = k as u32;
+    }
+    let guard = |k: usize| 2 * (n + k) as Lit;
+    let mut s = Solver::new(n + window.len());
+    s.keep_assumptions = true;
+    let mut ok = true;
+    for (i, c) in clauses.iter().enumerate() {
+        if !keep[i] {
+            continue;
+        }
+        stats.ticks += c.len() as u64;
+        ok &= if in_window[i] == u32::MAX {
+            s.add_clause(c)
+        } else {
+            let mut g = c.clone();
+            g.push(guard(in_window[i] as usize) ^ 1);
+            s.add_clause(&g)
+        };
+    }
+    if !ok {
+        return false;
+    }
+    s.tick_limit = budget.saturating_sub(stats.ticks);
+    kept.clear();
+    for (k, &i) in window.iter().enumerate() {
+        if s.ticks >= s.tick_limit {
+            stats.untried = (left_from_w - k) as u64;
+            break;
+        }
+        if joined(joins, &clauses[i]) {
+            stats.joined += 1;
+            settle(i, settled, joins, &mut stats.ticks);
+            kept.push(guard(k));
+            continue;
+        }
+        assumptions.clear();
+        assumptions.extend((k + 1..window.len()).rev().map(guard));
+        assumptions.extend_from_slice(kept);
+        assumptions.extend(clauses[i].iter().map(|&l| l ^ 1));
+        let implied = if search {
+            stats.searched += 1;
+            s.solve(assumptions, CONFLICTS_PER_CALL) == Outcome::Unsat
+        } else {
+            stats.tried += 1;
+            s.propagation_refutes(assumptions)
+        };
+        if implied {
+            keep[i] = false;
+            stats.implied += 1;
+        } else {
+            kept.push(guard(k));
+            if search {
+                settle(i, settled, joins, &mut stats.ticks);
+            }
+        }
+    }
+    stats.conflicts += s.conflicts;
+    stats.ticks += s.ticks;
+    for &i in window {
+        in_window[i] = u32::MAX;
+    }
+    true
 }
 
 #[cfg(test)]

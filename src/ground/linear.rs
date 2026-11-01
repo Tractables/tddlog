@@ -185,25 +185,7 @@ fn plan<'a>(
     }
     // Pass-through positions: the same variable in the head and the call, in
     // no other argument of either and nowhere else in the rule.
-    let pass: Vec<bool> = (0..sig.1)
-        .map(|i| {
-            recursive.iter().all(
-                |&(head, call, clause)| match (&head.args[i], &call.args[i]) {
-                    (Term::Var(v), Term::Var(w)) if v == w => {
-                        let t = &head.args[i];
-                        head.args.iter().filter(|a| *a == t).count() == 1
-                            && call.args.iter().filter(|a| *a == t).count() == 1
-                            && clause
-                                .body
-                                .iter()
-                                .filter(|l| !matches!(l, Literal::Pos(a) if std::ptr::eq(a, call)))
-                                .all(|l| !literal_vars(l).contains(v))
-                    }
-                    _ => false,
-                },
-            )
-        })
-        .collect();
+    let pass = pass_positions(sig.1, &recursive);
     if pass.iter().all(|p| *p) {
         return None;
     }
@@ -256,6 +238,28 @@ fn plan<'a>(
         pass,
         sources,
     })
+}
+
+fn pass_positions(arity: usize, recursive: &[(&Atom, &Atom, &Clause)]) -> Vec<bool> {
+    (0..arity)
+        .map(|i| {
+            recursive.iter().all(
+                |&(head, call, clause)| match (&head.args[i], &call.args[i]) {
+                    (Term::Var(v), Term::Var(w)) if v == w => {
+                        let t = &head.args[i];
+                        head.args.iter().filter(|a| *a == t).count() == 1
+                            && call.args.iter().filter(|a| *a == t).count() == 1
+                            && clause
+                                .body
+                                .iter()
+                                .filter(|l| !matches!(l, Literal::Pos(a) if std::ptr::eq(a, call)))
+                                .all(|l| !literal_vars(l).contains(v))
+                    }
+                    _ => false,
+                },
+            )
+        })
+        .collect()
 }
 
 /// Whether `sig` is a recursive component of its own, with no recursive

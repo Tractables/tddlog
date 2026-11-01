@@ -135,29 +135,7 @@ fn seed_sets(
     (key_ids, by_key, unlisted): (&mut Interned<usize>, &mut Chains<usize>, &mut Vec<bool>),
     (body_ids, scratch): (&mut Bodies, &mut AtomScratch),
 ) -> (usize, Option<Rows>, Option<AtomId>, bool) {
-    // The sets of the atoms it reads that came before it; an atom that
-    // reads none is compared with the atoms of its own unit only, the
-    // values of a table without parents.
-    let stamp = a as usize + 1;
-    scratch.read_sets.clear();
-    for l in by_head[a as usize]
-        .iter()
-        .flat_map(|&ri| gp.rules[ri].body.iter())
-    {
-        let i = set_of[l.atom() as usize];
-        if i != usize::MAX && scratch.read_mark[i] != stamp {
-            scratch.read_mark[i] = stamp;
-            scratch.read_sets.push(i);
-        }
-    }
-    scratch.read_sets.sort_unstable();
-    scratch.key.clear();
-    scratch.key.push(class);
-    if scratch.read_sets.is_empty() {
-        scratch.key.push(usize::MAX - base_of[a as usize]);
-    } else {
-        scratch.key.extend_from_slice(&scratch.read_sets);
-    }
+    build_atom_key((gp, by_head, base_of), (a, class), set_of, scratch);
     let rows_a = rows_of(
         gp,
         &by_head[a as usize],
@@ -227,6 +205,37 @@ fn seed_sets(
             .filter(|&b| body_ids.rules_out_some(b, key_id)),
     );
     (key_id, rows_a, required, alone)
+}
+
+fn build_atom_key(
+    (gp, by_head, base_of): (&GroundProgram, &RulesByHead, &[usize]),
+    (a, class): (AtomId, usize),
+    set_of: &[usize],
+    scratch: &mut AtomScratch,
+) {
+    // The sets of the atoms it reads that came before it; an atom that
+    // reads none is compared with the atoms of its own unit only, the
+    // values of a table without parents.
+    let stamp = a as usize + 1;
+    scratch.read_sets.clear();
+    for l in by_head[a as usize]
+        .iter()
+        .flat_map(|&ri| gp.rules[ri].body.iter())
+    {
+        let i = set_of[l.atom() as usize];
+        if i != usize::MAX && scratch.read_mark[i] != stamp {
+            scratch.read_mark[i] = stamp;
+            scratch.read_sets.push(i);
+        }
+    }
+    scratch.read_sets.sort_unstable();
+    scratch.key.clear();
+    scratch.key.push(class);
+    if scratch.read_sets.is_empty() {
+        scratch.key.push(usize::MAX - base_of[a as usize]);
+    } else {
+        scratch.key.extend_from_slice(&scratch.read_sets);
+    }
 }
 
 /// Scans `a`'s rules to find the atoms every rule reads positively
