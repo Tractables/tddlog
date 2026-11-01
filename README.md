@@ -120,7 +120,7 @@ inference:
 | Bayesian networks in BIF, Hugin, GeNIe or UAI, with evidence in Ace's `.inst` or UAI's `.evid` | tddlog, by the file's extension | one annotated disjunction per row of each table |
 | Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
 | Dice programs | tddlog, by the extension `.dice` | each integer as its bits, each operation as rules over them, a loop as recursion over a step index |
-| Alea.jl programs (`model()` and `QUERY`) | [`scripts/alea2problog.jl`](scripts/alea2problog.jl), in Julia with Alea.jl | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence |
+| Alea.jl programs (`model()` and `QUERY`) | [`scripts/alea2problog.jl`](scripts/alea2problog.jl), in Julia with Alea.jl | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence; Alea.jl+tddlog in the results |
 | Roulette programs (`#lang roulette/example/disrupt`) | [`scripts/roulette2problog.rkt`](scripts/roulette2problog.rkt), in Racket with Roulette; with `--tddlog`, the program runs with tddlog answering its queries | the Boolean circuit Roulette builds: each flip a probabilistic fact, each gate a rule, each observation evidence |
 | LPADs written for cplint and PITA | tddlog, where the file holds `:- begin_lpad.` | the same clauses in ProbLog's syntax, with the database clauses they call and the file's example queries; under PITA's depth bound, each predicate with the depth as an argument; PRISM's switches as annotated disjunctions of `msw/2` |
 
@@ -224,6 +224,13 @@ instance, time and program, and a page for each system.
   written in. A system is given every instance it can take, through a
   translation where it cannot read the original (an LPAD for ProbLog, a
   Dice program for Roulette).
+- On the programs Alea.jl compiles to Boolean circuits (the bit-blasted
+  programs, Cao et al.'s integer programs and Pluck's sequence models),
+  tddlog runs as **Alea.jl+tddlog**: Alea.jl runs the program up to the
+  circuit it builds, and tddlog answers from the circuit, so that against
+  Alea.jl only the inference differs. Its time is Alea.jl's run up to
+  the circuit, timed warm as Alea.jl's own, and tddlog's on the circuit;
+  every other system given the circuit pays the same time for it.
 - Runs are single-threaded, under each suite's time limit (300 to 1200
   seconds). A suite's systems ran side by side on the same machines, and
   tddlog's current version in the same lanes, with the same memory per
@@ -362,49 +369,52 @@ the rus networks, weighted CSPs, and pedigree and diagnosis networks.
 
 <p align="center">
   <img src="docs/images/results-functional-programs.svg"
-       alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest native system's">
+       alt="Probabilistic functional programs answered within each time limit, and the time of tddlog or Alea.jl+tddlog against the fastest native system's">
 </p>
 
-tddlog answers **279 of 315** programs over discrete values with
+tddlog and Alea.jl+tddlog answer **279 of 315** programs over discrete
+values with
 conditionals and loops, of 17 families: the Caesar cipher, diamond and
 ladder networks, Geni's router grids with failing links or routers and
 its weather factory, hidden Markov models and Pluck's sequence models, a
 Markov chain, a lossy network, contract signing, a perturbed-memory
 interpreter, Cao et al.'s integer programs, the coupon collector, 3-SAT,
 the bounded retransmission protocol and the Dice paper's small
-programs.
+programs. On Cao et al.'s integer programs and Pluck's sequence models,
+Alea.jl builds the Boolean circuit that Alea.jl+tddlog answers.
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
+| System | Answers | Its total time | tddlog or Alea.jl+tddlog's total time | tddlog or Alea.jl+tddlog faster |
 |---|--:|--:|--:|--:|
 | Alea.jl | 209 | 25 h | 1.2 h | 12× |
 | Roulette | 171 | 37 h | 1.2 h | 18× |
 | Dice | 171 | 38 h | 1.2 h | 36× |
-| Pluck | 123 | 53 h | 1.2 h | 39× |
+| Pluck | 123 | 53 h | 1.2 h | 40× |
 | Geni | 91 | 63 h | 1.2 h | 70× |
-| 4 others: Genfer, noDice, SPPL, Psi | 8 to 83 | over 65 h each | 1.2 h | at least 408× |
+| 4 others: Genfer, noDice, SPPL, Psi | 8 to 83 | over 65 h each | 1.2 h | at least 405× |
 
 ### Bit-blasted programs
 
 <p align="center">
   <img src="docs/images/results-bit-blasted.svg"
-       alt="Bit-blasted programs answered within each time limit, and tddlog's time against the fastest native system's">
+       alt="Bit-blasted programs answered within each time limit, and Alea.jl+tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **224 of 257** programs over integers written in
+Alea.jl+tddlog answers **223 of 257** programs over integers written in
 Alea.jl, which compiles each to a Boolean circuit. Alea.jl runs its own
-program; every other system is given the circuit.
+program, Alea.jl+tddlog runs it up to the circuit and hands the circuit
+to tddlog, and every other system is given the circuit.
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
+| System | Answers | Its total time | Alea.jl+tddlog's total time | Alea.jl+tddlog faster |
 |---|--:|--:|--:|--:|
-| Alea.jl | 139 | 32 h | 3.7 h | 6.6× |
-| Roulette | 98 | 43 h | 2.1 h | 20× |
-| Pluck | 54 | 58 h | 2.1 h | 31× |
-| Dice | 19 | 69 h | 2.1 h | too few in common |
-| Genfer | 12 | 71 h | 2.1 h | too few in common |
-| 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 72 h each | 2.1 h to 2.7 h | too few in common |
+| Alea.jl | 139 | 32 h | 3.7 h | 6.4× |
+| Roulette | 98 | 43 h | 2.0 h | 18× |
+| Pluck | 54 | 57 h | 2.0 h | 30× |
+| Dice | 19 | 69 h | 2.0 h | too few in common |
+| Genfer | 12 | 70 h | 2.0 h | too few in common |
+| 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 72 h each | 2.0 h to 2.7 h | too few in common |
 
-- Where others win: Alea.jl on 59 circuits, five of which tddlog does not
-  answer, and Roulette on 31; Genfer on the population models, which it
+- Where others win: Alea.jl on 65 circuits, five of which Alea.jl+tddlog
+  does not answer, and Roulette on 31; Genfer on the population models, which it
   answers in milliseconds; Psi on two linear regressions it solves
   symbolically.
 
@@ -412,20 +422,21 @@ program; every other system is given the circuit.
 
 <p align="center">
   <img src="docs/images/results-all-programs.svg"
-       alt="All programs answered within each time limit, and tddlog's time against the fastest other system's">
+       alt="All programs answered within each time limit, and the time of tddlog or Alea.jl+tddlog against the fastest other system's">
 </p>
 
-tddlog answers **2005 of 2183**: the six types together, every system
-on every program it is given, natively or through a translation.
+tddlog and Alea.jl+tddlog answer **2004 of 2183**: the six types
+together, every system on every program it is given, natively or through
+a translation.
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
+| System | Answers | Its total time | tddlog or Alea.jl+tddlog's total time | tddlog or Alea.jl+tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 1070 | 179 h | 7.1 h | 28× |
-| libDAI | 913 | 227 h | 7.4 h | 36× |
+| Ace | 1070 | 178 h | 7.0 h | 27× |
+| libDAI | 913 | 226 h | 7.4 h | 36× |
 | TensorInference.jl | 890 | 243 h | 8.4 h | 30× |
 | pyAgrum | 866 | 233 h | 7.4 h | 35× |
-| Merlin | 862 | 238 h | 7.6 h | 30× |
-| 18 others: ProbLog, PITA, pgmpy, Alea.jl, aspmc, Roulette, Storm, Pluck, Dice, PRISM, PSouffle, ProvSQL, Scallop, noDice, Genfer, Geni, SPPL, Psi | 88 to 761 | over 16 h each | 45 min to 7.6 h | at least 20× |
+| Merlin | 862 | 237 h | 7.5 h | 30× |
+| 18 others: ProbLog, PITA, pgmpy, Alea.jl, aspmc, Roulette, Storm, Pluck, Dice, PRISM, PSouffle, ProvSQL, Scallop, noDice, Genfer, Geni, SPPL, Psi | 88 to 761 | over 16 h each | 45 min to 7.5 h | at least 20× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
