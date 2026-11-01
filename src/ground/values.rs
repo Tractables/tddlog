@@ -923,7 +923,7 @@ impl<'a> Reading<'a> {
                     if depends & all == all {
                         break;
                     }
-                    match self.depends(variable, l.atom(), &mut left) {
+                    match self.depends(variable, l.atom(), all & !depends, &mut left) {
                         Some(d) => depends |= d,
                         None => {
                             ok = false;
@@ -934,7 +934,7 @@ impl<'a> Reading<'a> {
                 if depends & all == all {
                     continue;
                 }
-                match self.depends(variable, r.head, &mut left) {
+                match self.depends(variable, r.head, ALONE, &mut left) {
                     Some(d) if d & ALONE != 0 => read.push(r.head),
                     _ => {
                         ok = false;
@@ -946,53 +946,69 @@ impl<'a> Reading<'a> {
         work.add(budget - left) && ok && tested.len() >= 2
     }
 
-    /// The bits of the current variable that `a` depends on, through
-    /// gates down to the variables' atoms, as a mask, with [`ALONE`] where
-    /// it reads nothing else and no query or observation names it; `None`
-    /// where the steps `left` run out.
-    fn depends(&mut self, variable: &[bool], a: AtomId, left: &mut usize) -> Option<u32> {
+    /// What `a` depends on, through gates down to the variables' atoms:
+    /// the current variable's bits, as a mask, with [`ALONE`] where it
+    /// reads nothing else and no query or observation names it. The walk
+    /// stops once it has found the bits of `want`, or, where `want` is
+    /// [`ALONE`], an atom that is not alone, and gives what it found then;
+    /// `None` where the steps `left` run out.
+    fn depends(
+        &mut self,
+        variable: &[bool],
+        a: AtomId,
+        want: u32,
+        left: &mut usize,
+    ) -> Option<u32> {
         let (gp, by_head) = (self.gp, self.by_head);
         let token = self.token;
         let mut stack = vec![a];
+        let mut reached = 0;
+        let mut alone = true;
         while let Some(&x) = stack.last() {
             let x = x as usize;
-            if self.found[x] == token {
-                stack.pop();
-                continue;
-            }
-            if variable[x] || self.rank[x] == NONE {
+            if self.found[x] != token {
+                if variable[x] || self.rank[x] == NONE {
+                    self.depends[x] = 0;
+                } else if self.entered[x] != token {
+                    // A gate: its body's atoms first, then itself.
+                    self.entered[x] = token;
+                    for &ri in &by_head[x] {
+                        let body = &gp.rules[ri].body;
+                        *left = left.checked_sub(body.len() + 1)?;
+                        stack.extend(
+                            body.iter()
+                                .map(|l| l.atom())
+                                .filter(|&y| self.found[y as usize] != token),
+                        );
+                    }
+                    continue;
+                } else {
+                    let mut mask = 0;
+                    let mut alone = !self.named[x];
+                    for &ri in &by_head[x] {
+                        for l in &gp.rules[ri].body {
+                            let d = self.depends[l.atom() as usize];
+                            mask |= d & !ALONE;
+                            alone &= d & ALONE != 0;
+                        }
+                    }
+                    self.depends[x] = mask | if alone { ALONE } else { 0 };
+                }
                 self.found[x] = token;
-                self.depends[x] = 0;
-                stack.pop();
-                continue;
             }
-            // A gate: its body's atoms first, then itself.
-            let rules = &by_head[x];
-            if self.entered[x] != token {
-                self.entered[x] = token;
-                for &ri in rules {
-                    let body = &gp.rules[ri].body;
-                    *left = left.checked_sub(body.len() + 1)?;
-                    stack.extend(
-                        body.iter()
-                            .map(|l| l.atom())
-                            .filter(|&y| self.found[y as usize] != token),
-                    );
-                }
-                continue;
-            }
-            let mut mask = 0;
-            let mut alone = !self.named[x];
-            for &ri in rules {
-                for l in &gp.rules[ri].body {
-                    let d = self.depends[l.atom() as usize];
-                    mask |= d & !ALONE;
-                    alone &= d & ALONE != 0;
-                }
-            }
-            self.found[x] = token;
-            self.depends[x] = mask | if alone { ALONE } else { 0 };
             stack.pop();
+            let d = self.depends[x];
+            reached |= d & !ALONE;
+            alone &= d & ALONE != 0;
+            if (want == ALONE && !alone) || (want != ALONE && reached & want == want) {
+                // The gates left half read are read again on another walk.
+                for &y in &stack {
+                    if self.found[y as usize] != token {
+                        self.entered[y as usize] = 0;
+                    }
+                }
+                return Some(reached);
+            }
         }
         Some(self.depends[a as usize])
     }
