@@ -662,25 +662,7 @@ impl<'a> Propagation<'a> {
         // `^ 1` negates a node.
         let lit = |v: u32| GLit::new(v / 2, v & 1 == 1);
         let pair = |a: u32, b: u32| (a.min(b), a.max(b));
-        // The clauses of two literals, each with its rule, and per node the
-        // number it is in; the longer ones' nodes end to end, and per clause
-        // its rule and its end.
-        let mut binary: rustc_hash::FxHashMap<(u32, u32), u32> = rustc_hash::FxHashMap::default();
-        let mut degree = vec![0u32; 2 * n];
-        let mut lits: Vec<u32> = Vec::new();
-        let mut long: Vec<(u32, usize)> = Vec::new();
-        for (ri, c) in clauses.iter() {
-            if let &[a, b] = c {
-                if let std::collections::hash_map::Entry::Vacant(e) = binary.entry(pair(a, b)) {
-                    e.insert(ri);
-                    degree[a as usize] += 1;
-                    degree[b as usize] += 1;
-                }
-            } else {
-                lits.extend_from_slice(c);
-                long.push((ri, lits.len()));
-            }
-        }
+        let (binary, degree, lits, long) = partition_binary_and_long_clauses(clauses, n);
         let mut excluded = vec![false; n];
         for &(g, f, _) in equal {
             excluded[g as usize] = true;
@@ -740,7 +722,40 @@ impl<'a> Propagation<'a> {
         }
         refuse_cyclic_gates(gates, &gate_of)
     }
+}
 
+type PartitionedClauses = (
+    rustc_hash::FxHashMap<(u32, u32), u32>,
+    Vec<u32>,
+    Vec<u32>,
+    Vec<(u32, usize)>,
+);
+
+/// The clauses of two literals, each with its rule, and per node the number
+/// it is in; the longer ones' nodes end to end, and per clause its rule and
+/// its end.
+fn partition_binary_and_long_clauses(clauses: &Clauses, n: usize) -> PartitionedClauses {
+    let pair = |a: u32, b: u32| (a.min(b), a.max(b));
+    let mut binary: rustc_hash::FxHashMap<(u32, u32), u32> = rustc_hash::FxHashMap::default();
+    let mut degree = vec![0u32; 2 * n];
+    let mut lits: Vec<u32> = Vec::new();
+    let mut long: Vec<(u32, usize)> = Vec::new();
+    for (ri, c) in clauses.iter() {
+        if let &[a, b] = c {
+            if let std::collections::hash_map::Entry::Vacant(e) = binary.entry(pair(a, b)) {
+                e.insert(ri);
+                degree[a as usize] += 1;
+                degree[b as usize] += 1;
+            }
+        } else {
+            lits.extend_from_slice(c);
+            long.push((ri, lits.len()));
+        }
+    }
+    (binary, degree, lits, long)
+}
+
+impl Propagation<'_> {
     /// Of `gates`, those that nothing reads but the definitions of the
     /// others kept: no query asks the fact, and every live rule that reads
     /// it is a clause of a definition kept. A gate that a query, another

@@ -1036,24 +1036,40 @@ impl<'a> TopDown<'a> {
                     self.undo(mark);
                 }
             }
-            Lit::Collect(c) => {
-                let result = Self::inst(&c.result, base);
-                if !self.listlike(&result) {
-                    let result = self.show_term(&result);
-                    return Err(lists::not_a_list(&c.text, &result));
+            Lit::Collect(c) => self.eval_collect_lit(t, rule, base, i, c, steps)?,
+        }
+        Ok(())
+    }
+
+    fn eval_collect_lit(
+        &mut self,
+        t: u32,
+        rule: &Rule,
+        base: u32,
+        i: usize,
+        c: &Collect,
+        steps: &mut Vec<Step>,
+    ) -> Result<(), GroundError> {
+        let result = Self::inst(&c.result, base);
+        if !self.listlike(&result) {
+            let result = self.show_term(&result);
+            return Err(lists::not_a_list(&c.text, &result));
+        }
+        for &(list, cond) in self.collect(c, base, rule)?.iter() {
+            let mark = self.mark();
+            if self.unify(&Self::inst(&c.result, base), &T::G(list)) {
+                let step = cond.map(|(positive, a)| match positive {
+                    true => Step::Pos(a),
+                    false => Step::Neg(a),
+                });
+                steps.extend(step);
+                let r = self.body(t, rule, base, i + 1, steps);
+                if step.is_some() {
+                    steps.pop();
                 }
-                for &(list, cond) in self.collect(c, base, rule)?.iter() {
-                    let mark = self.mark();
-                    if self.unify(&Self::inst(&c.result, base), &T::G(list)) {
-                        let step = cond.map(|(positive, a)| match positive {
-                            true => Step::Pos(a),
-                            false => Step::Neg(a),
-                        });
-                        next(self, step, steps)?;
-                    }
-                    self.undo(mark);
-                }
+                r?;
             }
+            self.undo(mark);
         }
         Ok(())
     }

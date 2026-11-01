@@ -56,7 +56,7 @@ pub(crate) struct Compiled {
 /// given a formula. Most atoms are facts, which have none: an entry for
 /// each atom would write most of a small program's memory before its
 /// compile begins. A formula is held through an `Arc`, which a read that
-/// does not take it shares ([`Read::Shared`]) for a conjunction to read in
+/// does not take it shares ([`Read::shared`]) for a conjunction to read in
 /// place; no read outlives the atom update that made it.
 #[derive(Default)]
 pub(crate) struct Formulas {
@@ -1532,7 +1532,7 @@ impl Compilation {
         let own = scope_of(k);
         let placed = |f: Read| match own.same(scope) {
             true => Ok(f),
-            false => backend.embed_read(f, own, scope).map(Read::Owned),
+            false => backend.embed_read(f, own, scope).map(Read::from),
         };
         let (x, y) = (placed(x)?, placed(y)?);
         backend.select_at_root(
@@ -1735,7 +1735,7 @@ impl<'a> RoundCtx<'a, '_> {
     /// none where the caller may read the literal again. In a run
     /// without a watch the last read of a formula takes it, and the
     /// cached other polarity: the end of the component would drop them.
-    /// Another read shares them with the store ([`Read::Shared`]), and
+    /// Another read shares them with the store ([`Read::shared`]), and
     /// the conjunction that reads it reads it in place.
     fn derived(&self, l: GLit, covers: u32, formulas: &mut Formulas) -> Result<Read, CompileError> {
         let b = l.atom() as usize;
@@ -1750,8 +1750,8 @@ impl<'a> RoundCtx<'a, '_> {
             };
             match f {
                 Some(f) => Read::taken(f),
-                None if stored_positive => Read::Owned(self.backend.zero(own)),
-                None => Read::Owned(self.backend.one(own)),
+                None if stored_positive => Read::from(self.backend.zero(own)),
+                None => Read::from(self.backend.one(own)),
             }
         };
         if stored_positive == l.is_positive() {
@@ -1780,13 +1780,13 @@ impl<'a> RoundCtx<'a, '_> {
                 };
                 let f = stored(formulas).with_cow(|f| self.negate(source, f))?;
                 if last {
-                    return Ok(Read::Owned(f));
+                    return Ok(Read::from(f));
                 }
                 let f = Arc::new(f);
                 self.lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
-                Ok(Read::Shared(f))
+                Ok(Read::shared(f))
             }
-            Formulation::Primal => Ok(Read::Owned(
+            Formulation::Primal => Ok(Read::from(
                 stored(formulas).with_cow(|f| self.negate(NegationSource::Primal, f))?,
             )),
         }
@@ -1894,21 +1894,7 @@ impl<'a> RoundCtx<'a, '_> {
         } else {
             NegationSource::Term
         };
-        // The primal's update of an atom with a formula starts the
-        // conjunction from `¬λ_a` (below).
-        let not_acc = match self.formulation {
-            Formulation::Primal if incremental => match (
-                self.lambda_cache.borrow_mut().take(a as usize),
-                &formulas[a as usize],
-            ) {
-                (Some(not_acc), _) => Some(Read::taken(not_acc).owned(self.backend)?),
-                (None, Some(acc)) => {
-                    Some(self.negate(NegationSource::Primal, Cow::Borrowed(&**acc))?)
-                }
-                (None, None) => None,
-            },
-            _ => None,
-        };
+        let not_acc = self.initial_primal_negation(a, formulas, incremental)?;
         let started = not_acc.is_some();
         let watched = |f: Tdd, a: AtomId| self.watched(f, a);
         let checked = |f: Tdd| self.checked(f);
@@ -1921,25 +1907,7 @@ impl<'a> RoundCtx<'a, '_> {
             // that reads it moves onto its own, which contains it: a cone
             // holds the cone of everything it depends on.
             let mut part = |l: GLit, covers: u32, on: &VtreeScope| -> Result<Part, CompileError> {
-                let b = l.atom() as usize;
-                match self.gp.kinds[b] {
-                    AtomKind::Fact(_) => {
-                        let v = self.var_of[b].unwrap();
-                        let lit = if l.is_positive() {
-                            tididi::Literal::pos(v)
-                        } else {
-                            tididi::Literal::neg(v)
-                        };
-                        Ok(Part(
-                            Read::Owned(self.backend.literal(on, lit)?),
-                            on.clone(),
-                        ))
-                    }
-                    AtomKind::Derived => Ok(Part(
-                        self.derived(l, covers, formulas)?,
-                        self.scope_of(l.atom()).clone(),
-                    )),
-                }
+                self.literal_part(l, covers, on, formulas)
             };
             let mut factoring = Factoring {
                 backend: self.backend,
@@ -1968,6 +1936,54 @@ impl<'a> RoundCtx<'a, '_> {
             factoring.negated_bodies(bodies, pairs, self.scope, not_acc)?
         };
         self.combine_negated_bodies(a, nb, started, incremental, formulas)
+    }
+
+    /// The primal's update of an atom with a formula starts the conjunction
+    /// from `¬λ_a`.
+    fn initial_primal_negation(
+        &self,
+        a: AtomId,
+        formulas: &Formulas,
+        incremental: bool,
+    ) -> Result<Option<Tdd>, CompileError> {
+        match self.formulation {
+            Formulation::Primal if incremental => match (
+                self.lambda_cache.borrow_mut().take(a as usize),
+                &formulas[a as usize],
+            ) {
+                (Some(not_acc), _) => Ok(Some(Read::taken(not_acc).owned(self.backend)?)),
+                (None, Some(acc)) => Ok(Some(
+                    self.negate(NegationSource::Primal, Cow::Borrowed(&**acc))?,
+                )),
+                (None, None) => Ok(None),
+            },
+            _ => Ok(None),
+        }
+    }
+
+    fn literal_part(
+        &self,
+        l: GLit,
+        covers: u32,
+        on: &VtreeScope,
+        formulas: &mut Formulas,
+    ) -> Result<Part, CompileError> {
+        let b = l.atom() as usize;
+        match self.gp.kinds[b] {
+            AtomKind::Fact(_) => {
+                let v = self.var_of[b].unwrap();
+                let lit = if l.is_positive() {
+                    tididi::Literal::pos(v)
+                } else {
+                    tididi::Literal::neg(v)
+                };
+                Ok(Part(Read::from(self.backend.literal(on, lit)?), on.clone()))
+            }
+            AtomKind::Derived => Ok(Part(
+                self.derived(l, covers, formulas)?,
+                self.scope_of(l.atom()).clone(),
+            )),
+        }
     }
 
     fn compile_aft(

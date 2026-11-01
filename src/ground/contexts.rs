@@ -148,6 +148,28 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
     read
 }
 
+fn rule_contexts(
+    gp: &GroundProgram,
+    rules: &[usize],
+    member: &impl Fn(usize) -> usize,
+) -> Vec<Vec<GLit>> {
+    rules
+        .iter()
+        .map(|&ri| {
+            let k = member(ri);
+            let mut c: Vec<GLit> = gp.rules[ri]
+                .body
+                .iter()
+                .enumerate()
+                .filter(|&(j, _)| j != k)
+                .map(|(_, &l)| l)
+                .collect();
+            c.sort_unstable();
+            c
+        })
+        .collect()
+}
+
 fn table_readers(gp: &GroundProgram, tables: &Tables, nt: usize) -> (Vec<Vec<usize>>, Vec<bool>) {
     let mut readers: Vec<Vec<usize>> = vec![Vec::new(); nt];
     let mut spoilt = vec![false; nt];

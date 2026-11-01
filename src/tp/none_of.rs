@@ -927,12 +927,17 @@ fn build_on(
             scratch.levels.push(level);
         }
     }
-    let output = output.expect("the root is internal");
+    finish_built_tdd(b, root, output)
+}
+
+fn finish_built_tdd(
+    b: tididi::diagram::TddBuilder,
+    root: VtreeIdx,
+    output: Option<NodeIdx>,
+) -> Result<Option<Tdd>, OperationError> {
+    let local = output.expect("the root is internal");
     let f = b
-        .finish(TddNodeId {
-            vtree: root,
-            local: output,
-        })
+        .finish(TddNodeId { vtree: root, local })
         .map_err(OperationError::from)?;
     Ok(Some(f))
 }
@@ -1646,19 +1651,12 @@ impl Pairs {
     /// next to them, and the range of a left one's on the right a
     /// search of that side alone, not of the whole cube; ranges kept per
     /// cube and node mostly missed.
-    #[allow(
-        clippy::too_many_arguments,
-        reason = "each argument is one of the node's tables or children"
-    )]
     fn split_residuals(
         &mut self,
         res: &mut Residuals,
         cubes: &Cubes,
-        t: VtreeIdx,
-        (t_lo, t_hi): (u32, u32),
-        right_lo: u32,
-        left: &Level,
-        right: &Level,
+        (t, t_lo, t_hi, right_lo): (VtreeIdx, u32, u32, u32),
+        (left, right): (&Level, &Level),
     ) {
         let Self {
             span_of,
@@ -1668,18 +1666,6 @@ impl Pairs {
             right_split,
             ..
         } = self;
-        // The range of cube `c`'s literals under the node and where
-        // those on the right begin, for a residual another cube made:
-        // a search of the whole cube, kept for the cube's next.
-        let mut searched = |c: u32| {
-            let e = &mut span_of[c as usize];
-            if e.0 != t.0 {
-                let (i, j) = cubes.under(c, (t_lo, t_hi));
-                let p = i + cubes.lits(c)[i..j].partition_point(|&x| x / 2 < right_lo);
-                *e = (t.0, i as u32, p as u32, j as u32);
-            }
-            (e.1 as usize, e.2 as usize, e.3 as usize)
-        };
         pass.clear();
         branches.clear();
         left_split.clear();
@@ -1698,7 +1684,7 @@ impl Pairs {
                     };
                     (a as usize, p, j)
                 } else {
-                    searched(c)
+                    Self::searched_span(span_of, cubes, c, t, (t_lo, t_hi), right_lo)
                 };
                 debug_assert_eq!((i, j), cubes.under(c, (t_lo, t_hi)));
                 debug_assert!(i < p, "a left class's cube has literals on the left");
@@ -1725,7 +1711,8 @@ impl Pairs {
                 let on_left = if d == c {
                     a > 0 && cubes.lits(c)[a as usize - 1] / 2 >= t_lo
                 } else {
-                    let (i, p, _) = searched(c);
+                    let (i, p, _) =
+                        Self::searched_span(span_of, cubes, c, t, (t_lo, t_hi), right_lo);
                     i < p
                 };
                 debug_assert_eq!(
@@ -1738,6 +1725,26 @@ impl Pairs {
             }
             right_split.push((p0, pass.len()));
         }
+    }
+
+    /// The range of cube `c`'s literals under `t` and where those on the
+    /// right begin, for a residual another cube made: a search of the whole
+    /// cube, kept for the cube's next.
+    fn searched_span(
+        span_of: &mut [(u32, u32, u32, u32)],
+        cubes: &Cubes,
+        c: u32,
+        t: VtreeIdx,
+        (t_lo, t_hi): (u32, u32),
+        right_lo: u32,
+    ) -> (usize, usize, usize) {
+        let e = &mut span_of[c as usize];
+        if e.0 != t.0 {
+            let (i, j) = cubes.under(c, (t_lo, t_hi));
+            let p = i + cubes.lits(c)[i..j].partition_point(|&x| x / 2 < right_lo);
+            *e = (t.0, i as u32, p as u32, j as u32);
+        }
+        (e.1 as usize, e.2 as usize, e.3 as usize)
     }
 }
 
@@ -1764,26 +1771,26 @@ fn join(
         shape.exact_at,
         shape.kept,
     );
-    let (t_lo, right_lo) = (spans[t.idx()].0, spans[r.idx()].0);
+    let ((t_lo, t_hi), right_lo) = (spans[t.idx()], spans[r.idx()].0);
     let bits = kept[t.idx()] as usize;
     let (left_bits, right_at) = (
         bits.min(kept[l.idx()] as usize),
         (right_lo - spans[l.idx()].0) as usize,
     );
     let right_bits = bits.saturating_sub(right_at);
-    pairs.split_residuals(res, cubes, t, spans[t.idx()], right_lo, left, right);
+    pairs.split_residuals(res, cubes, (t, t_lo, t_hi, right_lo), (left, right));
     let exact = exact_at.of(t.idx());
     pairs.alone_of.clear();
     pairs.alone_of.resize(left.classes.len(), UNKNOWN);
     for (cb, &(bp0, bp1)) in right.classes.iter().zip(pairs.right_split.iter()) {
         let (b_here, b_ones, b_values) = (right.residuals(cb), right.ones(cb), right.values(cb));
-        'pair: for (ia, (ca, &(ap0, ap1, ab0, ab1))) in
+        for (ia, (ca, &(ap0, ap1, ab0, ab1))) in
             left.classes.iter().zip(pairs.left_split.iter()).enumerate()
         {
             let (a_here, a_ones) = (left.residuals(ca), left.ones(ca));
             work += 1;
             if !merge_group_ones(a_ones, b_ones, exact, group_lca, t, &mut pairs.ones) {
-                continue 'pair;
+                continue;
             }
             work += (a_here.len() + b_here.len()) as u64;
             if !collect_right_branches(
@@ -1794,7 +1801,7 @@ fn join(
                 kept[r.idx()],
                 &mut pairs.fresh,
             ) {
-                continue 'pair;
+                continue;
             }
             let lone = pairs.fresh.is_empty() && bp0 == bp1 && b_ones.is_empty();
             if lone && pairs.alone_of[ia] != UNKNOWN {
@@ -1803,36 +1810,47 @@ fn join(
                         .emitted
                         .push((pairs.alone_of[ia], ChildPair::new(ca.node, cb.node)));
                 }
-                continue 'pair;
+                continue;
             }
             let at = level.residuals.len();
-            let Some(h) = merge_residuals_and_hash(
-                &pairs.pass[ap0..ap1],
-                &pairs.pass[bp0..bp1],
-                &pairs.fresh,
-                &pairs.ones,
-                forcing,
-                &mut level.residuals,
-            ) else {
-                if lone {
-                    pairs.alone_of[ia] = REFUSED;
-                }
-                continue 'pair;
-            };
-            let k = intern_joined_class(
+            if let Some(k) = merge_and_intern_pair_class(
                 (level, keys),
-                (at, &pairs.ones, h),
+                (&pairs.pass[ap0..ap1], &pairs.pass[bp0..bp1], &pairs.fresh),
+                (&pairs.ones, forcing, at),
                 (left.values(ca), left_bits),
                 (b_values, right_at, right_bits),
                 t_lo,
-            );
-            if lone {
-                pairs.alone_of[ia] = k;
+            ) {
+                if lone {
+                    pairs.alone_of[ia] = k;
+                }
+                pairs.emitted.push((k, ChildPair::new(ca.node, cb.node)));
+            } else if lone {
+                pairs.alone_of[ia] = REFUSED;
             }
-            pairs.emitted.push((k, ChildPair::new(ca.node, cb.node)));
         }
     }
     work
+}
+
+type ResidualSlice<'a> = &'a [(u32, u32, u32)];
+
+fn merge_and_intern_pair_class(
+    (level, keys): (&mut Level, &mut Keys),
+    (pass_a, pass_b, fresh): (ResidualSlice<'_>, ResidualSlice<'_>, ResidualSlice<'_>),
+    (ones, forcing, at): (&[u32], &mut Forcing, usize),
+    left_vals: (&[u64], usize),
+    right_vals: (&[u64], usize, usize),
+    t_lo: u32,
+) -> Option<u32> {
+    let h = merge_residuals_and_hash(pass_a, pass_b, fresh, ones, forcing, &mut level.residuals)?;
+    Some(intern_joined_class(
+        (level, keys),
+        (at, ones, h),
+        left_vals,
+        right_vals,
+        t_lo,
+    ))
 }
 
 fn intern_joined_class(

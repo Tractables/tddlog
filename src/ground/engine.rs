@@ -221,7 +221,6 @@ impl ArithFn {
     fn apply(self, args: &[Num]) -> Option<Num> {
         use ArithFn::*;
         use Num::{F, I};
-        let float = |f: fn(f64) -> f64| Some(F(f(args[0].float())));
         // Python's floor division and modulo, which round towards minus
         // infinity, the modulo taking the divisor's sign.
         let floor_div = |x: i64, y: i64| {
@@ -240,7 +239,6 @@ impl ArithFn {
                 r
             })
         };
-        let to_int = |x: f64| (x.is_finite() && x.abs() < 9.2e18).then_some(I(x as i64));
         match (self, args) {
             (Add, &[I(x), I(y)]) => x.checked_add(y).map(I),
             (Sub, &[I(x), I(y)]) => x.checked_sub(y).map(I),
@@ -262,19 +260,6 @@ impl ArithFn {
                 u32::try_from(y).ok().and_then(|y| x.checked_pow(y)).map(I)
             }
             (Pow, &[x, y]) => Some(F(x.float().powf(y.float()))),
-            (Neg, &[I(x)]) => x.checked_neg().map(I),
-            (Neg, &[F(x)]) => Some(F(-x)),
-            (Plus, &[x]) => Some(x),
-            (Abs, &[I(x)]) => x.checked_abs().map(I),
-            (Abs, &[F(x)]) => Some(F(x.abs())),
-            (Sign, &[I(x)]) => Some(I(x.signum())),
-            (Sign, &[F(x)]) => Some(F(if x > 0.0 {
-                1.0
-            } else if x < 0.0 {
-                -1.0
-            } else {
-                x
-            })),
             // Python's `min` and `max` return the first of equal values.
             (Min, &[x, y]) => Some(if y.float() < x.float() { y } else { x }),
             (Max, &[x, y]) => Some(if y.float() > x.float() { y } else { x }),
@@ -283,24 +268,47 @@ impl ArithFn {
             (Xor, &[I(x), I(y)]) => Some(I(x ^ y)),
             (Shl, &[I(x), I(y)]) => u32::try_from(y).ok().and_then(|y| x.checked_shl(y)).map(I),
             (Shr, &[I(x), I(y)]) => u32::try_from(y).ok().map(|y| I(x >> y.min(63))),
-            (BitNot, &[I(x)]) => Some(I(!x)),
-            (Float, &[x]) => Some(F(x.float())),
-            (Floor | Ceiling | Truncate, &[I(x)]) => Some(I(x)),
-            (Floor, &[F(x)]) => to_int(x.floor()),
-            (Ceiling, &[F(x)]) => to_int(x.ceil()),
-            (Truncate, &[F(x)]) => to_int(x.trunc()),
-            (FractionalPart, &[I(_)]) => Some(I(0)),
-            (FractionalPart, &[F(x)]) => Some(F(x - x.trunc())),
-            (Sqrt, &[x]) => (x.float() >= 0.0).then(|| F(x.float().sqrt())),
-            (Exp, _) => float(f64::exp),
-            (Log, &[x]) => (x.float() > 0.0).then(|| F(x.float().ln())),
-            (Sin, _) => float(f64::sin),
-            (Cos, _) => float(f64::cos),
-            (Tan, _) => float(f64::tan),
-            (Asin, _) => float(f64::asin),
-            (Acos, _) => float(f64::acos),
-            (Atan, _) => float(f64::atan),
             (Atan2, &[y, x]) => Some(F(y.float().atan2(x.float()))),
+            (_, &[x]) => self.apply_unary(x),
+            _ => None,
+        }
+    }
+
+    fn apply_unary(self, arg: Num) -> Option<Num> {
+        use ArithFn::*;
+        use Num::{F, I};
+        let to_int = |x: f64| (x.is_finite() && x.abs() < 9.2e18).then_some(I(x as i64));
+        match (self, arg) {
+            (Neg, I(x)) => x.checked_neg().map(I),
+            (Neg, F(x)) => Some(F(-x)),
+            (Plus, x) => Some(x),
+            (Abs, I(x)) => x.checked_abs().map(I),
+            (Abs, F(x)) => Some(F(x.abs())),
+            (Sign, I(x)) => Some(I(x.signum())),
+            (Sign, F(x)) => Some(F(if x > 0.0 {
+                1.0
+            } else if x < 0.0 {
+                -1.0
+            } else {
+                x
+            })),
+            (BitNot, I(x)) => Some(I(!x)),
+            (Float, x) => Some(F(x.float())),
+            (Floor | Ceiling | Truncate, I(x)) => Some(I(x)),
+            (Floor, F(x)) => to_int(x.floor()),
+            (Ceiling, F(x)) => to_int(x.ceil()),
+            (Truncate, F(x)) => to_int(x.trunc()),
+            (FractionalPart, I(_)) => Some(I(0)),
+            (FractionalPart, F(x)) => Some(F(x - x.trunc())),
+            (Sqrt, x) => (x.float() >= 0.0).then(|| F(x.float().sqrt())),
+            (Exp, x) => Some(F(x.float().exp())),
+            (Log, x) => (x.float() > 0.0).then(|| F(x.float().ln())),
+            (Sin, x) => Some(F(x.float().sin())),
+            (Cos, x) => Some(F(x.float().cos())),
+            (Tan, x) => Some(F(x.float().tan())),
+            (Asin, x) => Some(F(x.float().asin())),
+            (Acos, x) => Some(F(x.float().acos())),
+            (Atan, x) => Some(F(x.float().atan())),
             _ => None,
         }
     }

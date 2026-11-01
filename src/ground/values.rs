@@ -193,22 +193,9 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
     }
     let by_head = gp.rules_by_head();
     let sccs = deps::derived_sccs(gp, &by_head);
-    // The gates, the acyclic atoms with rules, each with its place in
-    // dependency order.
-    let mut rank = vec![NONE; n];
-    let mut gates = 0;
-    for scc in &sccs {
-        if let [a] = scc[..]
-            && !by_head[a as usize].is_empty()
-            && !deps::is_cyclic(gp, &by_head, scc)
-        {
-            rank[a as usize] = gates;
-            gates += 1;
-        }
-    }
-    if gates == 0 {
+    let Some(rank) = acyclic_gate_ranks(gp, &by_head, &sccs) else {
         return 0;
-    }
+    };
     let candidates = {
         let gate: Vec<bool> = rank.iter().map(|&r| r != NONE).collect();
         match co_read(gp, &readers, &bits(&gate), &gate, false, &mut work) {
@@ -231,6 +218,27 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
     };
     drop(units);
     written.finish(gp, &replaced)
+}
+
+/// The gates, the acyclic atoms with rules, each with its place in
+/// dependency order.
+fn acyclic_gate_ranks(
+    gp: &GroundProgram,
+    by_head: &super::RulesByHead,
+    sccs: &[Vec<AtomId>],
+) -> Option<Vec<u32>> {
+    let mut rank = vec![NONE; gp.num_atoms()];
+    let mut gates = 0;
+    for scc in sccs {
+        if let [a] = scc[..]
+            && !by_head[a as usize].is_empty()
+            && !deps::is_cyclic(gp, by_head, scc)
+        {
+            rank[a as usize] = gates;
+            gates += 1;
+        }
+    }
+    (gates > 0).then_some(rank)
 }
 
 fn write_unit_groups(
@@ -374,8 +382,16 @@ fn co_read(
         found.push((atoms.len(), set.len()));
         atoms.extend_from_slice(&set);
     }
+    Some(select_disjoint_sets(gp.num_atoms(), &atoms, found))
+}
+
+fn select_disjoint_sets(
+    num_atoms: usize,
+    atoms: &[AtomId],
+    mut found: Vec<(usize, usize)>,
+) -> Vec<Vec<AtomId>> {
     found.sort_by_key(|&(_, len)| std::cmp::Reverse(len));
-    let mut taken = vec![false; gp.num_atoms()];
+    let mut taken = vec![false; num_atoms];
     let mut kept = Vec::new();
     for (at, len) in found {
         let c = &atoms[at..at + len];
@@ -387,7 +403,7 @@ fn co_read(
         }
         kept.push(c.to_vec());
     }
-    Some(kept)
+    kept
 }
 
 fn reads_both_signs(

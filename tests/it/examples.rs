@@ -72,6 +72,10 @@ fn check_text(file: &str, source: &str, expected: &[(&str, f64)]) {
     ] {
         indicated(file, source, expected, indicators, strategy, Rows::Classes);
     }
+    check_families_and_printed_ground(file, source, expected);
+}
+
+fn check_families_and_printed_ground(file: &str, source: &str, expected: &[(&str, f64)]) {
     // `run` reads the program through every indicator for `families`, as
     // the binary does, written without linear recursion; a program where no
     // component reads another's atoms has none, and the layout refuses it,

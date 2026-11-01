@@ -56,8 +56,7 @@ pub(crate) const CONS: &str = "[|]";
 pub(crate) const NIL: &str = "[]";
 
 /// A ground or non-ground term.
-#[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Clone, Debug, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, PartialOrd, Ord)]
 pub enum Term {
     /// A symbolic constant, e.g. `alice`, `'New York'`, `[]`.
     Const(Name),
@@ -72,7 +71,7 @@ pub enum Term {
 }
 
 // The derived equality, with names told by [`same_name`], with which the
-// derived hash agrees.
+// hash agrees.
 impl PartialEq for Term {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -82,6 +81,19 @@ impl PartialEq for Term {
             (Term::Float(a), Term::Float(b)) => a == b,
             (Term::Compound(a), Term::Compound(b)) => Arc::ptr_eq(a, b) || **a == **b,
             _ => false,
+        }
+    }
+}
+
+impl Hash for Term {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        std::mem::discriminant(self).hash(state);
+        match self {
+            Term::Const(a) => a.hash(state),
+            Term::Int(a) => a.hash(state),
+            Term::Var(a) => a.hash(state),
+            Term::Float(a) => a.hash(state),
+            Term::Compound(a) => a.hash(state),
         }
     }
 }
@@ -448,26 +460,7 @@ fn write_term(f: &mut fmt::Formatter<'_>, t: &Term, max: u16) -> fmt::Result {
 /// priority parentheses).
 fn compound_pieces<'a>(c: &'a Compound, pieces: &mut Vec<Piece<'a>>) {
     match (&*c.name, &c.args[..]) {
-        (CONS, [_, _]) => {
-            pieces.push(Piece::Text("["));
-            let mut cell = c;
-            loop {
-                pieces.push(Piece::Term(&cell.args[0], 1200));
-                match &cell.args[1] {
-                    Term::Compound(next) if &*next.name == CONS && next.args.len() == 2 => {
-                        pieces.push(Piece::Text(", "));
-                        cell = next;
-                    }
-                    Term::Const(nil) if &**nil == NIL => break,
-                    tail => {
-                        pieces.push(Piece::Text(" | "));
-                        pieces.push(Piece::Term(tail, 1200));
-                        break;
-                    }
-                }
-            }
-            pieces.push(Piece::Text("]"));
-        }
+        (CONS, [_, _]) => list_pieces(c, pieces),
         (",", [_, _]) => {
             pieces.push(Piece::Text("("));
             for (i, a) in chain(",", c).into_iter().enumerate() {
@@ -532,6 +525,27 @@ fn compound_pieces<'a>(c: &'a Compound, pieces: &mut Vec<Piece<'a>>) {
             pieces.push(Piece::Text(")"));
         }
     }
+}
+
+fn list_pieces<'a>(c: &'a Compound, pieces: &mut Vec<Piece<'a>>) {
+    pieces.push(Piece::Text("["));
+    let mut cell = c;
+    loop {
+        pieces.push(Piece::Term(&cell.args[0], 1200));
+        match &cell.args[1] {
+            Term::Compound(next) if &*next.name == CONS && next.args.len() == 2 => {
+                pieces.push(Piece::Text(", "));
+                cell = next;
+            }
+            Term::Const(nil) if &**nil == NIL => break,
+            tail => {
+                pieces.push(Piece::Text(" | "));
+                pieces.push(Piece::Term(tail, 1200));
+                break;
+            }
+        }
+    }
+    pieces.push(Piece::Text("]"));
 }
 
 /// A term other than a compound.
@@ -752,8 +766,7 @@ impl Ord for Args {
 }
 
 /// A predicate atom `name(args)`.
-#[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Clone, Debug, Default, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, Eq, PartialOrd, Ord)]
 pub struct Atom {
     pub name: Name,
     pub args: Args,
@@ -763,6 +776,13 @@ pub struct Atom {
 impl PartialEq for Atom {
     fn eq(&self, other: &Self) -> bool {
         same_name(&self.name, &other.name) && self.args == other.args
+    }
+}
+
+impl Hash for Atom {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.args.hash(state);
     }
 }
 

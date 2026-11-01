@@ -466,6 +466,19 @@ impl Factoring<'_> {
             }
             lits.push(u32::MAX);
         }
+        let siblings = self.encode_sibling_slots(&facts, &scratch.var_rank);
+        Some((
+            ClauseKey {
+                vars: held.len(),
+                lits,
+                seeds: self.seeds,
+                siblings,
+            },
+            slots,
+        ))
+    }
+
+    fn encode_sibling_slots(&self, facts: &[tididi::Literal], var_rank: &[u32]) -> Vec<u32> {
         let mut siblings = Vec::new();
         if self.seeds {
             let mut read: Vec<(u32, u32)> = facts
@@ -473,7 +486,7 @@ impl Factoring<'_> {
                 .filter(|f| self.sibling_of[f.var.0 as usize] != u32::MAX)
                 .map(|f| {
                     (
-                        scratch.var_rank[f.var.0 as usize],
+                        var_rank[f.var.0 as usize],
                         self.sibling_of[f.var.0 as usize],
                     )
                 })
@@ -487,15 +500,7 @@ impl Factoring<'_> {
                 siblings.push(*place.entry(group).or_insert(next));
             }
         }
-        Some((
-            ClauseKey {
-                vars: held.len(),
-                lits,
-                seeds: self.seeds,
-                siblings,
-            },
-            slots,
-        ))
+        siblings
     }
 
     /// The sibling groups (`Encoding::siblings`) of which the bodies
@@ -717,7 +722,7 @@ impl Factoring<'_> {
         // taken by the second.
         let (acc, on) = (Arc::new(acc.0), acc.1);
         let x = self.backend.and_on(
-            Part(Read::Shared(Arc::clone(&acc)), on.clone()),
+            Part(Read::shared(Arc::clone(&acc)), on.clone()),
             not_a,
             scope,
         )?;
@@ -998,15 +1003,7 @@ impl Factoring<'_> {
             let f = match (conj, split) {
                 (_, Some((a, b))) => {
                     (self.count)(Op::And, std::mem::take(&mut run));
-                    // A split is made only against a formula other than true.
-                    let formula = self.formula(formula, scope);
-                    let mut acc = (
-                        self.or_route(scope, formula, a, b, &fact_lits)?,
-                        scope.clone(),
-                    );
-                    at.settled_nodes = self.backend.nodes(&acc.0);
-                    acc.0 = (self.watched)(acc.0, self.head)?;
-                    acc
+                    self.and_split_clause(formula, a, b, &fact_lits, scope, &mut at)?
                 }
                 (None, None) => {
                     self.and_fact_clause(formula, &fact_lits, scope, &mut at, &mut run)?
@@ -1024,6 +1021,26 @@ impl Factoring<'_> {
         (self.count)(Op::And, run);
         let acc = self.formula(at.acc, scope);
         self.placed(acc, scope)
+    }
+
+    fn and_split_clause(
+        &mut self,
+        formula: Option<Formula>,
+        a: Part,
+        b: Part,
+        fact_lits: &[tididi::Literal],
+        scope: &VtreeScope,
+        at: &mut Loop,
+    ) -> Result<Formula, CompileError> {
+        // A split is made only against a formula other than true.
+        let formula = self.formula(formula, scope);
+        let mut acc = (
+            self.or_route(scope, formula, a, b, fact_lits)?,
+            scope.clone(),
+        );
+        at.settled_nodes = self.backend.nodes(&acc.0);
+        acc.0 = (self.watched)(acc.0, self.head)?;
+        Ok(acc)
     }
 
     fn and_single_derived(

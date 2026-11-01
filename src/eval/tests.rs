@@ -504,8 +504,30 @@ fn assert_count_route(what: &str, f: &Tdd, w: &Probabilities, route: Way) {
         Counts::Plain(plain) => plain.total(f).count(),
         Counts::Wide(wide) => wide.total(f).count(),
     };
+    let got = classify_count_way(what, f, &counts, switched, widened);
+    assert_eq!(got, route, "{what}");
+    assert_eq!(recounts, usize::from(route == Way::Switched), "{what}");
+    assert_eq!(
+        bits(total),
+        bits(wide.total(f).count()),
+        "{what}: the total"
+    );
+    for ((leaf, var), a) in f.vtree().leaf_bottomup().zip(literals) {
+        let b = wide
+            .with_literal(f, leaf, var, true, w)
+            .unwrap()
+            .map(Scaled::count);
+        assert_eq!(a.map(bits), b.map(bits), "{what}: literal {var:?}");
+    }
+    if route == Way::Plain {
+        let plain = count::<f64>(f, w).unwrap();
+        assert_eq!(total.to_f64(), plain.total(f).value, "{what}");
+    }
+}
+
+fn classify_count_way(what: &str, f: &Tdd, counts: &Counts, switched: bool, widened: bool) -> Way {
     let (up, down) = counts.routes().in_counts();
-    let got = match &counts {
+    match counts {
         _ if switched => {
             let all: usize = f
                 .vtree()
@@ -535,24 +557,6 @@ fn assert_count_route(what: &str, f: &Tdd, w: &Probabilities, route: Way) {
             if scaled { Way::Scaled } else { Way::Plain }
         }
         Counts::Wide(_) => unreachable!("a count in `Count`s is switched or widened"),
-    };
-    assert_eq!(got, route, "{what}");
-    assert_eq!(recounts, usize::from(route == Way::Switched), "{what}");
-    assert_eq!(
-        bits(total),
-        bits(wide.total(f).count()),
-        "{what}: the total"
-    );
-    for ((leaf, var), a) in f.vtree().leaf_bottomup().zip(literals) {
-        let b = wide
-            .with_literal(f, leaf, var, true, w)
-            .unwrap()
-            .map(Scaled::count);
-        assert_eq!(a.map(bits), b.map(bits), "{what}: literal {var:?}");
-    }
-    if route == Way::Plain {
-        let plain = count::<f64>(f, w).unwrap();
-        assert_eq!(total.to_f64(), plain.total(f).value, "{what}");
     }
 }
 

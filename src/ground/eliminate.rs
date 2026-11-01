@@ -431,31 +431,7 @@ fn elimination_order(
         if products > limit {
             return None;
         }
-        for &i in &tails {
-            onto[i].remove(&v);
-            fill.remove(&(i, v));
-        }
-        for &j in &heads {
-            into[j].remove(&v);
-            fill.remove(&(v, j));
-        }
-        onto[v].clear();
-        into[v].clear();
-        for &i in &tails {
-            for &j in &heads {
-                if i != j {
-                    onto[i].insert(j);
-                    into[j].insert(i);
-                    fill.insert((i, j));
-                }
-            }
-        }
-        let mut stale: FxHashSet<usize> = FxHashSet::default();
-        for &u in tails.iter().chain(&heads) {
-            stale.insert(u);
-            stale.extend(into[u].iter().copied());
-            stale.extend(onto[u].iter().copied());
-        }
+        let stale = eliminate_vertex_from_graph(v, &tails, &heads, &mut onto, &mut into, &mut fill);
         for u in stale {
             if u < n && !gone[u] {
                 heap.push(Reverse(score(u, &onto, &into, &fill)));
@@ -463,6 +439,42 @@ fn elimination_order(
         }
     }
     Some((order, products))
+}
+
+fn eliminate_vertex_from_graph(
+    v: usize,
+    tails: &[usize],
+    heads: &[usize],
+    onto: &mut [FxHashSet<usize>],
+    into: &mut [FxHashSet<usize>],
+    fill: &mut FxHashSet<(usize, usize)>,
+) -> FxHashSet<usize> {
+    for &i in tails {
+        onto[i].remove(&v);
+        fill.remove(&(i, v));
+    }
+    for &j in heads {
+        into[j].remove(&v);
+        fill.remove(&(v, j));
+    }
+    onto[v].clear();
+    into[v].clear();
+    for &i in tails {
+        for &j in heads {
+            if i != j {
+                onto[i].insert(j);
+                into[j].insert(i);
+                fill.insert((i, j));
+            }
+        }
+    }
+    let mut stale: FxHashSet<usize> = FxHashSet::default();
+    for &u in tails.iter().chain(heads) {
+        stale.insert(u);
+        stale.extend(into[u].iter().copied());
+        stale.extend(onto[u].iter().copied());
+    }
+    stale
 }
 
 #[cfg(test)]

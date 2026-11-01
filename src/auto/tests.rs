@@ -379,20 +379,7 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
             .any(|n| n.starts_with("naming: ") && n.ends_with("widest 1, 399 copies of 399 atoms")),
         "{notes:#?}"
     );
-    let work = |t: &str| -> u64 {
-        notes
-            .iter()
-            .filter_map(|n| {
-                n.strip_prefix(&format!("trial: {t} indicators="))?
-                    .split(", work=")
-                    .nth(1)?
-                    .split(',')
-                    .next()?
-                    .parse::<u64>()
-                    .ok()
-            })
-            .sum()
-    };
+    let work = |t: &str| trial_work(notes, t);
     let turns: Vec<_> = attempts(notes).into_iter().map(|(_, t)| t).collect();
     assert!(
         turns
@@ -415,6 +402,21 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
         (p - (1.0 - 0.5e-4f64).powi(steps as i32)).abs() < 1e-12,
         "{p}"
     );
+}
+
+fn trial_work(notes: &[String], trial: &str) -> u64 {
+    notes
+        .iter()
+        .filter_map(|n| {
+            n.strip_prefix(&format!("trial: {trial} indicators="))?
+                .split(", work=")
+                .nth(1)?
+                .split(',')
+                .next()?
+                .parse::<u64>()
+                .ok()
+        })
+        .sum()
 }
 
 #[test]

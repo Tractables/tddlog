@@ -376,32 +376,42 @@ impl QueryEvaluation {
             pending_query,
             sizes,
         };
-        for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
-            backend.pause()?;
-            let p = match id {
-                None => {
-                    if *positive {
-                        0.0
-                    } else {
-                        1.0
-                    }
-                }
-                Some(a) => answers.probability(*a, *positive)?,
-            };
-            *answers.pending_query = None;
-            backend.kept();
-            out.push(QueryResult {
-                atom: atom.clone(),
-                positive: *positive,
-                probability: p.clamp(0.0, 1.0),
-            });
-        }
+        answer_remaining_queries(gp, backend, &mut answers, out)?;
         sizes.routes = counted
             .as_ref()
             .map(CountedEvidence::routes)
             .unwrap_or_default();
         Ok((Some(std::mem::take(out)), *sizes))
     }
+}
+
+fn answer_remaining_queries(
+    gp: &GroundProgram,
+    backend: &TddBackend<'_>,
+    answers: &mut Answers<'_>,
+    out: &mut Vec<QueryResult>,
+) -> Result<(), CompileError> {
+    for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
+        backend.pause()?;
+        let p = match id {
+            None => {
+                if *positive {
+                    0.0
+                } else {
+                    1.0
+                }
+            }
+            Some(a) => answers.probability(*a, *positive)?,
+        };
+        *answers.pending_query = None;
+        backend.kept();
+        out.push(QueryResult {
+            atom: atom.clone(),
+            positive: *positive,
+            probability: p.clamp(0.0, 1.0),
+        });
+    }
+    Ok(())
 }
 
 fn prepare_evidence<'a>(

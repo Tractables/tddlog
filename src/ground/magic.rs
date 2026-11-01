@@ -831,7 +831,14 @@ impl Demand<'_> {
                 _ => None,
             };
             if let Some(a) = body_atom {
-                self.emit_body_demand(rule, a, &bound_so_far, &prefix, &unread, &bound, &guard, w);
+                self.emit_body_demand(
+                    rule,
+                    a,
+                    (&bound_so_far, &bound),
+                    (&prefix, &unread),
+                    &guard,
+                    w,
+                );
             }
             // Positive literals and deterministic filters join the prefix,
             // and so do negations of given predicates, whose atoms are all
@@ -880,18 +887,12 @@ impl Demand<'_> {
         });
     }
 
-    #[allow(
-        clippy::too_many_arguments,
-        reason = "each argument is one slice or set of the rule's schedule"
-    )]
     fn emit_body_demand(
         &self,
         rule: &Clause,
         a: &Atom,
-        bound_so_far: &FxHashSet<String>,
-        prefix: &[usize],
-        unread: &[usize],
-        bound: &FxHashSet<String>,
+        (bound_so_far, bound): (&FxHashSet<String>, &FxHashSet<String>),
+        (prefix, unread): (&[usize], &[usize]),
         guard: &Literal,
         w: &mut Written,
     ) {

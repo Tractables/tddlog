@@ -117,19 +117,7 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
         network.declare(&format!("x{i}"), (0..k).map(|u| u.to_string()).collect())?;
     }
     if !markov {
-        for (scope, table) in scopes.into_iter().zip(tables) {
-            let (&child, parents) = scope
-                .split_last()
-                .ok_or("UAI BAYES function of an empty scope")?;
-            if network.tables[child].is_some() {
-                return Err(format!("UAI BAYES file with two tables for x{child}"));
-            }
-            network.set_product_table(child, parents.to_vec(), table)?;
-        }
-        if let Some(v) = network.tables.iter().position(Option::is_none) {
-            return Err(format!("UAI BAYES file without a table for x{v}"));
-        }
-        return Ok(Read::of(network));
+        return parse_bayes_tables(network, scopes, tables);
     }
     if let Some(conditional) = conditional_tables(&sizes, &scopes, &tables) {
         for (v, (scope, table)) in conditional.into_iter().enumerate() {
@@ -191,6 +179,26 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
         forced,
         log10_offset: Some(partition_offset(&logs)),
     })
+}
+
+fn parse_bayes_tables(
+    mut network: Network,
+    scopes: Vec<Vec<usize>>,
+    tables: Vec<Vec<f64>>,
+) -> Result<Read, String> {
+    for (scope, table) in scopes.into_iter().zip(tables) {
+        let (&child, parents) = scope
+            .split_last()
+            .ok_or("UAI BAYES function of an empty scope")?;
+        if network.tables[child].is_some() {
+            return Err(format!("UAI BAYES file with two tables for x{child}"));
+        }
+        network.set_product_table(child, parents.to_vec(), table)?;
+    }
+    if let Some(v) = network.tables.iter().position(Option::is_none) {
+        return Err(format!("UAI BAYES file without a table for x{v}"));
+    }
+    Ok(Read::of(network))
 }
 
 /// `log10 Z - log10 P(e)` of a Markov network's program, the sum of the
@@ -348,6 +356,8 @@ fn match_functions_to_vars(
     Some(owner)
 }
 
+type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
+
 /// The colour symmetry of a Markov network, broken. In a network whose
 /// variables all have the same k >= 2 values and whose functions are all
 /// over two variables and Potts tables (one entry on the diagonal, one off
@@ -362,12 +372,11 @@ fn match_functions_to_vars(
 /// Returns the functions with v1's and v2's unary tables added and the
 /// table of v3 given v2 where there is a v3, whose Z is the network's
 /// divided by k; `None` for another network.
-#[allow(clippy::type_complexity)]
 fn colour_symmetry(
     sizes: &[usize],
     scopes: &[Vec<usize>],
     tables: &[Vec<f64>],
-) -> Option<(Vec<Vec<usize>>, Vec<Vec<f64>>)> {
+) -> Option<BrokenSymmetry> {
     let k = *sizes.first()?;
     if k < 2 || sizes.iter().any(|&c| c != k) || scopes.is_empty() {
         return None;

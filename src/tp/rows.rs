@@ -287,42 +287,6 @@ fn collect_models(
     }
     let words = n.div_ceil(64).max(1);
     let mut models = Vec::new();
-    // The models at `values` with each value of the output that agrees
-    // with `value` on the bits `fixed`: for a group, the value fixed or,
-    // where none is, each of them; false past `max` models.
-    let mut put = |values: &[u32], (fixed, value): (u64, u64)| {
-        let open = match (binary, fixed) {
-            (true, _) => (outputs - 1) & !fixed,
-            (false, 0) => outputs - 1,
-            (false, _) => 0,
-        };
-        let mut next = 0u64;
-        loop {
-            let out = if binary { value | next } else { value + next };
-            let at = models.len();
-            models.resize(at + words, 0u64);
-            for (g, &(start, len, _)) in all.iter().enumerate() {
-                for (k, &v) in members[start..start + len].iter().enumerate() {
-                    let holds = match g == output {
-                        true if binary => out >> k & 1 == 1,
-                        true => k as u64 == out,
-                        false => k as u32 == values[g],
-                    };
-                    let i = v.0 as usize - 1;
-                    models[at + i / 64] |= u64::from(holds) << (i % 64);
-                }
-            }
-            if next == open {
-                return models.len() <= max * words;
-            }
-            // The next value of the bits left open, or the next value.
-            next = if binary {
-                next.wrapping_sub(open) & open
-            } else {
-                next + 1
-            };
-        }
-    };
     let place = |r: u32| rows[r as usize * (width + 1) + width] as usize;
     let mut runs = order.chunk_by(|&a, &b| key(a) == key(b)).peekable();
     let mut at = vec![0u64; inputs.len()];
@@ -341,7 +305,14 @@ fn collect_models(
             None => Some((0, 0)),
         };
         if let Some(fixed) = fixed
-            && !put(&values, fixed)
+            && !put_output_models(
+                (all, members),
+                (output, outputs, binary),
+                (words, max),
+                &values,
+                fixed,
+                &mut models,
+            )
         {
             return None;
         }
@@ -352,6 +323,50 @@ fn collect_models(
     }
     debug_assert!(runs.next().is_none());
     Some(models)
+}
+
+/// The models at `values` with each value of the output that agrees with
+/// `value` on the bits `fixed`: for a group, the value fixed or, where none
+/// is, each of them; false past `max` models.
+fn put_output_models(
+    (all, members): (&[(usize, usize, bool)], &[VarId]),
+    (output, outputs, binary): (usize, u64, bool),
+    (words, max): (usize, usize),
+    values: &[u32],
+    (fixed, value): (u64, u64),
+    models: &mut Vec<u64>,
+) -> bool {
+    let open = match (binary, fixed) {
+        (true, _) => (outputs - 1) & !fixed,
+        (false, 0) => outputs - 1,
+        (false, _) => 0,
+    };
+    let mut next = 0u64;
+    loop {
+        let out = if binary { value | next } else { value + next };
+        let at = models.len();
+        models.resize(at + words, 0u64);
+        for (g, &(start, len, _)) in all.iter().enumerate() {
+            for (k, &v) in members[start..start + len].iter().enumerate() {
+                let holds = match g == output {
+                    true if binary => out >> k & 1 == 1,
+                    true => k as u64 == out,
+                    false => k as u32 == values[g],
+                };
+                let i = v.0 as usize - 1;
+                models[at + i / 64] |= u64::from(holds) << (i % 64);
+            }
+        }
+        if next == open {
+            return models.len() <= max * words;
+        }
+        // The next value of the bits left open, or the next value.
+        next = if binary {
+            next.wrapping_sub(open) & open
+        } else {
+            next + 1
+        };
+    }
 }
 
 type CubeForces = (Vec<u32>, Vec<Option<(u64, u64)>>);

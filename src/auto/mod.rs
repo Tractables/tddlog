@@ -537,16 +537,7 @@ fn run_within(
         }
         let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
         let t = &mut trials[i];
-        if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
-            ledger.notes.push(format!(
-                "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
-                t.kind,
-                t.kind.indicators_name(),
-                if t.querying { "query phase" } else { "compile" },
-                projected,
-                (t.target as f64).log2()
-            ));
-        }
+        note_projected_finish(t, &mut ledger);
         let left = t.target.saturating_sub(t.spent).max(1);
         let rent = if weighed { None } else { search_rent(t, left) };
         let bounds = Bounds {
@@ -581,6 +572,19 @@ fn run_within(
             weighed = true;
             weigh_searched(&mut trials, &programs, &mut ledger)?;
         }
+    }
+}
+
+fn note_projected_finish(t: &Trial, ledger: &mut Ledger) {
+    if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
+        ledger.notes.push(format!(
+            "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
+            t.kind,
+            t.kind.indicators_name(),
+            if t.querying { "query phase" } else { "compile" },
+            projected,
+            (t.target as f64).log2()
+        ));
     }
 }
 

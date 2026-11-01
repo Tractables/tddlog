@@ -576,21 +576,25 @@ impl SetFinder {
             }
             true
         };
-        // A shared body of `a` that does not clash with a rule of the
-        // set rules the set out for every atom with that body.
         if !exclusive {
-            for &(ra, b) in &self.scratch.shared {
-                self.marks.mark_rule(ra, &gp.rules[ra].body, &self.set_of);
-                if !self.sets.iter(i).all(|m| {
-                    by_head[m as usize]
-                        .iter()
-                        .all(|&rb| self.marks.clashes(&gp.rules[rb].body, &self.set_of))
-                }) {
-                    self.failed.push((b, i));
-                }
-            }
+            self.record_failed_shared_bodies(gp, by_head, i);
         }
         exclusive
+    }
+
+    /// A shared body of `a` that does not clash with a rule of set `i`
+    /// rules the set out for every atom with that body.
+    fn record_failed_shared_bodies(&mut self, gp: &GroundProgram, by_head: &RulesByHead, i: usize) {
+        for &(ra, b) in &self.scratch.shared {
+            self.marks.mark_rule(ra, &gp.rules[ra].body, &self.set_of);
+            if !self.sets.iter(i).all(|m| {
+                by_head[m as usize]
+                    .iter()
+                    .all(|&rb| self.marks.clashes(&gp.rules[rb].body, &self.set_of))
+            }) {
+                self.failed.push((b, i));
+            }
+        }
     }
 
     fn find_candidate(
@@ -628,6 +632,24 @@ impl SetFinder {
                 .into_iter()
                 .find(|&i| self.exclusive_with((gp, by_head), a, rows_a, i));
         }
+        self.populate_key_candidates(gp, by_head, a, key_id, n);
+        for k in 0..self.candidates.len() {
+            let i = self.candidates[k];
+            if self.exclusive_with((gp, by_head), a, rows_a, i) {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    fn populate_key_candidates(
+        &mut self,
+        gp: &GroundProgram,
+        by_head: &RulesByHead,
+        a: AtomId,
+        key_id: usize,
+        n: usize,
+    ) {
         // The rule of `a` under whose literals the fewest sets are
         // listed, where they are fewer than the key's sets.
         let fewest = by_head[a as usize]
@@ -671,13 +693,6 @@ impl SetFinder {
                     }));
             }
         }
-        for k in 0..self.candidates.len() {
-            let i = self.candidates[k];
-            if self.exclusive_with((gp, by_head), a, rows_a, i) {
-                return Some(i);
-            }
-        }
-        None
     }
 }
 
@@ -762,16 +777,7 @@ impl SetFinder {
             }
         };
         if let Some(x) = &rows_a {
-            let mut j = 0;
-            while j < x.len {
-                let head = self
-                    .run_heads
-                    .entry((i, x.sig, x.key_hash(&self.store, j)))
-                    .or_insert(u32::MAX);
-                self.run_chain.push((a, j as u32, *head));
-                *head = (self.run_chain.len() - 1) as u32;
-                j = x.run_end(&self.store, j);
-            }
+            self.index_atom_runs(a, i, x);
         }
         self.rows[a as usize] = rows_a;
         self.set_of[a as usize] = i;
@@ -779,6 +785,19 @@ impl SetFinder {
         // bodies are distinct, so a set takes each body once.
         for &body in &self.scratch.bodies {
             self.body_ids.rule_out(body, key_id, i);
+        }
+    }
+
+    fn index_atom_runs(&mut self, a: AtomId, i: usize, x: &Rows) {
+        let mut j = 0;
+        while j < x.len {
+            let head = self
+                .run_heads
+                .entry((i, x.sig, x.key_hash(&self.store, j)))
+                .or_insert(u32::MAX);
+            self.run_chain.push((a, j as u32, *head));
+            *head = (self.run_chain.len() - 1) as u32;
+            j = x.run_end(&self.store, j);
         }
     }
 

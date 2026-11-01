@@ -845,27 +845,15 @@ impl Lowering<'_, '_> {
         head_args.extend(locals.iter().cloned().map(Term::Var));
         let arity = head_args.len();
         let head = Atom::new(aux.clone(), head_args);
-        let none: Term = Term::Const("$none".into());
-        for alt in fa.goal {
-            let mut vs = Vec::new();
-            for l in &alt {
-                binds(l, &mut vs);
-            }
-            if let Some(v) = template_vars
-                .iter()
-                .find(|v| !vs.contains(v) && !shared.contains(v))
-            {
-                return refuse(format!(
-                    "the template's {v} is not bound by every alternative"
-                ));
-            }
-            // A variable of another alternative is no variable of this one.
-            let mut body = alt;
-            for v in locals.iter().filter(|v| !vs.contains(v)) {
-                body.push(Literal::Cmp(CmpOp::Eq, Term::Var(v.clone()), none.clone()));
-            }
-            work.push(Clause::rule(head.clone(), body, 0));
-        }
+        push_findall_clauses(
+            fa.goal,
+            &head,
+            &template_vars,
+            &shared,
+            &locals,
+            &text,
+            work,
+        )?;
         self.cone_roots.push((aux.clone(), arity));
         Ok(Collect {
             aux,
@@ -876,6 +864,39 @@ impl Lowering<'_, '_> {
             text,
         })
     }
+}
+
+fn push_findall_clauses(
+    goal: Vec<Vec<Literal>>,
+    head: &Atom,
+    template_vars: &[String],
+    shared: &[String],
+    locals: &[String],
+    text: &str,
+    work: &mut Vec<Clause>,
+) -> Result<(), GroundError> {
+    let none: Term = Term::Const("$none".into());
+    for alt in goal {
+        let mut vs = Vec::new();
+        for l in &alt {
+            binds(l, &mut vs);
+        }
+        if let Some(v) = template_vars
+            .iter()
+            .find(|v| !vs.contains(v) && !shared.contains(v))
+        {
+            return Err(GroundError::Refused(format!(
+                "{text}: the template's {v} is not bound by every alternative"
+            )));
+        }
+        // A variable of another alternative is no variable of this one.
+        let mut body = alt;
+        for v in locals.iter().filter(|v| !vs.contains(v)) {
+            body.push(Literal::Cmp(CmpOp::Eq, Term::Var(v.clone()), none.clone()));
+        }
+        work.push(Clause::rule(head.clone(), body, 0));
+    }
+    Ok(())
 }
 
 /// The predicates the findalls of `program` read, from `roots`, checked and

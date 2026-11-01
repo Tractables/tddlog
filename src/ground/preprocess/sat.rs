@@ -481,22 +481,8 @@ impl Solver {
             let p = self.trail[self.qhead];
             self.qhead += 1;
             let f = p ^ 1;
-            let others = std::mem::take(&mut self.binaries[f as usize]);
-            self.ticks += 1 + others.len() as u64;
-            let mut conflict = None;
-            for &o in &others {
-                match self.value[o as usize] {
-                    1 => {}
-                    0 => self.enqueue(o, BINARY | f),
-                    _ => {
-                        conflict = Some(Conflict::Binary(f, o));
-                        break;
-                    }
-                }
-            }
-            self.binaries[f as usize] = others;
-            if conflict.is_some() {
-                return conflict;
+            if let Some(conflict) = self.propagate_binaries(f) {
+                return Some(conflict);
             }
             let mut ws = std::mem::take(&mut self.watches[f as usize]);
             let (mut i, mut j) = (0, 0);
@@ -556,6 +542,24 @@ impl Solver {
             self.watches[f as usize] = ws;
         }
         None
+    }
+
+    fn propagate_binaries(&mut self, f: Lit) -> Option<Conflict> {
+        let others = std::mem::take(&mut self.binaries[f as usize]);
+        self.ticks += 1 + others.len() as u64;
+        let mut conflict = None;
+        for &o in &others {
+            match self.value[o as usize] {
+                1 => {}
+                0 => self.enqueue(o, BINARY | f),
+                _ => {
+                    conflict = Some(Conflict::Binary(f, o));
+                    break;
+                }
+            }
+        }
+        self.binaries[f as usize] = others;
+        conflict
     }
 
     /// The literals of a conflict or a reason but the one it implies, the
@@ -635,26 +639,7 @@ impl Solver {
         }
         self.stack = met;
         learnt[0] = p.expect("a literal of the conflict's level") ^ 1;
-        // Recursive minimization: a literal implied by the others' reasons,
-        // within levels the clause already has, goes.
-        let abstraction = learnt[1..]
-            .iter()
-            .fold(0u64, |a, &l| a | 1 << (self.level[var(l)] & 63));
-        self.to_clear.clear();
-        self.to_clear.extend_from_slice(&learnt);
-        let mut j = 1;
-        for i in 1..learnt.len() {
-            let l = learnt[i];
-            if self.reason[var(l)] == NONE || !self.redundant(l, abstraction) {
-                learnt[j] = l;
-                j += 1;
-            }
-        }
-        learnt.truncate(j);
-        for k in 0..self.to_clear.len() {
-            let v = var(self.to_clear[k]);
-            self.seen[v] = false;
-        }
+        self.minimize_learnt_clause(&mut learnt);
         let mut back = 0;
         if learnt.len() > 1 {
             let mut max = 1;
@@ -680,6 +665,29 @@ impl Solver {
         }
         self.learnt = learnt;
         (back, lbd)
+    }
+
+    /// Recursive minimization: a literal implied by the others' reasons,
+    /// within levels the clause already has, goes.
+    fn minimize_learnt_clause(&mut self, learnt: &mut Vec<Lit>) {
+        let abstraction = learnt[1..]
+            .iter()
+            .fold(0u64, |a, &l| a | 1 << (self.level[var(l)] & 63));
+        self.to_clear.clear();
+        self.to_clear.extend_from_slice(learnt);
+        let mut j = 1;
+        for i in 1..learnt.len() {
+            let l = learnt[i];
+            if self.reason[var(l)] == NONE || !self.redundant(l, abstraction) {
+                learnt[j] = l;
+                j += 1;
+            }
+        }
+        learnt.truncate(j);
+        for k in 0..self.to_clear.len() {
+            let v = var(self.to_clear[k]);
+            self.seen[v] = false;
+        }
     }
 
     /// Whether the false literal `p` of the learnt clause follows from the

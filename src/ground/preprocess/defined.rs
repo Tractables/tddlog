@@ -189,23 +189,7 @@ pub(in crate::ground) fn eliminate_defined(gp: &mut GroundProgram) -> Option<Def
         resolvents = out.resolvents;
     }
     if stats.eliminated > 0 {
-        // The resolvents and clauses that the others imply leave too.
-        let stay: Vec<usize> = (0..cnf.clauses.len()).filter(|&i| kept[i]).collect();
-        let after: Vec<Vec<Lit>> = stay
-            .iter()
-            .map(|&i| cnf.clauses[i].clone())
-            .chain(resolvents.iter().cloned())
-            .collect();
-        let (keep, implied_after) = implied_clauses(n, &after);
-        stats.implied_after = implied_after;
-        for (j, &i) in stay.iter().enumerate() {
-            kept[i] = keep[j];
-        }
-        let mut j = stay.len();
-        resolvents.retain(|_| {
-            j += 1;
-            keep[j - 1]
-        });
+        stats.implied_after = prune_implied_after(n, &cnf.clauses, &mut kept, &mut resolvents);
     }
     stats.left = kept.iter().filter(|&&k| k).count() + resolvents.len();
     if stats.eliminated == 0 && stats.implied.implied == 0 {
@@ -213,6 +197,31 @@ pub(in crate::ground) fn eliminate_defined(gp: &mut GroundProgram) -> Option<Def
     }
     apply_defined(gp, &cnf, &kept, &resolvents);
     Some(stats)
+}
+
+/// Drops the resolvents and remaining clauses that the others imply.
+fn prune_implied_after(
+    n: usize,
+    clauses: &[Vec<Lit>],
+    kept: &mut [bool],
+    resolvents: &mut Vec<Vec<Lit>>,
+) -> ImpliedStats {
+    let stay: Vec<usize> = (0..clauses.len()).filter(|&i| kept[i]).collect();
+    let after: Vec<Vec<Lit>> = stay
+        .iter()
+        .map(|&i| clauses[i].clone())
+        .chain(resolvents.iter().cloned())
+        .collect();
+    let (keep, implied_after) = implied_clauses(n, &after);
+    for (j, &i) in stay.iter().enumerate() {
+        kept[i] = keep[j];
+    }
+    let mut j = stay.len();
+    resolvents.retain(|_| {
+        j += 1;
+        keep[j - 1]
+    });
+    implied_after
 }
 
 fn apply_defined(gp: &mut GroundProgram, cnf: &Cnf, kept: &[bool], resolvents: &[Vec<Lit>]) {
@@ -316,6 +325,15 @@ fn cnf(gp: &GroundProgram, copy: &[Option<GLit>]) -> Option<Cnf> {
             facts.push(a as AtomId);
         }
     }
+    build_indexed_cnf(facts, &var_of, clauses, repeated)
+}
+
+fn build_indexed_cnf(
+    facts: Vec<AtomId>,
+    var_of: &[u32],
+    clauses: Vec<(Vec<(AtomId, bool)>, Origin)>,
+    repeated: Vec<Origin>,
+) -> Option<Cnf> {
     let mut out = Cnf {
         facts,
         clauses: Vec::with_capacity(clauses.len()),

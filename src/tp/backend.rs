@@ -26,61 +26,74 @@ pub(crate) type Formula = (Tdd, VtreeScope);
 /// store keeps ([`super::compile::Formulas`]), which a conjunction reads in
 /// place, copying only the levels its result would take, and any other
 /// operation copies.
-#[allow(
-    clippy::large_enum_variant,
-    reason = "an owned read moves into the conjunction as `Cow` holds it"
-)]
-pub(crate) enum Read {
-    Owned(Tdd),
-    Shared(Arc<Tdd>),
+pub(crate) struct Read {
+    owned: Option<Tdd>,
+    shared: Option<Arc<Tdd>>,
+}
+
+impl From<Tdd> for Read {
+    fn from(f: Tdd) -> Self {
+        Read {
+            owned: Some(f),
+            shared: None,
+        }
+    }
 }
 
 impl std::ops::Deref for Read {
     type Target = Tdd;
 
     fn deref(&self) -> &Tdd {
-        match self {
-            Read::Owned(f) => f,
-            Read::Shared(f) => f,
+        match (&self.owned, &self.shared) {
+            (Some(f), _) => f,
+            (None, Some(f)) => f,
+            (None, None) => unreachable!("a read is owned or shared"),
         }
     }
 }
 
 impl Read {
+    /// A shared read of `f`.
+    pub(crate) fn shared(f: Arc<Tdd>) -> Self {
+        Read {
+            owned: None,
+            shared: Some(f),
+        }
+    }
+
     /// A stored formula taken from its store: owned where no read of it
     /// is outstanding.
     pub(crate) fn taken(f: Arc<Tdd>) -> Self {
-        Arc::try_unwrap(f).map_or_else(Read::Shared, Read::Owned)
+        Arc::try_unwrap(f).map_or_else(Read::shared, Read::from)
     }
 
     /// The formula for an operation to consume: itself, or a copy of a
     /// shared one ([`TddBackend::copy`]).
     pub(crate) fn owned(self, backend: &TddBackend) -> Result<Tdd, CompileError> {
-        match self {
-            Read::Owned(f) => Ok(f),
-            Read::Shared(f) => Arc::try_unwrap(f).or_else(|f| backend.copy(&f)),
+        match (self.owned, self.shared) {
+            (Some(f), _) => Ok(f),
+            (None, Some(f)) => Arc::try_unwrap(f).or_else(|f| backend.copy(&f)),
+            (None, None) => unreachable!("a read is owned or shared"),
         }
     }
 
     /// Run `op` on the formula, owned where no other read holds it and
     /// borrowed otherwise, where [`owned`](Self::owned) would copy it.
     pub(crate) fn with_cow<R>(self, op: impl FnOnce(Cow<'_, Tdd>) -> R) -> R {
-        match self {
-            Read::Owned(f) => op(Cow::Owned(f)),
-            Read::Shared(f) => match Arc::try_unwrap(f) {
+        match (self.owned, self.shared) {
+            (Some(f), _) => op(Cow::Owned(f)),
+            (None, Some(f)) => match Arc::try_unwrap(f) {
                 Ok(f) => op(Cow::Owned(f)),
                 Err(f) => op(Cow::Borrowed(&f)),
             },
+            (None, None) => unreachable!("a read is owned or shared"),
         }
     }
 
     /// The formula as a conjunction takes it, with the store's hold on a
     /// shared one, which the borrow reads through ([`lend`]).
     fn split(self) -> (Option<Tdd>, Option<Arc<Tdd>>) {
-        match self {
-            Read::Owned(f) => (Some(f), None),
-            Read::Shared(f) => (None, Some(f)),
-        }
+        (self.owned, self.shared)
     }
 }
 
@@ -98,8 +111,8 @@ fn lend(owned: Option<Tdd>, shared: &Option<Arc<Tdd>>) -> Cow<'_, Tdd> {
 /// made.
 fn unlend(back: Cow<'_, Tdd>, shared: &Option<Arc<Tdd>>) -> Read {
     match back {
-        Cow::Owned(f) => Read::Owned(f),
-        Cow::Borrowed(_) => Read::Shared(Arc::clone(
+        Cow::Owned(f) => Read::from(f),
+        Cow::Borrowed(_) => Read::shared(Arc::clone(
             shared.as_ref().expect("a borrow of a shared read"),
         )),
     }
@@ -110,7 +123,7 @@ pub(crate) struct Part(pub(crate) Read, pub(crate) VtreeScope);
 
 impl From<Formula> for Part {
     fn from((f, scope): Formula) -> Self {
-        Part(Read::Owned(f), scope)
+        Part(Read::from(f), scope)
     }
 }
 
@@ -906,18 +919,7 @@ impl TddBackend<'_> {
                 continue;
             }
             let (tl, tr) = vtree.children(t);
-            let at_x = x.level(t);
-            let width = at_x.nodes().len();
-            if (0..width).all(|i| at_x.pairs_read(i, &mut buf).is_sorted_by_key(key)) {
-                b.replace_level(self.engine, t, x.level_view(t))?;
-            } else {
-                for i in 0..width {
-                    pairs.clear();
-                    pairs.extend_from_slice(at_x.pairs_read(i, &mut buf));
-                    pairs.sort_unstable_by_key(key);
-                    b.push(self.engine, t, &pairs)?;
-                }
-            }
+            let width = self.copy_sorted_x_level(&mut b, x, t, &mut pairs, &mut buf)?;
             let moved = |ch: VtreeIdx, e: EncodedChildRef| match to[ch.idx()].as_slice() {
                 [] => e,
                 at => EncodedChildRef::from_raw(at[e.raw() as usize]),
@@ -961,6 +963,30 @@ impl TddBackend<'_> {
             })
             .map_err(OperationError::from)?,
         ))
+    }
+
+    fn copy_sorted_x_level(
+        &self,
+        b: &mut tididi::diagram::TddBuilder,
+        x: &Tdd,
+        t: VtreeIdx,
+        pairs: &mut Vec<ChildPair>,
+        buf: &mut Vec<ChildPair>,
+    ) -> Result<usize, CompileError> {
+        let key = |p: &ChildPair| (p.left.raw(), p.right.raw());
+        let at_x = x.level(t);
+        let width = at_x.nodes().len();
+        if (0..width).all(|i| at_x.pairs_read(i, buf).is_sorted_by_key(key)) {
+            b.replace_level(self.engine, t, x.level_view(t))?;
+        } else {
+            for i in 0..width {
+                pairs.clear();
+                pairs.extend_from_slice(at_x.pairs_read(i, buf));
+                pairs.sort_unstable_by_key(key);
+                b.push(self.engine, t, pairs)?;
+            }
+        }
+        Ok(width)
     }
     /// `a ∧ b`, each operand owned or borrowed: a borrowed one is read in
     /// place.

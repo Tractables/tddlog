@@ -76,30 +76,11 @@ pub(crate) fn compile_component(
         }
         // Unfoundedness refinement: least fixpoint of the upper component
         // from ⊥ with the lower component frozen.
-        let mut u: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
-        loop {
-            let mut changed = false;
-            for (i, &a) in scc.iter().enumerate() {
-                let (_, p) = apply(a, &lower, &u)?;
-                updates += 1;
-                if !backend.equivalent(&p, &u[i])? {
-                    u[i] = p;
-                    changed = true;
-                }
-            }
-            if !changed {
-                break;
-            }
-        }
-        let mut refined = false;
-        for i in 0..k {
-            if !backend.equivalent(&u[i], &upper[i])? {
-                refined = true;
-            }
-        }
-        if !refined {
+        let Some(u) =
+            unfounded_refinement(scc, scope, backend, &lower, &upper, &apply, &mut updates)?
+        else {
             break;
-        }
+        };
         upper = u;
     }
     for i in 0..k {
@@ -108,6 +89,39 @@ pub(crate) fn compile_component(
         }
     }
     Ok((lower, updates))
+}
+
+fn unfounded_refinement(
+    scc: &[AtomId],
+    scope: &VtreeScope,
+    backend: &TddBackend,
+    lower: &[Tdd],
+    upper: &[Tdd],
+    apply: &impl Fn(AtomId, &[Tdd], &[Tdd]) -> Result<(Tdd, Tdd), CompileError>,
+    updates: &mut usize,
+) -> Result<Option<Vec<Tdd>>, CompileError> {
+    let k = scc.len();
+    let mut u: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
+    loop {
+        let mut changed = false;
+        for (i, &a) in scc.iter().enumerate() {
+            let (_, p) = apply(a, lower, &u)?;
+            *updates += 1;
+            if !backend.equivalent(&p, &u[i])? {
+                u[i] = p;
+                changed = true;
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    for i in 0..k {
+        if !backend.equivalent(&u[i], &upper[i])? {
+            return Ok(Some(u));
+        }
+    }
+    Ok(None)
 }
 
 /// Formulas of literals over atoms outside `scc`, which are fixed during the

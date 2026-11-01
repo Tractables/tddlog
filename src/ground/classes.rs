@@ -434,6 +434,17 @@ fn rewrite_rows(
             }
         }
     }
+    apply_class_rewrites(gp, n, fresh, before_atom, before_rule, &dropped);
+}
+
+fn apply_class_rewrites(
+    gp: &mut GroundProgram,
+    n: usize,
+    fresh: AtomId,
+    mut before_atom: FxHashMap<AtomId, Vec<Atom>>,
+    before_rule: FxHashMap<usize, Vec<GroundRule>>,
+    dropped: &[bool],
+) {
     // Renumber: the atoms in order with the class atoms placed, the fresh
     // ids in the order they were handed out.
     let mut order = Vec::with_capacity(fresh as usize);
@@ -447,7 +458,7 @@ fn rewrite_rows(
         }
         order.push(a);
     }
-    gp.splice_rules(before_rule, &dropped);
+    gp.splice_rules(before_rule, dropped);
     simplify::renumber(gp, &order);
     simplify::compact(gp);
 }
@@ -600,12 +611,11 @@ fn signature(
     scratch: &mut SignatureScratch,
 ) -> Option<bool> {
     collect_switch_reads(gp, row_rules, own, t, scratch);
+    intern_switch_roles(gp, role_ids, scratch);
     let SignatureScratch {
         slot,
         of_row,
         reads,
-        read_start,
-        role,
         ids,
         numbers,
         switches,
@@ -613,29 +623,6 @@ fn signature(
         signature,
         ..
     } = scratch;
-    // Each switch's literals, sorted, are its role. Two switches have one
-    // role exactly when they get one number.
-    ids.clear();
-    for (k, &s) in of_row.iter().enumerate() {
-        let AtomKind::Fact(p) = gp.kinds[s as usize] else {
-            unreachable!("a table's own atom is a fact")
-        };
-        let run = &mut reads[read_start[k]..read_start[k + 1]];
-        run.sort_unstable();
-        role.clear();
-        role.push(p.p.to_bits());
-        role.push(p.not.to_bits());
-        role.extend_from_slice(run);
-        let id = match role_ids.get(role.as_slice()) {
-            Some(&id) => id,
-            None => {
-                let id = role_ids.len() as u32;
-                role_ids.insert(role.clone(), id);
-                id
-            }
-        };
-        ids.push(id);
-    }
     numbers.clear();
     numbers.extend_from_slice(ids);
     numbers.sort_unstable();
@@ -674,6 +661,44 @@ fn signature(
         );
     }
     Some(!reads.is_empty())
+}
+
+/// Each switch's literals, sorted, are its role. Two switches have one role
+/// exactly when they get one number.
+fn intern_switch_roles(
+    gp: &GroundProgram,
+    role_ids: &mut FxHashMap<Role, u32>,
+    scratch: &mut SignatureScratch,
+) {
+    let SignatureScratch {
+        of_row,
+        reads,
+        read_start,
+        role,
+        ids,
+        ..
+    } = scratch;
+    ids.clear();
+    for (k, &s) in of_row.iter().enumerate() {
+        let AtomKind::Fact(p) = gp.kinds[s as usize] else {
+            unreachable!("a table's own atom is a fact")
+        };
+        let run = &mut reads[read_start[k]..read_start[k + 1]];
+        run.sort_unstable();
+        role.clear();
+        role.push(p.p.to_bits());
+        role.push(p.not.to_bits());
+        role.extend_from_slice(run);
+        let id = match role_ids.get(role.as_slice()) {
+            Some(&id) => id,
+            None => {
+                let id = role_ids.len() as u32;
+                role_ids.insert(role.clone(), id);
+                id
+            }
+        };
+        ids.push(id);
+    }
 }
 
 fn collect_switch_reads(

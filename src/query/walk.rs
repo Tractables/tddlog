@@ -814,24 +814,7 @@ impl EvidenceWalk {
     fn unbatch(&mut self, id: usize) {
         let Batch { target, product } = self.batches[id];
         self.in_full.remove(&product);
-        let (mut operands, mut outs) = (Vec::new(), Vec::new());
-        let batch_of = &self.batch_of;
-        self.joins.retain(|join| {
-            if batch_of.get(&join.out()) != Some(&id) {
-                return true;
-            }
-            match join {
-                Join::Two(a, b, _) => operands.extend([*a, *b]),
-                Join::Smallest(items, _) => operands.extend_from_slice(items),
-            }
-            outs.push(join.out());
-            false
-        });
-        for out in &outs {
-            self.batch_of.remove(out);
-            self.shared.remove(out);
-        }
-        operands.retain(|slot| !outs.contains(slot));
+        let mut operands = self.drain_batch_operands(id);
         let at = self
             .joins
             .iter()
@@ -895,6 +878,28 @@ impl EvidenceWalk {
         {
             self.unbatched += 1;
         }
+    }
+
+    fn drain_batch_operands(&mut self, id: usize) -> Vec<usize> {
+        let (mut operands, mut outs) = (Vec::new(), Vec::new());
+        let batch_of = &self.batch_of;
+        self.joins.retain(|join| {
+            if batch_of.get(&join.out()) != Some(&id) {
+                return true;
+            }
+            match join {
+                Join::Two(a, b, _) => operands.extend([*a, *b]),
+                Join::Smallest(items, _) => operands.extend_from_slice(items),
+            }
+            outs.push(join.out());
+            false
+        });
+        for out in &outs {
+            self.batch_of.remove(out);
+            self.shared.remove(out);
+        }
+        operands.retain(|slot| !outs.contains(slot));
+        operands
     }
 
     /// An empty slot for a join's result, built on the scope over `shared`

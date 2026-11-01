@@ -536,15 +536,12 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
             merged += 1;
             continue;
         }
-        if node(l) != 0 && owner[node(l)].is_none() {
-            owner[node(l)] = Some(GLit::new(a, l & 1 == 0));
-            if let Some(sweep) = sweep.as_mut().filter(|_| swept[a as usize]) {
-                sweep.add(&g, node(l));
-            }
-        }
-        if node(l) != 0 && first_gate[node(l)].is_none() {
-            first_gate[node(l)] = Some(GLit::new(a, l & 1 == 0));
-        }
+        record_gate_node_owner(
+            (a, l, swept[a as usize]),
+            &g,
+            &mut sweep,
+            (&mut owner, &mut first_gate),
+        );
     }
     if let Some(sweep) = sweep {
         gp.stats.swept.add(sweep.stats);
@@ -552,11 +549,38 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     if merged == 0 {
         return false;
     }
-    rewrite(gp, &into, &fixed);
+    apply_aig_merges(gp, derived, merged, &into, &fixed);
+    true
+}
+
+fn apply_aig_merges(
+    gp: &mut GroundProgram,
+    derived: usize,
+    merged: usize,
+    into: &[GLit],
+    fixed: &[Option<bool>],
+) {
+    rewrite(gp, into, fixed);
     restrict_to_relevant(gp);
     gp.stats.merged += merged;
     gp.stats.reduced += derived.saturating_sub(gp.num_derived());
-    true
+}
+
+fn record_gate_node_owner(
+    (a, l, is_swept): (AtomId, Lit, bool),
+    g: &Graph,
+    sweep: &mut Option<Sweep>,
+    (owner, first_gate): (&mut [Option<GLit>], &mut [Option<GLit>]),
+) {
+    if node(l) != 0 && owner[node(l)].is_none() {
+        owner[node(l)] = Some(GLit::new(a, l & 1 == 0));
+        if let Some(sweep) = sweep.as_mut().filter(|_| is_swept) {
+            sweep.add(g, node(l));
+        }
+    }
+    if node(l) != 0 && first_gate[node(l)].is_none() {
+        first_gate[node(l)] = Some(GLit::new(a, l & 1 == 0));
+    }
 }
 
 fn init_sweep_state(

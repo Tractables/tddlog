@@ -266,15 +266,30 @@ pub(super) fn rewrite(shape: &Shape, order: &[usize], program: &Program) -> Opti
             Some(write(t, r, f, &values, &dists))
         })
         .collect();
-    // An observation of a taken table's absent value, as one of its
-    // present value.
+    let evidence = rewrite_evidence(shape, program, &values, &chosen, &value);
+    Some(Rewritten {
+        written,
+        count,
+        evidence,
+    })
+}
+
+/// An observation of a taken table's absent value, rewritten as one of its
+/// present value.
+fn rewrite_evidence(
+    shape: &Shape,
+    program: &Program,
+    values: &[Option<[&Atom; 2]>],
+    chosen: &[Option<Form>],
+    value: &impl Fn(usize, &Atom) -> Option<usize>,
+) -> Option<Vec<(Atom, bool)>> {
     let present = |a: &Atom| {
         let p = shape.predicate_of(a)?;
         let f = chosen[p]?;
         (value(p, a)? == f.absent)
             .then(|| values[p].expect("a table taken has values")[1 - f.absent])
     };
-    let evidence = program
+    program
         .evidence
         .iter()
         .any(|(a, _)| present(a).is_some())
@@ -287,12 +302,7 @@ pub(super) fn rewrite(shape: &Shape, order: &[usize], program: &Program) -> Opti
                     None => (a.clone(), *v),
                 })
                 .collect()
-        });
-    Some(Rewritten {
-        written,
-        count,
-        evidence,
-    })
+        })
 }
 
 /// `gp`, ground from a program whose noisy-or tables [`rewrite`] wrote,
@@ -341,22 +351,7 @@ fn choose(
     dists: &[[f64; 2]],
 ) -> Vec<Option<Form>> {
     let n = shape.predicates();
-    let mut needed = vec![0u8; n];
-    let mut observed = vec![0u8; n];
-    let asked = program.queries.iter().map(|(a, _)| (a, false));
-    for (a, evidence) in asked.chain(program.evidence.iter().map(|(a, _)| (a, true))) {
-        if let Some(p) = shape.predicate_of(a)
-            && let Some(v) = value(p, a)
-        {
-            // An observation of either value is one of the value written;
-            // a form whose absent value is not observed comes first.
-            if evidence {
-                observed[p] |= 1 << v;
-            } else {
-                needed[p] |= 1 << v;
-            }
-        }
-    }
+    let (mut needed, observed) = initial_needed_and_observed(shape, program, value);
     let mut chosen: Vec<Option<Form>> = vec![None; n];
     let mut taken: Vec<bool> = rows.iter().map(Option::is_some).collect();
     let need_all = |t: usize, needed: &mut [u8]| {
@@ -391,47 +386,16 @@ fn choose(
                 continue;
             }
             let r = rows[t].as_ref().expect("a table taken has rows");
-            let open = |f: &Form| needed[t] & (1 << f.absent) == 0;
-            // How many parents a form of an observed table would leave with
-            // no form open: the table would not be taken then.
-            let blocked = |f: &Form| {
-                let dist = r.dist(dists);
-                r.parents
-                    .iter()
-                    .enumerate()
-                    .filter(|&(i, &p)| {
-                        let need = needed[p] | 1 << (f.base >> i & 1 ^ 1);
-                        f.q(dist, i) < 1.0
-                            && !(taken[p]
-                                && rows[p].as_ref().is_some_and(|rp| {
-                                    rp.forms
-                                        .iter()
-                                        .flatten()
-                                        .any(|g| need & (1 << g.absent) == 0)
-                                }))
-                    })
-                    .count()
-            };
             let watched = observed[t] != 0 || under[t];
-            let form = if !watched || r.parents.iter().all(|&p| taken[p]) {
-                match chosen[t] {
-                    Some(f) if open(&f) => Some(f),
-                    _ => {
-                        changed = true;
-                        let mut forms = r.forms.iter().flatten().filter(|f| open(f));
-                        if watched {
-                            forms
-                                .min_by_key(|f| (blocked(f), observed[t] >> f.absent & 1))
-                                .copied()
-                        } else {
-                            forms.next().copied()
-                        }
-                    }
-                }
-            } else {
-                changed = true;
-                None
-            };
+            let form = pick_table_form(
+                r,
+                chosen[t],
+                (needed[t], observed[t], watched),
+                (&needed, &taken),
+                rows,
+                dists,
+                &mut changed,
+            );
             match form {
                 Some(f) => {
                     let dist = r.dist(dists);
@@ -453,6 +417,80 @@ fn choose(
         }
     }
     chosen
+}
+
+fn initial_needed_and_observed(
+    shape: &Shape,
+    program: &Program,
+    value: &impl Fn(usize, &Atom) -> Option<usize>,
+) -> (Vec<u8>, Vec<u8>) {
+    let n = shape.predicates();
+    let mut needed = vec![0u8; n];
+    let mut observed = vec![0u8; n];
+    let asked = program.queries.iter().map(|(a, _)| (a, false));
+    for (a, evidence) in asked.chain(program.evidence.iter().map(|(a, _)| (a, true))) {
+        if let Some(p) = shape.predicate_of(a)
+            && let Some(v) = value(p, a)
+        {
+            // An observation of either value is one of the value written;
+            // a form whose absent value is not observed comes first.
+            if evidence {
+                observed[p] |= 1 << v;
+            } else {
+                needed[p] |= 1 << v;
+            }
+        }
+    }
+    (needed, observed)
+}
+
+fn pick_table_form(
+    r: &Rows,
+    current: Option<Form>,
+    (needed_t, observed_t, watched): (u8, u8, bool),
+    (needed, taken): (&[u8], &[bool]),
+    rows: &[Option<Rows>],
+    dists: &[[f64; 2]],
+    changed: &mut bool,
+) -> Option<Form> {
+    if watched && !r.parents.iter().all(|&p| taken[p]) {
+        *changed = true;
+        return None;
+    }
+    let open = |f: &Form| needed_t & (1 << f.absent) == 0;
+    if let Some(f) = current
+        && open(&f)
+    {
+        return Some(f);
+    }
+    *changed = true;
+    let mut forms = r.forms.iter().flatten().filter(|f| open(f));
+    if !watched {
+        return forms.next().copied();
+    }
+    // How many parents a form of an observed table would leave with
+    // no form open: the table would not be taken then.
+    let blocked = |f: &Form| {
+        let dist = r.dist(dists);
+        r.parents
+            .iter()
+            .enumerate()
+            .filter(|&(i, &p)| {
+                let need = needed[p] | 1 << (f.base >> i & 1 ^ 1);
+                f.q(dist, i) < 1.0
+                    && !(taken[p]
+                        && rows[p].as_ref().is_some_and(|rp| {
+                            rp.forms
+                                .iter()
+                                .flatten()
+                                .any(|g| need & (1 << g.absent) == 0)
+                        }))
+            })
+            .count()
+    };
+    forms
+        .min_by_key(|f| (blocked(f), observed_t >> f.absent & 1))
+        .copied()
 }
 
 /// Table `t` of the rows `r`, taken in the form `f`, as clauses: the row

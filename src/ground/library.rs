@@ -200,22 +200,7 @@ pub(super) fn added(program: &Program) -> Option<Program> {
     let defined: FxHashSet<(&str, usize)> = heads(program).collect();
     let library = library(program);
     let (wanted, any_call) = wanted_library_predicates(program, library, &defined);
-    // The built-ins the queries and the evidence ask about.
-    let mut asked: Vec<(&str, usize, Builtin)> = Vec::new();
-    let patterns = program
-        .queries
-        .iter()
-        .chain(&program.evidence)
-        .map(|(a, _)| a);
-    for a in patterns.chain(program.query_rules.iter().map(|r| &r.pattern)) {
-        let (name, arity) = a.signature();
-        if let Some(b) = Builtin::of(name, arity)
-            && !defined.contains(&(name, arity))
-            && !asked.iter().any(|e| e.2 == b)
-        {
-            asked.push((name, arity, b));
-        }
-    }
+    let asked = asked_builtins(program, &defined);
     if wanted.is_empty() && !any_call && asked.is_empty() {
         return collected;
     }
@@ -277,6 +262,29 @@ pub(super) fn added(program: &Program) -> Option<Program> {
         guard_variable_calls(&mut with, &listed, program.unknown_fails);
     }
     Some(with)
+}
+
+/// The built-ins the queries and the evidence ask about.
+fn asked_builtins<'a>(
+    program: &'a Program,
+    defined: &FxHashSet<(&str, usize)>,
+) -> Vec<(&'a str, usize, Builtin)> {
+    let mut asked = Vec::new();
+    let patterns = program
+        .queries
+        .iter()
+        .chain(&program.evidence)
+        .map(|(a, _)| a);
+    for a in patterns.chain(program.query_rules.iter().map(|r| &r.pattern)) {
+        let (name, arity) = a.signature();
+        if let Some(b) = Builtin::of(name, arity)
+            && !defined.contains(&(name, arity))
+            && !asked.iter().any(|e: &(&str, usize, Builtin)| e.2 == b)
+        {
+            asked.push((name, arity, b));
+        }
+    }
+    asked
 }
 
 type Sig = (&'static str, usize);

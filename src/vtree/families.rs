@@ -903,44 +903,55 @@ impl Grouping {
         // apart, they separate nothing and take a table's switches off its
         // spine.
         unmark_single_group_hubs(num_atoms, roots.len(), &shared, &mut parent, cones, hubs);
-        // Groups are numbered by the first atom of the program as grounded that
-        // their rules define, links aside, and not by the order of their roots:
-        // the decomposition breaks ties by that number, and how the rewrite ties
-        // its copies together should not move it.
-        let mut first_atom = vec![AtomId::MAX; roots.len()];
-        for i in (0..roots.len()).filter(|&i| !shared[i]) {
-            let head = cones
-                .rules_of(walk[i])
-                .iter()
-                .map(|&ri| roles.defines[gp.rules[ri].head as usize])
-                .min()
-                .unwrap_or(AtomId::MAX);
-            let g = find(&mut parent, i);
-            first_atom[g] = first_atom[g].min(head);
-        }
-        let mut group_roots: Vec<usize> = (0..roots.len())
-            .filter(|&i| find(&mut parent, i) == i)
-            .collect();
-        group_roots.sort_by_key(|&g| (first_atom[g], g));
-        let mut group_of = vec![usize::MAX; roots.len()];
-        for (n, &g) in group_roots.iter().enumerate() {
-            group_of[g] = n;
-        }
-        for i in 0..roots.len() {
-            group_of[i] = group_of[find(&mut parent, i)];
-        }
-        let mut first_root = vec![usize::MAX; group_roots.len()];
-        for (i, &g) in group_of.iter().enumerate() {
-            first_root[g] = first_root[g].min(i);
-        }
+        let (group_of, first_root, count) =
+            number_groups(gp, roles, roots.len(), &shared, &mut parent, cones);
         Grouping {
             group_of,
-            count: group_roots.len(),
+            count,
             first_root,
             shared,
             family_of,
         }
     }
+}
+
+/// Numbers groups by the first atom of the program as grounded that their
+/// rules define, links aside, rather than by the order of their roots: the
+/// decomposition breaks ties by that number, and how the rewrite ties its
+/// copies together should not move it.
+fn number_groups(
+    gp: &GroundProgram,
+    roles: &Roles,
+    num_roots: usize,
+    shared: &[bool],
+    parent: &mut [usize],
+    cones: &Cones,
+) -> (Vec<usize>, Vec<usize>, usize) {
+    let mut first_atom = vec![AtomId::MAX; num_roots];
+    for i in (0..num_roots).filter(|&i| !shared[i]) {
+        let head = cones
+            .rules_of(cones.walk[i])
+            .iter()
+            .map(|&ri| roles.defines[gp.rules[ri].head as usize])
+            .min()
+            .unwrap_or(AtomId::MAX);
+        let g = find(parent, i);
+        first_atom[g] = first_atom[g].min(head);
+    }
+    let mut group_roots: Vec<usize> = (0..num_roots).filter(|&i| find(parent, i) == i).collect();
+    group_roots.sort_by_key(|&g| (first_atom[g], g));
+    let mut group_of = vec![usize::MAX; num_roots];
+    for (n, &g) in group_roots.iter().enumerate() {
+        group_of[g] = n;
+    }
+    for i in 0..num_roots {
+        group_of[i] = group_of[find(parent, i)];
+    }
+    let mut first_root = vec![usize::MAX; group_roots.len()];
+    for (i, &g) in group_of.iter().enumerate() {
+        first_root[g] = first_root[g].min(i);
+    }
+    (group_of, first_root, group_roots.len())
 }
 
 fn unmark_single_group_hubs(
