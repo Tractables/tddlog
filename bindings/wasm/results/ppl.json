@@ -1,6 +1,6 @@
 {
  "version":"0.1.0",
- "names":{"tddlog":"tddlog","alea":"Alea.jl","alea-process":"Alea.jl's process","dice":"Dice","roulette":"Roulette","roulette-process":"Roulette's process","problog":"ProbLog","geni":"Geni","nodice":"noDice","psi":"Psi","genfer":"Genfer","sppl":"SPPL","pluck":"Pluck","pita":"PITA","aspmc":"aspmc","scallop":"Scallop","storm":"Storm","prism":"PRISM","ace":"Ace","merlin":"Merlin","agrum":"pyAgrum","pgmpy":"pgmpy","libdai":"libDAI","tensorinference":"TensorInference.jl"},
+ "names":{"tddlog":"tddlog","alea":"Alea.jl","alea-process":"Alea.jl's process","dice":"Dice","roulette":"Roulette","roulette-process":"Roulette's process","problog":"ProbLog","geni":"Geni","nodice":"noDice","psi":"Psi","genfer":"Genfer","sppl":"SPPL","pluck":"Pluck","pita":"PITA","aspmc":"aspmc","scallop":"Scallop","psouffle":"PSouffle","storm":"Storm","prism":"PRISM","ace":"Ace","merlin":"Merlin","agrum":"pyAgrum","pgmpy":"pgmpy","libdai":"libDAI","tensorinference":"TensorInference.jl"},
  "families":[
   {
    "key":"ppl",
