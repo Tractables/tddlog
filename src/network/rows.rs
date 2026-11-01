@@ -160,7 +160,7 @@ impl Decimal {
     /// 0.007262920000000001), and the noise would make the entry's slack
     /// that of 16 digits; 2/3 printed in full stays 0.6666666666666666.
     /// For an entry the file writes in 12 significant digits or fewer, this
-    /// is its text. `gen_bn.py`'s `meant_decimal`.
+    /// is its text.
     fn meant(x: f64) -> Decimal {
         if x == 0.0 {
             return Decimal {
@@ -284,9 +284,7 @@ impl PartialOrd for Natural {
 
 /// The sum of `xs` correctly rounded, as Python's `math.fsum` computes it
 /// (Shewchuk's partials, then the rounding of their sum): whether a row
-/// sums to more than one decides whether it is divided, and where a plain
-/// sum differs from the exact one in the last bit, the decisions of
-/// `gen_bn.py`, which sums with `math.fsum`, would differ.
+/// sums to more than one decides whether it is divided.
 pub(crate) fn fsum(xs: &[f64]) -> f64 {
     let mut partials: Vec<f64> = Vec::new();
     for &x in xs {

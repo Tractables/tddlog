@@ -333,33 +333,9 @@ fn conditional_tables(
     }
     // The child relation is acyclic: a depth-first walk to the parents
     // meets no variable on its own path.
-    let mut state = vec![0u8; n]; // 0 unseen, 1 on the path, 2 done
-    for root in 0..n {
-        if state[root] != 0 {
-            continue;
-        }
-        state[root] = 1;
-        let mut stack = vec![(root, 0usize)];
-        while let Some((v, next)) = stack.last_mut() {
-            let parents = &out[*v].0[..out[*v].0.len() - 1];
-            if *next == parents.len() {
-                state[*v] = 2;
-                stack.pop();
-                continue;
-            }
-            let u = parents[*next];
-            *next += 1;
-            match state[u] {
-                1 => return None,
-                0 => {
-                    state[u] = 1;
-                    stack.push((u, 0));
-                }
-                _ => {}
-            }
-        }
-    }
-    Some(out)
+    super::parent_postorder(n, |v| &out[v].0[..out[v].0.len() - 1])
+        .1
+        .then_some(out)
 }
 
 /// The colour symmetry of a Markov network, broken. In a network whose

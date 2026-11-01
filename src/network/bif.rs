@@ -1,9 +1,8 @@
 //! The Bayesian Interchange Format: `variable X { type discrete [ 2 ] {
 //! a, b }; }` and `probability ( X | P1, P2 ) { (u1, u2) 0.1, 0.9; ... }`,
 //! a root's row written `table 0.3, 0.7;`. A comment runs from `//` to the
-//! end of the line. Read as `gen_bn.py`'s regular expressions read it; a
-//! row of the same parents' values twice keeps the first's place and
-//! the second's numbers.
+//! end of the line. A row of the same parents' values twice keeps the
+//! first's place and the second's numbers.
 
 use std::collections::HashMap;
 
@@ -98,16 +97,7 @@ fn declaration(text: &str, i: usize) -> Option<(&str, &str, usize)> {
 /// Sets a variable's table from a `probability` block: its head, `X |
 /// P1, P2`, and its rows.
 fn read_probability(network: &mut Network, head: &str, body: &str) -> Result<(), String> {
-    let mut parts = head.split('|').map(strip);
-    let name = parts.next().unwrap_or("");
-    let v = network.variable(name)?;
-    let parents = match parts.next() {
-        Some(p) if !p.is_empty() => p
-            .split(',')
-            .map(|p| network.variable(strip(p)))
-            .collect::<Result<Vec<_>, _>>()?,
-        _ => Vec::new(),
-    };
+    let (name, v, parents) = network.parse_table_head(head, |p| p.split(','))?;
     let k = network.values[v].len();
     let mut table = Table {
         parents,

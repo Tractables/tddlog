@@ -3,12 +3,11 @@
 //! first parent outermost and the values of X innermost. A comment runs
 //! from `%` to the end of the line, outside quotes (munin's states include
 //! "<12%"). A node without states, a decision or utility node of an
-//! influence diagram, is not a variable. Read as `gen_bn.py`'s regular
-//! expressions read it.
+//! influence diagram, is not a variable.
 
 use super::Network;
 use super::scan::{
-    fields, names_before_brace, numbers, occurrences, paren_blocks, skip_space, space, strip,
+    fields, names_before_brace, numbers, occurrences, paren_blocks, skip_space, space,
 };
 
 pub(super) fn parse(text: &str) -> Result<Network, String> {
@@ -26,8 +25,7 @@ pub(super) fn parse(text: &str) -> Result<Network, String> {
 }
 
 /// `text` without its comments, from `%` to the end of the line, where
-/// the `%` is not inside a quoted string: gen_bn.py's
-/// `re.sub(r'("[^"]*")|%.*', ...)`.
+/// the `%` is not inside a quoted string (`"[^"]*"`).
 fn without_comments(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
@@ -114,15 +112,7 @@ fn states(body: &str) -> Option<Vec<String>> {
 
 /// Sets a variable's table from a potential's head, `X | P1 P2`, and body.
 fn read_potential(network: &mut Network, head: &str, body: &str) -> Result<(), String> {
-    let mut parts = head.split('|');
-    let name = strip(parts.next().unwrap_or(""));
-    let v = network.variable(name)?;
-    let parents = match parts.next() {
-        Some(p) => fields(p)
-            .map(|p| network.variable(p))
-            .collect::<Result<Vec<_>, _>>()?,
-        None => Vec::new(),
-    };
+    let (name, v, parents) = network.parse_table_head(head, fields)?;
     let data = data(body).ok_or_else(|| format!("{name}: a potential without data"))?;
     network.set_product_table(v, parents, numbers(data)?)
 }

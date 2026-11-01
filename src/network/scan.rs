@@ -1,6 +1,5 @@
-//! The text conventions the Hugin and BIF readers share with the regular
-//! expressions of `gen_bn.py`, which read the same files: white
-//! space and word characters as Python's `re` and `str.split` take them.
+//! The text conventions the Hugin and BIF readers share: white space and
+//! word characters as Python's `re` and `str.split` take them.
 
 pub(super) use crate::syntax::lpad::{space, word};
 
@@ -90,7 +89,7 @@ fn paren_block(text: &str, i: usize) -> Option<(&str, &str, usize)> {
     Some((&rest[..close], &text[k..end], end + 1))
 }
 
-/// The numbers of a Hugin table's data: each match of gen_bn.py's
+/// The numbers of a Hugin table's data: each match of
 /// `[-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?`, read as a
 /// double.
 pub(super) fn numbers(s: &str) -> Result<Vec<f64>, String> {
@@ -150,7 +149,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn numbers_read_as_gen_bn_py_finds_them() {
+    fn numbers_read_each_float_token() {
         assert_eq!(
             numbers("((0.5 .5\n1e-3), -2.5E+1 7. 1e x+3 1.2.3)").unwrap(),
             [0.5, 0.5, 1e-3, -25.0, 7.0, 1.0, 3.0, 1.2, 0.3]

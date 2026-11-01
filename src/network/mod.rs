@@ -1,9 +1,7 @@
 //! Discrete Bayesian and Markov networks, read as programs.
 //!
 //! A network file is read as a ProbLog program, which `tddlog --program`
-//! prints. It is the program the benchmarks' Python script `gen_bn.py` (on
-//! the baselines branch), which this reader replaced, wrote, byte for byte:
-//! every variable `X` with
+//! prints, and that program is what tddlog answers: every variable `X` with
 //! parents `P1..Pm` becomes one annotated disjunction per row of its
 //! conditional table,
 //!
@@ -319,6 +317,25 @@ impl Network {
             .ok_or_else(|| format!("{} has no value {value}", self.names[v]))
     }
 
+    /// The variable and parents of a table's `X | P1 ...` head, with the
+    /// parents split by `split_parents`.
+    fn parse_table_head<'a, I: Iterator<Item = &'a str>>(
+        &self,
+        head: &'a str,
+        split_parents: impl FnOnce(&'a str) -> I,
+    ) -> Result<(&'a str, usize, Vec<usize>), String> {
+        let mut parts = head.split('|').map(scan::strip);
+        let name = parts.next().unwrap_or("");
+        let v = self.variable(name)?;
+        let parents = match parts.next() {
+            Some(p) if !p.is_empty() => split_parents(p)
+                .map(|p| self.variable(scan::strip(p)))
+                .collect::<Result<Vec<_>, _>>()?,
+            _ => Vec::new(),
+        };
+        Ok((name, v, parents))
+    }
+
     /// The observations `pairs` (a variable name and a value name each), a
     /// variable and a value index each, in the network's order. A variable
     /// or value the network does not have, or a variable observed twice, is
@@ -419,33 +436,9 @@ impl Network {
     }
 
     /// Each variable after its parents, depth first from each variable in
-    /// turn, the parents in their table's order. A stack, not recursion: a
-    /// chain of ancestors can be as long as the network.
+    /// turn, the parents in their table's order.
     fn topological(&self, tables: &[&Table]) -> Vec<usize> {
-        let mut done = vec![false; self.names.len()];
-        let mut out = Vec::with_capacity(self.names.len());
-        for root in 0..self.names.len() {
-            if done[root] {
-                continue;
-            }
-            done[root] = true;
-            let mut stack = vec![(root, 0)];
-            while let Some((v, next)) = stack.last_mut() {
-                let parents = &tables[*v].parents;
-                while *next < parents.len() && done[parents[*next]] {
-                    *next += 1;
-                }
-                if *next == parents.len() {
-                    out.push(*v);
-                    stack.pop();
-                } else {
-                    let p = parents[*next];
-                    done[p] = true;
-                    stack.push((p, 0));
-                }
-            }
-        }
-        out
+        parent_postorder(self.names.len(), |v| &tables[v].parents).0
     }
 
     /// The variables `queries` asks, observed or not.
@@ -600,6 +593,46 @@ impl Network {
         }
         Ok(atoms)
     }
+}
+
+/// Each variable of `0..n` after its parents, depth first from each
+/// variable in turn, with the parents in `parents_of(v)`'s order, and
+/// whether the parent relation is acyclic. A stack, not recursion: a
+/// chain of ancestors can be as long as the network.
+pub(super) fn parent_postorder<'a>(
+    n: usize,
+    parents_of: impl Fn(usize) -> &'a [usize],
+) -> (Vec<usize>, bool) {
+    let mut state = vec![0u8; n]; // 0 unseen, 1 on the path, 2 done
+    let mut acyclic = true;
+    let mut out = Vec::with_capacity(n);
+    for root in 0..n {
+        if state[root] != 0 {
+            continue;
+        }
+        state[root] = 1;
+        let mut stack = vec![(root, 0usize)];
+        while let Some((v, next)) = stack.last_mut() {
+            let parents = parents_of(*v);
+            if *next == parents.len() {
+                state[*v] = 2;
+                out.push(*v);
+                stack.pop();
+                continue;
+            }
+            let p = parents[*next];
+            *next += 1;
+            match state[p] {
+                0 => {
+                    state[p] = 1;
+                    stack.push((p, 0));
+                }
+                1 => acyclic = false,
+                _ => {}
+            }
+        }
+    }
+    (out, acyclic)
 }
 
 /// A name as the program writes it: lowercased, every character but
