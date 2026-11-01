@@ -1810,6 +1810,25 @@ mod roulette_circuits {
             &[("q1(1)", 0.26), ("q2(1)", 0.08), ("q3(1)", 0.18), ("q4(1)", 0.0)],
         );
     }
+
+    /// The package's example language: each `query` calls `infer` for the
+    /// value, with a failed observation's value (q1(3)), and for the
+    /// observation (q2), whose guards share no conjunct.
+    #[test]
+    fn lib_disrupt() {
+        weigh(
+            "../tests/roulette/lib/disrupt.pl",
+            1.0,
+            &[
+                ("q1(0)", 0.3),
+                ("q1(1)", 0.42),
+                ("q1(2)", 0.0),
+                ("q1(3)", 0.28),
+                ("q2(0)", 0.28),
+                ("q2(1)", 0.72),
+            ],
+        );
+    }
 }
 
 /// The literature families (generators and notes on the baselines branch),

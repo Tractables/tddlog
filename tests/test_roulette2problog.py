@@ -6,14 +6,16 @@ answering its queries; --make compiles a program's modules ahead of its
 runs; the circuit is written in time linear in its size; and it refuses
 what it does not read. The programs of tests/roulette/ are in the language
 of Roulette's PLDI 2025 artifact, those of tests/roulette/lib/ in that of
-Roulette's package roulette-lib.
+Roulette's package roulette-lib or of its example language
+`roulette/example/disrupt` (the package `roulette`).
 
 Racket runs only where TDDLOG_ROULETTE names it, for the artifact, or
 TDDLOG_ROULETTE_LIB, for the package, each a command template with {file}
 for the script, e.g. "env PLTUSERHOME=R/home PLTADDONDIR=R/addon
 R/racket/bin/racket {file}" with R an installation of Roulette
 (https://github.com/camoy/roulette, the artifact at 54d6185, or
-`raco pkg install roulette-lib`); otherwise the tests are skipped. The
+neuppl/roulette's packages roulette-lib and roulette); otherwise the
+tests are skipped. The
 tests of --tddlog run the binary that TDDLOG_BIN names, by default
 target/release/tddlog.
 """
@@ -159,14 +161,18 @@ class RouletteLibTests(unittest.TestCase):
             with self.subTest(program=p.name):
                 r = lib(p)
                 self.assertEqual(r.returncode, 0, r.stderr)
-                self.assertEqual(r.stdout, p.with_suffix('.pl').read_text())
+                # The example language's ⊥, a failed observation's value, is
+                # a gensym, whose number depends on the installation.
+                self.assertEqual(re.sub(r'⊥\d+', '⊥', r.stdout),
+                                 re.sub(r'⊥\d+', '⊥', p.with_suffix('.pl').read_text()))
 
     @unittest.skipUnless(TDDLOG.exists(), 'no tddlog binary at TDDLOG_BIN')
     def test_tddlog_weighs_the_queries(self):
         # Each program prints the weights it asks for, by hand in its comment.
         for name, weights in [
                 ('tiny', [[0.31, 0.69], [0.42], [0.28], [0.18], [0.12], [0, 0.18]]),
-                ('diagnosis', [[0.26], [0.08, 0.18, 0]])]:
+                ('diagnosis', [[0.26], [0.08, 0.18, 0]]),
+                ('disrupt', [[5 / 12, 7 / 12, 0]])]:
             with self.subTest(program=name):
                 r = lib('--tddlog', TDDLOG, root / 'tests' / 'roulette' / 'lib' / f'{name}.rkt')
                 self.assertEqual(r.returncode, 0, r.stderr)
@@ -177,6 +183,20 @@ class RouletteLibTests(unittest.TestCase):
                     self.assertEqual(len(got), len(ws), line)
                     for g, w in zip(got, ws):
                         self.assertAlmostEqual(g, w, delta=1e-9, msg=line)
+
+    def test_a_compiled_script_is_refused(self):
+        # raco make of the script: its replacements of Roulette's modules
+        # would not hold, and it says so.
+        with tempfile.TemporaryDirectory() as d:
+            copy = Path(d, script.name)
+            copy.write_text(script.read_text())
+            make = ROULETTE_LIB.format(file='-l- raco make').split() + [str(copy)]
+            m = subprocess.run(make, capture_output=True, text=True)
+            self.assertEqual(m.returncode, 0, m.stderr)
+            r = subprocess.run(ROULETTE_LIB.format(file=copy).split() + [str(LIB_PROGRAMS[0])],
+                               capture_output=True, text=True)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('roulette2problog.rkt is compiled', r.stderr)
 
     def test_refusals(self):
         with tempfile.TemporaryDirectory() as d:

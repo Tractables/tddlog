@@ -6,6 +6,8 @@
 ;;     racket roulette2problog.rkt --tddlog TDDLOG PROGRAM.rkt [ARG ...]
 ;;     racket roulette2problog.rkt --make PROGRAM.rkt
 ;;
+;; It runs from its source, not compiled by `raco make`.
+;;
 ;; Roulette (Moy, Czenszak, Li, Marshall and Holtzen, "Roulette: A Language
 ;; for Expressive, Exact, and Efficient Discrete Probabilistic Programming",
 ;; PLDI 2025) evaluates a Racket program symbolically with Rosette: every
@@ -30,7 +32,11 @@
 ;;   `infer` hands a value to an engine, rsdd's (roulette/engine/rsdd) by
 ;;   default, and returns a measure that gives each value the program asks
 ;;   about its weight: the weighted model count of its guard conjoined with
-;;   Rosette's assumptions, not normalized.
+;;   Rosette's assumptions, not normalized. With the package `roulette`
+;;   beside it, also programs in its example language `#lang
+;;   roulette/example/disrupt` (the paper's programs, their `query` written
+;;   as this version's), whose `query` asks `infer` twice, for the value
+;;   under the observations and for the observations, and normalizes.
 ;;
 ;; The script runs PROGRAM.rkt, with ARG ... as its command line, with
 ;; Roulette's modules that answer queries replaced by this file's
@@ -52,7 +58,10 @@
 ;;
 ;; Without --tddlog, the queries are recorded and answer nothing (the
 ;; artifact's an empty distribution, the package's measures a weight of 0
-;; for every value), the program's own output goes to standard error, and
+;; for every value; 1 for a value a call can take where the program runs
+;; on the package's example language `roulette/example/disrupt`, whose
+;; `query` divides each value's weight by their sum and stops on a sum of
+;; 0), the program's own output goes to standard error, and
 ;; once the program has run the script writes one ProbLog program for all
 ;; its queries to standard output: a random choice is a probabilistic fact
 ;; `P::fN.` (the N-th of the circuit in the order Roulette created them),
@@ -517,9 +526,26 @@
           (vector-ref (query-entries q) i)
           (list-ref (reverse (query-others q)) (- i n))))
 
+    ;; A value's weight while the queries are recorded: 0, or 1 where the
+    ;; program runs on the example language `roulette/example/disrupt`,
+    ;; whose `query` normalizes the weights of a call's values (and of the
+    ;; evidence's) by their sum and stops where it is 0. A program on
+    ;; `infer` alone, Circulette's, sees 0 and prints no posterior.
+    (define record-weight
+      (let ([w #f])
+        (λ ()
+          (or w
+              (begin
+                (set! w (if (with-handlers ([exn:fail? (λ (_) #f)])
+                              (module-declared? 'roulette/example/disrupt/core #f))
+                            1
+                            0))
+                w)))))
+
     ;; The measure of the call `q`: a value's weight, once the value is
-    ;; recorded as asked, is 0, or with --tddlog tddlog's. A value the call
-    ;; cannot take is recorded too, with the guard #f.
+    ;; recorded as asked, is the record weight (0 for a value the call cannot
+    ;; take), or with --tddlog tddlog's. A value the call cannot take is
+    ;; recorded too, with the guard #f.
     (define (query-measure q)
       (define (density v)
         (define i (hash-ref! (query-index q) v
@@ -528,7 +554,10 @@
                                (hash-count (query-index q)))))
         (hash-set! (query-asked q) i #t)
         (define cmd (tddlog-command))
-        (if cmd (hash-ref! (query-weights q) i (λ () (weight cmd q i))) 0))
+        (cond
+          [cmd (hash-ref! (query-weights q) i (λ () (weight cmd q i)))]
+          [(cdr (query-entry q i)) (record-weight)]
+          [else 0]))
       (measure (λ (vs) (apply + (set-map vs density)))
                (λ () (for/set ([e (in-vector (query-entries q))]
                                #:unless (zero? (density (car e))))
@@ -695,6 +724,14 @@
   (define self-file
     (let ([n (resolved-module-path-name (variable-reference->resolved-module-path (#%variable-reference)))])
       (if (pair? n) (car n) n)))
+  ;; The script runs from its source. Compiled (`raco make` of this file),
+  ;; its submodules' re-exports of Roulette's bindings resolve to the
+  ;; submodules themselves, and a program fails to instantiate; compiled
+  ;; by another Racket, it does not load.
+  (let ([zo (get-compilation-bytecode-file self-file)])
+    (when (file-exists? zo)
+      (raise-user-error 'roulette2problog "~a is compiled (~a); it runs from its source: delete the compiled file"
+                        (file-name-from-path self-file) zo)))
 
   ;; Roulette's modules that the program's requires are sent from, each to
   ;; this file's submodule that takes its place.
@@ -813,19 +850,39 @@
              (string-append* (for/list ([f (in-list (reverse made))]) (format " ~a" (file-name-from-path f))))
              (seconds-since t0))
     (exit 0))
+  ;; The modules the program requires (at phase 0), instantiated, so that
+  ;; the clock starts at the program's own body: Racket's start and the
+  ;; load of its modules are not the program's run.
+  (define (instantiate-imports! mp)
+    (define root (module-path-index-join mp #f))
+    (define (rooted mpi)
+      (define-values (name base) (module-path-index-split mpi))
+      (cond
+        [(not name) root]
+        [(module-path-index? base) (module-path-index-join name (rooted base))]
+        [else mpi]))
+    (for* ([phase+imports (in-list (module->imports mp))]
+           #:when (eqv? (car phase+imports) 0)
+           [mpi (in-list (cdr phase+imports))])
+      (dynamic-require (rooted mpi) #f)))
   (parameterize ([current-command-line-arguments (list->vector (cdr argv))]
                  [current-module-name-resolver redirecting-resolver]
                  [current-load/use-compiled loading]
                  [current-output-port (if tddlog stdout (current-error-port))]
                  [tddlog-command tddlog]
                  [program-label (string-join (cons (path->string (file-name-from-path program)) (cdr argv)) " ")])
+    (unless (module-declared? program-mp #t)
+      (raise-user-error 'roulette2problog "~a declares no module" (car argv)))
+    (instantiate-imports! program-mp)
+    ;; From here to the circuit, the program's run (`program ~a s`).
+    (define t-run (current-inexact-milliseconds))
     (dynamic-require program-mp #f)
     (when (module-declared? `(submod ,program-mp main) #t)
       (dynamic-require `(submod ,program-mp main) #f))
     (unless tddlog
       (when (zero? (recorded-count))
         (raise-user-error 'roulette2problog "~a asks no query" (car argv)))
-      (define ran (seconds-since t0))
+      (define ran (seconds-since t-run))
       (define t1 (current-inexact-milliseconds))
       ;; Written whole at the end, so that a pipe takes it in one piece.
       (define out (open-output-bytes))
