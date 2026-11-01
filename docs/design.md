@@ -444,7 +444,14 @@ distinct spelling.
 A Bayesian or Markov network file is read as a program, which
 `tddlog --program FILE` prints and the other systems of the benchmarks
 read, and that text is parsed as any program is: one route, whose
-answers are those of the program. The reader replaced a Python script
+answers are those of the program. What tddlog parses of it is the rows
+of the variables the queries and the evidence read and of their
+ancestors (`ReadOptions::whole` unset): grounding drops every other row,
+and nothing before it reads them (the noisy-or tables of step 0
+included), so the ground program is the same, and a large network asked
+about a few of its variables is not written out and parsed whole for
+them (a UAI network written as 74 MB of program text and observed at a
+few variables took 18 s to write, parse and ground for 40 rules). The reader replaced a Python script
 (`gen_bn.py`, now on the baselines branch) and writes its programs byte
 for byte; `tests/it/networks.rs` checks the reader's text line for line
 against the script's programs for the files of `tests/networks/`,

@@ -198,6 +198,7 @@ pub unsafe extern "C" fn tddlog_solve(
         },
         evidence: evidence.map(|e| format.evidence(e)),
         rescale: false,
+        whole: false,
         arguments,
     };
     let options = tddlog::Options {

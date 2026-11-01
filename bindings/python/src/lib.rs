@@ -181,6 +181,7 @@ fn solve(
         },
         evidence: evidence.map(|e| format.evidence(e.as_bytes())),
         rescale: false,
+        whole: false,
         arguments: arguments.unwrap_or_default(),
     };
     let options = tddlog::Options {

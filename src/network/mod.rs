@@ -1,9 +1,9 @@
 //! Discrete Bayesian and Markov networks, read as programs.
 //!
 //! A network file is read as a ProbLog program, which `tddlog --program`
-//! prints, and that program is what tddlog answers. It is the program the
-//! benchmarks' Python script `gen_bn.py` (on the baselines branch), which
-//! this reader replaced, wrote, byte for byte: every variable `X` with
+//! prints. It is the program the benchmarks' Python script `gen_bn.py` (on
+//! the baselines branch), which this reader replaced, wrote, byte for byte:
+//! every variable `X` with
 //! parents `P1..Pm` becomes one annotated disjunction per row of its
 //! conditional table,
 //!
@@ -18,6 +18,12 @@
 //! is a plain rule, and a row that sums to one up to the rounding of its
 //! decimals is divided by its sum (`rows.rs`). The rules come in the order
 //! of a depth-first walk from each variable in turn to its parents.
+//!
+//! What tddlog answers is that program's rows of the variables the queries
+//! and the evidence read and of their ancestors ([`ReadOptions::whole`]):
+//! no query or evidence depends on another row, which grounding would
+//! drop, and a large network asked about a few of its variables is then
+//! not written out and parsed whole for them.
 //!
 //! The formats, by the file's extension ([`Format::of_path`]): BIF
 //! (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`, its `cpt` nodes),
@@ -147,9 +153,15 @@ pub struct ReadOptions<'a> {
     /// ([`crate::syntax`]), as the values after the program's file do on
     /// the command line. Refused for a network or a Dice program.
     pub arguments: Vec<String>,
+    /// Write every variable's rows, as `--program` prints a network for
+    /// the systems that read its program, and not only those of the
+    /// variables the queries and the evidence read and of their
+    /// ancestors, the part of the program they depend on.
+    pub whole: bool,
 }
 
-/// Every variable queried, no evidence, the rows as written, no arguments.
+/// Every variable queried, no evidence, the rows as written, no
+/// arguments, the part of the program the queries depend on.
 impl Default for ReadOptions<'_> {
     fn default() -> Self {
         ReadOptions {
@@ -157,6 +169,7 @@ impl Default for ReadOptions<'_> {
             evidence: None,
             rescale: false,
             arguments: Vec::new(),
+            whole: false,
         }
     }
 }
@@ -220,7 +233,7 @@ pub fn read(data: &[u8], format: Format, options: &ReadOptions) -> Result<Networ
         rows::write_float(&mut program, c);
         program.push('\n');
     }
-    network.write(&mut program, &options.queries, &evidence)?;
+    network.write(&mut program, &options.queries, &evidence, options.whole)?;
     Ok(NetworkProgram {
         program,
         log10_offset,
@@ -435,15 +448,30 @@ impl Network {
 
     /// Writes the program: the rules in topological order, then the
     /// observations `evidence` (a variable and a value index each), then
-    /// the queries, each line ending in a newline.
+    /// the queries, each line ending in a newline. The rules are every
+    /// variable's where `whole` holds, and else those of the variables
+    /// queried and observed and of their ancestors; every row is checked.
     fn write(
         &self,
         out: &mut String,
         queries: &Queries,
         evidence: &[(usize, usize)],
+        whole: bool,
     ) -> Result<(), String> {
         let tables = self.tables()?;
         let atoms = self.atoms()?;
+        let queried = self.queried(&tables, queries)?;
+        let mut written = vec![whole; self.names.len()];
+        let mut stack: Vec<usize> = queried
+            .iter()
+            .copied()
+            .chain(evidence.iter().map(|&(v, _)| v))
+            .collect();
+        while let Some(v) = stack.pop() {
+            if !std::mem::replace(&mut written[v], true) {
+                stack.extend(&tables[v].parents);
+            }
+        }
         let start = out.len();
         let (mut row, mut head) = (Vec::new(), String::new());
         for v in self.topological(&tables) {
@@ -466,6 +494,9 @@ impl Network {
                         format!("{} given ({}): {e}", self.names[v], at.join(", "))
                     })?;
                     head.clear();
+                    if !written[v] {
+                        continue;
+                    }
                     let heads: Vec<(f64, usize)> = row
                         .iter()
                         .enumerate()
@@ -505,11 +536,7 @@ impl Network {
             writeln!(out, "evidence({}).", atoms[v][u]).expect("a String takes any text");
         }
         if *queries != Queries::None {
-            let queried: Vec<usize> = self
-                .queried(&tables, queries)?
-                .into_iter()
-                .filter(|&v| !observed[v])
-                .collect();
+            let queried: Vec<usize> = queried.into_iter().filter(|&v| !observed[v]).collect();
             if queried.is_empty() {
                 return Err("every queried variable is observed, nothing is left to query".into());
             }

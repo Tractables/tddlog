@@ -294,6 +294,7 @@ fn main() -> ExitCode {
         evidence,
         rescale: args.rescale,
         arguments: args.arguments.clone(),
+        whole: args.program_only,
     };
     let started = Instant::now();
     let mut input = match tddlog::read(&data, args.format, &options) {

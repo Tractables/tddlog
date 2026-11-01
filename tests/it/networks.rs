@@ -13,7 +13,8 @@ use std::process::{Command, Output};
 use tddlog::network::{self, Evidence, Format, Queries, ReadOptions};
 
 /// The program a network file reads as, with its queries, its evidence file
-/// and whether its rows are rescaled.
+/// and whether its rows are rescaled: every variable's rows, as `--program`
+/// prints it.
 fn read(path: &str, queries: Queries, evidence: Option<&str>, rescale: bool) -> String {
     let data = std::fs::read(path).unwrap();
     let evidence_data = evidence.map(|e| std::fs::read(e).unwrap());
@@ -22,6 +23,7 @@ fn read(path: &str, queries: Queries, evidence: Option<&str>, rescale: bool) -> 
         evidence: evidence
             .map(|e| Evidence::of_path(e, evidence_data.as_deref().unwrap()).unwrap()),
         rescale,
+        whole: true,
         ..ReadOptions::default()
     };
     let format = Format::of_path(path).unwrap();
@@ -138,6 +140,41 @@ fn a_network_reads_as_the_program_beside_it() {
         let got: Vec<&str> = read.lines().collect();
         assert_eq!(got, written(program), "{path} against {program}");
     }
+}
+
+/// What tddlog answers is the part of a network's program that its queries
+/// and evidence read: asia.net queried at `either` alone is answered
+/// without the rows of `bronc`, `xray` and `dysp`, which `--program`
+/// prints, and its answers are the whole program's, to the bit.
+#[test]
+fn a_network_is_answered_on_the_rows_its_queries_read() {
+    let data = std::fs::read("examples/asia.net").unwrap();
+    let solved = |whole| {
+        let options = ReadOptions {
+            queries: Queries::Named(vec!["either".into()]),
+            whole,
+            ..ReadOptions::default()
+        };
+        let input = tddlog::read(&data, tddlog::Format::Network(Format::Hugin), &options).unwrap();
+        let solution =
+            tddlog::solve(&input.program, &tddlog::Options::default(), &mut |_| {}).unwrap();
+        let answers: Vec<(String, u64)> = solution
+            .answers
+            .unwrap()
+            .iter()
+            .map(|a| (a.to_string(), a.probability.to_bits()))
+            .collect();
+        (input.program.into_owned(), answers)
+    };
+    let (part, answers) = solved(false);
+    let (whole, whole_answers) = solved(true);
+    for name in ["bronc", "xray", "dysp"] {
+        assert!(!part.contains(&format!("{name}(")), "{part}");
+        assert!(whole.contains(&format!("{name}(")), "{whole}");
+    }
+    assert!(part.lines().all(|l| whole.lines().any(|w| w == l)));
+    assert_eq!(answers.len(), 2);
+    assert_eq!(answers, whole_answers);
 }
 
 fn tddlog(args: &[&str]) -> Output {
