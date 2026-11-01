@@ -1178,65 +1178,25 @@ fn rows_of(
     sigs: &mut FxHashMap<Vec<usize>, u32>,
     store: &mut RowStore,
 ) -> Option<Rows> {
+    let w = collect_selectors(
+        gp,
+        rules,
+        set_of,
+        &mut scratch.read,
+        &mut scratch.sets,
+        &mut scratch.slot,
+        &mut scratch.selectors,
+    )?;
+    scratch.group_by_selectors(rules.len(), w);
     let RowScratch {
-        read,
         sets,
-        slot,
         selectors,
         order,
-        buckets,
-        same_group,
         group_of,
         groups,
         hashes,
+        ..
     } = scratch;
-    let w = collect_selectors(gp, rules, set_of, read, sets, slot, selectors)?;
-    // The rules that read the same atoms, grouped by the hash of those
-    // atoms, the groups in the order they first come and the rules of each
-    // in order, without a sort: where the rules of an atom's values each
-    // read other atoms, a sort only finds runs of one rule.
-    let size = (2 * rules.len()).next_power_of_two().max(2);
-    let shift = u64::BITS - size.trailing_zeros();
-    buckets.clear();
-    buckets.resize(size, u32::MAX);
-    same_group.clear();
-    group_of.clear();
-    groups.clear();
-    hashes.clear();
-    for k in 0..rules.len() {
-        let key = &selectors[k * w..(k + 1) * w];
-        let h = FxBuildHasher.hash_one(key);
-        hashes.push(h);
-        let last = &mut buckets[(h >> shift) as usize];
-        let mut g = *last;
-        while g != u32::MAX
-            && (hashes[groups[g as usize].0] != h
-                || selectors[groups[g as usize].0 * w..(groups[g as usize].0 + 1) * w] != *key)
-        {
-            g = same_group[g as usize];
-        }
-        if g == u32::MAX {
-            g = groups.len() as u32;
-            groups.push((k, 0));
-            same_group.push(*last);
-            *last = g;
-        }
-        groups[g as usize].1 += 1;
-        group_of.push(g);
-    }
-    // Each group's rules from where the groups before it end.
-    let mut end = 0;
-    for (start, size) in groups.iter_mut() {
-        *start = end;
-        end += *size;
-    }
-    order.clear();
-    order.resize(rules.len(), 0);
-    for (k, &g) in group_of.iter().enumerate() {
-        let (at, _) = &mut groups[g as usize];
-        order[*at] = k;
-        *at += 1;
-    }
     let x = Rows {
         sig: 0,
         width: w,
@@ -1265,6 +1225,66 @@ fn rows_of(
         }
     };
     Some(Rows { sig, ..x })
+}
+
+impl RowScratch {
+    /// Groups the `num_rules` rules that read the same `w` atoms by the hash
+    /// of those atoms, the groups in the order they first come and the rules
+    /// of each in order, without a sort.
+    fn group_by_selectors(&mut self, num_rules: usize, w: usize) {
+        let RowScratch {
+            selectors,
+            order,
+            buckets,
+            same_group,
+            group_of,
+            groups,
+            hashes,
+            ..
+        } = self;
+        let size = (2 * num_rules).next_power_of_two().max(2);
+        let shift = u64::BITS - size.trailing_zeros();
+        buckets.clear();
+        buckets.resize(size, u32::MAX);
+        same_group.clear();
+        group_of.clear();
+        groups.clear();
+        hashes.clear();
+        for k in 0..num_rules {
+            let key = &selectors[k * w..(k + 1) * w];
+            let h = FxBuildHasher.hash_one(key);
+            hashes.push(h);
+            let last = &mut buckets[(h >> shift) as usize];
+            let mut g = *last;
+            while g != u32::MAX
+                && (hashes[groups[g as usize].0] != h
+                    || selectors[groups[g as usize].0 * w..(groups[g as usize].0 + 1) * w] != *key)
+            {
+                g = same_group[g as usize];
+            }
+            if g == u32::MAX {
+                g = groups.len() as u32;
+                groups.push((k, 0));
+                same_group.push(*last);
+                *last = g;
+            }
+            groups[g as usize].1 += 1;
+            group_of.push(g);
+        }
+        // Each group's rules from where the groups before it end.
+        let mut end = 0;
+        for (start, size) in groups.iter_mut() {
+            *start = end;
+            end += *size;
+        }
+        order.clear();
+        order.resize(num_rules, 0);
+        for (k, &g) in group_of.iter().enumerate() {
+            let (at, _) = &mut groups[g as usize];
+            order[*at] = k;
+            *at += 1;
+        }
+    }
 }
 
 fn collect_selectors(

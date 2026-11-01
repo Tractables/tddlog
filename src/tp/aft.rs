@@ -39,21 +39,7 @@ pub(crate) fn compile_component(
     for (i, &a) in scc.iter().enumerate() {
         index[a as usize] = i;
     }
-    // Formulas of literals over atoms outside the component are fixed.
-    let mut outside: Vec<Option<Tdd>> = (0..n).map(|_| None).collect();
-    for &a in scc {
-        for &ri in &by_head[a as usize] {
-            for l in &gp.rules[ri].body {
-                let b = l.atom() as usize;
-                if gp.kinds[b] == AtomKind::Derived
-                    && index[b] == usize::MAX
-                    && outside[b].is_none()
-                {
-                    outside[b] = Some(lambda_of(l.atom())?);
-                }
-            }
-        }
-    }
+    let outside = outside_formulas(gp, by_head, scc, &index, lambda_of)?;
     let k = scc.len();
     let mut updates = 0;
     let mut lower: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
@@ -122,6 +108,32 @@ pub(crate) fn compile_component(
         }
     }
     Ok((lower, updates))
+}
+
+/// Formulas of literals over atoms outside `scc`, which are fixed during the
+/// fixpoint.
+fn outside_formulas(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    scc: &[AtomId],
+    index: &[usize],
+    lambda_of: &mut dyn FnMut(AtomId) -> Result<Tdd, CompileError>,
+) -> Result<Vec<Option<Tdd>>, CompileError> {
+    let mut outside: Vec<Option<Tdd>> = (0..gp.num_atoms()).map(|_| None).collect();
+    for &a in scc {
+        for &ri in &by_head[a as usize] {
+            for l in &gp.rules[ri].body {
+                let b = l.atom() as usize;
+                if gp.kinds[b] == AtomKind::Derived
+                    && index[b] == usize::MAX
+                    && outside[b].is_none()
+                {
+                    outside[b] = Some(lambda_of(l.atom())?);
+                }
+            }
+        }
+    }
+    Ok(outside)
 }
 
 fn apply_atom(

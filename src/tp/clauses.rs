@@ -756,47 +756,8 @@ impl Factoring<'_> {
         scope: &VtreeScope,
         acc: &mut Option<Tdd>,
     ) -> Result<Option<Tdd>, CompileError> {
-        let mut taken = exclusive.clone();
-        let mut left_out = 0;
-        let cubes: Vec<Vec<tididi::Literal>> = bodies
-            .iter()
-            .map(|body| {
-                let mut lits = Vec::with_capacity(body.len());
-                lits.extend(body.iter().filter_map(|&l| self.fact_literal(l)));
-                left_out += taken.leave_out(&mut lits);
-                taken.take_pair(&lits);
-                lits
-            })
-            .collect();
-        let size = cubes.iter().map(Vec::len).sum::<usize>()
-            + groups.iter().map(|(g, _)| g.len()).sum::<usize>();
-        // The cubes and groups over the variables they read, the k-th
-        // of them local variable k + 1.
-        let (vars, cubes, local_groups) = {
-            let mut scratch = self.scratch.borrow_mut();
-            let vars = scratch.ranked(
-                cubes
-                    .iter()
-                    .flatten()
-                    .chain(groups.iter().flat_map(|(g, _)| g))
-                    .map(|l| l.var),
-                |i, _| i as u32 + 1,
-            );
-            let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
-            let cubes: Vec<Vec<tididi::Literal>> = cubes
-                .iter()
-                .map(|c| {
-                    c.iter()
-                        .map(|l| tididi::Literal::new(local(l.var), l.sign))
-                        .collect()
-                })
-                .collect();
-            let local_groups: Vec<(Vec<VarId>, bool)> = groups
-                .iter()
-                .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
-                .collect();
-            (vars, cubes, local_groups)
-        };
+        let (vars, cubes, local_groups, size, left_out) =
+            self.localize_level_cubes(bodies, groups, exclusive);
         // A table's link ([`super::rows`]) is the set of its models,
         // built in one pass where there are no more of them than
         // literals in its bodies and groups. A link of more spreads the
@@ -843,6 +804,53 @@ impl Factoring<'_> {
         }
         memo.stats.fell_back += 1;
         Ok(None)
+    }
+
+    fn localize_level_cubes(
+        &self,
+        bodies: &[Vec<GLit>],
+        groups: &[AtMostOne],
+        exclusive: &Exclusive,
+    ) -> LocalizedLevel {
+        let mut taken = exclusive.clone();
+        let mut left_out = 0;
+        let cubes: Vec<Vec<tididi::Literal>> = bodies
+            .iter()
+            .map(|body| {
+                let mut lits = Vec::with_capacity(body.len());
+                lits.extend(body.iter().filter_map(|&l| self.fact_literal(l)));
+                left_out += taken.leave_out(&mut lits);
+                taken.take_pair(&lits);
+                lits
+            })
+            .collect();
+        let size = cubes.iter().map(Vec::len).sum::<usize>()
+            + groups.iter().map(|(g, _)| g.len()).sum::<usize>();
+        // The cubes and groups over the variables they read, the k-th
+        // of them local variable k + 1.
+        let mut scratch = self.scratch.borrow_mut();
+        let vars = scratch.ranked(
+            cubes
+                .iter()
+                .flatten()
+                .chain(groups.iter().flat_map(|(g, _)| g))
+                .map(|l| l.var),
+            |i, _| i as u32 + 1,
+        );
+        let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
+        let cubes: Vec<Vec<tididi::Literal>> = cubes
+            .iter()
+            .map(|c| {
+                c.iter()
+                    .map(|l| tididi::Literal::new(local(l.var), l.sign))
+                    .collect()
+            })
+            .collect();
+        let local_groups: Vec<(Vec<VarId>, bool)> = groups
+            .iter()
+            .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
+            .collect();
+        (vars, cubes, local_groups, size, left_out)
     }
 
     /// `start ∧ ⋀_r ¬body_r` on `scope`, conjoined into `start` a body at a
@@ -1174,3 +1182,10 @@ impl Factoring<'_> {
 }
 
 type BodyParts = (Vec<tididi::Literal>, Option<Part>, Option<(Part, Part)>);
+type LocalizedLevel = (
+    Vec<VarId>,
+    Vec<Vec<tididi::Literal>>,
+    Vec<(Vec<VarId>, bool)>,
+    usize,
+    usize,
+);

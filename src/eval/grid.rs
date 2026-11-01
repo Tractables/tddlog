@@ -1764,42 +1764,10 @@ mod tests {
     /// DBN_13's passes down relay their output.
     #[test]
     fn census_shapes_run_through_kernels_to_the_bit() {
-        let shapes: [((isize, isize), Vec<Dim>); 3] = [
-            (
-                (1, 0),
-                vec![
-                    Dim::pair(2, -1, 1),
-                    Dim::node(4, 2, 0, 1),
-                    Dim::node(4, 0, 2, 4),
-                    Dim::node(2, 8, 0, 16),
-                    Dim::node(16, 0, 8, 32),
-                ],
-            ),
-            (
-                (4, 0),
-                vec![
-                    Dim::pair(2, -4, 512),
-                    Dim::node(2, 1, 0, 1),
-                    Dim::node(16, 0, 1, 2),
-                    Dim::node(16, 0, 16, 32),
-                    Dim::node(2, 2, 256, 512),
-                ],
-            ),
-            (
-                (0, 31),
-                vec![
-                    Dim::pair(4, 1, -8),
-                    Dim::node(2, 4, 0, 1),
-                    Dim::node(2, 64, -1, 2),
-                    Dim::node(4, 8, 32, 4),
-                    Dim::node(4, 256, -2, 16),
-                ],
-            ),
-        ];
         let value = |i: usize, salt: usize| {
             ((i * 2_654_435_761 + salt * 40_503) % 1009) as f64 / 1009.0 + 0.003
         };
-        for (s, (at, dims)) in shapes.into_iter().enumerate() {
+        for (s, (at, dims)) in census_shapes().into_iter().enumerate() {
             let grid = Grid::new(at, dims.clone(), Vec::new());
             let reach = |side: fn(&Dim) -> isize, base: isize| {
                 base + dims
@@ -1871,6 +1839,41 @@ mod tests {
                 &want_counts,
             );
         }
+    }
+
+    fn census_shapes() -> [((isize, isize), Vec<Dim>); 3] {
+        [
+            (
+                (1, 0),
+                vec![
+                    Dim::pair(2, -1, 1),
+                    Dim::node(4, 2, 0, 1),
+                    Dim::node(4, 0, 2, 4),
+                    Dim::node(2, 8, 0, 16),
+                    Dim::node(16, 0, 8, 32),
+                ],
+            ),
+            (
+                (4, 0),
+                vec![
+                    Dim::pair(2, -4, 512),
+                    Dim::node(2, 1, 0, 1),
+                    Dim::node(16, 0, 1, 2),
+                    Dim::node(16, 0, 16, 32),
+                    Dim::node(2, 2, 256, 512),
+                ],
+            ),
+            (
+                (0, 31),
+                vec![
+                    Dim::pair(4, 1, -8),
+                    Dim::node(2, 4, 0, 1),
+                    Dim::node(2, 64, -1, 2),
+                    Dim::node(4, 8, 32, 4),
+                    Dim::node(4, 256, -2, 16),
+                ],
+            ),
+        ]
     }
 
     fn assert_grid_variants(

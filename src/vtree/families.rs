@@ -447,33 +447,7 @@ impl Roles {
         for ind in &gp.encoding.indicators {
             link_of[ind.var as usize] = ind.link;
         }
-        // What a rule reads as a row of its group's table: the body of a rule
-        // of a derived atom; the body of a rule of a link that holds clauses that
-        // reads a copy the link defines false, one of the table's rows, but that
-        // copy; nothing of the other rules of such a link, or of other links.
-        // The row is the body's literals that [`reads`] keeps, the second being
-        // the link whose copies it leaves out.
-        // Which of these each rule is, worked out once: the passes below read
-        // a group's rules twice, and would search a link's rule for its copy
-        // each time.
-        let row_kind: Vec<u8> = gp
-            .rules
-            .iter()
-            .map(|r| {
-                if !is_link[r.head as usize] {
-                    ROW
-                } else if !is_clause[r.head as usize]
-                    || !r
-                        .body
-                        .iter()
-                        .any(|l| !l.is_positive() && link_of[l.atom() as usize] == r.head)
-                {
-                    NO_ROW
-                } else {
-                    CLAUSE_ROW
-                }
-            })
-            .collect();
+        let row_kind = classify_row_kinds(gp, &is_link, &is_clause, &link_of);
         Roles {
             kind,
             is_link,
@@ -488,6 +462,35 @@ impl Roles {
             row_kind,
         }
     }
+}
+
+/// What a rule reads as a row of its group's table: the body of a rule of a
+/// derived atom; the body of a rule of a link that holds clauses that reads a
+/// copy the link defines false, one of the table's rows, but that copy;
+/// nothing of the other rules of such a link, or of other links.
+fn classify_row_kinds(
+    gp: &GroundProgram,
+    is_link: &[bool],
+    is_clause: &[bool],
+    link_of: &[AtomId],
+) -> Vec<u8> {
+    gp.rules
+        .iter()
+        .map(|r| {
+            if !is_link[r.head as usize] {
+                ROW
+            } else if !is_clause[r.head as usize]
+                || !r
+                    .body
+                    .iter()
+                    .any(|l| !l.is_positive() && link_of[l.atom() as usize] == r.head)
+            {
+                NO_ROW
+            } else {
+                CLAUSE_ROW
+            }
+        })
+        .collect()
 }
 
 type ClauseRoles = (

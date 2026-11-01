@@ -118,45 +118,15 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
     let mut negated: Vec<(usize, usize)> = Vec::new();
     for &h in structure.sccs.iter().rev().flatten() {
         for &ri in &by_head[h as usize] {
-            'rule: loop {
-                // The latest atom read negatively first: the rules of `a`
-                // read the atoms of its table before it, as written, and
-                // their contexts are those of the rule once the later ones
-                // are unfolded.
-                let body = &gp.rules[ri].body;
-                negated.clear();
-                negated.extend(
-                    body.iter()
-                        .enumerate()
-                        .filter(|&(_, &l)| earlier_sibling(gp, &position, h, l))
-                        .map(|(k, l)| (position[l.atom() as usize], k)),
-                );
-                negated.sort_unstable_by(|x, y| y.cmp(x));
-                let step = negated.iter().find_map(|&(_, k)| {
-                    unfold_step(
-                        (gp, by_head),
-                        (body, k),
-                        &mut rest,
-                        &mut by_context,
-                        &context,
-                        &clash,
-                    )
-                    .map(|u| (k, u))
-                });
-                let Some((k, unfolded)) = step else { break };
-                count += 1;
-                let body = &mut gp.rules[ri].body;
-                match unfolded {
-                    Unfolded::Literal(m) if !body.contains(&m) => body[k] = m,
-                    Unfolded::Literal(_) | Unfolded::True => {
-                        body.remove(k);
-                    }
-                    Unfolded::False => {
-                        dropped[ri] = true;
-                        break 'rule;
-                    }
-                }
-            }
+            count += unfold_rule(
+                gp,
+                by_head,
+                &position,
+                (h, ri),
+                (&mut rest, &mut negated, &mut dropped),
+                &mut by_context,
+                (&context, &clash),
+            );
         }
     }
     if count > 0 {
@@ -164,6 +134,59 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
         gp.rules.retain(|_| (!dropped[i], i += 1).0);
     }
     count + alias_value_facts(gp, &excluded)
+}
+
+type UnfoldBuffers<'a> = (
+    &'a mut Vec<GLit>,
+    &'a mut Vec<(usize, usize)>,
+    &'a mut [bool],
+);
+
+fn unfold_rule(
+    gp: &mut GroundProgram,
+    by_head: &super::RulesByHead,
+    position: &[usize],
+    (h, ri): (AtomId, usize),
+    (rest, negated, dropped): UnfoldBuffers<'_>,
+    by_context: &mut FxHashMap<AtomId, Option<FxHashMap<Vec<GLit>, usize>>>,
+    (context, clash): (
+        &impl Fn(&[GLit]) -> Vec<GLit>,
+        &impl Fn(&[GLit], &[GLit]) -> bool,
+    ),
+) -> usize {
+    let mut count = 0;
+    loop {
+        // The latest atom read negatively first: the rules of `a`
+        // read the atoms of its table before it, as written, and
+        // their contexts are those of the rule once the later ones
+        // are unfolded.
+        let body = &gp.rules[ri].body;
+        negated.clear();
+        negated.extend(
+            body.iter()
+                .enumerate()
+                .filter(|&(_, &l)| earlier_sibling(gp, position, h, l))
+                .map(|(k, l)| (position[l.atom() as usize], k)),
+        );
+        negated.sort_unstable_by(|x, y| y.cmp(x));
+        let step = negated.iter().find_map(|&(_, k)| {
+            unfold_step((gp, by_head), (body, k), rest, by_context, context, clash).map(|u| (k, u))
+        });
+        let Some((k, unfolded)) = step else { break };
+        count += 1;
+        let body = &mut gp.rules[ri].body;
+        match unfolded {
+            Unfolded::Literal(m) if !body.contains(&m) => body[k] = m,
+            Unfolded::Literal(_) | Unfolded::True => {
+                body.remove(k);
+            }
+            Unfolded::False => {
+                dropped[ri] = true;
+                break;
+            }
+        }
+    }
+    count
 }
 
 /// A negated derived atom of the head's predicate, of an earlier

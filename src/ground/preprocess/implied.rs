@@ -110,27 +110,10 @@ pub(in crate::ground) fn implied_clauses(
     // The clauses that stay whatever is found after, and the pairs of
     // variables those of at most `PAIRED` literals join: the clauses too
     // short to be tried, then each found not implied by the search.
-    let key = |a: Lit, b: Lit| {
-        let (a, b) = ((a >> 1) as u64, (b >> 1) as u64);
-        a.min(b) << 32 | a.max(b)
-    };
     let mut settled = vec![false; clauses.len()];
     let mut joins: FxHashSet<u64> = FxHashSet::default();
-    let settle =
-        |i: usize, settled: &mut Vec<bool>, joins: &mut FxHashSet<u64>, ticks: &mut u64| {
-            settled[i] = true;
-            let c = &clauses[i];
-            if c.len() <= PAIRED {
-                *ticks += (c.len() * (c.len() - 1) / 2) as u64;
-                for (k, &a) in c.iter().enumerate() {
-                    for &b in &c[k + 1..] {
-                        joins.insert(key(a, b));
-                    }
-                }
-            }
-        };
     for i in (0..clauses.len()).filter(|&i| clauses[i].len() < SHORTEST) {
-        settle(i, &mut settled, &mut joins, &mut stats.ticks);
+        settle_clause(clauses, i, &mut settled, &mut joins, &mut stats.ticks);
     }
     let mut in_window = vec![u32::MAX; clauses.len()];
     let mut assumptions: Vec<Lit> = Vec::new();
@@ -165,41 +148,44 @@ pub(in crate::ground) fn implied_clauses(
     (keep, stats)
 }
 
+fn pair_key(a: Lit, b: Lit) -> u64 {
+    let (a, b) = ((a >> 1) as u64, (b >> 1) as u64);
+    a.min(b) << 32 | a.max(b)
+}
+
+fn settle_clause(
+    clauses: &[Vec<Lit>],
+    i: usize,
+    settled: &mut [bool],
+    joins: &mut FxHashSet<u64>,
+    ticks: &mut u64,
+) {
+    settled[i] = true;
+    let c = &clauses[i];
+    if c.len() <= PAIRED {
+        *ticks += (c.len() * (c.len() - 1) / 2) as u64;
+        for (k, &a) in c.iter().enumerate() {
+            for &b in &c[k + 1..] {
+                joins.insert(pair_key(a, b));
+            }
+        }
+    }
+}
+
+fn is_joined(joins: &FxHashSet<u64>, c: &[Lit]) -> bool {
+    c.len() <= PAIRED
+        && c.iter()
+            .enumerate()
+            .all(|(k, &a)| c[k + 1..].iter().all(|&b| joins.contains(&pair_key(a, b))))
+}
+
 fn run_window(
     (n, clauses, window): (usize, &[Vec<Lit>], &[usize]),
     (search, budget, left_from_w): (bool, u64, usize),
-    (keep, settled, joins, in_window): (
-        &mut [bool],
-        &mut Vec<bool>,
-        &mut FxHashSet<u64>,
-        &mut [u32],
-    ),
+    (keep, settled, joins, in_window): (&mut [bool], &mut [bool], &mut FxHashSet<u64>, &mut [u32]),
     (assumptions, kept): (&mut Vec<Lit>, &mut Vec<Lit>),
     stats: &mut ImpliedStats,
 ) -> bool {
-    let key = |a: Lit, b: Lit| {
-        let (a, b) = ((a >> 1) as u64, (b >> 1) as u64);
-        a.min(b) << 32 | a.max(b)
-    };
-    let settle =
-        |i: usize, settled: &mut Vec<bool>, joins: &mut FxHashSet<u64>, ticks: &mut u64| {
-            settled[i] = true;
-            let c = &clauses[i];
-            if c.len() <= PAIRED {
-                *ticks += (c.len() * (c.len() - 1) / 2) as u64;
-                for (k, &a) in c.iter().enumerate() {
-                    for &b in &c[k + 1..] {
-                        joins.insert(key(a, b));
-                    }
-                }
-            }
-        };
-    let joined = |joins: &FxHashSet<u64>, c: &[Lit]| {
-        c.len() <= PAIRED
-            && c.iter()
-                .enumerate()
-                .all(|(k, &a)| c[k + 1..].iter().all(|&b| joins.contains(&key(a, b))))
-    };
     for (k, &i) in window.iter().enumerate() {
         in_window[i] = k as u32;
     }
@@ -230,9 +216,9 @@ fn run_window(
             stats.untried = (left_from_w - k) as u64;
             break;
         }
-        if joined(joins, &clauses[i]) {
+        if is_joined(joins, &clauses[i]) {
             stats.joined += 1;
-            settle(i, settled, joins, &mut stats.ticks);
+            settle_clause(clauses, i, settled, joins, &mut stats.ticks);
             kept.push(guard(k));
             continue;
         }
@@ -253,7 +239,7 @@ fn run_window(
         } else {
             kept.push(guard(k));
             if search {
-                settle(i, settled, joins, &mut stats.ticks);
+                settle_clause(clauses, i, settled, joins, &mut stats.ticks);
             }
         }
     }

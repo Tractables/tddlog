@@ -602,39 +602,10 @@ impl<'a> Parser<'a> {
 
     fn id_atom(&mut self, name: &'a str, line: usize) -> Res<Kind<'a>> {
         let kind = match name {
-            "flip" => {
-                if self.at(Tk::Op, "(") {
-                    self.take();
-                    let p = self.float()?;
-                    self.op(")")?;
-                    Kind::Flip(p)
-                } else {
-                    Kind::Flip(self.float()?)
-                }
-            }
-            "discrete" => {
-                self.op("(")?;
-                let mut ps = vec![self.float()?];
-                while self.at(Tk::Op, ",") {
-                    self.take();
-                    ps.push(self.float()?);
-                }
-                self.op(")")?;
-                Kind::Discrete(ps)
-            }
+            "flip" | "discrete" | "uniform" | "binomial" => self.dist_atom(name)?,
             "int" => {
                 let (w, k) = self.int_pair()?;
                 Kind::Int(w, k)
-            }
-            "uniform" => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let lo = self.integer()?;
-                self.op(",")?;
-                let hi = self.integer()?;
-                self.op(")")?;
-                Kind::Uniform(w, lo, hi)
             }
             "iterate" => {
                 self.op("(")?;
@@ -645,16 +616,6 @@ impl<'a> Parser<'a> {
                 let k = self.integer()?;
                 self.op(")")?;
                 Kind::Iterate(f, Box::new(init), k)
-            }
-            "binomial" => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let n = self.integer()?;
-                self.op(",")?;
-                let p = self.float()?;
-                self.op(")")?;
-                Kind::Binomial(w, n, p)
             }
             "nth_bit" => {
                 self.op("(")?;
@@ -680,24 +641,72 @@ impl<'a> Parser<'a> {
             name if UNSUPPORTED.contains(&name) => {
                 return Err(fail(line, format!("Dice's `{name}` is not supported")));
             }
-            name => {
+            name => self.call_or_var(name)?,
+        };
+        Ok(kind)
+    }
+
+    fn dist_atom(&mut self, name: &'a str) -> Res<Kind<'a>> {
+        let kind = match name {
+            "flip" => {
                 if self.at(Tk::Op, "(") {
                     self.take();
-                    let mut args = Vec::new();
-                    while !self.at(Tk::Op, ")") {
-                        args.push(self.expr(0)?);
-                        if self.at(Tk::Op, ",") {
-                            self.take();
-                        }
-                    }
+                    let p = self.float()?;
                     self.op(")")?;
-                    Kind::Call(name, args)
+                    Kind::Flip(p)
                 } else {
-                    Kind::Var(name)
+                    Kind::Flip(self.float()?)
                 }
+            }
+            "discrete" => {
+                self.op("(")?;
+                let mut ps = vec![self.float()?];
+                while self.at(Tk::Op, ",") {
+                    self.take();
+                    ps.push(self.float()?);
+                }
+                self.op(")")?;
+                Kind::Discrete(ps)
+            }
+            "uniform" => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let lo = self.integer()?;
+                self.op(",")?;
+                let hi = self.integer()?;
+                self.op(")")?;
+                Kind::Uniform(w, lo, hi)
+            }
+            _ => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let n = self.integer()?;
+                self.op(",")?;
+                let p = self.float()?;
+                self.op(")")?;
+                Kind::Binomial(w, n, p)
             }
         };
         Ok(kind)
+    }
+
+    fn call_or_var(&mut self, name: &'a str) -> Res<Kind<'a>> {
+        if self.at(Tk::Op, "(") {
+            self.take();
+            let mut args = Vec::new();
+            while !self.at(Tk::Op, ")") {
+                args.push(self.expr(0)?);
+                if self.at(Tk::Op, ",") {
+                    self.take();
+                }
+            }
+            self.op(")")?;
+            Ok(Kind::Call(name, args))
+        } else {
+            Ok(Kind::Var(name))
+        }
     }
 }
 

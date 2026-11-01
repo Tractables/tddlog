@@ -134,27 +134,7 @@ pub(super) fn clause_tables(
     let Sets {
         exclusive, set_of, ..
     } = *sets;
-    // The rules of each set, in order, end to end, not a list per set
-    // grown rule by rule.
-    let mut rules_from = vec![0usize; exclusive.len() + 1];
-    for r in &gp.rules {
-        let s = set_of[r.head as usize];
-        if s != usize::MAX {
-            rules_from[s + 1] += 1;
-        }
-    }
-    for s in 0..exclusive.len() {
-        rules_from[s + 1] += rules_from[s];
-    }
-    let mut rules_of = vec![0usize; rules_from[exclusive.len()]];
-    let mut next = rules_from.clone();
-    for (ri, r) in gp.rules.iter().enumerate() {
-        let s = set_of[r.head as usize];
-        if s != usize::MAX {
-            rules_of[next[s]] = ri;
-            next[s] += 1;
-        }
-    }
+    let (rules_from, rules_of) = rules_by_set(gp, set_of, exclusive.len());
     // A set's input states depend on whether the sets it reads are
     // tables, so the sets are checked until no more become tables.
     let mut table = vec![false; exclusive.len()];
@@ -214,6 +194,31 @@ pub(super) fn clause_tables(
         }
     }
     (tables, table)
+}
+
+/// The rules of each set, in order, end to end, not a list per set grown rule
+/// by rule.
+fn rules_by_set(gp: &GroundProgram, set_of: &[usize], num_sets: usize) -> (Vec<usize>, Vec<usize>) {
+    let mut rules_from = vec![0usize; num_sets + 1];
+    for r in &gp.rules {
+        let s = set_of[r.head as usize];
+        if s != usize::MAX {
+            rules_from[s + 1] += 1;
+        }
+    }
+    for s in 0..num_sets {
+        rules_from[s + 1] += rules_from[s];
+    }
+    let mut rules_of = vec![0usize; rules_from[num_sets]];
+    let mut next = rules_from.clone();
+    for (ri, r) in gp.rules.iter().enumerate() {
+        let s = set_of[r.head as usize];
+        if s != usize::MAX {
+            rules_of[next[s]] = ri;
+            next[s] += 1;
+        }
+    }
+    (rules_from, rules_of)
 }
 
 /// The states a rule body leaves an input in ([`partition`]): one, or all
@@ -565,6 +570,29 @@ fn partition(
         )? {
             continue;
         }
+        buffers.record_rule_row(ri, &mut last);
+    }
+    let keys: Vec<&[(u32, Allowed)]> = buffers.rows[..buffers.rows_len]
+        .iter()
+        .map(Vec::as_slice)
+        .collect();
+    if !covers(&keys, &mut Vec::new(), &|i| states_of(&inputs.info, i)) {
+        return None;
+    }
+    // Each row's cubes, in the order of their rules.
+    buffers.cube_spans.sort_unstable();
+    if !buffers
+        .cube_spans
+        .chunk_by(|x, y| x.0 == y.0)
+        .all(|spans| switches_partition(spans, &buffers.cubes))
+    {
+        return None;
+    }
+    Some(buffers.firing.clone())
+}
+
+impl Buffers {
+    fn record_rule_row(&mut self, ri: usize, last: &mut Option<usize>) {
         let Buffers {
             rows,
             rows_len,
@@ -575,11 +603,11 @@ fn partition(
             cube_spans,
             firing,
             ..
-        } = buffers;
+        } = self;
         firing.push(ri);
         // The rules of a row come one after another: a rule that reads as
         // the rule before has its row, found without a lookup.
-        let r = match last {
+        let r = match *last {
             Some(r) if rows[r] == *row => r,
             _ => {
                 let (r, new) = row_by.find_or_push(FxBuildHasher.hash_one(row.as_slice()), |r| {
@@ -599,27 +627,10 @@ fn partition(
                 r as usize
             }
         };
-        last = Some(r);
+        *last = Some(r);
         cube_spans.push((r, cubes.len(), cubes.len() + cube.len()));
         cubes.extend_from_slice(cube);
     }
-    let keys: Vec<&[(u32, Allowed)]> = buffers.rows[..buffers.rows_len]
-        .iter()
-        .map(Vec::as_slice)
-        .collect();
-    if !covers(&keys, &mut Vec::new(), &|i| states_of(&inputs.info, i)) {
-        return None;
-    }
-    // Each row's cubes, in the order of their rules.
-    buffers.cube_spans.sort_unstable();
-    if !buffers
-        .cube_spans
-        .chunk_by(|x, y| x.0 == y.0)
-        .all(|spans| switches_partition(spans, &buffers.cubes))
-    {
-        return None;
-    }
-    Some(buffers.firing.clone())
 }
 
 // What the rule at hand allows of each input it reads, kept as the one

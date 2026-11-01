@@ -172,6 +172,13 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
             Kind::Program { fan_in: false },
         ],
     );
+    assert_single_component_dynamic_trials(&ground, &strategies);
+}
+
+fn assert_single_component_dynamic_trials(
+    ground: &impl Fn(&str) -> GroundProgram,
+    strategies: &impl Fn(&GroundProgram) -> Vec<Kind>,
+) {
     // The smokers program is one recursive component: `smokes` over
     // three people, merged with nothing to be merged with. Queried for
     // everyone, as the benchmark programs are; a query for one person is

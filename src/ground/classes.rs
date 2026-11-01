@@ -315,6 +315,21 @@ fn classes_of(
         };
         groups[g].1.push(row);
     }
+    let (classes, stochastic) = pack_groups_into_classes(rows, tables, groups, most, selectors)?;
+    (stochastic
+        && (classes.len() <= few
+            || (spines && (OWN_VALUE_FROM..=MOST_SELECTORS).contains(&classes.len()))))
+    .then_some(classes)
+}
+
+/// Packs `groups` into at most `most` classes of pairwise-clashing rows.
+fn pack_groups_into_classes(
+    rows: &Rows,
+    tables: &mut Tables,
+    groups: Vec<(bool, Vec<usize>)>,
+    most: usize,
+    selectors: &mut Vec<AtomId>,
+) -> Option<(Vec<Vec<usize>>, bool)> {
     // Each group makes a class at least, so the table is given up once
     // the classes made and the groups left come to the bound.
     let mut classes: Vec<Vec<usize>> = Vec::new();
@@ -346,10 +361,7 @@ fn classes_of(
             }
         }
     }
-    (stochastic
-        && (classes.len() <= few
-            || (spines && (OWN_VALUE_FROM..=MOST_SELECTORS).contains(&classes.len()))))
-    .then_some(classes)
+    Some((classes, stochastic))
 }
 
 /// `gp` with the rows of each table of `rewrite` read through their

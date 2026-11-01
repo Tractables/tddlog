@@ -337,6 +337,10 @@ fn a_network_answers_as_problog_and_enumeration_do() {
         ("either(no)", 0.69630537),
     ];
     assert_close("asia.net", &answers(&out, "P(e)").0, &asia, 1e-7);
+    assert_network_fixture_queries();
+}
+
+fn assert_network_fixture_queries() {
     // ProbLog's answers on the programs of tests/networks/, one query at
     // a time.
     for (args, expected) in [

@@ -125,54 +125,16 @@ struct Program {
 /// a mask per component. Beyond, the bound exceeds anything a search costs.
 const CONE_FACTS: usize = 64;
 
+type UnitGraph = (
+    Vec<Vec<usize>>,
+    Vec<Vec<usize>>,
+    Vec<Vec<usize>>,
+    Vec<Vec<usize>>,
+);
+
 impl Program {
     fn new(gp: &GroundProgram, by_head: &RulesByHead, units: Vec<Vec<AtomId>>) -> Self {
-        let n = gp.num_atoms();
-        let mut unit_of = vec![usize::MAX; n];
-        for (i, unit) in units.iter().enumerate() {
-            for &a in unit {
-                unit_of[a as usize] = i;
-            }
-        }
-        let mut fact_index: FxHashMap<AtomId, usize> = FxHashMap::default();
-        let mut fact_users: Vec<Vec<usize>> = Vec::new();
-        let mut deps = vec![Vec::new(); units.len()];
-        let mut consumers = vec![Vec::new(); units.len()];
-        let mut facts_of = vec![Vec::new(); units.len()];
-        for (i, unit) in units.iter().enumerate() {
-            for &h in unit {
-                for &ri in &by_head[h as usize] {
-                    for l in &gp.rules[ri].body {
-                        let b = l.atom();
-                        match gp.kinds[b as usize] {
-                            AtomKind::Derived => {
-                                let j = unit_of[b as usize];
-                                if j != i {
-                                    deps[i].push(j);
-                                }
-                            }
-                            AtomKind::Fact(_) => {
-                                let k = *fact_index.entry(b).or_insert_with(|| {
-                                    fact_users.push(Vec::new());
-                                    fact_users.len() - 1
-                                });
-                                facts_of[i].push(k);
-                            }
-                        }
-                    }
-                }
-            }
-            deps[i].sort_unstable();
-            deps[i].dedup();
-            facts_of[i].sort_unstable();
-            facts_of[i].dedup();
-            for &j in &deps[i] {
-                consumers[j].push(i);
-            }
-            for &k in &facts_of[i] {
-                fact_users[k].push(i);
-            }
-        }
+        let (deps, consumers, mut facts_of, fact_users) = unit_deps_and_facts(gp, by_head, &units);
         // Ancestors, in the compiler's order (dependencies come first).
         let mut ancestors: Vec<Vec<usize>> = vec![Vec::new(); units.len()];
         for i in 0..units.len() {
@@ -257,74 +219,140 @@ impl Program {
         scratch.fact_seen.resize(self.fact_users.len(), false);
         let mut total = 0f64;
         for &a in &self.scored {
-            let set = &self.ancestors[a];
-            for &u in set {
-                scratch.in_set[u] = true;
-            }
-            scratch.in_set[a] = true;
-            let first = set
-                .iter()
-                .map(|&u| pos[u])
-                .min()
-                .unwrap_or(pos[a])
-                .min(pos[a]);
-            let last = pos[a];
-            let span = last - first + 1;
-            // `add` and `rem` are accumulators over the span and have to
-            // start at zero. They are sized to the whole order once and the
-            // sweep below puts back the entries it reads, which are the only
-            // ones this component writes, so neither is cleared here: that
-            // would be two more passes over the span per scored component.
-            scratch.add.resize(n, 0.0);
-            scratch.rem.resize(n, 0.0);
-            scratch.touched.clear();
-            for &u in set.iter().chain(std::iter::once(&a)) {
-                // The component itself, awaited by consumers inside the set.
-                let mut last_use = None;
-                for &c in &self.consumers[u] {
-                    if scratch.in_set[c] {
-                        last_use = Some(last_use.map_or(pos[c], |l: usize| l.max(pos[c])));
-                    }
-                }
-                work += self.consumers[u].len() as u64;
-                if let Some(l) = last_use {
-                    scratch.add[pos[u] - first] += self.weight[u];
-                    scratch.rem[l - first] += self.weight[u];
-                }
-                // Its facts, read at their first consumer anywhere, awaited
-                // by their last consumer inside the set.
-                for &k in &self.facts_of[u] {
-                    if scratch.fact_seen[k] {
-                        continue;
-                    }
-                    scratch.fact_seen[k] = true;
-                    scratch.touched.push(k);
-                    let p = scratch.fact_pos[k];
-                    let l = self.fact_users[k]
-                        .iter()
-                        .filter(|&&c| scratch.in_set[c])
-                        .map(|&c| pos[c])
-                        .max()
-                        .unwrap();
-                    work += self.fact_users[k].len() as u64;
-                    if l > p {
-                        scratch.add[p.max(first) - first] += 1.0;
-                        scratch.rem[l - first] += 1.0;
-                    }
-                }
-            }
-            total += sweep_span(scratch, first, span);
-            work += span as u64;
-            for &u in set {
-                scratch.in_set[u] = false;
-            }
-            scratch.in_set[a] = false;
-            for &k in &scratch.touched {
-                scratch.fact_seen[k] = false;
-            }
+            total += self.score_component(a, pos, scratch, &mut work);
         }
         (total.max(1.0).log2(), work)
     }
+
+    fn score_component(
+        &self,
+        a: usize,
+        pos: &[usize],
+        scratch: &mut Scratch,
+        work: &mut u64,
+    ) -> f64 {
+        let n = pos.len();
+        let set = &self.ancestors[a];
+        for &u in set {
+            scratch.in_set[u] = true;
+        }
+        scratch.in_set[a] = true;
+        let first = set
+            .iter()
+            .map(|&u| pos[u])
+            .min()
+            .unwrap_or(pos[a])
+            .min(pos[a]);
+        let last = pos[a];
+        let span = last - first + 1;
+        // `add` and `rem` are accumulators over the span and have to
+        // start at zero. They are sized to the whole order once and the
+        // sweep below puts back the entries it reads, which are the only
+        // ones this component writes, so neither is cleared here: that
+        // would be two more passes over the span per scored component.
+        scratch.add.resize(n, 0.0);
+        scratch.rem.resize(n, 0.0);
+        scratch.touched.clear();
+        for &u in set.iter().chain(std::iter::once(&a)) {
+            // The component itself, awaited by consumers inside the set.
+            let mut last_use = None;
+            for &c in &self.consumers[u] {
+                if scratch.in_set[c] {
+                    last_use = Some(last_use.map_or(pos[c], |l: usize| l.max(pos[c])));
+                }
+            }
+            *work += self.consumers[u].len() as u64;
+            if let Some(l) = last_use {
+                scratch.add[pos[u] - first] += self.weight[u];
+                scratch.rem[l - first] += self.weight[u];
+            }
+            // Its facts, read at their first consumer anywhere, awaited
+            // by their last consumer inside the set.
+            for &k in &self.facts_of[u] {
+                if scratch.fact_seen[k] {
+                    continue;
+                }
+                scratch.fact_seen[k] = true;
+                scratch.touched.push(k);
+                let p = scratch.fact_pos[k];
+                let l = self.fact_users[k]
+                    .iter()
+                    .filter(|&&c| scratch.in_set[c])
+                    .map(|&c| pos[c])
+                    .max()
+                    .unwrap();
+                *work += self.fact_users[k].len() as u64;
+                if l > p {
+                    scratch.add[p.max(first) - first] += 1.0;
+                    scratch.rem[l - first] += 1.0;
+                }
+            }
+        }
+        let score = sweep_span(scratch, first, span);
+        *work += span as u64;
+        for &u in set {
+            scratch.in_set[u] = false;
+        }
+        scratch.in_set[a] = false;
+        for &k in &scratch.touched {
+            scratch.fact_seen[k] = false;
+        }
+        score
+    }
+}
+
+fn unit_deps_and_facts(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    units: &[Vec<AtomId>],
+) -> UnitGraph {
+    let n = gp.num_atoms();
+    let mut unit_of = vec![usize::MAX; n];
+    for (i, unit) in units.iter().enumerate() {
+        for &a in unit {
+            unit_of[a as usize] = i;
+        }
+    }
+    let mut fact_index: FxHashMap<AtomId, usize> = FxHashMap::default();
+    let mut fact_users: Vec<Vec<usize>> = Vec::new();
+    let mut deps = vec![Vec::new(); units.len()];
+    let mut consumers = vec![Vec::new(); units.len()];
+    let mut facts_of = vec![Vec::new(); units.len()];
+    for (i, unit) in units.iter().enumerate() {
+        for &h in unit {
+            for &ri in &by_head[h as usize] {
+                for l in &gp.rules[ri].body {
+                    let b = l.atom();
+                    match gp.kinds[b as usize] {
+                        AtomKind::Derived => {
+                            let j = unit_of[b as usize];
+                            if j != i {
+                                deps[i].push(j);
+                            }
+                        }
+                        AtomKind::Fact(_) => {
+                            let k = *fact_index.entry(b).or_insert_with(|| {
+                                fact_users.push(Vec::new());
+                                fact_users.len() - 1
+                            });
+                            facts_of[i].push(k);
+                        }
+                    }
+                }
+            }
+        }
+        deps[i].sort_unstable();
+        deps[i].dedup();
+        facts_of[i].sort_unstable();
+        facts_of[i].dedup();
+        for &j in &deps[i] {
+            consumers[j].push(i);
+        }
+        for &k in &facts_of[i] {
+            fact_users[k].push(i);
+        }
+    }
+    (deps, consumers, facts_of, fact_users)
 }
 
 fn cone_bound(units: &[Vec<AtomId>], facts_of: &[Vec<usize>], deps: &[Vec<usize>]) -> f64 {

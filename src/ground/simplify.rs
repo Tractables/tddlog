@@ -237,56 +237,9 @@ pub(crate) fn merge_equal_atoms(gp: &mut GroundProgram) {
             return;
         }
         let by_head = gp.rules_by_head();
-        // Only the atoms whose bodies may be those of an atom merged away,
-        // by a hash of them, have their bodies compared. On a network,
-        // whose atoms merged away are its certain switches, only the
-        // switches and the atoms with one empty body need their bodies
-        // sorted and kept.
-        let hash = body_set_hashes(gp, &by_head);
-        let shared: FxHashSet<u64> = (0..n)
-            .filter(|&a| merged_away(a))
-            .map(|a| hash[a])
-            .collect();
-        // Of these, keys are built only where two atoms' hashes meet: on a
-        // program conditioned on its guards, whose pass made each of its
-        // hundreds of thousands of atoms with bodies of its own, almost
-        // nowhere.
-        let candidate = |a: usize| {
-            gp.kinds[a] == AtomKind::Derived && !by_head[a].is_empty() && shared.contains(&hash[a])
-        };
-        let mut met: FxHashMap<u64, bool> = FxHashMap::default();
-        for a in (0..n).filter(|&a| candidate(a)) {
-            met.entry(hash[a])
-                .and_modify(|twice| *twice = true)
-                .or_insert(false);
-        }
-        let mut class_of: FxHashMap<Vec<Vec<GLit>>, AtomId> = FxHashMap::default();
-        let mut into: Vec<AtomId> = (0..n as AtomId).collect();
-        let mut merged = false;
-        for a in 0..n {
-            if !candidate(a) || !met[&hash[a]] {
-                continue;
-            }
-            let key = rules_key(gp, &by_head[a]);
-            match class_of.get_mut(&key) {
-                None => {
-                    class_of.insert(key, a as AtomId);
-                }
-                Some(rep) if away[a] => {
-                    into[a] = *rep;
-                    merged = true;
-                }
-                Some(rep) if away[*rep as usize] => {
-                    into[*rep as usize] = a as AtomId;
-                    *rep = a as AtomId;
-                    merged = true;
-                }
-                Some(_) => {}
-            }
-        }
-        if !merged {
+        let Some(into) = find_equal_merges(gp, &by_head, &away) else {
             return;
-        }
+        };
         // An atom merged into one later merged in turn reads the last.
         let root = |mut a: AtomId| {
             while into[a as usize] != a {
@@ -311,6 +264,62 @@ pub(crate) fn merge_equal_atoms(gp: &mut GroundProgram) {
             }
         }
     }
+}
+
+fn find_equal_merges(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    away: &[bool],
+) -> Option<Vec<AtomId>> {
+    let n = gp.atoms.len();
+    // Only the atoms whose bodies may be those of an atom merged away,
+    // by a hash of them, have their bodies compared. On a network,
+    // whose atoms merged away are its certain switches, only the
+    // switches and the atoms with one empty body need their bodies
+    // sorted and kept.
+    let hash = body_set_hashes(gp, by_head);
+    let shared: FxHashSet<u64> = (0..n)
+        .filter(|&a| away[a] && gp.kinds[a] == AtomKind::Derived && !by_head[a].is_empty())
+        .map(|a| hash[a])
+        .collect();
+    // Of these, keys are built only where two atoms' hashes meet: on a
+    // program conditioned on its guards, whose pass made each of its
+    // hundreds of thousands of atoms with bodies of its own, almost
+    // nowhere.
+    let candidate = |a: usize| {
+        gp.kinds[a] == AtomKind::Derived && !by_head[a].is_empty() && shared.contains(&hash[a])
+    };
+    let mut met: FxHashMap<u64, bool> = FxHashMap::default();
+    for a in (0..n).filter(|&a| candidate(a)) {
+        met.entry(hash[a])
+            .and_modify(|twice| *twice = true)
+            .or_insert(false);
+    }
+    let mut class_of: FxHashMap<Vec<Vec<GLit>>, AtomId> = FxHashMap::default();
+    let mut into: Vec<AtomId> = (0..n as AtomId).collect();
+    let mut merged = false;
+    for a in 0..n {
+        if !candidate(a) || !met[&hash[a]] {
+            continue;
+        }
+        let key = rules_key(gp, &by_head[a]);
+        match class_of.get_mut(&key) {
+            None => {
+                class_of.insert(key, a as AtomId);
+            }
+            Some(rep) if away[a] => {
+                into[a] = *rep;
+                merged = true;
+            }
+            Some(rep) if away[*rep as usize] => {
+                into[*rep as usize] = a as AtomId;
+                *rep = a as AtomId;
+                merged = true;
+            }
+            Some(_) => {}
+        }
+    }
+    merged.then_some(into)
 }
 
 /// The key by which [`merge_equal_atoms`] compares atoms: the set of the

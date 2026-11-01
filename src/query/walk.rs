@@ -767,6 +767,15 @@ impl EvidenceWalk {
         if parts < 2 {
             return (factors, groups);
         }
+        self.group_factors_by_part(factors, &lowest, &part_of)
+    }
+
+    fn group_factors_by_part(
+        &mut self,
+        factors: VecDeque<usize>,
+        lowest: &[Option<VtreeIdx>],
+        part_of: &FxHashMap<VtreeIdx, VtreeIdx>,
+    ) -> (VecDeque<usize>, Vec<Group>) {
         #[cfg(test)]
         {
             self.by_part += 1;

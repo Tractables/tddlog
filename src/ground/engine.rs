@@ -1523,23 +1523,7 @@ fn list_builtin_solutions(
                 })
                 .collect()
         }
-        Builtin::Nth0 | Builtin::Nth1 => {
-            let base = i64::from(b == Builtin::Nth1);
-            let l = vals[1].expect("mode");
-            let (items, _) = g.spine(l, cons);
-            match vals[0] {
-                Some(Val::Int(i)) => usize::try_from(i - base)
-                    .ok()
-                    .and_then(|k| items.get(k))
-                    .map_or_else(Vec::new, |&x| one(vec![Val::Int(i), l, x])),
-                Some(_) => Vec::new(),
-                None => items
-                    .into_iter()
-                    .enumerate()
-                    .map(|(k, x)| vec![Val::Int(k as i64 + base), l, x])
-                    .collect(),
-            }
-        }
+        Builtin::Nth0 | Builtin::Nth1 => nth_solutions(g, b, vals, cons),
         Builtin::Reverse => {
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |mut items| {
@@ -1567,26 +1551,7 @@ fn list_builtin_solutions(
             let s = g.make_list(&items, nil);
             one(vec![l, s])
         }
-        // The lists concatenated, the last as the tail, as `append/2`'s
-        // clauses concatenate them.
-        Builtin::AppendLists => {
-            let lists = g.items(vals[0].expect("mode"));
-            let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
-                return match lists {
-                    Some(_) => one(vec![vals[0].expect("mode"), nil]),
-                    None => Vec::new(),
-                };
-            };
-            let mut items = Vec::new();
-            for &l in init {
-                match g.items(l) {
-                    Some(xs) => items.extend(xs),
-                    None => return Vec::new(),
-                }
-            }
-            let joined = g.make_list(&items, last);
-            one(vec![vals[0].expect("mode"), joined])
-        }
+        Builtin::AppendLists => append_lists_solutions(g, vals, nil),
         Builtin::Flatten => {
             let l = vals[0].expect("mode");
             flattened(g, l, nil, cons)
@@ -1596,6 +1561,45 @@ fn list_builtin_solutions(
         }
         _ => unreachable!(),
     }
+}
+
+fn nth_solutions(g: &Grounder, b: Builtin, vals: &[Option<Val>], cons: u32) -> Vec<Vec<Val>> {
+    let base = i64::from(b == Builtin::Nth1);
+    let l = vals[1].expect("mode");
+    let (items, _) = g.spine(l, cons);
+    match vals[0] {
+        Some(Val::Int(i)) => usize::try_from(i - base)
+            .ok()
+            .and_then(|k| items.get(k))
+            .map_or_else(Vec::new, |&x| vec![vec![Val::Int(i), l, x]]),
+        Some(_) => Vec::new(),
+        None => items
+            .into_iter()
+            .enumerate()
+            .map(|(k, x)| vec![Val::Int(k as i64 + base), l, x])
+            .collect(),
+    }
+}
+
+/// The lists concatenated, the last as the tail, as `append/2`'s clauses
+/// concatenate them.
+fn append_lists_solutions(g: &mut Grounder, vals: &[Option<Val>], nil: Val) -> Vec<Vec<Val>> {
+    let lists = g.items(vals[0].expect("mode"));
+    let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
+        return match lists {
+            Some(_) => vec![vec![vals[0].expect("mode"), nil]],
+            None => Vec::new(),
+        };
+    };
+    let mut items = Vec::new();
+    for &l in init {
+        match g.items(l) {
+            Some(xs) => items.extend(xs),
+            None => return Vec::new(),
+        }
+    }
+    let joined = g.make_list(&items, last);
+    vec![vec![vals[0].expect("mode"), joined]]
 }
 
 fn plus_solutions(vals: &[Option<Val>]) -> Vec<Vec<Val>> {
@@ -2286,33 +2290,8 @@ fn assemble_program(
     constants: usize,
     swept: super::aig::SweepStats,
 ) -> Result<GroundProgram, GroundError> {
-    // Assemble the output: the atoms in the order made, those of facts
-    // under a demand as it read them ([`facts_as_read`]). Of a fact's
-    // atoms, only those a rule, a query or the evidence names: no other
-    // reads them, and a database's are mostly read by none (a query of
-    // TPC-H reads a fiftieth of its six million line items).
     let n = g.atoms.len();
-    let mut named: Vec<bool> = g
-        .atoms
-        .iter()
-        .map(|(p, _)| g.preds[*p as usize].facts.is_none())
-        .collect();
-    for r in &g.ground_rules {
-        named[r.head as usize] = true;
-        for l in &r.body {
-            named[l.atom() as usize] = true;
-        }
-    }
-    for (_, id, _) in queries.iter().chain(&evidence) {
-        if let Some(a) = id {
-            named[*a as usize] = true;
-        }
-    }
-    let order: Vec<AtomId> = match norm.control.is_empty() {
-        true => (0..n as AtomId).collect(),
-        false => facts_as_read(&g),
-    };
-    let order: Vec<AtomId> = order.into_iter().filter(|&a| named[a as usize]).collect();
+    let order = ordered_named_atoms(&g, norm, &queries, &evidence);
     let mut gp = GroundProgram::default();
     let m = order.len();
     if gp.atoms.try_reserve_exact(m).is_err() || gp.kinds.try_reserve_exact(m).is_err() {
@@ -2349,7 +2328,45 @@ fn assemble_program(
     gp.stats.levels = keys;
     gp.stats.constants = constants;
     gp.stats.swept.add(swept);
-    if m < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
+    renumber_program(&mut gp, &order, n);
+    Ok(gp)
+}
+
+/// The atoms in the order made, those of facts under a demand as it read them
+/// ([`facts_as_read`]). Of a fact's atoms, only those a rule, a query or the
+/// evidence names: no other reads them.
+fn ordered_named_atoms(
+    g: &Grounder,
+    norm: &NormProgram,
+    queries: &[GroundAtomEntry],
+    evidence: &[GroundAtomEntry],
+) -> Vec<AtomId> {
+    let n = g.atoms.len();
+    let mut named: Vec<bool> = g
+        .atoms
+        .iter()
+        .map(|(p, _)| g.preds[*p as usize].facts.is_none())
+        .collect();
+    for r in &g.ground_rules {
+        named[r.head as usize] = true;
+        for l in &r.body {
+            named[l.atom() as usize] = true;
+        }
+    }
+    for (_, id, _) in queries.iter().chain(evidence) {
+        if let Some(a) = id {
+            named[*a as usize] = true;
+        }
+    }
+    let order: Vec<AtomId> = match norm.control.is_empty() {
+        true => (0..n as AtomId).collect(),
+        false => facts_as_read(g),
+    };
+    order.into_iter().filter(|&a| named[a as usize]).collect()
+}
+
+fn renumber_program(gp: &mut GroundProgram, order: &[AtomId], n: usize) {
+    if order.len() < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
         let mut new = vec![AtomId::MAX; n];
         for (i, &a) in order.iter().enumerate() {
             new[a as usize] = i as AtomId;
@@ -2371,7 +2388,6 @@ fn assemble_program(
             *id = id.map(new);
         }
     }
-    Ok(gp)
 }
 
 /// The atoms of a program under a demand ([`super::magic`]) in the order
@@ -3496,32 +3512,15 @@ fn take(
             candidates,
             next,
             bound,
-        } => {
-            let ILit::Pos(p, args) = &rule.body[i] else {
-                unreachable!("tuples of a positive literal")
-            };
-            let p = *p as usize;
-            let control = g.preds[p].control;
-            while let Some(&t) = candidates.get(*next) {
-                *next += 1;
-                let rel = &g.rels[p];
-                let tuple = rel.tuple(t);
-                if !bound.iter().all(|(pos, v)| tuple[*pos] == *v) {
-                    continue;
-                }
-                let mark = trail.len();
-                let id = rel.ids[t];
-                let fixed = g.fixed(id);
-                if !unify_args(args, tuple, subst, trail) || fixed == Some(false) {
-                    unbind(subst, trail, mark);
-                    continue;
-                }
-                let lit = (!control && fixed != Some(true)).then_some(GLit::Pos(id));
-                push_body_lit(g, rule, i, lit, body_atoms);
-                return true;
-            }
-            false
-        }
+        } => take_tuples(
+            g,
+            rule,
+            i,
+            (candidates, next, bound),
+            subst,
+            trail,
+            body_atoms,
+        ),
         Alts::Range { lo, next, hi } => {
             let ILit::Builtin(_, args, _) = &rule.body[i] else {
                 unreachable!("the range of between/3")
@@ -3571,6 +3570,41 @@ fn take(
             false
         }
     }
+}
+
+fn take_tuples(
+    g: &mut Grounder,
+    rule: &IRule,
+    i: usize,
+    (candidates, next, bound): (&[usize], &mut usize, &[(usize, Val)]),
+    subst: &mut [Option<Val>],
+    trail: &mut Vec<u32>,
+    body_atoms: &mut Vec<GLit>,
+) -> bool {
+    let ILit::Pos(p, args) = &rule.body[i] else {
+        unreachable!("tuples of a positive literal")
+    };
+    let p = *p as usize;
+    let control = g.preds[p].control;
+    while let Some(&t) = candidates.get(*next) {
+        *next += 1;
+        let rel = &g.rels[p];
+        let tuple = rel.tuple(t);
+        if !bound.iter().all(|(pos, v)| tuple[*pos] == *v) {
+            continue;
+        }
+        let mark = trail.len();
+        let id = rel.ids[t];
+        let fixed = g.fixed(id);
+        if !unify_args(args, tuple, subst, trail) || fixed == Some(false) {
+            unbind(subst, trail, mark);
+            continue;
+        }
+        let lit = (!control && fixed != Some(true)).then_some(GLit::Pos(id));
+        push_body_lit(g, rule, i, lit, body_atoms);
+        return true;
+    }
+    false
 }
 
 /// Takes the one alternative of literal `i` ([`Alts::Once`]), if it has

@@ -1005,12 +1005,6 @@ fn rows_as_clauses(
         }
     }
     let (held_copy, held_sets) = held_copies(gp, reads, copies, tables, &read_by_link);
-    let held = |l: &GLit| {
-        copies
-            .index(l.atom())
-            .map(|i| held_copy[i])
-            .filter(|&k| k != u32::MAX)
-    };
     let rules = std::mem::take(&mut gp.rules);
     let mut begun = vec![false; list.len()];
     // Per set, unit and part held by the links, the last row to read a
@@ -1039,44 +1033,70 @@ fn rows_as_clauses(
                 (t, &inputs[t]),
             );
         }
-        // The links hold the at-most-one of each set the row reads a copy
-        // of, so a copy of a set the row reads a value of holds negated
-        // wherever the link and the row's value do: the links read the row
-        // without it, the same function. The clause loops leave such
-        // literals out anyway; the families layout reads the rows, and a row
-        // that reads its value's copy alone puts the copy by the row, which
-        // shrinks the evidence (bn_barley, bn_diabetes). A set whose copies
-        // another rule reads keeps the negations, which that rule reads too:
-        // read one way by the links and the other by that rule, the copies
-        // would be laid out apart (bn_water_ev).
-        for k in rule
-            .body
-            .iter()
-            .filter(|l| l.is_positive())
-            .filter_map(held)
-        {
-            read_by[k as usize] = ri;
-        }
-        row.clear();
-        row.extend(
-            rule.body
-                .iter()
-                .copied()
-                .filter(|l| l.is_positive() || held(l).is_none_or(|k| read_by[k as usize] != ri)),
+        emit_row_clauses(
+            gp,
+            ri,
+            rule,
+            t,
+            (reads, copies, tables),
+            (&held_copy, &read_by_link),
+            (&mut read_by, &mut row),
         );
-        let j = reads.place[rule.head as usize] as usize;
-        for reader in &list[t].readers {
-            let Indicator { var, link, .. } = gp.encoding.indicators[reader[j]];
-            let mut body = Vec::with_capacity(row.len() + 1);
-            body.extend_from_slice(&row);
-            body.push(GLit::Neg(var));
-            gp.rules.push(GroundRule::new(link, body));
-        }
-        if read_by_link[rule.head as usize] {
-            gp.rules.push(rule);
-        }
     }
     read_by_link
+}
+
+fn emit_row_clauses(
+    gp: &mut GroundProgram,
+    ri: usize,
+    rule: GroundRule,
+    t: usize,
+    (reads, copies, tables): (&Reads, &Copies, &Tables),
+    (held_copy, read_by_link): (&[u32], &[bool]),
+    (read_by, row): (&mut [usize], &mut Vec<GLit>),
+) {
+    let held = |l: &GLit| {
+        copies
+            .index(l.atom())
+            .map(|i| held_copy[i])
+            .filter(|&k| k != u32::MAX)
+    };
+    // The links hold the at-most-one of each set the row reads a copy
+    // of, so a copy of a set the row reads a value of holds negated
+    // wherever the link and the row's value do: the links read the row
+    // without it, the same function. The clause loops leave such
+    // literals out anyway; the families layout reads the rows, and a row
+    // that reads its value's copy alone puts the copy by the row, which
+    // shrinks the evidence (bn_barley, bn_diabetes). A set whose copies
+    // another rule reads keeps the negations, which that rule reads too:
+    // read one way by the links and the other by that rule, the copies
+    // would be laid out apart (bn_water_ev).
+    for k in rule
+        .body
+        .iter()
+        .filter(|l| l.is_positive())
+        .filter_map(held)
+    {
+        read_by[k as usize] = ri;
+    }
+    row.clear();
+    row.extend(
+        rule.body
+            .iter()
+            .copied()
+            .filter(|l| l.is_positive() || held(l).is_none_or(|k| read_by[k as usize] != ri)),
+    );
+    let j = reads.place[rule.head as usize] as usize;
+    for reader in &tables.list[t].readers {
+        let Indicator { var, link, .. } = gp.encoding.indicators[reader[j]];
+        let mut body = Vec::with_capacity(row.len() + 1);
+        body.extend_from_slice(row);
+        body.push(GLit::Neg(var));
+        gp.rules.push(GroundRule::new(link, body));
+    }
+    if read_by_link[rule.head as usize] {
+        gp.rules.push(rule);
+    }
 }
 
 fn table_inputs(

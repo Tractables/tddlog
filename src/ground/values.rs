@@ -1442,43 +1442,9 @@ impl Written {
         leaves: &[Leaf],
         limit: usize,
     ) -> bool {
-        // Each row's contexts, read through the written units' values.
-        let mut rows: Vec<(Vec<GLit>, &Distribution)> = Vec::new();
-        let mut size = 0;
-        for leaf in leaves {
-            let literals: Vec<GLit> = leaf
-                .cube
-                .iter()
-                .map(|&(x, v)| GLit::new(inputs[x as usize], v))
-                .collect();
-            let Some((kept, values)) = self.read(&literals) else {
-                continue;
-            };
-            let mut bodies: Vec<Vec<GLit>> = vec![kept];
-            for matching in values {
-                if bodies.len() * matching.len() > limit {
-                    return false;
-                }
-                bodies = bodies
-                    .iter()
-                    .flat_map(|b| {
-                        matching.iter().map(move |&v| {
-                            let mut b = b.clone();
-                            b.push(GLit::Pos(v));
-                            b
-                        })
-                    })
-                    .collect();
-            }
-            let k = leaf.dist.len();
-            for body in bodies {
-                size += k * body.len() + k * (k + 1) / 2;
-                rows.push((body, &leaf.dist));
-            }
-            if size > limit {
-                return false;
-            }
-        }
+        let Some(rows) = self.expand_leaf_rows(inputs, leaves, limit) else {
+            return false;
+        };
         let mut codes: Vec<u32> = rows
             .iter()
             .flat_map(|(_, d)| d.iter().map(|&(c, _)| c))
@@ -1531,6 +1497,53 @@ impl Written {
         self.units.push(u);
         self.values.push((codes, values));
         true
+    }
+
+    /// Each row's contexts, read through the written units' values, where
+    /// they hold at most `limit` literals.
+    fn expand_leaf_rows<'a>(
+        &self,
+        inputs: &[AtomId],
+        leaves: &'a [Leaf],
+        limit: usize,
+    ) -> Option<Vec<(Vec<GLit>, &'a Distribution)>> {
+        let mut rows: Vec<(Vec<GLit>, &Distribution)> = Vec::new();
+        let mut size = 0;
+        for leaf in leaves {
+            let literals: Vec<GLit> = leaf
+                .cube
+                .iter()
+                .map(|&(x, v)| GLit::new(inputs[x as usize], v))
+                .collect();
+            let Some((kept, values)) = self.read(&literals) else {
+                continue;
+            };
+            let mut bodies: Vec<Vec<GLit>> = vec![kept];
+            for matching in values {
+                if bodies.len() * matching.len() > limit {
+                    return None;
+                }
+                bodies = bodies
+                    .iter()
+                    .flat_map(|b| {
+                        matching.iter().map(move |&v| {
+                            let mut b = b.clone();
+                            b.push(GLit::Pos(v));
+                            b
+                        })
+                    })
+                    .collect();
+            }
+            let k = leaf.dist.len();
+            for body in bodies {
+                size += k * body.len() + k * (k + 1) / 2;
+                rows.push((body, &leaf.dist));
+            }
+            if size > limit {
+                return None;
+            }
+        }
+        Some(rows)
     }
 
     /// `gp` with the rules of the atoms `replaced` replaced by the rows

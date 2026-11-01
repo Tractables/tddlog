@@ -273,11 +273,8 @@ impl<V: Value> Down<V> {
         let (l, r) = f.vtree().children(p);
         let (ld, rd) = (f.level(l).child_decoder(), f.level(r).child_decoder());
         let above = self.exact[p.idx()];
-        // An inline value is under no power: a child's column takes terms
-        // under one only where its sibling, if marginal, is under none,
-        // and no level is scaled here where either child is marginal.
-        let uniform =
-            |s: VtreeIdx| !f.level(s).child_decoder().is_marginal() || up.exps[s.idx()] == 0;
+        // An inline value is under no power: no level is scaled here where
+        // either child is marginal.
         let movable = above && !ld.is_marginal() && !rd.is_marginal();
         // The children spread into: `c` alone from a grid, both otherwise.
         let sibling = |x: VtreeIdx| if x == l { r } else { l };
@@ -292,20 +289,7 @@ impl<V: Value> Down<V> {
             "a level takes terms from one column, under one power"
         );
         let copies = self.prepare_parent_and_copies(up, p, (l, r), kids, movable)?;
-        let (range, exp) = (self.ranges[p.idx()], self.exps[p.idx()]);
-        // Whether a child's column, counted in `V`s as `values` in range
-        // `got` from its sibling's counts read in range `read`, is exact;
-        // and where it is not, whether one counted in [`Count`]s from the
-        // same columns is, which [`fitted`] may then keep in `V`s under a
-        // power of its own.
-        let exact = |s: VtreeIdx, read: Range, values: &[V], got: Range| {
-            above
-                && uniform(s)
-                && up.exact[s.idx()]
-                && got.finite()
-                && (range.times(read)
-                    || exact_as_computed(values, got, lowest_product(range, read)))
-        };
+        let exp = self.exps[p.idx()];
         let recountable = |sibling: VtreeIdx| above && up.exact[sibling.idx()];
         // What each child reads of its sibling's counts, under the copy's
         // shift, and their range.
@@ -331,7 +315,7 @@ impl<V: Value> Down<V> {
                 (None, Some((down, r))) => {
                     let (_, shift, read) = reads[i].expect("a child reads its sibling");
                     self.keep(x, Fit::Floats(down, r, exp + up.exps[sib.idx()] - shift));
-                    let held = exact(sib, read, &self.columns[x.idx()], self.ranges[x.idx()]);
+                    let held = self.is_child_exact(f, up, (p, sib, x), read);
                     self.exact[x.idx()] = held;
                     recount |= !held && recountable(sib);
                 }
@@ -353,6 +337,32 @@ impl<V: Value> Down<V> {
             self.views[p.idx()] = View::Pairs;
         }
         Ok(())
+    }
+
+    /// Whether child `x`'s column, counted in `V`s from its sibling `s`'s
+    /// counts read in range `read`, is exact.
+    fn is_child_exact(
+        &self,
+        f: &tididi::Tdd,
+        up: Ups<'_, V>,
+        (p, s, x): (
+            tididi::vtree::VtreeIdx,
+            tididi::vtree::VtreeIdx,
+            tididi::vtree::VtreeIdx,
+        ),
+        read: Range,
+    ) -> bool {
+        // An inline value is under no power: a child's column takes terms
+        // under one only where its sibling, if marginal, is under none.
+        let uniform = !f.level(s).child_decoder().is_marginal() || up.exps[s.idx()] == 0;
+        let range = self.ranges[p.idx()];
+        let got = self.ranges[x.idx()];
+        let values = &self.columns[x.idx()];
+        self.exact[p.idx()]
+            && uniform
+            && up.exact[s.idx()]
+            && got.finite()
+            && (range.times(read) || exact_as_computed(values, got, lowest_product(range, read)))
     }
 
     fn prepare_parent_and_copies(

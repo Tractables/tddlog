@@ -884,31 +884,8 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
     if roots.is_empty() {
         return Ok(FxHashSet::default());
     }
-    let mut ids: FxHashMap<Pred, usize> = FxHashMap::default();
-    let id = |p: Pred, ids: &mut FxHashMap<Pred, usize>| {
-        let n = ids.len();
-        *ids.entry(p).or_insert(n)
-    };
-    let mut edges: Vec<(usize, usize)> = Vec::new();
-    for c in &program.clauses {
-        for h in &c.heads {
-            let from = id((h.atom.name.clone(), h.atom.args.len()), &mut ids);
-            for l in &c.body {
-                let to = match l {
-                    Literal::Pos(a) | Literal::Neg(a) => (a.name.clone(), a.args.len()),
-                    Literal::Collect(k) => (k.aux.clone(), k.arity),
-                    _ => continue,
-                };
-                let to = id(to, &mut ids);
-                edges.push((from, to));
-            }
-        }
-    }
+    let (ids, out) = build_pred_graph(program);
     let n = ids.len();
-    let mut out: Vec<Vec<usize>> = vec![Vec::new(); n];
-    for &(a, b) in &edges {
-        out[a].push(b);
-    }
     let mut reached = vec![false; n];
     let mut stack: Vec<usize> = roots.iter().map(|r| ids[r]).collect();
     while let Some(p) = stack.pop() {
@@ -954,6 +931,42 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
         .filter(|&p| reached[p])
         .map(|p| names[p].clone())
         .collect();
+    check_and_regroup_cone(program, &cone)?;
+    Ok(cone)
+}
+
+fn build_pred_graph(program: &Program) -> (FxHashMap<Pred, usize>, Vec<Vec<usize>>) {
+    let mut ids: FxHashMap<Pred, usize> = FxHashMap::default();
+    let id = |p: Pred, ids: &mut FxHashMap<Pred, usize>| {
+        let n = ids.len();
+        *ids.entry(p).or_insert(n)
+    };
+    let mut edges: Vec<(usize, usize)> = Vec::new();
+    for c in &program.clauses {
+        for h in &c.heads {
+            let from = id((h.atom.name.clone(), h.atom.args.len()), &mut ids);
+            for l in &c.body {
+                let to = match l {
+                    Literal::Pos(a) | Literal::Neg(a) => (a.name.clone(), a.args.len()),
+                    Literal::Collect(k) => (k.aux.clone(), k.arity),
+                    _ => continue,
+                };
+                let to = id(to, &mut ids);
+                edges.push((from, to));
+            }
+        }
+    }
+    let mut out: Vec<Vec<usize>> = vec![Vec::new(); ids.len()];
+    for &(a, b) in &edges {
+        out[a].push(b);
+    }
+    (ids, out)
+}
+
+fn check_and_regroup_cone(
+    program: &mut Program,
+    cone: &FxHashSet<Pred>,
+) -> Result<(), GroundError> {
     let mut next = program.clauses.iter().map(|c| c.group).max().unwrap_or(0) + 1;
     for c in &mut program.clauses {
         let sig = (c.heads[0].atom.name.clone(), c.heads[0].atom.args.len());
@@ -973,7 +986,7 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
             next += 1;
         }
     }
-    Ok(cone)
+    Ok(())
 }
 
 /// The variables of `atoms`.

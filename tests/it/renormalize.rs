@@ -292,42 +292,50 @@ fn the_rows_keep_the_heads_left_and_their_masses() {
                     "{k} values, {rows:?}: no atom of the masses' own:\n{ground}"
                 );
             }
-            // The masses of c's rows, each a fact its context requires.
-            let printed = ground.to_string();
-            let masses: Vec<f64> = printed
-                .lines()
-                .filter_map(|l| l.split_once("::'$rn_w'"))
-                .map(|(p, _)| p.parse().unwrap())
-                .collect();
-            assert_eq!(
-                masses.len(),
-                k - 1,
-                "{k} values, {rows:?}: the masses' facts:\n{ground}"
-            );
-            for i in 0..k - 1 {
-                let m = 1.0 - net.c[i][2];
-                assert!(
-                    masses.iter().any(|&w| (w - m).abs() < 1e-12),
-                    "{k} values, {rows:?}: no mass {m} in {masses:?}:\n{ground}"
-                );
-            }
-            // The rows of `x` keep `x(t)`, observed: each reads one fact of
-            // `x(t)`'s probability, and `x(f)` goes.
-            let mut known: Vec<f64> = printed
-                .lines()
-                .filter_map(|l| l.split_once("::'$rn_t'"))
-                .map(|(p, _)| p.parse().unwrap())
-                .collect();
-            known.sort_by(f64::total_cmp);
-            assert_eq!(
-                known,
-                [X[1], X[0]],
-                "{k} values, {rows:?}: the facts of x(t):\n{ground}"
-            );
+            // The masses of c's rows, each a fact its context requires, and
+            // the facts of `x(t)`, observed.
+            assert_renormalized_masses_and_known(&ground, &net, k, rows);
             assert!(
                 !defines("x(f)") && !reads("x(f)"),
                 "{k} values, {rows:?}: x(f) is still in the program:\n{ground}"
             );
         }
     }
+}
+
+fn assert_renormalized_masses_and_known(
+    ground: &tddlog::ground::GroundProgram,
+    net: &Net,
+    k: usize,
+    rows: Rows,
+) {
+    let printed = ground.to_string();
+    let masses: Vec<f64> = printed
+        .lines()
+        .filter_map(|l| l.split_once("::'$rn_w'"))
+        .map(|(p, _)| p.parse().unwrap())
+        .collect();
+    assert_eq!(
+        masses.len(),
+        k - 1,
+        "{k} values, {rows:?}: the masses' facts:\n{ground}"
+    );
+    for i in 0..k - 1 {
+        let m = 1.0 - net.c[i][2];
+        assert!(
+            masses.iter().any(|&w| (w - m).abs() < 1e-12),
+            "{k} values, {rows:?}: no mass {m} in {masses:?}:\n{ground}"
+        );
+    }
+    let mut known: Vec<f64> = printed
+        .lines()
+        .filter_map(|l| l.split_once("::'$rn_t'"))
+        .map(|(p, _)| p.parse().unwrap())
+        .collect();
+    known.sort_by(f64::total_cmp);
+    assert_eq!(
+        known,
+        [X[1], X[0]],
+        "{k} values, {rows:?}: the facts of x(t):\n{ground}"
+    );
 }
