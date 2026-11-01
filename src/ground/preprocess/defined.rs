@@ -409,23 +409,15 @@ fn eliminate(n: usize, clauses: &[Vec<Lit>], candidate: &[bool]) -> Option<Elimi
             if !contracts(&db, &alive, &occurs, &resolvents, &mut mark, &mut stamp) {
                 continue;
             }
-            for &c in pos.iter().chain(neg) {
-                alive[c as usize] = false;
-                present.remove(&db[c as usize]);
-            }
-            occurs[2 * y].clear();
-            occurs[2 * y + 1].clear();
-            for r in resolvents.drain(..) {
-                if r.is_empty() {
-                    return None;
-                }
-                let i = db.len() as u32;
-                for &l in &r {
-                    occurs[l as usize].push(i);
-                }
-                present.insert(r.clone());
-                db.push(r);
-                alive.push(true);
+            if !apply_variable_elimination(
+                y,
+                &mut db,
+                &mut alive,
+                &mut occurs,
+                &mut present,
+                &mut resolvents,
+            ) {
+                return None;
             }
             eliminated[y] = true;
             changed = true;
@@ -447,6 +439,35 @@ fn eliminate(n: usize, clauses: &[Vec<Lit>], candidate: &[bool]) -> Option<Elimi
         resolvents,
         eliminated,
     })
+}
+
+fn apply_variable_elimination(
+    y: usize,
+    db: &mut Vec<Vec<Lit>>,
+    alive: &mut Vec<bool>,
+    occurs: &mut [Vec<u32>],
+    present: &mut FxHashSet<Vec<Lit>>,
+    resolvents: &mut Vec<Vec<Lit>>,
+) -> bool {
+    for &c in occurs[2 * y].iter().chain(&occurs[2 * y + 1]) {
+        alive[c as usize] = false;
+        present.remove(&db[c as usize]);
+    }
+    occurs[2 * y].clear();
+    occurs[2 * y + 1].clear();
+    for r in resolvents.drain(..) {
+        if r.is_empty() {
+            return false;
+        }
+        let i = db.len() as u32;
+        for &l in &r {
+            occurs[l as usize].push(i);
+        }
+        present.insert(r.clone());
+        db.push(r);
+        alive.push(true);
+    }
+    true
 }
 
 /// Whether the primal graph of the CNF `db` (the clauses `alive`, each

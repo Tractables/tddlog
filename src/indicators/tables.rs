@@ -362,6 +362,15 @@ fn covers<I: Copy + Ord>(
         above.pop();
         return all;
     }
+    measures_and_disjoint(rows, &read, above, states)
+}
+
+fn measures_and_disjoint<I: Copy + Ord>(
+    rows: &[&[(I, Allowed)]],
+    read: &[I],
+    above: &[I],
+    states: &impl Fn(I) -> u32,
+) -> bool {
     let Some(total) = read.iter().try_fold(1u128, |acc, input| {
         acc.checked_mul(u128::from(states(*input)))
     }) else {
@@ -371,7 +380,7 @@ fn covers<I: Copy + Ord>(
     let mut points = true;
     for row in rows {
         let mut measure = 1u128;
-        for input in &read {
+        for input in read {
             let count = match row.binary_search_by(|(j, _)| j.cmp(input)) {
                 Ok(k) => row[k].1.count(states(*input)),
                 Err(_) => states(*input),
@@ -698,42 +707,63 @@ fn scan_rule_inputs(
             }
             continue;
         }
-        let mark = &mut inputs.marks[inputs.base[i as usize] as usize + state as usize];
-        if positive {
-            if only.is_some_and(|o| o != state) || *mark == stamp {
-                return Some(None);
-            }
-            *only = Some(state);
-            // The literals right after it that read the input's other
-            // states negatively, as `introduce` writes a row's value of
-            // a parent, rule the rule out only where one negates this
-            // state, and are passed over without the rest.
-            if inputs.info[i as usize].0 != usize::MAX {
-                while let Some(&m) = body.get(next)
-                    && !m.is_positive()
-                    && inputs.of[m.atom() as usize].0 == i
-                {
-                    if inputs.of[m.atom() as usize].1 == state {
-                        return Some(None);
-                    }
-                    next += 1;
-                }
-            }
-        } else if *only == Some(state) {
+        if !record_unary_state(
+            inputs,
+            (*states, only, out),
+            stamp,
+            (i, state, positive),
+            body,
+            &mut next,
+        ) {
             return Some(None);
-        } else if only.is_none() && *mark != stamp {
-            // Once a positive literal has named the input's state, the
-            // states its negative literals rule out are not read: a
-            // row reads a parent's value and then the other values
-            // negated (the expansion in `introduce`).
-            *mark = stamp;
-            out.push(state);
-            if out.len() as u32 == *states {
-                return Some(None);
-            }
         }
     }
     Some(Some(reading))
+}
+
+fn record_unary_state(
+    inputs: &mut Inputs,
+    (states, only, out): (u32, &mut Option<u32>, &mut Vec<u32>),
+    stamp: usize,
+    (i, state, positive): (u32, u32, bool),
+    body: &[GLit],
+    next: &mut usize,
+) -> bool {
+    let mark = &mut inputs.marks[inputs.base[i as usize] as usize + state as usize];
+    if positive {
+        if only.is_some_and(|o| o != state) || *mark == stamp {
+            return false;
+        }
+        *only = Some(state);
+        // The literals right after it that read the input's other
+        // states negatively, as `introduce` writes a row's value of
+        // a parent, rule the rule out only where one negates this
+        // state, and are passed over without the rest.
+        if inputs.info[i as usize].0 != usize::MAX {
+            while let Some(&m) = body.get(*next)
+                && !m.is_positive()
+                && inputs.of[m.atom() as usize].0 == i
+            {
+                if inputs.of[m.atom() as usize].1 == state {
+                    return false;
+                }
+                *next += 1;
+            }
+        }
+    } else if *only == Some(state) {
+        return false;
+    } else if only.is_none() && *mark != stamp {
+        // Once a positive literal has named the input's state, the
+        // states its negative literals rule out are not read: a
+        // row reads a parent's value and then the other values
+        // negated (the expansion in `introduce`).
+        *mark = stamp;
+        out.push(state);
+        if out.len() as u32 == states {
+            return false;
+        }
+    }
+    true
 }
 
 fn build_rule_row(

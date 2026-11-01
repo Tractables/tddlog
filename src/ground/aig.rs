@@ -480,13 +480,7 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     if !may_merge(gp, by_head, &gates, &gate, &kept) {
         return false;
     }
-    let swept = swept_atoms(gp, structure, &in_set);
-    let sweeping = gates.iter().any(|&a| swept[a as usize]);
-    let mut g = Graph::new(if sweeping { WORDS } else { 0 });
-    let mut sweep = sweeping.then(|| {
-        let literals: u64 = gp.rules.iter().map(|r| r.body.len() as u64).sum();
-        Sweep::new(&g, literals)
-    });
+    let (swept, mut g, mut sweep) = init_sweep_state(gp, structure, &gates, &in_set);
     // Each atom's literal in the graph, built when first read; the atom
     // literal each node stands for, its first gate's or input's; and its
     // first gate's, where that is not the first atom: a bit that a switch
@@ -563,6 +557,22 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     gp.stats.merged += merged;
     gp.stats.reduced += derived.saturating_sub(gp.num_derived());
     true
+}
+
+fn init_sweep_state(
+    gp: &GroundProgram,
+    structure: &Structure,
+    gates: &[AtomId],
+    in_set: &[bool],
+) -> (Vec<bool>, Graph, Option<Sweep>) {
+    let swept = swept_atoms(gp, structure, in_set);
+    let sweeping = gates.iter().any(|&a| swept[a as usize]);
+    let g = Graph::new(if sweeping { WORDS } else { 0 });
+    let sweep = sweeping.then(|| {
+        let literals: u64 = gp.rules.iter().map(|r| r.body.len() as u64).sum();
+        Sweep::new(&g, literals)
+    });
+    (swept, g, sweep)
 }
 
 fn candidate_gates(

@@ -184,35 +184,14 @@ fn the_rows_renormalized_keep_the_answers_and_the_evidence_probability() {
                 // P(e), nothing detached, with the renormalization and
                 // without.
                 for renormalize in [true, false] {
-                    let options = GroundOptions {
-                        detach: false,
+                    check_undetached_renormalization(
+                        k,
+                        &program,
+                        rows,
+                        indicators,
+                        strategy,
                         renormalize,
-                        ..rows.options()
-                    };
-                    let ground = tddlog::ground::ground(&program, &options).unwrap();
-                    assert_eq!(
-                        ground.stats.conditioned.renormalized > 0,
-                        renormalize,
-                        "{k} values, {rows:?}, renormalize {renormalize}: {} rows renormalized",
-                        ground.stats.conditioned.renormalized
-                    );
-                    let run = tddlog::solve_ground(
-                        ground,
-                        &common::options(strategy, Projection::default()),
-                    )
-                    .unwrap();
-                    assert_answers(
-                        &format!(
-                            "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}"
-                        ),
-                        &run.results.expect("evidence is consistent"),
-                        &expected,
-                        1e-9,
-                    );
-                    let got = run.evidence_probability.expect("P(e)").to_f64();
-                    assert!(
-                        (got - pe).abs() <= 1e-12 * pe,
-                        "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}: P(e) = {got} against {pe}"
+                        (pe, &expected),
                     );
                 }
             }
@@ -227,6 +206,44 @@ fn the_rows_renormalized_keep_the_answers_and_the_evidence_probability() {
             );
         }
     }
+}
+
+fn check_undetached_renormalization(
+    k: usize,
+    program: &tddlog::syntax::Program,
+    rows: Rows,
+    indicators: bool,
+    strategy: Strategy,
+    renormalize: bool,
+    (pe, expected): (f64, &[(String, f64)]),
+) {
+    let options = GroundOptions {
+        detach: false,
+        renormalize,
+        ..rows.options()
+    };
+    let ground = tddlog::ground::ground(program, &options).unwrap();
+    assert_eq!(
+        ground.stats.conditioned.renormalized > 0,
+        renormalize,
+        "{k} values, {rows:?}, renormalize {renormalize}: {} rows renormalized",
+        ground.stats.conditioned.renormalized
+    );
+    let run =
+        tddlog::solve_ground(ground, &common::options(strategy, Projection::default())).unwrap();
+    assert_answers(
+        &format!(
+            "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}"
+        ),
+        &run.results.expect("evidence is consistent"),
+        expected,
+        1e-9,
+    );
+    let got = run.evidence_probability.expect("P(e)").to_f64();
+    assert!(
+        (got - pe).abs() <= 1e-12 * pe,
+        "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}: P(e) = {got} against {pe}"
+    );
 }
 
 #[test]

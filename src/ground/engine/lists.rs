@@ -149,73 +149,81 @@ fn proofs_on(
             key: empty,
             lits: Rc::from([(true, a)]),
         }]),
-        Node::Derived(derivations) => {
-            path.push(a);
-            let mut out: Vec<Proof> = Vec::new();
-            for (group, steps) in derivations {
-                let mut partial: Vec<(Vec<u32>, Vec<Lit>)> = vec![(vec![group], Vec::new())];
-                for step in steps {
-                    match step {
-                        Step::Rank(r) => partial.iter_mut().for_each(|(k, _)| k.push(r)),
-                        // A negation is one literal, but of an atom true in
-                        // every world, a proof of no literals, or in none.
-                        Step::Neg(b) => {
-                            let truth = match src.truth(b) {
-                                Some(t) => Some(t),
-                                None => {
-                                    let sub = proofs_on(src, b, what, path)?;
-                                    match sub.iter().any(|p| p.lits.is_empty()) {
-                                        true => Some(true),
-                                        false => sub.is_empty().then_some(false),
-                                    }
-                                }
-                            };
-                            match truth {
-                                Some(true) => partial.clear(),
-                                Some(false) => {}
-                                None => partial.iter_mut().for_each(|(_, l)| l.push((false, b))),
-                            }
-                        }
-                        Step::Pos(b) => {
-                            let sub = proofs_on(src, b, what, path)?;
-                            if partial.len().saturating_mul(sub.len()) > MAX_PROOFS {
-                                path.pop();
-                                return Err(too_many(src, a, what));
-                            }
-                            partial = partial
-                                .iter()
-                                .flat_map(|(k, l)| {
-                                    sub.iter().map(move |p| {
-                                        let mut k = k.clone();
-                                        k.extend_from_slice(&p.key);
-                                        let mut l = l.clone();
-                                        l.extend_from_slice(&p.lits);
-                                        (k, l)
-                                    })
-                                })
-                                .collect();
-                        }
-                    }
-                    if partial.is_empty() {
-                        break;
-                    }
-                }
-                out.extend(partial.into_iter().map(|(k, l)| Proof {
-                    key: Rc::from(k),
-                    lits: Rc::from(l),
-                }));
-                if out.len() > MAX_PROOFS {
-                    path.pop();
-                    return Err(too_many(src, a, what));
-                }
-            }
-            path.pop();
-            out.sort_by(|x, y| x.key.cmp(&y.key));
-            Rc::from(out)
-        }
+        Node::Derived(derivations) => derived_proofs_on(src, a, derivations, what, path)?,
     };
     src.known().insert(a, out.clone());
     Ok(out)
+}
+
+fn derived_proofs_on(
+    src: &mut impl Source,
+    a: u32,
+    derivations: Vec<(u32, Vec<Step>)>,
+    what: &str,
+    path: &mut Vec<u32>,
+) -> Result<Rc<[Proof]>, GroundError> {
+    path.push(a);
+    let mut out: Vec<Proof> = Vec::new();
+    for (group, steps) in derivations {
+        let mut partial: Vec<(Vec<u32>, Vec<Lit>)> = vec![(vec![group], Vec::new())];
+        for step in steps {
+            match step {
+                Step::Rank(r) => partial.iter_mut().for_each(|(k, _)| k.push(r)),
+                // A negation is one literal, but of an atom true in
+                // every world, a proof of no literals, or in none.
+                Step::Neg(b) => {
+                    let truth = match src.truth(b) {
+                        Some(t) => Some(t),
+                        None => {
+                            let sub = proofs_on(src, b, what, path)?;
+                            match sub.iter().any(|p| p.lits.is_empty()) {
+                                true => Some(true),
+                                false => sub.is_empty().then_some(false),
+                            }
+                        }
+                    };
+                    match truth {
+                        Some(true) => partial.clear(),
+                        Some(false) => {}
+                        None => partial.iter_mut().for_each(|(_, l)| l.push((false, b))),
+                    }
+                }
+                Step::Pos(b) => {
+                    let sub = proofs_on(src, b, what, path)?;
+                    if partial.len().saturating_mul(sub.len()) > MAX_PROOFS {
+                        path.pop();
+                        return Err(too_many(src, a, what));
+                    }
+                    partial = partial
+                        .iter()
+                        .flat_map(|(k, l)| {
+                            sub.iter().map(move |p| {
+                                let mut k = k.clone();
+                                k.extend_from_slice(&p.key);
+                                let mut l = l.clone();
+                                l.extend_from_slice(&p.lits);
+                                (k, l)
+                            })
+                        })
+                        .collect();
+                }
+            }
+            if partial.is_empty() {
+                break;
+            }
+        }
+        out.extend(partial.into_iter().map(|(k, l)| Proof {
+            key: Rc::from(k),
+            lits: Rc::from(l),
+        }));
+        if out.len() > MAX_PROOFS {
+            path.pop();
+            return Err(too_many(src, a, what));
+        }
+    }
+    path.pop();
+    out.sort_by(|x, y| x.key.cmp(&y.key));
+    Ok(Rc::from(out))
 }
 
 fn too_many(src: &mut impl Source, a: u32, what: &str) -> GroundError {

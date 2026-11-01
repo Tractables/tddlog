@@ -1195,24 +1195,14 @@ impl<V: Value> Counted<V> {
             // normal, moved up as far as they stay finite and computed
             // again.
             let products = ranges[l.idx()].times(ranges[r.idx()]);
-            if movable
-                && !products
-                && !exact_as_computed(
-                    &up[t.idx()],
-                    ranges[t.idx()],
-                    lowest_product(ranges[l.idx()], ranges[r.idx()]),
-                )
-                && raising(ranges[t.idx()]) > 0
-                && let Some(ks) =
-                    split_shift(ranges[l.idx()], ranges[r.idx()], raising(ranges[t.idx()]))
-            {
-                shift_children((l, r), up, exps, ranges, ks);
-                level_up(
+            if movable && !products {
+                raise_and_recompute_level(
                     f,
                     (t, l, r),
                     &views[t.idx()],
                     up,
-                    &mut ranges[t.idx()],
+                    exps,
+                    ranges,
                     &mut self.routes_up,
                 );
             }
@@ -1234,6 +1224,31 @@ impl<V: Value> Counted<V> {
             }
         }
         None
+    }
+}
+
+fn raise_and_recompute_level<V: Value>(
+    f: &tididi::Tdd,
+    (t, l, r): (
+        tididi::vtree::VtreeIdx,
+        tididi::vtree::VtreeIdx,
+        tididi::vtree::VtreeIdx,
+    ),
+    view: &View,
+    up: &mut [Vec<V>],
+    exps: &mut [i64],
+    ranges: &mut [Range],
+    routes_up: &mut [usize; ROUTES],
+) {
+    if !exact_as_computed(
+        &up[t.idx()],
+        ranges[t.idx()],
+        lowest_product(ranges[l.idx()], ranges[r.idx()]),
+    ) && raising(ranges[t.idx()]) > 0
+        && let Some(ks) = split_shift(ranges[l.idx()], ranges[r.idx()], raising(ranges[t.idx()]))
+    {
+        shift_children((l, r), up, exps, ranges, ks);
+        level_up(f, (t, l, r), view, up, &mut ranges[t.idx()], routes_up);
     }
 }
 

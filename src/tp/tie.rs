@@ -145,37 +145,15 @@ pub(crate) fn ties(
         d
     };
     for links in tables.into_values().filter(|links| links.len() >= 2) {
-        // The readers whose links may be tied or be tied to: a link at the
-        // root is neither, since no other's node is above it.
-        let mut readers: Vec<(AtomId, Vec<VarId>, VtreeIdx)> = links
-            .into_iter()
-            .filter(|&link| {
-                by_head[link as usize]
-                    .iter()
-                    .map(|&ri| gp.rules[ri].clauses())
-                    .sum::<usize>()
-                    >= TIE_FROM
-            })
-            .filter_map(|link| {
-                let mut vars: Vec<VarId> = Vec::new();
-                for l in by_head[link as usize]
-                    .iter()
-                    .flat_map(|&ri| &gp.rules[ri].body)
-                {
-                    let v = var_of[l.atom() as usize].expect("a link reads facts alone");
-                    if std::mem::replace(&mut gathered[v.0 as usize], link) != link {
-                        vars.push(v);
-                    }
-                }
-                vars.sort_unstable();
-                // A link reads facts alone: its cone is its variables.
-                if vars.len() >= global_from {
-                    return None;
-                }
-                let node = backend.lowest_over_vars(&vars);
-                (node != vtree.root()).then_some((link, vars, node))
-            })
-            .collect();
+        let mut readers = candidate_table_readers(
+            gp,
+            by_head,
+            var_of,
+            backend,
+            links,
+            global_from,
+            &mut gathered,
+        );
         readers.sort_by_key(|&(link, _, node)| (std::cmp::Reverse(depth(node)), link));
         let mut kept: Vec<(AtomId, VtreeIdx)> = Vec::new();
         for (link, link_vars, node) in readers {
@@ -200,6 +178,49 @@ pub(crate) fn ties(
         }
     }
     ties
+}
+
+/// The readers whose links may be tied or be tied to: a link at the root is
+/// neither, since no other's node is above it.
+fn candidate_table_readers(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    var_of: &[Option<VarId>],
+    backend: &TddBackend,
+    links: Vec<AtomId>,
+    global_from: usize,
+    gathered: &mut [AtomId],
+) -> Vec<(AtomId, Vec<VarId>, VtreeIdx)> {
+    let root = backend.vtree().root();
+    links
+        .into_iter()
+        .filter(|&link| {
+            by_head[link as usize]
+                .iter()
+                .map(|&ri| gp.rules[ri].clauses())
+                .sum::<usize>()
+                >= TIE_FROM
+        })
+        .filter_map(|link| {
+            let mut vars: Vec<VarId> = Vec::new();
+            for l in by_head[link as usize]
+                .iter()
+                .flat_map(|&ri| &gp.rules[ri].body)
+            {
+                let v = var_of[l.atom() as usize].expect("a link reads facts alone");
+                if std::mem::replace(&mut gathered[v.0 as usize], link) != link {
+                    vars.push(v);
+                }
+            }
+            vars.sort_unstable();
+            // A link reads facts alone: its cone is its variables.
+            if vars.len() >= global_from {
+                return None;
+            }
+            let node = backend.lowest_over_vars(&vars);
+            (node != root).then_some((link, vars, node))
+        })
+        .collect()
 }
 
 type LinkCopies = FxHashMap<AtomId, Vec<(AtomId, VarId)>>;

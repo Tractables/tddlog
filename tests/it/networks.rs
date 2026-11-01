@@ -49,8 +49,26 @@ fn written(path: &str) -> Vec<String> {
 
 #[test]
 fn a_network_reads_as_the_program_beside_it() {
-    let named = |names: &[&str]| Queries::Named(names.iter().map(|n| n.to_string()).collect());
-    let cases: [(&str, Queries, Option<&str>, bool, &str); 12] = [
+    for (path, queries, evidence, rescale, program) in uai_reading_cases()
+        .into_iter()
+        .chain(bayesian_network_reading_cases())
+    {
+        let read = read(path, queries, evidence, rescale);
+        let got: Vec<&str> = read.lines().collect();
+        assert_eq!(got, written(program), "{path} against {program}");
+    }
+}
+
+type ReadingCase = (
+    &'static str,
+    Queries,
+    Option<&'static str>,
+    bool,
+    &'static str,
+);
+
+fn uai_reading_cases() -> [ReadingCase; 6] {
+    [
         (
             "tests/regress/markov.uai",
             Queries::All,
@@ -87,6 +105,19 @@ fn a_network_reads_as_the_program_beside_it() {
             "tests/regress/potts.pl",
         ),
         (
+            "tests/networks/chain.uai",
+            Queries::Leaves,
+            None,
+            false,
+            "tests/networks/chain.pl",
+        ),
+    ]
+}
+
+fn bayesian_network_reading_cases() -> [ReadingCase; 6] {
+    let named = |names: &[&str]| Queries::Named(names.iter().map(|n| n.to_string()).collect());
+    [
+        (
             "examples/cancer.net",
             Queries::Leaves,
             None,
@@ -122,25 +153,13 @@ fn a_network_reads_as_the_program_beside_it() {
             "tests/networks/percent.pl",
         ),
         (
-            "tests/networks/chain.uai",
-            Queries::Leaves,
-            None,
-            false,
-            "tests/networks/chain.pl",
-        ),
-        (
             "tests/networks/noisy.xdsl",
             Queries::All,
             None,
             false,
             "tests/networks/noisy.pl",
         ),
-    ];
-    for (path, queries, evidence, rescale, program) in cases {
-        let read = read(path, queries, evidence, rescale);
-        let got: Vec<&str> = read.lines().collect();
-        assert_eq!(got, written(program), "{path} against {program}");
-    }
+    ]
 }
 
 /// What tddlog answers is the part of a network's program that its queries

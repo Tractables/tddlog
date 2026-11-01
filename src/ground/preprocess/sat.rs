@@ -1028,46 +1028,6 @@ mod tests {
             for c in &clauses {
                 ok &= s.add_clause(&lits(c));
             }
-            let fixpoint = |assumptions: &[i32]| -> bool {
-                let mut value = vec![0i8; n + 1];
-                for &a in assumptions {
-                    let v = a.unsigned_abs() as usize;
-                    let want = if a > 0 { 1 } else { -1 };
-                    if value[v] == -want {
-                        return true;
-                    }
-                    value[v] = want;
-                }
-                loop {
-                    let mut changed = false;
-                    for c in &clauses {
-                        let holds =
-                            |x: i32| value[x.unsigned_abs() as usize] == if x > 0 { 1 } else { -1 };
-                        if c.iter().any(|&x| holds(x)) {
-                            continue;
-                        }
-                        let mut open: Vec<i32> = c
-                            .iter()
-                            .copied()
-                            .filter(|&x| value[x.unsigned_abs() as usize] == 0)
-                            .collect();
-                        open.sort_unstable();
-                        open.dedup();
-                        match open.len() {
-                            0 => return true,
-                            1 => {
-                                value[open[0].unsigned_abs() as usize] =
-                                    if open[0] > 0 { 1 } else { -1 };
-                                changed = true;
-                            }
-                            _ => {}
-                        }
-                    }
-                    if !changed {
-                        return false;
-                    }
-                }
-            };
             let mut assumptions: Vec<i32> = Vec::new();
             for _ in 0..30 {
                 match next(&mut state) % 3 {
@@ -1087,7 +1047,7 @@ mod tests {
                 let got = s.propagation_refutes(&lits(&assumptions));
                 assert_eq!(
                     got,
-                    !ok || fixpoint(&assumptions),
+                    !ok || unit_propagation_refutes(n, &clauses, &assumptions),
                     "case {case}: {clauses:?} under {assumptions:?}"
                 );
                 assert!(
@@ -1098,6 +1058,45 @@ mod tests {
             }
         }
         assert!(refuted > 300, "refutations met: {refuted}");
+    }
+
+    fn unit_propagation_refutes(n: usize, clauses: &[Vec<i32>], assumptions: &[i32]) -> bool {
+        let mut value = vec![0i8; n + 1];
+        for &a in assumptions {
+            let v = a.unsigned_abs() as usize;
+            let want = if a > 0 { 1 } else { -1 };
+            if value[v] == -want {
+                return true;
+            }
+            value[v] = want;
+        }
+        loop {
+            let mut changed = false;
+            for c in clauses {
+                let holds = |x: i32| value[x.unsigned_abs() as usize] == if x > 0 { 1 } else { -1 };
+                if c.iter().any(|&x| holds(x)) {
+                    continue;
+                }
+                let mut open: Vec<i32> = c
+                    .iter()
+                    .copied()
+                    .filter(|&x| value[x.unsigned_abs() as usize] == 0)
+                    .collect();
+                open.sort_unstable();
+                open.dedup();
+                match open.len() {
+                    0 => return true,
+                    1 => {
+                        value[open[0].unsigned_abs() as usize] = if open[0] > 0 { 1 } else { -1 };
+                        changed = true;
+                    }
+                    _ => {}
+                }
+            }
+            if !changed {
+                return false;
+            }
+        }
     }
 
     #[test]

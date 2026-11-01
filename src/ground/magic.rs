@@ -848,6 +848,18 @@ impl Demand<'_> {
                 bound_so_far.insert(v);
             }
         }
+        self.append_rewritten_rule(rule, guard, &ordered, w);
+        Some(())
+    }
+
+    fn append_rewritten_rule(
+        &self,
+        rule: &Clause,
+        guard: Literal,
+        ordered: &[usize],
+        w: &mut Written,
+    ) {
+        let head = &rule.heads[0].atom;
         let mut body = Vec::with_capacity(1 + ordered.len());
         body.push(guard);
         // A counted rule keeps its literals in the order of the source, by
@@ -866,7 +878,6 @@ impl Demand<'_> {
             body,
             group: rule.group,
         });
-        Some(())
     }
 
     #[allow(

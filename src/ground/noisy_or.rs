@@ -618,44 +618,8 @@ fn noisy_or_forms(dist: &[[f64; 2]]) -> [Option<Form>; 2] {
 /// one atom"): how many were. Their rows' facts are left unread, for the
 /// relevance cut to take out.
 pub(super) fn rows_as_noisy_ors(gp: &mut GroundProgram) -> usize {
-    let n = gp.num_atoms();
-    // How many literals read each atom, a named atom counted as read
-    // twice: a fact read once and named by nothing is a row's own.
-    let mut reads = vec![0u8; n];
-    for l in gp.rules.iter().flat_map(|r| &r.body) {
-        let k = &mut reads[l.atom() as usize];
-        *k = k.saturating_add(1);
-    }
-    for a in gp.named_atoms() {
-        reads[a as usize] = 2;
-    }
-    let own = |l: GLit| reads[l.atom() as usize] == 1 && gp.is_fact(l.atom());
     let by_head = gp.rules_by_head();
-    let mut found: Vec<(AtomId, AtomTable, Form)> = Vec::new();
-    for (x, rules) in by_head.iter().enumerate() {
-        if rules.len() < 2 {
-            continue;
-        }
-        let x = x as AtomId;
-        if let Some((parents, dist)) = one_atom_rows(gp, x, rules, &own)
-            && let [Some(f), _] = noisy_or_forms(&dist)
-        {
-            found.push((x, (parents, dist), f));
-        }
-    }
-    if found.is_empty() {
-        return 0;
-    }
-    // A table's parents do not depend on it where it is in no cycle.
-    let mut cyclic = vec![false; n];
-    for c in super::deps::derived_sccs(gp, &by_head) {
-        if super::deps::is_cyclic(gp, &by_head, &c) {
-            for a in c {
-                cyclic[a as usize] = true;
-            }
-        }
-    }
-    found.retain(|(x, ..)| !cyclic[*x as usize]);
+    let found = find_acyclic_noisy_ors(gp, &by_head);
     if found.is_empty() {
         return 0;
     }
@@ -709,6 +673,50 @@ pub(super) fn rows_as_noisy_ors(gp: &mut GroundProgram) -> usize {
     gp.rules.extend(written);
     gp.structure = std::sync::OnceLock::new();
     found.len()
+}
+
+fn find_acyclic_noisy_ors(
+    gp: &GroundProgram,
+    by_head: &super::RulesByHead,
+) -> Vec<(AtomId, AtomTable, Form)> {
+    let n = gp.num_atoms();
+    // How many literals read each atom, a named atom counted as read
+    // twice: a fact read once and named by nothing is a row's own.
+    let mut reads = vec![0u8; n];
+    for l in gp.rules.iter().flat_map(|r| &r.body) {
+        let k = &mut reads[l.atom() as usize];
+        *k = k.saturating_add(1);
+    }
+    for a in gp.named_atoms() {
+        reads[a as usize] = 2;
+    }
+    let own = |l: GLit| reads[l.atom() as usize] == 1 && gp.is_fact(l.atom());
+    let mut found: Vec<(AtomId, AtomTable, Form)> = Vec::new();
+    for (x, rules) in by_head.iter().enumerate() {
+        if rules.len() < 2 {
+            continue;
+        }
+        let x = x as AtomId;
+        if let Some((parents, dist)) = one_atom_rows(gp, x, rules, &own)
+            && let [Some(f), _] = noisy_or_forms(&dist)
+        {
+            found.push((x, (parents, dist), f));
+        }
+    }
+    if found.is_empty() {
+        return found;
+    }
+    // A table's parents do not depend on it where it is in no cycle.
+    let mut cyclic = vec![false; n];
+    for c in super::deps::derived_sccs(gp, by_head) {
+        if super::deps::is_cyclic(gp, by_head, &c) {
+            for a in c {
+                cyclic[a as usize] = true;
+            }
+        }
+    }
+    found.retain(|(x, ..)| !cyclic[*x as usize]);
+    found
 }
 
 /// The parents of the rules `rules` of `x` in `gp` and their rows, by

@@ -288,48 +288,57 @@ impl<'a> Propagation<'a> {
                     }
                 }
             }
-            if !derived {
-                continue;
+            if derived {
+                self.propagate_derived_atom(a, holds, set)?;
             }
-            if holds {
-                match self.live[a as usize] {
+        }
+        Ok(())
+    }
+
+    fn propagate_derived_atom(
+        &mut self,
+        a: AtomId,
+        holds: bool,
+        set: usize,
+    ) -> Result<(), Contradiction> {
+        if holds {
+            match self.live[a as usize] {
+                0 => return Err(Contradiction),
+                1 => self.last_rule_holds(a)?,
+                _ => {}
+            }
+            if set != usize::MAX {
+                for i in 0..self.sets[set].len() {
+                    let b = self.sets[set][i];
+                    if b != a {
+                        self.assign(b, false)?;
+                    }
+                }
+            }
+        } else {
+            for i in 0..self.by_head[a as usize].len() {
+                let ri = self.by_head[a as usize][i];
+                if self.killer[ri] != u32::MAX {
+                    continue;
+                }
+                match self.open[ri] {
                     0 => return Err(Contradiction),
-                    1 => self.last_rule_holds(a)?,
+                    1 => self.last_literal_fails(ri)?,
                     _ => {}
                 }
-                if set != usize::MAX {
-                    for i in 0..self.sets[set].len() {
-                        let b = self.sets[set][i];
-                        if b != a {
-                            self.assign(b, false)?;
+            }
+            if set != usize::MAX && self.exhaustive[set] {
+                match self.left[set] {
+                    0 => return Err(Contradiction),
+                    1 => {
+                        if let Some(&last) = self.sets[set]
+                            .iter()
+                            .find(|&&b| self.val[b as usize] != Val::False)
+                        {
+                            self.assign(last, true)?;
                         }
                     }
-                }
-            } else {
-                for i in 0..self.by_head[a as usize].len() {
-                    let ri = self.by_head[a as usize][i];
-                    if self.killer[ri] != u32::MAX {
-                        continue;
-                    }
-                    match self.open[ri] {
-                        0 => return Err(Contradiction),
-                        1 => self.last_literal_fails(ri)?,
-                        _ => {}
-                    }
-                }
-                if set != usize::MAX && self.exhaustive[set] {
-                    match self.left[set] {
-                        0 => return Err(Contradiction),
-                        1 => {
-                            if let Some(&last) = self.sets[set]
-                                .iter()
-                                .find(|&&b| self.val[b as usize] != Val::False)
-                            {
-                                self.assign(last, true)?;
-                            }
-                        }
-                        _ => {}
-                    }
+                    _ => {}
                 }
             }
         }

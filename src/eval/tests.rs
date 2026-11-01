@@ -385,31 +385,7 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
         tididi::and(cube(&v80, 1..=40, -1), cube(&v80, 41..=80, 1)).unwrap(),
     )
     .unwrap();
-    // Over a, b and c, 30, 30 and 60 variables whose cubes weigh about
-    // 2^-500, 2^-1100 and 2^-1100: `(a ∧ ¬b ∧ c) ∨ (¬a ∧ b ∧ ¬c)`. The
-    // level over a and b has the column 2^-1100 at `a ∧ ¬b` and about
-    // one at `¬a ∧ b`, and b's counts up span 1 100 bits, but the
-    // column's least value meets b's greatest only: a's column is exact
-    // as computed.
-    let v120 = Arc::new(Vtree::balanced(120));
-    let (a, b, c) = (
-        |s| cube(&v120, 1..=30, s),
-        |s| cube(&v120, 31..=60, s),
-        |s| cube(&v120, 61..=120, s),
-    );
-    let and3 = |x: Tdd, y: Tdd, z: Tdd| tididi::and(tididi::and(x, y).unwrap(), z).unwrap();
-    let three = tididi::or(and3(a(1), b(-1), c(1)), and3(a(-1), b(1), c(-1))).unwrap();
-    let three_w = weights_from(120, |v| {
-        f64::exp2(
-            -(if v <= 30 {
-                500.0 / 30.0
-            } else if v <= 60 {
-                1100.0 / 30.0
-            } else {
-                1100.0 / 60.0
-            }),
-        )
-    });
+    let (three, three_w) = three_cubes_case(&cube);
     for (what, f, w, route) in [
         ("cube at 1/4", &one, cube_at(0.25), Way::Plain),
         ("cube at 1e-9", &one, cube_at(1e-9), Way::Scaled),
@@ -449,6 +425,36 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
     ] {
         assert_count_route(what, f, &w, route);
     }
+}
+
+/// Over a, b and c, 30, 30 and 60 variables whose cubes weigh about
+/// 2^-500, 2^-1100 and 2^-1100: `(a ∧ ¬b ∧ c) ∨ (¬a ∧ b ∧ ¬c)`. The level
+/// over a and b has the column 2^-1100 at `a ∧ ¬b` and about one at
+/// `¬a ∧ b`, and b's counts up span 1 100 bits, but the column's least
+/// value meets b's greatest only: a's column is exact as computed.
+fn three_cubes_case(
+    cube: &impl Fn(&Arc<Vtree>, std::ops::RangeInclusive<i32>, i32) -> Tdd,
+) -> (Tdd, Probabilities) {
+    let v120 = Arc::new(Vtree::balanced(120));
+    let (a, b, c) = (
+        |s| cube(&v120, 1..=30, s),
+        |s| cube(&v120, 31..=60, s),
+        |s| cube(&v120, 61..=120, s),
+    );
+    let and3 = |x: Tdd, y: Tdd, z: Tdd| tididi::and(tididi::and(x, y).unwrap(), z).unwrap();
+    let three = tididi::or(and3(a(1), b(-1), c(1)), and3(a(-1), b(1), c(-1))).unwrap();
+    let three_w = weights_from(120, |v| {
+        f64::exp2(
+            -(if v <= 30 {
+                500.0 / 30.0
+            } else if v <= 60 {
+                1100.0 / 30.0
+            } else {
+                1100.0 / 60.0
+            }),
+        )
+    });
+    (three, three_w)
 }
 
 /// Variables 1 to `k` weighing `p(v)` positive and `1 - p(v)` negative.

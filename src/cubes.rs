@@ -499,7 +499,11 @@ mod tests {
                 &origin,
             );
         }
-        // The values 1 to 6 over three leaves: 1, 2..=3, 4..=5 and 6.
+        assert_aligned_binary_range_merge();
+    }
+
+    /// The values 1 to 6 over three leaves: 1, 2..=3, 4..=5 and 6.
+    fn assert_aligned_binary_range_merge() {
         let (mut codes, mut start) = (Vec::new(), vec![0u32]);
         for value in 1..=6u32 {
             codes.extend((0..3).map(|b| 2 * b + (value >> b & 1)));

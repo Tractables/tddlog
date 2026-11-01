@@ -215,33 +215,36 @@ impl<'a> Owners<'a> {
                 *x = if *x == NONE || *x == t { t } else { MANY };
             }
         }
-        // Then the tables none of whose rules reads one of its own facts.
-        // One whose heads not false are true changes only where its
-        // contexts exclude each other and read no set in binary (below):
-        // each literal of a context positive, of a set not read in binary.
-        for r in &gp.rules {
-            let t = tables.of(r.head);
-            let e = o.kinds[t];
+        o.mark_own_and_fixed(num_sets);
+        Some(o)
+    }
+
+    /// Marks the tables that read one of their own facts, and clears `FALSE`
+    /// where a table whose heads not false are true has a rule whose context
+    /// reads a negative literal, a non-set literal or a set read in binary.
+    fn mark_own_and_fixed(&mut self, num_sets: usize) {
+        for r in &self.gp.rules {
+            let t = self.tables.of(r.head);
+            let e = self.kinds[t];
             if !may(&e) || !e[READS_FACT] {
                 continue;
             }
             let (mut own, mut fixed) = (false, false);
             for l in &r.body {
-                if o.own(l.atom(), t) {
+                if self.own(l.atom(), t) {
                     own = true;
                 } else if !e[OPEN]
-                    && (!l.is_positive() || tables.of(l.atom()) >= num_sets || o.wide(l))
+                    && (!l.is_positive() || self.tables.of(l.atom()) >= num_sets || self.wide(l))
                 {
                     fixed = true;
                 }
             }
-            let e = &mut o.kinds[t];
+            let e = &mut self.kinds[t];
             e[READS_OWN] |= own;
             if fixed {
                 e[FALSE] = false;
             }
         }
-        Some(o)
     }
 
     /// Whether `h` is a derived atom the conditioning made false.

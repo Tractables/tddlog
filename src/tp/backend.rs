@@ -1831,54 +1831,7 @@ mod tests {
                 seed.wrapping_mul(6364136223846793005)
                     .wrapping_add(1442695040888963407),
             );
-            let mut cubes: Vec<Vec<Literal>> = Vec::new();
-            let mut groups: Vec<(Vec<VarId>, bool)> = Vec::new();
-            let mut leaves: Vec<VarId> = Vec::new();
-            if seed % 2 == 0 {
-                let mut n = 0u32;
-                let mut fresh = || {
-                    n += 1;
-                    VarId(n)
-                };
-                for _ in 0..6 + next(8) {
-                    let c = fresh();
-                    for _ in 0..1 + next(5) {
-                        let o = fresh();
-                        let sign = seed % 4 == 0 || next(4) > 0;
-                        for _ in 0..1 + next(6) {
-                            let l = fresh();
-                            cubes.push(vec![
-                                Literal::pos(c),
-                                Literal::new(o, sign),
-                                Literal::pos(l),
-                            ]);
-                            leaves.push(l);
-                        }
-                        leaves.push(o);
-                    }
-                    leaves.push(c);
-                }
-            } else {
-                let n = 150 + next(150) as u32;
-                for _ in 0..n {
-                    let base = 1 + next(u64::from(n)) as u32;
-                    let cube: Vec<Literal> = (0..1 + next(4))
-                        .map(|_| Literal::new(VarId((base + next(12) as u32).min(n)), next(3) > 0))
-                        .collect();
-                    cubes.push(cube);
-                }
-                let mut v = 1;
-                while v + 3 <= n {
-                    if next(8) == 0 {
-                        groups.push((
-                            (v..v + 2 + next(2) as u32).map(VarId).collect(),
-                            next(2) == 0,
-                        ));
-                    }
-                    v += 4;
-                }
-                leaves = (1..=n).map(VarId).collect();
-            }
+            let (cubes, groups, mut leaves) = random_many_leaves_instance(seed, &mut next);
             // A tree split at random places of the order, whose widths the
             // cubes' nearness bounds, where a random vtree's are not.
             fn split(leaves: &[VarId], next: &mut dyn FnMut(u64) -> u64) -> Vtree {
@@ -1914,6 +1867,63 @@ mod tests {
                 );
             });
         }
+    }
+
+    type ManyLeavesInstance = (Vec<Vec<Literal>>, Vec<(Vec<VarId>, bool)>, Vec<VarId>);
+
+    fn random_many_leaves_instance(
+        seed: u64,
+        next: &mut impl FnMut(u64) -> u64,
+    ) -> ManyLeavesInstance {
+        let mut cubes: Vec<Vec<Literal>> = Vec::new();
+        let mut groups: Vec<(Vec<VarId>, bool)> = Vec::new();
+        let mut leaves: Vec<VarId> = Vec::new();
+        if seed.is_multiple_of(2) {
+            let mut n = 0u32;
+            let mut fresh = || {
+                n += 1;
+                VarId(n)
+            };
+            for _ in 0..6 + next(8) {
+                let c = fresh();
+                for _ in 0..1 + next(5) {
+                    let o = fresh();
+                    let sign = seed.is_multiple_of(4) || next(4) > 0;
+                    for _ in 0..1 + next(6) {
+                        let l = fresh();
+                        cubes.push(vec![
+                            Literal::pos(c),
+                            Literal::new(o, sign),
+                            Literal::pos(l),
+                        ]);
+                        leaves.push(l);
+                    }
+                    leaves.push(o);
+                }
+                leaves.push(c);
+            }
+        } else {
+            let n = 150 + next(150) as u32;
+            for _ in 0..n {
+                let base = 1 + next(u64::from(n)) as u32;
+                let cube: Vec<Literal> = (0..1 + next(4))
+                    .map(|_| Literal::new(VarId((base + next(12) as u32).min(n)), next(3) > 0))
+                    .collect();
+                cubes.push(cube);
+            }
+            let mut v = 1;
+            while v + 3 <= n {
+                if next(8) == 0 {
+                    groups.push((
+                        (v..v + 2 + next(2) as u32).map(VarId).collect(),
+                        next(2) == 0,
+                    ));
+                }
+                v += 4;
+            }
+            leaves = (1..=n).map(VarId).collect();
+        }
+        (cubes, groups, leaves)
     }
 
     /// Tables as a reader's link holds them ([`crate::indicators`]): each

@@ -1391,21 +1391,7 @@ impl Decompositions {
         item_at: &[usize],
     ) -> Result<Option<Annealable>, String> {
         let num_items = self.num_items;
-        let mut vertex_of = vec![0u32; num_items];
-        for (v, &i) in item_at.iter().enumerate() {
-            vertex_of[i] = v as u32;
-        }
-        let edges: Vec<(u32, u32)> = self
-            .edges
-            .iter()
-            .map(|&(u, v)| {
-                (
-                    vertex_of[u].min(vertex_of[v]),
-                    vertex_of[u].max(vertex_of[v]),
-                )
-            })
-            .collect();
-        let graph = goatd::Graph::new(num_items as u32, edges.clone());
+        let (edges, graph) = numbering_graph(num_items, &self.edges, item_at);
         let (min_fill, units, seconds) = metered(|| {
             goatd::elimination::decompose(
                 &graph,
@@ -1589,6 +1575,23 @@ impl Decompositions {
             items.branches.iter().filter(|b| !b.is_empty()).count(),
         )
     }
+}
+
+fn numbering_graph(
+    num_items: usize,
+    edges: &[(usize, usize)],
+    item_at: &[usize],
+) -> (Vec<(u32, u32)>, goatd::Graph) {
+    let mut vertex_of = vec![0u32; num_items];
+    for (v, &i) in item_at.iter().enumerate() {
+        vertex_of[i] = v as u32;
+    }
+    let edges: Vec<(u32, u32)> = edges
+        .iter()
+        .map(|&(u, v)| (vertex_of[u], vertex_of[v]))
+        .collect();
+    let graph = goatd::Graph::new(num_items as u32, edges.iter().copied());
+    (edges, graph)
 }
 
 /// The lists [`Blocks::of`] fills for each group, kept from one group to

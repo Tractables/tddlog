@@ -792,19 +792,8 @@ impl<'a> Lexer<'a> {
                 None
             }
             b'/' if at(i + 1) == Some(b'*') => {
-                i += 2;
-                loop {
-                    if i >= n {
-                        return Some(self.fail(line, "unterminated block comment".into()));
-                    }
-                    if b[i] == b'*' && at(i + 1) == Some(b'/') {
-                        i += 2;
-                        break;
-                    }
-                    if b[i] == b'\n' {
-                        line += 1;
-                    }
-                    i += 1;
+                if let Some(err) = self.skip_block_comment(&mut i, &mut line) {
+                    return Some(err);
                 }
                 None
             }
@@ -832,12 +821,9 @@ impl<'a> Lexer<'a> {
             // places, recorded and passed over, and in a parse, a place
             // left without an argument.
             b'$' if at(i + 1).is_some_and(|d| d.is_ascii_digit()) => {
-                let end = i + 1 + b[i + 1..].iter().take_while(|d| d.is_ascii_digit()).count();
-                let Some(places) = &mut self.places else {
-                    return Some(self.fail(line, format!("`{}` has no argument", &src[i..end])));
-                };
-                places.push(Place { at: i..end, line });
-                i = end;
+                if let Some(err) = self.record_place(&mut i, line) {
+                    return Some(err);
+                }
                 None
             }
             // punctuation and operators
@@ -854,6 +840,41 @@ impl<'a> Lexer<'a> {
         self.i = i;
         self.line = line;
         tok
+    }
+
+    fn skip_block_comment(&mut self, i: &mut usize, line: &mut usize) -> Option<Tok<'a>> {
+        let b = self.src.as_bytes();
+        let n = b.len();
+        *i += 2;
+        loop {
+            if *i >= n {
+                return Some(self.fail(*line, "unterminated block comment".into()));
+            }
+            if b[*i] == b'*' && b.get(*i + 1) == Some(&b'/') {
+                *i += 2;
+                return None;
+            }
+            if b[*i] == b'\n' {
+                *line += 1;
+            }
+            *i += 1;
+        }
+    }
+
+    fn record_place(&mut self, i: &mut usize, line: usize) -> Option<Tok<'a>> {
+        let b = self.src.as_bytes();
+        let end = *i
+            + 1
+            + b[*i + 1..]
+                .iter()
+                .take_while(|d| d.is_ascii_digit())
+                .count();
+        let Some(places) = &mut self.places else {
+            return Some(self.fail(line, format!("`{}` has no argument", &self.src[*i..end])));
+        };
+        places.push(Place { at: *i..end, line });
+        *i = end;
+        None
     }
 
     /// Reads a quoted atom starting at `i` (just after the opening `quote`

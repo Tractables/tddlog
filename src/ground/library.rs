@@ -368,26 +368,7 @@ fn build_call_clauses(
 ) -> Vec<(usize, Vec<(Name, usize)>)> {
     let dispatched =
         |name: &str, arity: usize| !defined.contains(&(name, arity)) && construct(name, arity);
-    // The goals a goal it builds can name: the predicates it defines,
-    // named in an argument, and the terms written in an argument, in
-    // the order of their names, that are a built-in's or a construct's
-    // goal with the arguments added.
-    let written = argument_names(with.clauses.iter(), Some(with));
-    let named: FxHashSet<&str> = written.iter().map(|&(p, _)| p).collect();
-    let mut goals: Vec<(Name, usize)> = Vec::new();
-    let mut seen: FxHashSet<(Name, usize)> = FxHashSet::default();
-    for h in with.clauses.iter().flat_map(|c| &c.heads) {
-        let p = (h.atom.name.clone(), h.atom.args.len());
-        if !p.0.starts_with('$') && named.contains(&*p.0) && seen.insert(p.clone()) {
-            goals.push(p);
-        }
-    }
-    let mut terms: Vec<(Name, usize)> = written
-        .into_iter()
-        .filter(|(p, _)| !p.starts_with('$'))
-        .map(|(p, k)| (p.into(), k))
-        .collect();
-    terms.sort_unstable();
+    let (goals, terms) = discover_callable_goals(with);
     // The clauses of '$call<n>', for each number n of arguments added,
     // and the goals each can be given, which its test lists.
     let var = |prefix: &str, i: usize| Term::Var(format!("{prefix}{i}"));
@@ -449,6 +430,32 @@ fn build_call_clauses(
         listed.push((n, callable));
     }
     listed
+}
+
+type CallableGoals = (Vec<(Name, usize)>, Vec<(Name, usize)>);
+
+/// The goals a goal it builds can name: the predicates it defines, named in
+/// an argument, and the terms written in an argument, in the order of their
+/// names, that are a built-in's or a construct's goal with the arguments
+/// added.
+fn discover_callable_goals(with: &Program) -> CallableGoals {
+    let written = argument_names(with.clauses.iter(), Some(with));
+    let named: FxHashSet<&str> = written.iter().map(|&(p, _)| p).collect();
+    let mut goals: Vec<(Name, usize)> = Vec::new();
+    let mut seen: FxHashSet<(Name, usize)> = FxHashSet::default();
+    for h in with.clauses.iter().flat_map(|c| &c.heads) {
+        let p = (h.atom.name.clone(), h.atom.args.len());
+        if !p.0.starts_with('$') && named.contains(&*p.0) && seen.insert(p.clone()) {
+            goals.push(p);
+        }
+    }
+    let mut terms: Vec<(Name, usize)> = written
+        .into_iter()
+        .filter(|(p, _)| !p.starts_with('$'))
+        .map(|(p, k)| (p.into(), k))
+        .collect();
+    terms.sort_unstable();
+    (goals, terms)
 }
 
 fn guard_variable_calls(

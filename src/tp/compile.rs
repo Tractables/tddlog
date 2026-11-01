@@ -873,16 +873,7 @@ impl Compilation {
             projection: projection_stats,
             ..Default::default()
         };
-        let fixpoint = Fixpoint {
-            formulas: Formulas::new(n, stored),
-            lambda_cache: std::cell::RefCell::new(Formulas::new(n, 0)),
-            positive: std::cell::RefCell::new(vec![formulation == Formulation::Primal; n]),
-            version: std::cell::RefCell::new(vec![1; n]),
-            seen: std::cell::RefCell::new(vec![0; gp.rules.len()]),
-            worklist: None,
-            sizes: vec![0; n],
-            live: 0,
-        };
+        let fixpoint = Self::new_fixpoint(n, stored, gp.rules.len(), formulation);
         Ok(Compilation {
             horizon: None,
             reach: None,
@@ -915,6 +906,24 @@ impl Compilation {
             counts: std::cell::RefCell::new([0usize; 5]),
             negations: std::cell::RefCell::new(Negations::default()),
         })
+    }
+
+    fn new_fixpoint(
+        n: usize,
+        stored: usize,
+        num_rules: usize,
+        formulation: Formulation,
+    ) -> Fixpoint {
+        Fixpoint {
+            formulas: Formulas::new(n, stored),
+            lambda_cache: std::cell::RefCell::new(Formulas::new(n, 0)),
+            positive: std::cell::RefCell::new(vec![formulation == Formulation::Primal; n]),
+            version: std::cell::RefCell::new(vec![1; n]),
+            seen: std::cell::RefCell::new(vec![0; num_rules]),
+            worklist: None,
+            sizes: vec![0; n],
+            live: 0,
+        }
     }
 
     fn init_dying(

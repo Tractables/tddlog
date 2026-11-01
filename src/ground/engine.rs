@@ -1417,15 +1417,7 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             let (items, _) = g.spine(l, cons);
             items.into_iter().map(|x| vec![x, l]).collect()
         }
-        Builtin::Memberchk => {
-            let l = vals[1].expect("mode");
-            let (items, _) = g.spine(l, cons);
-            let first = match vals[0] {
-                Some(x) => items.into_iter().find(|&y| y == x),
-                None => items.first().copied(),
-            };
-            first.map_or_else(Vec::new, |x| one(vec![x, l]))
-        }
+        Builtin::Memberchk => memberchk_solutions(g, vals, cons),
         Builtin::Append => append_solutions(g, vals, nil, cons),
         Builtin::Length => {
             let l = vals[0].expect("mode");
@@ -1475,17 +1467,7 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         // or one of those from the other and the third.
         Builtin::Plus => plus_solutions(vals),
         // The order of the two terms in the standard order: `<`, `=` or `>`.
-        Builtin::Compare => {
-            let (a, b) = (vals[1].expect("mode"), vals[2].expect("mode"));
-            let (x, y) = (g.term_of(a), g.term_of(b));
-            let order = match term_cmp(&x, &y) {
-                std::cmp::Ordering::Less => "<",
-                std::cmp::Ordering::Equal => "=",
-                std::cmp::Ordering::Greater => ">",
-            };
-            let order = Val::Sym(g.syms.intern(&Name::from(order)));
-            one(vec![order, a, b])
-        }
+        Builtin::Compare => compare_solutions(g, vals),
         Builtin::IsList => {
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |_| one(vec![l]))
@@ -1499,6 +1481,28 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         // The test before a call of a goal that is a variable.
         Builtin::Callable => callable_solutions(g, vals),
     }
+}
+
+fn memberchk_solutions(g: &Grounder, vals: &[Option<Val>], cons: u32) -> Vec<Vec<Val>> {
+    let l = vals[1].expect("mode");
+    let (items, _) = g.spine(l, cons);
+    let first = match vals[0] {
+        Some(x) => items.into_iter().find(|&y| y == x),
+        None => items.first().copied(),
+    };
+    first.map_or_else(Vec::new, |x| vec![vec![x, l]])
+}
+
+fn compare_solutions(g: &mut Grounder, vals: &[Option<Val>]) -> Vec<Vec<Val>> {
+    let (a, b) = (vals[1].expect("mode"), vals[2].expect("mode"));
+    let (x, y) = (g.term_of(a), g.term_of(b));
+    let order = match term_cmp(&x, &y) {
+        std::cmp::Ordering::Less => "<",
+        std::cmp::Ordering::Equal => "=",
+        std::cmp::Ordering::Greater => ">",
+    };
+    let order = Val::Sym(g.syms.intern(&Name::from(order)));
+    vec![vec![order, a, b]]
 }
 
 fn list_builtin_solutions(

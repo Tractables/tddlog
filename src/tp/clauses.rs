@@ -980,14 +980,7 @@ impl Factoring<'_> {
             if let &[l] = body.as_slice()
                 && self.fact_literal(l).is_none()
             {
-                (self.count)(Op::And, std::mem::take(&mut run));
-                let nb = (self.part)(l.negated(), 1, scope)?;
-                let mut f = self.and_term(at.acc.take(), nb, scope)?;
-                at.settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
-                f.0 = (self.watched)(f.0, self.head)?;
-                let zero = self.backend.is_zero(&f.0);
-                at.acc = Some(f);
-                if zero {
+                if self.and_single_derived(l, scope, &mut at, &mut run)? {
                     break;
                 }
                 continue;
@@ -1031,6 +1024,23 @@ impl Factoring<'_> {
         (self.count)(Op::And, run);
         let acc = self.formula(at.acc, scope);
         self.placed(acc, scope)
+    }
+
+    fn and_single_derived(
+        &mut self,
+        l: GLit,
+        scope: &VtreeScope,
+        at: &mut Loop,
+        run: &mut usize,
+    ) -> Result<bool, CompileError> {
+        (self.count)(Op::And, std::mem::take(run));
+        let nb = (self.part)(l.negated(), 1, scope)?;
+        let mut f = self.and_term(at.acc.take(), nb, scope)?;
+        at.settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
+        f.0 = (self.watched)(f.0, self.head)?;
+        let zero = self.backend.is_zero(&f.0);
+        at.acc = Some(f);
+        Ok(zero)
     }
 
     fn and_derived_clause(

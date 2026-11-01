@@ -99,6 +99,11 @@ fn print_compile_stats(args: &Args, run: &tddlog::Run) {
         m.given_up,
         s.tied
     );
+    print_search_and_projection_stats(run, projection);
+}
+
+fn print_search_and_projection_stats(run: &tddlog::Run, projection: Projection) {
+    let s = &run.stats;
     if let Some(sr) = &s.search {
         eprintln!(
             "compile search: {} searches ({} gained under a tenth), {} probes, {} kept, {} pairs to {}, {} work units, {} restarts ({} kept)",
