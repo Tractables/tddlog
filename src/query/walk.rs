@@ -1167,29 +1167,7 @@ impl EvidenceWalk {
         scopes: &Scopes,
     ) -> Result<bool, CompileError> {
         let last = self.at_last_join();
-        if let Some((wait, other)) = [(a, b), (b, a)]
-            .into_iter()
-            .find(|(w, _)| self.waiting.contains_key(w))
-        {
-            let (x, y) = self.waiting.remove(&wait).unwrap();
-            let (zx, zy, zo) = (
-                self.slot_pairs[x],
-                self.slot_pairs[y],
-                self.slot_pairs[other],
-            );
-            if last && !self.waiting.contains_key(&other) && zo < zx && zo < zy {
-                let (larger, smaller) = if zx >= zy { (x, y) } else { (y, x) };
-                let t = self.slot(None, 0);
-                self.joins.pop_front();
-                self.joins.push_front(Join::Two(t, smaller, out));
-                self.joins.push_front(Join::Two(other, larger, t));
-                #[cfg(test)]
-                {
-                    self.reassociated += 1;
-                }
-            } else {
-                self.joins.push_front(Join::Two(x, y, wait));
-            }
+        if self.reschedule_waiting(a, b, out, last) {
             return Ok(false);
         }
         // A cap under the stop the attempt runs under already: on a node's last
@@ -1221,68 +1199,7 @@ impl EvidenceWalk {
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
         let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
-        let (first, second) = match merged {
-            true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
-            false => (None, None),
-        };
-        // The walk keeps its operands until a result exists. `and_onto` moves
-        // them onto the join's scope and gives them back when stopped, each on
-        // the scope it was left on; a pair refused after its moves goes back on
-        // the join's scope, which the retry then needs none for. The cap's pair
-        // floor is for the conjunction: the moves put no pair in flight, so it
-        // cannot stop them.
-        let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
-        // Where only the evidence's count is wanted, the join sums out what no
-        // later join reads (`SumOut`); an operand that carries the facts'
-        // weights makes a weighted join.
-        let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
-        let pairs = self.slot_pairs[a] + self.slot_pairs[b];
-        let targets = match &mut self.sum_out {
-            Some(so) => {
-                so.begin(a, b);
-                so.targets(&scope, pairs)
-            }
-            None => Vec::new(),
-        };
-        let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
-            (Some(so), _, false) => {
-                so.and_marginalizing(backend, (fa, first), (fb, second), &scope, &targets)
-            }
-            (Some(so), true, true) => so.and_onto(backend, (fa, first), (fb, second), &scope),
-            _ => backend.and_onto(fa, first, fb, second, &scope),
-        };
-        // A join that sums out its whole scope makes a weight: the nodes it
-        // emits are folded away level by level, and neither the attempt's
-        // node cap nor its pair floor measures what it holds. It runs under
-        // the work stop and the memory budget alone (rus_20_40's last join,
-        // 3.3 G units, was cut short six times by the cap and the work stop
-        // in turn and built again each time).
-        let whole = targets.contains(&scope.vtree().root());
-        let attempt = match cap {
-            Some(outer) => {
-                let _cap = backend.engine.limits().edit(|c| {
-                    c.with_stop_rules(
-                        StopRules::default()
-                            .with_unconditional(outer.unconditional)
-                            .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
-                    )
-                });
-                join(fa, fb)
-            }
-            None if whole => {
-                let _uncapped = backend.engine.limits().edit(|c| {
-                    let stop = c.stop_rules().with_after_pairs(None);
-                    c.with_output_node_cap(None).with_stop_rules(stop)
-                });
-                join(fa, fb)
-            }
-            None => join(fa, fb),
-        };
-        if attempt.is_err()
-            && let Some(so) = &mut self.sum_out
-        {
-            so.undo();
-        }
+        let attempt = self.run_join((a, b), (&scope, merged), (cap, floor), backend);
         let formula = match attempt {
             Ok(formula) => formula,
             Err(refused)
@@ -1320,6 +1237,107 @@ impl EvidenceWalk {
         self.slots[b] = None;
         backend.kept();
         Ok(true)
+    }
+
+    fn reschedule_waiting(&mut self, a: usize, b: usize, out: usize, last: bool) -> bool {
+        let Some((wait, other)) = [(a, b), (b, a)]
+            .into_iter()
+            .find(|(w, _)| self.waiting.contains_key(w))
+        else {
+            return false;
+        };
+        let (x, y) = self.waiting.remove(&wait).unwrap();
+        let (zx, zy, zo) = (
+            self.slot_pairs[x],
+            self.slot_pairs[y],
+            self.slot_pairs[other],
+        );
+        if last && !self.waiting.contains_key(&other) && zo < zx && zo < zy {
+            let (larger, smaller) = if zx >= zy { (x, y) } else { (y, x) };
+            let t = self.slot(None, 0);
+            self.joins.pop_front();
+            self.joins.push_front(Join::Two(t, smaller, out));
+            self.joins.push_front(Join::Two(other, larger, t));
+            #[cfg(test)]
+            {
+                self.reassociated += 1;
+            }
+        } else {
+            self.joins.push_front(Join::Two(x, y, wait));
+        }
+        true
+    }
+
+    fn run_join(
+        &mut self,
+        (a, b): (usize, usize),
+        (scope, merged): (&VtreeScope, bool),
+        (cap, floor): (Option<StopRules>, u64),
+        backend: &TddBackend,
+    ) -> Result<Tdd, Box<(CompileError, Part, Part)>> {
+        let (first, second) = match merged {
+            true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
+            false => (None, None),
+        };
+        // The walk keeps its operands until a result exists. `and_onto` moves
+        // them onto the join's scope and gives them back when stopped, each on
+        // the scope it was left on; a pair refused after its moves goes back on
+        // the join's scope, which the retry then needs none for. The cap's pair
+        // floor is for the conjunction: the moves put no pair in flight, so it
+        // cannot stop them.
+        let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
+        // Where only the evidence's count is wanted, the join sums out what no
+        // later join reads (`SumOut`); an operand that carries the facts'
+        // weights makes a weighted join.
+        let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
+        let pairs = self.slot_pairs[a] + self.slot_pairs[b];
+        let targets = match &mut self.sum_out {
+            Some(so) => {
+                so.begin(a, b);
+                so.targets(scope, pairs)
+            }
+            None => Vec::new(),
+        };
+        let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
+            (Some(so), _, false) => {
+                so.and_marginalizing(backend, (fa, first), (fb, second), scope, &targets)
+            }
+            (Some(so), true, true) => so.and_onto(backend, (fa, first), (fb, second), scope),
+            _ => backend.and_onto(fa, first, fb, second, scope),
+        };
+        // A join that sums out its whole scope makes a weight: the nodes it
+        // emits are folded away level by level, and neither the attempt's
+        // node cap nor its pair floor measures what it holds. It runs under
+        // the work stop and the memory budget alone (rus_20_40's last join,
+        // 3.3 G units, was cut short six times by the cap and the work stop
+        // in turn and built again each time).
+        let whole = targets.contains(&scope.vtree().root());
+        let attempt = match cap {
+            Some(outer) => {
+                let _cap = backend.engine.limits().edit(|c| {
+                    c.with_stop_rules(
+                        StopRules::default()
+                            .with_unconditional(outer.unconditional)
+                            .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
+                    )
+                });
+                join(fa, fb)
+            }
+            None if whole => {
+                let _uncapped = backend.engine.limits().edit(|c| {
+                    let stop = c.stop_rules().with_after_pairs(None);
+                    c.with_output_node_cap(None).with_stop_rules(stop)
+                });
+                join(fa, fb)
+            }
+            None => join(fa, fb),
+        };
+        if attempt.is_err()
+            && let Some(so) = &mut self.sum_out
+        {
+            so.undo();
+        }
+        attempt
     }
 
     fn join_scope(

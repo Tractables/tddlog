@@ -199,77 +199,7 @@ pub(super) fn added(program: &Program) -> Option<Program> {
     let program = collected.as_ref().unwrap_or(program);
     let defined: FxHashSet<(&str, usize)> = heads(program).collect();
     let library = library(program);
-    // The library's predicates the program does not define, their arities
-    // by name.
-    let mut offered: FxHashMap<&'static str, Vec<usize>> = FxHashMap::default();
-    for sig in heads(library).filter(|sig| !defined.contains(sig)) {
-        offered.entry(sig.0).or_default().push(sig.1);
-    }
-    // The library's predicates the program reaches, and whether it calls
-    // call/N.
-    type Sig = (&'static str, usize);
-    let mut wanted: FxHashSet<Sig> = FxHashSet::default();
-    let mut stack: Vec<Sig> = Vec::new();
-    let mut any_call = false;
-    let reach = |a: &Atom, wanted: &mut FxHashSet<Sig>, stack: &mut Vec<Sig>| {
-        let (name, arity) = a.signature();
-        if let Some((&name, arities)) = offered.get_key_value(name)
-            && arities.contains(&arity)
-            && wanted.insert((name, arity))
-        {
-            stack.push((name, arity));
-        }
-    };
-    for body in bodies(program) {
-        calls(body, &mut |a| {
-            any_call |= is_call(a, &defined);
-            reach(a, &mut wanted, &mut stack);
-        });
-    }
-    let clauses = |sig: Sig| {
-        library
-            .clauses
-            .iter()
-            .filter(move |c| c.heads[0].atom.signature() == sig)
-    };
-    let drain = |wanted: &mut FxHashSet<Sig>, stack: &mut Vec<Sig>| {
-        while let Some(sig) = stack.pop() {
-            for c in clauses(sig) {
-                calls(&c.body, &mut |a| reach(a, wanted, stack));
-            }
-        }
-    };
-    drain(&mut wanted, &mut stack);
-    // Where the program or the library's clauses it reaches call call/N, a
-    // goal can name the library's predicates named in an argument.
-    loop {
-        let reached = || wanted.iter().flat_map(|&sig| clauses(sig));
-        let mut calls_n = any_call;
-        for c in reached() {
-            calls(&c.body, &mut |a| calls_n |= is_call(a, &defined));
-        }
-        if !calls_n {
-            break;
-        }
-        let mut named = argument_names(program.clauses.iter(), Some(program));
-        named.extend(argument_names(reached(), None));
-        let named: FxHashSet<&str> = named.into_iter().map(|(p, _)| p).collect();
-        let mut more: Vec<Sig> = offered
-            .iter()
-            .filter(|(name, _)| named.contains(*name))
-            .flat_map(|(&name, arities)| arities.iter().map(move |&m| (name, m)))
-            .filter(|sig| !wanted.contains(sig))
-            .collect();
-        if more.is_empty() {
-            break;
-        }
-        more.sort_unstable();
-        for sig in more {
-            wanted.insert(sig);
-            stack.push(sig);
-        }
-        drain(&mut wanted, &mut stack);
-    }
+    let (wanted, any_call) = wanted_library_predicates(program, library, &defined);
     // The built-ins the queries and the evidence ask about.
     let mut asked: Vec<(&str, usize, Builtin)> = Vec::new();
     let patterns = program
@@ -343,128 +273,225 @@ pub(super) fn added(program: &Program) -> Option<Program> {
     };
     for_each_body(&mut with, |body| calls_mut(body, &write));
     if !added.borrow().is_empty() {
-        // The goals a goal it builds can name: the predicates it defines,
-        // named in an argument, and the terms written in an argument, in
-        // the order of their names, that are a built-in's or a construct's
-        // goal with the arguments added.
-        let written = argument_names(with.clauses.iter(), Some(&with));
-        let named: FxHashSet<&str> = written.iter().map(|&(p, _)| p).collect();
-        let mut goals: Vec<(Name, usize)> = Vec::new();
-        let mut seen: FxHashSet<(Name, usize)> = FxHashSet::default();
-        for h in with.clauses.iter().flat_map(|c| &c.heads) {
-            let p = (h.atom.name.clone(), h.atom.args.len());
-            if !p.0.starts_with('$') && named.contains(&*p.0) && seen.insert(p.clone()) {
-                goals.push(p);
-            }
-        }
-        let mut terms: Vec<(Name, usize)> = written
-            .into_iter()
-            .filter(|(p, _)| !p.starts_with('$'))
-            .map(|(p, k)| (p.into(), k))
-            .collect();
-        terms.sort_unstable();
-        // The clauses of '$call<n>', for each number n of arguments added,
-        // and the goals each can be given, which its test lists.
-        let var = |prefix: &str, i: usize| Term::Var(format!("{prefix}{i}"));
-        let mut listed: Vec<(usize, Vec<(Name, usize)>)> = Vec::new();
-        loop {
-            let next = added
-                .borrow()
-                .iter()
-                .copied()
-                .filter(|n| listed.iter().all(|e| e.0 != *n))
-                .min();
-            let Some(n) = next else {
-                break;
-            };
-            let mut callable = Vec::new();
-            let others = terms.iter().map(|(p, k)| (p, k + n)).filter(|&(p, m)| {
-                (Builtin::of(p, m).is_some() || construct(p, m)) && !defined.contains(&(&**p, m))
-            });
-            let preds = goals.iter().filter(|(_, m)| *m >= n).map(|(p, m)| (p, *m));
-            for (p, m) in preds.chain(others) {
-                let bound: Vec<Term> = (0..m - n).map(|i| var("B", i)).collect();
-                let term = |p: &Name, args: Vec<Term>| {
-                    if args.is_empty() {
-                        Term::Const(p.clone())
-                    } else {
-                        Compound::term(p.clone(), args)
-                    }
-                };
-                let goal = term(p, bound.clone());
-                let all: Vec<Term> = bound
-                    .into_iter()
-                    .chain((0..n).map(|i| var("A", i)))
-                    .collect();
-                let bodies: Vec<Vec<Literal>> = if !dispatched(p, m) {
-                    vec![vec![Literal::Pos(Atom::new(p.clone(), all.clone()))]]
-                } else {
-                    match (&**p, m) {
-                        ("true", 0) => vec![Vec::new()],
-                        ("fail" | "false", 0) => Vec::new(),
-                        _ => match goal_literal(term(p, all.clone())) {
-                            Some(l) => vec![vec![l]],
-                            None => continue,
-                        },
-                    }
-                };
-                let head = Atom::new(
-                    call_name(n),
-                    std::iter::once(goal)
-                        .chain(all[all.len() - n..].iter().cloned())
-                        .collect::<Vec<_>>(),
-                );
-                for mut body in bodies {
-                    calls_mut(&mut body, &write);
-                    with.clauses.push(Clause::rule(head.clone(), body, group));
-                    group += 1;
-                }
-                callable.push((p.clone(), m - n));
-            }
-            listed.push((n, callable));
-        }
-        // The test before each call of a goal that is a variable.
-        let unknown = if program.unknown_fails {
-            "fail"
-        } else {
-            "error"
-        };
-        let unknown = Term::Const(unknown.into());
-        let tests: FxHashMap<String, Literal> = listed
-            .iter()
-            .map(|&(n, ref goals)| {
-                let callable = Term::list(
-                    goals.iter().map(|(p, k)| {
-                        Compound::term(
-                            "/".into(),
-                            vec![Term::Const(p.clone()), Term::Int(*k as i64)],
-                        )
-                    }),
-                    Term::Const(NIL.into()),
-                );
-                let test = Literal::Builtin(
-                    Builtin::Callable,
-                    vec![
-                        Term::Var(String::new()),
-                        Term::Int(n as i64),
-                        callable,
-                        unknown.clone(),
-                    ],
-                    false,
-                );
-                (call_name(n), test)
-            })
-            .collect();
-        let test = |a: &Atom| {
-            let mut t = tests.get(&*a.name)?.clone();
-            if let Literal::Builtin(_, args, _) = &mut t {
-                args[0] = a.args[0].clone();
-            }
-            Some(t)
-        };
-        for_each_body(&mut with, |body| guard(body, &test));
+        let listed = build_call_clauses(&mut with, &defined, &added, &write, &mut group);
+        guard_variable_calls(&mut with, &listed, program.unknown_fails);
     }
     Some(with)
+}
+
+type Sig = (&'static str, usize);
+
+fn wanted_library_predicates(
+    program: &Program,
+    library: &'static Program,
+    defined: &FxHashSet<(&str, usize)>,
+) -> (FxHashSet<Sig>, bool) {
+    // The library's predicates the program does not define, their arities
+    // by name.
+    let mut offered: FxHashMap<&'static str, Vec<usize>> = FxHashMap::default();
+    for sig in heads(library).filter(|sig| !defined.contains(sig)) {
+        offered.entry(sig.0).or_default().push(sig.1);
+    }
+    // The library's predicates the program reaches, and whether it calls
+    // call/N.
+    let mut wanted: FxHashSet<Sig> = FxHashSet::default();
+    let mut stack: Vec<Sig> = Vec::new();
+    let mut any_call = false;
+    let reach = |a: &Atom, wanted: &mut FxHashSet<Sig>, stack: &mut Vec<Sig>| {
+        let (name, arity) = a.signature();
+        if let Some((&name, arities)) = offered.get_key_value(name)
+            && arities.contains(&arity)
+            && wanted.insert((name, arity))
+        {
+            stack.push((name, arity));
+        }
+    };
+    for body in bodies(program) {
+        calls(body, &mut |a| {
+            any_call |= is_call(a, defined);
+            reach(a, &mut wanted, &mut stack);
+        });
+    }
+    let clauses = |sig: Sig| {
+        library
+            .clauses
+            .iter()
+            .filter(move |c| c.heads[0].atom.signature() == sig)
+    };
+    let drain = |wanted: &mut FxHashSet<Sig>, stack: &mut Vec<Sig>| {
+        while let Some(sig) = stack.pop() {
+            for c in clauses(sig) {
+                calls(&c.body, &mut |a| reach(a, wanted, stack));
+            }
+        }
+    };
+    drain(&mut wanted, &mut stack);
+    // Where the program or the library's clauses it reaches call call/N, a
+    // goal can name the library's predicates named in an argument.
+    loop {
+        let reached = || wanted.iter().flat_map(|&sig| clauses(sig));
+        let mut calls_n = any_call;
+        for c in reached() {
+            calls(&c.body, &mut |a| calls_n |= is_call(a, defined));
+        }
+        if !calls_n {
+            break;
+        }
+        let mut named = argument_names(program.clauses.iter(), Some(program));
+        named.extend(argument_names(reached(), None));
+        let named: FxHashSet<&str> = named.into_iter().map(|(p, _)| p).collect();
+        let mut more: Vec<Sig> = offered
+            .iter()
+            .filter(|(name, _)| named.contains(*name))
+            .flat_map(|(&name, arities)| arities.iter().map(move |&m| (name, m)))
+            .filter(|sig| !wanted.contains(sig))
+            .collect();
+        if more.is_empty() {
+            break;
+        }
+        more.sort_unstable();
+        for sig in more {
+            wanted.insert(sig);
+            stack.push(sig);
+        }
+        drain(&mut wanted, &mut stack);
+    }
+    (wanted, any_call)
+}
+
+fn build_call_clauses(
+    with: &mut Program,
+    defined: &FxHashSet<(&str, usize)>,
+    added: &RefCell<FxHashSet<usize>>,
+    write: &impl Fn(&mut Atom),
+    group: &mut u32,
+) -> Vec<(usize, Vec<(Name, usize)>)> {
+    let dispatched =
+        |name: &str, arity: usize| !defined.contains(&(name, arity)) && construct(name, arity);
+    // The goals a goal it builds can name: the predicates it defines,
+    // named in an argument, and the terms written in an argument, in
+    // the order of their names, that are a built-in's or a construct's
+    // goal with the arguments added.
+    let written = argument_names(with.clauses.iter(), Some(with));
+    let named: FxHashSet<&str> = written.iter().map(|&(p, _)| p).collect();
+    let mut goals: Vec<(Name, usize)> = Vec::new();
+    let mut seen: FxHashSet<(Name, usize)> = FxHashSet::default();
+    for h in with.clauses.iter().flat_map(|c| &c.heads) {
+        let p = (h.atom.name.clone(), h.atom.args.len());
+        if !p.0.starts_with('$') && named.contains(&*p.0) && seen.insert(p.clone()) {
+            goals.push(p);
+        }
+    }
+    let mut terms: Vec<(Name, usize)> = written
+        .into_iter()
+        .filter(|(p, _)| !p.starts_with('$'))
+        .map(|(p, k)| (p.into(), k))
+        .collect();
+    terms.sort_unstable();
+    // The clauses of '$call<n>', for each number n of arguments added,
+    // and the goals each can be given, which its test lists.
+    let var = |prefix: &str, i: usize| Term::Var(format!("{prefix}{i}"));
+    let mut listed: Vec<(usize, Vec<(Name, usize)>)> = Vec::new();
+    loop {
+        let next = added
+            .borrow()
+            .iter()
+            .copied()
+            .filter(|n| listed.iter().all(|e| e.0 != *n))
+            .min();
+        let Some(n) = next else {
+            break;
+        };
+        let mut callable = Vec::new();
+        let others = terms.iter().map(|(p, k)| (p, k + n)).filter(|&(p, m)| {
+            (Builtin::of(p, m).is_some() || construct(p, m)) && !defined.contains(&(&**p, m))
+        });
+        let preds = goals.iter().filter(|(_, m)| *m >= n).map(|(p, m)| (p, *m));
+        for (p, m) in preds.chain(others) {
+            let bound: Vec<Term> = (0..m - n).map(|i| var("B", i)).collect();
+            let term = |p: &Name, args: Vec<Term>| {
+                if args.is_empty() {
+                    Term::Const(p.clone())
+                } else {
+                    Compound::term(p.clone(), args)
+                }
+            };
+            let goal = term(p, bound.clone());
+            let all: Vec<Term> = bound
+                .into_iter()
+                .chain((0..n).map(|i| var("A", i)))
+                .collect();
+            let bodies: Vec<Vec<Literal>> = if !dispatched(p, m) {
+                vec![vec![Literal::Pos(Atom::new(p.clone(), all.clone()))]]
+            } else {
+                match (&**p, m) {
+                    ("true", 0) => vec![Vec::new()],
+                    ("fail" | "false", 0) => Vec::new(),
+                    _ => match goal_literal(term(p, all.clone())) {
+                        Some(l) => vec![vec![l]],
+                        None => continue,
+                    },
+                }
+            };
+            let head = Atom::new(
+                call_name(n),
+                std::iter::once(goal)
+                    .chain(all[all.len() - n..].iter().cloned())
+                    .collect::<Vec<_>>(),
+            );
+            for mut body in bodies {
+                calls_mut(&mut body, write);
+                with.clauses.push(Clause::rule(head.clone(), body, *group));
+                *group += 1;
+            }
+            callable.push((p.clone(), m - n));
+        }
+        listed.push((n, callable));
+    }
+    listed
+}
+
+fn guard_variable_calls(
+    with: &mut Program,
+    listed: &[(usize, Vec<(Name, usize)>)],
+    unknown_fails: bool,
+) {
+    // The test before each call of a goal that is a variable.
+    let unknown = if unknown_fails { "fail" } else { "error" };
+    let unknown = Term::Const(unknown.into());
+    let tests: FxHashMap<String, Literal> = listed
+        .iter()
+        .map(|&(n, ref goals)| {
+            let callable = Term::list(
+                goals.iter().map(|(p, k)| {
+                    Compound::term(
+                        "/".into(),
+                        vec![Term::Const(p.clone()), Term::Int(*k as i64)],
+                    )
+                }),
+                Term::Const(NIL.into()),
+            );
+            let test = Literal::Builtin(
+                Builtin::Callable,
+                vec![
+                    Term::Var(String::new()),
+                    Term::Int(n as i64),
+                    callable,
+                    unknown.clone(),
+                ],
+                false,
+            );
+            (call_name(n), test)
+        })
+        .collect();
+    let test = |a: &Atom| {
+        let mut t = tests.get(&*a.name)?.clone();
+        if let Literal::Builtin(_, args, _) = &mut t {
+            args[0] = a.args[0].clone();
+        }
+        Some(t)
+    };
+    for_each_body(with, |body| guard(body, &test));
 }
 
 fn for_each_body(program: &mut Program, mut f: impl FnMut(&mut Vec<Literal>)) {

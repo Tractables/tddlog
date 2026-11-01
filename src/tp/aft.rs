@@ -54,61 +54,20 @@ pub(crate) fn compile_component(
             }
         }
     }
-    let lit_pair = |l: GLit, lower: &[Tdd], upper: &[Tdd]| -> Result<(Tdd, Tdd), CompileError> {
-        let b = l.atom() as usize;
-        let (t, p) = match gp.kinds[b] {
-            AtomKind::Fact(_) => {
-                let v = var_of[b].unwrap();
-                let f = backend.literal(scope, tididi::Literal::pos(v))?;
-                (backend.copy(&f)?, f)
-            }
-            AtomKind::Derived if index[b] != usize::MAX => (
-                backend.copy(&lower[index[b]])?,
-                backend.copy(&upper[index[b]])?,
-            ),
-            AtomKind::Derived => {
-                let f = outside[b]
-                    .as_ref()
-                    .expect("an atom outside the component has its formula");
-                (backend.copy(f)?, backend.copy(f)?)
-            }
-        };
-        if l.is_positive() {
-            Ok((t, p))
-        } else {
-            Ok((negate(p)?, negate(t)?))
-        }
-    };
-    // One application of the operator to atom `a`, both components.
-    let apply = |a: AtomId, lower: &[Tdd], upper: &[Tdd]| -> Result<(Tdd, Tdd), CompileError> {
-        let mut t_acc = backend.zero(scope);
-        let mut p_acc = backend.zero(scope);
-        for body in by_head[a as usize]
-            .iter()
-            .flat_map(|&ri| gp.rules[ri].bodies())
-        {
-            let mut bt = backend.one(scope);
-            let mut bp = backend.one(scope);
-            for &l in body.iter() {
-                let (vt, vp) = lit_pair(l, lower, upper)?;
-                bt = backend.and(bt, vt)?;
-                bp = backend.and(bp, vp)?;
-                if backend.is_zero(&bp) {
-                    break;
-                }
-            }
-            t_acc = backend.or(t_acc, bt)?;
-            p_acc = backend.or(p_acc, bp)?;
-        }
-        backend.minimize(&mut t_acc, Reduce::Between)?;
-        backend.minimize(&mut p_acc, Reduce::Between)?;
-        Ok((t_acc, p_acc))
-    };
-
     let k = scc.len();
     let mut updates = 0;
     let mut lower: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
     let mut upper: Vec<Tdd> = (0..k).map(|_| backend.one(scope)).collect();
+    let apply = |a: AtomId, lower: &[Tdd], upper: &[Tdd]| {
+        apply_atom(
+            (gp, by_head, var_of),
+            (scope, &index, &outside),
+            negate,
+            backend,
+            a,
+            (lower, upper),
+        )
+    };
     loop {
         // Application refinements, one atom at a time, until stable.
         loop {
@@ -163,4 +122,61 @@ pub(crate) fn compile_component(
         }
     }
     Ok((lower, updates))
+}
+
+fn apply_atom(
+    (gp, by_head, var_of): (&GroundProgram, &RulesByHead, &[Option<VarId>]),
+    (scope, index, outside): (&VtreeScope, &[usize], &[Option<Tdd>]),
+    negate: &dyn Fn(Tdd) -> Result<Tdd, CompileError>,
+    backend: &TddBackend,
+    a: AtomId,
+    (lower, upper): (&[Tdd], &[Tdd]),
+) -> Result<(Tdd, Tdd), CompileError> {
+    let lit_pair = |l: GLit| -> Result<(Tdd, Tdd), CompileError> {
+        let b = l.atom() as usize;
+        let (t, p) = match gp.kinds[b] {
+            AtomKind::Fact(_) => {
+                let v = var_of[b].unwrap();
+                let f = backend.literal(scope, tididi::Literal::pos(v))?;
+                (backend.copy(&f)?, f)
+            }
+            AtomKind::Derived if index[b] != usize::MAX => (
+                backend.copy(&lower[index[b]])?,
+                backend.copy(&upper[index[b]])?,
+            ),
+            AtomKind::Derived => {
+                let f = outside[b]
+                    .as_ref()
+                    .expect("an atom outside the component has its formula");
+                (backend.copy(f)?, backend.copy(f)?)
+            }
+        };
+        if l.is_positive() {
+            Ok((t, p))
+        } else {
+            Ok((negate(p)?, negate(t)?))
+        }
+    };
+    let mut t_acc = backend.zero(scope);
+    let mut p_acc = backend.zero(scope);
+    for body in by_head[a as usize]
+        .iter()
+        .flat_map(|&ri| gp.rules[ri].bodies())
+    {
+        let mut bt = backend.one(scope);
+        let mut bp = backend.one(scope);
+        for &l in body.iter() {
+            let (vt, vp) = lit_pair(l)?;
+            bt = backend.and(bt, vt)?;
+            bp = backend.and(bp, vp)?;
+            if backend.is_zero(&bp) {
+                break;
+            }
+        }
+        t_acc = backend.or(t_acc, bt)?;
+        p_acc = backend.or(p_acc, bp)?;
+    }
+    backend.minimize(&mut t_acc, Reduce::Between)?;
+    backend.minimize(&mut p_acc, Reduce::Between)?;
+    Ok((t_acc, p_acc))
 }

@@ -509,6 +509,118 @@ fn run_within(
         dynamic_first_pairs,
         memory_bytes,
     } = watch;
+    let (programs, mut trials, mut ledger) = init_trials(programs, trials, first_pairs, laid)?;
+    // Whether the searched families layout has been weighed against the
+    // laid one ([`weigh_searched`]); once a run.
+    let mut weighed = false;
+    // The last refusal that retired a trial ([`Trial::retire`]), which the
+    // run fails with once every trial is retired or disabled.
+    let mut refused: Option<tididi::OperationError> = None;
+    loop {
+        // The next attempt goes to the trial projected to finish first, by
+        // its target and its weight ([`Trial::key`]); the first in order on
+        // a tie.
+        let next = (0..trials.len())
+            .filter(|&i| !trials[i].disabled)
+            .min_by(|&i, &j| trials[i].key().total_cmp(&trials[j].key()));
+        let Some(i) = next else {
+            revive_or_fail(&mut trials, refused.take(), &mut ledger)?;
+            continue;
+        };
+        if !weighed && trials[i].kind == (Kind::Families { search: true }) {
+            weighed = true;
+            weigh_searched(&mut trials, &programs, &mut ledger)?;
+            continue;
+        }
+        if !prepare(&mut trials, i, &programs, &mut ledger)? {
+            continue;
+        }
+        let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
+        let t = &mut trials[i];
+        if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
+            ledger.notes.push(format!(
+                "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
+                t.kind,
+                t.kind.indicators_name(),
+                if t.querying { "query phase" } else { "compile" },
+                projected,
+                (t.target as f64).log2()
+            ));
+        }
+        let left = t.target.saturating_sub(t.spent).max(1);
+        let rent = if weighed { None } else { search_rent(t, left) };
+        let bounds = Bounds {
+            pairs: t.watch(first_pairs),
+            work: rent.unwrap_or(left),
+            projected_from: projected_from(first_pairs),
+            horizon: (t.target.max(1) as f64).log2() + PROJECTED_DOUBLINGS,
+        };
+        let result = attempt(
+            t,
+            (!alone).then_some(bounds),
+            projection,
+            dynamic_first_pairs,
+            memory_bytes,
+            &mut ledger,
+        );
+        let error = match result {
+            Ok((results, query_sizes)) => {
+                let mut run = finish(t, results, query_sizes, ledger);
+                run.spent = Spent(Some((trials, programs)));
+                return Ok(run);
+            }
+            Err(error) => error,
+        };
+        t.record_progress();
+        let Some(stop) = Stop::of(bounds, t.last_work, &error) else {
+            handle_refused_attempt(&mut trials, i, bounds, error, &mut refused, &mut ledger)?;
+            continue;
+        };
+        apply_stop(t, stop, first_pairs, &mut ledger);
+        if !weighed && search_due(&trials[i]) {
+            weighed = true;
+            weigh_searched(&mut trials, &programs, &mut ledger)?;
+        }
+    }
+}
+
+fn apply_stop(t: &mut Trial, stop: Stop, first_pairs: usize, ledger: &mut Ledger) {
+    match stop {
+        // A formula past the watch: the trial's next attempt holds it.
+        Stop::Size(pairs) => t.hold(pairs, first_pairs),
+        // Its target spent, the trial's next doubles until it leaves
+        // the trial more than twice the work the stop lost. A turn
+        // that ended at a step it kept lost nothing; where the guard
+        // stopped an operation, the step it cut short starts over, and
+        // each time it is cut short its next try has at least twice the
+        // work (rus_20_40,
+        // whose last join of 3.3 G units was otherwise stopped at
+        // 2.1 G and given 2.1 G again).
+        Stop::Work => {
+            while t.target.saturating_sub(t.spent) <= t.lost.saturating_mul(2) {
+                t.target = t.target.saturating_mul(2);
+            }
+        }
+        // Its compile projected past its horizon, the turn ends there as
+        // one that spent its target.
+        Stop::Projected => t.target = t.target.saturating_mul(2),
+    }
+    if t.weight > 1 && overspent_estimate(t) {
+        ledger.notes.push(format!(
+            "turn: {} indicators={} spent past its layout's estimate",
+            t.kind,
+            t.kind.indicators_name()
+        ));
+        t.weight = 1;
+    }
+}
+
+fn init_trials(
+    programs: Programs,
+    trials: Vec<Kind>,
+    first_pairs: usize,
+    laid: Option<Box<Prepared>>,
+) -> Result<(Programs, Vec<Trial>, Ledger), Error> {
     // The trials' rewrites start from the program written without its
     // linear recursion.
     let start = Instant::now();
@@ -566,190 +678,112 @@ fn run_within(
             t.target /= LEAD_SHARE;
         }
     }
-    // Whether the searched families layout has been weighed against the
-    // laid one ([`weigh_searched`]); once a run.
-    let mut weighed = false;
-    // The last refusal that retired a trial ([`Trial::retire`]), which the
-    // run fails with once every trial is retired or disabled.
-    let mut refused: Option<tididi::OperationError> = None;
-    loop {
-        // The next attempt goes to the trial projected to finish first, by
-        // its target and its weight ([`Trial::key`]); the first in order on
-        // a tie.
-        let next = (0..trials.len())
-            .filter(|&i| !trials[i].disabled)
-            .min_by(|&i, &j| trials[i].key().total_cmp(&trials[j].key()));
-        let Some(i) = next else {
-            // Trials retired while another held memory, which is freed now,
-            // run again, once each.
-            let behind: Vec<usize> = (0..trials.len())
-                .filter(|&j| trials[j].behind && !trials[j].revived)
-                .collect();
-            if !behind.is_empty() {
-                for &j in &behind {
-                    let t = &mut trials[j];
-                    (t.disabled, t.revived) = (false, true);
-                    ledger.notes.push(format!(
-                        "revived: {} indicators={} ({} units), retired while another trial held memory",
-                        t.kind,
-                        t.kind.indicators_name(),
-                        t.spent
-                    ));
-                }
-                continue;
-            }
-            let error = refused.map_or_else(
-                || Error::Vtree("auto has no trial left".into()),
-                |e| Error::Trials {
-                    error: tp::CompileError::Tdd(e),
-                    notes: ledger.notes,
-                },
-            );
-            return Err(error);
-        };
-        if !weighed && trials[i].kind == (Kind::Families { search: true }) {
-            weighed = true;
-            weigh_searched(&mut trials, &programs, &mut ledger)?;
-            continue;
-        }
-        if !prepare(&mut trials, i, &programs, &mut ledger)? {
-            continue;
-        }
-        let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
-        let t = &mut trials[i];
-        if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
+    Ok((programs, trials, ledger))
+}
+
+fn revive_or_fail(
+    trials: &mut [Trial],
+    refused: Option<tididi::OperationError>,
+    ledger: &mut Ledger,
+) -> Result<(), Error> {
+    // Trials retired while another held memory, which is freed now,
+    // run again, once each.
+    let behind: Vec<usize> = (0..trials.len())
+        .filter(|&j| trials[j].behind && !trials[j].revived)
+        .collect();
+    if !behind.is_empty() {
+        for &j in &behind {
+            let t = &mut trials[j];
+            (t.disabled, t.revived) = (false, true);
             ledger.notes.push(format!(
-                "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
+                "revived: {} indicators={} ({} units), retired while another trial held memory",
                 t.kind,
                 t.kind.indicators_name(),
-                if t.querying { "query phase" } else { "compile" },
-                projected,
-                (t.target as f64).log2()
+                t.spent
             ));
         }
-        let left = t.target.saturating_sub(t.spent).max(1);
-        let rent = if weighed { None } else { search_rent(t, left) };
-        let bounds = Bounds {
-            pairs: t.watch(first_pairs),
-            work: rent.unwrap_or(left),
-            projected_from: projected_from(first_pairs),
-            horizon: (t.target.max(1) as f64).log2() + PROJECTED_DOUBLINGS,
-        };
-        let result = attempt(
-            t,
-            (!alone).then_some(bounds),
-            projection,
-            dynamic_first_pairs,
-            memory_bytes,
-            &mut ledger,
-        );
-        let error = match result {
-            Ok((results, query_sizes)) => {
-                let mut run = finish(t, results, query_sizes, ledger);
-                run.spent = Spent(Some((trials, programs)));
-                return Ok(run);
-            }
-            Err(error) => error,
-        };
-        t.record_progress();
-        let Some(stop) = Stop::of(bounds, t.last_work, &error) else {
-            if let tp::CompileError::Tdd(
-                e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
-            ) = error
-            {
-                // A walk that sums out starts over first, once, putting
-                // nothing off (`query::walk`'s module doc).
-                if trials[i].evaluation.walk_again() {
-                    let t = &mut trials[i];
-                    t.progress.clear();
-                    ledger.notes.push(format!(
-                        "walked again: {} indicators={} putting nothing off ({} units): {e}",
-                        t.kind,
-                        t.kind.indicators_name(),
-                        t.spent
-                    ));
-                    continue;
-                }
-                // Memory refused goes to the trial refused it where it has
-                // spent more than each trial that holds any, once: what
-                // they built is freed, and it resumes at its next turn.
-                let others: Vec<usize> = (0..trials.len())
-                    .filter(|&j| j != i && trials[j].holds())
-                    .collect();
-                let leads = others.iter().all(|&j| trials[j].spent < trials[i].spent);
-                if e == tididi::OperationError::OverBudget
-                    && !others.is_empty()
-                    && leads
-                    && !trials[i].freed_for
-                {
-                    trials[i].freed_for = true;
-                    let freed: Vec<String> = others
-                        .iter()
-                        .map(|&j| {
-                            trials[j].release();
-                            format!("{} ({} units)", trials[j].kind, trials[j].spent)
-                        })
-                        .collect();
-                    ledger.notes.push(format!(
-                        "released: {} for {} indicators={} ({} units), refused memory under a watch of {} pairs",
-                        freed.join(", "),
-                        trials[i].kind,
-                        trials[i].kind.indicators_name(),
-                        trials[i].spent,
-                        bounds.pairs
-                    ));
-                    continue;
-                }
-                let t = &mut trials[i];
-                ledger.notes.push(format!(
-                    "retired: {} indicators={} under a watch of {} pairs: {e}",
-                    t.kind,
-                    t.kind.indicators_name(),
-                    bounds.pairs
-                ));
-                t.retire();
-                t.behind = e == tididi::OperationError::OverBudget && !others.is_empty();
-                refused = Some(e);
-                continue;
-            }
-            return Err(Error::Trials {
-                error,
-                notes: ledger.notes,
-            });
-        };
-        match stop {
-            // A formula past the watch: the trial's next attempt holds it.
-            Stop::Size(pairs) => t.hold(pairs, first_pairs),
-            // Its target spent, the trial's next doubles until it leaves
-            // the trial more than twice the work the stop lost. A turn
-            // that ended at a step it kept lost nothing; where the guard
-            // stopped an operation, the step it cut short starts over, and
-            // each time it is cut short its next try has at least twice the
-            // work (rus_20_40,
-            // whose last join of 3.3 G units was otherwise stopped at
-            // 2.1 G and given 2.1 G again).
-            Stop::Work => {
-                while t.target.saturating_sub(t.spent) <= t.lost.saturating_mul(2) {
-                    t.target = t.target.saturating_mul(2);
-                }
-            }
-            // Its compile projected past its horizon, the turn ends there as
-            // one that spent its target.
-            Stop::Projected => t.target = t.target.saturating_mul(2),
-        }
-        if t.weight > 1 && overspent_estimate(t) {
-            ledger.notes.push(format!(
-                "turn: {} indicators={} spent past its layout's estimate",
-                t.kind,
-                t.kind.indicators_name()
-            ));
-            t.weight = 1;
-        }
-        if !weighed && search_due(&trials[i]) {
-            weighed = true;
-            weigh_searched(&mut trials, &programs, &mut ledger)?;
-        }
+        return Ok(());
     }
+    Err(refused.map_or_else(
+        || Error::Vtree("auto has no trial left".into()),
+        |e| Error::Trials {
+            error: tp::CompileError::Tdd(e),
+            notes: std::mem::take(&mut ledger.notes),
+        },
+    ))
+}
+
+fn handle_refused_attempt(
+    trials: &mut [Trial],
+    i: usize,
+    bounds: Bounds,
+    error: tp::CompileError,
+    refused: &mut Option<tididi::OperationError>,
+    ledger: &mut Ledger,
+) -> Result<(), Error> {
+    let tp::CompileError::Tdd(
+        e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
+    ) = error
+    else {
+        return Err(Error::Trials {
+            error,
+            notes: std::mem::take(&mut ledger.notes),
+        });
+    };
+    // A walk that sums out starts over first, once, putting
+    // nothing off (`query::walk`'s module doc).
+    if trials[i].evaluation.walk_again() {
+        let t = &mut trials[i];
+        t.progress.clear();
+        ledger.notes.push(format!(
+            "walked again: {} indicators={} putting nothing off ({} units): {e}",
+            t.kind,
+            t.kind.indicators_name(),
+            t.spent
+        ));
+        return Ok(());
+    }
+    // Memory refused goes to the trial refused it where it has
+    // spent more than each trial that holds any, once: what
+    // they built is freed, and it resumes at its next turn.
+    let others: Vec<usize> = (0..trials.len())
+        .filter(|&j| j != i && trials[j].holds())
+        .collect();
+    let leads = others.iter().all(|&j| trials[j].spent < trials[i].spent);
+    if e == tididi::OperationError::OverBudget
+        && !others.is_empty()
+        && leads
+        && !trials[i].freed_for
+    {
+        trials[i].freed_for = true;
+        let freed: Vec<String> = others
+            .iter()
+            .map(|&j| {
+                trials[j].release();
+                format!("{} ({} units)", trials[j].kind, trials[j].spent)
+            })
+            .collect();
+        ledger.notes.push(format!(
+            "released: {} for {} indicators={} ({} units), refused memory under a watch of {} pairs",
+            freed.join(", "),
+            trials[i].kind,
+            trials[i].kind.indicators_name(),
+            trials[i].spent,
+            bounds.pairs
+        ));
+        return Ok(());
+    }
+    let t = &mut trials[i];
+    ledger.notes.push(format!(
+        "retired: {} indicators={} under a watch of {} pairs: {e}",
+        t.kind,
+        t.kind.indicators_name(),
+        bounds.pairs
+    ));
+    t.retire();
+    t.behind = e == tididi::OperationError::OverBudget && !others.is_empty();
+    *refused = Some(e);
+    Ok(())
 }
 
 /// Builds the searched families layout and weighs it against that of

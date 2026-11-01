@@ -1411,41 +1411,11 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             };
             first.map_or_else(Vec::new, |x| one(vec![x, l]))
         }
-        // Each item with the list without it, from the first.
-        Builtin::Select => {
-            let l = vals[1].expect("mode");
-            let (items, tails) = g.spine(l, cons);
-            let end = tails[items.len()];
-            (0..items.len())
-                .map(|k| {
-                    let rest: Vec<Val> =
-                        items[..k].iter().chain(&items[k + 1..]).copied().collect();
-                    vec![items[k], l, g.make_list(&rest, end)]
-                })
-                .collect()
-        }
         Builtin::Append => append_solutions(g, vals, nil, cons),
         Builtin::Length => {
             let l = vals[0].expect("mode");
             g.items(l)
                 .map_or_else(Vec::new, |items| one(vec![l, Val::Int(items.len() as i64)]))
-        }
-        Builtin::Nth0 | Builtin::Nth1 => {
-            let base = i64::from(b == Builtin::Nth1);
-            let l = vals[1].expect("mode");
-            let (items, _) = g.spine(l, cons);
-            match vals[0] {
-                Some(Val::Int(i)) => usize::try_from(i - base)
-                    .ok()
-                    .and_then(|k| items.get(k))
-                    .map_or_else(Vec::new, |&x| one(vec![Val::Int(i), l, x])),
-                Some(_) => Vec::new(),
-                None => items
-                    .into_iter()
-                    .enumerate()
-                    .map(|(k, x)| vec![Val::Int(k as i64 + base), l, x])
-                    .collect(),
-            }
         }
         Builtin::Last => {
             let l = vals[0].expect("mode");
@@ -1454,27 +1424,14 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
                 None => Vec::new(),
             }
         }
-        Builtin::Reverse => {
-            let l = vals[0].expect("mode");
-            match g.items(l) {
-                Some(mut items) => {
-                    items.reverse();
-                    let r = g.make_list(&items, nil);
-                    one(vec![l, r])
-                }
-                None => Vec::new(),
-            }
-        }
-        // `B is A + X` from `A = 0`, left to right.
-        Builtin::SumList => {
-            let l = vals[0].expect("mode");
-            let sum = g.items(l).and_then(|items| {
-                items.iter().try_fold(Num::I(0), |acc, &x| {
-                    ArithFn::Add.apply(&[acc, g.num(x)?]).map(Num::rounded)
-                })
-            });
-            sum.map_or_else(Vec::new, |s| one(vec![l, s.val()]))
-        }
+        Builtin::Select
+        | Builtin::Nth0
+        | Builtin::Nth1
+        | Builtin::Reverse
+        | Builtin::SumList
+        | Builtin::Sort
+        | Builtin::AppendLists
+        | Builtin::Flatten => list_builtin_solutions(g, b, vals, nil, cons),
         // The element itself, the later of equal ones: `M > X` keeps `M`
         // and `M =< X` takes `X`.
         Builtin::MaxList | Builtin::MinList => extremum_list(g, b, vals[0].expect("mode")),
@@ -1482,18 +1439,6 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         // each group's first pair, a group with its values in order, as
         // ProbLog's library(lists) groups them.
         Builtin::EnumGroups => enum_groups(g, vals[0].expect("mode"), nil),
-        // The items in the standard order of terms, equal ones once.
-        Builtin::Sort => {
-            let l = vals[0].expect("mode");
-            let (mut items, _) = g.spine(l, cons);
-            items.sort_by(|&x, &y| {
-                let (a, b) = (g.term_of(x), g.term_of(y));
-                term_cmp(&a, &b)
-            });
-            items.dedup();
-            let s = g.make_list(&items, nil);
-            one(vec![l, s])
-        }
         Builtin::Between => match (vals[0], vals[1], vals[2]) {
             (Some(Val::Int(lo)), Some(Val::Int(hi)), Some(x)) => match x {
                 Val::Int(x) if lo <= x && x <= hi => {
@@ -1503,26 +1448,6 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             },
             _ => Vec::new(),
         },
-        // The lists concatenated, the last as the tail, as `append/2`'s
-        // clauses concatenate them.
-        Builtin::AppendLists => {
-            let lists = g.items(vals[0].expect("mode"));
-            let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
-                return match lists {
-                    Some(_) => one(vec![vals[0].expect("mode"), nil]),
-                    None => Vec::new(),
-                };
-            };
-            let mut items = Vec::new();
-            for &l in init {
-                match g.items(l) {
-                    Some(xs) => items.extend(xs),
-                    None => return Vec::new(),
-                }
-            }
-            let joined = g.make_list(&items, last);
-            one(vec![vals[0].expect("mode"), joined])
-        }
         // The set predicates and delete/3 over the items of a proper list,
         // each tested against the second argument: the items of a list, as
         // memberchk/2 reads them, or a term.
@@ -1531,29 +1456,9 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         | Builtin::Union
         | Builtin::Subtract
         | Builtin::Delete => set_solutions(g, b, vals, nil, cons),
-        Builtin::Flatten => {
-            let l = vals[0].expect("mode");
-            flattened(g, l, nil, cons)
-                .into_iter()
-                .map(|items| vec![l, g.make_list(&items, nil)])
-                .collect()
-        }
         // Integers only, as ProbLog's plus/3: the third from the first two,
         // or one of those from the other and the third.
-        Builtin::Plus => {
-            let int = |v: Option<Val>| match v {
-                Some(Val::Int(i)) => Some(Some(i)),
-                None => Some(None),
-                Some(_) => None,
-            };
-            let sol = match (int(vals[0]), int(vals[1]), int(vals[2])) {
-                (Some(Some(x)), Some(Some(y)), Some(_)) => x.checked_add(y).map(|z| [x, y, z]),
-                (Some(Some(x)), Some(None), Some(Some(z))) => z.checked_sub(x).map(|y| [x, y, z]),
-                (Some(None), Some(Some(y)), Some(Some(z))) => z.checked_sub(y).map(|x| [x, y, z]),
-                _ => None,
-            };
-            sol.map_or_else(Vec::new, |s| one(s.map(Val::Int).to_vec()))
-        }
+        Builtin::Plus => plus_solutions(vals),
         // The order of the two terms in the standard order: `<`, `=` or `>`.
         Builtin::Compare => {
             let (a, b) = (vals[1].expect("mode"), vals[2].expect("mode"));
@@ -1575,26 +1480,142 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         Builtin::Nonvar => one(vec![vals[0].expect("mode")]),
         // `T =.. L`: the list of a term's name and arguments, `[T]` for an
         // atom or a number; or the term of such a list.
-        Builtin::Univ => match vals {
-            [Some(t), _] => {
-                let parts = match *t {
-                    Val::Fn(id) => g.terms.keys.list(id as usize).to_vec(),
-                    v => vec![v],
-                };
-                let l = g.make_list(&parts, nil);
-                one(vec![*t, l])
-            }
-            [None, Some(l)] => match univ(g, *l) {
-                Ok(t) => one(vec![t, *l]),
-                Err(e) => {
-                    g.fail(e);
-                    Vec::new()
-                }
-            },
-            _ => unreachable!("mode"),
-        },
+        Builtin::Univ => univ_solutions(g, vals, nil),
         // The test before a call of a goal that is a variable.
         Builtin::Callable => callable_solutions(g, vals),
+    }
+}
+
+fn list_builtin_solutions(
+    g: &mut Grounder,
+    b: Builtin,
+    vals: &[Option<Val>],
+    nil: Val,
+    cons: u32,
+) -> Vec<Vec<Val>> {
+    let one = |sol: Vec<Val>| vec![sol];
+    match b {
+        // Each item with the list without it, from the first.
+        Builtin::Select => {
+            let l = vals[1].expect("mode");
+            let (items, tails) = g.spine(l, cons);
+            let end = tails[items.len()];
+            (0..items.len())
+                .map(|k| {
+                    let rest: Vec<Val> =
+                        items[..k].iter().chain(&items[k + 1..]).copied().collect();
+                    vec![items[k], l, g.make_list(&rest, end)]
+                })
+                .collect()
+        }
+        Builtin::Nth0 | Builtin::Nth1 => {
+            let base = i64::from(b == Builtin::Nth1);
+            let l = vals[1].expect("mode");
+            let (items, _) = g.spine(l, cons);
+            match vals[0] {
+                Some(Val::Int(i)) => usize::try_from(i - base)
+                    .ok()
+                    .and_then(|k| items.get(k))
+                    .map_or_else(Vec::new, |&x| one(vec![Val::Int(i), l, x])),
+                Some(_) => Vec::new(),
+                None => items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(k, x)| vec![Val::Int(k as i64 + base), l, x])
+                    .collect(),
+            }
+        }
+        Builtin::Reverse => {
+            let l = vals[0].expect("mode");
+            g.items(l).map_or_else(Vec::new, |mut items| {
+                items.reverse();
+                let r = g.make_list(&items, nil);
+                one(vec![l, r])
+            })
+        }
+        // `B is A + X` from `A = 0`, left to right.
+        Builtin::SumList => {
+            let l = vals[0].expect("mode");
+            let sum = g.items(l).and_then(|items| {
+                items.iter().try_fold(Num::I(0), |acc, &x| {
+                    ArithFn::Add.apply(&[acc, g.num(x)?]).map(Num::rounded)
+                })
+            });
+            sum.map_or_else(Vec::new, |s| one(vec![l, s.val()]))
+        }
+        // The items in the standard order of terms, equal ones once.
+        Builtin::Sort => {
+            let l = vals[0].expect("mode");
+            let (mut items, _) = g.spine(l, cons);
+            items.sort_by(|&x, &y| term_cmp(&g.term_of(x), &g.term_of(y)));
+            items.dedup();
+            let s = g.make_list(&items, nil);
+            one(vec![l, s])
+        }
+        // The lists concatenated, the last as the tail, as `append/2`'s
+        // clauses concatenate them.
+        Builtin::AppendLists => {
+            let lists = g.items(vals[0].expect("mode"));
+            let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
+                return match lists {
+                    Some(_) => one(vec![vals[0].expect("mode"), nil]),
+                    None => Vec::new(),
+                };
+            };
+            let mut items = Vec::new();
+            for &l in init {
+                match g.items(l) {
+                    Some(xs) => items.extend(xs),
+                    None => return Vec::new(),
+                }
+            }
+            let joined = g.make_list(&items, last);
+            one(vec![vals[0].expect("mode"), joined])
+        }
+        Builtin::Flatten => {
+            let l = vals[0].expect("mode");
+            flattened(g, l, nil, cons)
+                .into_iter()
+                .map(|items| vec![l, g.make_list(&items, nil)])
+                .collect()
+        }
+        _ => unreachable!(),
+    }
+}
+
+fn plus_solutions(vals: &[Option<Val>]) -> Vec<Vec<Val>> {
+    let int = |v: Option<Val>| match v {
+        Some(Val::Int(i)) => Some(Some(i)),
+        None => Some(None),
+        Some(_) => None,
+    };
+    let sol = match (int(vals[0]), int(vals[1]), int(vals[2])) {
+        (Some(Some(x)), Some(Some(y)), Some(_)) => x.checked_add(y).map(|z| [x, y, z]),
+        (Some(Some(x)), Some(None), Some(Some(z))) => z.checked_sub(x).map(|y| [x, y, z]),
+        (Some(None), Some(Some(y)), Some(Some(z))) => z.checked_sub(y).map(|x| [x, y, z]),
+        _ => None,
+    };
+    sol.map_or_else(Vec::new, |s| vec![s.map(Val::Int).to_vec()])
+}
+
+fn univ_solutions(g: &mut Grounder, vals: &[Option<Val>], nil: Val) -> Vec<Vec<Val>> {
+    match vals {
+        [Some(t), _] => {
+            let parts = match *t {
+                Val::Fn(id) => g.terms.keys.list(id as usize).to_vec(),
+                v => vec![v],
+            };
+            let l = g.make_list(&parts, nil);
+            vec![vec![*t, l]]
+        }
+        [None, Some(l)] => match univ(g, *l) {
+            Ok(t) => vec![vec![t, *l]],
+            Err(e) => {
+                g.fail(e);
+                Vec::new()
+            }
+        },
+        _ => unreachable!("mode"),
     }
 }
 

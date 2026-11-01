@@ -60,105 +60,14 @@ impl Template {
 /// leaves, each value's formula over one more switch per row than the one
 /// before (bn_barley's tkv).
 pub(crate) fn templates(gp: &GroundProgram, by_head: &RulesByHead) -> FxHashMap<AtomId, Template> {
-    let n = gp.num_atoms();
-    let mut read = vec![false; n];
-    // The heads of rules of pairs, whose bodies are no conjunctions.
-    let mut pairs = vec![false; n];
-    for r in &gp.rules {
-        for l in &r.body {
-            read[l.atom() as usize] = true;
-        }
-        pairs[r.head as usize] |= r.pairs;
-    }
-    let mut observed = vec![false; n];
-    for &(_, id, _) in &gp.evidence {
-        if let Some(a) = id {
-            observed[a as usize] = true;
-        }
-    }
-    let leaf = |a: AtomId| {
-        gp.kinds[a as usize] == AtomKind::Derived
-            && !read[a as usize]
-            && !observed[a as usize]
-            && !pairs[a as usize]
-    };
-    // A fact is private until a rule whose head is no leaf reads it.
-    let mut private: Vec<bool> = (0..n)
-        .map(|a| gp.is_fact(a as AtomId) && !observed[a])
-        .collect();
-    for r in &gp.rules {
-        if !leaf(r.head) {
-            for l in &r.body {
-                private[l.atom() as usize] = false;
-            }
-        }
-    }
+    let (queried, private) = leaf_and_private_atoms(gp);
     let probability = |a: AtomId| match gp.kinds[a as usize] {
         AtomKind::Fact(p) => p,
         AtomKind::Derived => unreachable!("a private atom is a fact"),
     };
-    // A rule's literals other than private ones, and its private ones,
-    // sorted, into buffers kept across the rules rather than two new lists
-    // per rule. The rest is compared as a multiset ([`Multisets`]) and not
-    // sorted.
-    let split = |ri: usize, rest: &mut Vec<GLit>, own: &mut Vec<GLit>| {
-        rest.clear();
-        own.clear();
-        for &l in &gp.rules[ri].body {
-            if private[l.atom() as usize] {
-                own.push(l)
-            } else {
-                rest.push(l)
-            }
-        }
-        own.sort_unstable();
-    };
     let (mut rest, mut own): (Vec<GLit>, Vec<GLit>) = (Vec::new(), Vec::new());
-    let mut queried: Vec<AtomId> = gp
-        .queries
-        .iter()
-        .filter_map(|&(_, id, _)| id)
-        .filter(|&a| leaf(a))
-        .collect();
-    queried.sort_unstable();
-    queried.dedup();
-    // The templates, each claiming the rest of its rules' bodies: the
-    // bodies, and per body the template and the private literal of its rule,
-    // numbered alike; and per template the number of its first rule's body,
-    // `u32::MAX` for an atom that is none.
-    let mut claimed = Multisets::new(n);
-    let mut claims: Vec<(AtomId, AtomId)> = Vec::new();
-    let mut claims_from = vec![u32::MAX; n];
-    // A query leaf's bodies, and per body the private literal of its rule.
-    let mut bodies = Multisets::new(n);
-    let mut privates: Vec<AtomId> = Vec::new();
-    for &y in &queried {
-        let rules = &by_head[y as usize];
-        if rules.is_empty() {
-            continue;
-        }
-        bodies.clear();
-        privates.clear();
-        let ok = rules.iter().all(|&ri| {
-            split(ri, &mut rest, &mut own);
-            match own[..] {
-                [GLit::Pos(t)] => {
-                    claimed.find(&rest).is_none() && bodies.id(&rest).1 && {
-                        privates.push(t);
-                        true
-                    }
-                }
-                _ => false,
-            }
-        });
-        if ok {
-            claims_from[y as usize] = claims.len() as u32;
-            for (k, &t) in privates.iter().enumerate() {
-                claimed.id(bodies.get(k as u32));
-                claims.push((y, t));
-            }
-        }
-    }
+    let (mut claimed, claims, claims_from) =
+        claim_templates(gp, by_head, &queried, &private, &mut rest, &mut own);
     // The query leaf each claimed body was last read for.
     let mut read_for = vec![AtomId::MAX; claims.len()];
     // Per query leaf, the cube of each `t`, as a range of `cubes`, and the
@@ -173,7 +82,7 @@ pub(crate) fn templates(gp: &GroundProgram, by_head: &RulesByHead) -> FxHashMap<
         if claims_from[x as usize] != u32::MAX || rules.is_empty() {
             continue;
         }
-        split(rules[0], &mut rest, &mut own);
+        split_rule_body(&gp.rules[rules[0]].body, &private, &mut rest, &mut own);
         let Some(k) = claimed.find(&rest) else {
             continue;
         };
@@ -192,7 +101,7 @@ pub(crate) fn templates(gp: &GroundProgram, by_head: &RulesByHead) -> FxHashMap<
         let from = claims_from[y as usize];
         let ok = rules.iter().enumerate().all(|(i, &ri)| {
             if i > 0 {
-                split(ri, &mut rest, &mut own);
+                split_rule_body(&gp.rules[ri].body, &private, &mut rest, &mut own);
             }
             let counterpart = from + i as u32;
             let k = if claimed.get(counterpart) == rest.as_slice() {
@@ -244,4 +153,117 @@ pub(crate) fn templates(gp: &GroundProgram, by_head: &RulesByHead) -> FxHashMap<
         out.insert(x, Template { atom: y, weights });
     }
     out
+}
+
+fn leaf_and_private_atoms(gp: &GroundProgram) -> (Vec<AtomId>, Vec<bool>) {
+    let n = gp.num_atoms();
+    let mut read = vec![false; n];
+    // The heads of rules of pairs, whose bodies are no conjunctions.
+    let mut pairs = vec![false; n];
+    for r in &gp.rules {
+        for l in &r.body {
+            read[l.atom() as usize] = true;
+        }
+        pairs[r.head as usize] |= r.pairs;
+    }
+    let mut observed = vec![false; n];
+    for &(_, id, _) in &gp.evidence {
+        if let Some(a) = id {
+            observed[a as usize] = true;
+        }
+    }
+    let leaf = |a: AtomId| {
+        gp.kinds[a as usize] == AtomKind::Derived
+            && !read[a as usize]
+            && !observed[a as usize]
+            && !pairs[a as usize]
+    };
+    // A fact is private until a rule whose head is no leaf reads it.
+    let mut private: Vec<bool> = (0..n)
+        .map(|a| gp.is_fact(a as AtomId) && !observed[a])
+        .collect();
+    for r in &gp.rules {
+        if !leaf(r.head) {
+            for l in &r.body {
+                private[l.atom() as usize] = false;
+            }
+        }
+    }
+    let mut queried: Vec<AtomId> = gp
+        .queries
+        .iter()
+        .filter_map(|&(_, id, _)| id)
+        .filter(|&a| leaf(a))
+        .collect();
+    queried.sort_unstable();
+    queried.dedup();
+    (queried, private)
+}
+
+/// A rule's literals other than private ones, and its private ones,
+/// sorted, into buffers kept across the rules rather than two new lists
+/// per rule. The rest is compared as a multiset ([`Multisets`]) and not
+/// sorted.
+fn split_rule_body(body: &[GLit], private: &[bool], rest: &mut Vec<GLit>, own: &mut Vec<GLit>) {
+    rest.clear();
+    own.clear();
+    for &l in body {
+        if private[l.atom() as usize] {
+            own.push(l)
+        } else {
+            rest.push(l)
+        }
+    }
+    own.sort_unstable();
+}
+
+type ClaimedTemplates = (Multisets, Vec<(AtomId, AtomId)>, Vec<u32>);
+
+fn claim_templates(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    queried: &[AtomId],
+    private: &[bool],
+    rest: &mut Vec<GLit>,
+    own: &mut Vec<GLit>,
+) -> ClaimedTemplates {
+    let n = gp.num_atoms();
+    // The templates, each claiming the rest of its rules' bodies: the
+    // bodies, and per body the template and the private literal of its rule,
+    // numbered alike; and per template the number of its first rule's body,
+    // `u32::MAX` for an atom that is none.
+    let mut claimed = Multisets::new(n);
+    let mut claims: Vec<(AtomId, AtomId)> = Vec::new();
+    let mut claims_from = vec![u32::MAX; n];
+    // A query leaf's bodies, and per body the private literal of its rule.
+    let mut bodies = Multisets::new(n);
+    let mut privates: Vec<AtomId> = Vec::new();
+    for &y in queried {
+        let rules = &by_head[y as usize];
+        if rules.is_empty() {
+            continue;
+        }
+        bodies.clear();
+        privates.clear();
+        let ok = rules.iter().all(|&ri| {
+            split_rule_body(&gp.rules[ri].body, private, rest, own);
+            match own[..] {
+                [GLit::Pos(t)] => {
+                    claimed.find(rest).is_none() && bodies.id(rest).1 && {
+                        privates.push(t);
+                        true
+                    }
+                }
+                _ => false,
+            }
+        });
+        if ok {
+            claims_from[y as usize] = claims.len() as u32;
+            for (k, &t) in privates.iter().enumerate() {
+                claimed.id(bodies.get(k as u32));
+                claims.push((y, t));
+            }
+        }
+    }
+    (claimed, claims, claims_from)
 }

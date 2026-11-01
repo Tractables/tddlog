@@ -648,85 +648,91 @@ impl Factoring<'_> {
             let (with, without): (Vec<Vec<GLit>>, Vec<Vec<GLit>>) =
                 bodies.into_iter().partition(|body| body.contains(&shared));
             bodies = without;
-            let with_bodies = with.len() as u32;
-            // The term is built on the scope of the bodies sharing `L`,
-            // `L` included, and embedded up.
-            let own = self.scope_over(&with, &[], scope)?;
-            // Every literal all of those bodies contain goes with `L`: the
-            // term is `¬(L ∧ M ∧ ⋁_r (body_r \ L \ M))` with `M` the common
-            // literals, which is the same function as the chain of one term
-            // per literal, without the chain's terms. A row of a network's
-            // table read through indicators names a parent's value by one copy
-            // true and the copies of its other values false, so the rows on
-            // one value share as many literals as the parent has values.
-            let common = self.scratch.borrow_mut().common(&with, shared);
-            let stripped = || std::iter::once(shared).chain(common.iter().copied());
-            let with = self.scratch.borrow_mut().strip(with, stripped());
-            // The stripped bodies' scope is `own` less the stripped fact
-            // literals' variables, which no body left mentions (a body
-            // with a literal and its complement was dropped on entry);
-            // with a derived literal among them it is `own`, as
-            // `scope_over` would say, without its scan of the bodies.
-            let inner = match own.vars() {
-                Some(held)
-                    if with
-                        .iter()
-                        .flatten()
-                        .all(|&l| self.fact_literal(l).is_some()) =>
-                {
-                    let mut gone: Vec<VarId> = stripped()
-                        .filter_map(|l| self.fact_literal(l))
-                        .map(|f| f.var)
-                        .collect();
-                    gone.sort_unstable();
-                    let rest: Vec<VarId> = held
-                        .iter()
-                        .copied()
-                        .filter(|v| gone.binary_search(v).is_err())
-                        .collect();
-                    self.narrowed(&own, held, &rest)?
-                }
-                _ => own.clone(),
-            };
-            // ⋁_{r∋L} (body_r \ L \ M), on `inner` until an operation
-            // needs it on `own`.
-            let mut positive: Formula = (self.positive_bodies(with, &inner)?, inner);
-            // ¬(L ∧ M ∧ positive), the facts first as clauses of one literal
-            // (which rebuild only the levels on the path from the leaf to
-            // the root, where a literal built as a diagram and conjoined
-            // costs every level of the scope), then the derived literals'
-            // formulas.
-            let mut derived = Vec::new();
-            let mut dead = false;
-            for l in std::iter::once(shared).chain(common) {
-                match self.fact_literal(l) {
-                    Some(f) => {
-                        let p = self.placed(positive, &own)?;
-                        positive = (self.backend.and_clause(&own, p, &[f])?, own.clone());
-                        (self.count)(Op::And, 1);
-                    }
-                    None => derived.push(l),
-                }
+            if let Some(term) = self.shared_term(shared, with, scope)? {
+                terms.push(term);
             }
-            for l in derived {
-                // For each body of the group, which all hold it.
-                let lf = (self.part)(l, with_bodies, &own)?;
-                if self.backend.is_zero(&lf.0) {
-                    dead = true; // the literal is false: those bodies are false
-                    break;
-                }
-                positive = (self.backend.and_on(lf, positive, &own)?, own.clone());
-                (self.count)(Op::And, 1);
-            }
-            if dead {
-                continue;
-            }
-            let both = (self.watched)(self.placed(positive, &own)?, self.head)?;
-            let term = (self.negate)(self.term, both.into())?;
-            terms.push((term, own));
         }
         terms.extend(start.map(|f| (f, scope.clone())));
         Ok(terms)
+    }
+
+    fn shared_term(
+        &mut self,
+        shared: GLit,
+        with: Vec<Vec<GLit>>,
+        scope: &VtreeScope,
+    ) -> Result<Option<Formula>, CompileError> {
+        let with_bodies = with.len() as u32;
+        // The term is built on the scope of the bodies sharing `L`,
+        // `L` included, and embedded up.
+        let own = self.scope_over(&with, &[], scope)?;
+        // Every literal all of those bodies contain goes with `L`: the
+        // term is `¬(L ∧ M ∧ ⋁_r (body_r \ L \ M))` with `M` the common
+        // literals, which is the same function as the chain of one term
+        // per literal, without the chain's terms. A row of a network's
+        // table read through indicators names a parent's value by one copy
+        // true and the copies of its other values false, so the rows on
+        // one value share as many literals as the parent has values.
+        let common = self.scratch.borrow_mut().common(&with, shared);
+        let stripped = || std::iter::once(shared).chain(common.iter().copied());
+        let with = self.scratch.borrow_mut().strip(with, stripped());
+        // The stripped bodies' scope is `own` less the stripped fact
+        // literals' variables, which no body left mentions (a body
+        // with a literal and its complement was dropped on entry);
+        // with a derived literal among them it is `own`, as
+        // `scope_over` would say, without its scan of the bodies.
+        let inner = match own.vars() {
+            Some(held)
+                if with
+                    .iter()
+                    .flatten()
+                    .all(|&l| self.fact_literal(l).is_some()) =>
+            {
+                let mut gone: Vec<VarId> = stripped()
+                    .filter_map(|l| self.fact_literal(l))
+                    .map(|f| f.var)
+                    .collect();
+                gone.sort_unstable();
+                let rest: Vec<VarId> = held
+                    .iter()
+                    .copied()
+                    .filter(|v| gone.binary_search(v).is_err())
+                    .collect();
+                self.narrowed(&own, held, &rest)?
+            }
+            _ => own.clone(),
+        };
+        // ⋁_{r∋L} (body_r \ L \ M), on `inner` until an operation
+        // needs it on `own`.
+        let mut positive: Formula = (self.positive_bodies(with, &inner)?, inner);
+        // ¬(L ∧ M ∧ positive), the facts first as clauses of one literal
+        // (which rebuild only the levels on the path from the leaf to
+        // the root, where a literal built as a diagram and conjoined
+        // costs every level of the scope), then the derived literals'
+        // formulas.
+        let mut derived = Vec::new();
+        for l in std::iter::once(shared).chain(common) {
+            match self.fact_literal(l) {
+                Some(f) => {
+                    let p = self.placed(positive, &own)?;
+                    positive = (self.backend.and_clause(&own, p, &[f])?, own.clone());
+                    (self.count)(Op::And, 1);
+                }
+                None => derived.push(l),
+            }
+        }
+        for l in derived {
+            // For each body of the group, which all hold it.
+            let lf = (self.part)(l, with_bodies, &own)?;
+            if self.backend.is_zero(&lf.0) {
+                return Ok(None); // the literal is false: those bodies are false
+            }
+            positive = (self.backend.and_on(lf, positive, &own)?, own.clone());
+            (self.count)(Op::And, 1);
+        }
+        let both = (self.watched)(self.placed(positive, &own)?, self.head)?;
+        let term = (self.negate)(self.term, both.into())?;
+        Ok(Some((term, own)))
     }
 
     /// The conjunction of the terms, on `scope`, last term first: the
@@ -843,49 +849,11 @@ impl Factoring<'_> {
         }
         // The groups of the bodies' pairs, each at the body that first reads
         // the variable that leads it.
-        let mut found: Vec<(usize, Vec<VarId>)> = Vec::new();
-        if three_pairs {
-            let mut pairs: FxHashSet<(VarId, VarId)> = FxHashSet::default();
-            let mut neighbors: FxHashMap<VarId, Vec<VarId>> = FxHashMap::default();
-            let mut seen: Vec<(VarId, usize)> = Vec::new();
-            for (i, body) in bodies.iter().enumerate() {
-                if let Some((x, y)) = self.pair_of(body)
-                    && pairs.insert((x, y))
-                {
-                    for (u, v) in [(x, y), (y, x)] {
-                        let list = neighbors.entry(u).or_insert_with(|| {
-                            seen.push((u, i));
-                            Vec::new()
-                        });
-                        list.push(v);
-                    }
-                }
-            }
-            let mut grouped: FxHashSet<VarId> = FxHashSet::default();
-            for &(u, at) in &seen {
-                if grouped.contains(&u) {
-                    continue;
-                }
-                let group: Vec<VarId> = std::iter::once(u)
-                    .chain(
-                        neighbors[&u]
-                            .iter()
-                            .copied()
-                            .filter(|v| !grouped.contains(v)),
-                    )
-                    .collect();
-                let whole = group.len() >= 3
-                    && group.iter().enumerate().all(|(i, &x)| {
-                        group[i + 1..]
-                            .iter()
-                            .all(|&y| pairs.contains(&(x.min(y), x.max(y))))
-                    });
-                if whole {
-                    grouped.extend(group.iter().copied());
-                    found.push((at, group));
-                }
-            }
-        }
+        let found = if three_pairs {
+            self.pair_groups(&bodies)
+        } else {
+            Vec::new()
+        };
         let mut groups: Vec<Vec<VarId>> = Vec::with_capacity(found.len() + pairs.len());
         let mut found = found.into_iter().peekable();
         for p in pairs {
@@ -902,6 +870,59 @@ impl Factoring<'_> {
         if groups.is_empty() {
             return (Vec::new(), bodies);
         }
+        self.split_group_bodies(bodies, groups)
+    }
+
+    fn pair_groups(&self, bodies: &[Vec<GLit>]) -> Vec<(usize, Vec<VarId>)> {
+        let mut found = Vec::new();
+        let mut pairs: FxHashSet<(VarId, VarId)> = FxHashSet::default();
+        let mut neighbors: FxHashMap<VarId, Vec<VarId>> = FxHashMap::default();
+        let mut seen: Vec<(VarId, usize)> = Vec::new();
+        for (i, body) in bodies.iter().enumerate() {
+            if let Some((x, y)) = self.pair_of(body)
+                && pairs.insert((x, y))
+            {
+                for (u, v) in [(x, y), (y, x)] {
+                    let list = neighbors.entry(u).or_insert_with(|| {
+                        seen.push((u, i));
+                        Vec::new()
+                    });
+                    list.push(v);
+                }
+            }
+        }
+        let mut grouped: FxHashSet<VarId> = FxHashSet::default();
+        for &(u, at) in &seen {
+            if grouped.contains(&u) {
+                continue;
+            }
+            let group: Vec<VarId> = std::iter::once(u)
+                .chain(
+                    neighbors[&u]
+                        .iter()
+                        .copied()
+                        .filter(|v| !grouped.contains(v)),
+                )
+                .collect();
+            let whole = group.len() >= 3
+                && group.iter().enumerate().all(|(i, &x)| {
+                    group[i + 1..]
+                        .iter()
+                        .all(|&y| pairs.contains(&(x.min(y), x.max(y))))
+                });
+            if whole {
+                grouped.extend(group.iter().copied());
+                found.push((at, group));
+            }
+        }
+        found
+    }
+
+    fn split_group_bodies(
+        &self,
+        bodies: Vec<Vec<GLit>>,
+        groups: Vec<Vec<VarId>>,
+    ) -> (Vec<AtMostOne>, Vec<Vec<GLit>>) {
         let group_of: FxHashMap<VarId, usize> = groups
             .iter()
             .enumerate()

@@ -198,84 +198,11 @@ pub(crate) fn normalize(
         evidence: program.evidence.clone(),
         ..Default::default()
     };
-
-    // Predicates with negative head literals, and each predicate's number
-    // of clauses and whether they are all ground facts ([`Facts`]).
-    // Signatures are borrowed from the program, not owned one per head;
-    // a predicate's facts usually come together, and the last one is
-    // looked up by its name's address before its signature is hashed.
-    fn sig(a: &Atom) -> (&str, usize) {
-        a.signature()
-    }
-    fn fact(c: &Clause) -> Option<&HeadChoice> {
-        match &c.heads[..] {
-            [h] if c.body.is_empty() && !h.negated && h.atom.is_ground() && h.mass().is_some() => {
-                Some(h)
-            }
-            _ => None,
-        }
-    }
-    /// The place of `a`'s predicate in `defined`, which gains it where it
-    /// is new; `last` is the last one looked up.
-    fn place_of<'p>(
-        a: &'p Atom,
-        last: &mut Option<(&'p Name, usize, usize)>,
-        place: &mut FxHashMap<(&'p str, usize), usize>,
-        defined: &mut Vec<Defined<'p>>,
-    ) -> usize {
-        if let Some((name, arity, k)) = *last
-            && arity == a.args.len()
-            && same_name(name, &a.name)
-        {
-            return k;
-        }
-        let k = *place.entry(sig(a)).or_insert_with(|| {
-            defined.push((sig(a), 0, true));
-            defined.len() - 1
-        });
-        *last = Some((&a.name, a.args.len(), k));
-        k
-    }
-    /// A predicate, its number of clauses, and whether they are all facts.
-    type Defined<'p> = ((&'p str, usize), usize, bool);
-    let mut negated_preds: Vec<(&str, usize)> = Vec::new();
-    let mut place: FxHashMap<(&str, usize), usize> = FxHashMap::default();
-    let mut defined: Vec<Defined> = Vec::new();
-    let mut last = None;
-    // The non-ground probabilistic facts, by their predicates' places.
-    let mut open_facts: Vec<(usize, f64)> = Vec::new();
-    for c in &program.clauses {
-        let is_fact = fact(c).is_some();
-        let open = c.heads.len() == 1 && c.body.is_empty() && !is_fact;
-        for h in &c.heads {
-            let k = place_of(&h.atom, &mut last, &mut place, &mut defined);
-            defined[k].1 += 1;
-            defined[k].2 &= is_fact;
-            if h.negated && !negated_preds.contains(&defined[k].0) {
-                negated_preds.push(defined[k].0);
-            }
-            if let Some(Annotation::Number(p)) = h.prob
-                && open
-                && !h.negated
-            {
-                open_facts.push((k, p));
-            }
-        }
-    }
-
-    // Non-ground probabilistic facts become switch predicates outright, if the
-    // predicate has no other clause.
-    let mut fact_switches: FxHashMap<(&str, usize), f64> = FxHashMap::default();
-    for (k, p) in open_facts {
-        if defined[k].1 == 1 {
-            fact_switches.insert(defined[k].0, p);
-        }
-    }
+    let (mut place, mut defined, negated_preds, fact_switches) = scan_predicates(program);
     for (&(name, arity), p) in &fact_switches {
         out.switches
             .insert((name.into(), arity), Weights::Fixed(Prob::new(*p)));
     }
-
     // The predicates kept as their facts, by place: each one's place in
     // `made`, `NEW` until its first fact makes it. A predicate a findall
     // reads keeps its facts as rules, whose derivations the grounder counts.
@@ -289,22 +216,11 @@ pub(crate) fn normalize(
         .collect();
     let mut made: Vec<(usize, Facts)> = Vec::new();
     let mut qs = Vec::with_capacity(1);
-    let sum_error = |heads: Vec<HeadChoice>, clause: &Clause, total: f64| {
-        let clause = Clause {
-            heads,
-            body: clause.body.clone(),
-            group: clause.group,
-        };
-        GroundError::Unsupported(format!(
-            "annotated disjunction probabilities sum to {total} > 1: {clause}"
-        ))
-    };
-
     // The switches' names are written in one buffer, not one per clause.
     let mut name = String::new();
-    last = None;
+    let mut last = None;
     for clause in &program.clauses {
-        if let Some(h) = fact(clause) {
+        if let Some(h) = ground_fact(clause) {
             let k = place_of(&h.atom, &mut last, &mut place, &mut defined);
             if let Some(mut t) = kept[k] {
                 if t == NEW {
@@ -333,79 +249,199 @@ pub(crate) fn normalize(
                 continue;
             }
         }
-        let heads = renamed_heads(&clause.heads, &negated_preds);
-        let probabilistic = heads.iter().any(|h| h.prob.is_some());
-        if !probabilistic {
-            let clause = Clause {
-                heads,
-                body: clause.body.clone(),
-                group: clause.group,
-            };
-            if clause.heads.len() > 1 {
-                return Err(GroundError::Unsupported(format!(
-                    "disjunctive head without probabilities: {clause}"
-                )));
-            }
-            out.rules.push(clause);
-            continue;
-        }
-        if heads.len() == 1 && fact_switches.contains_key(&sig(&heads[0].atom)) {
-            continue; // declared as a switch predicate above
-        }
-        let mut vars = clause_vars(&heads, &clause.body);
-        let mut computed: Vec<Literal> = Vec::new();
-        let n = heads.len();
-        let flexible: Option<Arc<str>> = if heads.iter().all(|h| h.mass().is_some()) {
-            qs.clear();
-            if let Err(total) = switch_probabilities(&heads, &mut qs) {
-                return Err(sum_error(heads, clause, total));
-            }
-            None
-        } else {
-            // The heads' probabilities follow `V` in the switches'
-            // arguments, those not a number or a variable bound by `is`.
-            for (j, h) in heads.iter().enumerate() {
-                vars.push(match &h.prob {
-                    None => Term::Float(F64(1.0)),
-                    Some(Annotation::Number(p)) => Term::Float(F64(*p)),
-                    Some(Annotation::Flexible(t)) if t.is_var() => t.clone(),
-                    Some(Annotation::Flexible(t)) => {
-                        let p = Term::Var(format!("$P{j}"));
-                        computed.push(Literal::Is(p.clone(), t.clone()));
-                        p
-                    }
-                });
-            }
-            Some(clause.to_string().into())
-        };
-        let mut guards: Vec<Literal> = Vec::new();
-        for (i, head) in heads.into_iter().enumerate() {
-            let sw_name = switch_name(&mut name, &head.atom.name, clause.group, i);
-            let sw = Atom::new(sw_name.clone(), vars.iter().cloned().collect::<Args>());
-            let weights = match &flexible {
-                None => Weights::Fixed(qs[i]),
-                Some(clause) => Weights::Flexible {
-                    index: i,
-                    heads: n,
-                    clause: clause.clone(),
-                },
-            };
-            out.switches.insert((sw_name, vars.len()), weights);
-            // Allocated once at its size, to take the switch and the
-            // guards beside a copy of the clause's body.
-            let mut body =
-                Vec::with_capacity(clause.body.len() + computed.len() + 1 + guards.len());
-            body.extend_from_slice(&clause.body);
-            body.extend_from_slice(&computed);
-            body.push(Literal::Pos(sw.clone()));
-            body.extend_from_slice(&guards);
-            out.rules.push(Clause::rule(head.atom, body, clause.group));
-            guards.push(Literal::Neg(sw));
-        }
+        normalize_clause(
+            clause,
+            &negated_preds,
+            &fact_switches,
+            &mut qs,
+            &mut name,
+            &mut out,
+        )?;
     }
     out.facts = made.into_iter().map(|(at, f)| (at, Arc::new(f))).collect();
     out.counted = counted;
+    append_drivers_and_negated(program, &negated_preds, &mut out);
+    Ok(out)
+}
 
+/// A predicate, its number of clauses, and whether they are all facts.
+type Defined<'p> = ((&'p str, usize), usize, bool);
+
+type ScannedPreds<'p> = (
+    FxHashMap<(&'p str, usize), usize>,
+    Vec<Defined<'p>>,
+    Vec<(&'p str, usize)>,
+    FxHashMap<(&'p str, usize), f64>,
+);
+
+fn ground_fact(c: &Clause) -> Option<&HeadChoice> {
+    match &c.heads[..] {
+        [h] if c.body.is_empty() && !h.negated && h.atom.is_ground() && h.mass().is_some() => {
+            Some(h)
+        }
+        _ => None,
+    }
+}
+
+/// The place of `a`'s predicate in `defined`, which gains it where it
+/// is new; `last` is the last one looked up.
+fn place_of<'p>(
+    a: &'p Atom,
+    last: &mut Option<(&'p Name, usize, usize)>,
+    place: &mut FxHashMap<(&'p str, usize), usize>,
+    defined: &mut Vec<Defined<'p>>,
+) -> usize {
+    if let Some((name, arity, k)) = *last
+        && arity == a.args.len()
+        && same_name(name, &a.name)
+    {
+        return k;
+    }
+    let sig = a.signature();
+    let k = *place.entry(sig).or_insert_with(|| {
+        defined.push((sig, 0, true));
+        defined.len() - 1
+    });
+    *last = Some((&a.name, a.args.len(), k));
+    k
+}
+
+// Predicates with negative head literals, and each predicate's number
+// of clauses and whether they are all ground facts ([`Facts`]).
+// Signatures are borrowed from the program, not owned one per head;
+// a predicate's facts usually come together, and the last one is
+// looked up by its name's address before its signature is hashed.
+fn scan_predicates(program: &Program) -> ScannedPreds<'_> {
+    let mut negated_preds: Vec<(&str, usize)> = Vec::new();
+    let mut place: FxHashMap<(&str, usize), usize> = FxHashMap::default();
+    let mut defined: Vec<Defined> = Vec::new();
+    let mut last = None;
+    // The non-ground probabilistic facts, by their predicates' places.
+    let mut open_facts: Vec<(usize, f64)> = Vec::new();
+    for c in &program.clauses {
+        let is_fact = ground_fact(c).is_some();
+        let open = c.heads.len() == 1 && c.body.is_empty() && !is_fact;
+        for h in &c.heads {
+            let k = place_of(&h.atom, &mut last, &mut place, &mut defined);
+            defined[k].1 += 1;
+            defined[k].2 &= is_fact;
+            if h.negated && !negated_preds.contains(&defined[k].0) {
+                negated_preds.push(defined[k].0);
+            }
+            if let Some(Annotation::Number(p)) = h.prob
+                && open
+                && !h.negated
+            {
+                open_facts.push((k, p));
+            }
+        }
+    }
+    // Non-ground probabilistic facts become switch predicates outright, if the
+    // predicate has no other clause.
+    let mut fact_switches: FxHashMap<(&str, usize), f64> = FxHashMap::default();
+    for (k, p) in open_facts {
+        if defined[k].1 == 1 {
+            fact_switches.insert(defined[k].0, p);
+        }
+    }
+    (place, defined, negated_preds, fact_switches)
+}
+
+fn sum_error(heads: Vec<HeadChoice>, clause: &Clause, total: f64) -> GroundError {
+    let clause = Clause {
+        heads,
+        body: clause.body.clone(),
+        group: clause.group,
+    };
+    GroundError::Unsupported(format!(
+        "annotated disjunction probabilities sum to {total} > 1: {clause}"
+    ))
+}
+
+fn normalize_clause(
+    clause: &Clause,
+    negated_preds: &[(&str, usize)],
+    fact_switches: &FxHashMap<(&str, usize), f64>,
+    qs: &mut Vec<Prob>,
+    name: &mut String,
+    out: &mut NormProgram,
+) -> Result<(), GroundError> {
+    let heads = renamed_heads(&clause.heads, negated_preds);
+    let probabilistic = heads.iter().any(|h| h.prob.is_some());
+    if !probabilistic {
+        let clause = Clause {
+            heads,
+            body: clause.body.clone(),
+            group: clause.group,
+        };
+        if clause.heads.len() > 1 {
+            return Err(GroundError::Unsupported(format!(
+                "disjunctive head without probabilities: {clause}"
+            )));
+        }
+        out.rules.push(clause);
+        return Ok(());
+    }
+    if heads.len() == 1 && fact_switches.contains_key(&heads[0].atom.signature()) {
+        return Ok(()); // declared as a switch predicate above
+    }
+    let mut vars = clause_vars(&heads, &clause.body);
+    let mut computed: Vec<Literal> = Vec::new();
+    let n = heads.len();
+    let flexible: Option<Arc<str>> = if heads.iter().all(|h| h.mass().is_some()) {
+        qs.clear();
+        if let Err(total) = switch_probabilities(&heads, qs) {
+            return Err(sum_error(heads, clause, total));
+        }
+        None
+    } else {
+        // The heads' probabilities follow `V` in the switches'
+        // arguments, those not a number or a variable bound by `is`.
+        for (j, h) in heads.iter().enumerate() {
+            vars.push(match &h.prob {
+                None => Term::Float(F64(1.0)),
+                Some(Annotation::Number(p)) => Term::Float(F64(*p)),
+                Some(Annotation::Flexible(t)) if t.is_var() => t.clone(),
+                Some(Annotation::Flexible(t)) => {
+                    let p = Term::Var(format!("$P{j}"));
+                    computed.push(Literal::Is(p.clone(), t.clone()));
+                    p
+                }
+            });
+        }
+        Some(clause.to_string().into())
+    };
+    let mut guards: Vec<Literal> = Vec::new();
+    for (i, head) in heads.into_iter().enumerate() {
+        let sw_name = switch_name(name, &head.atom.name, clause.group, i);
+        let sw = Atom::new(sw_name.clone(), vars.iter().cloned().collect::<Args>());
+        let weights = match &flexible {
+            None => Weights::Fixed(qs[i]),
+            Some(clause) => Weights::Flexible {
+                index: i,
+                heads: n,
+                clause: clause.clone(),
+            },
+        };
+        out.switches.insert((sw_name, vars.len()), weights);
+        // Allocated once at its size, to take the switch and the
+        // guards beside a copy of the clause's body.
+        let mut body = Vec::with_capacity(clause.body.len() + computed.len() + 1 + guards.len());
+        body.extend_from_slice(&clause.body);
+        body.extend_from_slice(&computed);
+        body.push(Literal::Pos(sw.clone()));
+        body.extend_from_slice(&guards);
+        out.rules.push(Clause::rule(head.atom, body, clause.group));
+        guards.push(Literal::Neg(sw));
+    }
+    Ok(())
+}
+
+fn append_drivers_and_negated(
+    program: &Program,
+    negated_preds: &[(&str, usize)],
+    out: &mut NormProgram,
+) {
     for (k, qr) in program.query_rules.iter().enumerate() {
         // The pattern's variables that the body binds: the others stay
         // variables of the queries, as ProbLog's findall1.pl has one.
@@ -428,7 +464,7 @@ pub(crate) fn normalize(
     }
 
     // p(V) :- p⁺(V), \+ p⁻(V) for each predicate with negative heads.
-    for &(name, arity) in &negated_preds {
+    for &(name, arity) in negated_preds {
         let vars: Vec<Term> = (0..arity).map(|i| Term::Var(format!("V{i}"))).collect();
         let body = vec![
             Literal::Pos(Atom::new(pos_name(name), vars.clone())),
@@ -437,7 +473,6 @@ pub(crate) fn normalize(
         out.rules
             .push(Clause::rule(Atom::new(name, vars), body, u32::MAX));
     }
-    Ok(out)
 }
 
 /// The sum of the masses of a clause's heads ([`HeadChoice::mass`]);

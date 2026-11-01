@@ -314,13 +314,6 @@ pub(super) fn exclusive_sets(
     base_of: &[usize],
     sccs: &[Vec<AtomId>],
 ) -> Found {
-    let n = gp.num_atoms();
-    // The atoms of each set, in the order they joined it ([`Chains`]),
-    // rather than a list per set: most atoms are alone in theirs.
-    let mut sets: Chains<AtomId> = Chains::default();
-    let mut set_of = vec![usize::MAX; n];
-    // Each atom's key, its class and the sets it reads, numbered.
-    let mut key_ids: Interned<usize> = Interned::with_capacity(0);
     // The class of each atom: its predicate's index if the predicate has
     // other atoms, `usize::MAX` if not.
     let (predicate_of, atoms_of, readers, silent) = predicate_exclusivity(gp, sccs);
@@ -328,55 +321,89 @@ pub(super) fn exclusive_sets(
         id if atoms_of[id] > 1 => id,
         _ => usize::MAX,
     };
+    let mut finder = SetFinder::new(gp);
+    for &a in sccs.iter().flatten() {
+        if silent[predicate_of[a as usize]] {
+            finder.add_silent(a);
+            continue;
+        }
+        let (key_id, rows_a, required, alone) = seed_sets(
+            (gp, by_head, base_of),
+            (a, class(a)),
+            (&finder.set_of, &readers),
+            &mut finder.marks,
+            (&mut finder.sigs, &mut finder.store),
+            (
+                &mut finder.key_ids,
+                &mut finder.by_key,
+                &mut finder.unlisted,
+            ),
+            (&mut finder.body_ids, &mut finder.scratch),
+        );
+        let joined =
+            finder.find_candidate((gp, by_head), a, key_id, rows_a.as_ref(), required, alone);
+        finder.marks.clear();
+        for (b, i) in finder.failed.drain(..) {
+            finder.body_ids.rule_out(b, key_id, i);
+        }
+        finder.place_atom((gp, by_head), &predicate_of, a, key_id, rows_a, joined);
+    }
+    let sets = (0..finder.sets.len())
+        .filter(|&i| finder.sets.len_of(i) >= 2)
+        .map(|i| finder.sets.iter(i).collect())
+        .collect();
+    Found {
+        sets,
+        predicate_of,
+        atoms_of,
+    }
+}
+
+struct SetFinder {
+    // The atoms of each set, in the order they joined it ([`Chains`]),
+    // rather than a list per set: most atoms are alone in theirs.
+    sets: Chains<AtomId>,
+    set_of: Vec<usize>,
+    // Each atom's key, its class and the sets it reads, numbered.
+    key_ids: Interned<usize>,
     // The sets of each key.
-    let mut by_key: Chains<usize> = Chains::default();
+    by_key: Chains<usize>,
     // Each atom's rules by the atoms of sets they read positively, once
     // its parents' sets are final: where every rule of two atoms reads one
     // atom of each of the same sets, two rules that read different atoms of
     // one set clash, and only the rules that read the same ones need their
     // literals compared, not every pair of two values' rules (bn_pathfinder's
     // f74 has over a thousand rules per value).
-    let mut rows: Vec<Option<Rows>> = vec![None; n];
-    // Each rule is stored once at most, with at most its body's literals as
-    // the atoms it reads, so the store is sized once rather than grown.
-    let mut store = RowStore::default();
-    store.rules.reserve_exact(gp.rules.len());
-    store.run_ends.reserve_exact(gp.rules.len());
-    store.key_hashes.reserve_exact(gp.rules.len());
-    store
-        .selectors
-        .reserve_exact(gp.rules.iter().map(|r| r.body.len()).sum());
+    rows: Vec<Option<Rows>>,
+    store: RowStore,
     // The sets the rows read, numbered ([`Rows::sig`]).
-    let mut sigs: FxHashMap<Vec<usize>, u32> = FxHashMap::default();
+    sigs: FxHashMap<Vec<usize>, u32>,
     // Per set, the numbers of the sets its atoms' rows read, distinct, and
     // `None` for an atom without rows; and the runs of its atoms' rows by
     // the set, the number and the hash of the atoms they read: the head of
     // a chain through `run_chain` of each run's atom, first rule and next
     // run. An atom is compared with only the runs that read what one of its
     // rows reads, not merged with every atom's rows in turn.
-    let mut sigs_of_set: Chains<Option<u32>> = Chains::default();
-    let mut run_heads: FxHashMap<(usize, u32, u64), u32> = FxHashMap::default();
-    let mut run_chain: Vec<(AtomId, u32, u32)> = Vec::new();
+    sigs_of_set: Chains<Option<u32>>,
+    run_heads: FxHashMap<(usize, u32, u64), u32>,
+    run_chain: Vec<(AtomId, u32, u32)>,
     // Each body that another rule can have, its literals sorted and
     // distinct, by number, with the sets whose rules hold it. A body with a
     // literal that no other rule reads is no other rule's, and rules no set
     // out for another atom. On a network nearly every body has one, a
     // switch of its row, so few bodies are hashed and copied to be
     // numbered.
-    let mut body_ids = Bodies::with_capacity(gp.rules.len());
-    let mut marks = Marks::new(n);
-    let mut scratch = AtomScratch {
-        read_mark: vec![0usize; n],
-        ..AtomScratch::default()
-    };
+    body_ids: Bodies,
+    marks: Marks,
+    scratch: AtomScratch,
     // The sets a shared body is found to rule out as the atom is compared,
     // and the runs of a set's rows that read what a row of it reads.
-    let mut failed: Vec<(u32, usize)> = Vec::new();
-    let mut runs: Vec<(usize, usize)> = Vec::new();
+    failed: Vec<(u32, usize)>,
+    runs: Vec<(usize, usize)>,
     // The atoms of a set whose rows read other sets than the atom's, kept
     // from one call of `exclusive_with` to the next rather than a list
     // allocated per call.
-    let mut rest: Vec<AtomId> = Vec::new();
+    rest: Vec<AtomId>,
     // Per set, the atoms every rule of every one of its atoms reads
     // positively, sorted, as a range of `common`, which only shrinks, and
     // its key; per atom, the sets that held it so
@@ -384,11 +411,11 @@ pub(super) fn exclusive_sets(
     // is one negated atom `\+x` clashes with a rule only where that rule
     // reads `x`, so it can join only a set all of whose rules read `x`
     // (dice_digitRecognition's observations each have a rule `\+y(d)`).
-    let mut common: Vec<AtomId> = Vec::new();
-    let mut common_of: Vec<(usize, usize)> = Vec::new();
-    let mut key_of_set: Vec<usize> = Vec::new();
-    let mut sets_reading: FxHashMap<AtomId, usize> = FxHashMap::default();
-    let mut reading: Chains<usize> = Chains::default();
+    common: Vec<AtomId>,
+    common_of: Vec<(usize, usize)>,
+    key_of_set: Vec<usize>,
+    sets_reading: FxHashMap<AtomId, usize>,
+    reading: Chains<usize>,
     // Per key and literal, the sets of the key whose first atom's first
     // rule has a literal that clashes with it ([`Marks::clashes`]): its
     // negation, or another atom of a set it reads positively ([`clash_code`]).
@@ -401,237 +428,326 @@ pub(super) fn exclusive_sets(
     // (most keys, whose listing cost hybit_weekend's grounding 5 per cent),
     // or a set whose first atom has no rules, or whose first rule reads an
     // atom whose set is not known yet.
-    let mut clashing: FxHashMap<(usize, usize), usize> = FxHashMap::default();
-    let mut clash_lists: Chains<usize> = Chains::default();
-    let mut unlisted: Vec<bool> = Vec::new();
-    let mut candidates: Vec<usize> = Vec::new();
-    for &a in sccs.iter().flatten() {
-        if silent[predicate_of[a as usize]] {
-            let i = sets.add();
-            sigs_of_set.add();
-            key_of_set.push(usize::MAX);
-            common_of.push((common.len(), common.len()));
-            sets.push(i, a);
-            set_of[a as usize] = i;
-            continue;
+    clashing: FxHashMap<(usize, usize), usize>,
+    clash_lists: Chains<usize>,
+    unlisted: Vec<bool>,
+    candidates: Vec<usize>,
+}
+
+impl SetFinder {
+    fn new(gp: &GroundProgram) -> Self {
+        let n = gp.num_atoms();
+        // Each rule is stored once at most, with at most its body's literals as
+        // the atoms it reads, so the store is sized once rather than grown.
+        let mut store = RowStore::default();
+        store.rules.reserve_exact(gp.rules.len());
+        store.run_ends.reserve_exact(gp.rules.len());
+        store.key_hashes.reserve_exact(gp.rules.len());
+        store
+            .selectors
+            .reserve_exact(gp.rules.iter().map(|r| r.body.len()).sum());
+        Self {
+            sets: Chains::default(),
+            set_of: vec![usize::MAX; n],
+            key_ids: Interned::with_capacity(0),
+            by_key: Chains::default(),
+            rows: vec![None; n],
+            store,
+            sigs: FxHashMap::default(),
+            sigs_of_set: Chains::default(),
+            run_heads: FxHashMap::default(),
+            run_chain: Vec::new(),
+            body_ids: Bodies::with_capacity(gp.rules.len()),
+            marks: Marks::new(n),
+            scratch: AtomScratch {
+                read_mark: vec![0usize; n],
+                ..AtomScratch::default()
+            },
+            failed: Vec::new(),
+            runs: Vec::new(),
+            rest: Vec::new(),
+            common: Vec::new(),
+            common_of: Vec::new(),
+            key_of_set: Vec::new(),
+            sets_reading: FxHashMap::default(),
+            reading: Chains::default(),
+            clashing: FxHashMap::default(),
+            clash_lists: Chains::default(),
+            unlisted: Vec::new(),
+            candidates: Vec::new(),
         }
-        let (key_id, rows_a, required, alone) = seed_sets(
-            (gp, by_head, base_of),
-            (a, class(a)),
-            (&set_of, &readers),
-            &mut marks,
-            (&mut sigs, &mut store),
-            (&mut key_ids, &mut by_key, &mut unlisted),
-            (&mut body_ids, &mut scratch),
-        );
-        let sig_a = rows_a.as_ref().map(|x| x.sig);
-        let ruled_out = |i: usize| scratch.holding.iter().any(|&b| body_ids.holds(b, i));
-        // Whether `a` is exclusive with every atom of a set: whether every
-        // rule of `a` clashes with every rule of each atom, or, where the
-        // two atoms' rows read the same sets, with every rule of the same
-        // row. Each rule of `a` is marked once per set and tested against
-        // all the set's atoms, not marked anew for each atom. The rule
-        // marked last stays marked for the next set, which is most often
-        // with the same rule: an atom of one rule is compared with every
-        // candidate set.
-        let mut exclusive_with = |i: usize| -> bool {
-            let exclusive = 'test: {
-                rest.clear();
-                if sigs_of_set.iter(i).any(|s| s.is_none() || s != sig_a) {
-                    rest.extend(sets.iter(i).filter(|&b| {
-                        sig_a.is_none() || rows[b as usize].as_ref().map(|y| y.sig) != sig_a
-                    }));
+    }
+
+    fn add_silent(&mut self, a: AtomId) {
+        let i = self.sets.add();
+        self.sigs_of_set.add();
+        self.key_of_set.push(usize::MAX);
+        self.common_of.push((self.common.len(), self.common.len()));
+        self.sets.push(i, a);
+        self.set_of[a as usize] = i;
+    }
+
+    // Whether `a` is exclusive with every atom of a set: whether every
+    // rule of `a` clashes with every rule of each atom, or, where the
+    // two atoms' rows read the same sets, with every rule of the same
+    // row. Each rule of `a` is marked once per set and tested against
+    // all the set's atoms, not marked anew for each atom. The rule
+    // marked last stays marked for the next set, which is most often
+    // with the same rule: an atom of one rule is compared with every
+    // candidate set.
+    fn exclusive_with(
+        &mut self,
+        (gp, by_head): (&GroundProgram, &RulesByHead),
+        a: AtomId,
+        rows_a: Option<&Rows>,
+        i: usize,
+    ) -> bool {
+        let sig_a = rows_a.map(|x| x.sig);
+        let exclusive = 'test: {
+            self.rest.clear();
+            if self.sigs_of_set.iter(i).any(|s| s.is_none() || s != sig_a) {
+                self.rest.extend(self.sets.iter(i).filter(|&b| {
+                    sig_a.is_none() || self.rows[b as usize].as_ref().map(|y| y.sig) != sig_a
+                }));
+            }
+            if !self.rest.is_empty() {
+                for &ra in &by_head[a as usize] {
+                    self.marks.mark_rule(ra, &gp.rules[ra].body, &self.set_of);
+                    if !self.rest.iter().all(|&b| {
+                        by_head[b as usize]
+                            .iter()
+                            .all(|&rb| self.marks.clashes(&gp.rules[rb].body, &self.set_of))
+                    }) {
+                        break 'test false;
+                    }
                 }
-                if !rest.is_empty() {
-                    for &ra in &by_head[a as usize] {
-                        marks.mark_rule(ra, &gp.rules[ra].body, &set_of);
-                        if !rest.iter().all(|&b| {
-                            by_head[b as usize]
+            }
+            let Some(x) = rows_a.filter(|x| self.sigs_of_set.iter(i).any(|s| s == Some(x.sig)))
+            else {
+                break 'test true;
+            };
+            // Each run of the rows of `a`, and the runs of the set's atoms
+            // whose rows read the same sets and the same atoms of them, as
+            // ranges of the store's rules.
+            let mut j = 0;
+            while j < x.len {
+                let j_end = x.run_end(&self.store, j);
+                self.runs.clear();
+                let key = x.key(&self.store, j);
+                let mut link = self
+                    .run_heads
+                    .get(&(i, x.sig, x.key_hash(&self.store, j)))
+                    .copied();
+                while let Some(l) = link {
+                    let (b, k, next) = self.run_chain[l as usize];
+                    let y = self.rows[b as usize]
+                        .as_ref()
+                        .expect("an indexed atom has rows");
+                    if y.key(&self.store, k as usize) == key {
+                        self.runs.push((
+                            y.start + k as usize,
+                            y.start + y.run_end(&self.store, k as usize),
+                        ));
+                    }
+                    link = (next != u32::MAX).then_some(next);
+                }
+                if !self.runs.is_empty() {
+                    for &ra in &x.rules(&self.store)[j..j_end] {
+                        self.marks.mark_rule(ra, &gp.rules[ra].body, &self.set_of);
+                        if !self.runs.iter().all(|&(s, e)| {
+                            self.store.rules[s..e]
                                 .iter()
-                                .all(|&rb| marks.clashes(&gp.rules[rb].body, &set_of))
+                                .all(|&rb| self.marks.clashes(&gp.rules[rb].body, &self.set_of))
                         }) {
                             break 'test false;
                         }
                     }
                 }
-                let Some(x) = rows_a
-                    .as_ref()
-                    .filter(|x| sigs_of_set.iter(i).any(|s| s == Some(x.sig)))
-                else {
-                    break 'test true;
-                };
-                // Each run of the rows of `a`, and the runs of the set's atoms
-                // whose rows read the same sets and the same atoms of them, as
-                // ranges of the store's rules.
-                let mut j = 0;
-                while j < x.len {
-                    let j_end = x.run_end(&store, j);
-                    runs.clear();
-                    let key = x.key(&store, j);
-                    let mut link = run_heads.get(&(i, x.sig, x.key_hash(&store, j))).copied();
-                    while let Some(l) = link {
-                        let (b, k, next) = run_chain[l as usize];
-                        let y = rows[b as usize].as_ref().expect("an indexed atom has rows");
-                        if y.key(&store, k as usize) == key {
-                            runs.push((
-                                y.start + k as usize,
-                                y.start + y.run_end(&store, k as usize),
-                            ));
-                        }
-                        link = (next != u32::MAX).then_some(next);
-                    }
-                    if !runs.is_empty() {
-                        for &ra in &x.rules(&store)[j..j_end] {
-                            marks.mark_rule(ra, &gp.rules[ra].body, &set_of);
-                            if !runs.iter().all(|&(s, e)| {
-                                store.rules[s..e]
-                                    .iter()
-                                    .all(|&rb| marks.clashes(&gp.rules[rb].body, &set_of))
-                            }) {
-                                break 'test false;
-                            }
-                        }
-                    }
-                    j = j_end;
-                }
-                true
-            };
-            // A shared body of `a` that does not clash with a rule of the
-            // set rules the set out for every atom with that body.
-            if !exclusive {
-                for &(ra, b) in &scratch.shared {
-                    marks.mark_rule(ra, &gp.rules[ra].body, &set_of);
-                    if !sets.iter(i).all(|m| {
-                        by_head[m as usize]
-                            .iter()
-                            .all(|&rb| marks.clashes(&gp.rules[rb].body, &set_of))
-                    }) {
-                        failed.push((b, i));
-                    }
+                j = j_end;
+            }
+            true
+        };
+        // A shared body of `a` that does not clash with a rule of the
+        // set rules the set out for every atom with that body.
+        if !exclusive {
+            for &(ra, b) in &self.scratch.shared {
+                self.marks.mark_rule(ra, &gp.rules[ra].body, &self.set_of);
+                if !self.sets.iter(i).all(|m| {
+                    by_head[m as usize]
+                        .iter()
+                        .all(|&rb| self.marks.clashes(&gp.rules[rb].body, &self.set_of))
+                }) {
+                    self.failed.push((b, i));
                 }
             }
-            exclusive
-        };
-        let joined = match required {
-            _ if alone => None,
-            Some(x) => sets_reading
+        }
+        exclusive
+    }
+
+    fn find_candidate(
+        &mut self,
+        (gp, by_head): (&GroundProgram, &RulesByHead),
+        a: AtomId,
+        key_id: usize,
+        rows_a: Option<&Rows>,
+        required: Option<AtomId>,
+        alone: bool,
+    ) -> Option<usize> {
+        if alone {
+            return None;
+        }
+        let n = gp.num_atoms();
+        if let Some(x) = required {
+            let candidates: Vec<usize> = self
+                .sets_reading
                 .get(&x)
                 .into_iter()
-                .flat_map(|&l| reading.iter(l))
+                .flat_map(|&l| self.reading.iter(l))
                 .filter(|&i| {
-                    key_of_set[i] == key_id
-                        && !ruled_out(i)
-                        && common[common_of[i].0..common_of[i].1]
+                    self.key_of_set[i] == key_id
+                        && !self
+                            .scratch
+                            .holding
+                            .iter()
+                            .any(|&b| self.body_ids.holds(b, i))
+                        && self.common[self.common_of[i].0..self.common_of[i].1]
                             .binary_search(&x)
                             .is_ok()
                 })
-                .find(|&i| exclusive_with(i)),
-            None => {
-                // The rule of `a` under whose literals the fewest sets are
-                // listed, where they are fewer than the key's sets.
-                let listed = |ri: usize| {
-                    let clashing = &clashing;
-                    let set_of = &set_of;
-                    gp.rules[ri].body.iter().flat_map(move |&l| {
-                        [Some(lit_index(&l)), clash_code(l, set_of, n)]
-                            .into_iter()
-                            .flatten()
-                            .filter_map(move |code| clashing.get(&(key_id, code)).copied())
-                    })
-                };
-                let fewest = by_head[a as usize]
-                    .iter()
-                    .filter(|_| by_key.len_of(key_id) > 1 && !unlisted[key_id])
-                    .map(|&ri| (listed(ri).map(|k| clash_lists.len_of(k)).sum::<usize>(), ri))
-                    .min()
-                    .filter(|&(count, _)| count < by_key.len_of(key_id));
-                match fewest {
-                    Some((_, ri)) => {
-                        candidates.clear();
-                        candidates.extend(
-                            listed(ri)
-                                .flat_map(|k| clash_lists.iter(k))
-                                .filter(|&i| !ruled_out(i)),
-                        );
-                        candidates.sort_unstable();
-                        candidates.dedup();
-                        candidates.iter().copied().find(|&i| exclusive_with(i))
-                    }
-                    None => by_key
-                        .iter(key_id)
-                        .filter(|&i| !ruled_out(i))
-                        .find(|&i| exclusive_with(i)),
-                }
-            }
-        };
-        marks.clear();
-        for (b, i) in failed.drain(..) {
-            body_ids.rule_out(b, key_id, i);
+                .collect();
+            return candidates
+                .into_iter()
+                .find(|&i| self.exclusive_with((gp, by_head), a, rows_a, i));
         }
+        // The rule of `a` under whose literals the fewest sets are
+        // listed, where they are fewer than the key's sets.
+        let fewest = by_head[a as usize]
+            .iter()
+            .filter(|_| self.by_key.len_of(key_id) > 1 && !self.unlisted[key_id])
+            .map(|&ri| {
+                (
+                    listed_clashes(gp, &self.clashing, &self.set_of, (key_id, n), ri)
+                        .map(|k| self.clash_lists.len_of(k))
+                        .sum::<usize>(),
+                    ri,
+                )
+            })
+            .min()
+            .filter(|&(count, _)| count < self.by_key.len_of(key_id));
+        self.candidates.clear();
+        match fewest {
+            Some((_, ri)) => {
+                self.candidates.extend(
+                    listed_clashes(gp, &self.clashing, &self.set_of, (key_id, n), ri)
+                        .flat_map(|k| self.clash_lists.iter(k))
+                        .filter(|&i| {
+                            !self
+                                .scratch
+                                .holding
+                                .iter()
+                                .any(|&b| self.body_ids.holds(b, i))
+                        }),
+                );
+                self.candidates.sort_unstable();
+                self.candidates.dedup();
+            }
+            None => {
+                self.candidates
+                    .extend(self.by_key.iter(key_id).filter(|&i| {
+                        !self
+                            .scratch
+                            .holding
+                            .iter()
+                            .any(|&b| self.body_ids.holds(b, i))
+                    }));
+            }
+        }
+        for k in 0..self.candidates.len() {
+            let i = self.candidates[k];
+            if self.exclusive_with((gp, by_head), a, rows_a, i) {
+                return Some(i);
+            }
+        }
+        None
+    }
+}
+
+fn listed_clashes<'a>(
+    gp: &'a GroundProgram,
+    clashing: &'a FxHashMap<(usize, usize), usize>,
+    set_of: &'a [usize],
+    (key_id, n): (usize, usize),
+    ri: usize,
+) -> impl Iterator<Item = usize> + 'a {
+    gp.rules[ri].body.iter().flat_map(move |&l| {
+        [Some(lit_index(&l)), clash_code(l, set_of, n)]
+            .into_iter()
+            .flatten()
+            .filter_map(move |code| clashing.get(&(key_id, code)).copied())
+    })
+}
+
+impl SetFinder {
+    fn place_atom(
+        &mut self,
+        (gp, by_head): (&GroundProgram, &RulesByHead),
+        predicate_of: &[usize],
+        a: AtomId,
+        key_id: usize,
+        rows_a: Option<Rows>,
+        joined: Option<usize>,
+    ) {
+        let n = gp.num_atoms();
+        let sig_a = rows_a.as_ref().map(|x| x.sig);
         let i = match joined {
             Some(i) => {
-                let (start, end) = common_of[i];
+                let (start, end) = self.common_of[i];
                 let mut kept = start;
                 for k in start..end {
-                    if scratch.common_a.binary_search(&common[k]).is_ok() {
-                        common[kept] = common[k];
+                    if self.scratch.common_a.binary_search(&self.common[k]).is_ok() {
+                        self.common[kept] = self.common[k];
                         kept += 1;
                     }
                 }
-                common_of[i].1 = kept;
-                sets.push(i, a);
-                if !sigs_of_set.iter(i).any(|s| s == sig_a) {
-                    sigs_of_set.push(i, sig_a);
+                self.common_of[i].1 = kept;
+                self.sets.push(i, a);
+                if !self.sigs_of_set.iter(i).any(|s| s == sig_a) {
+                    self.sigs_of_set.push(i, sig_a);
                 }
                 i
             }
             None => {
-                let i = sets.add();
-                sets.push(i, a);
-                sigs_of_set.add();
-                sigs_of_set.push(i, sig_a);
-                by_key.push(key_id, i);
-                key_of_set.push(key_id);
-                for &x in &scratch.common_a {
-                    let l = *sets_reading.entry(x).or_insert_with(|| reading.add());
-                    reading.push(l, i);
+                let i = self.sets.add();
+                self.sets.push(i, a);
+                self.sigs_of_set.add();
+                self.sigs_of_set.push(i, sig_a);
+                self.by_key.push(key_id, i);
+                self.key_of_set.push(key_id);
+                for &x in &self.scratch.common_a {
+                    let l = *self
+                        .sets_reading
+                        .entry(x)
+                        .or_insert_with(|| self.reading.add());
+                    self.reading.push(l, i);
                 }
-                common_of.push((common.len(), common.len() + scratch.common_a.len()));
-                common.extend_from_slice(&scratch.common_a);
-                // List set `j`, whose first atom is `b`.
-                let mut list = |j: usize, b: AtomId| match by_head[b as usize]
-                    .first()
-                    .map(|&r| &gp.rules[r].body)
-                {
-                    Some(body)
-                        if body.iter().all(|l| {
-                            !l.is_positive()
-                                || set_of[l.atom() as usize] != usize::MAX
-                                || predicate_of[l.atom() as usize] == usize::MAX
-                        }) =>
-                    {
-                        for &l in body {
-                            for code in [Some(lit_index(&l.negated())), clash_code(l, &set_of, n)]
-                                .into_iter()
-                                .flatten()
-                            {
-                                let k = *clashing
-                                    .entry((key_id, code))
-                                    .or_insert_with(|| clash_lists.add());
-                                clash_lists.push(k, j);
-                            }
-                        }
-                    }
-                    _ => unlisted[key_id] = true,
-                };
-                match by_key.len_of(key_id) {
+                self.common_of.push((
+                    self.common.len(),
+                    self.common.len() + self.scratch.common_a.len(),
+                ));
+                self.common.extend_from_slice(&self.scratch.common_a);
+                match self.by_key.len_of(key_id) {
                     1 => {}
                     2 => {
-                        let first = by_key.iter(key_id).next().expect("the key's first set");
-                        list(first, sets.iter(first).next().expect("a set's first atom"));
-                        list(i, a);
+                        let first = self
+                            .by_key
+                            .iter(key_id)
+                            .next()
+                            .expect("the key's first set");
+                        let first_atom = self.sets.iter(first).next().expect("a set's first atom");
+                        self.list_set((gp, by_head), predicate_of, n, key_id, first, first_atom);
+                        self.list_set((gp, by_head), predicate_of, n, key_id, i, a);
                     }
-                    _ => list(i, a),
+                    _ => self.list_set((gp, by_head), predicate_of, n, key_id, i, a),
                 }
                 i
             }
@@ -639,30 +755,60 @@ pub(super) fn exclusive_sets(
         if let Some(x) = &rows_a {
             let mut j = 0;
             while j < x.len {
-                let head = run_heads
-                    .entry((i, x.sig, x.key_hash(&store, j)))
+                let head = self
+                    .run_heads
+                    .entry((i, x.sig, x.key_hash(&self.store, j)))
                     .or_insert(u32::MAX);
-                run_chain.push((a, j as u32, *head));
-                *head = (run_chain.len() - 1) as u32;
-                j = x.run_end(&store, j);
+                self.run_chain.push((a, j as u32, *head));
+                *head = (self.run_chain.len() - 1) as u32;
+                j = x.run_end(&self.store, j);
             }
         }
-        rows[a as usize] = rows_a;
-        set_of[a as usize] = i;
+        self.rows[a as usize] = rows_a;
+        self.set_of[a as usize] = i;
         // An atom that has a body a set holds is ruled out of it, and its
         // bodies are distinct, so a set takes each body once.
-        for &body in &scratch.bodies {
-            body_ids.rule_out(body, key_id, i);
+        for &body in &self.scratch.bodies {
+            self.body_ids.rule_out(body, key_id, i);
         }
     }
-    let sets = (0..sets.len())
-        .filter(|&i| sets.len_of(i) >= 2)
-        .map(|i| sets.iter(i).collect())
-        .collect();
-    Found {
-        sets,
-        predicate_of,
-        atoms_of,
+
+    // List set `j`, whose first atom is `b`.
+    fn list_set(
+        &mut self,
+        (gp, by_head): (&GroundProgram, &RulesByHead),
+        predicate_of: &[usize],
+        n: usize,
+        key_id: usize,
+        j: usize,
+        b: AtomId,
+    ) {
+        match by_head[b as usize].first().map(|&r| &gp.rules[r].body) {
+            Some(body)
+                if body.iter().all(|l| {
+                    !l.is_positive()
+                        || self.set_of[l.atom() as usize] != usize::MAX
+                        || predicate_of[l.atom() as usize] == usize::MAX
+                }) =>
+            {
+                for &l in body {
+                    for code in [
+                        Some(lit_index(&l.negated())),
+                        clash_code(l, &self.set_of, n),
+                    ]
+                    .into_iter()
+                    .flatten()
+                    {
+                        let k = *self
+                            .clashing
+                            .entry((key_id, code))
+                            .or_insert_with(|| self.clash_lists.add());
+                        self.clash_lists.push(k, j);
+                    }
+                }
+            }
+            _ => self.unlisted[key_id] = true,
+        }
     }
 }
 
