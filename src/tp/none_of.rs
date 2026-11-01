@@ -103,17 +103,7 @@ impl Level {
             if !c.live {
                 continue;
             }
-            let v = spare.len();
-            let lifted = (c.lo - lo).min(bits);
-            let mut written = append_bits(spare, 0, defaults, lo as usize, lifted as usize);
-            written = append_bits(
-                spare,
-                written,
-                &self.values[c.values.0 as usize..c.values.1 as usize],
-                0,
-                (bits - lifted) as usize,
-            );
-            debug_assert_eq!(written, bits as usize);
+            let v = self.copy_values(&c, lo, bits, defaults, spare);
             self.classes[kept] = Class {
                 values: (v as u32, spare.len() as u32),
                 lo,
@@ -125,6 +115,21 @@ impl Level {
         std::mem::swap(&mut self.values, spare);
         self.lifted = false;
         self.dead = 0;
+    }
+    fn copy_values(
+        &self,
+        c: &Class,
+        lo: u32,
+        bits: u32,
+        defaults: &[u64],
+        dst: &mut Vec<u64>,
+    ) -> usize {
+        let v = dst.len();
+        let lifted = (c.lo - lo).min(bits);
+        let written = append_bits(dst, 0, defaults, lo as usize, lifted as usize);
+        let written = append_bits(dst, written, self.values(c), 0, (bits - lifted) as usize);
+        debug_assert_eq!(written, bits as usize);
+        v
     }
     fn residuals(&self, c: &Class) -> &[(u32, u32)] {
         &self.residuals[c.residuals.0 as usize..c.residuals.1 as usize]
@@ -790,19 +795,15 @@ fn post_order(vtree: &Vtree) -> (Vec<VtreeIdx>, Vec<(u32, u32)>, u32) {
     (order, spans, leaves)
 }
 
-fn build_on(
-    engine: &Engine,
-    vtree: &Arc<Vtree>,
+/// Each cube's literals, by the number of their leaf, twice it plus the
+/// sign; a cube with a variable in both signs holds nowhere, and an empty
+/// cube or a pair that merges to one holds everywhere (`None`).
+fn encode_cubes(
+    vtree: &Vtree,
+    spans: &[(u32, u32)],
+    leaves: u32,
     cubes: &[Vec<Literal>],
-    groups: &[(Vec<VarId>, bool)],
-    max_work: u64,
-    scratch: &mut Scratch,
-) -> Result<Option<Tdd>, OperationError> {
-    let n = vtree.num_nodes();
-    let root = vtree.root();
-    let (order, spans, leaves) = post_order(vtree);
-    // Each cube's literals, by the number of their leaf, twice it plus the
-    // sign; a cube with a variable in both signs holds nowhere.
+) -> Option<(Vec<u32>, Vec<u32>, Vec<u32>)> {
     let mut codes: Vec<u32> = Vec::with_capacity(cubes.iter().map(Vec::len).sum());
     let mut start: Vec<u32> = Vec::with_capacity(cubes.len() + 1);
     start.push(0);
@@ -825,7 +826,7 @@ fn build_on(
         codes.truncate(kept);
         let lits = &codes[at..];
         if lits.is_empty() {
-            return Ok(Some(engine.zero(vtree)));
+            return None;
         }
         if lits.windows(2).any(|w| w[0] / 2 == w[1] / 2) {
             codes.truncate(at);
@@ -845,8 +846,25 @@ fn build_on(
                 occurs[x as usize] += 1;
             }
         }
-        Merged::ToTrue => return Ok(Some(engine.zero(vtree))),
+        Merged::ToTrue => return None,
     }
+    Some((codes, start, occurs))
+}
+
+fn build_on(
+    engine: &Engine,
+    vtree: &Arc<Vtree>,
+    cubes: &[Vec<Literal>],
+    groups: &[(Vec<VarId>, bool)],
+    max_work: u64,
+    scratch: &mut Scratch,
+) -> Result<Option<Tdd>, OperationError> {
+    let n = vtree.num_nodes();
+    let root = vtree.root();
+    let (order, spans, leaves) = post_order(vtree);
+    let Some((codes, start, occurs)) = encode_cubes(vtree, &spans, leaves, cubes) else {
+        return Ok(Some(engine.zero(vtree)));
+    };
     // The cubes with each literal and its place in the cube's, by code;
     // the groups with a variable at each leaf, by leaf number; the node
     // where each group's variables meet, and the groups that must have one
@@ -1093,22 +1111,7 @@ fn build_on(
                 }
                 let at = taken.residuals.len();
                 taken.residuals.extend_from_slice(level.residuals(&c));
-                let v = taken.values.len();
-                let lifted = (c.lo - r_lo).min(kept[r.idx()]);
-                let bits = append_bits(
-                    &mut taken.values,
-                    0,
-                    defaults,
-                    r_lo as usize,
-                    lifted as usize,
-                );
-                append_bits(
-                    &mut taken.values,
-                    bits,
-                    level.values(&c),
-                    0,
-                    (kept[r.idx()] - lifted) as usize,
-                );
+                let v = level.copy_values(&c, r_lo, kept[r.idx()], defaults, &mut taken.values);
                 taken.push(at, level.ones(&c), v, r_lo, c.hash, c.node);
                 level.classes[k].live = false;
                 level.dead += 1;
@@ -1452,69 +1455,43 @@ struct Pairs {
     alone_of: Vec<u32>,
 }
 
-/// The pairs of `left`'s classes with `right`'s at `t`, whose children
-/// are `l` and `r`, on `pairs.emitted`, each with the number of the class
-/// of `level` it makes: a class new to `level` is added to it, looked up
-/// in `keys`, which holds `level`'s classes. `left` and `right` are
-/// levels of `l` and `r` whose classes keep their values from the
-/// children's first leaves. Returns the work spent.
-fn join(
-    shape: &Shape,
-    res: &mut Residuals,
-    forcing: &mut Forcing,
-    pairs: &mut Pairs,
-    (t, l, r): (VtreeIdx, VtreeIdx, VtreeIdx),
-    (left, right): (&Level, &Level),
-    (level, keys): (&mut Level, &mut Keys),
-) -> u64 {
-    let mut work = 0;
-    let Shape {
-        spans,
-        cubes,
-        group_lca,
-        exact_at,
-        kept,
-    } = *shape;
-    let Pairs {
-        fresh,
-        ones,
-        span_of,
-        pass,
-        branches,
-        left_split,
-        right_split,
-        emitted,
-        alone_of,
-    } = pairs;
-    let right_lo = spans[r.idx()].0;
-    // A class made here keeps its values up to the node's last leaf a node
-    // above may read: those of the left's leaves its left class keeps, and
-    // where it keeps a leaf on the right, clear bits up to the right's
-    // first and those of the right's leaves it keeps, which its right
-    // class keeps too ([`kept_bits`]).
-    let bits = kept[t.idx()] as usize;
-    let (left_bits, right_at) = (
-        bits.min(kept[l.idx()] as usize),
-        (right_lo - spans[l.idx()].0) as usize,
-    );
-    let right_bits = bits.saturating_sub(right_at);
-    let t_lo = spans[t.idx()].0;
-    // Each residual of one side whose cube has no literal on the other
-    // passes up as it is. One of the left whose cube has literals on
-    // the right stays where the right's representative makes those all
-    // hold, with them taken out, where some remain. Its cube's
-    // literals on the right are the residual's there, whichever cube
-    // it came with, so the right's residuals of such cubes, which the
-    // left's cover, are passed over. Which kind a residual is depends
-    // on the node alone, so it is sorted out once per class, not per
-    // pair. A residual its cube made left out that cube's literals
-    // under the child it comes from, and the literals on the other side
-    // follow or precede them: whether some do is a look at the literal
-    // next to them, and the range of a left one's on the right a
-    // search of that side alone, not of the whole cube; ranges kept per
-    // cube and node mostly missed.
-    {
-        let t_hi = spans[t.idx()].1;
+impl Pairs {
+    /// Each residual of one side whose cube has no literal on the other
+    /// passes up as it is. One of the left whose cube has literals on
+    /// the right stays where the right's representative makes those all
+    /// hold, with them taken out, where some remain. Its cube's
+    /// literals on the right are the residual's there, whichever cube
+    /// it came with, so the right's residuals of such cubes, which the
+    /// left's cover, are passed over. Which kind a residual is depends
+    /// on the node alone, so it is sorted out once per class, not per
+    /// pair. A residual its cube made left out that cube's literals
+    /// under the child it comes from, and the literals on the other side
+    /// follow or precede them: whether some do is a look at the literal
+    /// next to them, and the range of a left one's on the right a
+    /// search of that side alone, not of the whole cube; ranges kept per
+    /// cube and node mostly missed.
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "each argument is one of the node's tables or children"
+    )]
+    fn split_residuals(
+        &mut self,
+        res: &mut Residuals,
+        cubes: &Cubes,
+        t: VtreeIdx,
+        (t_lo, t_hi): (u32, u32),
+        right_lo: u32,
+        left: &Level,
+        right: &Level,
+    ) {
+        let Self {
+            span_of,
+            pass,
+            branches,
+            left_split,
+            right_split,
+            ..
+        } = self;
         // The range of cube `c`'s literals under the node and where
         // those on the right begin, for a residual another cube made:
         // a search of the whole cube, kept for the cube's next.
@@ -1586,6 +1563,56 @@ fn join(
             right_split.push((p0, pass.len()));
         }
     }
+}
+
+/// The pairs of `left`'s classes with `right`'s at `t`, whose children
+/// are `l` and `r`, on `pairs.emitted`, each with the number of the class
+/// of `level` it makes: a class new to `level` is added to it, looked up
+/// in `keys`, which holds `level`'s classes. `left` and `right` are
+/// levels of `l` and `r` whose classes keep their values from the
+/// children's first leaves. Returns the work spent.
+fn join(
+    shape: &Shape,
+    res: &mut Residuals,
+    forcing: &mut Forcing,
+    pairs: &mut Pairs,
+    (t, l, r): (VtreeIdx, VtreeIdx, VtreeIdx),
+    (left, right): (&Level, &Level),
+    (level, keys): (&mut Level, &mut Keys),
+) -> u64 {
+    let mut work = 0;
+    let Shape {
+        spans,
+        cubes,
+        group_lca,
+        exact_at,
+        kept,
+    } = *shape;
+    let right_lo = spans[r.idx()].0;
+    // A class made here keeps its values up to the node's last leaf a node
+    // above may read: those of the left's leaves its left class keeps, and
+    // where it keeps a leaf on the right, clear bits up to the right's
+    // first and those of the right's leaves it keeps, which its right
+    // class keeps too ([`kept_bits`]).
+    let bits = kept[t.idx()] as usize;
+    let (left_bits, right_at) = (
+        bits.min(kept[l.idx()] as usize),
+        (right_lo - spans[l.idx()].0) as usize,
+    );
+    let right_bits = bits.saturating_sub(right_at);
+    let t_lo = spans[t.idx()].0;
+    pairs.split_residuals(res, cubes, t, spans[t.idx()], right_lo, left, right);
+    let Pairs {
+        fresh,
+        ones,
+        pass,
+        branches,
+        left_split,
+        right_split,
+        emitted,
+        alone_of,
+        ..
+    } = pairs;
     let exact = exact_at.of(t.idx());
     // A pair whose right class passes no residual up and sets no group,
     // and where no cube of the left class's residuals with literals on

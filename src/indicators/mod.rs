@@ -400,6 +400,21 @@ impl<'a> Reads<'a> {
         s != usize::MAX && !self.bit_atoms[s].is_empty()
     }
 
+    /// The bit atoms of `head`'s set that `head`'s code sets: none where
+    /// `head` is in no set read in binary.
+    fn head_bits(&self, head: AtomId) -> impl Iterator<Item = AtomId> + '_ {
+        let bits = if self.coded(head) {
+            &self.bit_atoms[self.set_of[head as usize]]
+        } else {
+            &[][..]
+        };
+        let code = self.place[head as usize] as usize + 1;
+        bits.iter()
+            .enumerate()
+            .filter(move |&(j, _)| code >> j & 1 == 1)
+            .map(|(_, &b)| b)
+    }
+
     /// The set, unit and part reading `b` in binary for rule `ri`, if one
     /// does: none where `b`'s set has no bits, as most have, told before
     /// the rule is read.
@@ -694,17 +709,8 @@ impl Bodies {
                         let vars = bit_copies
                             .entry(key)
                             .or_insert_with(|| copies.of_bits(&reads.bit_atoms[s], u, p));
-                        for (j, &var) in vars.iter().enumerate() {
-                            keep_new(
-                                &mut body,
-                                &mut kept_for,
-                                written,
-                                if code >> j & 1 == 1 {
-                                    GLit::Pos(var)
-                                } else {
-                                    GLit::Neg(var)
-                                },
-                            );
+                        for l in code_lits(vars, code) {
+                            keep_new(&mut body, &mut kept_for, written, l);
                         }
                         continue;
                     }
@@ -789,16 +795,8 @@ fn add_bit_rules(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, bit_row
     let first_bit = reads.first_bit;
     let mut rows_of_bit: Vec<Vec<usize>> = vec![Vec::new(); copies.first - first_bit];
     for (ri, r) in reads.original.rules.iter().enumerate() {
-        if reads.coded(r.head) {
-            let code = reads.place[r.head as usize] as usize + 1;
-            for (j, &b) in reads.bit_atoms[reads.set_of[r.head as usize]]
-                .iter()
-                .enumerate()
-            {
-                if code >> j & 1 == 1 {
-                    rows_of_bit[b as usize - first_bit].push(ri);
-                }
-            }
+        for b in reads.head_bits(r.head) {
+            rows_of_bit[b as usize - first_bit].push(ri);
         }
     }
     let code: Vec<bool> = (0..gp.atoms.len())
@@ -816,25 +814,15 @@ fn add_bit_rules(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, bit_row
         .collect();
     let mut next = vec![0usize; rows_of_bit.len()];
     for (ri, bit_body) in bit_rows.iter().enumerate() {
-        let head = gp.rules[ri].head;
-        if !reads.coded(head) {
-            continue;
-        }
-        let code = reads.place[head as usize] as usize + 1;
-        for (j, &b) in reads.bit_atoms[reads.set_of[head as usize]]
-            .iter()
-            .enumerate()
-        {
-            if code >> j & 1 == 1 {
-                let i = b as usize - first_bit;
-                let k = next[i];
-                next[i] += 1;
-                match &mut merged[i] {
-                    None => gp.rules.push(GroundRule::new(b, bit_body.clone())),
-                    Some(at) => gp
-                        .rules
-                        .extend(at[k].take().map(|body| GroundRule::new(b, body))),
-                }
+        for b in reads.head_bits(gp.rules[ri].head) {
+            let i = b as usize - first_bit;
+            let k = next[i];
+            next[i] += 1;
+            match &mut merged[i] {
+                None => gp.rules.push(GroundRule::new(b, bit_body.clone())),
+                Some(at) => gp
+                    .rules
+                    .extend(at[k].take().map(|body| GroundRule::new(b, body))),
             }
         }
     }
@@ -1240,22 +1228,17 @@ fn drop_unread_values(gp: &mut GroundProgram, reads: &Reads, copies: &Copies) {
         };
         for (i, &k) in exclusive[s].iter().enumerate() {
             if named[k as usize] && !read[k as usize] {
-                let code = i + 1;
-                let body = vars
-                    .iter()
-                    .enumerate()
-                    .map(|(j, &v)| {
-                        if code >> j & 1 == 1 {
-                            GLit::Pos(v)
-                        } else {
-                            GLit::Neg(v)
-                        }
-                    })
-                    .collect();
+                let body = code_lits(vars, i + 1).collect();
                 gp.rules.push(GroundRule::new(k, body));
             }
         }
     }
+}
+
+fn code_lits(vars: &[AtomId], code: usize) -> impl Iterator<Item = GLit> + '_ {
+    vars.iter()
+        .enumerate()
+        .map(move |(j, &v)| GLit::new(v, code >> j & 1 == 1))
 }
 
 /// A bit's rules, where two differ in the sign of one literal of the code

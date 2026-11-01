@@ -56,6 +56,25 @@ pub(super) fn facts_at_first_use(
     order
 }
 
+/// The deduplicated undirected edges `(u, v)` with `u < v` of `cliques`.
+pub(super) fn edges_of_cliques(cliques: &[Vec<usize>]) -> Vec<(usize, usize)> {
+    let mut seen = FxHashSet::default();
+    let mut edges = Vec::new();
+    for clique in cliques {
+        for (i, &u) in clique.iter().enumerate() {
+            for &v in &clique[i + 1..] {
+                if u != v {
+                    let e = (u.min(v), u.max(v));
+                    if seen.insert(e) {
+                        edges.push(e);
+                    }
+                }
+            }
+        }
+    }
+    edges
+}
+
 /// The interaction graph of the ground program: one vertex per atom — facts
 /// and derived alike — and, for every rule, a clique over its head and the
 /// atoms of its body, each of the rules a rule of pairs stands for in
@@ -71,31 +90,26 @@ pub(super) fn facts_at_first_use(
 /// as an atom observed true or read by another rule does. A noisy-or
 /// finding observed absent so stops coupling its causes.
 pub(crate) fn interaction_edges(gp: &GroundProgram) -> Vec<(u32, u32)> {
-    let mut seen = FxHashSet::default();
-    let mut edges = Vec::new();
-    let mut clique: Vec<AtomId> = Vec::new();
     let alone = observed_false_alone(gp);
-    for (head, body) in gp
+    let cliques: Vec<Vec<usize>> = gp
         .rules
         .iter()
         .flat_map(|r| r.bodies().map(|body| (r.head, body)))
-    {
-        clique.clear();
-        if !alone[head as usize] {
-            clique.push(head);
-        }
-        clique.extend(body.iter().map(|l| l.atom()));
-        clique.sort_unstable();
-        clique.dedup();
-        for (i, &u) in clique.iter().enumerate() {
-            for &v in &clique[i + 1..] {
-                if seen.insert((u, v)) {
-                    edges.push((u, v));
-                }
-            }
-        }
-    }
-    edges
+        .map(|(head, body)| {
+            let mut clique: Vec<usize> = (!alone[head as usize])
+                .then_some(head as usize)
+                .into_iter()
+                .chain(body.iter().map(|l| l.atom() as usize))
+                .collect();
+            clique.sort_unstable();
+            clique.dedup();
+            clique
+        })
+        .collect();
+    edges_of_cliques(&cliques)
+        .into_iter()
+        .map(|(u, v)| (u as u32, v as u32))
+        .collect()
 }
 
 /// The common neighbours of `a` and `b`, read off the smaller of their sets.

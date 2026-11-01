@@ -14,11 +14,12 @@ use crate::multisets::Multisets;
 use super::cost::{Interfaces, Open, Scope, Weighed};
 use super::forest::Forest;
 use super::graph::{
-    ELIMINATION_BUDGET_UNITS, Elimination, anneal_budget, annealed, eliminated_in_order,
-    elimination_budget, facts_by_use, min_fill_cliques, minor_min_width, weighted_min_fill,
+    ELIMINATION_BUDGET_UNITS, Elimination, anneal_budget, annealed, edges_of_cliques,
+    eliminated_in_order, elimination_budget, facts_by_use, min_fill_cliques, minor_min_width,
+    weighted_min_fill,
 };
 use super::nest::{AtomMarks, NestScratch, Rows, nest};
-use super::td::{metered, portfolio_to_bound, scaled_budget_units};
+use super::td::{metered, portfolio_to_bound, root_bags, scaled_budget_units};
 use super::{Estimate, TD_SEED};
 
 /// The min-fill width from which `families` searches for a narrower
@@ -1916,19 +1917,7 @@ impl Items {
                 cliques.push(vec![b, self.branches[g].get(k + 1).copied().unwrap_or(g)]);
             }
         }
-        let mut seen_edge = FxHashSet::default();
-        let mut edges = Vec::new();
-        for clique in &cliques {
-            for (i, &u) in clique.iter().enumerate() {
-                for &v in &clique[i + 1..] {
-                    let e = (u.min(v), u.max(v));
-                    if seen_edge.insert(e) {
-                        edges.push(e);
-                    }
-                }
-            }
-        }
-        edges
+        edges_of_cliques(&cliques)
     }
 
     /// The numberings of the items decomposed: the groups in their order and
@@ -2037,29 +2026,7 @@ impl<'a> Layouts<'a> {
         let items = self.items;
         let num_items = items.block.len();
         let bags = td.bags();
-        let adjacency = td.adjacency();
-        let mut parent_bag = vec![usize::MAX; bags.len()];
-        let mut preorder = Vec::with_capacity(bags.len());
-        let mut visited = vec![false; bags.len()];
-        let mut tops = Vec::new();
-        for start in 0..bags.len() {
-            if visited[start] {
-                continue;
-            }
-            visited[start] = true;
-            tops.push(start);
-            let mut stack = vec![start];
-            while let Some(b) = stack.pop() {
-                preorder.push(b);
-                for &c in &adjacency[b] {
-                    if !visited[c] {
-                        visited[c] = true;
-                        parent_bag[c] = b;
-                        stack.push(c);
-                    }
-                }
-            }
-        }
+        let (_, preorder, tops, children) = root_bags(td, 0);
         let mut blocks_at: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
         let mut placed_item = vec![false; num_items];
         for &b in &preorder {
@@ -2074,12 +2041,6 @@ impl<'a> Layouts<'a> {
                     placed_item[i] = true;
                     blocks_at[b].push(i);
                 }
-            }
-        }
-        let mut children: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
-        for &b in &preorder {
-            if parent_bag[b] != usize::MAX {
-                children[parent_bag[b]].push(b);
             }
         }
         let mut subtree: Vec<Option<(usize, Open)>> = vec![None; bags.len()];

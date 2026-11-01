@@ -631,7 +631,7 @@ pub(super) fn decision_forest(
     // Per node, where it went in the forest, if any of its facts is `gp`'s.
     let mut at: Vec<Option<usize>> = Vec::with_capacity(decisions.nodes.len());
     for (i, n) in decisions.nodes.iter().enumerate() {
-        let mut here =
+        let here =
             match n {
                 DecisionNode::Leaf(name) => by_name
                     .get(name)
@@ -647,14 +647,14 @@ pub(super) fn decision_forest(
             };
         // The names outermost, the facts placed here below them.
         let names = above.get(i).into_iter().flatten();
-        for &v in names.chain(homes.get(i).into_iter().flatten()).rev() {
-            placed[v as usize] = true;
-            let leaf = forest.leaf(v);
-            here = Some(match here {
-                Some(h) => forest.join(leaf, h),
-                None => leaf,
-            });
-        }
+        let here = forest.spine_up(
+            names
+                .chain(homes.get(i).into_iter().flatten())
+                .rev()
+                .inspect(|&&v| placed[v as usize] = true)
+                .copied(),
+            here,
+        );
         at.push(here);
     }
     let root = at.last().copied().flatten();
@@ -670,15 +670,9 @@ pub(super) fn decision_forest(
     rest.sort_unstable_by_key(|&a| met[a as usize]);
     // `(root (r1 (r2 ...)))`, built from its innermost join out, the first
     // fact placed innermost (read first).
-    let mut spine = None;
-    for &a in &rest {
-        let leaf = forest.leaf(a);
-        spine = Some(match spine {
-            Some(s) => forest.join(leaf, s),
-            None => leaf,
-        });
-    }
-    let spine = spine.expect("some rest");
+    let spine = forest
+        .spine_up(rest.iter().copied(), None)
+        .expect("some rest");
     let root = match root {
         Some(root) => forest.join(root, spine),
         None => spine,

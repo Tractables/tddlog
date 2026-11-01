@@ -180,8 +180,8 @@ use tididi::{OperationError, Tdd};
 use super::sum_out::SumOut;
 use super::{Formula, QuerySizes, Scopes};
 use crate::ground::AtomId;
-use crate::tp::backend::FullSchedule;
-use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend};
+use crate::tp::backend::{FullSchedule, Part};
+use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend, VtreeScope};
 
 /// The evidence phase puts a node's smaller items off while they total under
 /// 1/PUT_OFF_BELOW of its largest (see the module doc).
@@ -1220,29 +1220,7 @@ impl EvidenceWalk {
                     && self.last_joins.contains(&out)))
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
-        let (_, sa) = self.slots[a].as_ref().unwrap();
-        let (_, sb) = self.slots[b].as_ref().unwrap();
-        let shared = self.shared.get(&out).filter(|_| !sa.same(sb));
-        // Both are ascending and distinct: merged, not sorted, and each
-        // operand's renaming onto the union read off the merge.
-        let merged = !sa.same(sb)
-            && shared.is_none()
-            && match (sa.vars(), sb.vars()) {
-                (Some(x), Some(y)) => {
-                    self.union.merge(x, y);
-                    true
-                }
-                _ => false,
-            };
-        let scope = if sa.same(sb) {
-            sa.clone()
-        } else if let Some(vars) = shared {
-            scopes.over(vars)?
-        } else if merged {
-            scopes.over(&self.union.vars)?
-        } else {
-            backend.global()
-        };
+        let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
         let (first, second) = match merged {
             true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
             false => (None, None),
@@ -1316,8 +1294,7 @@ impl EvidenceWalk {
                 // Past the cap: the operands go into the batch's target, or
                 // wait on the join's scope.
                 let (_, fa, fb) = *refused;
-                self.slots[a] = Some(fa.owned(backend)?);
-                self.slots[b] = Some(fb.owned(backend)?);
+                self.restore_operands(a, b, fa, fb, backend)?;
                 backend.kept();
                 if let Some(id) = batch {
                     self.unbatch(id);
@@ -1331,8 +1308,7 @@ impl EvidenceWalk {
             }
             Err(refused) => {
                 let (e, fa, fb) = *refused;
-                self.slots[a] = Some(fa.owned(backend)?);
-                self.slots[b] = Some(fb.owned(backend)?);
+                self.restore_operands(a, b, fa, fb, backend)?;
                 return Err(e);
             }
         };
@@ -1344,6 +1320,53 @@ impl EvidenceWalk {
         self.slots[b] = None;
         backend.kept();
         Ok(true)
+    }
+
+    fn join_scope(
+        &mut self,
+        a: usize,
+        b: usize,
+        out: usize,
+        backend: &TddBackend,
+        scopes: &Scopes,
+    ) -> Result<(VtreeScope, bool), CompileError> {
+        let (_, sa) = self.slots[a].as_ref().unwrap();
+        let (_, sb) = self.slots[b].as_ref().unwrap();
+        let shared = self.shared.get(&out).filter(|_| !sa.same(sb));
+        // Both are ascending and distinct: merged, not sorted, and each
+        // operand's renaming onto the union read off the merge.
+        let merged = !sa.same(sb)
+            && shared.is_none()
+            && match (sa.vars(), sb.vars()) {
+                (Some(x), Some(y)) => {
+                    self.union.merge(x, y);
+                    true
+                }
+                _ => false,
+            };
+        let scope = if sa.same(sb) {
+            sa.clone()
+        } else if let Some(vars) = shared {
+            scopes.over(vars)?
+        } else if merged {
+            scopes.over(&self.union.vars)?
+        } else {
+            backend.global()
+        };
+        Ok((scope, merged))
+    }
+
+    fn restore_operands(
+        &mut self,
+        a: usize,
+        b: usize,
+        fa: Part,
+        fb: Part,
+        backend: &TddBackend,
+    ) -> Result<(), CompileError> {
+        self.slots[a] = Some(fa.owned(backend)?);
+        self.slots[b] = Some(fb.owned(backend)?);
+        Ok(())
     }
 
     /// Reduces the pending result of the front join, of slots `a` and `b`,
@@ -1474,30 +1497,7 @@ impl EvidenceWalk {
         let rest = items.iter().map(|&(_, z)| z).sum::<usize>() - size
             + put_off.iter().map(|&(_, z, _)| z).sum::<usize>();
         if node != tree.root() && self.puts_off(rest, items[largest].0) {
-            let (main, _) = items.remove(largest);
-            let mut groups = Vec::new();
-            for &group in put_off.iter().flat_map(|(_, _, groups)| groups) {
-                push_group(&mut groups, group);
-            }
-            push_group(
-                &mut groups,
-                Group {
-                    len: items.len(),
-                    pairs: items.iter().map(|&(_, z)| z).sum(),
-                },
-            );
-            let mut rest_factors = VecDeque::new();
-            for (factors, _, _) in put_off {
-                rest_factors = concat(rest_factors, factors);
-            }
-            rest_factors.extend(items.into_iter().map(|(f, _)| f));
-            self.put_offs += usize::from(!rest_factors.is_empty());
-            self.built[node.idx()] = Some(Built {
-                main,
-                put_off: rest_factors,
-                put_off_size: rest,
-                groups,
-            });
+            self.pass_up(node, largest, rest, items, put_off);
             return;
         }
         // Below the root, the node's own factors are conjoined with the largest
@@ -1569,6 +1569,40 @@ impl EvidenceWalk {
             put_off: VecDeque::new(),
             put_off_size: 0,
             groups: Vec::new(),
+        });
+    }
+
+    fn pass_up(
+        &mut self,
+        node: VtreeIdx,
+        largest: usize,
+        rest: usize,
+        mut items: Vec<(usize, usize)>,
+        put_off: Vec<(VecDeque<usize>, usize, Vec<Group>)>,
+    ) {
+        let (main, _) = items.remove(largest);
+        let mut groups = Vec::new();
+        for &group in put_off.iter().flat_map(|(_, _, groups)| groups) {
+            push_group(&mut groups, group);
+        }
+        push_group(
+            &mut groups,
+            Group {
+                len: items.len(),
+                pairs: items.iter().map(|&(_, z)| z).sum(),
+            },
+        );
+        let mut rest_factors = VecDeque::new();
+        for (factors, _, _) in put_off {
+            rest_factors = concat(rest_factors, factors);
+        }
+        rest_factors.extend(items.into_iter().map(|(f, _)| f));
+        self.put_offs += usize::from(!rest_factors.is_empty());
+        self.built[node.idx()] = Some(Built {
+            main,
+            put_off: rest_factors,
+            put_off_size: rest,
+            groups,
         });
     }
 }

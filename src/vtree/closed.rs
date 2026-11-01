@@ -133,14 +133,9 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
             acc = None;
             new = all;
         }
-        for &f in &new {
-            let leaf = forest.leaf(f);
-            acc = Some(match acc {
-                None => leaf,
-                Some(rest) => forest.join(leaf, rest),
-            });
-        }
-        let Some(acc) = acc else { continue };
+        let Some(acc) = forest.spine_up(new.iter().copied(), acc) else {
+            continue;
+        };
         if reads.len() > 1 && !pairing {
             joins += 1;
             widest = widest.max(reads.len());

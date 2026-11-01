@@ -272,10 +272,10 @@ impl Solver {
         out
     }
 
-    /// Looks for a model in which `assumptions` hold, within
-    /// `conflict_limit` conflicts and the solver's limit on propagation
-    /// steps.
-    pub(in crate::ground) fn solve(&mut self, assumptions: &[Lit], conflict_limit: u64) -> Outcome {
+    /// Backtracks to the prefix of `assumptions` shared with the last call
+    /// when [`Solver::keep_assumptions`] is set, and propagates level zero.
+    /// `None` once level zero is unsatisfiable.
+    fn enter_assumptions(&mut self, assumptions: &[Lit]) -> Option<usize> {
         // The levels kept were propagated when the last call returned.
         let shared = if self.keep_assumptions {
             self.held
@@ -288,10 +288,27 @@ impl Solver {
         };
         self.cancel_until(shared);
         if !self.ok {
-            return Outcome::Unsat;
+            return None;
         }
         if self.decision_level() == 0 && self.propagate().is_some() {
             self.ok = false;
+            return None;
+        }
+        Some(shared)
+    }
+
+    /// Records the assumptions of levels `1..=k` still on the trail.
+    fn finish_assumptions(&mut self, assumptions: &[Lit]) {
+        let k = self.decision_level().min(assumptions.len());
+        self.held.clear();
+        self.held.extend_from_slice(&assumptions[..k]);
+    }
+
+    /// Looks for a model in which `assumptions` hold, within
+    /// `conflict_limit` conflicts and the solver's limit on propagation
+    /// steps.
+    pub(in crate::ground) fn solve(&mut self, assumptions: &[Lit], conflict_limit: u64) -> Outcome {
+        if self.enter_assumptions(assumptions).is_none() {
             return Outcome::Unsat;
         }
         if self.max_learnts == 0.0 {
@@ -303,10 +320,7 @@ impl Solver {
             self.restarts += 1;
             match self.search(assumptions, budget, until) {
                 Some(outcome) => {
-                    // Levels `1..=k` hold the first `k` assumptions.
-                    let k = self.decision_level().min(assumptions.len());
-                    self.held.clear();
-                    self.held.extend_from_slice(&assumptions[..k]);
+                    self.finish_assumptions(assumptions);
                     return outcome;
                 }
                 None => {
@@ -330,21 +344,7 @@ impl Solver {
     /// caller asks ([`Solver::keep_assumptions`]), and leaves those of the
     /// assumptions it propagated without a conflict.
     pub(in crate::ground) fn propagation_refutes(&mut self, assumptions: &[Lit]) -> bool {
-        let shared = if self.keep_assumptions {
-            self.held
-                .iter()
-                .zip(assumptions)
-                .take_while(|(a, b)| a == b)
-                .count()
-        } else {
-            0
-        };
-        self.cancel_until(shared);
-        if !self.ok {
-            return true;
-        }
-        if self.decision_level() == 0 && self.propagate().is_some() {
-            self.ok = false;
+        if self.enter_assumptions(assumptions).is_none() {
             return true;
         }
         let mut refuted = false;
@@ -367,9 +367,7 @@ impl Solver {
                 }
             }
         }
-        let k = self.decision_level().min(assumptions.len());
-        self.held.clear();
-        self.held.extend_from_slice(&assumptions[..k]);
+        self.finish_assumptions(assumptions);
         refuted
     }
 

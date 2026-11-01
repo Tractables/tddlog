@@ -823,32 +823,7 @@ impl Demand<'_> {
                 _ => None,
             };
             if let Some(a) = body_atom {
-                if self.derived(a) {
-                    let sub = self.adorn(a, &bound_so_far);
-                    let args = bound_args(a, &sub);
-                    let kept = bearing(&rule.body, &prefix, &args, &bound);
-                    let mut body = Vec::with_capacity(1 + kept.len());
-                    body.push(guard.clone());
-                    body.extend(kept.iter().map(|&j| rule.body[j].clone()));
-                    let demand = magic_atom(a, &sub);
-                    if !unread.is_empty() {
-                        let all: Vec<usize> = prefix.iter().chain(&unread).copied().collect();
-                        for j in bearing(&rule.body, &all, &args, &bound) {
-                            if let Literal::Neg(n) = &rule.body[j]
-                                && unread.contains(&j)
-                            {
-                                w.unread.push((
-                                    (demand.name.clone(), demand.args.len()),
-                                    (n.name.clone(), n.args.len()),
-                                ));
-                            }
-                        }
-                    }
-                    w.out.rules.push(Clause::rule(demand, body, u32::MAX));
-                    w.work.push((a.clone(), sub));
-                } else if self.given.contains(&a.signature()) {
-                    w.work.push((a.clone(), Vec::new()));
-                }
+                self.emit_body_demand(rule, a, &bound_so_far, &prefix, &unread, &bound, &guard, w);
             }
             // Positive literals and deterministic filters join the prefix,
             // and so do negations of given predicates, whose atoms are all
@@ -884,6 +859,49 @@ impl Demand<'_> {
             group: rule.group,
         });
         Some(())
+    }
+
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "each argument is one slice or set of the rule's schedule"
+    )]
+    fn emit_body_demand(
+        &self,
+        rule: &Clause,
+        a: &Atom,
+        bound_so_far: &FxHashSet<String>,
+        prefix: &[usize],
+        unread: &[usize],
+        bound: &FxHashSet<String>,
+        guard: &Literal,
+        w: &mut Written,
+    ) {
+        if self.derived(a) {
+            let sub = self.adorn(a, bound_so_far);
+            let args = bound_args(a, &sub);
+            let kept = bearing(&rule.body, prefix, &args, bound);
+            let mut body = Vec::with_capacity(1 + kept.len());
+            body.push(guard.clone());
+            body.extend(kept.iter().map(|&j| rule.body[j].clone()));
+            let demand = magic_atom(a, &sub);
+            if !unread.is_empty() {
+                let all: Vec<usize> = prefix.iter().chain(unread).copied().collect();
+                for j in bearing(&rule.body, &all, &args, bound) {
+                    if let Literal::Neg(n) = &rule.body[j]
+                        && unread.contains(&j)
+                    {
+                        w.unread.push((
+                            (demand.name.clone(), demand.args.len()),
+                            (n.name.clone(), n.args.len()),
+                        ));
+                    }
+                }
+            }
+            w.out.rules.push(Clause::rule(demand, body, u32::MAX));
+            w.work.push((a.clone(), sub));
+        } else if self.given.contains(&a.signature()) {
+            w.work.push((a.clone(), Vec::new()));
+        }
     }
 }
 

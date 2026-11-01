@@ -896,54 +896,11 @@ impl<'a> Pass<'a> {
                     (j, n0) = (0, f.extra.len());
                     continue;
                 }
-                let BodyLit { lit, fact, cover } = self.body[start + j];
-                let ok = if fact {
-                    f.insert(lit)
+                let b = self.body[start + j];
+                let ok = if b.fact {
+                    f.insert(b.lit)
                 } else {
-                    let (inner, outer) = (cover.parts(&f.base), cover.parts(&f.extra));
-                    let n = inner.len() + outer.len();
-                    if f.values[j].part == n {
-                        // Read under this part before ([`Read`]).
-                        self.copied += n;
-                        true
-                    } else {
-                        let v = match given.take() {
-                            Some(v) => {
-                                self.copied += n;
-                                v
-                            }
-                            None => {
-                                // A part as long as the cube, while the cube
-                                // is `cx`, is `cx`; one range of `cx` alone
-                                // is in the table of parts.
-                                let (known, cube) = match inner.joined() {
-                                    Some(inner) if outer.is_empty() => {
-                                        let known = if f.extra.is_empty() && n == f.base.len() {
-                                            f.cx
-                                        } else {
-                                            self.cubes.part(f.cx, inner.clone(), &f.base)
-                                        };
-                                        (Some(known), &f.base[inner])
-                                    }
-                                    _ => {
-                                        f.part.clear();
-                                        merge(&mut f.part, &f.base[inner.0], &f.extra[outer.0]);
-                                        merge(&mut f.part, &f.base[inner.1], &f.extra[outer.1]);
-                                        (None, &f.part[..])
-                                    }
-                                };
-                                match self.value(lit.atom(), cube, known) {
-                                    Ok(v) => v,
-                                    Err(need) => {
-                                        f.phase = Phase::Imply { j, n0 };
-                                        return Err(need);
-                                    }
-                                }
-                            }
-                        };
-                        f.values[j] = Read { val: v, part: n };
-                        self.imply(f, v, lit.is_positive())
-                    }
+                    self.read_derived_lit(f, j, n0, b, &mut given)?
                 };
                 self.spent += 1;
                 if !ok {
@@ -955,55 +912,114 @@ impl<'a> Pass<'a> {
                 f.next_rule();
                 continue;
             }
-            // The guards are the literals the rule added to `cx`.
-            f.body.clear();
-            f.body.extend_from_slice(&f.extra);
-            self.copied += f.base.len() + f.extra.len();
-            // A rule that adds no guard reads under `cx`: its cube grew by
-            // none of its atoms and clashed with none.
-            f.under = NONE;
-            if !f.body.is_empty() {
-                f.under = f.ends.len() as u32;
-                f.settled.extend_from_slice(&f.extra);
-                f.ends.push(f.settled.len());
-                f.guards.extend(f.body.iter().map(|l| (l.atom(), f.under)));
-            }
-            // The body: the guards, and the atoms of the output that the
-            // derived literals read. A fact literal is in the cube, and a
-            // derived one whose value is a fact literal put it there. The
-            // round that settled the cube read every derived one under it.
-            let mut clash = false;
-            for (j, b) in self.body[start..start + len].iter().enumerate() {
-                if !b.fact {
-                    let read = f.values[j];
-                    self.copied += read.part;
-                    match (read.val, b.lit.is_positive()) {
-                        (Val::True, false) | (Val::False, true) => {
-                            clash = true;
-                            break;
-                        }
-                        (Val::Atom(a), positive) => {
-                            f.reads.push((a, f.under));
-                            f.body
-                                .push(if positive { GLit::Pos(a) } else { GLit::Neg(a) })
-                        }
-                        _ => {}
-                    }
-                }
-                self.spent += 1;
-            }
-            if !clash {
-                let spare = f.spare.pop().unwrap_or_default();
-                let mut b = std::mem::replace(&mut f.body, spare);
-                b.sort_unstable();
-                b.dedup();
-                if b.is_empty() {
-                    return Ok(Val::True);
-                }
-                f.bodies.push(b);
+            if let Some(val) = self.build_rule_body(f, start, len) {
+                return Ok(val);
             }
             f.next_rule();
         }
+    }
+
+    fn read_derived_lit(
+        &mut self,
+        f: &mut Frame,
+        j: usize,
+        n0: usize,
+        BodyLit { lit, cover, .. }: BodyLit,
+        given: &mut Option<Val>,
+    ) -> Result<bool, Need> {
+        let (inner, outer) = (cover.parts(&f.base), cover.parts(&f.extra));
+        let n = inner.len() + outer.len();
+        if f.values[j].part == n {
+            // Read under this part before ([`Read`]).
+            self.copied += n;
+            return Ok(true);
+        }
+        let v = match given.take() {
+            Some(v) => {
+                self.copied += n;
+                v
+            }
+            None => {
+                // A part as long as the cube, while the cube is `cx`, is
+                // `cx`; one range of `cx` alone is in the table of parts.
+                let (known, cube) = match inner.joined() {
+                    Some(inner) if outer.is_empty() => {
+                        let known = if f.extra.is_empty() && n == f.base.len() {
+                            f.cx
+                        } else {
+                            self.cubes.part(f.cx, inner.clone(), &f.base)
+                        };
+                        (Some(known), &f.base[inner])
+                    }
+                    _ => {
+                        f.part.clear();
+                        merge(&mut f.part, &f.base[inner.0], &f.extra[outer.0]);
+                        merge(&mut f.part, &f.base[inner.1], &f.extra[outer.1]);
+                        (None, &f.part[..])
+                    }
+                };
+                match self.value(lit.atom(), cube, known) {
+                    Ok(v) => v,
+                    Err(need) => {
+                        f.phase = Phase::Imply { j, n0 };
+                        return Err(need);
+                    }
+                }
+            }
+        };
+        f.values[j] = Read { val: v, part: n };
+        Ok(self.imply(f, v, lit.is_positive()))
+    }
+
+    fn build_rule_body(&mut self, f: &mut Frame, start: usize, len: usize) -> Option<Val> {
+        // The guards are the literals the rule added to `cx`.
+        f.body.clear();
+        f.body.extend_from_slice(&f.extra);
+        self.copied += f.base.len() + f.extra.len();
+        // A rule that adds no guard reads under `cx`: its cube grew by
+        // none of its atoms and clashed with none.
+        f.under = NONE;
+        if !f.body.is_empty() {
+            f.under = f.ends.len() as u32;
+            f.settled.extend_from_slice(&f.extra);
+            f.ends.push(f.settled.len());
+            f.guards.extend(f.body.iter().map(|l| (l.atom(), f.under)));
+        }
+        // The body: the guards, and the atoms of the output that the
+        // derived literals read. A fact literal is in the cube, and a
+        // derived one whose value is a fact literal put it there. The
+        // round that settled the cube read every derived one under it.
+        let mut clash = false;
+        for (j, b) in self.body[start..start + len].iter().enumerate() {
+            if !b.fact {
+                let read = f.values[j];
+                self.copied += read.part;
+                match (read.val, b.lit.is_positive()) {
+                    (Val::True, false) | (Val::False, true) => {
+                        clash = true;
+                        break;
+                    }
+                    (Val::Atom(a), positive) => {
+                        f.reads.push((a, f.under));
+                        f.body
+                            .push(if positive { GLit::Pos(a) } else { GLit::Neg(a) })
+                    }
+                    _ => {}
+                }
+            }
+            self.spent += 1;
+        }
+        if !clash {
+            let spare = f.spare.pop().unwrap_or_default();
+            let mut b = std::mem::replace(&mut f.body, spare);
+            b.sort_unstable();
+            b.dedup();
+            if b.is_empty() {
+                return Some(Val::True);
+            }
+            f.bodies.push(b);
+        }
+        None
     }
 
     /// The value of a frame whose rules are all read: false without

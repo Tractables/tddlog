@@ -108,10 +108,14 @@ impl Forest {
         }
     }
 
-    /// `atoms` on a right-linear spine above `below`, the first topmost.
-    pub(super) fn spine(&mut self, atoms: &[AtomId], below: Option<usize>) -> Option<usize> {
+    /// `atoms` on a right-linear spine above `below`, the first deepest.
+    pub(super) fn spine_up(
+        &mut self,
+        atoms: impl IntoIterator<Item = AtomId>,
+        below: Option<usize>,
+    ) -> Option<usize> {
         let mut acc = below;
-        for &atom in atoms.iter().rev() {
+        for atom in atoms {
             let leaf = self.leaf(atom);
             acc = Some(match acc {
                 None => leaf,
@@ -119,6 +123,11 @@ impl Forest {
             });
         }
         acc
+    }
+
+    /// `atoms` on a right-linear spine above `below`, the first topmost.
+    pub(super) fn spine(&mut self, atoms: &[AtomId], below: Option<usize>) -> Option<usize> {
+        self.spine_up(atoms.iter().copied().rev(), below)
     }
 
     /// The finished vtree, carrying `VarId(i + 1)` on its `i`-th leaf from the

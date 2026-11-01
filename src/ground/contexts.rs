@@ -135,7 +135,7 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
             taken[ri] = true;
             rewrites.push((ri, k, probabilities[&gp.rules[ri].body[k].atom()]));
         }
-        for m in members(tables, t) {
+        for m in tables.members(t) {
             for &mr in &tables.by_head()[m as usize] {
                 drop_rules[mr] = true;
             }
@@ -159,31 +159,17 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
             gp.rules[ri].body[k] = GLit::Pos(f);
         }
     }
-    let mut i = 0;
-    gp.rules.retain(|_| {
-        i += 1;
-        !drop_rules[i - 1]
-    });
+    let mut dead = drop_rules.iter();
+    gp.rules.retain(|_| !*dead.next().unwrap());
     simplify::compact(gp);
     read
-}
-
-/// The atoms of table `t`: an exclusive set's, or the one atom of a table
-/// of one ([`Tables::of`]).
-fn members(tables: &Tables, t: usize) -> Vec<AtomId> {
-    let sets = tables.sets();
-    if t < sets.len() {
-        sets[t].clone()
-    } else {
-        vec![(t - sets.len()) as AtomId]
-    }
 }
 
 /// How many facts are table `t`'s own: what reading its atoms through
 /// facts of their own frees.
 fn own_facts(gp: &GroundProgram, tables: &Tables, t: usize) -> usize {
     let mut own: FxHashSet<AtomId> = FxHashSet::default();
-    for m in members(tables, t) {
+    for m in tables.members(t) {
         for &mr in &tables.by_head()[m as usize] {
             own.extend(gp.rules[mr].body.iter().map(|l| l.atom()));
         }
@@ -203,7 +189,7 @@ fn choice(
     named: &[bool],
 ) -> Option<rustc_hash::FxHashMap<AtomId, Prob>> {
     let mut probabilities = rustc_hash::FxHashMap::default();
-    for m in members(tables, t) {
+    for m in tables.members(t) {
         if named[m as usize] || gp.kinds[m as usize] != AtomKind::Derived {
             return None;
         }

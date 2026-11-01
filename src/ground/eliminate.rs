@@ -243,10 +243,10 @@ fn conjoin(a: &[GLit], b: &[GLit]) -> Option<Vec<GLit>> {
     (!contradicts).then_some(body)
 }
 
-/// Rewrites one linear recursive component, marking its rules dropped.
-/// Rewrites one component, unless its elimination would take more than
-/// `budget` label products, which it then lowers by the products taken.
-/// Returns whether it rewrote the component.
+/// Rewrites one linear recursive component, marking its rules dropped,
+/// unless its elimination would take more than `budget` label products,
+/// which it then lowers by the products taken. Returns whether it rewrote
+/// the component.
 fn eliminate(
     out: &mut Out,
     by_head: &RulesByHead,

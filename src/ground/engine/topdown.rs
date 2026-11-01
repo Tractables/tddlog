@@ -1657,12 +1657,7 @@ impl<'a> TopDown<'a> {
     /// An answer of table `t` from the instance of a clause of `group`
     /// just proved: the call's terms as bound, read with the body's
     /// `steps`.
-    fn answer(
-        &mut self,
-        t: u32,
-        group: u32,
-        steps: &[Step],
-    ) -> Result<(), GroundError> {
+    fn answer(&mut self, t: u32, group: u32, steps: &[Step]) -> Result<(), GroundError> {
         let p = self.tables[t as usize].pred;
         let call = self.frames.last().expect("a frame").call.clone();
         let args = self.full_all(&call)?;

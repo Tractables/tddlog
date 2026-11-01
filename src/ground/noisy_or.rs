@@ -134,6 +134,25 @@ impl Form {
     fn q(&self, dist: &[[f64; 2]], i: usize) -> f64 {
         dist[self.base ^ 1 << i][self.absent] / self.leak
     }
+
+    /// The active value of parent `k` (`0` or `1`) and its cause weight,
+    /// or `None` when parent `k` has `q >= 1.0`.
+    fn cause(&self, dist: &[[f64; 2]], k: usize) -> Option<(usize, Prob)> {
+        let q = self.q(dist, k);
+        if q >= 1.0 {
+            return None;
+        }
+        let flipped = self.base ^ 1 << k;
+        let w = if self.leak == 1.0 {
+            Prob {
+                p: dist[flipped][1 - self.absent],
+                not: dist[flipped][self.absent],
+            }
+        } else {
+            Prob { p: 1.0 - q, not: q }
+        };
+        Some((self.base >> k & 1 ^ 1, w))
+    }
 }
 
 /// A table of two values whose rows partition its parents' values and
@@ -469,20 +488,13 @@ fn write(
         ));
     }
     for (k, &p) in r.parents.iter().enumerate() {
-        let q = f.q(dist, k);
-        if q >= 1.0 {
+        let Some((active, w)) = f.cause(dist, k) else {
             continue;
-        }
-        let flipped = f.base ^ 1 << k;
-        let cause = if f.leak == 1.0 {
-            dist[flipped][1 - f.absent]
-        } else {
-            1.0 - q
         };
-        let active = of(p)[f.base >> k & 1 ^ 1].clone();
+        let active = of(p)[active].clone();
         out.push((
             Clause {
-                heads: head(cause),
+                heads: head(w.p),
                 body: vec![Literal::Pos(active)],
                 group: 0,
             },
@@ -677,20 +689,10 @@ pub(super) fn rows_as_noisy_ors(gp: &mut GroundProgram) -> usize {
             written.push(GroundRule::new(*x, vec![GLit::Pos(l)]));
         }
         for (k, &p) in parents.iter().enumerate() {
-            let q = f.q(dist, k);
-            if q >= 1.0 {
+            let Some((active, w)) = f.cause(dist, k) else {
                 continue;
-            }
-            let flipped = f.base ^ 1 << k;
-            let w = if f.leak == 1.0 {
-                Prob {
-                    p: dist[flipped][1],
-                    not: dist[flipped][0],
-                }
-            } else {
-                Prob { p: 1.0 - q, not: q }
             };
-            let active = GLit::new(p, f.base >> k & 1 == 0);
+            let active = GLit::new(p, active == 1);
             let body = if w.not == 0.0 {
                 vec![active]
             } else {

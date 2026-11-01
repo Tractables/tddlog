@@ -965,8 +965,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    inlined cost more work than the variable. A loop unrolled step by step
    names each step's intermediate values this way: the Dice paper's
    diamond, unrolled, keeps one atom a step of four. Written as recursion
-   over a step index, as the Dice reader writes Dice's `iterate`, they
-   are a recursive predicate's atoms and stay.
+   over a step index, as the Dice reader writes Dice's `iterate`, a
+   recursive predicate whose ground atoms are each read once positively is
+   inlined as a chain while its readers' bodies stay within `CHAIN_GROWTH`
+   times the longest body.
 
    Then **equal gates** (`aig::reduce`; `examples/equal_gates.pl`,
    `examples/equal_functions.pl`). The acyclic derived atoms with rules,
@@ -981,7 +983,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    often the program writes it (structural hashing). Alea.jl writes a
    gate again wherever its program computes a value again.
 
-   A gate alone in its predicate may also compute an earlier such gate's
+   A gate alone in its predicate or of a recursive predicate, and in no
+   exclusive set, may also compute an earlier such gate's
    function, or a fact's, by other structure, or the complement of one,
    or a constant. Those are found as an and-inverter graph package finds
    them (Mishchenko et al.'s fraiging): every node carries its values on
@@ -997,17 +1000,18 @@ are skipped. Several steps have a program in `examples/` that shows them.
    prove it goes on within its steps, past 16 words no longer simulating
    them. A proved gate is merged into the earlier one, read through a
    negated literal where it is the complement, or keeps an empty body or
-   none where it is constant; a later gate alone in its predicate built as
-   its node is merged the same way.
+   none where it is constant; a later gate alone in its predicate or of a
+   recursive predicate, and in no exclusive set, built as its node is
+   merged the same way.
 
    A body that then reads an atom both ways is dropped, and so is a rule
    its head already has. An atom a query or the evidence names is not
    merged away, nor a value of an exclusive set of a predicate with
    several atoms, a network variable's: merged into another variable's
-   value, it splits its variable. Only atoms alone in their predicates and
-   in no exclusive set of several atoms are merged into a complement, a
-   fact or a constant: merged into a switch fact or another value, a
-   table's values take the table's structure apart. The survivors keep
+   value, it splits its variable. Only atoms alone in their predicates or
+   of a recursive predicate, and in no exclusive set, are merged into a
+   complement, a fact or a constant: merged into a switch fact or another
+   value, a table's values take the table's structure apart. The survivors keep
    their rules, over the atoms merged into. A program conditioned on its
    guards (`decision`'s, finished again) is not merged: the conditioning
    put each gate under the decisions that select it, and which of two

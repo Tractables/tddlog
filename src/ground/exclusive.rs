@@ -47,22 +47,20 @@ use super::{AtomId, GLit, GroundProgram, RulesByHead};
 /// false, which compared with each other would be most of the run on a
 /// large one. Values that conditioning settles false beside one it settles
 /// true (`s(a)` beside `s(b)` in a test below) keep their sets.
-pub(super) fn exclusive_sets(
+fn lit_index(l: &GLit) -> usize {
+    2 * l.atom() as usize + usize::from(l.is_positive())
+}
+
+/// Each derived atom's predicate (`predicate_of`), the number of atoms in
+/// each predicate (`atoms_of`), how many rules read each literal (`readers`,
+/// capped at 2), and which multi-atom predicates have every atom observed
+/// false and unread (`silent`).
+fn predicate_exclusivity(
     gp: &GroundProgram,
-    by_head: &RulesByHead,
-    base_of: &[usize],
     sccs: &[Vec<AtomId>],
-) -> Found {
+) -> (Vec<usize>, Vec<usize>, Vec<u8>, Vec<bool>) {
     let n = gp.num_atoms();
-    // The atoms of each set, in the order they joined it ([`Chains`]),
-    // rather than a list per set: most atoms are alone in theirs.
-    let mut sets: Chains<AtomId> = Chains::default();
-    let mut set_of = vec![usize::MAX; n];
-    // Each atom's key, its class and the sets it reads, numbered.
-    let mut key_ids: Interned<usize> = Interned::with_capacity(0);
-    // The class of each atom: its predicate's index if the predicate has
-    // other atoms, `usize::MAX` if not. Each atom's predicate is looked up
-    // once, not again when its key is made.
+    // Each atom's predicate is looked up once, not again when its key is made.
     let mut predicates: FxHashMap<(&str, usize), usize> = FxHashMap::default();
     let mut predicate_of = vec![usize::MAX; n];
     let mut atoms_of: Vec<usize> = Vec::new();
@@ -77,6 +75,233 @@ pub(super) fn exclusive_sets(
         atoms_of[id] += 1;
         predicate_of[a as usize] = id;
     }
+    // How many rules read each literal, 2 standing for two or more.
+    let mut readers = vec![0u8; 2 * n];
+    for l in gp.rules.iter().flat_map(|r| &r.body) {
+        let idx = lit_index(l);
+        readers[idx] = (readers[idx] + 1).min(2);
+    }
+    // The predicates of several atoms each observed false and read by no
+    // rule, whose atoms are not compared.
+    let mut false_unread = vec![false; n];
+    for &(_, id, value) in &gp.evidence {
+        if let Some(x) = id
+            .filter(|&x| !value && readers[2 * x as usize] == 0 && readers[2 * x as usize + 1] == 0)
+        {
+            false_unread[x as usize] = true;
+        }
+    }
+    let mut silent: Vec<bool> = atoms_of.iter().map(|&k| k > 1).collect();
+    for &a in sccs.iter().flatten() {
+        silent[predicate_of[a as usize]] &= false_unread[a as usize];
+    }
+    (predicate_of, atoms_of, readers, silent)
+}
+
+#[derive(Default)]
+struct AtomScratch {
+    /// Buffers reused across atoms and rules: a body, the rest of it that
+    /// other rules can clash with, and what `rows_of` reads of each rule.
+    sorted: Vec<GLit>,
+    kept: Vec<GLit>,
+    rows: RowScratch,
+    /// Per atom: the sets it reads and its key, its rules' bodies that do
+    /// not clash with themselves, distinct, and those an earlier atom had.
+    read_sets: Vec<usize>,
+    /// The sets the atom at hand reads, each marked with the atom's stamp
+    /// as it is listed, so that it is listed once, without sorting the sets
+    /// of every literal of its rules. Atoms are numbered from zero, so an
+    /// atom's number plus one is a stamp fresh for each.
+    read_mark: Vec<usize>,
+    key: Vec<usize>,
+    rule_bodies: Vec<(usize, u32)>,
+    bodies: Vec<u32>,
+    shared: Vec<(usize, u32)>,
+    /// The bodies of the atom at hand that rule out a set of its key.
+    holding: Vec<u32>,
+    common_a: Vec<AtomId>,
+}
+
+/// Prepares atom `a`'s key, indexed rows, single-negated-atom requirement,
+/// and reusable body identifiers (`scratch.bodies`, `scratch.shared`,
+/// `scratch.holding`, `scratch.common_a`), returning `(key_id, rows_a,
+/// required, alone)`.
+fn seed_sets(
+    (gp, by_head, base_of): (&GroundProgram, &RulesByHead, &[usize]),
+    (a, class): (AtomId, usize),
+    (set_of, readers): (&[usize], &[u8]),
+    marks: &mut Marks,
+    (sigs, store): (&mut FxHashMap<Vec<usize>, u32>, &mut RowStore),
+    (key_ids, by_key, unlisted): (&mut Interned<usize>, &mut Chains<usize>, &mut Vec<bool>),
+    (body_ids, scratch): (&mut Bodies, &mut AtomScratch),
+) -> (usize, Option<Rows>, Option<AtomId>, bool) {
+    // The sets of the atoms it reads that came before it; an atom that
+    // reads none is compared with the atoms of its own unit only, the
+    // values of a table without parents.
+    let stamp = a as usize + 1;
+    scratch.read_sets.clear();
+    for l in by_head[a as usize]
+        .iter()
+        .flat_map(|&ri| gp.rules[ri].body.iter())
+    {
+        let i = set_of[l.atom() as usize];
+        if i != usize::MAX && scratch.read_mark[i] != stamp {
+            scratch.read_mark[i] = stamp;
+            scratch.read_sets.push(i);
+        }
+    }
+    scratch.read_sets.sort_unstable();
+    scratch.key.clear();
+    scratch.key.push(class);
+    if scratch.read_sets.is_empty() {
+        scratch.key.push(usize::MAX - base_of[a as usize]);
+    } else {
+        scratch.key.extend_from_slice(&scratch.read_sets);
+    }
+    let rows_a = rows_of(
+        gp,
+        &by_head[a as usize],
+        set_of,
+        &mut scratch.rows,
+        sigs,
+        store,
+    );
+    // A body that does not clash with itself, found in a rule of an
+    // atom of a set, keeps every atom with that body out of the set, so
+    // only the sets holding none of this atom's bodies are compared
+    // (dice_digitRecognition's observations are alone in their
+    // predicates and share one key, and would each be compared with all
+    // the sets before it). So does a body that does not clash with a
+    // rule of the set ([`Bodies::rule_out`]).
+    let known = body_ids.len();
+    // The atoms each rule of `a` reads positively, and a rule that is
+    // one negated atom, if there is one, read off each body as it is
+    // sorted to be numbered, not in a pass of their own.
+    let mut required: Option<AtomId> = None;
+    scratch.common_a.clear();
+    scratch.rule_bodies.clear();
+    for (k, &ri) in by_head[a as usize].iter().enumerate() {
+        // The rule's body sorted and distinct, as nearly every body
+        // is already, copied only where it is not.
+        let body: &[GLit] = if gp.rules[ri].body.is_sorted_by(|x, y| x < y) {
+            &gp.rules[ri].body
+        } else {
+            scratch.sorted.clear();
+            scratch.sorted.extend_from_slice(&gp.rules[ri].body);
+            scratch.sorted.sort_unstable();
+            scratch.sorted.dedup();
+            &scratch.sorted
+        };
+        if let [GLit::Neg(x)] = body[..] {
+            required.get_or_insert(x);
+        }
+        if k == 0 {
+            scratch
+                .common_a
+                .extend(body.iter().filter(|l| l.is_positive()).map(|l| l.atom()));
+            scratch.common_a.dedup();
+        } else {
+            scratch
+                .common_a
+                .retain(|&x| body.binary_search(&GLit::Pos(x)).is_ok());
+        }
+        // What another rule can clash with of the body: its literals
+        // but those of a fact that no other rule reads, which no set
+        // holds either. A rule clashes with another atom's rule where
+        // the rest of its body does, so two rules with the same rest
+        // stand for each other ([`Bodies`]). A choice read under
+        // exclusive contexts is read through a fact per context, read
+        // once: dice_caesar-iter's 3000 encoded letters, each alone in
+        // its predicate, have the same four rests, a value of the key
+        // each, and are not compared with each other.
+        let once = |l: &GLit| {
+            let x = l.atom() as usize;
+            readers[2 * x] + readers[2 * x + 1] == 1
+                && by_head[x].is_empty()
+                && set_of[x] == usize::MAX
+        };
+        let rest_of: &[GLit] = if body.iter().any(once) {
+            scratch.kept.clear();
+            scratch.kept.extend(body.iter().filter(|l| !once(l)));
+            &scratch.kept
+        } else {
+            body
+        };
+        // A body with a literal no other rule reads is not marked to
+        // tell whether it clashes with itself: on a network nearly
+        // every body is such. Nor is an empty rest, which would stand
+        // for every rule that reads only such facts.
+        if !rest_of.is_empty() && rest_of.iter().all(|l| readers[lit_index(l)] == 2) {
+            let clashes = marks.mark(rest_of, set_of);
+            marks.clear();
+            if !clashes {
+                scratch.rule_bodies.push((ri, body_ids.id(rest_of)));
+            }
+        }
+    }
+    scratch.bodies.clear();
+    scratch
+        .bodies
+        .extend(scratch.rule_bodies.iter().map(|&(_, b)| b));
+    scratch.bodies.sort_unstable();
+    scratch.bodies.dedup();
+    // The bodies of `a` that an earlier atom had, one rule each: those
+    // a later atom may have too.
+    scratch.shared.clear();
+    scratch.shared.extend(
+        scratch
+            .rule_bodies
+            .iter()
+            .copied()
+            .filter(|&(_, b)| (b as usize) < known),
+    );
+    scratch.shared.sort_unstable_by_key(|&(_, b)| b);
+    scratch.shared.dedup_by_key(|&mut (_, b)| b);
+    let key_id = key_ids.id(&scratch.key).0 as usize;
+    if by_key.len() <= key_id {
+        by_key.add();
+        unlisted.push(false);
+    }
+    // A body that rules out every set of the key leaves `a` a set of
+    // its own: dice_digitRecognition's observations of the digits 1
+    // to 9 each have a rule `y(0)`, which every set of the key holds or
+    // does not clash with.
+    let alone = scratch
+        .bodies
+        .iter()
+        .any(|&b| body_ids.rules_out_all(b, key_id, by_key.len_of(key_id)));
+    // Each set that comes up is asked whether it holds one of the
+    // bodies of `a` that rule out a set of the key, rather than every
+    // set holding one marked first: each leaf's adder of bb_wmi_star
+    // has the bits of the centre for bodies, and its atoms of one key
+    // marked the sets of every leaf before them.
+    scratch.holding.clear();
+    scratch.holding.extend(
+        scratch
+            .bodies
+            .iter()
+            .copied()
+            .filter(|&b| body_ids.rules_out_some(b, key_id)),
+    );
+    (key_id, rows_a, required, alone)
+}
+
+pub(super) fn exclusive_sets(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    base_of: &[usize],
+    sccs: &[Vec<AtomId>],
+) -> Found {
+    let n = gp.num_atoms();
+    // The atoms of each set, in the order they joined it ([`Chains`]),
+    // rather than a list per set: most atoms are alone in theirs.
+    let mut sets: Chains<AtomId> = Chains::default();
+    let mut set_of = vec![usize::MAX; n];
+    // Each atom's key, its class and the sets it reads, numbered.
+    let mut key_ids: Interned<usize> = Interned::with_capacity(0);
+    // The class of each atom: its predicate's index if the predicate has
+    // other atoms, `usize::MAX` if not.
+    let (predicate_of, atoms_of, readers, silent) = predicate_exclusivity(gp, sccs);
     let class = |a: AtomId| match predicate_of[a as usize] {
         id if atoms_of[id] > 1 => id,
         _ => usize::MAX,
@@ -117,48 +342,13 @@ pub(super) fn exclusive_sets(
     // switch of its row, so few bodies are hashed and copied to be
     // numbered.
     let mut body_ids = Bodies::with_capacity(gp.rules.len());
-    // How many rules read each literal, 2 standing for two or more.
-    let lit = |l: &GLit| 2 * l.atom() as usize + usize::from(l.is_positive());
-    let mut readers = vec![0u8; 2 * n];
-    for l in gp.rules.iter().flat_map(|r| &r.body) {
-        readers[lit(l)] = (readers[lit(l)] + 1).min(2);
-    }
-    // The predicates of several atoms each observed false and read by no
-    // rule, whose atoms are not compared.
-    let mut false_unread = vec![false; n];
-    for &(_, id, value) in &gp.evidence {
-        if let Some(x) = id
-            .filter(|&x| !value && readers[2 * x as usize] == 0 && readers[2 * x as usize + 1] == 0)
-        {
-            false_unread[x as usize] = true;
-        }
-    }
-    let mut silent: Vec<bool> = atoms_of.iter().map(|&k| k > 1).collect();
-    for &a in sccs.iter().flatten() {
-        silent[predicate_of[a as usize]] &= false_unread[a as usize];
-    }
     let mut marks = Marks::new(n);
-    // Buffers reused across atoms and rules: a body, the rest of it that
-    // other rules can clash with, and what `rows_of` reads of each rule.
-    let mut sorted: Vec<GLit> = Vec::new();
-    let mut kept: Vec<GLit> = Vec::new();
-    let mut scratch = RowScratch::default();
-    // And per atom: the sets it reads and its key, its rules' bodies that
-    // do not clash with themselves, distinct, and those an earlier atom
-    // had, and the runs of a set's rows that read what a row of it reads.
-    let mut read_sets: Vec<usize> = Vec::new();
-    // The sets the atom at hand reads, each marked with the atom's stamp
-    // as it is listed, so that it is listed once, without sorting the sets
-    // of every literal of its rules. Atoms are numbered from zero, so an
-    // atom's number plus one is a stamp fresh for each.
-    let mut read_mark = vec![0usize; n];
-    let mut key: Vec<usize> = Vec::new();
-    let mut rule_bodies: Vec<(usize, u32)> = Vec::new();
-    let mut bodies: Vec<u32> = Vec::new();
-    let mut shared: Vec<(usize, u32)> = Vec::new();
-    // The bodies of the atom at hand that rule out a set of its key, and
-    // the sets a shared body is found to rule out as the atom is compared.
-    let mut holding: Vec<u32> = Vec::new();
+    let mut scratch = AtomScratch {
+        read_mark: vec![0usize; n],
+        ..AtomScratch::default()
+    };
+    // The sets a shared body is found to rule out as the atom is compared,
+    // and the runs of a set's rows that read what a row of it reads.
     let mut failed: Vec<(u32, usize)> = Vec::new();
     let mut runs: Vec<(usize, usize)> = Vec::new();
     // The atoms of a set whose rows read other sets than the atom's, kept
@@ -177,7 +367,6 @@ pub(super) fn exclusive_sets(
     let mut key_of_set: Vec<usize> = Vec::new();
     let mut sets_reading: FxHashMap<AtomId, usize> = FxHashMap::default();
     let mut reading: Chains<usize> = Chains::default();
-    let mut common_a: Vec<AtomId> = Vec::new();
     // Per key and literal, the sets of the key whose first atom's first
     // rule has a literal that clashes with it ([`Marks::clashes`]): its
     // negation, or another atom of a set it reads positively ([`clash_code`]).
@@ -204,147 +393,17 @@ pub(super) fn exclusive_sets(
             set_of[a as usize] = i;
             continue;
         }
-        // The sets of the atoms it reads that came before it; an atom that
-        // reads none is compared with the atoms of its own unit only, the
-        // values of a table without parents.
-        let stamp = a as usize + 1;
-        read_sets.clear();
-        for l in by_head[a as usize]
-            .iter()
-            .flat_map(|&ri| gp.rules[ri].body.iter())
-        {
-            let i = set_of[l.atom() as usize];
-            if i != usize::MAX && read_mark[i] != stamp {
-                read_mark[i] = stamp;
-                read_sets.push(i);
-            }
-        }
-        read_sets.sort_unstable();
-        key.clear();
-        key.push(class(a));
-        if read_sets.is_empty() {
-            key.push(usize::MAX - base_of[a as usize]);
-        } else {
-            key.extend_from_slice(&read_sets);
-        }
-        let rows_a = rows_of(
-            gp,
-            &by_head[a as usize],
-            &set_of,
-            &mut scratch,
-            &mut sigs,
-            &mut store,
+        let (key_id, rows_a, required, alone) = seed_sets(
+            (gp, by_head, base_of),
+            (a, class(a)),
+            (&set_of, &readers),
+            &mut marks,
+            (&mut sigs, &mut store),
+            (&mut key_ids, &mut by_key, &mut unlisted),
+            (&mut body_ids, &mut scratch),
         );
         let sig_a = rows_a.as_ref().map(|x| x.sig);
-        // A body that does not clash with itself, found in a rule of an
-        // atom of a set, keeps every atom with that body out of the set, so
-        // only the sets holding none of this atom's bodies are compared
-        // (dice_digitRecognition's observations are alone in their
-        // predicates and share one key, and would each be compared with all
-        // the sets before it). So does a body that does not clash with a
-        // rule of the set ([`Bodies::rule_out`]).
-        let known = body_ids.len();
-        // The atoms each rule of `a` reads positively, and a rule that is
-        // one negated atom, if there is one, read off each body as it is
-        // sorted to be numbered, not in a pass of their own.
-        let mut required: Option<AtomId> = None;
-        common_a.clear();
-        rule_bodies.clear();
-        for (k, &ri) in by_head[a as usize].iter().enumerate() {
-            // The rule's body sorted and distinct, as nearly every body
-            // is already, copied only where it is not.
-            let body: &[GLit] = if gp.rules[ri].body.is_sorted_by(|x, y| x < y) {
-                &gp.rules[ri].body
-            } else {
-                sorted.clear();
-                sorted.extend_from_slice(&gp.rules[ri].body);
-                sorted.sort_unstable();
-                sorted.dedup();
-                &sorted
-            };
-            if let [GLit::Neg(x)] = body[..] {
-                required.get_or_insert(x);
-            }
-            if k == 0 {
-                common_a.extend(body.iter().filter(|l| l.is_positive()).map(|l| l.atom()));
-                common_a.dedup();
-            } else {
-                common_a.retain(|&x| body.binary_search(&GLit::Pos(x)).is_ok());
-            }
-            // What another rule can clash with of the body: its literals
-            // but those of a fact that no other rule reads, which no set
-            // holds either. A rule clashes with another atom's rule where
-            // the rest of its body does, so two rules with the same rest
-            // stand for each other ([`Bodies`]). A choice read under
-            // exclusive contexts is read through a fact per context, read
-            // once: dice_caesar-iter's 3000 encoded letters, each alone in
-            // its predicate, have the same four rests, a value of the key
-            // each, and are not compared with each other.
-            let once = |l: &GLit| {
-                let x = l.atom() as usize;
-                readers[2 * x] + readers[2 * x + 1] == 1
-                    && by_head[x].is_empty()
-                    && set_of[x] == usize::MAX
-            };
-            let rest_of: &[GLit] = if body.iter().any(once) {
-                kept.clear();
-                kept.extend(body.iter().filter(|l| !once(l)));
-                &kept
-            } else {
-                body
-            };
-            // A body with a literal no other rule reads is not marked to
-            // tell whether it clashes with itself: on a network nearly
-            // every body is such. Nor is an empty rest, which would stand
-            // for every rule that reads only such facts.
-            if !rest_of.is_empty() && rest_of.iter().all(|l| readers[lit(l)] == 2) {
-                let clashes = marks.mark(rest_of, &set_of);
-                marks.clear();
-                if !clashes {
-                    rule_bodies.push((ri, body_ids.id(rest_of)));
-                }
-            }
-        }
-        bodies.clear();
-        bodies.extend(rule_bodies.iter().map(|&(_, b)| b));
-        bodies.sort_unstable();
-        bodies.dedup();
-        // The bodies of `a` that an earlier atom had, one rule each: those
-        // a later atom may have too.
-        shared.clear();
-        shared.extend(
-            rule_bodies
-                .iter()
-                .copied()
-                .filter(|&(_, b)| (b as usize) < known),
-        );
-        shared.sort_unstable_by_key(|&(_, b)| b);
-        shared.dedup_by_key(|&mut (_, b)| b);
-        let key_id = key_ids.id(&key).0 as usize;
-        if by_key.len() <= key_id {
-            by_key.add();
-            unlisted.push(false);
-        }
-        // A body that rules out every set of the key leaves `a` a set of
-        // its own: dice_digitRecognition's observations of the digits 1
-        // to 9 each have a rule `y(0)`, which every set of the key holds or
-        // does not clash with.
-        let alone = bodies
-            .iter()
-            .any(|&b| body_ids.rules_out_all(b, key_id, by_key.len_of(key_id)));
-        // Each set that comes up is asked whether it holds one of the
-        // bodies of `a` that rule out a set of the key, rather than every
-        // set holding one marked first: each leaf's adder of bb_wmi_star
-        // has the bits of the centre for bodies, and its atoms of one key
-        // marked the sets of every leaf before them.
-        holding.clear();
-        holding.extend(
-            bodies
-                .iter()
-                .copied()
-                .filter(|&b| body_ids.rules_out_some(b, key_id)),
-        );
-        let ruled_out = |i: usize| holding.iter().any(|&b| body_ids.holds(b, i));
+        let ruled_out = |i: usize| scratch.holding.iter().any(|&b| body_ids.holds(b, i));
         // Whether `a` is exclusive with every atom of a set: whether every
         // rule of `a` clashes with every rule of each atom, or, where the
         // two atoms' rows read the same sets, with every rule of the same
@@ -418,7 +477,7 @@ pub(super) fn exclusive_sets(
             // A shared body of `a` that does not clash with a rule of the
             // set rules the set out for every atom with that body.
             if !exclusive {
-                for &(ra, b) in &shared {
+                for &(ra, b) in &scratch.shared {
                     marks.mark_rule(ra, &gp.rules[ra].body, &set_of);
                     if !sets.iter(i).all(|m| {
                         by_head[m as usize]
@@ -452,7 +511,7 @@ pub(super) fn exclusive_sets(
                     let clashing = &clashing;
                     let set_of = &set_of;
                     gp.rules[ri].body.iter().flat_map(move |&l| {
-                        [Some(lit(&l)), clash_code(l, set_of, n)]
+                        [Some(lit_index(&l)), clash_code(l, set_of, n)]
                             .into_iter()
                             .flatten()
                             .filter_map(move |code| clashing.get(&(key_id, code)).copied())
@@ -492,7 +551,7 @@ pub(super) fn exclusive_sets(
                 let (start, end) = common_of[i];
                 let mut kept = start;
                 for k in start..end {
-                    if common_a.binary_search(&common[k]).is_ok() {
+                    if scratch.common_a.binary_search(&common[k]).is_ok() {
                         common[kept] = common[k];
                         kept += 1;
                     }
@@ -511,12 +570,12 @@ pub(super) fn exclusive_sets(
                 sigs_of_set.push(i, sig_a);
                 by_key.push(key_id, i);
                 key_of_set.push(key_id);
-                for &x in &common_a {
+                for &x in &scratch.common_a {
                     let l = *sets_reading.entry(x).or_insert_with(|| reading.add());
                     reading.push(l, i);
                 }
-                common_of.push((common.len(), common.len() + common_a.len()));
-                common.extend_from_slice(&common_a);
+                common_of.push((common.len(), common.len() + scratch.common_a.len()));
+                common.extend_from_slice(&scratch.common_a);
                 // List set `j`, whose first atom is `b`.
                 let mut list = |j: usize, b: AtomId| match by_head[b as usize]
                     .first()
@@ -530,7 +589,7 @@ pub(super) fn exclusive_sets(
                         }) =>
                     {
                         for &l in body {
-                            for code in [Some(lit(&l.negated())), clash_code(l, &set_of, n)]
+                            for code in [Some(lit_index(&l.negated())), clash_code(l, &set_of, n)]
                                 .into_iter()
                                 .flatten()
                             {
@@ -570,7 +629,7 @@ pub(super) fn exclusive_sets(
         set_of[a as usize] = i;
         // An atom that has a body a set holds is ruled out of it, and its
         // bodies are distinct, so a set takes each body once.
-        for &body in &bodies {
+        for &body in &scratch.bodies {
             body_ids.rule_out(body, key_id, i);
         }
     }

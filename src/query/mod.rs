@@ -670,10 +670,11 @@ impl Answers<'_> {
                 positive: polarity,
             });
         }
-        let (f, scope) = match &self.pending_query.as_ref().unwrap().formula {
-            Some((f, scope)) => (f, scope),
-            None => stored(self.compiled, a),
-        };
+        let (f, scope) = unpack(
+            self.compiled,
+            &self.pending_query.as_ref().unwrap().formula,
+            a,
+        );
         let w = self.weights_on(scope, template);
         self.sizes.record(self.backend.size(f), self.watch)?;
         Ok(crate::eval::mass(self.backend.engine, f, &w, &mut self.sizes.recounts)?.to_f64())
@@ -690,10 +691,7 @@ impl Answers<'_> {
     ) -> Result<f64, CompileError> {
         self.sizes.products += 1;
         let built = self.formula(a, polarity)?;
-        let (q, q_scope) = match &built {
-            Some((f, scope)) => (f, scope),
-            None => stored(self.compiled, a),
-        };
+        let (q, q_scope) = unpack(self.compiled, &built, a);
         let q_w = self.weights_on(q_scope, template);
         let ev = self.evidence.as_ref().unwrap();
         let c = self
@@ -774,12 +772,22 @@ impl Answers<'_> {
     }
 }
 
-/// The stored formula of `a` in `compiled`, and its scope.
-fn stored(compiled: &Compiled, a: AtomId) -> (&Tdd, &VtreeScope) {
-    let f = compiled.formulas[a as usize]
-        .as_deref()
-        .expect("the stored polarity's formula is stored");
-    (f, compiled.scope_of(a))
+/// `built` if the query built a formula, or the stored formula of `a` in
+/// `compiled` and its scope.
+fn unpack<'a>(
+    compiled: &'a Compiled,
+    built: &'a Option<Formula>,
+    a: AtomId,
+) -> (&'a Tdd, &'a VtreeScope) {
+    match built {
+        Some((f, scope)) => (f, scope),
+        None => {
+            let f = compiled.formulas[a as usize]
+                .as_deref()
+                .expect("the stored polarity's formula is stored");
+            (f, compiled.scope_of(a))
+        }
+    }
 }
 
 /// The evidence formula counted up and down once, on its own scope: its
@@ -824,10 +832,7 @@ impl CountedEvidence {
 
     /// The mass, exactly.
     fn total(&self, e: &Tdd) -> Count {
-        match &self.counted {
-            Counts::Plain(plain) => plain.total(e).count(),
-            Counts::Wide(wide) => wide.total(e).count(),
-        }
+        self.counted.total(e)
     }
 }
 

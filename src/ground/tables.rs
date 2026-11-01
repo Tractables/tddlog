@@ -121,6 +121,17 @@ impl Tables {
         }
     }
 
+    /// The atoms of `table`: an exclusive set's, or the one atom of a table
+    /// of one ([`Tables::of`]).
+    pub(super) fn members(&self, table: usize) -> impl Iterator<Item = AtomId> + '_ {
+        let sets = &self.structure.sets;
+        let (set, one) = match sets.get(table) {
+            Some(set) => (set.as_slice(), None),
+            None => (&[][..], Some((table - sets.len()) as AtomId)),
+        };
+        set.iter().copied().chain(one)
+    }
+
     /// The table whose own fact `s` is, if it is a fact and one's own.
     pub(crate) fn owner(&self, gp: &GroundProgram, s: AtomId) -> Option<usize> {
         if !gp.is_fact(s) || self.named[s as usize] {
@@ -155,13 +166,11 @@ impl Tables {
         if let Some(&known) = self.independent.get(&table) {
             return known;
         }
-        let sets = &self.structure.sets;
-        let members: Vec<usize> = if table < sets.len() {
-            sets[table].iter().map(|&a| a as usize).collect()
-        } else {
-            vec![table - sets.len()]
-        };
-        let earliest = members.iter().map(|&m| self.position[m]).min().unwrap_or(0);
+        let earliest = self
+            .members(table)
+            .map(|m| self.position[m as usize])
+            .min()
+            .unwrap_or(0);
         let mark = self.independent.len() + 1;
         let mut stack: Vec<usize> = Vec::new();
         let by_head = &self.structure.by_head;
@@ -175,8 +184,8 @@ impl Tables {
                 }
             }
         };
-        for &m in &members {
-            push_body(m, &mut stack);
+        for m in self.members(table) {
+            push_body(m as usize, &mut stack);
         }
         let mut ok = true;
         while let Some(b) = stack.pop() {

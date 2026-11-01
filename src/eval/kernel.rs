@@ -301,8 +301,8 @@ impl LaneSet {
 }
 
 /// The places of the dimensions `set` under `steps`, as their offsets in
-/// `out`, `x` and `y`, sorted by `out`'s.
-fn places(dims: &[Dim], steps: &[[isize; 3]], set: &[usize]) -> Vec<[isize; 3]> {
+/// `out`, `x` and `y`.
+pub(super) fn cell_places(dims: &[Dim], steps: &[[isize; 3]], set: &[usize]) -> Vec<[isize; 3]> {
     let mut places = vec![[0isize; 3]];
     for &d in set {
         places = (0..dims[d].radix as isize)
@@ -313,6 +313,13 @@ fn places(dims: &[Dim], steps: &[[isize; 3]], set: &[usize]) -> Vec<[isize; 3]> 
             })
             .collect();
     }
+    places
+}
+
+/// The places of the dimensions `set` under `steps`, as their offsets in
+/// `out`, `x` and `y`, sorted by `out`'s.
+fn places(dims: &[Dim], steps: &[[isize; 3]], set: &[usize]) -> Vec<[isize; 3]> {
+    let mut places = cell_places(dims, steps, set);
     places.sort_by_key(|p| p[0]);
     places
 }

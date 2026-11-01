@@ -883,36 +883,11 @@ impl TddBackend<'_> {
         x: &Tdd,
         y: &Tdd,
     ) -> Result<Option<Tdd>, CompileError> {
+        let Some((c, v_left, xc, yc)) = root_selection(scope, v, x, y)? else {
+            return Ok(None);
+        };
         let vtree = scope.vtree();
         let root = vtree.root();
-        if vtree.node(root).is_leaf() || x.is_zero() || y.is_zero() {
-            return Ok(None);
-        }
-        let leaf = vtree
-            .leaf_of(Self::renamed(scope, Literal::pos(v))?.var)
-            .expect("a scope's variables are its leaves");
-        let (l, r) = vtree.children(root);
-        let (c, v_left) = match leaf {
-            _ if leaf == l => (r, true),
-            _ if leaf == r => (l, false),
-            _ => return Ok(None),
-        };
-        // Neither reads `v`: its root has one pair, `One` on `v`'s side.
-        let at_c = |f: &Tdd| -> Option<u32> {
-            let mut pairs = f.level(root).pairs_iter_of_idx(f.output().local.idx());
-            let (1, Some(p)) = (pairs.len(), pairs.next()) else {
-                return None;
-            };
-            let (at_v, at_c) = if v_left {
-                (p.left, p.right)
-            } else {
-                (p.right, p.left)
-            };
-            (at_v.raw() == ONE_LEAF_IDX.0).then_some(at_c.raw())
-        };
-        let (Some(xc), Some(yc)) = (at_c(x), at_c(y)) else {
-            return Ok(None);
-        };
         // A unit per pair looked up, where the engine charges about a unit
         // per product pair: `auto`'s work budget sees the build.
         self.engine
@@ -978,19 +953,7 @@ impl TddBackend<'_> {
             to[t.idx()] = at;
         }
         let yc = to[c.idx()].get(yc as usize).copied().unwrap_or(yc);
-        let (xc, yc) = (NodeIdx(xc), NodeIdx(yc));
-        let pairs = if v_left {
-            [
-                ChildPair::new(POS_LEAF_IDX, xc),
-                ChildPair::new(NEG_LEAF_IDX, yc),
-            ]
-        } else {
-            [
-                ChildPair::new(xc, POS_LEAF_IDX),
-                ChildPair::new(yc, NEG_LEAF_IDX),
-            ]
-        };
-        let node = b.push(self.engine, root, &pairs)?;
+        let node = b.push(self.engine, root, &root_selection_pairs(v_left, xc, yc))?;
         Ok(Some(
             b.finish(TddNodeId {
                 vtree: root,
@@ -1263,6 +1226,64 @@ impl TddBackend<'_> {
     }
 }
 
+/// Where `scope`'s root has `v`'s leaf as a child and neither `x` nor `y`
+/// is zero or reads `v`: the other child `c` of the root, whether `v`'s
+/// leaf is on the left, and the node of `c` that each operand's root pair
+/// points to.
+fn root_selection(
+    scope: &VtreeScope,
+    v: VarId,
+    x: &Tdd,
+    y: &Tdd,
+) -> Result<Option<(VtreeIdx, bool, u32, u32)>, CompileError> {
+    let vtree = scope.vtree();
+    let root = vtree.root();
+    if vtree.node(root).is_leaf() || x.is_zero() || y.is_zero() {
+        return Ok(None);
+    }
+    let leaf = vtree
+        .leaf_of(TddBackend::renamed(scope, Literal::pos(v))?.var)
+        .expect("a scope's variables are its leaves");
+    let (l, r) = vtree.children(root);
+    let (c, v_left) = match leaf {
+        _ if leaf == l => (r, true),
+        _ if leaf == r => (l, false),
+        _ => return Ok(None),
+    };
+    // Neither reads `v`: its root has one pair, `One` on `v`'s side.
+    let at_c = |f: &Tdd| -> Option<u32> {
+        let mut pairs = f.level(root).pairs_iter_of_idx(f.output().local.idx());
+        let (1, Some(p)) = (pairs.len(), pairs.next()) else {
+            return None;
+        };
+        let (at_v, at_c) = if v_left {
+            (p.left, p.right)
+        } else {
+            (p.right, p.left)
+        };
+        (at_v.raw() == ONE_LEAF_IDX.0).then_some(at_c.raw())
+    };
+    let (Some(xc), Some(yc)) = (at_c(x), at_c(y)) else {
+        return Ok(None);
+    };
+    Ok(Some((c, v_left, xc, yc)))
+}
+
+fn root_selection_pairs(v_left: bool, xc: u32, yc: u32) -> [ChildPair; 2] {
+    let (xc, yc) = (NodeIdx(xc), NodeIdx(yc));
+    if v_left {
+        [
+            ChildPair::new(POS_LEAF_IDX, xc),
+            ChildPair::new(NEG_LEAF_IDX, yc),
+        ]
+    } else {
+        [
+            ChildPair::new(xc, POS_LEAF_IDX),
+            ChildPair::new(yc, NEG_LEAF_IDX),
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1289,33 +1310,9 @@ mod tests {
         x: &Tdd,
         y: &Tdd,
     ) -> Option<Tdd> {
+        let (c, v_left, xc, yc) = root_selection(scope, v, x, y).unwrap()?;
         let (engine, vtree) = (backend.engine, scope.vtree());
         let root = vtree.root();
-        if vtree.node(root).is_leaf() || x.is_zero() || y.is_zero() {
-            return None;
-        }
-        let leaf = vtree
-            .leaf_of(TddBackend::renamed(scope, Literal::pos(v)).unwrap().var)
-            .unwrap();
-        let (l, r) = vtree.children(root);
-        let (c, v_left) = match leaf {
-            _ if leaf == l => (r, true),
-            _ if leaf == r => (l, false),
-            _ => return None,
-        };
-        let at_c = |f: &Tdd| -> Option<u32> {
-            let mut pairs = f.level(root).pairs_iter_of_idx(f.output().local.idx());
-            let (1, Some(p)) = (pairs.len(), pairs.next()) else {
-                return None;
-            };
-            let (at_v, at_c) = if v_left {
-                (p.left, p.right)
-            } else {
-                (p.right, p.left)
-            };
-            (at_v.raw() == ONE_LEAF_IDX.0).then_some(at_c.raw())
-        };
-        let (xc, yc) = (at_c(x)?, at_c(y)?);
         let mut b = Tdd::builder(engine, vtree).unwrap();
         let mut to: [Vec<Vec<u32>>; 2] = [
             vec![Vec::new(); vtree.num_nodes()],
@@ -1343,19 +1340,13 @@ mod tests {
             }
         }
         let side = |k: usize, i: u32| to[k][c.idx()].get(i as usize).copied().unwrap_or(i);
-        let (xc, yc) = (NodeIdx(side(0, xc)), NodeIdx(side(1, yc)));
-        let pairs = if v_left {
-            [
-                ChildPair::new(POS_LEAF_IDX, xc),
-                ChildPair::new(NEG_LEAF_IDX, yc),
-            ]
-        } else {
-            [
-                ChildPair::new(xc, POS_LEAF_IDX),
-                ChildPair::new(yc, NEG_LEAF_IDX),
-            ]
-        };
-        let node = b.push(engine, root, &pairs).unwrap();
+        let node = b
+            .push(
+                engine,
+                root,
+                &root_selection_pairs(v_left, side(0, xc), side(1, yc)),
+            )
+            .unwrap();
         Some(
             b.finish(TddNodeId {
                 vtree: root,
@@ -1585,6 +1576,66 @@ mod tests {
         }
     }
 
+    fn applied_none_of(
+        backend: &TddBackend,
+        scope: &VtreeScope,
+        cubes: &[Vec<Literal>],
+        groups: &[(Vec<VarId>, bool)],
+    ) -> Tdd {
+        let mut applied = backend.one(scope);
+        for cube in cubes {
+            let clause: Vec<Literal> = cube.iter().map(|l| l.negated()).collect();
+            applied = backend.and_clause(scope, applied, &clause).unwrap();
+        }
+        for (g, exactly) in groups {
+            for (i, &a) in g.iter().enumerate() {
+                for &b in &g[i + 1..] {
+                    applied = backend
+                        .and_clause(scope, applied, &[Literal::neg(a), Literal::neg(b)])
+                        .unwrap();
+                }
+            }
+            if *exactly {
+                let clause: Vec<Literal> = g.iter().map(|&v| Literal::pos(v)).collect();
+                applied = backend.and_clause(scope, applied, &clause).unwrap();
+            }
+        }
+        applied
+    }
+
+    fn local_none_of(
+        backend: &TddBackend,
+        scope: &VtreeScope,
+        cubes: &[Vec<Literal>],
+        groups: &[(Vec<VarId>, bool)],
+    ) -> Tdd {
+        let mut vars: Vec<VarId> = cubes
+            .iter()
+            .flatten()
+            .map(|l| l.var)
+            .chain(groups.iter().flat_map(|(g, _)| g.iter().copied()))
+            .collect();
+        vars.sort_unstable();
+        vars.dedup();
+        let local = |v: VarId| VarId(vars.binary_search(&v).unwrap() as u32 + 1);
+        let local_cubes: Vec<Vec<Literal>> = cubes
+            .iter()
+            .map(|c| {
+                c.iter()
+                    .map(|l| Literal::new(local(l.var), l.sign))
+                    .collect()
+            })
+            .collect();
+        let local_groups: Vec<(Vec<VarId>, bool)> = groups
+            .iter()
+            .map(|(g, exactly)| (g.iter().map(|&v| local(v)).collect(), *exactly))
+            .collect();
+        backend
+            .none_of(scope, &vars, &local_cubes, &local_groups, u64::MAX)
+            .unwrap()
+            .expect("no bound")
+    }
+
     /// The conjunction of the cubes' negations and the groups' clauses, one
     /// clause at a time, against the diagram built level by level, on
     /// random vtrees with groups whose variables the cubes read in either
@@ -1598,14 +1649,11 @@ mod tests {
             );
             let n = 2 + next(9) as u32;
             let tree = Arc::new(Vtree::random(n, seed));
-            let mut groups: Vec<(Vec<Literal>, bool)> = Vec::new();
+            let mut groups: Vec<(Vec<VarId>, bool)> = Vec::new();
             let mut v = 1;
             while v < n && next(3) > 0 {
                 let size = (2 + next(3) as u32).min(n + 1 - v);
-                groups.push((
-                    (v..v + size).map(|x| Literal::pos(VarId(x))).collect(),
-                    next(2) == 0,
-                ));
+                groups.push(((v..v + size).map(VarId).collect(), next(2) == 0));
                 v += size;
             }
             // Random cubes, or on odd seeds the codes of random values over
@@ -1635,48 +1683,8 @@ mod tests {
             tree.context().run(|engine| {
                 let backend = TddBackend::new(engine, tree.clone());
                 let scope = backend.global();
-                let mut applied = backend.one(&scope);
-                for cube in &cubes {
-                    let clause: Vec<Literal> = cube.iter().map(|l| l.negated()).collect();
-                    applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                }
-                for (g, exactly) in &groups {
-                    for (i, &a) in g.iter().enumerate() {
-                        for &b in &g[i + 1..] {
-                            applied = backend
-                                .and_clause(&scope, applied, &[a.negated(), b.negated()])
-                                .unwrap();
-                        }
-                    }
-                    if *exactly {
-                        applied = backend.and_clause(&scope, applied, g).unwrap();
-                    }
-                }
-                let mut vars: Vec<VarId> = cubes
-                    .iter()
-                    .flatten()
-                    .chain(groups.iter().flat_map(|(g, _)| g))
-                    .map(|l| l.var)
-                    .collect();
-                vars.sort_unstable();
-                vars.dedup();
-                let local = |v: VarId| VarId(vars.binary_search(&v).unwrap() as u32 + 1);
-                let local_cubes: Vec<Vec<Literal>> = cubes
-                    .iter()
-                    .map(|c| {
-                        c.iter()
-                            .map(|l| Literal::new(local(l.var), l.sign))
-                            .collect()
-                    })
-                    .collect();
-                let local_groups: Vec<(Vec<VarId>, bool)> = groups
-                    .iter()
-                    .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
-                    .collect();
-                let built = backend
-                    .none_of(&scope, &vars, &local_cubes, &local_groups, u64::MAX)
-                    .unwrap()
-                    .expect("no bound");
+                let applied = applied_none_of(&backend, &scope, &cubes, &groups);
+                let built = local_none_of(&backend, &scope, &cubes, &groups);
                 assert!(
                     backend.equivalent(&built, &applied).unwrap(),
                     "seed {seed}: cubes {cubes:?} groups {groups:?}"
@@ -1731,24 +1739,7 @@ mod tests {
                     continue;
                 };
                 built += 1;
-                let mut applied = backend.one(&scope);
-                for cube in &cubes {
-                    let clause: Vec<Literal> = cube.iter().map(|l| l.negated()).collect();
-                    applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                }
-                for (g, exactly) in &groups {
-                    for (i, &a) in g.iter().enumerate() {
-                        for &b in &g[i + 1..] {
-                            applied = backend
-                                .and_clause(&scope, applied, &[Literal::neg(a), Literal::neg(b)])
-                                .unwrap();
-                        }
-                    }
-                    if *exactly {
-                        let clause: Vec<Literal> = g.iter().map(|&v| Literal::pos(v)).collect();
-                        applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                    }
-                }
+                let applied = applied_none_of(&backend, &scope, &cubes, &groups);
                 assert!(
                     backend.equivalent(&f, &applied).unwrap(),
                     "round {round}: cubes {cubes:?} groups {groups:?}"
@@ -1906,49 +1897,8 @@ mod tests {
             tree.context().run(|engine| {
                 let backend = TddBackend::new(engine, tree.clone());
                 let scope = backend.global();
-                let mut applied = backend.one(&scope);
-                for cube in &cubes {
-                    let clause: Vec<Literal> = cube.iter().map(|l| l.negated()).collect();
-                    applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                }
-                for (g, exactly) in &groups {
-                    for (i, &a) in g.iter().enumerate() {
-                        for &b in &g[i + 1..] {
-                            applied = backend
-                                .and_clause(&scope, applied, &[Literal::neg(a), Literal::neg(b)])
-                                .unwrap();
-                        }
-                    }
-                    if *exactly {
-                        let clause: Vec<Literal> = g.iter().map(|&v| Literal::pos(v)).collect();
-                        applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                    }
-                }
-                let mut vars: Vec<VarId> = cubes
-                    .iter()
-                    .flatten()
-                    .map(|l| l.var)
-                    .chain(groups.iter().flat_map(|(g, _)| g.iter().copied()))
-                    .collect();
-                vars.sort_unstable();
-                vars.dedup();
-                let local = |v: VarId| VarId(vars.binary_search(&v).unwrap() as u32 + 1);
-                let local_cubes: Vec<Vec<Literal>> = cubes
-                    .iter()
-                    .map(|c| {
-                        c.iter()
-                            .map(|l| Literal::new(local(l.var), l.sign))
-                            .collect()
-                    })
-                    .collect();
-                let local_groups: Vec<(Vec<VarId>, bool)> = groups
-                    .iter()
-                    .map(|(g, exactly)| (g.iter().map(|&v| local(v)).collect(), *exactly))
-                    .collect();
-                let built = backend
-                    .none_of(&scope, &vars, &local_cubes, &local_groups, u64::MAX)
-                    .unwrap()
-                    .expect("no bound");
+                let applied = applied_none_of(&backend, &scope, &cubes, &groups);
+                let built = local_none_of(&backend, &scope, &cubes, &groups);
                 assert!(
                     backend.equivalent(&built, &applied).unwrap(),
                     "seed {seed}: {n} variables"
@@ -2042,24 +1992,7 @@ mod tests {
                     .none_of(&scope, &vars, &cubes, &groups, u64::MAX)
                     .unwrap()
                     .expect("no bound");
-                let mut applied = backend.one(&scope);
-                for cube in &cubes {
-                    let clause: Vec<Literal> = cube.iter().map(|l| l.negated()).collect();
-                    applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                }
-                for (g, exactly) in &groups {
-                    for (i, &a) in g.iter().enumerate() {
-                        for &b in &g[i + 1..] {
-                            applied = backend
-                                .and_clause(&scope, applied, &[Literal::neg(a), Literal::neg(b)])
-                                .unwrap();
-                        }
-                    }
-                    if *exactly {
-                        let clause: Vec<Literal> = g.iter().map(|&v| Literal::pos(v)).collect();
-                        applied = backend.and_clause(&scope, applied, &clause).unwrap();
-                    }
-                }
+                let applied = applied_none_of(&backend, &scope, &cubes, &groups);
                 assert!(
                     backend.equivalent(&built, &applied).unwrap(),
                     "seed {seed}: cubes {cubes:?} groups {groups:?}"

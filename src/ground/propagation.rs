@@ -729,46 +729,7 @@ impl<'a> Propagation<'a> {
                 break;
             }
         }
-        // A depth-first search over the gates' inputs refuses each gate
-        // with an input on the search's path, under it: every other input
-        // is a gate the search finished first, so the gates taken read one
-        // another without a cycle. A cyclic pair, `g1 :- g2. g2 :- g1.`,
-        // has one least model, not the clauses' two.
-        let mut state = vec![0u8; gates.len()];
-        let mut refused = vec![false; gates.len()];
-        let mut path: Vec<(usize, usize)> = Vec::new();
-        for root in 0..gates.len() {
-            if state[root] != 0 {
-                continue;
-            }
-            state[root] = 1;
-            path.push((root, 0));
-            while let Some(&(v, e)) = path.last() {
-                let Some(&l) = gates[v].inputs.get(e) else {
-                    state[v] = 2;
-                    path.pop();
-                    continue;
-                };
-                path.last_mut().expect("on the path").1 += 1;
-                let w = gate_of[l.atom() as usize];
-                if w == u32::MAX {
-                    continue;
-                }
-                match state[w as usize] {
-                    0 => {
-                        state[w as usize] = 1;
-                        path.push((w as usize, 0));
-                    }
-                    1 => refused[v] = true,
-                    _ => {}
-                }
-            }
-        }
-        gates
-            .into_iter()
-            .zip(refused)
-            .filter_map(|(gate, refused)| (!refused).then_some(gate))
-            .collect()
+        refuse_cyclic_gates(gates, &gate_of)
     }
 
     /// Of `gates`, those that nothing reads but the definitions of the
@@ -833,6 +794,49 @@ impl<'a> Propagation<'a> {
             .filter_map(|(gate, kept)| kept.then_some(gate))
             .collect()
     }
+}
+
+/// A depth-first search over the gates' inputs refuses each gate with an
+/// input on the search's path, under it: every other input is a gate the
+/// search finished first, so the gates taken read one another without a
+/// cycle. A cyclic pair, `g1 :- g2. g2 :- g1.`, has one least model, not
+/// the clauses' two.
+fn refuse_cyclic_gates(gates: Vec<Gate>, gate_of: &[u32]) -> Vec<Gate> {
+    let mut state = vec![0u8; gates.len()];
+    let mut refused = vec![false; gates.len()];
+    let mut path: Vec<(usize, usize)> = Vec::new();
+    for root in 0..gates.len() {
+        if state[root] != 0 {
+            continue;
+        }
+        state[root] = 1;
+        path.push((root, 0));
+        while let Some(&(v, e)) = path.last() {
+            let Some(&l) = gates[v].inputs.get(e) else {
+                state[v] = 2;
+                path.pop();
+                continue;
+            };
+            path.last_mut().expect("on the path").1 += 1;
+            let w = gate_of[l.atom() as usize];
+            if w == u32::MAX {
+                continue;
+            }
+            match state[w as usize] {
+                0 => {
+                    state[w as usize] = 1;
+                    path.push((w as usize, 0));
+                }
+                1 => refused[v] = true,
+                _ => {}
+            }
+        }
+    }
+    gates
+        .into_iter()
+        .zip(refused)
+        .filter_map(|(gate, refused)| (!refused).then_some(gate))
+        .collect()
 }
 
 #[cfg(test)]

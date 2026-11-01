@@ -605,8 +605,18 @@ impl Factoring<'_> {
             return self.backend.cube(scope, &facts);
         }
         let c = self.collapse(&mut pending, scope)?;
-        let mut c = self.placed(c, scope)?;
-        for &f in &facts {
+        self.and_facts(c, &facts, scope)
+    }
+
+    /// `part ∧ ⋀ facts` on `scope`, each fact conjoined as a unit clause.
+    fn and_facts(
+        &self,
+        part: Part,
+        facts: &[tididi::Literal],
+        scope: &VtreeScope,
+    ) -> Result<Tdd, CompileError> {
+        let mut c = self.placed(part, scope)?;
+        for &f in facts {
             c = self.backend.and_clause(scope, c, &[f])?;
             (self.count)(Op::And, 1);
         }
@@ -699,12 +709,7 @@ impl Factoring<'_> {
         let b = if facts.is_empty() {
             b.owned(self.backend)?
         } else {
-            let mut b = self.placed(b, scope)?;
-            for &f in facts {
-                b = self.backend.and_clause(scope, b, &[f])?;
-                (self.count)(Op::And, 1);
-            }
-            (b, scope.clone())
+            (self.and_facts(b, facts, scope)?, scope.clone())
         };
         // Each part negated on its own scope, the smaller.
         let not_a = (a.0.with_cow(|f| (self.negate)(self.term, f))?, a.1);
@@ -1111,12 +1116,7 @@ impl Factoring<'_> {
                     let c = if fact_lits.is_empty() {
                         c
                     } else {
-                        let mut c = self.placed(c, scope)?;
-                        for &f in &fact_lits {
-                            c = self.backend.and_clause(scope, c, &[f])?;
-                            (self.count)(Op::And, 1);
-                        }
-                        Part::from((c, scope.clone()))
+                        Part::from((self.and_facts(c, &fact_lits, scope)?, scope.clone()))
                     };
                     let nb = (c.0.with_cow(|f| (self.negate)(self.term, f))?, c.1);
                     let mut acc = self.and_term(formula, nb.into(), scope)?;

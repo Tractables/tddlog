@@ -325,7 +325,7 @@ fn spine(
     scratch: &mut NestScratch,
     facts: &[AtomId],
     readers: &[usize],
-    mut acc: Option<usize>,
+    acc: Option<usize>,
 ) -> Option<usize> {
     if let Some(below) = acc
         && !facts.is_empty()
@@ -335,14 +335,7 @@ fn spine(
         let facts = forest.balanced(&leaves).unwrap();
         return Some(forest.join(below, facts));
     }
-    for &f in facts {
-        let leaf = forest.leaf(f);
-        acc = Some(match acc {
-            None => leaf,
-            Some(rest) => forest.join(leaf, rest),
-        });
-    }
-    acc
+    forest.spine_up(facts.iter().copied(), acc)
 }
 
 /// The copies the rows `members` read that are not placed yet, ascending,

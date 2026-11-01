@@ -337,6 +337,15 @@ impl SumOut {
         let place =
             |f: Formula, map: Option<&[VarId]>| -> Result<Formula, Box<(CompileError, Formula)>> {
                 let (t, own) = f;
+                if t.weights().is_none() {
+                    return backend
+                        .embed_moving(t, &own, scope, map)
+                        .map(|g| (g, scope.clone()))
+                        .map_err(|refused| {
+                            let (e, t) = *refused;
+                            Box::new((e, (t, own)))
+                        });
+                }
                 if own.same(scope) {
                     return Ok((t, own));
                 }
@@ -347,24 +356,14 @@ impl SumOut {
                         Err(e) => return Err(Box::new((e, (t, own)))),
                     },
                 };
-                if t.weights().is_some() {
-                    match backend.engine.embed_over(
-                        &t,
-                        scope.vtree(),
-                        |v| map[v.0 as usize - 1],
-                        Some(store.empty_like()),
-                    ) {
-                        Ok((g, _)) => Ok((g, scope.clone())),
-                        Err(e) => Err(Box::new((e.into(), (t, own)))),
-                    }
-                } else {
-                    match backend
-                        .engine
-                        .embed_moving(t, scope.vtree(), |v| map[v.0 as usize - 1])
-                    {
-                        Ok((g, _)) => Ok((g, scope.clone())),
-                        Err(refused) => Err(Box::new((refused.error.into(), (refused.tdd, own)))),
-                    }
+                match backend.engine.embed_over(
+                    &t,
+                    scope.vtree(),
+                    |v| map[v.0 as usize - 1],
+                    Some(store.empty_like()),
+                ) {
+                    Ok((g, _)) => Ok((g, scope.clone())),
+                    Err(e) => Err(Box::new((e.into(), (t, own)))),
                 }
             };
         let unswap = |x: Formula, y: Formula| if swapped { (y, x) } else { (x, y) };

@@ -75,7 +75,7 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
     let order = positions(gp, fan_in);
     let facts: Vec<AtomId> = order.iter().copied().filter(|&a| gp.is_fact(a)).collect();
     // A program that reads atoms through indicators already is compiled as
-    // it is (`Kind::eliminated`).
+    // it is (`crate::indicators`, `Prepared::of`).
     if !gp.encoding.is_empty() {
         return Laid { facts, named: None };
     }

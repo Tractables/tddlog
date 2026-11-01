@@ -224,16 +224,10 @@ pub(in crate::ground) fn eliminate_defined(gp: &mut GroundProgram) -> Option<Def
             Origin::Observation(k) => dead_observation[k] = true,
         }
     }
-    let mut k = 0;
-    gp.rules.retain(|_| {
-        k += 1;
-        !dead_rule[k - 1]
-    });
-    let mut k = 0;
-    gp.evidence.retain(|_| {
-        k += 1;
-        !dead_observation[k - 1]
-    });
+    let mut dead = dead_rule.iter();
+    gp.rules.retain(|_| !*dead.next().unwrap());
+    let mut dead = dead_observation.iter();
+    gp.evidence.retain(|_| !*dead.next().unwrap());
     for (k, clause) in resolvents.iter().enumerate() {
         let h = gp.atoms.len() as AtomId;
         let atom = Atom::new(RESOLVENT_NAME, Args::One(Term::Int(k as i64)));
