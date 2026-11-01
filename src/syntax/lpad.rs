@@ -475,12 +475,12 @@ fn intervention(lit: &str) -> bool {
 }
 
 /// Python's white space (`str.isspace`), which the clauses are trimmed of.
-pub(super) fn space(c: char) -> bool {
+pub(crate) fn space(c: char) -> bool {
     matches!(c, ' ' | '\t'..='\r' | '\x1c'..='\x1f') || (!c.is_ascii() && c.is_whitespace())
 }
 
 /// A character of a word (Python's `\w`).
-fn word(c: char) -> bool {
+pub(crate) fn word(c: char) -> bool {
     c == '_' || c.is_alphanumeric()
 }
 

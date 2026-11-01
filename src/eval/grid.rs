@@ -701,9 +701,7 @@ impl Grid {
                             p,
                             first,
                             last.as_deref_mut(),
-                            o,
-                            a,
-                            b,
+                            (o, a, b),
                         );
                     }
                     if !twos.is_empty() {
@@ -713,13 +711,11 @@ impl Grid {
                             p,
                             first,
                             last.as_deref_mut(),
-                            o,
-                            a,
-                            b,
+                            (o, a, b),
                         );
                     }
                     if !one.is_empty() {
-                        sums::<V, 1, SKIP>(one, &plan.offsets, p, first, last, o, a, b);
+                        sums::<V, 1, SKIP>(one, &plan.offsets, p, first, last, (o, a, b));
                     }
                 }
             },
@@ -877,7 +873,6 @@ impl Grid {
 ///
 /// Every slot the cells name at every offset lies within the arrays, and
 /// the cells name distinct slots of `out`.
-#[allow(clippy::too_many_arguments)]
 #[inline(always)]
 unsafe fn sums<V: Value, const N: usize, const SKIP: bool>(
     cells: &[[isize; 3]],
@@ -885,9 +880,7 @@ unsafe fn sums<V: Value, const N: usize, const SKIP: bool>(
     p: [isize; 3],
     first: bool,
     last: Option<&mut Range>,
-    o: *mut V,
-    x: *const V,
-    y: *const V,
+    (o, x, y): (*mut V, *const V, *const V),
 ) {
     // SAFETY: the caller's.
     unsafe {

@@ -161,11 +161,9 @@ impl Level {
     /// starting the next, rather than pushed and or-ed in a word at a time,
     /// part by part, which cost far more per class. Its values begin at the
     /// leaf `lo`, and `hash` is its key's.
-    #[allow(clippy::too_many_arguments)]
     fn close(
         &mut self,
-        at: usize,
-        ones: &[u32],
+        (at, ones): (usize, &[u32]),
         (left, left_bits): (&[u64], usize),
         (right, right_at, right_bits): (&[u64], usize, usize),
         lo: u32,
@@ -1127,18 +1125,14 @@ fn build_on(
             }
             pairs.emitted.clear();
             let before = level.classes.len();
-            join(
+            work += join(
                 &shape,
                 &mut res,
                 &mut forcing,
                 pairs,
-                &mut keys,
-                t,
-                (l, r),
-                &left,
-                &taken,
-                &mut level,
-                &mut work,
+                (t, l, r),
+                (&left, &taken),
+                (&mut level, &mut keys),
             );
             for k in before..level.classes.len() {
                 level.classes[k].read =
@@ -1242,18 +1236,14 @@ fn build_on(
         keys.clear();
         pairs.emitted.clear();
         let mut level = spare.pop().unwrap_or_default();
-        join(
+        work += join(
             &shape,
             &mut res,
             &mut forcing,
             pairs,
-            &mut keys,
-            t,
-            (l, r),
-            &left,
-            &right,
-            &mut level,
-            &mut work,
+            (t, l, r),
+            (&left, &right),
+            (&mut level, &mut keys),
         );
         keys_for = Some(t);
         if let Err(e) = engine.limits().poll_host_work(work - level_work_before) {
@@ -1467,21 +1457,17 @@ struct Pairs {
 /// of `level` it makes: a class new to `level` is added to it, looked up
 /// in `keys`, which holds `level`'s classes. `left` and `right` are
 /// levels of `l` and `r` whose classes keep their values from the
-/// children's first leaves.
-#[allow(clippy::too_many_arguments)]
+/// children's first leaves. Returns the work spent.
 fn join(
     shape: &Shape,
     res: &mut Residuals,
     forcing: &mut Forcing,
     pairs: &mut Pairs,
-    keys: &mut Keys,
-    t: VtreeIdx,
-    (l, r): (VtreeIdx, VtreeIdx),
-    left: &Level,
-    right: &Level,
-    level: &mut Level,
-    work: &mut u64,
-) {
+    (t, l, r): (VtreeIdx, VtreeIdx, VtreeIdx),
+    (left, right): (&Level, &Level),
+    (level, keys): (&mut Level, &mut Keys),
+) -> u64 {
+    let mut work = 0;
     let Shape {
         spans,
         cubes,
@@ -1616,7 +1602,7 @@ fn join(
             left.classes.iter().zip(left_split.iter()).enumerate()
         {
             let (a_here, a_ones) = (left.residuals(ca), left.ones(ca));
-            *work += 1;
+            work += 1;
             // The groups: none set on both sides, each that closes here
             // with one where it must have one.
             ones.clear();
@@ -1646,7 +1632,7 @@ fn join(
                 }
             }
             ones.retain(|&g| group_lca[g as usize] != t);
-            *work += (a_here.len() + b_here.len()) as u64;
+            work += (a_here.len() + b_here.len()) as u64;
             fresh.clear();
             for &(c, p, j, id, g) in &branches[ab0..ab1] {
                 let on_right = &cubes.codes[p as usize..j as usize];
@@ -1725,8 +1711,7 @@ fn join(
             }
             if k as usize == level.classes.len() {
                 level.close(
-                    at,
-                    ones,
+                    (at, ones),
                     (left.values(ca), left_bits),
                     (b_values, right_at, right_bits),
                     t_lo,
@@ -1739,6 +1724,7 @@ fn join(
             emitted.push((k, ChildPair::new(ca.node, cb.node)));
         }
     }
+    work
 }
 
 #[cfg(test)]
@@ -1822,8 +1808,7 @@ mod tests {
             let mut level = Level::default();
             level.add(&[], &[], true, 0, NodeIdx(0));
             level.close(
-                level.residuals.len(),
-                &[],
+                (level.residuals.len(), &[]),
                 (&left, left_bits),
                 (&right, right_at, right_bits),
                 0,

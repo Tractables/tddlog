@@ -2,16 +2,7 @@
 //! expressions of `gen_bn.py`, which read the same files: white
 //! space and word characters as Python's `re` and `str.split` take them.
 
-/// White space as Python's `\s` and `str.split()` take it: Unicode's, and
-/// the four ASCII separators U+001C to U+001F.
-pub(super) fn space(c: char) -> bool {
-    c.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&c)
-}
-
-/// A character of a word, for `\b`: a letter, a digit or `_`.
-pub(super) fn word(c: char) -> bool {
-    c.is_alphanumeric() || c == '_'
-}
+pub(super) use crate::syntax::lpad::{space, word};
 
 /// The fields of `s` between white space, as Python's `s.split()`.
 pub(super) fn fields(s: &str) -> impl Iterator<Item = &str> {

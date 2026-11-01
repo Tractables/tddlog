@@ -1268,9 +1268,9 @@ impl EvidenceWalk {
         };
         let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
             (Some(so), _, false) => {
-                so.and_marginalizing(backend, fa, first, fb, second, &scope, &targets)
+                so.and_marginalizing(backend, (fa, first), (fb, second), &scope, &targets)
             }
-            (Some(so), true, true) => so.and_onto(backend, fa, first, fb, second, &scope),
+            (Some(so), true, true) => so.and_onto(backend, (fa, first), (fb, second), &scope),
             _ => backend.and_onto(fa, first, fb, second, &scope),
         };
         // A join that sums out its whole scope makes a weight: the nodes it

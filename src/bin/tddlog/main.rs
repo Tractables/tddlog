@@ -274,15 +274,15 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let evidence = match &evidence {
-        Some((path, data)) => match Evidence::of_path(path, data) {
+    let evidence = match (&args.evidence, &evidence) {
+        (Some(path), Some(data)) => match Evidence::of_path(path, data) {
             Ok(evidence) => Some(evidence),
             Err(e) => {
                 eprintln!("{e}");
                 return ExitCode::from(2);
             }
         },
-        None => None,
+        _ => None,
     };
     let mut front = Front {
         bytes: data.len(),
@@ -363,16 +363,12 @@ fn main() -> ExitCode {
     }
 }
 
-/// The contents of the file and of its evidence file, with the latter's
-/// path; the error is a file that cannot be read.
-#[allow(clippy::type_complexity)]
-fn read_files(args: &Args) -> Result<(Vec<u8>, Option<(&str, Vec<u8>)>), String> {
+/// The contents of the file and of its evidence file; the error is a file
+/// that cannot be read.
+fn read_files(args: &Args) -> Result<(Vec<u8>, Option<Vec<u8>>), String> {
     let read = |path: &str| std::fs::read(path).map_err(|e| format!("cannot read {path}: {e}"));
     let data = read(&args.file)?;
-    let evidence = match &args.evidence {
-        Some(path) => Some((path.as_str(), read(path)?)),
-        None => None,
-    };
+    let evidence = args.evidence.as_deref().map(read).transpose()?;
     Ok((data, evidence))
 }
 

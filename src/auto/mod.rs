@@ -920,12 +920,9 @@ fn attempt(
             backend.end_turn_at(start_work.saturating_add(b.work));
         }
         let evaluated = t.evaluation.run(
-            gp,
-            deps,
-            order,
+            (gp, deps, order),
             &backend,
-            t.kind,
-            projection,
+            (t.kind, projection),
             dynamic_first_pairs,
             bounds.map(|b| b.pairs),
             horizon,

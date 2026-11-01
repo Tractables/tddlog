@@ -952,13 +952,14 @@ impl<'a> TopDown<'a> {
             let mark = self.mark();
             let key = self.tables[t as usize].call.clone();
             let call = self.unkey(&key, rule.args.len());
-            self.frames.last_mut().expect("a frame").call = call.clone();
             let base = self.binds.len() as u32;
             self.binds
                 .resize(self.binds.len() + rule.vars as usize, None);
             let head: Vec<T> = rule.args.iter().map(|a| Self::inst(a, base)).collect();
-            if self.unify_all(&head, &call) {
-                self.body(t, rule, base, 0, &call, &mut Vec::new())?;
+            let unified = self.unify_all(&head, &call);
+            self.frames.last_mut().expect("a frame").call = call;
+            if unified {
+                self.body(t, rule, base, 0, &mut Vec::new())?;
             }
             self.undo(mark);
         }
@@ -966,7 +967,7 @@ impl<'a> TopDown<'a> {
     }
 
     /// Resolves the literals of `rule` from the `i`th on, its variables
-    /// from `base`, for table `t`'s call `call`; `steps` holds what the
+    /// from `base`, for table `t`'s call; `steps` holds what the
     /// literals before it read: atoms, negated or not, and the ranks of
     /// built-ins' solutions.
     fn body(
@@ -975,15 +976,14 @@ impl<'a> TopDown<'a> {
         rule: &Rule,
         base: u32,
         i: usize,
-        call: &[T],
         steps: &mut Vec<Step>,
     ) -> Result<(), GroundError> {
         let Some(lit) = rule.body.get(i) else {
-            return self.answer(t, call, rule.group, steps);
+            return self.answer(t, rule.group, steps);
         };
         let next = |me: &mut Self, step: Option<Step>, steps: &mut Vec<Step>| {
             steps.extend(step);
-            let r = me.body(t, rule, base, i + 1, call, steps);
+            let r = me.body(t, rule, base, i + 1, steps);
             if step.is_some() {
                 steps.pop();
             }
@@ -1054,7 +1054,7 @@ impl<'a> TopDown<'a> {
                 };
                 let n = steps.len();
                 steps.extend(answers.into_iter().map(Step::Neg));
-                let r = self.body(t, rule, base, i + 1, call, steps);
+                let r = self.body(t, rule, base, i + 1, steps);
                 steps.truncate(n);
                 r?;
             }
@@ -1660,12 +1660,12 @@ impl<'a> TopDown<'a> {
     fn answer(
         &mut self,
         t: u32,
-        call: &[T],
         group: u32,
         steps: &[Step],
     ) -> Result<(), GroundError> {
         let p = self.tables[t as usize].pred;
-        let args = self.full_all(call)?;
+        let call = self.frames.last().expect("a frame").call.clone();
+        let args = self.full_all(&call)?;
         let Some(key) = Self::key(&args) else {
             return Err(self.too_deep(p, "answer"));
         };

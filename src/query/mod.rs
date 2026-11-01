@@ -718,22 +718,18 @@ impl Answers<'_> {
         loop {
             let p = match &c.counted {
                 Counts::Plain(plain) => joint_ratio(
-                    ev.e,
-                    plain,
+                    (ev.e, plain),
                     &c.spans,
-                    q,
-                    &q_w,
+                    (q, &q_w),
                     &leaf_in_e,
                     ev.mass,
                     &mut charged,
                     &host,
                 )?,
                 Counts::Wide(wide) => joint_ratio(
-                    ev.e,
-                    wide,
+                    (ev.e, wide),
                     &c.spans,
-                    q,
-                    &q_w,
+                    (q, &q_w),
                     &leaf_in_e,
                     ev.mass,
                     &mut charged,
@@ -855,13 +851,10 @@ fn literal_ratio<V: Value>(
 /// count is not exact. The walk's work is charged through `host`
 /// unless `charged` says a walk of this query already was, and a walk that
 /// finishes sets it.
-#[allow(clippy::too_many_arguments)]
 fn joint_ratio<V: Value>(
-    e: &Tdd,
-    c: &Counted<V>,
+    (e, c): (&Tdd, &Counted<V>),
     spans: &[(u32, u32)],
-    q: &Tdd,
-    q_w: &Probabilities,
+    (q, q_w): (&Tdd, &Probabilities),
     leaf_in_e: &impl Fn(VarId) -> Option<VtreeIdx>,
     mass: Count,
     charged: &mut bool,

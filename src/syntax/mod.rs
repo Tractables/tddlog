@@ -538,7 +538,7 @@ fn write_flat(f: &mut fmt::Formatter<'_>, t: &Term) -> fmt::Result {
 /// shortest digits that read back as it, in fixed notation from 1e-4 up to
 /// 1e16 (`2.0`, `0.0001`), in scientific notation otherwise (`1e-05`,
 /// `1e+16`).
-fn write_float(f: &mut fmt::Formatter<'_>, x: f64) -> fmt::Result {
+pub(crate) fn write_float(f: &mut impl fmt::Write, x: f64) -> fmt::Result {
     if x.is_nan() {
         return f.write_str("nan");
     }

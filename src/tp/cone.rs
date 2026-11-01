@@ -31,10 +31,11 @@ pub(crate) fn component_cones(
 ) -> Vec<Vec<VarId>> {
     let comp_of = component_of(gp.num_atoms(), sccs);
     let mut cones = Cones::new(sccs.len(), num_vars);
-    (0..sccs.len())
-        .map(|ci| {
+    sccs.iter()
+        .enumerate()
+        .map(|(ci, scc)| {
             cones
-                .of(gp, by_head, sccs, ci, var_of, &comp_of, usize::MAX)
+                .of(gp, by_head, (ci, scc), var_of, &comp_of, usize::MAX)
                 .expect("no limit")
         })
         .collect()
@@ -99,13 +100,11 @@ impl Cones {
 
     /// The cone of component `ci`, ascending; `None` where it has `limit`
     /// variables or more, or reads a cone that has.
-    #[allow(clippy::too_many_arguments)]
     pub(crate) fn of(
         &mut self,
         gp: &GroundProgram,
         by_head: &RulesByHead,
-        sccs: &[Vec<AtomId>],
-        ci: usize,
+        (ci, scc): (usize, &[AtomId]),
         var_of: &[Option<VarId>],
         comp_of: &[u32],
         limit: usize,
@@ -127,7 +126,7 @@ impl Cones {
         };
         let mut whole = false;
         let mut over = false;
-        'rules: for &a in &sccs[ci] {
+        'rules: for &a in scc {
             for &ri in &by_head[a as usize] {
                 for l in &gp.rules[ri].body {
                     let b = l.atom() as usize;

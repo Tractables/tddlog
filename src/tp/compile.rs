@@ -535,24 +535,22 @@ impl Projected {
         (Some(projected), None)
     }
 
-    /// The scope of component `ci`, the next to start: its cone's, or the
+    /// The scope of the next component to start (`scc`): its cone's, or the
     /// global one over the limit.
-    #[allow(clippy::too_many_arguments)]
     fn start(
         &mut self,
         gp: &GroundProgram,
         by_head: &RulesByHead,
-        sccs: &[Vec<AtomId>],
-        ci: usize,
+        scc: &[AtomId],
         var_of: &[Option<VarId>],
         comp_of: &[u32],
         backend: &TddBackend,
     ) -> Result<Option<VtreeScope>, CompileError> {
-        debug_assert_eq!(ci, self.started, "components start in order");
+        let ci = self.started;
         self.started += 1;
         let Some(vars) = self
             .cones
-            .of(gp, by_head, sccs, ci, var_of, comp_of, self.keep_global)
+            .of(gp, by_head, (ci, scc), var_of, comp_of, self.keep_global)
         else {
             return Ok(None);
         };
@@ -1049,8 +1047,7 @@ impl Compilation {
                     && let Some(scope) = p.start(
                         gp,
                         &self.by_head,
-                        &self.sccs,
-                        self.next,
+                        &self.sccs[self.next],
                         &self.var_of,
                         &self.comp_of,
                         backend,
@@ -1713,17 +1710,14 @@ impl Compilation {
             let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
                 backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
             };
-            let mut updates = 0;
             let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f.into());
-            let result = aft::compile_component(
+            let (result, updates) = aft::compile_component(
                 gp,
                 by_head,
                 var_of,
-                scc,
-                scope,
+                (scc, scope),
                 &mut lambda_lookup,
                 &wf_negate,
-                &mut updates,
                 backend,
             )?;
             stats.atom_updates += updates;

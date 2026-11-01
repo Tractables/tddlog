@@ -342,44 +342,7 @@ pub(crate) fn fsum(xs: &[f64]) -> f64 {
 /// otherwise (`1e-05`, `0.0001`, `1.0`), so that the program is the one
 /// `gen_bn.py` wrote.
 pub(crate) fn write_float(out: &mut String, x: f64) {
-    use std::fmt::Write;
-    if !x.is_finite() {
-        write!(out, "{x}").expect("a String takes any text");
-        return;
-    }
-    let text = format!("{x:e}");
-    let (mantissa, exp) = text.split_once('e').expect("Rust writes an exponent");
-    let (sign, mantissa) = match mantissa.strip_prefix('-') {
-        Some(m) => ("-", m),
-        None => ("", mantissa),
-    };
-    let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
-    let n = digits.len() as i32;
-    // x = 0.digits · 10^point
-    let point = exp.parse::<i32>().expect("an integer exponent") + 1;
-    out.push_str(sign);
-    if !(-4 < point && point <= 16) {
-        out.push_str(&digits[..1]);
-        if n > 1 {
-            out.push('.');
-            out.push_str(&digits[1..]);
-        }
-        let e = point - 1;
-        write!(out, "e{}{:02}", if e < 0 { '-' } else { '+' }, e.abs())
-            .expect("a String takes any text");
-    } else if point <= 0 {
-        out.push_str("0.");
-        out.extend(std::iter::repeat_n('0', (-point) as usize));
-        out.push_str(&digits);
-    } else if point < n {
-        out.push_str(&digits[..point as usize]);
-        out.push('.');
-        out.push_str(&digits[point as usize..]);
-    } else {
-        out.push_str(&digits);
-        out.extend(std::iter::repeat_n('0', (point - n) as usize));
-        out.push_str(".0");
-    }
+    crate::syntax::write_float(out, x).expect("a String takes any text");
 }
 
 #[cfg(test)]

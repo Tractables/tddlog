@@ -340,12 +340,9 @@ pub(crate) fn run_prepared(
     let ((results, query_sizes), vtree) = layout.vtree.context().run(|engine| {
         let backend = tp::TddBackend::new(engine, layout.vtree.clone());
         let answers = evaluation.run(
-            &ground,
-            &deps,
-            &layout.order,
+            (&ground, &deps, &layout.order),
             &backend,
-            kind,
-            projection,
+            (kind, projection),
             first_pairs,
             None,
             None,
