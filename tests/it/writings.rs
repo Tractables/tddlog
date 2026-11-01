@@ -799,3 +799,86 @@ fn a_variable_computed_from_many_flips_is_left_as_written() {
         assert!((r.probability - want).abs() < 1e-9, "{r} against {want}");
     }
 }
+
+#[test]
+fn a_private_variable_left_as_bits_reads_the_views_it_shares_with_its_reader() {
+    // Q's rows with P summed in pass their bound, so P is apart from Q. P
+    // reads only flips, no variable written, and stays as bits, reading the
+    // comparison X1 && X2 that Q's rows have replaced. R makes the flips
+    // read by more than P and Q.
+    const X: [f64; 6] = [0.3, 0.6, 0.2, 0.7, 0.4, 0.55];
+    const R: [f64; 6] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
+    const Q: [[f64; 8]; 4] = [
+        [0.1, 0.2, 0.1, 0.2, 0.15, 0.05, 0.12, 0.08],
+        [0.25, 0.05, 0.1, 0.15, 0.05, 0.2, 0.06, 0.14],
+        [0.05, 0.15, 0.3, 0.1, 0.1, 0.1, 0.05, 0.15],
+        [0.2, 0.1, 0.05, 0.05, 0.3, 0.1, 0.1, 0.1],
+    ];
+    // P's table: its k-th row, X3 to X6 its bits and X1 && X2 the next.
+    let p = |k: usize| 0.01 + 0.03 * k as f64;
+    fn table(x: usize, k: usize, p: &dyn Fn(usize) -> f64) -> String {
+        if x == 7 {
+            return format!("flip {:?}", p(k));
+        }
+        format!(
+            "if X{x} then ({}) else ({})",
+            table(x + 1, 2 * k + 1, p),
+            table(x + 1, 2 * k, p)
+        )
+    }
+    let draw = |r: &[f64; 8]| {
+        let weights: Vec<String> = r.iter().map(|q| format!("{q:?}")).collect();
+        format!("discrete({})", weights.join(", "))
+    };
+    let mut source = String::new();
+    for (k, q) in X.iter().enumerate() {
+        source += &format!("let X{} = flip {q:?} in\n", k + 1);
+    }
+    let r: Vec<String> = R
+        .iter()
+        .enumerate()
+        .map(|(k, q)| format!("(X{} && flip {q:?})", k + 1))
+        .collect();
+    source += &format!("let R = {} in\n", r.join(" || "));
+    source += &format!(
+        "let P = if (X1 && X2) then ({}) else ({}) in\n",
+        table(3, 1, &p),
+        table(3, 0, &p)
+    );
+    source += &format!(
+        "let Q = if (X1 && X2) then (if P then {} else {}) else (if P then {} else {}) in\n",
+        draw(&Q[0]),
+        draw(&Q[1]),
+        draw(&Q[2]),
+        draw(&Q[3])
+    );
+    source += "(R, (Q == int(3, 3), Q == int(3, 5)))\n";
+    let mut expected = [0.0; 3];
+    for world in 0usize..1 << X.len() {
+        let on = |k: usize| world >> k & 1 == 1;
+        let weight: f64 = (0..X.len())
+            .map(|k| if on(k) { X[k] } else { 1.0 - X[k] })
+            .product();
+        let not_r: f64 = (0..X.len())
+            .map(|k| if on(k) { 1.0 - R[k] } else { 1.0 })
+            .product();
+        let both = on(0) && on(1);
+        let row = (2..X.len()).fold(usize::from(both), |k, x| 2 * k + usize::from(on(x)));
+        let (given, otherwise) = if both { (&Q[0], &Q[1]) } else { (&Q[2], &Q[3]) };
+        expected[0] += weight * (1.0 - not_r);
+        for (e, value) in expected[1..].iter_mut().zip([3, 5]) {
+            *e += weight * (p(row) * given[value] + (1.0 - p(row)) * otherwise[value]);
+        }
+    }
+    let source = tddlog::syntax::dice::read(&source).unwrap();
+    let run = common::run(
+        &source,
+        &common::options(Strategy::Auto, Projection::default()),
+    )
+    .unwrap();
+    let results = run.results.expect("no evidence");
+    assert_eq!(results.len(), expected.len());
+    for (r, &want) in results.iter().zip(&expected) {
+        assert!((r.probability - want).abs() < 1e-9, "{r} against {want}");
+    }
+}

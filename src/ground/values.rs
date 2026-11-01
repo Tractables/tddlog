@@ -106,8 +106,8 @@ use crate::syntax::{Atom, Term};
 /// The rows a variable is written as hold at most this many times the
 /// literals of its cone's rules.
 const GROWTH: usize = 4;
-/// Steps of a variable's expansion per literal of its cone's rules, and of
-/// the whole pass per literal of the program: literals copied or read.
+/// Steps per literal a variable's expansion may write, and per literal of
+/// the program for the rest of the pass: literals copied or read.
 const WORK_PER_LITERAL: usize = 32;
 /// Steps an expansion, and the pass, may take more, however few the
 /// literals.
@@ -298,12 +298,19 @@ impl Unit<'_> {
         if !units.draws_alone(readers, &cone.inputs) {
             return false;
         }
-        let limit = (WORK_PER_LITERAL * cone.literals + WORK_FLOOR).min(work.left());
+        let limit = (GROWTH * WORK_PER_LITERAL * cone.literals + WORK_FLOOR).min(work.left());
         let Some(leaves) = cone.rows(units, limit, work) else {
             return false;
         };
+        // A private variable left as bits may read the views: they stay,
+        // and go where no one reads them.
+        let held: Vec<AtomId> = members
+            .iter()
+            .copied()
+            .filter(|&a| !units.view[a as usize])
+            .collect();
         let bound = GROWTH * cone.literals;
-        written.write(gp, members, interface, &cone.inputs, &leaves, bound)
+        written.write(gp, &held, interface, &cone.inputs, &leaves, bound)
     }
 
     /// Writes the unit of `members` and `interface`, summing what it holds
@@ -737,10 +744,12 @@ impl<'a> Units<'a> {
 
     /// The variables of one bit that the unit of `members` and `interface`
     /// sums into its rows: each gate of it, the readers first, that is
-    /// not of `interface`, with the atoms of its class under it but the
-    /// views (the gate first), where only they read those atoms, they hold
-    /// a fact and they read a view or an atom outside the class. A gate
-    /// that reads neither is a flip, which adds no row.
+    /// not of `interface` and that its readers read both ways, with the
+    /// atoms of its class under it but the views (the gate first), where
+    /// only they read those atoms, they hold a fact and they read a view or
+    /// an atom outside the class. A gate read one way only is a part of its
+    /// reader's table, and one that reads neither a view nor an atom
+    /// outside the class a flip, which adds no row.
     fn private(
         &self,
         readers: &Lists<u32>,
@@ -755,10 +764,21 @@ impl<'a> Units<'a> {
             .filter(|&a| self.is_gate(a) && !self.view[a as usize] && !interface.contains(&a))
             .collect();
         gates.sort_unstable_by_key(|&a| std::cmp::Reverse(self.rank[a as usize]));
+        let read_both_ways = |g: AtomId| {
+            let read = |positive: bool| {
+                readers[g as usize].iter().any(|&ri| {
+                    gp.rules[ri as usize]
+                        .body
+                        .iter()
+                        .any(|l| l.atom() == g && l.is_positive() == positive)
+                })
+            };
+            read(true) && read(false)
+        };
         let mut taken: FxHashSet<AtomId> = FxHashSet::default();
         let mut parts = Vec::new();
         for g in gates {
-            if taken.contains(&g) {
+            if taken.contains(&g) || !read_both_ways(g) {
                 continue;
             }
             let mut part = vec![g];
@@ -945,6 +965,10 @@ struct Reading<'a> {
     /// current variable.
     floor: u32,
     token: u32,
+    /// Scratch kept from one variable to the next.
+    stack: Vec<AtomId>,
+    read: Vec<AtomId>,
+    tested: Vec<(u32, u32)>,
     in_set: Vec<u32>,
     rule_seen: Vec<u32>,
     found: Vec<u32>,
@@ -976,6 +1000,9 @@ impl<'a> Reading<'a> {
             left: gp.rules.iter().map(|r| r.body.len() + 1).sum::<usize>() + WORK_FLOOR,
             floor: 0,
             token: 0,
+            stack: Vec::new(),
+            read: Vec::new(),
+            tested: Vec::new(),
             in_set: vec![0; n],
             rule_seen: vec![0; gp.rules.len()],
             found: vec![0; n],
@@ -1028,10 +1055,11 @@ impl<'a> Reading<'a> {
         let all = (1u32 << bits.len()) - 1;
         let start = self.left;
         let mut left = start;
-        let mut tested: Vec<(u32, u32)> = Vec::new();
-        let mut read: Vec<AtomId> = bits.to_vec();
+        self.tested.clear();
+        self.read.clear();
+        self.read.extend_from_slice(bits);
         let mut ok = true;
-        'read: while let Some(a) = read.pop() {
+        'read: while let Some(a) = self.read.pop() {
             for &ri in &readers[a as usize] {
                 if self.rule_seen[ri as usize] == token {
                     continue;
@@ -1053,8 +1081,8 @@ impl<'a> Reading<'a> {
                         code |= u32::from(l.is_positive()) << k;
                     }
                 }
-                if mask != 0 && !tested.contains(&(mask, code)) {
-                    tested.push((mask, code));
+                if mask != 0 && !self.tested.contains(&(mask, code)) {
+                    self.tested.push((mask, code));
                 }
                 let mut depends = mask;
                 for l in &r.body {
@@ -1074,7 +1102,7 @@ impl<'a> Reading<'a> {
                     continue;
                 }
                 match self.depends(variable, r.head, ALONE, &mut left) {
-                    Some(d) if d & ALONE != 0 => read.push(r.head),
+                    Some(d) if d & ALONE != 0 => self.read.push(r.head),
                     Some(_) => {
                         ok = false;
                         break 'read;
@@ -1088,7 +1116,7 @@ impl<'a> Reading<'a> {
             }
         }
         self.left = left;
-        work.add(start - left) && ok && tested.len() >= 2
+        work.add(start - left) && ok && self.tested.len() >= 2
     }
 
     /// What `a` depends on, through gates down to the variables' atoms:
@@ -1106,10 +1134,11 @@ impl<'a> Reading<'a> {
     ) -> Option<u32> {
         let (gp, by_head) = (self.gp, self.by_head);
         let token = self.token;
-        let mut stack = vec![a];
+        self.stack.clear();
+        self.stack.push(a);
         let mut reached = 0;
         let mut alone = true;
-        while let Some(&x) = stack.last() {
+        while let Some(&x) = self.stack.last() {
             let x = x as usize;
             if self.found[x] != token {
                 if variable[x] || self.rank[x] == NONE || self.rank[x] < self.floor {
@@ -1120,7 +1149,7 @@ impl<'a> Reading<'a> {
                     for &ri in &by_head[x] {
                         let body = &gp.rules[ri].body;
                         *left = left.checked_sub(body.len() + 1)?;
-                        stack.extend(
+                        self.stack.extend(
                             body.iter()
                                 .map(|l| l.atom())
                                 .filter(|&y| self.found[y as usize] != token),
@@ -1141,13 +1170,13 @@ impl<'a> Reading<'a> {
                 }
                 self.found[x] = token;
             }
-            stack.pop();
+            self.stack.pop();
             let d = self.depends[x];
             reached |= d & !ALONE;
             alone &= d & ALONE != 0;
             if (want == ALONE && !alone) || (want != ALONE && reached & want == want) {
                 // The gates left half read are read again on another walk.
-                for &y in &stack {
+                for &y in &self.stack {
                     if self.found[y as usize] != token {
                         self.entered[y as usize] = 0;
                     }
@@ -1713,13 +1742,13 @@ impl Written {
         self.bit_of.retain(|_, &mut (w, _)| w < values);
     }
 
-    /// Writes the unit of `members` and `interface` as the rows `leaves`
-    /// over its `inputs`, where they hold at most `limit` literals;
+    /// Writes the unit that holds `held` and of `interface` as the rows
+    /// `leaves` over its `inputs`, where they hold at most `limit` literals;
     /// whether they do.
     fn write(
         &mut self,
         gp: &GroundProgram,
-        members: &[AtomId],
+        held: &[AtomId],
         interface: &[AtomId],
         inputs: &[AtomId],
         leaves: &[Leaf],
@@ -1811,7 +1840,7 @@ impl Written {
                 self.facts.push(i);
             }
         }
-        self.replaced.extend_from_slice(members);
+        self.replaced.extend_from_slice(held);
         self.values.push((codes, values));
         true
     }
