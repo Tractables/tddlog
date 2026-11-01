@@ -687,7 +687,7 @@ impl Rewrite {
     fn apply(self, gp: &mut GroundProgram) -> (usize, Count) {
         let Rewrite {
             new_atoms,
-            mut emitted,
+            emitted,
             dropped,
             evidence,
             factor,
@@ -701,17 +701,7 @@ impl Rewrite {
             gp.atoms.push(atom);
             gp.kinds.push(kind);
         }
-        let old = std::mem::take(&mut gp.rules);
-        let mut rules = Vec::with_capacity(old.len());
-        for (ri, r) in old.into_iter().enumerate() {
-            if let Some(new) = emitted.remove(&ri) {
-                rules.extend(new);
-            }
-            if !dropped[ri] {
-                rules.push(r);
-            }
-        }
-        gp.rules = rules;
+        gp.splice_rules(emitted, &dropped);
         for bad in evidence {
             gp.evidence
                 .push((gp.atoms[bad as usize].clone(), Some(bad), false));

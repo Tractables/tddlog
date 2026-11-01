@@ -813,6 +813,12 @@ impl Factoring<'_> {
                 .expect("a rule of pairs over facts alone")
                 .var
         };
+        let three_pairs = bodies
+            .iter()
+            .filter(|body| self.pair_of(body).is_some())
+            .take(3)
+            .count()
+            == 3;
         if !pairs.is_empty() {
             let mut scratch = self.scratch.borrow_mut();
             let stamp = scratch.fresh_stamp();
@@ -832,25 +838,13 @@ impl Factoring<'_> {
             if !apart {
                 return self.at_most_one(with_pairs(bodies, pairs), &[]);
             }
-        } else if bodies
-            .iter()
-            .filter(|body| self.pair_of(body).is_some())
-            .take(3)
-            .count()
-            < 3
-        {
+        } else if !three_pairs {
             return (Vec::new(), bodies);
         }
         // The groups of the bodies' pairs, each at the body that first reads
         // the variable that leads it.
         let mut found: Vec<(usize, Vec<VarId>)> = Vec::new();
-        if bodies
-            .iter()
-            .filter(|body| self.pair_of(body).is_some())
-            .take(3)
-            .count()
-            == 3
-        {
+        if three_pairs {
             let mut pairs: FxHashSet<(VarId, VarId)> = FxHashSet::default();
             let mut neighbors: FxHashMap<VarId, Vec<VarId>> = FxHashMap::default();
             let mut seen: Vec<(VarId, usize)> = Vec::new();

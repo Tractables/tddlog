@@ -338,9 +338,26 @@ fn rewrite(
             }
         }
     }
-    // Equal facts: each copy's weight goes into the fact it copies, and the
-    // mass of the worlds where the two agree, which the rescaling takes
-    // out, into the program's factor.
+    merge_equal_facts(gp, equal, &mut out, &mut factor);
+    // Each gate's fact becomes a derived atom with the gate's rules, and
+    // the weight one half of each of its values, which its definition
+    // summed out, a factor of the counts.
+    for gate in gates {
+        gp.kinds[gate.fact as usize] = AtomKind::Derived;
+        gp.rules.extend(gate.rules());
+    }
+    (out, factor.shifted(-(gates.len() as i64)))
+}
+
+/// Equal facts: each copy's weight goes into the fact it copies, and the
+/// mass of the worlds where the two agree, which the rescaling takes out,
+/// into the program's factor.
+fn merge_equal_facts(
+    gp: &mut GroundProgram,
+    equal: &[(AtomId, AtomId, bool)],
+    out: &mut Conditioned,
+    factor: &mut Count,
+) {
     let mut weight: Vec<Option<Prob>> = vec![None; gp.num_atoms()];
     for &(g, f, same) in equal {
         let p = |a: AtomId| match gp.kinds[a as usize] {
@@ -350,7 +367,7 @@ fn rewrite(
         let w = weight[f as usize].unwrap_or(p(f));
         let wg = p(g).literal(same);
         let (t, e) = (w.p * wg.p, w.not * wg.not);
-        factor = (factor * Count::new(t + e)).normalized();
+        *factor = (*factor * Count::new(t + e)).normalized();
         weight[f as usize] = Some(Prob {
             p: t / (t + e),
             not: e / (t + e),
@@ -367,14 +384,6 @@ fn rewrite(
         }
     }
     out.merged = equal.len();
-    // Each gate's fact becomes a derived atom with the gate's rules, and
-    // the weight one half of each of its values, which its definition
-    // summed out, a factor of the counts.
-    for gate in gates {
-        gp.kinds[gate.fact as usize] = AtomKind::Derived;
-        gp.rules.extend(gate.rules());
-    }
-    (out, factor.shifted(-(gates.len() as i64)))
 }
 
 /// Drops the observations of certain atoms that hold: a true atom with a

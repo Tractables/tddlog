@@ -7,26 +7,14 @@ use crate::common;
 
 use tddlog::Options;
 
-/// The answers of `source`, each atom as printed with its probability.
-fn answers(source: &str) -> Vec<(String, f64)> {
-    let run = common::run(source, &Options::default()).unwrap();
-    run.results
-        .expect("consistent evidence")
-        .iter()
-        .map(|r| (r.to_string(), r.probability))
-        .collect()
-}
-
 fn assert_answers(source: &str, expected: &[(&str, f64)]) {
-    let got = answers(source);
-    assert_eq!(
-        got.iter().map(|(a, _)| a.as_str()).collect::<Vec<_>>(),
-        expected.iter().map(|(a, _)| *a).collect::<Vec<_>>(),
-        "{source}"
+    let run = common::run(source, &Options::default()).unwrap();
+    common::assert_answers(
+        source,
+        &run.results.expect("consistent evidence"),
+        expected,
+        1e-9,
     );
-    for ((a, p), (_, q)) in got.iter().zip(expected) {
-        assert!((p - q).abs() < 1e-9, "{a}: {p} against {q}");
-    }
 }
 
 /// The error `source` is refused with.

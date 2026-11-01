@@ -631,8 +631,7 @@ impl Lowering<'_, '_> {
             if own.is_empty() {
                 continue;
             }
-            let mut vs = Vec::new();
-            a.vars_into(&mut vs);
+            let mut vs = a.vars();
             vs.retain(|v| !own.contains(v));
             self.aux += 1;
             let head = Atom::new(
@@ -661,13 +660,7 @@ impl Lowering<'_, '_> {
             let atom = std::mem::take(&mut h.atom);
             h.atom = self.flat_atom(atom, &mut front);
         }
-        let head_vars: Vec<String> = {
-            let mut vs = Vec::new();
-            for h in &clause.heads {
-                h.atom.vars_into(&mut vs);
-            }
-            vs
-        };
+        let head_vars = atom_vars(clause.heads.iter().map(|h| &h.atom));
         let Some(body) = self.body(std::mem::take(&mut clause.body), &head_vars, work)? else {
             return Ok(None);
         };
@@ -699,27 +692,25 @@ impl Lowering<'_, '_> {
             .collect();
         for (i, l) in body.into_iter().enumerate() {
             match l {
-                Literal::Pos(a) => match builtin(&a, self.defined) {
-                    Some(b) => {
-                        let args: Vec<Term> =
-                            a.args.iter().map(|t| self.flatten(t, &mut out)).collect();
-                        out.push(Literal::Builtin(b, args, false));
-                    }
-                    None => {
-                        let a = self.flat_atom(a, &mut out);
-                        out.push(Literal::Pos(a));
-                    }
-                },
-                Literal::Neg(a) => {
-                    let mut pre = Vec::new();
+                ref l @ (Literal::Pos(_) | Literal::Neg(_)) => {
+                    let negated = matches!(l, Literal::Neg(_));
+                    let (Literal::Pos(a) | Literal::Neg(a)) = l.clone() else {
+                        unreachable!()
+                    };
                     let lit = match builtin(&a, self.defined) {
                         Some(b) => {
-                            let args = a.args.iter().map(|t| self.flatten(t, &mut pre)).collect();
-                            Literal::Builtin(b, args, true)
+                            let args = a.args.iter().map(|t| self.flatten(t, &mut out)).collect();
+                            Literal::Builtin(b, args, negated)
                         }
-                        None => Literal::Neg(self.flat_atom(a, &mut pre)),
+                        None => {
+                            let a = self.flat_atom(a, &mut out);
+                            if negated {
+                                Literal::Neg(a)
+                            } else {
+                                Literal::Pos(a)
+                            }
+                        }
                     };
-                    out.extend(pre);
                     out.push(lit);
                 }
                 Literal::Cmp(CmpOp::Eq, a, b) => {
@@ -997,10 +988,10 @@ fn atom_vars<'a>(atoms: impl IntoIterator<Item = &'a Atom>) -> Vec<String> {
 /// The variables of `body[i]`, where it is a negated atom, that neither
 /// `outside` nor another literal of `body` reads.
 fn locals(body: &[Literal], i: usize, outside: &[String]) -> Vec<String> {
-    let mut vs = Vec::new();
-    if let Literal::Neg(a) = &body[i] {
-        a.vars_into(&mut vs);
-    }
+    let Literal::Neg(a) = &body[i] else {
+        return Vec::new();
+    };
+    let mut vs = a.vars();
     if vs.is_empty() {
         return vs;
     }

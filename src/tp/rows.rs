@@ -170,7 +170,6 @@ pub(super) fn table_models(
         members,
         all,
     } = columns;
-    let bit = |g: usize| g >= first_bit;
     let width = all.len();
     // A cube spreads over two values or more of each input it does not
     // name: where that alone passes `max`, decline before reading them.
@@ -186,40 +185,7 @@ pub(super) fn table_models(
     };
     let value_of = |g: usize, k: u64| if k == all[g].1 as u64 { NONE } else { k as u32 };
 
-    // Each cube as `width + 1` values: the value of each input it names,
-    // free for those it does not, none for the output, and then the cube's
-    // place. What it says of the output is in `forces`: the bits of the
-    // output's value it fixes and their values, all of them for a group,
-    // and `None` where it rules its inputs out.
-    let mut read: Vec<u32> = Vec::with_capacity(cubes.len() * (width + 1));
-    let mut forces: Vec<Option<(u64, u64)>> = Vec::with_capacity(cubes.len());
-    for (i, c) in cubes.iter().enumerate() {
-        let at = read.len();
-        read.resize(at + width + 1, FREE);
-        let (values, place) = read[at..].split_at_mut(width);
-        place[0] = i as u32;
-        let mut force = None;
-        for &l in c.iter() {
-            let g = group_of[l.var.0 as usize] as usize;
-            let k = member[l.var.0 as usize];
-            if g == output {
-                if force.is_some() || (l.sign && !binary) {
-                    return None;
-                }
-                force = Some(if binary {
-                    (1 << k, u64::from(!l.sign) << k)
-                } else {
-                    (u64::MAX, u64::from(k))
-                });
-            } else if values[g] != FREE || !(l.sign || bit(g)) {
-                return None;
-            } else {
-                values[g] = if l.sign { k } else { NONE };
-            }
-        }
-        values[output] = NONE;
-        forces.push(force);
-    }
+    let (read, forces) = read_cubes(&cubes, width, output, binary, first_bit, &group_of, &member)?;
 
     // Each cube spread over the values of the inputs it does not name, in
     // the same layout.
@@ -334,6 +300,54 @@ pub(super) fn table_models(
     }
     debug_assert!(runs.next().is_none());
     Some(models)
+}
+
+type CubeForces = (Vec<u32>, Vec<Option<(u64, u64)>>);
+
+/// Each cube as `width + 1` values: the value of each input it names, free
+/// for those it does not, none for the output, and then the cube's place.
+/// What it says of the output is in `forces`: the bits of the output's
+/// value it fixes and their values, all of them for a group, and `None`
+/// where it rules its inputs out.
+fn read_cubes<C: AsRef<[tididi::Literal]>>(
+    cubes: &[C],
+    width: usize,
+    output: usize,
+    binary: bool,
+    first_bit: usize,
+    group_of: &[u32],
+    member: &[u32],
+) -> Option<CubeForces> {
+    let mut read: Vec<u32> = Vec::with_capacity(cubes.len() * (width + 1));
+    let mut forces: Vec<Option<(u64, u64)>> = Vec::with_capacity(cubes.len());
+    for (i, c) in cubes.iter().enumerate() {
+        let at = read.len();
+        read.resize(at + width + 1, FREE);
+        let (values, place) = read[at..].split_at_mut(width);
+        place[0] = i as u32;
+        let mut force = None;
+        for &l in c.as_ref() {
+            let g = group_of[l.var.0 as usize] as usize;
+            let k = member[l.var.0 as usize];
+            if g == output {
+                if force.is_some() || (l.sign && !binary) {
+                    return None;
+                }
+                force = Some(if binary {
+                    (1 << k, u64::from(!l.sign) << k)
+                } else {
+                    (u64::MAX, u64::from(k))
+                });
+            } else if values[g] != FREE || !(l.sign || g >= first_bit) {
+                return None;
+            } else {
+                values[g] = if l.sign { k } else { NONE };
+            }
+        }
+        values[output] = NONE;
+        forces.push(force);
+    }
+    Some((read, forces))
 }
 
 /// The columns of a table's rows: each group as the start and length of

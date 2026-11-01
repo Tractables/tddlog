@@ -304,15 +304,19 @@ impl Rooted {
             tops.push(s);
         }
         let root = forest.balanced(&tops)?;
+        let union = self.widest_root_path(bags, placed.len());
+        Some((forest, root, union))
+    }
 
+    fn widest_root_path(&self, bags: &[goatd::TdBag], num_atoms: usize) -> usize {
         let mut union = 0usize;
-        let mut on_path = vec![0u32; placed.len()];
+        let mut on_path = vec![0u32; num_atoms];
         let mut live = 0usize;
         enum Walk {
             Enter(usize),
             Leave(usize),
         }
-        let mut walk: Vec<Walk> = roots.iter().rev().map(|&r| Walk::Enter(r)).collect();
+        let mut walk: Vec<Walk> = self.roots.iter().rev().map(|&r| Walk::Enter(r)).collect();
         while let Some(step) = walk.pop() {
             match step {
                 Walk::Enter(b) => {
@@ -324,7 +328,7 @@ impl Rooted {
                     }
                     union = union.max(live);
                     walk.push(Walk::Leave(b));
-                    walk.extend(children[b].iter().rev().map(|&c| Walk::Enter(c)));
+                    walk.extend(self.children[b].iter().rev().map(|&c| Walk::Enter(c)));
                 }
                 Walk::Leave(b) => {
                     for &v in bags[b].vertices() {
@@ -336,7 +340,7 @@ impl Rooted {
                 }
             }
         }
-        Some((forest, root, union))
+        union
     }
 }
 

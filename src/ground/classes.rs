@@ -435,17 +435,7 @@ fn rewrite_rows(
         }
         order.push(a);
     }
-    let old = std::mem::take(&mut gp.rules);
-    let mut rules = Vec::with_capacity(old.len());
-    for (ri, r) in old.into_iter().enumerate() {
-        if let Some(emitted) = before_rule.remove(&ri) {
-            rules.extend(emitted);
-        }
-        if !dropped[ri] {
-            rules.push(r);
-        }
-    }
-    gp.rules = rules;
+    gp.splice_rules(before_rule, &dropped);
     simplify::renumber(gp, &order);
     simplify::compact(gp);
 }

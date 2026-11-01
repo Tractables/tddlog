@@ -203,22 +203,6 @@ impl Network {
         let expected = self.exact(evidence, queries);
         let all = common::ground(&source, Rows::Classes, true);
         let codes = all.encoding.codes.len();
-        for strategy in [
-            Strategy::Trial(Kind::Families { search: true }),
-            Strategy::Trial(Kind::Families { search: false }),
-        ] {
-            let run = tddlog::solve_ground(
-                all.clone(),
-                &common::options(strategy, tddlog::Projection::default()),
-            )
-            .unwrap();
-            assert_answers(
-                &format!("{what} ({strategy})"),
-                &run.results.expect("consistent evidence"),
-                &expected,
-                1e-12,
-            );
-        }
         let apart = common::ground(&source, Rows::Apart, true);
         assert_eq!(
             apart.encoding.codes.len(),
@@ -239,19 +223,44 @@ impl Network {
             &expected,
             1e-12,
         );
-        let run = common::run(
-            &source,
-            &common::options(Strategy::Auto, tddlog::Projection::default()),
+        assert_families_and_auto(what, &source, &all, &expected);
+        codes
+    }
+}
+
+fn assert_families_and_auto(
+    what: &str,
+    source: &str,
+    all: &tddlog::GroundProgram,
+    expected: &[(String, f64)],
+) {
+    for strategy in [
+        Strategy::Trial(Kind::Families { search: true }),
+        Strategy::Trial(Kind::Families { search: false }),
+    ] {
+        let run = tddlog::solve_ground(
+            all.clone(),
+            &common::options(strategy, tddlog::Projection::default()),
         )
         .unwrap();
         assert_answers(
-            &format!("{what} (auto)"),
+            &format!("{what} ({strategy})"),
             &run.results.expect("consistent evidence"),
-            &expected,
+            expected,
             1e-12,
         );
-        codes
     }
+    let run = common::run(
+        source,
+        &common::options(Strategy::Auto, tddlog::Projection::default()),
+    )
+    .unwrap();
+    assert_answers(
+        &format!("{what} (auto)"),
+        &run.results.expect("consistent evidence"),
+        expected,
+        1e-12,
+    );
 }
 
 // A table over two parents of many values is split on one, each part a
@@ -509,33 +518,7 @@ fn a_running_sum_read_in_binary_merges_its_bits_rows() {
             bit_rules[&k]
         );
     }
-    for strategy in [
-        Strategy::Trial(Kind::Families { search: true }),
-        Strategy::Trial(Kind::Families { search: false }),
-    ] {
-        let run = tddlog::solve_ground(
-            all.clone(),
-            &common::options(strategy, tddlog::Projection::default()),
-        )
-        .unwrap();
-        assert_answers(
-            &format!("running sum ({strategy})"),
-            &run.results.expect("no evidence"),
-            &expected,
-            1e-12,
-        );
-    }
-    let run = common::run(
-        &source,
-        &common::options(Strategy::Auto, tddlog::Projection::default()),
-    )
-    .unwrap();
-    assert_answers(
-        "running sum (auto)",
-        &run.results.expect("no evidence"),
-        &expected,
-        1e-12,
-    );
+    assert_families_and_auto("running sum", &source, &all, &expected);
 }
 
 #[test]
@@ -588,31 +571,5 @@ fn queried_values_of_a_set_read_in_binary() {
             );
         }
     }
-    for strategy in [
-        Strategy::Trial(Kind::Families { search: true }),
-        Strategy::Trial(Kind::Families { search: false }),
-    ] {
-        let run = tddlog::solve_ground(
-            all.clone(),
-            &common::options(strategy, tddlog::Projection::default()),
-        )
-        .unwrap();
-        assert_answers(
-            &format!("queried sum ({strategy})"),
-            &run.results.expect("no evidence"),
-            &expected,
-            1e-12,
-        );
-    }
-    let run = common::run(
-        &source,
-        &common::options(Strategy::Auto, tddlog::Projection::default()),
-    )
-    .unwrap();
-    assert_answers(
-        "queried sum (auto)",
-        &run.results.expect("no evidence"),
-        &expected,
-        1e-12,
-    );
+    assert_families_and_auto("queried sum", &source, &all, &expected);
 }

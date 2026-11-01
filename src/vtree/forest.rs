@@ -73,6 +73,12 @@ impl Forest {
         self.balanced_with(items, &|_, _| &[])
     }
 
+    /// Combine a leaf for each of `atoms` into one balanced tree.
+    pub(super) fn balanced_leaves(&mut self, atoms: &[AtomId]) -> Option<usize> {
+        let leaves: Vec<usize> = atoms.iter().map(|&a| self.leaf(a)).collect();
+        self.balanced(&leaves)
+    }
+
     /// [`Forest::balanced`], with the atoms `atop(lo, hi)` gives on a spine
     /// ([`Forest::spine`]) above the join of `items[lo..hi]`, for each join
     /// of two or more items short of all of them that the halving makes.

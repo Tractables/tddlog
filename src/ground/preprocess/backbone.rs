@@ -97,19 +97,20 @@ pub(in crate::ground) struct Found {
     pub(in crate::ground) search: Search,
 }
 
-/// The backbone of the clauses over `num_vars` variables whose literals
-/// are `lits`, clause `k` ending at `ends[k]`; `None` where they have no
-/// model.
-pub(in crate::ground) fn search(num_vars: usize, lits: &[Lit], ends: &[usize]) -> Option<Found> {
-    // Each clause's literals once, which the flipping counts, and no
-    // clause with a literal and its negation.
+fn clause_at<'a>(lits: &'a [Lit], ends: &[usize], c: usize) -> &'a [Lit] {
+    &lits[if c == 0 { 0 } else { ends[c - 1] }..ends[c]]
+}
+
+/// Each clause's literals once, which the flipping counts, and no clause
+/// with a literal and its negation.
+fn clean_clauses(lits: &[Lit], ends: &[usize]) -> (Vec<Lit>, Vec<usize>) {
     let (mut own, mut own_ends) = (
         Vec::with_capacity(lits.len()),
         Vec::with_capacity(ends.len()),
     );
     for k in 0..ends.len() {
         let start = own.len();
-        own.extend_from_slice(&lits[if k == 0 { 0 } else { ends[k - 1] }..ends[k]]);
+        own.extend_from_slice(clause_at(lits, ends, k));
         own[start..].sort_unstable();
         let mut kept = start;
         for j in start..own.len() {
@@ -125,12 +126,20 @@ pub(in crate::ground) fn search(num_vars: usize, lits: &[Lit], ends: &[usize]) -
             own_ends.push(own.len());
         }
     }
+    (own, own_ends)
+}
+
+/// The backbone of the clauses over `num_vars` variables whose literals
+/// are `lits`, clause `k` ending at `ends[k]`; `None` where they have no
+/// model.
+pub(in crate::ground) fn search(num_vars: usize, lits: &[Lit], ends: &[usize]) -> Option<Found> {
+    let (own, own_ends) = clean_clauses(lits, ends);
     let (lits, ends) = (&own[..], &own_ends[..]);
     let mut s = Solver::new(num_vars);
     s.tick_limit = TICKS_FLOOR + TICKS_PER_LITERAL * lits.len() as u64;
     let proving_limit = TICKS_FLOOR + TICKS_PER_LITERAL_PROVING * lits.len() as u64;
     for k in 0..ends.len() {
-        if !s.add_clause(&lits[if k == 0 { 0 } else { ends[k - 1] }..ends[k]]) {
+        if !s.add_clause(clause_at(lits, ends, k)) {
             return None;
         }
     }
@@ -346,7 +355,7 @@ impl<'a> Occurrences<'a> {
     fn new(num_vars: usize, lits: &'a [Lit], ends: &'a [usize]) -> Self {
         let clauses = || {
             (0..ends.len()).flat_map(|c| {
-                lits[if c == 0 { 0 } else { ends[c - 1] }..ends[c]]
+                clause_at(lits, ends, c)
                     .iter()
                     .map(move |&l| (l as usize, c as u32))
             })
@@ -359,8 +368,7 @@ impl<'a> Occurrences<'a> {
     }
 
     fn clause(&self, c: u32) -> &'a [Lit] {
-        let c = c as usize;
-        &self.lits[if c == 0 { 0 } else { self.ends[c - 1] }..self.ends[c]]
+        clause_at(self.lits, self.ends, c as usize)
     }
 
     fn of(&self, l: Lit) -> &[u32] {

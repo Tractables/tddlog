@@ -370,17 +370,7 @@ fn rules_hash(
 pub(crate) fn restrict_to_relevant(gp: &mut GroundProgram) -> Vec<AtomId> {
     let by_head = gp.rules_by_head();
     let mut relevant = vec![false; gp.atoms.len()];
-    let mut stack: Vec<AtomId> = Vec::new();
-    for (_, id, _) in &gp.queries {
-        if let Some(a) = id {
-            stack.push(*a);
-        }
-    }
-    for (_, id, _) in &gp.evidence {
-        if let Some(a) = id {
-            stack.push(*a);
-        }
-    }
+    let mut stack: Vec<AtomId> = gp.named_atoms().collect();
     while let Some(a) = stack.pop() {
         if relevant[a as usize] {
             continue;
