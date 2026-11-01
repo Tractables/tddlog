@@ -25,7 +25,10 @@
 //! its two values in every world, and `x(c)` is not written: the rewrite
 //! is taken only where nothing reads `x(c)` once the readers taken are
 //! rewritten too, and no query names it, and for a table observed only
-//! where its parents are taken (below). An observation of `x(c)` is one
+//! where its parents are taken (below). Only the tables a query or an
+//! observation depends on are taken or counted as readers: the relevance
+//! cut drops every other, and a program written with them is then ground
+//! as one written without them. An observation of `x(c)` is one
 //! of `x(b)`, negated: each world holds exactly one of the two, and a
 //! diagnosis network's findings are often observed absent so. A root, a
 //! table of no parents, is a leak alone, a probabilistic fact. Every
@@ -174,6 +177,22 @@ pub(super) struct Rewritten {
 /// noisy-ors; `None` where there is none to write.
 pub(super) fn rewrite(shape: &Shape, order: &[usize], program: &Program) -> Option<Rewritten> {
     let n = shape.predicates();
+    // The tables a query or an observation depends on, found in `order`
+    // reversed, where a table comes before those it reads; the relevance
+    // cut drops the others, whatever is taken.
+    let mut relevant = vec![false; n];
+    for (a, _) in program.queries.iter().chain(&program.evidence) {
+        if let Some(p) = shape.predicate_of(a) {
+            relevant[p] = true;
+        }
+    }
+    for &t in order.iter().rev() {
+        if relevant[t] {
+            for &p in shape.reads(t) {
+                relevant[p] = true;
+            }
+        }
+    }
     // The candidates: the tables of two values whose parents are
     // candidates, each with its values. A table's parents are the
     // predicates its rows read ([`Shape::reads`]), and a value is told by
@@ -182,7 +201,7 @@ pub(super) fn rewrite(shape: &Shape, order: &[usize], program: &Program) -> Opti
     // nothing from.
     let mut values: Vec<Option<[&Atom; 2]>> = vec![None; n];
     for &t in order {
-        if shape.reads(t).iter().all(|&p| values[p].is_some()) {
+        if relevant[t] && shape.reads(t).iter().all(|&p| values[p].is_some()) {
             values[t] = two_values(shape.clauses(t));
         }
     }
@@ -216,7 +235,7 @@ pub(super) fn rewrite(shape: &Shape, order: &[usize], program: &Program) -> Opti
         return None;
     }
 
-    let chosen = choose(shape, order, program, &value, &rows, &dists);
+    let chosen = choose(shape, order, program, &value, &relevant, &rows, &dists);
     let count = chosen.iter().flatten().count();
     if count == 0 {
         return None;
@@ -290,14 +309,15 @@ pub(super) fn observe(gp: &mut GroundProgram, evidence: &[(Atom, bool)]) {
 
 /// The form each table of `rows` is taken in, `None` for a table not taken:
 /// the absent value of each taken is one nothing reads or asks,
-/// once the tables not taken read every value their rows read and those
-/// taken the parents' values away from `u*`; and a table observed is taken
-/// only where its parents are.
+/// once the `relevant` tables not taken read every value their rows read
+/// and those taken the parents' values away from `u*`; and a table
+/// observed is taken only where its parents are.
 fn choose(
     shape: &Shape,
     order: &[usize],
     program: &Program,
     value: &impl Fn(usize, &Atom) -> Option<usize>,
+    relevant: &[bool],
     rows: &[Option<Rows>],
     dists: &[[f64; 2]],
 ) -> Vec<Option<Form>> {
@@ -334,7 +354,7 @@ fn choose(
             }
         }
     };
-    for t in (0..n).filter(|&t| !taken[t]) {
+    for t in (0..n).filter(|&t| relevant[t] && !taken[t]) {
         need_all(t, &mut needed);
     }
     // Needs only grow and tables only leave, so this ends; each table
@@ -878,6 +898,18 @@ z(v_0) :- x(v_1), y(v_1).
 query(z(v_1)).
 ";
         assert_eq!(rewritten(&format!("{table}{xor}")), None);
+        // Read at both values only by tables that no query or observation
+        // depends on, which the relevance cut drops: written as without
+        // them, which stay as written.
+        let unasked = xor.replace("query(z(v_1)).\n", "");
+        let (text, n) = rewritten(&format!("{table}{unasked}query(x(v_1)).\n")).expect("rewritten");
+        assert_eq!(n, 2);
+        assert_eq!(
+            text,
+            format!(
+                "0.1::d(v_1).\n0.3::x(v_1).\n0.7142857142857142::x(v_1) :- d(v_1).\n{unasked}query(x(v_1)).\n"
+            )
+        );
         // Asked at one value: written as its noisy-or, with d a fact.
         let (text, n) = rewritten(&format!("{table}query(x(v_1)).\n")).expect("rewritten");
         assert_eq!(n, 2);

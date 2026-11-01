@@ -587,9 +587,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    of `x(b)`, negated), and an observed table only with its parents (the
    conditioning reads a table's clauses, not a noisy-or's), as is every
    table written below one observed at its absent value, which turns all
-   of their causes off. A chain of such tables is then a chain of views that
-   inline (step 6) into one rule per cause. The program written is not
-   built: its shape is made from the source's (`Shape::rewritten`).
+   of their causes off. Only the tables a query or an observation depends
+   on are taken or count as readers: the relevance cut drops the others,
+   and a program grounds the same with them or without them. A chain of
+   such tables is then a chain of views that inline (step 6) into one rule
+   per cause. The program written is not built: its shape is made from the
+   source's (`Shape::rewritten`).
 1. **Normalize** (`normalize.rs`). Each probabilistic clause
    `p1::h1;...;pn::hn :- body` with clause variables V becomes rules
    `hi :- body, swi(V), \+sw1(V), ..., \+sw_{i-1}(V)`. With `S_i` the
