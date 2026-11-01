@@ -248,7 +248,7 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
                 written: &mut written,
                 work: &mut work,
             };
-            let done = unit.write(members, i) || unit.write_apart(members, i);
+            let done = unit.write_whole(members, i);
             if work.left() == 0 {
                 written.undo(mark);
                 break 'groups;
@@ -306,17 +306,23 @@ impl Unit<'_> {
         written.write(gp, members, interface, &cone.inputs, &leaves, bound)
     }
 
-    /// Writes the unit of `members` and `interface` with its private
-    /// variables apart from it, each read through its values, where it has
-    /// any; whether it did.
-    fn write_apart(&mut self, members: &[AtomId], interface: &[AtomId]) -> bool {
-        let parts = self.units.private(self.readers, members, self.work);
+    /// Writes the unit of `members` and `interface`, summing what it holds
+    /// into its rows or, where those pass their bounds, with its private
+    /// variables apart from it, each read through its values; whether it
+    /// did.
+    fn write_whole(&mut self, members: &[AtomId], interface: &[AtomId]) -> bool {
+        if self.write(members, interface) {
+            return true;
+        }
+        let parts = self
+            .units
+            .private(self.readers, members, interface, self.work);
         if parts.is_empty() {
             return false;
         }
         let mut apart: FxHashSet<AtomId> = FxHashSet::default();
         for part in &parts {
-            if !self.write(part, &part[..1]) {
+            if !self.write_whole(part, &part[..1]) {
                 return false;
             }
             apart.extend(part);
@@ -361,7 +367,7 @@ fn co_read(
         rs.clear();
         for &r in &readers[a] {
             let h = gp.rules[r as usize].head as usize;
-            if bit[h] {
+            if !any && bit[h] {
                 if !work.add(readers[h].len() + 1) {
                     return None;
                 }
@@ -589,7 +595,7 @@ impl<'a> Units<'a> {
                     }
                 }
             }
-            if variables.is_empty() || work.left() == 0 {
+            if variables.is_empty() || work.left() == 0 || reading.left == 0 {
                 return None;
             }
             variables.sort_unstable_by_key(|c| c[0]);
@@ -729,23 +735,24 @@ impl<'a> Units<'a> {
         })
     }
 
-    /// The variables of one bit that the unit of `members` sums into its
-    /// rows: each gate of it, the readers first, that is none of its bits,
-    /// with the atoms of its class under it (the gate first), where only
-    /// they read those atoms, they hold a fact and they read an atom
-    /// outside the class. A gate that reads nothing outside it is a flip,
-    /// which adds no row.
+    /// The variables of one bit that the unit of `members` and `interface`
+    /// sums into its rows: each gate of it, the readers first, that is
+    /// not of `interface`, with the atoms of its class under it but the
+    /// views (the gate first), where only they read those atoms, they hold
+    /// a fact and they read a view or an atom outside the class. A gate
+    /// that reads neither is a flip, which adds no row.
     fn private(
         &self,
         readers: &Lists<u32>,
         members: &[AtomId],
+        interface: &[AtomId],
         work: &mut Work,
     ) -> Vec<Vec<AtomId>> {
         let gp = self.gp;
         let mut gates: Vec<AtomId> = members
             .iter()
             .copied()
-            .filter(|&a| self.is_gate(a) && !self.is_bit[a as usize])
+            .filter(|&a| self.is_gate(a) && !self.view[a as usize] && !interface.contains(&a))
             .collect();
         gates.sort_unstable_by_key(|&a| std::cmp::Reverse(self.rank[a as usize]));
         let mut taken: FxHashSet<AtomId> = FxHashSet::default();
@@ -765,7 +772,7 @@ impl<'a> Units<'a> {
                     steps += body.len();
                     for l in body {
                         let y = l.atom();
-                        if self.class[y as usize] != self.class[g as usize] {
+                        if self.class[y as usize] != self.class[g as usize] || self.view[y as usize] {
                             outside = true;
                         } else if seen.insert(y) {
                             part.push(y);
@@ -777,7 +784,7 @@ impl<'a> Units<'a> {
             let private = outside
                 && part[1..].iter().all(|&a| {
                     steps += readers[a as usize].len();
-                    !self.is_bit[a as usize]
+                    !interface.contains(&a)
                         && readers[a as usize]
                             .iter()
                             .all(|&ri| seen.contains(&gp.rules[ri as usize].head))
@@ -931,6 +938,12 @@ struct Reading<'a> {
     readers: &'a Lists<u32>,
     rank: &'a [u32],
     named: &'a [bool],
+    /// The steps the walks through gates may still take, over all the
+    /// variables: one per literal of the program, and [`WORK_FLOOR`] more.
+    left: usize,
+    /// The lowest place in dependency order of an atom that may read the
+    /// current variable.
+    floor: u32,
     token: u32,
     in_set: Vec<u32>,
     rule_seen: Vec<u32>,
@@ -960,6 +973,8 @@ impl<'a> Reading<'a> {
             readers,
             rank,
             named,
+            left: gp.rules.iter().map(|r| r.body.len() + 1).sum::<usize>() + WORK_FLOOR,
+            floor: 0,
             token: 0,
             in_set: vec![0; n],
             rule_seen: vec![0; gp.rules.len()],
@@ -977,8 +992,8 @@ impl<'a> Reading<'a> {
     /// rules reading its head read the variable so in turn; and those
     /// rules read two codes or more of the bits. What a literal depends
     /// on is found through gates down to the variables' atoms, which
-    /// `variable` marks, in at most [`WORK_PER_LITERAL`] steps per literal
-    /// of the rules reading the bits.
+    /// `variable` marks, and no lower than the bits' first readers, in the
+    /// steps [`Reading::left`]; false once they have run out.
     fn as_values(
         &mut self,
         class: &[u32],
@@ -987,22 +1002,32 @@ impl<'a> Reading<'a> {
         bits: &[AtomId],
         work: &mut Work,
     ) -> bool {
+        if self.left == 0 {
+            return false;
+        }
         let (gp, readers) = (self.gp, self.readers);
         self.token += 1;
         let token = self.token;
+        self.floor = bits
+            .iter()
+            .map(|&a| match self.rank[a as usize] {
+                NONE => readers[a as usize]
+                    .iter()
+                    .map(|&ri| self.rank[gp.rules[ri as usize].head as usize])
+                    .min()
+                    .unwrap_or(NONE),
+                place => place,
+            })
+            .min()
+            .unwrap_or(NONE);
         for (k, &a) in bits.iter().enumerate() {
             self.in_set[a as usize] = token;
             self.found[a as usize] = token;
             self.depends[a as usize] = 1 << k | ALONE;
         }
         let all = (1u32 << bits.len()) - 1;
-        let budget = WORK_PER_LITERAL
-            * bits
-                .iter()
-                .flat_map(|&a| &readers[a as usize])
-                .map(|&ri| gp.rules[ri as usize].body.len())
-                .sum::<usize>();
-        let mut left = budget;
+        let start = self.left;
+        let mut left = start;
         let mut tested: Vec<(u32, u32)> = Vec::new();
         let mut read: Vec<AtomId> = bits.to_vec();
         let mut ok = true;
@@ -1039,6 +1064,7 @@ impl<'a> Reading<'a> {
                     match self.depends(variable, l.atom(), all & !depends, &mut left) {
                         Some(d) => depends |= d,
                         None => {
+                            left = 0;
                             ok = false;
                             break 'read;
                         }
@@ -1049,14 +1075,20 @@ impl<'a> Reading<'a> {
                 }
                 match self.depends(variable, r.head, ALONE, &mut left) {
                     Some(d) if d & ALONE != 0 => read.push(r.head),
-                    _ => {
+                    Some(_) => {
+                        ok = false;
+                        break 'read;
+                    }
+                    None => {
+                        left = 0;
                         ok = false;
                         break 'read;
                     }
                 }
             }
         }
-        work.add(budget - left) && ok && tested.len() >= 2
+        self.left = left;
+        work.add(start - left) && ok && tested.len() >= 2
     }
 
     /// What `a` depends on, through gates down to the variables' atoms:
@@ -1080,7 +1112,7 @@ impl<'a> Reading<'a> {
         while let Some(&x) = stack.last() {
             let x = x as usize;
             if self.found[x] != token {
-                if variable[x] || self.rank[x] == NONE {
+                if variable[x] || self.rank[x] == NONE || self.rank[x] < self.floor {
                     self.depends[x] = 0;
                 } else if self.entered[x] != token {
                     // A gate: its body's atoms first, then itself.
