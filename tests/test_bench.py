@@ -661,6 +661,87 @@ class RouletteTests(unittest.TestCase):
         self.assertEqual(bench.EXACT['gen_roulette.py'][1]('x.pl'), ['gen_roulette.py', '--reference-of', 'x.pl'])
 
 
+class CirculetteTests(unittest.TestCase):
+    """The circulette suite: Circulette's netlists, Roulette's circulette.rkt
+    on each, and the ProbLog program roulette2problog.rkt writes from its
+    run, one query a call of `infer`."""
+
+    # n = 2 faults: P(fail)'s call, then the singles and the pair
+    PROGRAM = ('% infer was called 4 times; query K is its K-th call.\n'
+               '0.1::f1.\n0.2::f2.\ng1 :- f1.\ng1 :- f2.\nevidence(g1, true).\n'
+               '% q1(1): #t\nq1(1).\nquery(q1(1)).\n% q2(1): #t\nq2(1) :- f1.\nquery(q2(1)).\n'
+               '% q3(1): #t\nq3(1) :- f2.\nquery(q3(1)).\n% q4(1): #t\nq4(1) :- f1, f2.\nquery(q4(1)).\n')
+    OUT = ('Diagnosis: (Circuit-Fault: #t) | Prob: 0.28\n'
+           'Gate 0 Fault | Posterior P(Gate|Fail): 0.357\n'
+           'Gate 1 Fault | Posterior P(Gate|Fail): 0.714\n'
+           'Gates 0 & 1 Fault | Posterior P(i,j | Fail): 0.0714\n')
+
+    def args(self, **kw):
+        base = dict(suite='circulette', only=[], families=[], dir='bench', timeout=30,
+                    circulette_benchmarks='cb', roulette='racket {file}', roulette_variants=['rsdd'])
+        base.update(kw)
+        return SimpleNamespace(**base)
+
+    def test_the_suite_grows_two_families(self):
+        spec = bench.instances(self.args())
+        self.assertEqual(len(spec), 41)
+        self.assertTrue(all(g[0] == 'gen_circulette.py' for _, g in spec.values()))
+        self.assertEqual([n for n, (f, _) in spec.items() if f == 'ct_mac'], [f'ct_mac{w}' for w in range(1, 7)])
+        self.assertEqual(bench.series('ct_fulladder', 'ct_fulladder8'), 'ct_fulladder')
+        # Roulette reads the netlist, the network tools the program's ground route
+        self.assertIsNone(bench.ground_form('gen_circulette.py', 'roulette', 'rsdd'))
+        self.assertEqual(bench.ground_form('gen_circulette.py', 'ace', 'auto'), 'hugin')
+
+    def test_the_calls_are_numbered_as_circulette_loops(self):
+        for n in range(1, 8):
+            order = [[i] for i in range(n)] + [[i, j] for i in range(n) for j in range(i + 1, n)] + \
+                    [[i, j, k] for i in range(n) for j in range(i + 1, n) for k in range(j + 1, n)]
+            self.assertEqual([bench.circulette_call(n, f) for f in order], list(range(2, 2 + len(order))), n)
+
+    def run_circulette(self, program, out, err='roulette_timer: program 2.25 s\n'):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'ct_1-bit-mux.pl')
+            path.write_text(program)
+            with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
+                                                            'stderr': err}) as timed:
+                r = bench.run_roulette(self.args(dir=d), 'ct_1-bit-mux', str(path), 'rsdd')
+            # tddlog's P(fail): its P(e) times its answer for the failure's query
+            p_fail = bench.circulette_p_fail(str(path), -0.5, {'q1(1)': 1.0}) if r['status'] == 'ok' else None
+        return r, timed.call_args_list, p_fail
+
+    def test_the_posteriors_are_keyed_by_the_calls(self):
+        r, calls, p_fail = self.run_circulette(self.PROGRAM, self.OUT)
+        self.assertEqual(calls[0][0][0], ['racket', '-l-', 'raco', 'make', 'cb/circulette.rkt', bench.ROULETTE_TIMER])
+        # under the timer, whose span is Roulette's own time (own_seconds), as the export's
+        self.assertEqual(calls[1][0][0][:3], ['racket', bench.ROULETTE_TIMER, 'cb/circulette.rkt'])
+        self.assertTrue(calls[1][0][0][3].endswith('/ct_1-bit-mux.cql'))
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(r['answers'], {'q1(1)': 1.0, 'q2(1)': 0.357, 'q3(1)': 0.714, 'q4(1)': 0.0714})
+        self.assertEqual(r['stats'], {'p_fail': 0.28, 'inproc_seconds': 2.25})
+        self.assertEqual(bench.own_seconds(dict(r, system='roulette', **r['stats'])), 2.25)   # as the record holds it
+        self.assertAlmostEqual(p_fail, 10 ** -0.5)
+        r, _, _ = self.run_circulette(self.PROGRAM, self.OUT, err='')
+        self.assertEqual((r['status'], r['error']), ('error', 'no roulette_timer line: ' + self.OUT.splitlines()[-1]))
+
+    def test_no_fault_that_fails_the_outputs_answers_zero(self):
+        program = '% infer was called 1 times; query K is its K-th call.\n% q1(1): #t\nq1(1) :- fail.\n' \
+                  'query(q1(1)).\n'
+        r, _, _ = self.run_circulette(program, 'Diagnosis: (Circuit-Fault: #t) | Prob: 0\n')
+        self.assertEqual(r['answers'], {'q1(1)': 0.0})
+        # tddlog: no evidence, P(e) 1, and the failure's query answers 0
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'ct_1-bit-mux.pl')
+            path.write_text(program)
+            self.assertEqual(bench.circulette_p_fail(str(path), 0.0, {'q1(1)': 0.0}), 0.0)
+
+    def test_a_program_whose_evidence_is_not_the_failure_is_refused(self):
+        r, _, _ = self.run_circulette(self.PROGRAM.replace('q1(1).\n', 'q1(1) :- g1.\n'), self.OUT)
+        self.assertEqual(r['status'], 'error')
+        self.assertIn('no posteriors', r['error'])
+        r, _, _ = self.run_circulette(self.PROGRAM.replace('called 4 times', 'called 5 times'), self.OUT)
+        self.assertIn('not 1 + n + C(n,2) + C(n,3)', r['error'])
+
+
 class SkipTests(unittest.TestCase):
     """A system skips the larger sizes of a program once it ran out of time
     or memory on a smaller one, and nothing else."""
@@ -881,6 +962,58 @@ class TddlogArmTests(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, msg), \
                         patch.object(bench, 'timed', side_effect=AssertionError('ran')):
                     bench.run(self.args(d, tddlog_arm=arm))
+
+
+class FoldTests(unittest.TestCase):
+    """A family of FOLD is one program and its arguments: gen writes the
+    program once (programs/PROGRAM.pl), each instance's arguments
+    (NAME.args) and NAME.pl, the program with them in its places, which
+    the other systems read; tddlog reads the program and the arguments."""
+
+    def test_tddlog_reads_the_program_and_its_arguments(self):
+        with scratch_dir('fold-') as d:
+            args = SimpleNamespace(suite='lit', only=['threedie10', 'threedie100', 'pgrid16_4'], families=[],
+                                   strategies=['auto'], kbs=['ddnnf'], problog='problog', pita='', aspmc='',
+                                   scallop='', dice='', dir=d, out=str(Path(d) / 'results.jsonl'), tddlog='tddlog',
+                                   timeout=10, no_skip=True, exact=False, ace='', merlin='', ganak='', pr=False,
+                                   cnf=False)
+            with redirect_stdout(io.StringIO()):
+                bench.gen(SimpleNamespace(**{**vars(args), 'tddlog': str(bench.source_tree.BINARY)}))
+            self.assertEqual(sorted(os.listdir(Path(d) / 'programs')), ['pgrid16.pl', 'threedie.pl'])
+            template = (Path(d) / 'programs' / 'threedie.pl').read_text()
+            self.assertEqual(template, bench.fold_template(['gen_threedie.py', '10'])[1])
+            self.assertEqual((Path(d) / 'threedie100.args').read_text(), '100\n')
+            self.assertEqual((Path(d) / 'pgrid16_4.args').read_text(), 'n_12_12\n')
+            self.assertEqual((Path(d) / 'threedie100.pl').read_text(),
+                             bench.folded_program(['gen_threedie.py', '100']))
+            self.assertIn('query(on(100,1)).', (Path(d) / 'threedie100.pl').read_text())
+            calls = []
+
+            def timed(cmd, timeout, cwd=None, env=None):
+                calls.append(cmd)
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': '', 'stderr': ''}
+            with patch.object(bench, 'timed', timed), redirect_stdout(io.StringIO()):
+                bench.run(args)
+            recs = [bench.json.loads(line) for line in open(args.out)]
+            # the skip rule follows the family's sizes: tddlog out of time on threedie10 is skipped on
+            # threedie100 (the record's program, not the series, once held the name the rule keys on)
+            skip = SimpleNamespace(**{**vars(args), 'no_skip': False, 'kbs': [], 'out': str(Path(d) / 'skip.jsonl')})
+
+            def out_of_time(cmd, timeout, cwd=None, env=None):
+                return {'status': 'timeout', 'seconds': timeout}
+            with patch.object(bench, 'timed', out_of_time), redirect_stdout(io.StringIO()):
+                bench.run(skip)
+            skipped = {r['instance']: r['status'] for r in map(bench.json.loads, open(skip.out))}
+        self.assertEqual((skipped['threedie10'], skipped['threedie100']), ('timeout', 'skipped'))
+        self.assertIn(['tddlog', '--stats', '--precision', '17', '--vtree', 'auto', f'{d}/programs/threedie.pl', '100'],
+                      calls)
+        self.assertIn(['tddlog', '--stats', '--precision', '17', '--vtree', 'auto', f'{d}/programs/pgrid16.pl',
+                       'n_12_12'], calls)
+        self.assertIn(['problog', '-k', 'ddnnf', f'{d}/threedie100.pl'], calls)
+        mine = {r['instance']: r for r in recs if r['system'] == 'tddlog'}
+        self.assertEqual((mine['threedie100']['original'], mine['threedie100']['arguments']), ('threedie.pl', ['100']))
+        self.assertEqual(mine['pgrid16_4']['arguments'], ['n_12_12'])
+        self.assertTrue(all('original' not in r for r in recs if r['system'] != 'tddlog'))
 
 
 class SuiteTests(unittest.TestCase):
@@ -2478,6 +2611,32 @@ class PitaTests(unittest.TestCase):
         self.assertEqual(cmd[flag - 1], '-g')
         self.assertLess(flag, next(i for i, c in enumerate(cmd) if c.startswith('consult(')))
         self.assertFalse(any('table_space' in c for c in self.pita_command(resource.RLIM_INFINITY)))
+
+    def test_write_new_leaves_a_hard_link_whole(self):
+        with tempfile.TemporaryDirectory() as d:
+            a, b = Path(d) / 'a', Path(d) / 'b'
+            a.write_text('the table\'s file\n')
+            os.link(a, b)
+            bench.write_new(str(a), 'this job\'s\n')
+            self.assertEqual((a.read_text(), b.read_text()), ('this job\'s\n', 'the table\'s file\n'))
+            self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ['a', 'b'])
+
+    def test_the_lpad_is_a_new_file_not_one_written_over(self):
+        """A run's LPAD replaces the file at its path by a new one: a hard
+        link to the old one (another job's copy of the directory) and a
+        reader of it keep the whole old text."""
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'p.pl'
+            path.write_text('0.5::a.\nquery(a).\n')
+            lpad, other = Path(d) / 'p.lpad.pl', Path(d) / 'other.lpad.pl'
+            lpad.write_text('old\n')
+            os.link(lpad, other)
+            args = SimpleNamespace(dir=d, pita='swipl', pita_packs='', timeout=1)
+            with patch.object(bench, 'timed', lambda *a, **k: {'status': 'ok', 'seconds': 0.1}):
+                bench.run_pita(args, 'p', str(path))
+            self.assertEqual(other.read_text(), 'old\n')
+            self.assertIn('a:0.5', lpad.read_text())
+            self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ['other.lpad.pl', 'p.lpad.pl', 'p.pl'])
 
     def test_a_full_table_space_ran_out_of_memory(self):
         self.assertTrue(bench.ran_out({'status': 'error', 'error': 'Not enough resources: private_table_space'}))

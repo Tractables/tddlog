@@ -200,6 +200,24 @@ def certain_fact(head):
     return head
 
 
+def impossible_fact(head):
+    """`a:0` -> `a`, the atom of a fact of probability zero, else None. PITA
+    (cplint 2026-09, SWI-Prolog 9.2.9) drops a head of probability zero, so
+    that a predicate whose only clause is such a fact is not defined, and a
+    body that reads it raises an existence error: Circulette's netlists hold
+    the inputs a cycle sets to 0 as facts of probability zero, and PITA
+    stopped on the first of them (`Unknown procedure: f5/2`). The fact is
+    written as a rule that fails, which PITA reads as false."""
+    parts = split_top(head, ':')
+    if len(parts) == 2 and ';' not in head:
+        try:
+            if float(Fraction(parts[1].strip())) == 0.0:
+                return parts[0].strip()
+        except (ValueError, ZeroDivisionError):
+            pass
+    return None
+
+
 def functor(term):
     """`p(a,b)` -> `p/2`, `p` -> `p/0`, and None for anything that is not a
     plain compound term (a comparison, a number, a variable)."""
@@ -319,6 +337,8 @@ def translate(text):
         head = head_disjuncts(head).strip()
         if body is None:
             head = certain_fact(head)
+            if impossible_fact(head):
+                head, body = impossible_fact(head), 'fail'
         clauses.append(f'{head}.' if body is None else f'{head} :- {body.strip()}.')
     for f in sorted(negated):
         name, n = f.rsplit('/', 1)

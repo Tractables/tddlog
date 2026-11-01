@@ -1724,8 +1724,9 @@ mod roulette {
 }
 
 /// The circuits that scripts/roulette2problog.rkt writes for the Roulette
-/// programs beside them in tests/roulette/ (tests/test_roulette2problog.py
-/// checks that it does), with the answers computed by hand in those
+/// programs beside them in tests/roulette/ and tests/roulette/lib/
+/// (tests/test_roulette2problog.py checks that it does), with the answers
+/// or weights computed by hand in those
 /// programs' comments, which Roulette gives too. qK(I) is the I-th value of
 /// the K-th query, in Racket's `datum-order`.
 mod roulette_circuits {
@@ -1759,6 +1760,80 @@ mod roulette_circuits {
         check(
             "../tests/roulette/tiny_path.pl",
             &[("q1(0)", 0.8), ("q1(1)", 0.2), ("q2(0)", 1.0)],
+        );
+    }
+
+    /// A circuit of Roulette's package (tests/roulette/lib/), whose engine
+    /// gives each value a weight: P(e) times its query's answer.
+    fn weigh(file: &str, pe: f64, weights: &[(&str, f64)]) {
+        let answers: Vec<(&str, f64)> = weights.iter().map(|&(q, w)| (q, w / pe)).collect();
+        check(file, &answers);
+        let data = std::fs::read(format!("examples/{file}")).unwrap();
+        let input =
+            tddlog::read(&data, tddlog::Format::of_path(file), &Default::default()).unwrap();
+        let options = tddlog::Options {
+            evidence_probability: true,
+            ..tddlog::Options::default()
+        };
+        let solution = tddlog::solve(&input.program, &options, &mut |_| {})
+            .unwrap_or_else(|e| panic!("{file}: {e}"));
+        let (p, _) = input
+            .evidence_probability(&solution)
+            .expect("P(e) asked for");
+        assert!((p - pe).abs() < 1e-12, "{file}: P(e) = {p} against {pe}");
+    }
+
+    /// No conjunct common to the guards asked: no evidence.
+    #[test]
+    fn lib_tiny() {
+        weigh(
+            "../tests/roulette/lib/tiny.pl",
+            1.0,
+            &[
+                ("q1(0)", 0.31),
+                ("q1(1)", 0.69),
+                ("q2(0)", 0.42),
+                ("q2(1)", 0.28),
+                ("q2(2)", 0.18),
+                ("q2(3)", 0.12),
+                ("q3(1)", 0.18),
+                ("q3(2)", 0.0),
+            ],
+        );
+    }
+
+    /// The observation common to the guards asked, as evidence, and random
+    /// choices of probability 1 and 0.
+    #[test]
+    fn lib_diagnosis() {
+        weigh(
+            "../tests/roulette/lib/diagnosis.pl",
+            0.26,
+            &[
+                ("q1(1)", 0.26),
+                ("q2(1)", 0.08),
+                ("q3(1)", 0.18),
+                ("q4(1)", 0.0),
+            ],
+        );
+    }
+
+    /// The package's example language: each `query` calls `infer` for the
+    /// value, with a failed observation's value (q1(3)), and for the
+    /// observation (q2), whose guards share no conjunct.
+    #[test]
+    fn lib_disrupt() {
+        weigh(
+            "../tests/roulette/lib/disrupt.pl",
+            1.0,
+            &[
+                ("q1(0)", 0.3),
+                ("q1(1)", 0.42),
+                ("q1(2)", 0.0),
+                ("q1(3)", 0.28),
+                ("q2(0)", 0.28),
+                ("q2(1)", 0.72),
+            ],
         );
     }
 }

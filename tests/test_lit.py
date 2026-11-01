@@ -17,6 +17,7 @@ sys.path.insert(0, str(scripts))
 from source_tree import SOURCE  # noqa: E402
 lit = SOURCE / 'tests' / 'lit'
 import lit_exact  # noqa: E402
+import bench  # noqa: E402  (the folded families' programs)
 
 # program -> (family, generator arguments, ProbLog's answers, one query at a
 # time: asked several at once, ProbLog 2.3.0's -k ddnnf answers pedigree.pl
@@ -121,9 +122,7 @@ class LitTests(unittest.TestCase):
             for n in (6, 8, 12, 16):
                 for seed in (1, 2, 3):
                     with self.subTest(encoding=encoding, n=n, seed=seed):
-                        text = subprocess.run(
-                            [sys.executable, str(scripts / 'gen_pcfg.py'), encoding, str(n), '--seed', str(seed)],
-                            capture_output=True, text=True, check=True).stdout
+                        text = bench.folded_program(['gen_pcfg.py', encoding, str(n), '--seed', str(seed)])
                         word = re.search(r'evidence\(word\(\[([a-z,]*)\]\)\)\.', text).group(1).split(',')
                         k = gen_pcfg.blocks(word)
                         self.assertGreaterEqual(k, 3)

@@ -17,6 +17,11 @@ class TranslationTests(unittest.TestCase):
         text = '0.5::edge(a,b).\n1::edge(b,c).\n1.0::edge(c,d).\n2/2::edge(d,e).\n'
         self.assertEqual(self.clauses(text), ['edge(a,b):0.5.', 'edge(b,c).', 'edge(c,d).', 'edge(d,e).'])
 
+    def test_a_fact_of_probability_zero_is_a_rule_that_fails(self):
+        # PITA drops `e:0.` and leaves e undefined; a rule that fails it reads as false.
+        text = '0.0::e.\n0::f(a).\n0.5::f(b).\nr :- e.\n'
+        self.assertEqual(self.clauses(text), ['e :- fail.', 'f(a) :- fail.', 'f(b):0.5.', 'r :- e.'])
+
     def test_a_rule_of_probability_one_keeps_its_annotation(self):
         text = '0.5::e.\n1::r :- e.\n0.4::s ; 0.6::t :- e.\n'
         self.assertEqual(self.clauses(text), ['e:0.5.', 'r:1 :- e.', 's:0.4 ; t:0.6 :- e.'])

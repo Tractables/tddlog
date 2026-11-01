@@ -138,8 +138,8 @@
     ["lit","mastermind32_5_8",300,"notnttttttttttttttttttt",9.921,5.357,"timeout","error","timeout","skipped",176.51,"skipped","skipped","skipped","skipped","skipped","skipped",0.5,1.589,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["lit","mastermind64_5_8",300,"notnttttttttttttttttttt",8.894,20.041,"timeout","error","timeout","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped",3.385,10.752,"skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped"],
     ["lit","plcg4",300,"nntntt-----------------",0.012,0.57,"wrong",2.826,"error",0.061,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","plcg6",300,"nntntt-----------------",0.198,6.345,"memout",4.4,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","plcg8",300,"nntntt-----------------",7.798,97.302,"skipped",260.186,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","plcg6",300,"nntntt-----------------",0.083,6.345,"memout",4.4,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","plcg8",300,"nntntt-----------------",3.769,97.302,"skipped",260.186,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","plcg10",300,"nntntt-----------------","timeout","timeout","skipped","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","plcg12",300,"nntntt-----------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","plcg14",300,"nntntt-----------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -157,13 +157,13 @@
     ["lit","problogtut_basic_09_higherorderfunctions_4",300,"notntt-----------------",0.014,0.275,"error",2.996,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_08_rule_probs_7",300,"notntt-----------------",0.007,0.12,0.536,2.771,"error",0.04,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfgcount8",300,"notntt-----------------",0.008,0.314,0.544,2.778,"error",0.028,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount16",300,"notntt-----------------",0.019,2.181,0.57,2.808,"error",0.037,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount16",300,"notntt-----------------",0.016,2.181,0.57,2.808,"error",0.037,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfgcount24",300,"notntt-----------------",0.039,8.185,0.711,2.885,"error",0.087,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount32",300,"notntt-----------------",0.103,26.44,"wrong",3.028,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount48",300,"notntt-----------------",0.383,112.906,"error",3.267,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount64",300,"notntt-----------------",0.968,"timeout","error",3.843,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount96",300,"notntt-----------------",6.015,"skipped","error",9.163,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount128",300,"notntt-----------------",18.414,"skipped","memout",21.878,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount32",300,"notntt-----------------",0.104,26.44,"wrong",3.028,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount48",300,"notntt-----------------",0.409,112.906,"error",3.267,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount64",300,"notntt-----------------",1.024,"timeout","error",3.843,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount96",300,"notntt-----------------",6.035,"skipped","error",9.163,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount128",300,"notntt-----------------",17.137,"skipped","memout",21.878,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_08_bayesian_dataflow_2",300,"notntt-----------------",0.005,0.101,0.598,2.879,22.228,0.018,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogex_9_packing_problem",300,"notntt-----------------",0.005,0.118,"error",2.785,"error",0.02,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_06_pcfg_4",300,"notntt-----------------",0.02,0.274,0.535,2.817,"error",0.044,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -188,15 +188,15 @@
     ["lit","cplint_pathdb",300,"ntottt-----------------",0.006,0.106,0.531,2.773,"error",0.016,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_10_inhibitioneffects_9",300,"notntt-----------------",0.007,0.129,2.384,3.031,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_coin2",300,"ntottt-----------------",0.004,0.102,0.532,2.781,"error",0.023,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_4",300,"notntt-----------------",0.011,0.594,0.645,"timeout",19.065,"timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_4",300,"notntt-----------------",0.009,0.594,0.645,"timeout",19.065,"timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid16_5",300,"notntt-----------------",0.012,2.683,0.712,"skipped",18.601,"skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid16_6",300,"notntt-----------------",0.014,"timeout",4.382,"skipped",18.501,"skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid16_7",300,"notntt-----------------",0.018,"skipped",6.268,"skipped",20.75,"skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_8",300,"notntt-----------------",0.022,"skipped","timeout","skipped","timeout","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_10",300,"notntt-----------------",0.035,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_12",300,"notntt-----------------",0.152,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_15",300,"notntt-----------------",1.69,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid18_17",300,"notntt-----------------",7.545,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_8",300,"notntt-----------------",0.031,"skipped","timeout","skipped","timeout","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_10",300,"notntt-----------------",0.047,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_12",300,"notntt-----------------",0.18,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_15",300,"notntt-----------------",1.855,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid18_17",300,"notntt-----------------",7.748,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid20_19",300,"notntt-----------------","timeout","skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_14_robot_key_1",300,"notntt-----------------",0.008,0.117,"wrong",2.78,"error",2.798,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_eruption",300,"ntottt-----------------",0.014,0.093,0.52,"error",20.105,0.016,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -205,11 +205,11 @@
     ["lit","problogtut_basic_10_inhibitioneffects_4",300,"notntt-----------------",0.006,0.104,0.525,2.777,18.912,0.195,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogex_tc_2",300,"notntt-----------------",0.005,0.092,"error",2.765,"error",0.014,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_multiple_paths_simple",300,"ntottt-----------------",0.005,0.093,0.537,1.741,17.962,0.017,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie10",300,"nnontt-----------------",0.009,0.186,0.511,2.867,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie100",300,"nnontt-----------------",0.053,1.363,45.559,5.901,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie300",300,"nnontt-----------------",0.257,5.149,"timeout",42.758,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie1000",300,"nnontt-----------------",2.001,274.002,"skipped","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie1500",300,"nnontt-----------------",4.198,"error","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie10",300,"nnontt-----------------",0.016,0.186,0.511,2.867,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie100",300,"nnontt-----------------",0.066,1.363,45.559,5.901,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie300",300,"nnontt-----------------",0.264,5.149,"timeout",42.758,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie1000",300,"nnontt-----------------",1.916,274.002,"skipped","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie1500",300,"nnontt-----------------",3.832,"error","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_tutslides_02_more_4",300,"notntt-----------------",0.007,0.119,0.544,2.81,21.023,0.11,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_13_incomplete_info_3",300,"notntt-----------------",0.006,0.1,0.553,2.789,"error",0.021,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_flexprob",300,"ntottt-----------------",0.005,0.091,0.532,1.755,"error",0.015,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -302,9 +302,9 @@
     ["lit","problogtut_basic_10_inhibitioneffects_1",300,"notntt-----------------",0.004,0.094,0.522,2.786,17.844,0.017,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_03_dice_6",300,"notntt-----------------",0.009,0.121,0.536,2.814,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_08_rule_probs_5",300,"notntt-----------------",0.076,0.105,0.533,2.832,"error",0.019,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","hmmpos1",300,"nntntt-----------------",0.016,0.831,0.542,2.928,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","hmmpos2",300,"nntntt-----------------",2.109,37.739,4.065,40.645,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","hmmpos3",300,"nntntt-----------------",47.549,"timeout","timeout","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","hmmpos1",300,"nntntt-----------------",0.023,0.831,0.542,2.928,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","hmmpos2",300,"nntntt-----------------",1.402,37.739,4.065,40.645,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","hmmpos3",300,"nntntt-----------------",35.958,"timeout","timeout","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","hmmpos4",300,"nntntt-----------------","timeout","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","hmmpos5",300,"nntntt-----------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_15_spaghetti_1",300,"notntt-----------------",0.009,0.161,"error",2.815,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -316,11 +316,11 @@
     ["lit","problogtut_various_07_ppdatalog_2",300,"notntt-----------------",0.007,0.134,3.336,"error","error",0.056,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_10_prism_3",300,"notntt-----------------",0.005,0.096,0.533,2.761,"error",0.015,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_markov_network",300,"ntottt-----------------",0.035,0.123,0.525,2.784,21.947,"timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm4",300,"nnontt-----------------",0.014,0.163,0.541,2.822,"error",2.606,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm8",300,"nnontt-----------------",0.206,2.395,1.108,31.996,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm12",300,"nnontt-----------------",7.474,"timeout",233.685,"timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm16",300,"nnontt-----------------","timeout","skipped","timeout","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm20",300,"nnontt-----------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm4",300,"nnontt-----------------",0.012,0.163,0.541,2.822,"error",2.606,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm8",300,"nnontt-----------------",0.153,2.395,1.108,31.996,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm12",300,"nnontt-----------------",6.87,"timeout",233.685,"timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm16",300,"nnontt-----------------",236.677,"skipped","timeout","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm20",300,"nnontt-----------------","timeout","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","dnahmm24",300,"nnontt-----------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","dnahmm28",300,"nnontt-----------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_threesideddice",300,"ntottt-----------------",0.007,0.115,0.532,"error","error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -336,11 +336,11 @@
     ["lit","problogtut_basic_08_rule_probs_3",300,"notntt-----------------",0.005,0.101,0.526,1.77,"error",0.019,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfg8",300,"notntt-----------------",0.008,0.173,0.534,2.783,"error",0.023,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfg12",300,"notntt-----------------",0.012,0.764,0.548,2.809,"error",0.038,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg16",300,"notntt-----------------",0.029,3.98,0.644,2.823,"error",0.044,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg20",300,"notntt-----------------",0.182,27.8,1.47,2.986,"error",0.201,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg24",300,"notntt-----------------",1.677,227.235,9.225,4.41,"error",1.764,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg28",300,"notntt-----------------",16.218,"timeout","memout",19.034,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg32",300,"notntt-----------------",102.117,"skipped","skipped",101.816,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg16",300,"notntt-----------------",0.031,3.98,0.644,2.823,"error",0.044,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg20",300,"notntt-----------------",0.183,27.8,1.47,2.986,"error",0.201,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg24",300,"notntt-----------------",1.54,227.235,9.225,4.41,"error",1.764,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg28",300,"notntt-----------------",14.911,"timeout","memout",19.034,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg32",300,"notntt-----------------",92.689,"skipped","skipped",101.816,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_09_airflap_1",300,"notntt-----------------",0.023,1.025,0.768,5.037,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_07_ppdatalog_3",300,"notntt-----------------",0.009,0.19,1.647,"error","error",0.068,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_tutslides_03_stochmem_2",300,"notntt-----------------",0.006,0.101,0.519,2.775,"error",0.035,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -556,7 +556,7 @@
     }
    ],
    "given":{"tddlog":365,"problog":365,"pita":365,"aspmc":365,"psouffle":365,"scallop":358,"ace":136,"merlin":136,"agrum":136,"pgmpy":136,"libdai":136,"tensorinference":136,"dice":136,"alea":136,"roulette":136,"nodice":136,"psi":136,"genfer":136,"sppl":136,"geni":136,"pluck":136,"storm":136,"prism":136},
-   "answers":{"tddlog":341,"problog":260,"pita":221,"aspmc":219,"psouffle":108,"scallop":156,"ace":64,"merlin":42,"agrum":43,"pgmpy":36,"libdai":44,"tensorinference":35,"dice":45,"alea":66,"roulette":66,"nodice":36,"psi":3,"genfer":22,"sppl":8,"geni":18,"pluck":52,"storm":41,"prism":26},
+   "answers":{"tddlog":342,"problog":260,"pita":221,"aspmc":219,"psouffle":108,"scallop":156,"ace":64,"merlin":42,"agrum":43,"pgmpy":36,"libdai":44,"tensorinference":35,"dice":45,"alea":66,"roulette":66,"nodice":36,"psi":3,"genfer":22,"sppl":8,"geni":18,"pluck":52,"storm":41,"prism":26},
    "classes":{
     "tddlog":{"own":0,"native":364,"translated":1},
     "problog":{"own":191,"native":135,"translated":39},
@@ -583,11 +583,11 @@
     "prism":{"own":0,"native":0,"translated":136}
    },
    "vs":{
-    "problog":{"given":365,"answers":260,"tddlog_answers":341,"either":342,"total":54718.907,"tddlog_total":2221.87,"both":94,"failures":1,"timeouts":82,"counted":65,"ratio":30.66,"speedup":47.86},
-    "pita":{"given":365,"answers":221,"tddlog_answers":341,"either":341,"total":77544.156,"tddlog_total":1621.87,"both":221,"failures":0,"timeouts":120,"counted":103,"ratio":29.74,"speedup":162.6},
-    "aspmc":{"given":365,"answers":219,"tddlog_answers":341,"either":341,"total":80128.476,"tddlog_total":1621.87,"both":219,"failures":0,"timeouts":122,"counted":112,"ratio":9.833,"speedup":92.17},
-    "psouffle":{"given":365,"answers":108,"tddlog_answers":341,"either":341,"total":151685.331,"tddlog_total":1621.87,"both":108,"failures":0,"timeouts":233,"counted":196,"ratio":142.8,"speedup":673.6},
-    "scallop":{"given":358,"answers":156,"tddlog_answers":335,"either":335,"total":113258.018,"tddlog_total":1565.512,"both":17,"failures":0,"timeouts":179,"counted":null,"ratio":null,"speedup":null},
+    "problog":{"given":365,"answers":260,"tddlog_answers":342,"either":343,"total":55318.907,"tddlog_total":2429.487,"both":94,"failures":1,"timeouts":83,"counted":65,"ratio":33.34,"speedup":48.41},
+    "pita":{"given":365,"answers":221,"tddlog_answers":342,"either":342,"total":78144.156,"tddlog_total":1829.487,"both":221,"failures":0,"timeouts":121,"counted":102,"ratio":30.42,"speedup":173.9},
+    "aspmc":{"given":365,"answers":219,"tddlog_answers":342,"either":342,"total":80728.476,"tddlog_total":1829.487,"both":219,"failures":0,"timeouts":123,"counted":112,"ratio":10.66,"speedup":96.26},
+    "psouffle":{"given":365,"answers":108,"tddlog_answers":342,"either":342,"total":152285.331,"tddlog_total":1829.487,"both":108,"failures":0,"timeouts":234,"counted":197,"ratio":142.8,"speedup":667.0},
+    "scallop":{"given":358,"answers":156,"tddlog_answers":336,"either":336,"total":113858.018,"tddlog_total":1773.129,"both":17,"failures":0,"timeouts":180,"counted":null,"ratio":null,"speedup":null},
     "ace":{"given":136,"answers":64,"tddlog_answers":126,"either":126,"total":43164.096,"tddlog_total":1344.392,"both":64,"failures":0,"timeouts":62,"counted":48,"ratio":38.37,"speedup":157.2},
     "merlin":{"given":136,"answers":42,"tddlog_answers":126,"either":126,"total":55944.401,"tddlog_total":1344.392,"both":20,"failures":0,"timeouts":84,"counted":70,"ratio":34.2,"speedup":221.6},
     "agrum":{"given":136,"answers":43,"tddlog_answers":126,"either":126,"total":55522.022,"tddlog_total":1344.392,"both":43,"failures":0,"timeouts":83,"counted":68,"ratio":37.04,"speedup":225.7},
@@ -964,46 +964,46 @@
      "scallop":{"given":38,"answers":33,"tddlog_answers":38,"either":38,"total":3006.6,"tddlog_total":7.6,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
     },
     "threedie":{
-     "problog":{"given":5,"answers":4,"tddlog_answers":5,"either":5,"total":880.714,"tddlog_total":6.856,"both":3,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":5,"answers":2,"tddlog_answers":5,"either":5,"total":1846.07,"tddlog_total":6.856,"both":2,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":5,"answers":3,"tddlog_answers":5,"either":5,"total":1251.526,"tddlog_total":6.856,"both":3,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":5,"answers":0,"tddlog_answers":5,"either":5,"total":3000,"tddlog_total":6.856,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":5,"answers":0,"tddlog_answers":5,"either":5,"total":3000,"tddlog_total":6.856,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":5,"answers":4,"tddlog_answers":5,"either":5,"total":880.714,"tddlog_total":6.412,"both":3,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":5,"answers":2,"tddlog_answers":5,"either":5,"total":1846.07,"tddlog_total":6.412,"both":2,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":5,"answers":3,"tddlog_answers":5,"either":5,"total":1251.526,"tddlog_total":6.412,"both":3,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":5,"answers":0,"tddlog_answers":5,"either":5,"total":3000,"tddlog_total":6.412,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":5,"answers":0,"tddlog_answers":5,"either":5,"total":3000,"tddlog_total":6.412,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
     },
     "pcfg":{
-     "problog":{"given":7,"answers":5,"tddlog_answers":7,"either":7,"total":1459.979,"tddlog_total":120.812,"both":4,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":7,"answers":5,"tddlog_answers":7,"either":7,"total":1212.421,"tddlog_total":120.812,"both":5,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":7,"answers":7,"tddlog_answers":7,"either":7,"total":136.661,"tddlog_total":120.812,"both":7,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":7,"answers":0,"tddlog_answers":7,"either":7,"total":4200,"tddlog_total":120.812,"both":0,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":7,"answers":5,"tddlog_answers":7,"either":7,"total":1202.565,"tddlog_total":120.812,"both":2,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":7,"answers":5,"tddlog_answers":7,"either":7,"total":1459.979,"tddlog_total":109.94,"both":4,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":7,"answers":5,"tddlog_answers":7,"either":7,"total":1212.421,"tddlog_total":109.94,"both":5,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":7,"answers":7,"tddlog_answers":7,"either":7,"total":136.661,"tddlog_total":109.94,"both":7,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":7,"answers":0,"tddlog_answers":7,"either":7,"total":4200,"tddlog_total":109.94,"both":0,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":7,"answers":5,"tddlog_answers":7,"either":7,"total":1202.565,"tddlog_total":109.94,"both":2,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null}
     },
     "pcfgcount":{
-     "problog":{"given":8,"answers":5,"tddlog_answers":8,"either":8,"total":1950.026,"tddlog_total":26.58,"both":5,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":8,"answers":3,"tddlog_answers":8,"either":8,"total":3001.825,"tddlog_total":26.58,"both":3,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":8,"answers":8,"tddlog_answers":8,"either":8,"total":49.65,"tddlog_total":26.58,"both":8,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":8,"answers":0,"tddlog_answers":8,"either":8,"total":4800,"tddlog_total":26.58,"both":0,"failures":0,"timeouts":8,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":8,"answers":3,"tddlog_answers":8,"either":8,"total":3000.6,"tddlog_total":26.58,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":8,"answers":5,"tddlog_answers":8,"either":8,"total":1950.026,"tddlog_total":25.405,"both":5,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":8,"answers":3,"tddlog_answers":8,"either":8,"total":3001.825,"tddlog_total":25.405,"both":3,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":8,"answers":8,"tddlog_answers":8,"either":8,"total":49.65,"tddlog_total":25.405,"both":8,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":8,"answers":0,"tddlog_answers":8,"either":8,"total":4800,"tddlog_total":25.405,"both":0,"failures":0,"timeouts":8,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":8,"answers":3,"tddlog_answers":8,"either":8,"total":3000.6,"tddlog_total":25.405,"both":0,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
     },
     "dnahmm":{
-     "problog":{"given":7,"answers":2,"tddlog_answers":3,"either":3,"total":602.595,"tddlog_total":7.88,"both":1,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":7,"answers":3,"tddlog_answers":3,"either":3,"total":235.334,"tddlog_total":7.88,"both":3,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":7,"answers":2,"tddlog_answers":3,"either":3,"total":634.818,"tddlog_total":7.88,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":7,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":7.88,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":7,"answers":1,"tddlog_answers":3,"either":3,"total":1202.606,"tddlog_total":7.88,"both":1,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":7,"answers":2,"tddlog_answers":4,"either":4,"total":1202.595,"tddlog_total":243.947,"both":1,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":7,"answers":3,"tddlog_answers":4,"either":4,"total":835.334,"tddlog_total":243.947,"both":3,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":7,"answers":2,"tddlog_answers":4,"either":4,"total":1234.818,"tddlog_total":243.947,"both":2,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":7,"answers":0,"tddlog_answers":4,"either":4,"total":2400,"tddlog_total":243.947,"both":0,"failures":0,"timeouts":4,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":7,"answers":1,"tddlog_answers":4,"either":4,"total":1802.606,"tddlog_total":243.947,"both":1,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null}
     },
     "plcg":{
-     "problog":{"given":7,"answers":3,"tddlog_answers":3,"either":3,"total":104.217,"tddlog_total":8.198,"both":3,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":7,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":8.198,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":7,"answers":3,"tddlog_answers":3,"either":3,"total":267.412,"tddlog_total":8.198,"both":3,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":7,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":8.198,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":7,"answers":1,"tddlog_answers":3,"either":3,"total":1200.2,"tddlog_total":8.198,"both":0,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":7,"answers":3,"tddlog_answers":3,"either":3,"total":104.217,"tddlog_total":4.169,"both":3,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":7,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":4.169,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":7,"answers":3,"tddlog_answers":3,"either":3,"total":267.412,"tddlog_total":4.169,"both":3,"failures":0,"timeouts":0,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":7,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":4.169,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":7,"answers":1,"tddlog_answers":3,"either":3,"total":1200.2,"tddlog_total":4.169,"both":0,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null}
     },
     "hmmpos":{
-     "problog":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":638.57,"tddlog_total":49.858,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":604.607,"tddlog_total":49.858,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":643.573,"tddlog_total":49.858,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":5,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":49.858,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":5,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":49.858,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":638.57,"tddlog_total":37.56,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":604.607,"tddlog_total":37.56,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":643.573,"tddlog_total":37.56,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":5,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":37.56,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":5,"answers":0,"tddlog_answers":3,"either":3,"total":1800,"tddlog_total":37.56,"both":0,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null}
     },
     "hwf":{
      "problog":{"given":5,"answers":2,"tddlog_answers":3,"either":3,"total":615.847,"tddlog_total":11.859,"both":2,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
@@ -1013,18 +1013,18 @@
      "scallop":{"given":5,"answers":1,"tddlog_answers":3,"either":3,"total":1204.603,"tddlog_total":11.859,"both":1,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null}
     },
     "pgrid":{
-     "problog":{"given":10,"answers":2,"tddlog_answers":9,"either":9,"total":4203.277,"tddlog_total":10.635,"both":2,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":10,"answers":4,"tddlog_answers":9,"either":9,"total":3012.007,"tddlog_total":10.635,"both":4,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
-     "aspmc":{"given":10,"answers":0,"tddlog_answers":9,"either":9,"total":5400,"tddlog_total":10.635,"both":0,"failures":0,"timeouts":9,"counted":null,"ratio":null,"speedup":null},
-     "psouffle":{"given":10,"answers":4,"tddlog_answers":9,"either":9,"total":3076.917,"tddlog_total":10.635,"both":4,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
-     "scallop":{"given":10,"answers":0,"tddlog_answers":9,"either":9,"total":5400,"tddlog_total":10.635,"both":0,"failures":0,"timeouts":9,"counted":null,"ratio":null,"speedup":null}
+     "problog":{"given":10,"answers":2,"tddlog_answers":9,"either":9,"total":4203.277,"tddlog_total":11.003,"both":2,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":10,"answers":4,"tddlog_answers":9,"either":9,"total":3012.007,"tddlog_total":11.003,"both":4,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
+     "aspmc":{"given":10,"answers":0,"tddlog_answers":9,"either":9,"total":5400,"tddlog_total":11.003,"both":0,"failures":0,"timeouts":9,"counted":null,"ratio":null,"speedup":null},
+     "psouffle":{"given":10,"answers":4,"tddlog_answers":9,"either":9,"total":3076.917,"tddlog_total":11.003,"both":4,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null},
+     "scallop":{"given":10,"answers":0,"tddlog_answers":9,"either":9,"total":5400,"tddlog_total":11.003,"both":0,"failures":0,"timeouts":9,"counted":null,"ratio":null,"speedup":null}
     },
     "own:problog":{
-     "problog":{"given":191,"answers":163,"tddlog_answers":189,"either":190,"total":20447.788,"tddlog_total":1353.073,"both":44,"failures":1,"timeouts":27,"counted":21,"ratio":18.99,"speedup":23.53},
-     "pita":{"given":191,"answers":123,"tddlog_answers":189,"either":189,"total":43818.687,"tddlog_total":753.073,"both":123,"failures":0,"timeouts":66,"counted":60,"ratio":20.61,"speedup":246.7},
-     "aspmc":{"given":191,"answers":144,"tddlog_answers":189,"either":189,"total":32402.405,"tddlog_total":753.073,"both":144,"failures":0,"timeouts":45,"counted":42,"ratio":3.478,"speedup":70.1},
-     "psouffle":{"given":191,"answers":56,"tddlog_answers":189,"either":189,"total":87810.413,"tddlog_total":753.073,"both":56,"failures":0,"timeouts":133,"counted":123,"ratio":132.7,"speedup":846.2},
-     "scallop":{"given":191,"answers":113,"tddlog_answers":189,"either":189,"total":51158.015,"tddlog_total":753.073,"both":10,"failures":0,"timeouts":76,"counted":null,"ratio":null,"speedup":null},
+     "problog":{"given":191,"answers":163,"tddlog_answers":189,"either":190,"total":20447.788,"tddlog_total":1341.394,"both":44,"failures":1,"timeouts":27,"counted":22,"ratio":19.06,"speedup":23.38},
+     "pita":{"given":191,"answers":123,"tddlog_answers":189,"either":189,"total":43818.687,"tddlog_total":741.394,"both":123,"failures":0,"timeouts":66,"counted":60,"ratio":20.7,"speedup":245.7},
+     "aspmc":{"given":191,"answers":144,"tddlog_answers":189,"either":189,"total":32402.405,"tddlog_total":741.394,"both":144,"failures":0,"timeouts":45,"counted":42,"ratio":3.738,"speedup":74.06},
+     "psouffle":{"given":191,"answers":56,"tddlog_answers":189,"either":189,"total":87810.413,"tddlog_total":741.394,"both":56,"failures":0,"timeouts":133,"counted":123,"ratio":132.7,"speedup":844.3},
+     "scallop":{"given":191,"answers":113,"tddlog_answers":189,"either":189,"total":51158.015,"tddlog_total":741.394,"both":10,"failures":0,"timeouts":76,"counted":null,"ratio":null,"speedup":null},
      "ace":{"given":29,"answers":16,"tddlog_answers":29,"either":29,"total":12873.641,"tddlog_total":567.846,"both":16,"failures":0,"timeouts":13,"counted":null,"ratio":null,"speedup":null},
      "merlin":{"given":29,"answers":3,"tddlog_answers":29,"either":29,"total":21003.125,"tddlog_total":567.846,"both":3,"failures":0,"timeouts":26,"counted":null,"ratio":null,"speedup":null},
      "agrum":{"given":29,"answers":3,"tddlog_answers":29,"either":29,"total":21001.905,"tddlog_total":567.846,"both":3,"failures":0,"timeouts":26,"counted":null,"ratio":null,"speedup":null},
@@ -1044,11 +1044,11 @@
      "prism":{"given":29,"answers":3,"tddlog_answers":29,"either":29,"total":21131.801,"tddlog_total":567.846,"both":3,"failures":0,"timeouts":26,"counted":null,"ratio":null,"speedup":null}
     },
     "own:pita":{
-     "problog":{"given":62,"answers":52,"tddlog_answers":58,"either":58,"total":3918.814,"tddlog_total":32.196,"both":13,"failures":0,"timeouts":6,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":62,"answers":51,"tddlog_answers":58,"either":58,"total":4519.225,"tddlog_total":32.196,"both":51,"failures":0,"timeouts":7,"counted":7,"ratio":18.26,"speedup":75.14},
-     "aspmc":{"given":62,"answers":48,"tddlog_answers":58,"either":58,"total":6269.842,"tddlog_total":32.196,"both":48,"failures":0,"timeouts":10,"counted":10,"ratio":27.93,"speedup":101.6},
-     "psouffle":{"given":62,"answers":22,"tddlog_answers":58,"either":58,"total":22206.697,"tddlog_total":32.196,"both":22,"failures":0,"timeouts":36,"counted":33,"ratio":137.9,"speedup":745.6},
-     "scallop":{"given":62,"answers":34,"tddlog_answers":58,"either":58,"total":14409.206,"tddlog_total":32.196,"both":1,"failures":0,"timeouts":24,"counted":null,"ratio":null,"speedup":null},
+     "problog":{"given":62,"answers":52,"tddlog_answers":59,"either":59,"total":4518.814,"tddlog_total":267.819,"both":13,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":62,"answers":51,"tddlog_answers":59,"either":59,"total":5119.225,"tddlog_total":267.819,"both":51,"failures":0,"timeouts":8,"counted":7,"ratio":18.92,"speedup":77.68},
+     "aspmc":{"given":62,"answers":48,"tddlog_answers":59,"either":59,"total":6869.842,"tddlog_total":267.819,"both":48,"failures":0,"timeouts":11,"counted":10,"ratio":27.92,"speedup":105.0},
+     "psouffle":{"given":62,"answers":22,"tddlog_answers":59,"either":59,"total":22806.697,"tddlog_total":267.819,"both":22,"failures":0,"timeouts":37,"counted":33,"ratio":137.9,"speedup":750.1},
+     "scallop":{"given":62,"answers":34,"tddlog_answers":59,"either":59,"total":15009.206,"tddlog_total":267.819,"both":1,"failures":0,"timeouts":25,"counted":null,"ratio":null,"speedup":null},
      "ace":{"given":12,"answers":11,"tddlog_answers":12,"either":12,"total":727.298,"tddlog_total":9.86,"both":11,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
      "merlin":{"given":12,"answers":10,"tddlog_answers":12,"either":12,"total":1220.514,"tddlog_total":9.86,"both":5,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
      "agrum":{"given":12,"answers":10,"tddlog_answers":12,"either":12,"total":1222.672,"tddlog_total":9.86,"both":10,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
@@ -7452,8 +7452,8 @@
     ["lit","pdb320",300,"nntntttttttttttttttttttt",2.394,"memout","timeout","timeout","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["lit","pdb640",300,"nntntttttttttttttttttttt","timeout","memout","timeout","skipped","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["lit","plcg4",300,"nntntt------------------",0.012,0.57,"wrong",2.826,"error",0.061,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","plcg6",300,"nntntt------------------",0.198,6.345,"memout",4.4,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","plcg8",300,"nntntt------------------",7.798,97.302,"skipped",260.186,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","plcg6",300,"nntntt------------------",0.083,6.345,"memout",4.4,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","plcg8",300,"nntntt------------------",3.769,97.302,"skipped",260.186,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","plcg10",300,"nntntt------------------","timeout","timeout","skipped","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","plcg12",300,"nntntt------------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","plcg14",300,"nntntt------------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -7471,13 +7471,13 @@
     ["lit","problogtut_basic_09_higherorderfunctions_4",300,"notntt------------------",0.014,0.275,"error",2.996,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_08_rule_probs_7",300,"notntt------------------",0.007,0.12,0.536,2.771,"error",0.04,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfgcount8",300,"notntt------------------",0.008,0.314,0.544,2.778,"error",0.028,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount16",300,"notntt------------------",0.019,2.181,0.57,2.808,"error",0.037,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount16",300,"notntt------------------",0.016,2.181,0.57,2.808,"error",0.037,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfgcount24",300,"notntt------------------",0.039,8.185,0.711,2.885,"error",0.087,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount32",300,"notntt------------------",0.103,26.44,"wrong",3.028,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount48",300,"notntt------------------",0.383,112.906,"error",3.267,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount64",300,"notntt------------------",0.968,"timeout","error",3.843,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount96",300,"notntt------------------",6.015,"skipped","error",9.163,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfgcount128",300,"notntt------------------",18.414,"skipped","memout",21.878,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount32",300,"notntt------------------",0.104,26.44,"wrong",3.028,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount48",300,"notntt------------------",0.409,112.906,"error",3.267,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount64",300,"notntt------------------",1.024,"timeout","error",3.843,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount96",300,"notntt------------------",6.035,"skipped","error",9.163,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfgcount128",300,"notntt------------------",17.137,"skipped","memout",21.878,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_08_bayesian_dataflow_2",300,"notntt------------------",0.005,0.101,0.598,2.879,22.228,0.018,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogex_9_packing_problem",300,"notntt------------------",0.005,0.118,"error",2.785,"error",0.02,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_06_pcfg_4",300,"notntt------------------",0.02,0.274,0.535,2.817,"error",0.044,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -7503,15 +7503,15 @@
     ["lit","cplint_pathdb",300,"ntottt------------------",0.006,0.106,0.531,2.773,"error",0.016,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_10_inhibitioneffects_9",300,"notntt------------------",0.007,0.129,2.384,3.031,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_coin2",300,"ntottt------------------",0.004,0.102,0.532,2.781,"error",0.023,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_4",300,"notntt------------------",0.011,0.594,0.645,"timeout",19.065,"timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_4",300,"notntt------------------",0.009,0.594,0.645,"timeout",19.065,"timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid16_5",300,"notntt------------------",0.012,2.683,0.712,"skipped",18.601,"skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid16_6",300,"notntt------------------",0.014,"timeout",4.382,"skipped",18.501,"skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid16_7",300,"notntt------------------",0.018,"skipped",6.268,"skipped",20.75,"skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_8",300,"notntt------------------",0.022,"skipped","timeout","skipped","timeout","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_10",300,"notntt------------------",0.035,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_12",300,"notntt------------------",0.152,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid16_15",300,"notntt------------------",1.69,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pgrid18_17",300,"notntt------------------",7.545,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_8",300,"notntt------------------",0.031,"skipped","timeout","skipped","timeout","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_10",300,"notntt------------------",0.047,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_12",300,"notntt------------------",0.18,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid16_15",300,"notntt------------------",1.855,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pgrid18_17",300,"notntt------------------",7.748,"skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pgrid20_19",300,"notntt------------------","timeout","skipped","skipped","skipped","skipped","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_14_robot_key_1",300,"notntt------------------",0.008,0.117,"wrong",2.78,"error",2.798,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_eruption",300,"ntottt------------------",0.014,0.093,0.52,"error",20.105,0.016,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -7520,11 +7520,11 @@
     ["lit","problogtut_basic_10_inhibitioneffects_4",300,"notntt------------------",0.006,0.104,0.525,2.777,18.912,0.195,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogex_tc_2",300,"notntt------------------",0.005,0.092,"error",2.765,"error",0.014,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_multiple_paths_simple",300,"ntottt------------------",0.005,0.093,0.537,1.741,17.962,0.017,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie10",300,"nnontt------------------",0.009,0.186,0.511,2.867,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie100",300,"nnontt------------------",0.053,1.363,45.559,5.901,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie300",300,"nnontt------------------",0.257,5.149,"timeout",42.758,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie1000",300,"nnontt------------------",2.001,274.002,"skipped","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","threedie1500",300,"nnontt------------------",4.198,"error","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie10",300,"nnontt------------------",0.016,0.186,0.511,2.867,"error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie100",300,"nnontt------------------",0.066,1.363,45.559,5.901,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie300",300,"nnontt------------------",0.264,5.149,"timeout",42.758,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie1000",300,"nnontt------------------",1.916,274.002,"skipped","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","threedie1500",300,"nnontt------------------",3.832,"error","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_tutslides_02_more_4",300,"notntt------------------",0.007,0.119,0.544,2.81,21.023,0.11,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_13_incomplete_info_3",300,"notntt------------------",0.006,0.1,0.553,2.789,"error",0.021,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_flexprob",300,"ntottt------------------",0.005,0.091,0.532,1.755,"error",0.015,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -7617,9 +7617,9 @@
     ["lit","problogtut_basic_10_inhibitioneffects_1",300,"notntt------------------",0.004,0.094,0.522,2.786,17.844,0.017,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_03_dice_6",300,"notntt------------------",0.009,0.121,0.536,2.814,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_basic_08_rule_probs_5",300,"notntt------------------",0.076,0.105,0.533,2.832,"error",0.019,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","hmmpos1",300,"nntntt------------------",0.016,0.831,0.542,2.928,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","hmmpos2",300,"nntntt------------------",2.109,37.739,4.065,40.645,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","hmmpos3",300,"nntntt------------------",47.549,"timeout","timeout","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","hmmpos1",300,"nntntt------------------",0.023,0.831,0.542,2.928,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","hmmpos2",300,"nntntt------------------",1.402,37.739,4.065,40.645,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","hmmpos3",300,"nntntt------------------",35.958,"timeout","timeout","timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","hmmpos4",300,"nntntt------------------","timeout","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","hmmpos5",300,"nntntt------------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_15_spaghetti_1",300,"notntt------------------",0.009,0.161,"error",2.815,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -7631,11 +7631,11 @@
     ["lit","problogtut_various_07_ppdatalog_2",300,"notntt------------------",0.007,0.134,3.336,"error","error",0.056,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_10_prism_3",300,"notntt------------------",0.005,0.096,0.533,2.761,"error",0.015,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_markov_network",300,"ntottt------------------",0.035,0.123,0.525,2.784,21.947,"timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm4",300,"nnontt------------------",0.014,0.163,0.541,2.822,"error",2.606,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm8",300,"nnontt------------------",0.206,2.395,1.108,31.996,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm12",300,"nnontt------------------",7.474,"timeout",233.685,"timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm16",300,"nnontt------------------","timeout","skipped","timeout","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","dnahmm20",300,"nnontt------------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm4",300,"nnontt------------------",0.012,0.163,0.541,2.822,"error",2.606,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm8",300,"nnontt------------------",0.153,2.395,1.108,31.996,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm12",300,"nnontt------------------",6.87,"timeout",233.685,"timeout","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm16",300,"nnontt------------------",236.677,"skipped","timeout","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","dnahmm20",300,"nnontt------------------","timeout","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","dnahmm24",300,"nnontt------------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","dnahmm28",300,"nnontt------------------","skipped","skipped","skipped","skipped","error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","cplint_threesideddice",300,"ntottt------------------",0.007,0.115,0.532,"error","error","memout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -7651,11 +7651,11 @@
     ["lit","problogtut_basic_08_rule_probs_3",300,"notntt------------------",0.005,0.101,0.526,1.77,"error",0.019,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfg8",300,"notntt------------------",0.008,0.173,0.534,2.783,"error",0.023,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","pcfg12",300,"notntt------------------",0.012,0.764,0.548,2.809,"error",0.038,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg16",300,"notntt------------------",0.029,3.98,0.644,2.823,"error",0.044,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg20",300,"notntt------------------",0.182,27.8,1.47,2.986,"error",0.201,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg24",300,"notntt------------------",1.677,227.235,9.225,4.41,"error",1.764,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg28",300,"notntt------------------",16.218,"timeout","memout",19.034,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    ["lit","pcfg32",300,"notntt------------------",102.117,"skipped","skipped",101.816,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg16",300,"notntt------------------",0.031,3.98,0.644,2.823,"error",0.044,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg20",300,"notntt------------------",0.183,27.8,1.47,2.986,"error",0.201,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg24",300,"notntt------------------",1.54,227.235,9.225,4.41,"error",1.764,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg28",300,"notntt------------------",14.911,"timeout","memout",19.034,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["lit","pcfg32",300,"notntt------------------",92.689,"skipped","skipped",101.816,"error","skipped",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_09_airflap_1",300,"notntt------------------",0.023,1.025,0.768,5.037,"error","timeout",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_various_07_ppdatalog_3",300,"notntt------------------",0.009,0.19,1.647,"error","error",0.068,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["lit","problogtut_tutslides_03_stochmem_2",300,"notntt------------------",0.006,0.101,0.519,2.775,"error",0.035,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -8765,7 +8765,7 @@
     }
    ],
    "given":{"tddlog":2183,"problog":2183,"pita":2183,"aspmc":2183,"psouffle":704,"scallop":1762,"ace":1953,"merlin":1953,"agrum":1953,"pgmpy":1953,"libdai":1953,"tensorinference":1953,"dice":1580,"alea":1580,"roulette":1580,"nodice":1580,"psi":1580,"genfer":1580,"sppl":1580,"geni":1580,"pluck":1583,"storm":1266,"prism":1266,"provsql":330},
-   "answers":{"tddlog":2004,"problog":761,"pita":756,"aspmc":674,"psouffle":310,"scallop":250,"ace":1070,"merlin":862,"agrum":866,"pgmpy":744,"libdai":913,"tensorinference":890,"dice":436,"alea":687,"roulette":587,"nodice":238,"psi":88,"genfer":207,"sppl":149,"geni":174,"pluck":466,"storm":473,"prism":329,"provsql":276},
+   "answers":{"tddlog":2005,"problog":761,"pita":756,"aspmc":674,"psouffle":310,"scallop":250,"ace":1070,"merlin":862,"agrum":866,"pgmpy":744,"libdai":913,"tensorinference":890,"dice":436,"alea":687,"roulette":587,"nodice":238,"psi":88,"genfer":207,"sppl":149,"geni":174,"pluck":466,"storm":473,"prism":329,"provsql":276},
    "classes":{
     "tddlog":{"own":0,"native":1682,"translated":501},
     "problog":{"own":191,"native":466,"translated":1526},
@@ -8793,11 +8793,11 @@
     "provsql":{"own":295,"native":0,"translated":35}
    },
    "vs":{
-    "problog":{"given":2183,"answers":761,"tddlog_answers":2004,"either":2005,"total":1086403.722,"tddlog_total":22870.111,"both":551,"failures":1,"timeouts":1244,"counted":901,"ratio":44.31,"speedup":161.5},
-    "pita":{"given":2183,"answers":756,"tddlog_answers":2004,"either":2004,"total":1116927.179,"tddlog_total":22270.111,"both":756,"failures":0,"timeouts":1248,"counted":996,"ratio":27.63,"speedup":122.0},
-    "aspmc":{"given":2183,"answers":674,"tddlog_answers":2004,"either":2005,"total":1210786.797,"tddlog_total":22870.111,"both":673,"failures":1,"timeouts":1331,"counted":933,"ratio":61.69,"speedup":217.2},
-    "psouffle":{"given":704,"answers":310,"tddlog_answers":667,"either":667,"total":303238.683,"tddlog_total":4349.794,"both":310,"failures":0,"timeouts":357,"counted":275,"ratio":59.48,"speedup":196.6},
-    "scallop":{"given":1762,"answers":250,"tddlog_answers":1620,"either":1620,"total":1291319.795,"tddlog_total":19860.328,"both":53,"failures":0,"timeouts":1370,"counted":956,"ratio":86.19,"speedup":488.2},
+    "problog":{"given":2183,"answers":761,"tddlog_answers":2005,"either":2006,"total":1087003.722,"tddlog_total":23077.728,"both":551,"failures":1,"timeouts":1245,"counted":899,"ratio":44.64,"speedup":162.5},
+    "pita":{"given":2183,"answers":756,"tddlog_answers":2005,"either":2005,"total":1117527.179,"tddlog_total":22477.728,"both":756,"failures":0,"timeouts":1249,"counted":996,"ratio":27.67,"speedup":122.1},
+    "aspmc":{"given":2183,"answers":674,"tddlog_answers":2005,"either":2006,"total":1211386.797,"tddlog_total":23077.728,"both":673,"failures":1,"timeouts":1332,"counted":929,"ratio":64.07,"speedup":221.8},
+    "psouffle":{"given":704,"answers":310,"tddlog_answers":668,"either":668,"total":303838.683,"tddlog_total":4557.411,"both":310,"failures":0,"timeouts":358,"counted":276,"ratio":59.48,"speedup":196.2},
+    "scallop":{"given":1762,"answers":250,"tddlog_answers":1621,"either":1621,"total":1291919.795,"tddlog_total":20067.945,"both":53,"failures":0,"timeouts":1371,"counted":955,"ratio":87.0,"speedup":491.6},
     "ace":{"given":1953,"answers":1070,"tddlog_answers":1788,"either":1794,"total":642836.493,"tddlog_total":25592.232,"both":1064,"failures":6,"timeouts":724,"counted":623,"ratio":9.575,"speedup":27.85},
     "merlin":{"given":1953,"answers":862,"tddlog_answers":1788,"either":1797,"total":855819.448,"tddlog_total":27392.232,"both":603,"failures":9,"timeouts":935,"counted":863,"ratio":4.972,"speedup":30.35},
     "agrum":{"given":1953,"answers":866,"tddlog_answers":1788,"either":1796,"total":840262.389,"tddlog_total":26792.232,"both":761,"failures":8,"timeouts":930,"counted":833,"ratio":8.382,"speedup":35.49},
@@ -8819,11 +8819,11 @@
    },
    "narrowed":{
     "logic-programs":{
-     "problog":{"given":365,"answers":260,"tddlog_answers":341,"either":342,"total":54718.907,"tddlog_total":2221.87,"both":94,"failures":1,"timeouts":82,"counted":65,"ratio":30.66,"speedup":47.86},
-     "pita":{"given":365,"answers":221,"tddlog_answers":341,"either":341,"total":77544.156,"tddlog_total":1621.87,"both":221,"failures":0,"timeouts":120,"counted":103,"ratio":29.74,"speedup":162.6},
-     "aspmc":{"given":365,"answers":219,"tddlog_answers":341,"either":341,"total":80128.476,"tddlog_total":1621.87,"both":219,"failures":0,"timeouts":122,"counted":112,"ratio":9.833,"speedup":92.17},
-     "psouffle":{"given":365,"answers":108,"tddlog_answers":341,"either":341,"total":151685.331,"tddlog_total":1621.87,"both":108,"failures":0,"timeouts":233,"counted":196,"ratio":142.8,"speedup":673.6},
-     "scallop":{"given":358,"answers":156,"tddlog_answers":335,"either":335,"total":113258.018,"tddlog_total":1565.512,"both":17,"failures":0,"timeouts":179,"counted":null,"ratio":null,"speedup":null},
+     "problog":{"given":365,"answers":260,"tddlog_answers":342,"either":343,"total":55318.907,"tddlog_total":2429.487,"both":94,"failures":1,"timeouts":83,"counted":65,"ratio":33.34,"speedup":48.41},
+     "pita":{"given":365,"answers":221,"tddlog_answers":342,"either":342,"total":78144.156,"tddlog_total":1829.487,"both":221,"failures":0,"timeouts":121,"counted":102,"ratio":30.42,"speedup":173.9},
+     "aspmc":{"given":365,"answers":219,"tddlog_answers":342,"either":342,"total":80728.476,"tddlog_total":1829.487,"both":219,"failures":0,"timeouts":123,"counted":112,"ratio":10.66,"speedup":96.26},
+     "psouffle":{"given":365,"answers":108,"tddlog_answers":342,"either":342,"total":152285.331,"tddlog_total":1829.487,"both":108,"failures":0,"timeouts":234,"counted":197,"ratio":142.8,"speedup":667.0},
+     "scallop":{"given":358,"answers":156,"tddlog_answers":336,"either":336,"total":113858.018,"tddlog_total":1773.129,"both":17,"failures":0,"timeouts":180,"counted":null,"ratio":null,"speedup":null},
      "ace":{"given":136,"answers":64,"tddlog_answers":126,"either":126,"total":43164.096,"tddlog_total":1344.392,"both":64,"failures":0,"timeouts":62,"counted":48,"ratio":38.37,"speedup":157.2},
      "merlin":{"given":136,"answers":42,"tddlog_answers":126,"either":126,"total":55944.401,"tddlog_total":1344.392,"both":20,"failures":0,"timeouts":84,"counted":70,"ratio":34.2,"speedup":221.6},
      "agrum":{"given":136,"answers":43,"tddlog_answers":126,"either":126,"total":55522.022,"tddlog_total":1344.392,"both":43,"failures":0,"timeouts":83,"counted":68,"ratio":37.04,"speedup":225.7},
@@ -8963,11 +8963,11 @@
      "prism":{"given":257,"answers":21,"tddlog_answers":224,"either":224,"total":247861.765,"tddlog_total":7423.13,"both":21,"failures":0,"timeouts":203,"counted":52,"ratio":498.0,"speedup":861.9}
     },
     "own:problog":{
-     "problog":{"given":191,"answers":163,"tddlog_answers":189,"either":190,"total":20447.788,"tddlog_total":1353.073,"both":44,"failures":1,"timeouts":27,"counted":21,"ratio":18.99,"speedup":23.53},
-     "pita":{"given":191,"answers":123,"tddlog_answers":189,"either":189,"total":43818.687,"tddlog_total":753.073,"both":123,"failures":0,"timeouts":66,"counted":60,"ratio":20.61,"speedup":246.7},
-     "aspmc":{"given":191,"answers":144,"tddlog_answers":189,"either":189,"total":32402.405,"tddlog_total":753.073,"both":144,"failures":0,"timeouts":45,"counted":42,"ratio":3.478,"speedup":70.1},
-     "psouffle":{"given":191,"answers":56,"tddlog_answers":189,"either":189,"total":87810.413,"tddlog_total":753.073,"both":56,"failures":0,"timeouts":133,"counted":123,"ratio":132.7,"speedup":846.2},
-     "scallop":{"given":191,"answers":113,"tddlog_answers":189,"either":189,"total":51158.015,"tddlog_total":753.073,"both":10,"failures":0,"timeouts":76,"counted":null,"ratio":null,"speedup":null},
+     "problog":{"given":191,"answers":163,"tddlog_answers":189,"either":190,"total":20447.788,"tddlog_total":1341.394,"both":44,"failures":1,"timeouts":27,"counted":22,"ratio":19.06,"speedup":23.38},
+     "pita":{"given":191,"answers":123,"tddlog_answers":189,"either":189,"total":43818.687,"tddlog_total":741.394,"both":123,"failures":0,"timeouts":66,"counted":60,"ratio":20.7,"speedup":245.7},
+     "aspmc":{"given":191,"answers":144,"tddlog_answers":189,"either":189,"total":32402.405,"tddlog_total":741.394,"both":144,"failures":0,"timeouts":45,"counted":42,"ratio":3.738,"speedup":74.06},
+     "psouffle":{"given":191,"answers":56,"tddlog_answers":189,"either":189,"total":87810.413,"tddlog_total":741.394,"both":56,"failures":0,"timeouts":133,"counted":123,"ratio":132.7,"speedup":844.3},
+     "scallop":{"given":191,"answers":113,"tddlog_answers":189,"either":189,"total":51158.015,"tddlog_total":741.394,"both":10,"failures":0,"timeouts":76,"counted":null,"ratio":null,"speedup":null},
      "ace":{"given":29,"answers":16,"tddlog_answers":29,"either":29,"total":12873.641,"tddlog_total":567.846,"both":16,"failures":0,"timeouts":13,"counted":null,"ratio":null,"speedup":null},
      "merlin":{"given":29,"answers":3,"tddlog_answers":29,"either":29,"total":21003.125,"tddlog_total":567.846,"both":3,"failures":0,"timeouts":26,"counted":null,"ratio":null,"speedup":null},
      "agrum":{"given":29,"answers":3,"tddlog_answers":29,"either":29,"total":21001.905,"tddlog_total":567.846,"both":3,"failures":0,"timeouts":26,"counted":null,"ratio":null,"speedup":null},
@@ -8987,11 +8987,11 @@
      "prism":{"given":29,"answers":3,"tddlog_answers":29,"either":29,"total":21131.801,"tddlog_total":567.846,"both":3,"failures":0,"timeouts":26,"counted":null,"ratio":null,"speedup":null}
     },
     "own:pita":{
-     "problog":{"given":62,"answers":52,"tddlog_answers":58,"either":58,"total":3918.814,"tddlog_total":32.196,"both":13,"failures":0,"timeouts":6,"counted":null,"ratio":null,"speedup":null},
-     "pita":{"given":62,"answers":51,"tddlog_answers":58,"either":58,"total":4519.225,"tddlog_total":32.196,"both":51,"failures":0,"timeouts":7,"counted":7,"ratio":18.26,"speedup":75.14},
-     "aspmc":{"given":62,"answers":48,"tddlog_answers":58,"either":58,"total":6269.842,"tddlog_total":32.196,"both":48,"failures":0,"timeouts":10,"counted":10,"ratio":27.93,"speedup":101.6},
-     "psouffle":{"given":62,"answers":22,"tddlog_answers":58,"either":58,"total":22206.697,"tddlog_total":32.196,"both":22,"failures":0,"timeouts":36,"counted":33,"ratio":137.9,"speedup":745.6},
-     "scallop":{"given":62,"answers":34,"tddlog_answers":58,"either":58,"total":14409.206,"tddlog_total":32.196,"both":1,"failures":0,"timeouts":24,"counted":null,"ratio":null,"speedup":null},
+     "problog":{"given":62,"answers":52,"tddlog_answers":59,"either":59,"total":4518.814,"tddlog_total":267.819,"both":13,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null},
+     "pita":{"given":62,"answers":51,"tddlog_answers":59,"either":59,"total":5119.225,"tddlog_total":267.819,"both":51,"failures":0,"timeouts":8,"counted":7,"ratio":18.92,"speedup":77.68},
+     "aspmc":{"given":62,"answers":48,"tddlog_answers":59,"either":59,"total":6869.842,"tddlog_total":267.819,"both":48,"failures":0,"timeouts":11,"counted":10,"ratio":27.92,"speedup":105.0},
+     "psouffle":{"given":62,"answers":22,"tddlog_answers":59,"either":59,"total":22806.697,"tddlog_total":267.819,"both":22,"failures":0,"timeouts":37,"counted":33,"ratio":137.9,"speedup":750.1},
+     "scallop":{"given":62,"answers":34,"tddlog_answers":59,"either":59,"total":15009.206,"tddlog_total":267.819,"both":1,"failures":0,"timeouts":25,"counted":null,"ratio":null,"speedup":null},
      "ace":{"given":12,"answers":11,"tddlog_answers":12,"either":12,"total":727.298,"tddlog_total":9.86,"both":11,"failures":0,"timeouts":1,"counted":null,"ratio":null,"speedup":null},
      "merlin":{"given":12,"answers":10,"tddlog_answers":12,"either":12,"total":1220.514,"tddlog_total":9.86,"both":5,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
      "agrum":{"given":12,"answers":10,"tddlog_answers":12,"either":12,"total":1222.672,"tddlog_total":9.86,"both":10,"failures":0,"timeouts":2,"counted":null,"ratio":null,"speedup":null},
@@ -9418,13 +9418,13 @@
    "system":"problog",
    "about":"the ProbLog tutorial's probabilistic context-free grammar, in its two encodings",
    "instances":15,
-   "vs":{"given":15,"answers":10,"tddlog_answers":15,"either":15,"total":3410.005,"tddlog_total":147.392,"both":9,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
+   "vs":{"given":15,"answers":10,"tddlog_answers":15,"either":15,"total":3410.005,"tddlog_total":135.345,"both":9,"failures":0,"timeouts":5,"counted":null,"ratio":null,"speedup":null}
   },
   {
    "system":"pita",
    "about":"cplint's examples written for PITA, PITA's three-sided die (ICLP 2010) and its DNA HMM (TPLP 2011)",
    "instances":50,
-   "vs":{"given":50,"answers":43,"tddlog_answers":46,"either":46,"total":2101.165,"tddlog_total":22.336,"both":43,"failures":0,"timeouts":3,"counted":3,"ratio":18.97,"speedup":53.78}
+   "vs":{"given":50,"answers":43,"tddlog_answers":47,"either":47,"total":2701.165,"tddlog_total":257.959,"both":43,"failures":0,"timeouts":4,"counted":3,"ratio":19.72,"speedup":56.44}
   },
   {
    "system":"pita",
@@ -9442,7 +9442,7 @@
    "system":"problog",
    "about":"the probabilistic grid of ProbLog2's evaluation (Fierens et al., TPLP 2015)",
    "instances":10,
-   "vs":{"given":10,"answers":2,"tddlog_answers":9,"either":9,"total":4203.277,"tddlog_total":10.635,"both":2,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null}
+   "vs":{"given":10,"answers":2,"tddlog_answers":9,"either":9,"total":4203.277,"tddlog_total":11.003,"both":2,"failures":0,"timeouts":7,"counted":null,"ratio":null,"speedup":null}
   }
  ],
  "systems":[
@@ -9456,7 +9456,7 @@
    "link":"https://github.com/Tractables/tddlog",
    "categories":["logic-programs","database-queries","bayesian-networks","markov-networks","functional-programs","bit-blasted"],
    "given":2183,
-   "answers":2004,
+   "answers":2005,
    "how":[
     {
      "cls":"native",
@@ -9602,7 +9602,7 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"a network of Boolean variables built from the ground program (ground2net.py)",
      "n":1043
@@ -9646,7 +9646,7 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"a network of Boolean variables built from the ground program (ground2net.py)",
      "n":1043
@@ -9690,7 +9690,7 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"a network of Boolean variables built from the ground program (ground2net.py)",
      "n":1043
@@ -9734,7 +9734,7 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"a network of Boolean variables built from the ground program (ground2net.py)",
      "n":1043
@@ -9778,7 +9778,7 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"a network of Boolean variables built from the ground program (ground2net.py)",
      "n":1043
@@ -9898,7 +9898,7 @@
      "n":139
     }
    ],
-   "native":{"given":657,"answers":431,"tddlog_answers":620,"either":621,"total":197130.25,"tddlog_total":4940.242,"both":295,"failures":1,"timeouts":190,"counted":126,"ratio":38.99,"speedup":63.34},
+   "native":{"given":657,"answers":431,"tddlog_answers":621,"either":622,"total":197730.25,"tddlog_total":5147.859,"both":295,"failures":1,"timeouts":191,"counted":125,"ratio":39.35,"speedup":63.79},
    "translated":{"given":1526,"answers":330,"tddlog_answers":1384,"either":1384,"total":889273.472,"tddlog_total":17929.869,"both":256,"failures":0,"timeouts":1054,"counted":715,"ratio":70.3,"speedup":371.1}
   },
   {
@@ -9977,8 +9977,8 @@
      "n":139
     }
    ],
-   "native":{"given":62,"answers":51,"tddlog_answers":58,"either":58,"total":4519.225,"tddlog_total":32.196,"both":51,"failures":0,"timeouts":7,"counted":7,"ratio":18.26,"speedup":75.14},
-   "translated":{"given":2121,"answers":705,"tddlog_answers":1946,"either":1946,"total":1112407.954,"tddlog_total":22237.915,"both":705,"failures":0,"timeouts":1241,"counted":989,"ratio":27.8,"speedup":122.4}
+   "native":{"given":62,"answers":51,"tddlog_answers":59,"either":59,"total":5119.225,"tddlog_total":267.819,"both":51,"failures":0,"timeouts":8,"counted":7,"ratio":18.92,"speedup":77.68},
+   "translated":{"given":2121,"answers":705,"tddlog_answers":1946,"either":1946,"total":1112407.954,"tddlog_total":22209.909,"both":705,"failures":0,"timeouts":1241,"counted":989,"ratio":27.82,"speedup":122.5}
   },
   {
    "key":"pgmpy",
@@ -10015,7 +10015,7 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"a network of Boolean variables built from the ground program (ground2net.py)",
      "n":1043
@@ -10151,7 +10151,7 @@
      "n":139
     }
    ],
-   "native":{"given":657,"answers":204,"tddlog_answers":620,"either":620,"total":428722.782,"tddlog_total":4340.242,"both":204,"failures":0,"timeouts":416,"counted":396,"ratio":12.68,"speedup":106.4},
+   "native":{"given":657,"answers":204,"tddlog_answers":621,"either":621,"total":429322.782,"tddlog_total":4547.859,"both":204,"failures":0,"timeouts":417,"counted":395,"ratio":13.75,"speedup":109.7},
    "translated":{"given":1526,"answers":470,"tddlog_answers":1384,"either":1385,"total":782064.015,"tddlog_total":18529.869,"both":469,"failures":1,"timeouts":915,"counted":528,"ratio":106.0,"speedup":249.2}
   },
   {
@@ -10437,14 +10437,14 @@
     },
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine"],
+     "suites":["std","lit","tpch","biomine","circulette"],
      "instances":"",
      "reason":"a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py)",
      "n":689
     }
    ],
    "native":{"given":15,"answers":9,"tddlog_answers":12,"either":12,"total":3876.613,"tddlog_total":32.304,"both":9,"failures":0,"timeouts":3,"counted":null,"ratio":null,"speedup":null},
-   "translated":{"given":689,"answers":301,"tddlog_answers":655,"either":655,"total":299362.07,"tddlog_total":4317.49,"both":301,"failures":0,"timeouts":354,"counted":275,"ratio":54.73,"speedup":197.1}
+   "translated":{"given":689,"answers":301,"tddlog_answers":656,"either":656,"total":299962.07,"tddlog_total":4525.107,"both":301,"failures":0,"timeouts":355,"counted":276,"ratio":54.73,"speedup":196.7}
   },
   {
    "key":"provsql",
@@ -10490,14 +10490,14 @@
    "how":[
     {
      "cls":"translated",
-     "suites":["std","lit","tpch","biomine","std_bn","ace","large","uai","uai_pr","uaipr","uaitpr","uaiihler","dice","ppl","bitblast","roulette","geni"],
+     "suites":["std","lit","tpch","biomine","std_bn","ace","large","uai","uai_pr","uaipr","uaitpr","uaiihler","dice","ppl","bitblast","roulette","geni","circulette"],
      "instances":"",
      "reason":"the ground program tddlog --ground prints of the ProbLog program (under --pr, of its P(e) program), as Scallop relations and rules (ground2scallop.py)",
      "n":1762
     }
    ],
    "native":null,
-   "translated":{"given":1762,"answers":250,"tddlog_answers":1620,"either":1620,"total":1291319.795,"tddlog_total":19860.328,"both":53,"failures":0,"timeouts":1370,"counted":956,"ratio":86.19,"speedup":488.2}
+   "translated":{"given":1762,"answers":250,"tddlog_answers":1621,"either":1621,"total":1291919.795,"tddlog_total":20067.945,"both":53,"failures":0,"timeouts":1371,"counted":955,"ratio":87.0,"speedup":491.6}
   },
   {
    "key":"nodice",
@@ -10977,12 +10977,12 @@
    "prism":{"given":71,"answers":30,"tddlog_answers":66,"either":66,"total":22527.001,"tddlog_total":184.703,"both":30,"failures":0,"timeouts":36,"counted":29,"ratio":154.5,"speedup":611.1}
   },
   "lit":{
-   "problog":{"given":328,"answers":232,"tddlog_answers":302,"either":303,"total":43956.362,"tddlog_total":2286.218,"both":71,"failures":1,"timeouts":71,"counted":64,"ratio":5.129,"speedup":24.33},
-   "pita":{"given":328,"answers":191,"tddlog_answers":302,"either":302,"total":68387.31,"tddlog_total":1686.218,"both":191,"failures":0,"timeouts":111,"counted":98,"ratio":23.09,"speedup":132.1},
-   "aspmc":{"given":328,"answers":206,"tddlog_answers":302,"either":302,"total":59100.121,"tddlog_total":1686.218,"both":206,"failures":0,"timeouts":96,"counted":87,"ratio":7.637,"speedup":69.45},
+   "problog":{"given":328,"answers":232,"tddlog_answers":303,"either":304,"total":44556.362,"tddlog_total":2493.835,"both":71,"failures":1,"timeouts":72,"counted":64,"ratio":5.229,"speedup":24.91},
+   "pita":{"given":328,"answers":191,"tddlog_answers":303,"either":303,"total":68987.31,"tddlog_total":1893.835,"both":191,"failures":0,"timeouts":112,"counted":98,"ratio":23.53,"speedup":135.2},
+   "aspmc":{"given":328,"answers":206,"tddlog_answers":303,"either":303,"total":59700.121,"tddlog_total":1893.835,"both":206,"failures":0,"timeouts":97,"counted":87,"ratio":8.35,"speedup":72.64},
    "provsql":{"given":35,"answers":17,"tddlog_answers":28,"either":28,"total":6992.497,"tddlog_total":426.844,"both":10,"failures":0,"timeouts":11,"counted":null,"ratio":null,"speedup":null},
-   "psouffle":{"given":328,"answers":106,"tddlog_answers":302,"either":302,"total":123186.112,"tddlog_total":1686.218,"both":106,"failures":0,"timeouts":196,"counted":163,"ratio":128.0,"speedup":612.9},
-   "scallop":{"given":328,"answers":148,"tddlog_answers":302,"either":302,"total":92571.824,"tddlog_total":1686.218,"both":12,"failures":0,"timeouts":154,"counted":null,"ratio":null,"speedup":null},
+   "psouffle":{"given":328,"answers":106,"tddlog_answers":303,"either":303,"total":123786.112,"tddlog_total":1893.835,"both":106,"failures":0,"timeouts":197,"counted":163,"ratio":128.0,"speedup":617.6},
+   "scallop":{"given":328,"answers":148,"tddlog_answers":303,"either":303,"total":93171.824,"tddlog_total":1893.835,"both":12,"failures":0,"timeouts":155,"counted":null,"ratio":null,"speedup":null},
    "ace":{"given":98,"answers":38,"tddlog_answers":86,"either":86,"total":29769.192,"tddlog_total":1408.339,"both":38,"failures":0,"timeouts":48,"counted":34,"ratio":39.74,"speedup":130.3},
    "merlin":{"given":98,"answers":23,"tddlog_answers":86,"either":87,"total":38729.349,"tddlog_total":2008.339,"both":12,"failures":1,"timeouts":64,"counted":null,"ratio":null,"speedup":null},
    "agrum":{"given":98,"answers":22,"tddlog_answers":86,"either":87,"total":39411.048,"tddlog_total":2008.339,"both":18,"failures":1,"timeouts":65,"counted":null,"ratio":null,"speedup":null},

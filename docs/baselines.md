@@ -33,7 +33,7 @@ builds:
 | libDAI 0.3.2 | yes (junction tree, min-fill) | UAI files | `--libdai` |
 | TensorInference.jl | yes (tensor network contraction, `treesa`, `greedy`) | UAI files | `--tensorinference` |
 | ProvSQL 1.13.0 (PostgreSQL 16.4) | yes (its own method choice, tree decomposition) | the TPC-H programs and the literature suite's pdb, noisy-or, liftsep and rgraph, as SQL | `--provsql` |
-| PSouffle (3fb0fd06) | yes (derivation graph, BDDs) | the programs of the logic program and database suites, through `problog2souffle.py` (section 26) | `--psouffle` |
+| PSouffle (3fb0fd06) | yes (derivation graph, BDDs) | the programs of the logic program and database suites and Circulette's, through `problog2souffle.py` (section 26) | `--psouffle` |
 | vProbLog | yes, at the fixpoint | not run, section 27 | |
 | Storm 1.14 (stormpy) | yes (`sparse`, `exact`, `dd`) | the weather factory as Rubicon's PRISM model; every other Dice program as a Markov chain, through `dice2prism.py` | `--storm`, `--storm-variants`, `--weather-models` |
 | PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the same as Storm | `--prism`, `--prism-variants`, `--prism-heap` |
@@ -195,7 +195,7 @@ for each backend in `--kbs` (by default `ddnnf,sdd,fsdd`), as the systems
 - `fsdd`: Tp-compilation (`problog/forward.py`, `ForwardSDD`), from the
   possibly cyclic ground formula, without cycle breaking or CNF. The
   ProbLog implementation of the method tddlog follows
-  ([papers/tp-compilation.md](papers/tp-compilation.md)).
+  ([papers/tp-compilation.md](../tddlog/docs/papers/tp-compilation.md)).
 - `fbdd` crashes upstream (`'_ForwardBDD' object has no attribute
   'init_varcount'`); use `fsdd`.
 
@@ -1588,6 +1588,73 @@ tests/test_dice2roulette.py checks the translation, and with
 `ROULETTE_RACKET` set (the command that runs Racket, without `{file}`)
 Roulette's answers on small programs against an exact enumeration.
 
+### Circulette (`--suite circulette`)
+
+Circulette (sandialabs/circulette at 1397f52c1cabaa07cbb895972d922454f0a845f7,
+LGPL-3.0; OSTI software record DOI 10.11578/dc.20261015.5; described in
+section 4.3 of SAND2025-13969R, "Practical Probabilistic Programming", DOI
+10.2172/3003005, which gives no instances or times) is a language on
+Roulette's package roulette-lib for the fault analysis of digital circuits.
+A netlist (`.cql`) lists a circuit's word gates; `circulette.rkt` evaluates
+it for one cycle with every input false and each gate's output flipped by a
+fault of probability 1 - p-clean (0.01 in every netlist), conditions on the
+outputs differing from the expected ones (all false), and asks rsdd for
+P(fail) and for the posterior of every single, pair and triple of faults:
+1 + n + C(n,2) + C(n,3) calls of `infer` for n faults. It prints P(fail),
+the singles above 0, the pairs above 2e-4 and the triples above 1e-8.
+
+Install: Roulette's upstream code, which every evaluation runs (under
+`$HOME/local/roulette-upstream`, apart from the artifact's Roulette):
+Racket 9.3 and, from git, roulette-lib and roulette at neuppl/roulette's
+main of 2026-10-31, 60f77cb13839cccafd018f4a8281758355492483 (the commit
+Racket's catalog gives for roulette-lib), roulette-x86_64-linux at
+45b7abd5dd6a8b094ac95653ff09a1d1d7462b6d (its prebuilt `librsdd.so`, SHA-256
+3ad7bacb6456666f4e762c1a766d40bb33a0d24f817cf5b5178da62743100c6f) and rosette
+at 373c8c35e4a7667f38fce10cf0b74ae17de07f1d. Circulette on it
+(install_circulette.sh, under `$HOME/local/circulette`); for
+`rkt_of_verilog.py`, Python 3.10 with pyrtl 0.12 and Circulette's
+`pyrtl_noopt.patch`, and Yosys 0.68 (yowasp-yosys 0.68.0.0.post1208).
+
+The instances (`CIRCULETTE`, gen_circulette.py): the four netlists of the
+repository's root (`ripple_adder.cql` is `exp.cql`); the designs of
+`examples/` converted by `rkt_of_verilog.py` as `examples/Makefile` does,
+a design that instantiates other modules with their files before it
+(`adder/`, `alu/`), all but `sram_2_16_2_scn4m_subm.v` and
+`openfpga_syn_spram_4x1_tmrg.v`, which do not convert; and two families of
+sizes, `ct_fulladder` (`adder/fullAdder8.v`'s ripple-carry adder at N bits,
+8 the file as written) and `ct_mac` (`openfpga_mac_2.v` at DATA_WIDTH N, 2
+and 4 the files `openfpga_mac_2.v` and `openfpga_mac_4.v`, which differ in
+comments alone). Every netlist expects all-false outputs.
+
+Roulette (`roulette:rsdd`) runs `racket circulette.rkt NAME.cql` as the
+Makefile does, `raco make` before the clock, under `scripts/roulette_timer.rkt`,
+which loads Racket, Roulette and the program's imports, then runs the
+program and reports its run's seconds: Roulette's time after its warm-up
+(`inproc_seconds`), the process's beside it. Its
+printed posteriors are keyed as the program's queries (`run_circulette`)
+and P(fail) is kept as `p_fail`. Roulette+tddlog is tddlog on the ProbLog program that tddlog's
+`scripts/roulette2problog.rkt` writes from circulette.rkt's own run with
+Roulette's engine replaced by one that records each `infer`:
+P(fail) is the evidence's probability, which tddlog prints under
+`--evidence-probability`, and each posterior a query's answer. The export
+is charged to Roulette+tddlog and every other system that reads the
+program, timed over three pinned runs: the exporter's own seconds,
+circulette.rkt's run up to the hand-off (`program_s`, the span
+roulette_timer.rkt times Roulette by) and the program's writing
+(`circuit_s`), without Racket's start and the modules' load, which the
+records keep as the runs' wall times.
+An export past 1.5 times the limit leaves no program, and its readers are
+out of time. The ProbLog family reads the same program, and the network
+tools its ground program (section 23).
+
+The Dice family (Dice, Alea.jl, noDice, Psi, Genfer, SPPL, Geni, Pluck)
+is not given these programs: Circulette's question is all 1 + n + C(n,2)
++ C(n,3) posteriors at once, and a Dice program answers one query, so a
+Dice program of P(fail) alone, or one program per posterior, would ask
+another question (rule 19). The programs are LGPL-3.0, with designs from
+OpenFPGA (MIT), OpenRAM (BSD-3) and others; until that is decided they
+stay off the benchmark pages, as Rubicon's GPL models do.
+
 ---
 
 ## 12. Program baselines of the survey
@@ -2410,6 +2477,7 @@ the same model) has the class of the program it is written from.
 | alea | bitblast | all | own | the bit-blasting paper's programs (PLDI 2024), Alea.jl's own |
 | alea | ppl | `arith_` | own | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch |
 | roulette | roulette | all | own | the Roulette paper's programs and networks (PLDI 2025), from its artifact |
+| roulette | circulette | all | own | Circulette's netlists, run by circulette.rkt on Roulette's upstream package roulette-lib as Circulette's examples/Makefile runs them |
 | geni | geni | all | own | the programs of Geni's evaluation (ICFP 2025) |
 | nodice | ppl | `nodice_` | own | noDice's programs (OOPSLA 2026) |
 | pluck | ppl | `pluck_` | own | Pluck's four sequence models (PLDI 2025) |
@@ -2437,7 +2505,7 @@ the same model) has the class of the program it is written from.
 | merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | a UAI network, the tool's own input |
 | merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | native | the network converted to a UAI file (gen_bn.py --uai), the same variables and tables |
 | merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai), the same variables and tables |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni, circulette | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
 | problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
@@ -2450,8 +2518,8 @@ the same model) has the class of the program it is written from.
 | tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
-| psouffle | std, lit, tpch, biomine | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
-| scallop | std, lit, tpch, biomine, std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler, dice, ppl, bitblast, roulette, geni | all | translated | the ground program tddlog --ground prints of the ProbLog program (under --pr, of its P(e) program), as Scallop relations and rules (ground2scallop.py) |
+| psouffle | std, lit, tpch, biomine, circulette | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
+| scallop | std, lit, tpch, biomine, std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler, dice, ppl, bitblast, roulette, geni, circulette | all | translated | the ground program tddlog --ground prints of the ProbLog program (under --pr, of its P(e) program), as Scallop relations and rules (ground2scallop.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
@@ -2460,6 +2528,7 @@ the same model) has the class of the program it is written from.
 | problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
+| tddlog, problog, pita, aspmc | circulette | all | translated | the ProbLog program roulette2problog.rkt writes from circulette.rkt's run on the netlist (tddlog's records are Roulette+tddlog's) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
