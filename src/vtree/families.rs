@@ -413,8 +413,45 @@ impl Roles {
         for ind in &gp.encoding.indicators {
             is_link[ind.link as usize] = true;
         }
-        let (is_clause, is_clause_atom, atoms_of_clause, clause_atoms, mut defines) =
-            clause_roles(gp, &is_link);
+        // The links that hold a table's clauses (`crate::indicators::clause_tables`),
+        // with the atom each copy stands for: their rules are the table's rows, each
+        // with the copy it sets.
+        let clauses = crate::indicators::clause_links(gp);
+        let mut is_clause = vec![false; num_atoms];
+        for &link in &clauses {
+            is_clause[link as usize] = true;
+        }
+        // The atoms whose copies each such link defines, and the first of them.
+        let mut atoms_of_clause: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
+        for ind in gp
+            .encoding
+            .indicators
+            .iter()
+            .filter(|ind| clauses.contains(&ind.link))
+        {
+            atoms_of_clause.entry(ind.link).or_default().push(ind.atom);
+        }
+        let clause_of: FxHashMap<AtomId, AtomId> = atoms_of_clause
+            .iter()
+            .map(|(&link, atoms)| (link, *atoms.iter().min().expect("a link has an indicator")))
+            .collect();
+        let clause_atoms: FxHashSet<AtomId> = atoms_of_clause.values().flatten().copied().collect();
+        let mut is_clause_atom = vec![false; num_atoms];
+        for &k in &clause_atoms {
+            is_clause_atom[k as usize] = true;
+        }
+        // The atom a rule's head stands for among those the groups define: a
+        // link that holds clauses stands for the first atom of its table, and
+        // other links and the atoms its clauses define for none.
+        let mut defines = vec![AtomId::MAX; num_atoms];
+        for h in 0..num_atoms {
+            if !is_link[h] && !is_clause_atom[h] {
+                defines[h] = h as AtomId;
+            }
+        }
+        for (&link, &k) in &clause_of {
+            defines[link as usize] = k;
+        }
         // A bit of a set read in binary ([`crate::indicators`]) stands for the
         // set's values: its formula goes with theirs.
         let code_of: FxHashMap<AtomId, usize> = gp
@@ -447,7 +484,33 @@ impl Roles {
         for ind in &gp.encoding.indicators {
             link_of[ind.var as usize] = ind.link;
         }
-        let row_kind = classify_row_kinds(gp, &is_link, &is_clause, &link_of);
+        // What a rule reads as a row of its group's table: the body of a rule
+        // of a derived atom; the body of a rule of a link that holds clauses that
+        // reads a copy the link defines false, one of the table's rows, but that
+        // copy; nothing of the other rules of such a link, or of other links.
+        // The row is the body's literals that [`reads`] keeps, the second being
+        // the link whose copies it leaves out.
+        // Which of these each rule is, worked out once: the passes below read
+        // a group's rules twice, and would search a link's rule for its copy
+        // each time.
+        let row_kind: Vec<u8> = gp
+            .rules
+            .iter()
+            .map(|r| {
+                if !is_link[r.head as usize] {
+                    ROW
+                } else if !is_clause[r.head as usize]
+                    || !r
+                        .body
+                        .iter()
+                        .any(|l| !l.is_positive() && link_of[l.atom() as usize] == r.head)
+                {
+                    NO_ROW
+                } else {
+                    CLAUSE_ROW
+                }
+            })
+            .collect();
         Roles {
             kind,
             is_link,
@@ -462,93 +525,6 @@ impl Roles {
             row_kind,
         }
     }
-}
-
-/// What a rule reads as a row of its group's table: the body of a rule of a
-/// derived atom; the body of a rule of a link that holds clauses that reads a
-/// copy the link defines false, one of the table's rows, but that copy;
-/// nothing of the other rules of such a link, or of other links.
-fn classify_row_kinds(
-    gp: &GroundProgram,
-    is_link: &[bool],
-    is_clause: &[bool],
-    link_of: &[AtomId],
-) -> Vec<u8> {
-    gp.rules
-        .iter()
-        .map(|r| {
-            if !is_link[r.head as usize] {
-                ROW
-            } else if !is_clause[r.head as usize]
-                || !r
-                    .body
-                    .iter()
-                    .any(|l| !l.is_positive() && link_of[l.atom() as usize] == r.head)
-            {
-                NO_ROW
-            } else {
-                CLAUSE_ROW
-            }
-        })
-        .collect()
-}
-
-type ClauseRoles = (
-    Vec<bool>,
-    Vec<bool>,
-    FxHashMap<AtomId, Vec<AtomId>>,
-    FxHashSet<AtomId>,
-    Vec<AtomId>,
-);
-
-/// The links that hold a table's clauses ([`crate::indicators::clause_tables`]),
-/// with the atom each copy stands for: their rules are the table's rows, each
-/// with the copy it sets.
-fn clause_roles(gp: &GroundProgram, is_link: &[bool]) -> ClauseRoles {
-    let num_atoms = gp.num_atoms();
-    let clauses = crate::indicators::clause_links(gp);
-    let mut is_clause = vec![false; num_atoms];
-    for &link in &clauses {
-        is_clause[link as usize] = true;
-    }
-    // The atoms whose copies each such link defines, and the first of them.
-    let mut atoms_of_clause: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
-    for ind in gp
-        .encoding
-        .indicators
-        .iter()
-        .filter(|ind| clauses.contains(&ind.link))
-    {
-        atoms_of_clause.entry(ind.link).or_default().push(ind.atom);
-    }
-    let clause_of: FxHashMap<AtomId, AtomId> = atoms_of_clause
-        .iter()
-        .map(|(&link, atoms)| (link, *atoms.iter().min().expect("a link has an indicator")))
-        .collect();
-    let clause_atoms: FxHashSet<AtomId> = atoms_of_clause.values().flatten().copied().collect();
-    let mut is_clause_atom = vec![false; num_atoms];
-    for &k in &clause_atoms {
-        is_clause_atom[k as usize] = true;
-    }
-    // The atom a rule's head stands for among those the groups define: a
-    // link that holds clauses stands for the first atom of its table, and
-    // other links and the atoms its clauses define for none.
-    let mut defines = vec![AtomId::MAX; num_atoms];
-    for h in 0..num_atoms {
-        if !is_link[h] && !is_clause_atom[h] {
-            defines[h] = h as AtomId;
-        }
-    }
-    for (&link, &k) in &clause_of {
-        defines[link as usize] = k;
-    }
-    (
-        is_clause,
-        is_clause_atom,
-        atoms_of_clause,
-        clause_atoms,
-        defines,
-    )
 }
 
 /// A value of a set read in binary that a query or the evidence names is the
@@ -671,15 +647,44 @@ impl Cones {
                 continue;
             }
             let rules_from = rules.len();
-            let links = Self::walk_cone(
-                gp,
-                by_head,
-                roles,
-                (i as u32, r),
-                &mut stamp,
-                &mut stack,
-                (&mut atoms, &mut rules),
-            );
+            let mut links = Vec::new();
+            stack.push(r);
+            stamp[r as usize] = i as u32;
+            while let Some(a) = stack.pop() {
+                if roles.copied.contains(&a) {
+                    links.extend(
+                        by_head[a as usize]
+                            .iter()
+                            .flat_map(|&ri| &gp.rules[ri].body)
+                            .map(|l| roles.link_of[l.atom() as usize]),
+                    );
+                    continue;
+                }
+                if let Some(&c) = roles.coded_value.get(&a) {
+                    for &b in &gp.encoding.codes[c].bits {
+                        if stamp[b as usize] != i as u32 {
+                            stamp[b as usize] = i as u32;
+                            stack.push(b);
+                        }
+                    }
+                    continue;
+                }
+                for &ri in &by_head[a as usize] {
+                    rules.push(ri);
+                    for l in &gp.rules[ri].body {
+                        let b = l.atom();
+                        if stamp[b as usize] == i as u32 {
+                            continue;
+                        }
+                        stamp[b as usize] = i as u32;
+                        if roles.kind[b as usize] != DERIVED {
+                            atoms.push(b);
+                        } else {
+                            stack.push(b);
+                        }
+                    }
+                }
+            }
             if let Some(c) = code
                 && !rules[rules_from..].iter().any(|&ri| {
                     gp.rules[ri]
@@ -702,56 +707,6 @@ impl Cones {
             reached,
             walk,
         }
-    }
-
-    fn walk_cone(
-        gp: &GroundProgram,
-        by_head: &RulesByHead,
-        roles: &Roles,
-        (i, r): (u32, AtomId),
-        stamp: &mut [u32],
-        stack: &mut Vec<AtomId>,
-        (atoms, rules): (&mut Vec<AtomId>, &mut Vec<usize>),
-    ) -> Vec<AtomId> {
-        let mut links = Vec::new();
-        stack.push(r);
-        stamp[r as usize] = i;
-        while let Some(a) = stack.pop() {
-            if roles.copied.contains(&a) {
-                links.extend(
-                    by_head[a as usize]
-                        .iter()
-                        .flat_map(|&ri| &gp.rules[ri].body)
-                        .map(|l| roles.link_of[l.atom() as usize]),
-                );
-                continue;
-            }
-            if let Some(&c) = roles.coded_value.get(&a) {
-                for &b in &gp.encoding.codes[c].bits {
-                    if stamp[b as usize] != i {
-                        stamp[b as usize] = i;
-                        stack.push(b);
-                    }
-                }
-                continue;
-            }
-            for &ri in &by_head[a as usize] {
-                rules.push(ri);
-                for l in &gp.rules[ri].body {
-                    let b = l.atom();
-                    if stamp[b as usize] == i {
-                        continue;
-                    }
-                    stamp[b as usize] = i;
-                    if roles.kind[b as usize] != DERIVED {
-                        atoms.push(b);
-                    } else {
-                        stack.push(b);
-                    }
-                }
-            }
-        }
-        links
     }
 
     /// The facts and indicators of family `i`'s cone.
@@ -903,55 +858,44 @@ impl Grouping {
         // apart, they separate nothing and take a table's switches off its
         // spine.
         unmark_single_group_hubs(num_atoms, roots.len(), &shared, &mut parent, cones, hubs);
-        let (group_of, first_root, count) =
-            number_groups(gp, roles, roots.len(), &shared, &mut parent, cones);
+        // Groups are numbered by the first atom of the program as grounded that
+        // their rules define, links aside, and not by the order of their roots:
+        // the decomposition breaks ties by that number, and how the rewrite ties
+        // its copies together should not move it.
+        let mut first_atom = vec![AtomId::MAX; roots.len()];
+        for i in (0..roots.len()).filter(|&i| !shared[i]) {
+            let head = cones
+                .rules_of(walk[i])
+                .iter()
+                .map(|&ri| roles.defines[gp.rules[ri].head as usize])
+                .min()
+                .unwrap_or(AtomId::MAX);
+            let g = find(&mut parent, i);
+            first_atom[g] = first_atom[g].min(head);
+        }
+        let mut group_roots: Vec<usize> = (0..roots.len())
+            .filter(|&i| find(&mut parent, i) == i)
+            .collect();
+        group_roots.sort_by_key(|&g| (first_atom[g], g));
+        let mut group_of = vec![usize::MAX; roots.len()];
+        for (n, &g) in group_roots.iter().enumerate() {
+            group_of[g] = n;
+        }
+        for i in 0..roots.len() {
+            group_of[i] = group_of[find(&mut parent, i)];
+        }
+        let mut first_root = vec![usize::MAX; group_roots.len()];
+        for (i, &g) in group_of.iter().enumerate() {
+            first_root[g] = first_root[g].min(i);
+        }
         Grouping {
             group_of,
-            count,
+            count: group_roots.len(),
             first_root,
             shared,
             family_of,
         }
     }
-}
-
-/// Numbers groups by the first atom of the program as grounded that their
-/// rules define, links aside, rather than by the order of their roots: the
-/// decomposition breaks ties by that number, and how the rewrite ties its
-/// copies together should not move it.
-fn number_groups(
-    gp: &GroundProgram,
-    roles: &Roles,
-    num_roots: usize,
-    shared: &[bool],
-    parent: &mut [usize],
-    cones: &Cones,
-) -> (Vec<usize>, Vec<usize>, usize) {
-    let mut first_atom = vec![AtomId::MAX; num_roots];
-    for i in (0..num_roots).filter(|&i| !shared[i]) {
-        let head = cones
-            .rules_of(cones.walk[i])
-            .iter()
-            .map(|&ri| roles.defines[gp.rules[ri].head as usize])
-            .min()
-            .unwrap_or(AtomId::MAX);
-        let g = find(parent, i);
-        first_atom[g] = first_atom[g].min(head);
-    }
-    let mut group_roots: Vec<usize> = (0..num_roots).filter(|&i| find(parent, i) == i).collect();
-    group_roots.sort_by_key(|&g| (first_atom[g], g));
-    let mut group_of = vec![usize::MAX; num_roots];
-    for (n, &g) in group_roots.iter().enumerate() {
-        group_of[g] = n;
-    }
-    for i in 0..num_roots {
-        group_of[i] = group_of[find(parent, i)];
-    }
-    let mut first_root = vec![usize::MAX; group_roots.len()];
-    for (i, &g) in group_of.iter().enumerate() {
-        first_root[g] = first_root[g].min(i);
-    }
-    (group_of, first_root, group_roots.len())
 }
 
 fn unmark_single_group_hubs(
@@ -1402,7 +1346,21 @@ impl Decompositions {
         item_at: &[usize],
     ) -> Result<Option<Annealable>, String> {
         let num_items = self.num_items;
-        let (edges, graph) = numbering_graph(num_items, &self.edges, item_at);
+        let mut vertex_of = vec![0u32; num_items];
+        for (v, &i) in item_at.iter().enumerate() {
+            vertex_of[i] = v as u32;
+        }
+        let edges: Vec<(u32, u32)> = self
+            .edges
+            .iter()
+            .map(|&(u, v)| {
+                (
+                    vertex_of[u].min(vertex_of[v]),
+                    vertex_of[u].max(vertex_of[v]),
+                )
+            })
+            .collect();
+        let graph = goatd::Graph::new(num_items as u32, edges.clone());
         let (min_fill, units, seconds) = metered(|| {
             goatd::elimination::decompose(
                 &graph,
@@ -1435,7 +1393,16 @@ impl Decompositions {
             self.search_cost += 2 * budget_units;
         }
         if self.search && narrowable {
-            tds.push(self.search_numbering(&graph, budget_units)?);
+            let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
+            let bound = self
+                .lower_bound
+                .expect("the bound is computed where the decomposition is narrowable");
+            let (found, units, seconds) =
+                metered(|| portfolio_to_bound(&graph, budget, budget_units, bound));
+            let (td, pushed) = found.ok_or("tree decomposition failed")?;
+            tds.push(td);
+            self.search_seconds += seconds;
+            self.search_units += units.saturating_sub(pushed);
         }
         // The groups eliminated in their numbering's order, where that is
         // narrower than min-fill. A program whose atoms are derived layer
@@ -1474,23 +1441,6 @@ impl Decompositions {
             weights,
             weighted,
         }))
-    }
-
-    fn search_numbering(
-        &mut self,
-        graph: &goatd::Graph,
-        budget_units: u64,
-    ) -> Result<goatd::TreeDecomposition, String> {
-        let budget = Duration::from_millis(goatd::meter::milliseconds_for_units(budget_units));
-        let bound = self
-            .lower_bound
-            .expect("the bound is computed where the decomposition is narrowable");
-        let (found, units, seconds) =
-            metered(|| portfolio_to_bound(graph, budget, budget_units, bound));
-        let (td, pushed) = found.ok_or("tree decomposition failed")?;
-        self.search_seconds += seconds;
-        self.search_units += units.saturating_sub(pushed);
-        Ok(td)
     }
 
     /// Where the portfolio searches the first numbering, `item_at`, and
@@ -1588,23 +1538,6 @@ impl Decompositions {
     }
 }
 
-fn numbering_graph(
-    num_items: usize,
-    edges: &[(usize, usize)],
-    item_at: &[usize],
-) -> (Vec<(u32, u32)>, goatd::Graph) {
-    let mut vertex_of = vec![0u32; num_items];
-    for (v, &i) in item_at.iter().enumerate() {
-        vertex_of[i] = v as u32;
-    }
-    let edges: Vec<(u32, u32)> = edges
-        .iter()
-        .map(|&(u, v)| (vertex_of[u], vertex_of[v]))
-        .collect();
-    let graph = goatd::Graph::new(num_items as u32, edges.iter().copied());
-    (edges, graph)
-}
-
 /// The lists [`Blocks::of`] fills for each group, kept from one group to
 /// the next with the room they have grown to, rather than made anew and
 /// grown from nothing for each.
@@ -1662,64 +1595,40 @@ impl Blocks {
         forest: &mut Forest,
         g: usize,
     ) -> (Option<usize>, Vec<Branch>) {
-        if groups.group_rules[g].is_empty() && groups.groups[g].0.is_empty() {
-            return (forest.balanced_leaves(&groups.groups[g].1), Vec::new());
-        }
-        self.scratch.start(&groups.groups[g].1);
-        self.scratch.mark.next();
-        for &v in &groups.inputs[g] {
-            self.scratch.mark.set(v, 0);
-        }
-        let rules = groups.group_rules[g].len();
-        let mut context_by = ByHash::with_capacity(rules);
-        let mut row_by = ByHash::with_capacity(rules);
-        self.rows.clear();
-        self.row_heads.clear();
-        self.row_hubs.clear();
-        // The context and the row of the rule before.
-        let mut before: Option<(u32, usize)> = None;
-        for &ri in &groups.group_rules[g] {
-            self.add_group_rule(gp, groups, ri, &mut context_by, &mut row_by, &mut before);
-        }
-        // A stable sort keeps each row's heads in the order they were read.
-        self.row_heads.sort_by_key(|&(i, _)| i);
-        let mut at = 0;
-        for i in 0..self.rows.len() {
-            while at < self.row_heads.len() && self.row_heads[at].0 == i {
-                self.rows.heads.push(self.row_heads[at].1);
-                at += 1;
-            }
-            self.rows.head_ends.push(self.rows.heads.len());
-        }
-        let rows: &Rows = &self.rows;
-        self.scratch.context.reserve(rows.num_contexts());
-        let branches = branches_of(
+        let Blocks {
+            scratch,
+            group_reader,
+            fact_reader,
             rows,
-            &groups.owner,
-            &self.row_hubs,
-            g,
-            &mut self.group_reader,
-            &mut self.fact_reader,
-        );
-        if branches.is_empty() {
-            let members = (0..rows.len()).collect();
-            return (nest(forest, rows, members, &mut self.scratch), Vec::new());
+            row_heads,
+            row_hubs,
+            ranked,
+            facts,
+            read,
+            hubs,
+            copies,
+            last_read,
+            last_facts,
+        } = self;
+        let Groups {
+            groups,
+            group_rules,
+            inputs,
+            owner,
+            hub_group,
+            link_of,
+            row_kind,
+            kind,
+            ..
+        } = groups;
+        if group_rules[g].is_empty() && groups[g].0.is_empty() {
+            return (forest.balanced_leaves(&groups[g].1), Vec::new());
         }
-        (
-            None,
-            build_branches(forest, rows, &mut self.scratch, branches),
-        )
-    }
-
-    fn add_group_rule(
-        &mut self,
-        gp: &GroundProgram,
-        groups: &Groups,
-        ri: usize,
-        context_by: &mut ByHash,
-        row_by: &mut ByHash,
-        before: &mut Option<(u32, usize)>,
-    ) {
+        scratch.start(&groups[g].1);
+        scratch.mark.next();
+        for &v in &inputs[g] {
+            scratch.mark.set(v, 0);
+        }
         // Contexts by a hash of their copies and rows by a hash of their
         // facts and context, compared on a match, so that neither is copied
         // to be looked up; each is built in `facts` and `copies` and copied
@@ -1733,103 +1642,111 @@ impl Blocks {
             value.hash(&mut h);
             h.finish()
         }
-        let Some((body, left_out)) = row_body(gp, &groups.row_kind, ri) else {
-            return;
-        };
-        scan_rule_literals(
-            (body, left_out),
-            (&groups.kind, &groups.hub_group, &groups.link_of),
-            &self.scratch,
-            &mut self.ranked,
-            &mut self.read,
-            &mut self.hubs,
-            &mut self.facts,
-        );
-        if self.facts.is_empty() && self.read.is_empty() {
-            return;
+        // The contexts and the rows by hash, at most one a rule of the
+        // group, for which they are allocated.
+        let rules = group_rules[g].len();
+        let mut context_by = ByHash::with_capacity(rules);
+        let mut row_by = ByHash::with_capacity(rules);
+        rows.clear();
+        row_heads.clear();
+        row_hubs.clear();
+        // The context and the row of the rule before.
+        let mut before: Option<(u32, usize)> = None;
+        for &ri in &group_rules[g] {
+            let Some((body, left_out)) = row_body(gp, row_kind, ri) else {
+                continue;
+            };
+            ranked.clear();
+            read.clear();
+            hubs.clear();
+            // Only a fact other than an indicator has a rank or is a hub,
+            // and only an indicator is a copy the group reads.
+            for l in body {
+                let a = l.atom();
+                match kind[a as usize] {
+                    FACT => {
+                        if let Some(rank) = scratch.rank.get(a) {
+                            ranked.push((rank, a));
+                        }
+                        let h = hub_group[a as usize];
+                        if h != usize::MAX {
+                            hubs.push(h);
+                        }
+                    }
+                    INDICATOR if reads(link_of, l, left_out) && scratch.mark.get(a).is_some() => {
+                        read.push(u64::from(a) << 1 | u64::from(l.is_positive()));
+                    }
+                    _ => {}
+                }
+            }
+            // A fact's rank is its place among the group's facts, one each.
+            // A rule's facts may come in the order of their ranks already,
+            // each once, and only the others are sorted.
+            if !ranked.is_sorted_by(|x, y| x < y) {
+                ranked.sort_unstable();
+                ranked.dedup();
+            }
+            facts.clear();
+            facts.extend(ranked.iter().map(|&(_, f)| f));
+            if facts.is_empty() && read.is_empty() {
+                continue;
+            }
+            let x = match before {
+                Some((x, _)) if read == last_read => x,
+                _ => {
+                    copies.clear();
+                    copies.extend(read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
+                    copies.sort_unstable();
+                    copies.dedup();
+                    let (x, new) = context_by.find_or_push(hash(copies), |x| {
+                        rows.context_copies(x) == copies.as_slice()
+                    });
+                    if new {
+                        rows.contexts.extend_from_slice(copies);
+                        rows.context_ends.push(rows.contexts.len());
+                    }
+                    std::mem::swap(read, last_read);
+                    x
+                }
+            };
+            let i = match before {
+                Some((y, i)) if y == x && facts == last_facts => i,
+                _ => {
+                    let (i, new) = row_by.find_or_push(hash(&(&**facts, x)), |i| {
+                        rows.context[i as usize] == x && rows.facts(i as usize) == facts.as_slice()
+                    });
+                    if new {
+                        rows.facts.extend_from_slice(facts);
+                        rows.fact_ends.push(rows.facts.len());
+                        rows.context.push(x);
+                    }
+                    std::mem::swap(facts, last_facts);
+                    i as usize
+                }
+            };
+            before = Some((x, i));
+            row_heads.push((i, gp.rules[ri].head));
+            row_hubs.extend(hubs.iter().map(|&h| (i, h)));
         }
-        let x = match *before {
-            Some((x, _)) if self.read == self.last_read => x,
-            _ => {
-                self.copies.clear();
-                self.copies
-                    .extend(self.read.iter().map(|&w| ((w >> 1) as AtomId, w & 1 == 1)));
-                self.copies.sort_unstable();
-                self.copies.dedup();
-                let (x, new) = context_by.find_or_push(hash(&self.copies), |x| {
-                    self.rows.context_copies(x) == self.copies.as_slice()
-                });
-                if new {
-                    self.rows.contexts.extend_from_slice(&self.copies);
-                    self.rows.context_ends.push(self.rows.contexts.len());
-                }
-                std::mem::swap(&mut self.read, &mut self.last_read);
-                x
+        // A stable sort keeps each row's heads in the order they were read.
+        row_heads.sort_by_key(|&(i, _)| i);
+        let mut at = 0;
+        for i in 0..rows.len() {
+            while at < row_heads.len() && row_heads[at].0 == i {
+                rows.heads.push(row_heads[at].1);
+                at += 1;
             }
-        };
-        let i = match *before {
-            Some((y, i)) if y == x && self.facts == self.last_facts => i,
-            _ => {
-                let (i, new) = row_by.find_or_push(hash(&(&*self.facts, x)), |i| {
-                    self.rows.context[i as usize] == x
-                        && self.rows.facts(i as usize) == self.facts.as_slice()
-                });
-                if new {
-                    self.rows.facts.extend_from_slice(&self.facts);
-                    self.rows.fact_ends.push(self.rows.facts.len());
-                    self.rows.context.push(x);
-                }
-                std::mem::swap(&mut self.facts, &mut self.last_facts);
-                i as usize
-            }
-        };
-        *before = Some((x, i));
-        self.row_heads.push((i, gp.rules[ri].head));
-        self.row_hubs.extend(self.hubs.iter().map(|&h| (i, h)));
-    }
-}
-
-fn scan_rule_literals(
-    (body, left_out): (&[GLit], Option<AtomId>),
-    (kind, hub_group, link_of): (&[u8], &[usize], &[AtomId]),
-    scratch: &NestScratch,
-    ranked: &mut Vec<(u32, AtomId)>,
-    read: &mut Vec<u64>,
-    hubs: &mut Vec<usize>,
-    facts: &mut Vec<AtomId>,
-) {
-    ranked.clear();
-    read.clear();
-    hubs.clear();
-    // Only a fact other than an indicator has a rank or is a hub,
-    // and only an indicator is a copy the group reads.
-    for l in body {
-        let a = l.atom();
-        match kind[a as usize] {
-            FACT => {
-                if let Some(rank) = scratch.rank.get(a) {
-                    ranked.push((rank, a));
-                }
-                let h = hub_group[a as usize];
-                if h != usize::MAX {
-                    hubs.push(h);
-                }
-            }
-            INDICATOR if reads(link_of, l, left_out) && scratch.mark.get(a).is_some() => {
-                read.push(u64::from(a) << 1 | u64::from(l.is_positive()));
-            }
-            _ => {}
+            rows.head_ends.push(rows.heads.len());
         }
+        let rows: &Rows = rows;
+        scratch.context.reserve(rows.num_contexts());
+        let branches = branches_of(rows, owner, row_hubs, g, group_reader, fact_reader);
+        if branches.is_empty() {
+            let members = (0..rows.len()).collect();
+            return (nest(forest, rows, members, scratch), Vec::new());
+        }
+        (None, build_branches(forest, rows, scratch, branches))
     }
-    // A fact's rank is its place among the group's facts, one each.
-    // A rule's facts may come in the order of their ranks already,
-    // each once, and only the others are sorted.
-    if !ranked.is_sorted_by(|x, y| x < y) {
-        ranked.sort_unstable();
-        ranked.dedup();
-    }
-    facts.clear();
-    facts.extend(ranked.iter().map(|&(_, f)| f));
 }
 
 fn build_branches(

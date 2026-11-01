@@ -182,76 +182,72 @@ fn problog_programs_all_configurations() {
     }));
     let mut problems = Vec::new();
     for f in &files {
-        check_file_configurations(f, &mut problems);
+        // Every layout answers the same questions; only the diagrams differ.
+        for strategy in [
+            Strategy::Trial(Kind::Dynamic),
+            Strategy::Trial(Kind::Closed),
+            Strategy::Auto,
+            Strategy::Trial(Kind::Program { fan_in: false }),
+            Strategy::Trial(Kind::Program { fan_in: true }),
+        ] {
+            problems.extend(check(f, strategy, Projection::Off));
+        }
+        // Projection must not move an answer: a component's cone contains the
+        // support of its formulas, and a variable a formula does not mention
+        // marginalises to one in the weighted model count. `max_share` 1.0
+        // projects every component a cone allows, 0.5 is the default mix with
+        // the global-vtree fallback.
+        for max_share in [1.0, 0.5] {
+            problems.extend(check(
+                f,
+                Strategy::Trial(Kind::Closed),
+                Projection::Cones { max_share },
+            ));
+        }
+        // Nor may reading derived atoms through indicators: the links admit
+        // one value of the indicators in each world, and their weights are
+        // one; where a table's rows partition its inputs, its clauses admit
+        // the one value of its copies a link would.
+        for strategy in [
+            Strategy::Trial(Kind::Families { search: true }),
+            Strategy::Trial(Kind::Closed),
+        ] {
+            problems.extend(check_with(
+                f,
+                true,
+                strategy,
+                Projection::default(),
+                Rows::Apart,
+                None,
+            ));
+        }
+        // Row classes (the default) must not move an answer: in each world
+        // at most one of the rows that read a class holds.
+        for (indicators, strategy) in [
+            (false, Strategy::Trial(Kind::Closed)),
+            (false, Strategy::Auto),
+            (true, Strategy::Trial(Kind::Families { search: true })),
+        ] {
+            problems.extend(check_with(
+                f,
+                indicators,
+                strategy,
+                Projection::default(),
+                Rows::Classes,
+                None,
+            ));
+        }
+        // A dynamic vtree changes how the formulas are represented, not what
+        // they are: a search at every step, without indicators, as auto
+        // compiles dynamic.
+        problems.extend(check_with(
+            f,
+            false,
+            Strategy::Trial(Kind::Dynamic),
+            Projection::Off,
+            Rows::Apart,
+            Some(0),
+        ));
     }
     assert!(problems.is_empty(), "{}", problems.join("\n"));
-}
-
-fn check_file_configurations(f: &Path, problems: &mut Vec<String>) {
-    // Every layout answers the same questions; only the diagrams differ.
-    for strategy in [
-        Strategy::Trial(Kind::Dynamic),
-        Strategy::Trial(Kind::Closed),
-        Strategy::Auto,
-        Strategy::Trial(Kind::Program { fan_in: false }),
-        Strategy::Trial(Kind::Program { fan_in: true }),
-    ] {
-        problems.extend(check(f, strategy, Projection::Off));
-    }
-    // Projection must not move an answer: a component's cone contains the
-    // support of its formulas, and a variable a formula does not mention
-    // marginalises to one in the weighted model count. `max_share` 1.0
-    // projects every component a cone allows, 0.5 is the default mix with
-    // the global-vtree fallback.
-    for max_share in [1.0, 0.5] {
-        problems.extend(check(
-            f,
-            Strategy::Trial(Kind::Closed),
-            Projection::Cones { max_share },
-        ));
-    }
-    // Nor may reading derived atoms through indicators: the links admit
-    // one value of the indicators in each world, and their weights are
-    // one; where a table's rows partition its inputs, its clauses admit
-    // the one value of its copies a link would.
-    for strategy in [
-        Strategy::Trial(Kind::Families { search: true }),
-        Strategy::Trial(Kind::Closed),
-    ] {
-        problems.extend(check_with(
-            f,
-            true,
-            strategy,
-            Projection::default(),
-            Rows::Apart,
-            None,
-        ));
-    }
-    // Row classes (the default) must not move an answer: in each world
-    // at most one of the rows that read a class holds.
-    for (indicators, strategy) in [
-        (false, Strategy::Trial(Kind::Closed)),
-        (false, Strategy::Auto),
-        (true, Strategy::Trial(Kind::Families { search: true })),
-    ] {
-        problems.extend(check_with(
-            f,
-            indicators,
-            strategy,
-            Projection::default(),
-            Rows::Classes,
-            None,
-        ));
-    }
-    // A dynamic vtree changes how the formulas are represented, not what
-    // they are: a search at every step, without indicators, as auto
-    // compiles dynamic.
-    problems.extend(check_with(
-        f,
-        false,
-        Strategy::Trial(Kind::Dynamic),
-        Projection::Off,
-        Rows::Apart,
-        Some(0),
-    ));
 }

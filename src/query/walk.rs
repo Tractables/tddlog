@@ -767,15 +767,6 @@ impl EvidenceWalk {
         if parts < 2 {
             return (factors, groups);
         }
-        self.group_factors_by_part(factors, &lowest, &part_of)
-    }
-
-    fn group_factors_by_part(
-        &mut self,
-        factors: VecDeque<usize>,
-        lowest: &[Option<VtreeIdx>],
-        part_of: &FxHashMap<VtreeIdx, VtreeIdx>,
-    ) -> (VecDeque<usize>, Vec<Group>) {
         #[cfg(test)]
         {
             self.by_part += 1;
@@ -814,7 +805,24 @@ impl EvidenceWalk {
     fn unbatch(&mut self, id: usize) {
         let Batch { target, product } = self.batches[id];
         self.in_full.remove(&product);
-        let mut operands = self.drain_batch_operands(id);
+        let (mut operands, mut outs) = (Vec::new(), Vec::new());
+        let batch_of = &self.batch_of;
+        self.joins.retain(|join| {
+            if batch_of.get(&join.out()) != Some(&id) {
+                return true;
+            }
+            match join {
+                Join::Two(a, b, _) => operands.extend([*a, *b]),
+                Join::Smallest(items, _) => operands.extend_from_slice(items),
+            }
+            outs.push(join.out());
+            false
+        });
+        for out in &outs {
+            self.batch_of.remove(out);
+            self.shared.remove(out);
+        }
+        operands.retain(|slot| !outs.contains(slot));
         let at = self
             .joins
             .iter()
@@ -878,28 +886,6 @@ impl EvidenceWalk {
         {
             self.unbatched += 1;
         }
-    }
-
-    fn drain_batch_operands(&mut self, id: usize) -> Vec<usize> {
-        let (mut operands, mut outs) = (Vec::new(), Vec::new());
-        let batch_of = &self.batch_of;
-        self.joins.retain(|join| {
-            if batch_of.get(&join.out()) != Some(&id) {
-                return true;
-            }
-            match join {
-                Join::Two(a, b, _) => operands.extend([*a, *b]),
-                Join::Smallest(items, _) => operands.extend_from_slice(items),
-            }
-            outs.push(join.out());
-            false
-        });
-        for out in &outs {
-            self.batch_of.remove(out);
-            self.shared.remove(out);
-        }
-        operands.retain(|slot| !outs.contains(slot));
-        operands
     }
 
     /// An empty slot for a join's result, built on the scope over `shared`
@@ -1213,7 +1199,68 @@ impl EvidenceWalk {
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
         let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
-        let attempt = self.run_join((a, b), (&scope, merged), (cap, floor), backend);
+        let (first, second) = match merged {
+            true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
+            false => (None, None),
+        };
+        // The walk keeps its operands until a result exists. `and_onto` moves
+        // them onto the join's scope and gives them back when stopped, each on
+        // the scope it was left on; a pair refused after its moves goes back on
+        // the join's scope, which the retry then needs none for. The cap's pair
+        // floor is for the conjunction: the moves put no pair in flight, so it
+        // cannot stop them.
+        let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
+        // Where only the evidence's count is wanted, the join sums out what no
+        // later join reads (`SumOut`); an operand that carries the facts'
+        // weights makes a weighted join.
+        let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
+        let pairs = self.slot_pairs[a] + self.slot_pairs[b];
+        let targets = match &mut self.sum_out {
+            Some(so) => {
+                so.begin(a, b);
+                so.targets(&scope, pairs)
+            }
+            None => Vec::new(),
+        };
+        let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
+            (Some(so), _, false) => {
+                so.and_marginalizing(backend, (fa, first), (fb, second), &scope, &targets)
+            }
+            (Some(so), true, true) => so.and_onto(backend, (fa, first), (fb, second), &scope),
+            _ => backend.and_onto(fa, first, fb, second, &scope),
+        };
+        // A join that sums out its whole scope makes a weight: the nodes it
+        // emits are folded away level by level, and neither the attempt's
+        // node cap nor its pair floor measures what it holds. It runs under
+        // the work stop and the memory budget alone (rus_20_40's last join,
+        // 3.3 G units, was cut short six times by the cap and the work stop
+        // in turn and built again each time).
+        let whole = targets.contains(&scope.vtree().root());
+        let attempt = match cap {
+            Some(outer) => {
+                let _cap = backend.engine.limits().edit(|c| {
+                    c.with_stop_rules(
+                        StopRules::default()
+                            .with_unconditional(outer.unconditional)
+                            .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
+                    )
+                });
+                join(fa, fb)
+            }
+            None if whole => {
+                let _uncapped = backend.engine.limits().edit(|c| {
+                    let stop = c.stop_rules().with_after_pairs(None);
+                    c.with_output_node_cap(None).with_stop_rules(stop)
+                });
+                join(fa, fb)
+            }
+            None => join(fa, fb),
+        };
+        if attempt.is_err()
+            && let Some(so) = &mut self.sum_out
+        {
+            so.undo();
+        }
         let formula = match attempt {
             Ok(formula) => formula,
             Err(refused)
@@ -1280,78 +1327,6 @@ impl EvidenceWalk {
             self.joins.push_front(Join::Two(x, y, wait));
         }
         true
-    }
-
-    fn run_join(
-        &mut self,
-        (a, b): (usize, usize),
-        (scope, merged): (&VtreeScope, bool),
-        (cap, floor): (Option<StopRules>, u64),
-        backend: &TddBackend,
-    ) -> Result<Tdd, Box<(CompileError, Part, Part)>> {
-        let (first, second) = match merged {
-            true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
-            false => (None, None),
-        };
-        // The walk keeps its operands until a result exists. `and_onto` moves
-        // them onto the join's scope and gives them back when stopped, each on
-        // the scope it was left on; a pair refused after its moves goes back on
-        // the join's scope, which the retry then needs none for. The cap's pair
-        // floor is for the conjunction: the moves put no pair in flight, so it
-        // cannot stop them.
-        let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
-        // Where only the evidence's count is wanted, the join sums out what no
-        // later join reads (`SumOut`); an operand that carries the facts'
-        // weights makes a weighted join.
-        let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
-        let pairs = self.slot_pairs[a] + self.slot_pairs[b];
-        let targets = match &mut self.sum_out {
-            Some(so) => {
-                so.begin(a, b);
-                so.targets(scope, pairs)
-            }
-            None => Vec::new(),
-        };
-        let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
-            (Some(so), _, false) => {
-                so.and_marginalizing(backend, (fa, first), (fb, second), scope, &targets)
-            }
-            (Some(so), true, true) => so.and_onto(backend, (fa, first), (fb, second), scope),
-            _ => backend.and_onto(fa, first, fb, second, scope),
-        };
-        // A join that sums out its whole scope makes a weight: the nodes it
-        // emits are folded away level by level, and neither the attempt's
-        // node cap nor its pair floor measures what it holds. It runs under
-        // the work stop and the memory budget alone (rus_20_40's last join,
-        // 3.3 G units, was cut short six times by the cap and the work stop
-        // in turn and built again each time).
-        let whole = targets.contains(&scope.vtree().root());
-        let attempt = match cap {
-            Some(outer) => {
-                let _cap = backend.engine.limits().edit(|c| {
-                    c.with_stop_rules(
-                        StopRules::default()
-                            .with_unconditional(outer.unconditional)
-                            .with_after_pairs(Some((floor, StopAt::WorkUnits(0)))),
-                    )
-                });
-                join(fa, fb)
-            }
-            None if whole => {
-                let _uncapped = backend.engine.limits().edit(|c| {
-                    let stop = c.stop_rules().with_after_pairs(None);
-                    c.with_output_node_cap(None).with_stop_rules(stop)
-                });
-                join(fa, fb)
-            }
-            None => join(fa, fb),
-        };
-        if attempt.is_err()
-            && let Some(so) = &mut self.sum_out
-        {
-            so.undo();
-        }
-        attempt
     }
 
     fn join_scope(
@@ -1547,41 +1522,6 @@ impl EvidenceWalk {
         } else {
             largest_child
         };
-        let (mut step, largest) =
-            self.plan_child_batches(node, (own, own_size, aside), items, put_off, backend);
-        // The largest set aside meets what the node built besides it smallest
-        // first, as their sizes come out, rather than after their product.
-        if let Some(main) = largest {
-            step.insert(0, main);
-            if step.len() > 2 {
-                let out = self.slot(None, 0);
-                self.joins.push_back(Join::Smallest(step, out));
-                step = vec![out];
-            }
-        }
-        let main = self.conjoin(step);
-        if let Some(main) = main
-            && main >= fresh
-            && node != tree.root()
-        {
-            self.last_joins.insert(main);
-        }
-        self.built[node.idx()] = main.map(|main| Built {
-            main,
-            put_off: VecDeque::new(),
-            put_off_size: 0,
-            groups: Vec::new(),
-        });
-    }
-
-    fn plan_child_batches(
-        &mut self,
-        node: VtreeIdx,
-        (own, own_size, aside): (usize, usize, Option<usize>),
-        items: Vec<(usize, usize)>,
-        put_off: Vec<(VecDeque<usize>, usize, Vec<Group>)>,
-        backend: &TddBackend,
-    ) -> (Vec<usize>, Option<usize>) {
         let mut step = Vec::with_capacity(items.len());
         let mut items = items.into_iter().map(|(f, _)| f).enumerate();
         let mut mine: Vec<usize> = items.by_ref().take(own).map(|(_, f)| f).collect();
@@ -1614,7 +1554,29 @@ impl EvidenceWalk {
                 step.extend(self.conjoin(batch));
             }
         }
-        (step, largest)
+        // The largest set aside meets what the node built besides it smallest
+        // first, as their sizes come out, rather than after their product.
+        if let Some(main) = largest {
+            step.insert(0, main);
+            if step.len() > 2 {
+                let out = self.slot(None, 0);
+                self.joins.push_back(Join::Smallest(step, out));
+                step = vec![out];
+            }
+        }
+        let main = self.conjoin(step);
+        if let Some(main) = main
+            && main >= fresh
+            && node != tree.root()
+        {
+            self.last_joins.insert(main);
+        }
+        self.built[node.idx()] = main.map(|main| Built {
+            main,
+            put_off: VecDeque::new(),
+            put_off_size: 0,
+            groups: Vec::new(),
+        });
     }
 
     fn pass_up(

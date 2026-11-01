@@ -674,7 +674,37 @@ fn weighted_cnfs_count_the_same_with_and_without_eliminating_defined_facts() {
             .map(|_| probabilities[(next() % 6) as usize])
             .collect();
         let lit = |v: u64, positive: bool| (v as i64 + 1) * if positive { 1 } else { -1 };
-        let mut clauses = plant_defined_fact_clauses(n, &mut p, &mut next);
+        let mut clauses: Vec<Vec<i64>> = Vec::new();
+        for g in 0..3 {
+            // Fact `y` of one half defined over `a` and `b`, after it.
+            let y = 3 * g;
+            let (a, b) = (
+                y + 1 + next() % (n - y - 1),
+                (y + 2 + next() % (n - y - 2)) % n,
+            );
+            if a == b {
+                continue;
+            }
+            p[y as usize] = 0.5;
+            let (yt, yf, at, af, bt, bf) = (
+                lit(y, true),
+                lit(y, false),
+                lit(a, true),
+                lit(a, false),
+                lit(b, true),
+                lit(b, false),
+            );
+            clauses.extend(match next() % 3 {
+                0 => vec![vec![yf, at], vec![yf, bt], vec![yt, af, bf]],
+                1 => vec![vec![yt, af], vec![yt, bf], vec![yf, at, bt]],
+                _ => vec![
+                    vec![yf, at, bt],
+                    vec![yf, af, bf],
+                    vec![yt, af, bt],
+                    vec![yt, at, bf],
+                ],
+            });
+        }
         for _ in 0..4 + next() % 6 {
             let width = 2 + next() % 2;
             clauses.push(
@@ -708,46 +738,6 @@ fn weighted_cnfs_count_the_same_with_and_without_eliminating_defined_facts() {
         eliminated >= 20,
         "facts eliminated over the rounds: {eliminated}"
     );
-}
-
-fn plant_defined_fact_clauses(
-    n: u64,
-    p: &mut [f64],
-    next: &mut impl FnMut() -> u64,
-) -> Vec<Vec<i64>> {
-    let lit = |v: u64, positive: bool| (v as i64 + 1) * if positive { 1 } else { -1 };
-    let mut clauses = Vec::new();
-    for g in 0..3 {
-        // Fact `y` of one half defined over `a` and `b`, after it.
-        let y = 3 * g;
-        let (a, b) = (
-            y + 1 + next() % (n - y - 1),
-            (y + 2 + next() % (n - y - 2)) % n,
-        );
-        if a == b {
-            continue;
-        }
-        p[y as usize] = 0.5;
-        let (yt, yf, at, af, bt, bf) = (
-            lit(y, true),
-            lit(y, false),
-            lit(a, true),
-            lit(a, false),
-            lit(b, true),
-            lit(b, false),
-        );
-        clauses.extend(match next() % 3 {
-            0 => vec![vec![yf, at], vec![yf, bt], vec![yt, af, bf]],
-            1 => vec![vec![yt, af], vec![yt, bf], vec![yf, at, bt]],
-            _ => vec![
-                vec![yf, at, bt],
-                vec![yf, af, bf],
-                vec![yt, af, bt],
-                vec![yt, at, bf],
-            ],
-        });
-    }
-    clauses
 }
 
 #[test]

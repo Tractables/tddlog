@@ -333,41 +333,35 @@ fn ground_norm(
         if let Some(gp) = levelled {
             gp
         } else {
-            ground_with_magic_or_fallback(norm, plain, bound)?
+            match magic::rewrite(norm).filter(|r| engine::safe(&r.program)) {
+                Some(r) if r.top_down => engine::topdown::ground(norm, bound)?,
+                Some(r) => match engine::ground_normalized(&r.program, bound) {
+                    Ok(gp) => gp,
+                    Err(
+                        e @ (GroundError::OverBound
+                        | GroundError::OutOfMemory
+                        | GroundError::Refused(_)),
+                    ) => return Err(e),
+                    // Where neither grounds, the rewritten program's error
+                    // is the one to give.
+                    Err(e) if plain => engine::ground_normalized(norm, bound).map_err(|_| e)?,
+                    // The demand of two calls of one predicate can close a
+                    // loop through a findall that the program does not
+                    // have, which its resolution from the queries does not
+                    // close.
+                    Err(e @ GroundError::Unsupported(_)) => {
+                        engine::topdown::ground(norm, bound).map_err(|_| e)?
+                    }
+                    Err(e) => return Err(e),
+                },
+                None if plain => engine::ground_normalized(norm, bound)?,
+                None => engine::topdown::ground(norm, bound)?,
+            }
         }
     };
     let size = gp.size();
     let (gp, kept) = finish_keeping(gp, opts, keep);
     Ok((gp, size, kept))
-}
-
-fn ground_with_magic_or_fallback(
-    norm: &normalize::NormProgram,
-    plain: bool,
-    bound: Option<usize>,
-) -> Result<GroundProgram, GroundError> {
-    match magic::rewrite(norm).filter(|r| engine::safe(&r.program)) {
-        Some(r) if r.top_down => engine::topdown::ground(norm, bound),
-        Some(r) => match engine::ground_normalized(&r.program, bound) {
-            Ok(gp) => Ok(gp),
-            Err(
-                e @ (GroundError::OverBound | GroundError::OutOfMemory | GroundError::Refused(_)),
-            ) => Err(e),
-            // Where neither grounds, the rewritten program's error
-            // is the one to give.
-            Err(e) if plain => engine::ground_normalized(norm, bound).map_err(|_| e),
-            // The demand of two calls of one predicate can close a
-            // loop through a findall that the program does not
-            // have, which its resolution from the queries does not
-            // close.
-            Err(e @ GroundError::Unsupported(_)) => {
-                engine::topdown::ground(norm, bound).map_err(|_| e)
-            }
-            Err(e) => Err(e),
-        },
-        None if plain => engine::ground_normalized(norm, bound),
-        None => engine::topdown::ground(norm, bound),
-    }
 }
 
 /// `gp` finished under `opts` ([`finish`]), and a copy of it as simplified

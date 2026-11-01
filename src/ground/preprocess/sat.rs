@@ -481,8 +481,22 @@ impl Solver {
             let p = self.trail[self.qhead];
             self.qhead += 1;
             let f = p ^ 1;
-            if let Some(conflict) = self.propagate_binaries(f) {
-                return Some(conflict);
+            let others = std::mem::take(&mut self.binaries[f as usize]);
+            self.ticks += 1 + others.len() as u64;
+            let mut conflict = None;
+            for &o in &others {
+                match self.value[o as usize] {
+                    1 => {}
+                    0 => self.enqueue(o, BINARY | f),
+                    _ => {
+                        conflict = Some(Conflict::Binary(f, o));
+                        break;
+                    }
+                }
+            }
+            self.binaries[f as usize] = others;
+            if conflict.is_some() {
+                return conflict;
             }
             let mut ws = std::mem::take(&mut self.watches[f as usize]);
             let (mut i, mut j) = (0, 0);
@@ -542,24 +556,6 @@ impl Solver {
             self.watches[f as usize] = ws;
         }
         None
-    }
-
-    fn propagate_binaries(&mut self, f: Lit) -> Option<Conflict> {
-        let others = std::mem::take(&mut self.binaries[f as usize]);
-        self.ticks += 1 + others.len() as u64;
-        let mut conflict = None;
-        for &o in &others {
-            match self.value[o as usize] {
-                1 => {}
-                0 => self.enqueue(o, BINARY | f),
-                _ => {
-                    conflict = Some(Conflict::Binary(f, o));
-                    break;
-                }
-            }
-        }
-        self.binaries[f as usize] = others;
-        conflict
     }
 
     /// The literals of a conflict or a reason but the one it implies, the
@@ -639,7 +635,26 @@ impl Solver {
         }
         self.stack = met;
         learnt[0] = p.expect("a literal of the conflict's level") ^ 1;
-        self.minimize_learnt_clause(&mut learnt);
+        // Recursive minimization: a literal implied by the others' reasons,
+        // within levels the clause already has, goes.
+        let abstraction = learnt[1..]
+            .iter()
+            .fold(0u64, |a, &l| a | 1 << (self.level[var(l)] & 63));
+        self.to_clear.clear();
+        self.to_clear.extend_from_slice(&learnt);
+        let mut j = 1;
+        for i in 1..learnt.len() {
+            let l = learnt[i];
+            if self.reason[var(l)] == NONE || !self.redundant(l, abstraction) {
+                learnt[j] = l;
+                j += 1;
+            }
+        }
+        learnt.truncate(j);
+        for k in 0..self.to_clear.len() {
+            let v = var(self.to_clear[k]);
+            self.seen[v] = false;
+        }
         let mut back = 0;
         if learnt.len() > 1 {
             let mut max = 1;
@@ -665,29 +680,6 @@ impl Solver {
         }
         self.learnt = learnt;
         (back, lbd)
-    }
-
-    /// Recursive minimization: a literal implied by the others' reasons,
-    /// within levels the clause already has, goes.
-    fn minimize_learnt_clause(&mut self, learnt: &mut Vec<Lit>) {
-        let abstraction = learnt[1..]
-            .iter()
-            .fold(0u64, |a, &l| a | 1 << (self.level[var(l)] & 63));
-        self.to_clear.clear();
-        self.to_clear.extend_from_slice(learnt);
-        let mut j = 1;
-        for i in 1..learnt.len() {
-            let l = learnt[i];
-            if self.reason[var(l)] == NONE || !self.redundant(l, abstraction) {
-                learnt[j] = l;
-                j += 1;
-            }
-        }
-        learnt.truncate(j);
-        for k in 0..self.to_clear.len() {
-            let v = var(self.to_clear[k]);
-            self.seen[v] = false;
-        }
     }
 
     /// Whether the false literal `p` of the learnt clause follows from the
@@ -1036,6 +1028,46 @@ mod tests {
             for c in &clauses {
                 ok &= s.add_clause(&lits(c));
             }
+            let fixpoint = |assumptions: &[i32]| -> bool {
+                let mut value = vec![0i8; n + 1];
+                for &a in assumptions {
+                    let v = a.unsigned_abs() as usize;
+                    let want = if a > 0 { 1 } else { -1 };
+                    if value[v] == -want {
+                        return true;
+                    }
+                    value[v] = want;
+                }
+                loop {
+                    let mut changed = false;
+                    for c in &clauses {
+                        let holds =
+                            |x: i32| value[x.unsigned_abs() as usize] == if x > 0 { 1 } else { -1 };
+                        if c.iter().any(|&x| holds(x)) {
+                            continue;
+                        }
+                        let mut open: Vec<i32> = c
+                            .iter()
+                            .copied()
+                            .filter(|&x| value[x.unsigned_abs() as usize] == 0)
+                            .collect();
+                        open.sort_unstable();
+                        open.dedup();
+                        match open.len() {
+                            0 => return true,
+                            1 => {
+                                value[open[0].unsigned_abs() as usize] =
+                                    if open[0] > 0 { 1 } else { -1 };
+                                changed = true;
+                            }
+                            _ => {}
+                        }
+                    }
+                    if !changed {
+                        return false;
+                    }
+                }
+            };
             let mut assumptions: Vec<i32> = Vec::new();
             for _ in 0..30 {
                 match next(&mut state) % 3 {
@@ -1055,7 +1087,7 @@ mod tests {
                 let got = s.propagation_refutes(&lits(&assumptions));
                 assert_eq!(
                     got,
-                    !ok || unit_propagation_refutes(n, &clauses, &assumptions),
+                    !ok || fixpoint(&assumptions),
                     "case {case}: {clauses:?} under {assumptions:?}"
                 );
                 assert!(
@@ -1066,45 +1098,6 @@ mod tests {
             }
         }
         assert!(refuted > 300, "refutations met: {refuted}");
-    }
-
-    fn unit_propagation_refutes(n: usize, clauses: &[Vec<i32>], assumptions: &[i32]) -> bool {
-        let mut value = vec![0i8; n + 1];
-        for &a in assumptions {
-            let v = a.unsigned_abs() as usize;
-            let want = if a > 0 { 1 } else { -1 };
-            if value[v] == -want {
-                return true;
-            }
-            value[v] = want;
-        }
-        loop {
-            let mut changed = false;
-            for c in clauses {
-                let holds = |x: i32| value[x.unsigned_abs() as usize] == if x > 0 { 1 } else { -1 };
-                if c.iter().any(|&x| holds(x)) {
-                    continue;
-                }
-                let mut open: Vec<i32> = c
-                    .iter()
-                    .copied()
-                    .filter(|&x| value[x.unsigned_abs() as usize] == 0)
-                    .collect();
-                open.sort_unstable();
-                open.dedup();
-                match open.len() {
-                    0 => return true,
-                    1 => {
-                        value[open[0].unsigned_abs() as usize] = if open[0] > 0 { 1 } else { -1 };
-                        changed = true;
-                    }
-                    _ => {}
-                }
-            }
-            if !changed {
-                return false;
-            }
-        }
     }
 
     #[test]

@@ -71,9 +71,8 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
     let nt = tables.sets().len() + n;
     let mut readers: Vec<Vec<usize>> = vec![Vec::new(); nt];
     let mut spoilt = vec![false; nt];
-    let mut seen: Vec<usize> = Vec::new();
     for (ri, r) in gp.rules.iter().enumerate() {
-        seen.clear();
+        let mut seen: Vec<usize> = Vec::new();
         for l in &r.body {
             if gp.is_fact(l.atom()) {
                 continue;
@@ -102,18 +101,29 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
         let Some(probabilities) = choice(gp, tables, t, rules, &named) else {
             continue;
         };
-        // The place in each reader of the atom of `t` it reads.
-        let at: Vec<usize> = rules
+        let member = |ri: usize| {
+            gp.rules[ri]
+                .body
+                .iter()
+                .position(|l| !gp.is_fact(l.atom()) && tables.of(l.atom()) == t)
+                .expect("a reader reads the table")
+        };
+        let contexts: Vec<Vec<GLit>> = rules
             .iter()
             .map(|&ri| {
-                gp.rules[ri]
+                let k = member(ri);
+                let mut c: Vec<GLit> = gp.rules[ri]
                     .body
                     .iter()
-                    .position(|l| !gp.is_fact(l.atom()) && tables.of(l.atom()) == t)
-                    .expect("a reader reads the table")
+                    .enumerate()
+                    .filter(|&(j, _)| j != k)
+                    .map(|(_, &l)| l)
+                    .collect();
+                c.sort_unstable();
+                c
             })
             .collect();
-        if !exclusive(gp, tables, rules, &at) {
+        if !exclusive(gp, tables, &contexts) {
             continue;
         }
         // The literals the atoms' rules held beyond the one fact each reader
@@ -142,59 +152,9 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
         }
         read += 1;
     }
-    if read > 0 {
-        apply_choice_rewrites(gp, rewrites, drop_rules);
+    if read == 0 {
+        return 0;
     }
-    read
-}
-
-fn rule_contexts(
-    gp: &GroundProgram,
-    rules: &[usize],
-    member: &impl Fn(usize) -> usize,
-) -> Vec<Vec<GLit>> {
-    rules
-        .iter()
-        .map(|&ri| {
-            let k = member(ri);
-            let mut c: Vec<GLit> = gp.rules[ri]
-                .body
-                .iter()
-                .enumerate()
-                .filter(|&(j, _)| j != k)
-                .map(|(_, &l)| l)
-                .collect();
-            c.sort_unstable();
-            c
-        })
-        .collect()
-}
-
-fn table_readers(gp: &GroundProgram, tables: &Tables, nt: usize) -> (Vec<Vec<usize>>, Vec<bool>) {
-    let mut readers: Vec<Vec<usize>> = vec![Vec::new(); nt];
-    let mut spoilt = vec![false; nt];
-    for (ri, r) in gp.rules.iter().enumerate() {
-        let mut seen: Vec<usize> = Vec::new();
-        for l in &r.body {
-            if gp.is_fact(l.atom()) {
-                continue;
-            }
-            let t = tables.of(l.atom());
-            if !l.is_positive() || seen.contains(&t) {
-                spoilt[t] = true;
-            }
-            seen.push(t);
-            readers[t].push(ri);
-        }
-    }
-    (readers, spoilt)
-}
-
-fn apply_choice_rewrites(
-    gp: &mut GroundProgram,
-    rewrites: Vec<(usize, usize, Prob)>,
-    mut drop_rules: Vec<bool>,
-) {
     for (ri, k, p) in rewrites {
         if p.p == 0.0 {
             drop_rules[ri] = true;
@@ -212,6 +172,7 @@ fn apply_choice_rewrites(
     let mut dead = drop_rules.iter();
     gp.rules.retain(|_| !*dead.next().unwrap());
     simplify::compact(gp);
+    read
 }
 
 /// How many facts are table `t`'s own: what reading its atoms through

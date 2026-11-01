@@ -362,6 +362,31 @@ fn bad_and_inert_options_exit_with_status_two() {
             &["--bogus", "examples/alarm.pl"],
             "unknown option `--bogus`",
         ),
+        // The values after the file are the program's arguments.
+        (
+            &["examples/alarm.pl", "examples/dice.pl"],
+            "argument 1, `examples/dice.pl`, is not a term",
+        ),
+        (
+            &["examples/alarm.pl", "-3"],
+            "argument 1, `-3`, is given, and the program has no `$1`",
+        ),
+        (
+            &["examples/chain.pl", "10", "0.9", "4", "x"],
+            "argument 4, `x`, is given, and the program has no `$4`",
+        ),
+        (
+            &["examples/chain.pl", "10", "0.9", "f("],
+            "argument 3, `f(`, is not a term: unexpected end of input",
+        ),
+        (
+            &["tests/dice/walk.dice", "3"],
+            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is dice",
+        ),
+        (
+            &["examples/asia.net", "3"],
+            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is hugin",
+        ),
         (
             &["--vtree", "closed", "--vtree", "td", "examples/alarm.pl"],
             "--vtree is given twice",
@@ -408,40 +433,6 @@ fn bad_and_inert_options_exit_with_status_two() {
             "--no-queries is given twice",
         ),
         (&["no/such/file.pl"], "cannot read no/such/file.pl"),
-    ];
-    for (args, message) in cases {
-        assert_exit(args, 2, message);
-    }
-    check_bad_program_arguments();
-}
-
-fn check_bad_program_arguments() {
-    // The values after the file are the program's arguments.
-    let cases: &[(&[&str], &str)] = &[
-        (
-            &["examples/alarm.pl", "examples/dice.pl"],
-            "argument 1, `examples/dice.pl`, is not a term",
-        ),
-        (
-            &["examples/alarm.pl", "-3"],
-            "argument 1, `-3`, is given, and the program has no `$1`",
-        ),
-        (
-            &["examples/chain.pl", "10", "0.9", "4", "x"],
-            "argument 4, `x`, is given, and the program has no `$4`",
-        ),
-        (
-            &["examples/chain.pl", "10", "0.9", "f("],
-            "argument 3, `f(`, is not a term: unexpected end of input",
-        ),
-        (
-            &["tests/dice/walk.dice", "3"],
-            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is dice",
-        ),
-        (
-            &["examples/asia.net", "3"],
-            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is hugin",
-        ),
     ];
     for (args, message) in cases {
         assert_exit(args, 2, message);

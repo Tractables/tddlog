@@ -51,7 +51,34 @@ pub(crate) fn drop_detached(gp: &mut GroundProgram) -> usize {
         return 0;
     }
     let n = gp.num_atoms();
-    let (mut parent, part_of, parts) = detached_parts(gp);
+    let mut parent: Vec<usize> = (0..n).collect();
+    for r in &gp.rules {
+        for l in &r.body {
+            union(&mut parent, r.head as usize, l.atom() as usize);
+        }
+    }
+    let mut queried = vec![false; n];
+    for &(_, q, _) in &gp.queries {
+        if let Some(q) = q {
+            let root = find(&mut parent, q as usize);
+            queried[root] = true;
+        }
+    }
+    // The detached parts by root, each with its observations.
+    let mut part_of = vec![usize::MAX; n];
+    let mut parts: Vec<Vec<(AtomId, bool)>> = Vec::new();
+    for &(_, a, v) in &gp.evidence {
+        let Some(a) = a else { continue };
+        let root = find(&mut parent, a as usize);
+        if queried[root] {
+            continue;
+        }
+        if part_of[root] == usize::MAX {
+            part_of[root] = parts.len();
+            parts.push(Vec::new());
+        }
+        parts[part_of[root]].push((a, v));
+    }
     if parts.is_empty() {
         return 0;
     }
@@ -112,41 +139,6 @@ pub(crate) fn drop_detached(gp: &mut GroundProgram) -> usize {
     gp.evidence
         .retain(|&(_, a, _)| a.is_none_or(|a| !dropped[a as usize]));
     before - gp.evidence.len()
-}
-
-type DetachedParts = (Vec<usize>, Vec<usize>, Vec<Vec<(AtomId, bool)>>);
-
-fn detached_parts(gp: &GroundProgram) -> DetachedParts {
-    let n = gp.num_atoms();
-    let mut parent: Vec<usize> = (0..n).collect();
-    for r in &gp.rules {
-        for l in &r.body {
-            union(&mut parent, r.head as usize, l.atom() as usize);
-        }
-    }
-    let mut queried = vec![false; n];
-    for &(_, q, _) in &gp.queries {
-        if let Some(q) = q {
-            let root = find(&mut parent, q as usize);
-            queried[root] = true;
-        }
-    }
-    // The detached parts by root, each with its observations.
-    let mut part_of = vec![usize::MAX; n];
-    let mut parts: Vec<Vec<(AtomId, bool)>> = Vec::new();
-    for &(_, a, v) in &gp.evidence {
-        let Some(a) = a else { continue };
-        let root = find(&mut parent, a as usize);
-        if queried[root] {
-            continue;
-        }
-        if part_of[root] == usize::MAX {
-            part_of[root] = parts.len();
-            parts.push(Vec::new());
-        }
-        parts[part_of[root]].push((a, v));
-    }
-    (parent, part_of, parts)
 }
 
 /// Whether a world is found, within `budget` of the search's work, in

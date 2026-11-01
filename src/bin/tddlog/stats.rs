@@ -99,11 +99,6 @@ fn print_compile_stats(args: &Args, run: &tddlog::Run) {
         m.given_up,
         s.tied
     );
-    print_search_and_projection_stats(run, projection);
-}
-
-fn print_search_and_projection_stats(run: &tddlog::Run, projection: Projection) {
-    let s = &run.stats;
     if let Some(sr) = &s.search {
         eprintln!(
             "compile search: {} searches ({} gained under a tenth), {} probes, {} kept, {} pairs to {}, {} work units, {} restarts ({} kept)",
@@ -290,11 +285,6 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.stepped
         ));
     }
-    append_conditioned_stats(&mut line, g);
-    line
-}
-
-fn append_conditioned_stats(line: &mut String, g: &GroundProgram) {
     let c = g.stats.conditioned;
     if c.facts + c.atoms + c.merged + c.into > 0 {
         line.push_str(&format!(
@@ -345,6 +335,7 @@ fn append_conditioned_stats(line: &mut String, g: &GroundProgram) {
             g.stats.detached
         ));
     }
+    line
 }
 
 /// The sources that negated anything: calls, operand pairs and work units.

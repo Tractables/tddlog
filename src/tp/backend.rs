@@ -919,7 +919,18 @@ impl TddBackend<'_> {
                 continue;
             }
             let (tl, tr) = vtree.children(t);
-            let width = self.copy_sorted_x_level(&mut b, x, t, &mut pairs, &mut buf)?;
+            let at_x = x.level(t);
+            let width = at_x.nodes().len();
+            if (0..width).all(|i| at_x.pairs_read(i, &mut buf).is_sorted_by_key(key)) {
+                b.replace_level(self.engine, t, x.level_view(t))?;
+            } else {
+                for i in 0..width {
+                    pairs.clear();
+                    pairs.extend_from_slice(at_x.pairs_read(i, &mut buf));
+                    pairs.sort_unstable_by_key(key);
+                    b.push(self.engine, t, &pairs)?;
+                }
+            }
             let moved = |ch: VtreeIdx, e: EncodedChildRef| match to[ch.idx()].as_slice() {
                 [] => e,
                 at => EncodedChildRef::from_raw(at[e.raw() as usize]),
@@ -963,30 +974,6 @@ impl TddBackend<'_> {
             })
             .map_err(OperationError::from)?,
         ))
-    }
-
-    fn copy_sorted_x_level(
-        &self,
-        b: &mut tididi::diagram::TddBuilder,
-        x: &Tdd,
-        t: VtreeIdx,
-        pairs: &mut Vec<ChildPair>,
-        buf: &mut Vec<ChildPair>,
-    ) -> Result<usize, CompileError> {
-        let key = |p: &ChildPair| (p.left.raw(), p.right.raw());
-        let at_x = x.level(t);
-        let width = at_x.nodes().len();
-        if (0..width).all(|i| at_x.pairs_read(i, buf).is_sorted_by_key(key)) {
-            b.replace_level(self.engine, t, x.level_view(t))?;
-        } else {
-            for i in 0..width {
-                pairs.clear();
-                pairs.extend_from_slice(at_x.pairs_read(i, buf));
-                pairs.sort_unstable_by_key(key);
-                b.push(self.engine, t, pairs)?;
-            }
-        }
-        Ok(width)
     }
     /// `a ∧ b`, each operand owned or borrowed: a borrowed one is read in
     /// place.
@@ -1469,7 +1456,72 @@ mod tests {
                 Vtree::join(&leaf, &below).unwrap(),
                 Vtree::join(&below, &leaf).unwrap(),
             ] {
-                assert_root_selection(seed, n, v, &cubes, Arc::new(tree));
+                let tree = Arc::new(tree);
+                tree.context().run(|engine| {
+                    let backend = TddBackend::new(engine, tree.clone());
+                    let scope = backend.global();
+                    // Both operands settled on the scope below `v` and
+                    // embedded, as the compiler hands them over.
+                    let vars: Vec<VarId> = (1..n).map(VarId).collect();
+                    let own = backend.scope(&vars).unwrap();
+                    let mut x = backend.zero(&own);
+                    for cube in &cubes {
+                        x = backend.or(x, backend.cube(&own, cube).unwrap()).unwrap();
+                    }
+                    backend.minimize(&mut x, Reduce::Settled).unwrap();
+                    let y = backend.negate(x.clone()).unwrap();
+                    let (x, y) = (
+                        backend.embed(x, &own, &scope).unwrap(),
+                        backend.embed(y, &own, &scope).unwrap(),
+                    );
+                    // The negation with its nodes in another order than `x`'s.
+                    let other = reversed(engine, &y);
+                    if x.is_zero() || y.is_zero() {
+                        assert!(backend.select_at_root(&scope, v, &x, &y).unwrap().is_none());
+                        return;
+                    }
+                    let built = backend
+                        .select_at_root(&scope, v, &x, &y)
+                        .unwrap()
+                        .expect("v is a child of the root");
+                    let interned = select_by_interning(&backend, &scope, v, &x, &y)
+                        .expect("v is a child of the root");
+                    assert!(
+                        same_levels(&built, &interned),
+                        "seed {seed}: not the interned diagram"
+                    );
+                    let built = backend
+                        .select_at_root(&scope, v, &x, &other)
+                        .unwrap()
+                        .expect("v is a child of the root");
+                    let interned = select_by_interning(&backend, &scope, v, &x, &other)
+                        .expect("v is a child of the root");
+                    assert!(
+                        same_levels(&built, &interned),
+                        "seed {seed}: not the interned diagram of the other negation"
+                    );
+                    let yes = backend
+                        .and_clause(&scope, x.clone(), &[Literal::pos(v)])
+                        .unwrap();
+                    let no = backend
+                        .and_clause(&scope, y.clone(), &[Literal::neg(v)])
+                        .unwrap();
+                    let mut applied = backend.or(yes, no).unwrap();
+                    backend.minimize(&mut applied, Reduce::Settled).unwrap();
+                    assert!(backend.equivalent(&built, &applied).unwrap(), "seed {seed}");
+                    assert_eq!(
+                        built.pair_count(),
+                        applied.pair_count(),
+                        "seed {seed}: not reduced"
+                    );
+                    let mut settled = built.clone();
+                    backend.minimize(&mut settled, Reduce::Settled).unwrap();
+                    assert_eq!(
+                        settled.pair_count(),
+                        built.pair_count(),
+                        "seed {seed}: settling changed it"
+                    );
+                });
             }
             // Under a balanced tree of all of them `v` is no child of the root.
             let tree = Arc::new(Vtree::balanced(n.max(4)));
@@ -1486,80 +1538,6 @@ mod tests {
                 );
             });
         }
-    }
-
-    fn assert_root_selection(
-        seed: u64,
-        n: u32,
-        v: VarId,
-        cubes: &[Vec<Literal>],
-        tree: Arc<Vtree>,
-    ) {
-        tree.context().run(|engine| {
-            let backend = TddBackend::new(engine, tree.clone());
-            let scope = backend.global();
-            // Both operands settled on the scope below `v` and
-            // embedded, as the compiler hands them over.
-            let vars: Vec<VarId> = (1..n).map(VarId).collect();
-            let own = backend.scope(&vars).unwrap();
-            let mut x = backend.zero(&own);
-            for cube in cubes {
-                x = backend.or(x, backend.cube(&own, cube).unwrap()).unwrap();
-            }
-            backend.minimize(&mut x, Reduce::Settled).unwrap();
-            let y = backend.negate(x.clone()).unwrap();
-            let (x, y) = (
-                backend.embed(x, &own, &scope).unwrap(),
-                backend.embed(y, &own, &scope).unwrap(),
-            );
-            // The negation with its nodes in another order than `x`'s.
-            let other = reversed(engine, &y);
-            if x.is_zero() || y.is_zero() {
-                assert!(backend.select_at_root(&scope, v, &x, &y).unwrap().is_none());
-                return;
-            }
-            let built = backend
-                .select_at_root(&scope, v, &x, &y)
-                .unwrap()
-                .expect("v is a child of the root");
-            let interned =
-                select_by_interning(&backend, &scope, v, &x, &y).expect("v is a child of the root");
-            assert!(
-                same_levels(&built, &interned),
-                "seed {seed}: not the interned diagram"
-            );
-            let built = backend
-                .select_at_root(&scope, v, &x, &other)
-                .unwrap()
-                .expect("v is a child of the root");
-            let interned = select_by_interning(&backend, &scope, v, &x, &other)
-                .expect("v is a child of the root");
-            assert!(
-                same_levels(&built, &interned),
-                "seed {seed}: not the interned diagram of the other negation"
-            );
-            let yes = backend
-                .and_clause(&scope, x.clone(), &[Literal::pos(v)])
-                .unwrap();
-            let no = backend
-                .and_clause(&scope, y.clone(), &[Literal::neg(v)])
-                .unwrap();
-            let mut applied = backend.or(yes, no).unwrap();
-            backend.minimize(&mut applied, Reduce::Settled).unwrap();
-            assert!(backend.equivalent(&built, &applied).unwrap(), "seed {seed}");
-            assert_eq!(
-                built.pair_count(),
-                applied.pair_count(),
-                "seed {seed}: not reduced"
-            );
-            let mut settled = built.clone();
-            backend.minimize(&mut settled, Reduce::Settled).unwrap();
-            assert_eq!(
-                settled.pair_count(),
-                built.pair_count(),
-                "seed {seed}: settling changed it"
-            );
-        });
     }
 
     /// `one_of` builds the diagram of exactly one and of at most one of
@@ -1857,7 +1835,54 @@ mod tests {
                 seed.wrapping_mul(6364136223846793005)
                     .wrapping_add(1442695040888963407),
             );
-            let (cubes, groups, mut leaves) = random_many_leaves_instance(seed, &mut next);
+            let mut cubes: Vec<Vec<Literal>> = Vec::new();
+            let mut groups: Vec<(Vec<VarId>, bool)> = Vec::new();
+            let mut leaves: Vec<VarId> = Vec::new();
+            if seed % 2 == 0 {
+                let mut n = 0u32;
+                let mut fresh = || {
+                    n += 1;
+                    VarId(n)
+                };
+                for _ in 0..6 + next(8) {
+                    let c = fresh();
+                    for _ in 0..1 + next(5) {
+                        let o = fresh();
+                        let sign = seed % 4 == 0 || next(4) > 0;
+                        for _ in 0..1 + next(6) {
+                            let l = fresh();
+                            cubes.push(vec![
+                                Literal::pos(c),
+                                Literal::new(o, sign),
+                                Literal::pos(l),
+                            ]);
+                            leaves.push(l);
+                        }
+                        leaves.push(o);
+                    }
+                    leaves.push(c);
+                }
+            } else {
+                let n = 150 + next(150) as u32;
+                for _ in 0..n {
+                    let base = 1 + next(u64::from(n)) as u32;
+                    let cube: Vec<Literal> = (0..1 + next(4))
+                        .map(|_| Literal::new(VarId((base + next(12) as u32).min(n)), next(3) > 0))
+                        .collect();
+                    cubes.push(cube);
+                }
+                let mut v = 1;
+                while v + 3 <= n {
+                    if next(8) == 0 {
+                        groups.push((
+                            (v..v + 2 + next(2) as u32).map(VarId).collect(),
+                            next(2) == 0,
+                        ));
+                    }
+                    v += 4;
+                }
+                leaves = (1..=n).map(VarId).collect();
+            }
             // A tree split at random places of the order, whose widths the
             // cubes' nearness bounds, where a random vtree's are not.
             fn split(leaves: &[VarId], next: &mut dyn FnMut(u64) -> u64) -> Vtree {
@@ -1893,63 +1918,6 @@ mod tests {
                 );
             });
         }
-    }
-
-    type ManyLeavesInstance = (Vec<Vec<Literal>>, Vec<(Vec<VarId>, bool)>, Vec<VarId>);
-
-    fn random_many_leaves_instance(
-        seed: u64,
-        next: &mut impl FnMut(u64) -> u64,
-    ) -> ManyLeavesInstance {
-        let mut cubes: Vec<Vec<Literal>> = Vec::new();
-        let mut groups: Vec<(Vec<VarId>, bool)> = Vec::new();
-        let mut leaves: Vec<VarId> = Vec::new();
-        if seed.is_multiple_of(2) {
-            let mut n = 0u32;
-            let mut fresh = || {
-                n += 1;
-                VarId(n)
-            };
-            for _ in 0..6 + next(8) {
-                let c = fresh();
-                for _ in 0..1 + next(5) {
-                    let o = fresh();
-                    let sign = seed.is_multiple_of(4) || next(4) > 0;
-                    for _ in 0..1 + next(6) {
-                        let l = fresh();
-                        cubes.push(vec![
-                            Literal::pos(c),
-                            Literal::new(o, sign),
-                            Literal::pos(l),
-                        ]);
-                        leaves.push(l);
-                    }
-                    leaves.push(o);
-                }
-                leaves.push(c);
-            }
-        } else {
-            let n = 150 + next(150) as u32;
-            for _ in 0..n {
-                let base = 1 + next(u64::from(n)) as u32;
-                let cube: Vec<Literal> = (0..1 + next(4))
-                    .map(|_| Literal::new(VarId((base + next(12) as u32).min(n)), next(3) > 0))
-                    .collect();
-                cubes.push(cube);
-            }
-            let mut v = 1;
-            while v + 3 <= n {
-                if next(8) == 0 {
-                    groups.push((
-                        (v..v + 2 + next(2) as u32).map(VarId).collect(),
-                        next(2) == 0,
-                    ));
-                }
-                v += 4;
-            }
-            leaves = (1..=n).map(VarId).collect();
-        }
-        (cubes, groups, leaves)
     }
 
     /// Tables as a reader's link holds them ([`crate::indicators`]): each

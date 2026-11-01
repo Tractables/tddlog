@@ -266,7 +266,22 @@ fn rewrite(
     gates: &[Gate],
     observe: bool,
 ) -> (Conditioned, Count) {
-    let known = known_atoms(gp, certain);
+    // What the program knew before: certain atoms, atoms without rules and
+    // observations.
+    let mut known = vec![false; gp.num_atoms()];
+    let mut ruled = vec![false; gp.num_atoms()];
+    for r in &gp.rules {
+        ruled[r.head as usize] = true;
+        known[r.head as usize] |= r.body.is_empty();
+    }
+    for &(_, a, _) in &gp.evidence {
+        if let Some(a) = a {
+            known[a as usize] = true;
+        }
+    }
+    for a in 0..gp.num_atoms() {
+        known[a] |= certain[a] || (gp.kinds[a] == AtomKind::Derived && !ruled[a]);
+    }
     let (mut out, mut factor) = (Conditioned::default(), Count::ONE);
     for a in 0..gp.num_atoms() {
         if val[a] == Val::Unknown || known[a] {
@@ -292,47 +307,6 @@ fn rewrite(
             });
         }
     }
-    rewrite_fixed_rules(gp, val, gates);
-    if observe {
-        for a in 0..gp.num_atoms() {
-            if gp.kinds[a] == AtomKind::Derived && val[a] != Val::Unknown && !known[a] {
-                gp.evidence
-                    .push((gp.atoms[a].clone(), Some(a as AtomId), val[a] == Val::True));
-            }
-        }
-    }
-    merge_equal_facts(gp, equal, &mut out, &mut factor);
-    // Each gate's fact becomes a derived atom with the gate's rules, and
-    // the weight one half of each of its values, which its definition
-    // summed out, a factor of the counts.
-    for gate in gates {
-        gp.kinds[gate.fact as usize] = AtomKind::Derived;
-        gp.rules.extend(gate.rules());
-    }
-    (out, factor.shifted(-(gates.len() as i64)))
-}
-
-/// What the program knew before: certain atoms, atoms without rules and
-/// observations.
-fn known_atoms(gp: &GroundProgram, certain: &[bool]) -> Vec<bool> {
-    let mut known = vec![false; gp.num_atoms()];
-    let mut ruled = vec![false; gp.num_atoms()];
-    for r in &gp.rules {
-        ruled[r.head as usize] = true;
-        known[r.head as usize] |= r.body.is_empty();
-    }
-    for &(_, a, _) in &gp.evidence {
-        if let Some(a) = a {
-            known[a as usize] = true;
-        }
-    }
-    for a in 0..gp.num_atoms() {
-        known[a] |= certain[a] || (gp.kinds[a] == AtomKind::Derived && !ruled[a]);
-    }
-    known
-}
-
-fn rewrite_fixed_rules(gp: &mut GroundProgram, val: &[Val], gates: &[Gate]) {
     // Fixed derived atoms are read as their values.
     let fixed = |l: GLit| match (gp.kinds[l.atom() as usize], val[l.atom() as usize]) {
         (AtomKind::Derived, Val::True) => Some(l.is_positive()),
@@ -356,6 +330,23 @@ fn rewrite_fixed_rules(gp: &mut GroundProgram, val: &[Val], gates: &[Gate]) {
         rules.push(GroundRule::new(r.head, r.body));
     }
     gp.rules = rules;
+    if observe {
+        for a in 0..gp.num_atoms() {
+            if gp.kinds[a] == AtomKind::Derived && val[a] != Val::Unknown && !known[a] {
+                gp.evidence
+                    .push((gp.atoms[a].clone(), Some(a as AtomId), val[a] == Val::True));
+            }
+        }
+    }
+    merge_equal_facts(gp, equal, &mut out, &mut factor);
+    // Each gate's fact becomes a derived atom with the gate's rules, and
+    // the weight one half of each of its values, which its definition
+    // summed out, a factor of the counts.
+    for gate in gates {
+        gp.kinds[gate.fact as usize] = AtomKind::Derived;
+        gp.rules.extend(gate.rules());
+    }
+    (out, factor.shifted(-(gates.len() as i64)))
 }
 
 /// Equal facts: each copy's weight goes into the fact it copies, and the

@@ -122,7 +122,23 @@ pub(crate) fn ties(
     let Some(global_from) = projection.global_from(var_of.iter().flatten().count() as u32) else {
         return ties;
     };
-    let (copies, tables) = table_copies(gp, var_of);
+    let mut copies: FxHashMap<AtomId, Vec<(AtomId, VarId)>> = FxHashMap::default();
+    for ind in &gp.encoding.indicators {
+        copies.entry(ind.link).or_default().push((
+            ind.atom,
+            var_of[ind.var as usize].expect("a copy is a fact"),
+        ));
+    }
+    let mut tables: FxHashMap<Vec<AtomId>, Vec<AtomId>> = FxHashMap::default();
+    for (&link, of) in &mut copies {
+        if of.len() >= 2 {
+            of.sort_unstable();
+            tables
+                .entry(of.iter().map(|&(k, _)| k).collect())
+                .or_default()
+                .push(link);
+        }
+    }
     let vtree = backend.vtree();
     // The link each variable was last gathered for: a link's rules read
     // its table's switches and copies over and over, and this finds them
@@ -145,15 +161,37 @@ pub(crate) fn ties(
         d
     };
     for links in tables.into_values().filter(|links| links.len() >= 2) {
-        let mut readers = candidate_table_readers(
-            gp,
-            by_head,
-            var_of,
-            backend,
-            links,
-            global_from,
-            &mut gathered,
-        );
+        // The readers whose links may be tied or be tied to: a link at the
+        // root is neither, since no other's node is above it.
+        let mut readers: Vec<(AtomId, Vec<VarId>, VtreeIdx)> = links
+            .into_iter()
+            .filter(|&link| {
+                by_head[link as usize]
+                    .iter()
+                    .map(|&ri| gp.rules[ri].clauses())
+                    .sum::<usize>()
+                    >= TIE_FROM
+            })
+            .filter_map(|link| {
+                let mut vars: Vec<VarId> = Vec::new();
+                for l in by_head[link as usize]
+                    .iter()
+                    .flat_map(|&ri| &gp.rules[ri].body)
+                {
+                    let v = var_of[l.atom() as usize].expect("a link reads facts alone");
+                    if std::mem::replace(&mut gathered[v.0 as usize], link) != link {
+                        vars.push(v);
+                    }
+                }
+                vars.sort_unstable();
+                // A link reads facts alone: its cone is its variables.
+                if vars.len() >= global_from {
+                    return None;
+                }
+                let node = backend.lowest_over_vars(&vars);
+                (node != vtree.root()).then_some((link, vars, node))
+            })
+            .collect();
         readers.sort_by_key(|&(link, _, node)| (std::cmp::Reverse(depth(node)), link));
         let mut kept: Vec<(AtomId, VtreeIdx)> = Vec::new();
         for (link, link_vars, node) in readers {
@@ -178,71 +216,4 @@ pub(crate) fn ties(
         }
     }
     ties
-}
-
-/// The readers whose links may be tied or be tied to: a link at the root is
-/// neither, since no other's node is above it.
-fn candidate_table_readers(
-    gp: &GroundProgram,
-    by_head: &RulesByHead,
-    var_of: &[Option<VarId>],
-    backend: &TddBackend,
-    links: Vec<AtomId>,
-    global_from: usize,
-    gathered: &mut [AtomId],
-) -> Vec<(AtomId, Vec<VarId>, VtreeIdx)> {
-    let root = backend.vtree().root();
-    links
-        .into_iter()
-        .filter(|&link| {
-            by_head[link as usize]
-                .iter()
-                .map(|&ri| gp.rules[ri].clauses())
-                .sum::<usize>()
-                >= TIE_FROM
-        })
-        .filter_map(|link| {
-            let mut vars: Vec<VarId> = Vec::new();
-            for l in by_head[link as usize]
-                .iter()
-                .flat_map(|&ri| &gp.rules[ri].body)
-            {
-                let v = var_of[l.atom() as usize].expect("a link reads facts alone");
-                if std::mem::replace(&mut gathered[v.0 as usize], link) != link {
-                    vars.push(v);
-                }
-            }
-            vars.sort_unstable();
-            // A link reads facts alone: its cone is its variables.
-            if vars.len() >= global_from {
-                return None;
-            }
-            let node = backend.lowest_over_vars(&vars);
-            (node != root).then_some((link, vars, node))
-        })
-        .collect()
-}
-
-type LinkCopies = FxHashMap<AtomId, Vec<(AtomId, VarId)>>;
-type TableLinks = FxHashMap<Vec<AtomId>, Vec<AtomId>>;
-
-fn table_copies(gp: &GroundProgram, var_of: &[Option<VarId>]) -> (LinkCopies, TableLinks) {
-    let mut copies: LinkCopies = FxHashMap::default();
-    for ind in &gp.encoding.indicators {
-        copies.entry(ind.link).or_default().push((
-            ind.atom,
-            var_of[ind.var as usize].expect("a copy is a fact"),
-        ));
-    }
-    let mut tables: TableLinks = FxHashMap::default();
-    for (&link, of) in &mut copies {
-        if of.len() >= 2 {
-            of.sort_unstable();
-            tables
-                .entry(of.iter().map(|&(k, _)| k).collect())
-                .or_default()
-                .push(link);
-        }
-    }
-    (copies, tables)
 }

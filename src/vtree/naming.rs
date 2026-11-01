@@ -122,13 +122,36 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
     if named.encoding.is_empty() {
         return Laid { facts, named: None };
     }
-    let laid = interleave_copies(
-        gp,
-        (&order, &at, &segment),
-        &units,
-        &named.encoding.indicators,
-        facts.len(),
-    );
+    // The copies at the start of their segments, each segment's in the
+    // order of the atoms they stand for.
+    let mut copies: Vec<(usize, u32, AtomId)> = named
+        .encoding
+        .indicators
+        .iter()
+        .zip(&units)
+        .map(|(ind, &u)| {
+            (
+                u,
+                at.get(ind.atom as usize).copied().unwrap_or(u32::MAX),
+                ind.var,
+            )
+        })
+        .collect();
+    copies.sort_unstable();
+    let mut laid = Vec::with_capacity(facts.len() + copies.len());
+    let mut next = copies.iter().peekable();
+    for &a in &order {
+        let seg = segment[at[a as usize] as usize];
+        while let Some(&&(u, _, var)) = next.peek().filter(|c| c.0 <= seg) {
+            debug_assert!(u <= seg);
+            laid.push(var);
+            next.next();
+        }
+        if gp.is_fact(a) {
+            laid.push(a);
+        }
+    }
+    laid.extend(next.map(|c| c.2));
     named.encoding.segments = units;
     let atoms: FxHashSet<AtomId> = named.encoding.indicators.iter().map(|i| i.atom).collect();
     let mut note = format!(
@@ -145,44 +168,6 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
         facts: laid,
         named: Some((named, note)),
     }
-}
-
-/// The copies at the start of their segments, each segment's in the order
-/// of the atoms they stand for, interleaved with the facts of `order`.
-fn interleave_copies(
-    gp: &GroundProgram,
-    (order, at, segment): (&[AtomId], &[u32], &[usize]),
-    units: &[usize],
-    indicators: &[crate::ground::Indicator],
-    facts_len: usize,
-) -> Vec<AtomId> {
-    let mut copies: Vec<(usize, u32, AtomId)> = indicators
-        .iter()
-        .zip(units)
-        .map(|(ind, &u)| {
-            (
-                u,
-                at.get(ind.atom as usize).copied().unwrap_or(u32::MAX),
-                ind.var,
-            )
-        })
-        .collect();
-    copies.sort_unstable();
-    let mut laid = Vec::with_capacity(facts_len + copies.len());
-    let mut next = copies.iter().peekable();
-    for &a in order {
-        let seg = segment[at[a as usize] as usize];
-        while let Some(&&(u, _, var)) = next.peek().filter(|c| c.0 <= seg) {
-            debug_assert!(u <= seg);
-            laid.push(var);
-            next.next();
-        }
-        if gp.is_fact(a) {
-            laid.push(a);
-        }
-    }
-    laid.extend(next.map(|c| c.2));
-    laid
 }
 
 /// `gp` with each body that reads more atoms than [`WIDEST`] written as a
@@ -262,12 +247,53 @@ fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundPr
 
 fn wide_bodies(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<Option<Vec<GLit>>>) {
     let n = gp.num_atoms();
+    let mut reads = vec![0u32; n];
+    for r in &gp.rules {
+        for l in &r.body {
+            reads[l.atom() as usize] += 1;
+        }
+    }
+    for (_, a, _) in gp.queries.iter().chain(&gp.evidence) {
+        if let Some(a) = a {
+            reads[*a as usize] = u32::MAX;
+        }
+    }
     let one_rule = |a: AtomId| match &deps.by_head[a as usize][..] {
         &[ri] if !gp.rules[ri].pairs => Some(ri),
         _ => None,
     };
-    let (view, width) = view_widths(gp, deps);
+    // An acyclic atom's rules read atoms of earlier components only.
+    let mut view = vec![false; n];
+    for scc in &deps.sccs {
+        if let &[a] = scc.as_slice()
+            && reads[a as usize] == 1
+            && let Some(ri) = one_rule(a)
+            && gp.rules[ri].body.iter().all(|l| l.atom() != a)
+        {
+            view[a as usize] = true;
+        }
+    }
     let is_view = |l: &GLit| l.is_positive() && view[l.atom() as usize];
+    // The literals each atom of one rule stands for, read through views,
+    // counted in dependency order.
+    let mut width = vec![1usize; n];
+    for scc in &deps.sccs {
+        for &a in scc {
+            if let Some(ri) = one_rule(a) {
+                width[a as usize] = gp.rules[ri]
+                    .body
+                    .iter()
+                    .map(|l| {
+                        if is_view(l) {
+                            width[l.atom() as usize]
+                        } else {
+                            1
+                        }
+                    })
+                    .sum();
+            }
+        }
+    }
     let wide = |r: &GroundRule| {
         !r.pairs
             && r.body
@@ -313,57 +339,6 @@ fn wide_bodies(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<Option<Vec<GL
         }
     }
     (taken, flat)
-}
-
-fn view_widths(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<usize>) {
-    let n = gp.num_atoms();
-    let mut reads = vec![0u32; n];
-    for r in &gp.rules {
-        for l in &r.body {
-            reads[l.atom() as usize] += 1;
-        }
-    }
-    for (_, a, _) in gp.queries.iter().chain(&gp.evidence) {
-        if let Some(a) = a {
-            reads[*a as usize] = u32::MAX;
-        }
-    }
-    let one_rule = |a: AtomId| match &deps.by_head[a as usize][..] {
-        &[ri] if !gp.rules[ri].pairs => Some(ri),
-        _ => None,
-    };
-    // An acyclic atom's rules read atoms of earlier components only.
-    let mut view = vec![false; n];
-    for scc in &deps.sccs {
-        if let &[a] = scc.as_slice()
-            && reads[a as usize] == 1
-            && let Some(ri) = one_rule(a)
-            && gp.rules[ri].body.iter().all(|l| l.atom() != a)
-        {
-            view[a as usize] = true;
-        }
-    }
-    // The literals each atom of one rule stands for, read through views,
-    // counted in dependency order.
-    let mut width = vec![1usize; n];
-    for scc in &deps.sccs {
-        for &a in scc {
-            if let Some(ri) = one_rule(a) {
-                width[a as usize] = gp.rules[ri]
-                    .body
-                    .iter()
-                    .map(|l| {
-                        if l.is_positive() && view[l.atom() as usize] {
-                            width[l.atom() as usize]
-                        } else {
-                            1
-                        }
-                    })
-                    .sum();
-            }
-        }
-    }
-    (view, width)
 }
 
 /// Every atom of `gp`, fact or derived, in the trial's order. The facts

@@ -193,9 +193,22 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
     }
     let by_head = gp.rules_by_head();
     let sccs = deps::derived_sccs(gp, &by_head);
-    let Some(rank) = acyclic_gate_ranks(gp, &by_head, &sccs) else {
+    // The gates, the acyclic atoms with rules, each with its place in
+    // dependency order.
+    let mut rank = vec![NONE; n];
+    let mut gates = 0;
+    for scc in &sccs {
+        if let [a] = scc[..]
+            && !by_head[a as usize].is_empty()
+            && !deps::is_cyclic(gp, &by_head, scc)
+        {
+            rank[a as usize] = gates;
+            gates += 1;
+        }
+    }
+    if gates == 0 {
         return 0;
-    };
+    }
     let candidates = {
         let gate: Vec<bool> = rank.iter().map(|&r| r != NONE).collect();
         match co_read(gp, &readers, &bits(&gate), &gate, false, &mut work) {
@@ -213,42 +226,8 @@ pub(super) fn bits_as_values(gp: &mut GroundProgram) -> usize {
     ) else {
         return 0;
     };
-    let Some((written, replaced)) = write_unit_groups(&units, &readers, &mut work) else {
-        return 0;
-    };
-    drop(units);
-    written.finish(gp, &replaced)
-}
-
-/// The gates, the acyclic atoms with rules, each with its place in
-/// dependency order.
-fn acyclic_gate_ranks(
-    gp: &GroundProgram,
-    by_head: &super::RulesByHead,
-    sccs: &[Vec<AtomId>],
-) -> Option<Vec<u32>> {
-    let mut rank = vec![NONE; gp.num_atoms()];
-    let mut gates = 0;
-    for scc in sccs {
-        if let [a] = scc[..]
-            && !by_head[a as usize].is_empty()
-            && !deps::is_cyclic(gp, by_head, scc)
-        {
-            rank[a as usize] = gates;
-            gates += 1;
-        }
-    }
-    (gates > 0).then_some(rank)
-}
-
-fn write_unit_groups(
-    units: &Units<'_>,
-    readers: &Lists<u32>,
-    work: &mut Work,
-) -> Option<(Written, Vec<bool>)> {
-    let gp = units.gp;
-    let n = gp.num_atoms();
     let order = units.order();
+
     let mut written = Written::new(n);
     let mut cone = Cone::new(n);
     'groups: for group in units.groups(&order) {
@@ -266,19 +245,19 @@ fn write_unit_groups(
                 written.undo(mark);
                 continue 'groups;
             }
-            if !cone.of(units, members, i) || !work.add(cone.literals) {
+            if !cone.of(&units, members, i) || !work.add(cone.literals) {
                 written.undo(mark);
                 continue 'groups;
             }
             if i.len() == 1 && !cone.inputs.iter().any(|x| written.bit_of.contains_key(x)) {
                 continue;
             }
-            if !units.draws_alone(readers, &cone.inputs) {
+            if !units.draws_alone(&readers, &cone.inputs) {
                 written.undo(mark);
                 continue 'groups;
             }
             let limit = (WORK_PER_LITERAL * cone.literals + WORK_FLOOR).min(work.left());
-            let leaves = cone.rows(units, limit, work);
+            let leaves = cone.rows(&units, limit, &mut work);
             if work.left() == 0 {
                 written.undo(mark);
                 break 'groups;
@@ -294,7 +273,7 @@ fn write_unit_groups(
         }
     }
     if written.values.is_empty() {
-        return None;
+        return 0;
     }
     let mut replaced = vec![false; n];
     for u in &written.units {
@@ -302,7 +281,7 @@ fn write_unit_groups(
             replaced[a as usize] = true;
         }
     }
-    Some((written, replaced))
+    written.finish(gp, &replaced)
 }
 
 /// The candidates of `gp`: for each atom of `bit` and `start` that two
@@ -373,7 +352,28 @@ fn co_read(
         set.push(a as AtomId);
         set.sort_unstable();
         // The codes these rules read: some atom read both ways.
-        if !reads_both_signs(gp, rs, &set, &mut signs, work)? {
+        if !work.add(rs.len() + set.len()) {
+            return None;
+        }
+        for &x in &set {
+            signs[x as usize] = 0;
+        }
+        for (k, &r) in rs.iter().enumerate() {
+            if k > 0 && rs[k - 1] == r {
+                continue;
+            }
+            let body = &gp.rules[r as usize].body;
+            if !work.add(body.len()) {
+                return None;
+            }
+            for l in body {
+                let x = l.atom() as usize;
+                if set.binary_search(&l.atom()).is_ok() {
+                    signs[x] |= 1 << u8::from(l.is_positive());
+                }
+            }
+        }
+        if !set.iter().any(|&x| signs[x as usize] == 3) {
             continue;
         }
         if any {
@@ -382,16 +382,8 @@ fn co_read(
         found.push((atoms.len(), set.len()));
         atoms.extend_from_slice(&set);
     }
-    Some(select_disjoint_sets(gp.num_atoms(), &atoms, found))
-}
-
-fn select_disjoint_sets(
-    num_atoms: usize,
-    atoms: &[AtomId],
-    mut found: Vec<(usize, usize)>,
-) -> Vec<Vec<AtomId>> {
     found.sort_by_key(|&(_, len)| std::cmp::Reverse(len));
-    let mut taken = vec![false; num_atoms];
+    let mut taken = vec![false; gp.num_atoms()];
     let mut kept = Vec::new();
     for (at, len) in found {
         let c = &atoms[at..at + len];
@@ -403,38 +395,7 @@ fn select_disjoint_sets(
         }
         kept.push(c.to_vec());
     }
-    kept
-}
-
-fn reads_both_signs(
-    gp: &GroundProgram,
-    rs: &[u32],
-    set: &[AtomId],
-    signs: &mut [u8],
-    work: &mut Work,
-) -> Option<bool> {
-    if !work.add(rs.len() + set.len()) {
-        return None;
-    }
-    for &x in set {
-        signs[x as usize] = 0;
-    }
-    for (k, &r) in rs.iter().enumerate() {
-        if k > 0 && rs[k - 1] == r {
-            continue;
-        }
-        let body = &gp.rules[r as usize].body;
-        if !work.add(body.len()) {
-            return None;
-        }
-        for l in body {
-            let x = l.atom() as usize;
-            if set.binary_search(&l.atom()).is_ok() {
-                signs[x] |= 1 << u8::from(l.is_positive());
-            }
-        }
-    }
-    Some(set.iter().any(|&x| signs[x as usize] == 3))
+    Some(kept)
 }
 
 /// The units of a program as the module says: the variables, of one bit
@@ -477,7 +438,44 @@ impl<'a> Units<'a> {
                 return None;
             }
             let (owner, class) = classes(gp, readers, sccs, &rank, named, &candidates);
-            let (start, bits_of, is_candidate) = class_bits(n, &owner, &class, &rank, &candidates);
+            // The units' bits: a candidate's, by class, and each other
+            // gate that owns itself, each class's a run of `bits_of` from
+            // `start`. A unit owns a fact of its draw, and has one bit, or
+            // is read as values.
+            let mut is_candidate = vec![false; n];
+            let mut start = vec![0usize; n + 1];
+            for c in &candidates {
+                for &a in c {
+                    is_candidate[a as usize] = true;
+                    start[class[a as usize] as usize + 1] += 1;
+                }
+            }
+            let alone = |a: usize| owner[a] == a as u32 && rank[a] != NONE && !is_candidate[a];
+            for a in 0..n {
+                if alone(a) {
+                    start[class[a] as usize + 1] += 1;
+                }
+            }
+            for c in 0..n {
+                start[c + 1] += start[c];
+            }
+            let mut bits_of = vec![0; start[n]];
+            let mut next = start.clone();
+            let mut place = |a: AtomId| {
+                let c = class[a as usize] as usize;
+                bits_of[next[c]] = a;
+                next[c] += 1;
+            };
+            for c in &candidates {
+                for &a in c {
+                    place(a);
+                }
+            }
+            for a in 0..n {
+                if alone(a) {
+                    place(a as AtomId);
+                }
+            }
             let of = |c: usize| &bits_of[start[c]..start[c + 1]];
             let mut random = vec![false; n];
             for (&c, kind) in class.iter().zip(&gp.kinds) {
@@ -520,7 +518,27 @@ impl<'a> Units<'a> {
                 .collect();
             pairs.sort_unstable();
             let members = Members::new(pairs);
-            let (is_bit, view) = unit_views(gp, by_head, &rank, &bits);
+            // The views, in dependency order.
+            let mut is_bit = vec![false; n];
+            for i in bits.values() {
+                for &a in i {
+                    is_bit[a as usize] = true;
+                }
+            }
+            let mut gates: Vec<AtomId> = (0..n as AtomId)
+                .filter(|&a| rank[a as usize] != NONE)
+                .collect();
+            gates.sort_unstable_by_key(|&a| rank[a as usize]);
+            let mut view = vec![false; n];
+            for a in gates {
+                view[a as usize] = !is_bit[a as usize]
+                    && by_head[a as usize].iter().all(|&ri| {
+                        gp.rules[ri].body.iter().all(|l| {
+                            let y = l.atom() as usize;
+                            is_bit[y] || view[y]
+                        })
+                    });
+            }
             return Some(Units {
                 gp,
                 by_head,
@@ -533,87 +551,7 @@ impl<'a> Units<'a> {
             });
         }
     }
-}
 
-/// The units' bits: a candidate's, by class, and each other gate that owns
-/// itself, each class's a run of `bits_of` from `start`. A unit owns a fact
-/// of its draw, and has one bit, or is read as values.
-fn class_bits(
-    n: usize,
-    owner: &[u32],
-    class: &[u32],
-    rank: &[u32],
-    candidates: &[Vec<AtomId>],
-) -> (Vec<usize>, Vec<AtomId>, Vec<bool>) {
-    let mut is_candidate = vec![false; n];
-    let mut start = vec![0usize; n + 1];
-    for c in candidates {
-        for &a in c {
-            is_candidate[a as usize] = true;
-            start[class[a as usize] as usize + 1] += 1;
-        }
-    }
-    let alone = |a: usize| owner[a] == a as u32 && rank[a] != NONE && !is_candidate[a];
-    for a in 0..n {
-        if alone(a) {
-            start[class[a] as usize + 1] += 1;
-        }
-    }
-    for c in 0..n {
-        start[c + 1] += start[c];
-    }
-    let mut bits_of = vec![0; start[n]];
-    let mut next = start.clone();
-    let mut place = |a: AtomId| {
-        let c = class[a as usize] as usize;
-        bits_of[next[c]] = a;
-        next[c] += 1;
-    };
-    for c in candidates {
-        for &a in c {
-            place(a);
-        }
-    }
-    for a in 0..n {
-        if alone(a) {
-            place(a as AtomId);
-        }
-    }
-    (start, bits_of, is_candidate)
-}
-
-/// The views, in dependency order.
-fn unit_views(
-    gp: &GroundProgram,
-    by_head: &Lists<usize>,
-    rank: &[u32],
-    bits: &FxHashMap<u32, Vec<AtomId>>,
-) -> (Vec<bool>, Vec<bool>) {
-    let n = gp.num_atoms();
-    let mut is_bit = vec![false; n];
-    for i in bits.values() {
-        for &a in i {
-            is_bit[a as usize] = true;
-        }
-    }
-    let mut gates: Vec<AtomId> = (0..n as AtomId)
-        .filter(|&a| rank[a as usize] != NONE)
-        .collect();
-    gates.sort_unstable_by_key(|&a| rank[a as usize]);
-    let mut view = vec![false; n];
-    for a in gates {
-        view[a as usize] = !is_bit[a as usize]
-            && by_head[a as usize].iter().all(|&ri| {
-                gp.rules[ri].body.iter().all(|l| {
-                    let y = l.atom() as usize;
-                    is_bit[y] || view[y]
-                })
-            });
-    }
-    (is_bit, view)
-}
-
-impl Units<'_> {
     fn is_gate(&self, a: AtomId) -> bool {
         self.rank[a as usize] != NONE
     }
@@ -1458,9 +1396,43 @@ impl Written {
         leaves: &[Leaf],
         limit: usize,
     ) -> bool {
-        let Some(rows) = self.expand_leaf_rows(inputs, leaves, limit) else {
-            return false;
-        };
+        // Each row's contexts, read through the written units' values.
+        let mut rows: Vec<(Vec<GLit>, &Distribution)> = Vec::new();
+        let mut size = 0;
+        for leaf in leaves {
+            let literals: Vec<GLit> = leaf
+                .cube
+                .iter()
+                .map(|&(x, v)| GLit::new(inputs[x as usize], v))
+                .collect();
+            let Some((kept, values)) = self.read(&literals) else {
+                continue;
+            };
+            let mut bodies: Vec<Vec<GLit>> = vec![kept];
+            for matching in values {
+                if bodies.len() * matching.len() > limit {
+                    return false;
+                }
+                bodies = bodies
+                    .iter()
+                    .flat_map(|b| {
+                        matching.iter().map(move |&v| {
+                            let mut b = b.clone();
+                            b.push(GLit::Pos(v));
+                            b
+                        })
+                    })
+                    .collect();
+            }
+            let k = leaf.dist.len();
+            for body in bodies {
+                size += k * body.len() + k * (k + 1) / 2;
+                rows.push((body, &leaf.dist));
+            }
+            if size > limit {
+                return false;
+            }
+        }
         let mut codes: Vec<u32> = rows
             .iter()
             .flat_map(|(_, d)| d.iter().map(|&(c, _)| c))
@@ -1513,53 +1485,6 @@ impl Written {
         self.units.push(u);
         self.values.push((codes, values));
         true
-    }
-
-    /// Each row's contexts, read through the written units' values, where
-    /// they hold at most `limit` literals.
-    fn expand_leaf_rows<'a>(
-        &self,
-        inputs: &[AtomId],
-        leaves: &'a [Leaf],
-        limit: usize,
-    ) -> Option<Vec<(Vec<GLit>, &'a Distribution)>> {
-        let mut rows: Vec<(Vec<GLit>, &Distribution)> = Vec::new();
-        let mut size = 0;
-        for leaf in leaves {
-            let literals: Vec<GLit> = leaf
-                .cube
-                .iter()
-                .map(|&(x, v)| GLit::new(inputs[x as usize], v))
-                .collect();
-            let Some((kept, values)) = self.read(&literals) else {
-                continue;
-            };
-            let mut bodies: Vec<Vec<GLit>> = vec![kept];
-            for matching in values {
-                if bodies.len() * matching.len() > limit {
-                    return None;
-                }
-                bodies = bodies
-                    .iter()
-                    .flat_map(|b| {
-                        matching.iter().map(move |&v| {
-                            let mut b = b.clone();
-                            b.push(GLit::Pos(v));
-                            b
-                        })
-                    })
-                    .collect();
-            }
-            let k = leaf.dist.len();
-            for body in bodies {
-                size += k * body.len() + k * (k + 1) / 2;
-                rows.push((body, &leaf.dist));
-            }
-            if size > limit {
-                return None;
-            }
-        }
-        Some(rows)
     }
 
     /// `gp` with the rules of the atoms `replaced` replaced by the rows

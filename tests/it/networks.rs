@@ -49,26 +49,8 @@ fn written(path: &str) -> Vec<String> {
 
 #[test]
 fn a_network_reads_as_the_program_beside_it() {
-    for (path, queries, evidence, rescale, program) in uai_reading_cases()
-        .into_iter()
-        .chain(bayesian_network_reading_cases())
-    {
-        let read = read(path, queries, evidence, rescale);
-        let got: Vec<&str> = read.lines().collect();
-        assert_eq!(got, written(program), "{path} against {program}");
-    }
-}
-
-type ReadingCase = (
-    &'static str,
-    Queries,
-    Option<&'static str>,
-    bool,
-    &'static str,
-);
-
-fn uai_reading_cases() -> [ReadingCase; 6] {
-    [
+    let named = |names: &[&str]| Queries::Named(names.iter().map(|n| n.to_string()).collect());
+    let cases: [(&str, Queries, Option<&str>, bool, &str); 12] = [
         (
             "tests/regress/markov.uai",
             Queries::All,
@@ -105,19 +87,6 @@ fn uai_reading_cases() -> [ReadingCase; 6] {
             "tests/regress/potts.pl",
         ),
         (
-            "tests/networks/chain.uai",
-            Queries::Leaves,
-            None,
-            false,
-            "tests/networks/chain.pl",
-        ),
-    ]
-}
-
-fn bayesian_network_reading_cases() -> [ReadingCase; 6] {
-    let named = |names: &[&str]| Queries::Named(names.iter().map(|n| n.to_string()).collect());
-    [
-        (
             "examples/cancer.net",
             Queries::Leaves,
             None,
@@ -153,13 +122,25 @@ fn bayesian_network_reading_cases() -> [ReadingCase; 6] {
             "tests/networks/percent.pl",
         ),
         (
+            "tests/networks/chain.uai",
+            Queries::Leaves,
+            None,
+            false,
+            "tests/networks/chain.pl",
+        ),
+        (
             "tests/networks/noisy.xdsl",
             Queries::All,
             None,
             false,
             "tests/networks/noisy.pl",
         ),
-    ]
+    ];
+    for (path, queries, evidence, rescale, program) in cases {
+        let read = read(path, queries, evidence, rescale);
+        let got: Vec<&str> = read.lines().collect();
+        assert_eq!(got, written(program), "{path} against {program}");
+    }
 }
 
 /// What tddlog answers is the part of a network's program that its queries
@@ -356,10 +337,6 @@ fn a_network_answers_as_problog_and_enumeration_do() {
         ("either(no)", 0.69630537),
     ];
     assert_close("asia.net", &answers(&out, "P(e)").0, &asia, 1e-7);
-    assert_network_fixture_queries();
-}
-
-fn assert_network_fixture_queries() {
     // ProbLog's answers on the programs of tests/networks/, one query at
     // a time.
     for (args, expected) in [

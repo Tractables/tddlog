@@ -475,135 +475,6 @@ impl Sweep {
 pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     let derived = gp.num_derived();
     let n = gp.atoms.len();
-    let by_head = &structure.by_head;
-    let (gates, gate, kept, in_set) = candidate_gates(gp, structure);
-    if !may_merge(gp, by_head, &gates, &gate, &kept) {
-        return false;
-    }
-    let (swept, mut g, mut sweep) = init_sweep_state(gp, structure, &gates, &in_set);
-    // Each atom's literal in the graph, built when first read; the atom
-    // literal each node stands for, its first gate's or input's; and its
-    // first gate's, where that is not the first atom: a bit that a switch
-    // sets and every step after carries unchanged is that switch's literal,
-    // which the gates are not merged into, and each step's copy of the bit
-    // is merged into the first (dice_pmc2 written as recursion: 854 of its
-    // 915 gates left were such copies).
-    let mut lit: Vec<Lit> = vec![NO; n];
-    let mut owner: Vec<Option<GLit>> = vec![None];
-    let mut first_gate: Vec<Option<GLit>> = vec![None];
-    // The literal each node is proved equal to, [`NO`] where none: a
-    // later gate built as the node is merged as the gate the sweep merged,
-    // where the sweep takes it.
-    let mut proved: Vec<Lit> = vec![NO];
-    // The literal each atom is merged into, and the value of each atom
-    // proved constant.
-    let mut into: Vec<GLit> = (0..n as AtomId).map(GLit::Pos).collect();
-    let mut fixed: Vec<Option<bool>> = vec![None; n];
-    let (mut body, mut terms) = (Vec::new(), Vec::new());
-    let mut merged = 0;
-    for &a in &gates {
-        let mut l = build_gate_lit(
-            (gp, by_head),
-            a,
-            (&gate, &swept),
-            &mut g,
-            &mut sweep,
-            (&mut lit, &mut owner),
-            (&mut body, &mut terms),
-        );
-        owner.resize(g.fanins.len(), None);
-        first_gate.resize(g.fanins.len(), None);
-        proved.resize(g.fanins.len(), NO);
-        if proved[node(l)] != NO && swept[a as usize] {
-            l = proved[node(l)] ^ (l & 1);
-        }
-        lit[a as usize] = l;
-        if !kept[a as usize]
-            && let Some(equal) = merge_gate(
-                a,
-                l,
-                (&gate, &swept),
-                (&owner, &first_gate),
-                &mut g,
-                &mut sweep,
-                (&mut proved, &mut lit),
-            )
-        {
-            match equal {
-                Ok(o) => into[a as usize] = o,
-                Err(v) => fixed[a as usize] = Some(v),
-            }
-            merged += 1;
-            continue;
-        }
-        record_gate_node_owner(
-            (a, l, swept[a as usize]),
-            &g,
-            &mut sweep,
-            (&mut owner, &mut first_gate),
-        );
-    }
-    if let Some(sweep) = sweep {
-        gp.stats.swept.add(sweep.stats);
-    }
-    if merged == 0 {
-        return false;
-    }
-    apply_aig_merges(gp, derived, merged, &into, &fixed);
-    true
-}
-
-fn apply_aig_merges(
-    gp: &mut GroundProgram,
-    derived: usize,
-    merged: usize,
-    into: &[GLit],
-    fixed: &[Option<bool>],
-) {
-    rewrite(gp, into, fixed);
-    restrict_to_relevant(gp);
-    gp.stats.merged += merged;
-    gp.stats.reduced += derived.saturating_sub(gp.num_derived());
-}
-
-fn record_gate_node_owner(
-    (a, l, is_swept): (AtomId, Lit, bool),
-    g: &Graph,
-    sweep: &mut Option<Sweep>,
-    (owner, first_gate): (&mut [Option<GLit>], &mut [Option<GLit>]),
-) {
-    if node(l) != 0 && owner[node(l)].is_none() {
-        owner[node(l)] = Some(GLit::new(a, l & 1 == 0));
-        if let Some(sweep) = sweep.as_mut().filter(|_| is_swept) {
-            sweep.add(g, node(l));
-        }
-    }
-    if node(l) != 0 && first_gate[node(l)].is_none() {
-        first_gate[node(l)] = Some(GLit::new(a, l & 1 == 0));
-    }
-}
-
-fn init_sweep_state(
-    gp: &GroundProgram,
-    structure: &Structure,
-    gates: &[AtomId],
-    in_set: &[bool],
-) -> (Vec<bool>, Graph, Option<Sweep>) {
-    let swept = swept_atoms(gp, structure, in_set);
-    let sweeping = gates.iter().any(|&a| swept[a as usize]);
-    let g = Graph::new(if sweeping { WORDS } else { 0 });
-    let sweep = sweeping.then(|| {
-        let literals: u64 = gp.rules.iter().map(|r| r.body.len() as u64).sum();
-        Sweep::new(&g, literals)
-    });
-    (swept, g, sweep)
-}
-
-fn candidate_gates(
-    gp: &GroundProgram,
-    structure: &Structure,
-) -> (Vec<AtomId>, Vec<bool>, Vec<bool>, Vec<bool>) {
-    let n = gp.atoms.len();
     let mut kept = vec![false; n];
     for a in gp.named_atoms() {
         kept[a as usize] = true;
@@ -628,43 +499,134 @@ fn candidate_gates(
     for &a in &gates {
         gate[a as usize] = true;
     }
-    (gates, gate, kept, in_set)
-}
-
-fn build_gate_lit(
-    (gp, by_head): (&GroundProgram, &RulesByHead),
-    a: AtomId,
-    (gate, swept): (&[bool], &[bool]),
-    g: &mut Graph,
-    sweep: &mut Option<Sweep>,
-    (lit, owner): (&mut [Lit], &mut Vec<Option<GLit>>),
-    (body, terms): (&mut Vec<Lit>, &mut Vec<Lit>),
-) -> Lit {
-    terms.clear();
-    for &ri in &by_head[a as usize] {
-        body.clear();
-        for &l in &gp.rules[ri].body {
-            let x = l.atom() as usize;
-            if lit[x] == NO {
-                // An input, or false.
-                debug_assert!(!gate[x], "gate {x} read before it is built");
-                lit[x] = if gp.kinds[x] == AtomKind::Derived && by_head[x].is_empty() {
-                    FALSE
-                } else {
-                    let i = g.input();
-                    owner.resize(g.fanins.len(), None);
-                    owner[node(i)] = Some(GLit::Pos(x as AtomId));
-                    if let Some(sweep) = sweep.as_mut().filter(|_| swept[x]) {
-                        sweep.add(g, node(i));
-                    }
-                    i
-                };
-            }
-            body.push(lit[x] ^ Lit::from(!l.is_positive()));
-        }
-        terms.push(g.and_all(body) ^ 1);
+    if !may_merge(gp, by_head, &gates, &gate, &kept) {
+        return false;
     }
-    g.and_all(terms) ^ 1
+    let swept = swept_atoms(gp, structure, &in_set);
+    let sweeping = gates.iter().any(|&a| swept[a as usize]);
+    let mut g = Graph::new(if sweeping { WORDS } else { 0 });
+    let mut sweep = sweeping.then(|| {
+        let literals: u64 = gp.rules.iter().map(|r| r.body.len() as u64).sum();
+        Sweep::new(&g, literals)
+    });
+    // Each atom's literal in the graph, built when first read; the atom
+    // literal each node stands for, its first gate's or input's; and its
+    // first gate's, where that is not the first atom: a bit that a switch
+    // sets and every step after carries unchanged is that switch's literal,
+    // which the gates are not merged into, and each step's copy of the bit
+    // is merged into the first (dice_pmc2 written as recursion: 854 of its
+    // 915 gates left were such copies).
+    let mut lit: Vec<Lit> = vec![NO; n];
+    let mut owner: Vec<Option<GLit>> = vec![None];
+    let mut first_gate: Vec<Option<GLit>> = vec![None];
+    // The literal each node is proved equal to, [`NO`] where none: a
+    // later gate built as the node is merged as the gate the sweep merged,
+    // where the sweep takes it.
+    let mut proved: Vec<Lit> = vec![NO];
+    // The literal each atom is merged into, and the value of each atom
+    // proved constant.
+    let mut into: Vec<GLit> = (0..n as AtomId).map(GLit::Pos).collect();
+    let mut fixed: Vec<Option<bool>> = vec![None; n];
+    let (mut body, mut terms) = (Vec::new(), Vec::new());
+    let mut merged = 0;
+    for &a in &gates {
+        terms.clear();
+        for &ri in &by_head[a as usize] {
+            body.clear();
+            for &l in &gp.rules[ri].body {
+                let x = l.atom() as usize;
+                if lit[x] == NO {
+                    // An input, or false.
+                    debug_assert!(!gate[x], "gate {x} read before it is built");
+                    lit[x] = if gp.kinds[x] == AtomKind::Derived && by_head[x].is_empty() {
+                        FALSE
+                    } else {
+                        let i = g.input();
+                        owner.resize(g.fanins.len(), None);
+                        owner[node(i)] = Some(GLit::Pos(x as AtomId));
+                        if let Some(sweep) = sweep.as_mut().filter(|_| swept[x]) {
+                            sweep.add(&g, node(i));
+                        }
+                        i
+                    };
+                }
+                body.push(lit[x] ^ Lit::from(!l.is_positive()));
+            }
+            terms.push(g.and_all(&mut body) ^ 1);
+        }
+        let mut l = g.and_all(&mut terms) ^ 1;
+        owner.resize(g.fanins.len(), None);
+        first_gate.resize(g.fanins.len(), None);
+        proved.resize(g.fanins.len(), NO);
+        if proved[node(l)] != NO && swept[a as usize] {
+            l = proved[node(l)] ^ (l & 1);
+        }
+        lit[a as usize] = l;
+        // The atom literal the gate is equal to: the node's first atom,
+        // where its graph literal is the gate's or its complement, or the
+        // constant.
+        let as_atom = |t: Lit, owner: &[Option<GLit>]| -> Option<GLit> {
+            owner[node(t)].map(|o| if t & 1 == 0 { o } else { o.negated() })
+        };
+        if !kept[a as usize] {
+            let structural = if node(l) == 0 {
+                (l == FALSE || swept[a as usize]).then_some(Err(l == TRUE))
+            } else {
+                // A copy of an earlier gate is merged whatever it is,
+                // also where an input stands for the node; its
+                // complement, or an input, only where the sweep would
+                // merge them.
+                as_atom(l, &owner)
+                    .filter(|o| {
+                        (o.is_positive() && gate[o.atom() as usize])
+                            || (swept[a as usize] && swept[o.atom() as usize])
+                    })
+                    .or_else(|| as_atom(l, &first_gate).filter(|o| o.is_positive()))
+                    .map(Ok)
+            };
+            let equal = structural.or_else(|| {
+                let sweep = sweep.as_mut().filter(|_| swept[a as usize])?;
+                let t = sweep.find(&mut g, l)?;
+                proved.resize(g.fanins.len(), NO);
+                proved[node(l)] = t ^ (l & 1);
+                lit[a as usize] = t;
+                Some(if node(t) == 0 {
+                    Err(t == TRUE)
+                } else {
+                    Ok(as_atom(t, &owner).expect("a candidate stands for an atom"))
+                })
+            });
+            match equal {
+                Some(Ok(o)) => into[a as usize] = o,
+                Some(Err(v)) => fixed[a as usize] = Some(v),
+                None => {}
+            }
+            if equal.is_some() {
+                merged += 1;
+                continue;
+            }
+        }
+        if node(l) != 0 && owner[node(l)].is_none() {
+            owner[node(l)] = Some(GLit::new(a, l & 1 == 0));
+            if let Some(sweep) = sweep.as_mut().filter(|_| swept[a as usize]) {
+                sweep.add(&g, node(l));
+            }
+        }
+        if node(l) != 0 && first_gate[node(l)].is_none() {
+            first_gate[node(l)] = Some(GLit::new(a, l & 1 == 0));
+        }
+    }
+    if let Some(sweep) = sweep {
+        gp.stats.swept.add(sweep.stats);
+    }
+    if merged == 0 {
+        return false;
+    }
+    rewrite(gp, &into, &fixed);
+    restrict_to_relevant(gp);
+    gp.stats.merged += merged;
+    gp.stats.reduced += derived.saturating_sub(gp.num_derived());
+    true
 }
 
 /// The atoms the sweep takes: alone in their predicates (a fact by its
@@ -687,50 +649,6 @@ fn swept_atoms(gp: &GroundProgram, structure: &Structure, in_set: &[bool]) -> Ve
                 }
         })
         .collect()
-}
-
-fn merge_gate(
-    a: AtomId,
-    l: Lit,
-    (gate, swept): (&[bool], &[bool]),
-    (owner, first_gate): (&[Option<GLit>], &[Option<GLit>]),
-    g: &mut Graph,
-    sweep: &mut Option<Sweep>,
-    (proved, lit): (&mut Vec<Lit>, &mut [Lit]),
-) -> Option<Result<GLit, bool>> {
-    // The atom literal the gate is equal to: the node's first atom,
-    // where its graph literal is the gate's or its complement, or the
-    // constant.
-    let as_atom = |t: Lit, owner: &[Option<GLit>]| -> Option<GLit> {
-        owner[node(t)].map(|o| if t & 1 == 0 { o } else { o.negated() })
-    };
-    let structural = if node(l) == 0 {
-        (l == FALSE || swept[a as usize]).then_some(Err(l == TRUE))
-    } else {
-        // A copy of an earlier gate is merged whatever it is,
-        // also where an input stands for the node; its
-        // complement, or an input, only where the sweep would
-        // merge them.
-        as_atom(l, owner)
-            .filter(|o| {
-                (o.is_positive() && gate[o.atom() as usize])
-                    || (swept[a as usize] && swept[o.atom() as usize])
-            })
-            .or_else(|| as_atom(l, first_gate).filter(|o| o.is_positive()))
-            .map(Ok)
-    };
-    structural.or_else(|| {
-        let sweep = sweep.as_mut().filter(|_| swept[a as usize])?;
-        let t = sweep.find(g, l)?;
-        proved.resize(g.fanins.len(), NO);
-        proved[node(l)] = t ^ (l & 1);
-        lit[a as usize] = t;
-        Some(if node(t) == 0 {
-            Err(t == TRUE)
-        } else {
-            Ok(as_atom(t, owner).expect("a candidate stands for an atom"))
-        })
-    })
 }
 
 /// Whether a gate that is not `kept` has the signature of a constant, or

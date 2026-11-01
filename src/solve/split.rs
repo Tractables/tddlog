@@ -200,10 +200,26 @@ fn query_groups(gp: &GroundProgram) -> Option<Groups> {
             component[a as usize] = c as u32;
         }
     }
+    // Marks every atom reachable from `from` through rule bodies, `from`
+    // included.
+    let reach = |from: &mut Vec<AtomId>, marked: &mut [bool]| {
+        while let Some(a) = from.pop() {
+            if std::mem::replace(&mut marked[a as usize], true) {
+                continue;
+            }
+            for &ri in &by_head[a as usize] {
+                from.extend(
+                    gp.rules[ri]
+                        .body
+                        .iter()
+                        .map(|l| l.atom())
+                        .filter(|&b| !marked[b as usize]),
+                );
+            }
+        }
+    };
     let mut evidence = vec![false; n];
-    reach_atoms(
-        gp,
-        &by_head,
+    reach(
         &mut gp.evidence.iter().filter_map(|&(_, id, _)| id).collect(),
         &mut evidence,
     );
@@ -224,7 +240,7 @@ fn query_groups(gp: &GroundProgram) -> Option<Groups> {
             );
         }
     }
-    reach_atoms(gp, &by_head, &mut from, &mut below);
+    reach(&mut from, &mut below);
     // The heads, by component (a fact's own atom), in query order.
     let mut heads: Vec<Vec<AtomId>> = Vec::new();
     let mut group_of_head = rustc_hash::FxHashMap::default();
@@ -247,45 +263,12 @@ fn query_groups(gp: &GroundProgram) -> Option<Groups> {
     if heads.len() < 2 || heads.len() > MAX_GROUPS {
         return None;
     }
-    Some(assign_queries_to_groups(gp, &by_head, heads, &evidence))
-}
-
-/// Marks every atom reachable from `from` through rule bodies, `from`
-/// included.
-fn reach_atoms(
-    gp: &GroundProgram,
-    by_head: &crate::ground::RulesByHead,
-    from: &mut Vec<AtomId>,
-    marked: &mut [bool],
-) {
-    while let Some(a) = from.pop() {
-        if std::mem::replace(&mut marked[a as usize], true) {
-            continue;
-        }
-        for &ri in &by_head[a as usize] {
-            from.extend(
-                gp.rules[ri]
-                    .body
-                    .iter()
-                    .map(|l| l.atom())
-                    .filter(|&b| !marked[b as usize]),
-            );
-        }
-    }
-}
-
-fn assign_queries_to_groups(
-    gp: &GroundProgram,
-    by_head: &crate::ground::RulesByHead,
-    heads: Vec<Vec<AtomId>>,
-    evidence: &[bool],
-) -> Groups {
     let mut groups = vec![Vec::new(); heads.len()];
     let mut reached = Vec::with_capacity(heads.len());
     let mut placed = vec![false; gp.queries.len()];
     for (g, mut head) in heads.into_iter().enumerate() {
-        let mut part = evidence.to_vec();
-        reach_atoms(gp, by_head, &mut head, &mut part);
+        let mut part = evidence.clone();
+        reach(&mut head, &mut part);
         for (i, &(_, id, _)) in gp.queries.iter().enumerate() {
             if !placed[i]
                 && id.is_some_and(|q| part[q as usize] && (g == 0 || !evidence[q as usize]))
@@ -301,5 +284,5 @@ fn assign_queries_to_groups(
             groups[0].push(i);
         }
     }
-    (groups, reached)
+    Some((groups, reached))
 }

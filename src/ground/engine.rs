@@ -221,6 +221,7 @@ impl ArithFn {
     fn apply(self, args: &[Num]) -> Option<Num> {
         use ArithFn::*;
         use Num::{F, I};
+        let float = |f: fn(f64) -> f64| Some(F(f(args[0].float())));
         // Python's floor division and modulo, which round towards minus
         // infinity, the modulo taking the divisor's sign.
         let floor_div = |x: i64, y: i64| {
@@ -239,6 +240,7 @@ impl ArithFn {
                 r
             })
         };
+        let to_int = |x: f64| (x.is_finite() && x.abs() < 9.2e18).then_some(I(x as i64));
         match (self, args) {
             (Add, &[I(x), I(y)]) => x.checked_add(y).map(I),
             (Sub, &[I(x), I(y)]) => x.checked_sub(y).map(I),
@@ -260,6 +262,19 @@ impl ArithFn {
                 u32::try_from(y).ok().and_then(|y| x.checked_pow(y)).map(I)
             }
             (Pow, &[x, y]) => Some(F(x.float().powf(y.float()))),
+            (Neg, &[I(x)]) => x.checked_neg().map(I),
+            (Neg, &[F(x)]) => Some(F(-x)),
+            (Plus, &[x]) => Some(x),
+            (Abs, &[I(x)]) => x.checked_abs().map(I),
+            (Abs, &[F(x)]) => Some(F(x.abs())),
+            (Sign, &[I(x)]) => Some(I(x.signum())),
+            (Sign, &[F(x)]) => Some(F(if x > 0.0 {
+                1.0
+            } else if x < 0.0 {
+                -1.0
+            } else {
+                x
+            })),
             // Python's `min` and `max` return the first of equal values.
             (Min, &[x, y]) => Some(if y.float() < x.float() { y } else { x }),
             (Max, &[x, y]) => Some(if y.float() > x.float() { y } else { x }),
@@ -268,47 +283,24 @@ impl ArithFn {
             (Xor, &[I(x), I(y)]) => Some(I(x ^ y)),
             (Shl, &[I(x), I(y)]) => u32::try_from(y).ok().and_then(|y| x.checked_shl(y)).map(I),
             (Shr, &[I(x), I(y)]) => u32::try_from(y).ok().map(|y| I(x >> y.min(63))),
+            (BitNot, &[I(x)]) => Some(I(!x)),
+            (Float, &[x]) => Some(F(x.float())),
+            (Floor | Ceiling | Truncate, &[I(x)]) => Some(I(x)),
+            (Floor, &[F(x)]) => to_int(x.floor()),
+            (Ceiling, &[F(x)]) => to_int(x.ceil()),
+            (Truncate, &[F(x)]) => to_int(x.trunc()),
+            (FractionalPart, &[I(_)]) => Some(I(0)),
+            (FractionalPart, &[F(x)]) => Some(F(x - x.trunc())),
+            (Sqrt, &[x]) => (x.float() >= 0.0).then(|| F(x.float().sqrt())),
+            (Exp, _) => float(f64::exp),
+            (Log, &[x]) => (x.float() > 0.0).then(|| F(x.float().ln())),
+            (Sin, _) => float(f64::sin),
+            (Cos, _) => float(f64::cos),
+            (Tan, _) => float(f64::tan),
+            (Asin, _) => float(f64::asin),
+            (Acos, _) => float(f64::acos),
+            (Atan, _) => float(f64::atan),
             (Atan2, &[y, x]) => Some(F(y.float().atan2(x.float()))),
-            (_, &[x]) => self.apply_unary(x),
-            _ => None,
-        }
-    }
-
-    fn apply_unary(self, arg: Num) -> Option<Num> {
-        use ArithFn::*;
-        use Num::{F, I};
-        let to_int = |x: f64| (x.is_finite() && x.abs() < 9.2e18).then_some(I(x as i64));
-        match (self, arg) {
-            (Neg, I(x)) => x.checked_neg().map(I),
-            (Neg, F(x)) => Some(F(-x)),
-            (Plus, x) => Some(x),
-            (Abs, I(x)) => x.checked_abs().map(I),
-            (Abs, F(x)) => Some(F(x.abs())),
-            (Sign, I(x)) => Some(I(x.signum())),
-            (Sign, F(x)) => Some(F(if x > 0.0 {
-                1.0
-            } else if x < 0.0 {
-                -1.0
-            } else {
-                x
-            })),
-            (BitNot, I(x)) => Some(I(!x)),
-            (Float, x) => Some(F(x.float())),
-            (Floor | Ceiling | Truncate, I(x)) => Some(I(x)),
-            (Floor, F(x)) => to_int(x.floor()),
-            (Ceiling, F(x)) => to_int(x.ceil()),
-            (Truncate, F(x)) => to_int(x.trunc()),
-            (FractionalPart, I(_)) => Some(I(0)),
-            (FractionalPart, F(x)) => Some(F(x - x.trunc())),
-            (Sqrt, x) => (x.float() >= 0.0).then(|| F(x.float().sqrt())),
-            (Exp, x) => Some(F(x.float().exp())),
-            (Log, x) => (x.float() > 0.0).then(|| F(x.float().ln())),
-            (Sin, x) => Some(F(x.float().sin())),
-            (Cos, x) => Some(F(x.float().cos())),
-            (Tan, x) => Some(F(x.float().tan())),
-            (Asin, x) => Some(F(x.float().asin())),
-            (Acos, x) => Some(F(x.float().acos())),
-            (Atan, x) => Some(F(x.float().atan())),
             _ => None,
         }
     }
@@ -1190,14 +1182,74 @@ fn compile_rule<'a>(
     let ordered = schedule_rule(clause, |i| known[i].is_some_and(|(_, switch)| switch))?;
     let mut body: Vec<ILit> = Vec::with_capacity(ordered.len());
     for &i in &ordered {
-        body.push(compile_body_lit(
-            g,
-            clause,
-            &clause.body[i],
-            known[i],
-            &mut vars,
-            &var_of,
-        )?);
+        match &clause.body[i] {
+            Literal::Pos(a) | Literal::Neg(a) => {
+                // A predicate not yet known is no switch: every switch is
+                // registered before the rules are compiled.
+                let (p, switch) =
+                    known[i].unwrap_or_else(|| (g.pred(&a.name, a.args.len(), None), false));
+                let args: Vec<Arg> = a.args.iter().map(|t| var_of(t, &mut vars, g)).collect();
+                body.push(match (matches!(&clause.body[i], Literal::Pos(_)), switch) {
+                    (true, true) => ILit::Switch(p, args),
+                    (true, false) => ILit::Pos(p, args),
+                    (false, true) => ILit::NegSwitch(p, args),
+                    (false, false) => ILit::Neg(p, args),
+                });
+            }
+            // `V = f(A..)`, its arguments flat ([`super::terms`]).
+            Literal::Cmp(CmpOp::Eq, x, y)
+                if x.is_var() && !y.is_ground() && y.as_compound().is_some()
+                    || y.is_var() && !x.is_ground() && x.as_compound().is_some() =>
+            {
+                let (v, t) = if x.is_var() { (x, y) } else { (y, x) };
+                let (name, args) = t.as_compound().expect("a compound side");
+                let target = var_of(v, &mut vars, g);
+                let name = g.syms.intern(name);
+                let args = args.iter().map(|a| var_of(a, &mut vars, g)).collect();
+                body.push(ILit::Build(target, name, args));
+            }
+            Literal::Cmp(op, a, b) if op.arithmetic() => {
+                let a = compile_expr(a, &mut vars, g, &var_of)?;
+                let b = compile_expr(b, &mut vars, g, &var_of)?;
+                body.push(ILit::Cmp(*op, a, b));
+            }
+            Literal::Cmp(op, a, b) => {
+                let a = IExpr::Arg(var_of(a, &mut vars, g));
+                let b = IExpr::Arg(var_of(b, &mut vars, g));
+                body.push(ILit::Cmp(*op, a, b));
+            }
+            Literal::Is(v, e) => {
+                if !v.is_ground() && !v.is_var() {
+                    return Err(GroundError::Unsupported(format!(
+                        "{clause}: the left side of is/2 is a compound term"
+                    )));
+                }
+                let v = var_of(v, &mut vars, g);
+                let e = compile_expr(e, &mut vars, g, &var_of)?;
+                body.push(ILit::Is(v, e));
+            }
+            Literal::Builtin(b, args, negated) => {
+                let args = args.iter().map(|a| var_of(a, &mut vars, g)).collect();
+                body.push(ILit::Builtin(*b, args, *negated));
+            }
+            Literal::Collect(c) => {
+                let aux = g.pred(&c.aux, c.arity, None);
+                let shared = c.shared.iter().map(|a| var_of(a, &mut vars, g)).collect();
+                let result = var_of(&c.result, &mut vars, g);
+                body.push(ILit::Collect(Box::new(ICollect {
+                    aux,
+                    shared,
+                    result,
+                    gather: c.gather,
+                    text: c.text.clone(),
+                })));
+            }
+            Literal::Findall(_) => {
+                return Err(GroundError::Unsupported(format!(
+                    "{clause}: a findall reached the grounder unlowered"
+                )));
+            }
+        }
     }
     let head_args: Vec<Arg> = head_atom
         .args
@@ -1215,81 +1267,6 @@ fn compile_rule<'a>(
         num_vars: vars.len() as u32,
         counted,
     })
-}
-
-fn compile_body_lit<'a>(
-    g: &mut Grounder<'a>,
-    clause: &'a Clause,
-    lit: &'a Literal,
-    known: Option<(u32, bool)>,
-    vars: &mut FxHashMap<String, u32>,
-    var_of: &impl Fn(&Term, &mut FxHashMap<String, u32>, &mut Grounder<'a>) -> Arg,
-) -> Result<ILit, GroundError> {
-    match lit {
-        Literal::Pos(a) | Literal::Neg(a) => {
-            // A predicate not yet known is no switch: every switch is
-            // registered before the rules are compiled.
-            let (p, switch) = known.unwrap_or_else(|| (g.pred(&a.name, a.args.len(), None), false));
-            let args: Vec<Arg> = a.args.iter().map(|t| var_of(t, vars, g)).collect();
-            Ok(match (matches!(lit, Literal::Pos(_)), switch) {
-                (true, true) => ILit::Switch(p, args),
-                (true, false) => ILit::Pos(p, args),
-                (false, true) => ILit::NegSwitch(p, args),
-                (false, false) => ILit::Neg(p, args),
-            })
-        }
-        // `V = f(A..)`, its arguments flat ([`super::terms`]).
-        Literal::Cmp(CmpOp::Eq, x, y)
-            if x.is_var() && !y.is_ground() && y.as_compound().is_some()
-                || y.is_var() && !x.is_ground() && x.as_compound().is_some() =>
-        {
-            let (v, t) = if x.is_var() { (x, y) } else { (y, x) };
-            let (name, args) = t.as_compound().expect("a compound side");
-            let target = var_of(v, vars, g);
-            let name = g.syms.intern(name);
-            let args = args.iter().map(|a| var_of(a, vars, g)).collect();
-            Ok(ILit::Build(target, name, args))
-        }
-        Literal::Cmp(op, a, b) if op.arithmetic() => {
-            let a = compile_expr(a, vars, g, var_of)?;
-            let b = compile_expr(b, vars, g, var_of)?;
-            Ok(ILit::Cmp(*op, a, b))
-        }
-        Literal::Cmp(op, a, b) => {
-            let a = IExpr::Arg(var_of(a, vars, g));
-            let b = IExpr::Arg(var_of(b, vars, g));
-            Ok(ILit::Cmp(*op, a, b))
-        }
-        Literal::Is(v, e) => {
-            if !v.is_ground() && !v.is_var() {
-                return Err(GroundError::Unsupported(format!(
-                    "{clause}: the left side of is/2 is a compound term"
-                )));
-            }
-            let v = var_of(v, vars, g);
-            let e = compile_expr(e, vars, g, var_of)?;
-            Ok(ILit::Is(v, e))
-        }
-        Literal::Builtin(b, args, negated) => {
-            let args = args.iter().map(|a| var_of(a, vars, g)).collect();
-            Ok(ILit::Builtin(*b, args, *negated))
-        }
-        Literal::Collect(c) => {
-            let aux = g.pred(&c.aux, c.arity, None);
-            let shared = c.shared.iter().map(|a| var_of(a, vars, g)).collect();
-            let result = var_of(&c.result, vars, g);
-            Ok(ILit::Collect(Box::new(ICollect {
-                aux,
-                shared,
-                result,
-                gather: c.gather,
-                text: c.text.clone(),
-            })))
-        }
-        Literal::Findall(_) => Err(GroundError::Unsupported(format!(
-            "{clause}: a findall reached the grounder unlowered"
-        ))),
-    }
 }
 
 /// The arithmetic expression `t`: its compound terms are functions.
@@ -1425,7 +1402,15 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             let (items, _) = g.spine(l, cons);
             items.into_iter().map(|x| vec![x, l]).collect()
         }
-        Builtin::Memberchk => memberchk_solutions(g, vals, cons),
+        Builtin::Memberchk => {
+            let l = vals[1].expect("mode");
+            let (items, _) = g.spine(l, cons);
+            let first = match vals[0] {
+                Some(x) => items.into_iter().find(|&y| y == x),
+                None => items.first().copied(),
+            };
+            first.map_or_else(Vec::new, |x| one(vec![x, l]))
+        }
         Builtin::Append => append_solutions(g, vals, nil, cons),
         Builtin::Length => {
             let l = vals[0].expect("mode");
@@ -1475,7 +1460,17 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         // or one of those from the other and the third.
         Builtin::Plus => plus_solutions(vals),
         // The order of the two terms in the standard order: `<`, `=` or `>`.
-        Builtin::Compare => compare_solutions(g, vals),
+        Builtin::Compare => {
+            let (a, b) = (vals[1].expect("mode"), vals[2].expect("mode"));
+            let (x, y) = (g.term_of(a), g.term_of(b));
+            let order = match term_cmp(&x, &y) {
+                std::cmp::Ordering::Less => "<",
+                std::cmp::Ordering::Equal => "=",
+                std::cmp::Ordering::Greater => ">",
+            };
+            let order = Val::Sym(g.syms.intern(&Name::from(order)));
+            one(vec![order, a, b])
+        }
         Builtin::IsList => {
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |_| one(vec![l]))
@@ -1489,28 +1484,6 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         // The test before a call of a goal that is a variable.
         Builtin::Callable => callable_solutions(g, vals),
     }
-}
-
-fn memberchk_solutions(g: &Grounder, vals: &[Option<Val>], cons: u32) -> Vec<Vec<Val>> {
-    let l = vals[1].expect("mode");
-    let (items, _) = g.spine(l, cons);
-    let first = match vals[0] {
-        Some(x) => items.into_iter().find(|&y| y == x),
-        None => items.first().copied(),
-    };
-    first.map_or_else(Vec::new, |x| vec![vec![x, l]])
-}
-
-fn compare_solutions(g: &mut Grounder, vals: &[Option<Val>]) -> Vec<Vec<Val>> {
-    let (a, b) = (vals[1].expect("mode"), vals[2].expect("mode"));
-    let (x, y) = (g.term_of(a), g.term_of(b));
-    let order = match term_cmp(&x, &y) {
-        std::cmp::Ordering::Less => "<",
-        std::cmp::Ordering::Equal => "=",
-        std::cmp::Ordering::Greater => ">",
-    };
-    let order = Val::Sym(g.syms.intern(&Name::from(order)));
-    vec![vec![order, a, b]]
 }
 
 fn list_builtin_solutions(
@@ -1535,7 +1508,23 @@ fn list_builtin_solutions(
                 })
                 .collect()
         }
-        Builtin::Nth0 | Builtin::Nth1 => nth_solutions(g, b, vals, cons),
+        Builtin::Nth0 | Builtin::Nth1 => {
+            let base = i64::from(b == Builtin::Nth1);
+            let l = vals[1].expect("mode");
+            let (items, _) = g.spine(l, cons);
+            match vals[0] {
+                Some(Val::Int(i)) => usize::try_from(i - base)
+                    .ok()
+                    .and_then(|k| items.get(k))
+                    .map_or_else(Vec::new, |&x| one(vec![Val::Int(i), l, x])),
+                Some(_) => Vec::new(),
+                None => items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(k, x)| vec![Val::Int(k as i64 + base), l, x])
+                    .collect(),
+            }
+        }
         Builtin::Reverse => {
             let l = vals[0].expect("mode");
             g.items(l).map_or_else(Vec::new, |mut items| {
@@ -1563,7 +1552,26 @@ fn list_builtin_solutions(
             let s = g.make_list(&items, nil);
             one(vec![l, s])
         }
-        Builtin::AppendLists => append_lists_solutions(g, vals, nil),
+        // The lists concatenated, the last as the tail, as `append/2`'s
+        // clauses concatenate them.
+        Builtin::AppendLists => {
+            let lists = g.items(vals[0].expect("mode"));
+            let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
+                return match lists {
+                    Some(_) => one(vec![vals[0].expect("mode"), nil]),
+                    None => Vec::new(),
+                };
+            };
+            let mut items = Vec::new();
+            for &l in init {
+                match g.items(l) {
+                    Some(xs) => items.extend(xs),
+                    None => return Vec::new(),
+                }
+            }
+            let joined = g.make_list(&items, last);
+            one(vec![vals[0].expect("mode"), joined])
+        }
         Builtin::Flatten => {
             let l = vals[0].expect("mode");
             flattened(g, l, nil, cons)
@@ -1573,45 +1581,6 @@ fn list_builtin_solutions(
         }
         _ => unreachable!(),
     }
-}
-
-fn nth_solutions(g: &Grounder, b: Builtin, vals: &[Option<Val>], cons: u32) -> Vec<Vec<Val>> {
-    let base = i64::from(b == Builtin::Nth1);
-    let l = vals[1].expect("mode");
-    let (items, _) = g.spine(l, cons);
-    match vals[0] {
-        Some(Val::Int(i)) => usize::try_from(i - base)
-            .ok()
-            .and_then(|k| items.get(k))
-            .map_or_else(Vec::new, |&x| vec![vec![Val::Int(i), l, x]]),
-        Some(_) => Vec::new(),
-        None => items
-            .into_iter()
-            .enumerate()
-            .map(|(k, x)| vec![Val::Int(k as i64 + base), l, x])
-            .collect(),
-    }
-}
-
-/// The lists concatenated, the last as the tail, as `append/2`'s clauses
-/// concatenate them.
-fn append_lists_solutions(g: &mut Grounder, vals: &[Option<Val>], nil: Val) -> Vec<Vec<Val>> {
-    let lists = g.items(vals[0].expect("mode"));
-    let Some((&last, init)) = lists.as_deref().and_then(<[Val]>::split_last) else {
-        return match lists {
-            Some(_) => vec![vec![vals[0].expect("mode"), nil]],
-            None => Vec::new(),
-        };
-    };
-    let mut items = Vec::new();
-    for &l in init {
-        match g.items(l) {
-            Some(xs) => items.extend(xs),
-            None => return Vec::new(),
-        }
-    }
-    let joined = g.make_list(&items, last);
-    vec![vec![vals[0].expect("mode"), joined]]
 }
 
 fn plus_solutions(vals: &[Option<Val>]) -> Vec<Vec<Val>> {
@@ -2302,8 +2271,33 @@ fn assemble_program(
     constants: usize,
     swept: super::aig::SweepStats,
 ) -> Result<GroundProgram, GroundError> {
+    // Assemble the output: the atoms in the order made, those of facts
+    // under a demand as it read them ([`facts_as_read`]). Of a fact's
+    // atoms, only those a rule, a query or the evidence names: no other
+    // reads them, and a database's are mostly read by none (a query of
+    // TPC-H reads a fiftieth of its six million line items).
     let n = g.atoms.len();
-    let order = ordered_named_atoms(&g, norm, &queries, &evidence);
+    let mut named: Vec<bool> = g
+        .atoms
+        .iter()
+        .map(|(p, _)| g.preds[*p as usize].facts.is_none())
+        .collect();
+    for r in &g.ground_rules {
+        named[r.head as usize] = true;
+        for l in &r.body {
+            named[l.atom() as usize] = true;
+        }
+    }
+    for (_, id, _) in queries.iter().chain(&evidence) {
+        if let Some(a) = id {
+            named[*a as usize] = true;
+        }
+    }
+    let order: Vec<AtomId> = match norm.control.is_empty() {
+        true => (0..n as AtomId).collect(),
+        false => facts_as_read(&g),
+    };
+    let order: Vec<AtomId> = order.into_iter().filter(|&a| named[a as usize]).collect();
     let mut gp = GroundProgram::default();
     let m = order.len();
     if gp.atoms.try_reserve_exact(m).is_err() || gp.kinds.try_reserve_exact(m).is_err() {
@@ -2340,45 +2334,7 @@ fn assemble_program(
     gp.stats.levels = keys;
     gp.stats.constants = constants;
     gp.stats.swept.add(swept);
-    renumber_program(&mut gp, &order, n);
-    Ok(gp)
-}
-
-/// The atoms in the order made, those of facts under a demand as it read them
-/// ([`facts_as_read`]). Of a fact's atoms, only those a rule, a query or the
-/// evidence names: no other reads them.
-fn ordered_named_atoms(
-    g: &Grounder,
-    norm: &NormProgram,
-    queries: &[GroundAtomEntry],
-    evidence: &[GroundAtomEntry],
-) -> Vec<AtomId> {
-    let n = g.atoms.len();
-    let mut named: Vec<bool> = g
-        .atoms
-        .iter()
-        .map(|(p, _)| g.preds[*p as usize].facts.is_none())
-        .collect();
-    for r in &g.ground_rules {
-        named[r.head as usize] = true;
-        for l in &r.body {
-            named[l.atom() as usize] = true;
-        }
-    }
-    for (_, id, _) in queries.iter().chain(evidence) {
-        if let Some(a) = id {
-            named[*a as usize] = true;
-        }
-    }
-    let order: Vec<AtomId> = match norm.control.is_empty() {
-        true => (0..n as AtomId).collect(),
-        false => facts_as_read(g),
-    };
-    order.into_iter().filter(|&a| named[a as usize]).collect()
-}
-
-fn renumber_program(gp: &mut GroundProgram, order: &[AtomId], n: usize) {
-    if order.len() < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
+    if m < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
         let mut new = vec![AtomId::MAX; n];
         for (i, &a) in order.iter().enumerate() {
             new[a as usize] = i as AtomId;
@@ -2400,6 +2356,7 @@ fn renumber_program(gp: &mut GroundProgram, order: &[AtomId], n: usize) {
             *id = id.map(new);
         }
     }
+    Ok(gp)
 }
 
 /// The atoms of a program under a demand ([`super::magic`]) in the order
@@ -3524,15 +3481,32 @@ fn take(
             candidates,
             next,
             bound,
-        } => take_tuples(
-            g,
-            rule,
-            i,
-            (candidates, next, bound),
-            subst,
-            trail,
-            body_atoms,
-        ),
+        } => {
+            let ILit::Pos(p, args) = &rule.body[i] else {
+                unreachable!("tuples of a positive literal")
+            };
+            let p = *p as usize;
+            let control = g.preds[p].control;
+            while let Some(&t) = candidates.get(*next) {
+                *next += 1;
+                let rel = &g.rels[p];
+                let tuple = rel.tuple(t);
+                if !bound.iter().all(|(pos, v)| tuple[*pos] == *v) {
+                    continue;
+                }
+                let mark = trail.len();
+                let id = rel.ids[t];
+                let fixed = g.fixed(id);
+                if !unify_args(args, tuple, subst, trail) || fixed == Some(false) {
+                    unbind(subst, trail, mark);
+                    continue;
+                }
+                let lit = (!control && fixed != Some(true)).then_some(GLit::Pos(id));
+                push_body_lit(g, rule, i, lit, body_atoms);
+                return true;
+            }
+            false
+        }
         Alts::Range { lo, next, hi } => {
             let ILit::Builtin(_, args, _) = &rule.body[i] else {
                 unreachable!("the range of between/3")
@@ -3584,41 +3558,6 @@ fn take(
     }
 }
 
-fn take_tuples(
-    g: &mut Grounder,
-    rule: &IRule,
-    i: usize,
-    (candidates, next, bound): (&[usize], &mut usize, &[(usize, Val)]),
-    subst: &mut [Option<Val>],
-    trail: &mut Vec<u32>,
-    body_atoms: &mut Vec<GLit>,
-) -> bool {
-    let ILit::Pos(p, args) = &rule.body[i] else {
-        unreachable!("tuples of a positive literal")
-    };
-    let p = *p as usize;
-    let control = g.preds[p].control;
-    while let Some(&t) = candidates.get(*next) {
-        *next += 1;
-        let rel = &g.rels[p];
-        let tuple = rel.tuple(t);
-        if !bound.iter().all(|(pos, v)| tuple[*pos] == *v) {
-            continue;
-        }
-        let mark = trail.len();
-        let id = rel.ids[t];
-        let fixed = g.fixed(id);
-        if !unify_args(args, tuple, subst, trail) || fixed == Some(false) {
-            unbind(subst, trail, mark);
-            continue;
-        }
-        let lit = (!control && fixed != Some(true)).then_some(GLit::Pos(id));
-        push_body_lit(g, rule, i, lit, body_atoms);
-        return true;
-    }
-    false
-}
-
 /// Takes the one alternative of literal `i` ([`Alts::Once`]), if it has
 /// one. Where it has none the walk unbinds what this bound.
 fn take_once(
@@ -3644,7 +3583,36 @@ fn take_once(
             push_body_lit(g, rule, i, lit, body_atoms);
             true
         }
-        ILit::Neg(p, args) => take_neg_once(g, rule, i, *p, args, subst, body_atoms),
+        ILit::Neg(p, args) => {
+            if g.current_stratum.contains(p) && !g.complete(*p, args, subst) {
+                // Same recursive component: possibility unknown yet.
+                let id = with_resolved(args, subst, |vals| g.placeholder_atom(*p, vals));
+                push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
+                return true;
+            }
+            match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
+                // An atom true in every world: the literal is false. Kept
+                // as a literal, it would not stop a demand, whose rule
+                // drops its body: cplint's left-corner grammar demanded
+                // every derivation of a goal's third clause behind
+                // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
+                Some(id) if g.fixed(id) == Some(true) || g.certain(id) => false,
+                Some(id) if g.fixed(id) == Some(false) => {
+                    push_body_lit(g, rule, i, None, body_atoms);
+                    true
+                }
+                // Possible atom: keep the negative literal.
+                Some(id) => {
+                    push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
+                    true
+                }
+                // Impossible atom: the literal is true.
+                None => {
+                    push_body_lit(g, rule, i, None, body_atoms);
+                    true
+                }
+            }
+        }
         ILit::Switch(p, args) => {
             let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
             push_body_lit(g, rule, i, Some(GLit::Pos(id)), body_atoms);
@@ -3655,7 +3623,28 @@ fn take_once(
             push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
             true
         }
-        ILit::Cmp(op, a, b) => take_cmp(g, *op, a, b, subst, trail),
+        ILit::Cmp(op, a, b) => {
+            let arithmetic = op.arithmetic();
+            match (side(g, a, subst, arithmetic), side(g, b, subst, arithmetic)) {
+                (Some(x), Some(y)) => compare(g, *op, x, y),
+                (None, Some(y)) if *op == CmpOp::Eq => match a.as_arg() {
+                    Some(Arg::Var(v)) => {
+                        bind(subst, trail, *v, y);
+                        true
+                    }
+                    _ => false,
+                },
+                (Some(x), None) if *op == CmpOp::Eq => match b.as_arg() {
+                    Some(Arg::Var(v)) => {
+                        bind(subst, trail, *v, x);
+                        true
+                    }
+                    _ => false,
+                },
+                // Undefined arithmetic (or an unbound side) fails the literal.
+                _ => false,
+            }
+        }
         ILit::Is(v, e) => {
             let Some(x) = eval_num(g, e, subst).map(|n| n.rounded().val()) else {
                 return false;
@@ -3690,74 +3679,5 @@ fn take_once(
         }
         // enter() gives a findall its lists as alternatives (Alts::Lists).
         ILit::Collect(_) => unreachable!("a findall is taken from its lists"),
-    }
-}
-
-fn take_neg_once(
-    g: &mut Grounder,
-    rule: &IRule,
-    i: usize,
-    p: PredId,
-    args: &[Arg],
-    subst: &[Option<Val>],
-    body_atoms: &mut Vec<GLit>,
-) -> bool {
-    if g.current_stratum.contains(&p) && !g.complete(p, args, subst) {
-        // Same recursive component: possibility unknown yet.
-        let id = with_resolved(args, subst, |vals| g.placeholder_atom(p, vals));
-        push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
-        return true;
-    }
-    match with_resolved(args, subst, |vals| g.lookup_atom(p, vals)) {
-        // An atom true in every world: the literal is false. Kept
-        // as a literal, it would not stop a demand, whose rule
-        // drops its body: cplint's left-corner grammar demanded
-        // every derivation of a goal's third clause behind
-        // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
-        Some(id) if g.fixed(id) == Some(true) || g.certain(id) => false,
-        Some(id) if g.fixed(id) == Some(false) => {
-            push_body_lit(g, rule, i, None, body_atoms);
-            true
-        }
-        // Possible atom: keep the negative literal.
-        Some(id) => {
-            push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
-            true
-        }
-        // Impossible atom: the literal is true.
-        None => {
-            push_body_lit(g, rule, i, None, body_atoms);
-            true
-        }
-    }
-}
-
-fn take_cmp(
-    g: &mut Grounder,
-    op: CmpOp,
-    a: &IExpr,
-    b: &IExpr,
-    subst: &mut [Option<Val>],
-    trail: &mut Vec<u32>,
-) -> bool {
-    let arithmetic = op.arithmetic();
-    match (side(g, a, subst, arithmetic), side(g, b, subst, arithmetic)) {
-        (Some(x), Some(y)) => compare(g, op, x, y),
-        (None, Some(y)) if op == CmpOp::Eq => match a.as_arg() {
-            Some(Arg::Var(v)) => {
-                bind(subst, trail, *v, y);
-                true
-            }
-            _ => false,
-        },
-        (Some(x), None) if op == CmpOp::Eq => match b.as_arg() {
-            Some(Arg::Var(v)) => {
-                bind(subst, trail, *v, x);
-                true
-            }
-            _ => false,
-        },
-        // Undefined arithmetic (or an unbound side) fails the literal.
-        _ => false,
     }
 }

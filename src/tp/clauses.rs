@@ -466,19 +466,6 @@ impl Factoring<'_> {
             }
             lits.push(u32::MAX);
         }
-        let siblings = self.encode_sibling_slots(&facts, &scratch.var_rank);
-        Some((
-            ClauseKey {
-                vars: held.len(),
-                lits,
-                seeds: self.seeds,
-                siblings,
-            },
-            slots,
-        ))
-    }
-
-    fn encode_sibling_slots(&self, facts: &[tididi::Literal], var_rank: &[u32]) -> Vec<u32> {
         let mut siblings = Vec::new();
         if self.seeds {
             let mut read: Vec<(u32, u32)> = facts
@@ -486,7 +473,7 @@ impl Factoring<'_> {
                 .filter(|f| self.sibling_of[f.var.0 as usize] != u32::MAX)
                 .map(|f| {
                     (
-                        var_rank[f.var.0 as usize],
+                        scratch.var_rank[f.var.0 as usize],
                         self.sibling_of[f.var.0 as usize],
                     )
                 })
@@ -500,7 +487,15 @@ impl Factoring<'_> {
                 siblings.push(*place.entry(group).or_insert(next));
             }
         }
-        siblings
+        Some((
+            ClauseKey {
+                vars: held.len(),
+                lits,
+                seeds: self.seeds,
+                siblings,
+            },
+            slots,
+        ))
     }
 
     /// The sibling groups (`Encoding::siblings`) of which the bodies
@@ -761,8 +756,47 @@ impl Factoring<'_> {
         scope: &VtreeScope,
         acc: &mut Option<Tdd>,
     ) -> Result<Option<Tdd>, CompileError> {
-        let (vars, cubes, local_groups, size, left_out) =
-            self.localize_level_cubes(bodies, groups, exclusive);
+        let mut taken = exclusive.clone();
+        let mut left_out = 0;
+        let cubes: Vec<Vec<tididi::Literal>> = bodies
+            .iter()
+            .map(|body| {
+                let mut lits = Vec::with_capacity(body.len());
+                lits.extend(body.iter().filter_map(|&l| self.fact_literal(l)));
+                left_out += taken.leave_out(&mut lits);
+                taken.take_pair(&lits);
+                lits
+            })
+            .collect();
+        let size = cubes.iter().map(Vec::len).sum::<usize>()
+            + groups.iter().map(|(g, _)| g.len()).sum::<usize>();
+        // The cubes and groups over the variables they read, the k-th
+        // of them local variable k + 1.
+        let (vars, cubes, local_groups) = {
+            let mut scratch = self.scratch.borrow_mut();
+            let vars = scratch.ranked(
+                cubes
+                    .iter()
+                    .flatten()
+                    .chain(groups.iter().flat_map(|(g, _)| g))
+                    .map(|l| l.var),
+                |i, _| i as u32 + 1,
+            );
+            let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
+            let cubes: Vec<Vec<tididi::Literal>> = cubes
+                .iter()
+                .map(|c| {
+                    c.iter()
+                        .map(|l| tididi::Literal::new(local(l.var), l.sign))
+                        .collect()
+                })
+                .collect();
+            let local_groups: Vec<(Vec<VarId>, bool)> = groups
+                .iter()
+                .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
+                .collect();
+            (vars, cubes, local_groups)
+        };
         // A table's link ([`super::rows`]) is the set of its models,
         // built in one pass where there are no more of them than
         // literals in its bodies and groups. A link of more spreads the
@@ -809,53 +843,6 @@ impl Factoring<'_> {
         }
         memo.stats.fell_back += 1;
         Ok(None)
-    }
-
-    fn localize_level_cubes(
-        &self,
-        bodies: &[Vec<GLit>],
-        groups: &[AtMostOne],
-        exclusive: &Exclusive,
-    ) -> LocalizedLevel {
-        let mut taken = exclusive.clone();
-        let mut left_out = 0;
-        let cubes: Vec<Vec<tididi::Literal>> = bodies
-            .iter()
-            .map(|body| {
-                let mut lits = Vec::with_capacity(body.len());
-                lits.extend(body.iter().filter_map(|&l| self.fact_literal(l)));
-                left_out += taken.leave_out(&mut lits);
-                taken.take_pair(&lits);
-                lits
-            })
-            .collect();
-        let size = cubes.iter().map(Vec::len).sum::<usize>()
-            + groups.iter().map(|(g, _)| g.len()).sum::<usize>();
-        // The cubes and groups over the variables they read, the k-th
-        // of them local variable k + 1.
-        let mut scratch = self.scratch.borrow_mut();
-        let vars = scratch.ranked(
-            cubes
-                .iter()
-                .flatten()
-                .chain(groups.iter().flat_map(|(g, _)| g))
-                .map(|l| l.var),
-            |i, _| i as u32 + 1,
-        );
-        let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
-        let cubes: Vec<Vec<tididi::Literal>> = cubes
-            .iter()
-            .map(|c| {
-                c.iter()
-                    .map(|l| tididi::Literal::new(local(l.var), l.sign))
-                    .collect()
-            })
-            .collect();
-        let local_groups: Vec<(Vec<VarId>, bool)> = groups
-            .iter()
-            .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
-            .collect();
-        (vars, cubes, local_groups, size, left_out)
     }
 
     /// `start ∧ ⋀_r ¬body_r` on `scope`, conjoined into `start` a body at a
@@ -985,7 +972,14 @@ impl Factoring<'_> {
             if let &[l] = body.as_slice()
                 && self.fact_literal(l).is_none()
             {
-                if self.and_single_derived(l, scope, &mut at, &mut run)? {
+                (self.count)(Op::And, std::mem::take(&mut run));
+                let nb = (self.part)(l.negated(), 1, scope)?;
+                let mut f = self.and_term(at.acc.take(), nb, scope)?;
+                at.settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
+                f.0 = (self.watched)(f.0, self.head)?;
+                let zero = self.backend.is_zero(&f.0);
+                at.acc = Some(f);
+                if zero {
                     break;
                 }
                 continue;
@@ -1003,7 +997,15 @@ impl Factoring<'_> {
             let f = match (conj, split) {
                 (_, Some((a, b))) => {
                     (self.count)(Op::And, std::mem::take(&mut run));
-                    self.and_split_clause(formula, a, b, &fact_lits, scope, &mut at)?
+                    // A split is made only against a formula other than true.
+                    let formula = self.formula(formula, scope);
+                    let mut acc = (
+                        self.or_route(scope, formula, a, b, &fact_lits)?,
+                        scope.clone(),
+                    );
+                    at.settled_nodes = self.backend.nodes(&acc.0);
+                    acc.0 = (self.watched)(acc.0, self.head)?;
+                    acc
                 }
                 (None, None) => {
                     self.and_fact_clause(formula, &fact_lits, scope, &mut at, &mut run)?
@@ -1021,43 +1023,6 @@ impl Factoring<'_> {
         (self.count)(Op::And, run);
         let acc = self.formula(at.acc, scope);
         self.placed(acc, scope)
-    }
-
-    fn and_split_clause(
-        &mut self,
-        formula: Option<Formula>,
-        a: Part,
-        b: Part,
-        fact_lits: &[tididi::Literal],
-        scope: &VtreeScope,
-        at: &mut Loop,
-    ) -> Result<Formula, CompileError> {
-        // A split is made only against a formula other than true.
-        let formula = self.formula(formula, scope);
-        let mut acc = (
-            self.or_route(scope, formula, a, b, fact_lits)?,
-            scope.clone(),
-        );
-        at.settled_nodes = self.backend.nodes(&acc.0);
-        acc.0 = (self.watched)(acc.0, self.head)?;
-        Ok(acc)
-    }
-
-    fn and_single_derived(
-        &mut self,
-        l: GLit,
-        scope: &VtreeScope,
-        at: &mut Loop,
-        run: &mut usize,
-    ) -> Result<bool, CompileError> {
-        (self.count)(Op::And, std::mem::take(run));
-        let nb = (self.part)(l.negated(), 1, scope)?;
-        let mut f = self.and_term(at.acc.take(), nb, scope)?;
-        at.settled_nodes = placed_count(self.backend.nodes(&f.0), &f.1, scope);
-        f.0 = (self.watched)(f.0, self.head)?;
-        let zero = self.backend.is_zero(&f.0);
-        at.acc = Some(f);
-        Ok(zero)
     }
 
     fn and_derived_clause(
@@ -1209,10 +1174,3 @@ impl Factoring<'_> {
 }
 
 type BodyParts = (Vec<tididi::Literal>, Option<Part>, Option<(Part, Part)>);
-type LocalizedLevel = (
-    Vec<VarId>,
-    Vec<Vec<tididi::Literal>>,
-    Vec<(Vec<VarId>, bool)>,
-    usize,
-    usize,
-);

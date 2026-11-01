@@ -602,10 +602,39 @@ impl<'a> Parser<'a> {
 
     fn id_atom(&mut self, name: &'a str, line: usize) -> Res<Kind<'a>> {
         let kind = match name {
-            "flip" | "discrete" | "uniform" | "binomial" => self.dist_atom(name)?,
+            "flip" => {
+                if self.at(Tk::Op, "(") {
+                    self.take();
+                    let p = self.float()?;
+                    self.op(")")?;
+                    Kind::Flip(p)
+                } else {
+                    Kind::Flip(self.float()?)
+                }
+            }
+            "discrete" => {
+                self.op("(")?;
+                let mut ps = vec![self.float()?];
+                while self.at(Tk::Op, ",") {
+                    self.take();
+                    ps.push(self.float()?);
+                }
+                self.op(")")?;
+                Kind::Discrete(ps)
+            }
             "int" => {
                 let (w, k) = self.int_pair()?;
                 Kind::Int(w, k)
+            }
+            "uniform" => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let lo = self.integer()?;
+                self.op(",")?;
+                let hi = self.integer()?;
+                self.op(")")?;
+                Kind::Uniform(w, lo, hi)
             }
             "iterate" => {
                 self.op("(")?;
@@ -616,6 +645,16 @@ impl<'a> Parser<'a> {
                 let k = self.integer()?;
                 self.op(")")?;
                 Kind::Iterate(f, Box::new(init), k)
+            }
+            "binomial" => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let n = self.integer()?;
+                self.op(",")?;
+                let p = self.float()?;
+                self.op(")")?;
+                Kind::Binomial(w, n, p)
             }
             "nth_bit" => {
                 self.op("(")?;
@@ -641,72 +680,24 @@ impl<'a> Parser<'a> {
             name if UNSUPPORTED.contains(&name) => {
                 return Err(fail(line, format!("Dice's `{name}` is not supported")));
             }
-            name => self.call_or_var(name)?,
-        };
-        Ok(kind)
-    }
-
-    fn dist_atom(&mut self, name: &'a str) -> Res<Kind<'a>> {
-        let kind = match name {
-            "flip" => {
+            name => {
                 if self.at(Tk::Op, "(") {
                     self.take();
-                    let p = self.float()?;
+                    let mut args = Vec::new();
+                    while !self.at(Tk::Op, ")") {
+                        args.push(self.expr(0)?);
+                        if self.at(Tk::Op, ",") {
+                            self.take();
+                        }
+                    }
                     self.op(")")?;
-                    Kind::Flip(p)
+                    Kind::Call(name, args)
                 } else {
-                    Kind::Flip(self.float()?)
+                    Kind::Var(name)
                 }
-            }
-            "discrete" => {
-                self.op("(")?;
-                let mut ps = vec![self.float()?];
-                while self.at(Tk::Op, ",") {
-                    self.take();
-                    ps.push(self.float()?);
-                }
-                self.op(")")?;
-                Kind::Discrete(ps)
-            }
-            "uniform" => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let lo = self.integer()?;
-                self.op(",")?;
-                let hi = self.integer()?;
-                self.op(")")?;
-                Kind::Uniform(w, lo, hi)
-            }
-            _ => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let n = self.integer()?;
-                self.op(",")?;
-                let p = self.float()?;
-                self.op(")")?;
-                Kind::Binomial(w, n, p)
             }
         };
         Ok(kind)
-    }
-
-    fn call_or_var(&mut self, name: &'a str) -> Res<Kind<'a>> {
-        if self.at(Tk::Op, "(") {
-            self.take();
-            let mut args = Vec::new();
-            while !self.at(Tk::Op, ")") {
-                args.push(self.expr(0)?);
-                if self.at(Tk::Op, ",") {
-                    self.take();
-                }
-            }
-            self.op(")")?;
-            Ok(Kind::Call(name, args))
-        } else {
-            Ok(Kind::Var(name))
-        }
     }
 }
 
@@ -1866,9 +1857,37 @@ impl<'a> Translator<'a> {
             },
             &Kind::Binomial(width, n, p) => self.binomial(width, n, p, name, line),
             &Kind::NthBit(width, i, ref x) => {
-                self.eval_nth_bit((width, i), x, env, path, name, line)
+                let v = self.eval(x, env, path, name)?;
+                let x = self.integer(&v, name, line)?;
+                if x.width != width || i >= width {
+                    return Err(fail(
+                        line,
+                        format!(
+                            "nth_bit(int({width}, {i}), x): x has {} bits, bit {i} of {width} is asked",
+                            x.width
+                        ),
+                    ));
+                }
+                Ok(Value::Bool(x.bits[(width - 1 - i) as usize].clone()))
             }
-            Kind::List(items) => self.eval_list(items, env, path, name, line),
+            Kind::List(items) => {
+                if items.len() > LIST_LENGTH {
+                    return Err(fail(
+                        line,
+                        format!(
+                            "a list of {} elements: Dice's lists hold at most {LIST_LENGTH}",
+                            items.len()
+                        ),
+                    ));
+                }
+                let mut elems = Vec::new();
+                for (k, x) in items.iter().enumerate() {
+                    elems.push(self.eval(x, env, path, &format!("{name}_{}", k + 1))?);
+                }
+                let n = self.constant(items.len() as u64, list_width(), line)?;
+                let t = type_of(&elems[0]);
+                self.list(n, elems, &t, name, line)
+            }
             Kind::Nil(t) => match t {
                 Type::List(_) => self.default(Some(t), name, line),
                 _ => Err(fail(
@@ -1904,55 +1923,6 @@ impl<'a> Translator<'a> {
                 self.iterate(f, init, *k, path, name, line)
             }
         }
-    }
-
-    fn eval_nth_bit(
-        &mut self,
-        (width, i): (u64, u64),
-        x: &'a Expr<'a>,
-        env: &Env<'a>,
-        path: &[Lit],
-        name: &str,
-        line: usize,
-    ) -> Res<Value> {
-        let v = self.eval(x, env, path, name)?;
-        let x = self.integer(&v, name, line)?;
-        if x.width != width || i >= width {
-            return Err(fail(
-                line,
-                format!(
-                    "nth_bit(int({width}, {i}), x): x has {} bits, bit {i} of {width} is asked",
-                    x.width
-                ),
-            ));
-        }
-        Ok(Value::Bool(x.bits[(width - 1 - i) as usize].clone()))
-    }
-
-    fn eval_list(
-        &mut self,
-        items: &'a [Expr<'a>],
-        env: &Env<'a>,
-        path: &[Lit],
-        name: &str,
-        line: usize,
-    ) -> Res<Value> {
-        if items.len() > LIST_LENGTH {
-            return Err(fail(
-                line,
-                format!(
-                    "a list of {} elements: Dice's lists hold at most {LIST_LENGTH}",
-                    items.len()
-                ),
-            ));
-        }
-        let mut elems = Vec::new();
-        for (k, x) in items.iter().enumerate() {
-            elems.push(self.eval(x, env, path, &format!("{name}_{}", k + 1))?);
-        }
-        let n = self.constant(items.len() as u64, list_width(), line)?;
-        let t = type_of(&elems[0]);
-        self.list(n, elems, &t, name, line)
     }
 
     fn uniform(&mut self, width: u64, lo: u64, hi: u64, name: &str, line: usize) -> Res<Value> {

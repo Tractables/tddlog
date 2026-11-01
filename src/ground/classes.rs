@@ -315,21 +315,6 @@ fn classes_of(
         };
         groups[g].1.push(row);
     }
-    let (classes, stochastic) = pack_groups_into_classes(rows, tables, groups, most, selectors)?;
-    (stochastic
-        && (classes.len() <= few
-            || (spines && (OWN_VALUE_FROM..=MOST_SELECTORS).contains(&classes.len()))))
-    .then_some(classes)
-}
-
-/// Packs `groups` into at most `most` classes of pairwise-clashing rows.
-fn pack_groups_into_classes(
-    rows: &Rows,
-    tables: &mut Tables,
-    groups: Vec<(bool, Vec<usize>)>,
-    most: usize,
-    selectors: &mut Vec<AtomId>,
-) -> Option<(Vec<Vec<usize>>, bool)> {
     // Each group makes a class at least, so the table is given up once
     // the classes made and the groups left come to the bound.
     let mut classes: Vec<Vec<usize>> = Vec::new();
@@ -361,7 +346,10 @@ fn pack_groups_into_classes(
             }
         }
     }
-    Some((classes, stochastic))
+    (stochastic
+        && (classes.len() <= few
+            || (spines && (OWN_VALUE_FROM..=MOST_SELECTORS).contains(&classes.len()))))
+    .then_some(classes)
 }
 
 /// `gp` with the rows of each table of `rewrite` read through their
@@ -434,17 +422,6 @@ fn rewrite_rows(
             }
         }
     }
-    apply_class_rewrites(gp, n, fresh, before_atom, before_rule, &dropped);
-}
-
-fn apply_class_rewrites(
-    gp: &mut GroundProgram,
-    n: usize,
-    fresh: AtomId,
-    mut before_atom: FxHashMap<AtomId, Vec<Atom>>,
-    before_rule: FxHashMap<usize, Vec<GroundRule>>,
-    dropped: &[bool],
-) {
     // Renumber: the atoms in order with the class atoms placed, the fresh
     // ids in the order they were handed out.
     let mut order = Vec::with_capacity(fresh as usize);
@@ -458,7 +435,7 @@ fn apply_class_rewrites(
         }
         order.push(a);
     }
-    gp.splice_rules(before_rule, dropped);
+    gp.splice_rules(before_rule, &dropped);
     simplify::renumber(gp, &order);
     simplify::compact(gp);
 }
@@ -610,111 +587,18 @@ fn signature(
     role_ids: &mut FxHashMap<Role, u32>,
     scratch: &mut SignatureScratch,
 ) -> Option<bool> {
-    collect_switch_reads(gp, row_rules, own, t, scratch);
-    intern_switch_roles(gp, role_ids, scratch);
-    let SignatureScratch {
-        slot,
-        of_row,
-        reads,
-        ids,
-        numbers,
-        switches,
-        rules,
-        signature,
-        ..
-    } = scratch;
-    numbers.clear();
-    numbers.extend_from_slice(ids);
-    numbers.sort_unstable();
-    let distinct = numbers.windows(2).all(|w| w[0] != w[1]);
-    switches.clear();
-    rules.clear();
-    if distinct {
-        for &ri in row_rules {
-            let r = &gp.rules[ri];
-            let start = switches.len();
-            switches.extend(
-                r.body
-                    .iter()
-                    .filter(|l| own[l.atom() as usize] == t)
-                    .map(|l| (l.is_positive(), ids[slot[l.atom() as usize] as usize])),
-            );
-            switches[start..].sort_unstable();
-            rules.push((r.head, start, switches.len()));
-        }
-    }
-    for &s in of_row.iter() {
-        slot[s as usize] = u32::MAX;
-    }
-    if !distinct {
-        return None;
-    }
-    rules.sort_unstable_by(|x, y| (x.0, &switches[x.1..x.2]).cmp(&(y.0, &switches[y.1..y.2])));
-    signature.clear();
-    for &(head, start, end) in rules.iter() {
-        signature.push(u64::from(head));
-        signature.push((end - start) as u64);
-        signature.extend(
-            switches[start..end]
-                .iter()
-                .map(|&(positive, id)| u64::from(id) << 1 | u64::from(positive)),
-        );
-    }
-    Some(!reads.is_empty())
-}
-
-/// Each switch's literals, sorted, are its role. Two switches have one role
-/// exactly when they get one number.
-fn intern_switch_roles(
-    gp: &GroundProgram,
-    role_ids: &mut FxHashMap<Role, u32>,
-    scratch: &mut SignatureScratch,
-) {
-    let SignatureScratch {
-        of_row,
-        reads,
-        read_start,
-        role,
-        ids,
-        ..
-    } = scratch;
-    ids.clear();
-    for (k, &s) in of_row.iter().enumerate() {
-        let AtomKind::Fact(p) = gp.kinds[s as usize] else {
-            unreachable!("a table's own atom is a fact")
-        };
-        let run = &mut reads[read_start[k]..read_start[k + 1]];
-        run.sort_unstable();
-        role.clear();
-        role.push(p.p.to_bits());
-        role.push(p.not.to_bits());
-        role.extend_from_slice(run);
-        let id = match role_ids.get(role.as_slice()) {
-            Some(&id) => id,
-            None => {
-                let id = role_ids.len() as u32;
-                role_ids.insert(role.clone(), id);
-                id
-            }
-        };
-        ids.push(id);
-    }
-}
-
-fn collect_switch_reads(
-    gp: &GroundProgram,
-    row_rules: &[usize],
-    own: &[usize],
-    t: usize,
-    scratch: &mut SignatureScratch,
-) {
     let SignatureScratch {
         slot,
         of_row,
         reads,
         read_start,
         at,
-        ..
+        role,
+        ids,
+        numbers,
+        switches,
+        rules,
+        signature,
     } = scratch;
     if slot.len() < gp.num_atoms() {
         slot.resize(gp.num_atoms(), u32::MAX);
@@ -754,4 +638,65 @@ fn collect_switch_reads(
             at[k] += 1;
         }
     }
+    // Each switch's literals, sorted, are its role. Two switches have one
+    // role exactly when they get one number.
+    ids.clear();
+    for (k, &s) in of_row.iter().enumerate() {
+        let AtomKind::Fact(p) = gp.kinds[s as usize] else {
+            unreachable!("a table's own atom is a fact")
+        };
+        let run = &mut reads[read_start[k]..read_start[k + 1]];
+        run.sort_unstable();
+        role.clear();
+        role.push(p.p.to_bits());
+        role.push(p.not.to_bits());
+        role.extend_from_slice(run);
+        let id = match role_ids.get(role.as_slice()) {
+            Some(&id) => id,
+            None => {
+                let id = role_ids.len() as u32;
+                role_ids.insert(role.clone(), id);
+                id
+            }
+        };
+        ids.push(id);
+    }
+    numbers.clear();
+    numbers.extend_from_slice(ids);
+    numbers.sort_unstable();
+    let distinct = numbers.windows(2).all(|w| w[0] != w[1]);
+    switches.clear();
+    rules.clear();
+    if distinct {
+        for &ri in row_rules {
+            let r = &gp.rules[ri];
+            let start = switches.len();
+            switches.extend(
+                r.body
+                    .iter()
+                    .filter(|l| own[l.atom() as usize] == t)
+                    .map(|l| (l.is_positive(), ids[slot[l.atom() as usize] as usize])),
+            );
+            switches[start..].sort_unstable();
+            rules.push((r.head, start, switches.len()));
+        }
+    }
+    for &s in of_row.iter() {
+        slot[s as usize] = u32::MAX;
+    }
+    if !distinct {
+        return None;
+    }
+    rules.sort_unstable_by(|x, y| (x.0, &switches[x.1..x.2]).cmp(&(y.0, &switches[y.1..y.2])));
+    signature.clear();
+    for &(head, start, end) in rules.iter() {
+        signature.push(u64::from(head));
+        signature.push((end - start) as u64);
+        signature.extend(
+            switches[start..end]
+                .iter()
+                .map(|&(positive, id)| u64::from(id) << 1 | u64::from(positive)),
+        );
+    }
+    Some(!reads.is_empty())
 }

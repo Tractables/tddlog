@@ -61,6 +61,10 @@ impl Template {
 /// before (bn_barley's tkv).
 pub(crate) fn templates(gp: &GroundProgram, by_head: &RulesByHead) -> FxHashMap<AtomId, Template> {
     let (queried, private) = leaf_and_private_atoms(gp);
+    let probability = |a: AtomId| match gp.kinds[a as usize] {
+        AtomKind::Fact(p) => p,
+        AtomKind::Derived => unreachable!("a private atom is a fact"),
+    };
     let (mut rest, mut own): (Vec<GLit>, Vec<GLit>) = (Vec::new(), Vec::new());
     let (mut claimed, claims, claims_from) =
         claim_templates(gp, by_head, &queried, &private, &mut rest, &mut own);
@@ -123,47 +127,32 @@ pub(crate) fn templates(gp: &GroundProgram, by_head: &RulesByHead) -> FxHashMap<
         if !ok {
             continue;
         }
-        if let Some(weights) = build_template_weights(gp, &cubes, &cube_of, &mut owner) {
-            out.insert(x, Template { atom: y, weights });
+        owner.clear();
+        let disjoint = cube_of.iter().all(|(&t, &(start, end))| {
+            cubes[start..end]
+                .iter()
+                .all(|l| *owner.entry(l.atom()).or_insert(t) == t)
+        });
+        if !disjoint {
+            continue;
         }
+        let mut weights: Vec<(AtomId, Prob)> = cube_of
+            .iter()
+            .map(|(&t, &(start, end))| {
+                (
+                    t,
+                    Prob::cube(
+                        cubes[start..end]
+                            .iter()
+                            .map(|&l| probability(l.atom()).literal(l.is_positive())),
+                    ),
+                )
+            })
+            .collect();
+        weights.sort_unstable_by_key(|&(t, _)| t);
+        out.insert(x, Template { atom: y, weights });
     }
     out
-}
-
-fn build_template_weights(
-    gp: &GroundProgram,
-    cubes: &[GLit],
-    cube_of: &FxHashMap<AtomId, (usize, usize)>,
-    owner: &mut FxHashMap<AtomId, AtomId>,
-) -> Option<Vec<(AtomId, Prob)>> {
-    owner.clear();
-    let disjoint = cube_of.iter().all(|(&t, &(start, end))| {
-        cubes[start..end]
-            .iter()
-            .all(|l| *owner.entry(l.atom()).or_insert(t) == t)
-    });
-    if !disjoint {
-        return None;
-    }
-    let probability = |a: AtomId| match gp.kinds[a as usize] {
-        AtomKind::Fact(p) => p,
-        AtomKind::Derived => unreachable!("a private atom is a fact"),
-    };
-    let mut weights: Vec<(AtomId, Prob)> = cube_of
-        .iter()
-        .map(|(&t, &(start, end))| {
-            (
-                t,
-                Prob::cube(
-                    cubes[start..end]
-                        .iter()
-                        .map(|&l| probability(l.atom()).literal(l.is_positive())),
-                ),
-            )
-        })
-        .collect();
-    weights.sort_unstable_by_key(|&(t, _)| t);
-    Some(weights)
 }
 
 fn leaf_and_private_atoms(gp: &GroundProgram) -> (Vec<AtomId>, Vec<bool>) {

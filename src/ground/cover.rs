@@ -363,30 +363,6 @@ impl Merge {
         // group at a time, so another body is under no merging that
         // reaches the empty body.
         self.node += 1;
-        self.collect_leaves(&group_of);
-        let mut sum = 0.0;
-        for &(start, end, weight) in &self.leaves {
-            let order = &mut self.order[start as usize..end as usize];
-            for (k, _) in order.iter_mut() {
-                *k = key(&self.groups, *k as u32);
-            }
-            order.sort_unstable_by_key(|&(k, _)| k);
-            sum += weight;
-        }
-        // A term weighs no less than a leaf that holds it, so where every
-        // leaf weighs a normal number, every weight the search takes is a
-        // product of normal numbers and close to its value, and so is
-        // their sum. A leaf of over a thousand literals weighs less, and
-        // the search then splits a term whatever its holders weigh.
-        self.weighed = self
-            .leaves
-            .iter()
-            .all(|&(_, _, weight)| weight >= f64::MIN_POSITIVE);
-        let all = self.holders.len();
-        self.derived(0, 0, 0, all, sum, 1.0)
-    }
-
-    fn collect_leaves(&mut self, group_of: &impl Fn(GLit) -> Option<(usize, usize)>) {
         let call = self.node;
         for k in 0..self.bodies.len() {
             let (start, end) = self.bodies[k];
@@ -435,6 +411,26 @@ impl Merge {
             self.leaves
                 .push((at as u32, self.order.len() as u32, weight));
         }
+        let mut sum = 0.0;
+        for &(start, end, weight) in &self.leaves {
+            let order = &mut self.order[start as usize..end as usize];
+            for (k, _) in order.iter_mut() {
+                *k = key(&self.groups, *k as u32);
+            }
+            order.sort_unstable_by_key(|&(k, _)| k);
+            sum += weight;
+        }
+        // A term weighs no less than a leaf that holds it, so where every
+        // leaf weighs a normal number, every weight the search takes is a
+        // product of normal numbers and close to its value, and so is
+        // their sum. A leaf of over a thousand literals weighs less, and
+        // the search then splits a term whatever its holders weigh.
+        self.weighed = self
+            .leaves
+            .iter()
+            .all(|&(_, _, weight)| weight >= f64::MIN_POSITIVE);
+        let all = self.holders.len();
+        self.derived(0, 0, 0, all, sum, 1.0)
     }
 
     /// The term `term` of hash `hash`, if it has been decided.
@@ -587,7 +583,26 @@ impl Merge {
         let size = self.groups[g as usize].size as usize;
         let mut derived = self.members.len() - members == size;
         if derived {
-            let (below, ends) = self.partition_tagged_holders(size);
+            // The holders of each term with one literal more, together and
+            // in the order they were in, and what they weigh.
+            let below = self.holders.len();
+            let ends = self.ends.len();
+            self.ends.resize(ends + size, (0, 0.0));
+            for &(i, h) in &self.tagged {
+                let end = &mut self.ends[ends + i as usize];
+                end.0 += 1;
+                end.1 += self.leaves[h as usize].2;
+            }
+            let mut total = 0;
+            for end in &mut self.ends[ends..] {
+                (end.0, total) = (total, total + end.0);
+            }
+            self.holders.resize(below + self.tagged.len(), 0);
+            for &(i, h) in &self.tagged {
+                let place = &mut self.ends[ends + i as usize].0;
+                self.holders[below + *place as usize] = h;
+                *place += 1;
+            }
             self.groups[g as usize].held = true;
             for i in 0..size {
                 let start = if i == 0 {
@@ -622,30 +637,6 @@ impl Merge {
         }
         self.members.truncate(members);
         derived
-    }
-
-    /// The holders of each term with one literal more, together and in the
-    /// order they were in, and what they weigh.
-    fn partition_tagged_holders(&mut self, size: usize) -> (usize, usize) {
-        let below = self.holders.len();
-        let ends = self.ends.len();
-        self.ends.resize(ends + size, (0, 0.0));
-        for &(i, h) in &self.tagged {
-            let end = &mut self.ends[ends + i as usize];
-            end.0 += 1;
-            end.1 += self.leaves[h as usize].2;
-        }
-        let mut total = 0;
-        for end in &mut self.ends[ends..] {
-            (end.0, total) = (total, total + end.0);
-        }
-        self.holders.resize(below + self.tagged.len(), 0);
-        for &(i, h) in &self.tagged {
-            let place = &mut self.ends[ends + i as usize].0;
-            self.holders[below + *place as usize] = h;
-            *place += 1;
-        }
-        (below, ends)
     }
 }
 
@@ -711,12 +702,47 @@ mod tests {
     /// set of three atoms and the atoms' negations, which are in no group.
     #[test]
     fn the_search_decides_as_merging_from_the_bodies_up() {
+        use std::collections::BTreeSet;
         let groups: [&[GLit]; 4] = [
             &[Pos(0), Neg(0)],
             &[Pos(1), Neg(1)],
             &[Pos(2), Neg(2)],
             &[Pos(3), Pos(4), Pos(5)],
         ];
+        let group = |l: GLit| groups.iter().position(|g| g.contains(&l));
+        let merged = |bodies: &[Vec<GLit>]| -> bool {
+            let mut terms: BTreeSet<Vec<GLit>> = bodies.iter().cloned().collect();
+            loop {
+                let mut more = Vec::new();
+                for t in &terms {
+                    for (k, &l) in t.iter().enumerate() {
+                        let Some(g) = group(l) else { continue };
+                        let rest: Vec<GLit> = t
+                            .iter()
+                            .enumerate()
+                            .filter(|&(j, _)| j != k)
+                            .map(|(_, &m)| m)
+                            .collect();
+                        let with = |m: GLit| {
+                            let mut term = rest.clone();
+                            term.push(m);
+                            term.sort_unstable();
+                            terms.contains(&term)
+                        };
+                        if rest.iter().all(|m| !groups[g].contains(m))
+                            && groups[g].iter().all(|&m| with(m))
+                            && !terms.contains(&rest)
+                        {
+                            more.push(rest);
+                        }
+                    }
+                }
+                if more.is_empty() {
+                    return terms.contains(&Vec::new());
+                }
+                terms.extend(more);
+            }
+        };
         let literals = [
             Pos(0),
             Neg(0),
@@ -757,7 +783,7 @@ mod tests {
             if measure < 1.0 {
                 continue;
             }
-            let expected = merged_reaches_empty_term(&groups, &bodies);
+            let expected = merged(&bodies);
             assert_eq!(valid_of(&refs), expected, "{bodies:?}");
             valid += usize::from(expected);
             cases += 1;
@@ -766,42 +792,6 @@ mod tests {
             valid > 1_000 && valid < 19_000,
             "{valid} of the cases valid"
         );
-    }
-
-    fn merged_reaches_empty_term(groups: &[&[GLit]], bodies: &[Vec<GLit>]) -> bool {
-        use std::collections::BTreeSet;
-        let group = |l: GLit| groups.iter().position(|g| g.contains(&l));
-        let mut terms: BTreeSet<Vec<GLit>> = bodies.iter().cloned().collect();
-        loop {
-            let mut more = Vec::new();
-            for t in &terms {
-                for (k, &l) in t.iter().enumerate() {
-                    let Some(g) = group(l) else { continue };
-                    let rest: Vec<GLit> = t
-                        .iter()
-                        .enumerate()
-                        .filter(|&(j, _)| j != k)
-                        .map(|(_, &m)| m)
-                        .collect();
-                    let with = |m: GLit| {
-                        let mut term = rest.clone();
-                        term.push(m);
-                        term.sort_unstable();
-                        terms.contains(&term)
-                    };
-                    if rest.iter().all(|m| !groups[g].contains(m))
-                        && groups[g].iter().all(|&m| with(m))
-                        && !terms.contains(&rest)
-                    {
-                        more.push(rest);
-                    }
-                }
-            }
-            if more.is_empty() {
-                return terms.contains(&Vec::new());
-            }
-            terms.extend(more);
-        }
     }
 
     /// A chain of 1100 switches: a body for each, true after those before

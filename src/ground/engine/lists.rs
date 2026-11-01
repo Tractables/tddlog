@@ -149,81 +149,73 @@ fn proofs_on(
             key: empty,
             lits: Rc::from([(true, a)]),
         }]),
-        Node::Derived(derivations) => derived_proofs_on(src, a, derivations, what, path)?,
+        Node::Derived(derivations) => {
+            path.push(a);
+            let mut out: Vec<Proof> = Vec::new();
+            for (group, steps) in derivations {
+                let mut partial: Vec<(Vec<u32>, Vec<Lit>)> = vec![(vec![group], Vec::new())];
+                for step in steps {
+                    match step {
+                        Step::Rank(r) => partial.iter_mut().for_each(|(k, _)| k.push(r)),
+                        // A negation is one literal, but of an atom true in
+                        // every world, a proof of no literals, or in none.
+                        Step::Neg(b) => {
+                            let truth = match src.truth(b) {
+                                Some(t) => Some(t),
+                                None => {
+                                    let sub = proofs_on(src, b, what, path)?;
+                                    match sub.iter().any(|p| p.lits.is_empty()) {
+                                        true => Some(true),
+                                        false => sub.is_empty().then_some(false),
+                                    }
+                                }
+                            };
+                            match truth {
+                                Some(true) => partial.clear(),
+                                Some(false) => {}
+                                None => partial.iter_mut().for_each(|(_, l)| l.push((false, b))),
+                            }
+                        }
+                        Step::Pos(b) => {
+                            let sub = proofs_on(src, b, what, path)?;
+                            if partial.len().saturating_mul(sub.len()) > MAX_PROOFS {
+                                path.pop();
+                                return Err(too_many(src, a, what));
+                            }
+                            partial = partial
+                                .iter()
+                                .flat_map(|(k, l)| {
+                                    sub.iter().map(move |p| {
+                                        let mut k = k.clone();
+                                        k.extend_from_slice(&p.key);
+                                        let mut l = l.clone();
+                                        l.extend_from_slice(&p.lits);
+                                        (k, l)
+                                    })
+                                })
+                                .collect();
+                        }
+                    }
+                    if partial.is_empty() {
+                        break;
+                    }
+                }
+                out.extend(partial.into_iter().map(|(k, l)| Proof {
+                    key: Rc::from(k),
+                    lits: Rc::from(l),
+                }));
+                if out.len() > MAX_PROOFS {
+                    path.pop();
+                    return Err(too_many(src, a, what));
+                }
+            }
+            path.pop();
+            out.sort_by(|x, y| x.key.cmp(&y.key));
+            Rc::from(out)
+        }
     };
     src.known().insert(a, out.clone());
     Ok(out)
-}
-
-fn derived_proofs_on(
-    src: &mut impl Source,
-    a: u32,
-    derivations: Vec<(u32, Vec<Step>)>,
-    what: &str,
-    path: &mut Vec<u32>,
-) -> Result<Rc<[Proof]>, GroundError> {
-    path.push(a);
-    let mut out: Vec<Proof> = Vec::new();
-    for (group, steps) in derivations {
-        let mut partial: Vec<(Vec<u32>, Vec<Lit>)> = vec![(vec![group], Vec::new())];
-        for step in steps {
-            match step {
-                Step::Rank(r) => partial.iter_mut().for_each(|(k, _)| k.push(r)),
-                // A negation is one literal, but of an atom true in
-                // every world, a proof of no literals, or in none.
-                Step::Neg(b) => {
-                    let truth = match src.truth(b) {
-                        Some(t) => Some(t),
-                        None => {
-                            let sub = proofs_on(src, b, what, path)?;
-                            match sub.iter().any(|p| p.lits.is_empty()) {
-                                true => Some(true),
-                                false => sub.is_empty().then_some(false),
-                            }
-                        }
-                    };
-                    match truth {
-                        Some(true) => partial.clear(),
-                        Some(false) => {}
-                        None => partial.iter_mut().for_each(|(_, l)| l.push((false, b))),
-                    }
-                }
-                Step::Pos(b) => {
-                    let sub = proofs_on(src, b, what, path)?;
-                    if partial.len().saturating_mul(sub.len()) > MAX_PROOFS {
-                        path.pop();
-                        return Err(too_many(src, a, what));
-                    }
-                    partial = partial
-                        .iter()
-                        .flat_map(|(k, l)| {
-                            sub.iter().map(move |p| {
-                                let mut k = k.clone();
-                                k.extend_from_slice(&p.key);
-                                let mut l = l.clone();
-                                l.extend_from_slice(&p.lits);
-                                (k, l)
-                            })
-                        })
-                        .collect();
-                }
-            }
-            if partial.is_empty() {
-                break;
-            }
-        }
-        out.extend(partial.into_iter().map(|(k, l)| Proof {
-            key: Rc::from(k),
-            lits: Rc::from(l),
-        }));
-        if out.len() > MAX_PROOFS {
-            path.pop();
-            return Err(too_many(src, a, what));
-        }
-    }
-    path.pop();
-    out.sort_by(|x, y| x.key.cmp(&y.key));
-    Ok(Rc::from(out))
 }
 
 fn too_many(src: &mut impl Source, a: u32, what: &str) -> GroundError {
@@ -270,12 +262,6 @@ pub(super) fn collect(
 /// `gather` says whether each is a solution once, by its atom, as all/3
 /// and all_or_none/3 list them, and whether the empty list is one. `what`
 /// names the findall, for an error.
-/// A place: the list so far and the formulas decided that come again.
-type Place = (Vec<Val>, Vec<(usize, bool)>);
-/// A state: the list so far, the formulas decided that come again, and the
-/// literal of the worlds it is in.
-type State = (Vec<Val>, Vec<(usize, bool)>, Option<Lit>);
-
 fn lists(
     src: &mut impl Source,
     found: Vec<(Val, Proof)>,
@@ -284,6 +270,11 @@ fn lists(
 ) -> Result<Vec<Listed>, GroundError> {
     let (found, of, last) = rank_and_number_formulas(found, gather.once());
     let mut holds: Vec<Option<Lit>> = vec![None; last.len()];
+    // Each state: the list so far, the formulas decided that come again,
+    // and the literal of the worlds it is in.
+    // A place: the list so far and the formulas decided that come again.
+    type Place = (Vec<Val>, Vec<(usize, bool)>);
+    type State = (Vec<Val>, Vec<(usize, bool)>, Option<Lit>);
     let mut states: Vec<State> = vec![(Vec::new(), Vec::new(), None)];
     for (i, ((value, proof), f)) in found.into_iter().zip(of).enumerate() {
         let Some(f) = f else {
@@ -307,77 +298,68 @@ fn lists(
                 l
             }
         };
-        states = step_states(src, states, (value, f, l, last[f] > i), what)?;
+        let again = last[f] > i;
+        // The states reached, each with its ways in.
+        let mut reached: Vec<(Place, Vec<Vec<Lit>>)> = Vec::new();
+        let mut at: FxHashMap<Place, usize> = FxHashMap::default();
+        for (items, mut decided, cond) in states {
+            let known = decided.iter().position(|&(g, _)| g == f);
+            let choices: Vec<(bool, Option<Lit>)> = match known {
+                Some(k) => {
+                    let d = decided[k].1;
+                    if !again {
+                        decided.remove(k);
+                    }
+                    vec![(d, None)]
+                }
+                None => vec![(true, Some(l)), (false, Some((!l.0, l.1)))],
+            };
+            for (d, lit) in choices {
+                let mut items = items.clone();
+                if d {
+                    items.push(value);
+                }
+                let mut decided = decided.clone();
+                if known.is_none() && again {
+                    decided.push((f, d));
+                }
+                let body: Vec<Lit> = cond.into_iter().chain(lit).collect();
+                let key = (items, decided);
+                match at.get(&key) {
+                    Some(&k) => reached[k].1.push(body),
+                    None => {
+                        at.insert(key.clone(), reached.len());
+                        reached.push((key, vec![body]));
+                    }
+                }
+            }
+        }
+        if reached.len() > MAX_LISTS {
+            return Err(GroundError::Refused(format!(
+                "{what}: more than {MAX_LISTS} lists of solutions, one for each set of \
+                 proofs that holds in some worlds only"
+            )));
+        }
+        states = Vec::with_capacity(reached.len());
+        for ((items, decided), ways) in reached {
+            let cond = match &ways[..] {
+                [way] if way.len() <= 1 => way.first().copied(),
+                _ => {
+                    let s = src.fresh()?;
+                    for way in &ways {
+                        src.rule(s, way)?;
+                    }
+                    Some((true, s))
+                }
+            };
+            states.push((items, decided, cond));
+        }
     }
     Ok(states
         .into_iter()
         .filter(|(items, _, _)| gather.empty() || !items.is_empty())
         .map(|(items, _, cond)| (src.list(&items), cond))
         .collect())
-}
-
-fn step_states(
-    src: &mut impl Source,
-    states: Vec<State>,
-    (value, f, l, again): (Val, usize, Lit, bool),
-    what: &str,
-) -> Result<Vec<State>, GroundError> {
-    // The states reached, each with its ways in.
-    let mut reached: Vec<(Place, Vec<Vec<Lit>>)> = Vec::new();
-    let mut at: FxHashMap<Place, usize> = FxHashMap::default();
-    for (items, mut decided, cond) in states {
-        let known = decided.iter().position(|&(g, _)| g == f);
-        let choices: Vec<(bool, Option<Lit>)> = match known {
-            Some(k) => {
-                let d = decided[k].1;
-                if !again {
-                    decided.remove(k);
-                }
-                vec![(d, None)]
-            }
-            None => vec![(true, Some(l)), (false, Some((!l.0, l.1)))],
-        };
-        for (d, lit) in choices {
-            let mut items = items.clone();
-            if d {
-                items.push(value);
-            }
-            let mut decided = decided.clone();
-            if known.is_none() && again {
-                decided.push((f, d));
-            }
-            let body: Vec<Lit> = cond.into_iter().chain(lit).collect();
-            let key = (items, decided);
-            match at.get(&key) {
-                Some(&k) => reached[k].1.push(body),
-                None => {
-                    at.insert(key.clone(), reached.len());
-                    reached.push((key, vec![body]));
-                }
-            }
-        }
-    }
-    if reached.len() > MAX_LISTS {
-        return Err(GroundError::Refused(format!(
-            "{what}: more than {MAX_LISTS} lists of solutions, one for each set of \
-             proofs that holds in some worlds only"
-        )));
-    }
-    let mut next = Vec::with_capacity(reached.len());
-    for ((items, decided), ways) in reached {
-        let cond = match &ways[..] {
-            [way] if way.len() <= 1 => way.first().copied(),
-            _ => {
-                let s = src.fresh()?;
-                for way in &ways {
-                    src.rule(s, way)?;
-                }
-                Some((true, s))
-            }
-        };
-        next.push((items, decided, cond));
-    }
-    Ok(next)
 }
 
 type RankedFormulas = (Vec<(Val, Proof)>, Vec<Option<usize>>, Vec<usize>);

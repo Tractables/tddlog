@@ -184,14 +184,35 @@ fn the_rows_renormalized_keep_the_answers_and_the_evidence_probability() {
                 // P(e), nothing detached, with the renormalization and
                 // without.
                 for renormalize in [true, false] {
-                    check_undetached_renormalization(
-                        k,
-                        &program,
-                        rows,
-                        indicators,
-                        strategy,
+                    let options = GroundOptions {
+                        detach: false,
                         renormalize,
-                        (pe, &expected),
+                        ..rows.options()
+                    };
+                    let ground = tddlog::ground::ground(&program, &options).unwrap();
+                    assert_eq!(
+                        ground.stats.conditioned.renormalized > 0,
+                        renormalize,
+                        "{k} values, {rows:?}, renormalize {renormalize}: {} rows renormalized",
+                        ground.stats.conditioned.renormalized
+                    );
+                    let run = tddlog::solve_ground(
+                        ground,
+                        &common::options(strategy, Projection::default()),
+                    )
+                    .unwrap();
+                    assert_answers(
+                        &format!(
+                            "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}"
+                        ),
+                        &run.results.expect("evidence is consistent"),
+                        &expected,
+                        1e-9,
+                    );
+                    let got = run.evidence_probability.expect("P(e)").to_f64();
+                    assert!(
+                        (got - pe).abs() <= 1e-12 * pe,
+                        "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}: P(e) = {got} against {pe}"
                     );
                 }
             }
@@ -206,44 +227,6 @@ fn the_rows_renormalized_keep_the_answers_and_the_evidence_probability() {
             );
         }
     }
-}
-
-fn check_undetached_renormalization(
-    k: usize,
-    program: &tddlog::syntax::Program,
-    rows: Rows,
-    indicators: bool,
-    strategy: Strategy,
-    renormalize: bool,
-    (pe, expected): (f64, &[(String, f64)]),
-) {
-    let options = GroundOptions {
-        detach: false,
-        renormalize,
-        ..rows.options()
-    };
-    let ground = tddlog::ground::ground(program, &options).unwrap();
-    assert_eq!(
-        ground.stats.conditioned.renormalized > 0,
-        renormalize,
-        "{k} values, {rows:?}, renormalize {renormalize}: {} rows renormalized",
-        ground.stats.conditioned.renormalized
-    );
-    let run =
-        tddlog::solve_ground(ground, &common::options(strategy, Projection::default())).unwrap();
-    assert_answers(
-        &format!(
-            "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}"
-        ),
-        &run.results.expect("evidence is consistent"),
-        expected,
-        1e-9,
-    );
-    let got = run.evidence_probability.expect("P(e)").to_f64();
-    assert!(
-        (got - pe).abs() <= 1e-12 * pe,
-        "{k} values, {rows:?}, indicators {indicators}, {strategy:?}, renormalize {renormalize}: P(e) = {got} against {pe}"
-    );
 }
 
 #[test]
@@ -309,50 +292,42 @@ fn the_rows_keep_the_heads_left_and_their_masses() {
                     "{k} values, {rows:?}: no atom of the masses' own:\n{ground}"
                 );
             }
-            // The masses of c's rows, each a fact its context requires, and
-            // the facts of `x(t)`, observed.
-            assert_renormalized_masses_and_known(&ground, &net, k, rows);
+            // The masses of c's rows, each a fact its context requires.
+            let printed = ground.to_string();
+            let masses: Vec<f64> = printed
+                .lines()
+                .filter_map(|l| l.split_once("::'$rn_w'"))
+                .map(|(p, _)| p.parse().unwrap())
+                .collect();
+            assert_eq!(
+                masses.len(),
+                k - 1,
+                "{k} values, {rows:?}: the masses' facts:\n{ground}"
+            );
+            for i in 0..k - 1 {
+                let m = 1.0 - net.c[i][2];
+                assert!(
+                    masses.iter().any(|&w| (w - m).abs() < 1e-12),
+                    "{k} values, {rows:?}: no mass {m} in {masses:?}:\n{ground}"
+                );
+            }
+            // The rows of `x` keep `x(t)`, observed: each reads one fact of
+            // `x(t)`'s probability, and `x(f)` goes.
+            let mut known: Vec<f64> = printed
+                .lines()
+                .filter_map(|l| l.split_once("::'$rn_t'"))
+                .map(|(p, _)| p.parse().unwrap())
+                .collect();
+            known.sort_by(f64::total_cmp);
+            assert_eq!(
+                known,
+                [X[1], X[0]],
+                "{k} values, {rows:?}: the facts of x(t):\n{ground}"
+            );
             assert!(
                 !defines("x(f)") && !reads("x(f)"),
                 "{k} values, {rows:?}: x(f) is still in the program:\n{ground}"
             );
         }
     }
-}
-
-fn assert_renormalized_masses_and_known(
-    ground: &tddlog::ground::GroundProgram,
-    net: &Net,
-    k: usize,
-    rows: Rows,
-) {
-    let printed = ground.to_string();
-    let masses: Vec<f64> = printed
-        .lines()
-        .filter_map(|l| l.split_once("::'$rn_w'"))
-        .map(|(p, _)| p.parse().unwrap())
-        .collect();
-    assert_eq!(
-        masses.len(),
-        k - 1,
-        "{k} values, {rows:?}: the masses' facts:\n{ground}"
-    );
-    for i in 0..k - 1 {
-        let m = 1.0 - net.c[i][2];
-        assert!(
-            masses.iter().any(|&w| (w - m).abs() < 1e-12),
-            "{k} values, {rows:?}: no mass {m} in {masses:?}:\n{ground}"
-        );
-    }
-    let mut known: Vec<f64> = printed
-        .lines()
-        .filter_map(|l| l.split_once("::'$rn_t'"))
-        .map(|(p, _)| p.parse().unwrap())
-        .collect();
-    known.sort_by(f64::total_cmp);
-    assert_eq!(
-        known,
-        [X[1], X[0]],
-        "{k} values, {rows:?}: the facts of x(t):\n{ground}"
-    );
 }

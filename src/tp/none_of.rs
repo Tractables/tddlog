@@ -870,13 +870,6 @@ fn build_on(
     scratch.pairs.span_of.resize(count, (u32::MAX, 0, 0, 0));
     scratch.defaults.clear();
     scratch.defaults.resize((leaves as usize).div_ceil(64), 0);
-    let shape = Shape {
-        spans: &spans,
-        cubes: &setup.cubes,
-        group_lca: &setup.group_lca,
-        exact_at: &setup.exact_at,
-        kept: &setup.kept,
-    };
     let mut work = 0u64;
     let mut output: Option<NodeIdx> = None;
     let mut keys = Keys::default();
@@ -884,122 +877,215 @@ fn build_on(
     let mut keys_for: Option<VtreeIdx> = None;
     for t in order {
         if vtree.node(t).is_leaf() {
-            if !build_leaf_level(
-                t,
-                groups,
-                (&setup.with_literal, &setup.groups_at, &shape),
-                (&mut setup.res, &mut setup.forcing),
-                scratch,
-            ) {
+            if !build_leaf_level(t, spans[t.idx()].0, groups, &mut setup, scratch) {
                 b.abandon(engine);
                 return Ok(Some(engine.zero(vtree)));
             }
             continue;
         }
-        let level = match build_internal_level(
-            (engine, vtree, &mut b),
-            t,
-            (&setup.with_literal, &setup.groups_at, &shape),
-            (&mut setup.res, &mut setup.forcing),
-            (&mut keys, &mut keys_for),
-            (&mut work, max_work),
-            scratch,
+        let shape = Shape {
+            spans: &spans,
+            cubes: &setup.cubes,
+            group_lca: &setup.group_lca,
+            exact_at: &setup.exact_at,
+            kept: &setup.kept,
+        };
+        let (l, r) = vtree.children(t);
+        let right = scratch.levels.pop().expect("children first");
+        let mut left = scratch.levels.pop().expect("children first");
+        let (t_lo, t_hi) = spans[t.idx()];
+        let level_work_before = work;
+        if can_lift(
+            vtree,
+            l,
+            (t_lo, t_hi),
+            &right,
+            &setup.groups_at,
+            &setup.with_literal,
+            &setup.cubes,
         ) {
-            Ok(Some(Some(level))) => level,
-            Ok(Some(None)) => {
-                b.abandon(engine);
-                return Ok(Some(engine.zero(vtree)));
+            let mut level = right;
+            let r_lo = spans[r.idx()].0;
+            // A class passed up takes the first class of the leaf's value,
+            // as its first pair would.
+            let first = &left.classes[0];
+            if left.values(first)[0] & 1 == 1 {
+                scratch.defaults[t_lo as usize / 64] |= 1 << (t_lo % 64);
             }
-            Ok(None) => {
+            if !level.lifted {
+                for k in 0..level.classes.len() {
+                    level.classes[k].read = nearest_read(
+                        &setup.cubes,
+                        &setup.res,
+                        level.residuals(&level.classes[k]),
+                        r_lo,
+                    );
+                }
+                level.lifted = true;
+            }
+            if keys_for != Some(r) {
+                keys.rebuild(&mut level);
+            }
+            // The classes a cube of the leaf's reads, taken out, each with
+            // its values from the right's first leaf.
+            let mut taken = scratch.spare.pop().unwrap_or_default();
+            for k in 0..level.classes.len() {
+                let c = level.classes[k];
+                if !c.live || c.read != t_lo {
+                    continue;
+                }
+                let at = taken.residuals.len();
+                taken.residuals.extend_from_slice(level.residuals(&c));
+                let v = level.copy_values(
+                    &c,
+                    r_lo,
+                    setup.kept[r.idx()],
+                    &scratch.defaults,
+                    &mut taken.values,
+                );
+                taken.push(at, level.ones(&c), v, r_lo, c.hash, c.node);
+                level.classes[k].live = false;
+                level.dead += 1;
+            }
+            let (nl, passed, nt) = (
+                left.classes.len() as u64,
+                level.live() as u64,
+                taken.classes.len() as u64,
+            );
+            if work + nl * passed + nl * nt + nt * carried(&left) + nl * carried(&taken) > max_work
+            {
                 b.abandon(engine);
                 return Ok(None);
             }
-            Err(e) => {
+            scratch.pairs.emitted.clear();
+            let before = level.classes.len();
+            work += join(
+                &shape,
+                &mut setup.res,
+                &mut setup.forcing,
+                &mut scratch.pairs,
+                (t, l, r),
+                (&left, &taken),
+                (&mut level, &mut keys),
+            );
+            for k in before..level.classes.len() {
+                level.classes[k].read = nearest_read(
+                    &setup.cubes,
+                    &setup.res,
+                    level.residuals(&level.classes[k]),
+                    t_lo,
+                );
+            }
+            keys_for = Some(t);
+            // A pair a class passed up writes.
+            work += nl * passed;
+            if let Err(e) = engine.limits().poll_host_work(work - level_work_before) {
                 b.abandon(engine);
                 return Err(e);
             }
-        };
+            if level.live() == 0 {
+                b.abandon(engine);
+                return Ok(Some(engine.zero(vtree)));
+            }
+            if let Err(e) = emit_lifted_pairs(engine, &mut b, t, before, &left, &mut level, scratch)
+            {
+                b.abandon(engine);
+                return Err(e);
+            }
+            // Taken out, the classes are dropped once they are as many as
+            // those left.
+            if level.dead > level.live() {
+                let mut kept = 0;
+                for k in 0..level.classes.len() {
+                    if level.classes[k].live {
+                        level.classes[kept] = level.classes[k];
+                        kept += 1;
+                    }
+                }
+                level.classes.truncate(kept);
+                level.dead = 0;
+                keys.rebuild(&mut level);
+            }
+            if t == root {
+                debug_assert_eq!(level.live(), 1, "every cube and group closes at the root");
+                output = Some(level.classes.iter().find(|c| c.live).expect("a class").node);
+                scratch.spare.push(level.cleared());
+            } else {
+                scratch.levels.push(level);
+            }
+            scratch.spare.extend([left.cleared(), taken.cleared()]);
+            continue;
+        }
+        let mut right = right;
+        left.normalize(
+            spans[l.idx()].0,
+            setup.kept[l.idx()],
+            &scratch.defaults,
+            &mut scratch.values,
+        );
+        right.normalize(
+            spans[r.idx()].0,
+            setup.kept[r.idx()],
+            &scratch.defaults,
+            &mut scratch.values,
+        );
+        // A pair of classes costs one step, and one per residual the two
+        // carry where it sets no group twice; where the level's pairs could
+        // cost more than what is left, it gives up before trying any. A
+        // build that gives up in the middle of a level has spent most of
+        // what it wastes there, and on the networks no build that finishes
+        // has a level whose bound passes what is left.
+        let (nl, nr) = (left.classes.len() as u64, right.classes.len() as u64);
+        if work + nl * nr + nr * carried(&left) + nl * carried(&right) > max_work {
+            b.abandon(engine);
+            return Ok(None);
+        }
+        keys.clear();
+        scratch.pairs.emitted.clear();
+        let mut level = scratch.spare.pop().unwrap_or_default();
+        work += join(
+            &shape,
+            &mut setup.res,
+            &mut setup.forcing,
+            &mut scratch.pairs,
+            (t, l, r),
+            (&left, &right),
+            (&mut level, &mut keys),
+        );
+        keys_for = Some(t);
+        if let Err(e) = engine.limits().poll_host_work(work - level_work_before) {
+            b.abandon(engine);
+            return Err(e);
+        }
+        if level.classes.is_empty() {
+            b.abandon(engine);
+            return Ok(Some(engine.zero(vtree)));
+        }
+        if let Err(e) = emit_joined_pairs(engine, &mut b, t, &mut level, scratch) {
+            b.abandon(engine);
+            return Err(e);
+        }
         if t == root {
-            debug_assert_eq!(level.live(), 1, "every cube and group closes at the root");
-            output = Some(level.classes.iter().find(|c| c.live).expect("a class").node);
+            debug_assert_eq!(
+                level.classes.len(),
+                1,
+                "every cube and group closes at the root"
+            );
+            output = Some(level.classes[0].node);
             scratch.spare.push(level.cleared());
         } else {
             scratch.levels.push(level);
         }
+        scratch.spare.extend([left.cleared(), right.cleared()]);
     }
-    finish_built_tdd(b, root, output)
-}
-
-fn finish_built_tdd(
-    b: tididi::diagram::TddBuilder,
-    root: VtreeIdx,
-    output: Option<NodeIdx>,
-) -> Result<Option<Tdd>, OperationError> {
-    let local = output.expect("the root is internal");
+    let output = output.expect("the root is internal");
     let f = b
-        .finish(TddNodeId { vtree: root, local })
+        .finish(TddNodeId {
+            vtree: root,
+            local: output,
+        })
         .map_err(OperationError::from)?;
     Ok(Some(f))
-}
-
-fn build_internal_level(
-    (engine, vtree, b): (&Engine, &Vtree, &mut tididi::diagram::TddBuilder),
-    t: VtreeIdx,
-    (with_literal, groups_at, shape): (&Grouped<(u32, u32)>, &Grouped<u32>, &Shape),
-    (res, forcing): (&mut Residuals, &mut Forcing),
-    (keys, keys_for): (&mut Keys, &mut Option<VtreeIdx>),
-    (work, max_work): (&mut u64, u64),
-    scratch: &mut Scratch,
-) -> Result<Option<Option<Level>>, OperationError> {
-    let (l, r) = vtree.children(t);
-    let right = scratch.levels.pop().expect("children first");
-    let left = scratch.levels.pop().expect("children first");
-    let level_work_before = *work;
-    let lifts = can_lift(
-        vtree,
-        l,
-        shape.spans[t.idx()],
-        &right,
-        groups_at,
-        with_literal,
-        shape.cubes,
-    );
-    if lifts {
-        let Some((mut level, taken, before)) = prepare_lifted_join(
-            (shape, res, forcing),
-            (t, l, r),
-            (&left, right),
-            (keys, keys_for),
-            (work, max_work),
-            scratch,
-        ) else {
-            return Ok(None);
-        };
-        engine.limits().poll_host_work(*work - level_work_before)?;
-        if level.live() == 0 {
-            return Ok(Some(None));
-        }
-        emit_lifted_pairs(engine, b, t, before, &left, (&mut level, keys), scratch)?;
-        scratch.spare.extend([left.cleared(), taken.cleared()]);
-        return Ok(Some(Some(level)));
-    }
-    let Some((mut level, left, right)) = prepare_regular_join(
-        (shape, res, forcing),
-        (t, l, r),
-        (left, right),
-        (keys, keys_for),
-        (work, max_work),
-        scratch,
-    ) else {
-        return Ok(None);
-    };
-    engine.limits().poll_host_work(*work - level_work_before)?;
-    if level.classes.is_empty() {
-        return Ok(Some(None));
-    }
-    emit_joined_pairs(engine, b, t, &mut level, scratch)?;
-    scratch.spare.extend([left.cleared(), right.cleared()]);
-    Ok(Some(Some(level)))
 }
 
 // A leaf of no group on the left whose cubes all have a literal on
@@ -1035,52 +1121,6 @@ fn can_lift(
         })
 }
 
-fn prepare_regular_join(
-    (shape, res, forcing): (&Shape, &mut Residuals, &mut Forcing),
-    (t, l, r): (VtreeIdx, VtreeIdx, VtreeIdx),
-    (mut left, mut right): (Level, Level),
-    (keys, keys_for): (&mut Keys, &mut Option<VtreeIdx>),
-    (work, max_work): (&mut u64, u64),
-    scratch: &mut Scratch,
-) -> Option<(Level, Level, Level)> {
-    left.normalize(
-        shape.spans[l.idx()].0,
-        shape.kept[l.idx()],
-        &scratch.defaults,
-        &mut scratch.values,
-    );
-    right.normalize(
-        shape.spans[r.idx()].0,
-        shape.kept[r.idx()],
-        &scratch.defaults,
-        &mut scratch.values,
-    );
-    // A pair of classes costs one step, and one per residual the two
-    // carry where it sets no group twice; where the level's pairs could
-    // cost more than what is left, it gives up before trying any. A
-    // build that gives up in the middle of a level has spent most of
-    // what it wastes there, and on the networks no build that finishes
-    // has a level whose bound passes what is left.
-    let (nl, nr) = (left.classes.len() as u64, right.classes.len() as u64);
-    if *work + nl * nr + nr * carried(&left) + nl * carried(&right) > max_work {
-        return None;
-    }
-    keys.clear();
-    scratch.pairs.emitted.clear();
-    let mut level = scratch.spare.pop().unwrap_or_default();
-    *work += join(
-        shape,
-        res,
-        forcing,
-        &mut scratch.pairs,
-        (t, l, r),
-        (&left, &right),
-        (&mut level, keys),
-    );
-    *keys_for = Some(t);
-    Some((level, left, right))
-}
-
 struct BuildSetup {
     with_literal: Grouped<(u32, u32)>,
     groups_at: Grouped<u32>,
@@ -1108,6 +1148,7 @@ fn init_build_state(
     (codes, start, occurs): (Vec<u32>, Vec<u32>, Vec<u32>),
     groups: &[(Vec<VarId>, bool)],
 ) -> BuildSetup {
+    let n = vtree.num_nodes();
     // The cubes with each literal and its place in the cube's, by code;
     // the groups with a variable at each leaf, by leaf number; the node
     // where each group's variables meet, and the groups that must have one
@@ -1127,7 +1168,28 @@ fn init_build_state(
             .enumerate()
             .flat_map(|(g, (vars, _))| vars.iter().map(move |&v| (leaf_number(v), g as u32))),
     );
-    let (group_lca, exact_at) = group_lcas_and_exact(vtree, groups);
+    let group_lca: Vec<VtreeIdx> = groups
+        .iter()
+        .map(|(vars, _)| {
+            vars.iter()
+                .map(|&v| {
+                    vtree
+                        .leaf_of(v)
+                        .expect("a group's variables are the vtree's")
+                })
+                .reduce(|m, l| vtree.lca(m, l))
+                .expect("a group has a variable")
+        })
+        .collect();
+    let exact_at = Grouped::new(
+        n,
+        groups
+            .iter()
+            .zip(&group_lca)
+            .enumerate()
+            .filter(|(_, ((_, exactly), _))| *exactly)
+            .map(|(g, (_, meet))| (meet.idx(), g as u32)),
+    );
     let count = start.len() - 1;
     let private: Vec<(u32, u32)> = start
         .windows(2)
@@ -1179,40 +1241,11 @@ fn init_build_state(
     }
 }
 
-fn group_lcas_and_exact(
-    vtree: &Vtree,
-    groups: &[(Vec<VarId>, bool)],
-) -> (Vec<VtreeIdx>, Grouped<u32>) {
-    let group_lca: Vec<VtreeIdx> = groups
-        .iter()
-        .map(|(vars, _)| {
-            vars.iter()
-                .map(|&v| {
-                    vtree
-                        .leaf_of(v)
-                        .expect("a group's variables are the vtree's")
-                })
-                .reduce(|m, l| vtree.lca(m, l))
-                .expect("a group has a variable")
-        })
-        .collect();
-    let exact_at = Grouped::new(
-        vtree.num_nodes(),
-        groups
-            .iter()
-            .zip(&group_lca)
-            .enumerate()
-            .filter(|(_, ((_, exactly), _))| *exactly)
-            .map(|(g, (_, meet))| (meet.idx(), g as u32)),
-    );
-    (group_lca, exact_at)
-}
-
 fn build_leaf_level(
     t: VtreeIdx,
+    leaf: u32,
     groups: &[(Vec<VarId>, bool)],
-    (with_literal, groups_at, shape): (&Grouped<(u32, u32)>, &Grouped<u32>, &Shape),
-    (res, forcing): (&mut Residuals, &mut Forcing),
+    setup: &mut BuildSetup,
     scratch: &mut Scratch,
 ) -> bool {
     let Scratch {
@@ -1226,7 +1259,6 @@ fn build_leaf_level(
         pairs,
         ..
     } = scratch;
-    let leaf = shape.spans[t.idx()].0;
     // The key and residuals of each value of the variable, or
     // `None` where it makes a cube hold or leaves a group without
     // its one.
@@ -1235,8 +1267,11 @@ fn build_leaf_level(
             key.clear();
             here.clear();
             ones.clear();
-            for &(c, i) in with_literal.of(2 * leaf as usize + usize::from(sign)) {
-                let Some(r) = res.here(shape.cubes, c, t, (i as usize, i as usize + 1)) else {
+            for &(c, i) in setup.with_literal.of(2 * leaf as usize + usize::from(sign)) {
+                let Some(r) = setup
+                    .res
+                    .here(&setup.cubes, c, t, (i as usize, i as usize + 1))
+                else {
                     return false;
                 };
                 here.push((r, c));
@@ -1245,8 +1280,8 @@ fn build_leaf_level(
             here.dedup_by_key(|&mut (r, _)| r);
             key.extend(here.iter().map(|&(r, _)| r));
             key.push(SEP);
-            for &g in groups_at.of(leaf as usize) {
-                if shape.group_lca[g as usize] == t {
+            for &g in setup.groups_at.of(leaf as usize) {
+                if setup.group_lca[g as usize] == t {
                     if groups[g as usize].1 && !sign {
                         return false;
                     }
@@ -1255,10 +1290,10 @@ fn build_leaf_level(
                 }
             }
             let residuals = key.len() - 1;
-            forcing.start();
+            setup.forcing.start();
             if !key[..residuals]
                 .iter()
-                .all(|&r| forcing.admits(res.forced[r as usize], ones))
+                .all(|&r| setup.forcing.admits(setup.res.forced[r as usize], ones))
             {
                 return false;
             }
@@ -1286,89 +1321,13 @@ fn build_leaf_level(
     true
 }
 
-fn prepare_lifted_join(
-    (shape, res, forcing): (&Shape, &mut Residuals, &mut Forcing),
-    (t, l, r): (VtreeIdx, VtreeIdx, VtreeIdx),
-    (left, mut level): (&Level, Level),
-    (keys, keys_for): (&mut Keys, &mut Option<VtreeIdx>),
-    (work, max_work): (&mut u64, u64),
-    scratch: &mut Scratch,
-) -> Option<(Level, Level, usize)> {
-    let t_lo = shape.spans[t.idx()].0;
-    let r_lo = shape.spans[r.idx()].0;
-    // A class passed up takes the first class of the leaf's value,
-    // as its first pair would.
-    let first = &left.classes[0];
-    if left.values(first)[0] & 1 == 1 {
-        scratch.defaults[t_lo as usize / 64] |= 1 << (t_lo % 64);
-    }
-    if !level.lifted {
-        for k in 0..level.classes.len() {
-            level.classes[k].read =
-                nearest_read(shape.cubes, res, level.residuals(&level.classes[k]), r_lo);
-        }
-        level.lifted = true;
-    }
-    if *keys_for != Some(r) {
-        keys.rebuild(&mut level);
-    }
-    // The classes a cube of the leaf's reads, taken out, each with
-    // its values from the right's first leaf.
-    let mut taken = scratch.spare.pop().unwrap_or_default();
-    for k in 0..level.classes.len() {
-        let c = level.classes[k];
-        if !c.live || c.read != t_lo {
-            continue;
-        }
-        let at = taken.residuals.len();
-        taken.residuals.extend_from_slice(level.residuals(&c));
-        let v = level.copy_values(
-            &c,
-            r_lo,
-            shape.kept[r.idx()],
-            &scratch.defaults,
-            &mut taken.values,
-        );
-        taken.push(at, level.ones(&c), v, r_lo, c.hash, c.node);
-        level.classes[k].live = false;
-        level.dead += 1;
-    }
-    let (nl, passed, nt) = (
-        left.classes.len() as u64,
-        level.live() as u64,
-        taken.classes.len() as u64,
-    );
-    if *work + nl * passed + nl * nt + nt * carried(left) + nl * carried(&taken) > max_work {
-        return None;
-    }
-    scratch.pairs.emitted.clear();
-    let before = level.classes.len();
-    *work += join(
-        shape,
-        res,
-        forcing,
-        &mut scratch.pairs,
-        (t, l, r),
-        (left, &taken),
-        (&mut level, keys),
-    );
-    for k in before..level.classes.len() {
-        level.classes[k].read =
-            nearest_read(shape.cubes, res, level.residuals(&level.classes[k]), t_lo);
-    }
-    *keys_for = Some(t);
-    // A pair a class passed up writes.
-    *work += nl * passed;
-    Some((level, taken, before))
-}
-
 fn emit_lifted_pairs(
     engine: &Engine,
     b: &mut tididi::diagram::TddBuilder,
     t: VtreeIdx,
     before: usize,
     left: &Level,
-    (level, keys): (&mut Level, &mut Keys),
+    level: &mut Level,
     scratch: &mut Scratch,
 ) -> Result<(), OperationError> {
     let Scratch {
@@ -1423,20 +1382,6 @@ fn emit_lifted_pairs(
             class.node = b.push(engine, t, &by_class[from..to])?;
         }
         from = to;
-    }
-    // Taken out, the classes are dropped once they are as many as
-    // those left.
-    if level.dead > level.live() {
-        let mut kept = 0;
-        for k in 0..level.classes.len() {
-            if level.classes[k].live {
-                level.classes[kept] = level.classes[k];
-                kept += 1;
-            }
-        }
-        level.classes.truncate(kept);
-        level.dead = 0;
-        keys.rebuild(level);
     }
     Ok(())
 }
@@ -1655,7 +1600,7 @@ impl Pairs {
         &mut self,
         res: &mut Residuals,
         cubes: &Cubes,
-        (t, t_lo, t_hi, right_lo): (VtreeIdx, u32, u32, u32),
+        (t, (t_lo, t_hi), right_lo): (VtreeIdx, (u32, u32), u32),
         (left, right): (&Level, &Level),
     ) {
         let Self {
@@ -1666,6 +1611,18 @@ impl Pairs {
             right_split,
             ..
         } = self;
+        // The range of cube `c`'s literals under the node and where
+        // those on the right begin, for a residual another cube made:
+        // a search of the whole cube, kept for the cube's next.
+        let mut searched = |c: u32| {
+            let e = &mut span_of[c as usize];
+            if e.0 != t.0 {
+                let (i, j) = cubes.under(c, (t_lo, t_hi));
+                let p = i + cubes.lits(c)[i..j].partition_point(|&x| x / 2 < right_lo);
+                *e = (t.0, i as u32, p as u32, j as u32);
+            }
+            (e.1 as usize, e.2 as usize, e.3 as usize)
+        };
         pass.clear();
         branches.clear();
         left_split.clear();
@@ -1684,7 +1641,7 @@ impl Pairs {
                     };
                     (a as usize, p, j)
                 } else {
-                    Self::searched_span(span_of, cubes, c, t, (t_lo, t_hi), right_lo)
+                    searched(c)
                 };
                 debug_assert_eq!((i, j), cubes.under(c, (t_lo, t_hi)));
                 debug_assert!(i < p, "a left class's cube has literals on the left");
@@ -1711,8 +1668,7 @@ impl Pairs {
                 let on_left = if d == c {
                     a > 0 && cubes.lits(c)[a as usize - 1] / 2 >= t_lo
                 } else {
-                    let (i, p, _) =
-                        Self::searched_span(span_of, cubes, c, t, (t_lo, t_hi), right_lo);
+                    let (i, p, _) = searched(c);
                     i < p
                 };
                 debug_assert_eq!(
@@ -1725,26 +1681,6 @@ impl Pairs {
             }
             right_split.push((p0, pass.len()));
         }
-    }
-
-    /// The range of cube `c`'s literals under `t` and where those on the
-    /// right begin, for a residual another cube made: a search of the whole
-    /// cube, kept for the cube's next.
-    fn searched_span(
-        span_of: &mut [(u32, u32, u32, u32)],
-        cubes: &Cubes,
-        c: u32,
-        t: VtreeIdx,
-        (t_lo, t_hi): (u32, u32),
-        right_lo: u32,
-    ) -> (usize, usize, usize) {
-        let e = &mut span_of[c as usize];
-        if e.0 != t.0 {
-            let (i, j) = cubes.under(c, (t_lo, t_hi));
-            let p = i + cubes.lits(c)[i..j].partition_point(|&x| x / 2 < right_lo);
-            *e = (t.0, i as u32, p as u32, j as u32);
-        }
-        (e.1 as usize, e.2 as usize, e.3 as usize)
     }
 }
 
@@ -1771,26 +1707,38 @@ fn join(
         shape.exact_at,
         shape.kept,
     );
-    let ((t_lo, t_hi), right_lo) = (spans[t.idx()], spans[r.idx()].0);
+    let (t_lo, right_lo) = (spans[t.idx()].0, spans[r.idx()].0);
+    // A class made here keeps its values up to the node's last leaf a node
+    // above may read: those of the left's leaves its left class keeps, and
+    // where it keeps a leaf on the right, clear bits up to the right's
+    // first and those of the right's leaves it keeps, which its right
+    // class keeps too ([`kept_bits`]).
     let bits = kept[t.idx()] as usize;
     let (left_bits, right_at) = (
         bits.min(kept[l.idx()] as usize),
         (right_lo - spans[l.idx()].0) as usize,
     );
     let right_bits = bits.saturating_sub(right_at);
-    pairs.split_residuals(res, cubes, (t, t_lo, t_hi, right_lo), (left, right));
+    pairs.split_residuals(res, cubes, (t, spans[t.idx()], right_lo), (left, right));
     let exact = exact_at.of(t.idx());
+    // A pair whose right class passes no residual up and sets no group,
+    // and where no cube of the left class's residuals with literals on
+    // the right holds there, makes the class of the left class's
+    // residuals that pass and its groups, or none where those force a
+    // group twice, whatever the right class: it is looked up once per
+    // left class (`alone_of`). On the networks such pairs are mostly a
+    // table's context paired with the two classes of a row's switches.
     pairs.alone_of.clear();
     pairs.alone_of.resize(left.classes.len(), UNKNOWN);
     for (cb, &(bp0, bp1)) in right.classes.iter().zip(pairs.right_split.iter()) {
         let (b_here, b_ones, b_values) = (right.residuals(cb), right.ones(cb), right.values(cb));
-        for (ia, (ca, &(ap0, ap1, ab0, ab1))) in
+        'pair: for (ia, (ca, &(ap0, ap1, ab0, ab1))) in
             left.classes.iter().zip(pairs.left_split.iter()).enumerate()
         {
             let (a_here, a_ones) = (left.residuals(ca), left.ones(ca));
             work += 1;
             if !merge_group_ones(a_ones, b_ones, exact, group_lca, t, &mut pairs.ones) {
-                continue;
+                continue 'pair;
             }
             work += (a_here.len() + b_here.len()) as u64;
             if !collect_right_branches(
@@ -1801,72 +1749,52 @@ fn join(
                 kept[r.idx()],
                 &mut pairs.fresh,
             ) {
-                continue;
+                continue 'pair;
             }
             let lone = pairs.fresh.is_empty() && bp0 == bp1 && b_ones.is_empty();
-            if lone && pairs.alone_of[ia] != UNKNOWN {
-                if pairs.alone_of[ia] != REFUSED {
-                    pairs
-                        .emitted
-                        .push((pairs.alone_of[ia], ChildPair::new(ca.node, cb.node)));
+            match pairs.alone_of[ia] {
+                _ if !lone => {}
+                UNKNOWN => {}
+                REFUSED => continue 'pair,
+                k => {
+                    pairs.emitted.push((k, ChildPair::new(ca.node, cb.node)));
+                    continue 'pair;
                 }
-                continue;
             }
             let at = level.residuals.len();
-            if let Some(k) = merge_and_intern_pair_class(
-                (level, keys),
-                (&pairs.pass[ap0..ap1], &pairs.pass[bp0..bp1], &pairs.fresh),
-                (&pairs.ones, forcing, at),
-                (left.values(ca), left_bits),
-                (b_values, right_at, right_bits),
-                t_lo,
-            ) {
+            let Some(h) = merge_residuals_and_hash(
+                &pairs.pass[ap0..ap1],
+                &pairs.pass[bp0..bp1],
+                &pairs.fresh,
+                &pairs.ones,
+                forcing,
+                &mut level.residuals,
+            ) else {
                 if lone {
-                    pairs.alone_of[ia] = k;
+                    pairs.alone_of[ia] = REFUSED;
                 }
-                pairs.emitted.push((k, ChildPair::new(ca.node, cb.node)));
-            } else if lone {
-                pairs.alone_of[ia] = REFUSED;
+                continue 'pair;
+            };
+            let k = keys.find_or_insert(level, at, &pairs.ones, h);
+            if lone {
+                pairs.alone_of[ia] = k;
             }
+            if k as usize == level.classes.len() {
+                level.close(
+                    (at, &pairs.ones),
+                    (left.values(ca), left_bits),
+                    (b_values, right_at, right_bits),
+                    t_lo,
+                    h,
+                    NodeIdx(0),
+                );
+            } else {
+                level.residuals.truncate(at);
+            }
+            pairs.emitted.push((k, ChildPair::new(ca.node, cb.node)));
         }
     }
     work
-}
-
-type ResidualSlice<'a> = &'a [(u32, u32, u32)];
-
-fn merge_and_intern_pair_class(
-    (level, keys): (&mut Level, &mut Keys),
-    (pass_a, pass_b, fresh): (ResidualSlice<'_>, ResidualSlice<'_>, ResidualSlice<'_>),
-    (ones, forcing, at): (&[u32], &mut Forcing, usize),
-    left_vals: (&[u64], usize),
-    right_vals: (&[u64], usize, usize),
-    t_lo: u32,
-) -> Option<u32> {
-    let h = merge_residuals_and_hash(pass_a, pass_b, fresh, ones, forcing, &mut level.residuals)?;
-    Some(intern_joined_class(
-        (level, keys),
-        (at, ones, h),
-        left_vals,
-        right_vals,
-        t_lo,
-    ))
-}
-
-fn intern_joined_class(
-    (level, keys): (&mut Level, &mut Keys),
-    (at, ones, h): (usize, &[u32], u64),
-    left_vals: (&[u64], usize),
-    right_vals: (&[u64], usize, usize),
-    t_lo: u32,
-) -> u32 {
-    let k = keys.find_or_insert(level, at, ones, h);
-    if k as usize == level.classes.len() {
-        level.close((at, ones), left_vals, right_vals, t_lo, h, NodeIdx(0));
-    } else {
-        level.residuals.truncate(at);
-    }
-    k
 }
 
 fn collect_right_branches(

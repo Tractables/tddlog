@@ -375,6 +375,44 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
     }
     let known =
         |t: &Term, outside: &FxHashSet<String>| t.vars().iter().all(|v| outside.contains(v));
+    // The variables of `rule`, of the component `k`, whose values atoms
+    // outside `k` give: those of its atoms outside `k`, and those an `is`,
+    // a unification or a built-in computes from them.
+    let outside = |rule: &Clause, k: usize| {
+        let mut outside: FxHashSet<String> = FxHashSet::default();
+        for l in &rule.body {
+            if let Literal::Pos(a) = l
+                && of(a) != Some(k)
+            {
+                outside.extend(a.vars());
+            }
+        }
+        loop {
+            let before = outside.len();
+            for l in &rule.body {
+                match l {
+                    Literal::Is(x, e) if known(e, &outside) => outside.extend(x.vars()),
+                    Literal::Cmp(CmpOp::Eq, a, b) => {
+                        if known(a, &outside) {
+                            outside.extend(b.vars());
+                        } else if known(b, &outside) {
+                            outside.extend(a.vars());
+                        }
+                    }
+                    Literal::Builtin(b, args, false) => {
+                        let given: Vec<bool> = args.iter().map(|t| known(t, &outside)).collect();
+                        if b.runs(&given) {
+                            args.iter().for_each(|t| outside.extend(t.vars()));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if outside.len() == before {
+                return outside;
+            }
+        }
+    };
     // Whether `rule`, of the component `k`, builds a value from a variable
     // not in `outside`.
     let builds = |rule: &Clause, k: usize, outside: &FxHashSet<String>| {
@@ -397,57 +435,11 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
         })
     };
     rules.iter().any(|(&k, rs)| {
-        let outsides: Vec<FxHashSet<String>> = rs.iter().map(|r| outside_vars(r, k, &of)).collect();
+        let outsides: Vec<FxHashSet<String>> = rs.iter().map(|r| outside(r, k)).collect();
         let grows = rs.iter().zip(&outsides).any(|(r, o)| builds(r, k, o))
             && !levelled(rs, &outsides, |a| of(a) == Some(k));
         grows && rs.iter().any(|r| negates(r))
     })
-}
-
-/// The variables of `rule`, of the component `k`, whose values atoms
-/// outside `k` give: those of its atoms outside `k`, and those an `is`,
-/// a unification or a built-in computes from them.
-fn outside_vars(
-    rule: &Clause,
-    k: usize,
-    of: &impl Fn(&Atom) -> Option<usize>,
-) -> FxHashSet<String> {
-    use crate::syntax::CmpOp;
-    let known =
-        |t: &Term, outside: &FxHashSet<String>| t.vars().iter().all(|v| outside.contains(v));
-    let mut outside: FxHashSet<String> = FxHashSet::default();
-    for l in &rule.body {
-        if let Literal::Pos(a) = l
-            && of(a) != Some(k)
-        {
-            outside.extend(a.vars());
-        }
-    }
-    loop {
-        let before = outside.len();
-        for l in &rule.body {
-            match l {
-                Literal::Is(x, e) if known(e, &outside) => outside.extend(x.vars()),
-                Literal::Cmp(CmpOp::Eq, a, b) => {
-                    if known(a, &outside) {
-                        outside.extend(b.vars());
-                    } else if known(b, &outside) {
-                        outside.extend(a.vars());
-                    }
-                }
-                Literal::Builtin(b, args, false) => {
-                    let given: Vec<bool> = args.iter().map(|t| known(t, &outside)).collect();
-                    if b.runs(&given) {
-                        args.iter().for_each(|t| outside.extend(t.vars()));
-                    }
-                }
-                _ => {}
-            }
-        }
-        if outside.len() == before {
-            return outside;
-        }
-    }
 }
 
 /// Whether the rules `rules` of a recursive component, with the variables
@@ -855,18 +847,6 @@ impl Demand<'_> {
                 bound_so_far.insert(v);
             }
         }
-        self.append_rewritten_rule(rule, guard, &ordered, w);
-        Some(())
-    }
-
-    fn append_rewritten_rule(
-        &self,
-        rule: &Clause,
-        guard: Literal,
-        ordered: &[usize],
-        w: &mut Written,
-    ) {
-        let head = &rule.heads[0].atom;
         let mut body = Vec::with_capacity(1 + ordered.len());
         body.push(guard);
         // A counted rule keeps its literals in the order of the source, by
@@ -885,6 +865,7 @@ impl Demand<'_> {
             body,
             group: rule.group,
         });
+        Some(())
     }
 
     fn emit_body_demand(

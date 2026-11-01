@@ -139,6 +139,8 @@ impl<'a> Tree<'a> {
     pub(super) fn name(&self) -> Option<Named> {
         let gp = self.gp;
         let n = gp.num_atoms();
+        let contexts = &self.decisions.contexts;
+        let decision = &self.decision;
         // Whether each atom's cone holds a fact outside the tree; the atoms
         // of the tree that a rule of such an atom reads are cut.
         let outside = self.cones_holding(|f| !self.in_tree[f]);
@@ -163,54 +165,9 @@ impl<'a> Tree<'a> {
         let (beside, beside_of) = self.beside(&outside, &inside, &cut_of);
         let (reads, named_contexts) = self.context_reads();
         // The rewrite: the context atoms, then the names and their links.
-        let (mut out, var_of, var_of_context, cut_var) =
-            self.create_named_program(&named_contexts, &cut, &beside);
-        let rules = self.rewrite_program_rules(
-            (&outside, &inside),
-            (&cut_of, &beside_of),
-            &reads,
-            &var_of,
-            &var_of_context,
-        );
-        let (above, cut_node) = self.place_names(
-            &outside,
-            &rules,
-            out.atoms.len(),
-            (&named_contexts, &var_of_context),
-            (&cut, &cut_var),
-        );
-        out.rules.extend(rules);
-        out.encoding.segments = segments(out.encoding.indicators.len(), &cut_node, beside.len());
-        let note = format!(
-            "naming: {} contexts of the decisions, {} atoms of their tree, {} beside it",
-            named_contexts.len(),
-            cut.len(),
-            beside.len()
-        );
-        Some(Named {
-            gp: out,
-            above,
-            note,
-        })
-    }
-
-    fn create_named_program(
-        &self,
-        named_contexts: &[u32],
-        cut: &[AtomId],
-        beside: &[AtomId],
-    ) -> (
-        GroundProgram,
-        FxHashMap<AtomId, AtomId>,
-        Vec<AtomId>,
-        Vec<AtomId>,
-    ) {
-        let gp = self.gp;
-        let contexts = &self.decisions.contexts;
-        let decision = &self.decision;
         let mut out = gp.without_rules();
         let mut atom_of_context: Vec<AtomId> = vec![AtomId::MAX; contexts.len()];
-        for &k in named_contexts {
+        for &k in &named_contexts {
             out.atoms
                 .push(Atom::new("$cx", vec![Term::Int(i64::from(k))]));
             out.kinds.push(AtomKind::Derived);
@@ -223,16 +180,17 @@ impl<'a> Tree<'a> {
             var
         };
         let mut var_of_context: Vec<AtomId> = vec![AtomId::MAX; contexts.len()];
-        for &k in named_contexts {
+        for &k in &named_contexts {
             var_of_context[k as usize] = name_atom(&mut out, atom_of_context[k as usize]);
         }
         let cut_var: Vec<AtomId> = cut.iter().map(|&a| name_atom(&mut out, a)).collect();
-        for &a in beside {
+        for &a in &beside {
             name_atom(&mut out, a);
         }
         // The rules: each context's from its parent's name and its
-        // decision.
-        for &k in named_contexts {
+        // decision, and the program's with the names read in place of what
+        // they name.
+        for &k in &named_contexts {
             let c = &contexts[k as usize];
             let mut body: Vec<GLit> = c
                 .parent
@@ -243,22 +201,9 @@ impl<'a> Tree<'a> {
             out.rules
                 .push(GroundRule::new(atom_of_context[k as usize], body));
         }
-        (out, var_of, var_of_context, cut_var)
-    }
-
-    fn rewrite_program_rules(
-        &self,
-        (outside, inside): (&[bool], &[bool]),
-        (cut_of, beside_of): (&[bool], &[bool]),
-        reads: &[Option<u32>],
-        var_of: &FxHashMap<AtomId, AtomId>,
-        var_of_context: &[AtomId],
-    ) -> Vec<GroundRule> {
-        let contexts = &self.decisions.contexts;
-        let decision = &self.decision;
         let mut cube: Vec<GLit> = Vec::new();
-        let mut rules: Vec<GroundRule> = Vec::with_capacity(self.gp.rules.len());
-        for (ri, r) in self.gp.rules.iter().enumerate() {
+        let mut rules: Vec<GroundRule> = Vec::with_capacity(gp.rules.len());
+        for (ri, r) in gp.rules.iter().enumerate() {
             let mut body = r.body.clone();
             if let Some(c) = reads[ri] {
                 cube.clear();
@@ -287,7 +232,26 @@ impl<'a> Tree<'a> {
                 pairs: r.pairs,
             });
         }
-        rules
+        let (above, cut_node) = self.place_names(
+            &outside,
+            &rules,
+            out.atoms.len(),
+            (&named_contexts, &var_of_context),
+            (&cut, &cut_var),
+        );
+        out.rules.extend(rules);
+        out.encoding.segments = segments(out.encoding.indicators.len(), &cut_node, beside.len());
+        let note = format!(
+            "naming: {} contexts of the decisions, {} atoms of their tree, {} beside it",
+            named_contexts.len(),
+            cut.len(),
+            beside.len()
+        );
+        Some(Named {
+            gp: out,
+            above,
+            note,
+        })
     }
 
     fn place_names(

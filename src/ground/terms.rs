@@ -845,15 +845,27 @@ impl Lowering<'_, '_> {
         head_args.extend(locals.iter().cloned().map(Term::Var));
         let arity = head_args.len();
         let head = Atom::new(aux.clone(), head_args);
-        push_findall_clauses(
-            fa.goal,
-            &head,
-            &template_vars,
-            &shared,
-            &locals,
-            &text,
-            work,
-        )?;
+        let none: Term = Term::Const("$none".into());
+        for alt in fa.goal {
+            let mut vs = Vec::new();
+            for l in &alt {
+                binds(l, &mut vs);
+            }
+            if let Some(v) = template_vars
+                .iter()
+                .find(|v| !vs.contains(v) && !shared.contains(v))
+            {
+                return refuse(format!(
+                    "the template's {v} is not bound by every alternative"
+                ));
+            }
+            // A variable of another alternative is no variable of this one.
+            let mut body = alt;
+            for v in locals.iter().filter(|v| !vs.contains(v)) {
+                body.push(Literal::Cmp(CmpOp::Eq, Term::Var(v.clone()), none.clone()));
+            }
+            work.push(Clause::rule(head.clone(), body, 0));
+        }
         self.cone_roots.push((aux.clone(), arity));
         Ok(Collect {
             aux,
@@ -866,47 +878,37 @@ impl Lowering<'_, '_> {
     }
 }
 
-fn push_findall_clauses(
-    goal: Vec<Vec<Literal>>,
-    head: &Atom,
-    template_vars: &[String],
-    shared: &[String],
-    locals: &[String],
-    text: &str,
-    work: &mut Vec<Clause>,
-) -> Result<(), GroundError> {
-    let none: Term = Term::Const("$none".into());
-    for alt in goal {
-        let mut vs = Vec::new();
-        for l in &alt {
-            binds(l, &mut vs);
-        }
-        if let Some(v) = template_vars
-            .iter()
-            .find(|v| !vs.contains(v) && !shared.contains(v))
-        {
-            return Err(GroundError::Refused(format!(
-                "{text}: the template's {v} is not bound by every alternative"
-            )));
-        }
-        // A variable of another alternative is no variable of this one.
-        let mut body = alt;
-        for v in locals.iter().filter(|v| !vs.contains(v)) {
-            body.push(Literal::Cmp(CmpOp::Eq, Term::Var(v.clone()), none.clone()));
-        }
-        work.push(Clause::rule(head.clone(), body, 0));
-    }
-    Ok(())
-}
-
 /// The predicates the findalls of `program` read, from `roots`, checked and
 /// their clauses given groups of their own in the order of the source.
 fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, GroundError> {
     if roots.is_empty() {
         return Ok(FxHashSet::default());
     }
-    let (ids, out) = build_pred_graph(program);
+    let mut ids: FxHashMap<Pred, usize> = FxHashMap::default();
+    let id = |p: Pred, ids: &mut FxHashMap<Pred, usize>| {
+        let n = ids.len();
+        *ids.entry(p).or_insert(n)
+    };
+    let mut edges: Vec<(usize, usize)> = Vec::new();
+    for c in &program.clauses {
+        for h in &c.heads {
+            let from = id((h.atom.name.clone(), h.atom.args.len()), &mut ids);
+            for l in &c.body {
+                let to = match l {
+                    Literal::Pos(a) | Literal::Neg(a) => (a.name.clone(), a.args.len()),
+                    Literal::Collect(k) => (k.aux.clone(), k.arity),
+                    _ => continue,
+                };
+                let to = id(to, &mut ids);
+                edges.push((from, to));
+            }
+        }
+    }
     let n = ids.len();
+    let mut out: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for &(a, b) in &edges {
+        out[a].push(b);
+    }
     let mut reached = vec![false; n];
     let mut stack: Vec<usize> = roots.iter().map(|r| ids[r]).collect();
     while let Some(p) = stack.pop() {
@@ -952,42 +954,6 @@ fn cone(program: &mut Program, roots: &[Pred]) -> Result<FxHashSet<Pred>, Ground
         .filter(|&p| reached[p])
         .map(|p| names[p].clone())
         .collect();
-    check_and_regroup_cone(program, &cone)?;
-    Ok(cone)
-}
-
-fn build_pred_graph(program: &Program) -> (FxHashMap<Pred, usize>, Vec<Vec<usize>>) {
-    let mut ids: FxHashMap<Pred, usize> = FxHashMap::default();
-    let id = |p: Pred, ids: &mut FxHashMap<Pred, usize>| {
-        let n = ids.len();
-        *ids.entry(p).or_insert(n)
-    };
-    let mut edges: Vec<(usize, usize)> = Vec::new();
-    for c in &program.clauses {
-        for h in &c.heads {
-            let from = id((h.atom.name.clone(), h.atom.args.len()), &mut ids);
-            for l in &c.body {
-                let to = match l {
-                    Literal::Pos(a) | Literal::Neg(a) => (a.name.clone(), a.args.len()),
-                    Literal::Collect(k) => (k.aux.clone(), k.arity),
-                    _ => continue,
-                };
-                let to = id(to, &mut ids);
-                edges.push((from, to));
-            }
-        }
-    }
-    let mut out: Vec<Vec<usize>> = vec![Vec::new(); ids.len()];
-    for &(a, b) in &edges {
-        out[a].push(b);
-    }
-    (ids, out)
-}
-
-fn check_and_regroup_cone(
-    program: &mut Program,
-    cone: &FxHashSet<Pred>,
-) -> Result<(), GroundError> {
     let mut next = program.clauses.iter().map(|c| c.group).max().unwrap_or(0) + 1;
     for c in &mut program.clauses {
         let sig = (c.heads[0].atom.name.clone(), c.heads[0].atom.args.len());
@@ -1007,7 +973,7 @@ fn check_and_regroup_cone(
             next += 1;
         }
     }
-    Ok(())
+    Ok(cone)
 }
 
 /// The variables of `atoms`.

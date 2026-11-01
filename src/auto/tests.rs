@@ -172,13 +172,6 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
             Kind::Program { fan_in: false },
         ],
     );
-    assert_single_component_dynamic_trials(&ground, &strategies);
-}
-
-fn assert_single_component_dynamic_trials(
-    ground: &impl Fn(&str) -> GroundProgram,
-    strategies: &impl Fn(&GroundProgram) -> Vec<Kind>,
-) {
     // The smokers program is one recursive component: `smokes` over
     // three people, merged with nothing to be merged with. Queried for
     // everyone, as the benchmark programs are; a query for one person is
@@ -379,7 +372,20 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
             .any(|n| n.starts_with("naming: ") && n.ends_with("widest 1, 399 copies of 399 atoms")),
         "{notes:#?}"
     );
-    let work = |t: &str| trial_work(notes, t);
+    let work = |t: &str| -> u64 {
+        notes
+            .iter()
+            .filter_map(|n| {
+                n.strip_prefix(&format!("trial: {t} indicators="))?
+                    .split(", work=")
+                    .nth(1)?
+                    .split(',')
+                    .next()?
+                    .parse::<u64>()
+                    .ok()
+            })
+            .sum()
+    };
     let turns: Vec<_> = attempts(notes).into_iter().map(|(_, t)| t).collect();
     assert!(
         turns
@@ -402,21 +408,6 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
         (p - (1.0 - 0.5e-4f64).powi(steps as i32)).abs() < 1e-12,
         "{p}"
     );
-}
-
-fn trial_work(notes: &[String], trial: &str) -> u64 {
-    notes
-        .iter()
-        .filter_map(|n| {
-            n.strip_prefix(&format!("trial: {trial} indicators="))?
-                .split(", work=")
-                .nth(1)?
-                .split(',')
-                .next()?
-                .parse::<u64>()
-                .ok()
-        })
-        .sum()
 }
 
 #[test]

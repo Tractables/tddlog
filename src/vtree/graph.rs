@@ -571,7 +571,30 @@ pub(super) fn eliminated_in_order(
     max_work: u64,
 ) -> Option<Elimination> {
     let n = order.len();
-    let (start, adjacent) = ordered_adjacency(edges, &order);
+    let mut position = vec![0u32; n];
+    for (i, &v) in order.iter().enumerate() {
+        position[v as usize] = i as u32;
+    }
+    // The graph by its vertices' places in the order, as lists that start
+    // at `start`.
+    let mut start = vec![0usize; n + 1];
+    for &(u, v) in edges {
+        start[position[u as usize] as usize + 1] += 1;
+        start[position[v as usize] as usize + 1] += 1;
+    }
+    for i in 0..n {
+        start[i + 1] += start[i];
+    }
+    let mut next = start.clone();
+    let mut adjacent = vec![0u32; 2 * edges.len()];
+    for &(u, v) in edges {
+        let (pu, pv) = (position[u as usize], position[v as usize]);
+        adjacent[next[pu as usize]] = pv;
+        next[pu as usize] += 1;
+        adjacent[next[pv as usize]] = pu;
+        next[pv as usize] += 1;
+    }
+    drop(next);
     // Per place: the cliques its vertex is in, by the place of the vertex
     // that left them; per clique, its vertices, and the clique that took it
     // in (itself while it stands).
@@ -637,34 +660,6 @@ pub(super) fn eliminated_in_order(
         order,
         at_elimination,
     })
-}
-
-/// The graph by its vertices' places in `order`, as adjacency lists starting
-/// at `start`.
-fn ordered_adjacency(edges: &[(u32, u32)], order: &[u32]) -> (Vec<usize>, Vec<u32>) {
-    let n = order.len();
-    let mut position = vec![0u32; n];
-    for (i, &v) in order.iter().enumerate() {
-        position[v as usize] = i as u32;
-    }
-    let mut start = vec![0usize; n + 1];
-    for &(u, v) in edges {
-        start[position[u as usize] as usize + 1] += 1;
-        start[position[v as usize] as usize + 1] += 1;
-    }
-    for i in 0..n {
-        start[i + 1] += start[i];
-    }
-    let mut next = start.clone();
-    let mut adjacent = vec![0u32; 2 * edges.len()];
-    for &(u, v) in edges {
-        let (pu, pv) = (position[u as usize], position[v as usize]);
-        adjacent[next[pu as usize]] = pv;
-        next[pu as usize] += 1;
-        adjacent[next[pv as usize]] = pu;
-        next[pv as usize] += 1;
-    }
-    (start, adjacent)
 }
 
 /// [`weighted_min_fill`], stopped past `max_work` units.

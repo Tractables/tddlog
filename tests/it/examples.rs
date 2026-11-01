@@ -72,10 +72,6 @@ fn check_text(file: &str, source: &str, expected: &[(&str, f64)]) {
     ] {
         indicated(file, source, expected, indicators, strategy, Rows::Classes);
     }
-    check_families_and_printed_ground(file, source, expected);
-}
-
-fn check_families_and_printed_ground(file: &str, source: &str, expected: &[(&str, f64)]) {
     // `run` reads the program through every indicator for `families`, as
     // the binary does, written without linear recursion; a program where no
     // component reads another's atoms has none, and the layout refuses it,
@@ -1016,21 +1012,6 @@ mod dice {
             (format!("{build}(length xs) == int(4, 0)"), 0.125),
         ];
         // Of length 1, 2 and 3, each element true (0.2) or false (0.8).
-        cases.extend(built_list_length_cases(build, h, t));
-        for (program, p) in &cases {
-            let text = read(program, program);
-            let solution = tddlog::solve(&text, &Options::default(), &mut |_| {})
-                .unwrap_or_else(|e| panic!("{program}: {e}"));
-            let answers = solution.answers.expect("consistent evidence");
-            let [answer] = &answers[..] else {
-                panic!("{program}: {} answers", answers.len());
-            };
-            check_text(program, &text, &[(&answer.to_string(), *p)]);
-        }
-    }
-
-    fn built_list_length_cases(build: &str, h: f64, t: f64) -> Vec<(String, f64)> {
-        let mut cases = Vec::new();
         for (n, ways) in [(1, 3.0), (2, 3.0), (3, 1.0)] {
             for k in 0..1 << n {
                 let mut conj = Vec::new();
@@ -1049,7 +1030,16 @@ mod dice {
                 cases.push((text, p));
             }
         }
-        cases
+        for (program, p) in &cases {
+            let text = read(program, program);
+            let solution = tddlog::solve(&text, &Options::default(), &mut |_| {})
+                .unwrap_or_else(|e| panic!("{program}: {e}"));
+            let answers = solution.answers.expect("consistent evidence");
+            let [answer] = &answers[..] else {
+                panic!("{program}: {} answers", answers.len());
+            };
+            check_text(program, &text, &[(&answer.to_string(), *p)]);
+        }
     }
 
     /// Every Dice program of the benchmarks (data/dice and data/nodice, on

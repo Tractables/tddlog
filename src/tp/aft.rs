@@ -39,101 +39,8 @@ pub(crate) fn compile_component(
     for (i, &a) in scc.iter().enumerate() {
         index[a as usize] = i;
     }
-    let outside = outside_formulas(gp, by_head, scc, &index, lambda_of)?;
-    let k = scc.len();
-    let mut updates = 0;
-    let mut lower: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
-    let mut upper: Vec<Tdd> = (0..k).map(|_| backend.one(scope)).collect();
-    let apply = |a: AtomId, lower: &[Tdd], upper: &[Tdd]| {
-        apply_atom(
-            (gp, by_head, var_of),
-            (scope, &index, &outside),
-            negate,
-            backend,
-            a,
-            (lower, upper),
-        )
-    };
-    loop {
-        // Application refinements, one atom at a time, until stable.
-        loop {
-            let mut changed = false;
-            for (i, &a) in scc.iter().enumerate() {
-                let (t, p) = apply(a, &lower, &upper)?;
-                updates += 1;
-                if !backend.equivalent(&t, &lower[i])? {
-                    lower[i] = t;
-                    changed = true;
-                }
-                if !backend.equivalent(&p, &upper[i])? {
-                    upper[i] = p;
-                    changed = true;
-                }
-            }
-            if !changed {
-                break;
-            }
-        }
-        // Unfoundedness refinement: least fixpoint of the upper component
-        // from ⊥ with the lower component frozen.
-        let Some(u) =
-            unfounded_refinement(scc, scope, backend, &lower, &upper, &apply, &mut updates)?
-        else {
-            break;
-        };
-        upper = u;
-    }
-    for i in 0..k {
-        if !backend.equivalent(&lower[i], &upper[i])? {
-            return Err(CompileError::Unsound(gp.atoms[scc[i] as usize].clone()));
-        }
-    }
-    Ok((lower, updates))
-}
-
-fn unfounded_refinement(
-    scc: &[AtomId],
-    scope: &VtreeScope,
-    backend: &TddBackend,
-    lower: &[Tdd],
-    upper: &[Tdd],
-    apply: &impl Fn(AtomId, &[Tdd], &[Tdd]) -> Result<(Tdd, Tdd), CompileError>,
-    updates: &mut usize,
-) -> Result<Option<Vec<Tdd>>, CompileError> {
-    let k = scc.len();
-    let mut u: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
-    loop {
-        let mut changed = false;
-        for (i, &a) in scc.iter().enumerate() {
-            let (_, p) = apply(a, lower, &u)?;
-            *updates += 1;
-            if !backend.equivalent(&p, &u[i])? {
-                u[i] = p;
-                changed = true;
-            }
-        }
-        if !changed {
-            break;
-        }
-    }
-    for i in 0..k {
-        if !backend.equivalent(&u[i], &upper[i])? {
-            return Ok(Some(u));
-        }
-    }
-    Ok(None)
-}
-
-/// Formulas of literals over atoms outside `scc`, which are fixed during the
-/// fixpoint.
-fn outside_formulas(
-    gp: &GroundProgram,
-    by_head: &RulesByHead,
-    scc: &[AtomId],
-    index: &[usize],
-    lambda_of: &mut dyn FnMut(AtomId) -> Result<Tdd, CompileError>,
-) -> Result<Vec<Option<Tdd>>, CompileError> {
-    let mut outside: Vec<Option<Tdd>> = (0..gp.num_atoms()).map(|_| None).collect();
+    // Formulas of literals over atoms outside the component are fixed.
+    let mut outside: Vec<Option<Tdd>> = (0..n).map(|_| None).collect();
     for &a in scc {
         for &ri in &by_head[a as usize] {
             for l in &gp.rules[ri].body {
@@ -147,18 +54,7 @@ fn outside_formulas(
             }
         }
     }
-    Ok(outside)
-}
-
-fn apply_atom(
-    (gp, by_head, var_of): (&GroundProgram, &RulesByHead, &[Option<VarId>]),
-    (scope, index, outside): (&VtreeScope, &[usize], &[Option<Tdd>]),
-    negate: &dyn Fn(Tdd) -> Result<Tdd, CompileError>,
-    backend: &TddBackend,
-    a: AtomId,
-    (lower, upper): (&[Tdd], &[Tdd]),
-) -> Result<(Tdd, Tdd), CompileError> {
-    let lit_pair = |l: GLit| -> Result<(Tdd, Tdd), CompileError> {
+    let lit_pair = |l: GLit, lower: &[Tdd], upper: &[Tdd]| -> Result<(Tdd, Tdd), CompileError> {
         let b = l.atom() as usize;
         let (t, p) = match gp.kinds[b] {
             AtomKind::Fact(_) => {
@@ -183,26 +79,88 @@ fn apply_atom(
             Ok((negate(p)?, negate(t)?))
         }
     };
-    let mut t_acc = backend.zero(scope);
-    let mut p_acc = backend.zero(scope);
-    for body in by_head[a as usize]
-        .iter()
-        .flat_map(|&ri| gp.rules[ri].bodies())
-    {
-        let mut bt = backend.one(scope);
-        let mut bp = backend.one(scope);
-        for &l in body.iter() {
-            let (vt, vp) = lit_pair(l)?;
-            bt = backend.and(bt, vt)?;
-            bp = backend.and(bp, vp)?;
-            if backend.is_zero(&bp) {
+    // One application of the operator to atom `a`, both components.
+    let apply = |a: AtomId, lower: &[Tdd], upper: &[Tdd]| -> Result<(Tdd, Tdd), CompileError> {
+        let mut t_acc = backend.zero(scope);
+        let mut p_acc = backend.zero(scope);
+        for body in by_head[a as usize]
+            .iter()
+            .flat_map(|&ri| gp.rules[ri].bodies())
+        {
+            let mut bt = backend.one(scope);
+            let mut bp = backend.one(scope);
+            for &l in body.iter() {
+                let (vt, vp) = lit_pair(l, lower, upper)?;
+                bt = backend.and(bt, vt)?;
+                bp = backend.and(bp, vp)?;
+                if backend.is_zero(&bp) {
+                    break;
+                }
+            }
+            t_acc = backend.or(t_acc, bt)?;
+            p_acc = backend.or(p_acc, bp)?;
+        }
+        backend.minimize(&mut t_acc, Reduce::Between)?;
+        backend.minimize(&mut p_acc, Reduce::Between)?;
+        Ok((t_acc, p_acc))
+    };
+
+    let k = scc.len();
+    let mut updates = 0;
+    let mut lower: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
+    let mut upper: Vec<Tdd> = (0..k).map(|_| backend.one(scope)).collect();
+    loop {
+        // Application refinements, one atom at a time, until stable.
+        loop {
+            let mut changed = false;
+            for (i, &a) in scc.iter().enumerate() {
+                let (t, p) = apply(a, &lower, &upper)?;
+                updates += 1;
+                if !backend.equivalent(&t, &lower[i])? {
+                    lower[i] = t;
+                    changed = true;
+                }
+                if !backend.equivalent(&p, &upper[i])? {
+                    upper[i] = p;
+                    changed = true;
+                }
+            }
+            if !changed {
                 break;
             }
         }
-        t_acc = backend.or(t_acc, bt)?;
-        p_acc = backend.or(p_acc, bp)?;
+        // Unfoundedness refinement: least fixpoint of the upper component
+        // from ⊥ with the lower component frozen.
+        let mut u: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
+        loop {
+            let mut changed = false;
+            for (i, &a) in scc.iter().enumerate() {
+                let (_, p) = apply(a, &lower, &u)?;
+                updates += 1;
+                if !backend.equivalent(&p, &u[i])? {
+                    u[i] = p;
+                    changed = true;
+                }
+            }
+            if !changed {
+                break;
+            }
+        }
+        let mut refined = false;
+        for i in 0..k {
+            if !backend.equivalent(&u[i], &upper[i])? {
+                refined = true;
+            }
+        }
+        if !refined {
+            break;
+        }
+        upper = u;
     }
-    backend.minimize(&mut t_acc, Reduce::Between)?;
-    backend.minimize(&mut p_acc, Reduce::Between)?;
-    Ok((t_acc, p_acc))
+    for i in 0..k {
+        if !backend.equivalent(&lower[i], &upper[i])? {
+            return Err(CompileError::Unsound(gp.atoms[scc[i] as usize].clone()));
+        }
+    }
+    Ok((lower, updates))
 }

@@ -537,7 +537,16 @@ fn run_within(
         }
         let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
         let t = &mut trials[i];
-        note_projected_finish(t, &mut ledger);
+        if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
+            ledger.notes.push(format!(
+                "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
+                t.kind,
+                t.kind.indicators_name(),
+                if t.querying { "query phase" } else { "compile" },
+                projected,
+                (t.target as f64).log2()
+            ));
+        }
         let left = t.target.saturating_sub(t.spent).max(1);
         let rent = if weighed { None } else { search_rent(t, left) };
         let bounds = Bounds {
@@ -572,19 +581,6 @@ fn run_within(
             weighed = true;
             weigh_searched(&mut trials, &programs, &mut ledger)?;
         }
-    }
-}
-
-fn note_projected_finish(t: &Trial, ledger: &mut Ledger) {
-    if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
-        ledger.notes.push(format!(
-            "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
-            t.kind,
-            t.kind.indicators_name(),
-            if t.querying { "query phase" } else { "compile" },
-            projected,
-            (t.target as f64).log2()
-        ));
     }
 }
 
@@ -978,19 +974,7 @@ fn attempt(
     }
     let seconds = started.elapsed().as_secs_f64();
     ledger.trial_seconds += seconds;
-    record_attempt_note(t, bounds, work, seconds, &result, ledger);
-    result
-}
-
-fn record_attempt_note(
-    t: &Trial,
-    bounds: Option<Bounds>,
-    work: u64,
-    seconds: f64,
-    result: &Result<Answers, tp::CompileError>,
-    ledger: &mut Ledger,
-) {
-    let outcome = match result {
+    let outcome = match &result {
         Ok(_) => "finished",
         Err(tp::CompileError::QueryOversize { .. } | tp::CompileError::Oversize { .. }) => "size",
         Err(tp::CompileError::Projected { .. }) => "projected",
@@ -1025,12 +1009,9 @@ fn record_attempt_note(
             None => format!(", steps {done}/{all}"),
         });
     let watch = bounds.map_or("none".to_string(), |b| b.pairs.to_string());
-    ledger.notes.push(format!(
-        "trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
-        t.kind,
-        t.kind.indicators_name(),
-        progress.unwrap_or_default()
-    ));
+    ledger.notes.push(format!("trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
+        t.kind, t.kind.indicators_name(), progress.unwrap_or_default()));
+    result
 }
 
 /// What a run of trials built and no longer reads once it has its

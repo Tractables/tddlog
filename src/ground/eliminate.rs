@@ -257,7 +257,29 @@ fn eliminate(
 ) -> bool {
     let n = scc.len();
     let source = n;
-    let mut labels = build_scc_labels(out.gp, by_head, scc);
+    let local: FxHashMap<AtomId, usize> = scc.iter().enumerate().map(|(i, &a)| (a, i)).collect();
+    // The labels by tail and head; an edge is present where its label is.
+    let mut labels: Vec<FxHashMap<usize, Label>> = vec![FxHashMap::default(); n + 1];
+    for (h, &head) in scc.iter().enumerate() {
+        for &ri in &by_head[head as usize] {
+            let body = &out.gp.rules[ri].body;
+            match body.iter().position(|l| local.contains_key(&l.atom())) {
+                Some(at) => {
+                    let b = local[&body[at].atom()];
+                    if b != h {
+                        let rest: Vec<GLit> = body
+                            .iter()
+                            .enumerate()
+                            .filter(|&(i, _)| i != at)
+                            .map(|(_, l)| *l)
+                            .collect();
+                        add(labels[b].entry(h).or_default(), rest);
+                    }
+                }
+                None => add(labels[source].entry(h).or_default(), body.clone()),
+            }
+        }
+    }
     let last: Vec<bool> = scc.iter().map(|&a| needed[a as usize]).collect();
     let Some((order, products)) = elimination_order(&labels, &last, *budget) else {
         return false;
@@ -324,39 +346,6 @@ fn eliminate(
         }
     }
     true
-}
-
-fn build_scc_labels(
-    gp: &GroundProgram,
-    by_head: &RulesByHead,
-    scc: &[AtomId],
-) -> Vec<FxHashMap<usize, Label>> {
-    let n = scc.len();
-    let source = n;
-    let local: FxHashMap<AtomId, usize> = scc.iter().enumerate().map(|(i, &a)| (a, i)).collect();
-    // The labels by tail and head; an edge is present where its label is.
-    let mut labels: Vec<FxHashMap<usize, Label>> = vec![FxHashMap::default(); n + 1];
-    for (h, &head) in scc.iter().enumerate() {
-        for &ri in &by_head[head as usize] {
-            let body = &gp.rules[ri].body;
-            match body.iter().position(|l| local.contains_key(&l.atom())) {
-                Some(at) => {
-                    let b = local[&body[at].atom()];
-                    if b != h {
-                        let rest: Vec<GLit> = body
-                            .iter()
-                            .enumerate()
-                            .filter(|&(i, _)| i != at)
-                            .map(|(_, l)| *l)
-                            .collect();
-                        add(labels[b].entry(h).or_default(), rest);
-                    }
-                }
-                None => add(labels[source].entry(h).or_default(), body.clone()),
-            }
-        }
-    }
-    labels
 }
 
 /// The order the component's nodes go in, the source last and the nodes
@@ -431,7 +420,31 @@ fn elimination_order(
         if products > limit {
             return None;
         }
-        let stale = eliminate_vertex_from_graph(v, &tails, &heads, &mut onto, &mut into, &mut fill);
+        for &i in &tails {
+            onto[i].remove(&v);
+            fill.remove(&(i, v));
+        }
+        for &j in &heads {
+            into[j].remove(&v);
+            fill.remove(&(v, j));
+        }
+        onto[v].clear();
+        into[v].clear();
+        for &i in &tails {
+            for &j in &heads {
+                if i != j {
+                    onto[i].insert(j);
+                    into[j].insert(i);
+                    fill.insert((i, j));
+                }
+            }
+        }
+        let mut stale: FxHashSet<usize> = FxHashSet::default();
+        for &u in tails.iter().chain(&heads) {
+            stale.insert(u);
+            stale.extend(into[u].iter().copied());
+            stale.extend(onto[u].iter().copied());
+        }
         for u in stale {
             if u < n && !gone[u] {
                 heap.push(Reverse(score(u, &onto, &into, &fill)));
@@ -439,42 +452,6 @@ fn elimination_order(
         }
     }
     Some((order, products))
-}
-
-fn eliminate_vertex_from_graph(
-    v: usize,
-    tails: &[usize],
-    heads: &[usize],
-    onto: &mut [FxHashSet<usize>],
-    into: &mut [FxHashSet<usize>],
-    fill: &mut FxHashSet<(usize, usize)>,
-) -> FxHashSet<usize> {
-    for &i in tails {
-        onto[i].remove(&v);
-        fill.remove(&(i, v));
-    }
-    for &j in heads {
-        into[j].remove(&v);
-        fill.remove(&(v, j));
-    }
-    onto[v].clear();
-    into[v].clear();
-    for &i in tails {
-        for &j in heads {
-            if i != j {
-                onto[i].insert(j);
-                into[j].insert(i);
-                fill.insert((i, j));
-            }
-        }
-    }
-    let mut stale: FxHashSet<usize> = FxHashSet::default();
-    for &u in tails.iter().chain(heads) {
-        stale.insert(u);
-        stale.extend(into[u].iter().copied());
-        stale.extend(onto[u].iter().copied());
-    }
-    stale
 }
 
 #[cfg(test)]

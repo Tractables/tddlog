@@ -217,38 +217,6 @@ fn solve_split(
             (vec![ground], vec![queries])
         }
     };
-    let (answers, evidence_probability, last) = run_parts(
-        parts,
-        places,
-        options,
-        (projection, first_pairs),
-        ready,
-        decided_seconds,
-        progress,
-    )?;
-    let evidence_probability = if options.evidence_probability {
-        evidence_probability
-    } else {
-        None
-    };
-    Ok(Solution {
-        answers,
-        evidence_probability,
-        held: (program, last),
-    })
-}
-
-type PartsOutcome = (Option<Vec<QueryResult>>, Option<crate::eval::Count>, Run);
-
-fn run_parts(
-    parts: Vec<GroundProgram>,
-    places: Vec<Vec<usize>>,
-    options: &Options,
-    (projection, first_pairs): (Projection, usize),
-    mut ready: auto::Ready,
-    decided_seconds: f64,
-    progress: &mut dyn FnMut(Progress<'_>),
-) -> Result<PartsOutcome, Error> {
     let mut answers: Vec<Option<QueryResult>> = (0..places.iter().map(Vec::len).sum())
         .map(|_| None)
         .collect();
@@ -301,11 +269,16 @@ fn run_parts(
             .map(|r| r.expect("every part answered"))
             .collect()
     });
-    Ok((
+    let evidence_probability = if options.evidence_probability {
+        evidence_probability
+    } else {
+        None
+    };
+    Ok(Solution {
         answers,
         evidence_probability,
-        last.expect("a program has a part"),
-    ))
+        held: (program, last.expect("a program has a part")),
+    })
 }
 
 /// The program [`solve`] hands the compile under `options`, as `--ground`

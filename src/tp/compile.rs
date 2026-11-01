@@ -849,6 +849,10 @@ impl Compilation {
         // A query answered through a template is a leaf, a component of its
         // own that nothing reads, and is left out.
         let templates = templates(gp, &by_head);
+        let mut answers: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
+        for (&x, t) in &templates {
+            answers.entry(t.atom).or_default().push(x);
+        }
         // A link tied to another reader's copies is not built either.
         let ties = ties(gp, &by_head, &var_of, backend, projection);
         let sccs: Vec<Vec<AtomId>> =
@@ -863,7 +867,15 @@ impl Compilation {
             .max()
             .unwrap_or(0);
         let encoded = Encoded::new(gp, &var_of, num_vars);
-        let dying = Self::init_dying(gp, &by_head, &sccs, &comp_of, &var_of, backend, &templates);
+        let queried: Option<(FxHashSet<AtomId>, Probabilities)> =
+            gp.evidence.is_empty().then(|| {
+                let atoms = gp.queries.iter().filter_map(|&(_, id, _)| id).collect();
+                (
+                    atoms,
+                    Probabilities::from_program(gp, &var_of, backend.vtree().num_vars()),
+                )
+            });
+        let dying = Dying::new(gp, &by_head, &sccs, &comp_of, queried, answers);
         // Room for an entry for each atom the compile gives a formula.
         let stored = sccs.iter().map(Vec::len).sum();
         let stats = CompileStats {
@@ -873,7 +885,16 @@ impl Compilation {
             projection: projection_stats,
             ..Default::default()
         };
-        let fixpoint = Self::new_fixpoint(n, stored, gp.rules.len(), formulation);
+        let fixpoint = Fixpoint {
+            formulas: Formulas::new(n, stored),
+            lambda_cache: std::cell::RefCell::new(Formulas::new(n, 0)),
+            positive: std::cell::RefCell::new(vec![formulation == Formulation::Primal; n]),
+            version: std::cell::RefCell::new(vec![1; n]),
+            seen: std::cell::RefCell::new(vec![0; gp.rules.len()]),
+            worklist: None,
+            sizes: vec![0; n],
+            live: 0,
+        };
         Ok(Compilation {
             horizon: None,
             reach: None,
@@ -906,48 +927,6 @@ impl Compilation {
             counts: std::cell::RefCell::new([0usize; 5]),
             negations: std::cell::RefCell::new(Negations::default()),
         })
-    }
-
-    fn new_fixpoint(
-        n: usize,
-        stored: usize,
-        num_rules: usize,
-        formulation: Formulation,
-    ) -> Fixpoint {
-        Fixpoint {
-            formulas: Formulas::new(n, stored),
-            lambda_cache: std::cell::RefCell::new(Formulas::new(n, 0)),
-            positive: std::cell::RefCell::new(vec![formulation == Formulation::Primal; n]),
-            version: std::cell::RefCell::new(vec![1; n]),
-            seen: std::cell::RefCell::new(vec![0; num_rules]),
-            worklist: None,
-            sizes: vec![0; n],
-            live: 0,
-        }
-    }
-
-    fn init_dying(
-        gp: &GroundProgram,
-        by_head: &RulesByHead,
-        sccs: &[Vec<AtomId>],
-        comp_of: &[u32],
-        var_of: &[Option<VarId>],
-        backend: &TddBackend,
-        templates: &FxHashMap<AtomId, Template>,
-    ) -> Dying {
-        let mut answers: FxHashMap<AtomId, Vec<AtomId>> = FxHashMap::default();
-        for (&x, t) in templates {
-            answers.entry(t.atom).or_default().push(x);
-        }
-        let queried: Option<(FxHashSet<AtomId>, Probabilities)> =
-            gp.evidence.is_empty().then(|| {
-                let atoms = gp.queries.iter().filter_map(|&(_, id, _)| id).collect();
-                (
-                    atoms,
-                    Probabilities::from_program(gp, var_of, backend.vtree().num_vars()),
-                )
-            });
-        Dying::new(gp, by_head, sccs, comp_of, queried, answers)
     }
 
     /// Search for a smaller global vtree between the steps of the compile:
@@ -1053,7 +1032,76 @@ impl Compilation {
         self.marking = self
             .horizon
             .is_some_and(|h| work.saturating_sub(h.origin) < h.mark);
-        let result = self.run_components(gp, backend, watch);
+        let result = (|| {
+            // The component the guard last put back, and how often.
+            let mut guarded = (usize::MAX, 0);
+            // The guard's factor: [`GUARD`], raised for the rest of the run
+            // past a formula it refused that the search left larger than the
+            // live formulas together.
+            let mut factor = GUARD;
+            while self.next < self.sccs.len() {
+                backend.kept();
+                backend.pause()?;
+                if let Some(p) = self.projected.as_mut()
+                    && p.started == self.next
+                    && let Some(scope) = p.start(
+                        gp,
+                        &self.by_head,
+                        &self.sccs[self.next],
+                        &self.var_of,
+                        &self.comp_of,
+                        backend,
+                    )?
+                {
+                    self.scopes[self.next] = scope;
+                }
+                let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
+                // The live pairs the guard's watch is a multiple of, and its
+                // floor.
+                let base = match &self.dynamic {
+                    Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
+                        self.fixpoint.live.max(dynamic.first_pairs),
+                        GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
+                    )),
+                    _ => None,
+                };
+                let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
+                // A round the guard refuses has taken no formula, but has
+                // counted reads down.
+                let reads = guard.map(|_| self.dying.reads_after(self.next));
+                let finished = match self.round(gp, backend, watch, guard) {
+                    Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
+                        guarded = (self.next, tries + 1);
+                        if self.fixpoint.worklist.is_none() {
+                            self.reset(self.next);
+                        }
+                        if let Some(reads) = reads {
+                            self.dying.put_back(self.next, &reads);
+                        }
+                        let refused = self.refused.get_mut().take();
+                        let kept = self.memo.get_mut().take_refused();
+                        let left = self.search(backend, refused.or(kept))?;
+                        if let (Some(left), Some((base, _))) = (left, base)
+                            && left > self.fixpoint.live
+                        {
+                            factor = factor.max(pairs.div_ceil(base.max(1)));
+                        }
+                        continue;
+                    }
+                    r => r?,
+                };
+                if finished {
+                    self.next += 1;
+                    self.drop_dying(backend, self.next - 1)?;
+                    self.narrow(backend, self.next - 1)?;
+                }
+                self.search(backend, None)?;
+                if finished {
+                    self.look_ahead(backend)?;
+                }
+            }
+            Ok(())
+        })();
         // A cyclic component keeps its rounds so far; the others start
         // over.
         if result.is_err() && self.next < self.sccs.len() && self.fixpoint.worklist.is_none() {
@@ -1076,82 +1124,6 @@ impl Compilation {
         self.stats.negations = *self.negations.borrow();
         self.stats.clause_memo = self.memo.borrow().stats;
         result
-    }
-
-    fn run_components(
-        &mut self,
-        gp: &GroundProgram,
-        backend: &TddBackend,
-        watch: Option<usize>,
-    ) -> Result<(), CompileError> {
-        // The component the guard last put back, and how often.
-        let mut guarded = (usize::MAX, 0);
-        // The guard's factor: [`GUARD`], raised for the rest of the run
-        // past a formula it refused that the search left larger than the
-        // live formulas together.
-        let mut factor = GUARD;
-        while self.next < self.sccs.len() {
-            backend.kept();
-            backend.pause()?;
-            if let Some(p) = self.projected.as_mut()
-                && p.started == self.next
-                && let Some(scope) = p.start(
-                    gp,
-                    &self.by_head,
-                    &self.sccs[self.next],
-                    &self.var_of,
-                    &self.comp_of,
-                    backend,
-                )?
-            {
-                self.scopes[self.next] = scope;
-            }
-            let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
-            // The live pairs the guard's watch is a multiple of, and its
-            // floor.
-            let base = match &self.dynamic {
-                Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
-                    self.fixpoint.live.max(dynamic.first_pairs),
-                    GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
-                )),
-                _ => None,
-            };
-            let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
-            // A round the guard refuses has taken no formula, but has
-            // counted reads down.
-            let reads = guard.map(|_| self.dying.reads_after(self.next));
-            let finished = match self.round(gp, backend, watch, guard) {
-                Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
-                    guarded = (self.next, tries + 1);
-                    if self.fixpoint.worklist.is_none() {
-                        self.reset(self.next);
-                    }
-                    if let Some(reads) = reads {
-                        self.dying.put_back(self.next, &reads);
-                    }
-                    let refused = self.refused.get_mut().take();
-                    let kept = self.memo.get_mut().take_refused();
-                    let left = self.search(backend, refused.or(kept))?;
-                    if let (Some(left), Some((base, _))) = (left, base)
-                        && left > self.fixpoint.live
-                    {
-                        factor = factor.max(pairs.div_ceil(base.max(1)));
-                    }
-                    continue;
-                }
-                r => r?,
-            };
-            if finished {
-                self.next += 1;
-                self.drop_dying(backend, self.next - 1)?;
-                self.narrow(backend, self.next - 1)?;
-            }
-            self.search(backend, None)?;
-            if finished {
-                self.look_ahead(backend)?;
-            }
-        }
-        Ok(())
     }
 
     /// Stops the run, between components, where its [`Horizon`] projects
@@ -1894,7 +1866,21 @@ impl<'a> RoundCtx<'a, '_> {
         } else {
             NegationSource::Term
         };
-        let not_acc = self.initial_primal_negation(a, formulas, incremental)?;
+        // The primal's update of an atom with a formula starts the
+        // conjunction from `¬λ_a` (below).
+        let not_acc = match self.formulation {
+            Formulation::Primal if incremental => match (
+                self.lambda_cache.borrow_mut().take(a as usize),
+                &formulas[a as usize],
+            ) {
+                (Some(not_acc), _) => Some(Read::taken(not_acc).owned(self.backend)?),
+                (None, Some(acc)) => {
+                    Some(self.negate(NegationSource::Primal, Cow::Borrowed(&**acc))?)
+                }
+                (None, None) => None,
+            },
+            _ => None,
+        };
         let started = not_acc.is_some();
         let watched = |f: Tdd, a: AtomId| self.watched(f, a);
         let checked = |f: Tdd| self.checked(f);
@@ -1907,7 +1893,22 @@ impl<'a> RoundCtx<'a, '_> {
             // that reads it moves onto its own, which contains it: a cone
             // holds the cone of everything it depends on.
             let mut part = |l: GLit, covers: u32, on: &VtreeScope| -> Result<Part, CompileError> {
-                self.literal_part(l, covers, on, formulas)
+                let b = l.atom() as usize;
+                match self.gp.kinds[b] {
+                    AtomKind::Fact(_) => {
+                        let v = self.var_of[b].unwrap();
+                        let lit = if l.is_positive() {
+                            tididi::Literal::pos(v)
+                        } else {
+                            tididi::Literal::neg(v)
+                        };
+                        Ok(Part(Read::from(self.backend.literal(on, lit)?), on.clone()))
+                    }
+                    AtomKind::Derived => Ok(Part(
+                        self.derived(l, covers, formulas)?,
+                        self.scope_of(l.atom()).clone(),
+                    )),
+                }
             };
             let mut factoring = Factoring {
                 backend: self.backend,
@@ -1936,54 +1937,6 @@ impl<'a> RoundCtx<'a, '_> {
             factoring.negated_bodies(bodies, pairs, self.scope, not_acc)?
         };
         self.combine_negated_bodies(a, nb, started, incremental, formulas)
-    }
-
-    /// The primal's update of an atom with a formula starts the conjunction
-    /// from `¬λ_a`.
-    fn initial_primal_negation(
-        &self,
-        a: AtomId,
-        formulas: &Formulas,
-        incremental: bool,
-    ) -> Result<Option<Tdd>, CompileError> {
-        match self.formulation {
-            Formulation::Primal if incremental => match (
-                self.lambda_cache.borrow_mut().take(a as usize),
-                &formulas[a as usize],
-            ) {
-                (Some(not_acc), _) => Ok(Some(Read::taken(not_acc).owned(self.backend)?)),
-                (None, Some(acc)) => Ok(Some(
-                    self.negate(NegationSource::Primal, Cow::Borrowed(&**acc))?,
-                )),
-                (None, None) => Ok(None),
-            },
-            _ => Ok(None),
-        }
-    }
-
-    fn literal_part(
-        &self,
-        l: GLit,
-        covers: u32,
-        on: &VtreeScope,
-        formulas: &mut Formulas,
-    ) -> Result<Part, CompileError> {
-        let b = l.atom() as usize;
-        match self.gp.kinds[b] {
-            AtomKind::Fact(_) => {
-                let v = self.var_of[b].unwrap();
-                let lit = if l.is_positive() {
-                    tididi::Literal::pos(v)
-                } else {
-                    tididi::Literal::neg(v)
-                };
-                Ok(Part(Read::from(self.backend.literal(on, lit)?), on.clone()))
-            }
-            AtomKind::Derived => Ok(Part(
-                self.derived(l, covers, formulas)?,
-                self.scope_of(l.atom()).clone(),
-            )),
-        }
     }
 
     fn compile_aft(

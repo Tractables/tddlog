@@ -429,14 +429,39 @@ impl<'a> Shape<'a> {
                 if !possible {
                     continue;
                 }
-                self.emit_switched_clause(
-                    (x, clause, group),
-                    &parents,
-                    &mut gp,
-                    &mut ids,
-                    &mut kept,
-                    (&mut switches, &mut qs, &mut name),
-                );
+                if !probabilistic(clause) {
+                    let h = number(&mut gp, &mut ids, x, &clause.heads[0].atom);
+                    let mut body = parents.clone();
+                    body.sort_unstable();
+                    body.dedup();
+                    let rule = GroundRule::new(h, body);
+                    if kept.keep(&gp.rules, &rule) {
+                        gp.rules.push(rule);
+                    }
+                    continue;
+                }
+                switch_probabilities(&clause.heads, &mut qs)
+                    .expect("a row's probabilities sum to one at most");
+                switches.clear();
+                for (i, (h, &q)) in clause.heads.iter().zip(&qs).enumerate() {
+                    let switch = gp.atoms.len() as AtomId;
+                    gp.atoms.push(Atom::new(
+                        switch_name(&mut name, self.names[x], group, i),
+                        Vec::new(),
+                    ));
+                    gp.kinds.push(AtomKind::Fact(q));
+                    switches.push(switch);
+                    let h = number(&mut gp, &mut ids, x, &h.atom);
+                    // The head's switch, and the switches of the heads before
+                    // it negated.
+                    let mut body = Vec::with_capacity(parents.len() + i + 1);
+                    body.push(GLit::Pos(switch));
+                    body.extend(switches[..i].iter().map(|&s| GLit::Neg(s)));
+                    body.extend_from_slice(&parents);
+                    body.sort_unstable();
+                    body.dedup();
+                    gp.rules.push(GroundRule::new(h, body));
+                }
             }
         }
         let lookup = |a: &Atom| {
@@ -455,49 +480,6 @@ impl<'a> Shape<'a> {
             .map(|(a, value)| (a.clone(), lookup(a), *value))
             .collect();
         gp
-    }
-
-    fn emit_switched_clause(
-        &self,
-        (x, clause, group): (usize, &'a Clause, u32),
-        parents: &[GLit],
-        gp: &mut GroundProgram,
-        ids: &mut FxHashMap<(usize, &'a [Term]), AtomId>,
-        kept: &mut KeptRules,
-        (switches, qs, name): (&mut Vec<AtomId>, &mut Vec<Prob>, &mut String),
-    ) {
-        if !probabilistic(clause) {
-            let h = number(gp, ids, x, &clause.heads[0].atom);
-            let mut body = parents.to_vec();
-            body.sort_unstable();
-            body.dedup();
-            let rule = GroundRule::new(h, body);
-            if kept.keep(&gp.rules, &rule) {
-                gp.rules.push(rule);
-            }
-            return;
-        }
-        switch_probabilities(&clause.heads, qs).expect("a row's probabilities sum to one at most");
-        switches.clear();
-        for (i, (h, &q)) in clause.heads.iter().zip(qs.iter()).enumerate() {
-            let switch = gp.atoms.len() as AtomId;
-            gp.atoms.push(Atom::new(
-                switch_name(name, self.names[x], group, i),
-                Vec::new(),
-            ));
-            gp.kinds.push(AtomKind::Fact(q));
-            switches.push(switch);
-            let h = number(gp, ids, x, &h.atom);
-            // The head's switch, and the switches of the heads before
-            // it negated.
-            let mut body = Vec::with_capacity(parents.len() + i + 1);
-            body.push(GLit::Pos(switch));
-            body.extend(switches[..i].iter().map(|&s| GLit::Neg(s)));
-            body.extend_from_slice(parents);
-            body.sort_unstable();
-            body.dedup();
-            gp.rules.push(GroundRule::new(h, body));
-        }
     }
 
     fn ground_fact_table(

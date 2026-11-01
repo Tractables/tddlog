@@ -510,9 +510,6 @@ impl Network {
                         format!("{} given ({}): {e}", self.names[v], at.join(", "))
                     })?;
                     head.clear();
-                    if !written[v] {
-                        continue;
-                    }
                     let heads: Vec<(f64, usize)> = row
                         .iter()
                         .enumerate()
@@ -565,49 +562,6 @@ impl Network {
         }
         if out.len() == start {
             out.push('\n');
-        }
-        Ok(())
-    }
-
-    fn format_row_head(
-        &self,
-        (v, key, parents): (usize, &[u32], &[usize]),
-        probs: &[f64],
-        atoms_v: &[String],
-        row: &mut Vec<f64>,
-        head: &mut String,
-    ) -> Result<(), String> {
-        row.clear();
-        row.extend_from_slice(probs);
-        rows::normalized(row).map_err(|e| {
-            let at: Vec<&str> = key
-                .iter()
-                .zip(parents)
-                .map(|(&u, &p)| self.values[p][u as usize].as_str())
-                .collect();
-            format!("{} given ({}): {e}", self.names[v], at.join(", "))
-        })?;
-        head.clear();
-        let heads: Vec<(f64, usize)> = row
-            .iter()
-            .enumerate()
-            .filter(|(_, p)| **p > 0.0)
-            .map(|(u, &p)| (p, u))
-            .collect();
-        match heads[..] {
-            // No value under this row: no rule.
-            [] => {}
-            [(p, u)] if (p - 1.0).abs() < 1e-9 => head.push_str(&atoms_v[u]),
-            _ => {
-                for (j, &(p, u)) in heads.iter().enumerate() {
-                    if j > 0 {
-                        head.push_str("; ");
-                    }
-                    crate::syntax::write_float(head, p).expect("a String takes any text");
-                    head.push_str("::");
-                    head.push_str(&atoms_v[u]);
-                }
-            }
         }
         Ok(())
     }

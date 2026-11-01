@@ -613,65 +613,6 @@ impl Unit<'_> {
     fn plan(&mut self, rules: &[usize], path: &mut Vec<usize>, whole: Option<usize>) -> Plan {
         let top = path.is_empty();
         let whole = whole.unwrap_or_else(|| self.whole(rules, path));
-        let Some(Candidate {
-            flat,
-            set,
-            own_value,
-            over,
-            values,
-            wholes,
-        }) = self.best_candidate(rules, path, top)
-        else {
-            return Plan {
-                cost: whole,
-                split: None,
-            };
-        };
-        // A whole unit is split where the split pays with its parts whole.
-        if top && SPLIT_GAIN * flat > whole {
-            return Plan {
-                cost: whole,
-                split: None,
-            };
-        }
-        debug_assert!(
-            top || wholes.len() == values.len(),
-            "the kept candidate summed every part"
-        );
-        path.push(set);
-        let parts: Vec<(AtomId, Vec<usize>, Plan)> = values
-            .into_iter()
-            .enumerate()
-            .map(|(k, (a, rules))| {
-                let plan = self.plan(&rules, path, wholes.get(k).copied());
-                (a, rules, plan)
-            })
-            .collect();
-        path.pop();
-        let cost = over + parts.iter().map(|(_, _, plan)| plan.cost).sum::<usize>();
-        if top || SPLIT_GAIN * cost <= whole {
-            Plan {
-                cost,
-                split: Some(Split {
-                    set,
-                    own_value,
-                    parts,
-                }),
-            }
-        } else {
-            Plan {
-                cost: whole,
-                split: None,
-            }
-        }
-    }
-
-    fn best_candidate(
-        &mut self,
-        rules: &[usize],
-        path: &mut Vec<usize>,
-        top: bool,
-    ) -> Option<Candidate> {
         let mut candidates: Vec<usize> = self.reads[rules[0]]
             .iter()
             .filter(|&&(s, _, copied)| {
@@ -733,7 +674,57 @@ impl Unit<'_> {
                 });
             }
         }
-        best
+        let Some(Candidate {
+            flat,
+            set,
+            own_value,
+            over,
+            values,
+            wholes,
+        }) = best
+        else {
+            return Plan {
+                cost: whole,
+                split: None,
+            };
+        };
+        // A whole unit is split where the split pays with its parts whole.
+        if top && SPLIT_GAIN * flat > whole {
+            return Plan {
+                cost: whole,
+                split: None,
+            };
+        }
+        debug_assert!(
+            top || wholes.len() == values.len(),
+            "the kept candidate summed every part"
+        );
+        path.push(set);
+        let parts: Vec<(AtomId, Vec<usize>, Plan)> = values
+            .into_iter()
+            .enumerate()
+            .map(|(k, (a, rules))| {
+                let plan = self.plan(&rules, path, wholes.get(k).copied());
+                (a, rules, plan)
+            })
+            .collect();
+        path.pop();
+        let cost = over + parts.iter().map(|(_, _, plan)| plan.cost).sum::<usize>();
+        if top || SPLIT_GAIN * cost <= whole {
+            Plan {
+                cost,
+                split: Some(Split {
+                    set,
+                    own_value,
+                    parts,
+                }),
+            }
+        } else {
+            Plan {
+                cost: whole,
+                split: None,
+            }
+        }
     }
 }
 

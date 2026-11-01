@@ -359,9 +359,37 @@ impl QueryEvaluation {
             sizes.walk_seconds += t.elapsed().as_secs_f64();
             *evidence = walked?;
         }
-        let Some(evidence) = prepare_evidence(backend, weights, evidence, mass, counted, sizes)?
-        else {
-            return Ok((None, *sizes));
+        let evidence = match evidence {
+            None => None,
+            Some((e, scope)) => {
+                // The evidence's weights, restricted to its scope once: every
+                // literal query reads them.
+                let w = weights.restrict(scope.vars());
+                sizes.evidence = backend.size(e);
+                sizes.evidence_implicit = backend.implicit_size(e);
+                sizes.record(sizes.evidence, None)?;
+                if mass.is_none() {
+                    let t = Instant::now();
+                    *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
+                    sizes.count_seconds += t.elapsed().as_secs_f64();
+                }
+                let mass = mass.unwrap();
+                // Only a mass that is zero as a count: in a float the
+                // probability of a thousand observations is zero too.
+                if mass.is_zero() {
+                    sizes.routes = counted
+                        .as_ref()
+                        .map(CountedEvidence::routes)
+                        .unwrap_or_default();
+                    return Ok((None, *sizes));
+                }
+                Some(Evidence {
+                    e,
+                    scope,
+                    weights: w,
+                    mass,
+                })
+            }
         };
         let mut answers = Answers {
             gp,
@@ -376,82 +404,32 @@ impl QueryEvaluation {
             pending_query,
             sizes,
         };
-        answer_remaining_queries(gp, backend, &mut answers, out)?;
+        for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
+            backend.pause()?;
+            let p = match id {
+                None => {
+                    if *positive {
+                        0.0
+                    } else {
+                        1.0
+                    }
+                }
+                Some(a) => answers.probability(*a, *positive)?,
+            };
+            *answers.pending_query = None;
+            backend.kept();
+            out.push(QueryResult {
+                atom: atom.clone(),
+                positive: *positive,
+                probability: p.clamp(0.0, 1.0),
+            });
+        }
         sizes.routes = counted
             .as_ref()
             .map(CountedEvidence::routes)
             .unwrap_or_default();
         Ok((Some(std::mem::take(out)), *sizes))
     }
-}
-
-fn answer_remaining_queries(
-    gp: &GroundProgram,
-    backend: &TddBackend<'_>,
-    answers: &mut Answers<'_>,
-    out: &mut Vec<QueryResult>,
-) -> Result<(), CompileError> {
-    for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
-        backend.pause()?;
-        let p = match id {
-            None => {
-                if *positive {
-                    0.0
-                } else {
-                    1.0
-                }
-            }
-            Some(a) => answers.probability(*a, *positive)?,
-        };
-        *answers.pending_query = None;
-        backend.kept();
-        out.push(QueryResult {
-            atom: atom.clone(),
-            positive: *positive,
-            probability: p.clamp(0.0, 1.0),
-        });
-    }
-    Ok(())
-}
-
-fn prepare_evidence<'a>(
-    backend: &TddBackend<'_>,
-    weights: &Probabilities,
-    evidence: &'a Option<Formula>,
-    mass: &mut Option<Count>,
-    counted: &mut Option<CountedEvidence>,
-    sizes: &mut QuerySizes,
-) -> Result<Option<Option<Evidence<'a>>>, CompileError> {
-    let Some((e, scope)) = evidence else {
-        return Ok(Some(None));
-    };
-    // The evidence's weights, restricted to its scope once: every
-    // literal query reads them.
-    let w = weights.restrict(scope.vars());
-    sizes.evidence = backend.size(e);
-    sizes.evidence_implicit = backend.implicit_size(e);
-    sizes.record(sizes.evidence, None)?;
-    if mass.is_none() {
-        let t = Instant::now();
-        *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
-        sizes.count_seconds += t.elapsed().as_secs_f64();
-    }
-    let mass = mass.unwrap();
-    // Only a mass that is zero as a count: in a float the
-    // probability of a thousand observations is zero too.
-    if mass.is_zero() {
-        sizes.routes = counted
-            .as_ref()
-            .map(CountedEvidence::routes)
-            .unwrap_or_default();
-        return Ok(None);
-    }
-    Ok(Some(Some(Evidence {
-        e,
-        scope,
-        weights: w,
-        mass,
-    })))
 }
 
 /// The scopes the query phase builds formulas on, interned like the
@@ -1084,89 +1062,89 @@ mod tests {
             };
             for form in [Formulation::Primal, Formulation::Dual] {
                 for projection in [Projection::Off, Projection::default()] {
-                    check_stopped_conditionals(&gp, indicators, form, projection);
+                    let (
+                        crate::vtree::Layout {
+                            vtree: tree, order, ..
+                        },
+                        _,
+                    ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed)
+                        .unwrap();
+                    let compiled = tree.context().run(|engine| {
+                        compile(
+                            &gp,
+                            fact_variables(&gp, &order),
+                            form,
+                            &TddBackend::new(engine, tree.clone()),
+                            projection,
+                            None,
+                        )
+                        .unwrap()
+                    });
+                    let mut state = tree.context().run(|engine| {
+                        QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
+                    });
+                    let mut budget = 1;
+                    let mut stops = 0;
+                    // The steps finished grow with each stop, out of the
+                    // walk's joins and the queries.
+                    let mut done = 0;
+                    let (answers, sizes) = loop {
+                        let result = tree.context().run(|engine| {
+                            let limit = LimitConfig::none().with_stop_rules(
+                                StopRules::default().with_unconditional(Some(StopAt::WorkUnits(
+                                    engine.limits().work_units() + budget,
+                                ))),
+                            );
+                            let _guard = engine.limits().scope(limit);
+                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
+                        });
+                        match result {
+                            Ok(result) => break result,
+                            Err(CompileError::Tdd(OperationError::Stopped)) => {
+                                let (now, all) = state.progress();
+                                assert_eq!(all, gp.evidence.len() - 1 + gp.queries.len());
+                                assert!(done <= now && now < all, "{done} {now} {all}");
+                                done = now;
+                                stops += 1;
+                                budget *= 2;
+                            }
+                            Err(e) => panic!("{e}"),
+                        }
+                        assert!(stops < 24, "a growing budget must eventually complete");
+                    };
+                    assert!(stops > 1);
+                    assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
+                    let answers = answers.unwrap();
+                    assert_eq!(answers.len(), 6);
+                    for (answer, expected) in answers.iter().zip([
+                        2.0 / 9.0,
+                        2.0 / 9.0,
+                        1.0,
+                        0.25,
+                        1.0 / 18.0,
+                        17.0 / 18.0,
+                    ]) {
+                        assert!(
+                            (answer.probability - expected).abs() < 1e-12,
+                            "{answer:?} indicators {indicators} {form:?}"
+                        );
+                    }
+                    let (fresh, fresh_sizes) = tree
+                        .context()
+                        .run(|engine| {
+                            query_probabilities(
+                                &gp,
+                                &TddBackend::new(engine, tree.clone()),
+                                &compiled,
+                            )
+                        })
+                        .unwrap();
+                    assert_eq!(Some(answers), fresh);
+                    assert_eq!(sizes.evidence, fresh_sizes.evidence);
+                    assert_eq!(sizes.largest, fresh_sizes.largest);
                 }
             }
         }
-    }
-
-    fn check_stopped_conditionals(
-        gp: &GroundProgram,
-        indicators: bool,
-        form: Formulation,
-        projection: Projection,
-    ) {
-        let (
-            crate::vtree::Layout {
-                vtree: tree, order, ..
-            },
-            _,
-        ) = crate::vtree::build(gp, &crate::ground::deps::Deps::of(gp), Kind::Closed).unwrap();
-        let compiled = tree.context().run(|engine| {
-            compile(
-                gp,
-                fact_variables(gp, &order),
-                form,
-                &TddBackend::new(engine, tree.clone()),
-                projection,
-                None,
-            )
-            .unwrap()
-        });
-        let mut state = tree.context().run(|engine| {
-            QueryEvaluation::new(gp, &TddBackend::new(engine, tree.clone()), &compiled)
-        });
-        let mut budget = 1;
-        let mut stops = 0;
-        // The steps finished grow with each stop, out of the walk's joins and
-        // the queries.
-        let mut done = 0;
-        let (answers, sizes) = loop {
-            let result = tree.context().run(|engine| {
-                let limit =
-                    LimitConfig::none().with_stop_rules(StopRules::default().with_unconditional(
-                        Some(StopAt::WorkUnits(engine.limits().work_units() + budget)),
-                    ));
-                let _guard = engine.limits().scope(limit);
-                state.run(gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
-            });
-            match result {
-                Ok(result) => break result,
-                Err(CompileError::Tdd(OperationError::Stopped)) => {
-                    let (now, all) = state.progress();
-                    assert_eq!(all, gp.evidence.len() - 1 + gp.queries.len());
-                    assert!(done <= now && now < all, "{done} {now} {all}");
-                    done = now;
-                    stops += 1;
-                    budget *= 2;
-                }
-                Err(e) => panic!("{e}"),
-            }
-            assert!(stops < 24, "a growing budget must eventually complete");
-        };
-        assert!(stops > 1);
-        assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
-        let answers = answers.unwrap();
-        assert_eq!(answers.len(), 6);
-        for (answer, expected) in
-            answers
-                .iter()
-                .zip([2.0 / 9.0, 2.0 / 9.0, 1.0, 0.25, 1.0 / 18.0, 17.0 / 18.0])
-        {
-            assert!(
-                (answer.probability - expected).abs() < 1e-12,
-                "{answer:?} indicators {indicators} {form:?}"
-            );
-        }
-        let (fresh, fresh_sizes) = tree
-            .context()
-            .run(|engine| {
-                query_probabilities(gp, &TddBackend::new(engine, tree.clone()), &compiled)
-            })
-            .unwrap();
-        assert_eq!(Some(answers), fresh);
-        assert_eq!(sizes.evidence, fresh_sizes.evidence);
-        assert_eq!(sizes.largest, fresh_sizes.largest);
     }
 
     /// The source of the tests of the walk's taken formulas: `g` observed
@@ -1366,95 +1344,130 @@ mod tests {
                     ground(source)
                 };
                 for strategy in [Kind::Closed, Kind::Families { search: false }] {
-                    reassociated +=
-                        check_waiting_join_strategy(&gp, strategy, expected.as_deref(), indicators);
+                    // The families layout lays out indicators, where atoms
+                    // are read through them.
+                    let (
+                        crate::vtree::Layout {
+                            vtree: tree, order, ..
+                        },
+                        _,
+                    ) = match crate::vtree::build(
+                        &gp,
+                        &crate::ground::deps::Deps::of(&gp),
+                        strategy,
+                    ) {
+                        Ok(layout) => layout,
+                        Err(_) if strategy != Kind::Closed => continue,
+                        Err(e) => panic!("{e}"),
+                    };
+                    let compiled = tree.context().run(|engine| {
+                        compile(
+                            &gp,
+                            fact_variables(&gp, &order),
+                            Formulation::Dual,
+                            &TddBackend::new(engine, tree.clone()),
+                            Projection::default(),
+                            None,
+                        )
+                        .unwrap()
+                    });
+                    let (fresh, _) = tree
+                        .context()
+                        .run(|engine| {
+                            query_probabilities(
+                                &gp,
+                                &TddBackend::new(engine, tree.clone()),
+                                &compiled,
+                            )
+                        })
+                        .unwrap();
+                    let fresh = fresh.unwrap();
+                    let mut state = tree.context().run(|engine| {
+                        QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
+                    });
+                    state.walk.defer_from = 1;
+                    state.walk.defer_growth = 1;
+                    let mut budget = 1;
+                    let answers = loop {
+                        let result = tree.context().run(|engine| {
+                            let limit = LimitConfig::none().with_stop_rules(
+                                StopRules::default().with_unconditional(Some(StopAt::WorkUnits(
+                                    engine.limits().work_units() + budget,
+                                ))),
+                            );
+                            let _guard = engine.limits().scope(limit);
+                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
+                        });
+                        match result {
+                            Ok((answers, _)) => break answers.unwrap(),
+                            Err(CompileError::Tdd(OperationError::Stopped)) => budget *= 2,
+                            Err(e) => panic!("{e}"),
+                        }
+                        assert!(
+                            budget < 1 << 24,
+                            "a growing budget must eventually complete"
+                        );
+                    };
+                    assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
+                    reassociated += state.walk.reassociated;
+                    assert_eq!(answers.len(), fresh.len());
+                    for (i, (answer, fresh)) in answers.iter().zip(&fresh).enumerate() {
+                        assert!(
+                            (answer.probability - fresh.probability).abs() < 1e-12,
+                            "{answer:?} {fresh:?} indicators {indicators} {strategy:?}"
+                        );
+                        if let Some(expected) = &expected {
+                            assert!(
+                                (answer.probability - expected[i]).abs() < 1e-12,
+                                "{answer:?} indicators {indicators} {strategy:?}"
+                            );
+                        }
+                    }
                 }
             }
         }
         assert!(reassociated > 0, "no last join reassociated");
     }
 
-    fn check_waiting_join_strategy(
-        gp: &GroundProgram,
-        strategy: Kind,
-        expected: Option<&[f64]>,
-        indicators: bool,
-    ) -> usize {
-        // The families layout lays out indicators, where atoms
-        // are read through them.
-        let (
-            crate::vtree::Layout {
-                vtree: tree, order, ..
-            },
-            _,
-        ) = match crate::vtree::build(gp, &crate::ground::deps::Deps::of(gp), strategy) {
-            Ok(layout) => layout,
-            Err(_) if strategy != Kind::Closed => return 0,
-            Err(e) => panic!("{e}"),
-        };
-        let compiled = tree.context().run(|engine| {
-            compile(
-                gp,
-                fact_variables(gp, &order),
-                Formulation::Dual,
-                &TddBackend::new(engine, tree.clone()),
-                Projection::default(),
-                None,
-            )
-            .unwrap()
-        });
-        let (fresh, _) = tree
-            .context()
-            .run(|engine| {
-                query_probabilities(gp, &TddBackend::new(engine, tree.clone()), &compiled)
-            })
-            .unwrap();
-        let fresh = fresh.unwrap();
-        let mut state = tree.context().run(|engine| {
-            QueryEvaluation::new(gp, &TddBackend::new(engine, tree.clone()), &compiled)
-        });
-        state.walk.defer_from = 1;
-        state.walk.defer_growth = 1;
-        let mut budget = 1;
-        let answers = loop {
-            let result = tree.context().run(|engine| {
-                let limit =
-                    LimitConfig::none().with_stop_rules(StopRules::default().with_unconditional(
-                        Some(StopAt::WorkUnits(engine.limits().work_units() + budget)),
-                    ));
-                let _guard = engine.limits().scope(limit);
-                state.run(gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
-            });
-            match result {
-                Ok((answers, _)) => break answers.unwrap(),
-                Err(CompileError::Tdd(OperationError::Stopped)) => budget *= 2,
-                Err(e) => panic!("{e}"),
-            }
-            assert!(
-                budget < 1 << 24,
-                "a growing budget must eventually complete"
-            );
-        };
-        assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
-        assert_eq!(answers.len(), fresh.len());
-        for (i, (answer, fresh)) in answers.iter().zip(&fresh).enumerate() {
-            assert!(
-                (answer.probability - fresh.probability).abs() < 1e-12,
-                "{answer:?} {fresh:?} indicators {indicators} {strategy:?}"
-            );
-            if let Some(expected) = expected {
-                assert!(
-                    (answer.probability - expected[i]).abs() < 1e-12,
-                    "{answer:?} indicators {indicators} {strategy:?}"
-                );
-            }
-        }
-        state.walk.reassociated
-    }
-
     #[test]
     fn grouped_batches_given_up_keep_the_answers() {
-        let (bayes, bayes_answers) = naive_bayes_program_and_answers(60);
+        // Two naive Bayes models, a and b, each with half its features
+        // observed: on a right-linear vtree each observation is at a node of
+        // its own, one above the other, and the factors put off along the
+        // spine make batches of several groups; where the two models meet,
+        // one model's result is the node's other item beside the batch of
+        // the other. Hand computed from the program's rounded weights, the
+        // same for both models: P(v1 | e) is proportional to 0.5 times the
+        // product of the observed p_i, P(v2 | e) to 0.5 times that of the
+        // q_i, and an unobserved feature's probability is
+        // P(v1 | e) p_j + P(v2 | e) q_j.
+        let k = 60;
+        let weight = |x: f64| format!("{x:.4}").parse::<f64>().unwrap();
+        let p = |i: usize| weight(0.1 + 0.8 * (i as f64 / k as f64));
+        let q = |i: usize| weight(0.9 - 0.8 * (i as f64 / k as f64));
+        let mut bayes = String::new();
+        for m in ["a", "b"] {
+            bayes.push_str(&format!("0.5::cls({m},v1); 0.5::cls({m},v2).\n"));
+            for i in 1..=k {
+                bayes.push_str(&format!(
+                    "{}::obs({m},{i}) :- cls({m},v1).\n{}::obs({m},{i}) :- cls({m},v2).\n",
+                    p(i),
+                    q(i)
+                ));
+                bayes.push_str(&if i <= k / 2 {
+                    format!("evidence(obs({m},{i}), true).\n")
+                } else {
+                    format!("query(obs({m},{i})).\n")
+                });
+            }
+        }
+        let (v1, v2) = (1..=k / 2).fold((0.5, 0.5), |(a, b), i| (a * p(i), b * q(i)));
+        let (v1, v2) = (v1 / (v1 + v2), v2 / (v1 + v2));
+        let bayes_answers: Vec<f64> = (k / 2 + 1..=k)
+            .map(|j| v1 * p(j) + v2 * q(j))
+            .cycle()
+            .take(k)
+            .collect();
         let (mut grouped, mut unbatched, mut ended_steps) = (0, 0, 0);
         for indicators in [false, true] {
             let gp = if indicators {
@@ -1516,38 +1529,6 @@ mod tests {
         assert!(grouped > 0, "no batch of several groups");
         assert!(unbatched > 0, "no batch given up");
         assert!(ended_steps > 0, "no batch given up ended a node's step");
-    }
-
-    /// Two naive Bayes models, a and b, each with half its features observed,
-    /// and the hand-computed posterior probabilities of the unobserved features.
-    fn naive_bayes_program_and_answers(k: usize) -> (String, Vec<f64>) {
-        let weight = |x: f64| format!("{x:.4}").parse::<f64>().unwrap();
-        let p = |i: usize| weight(0.1 + 0.8 * (i as f64 / k as f64));
-        let q = |i: usize| weight(0.9 - 0.8 * (i as f64 / k as f64));
-        let mut bayes = String::new();
-        for m in ["a", "b"] {
-            bayes.push_str(&format!("0.5::cls({m},v1); 0.5::cls({m},v2).\n"));
-            for i in 1..=k {
-                bayes.push_str(&format!(
-                    "{}::obs({m},{i}) :- cls({m},v1).\n{}::obs({m},{i}) :- cls({m},v2).\n",
-                    p(i),
-                    q(i)
-                ));
-                bayes.push_str(&if i <= k / 2 {
-                    format!("evidence(obs({m},{i}), true).\n")
-                } else {
-                    format!("query(obs({m},{i})).\n")
-                });
-            }
-        }
-        let (v1, v2) = (1..=k / 2).fold((0.5, 0.5), |(a, b), i| (a * p(i), b * q(i)));
-        let (v1, v2) = (v1 / (v1 + v2), v2 / (v1 + v2));
-        let answers: Vec<f64> = (k / 2 + 1..=k)
-            .map(|j| v1 * p(j) + v2 * q(j))
-            .cycle()
-            .take(k)
-            .collect();
-        (bayes, answers)
     }
 
     /// Data points x_j = m + e_j mod 2^n, a ripple-carry adder for each

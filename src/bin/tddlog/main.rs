@@ -166,32 +166,6 @@ fn parse_args() -> Result<Request, String> {
             },
         }
     }
-    finish_parsed_args(
-        file,
-        arguments,
-        strategy,
-        precision,
-        (ground_only, stats, evidence_probability),
-        (queries, no_queries, evidence, rescale, program_only),
-    )
-}
-
-type NetworkFlags = (
-    Option<Queries>,
-    Option<()>,
-    Option<String>,
-    Option<()>,
-    Option<()>,
-);
-
-fn finish_parsed_args(
-    file: Option<String>,
-    arguments: Vec<String>,
-    strategy: Option<Strategy>,
-    precision: Option<usize>,
-    (ground_only, stats, evidence_probability): (Option<()>, Option<()>, Option<()>),
-    (queries, no_queries, evidence, rescale, program_only): NetworkFlags,
-) -> Result<Request, String> {
     let file = file.ok_or_else(|| USAGE.to_string())?;
     let ground_only = ground_only.is_some();
     let stats = stats.is_some();

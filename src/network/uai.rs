@@ -117,7 +117,19 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
         network.declare(&format!("x{i}"), (0..k).map(|u| u.to_string()).collect())?;
     }
     if !markov {
-        return parse_bayes_tables(network, scopes, tables);
+        for (scope, table) in scopes.into_iter().zip(tables) {
+            let (&child, parents) = scope
+                .split_last()
+                .ok_or("UAI BAYES function of an empty scope")?;
+            if network.tables[child].is_some() {
+                return Err(format!("UAI BAYES file with two tables for x{child}"));
+            }
+            network.set_product_table(child, parents.to_vec(), table)?;
+        }
+        if let Some(v) = network.tables.iter().position(Option::is_none) {
+            return Err(format!("UAI BAYES file without a table for x{v}"));
+        }
+        return Ok(Read::of(network));
     }
     if let Some(conditional) = conditional_tables(&sizes, &scopes, &tables) {
         for (v, (scope, table)) in conditional.into_iter().enumerate() {
@@ -181,26 +193,6 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
     })
 }
 
-fn parse_bayes_tables(
-    mut network: Network,
-    scopes: Vec<Vec<usize>>,
-    tables: Vec<Vec<f64>>,
-) -> Result<Read, String> {
-    for (scope, table) in scopes.into_iter().zip(tables) {
-        let (&child, parents) = scope
-            .split_last()
-            .ok_or("UAI BAYES function of an empty scope")?;
-        if network.tables[child].is_some() {
-            return Err(format!("UAI BAYES file with two tables for x{child}"));
-        }
-        network.set_product_table(child, parents.to_vec(), table)?;
-    }
-    if let Some(v) = network.tables.iter().position(Option::is_none) {
-        return Err(format!("UAI BAYES file without a table for x{v}"));
-    }
-    Ok(Read::of(network))
-}
-
 /// `log10 Z - log10 P(e)` of a Markov network's program, the sum of the
 /// base-10 logarithms of each prior's sum, each factor's largest entry and
 /// each constant factor's entry (`logs`): in each assignment the program's
@@ -261,54 +253,8 @@ fn conditional_tables(
         }
         candidates.push(found);
     }
-    let owner = match_functions_to_vars(n, scopes, &candidates)?;
-    let mut out = Vec::with_capacity(n);
-    for (v, f) in owner.iter().enumerate() {
-        let f = f.expect("a perfect matching");
-        let (scope, table) = (&scopes[f], &tables[f]);
-        let at = scope
-            .iter()
-            .position(|&u| u == v)
-            .expect("v is in its scope");
-        let order: Vec<usize> = (0..scope.len()).filter(|&i| i != at).chain([at]).collect();
-        let strides = strides_of(scope);
-        let mut reordered = Vec::with_capacity(table.len());
-        let mut key = vec![0usize; order.len()];
-        for _ in 0..table.len() {
-            reordered.push(
-                table[key
-                    .iter()
-                    .zip(&order)
-                    .map(|(a, &i)| a * strides[i])
-                    .sum::<usize>()],
-            );
-            for j in (0..key.len()).rev() {
-                key[j] += 1;
-                if key[j] < sizes[scope[order[j]]] {
-                    break;
-                }
-                key[j] = 0;
-            }
-        }
-        out.push((
-            order.iter().map(|&i| scope[i]).collect::<Vec<_>>(),
-            reordered,
-        ));
-    }
-    // The child relation is acyclic: a depth-first walk to the parents
-    // meets no variable on its own path.
-    super::parent_postorder(n, |v| &out[v].0[..out[v].0.len() - 1])
-        .1
-        .then_some(out)
-}
-
-/// Kuhn's augmenting paths, functions to the variables they may be the
-/// table of; almost every function has one candidate.
-fn match_functions_to_vars(
-    n: usize,
-    scopes: &[Vec<usize>],
-    candidates: &[Vec<usize>],
-) -> Option<Vec<Option<usize>>> {
+    // Kuhn's augmenting paths, functions to the variables they may be the
+    // table of; almost every function has one candidate.
     let mut owner: Vec<Option<usize>> = vec![None; n];
     for j in 0..n {
         let mut seen = vec![false; n];
@@ -353,10 +299,45 @@ fn match_functions_to_vars(
             return None;
         }
     }
-    Some(owner)
+    let mut out = Vec::with_capacity(n);
+    for (v, f) in owner.iter().enumerate() {
+        let f = f.expect("a perfect matching");
+        let (scope, table) = (&scopes[f], &tables[f]);
+        let at = scope
+            .iter()
+            .position(|&u| u == v)
+            .expect("v is in its scope");
+        let order: Vec<usize> = (0..scope.len()).filter(|&i| i != at).chain([at]).collect();
+        let strides = strides_of(scope);
+        let mut reordered = Vec::with_capacity(table.len());
+        let mut key = vec![0usize; order.len()];
+        for _ in 0..table.len() {
+            reordered.push(
+                table[key
+                    .iter()
+                    .zip(&order)
+                    .map(|(a, &i)| a * strides[i])
+                    .sum::<usize>()],
+            );
+            for j in (0..key.len()).rev() {
+                key[j] += 1;
+                if key[j] < sizes[scope[order[j]]] {
+                    break;
+                }
+                key[j] = 0;
+            }
+        }
+        out.push((
+            order.iter().map(|&i| scope[i]).collect::<Vec<_>>(),
+            reordered,
+        ));
+    }
+    // The child relation is acyclic: a depth-first walk to the parents
+    // meets no variable on its own path.
+    super::parent_postorder(n, |v| &out[v].0[..out[v].0.len() - 1])
+        .1
+        .then_some(out)
 }
-
-type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
 
 /// The colour symmetry of a Markov network, broken. In a network whose
 /// variables all have the same k >= 2 values and whose functions are all
@@ -372,6 +353,8 @@ type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
 /// Returns the functions with v1's and v2's unary tables added and the
 /// table of v3 given v2 where there is a v3, whose Z is the network's
 /// divided by k; `None` for another network.
+type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
+
 fn colour_symmetry(
     sizes: &[usize],
     scopes: &[Vec<usize>],

@@ -292,26 +292,6 @@ fn settle_from(
         settled.next = s + 1;
     }
     // The queries, against the evidence the other readers left.
-    settle_asked_cuts(
-        gp,
-        backend,
-        compiled,
-        settled,
-        budget,
-        (&cuts, &asks, &segment_of),
-        (&mut readers, &mut supports),
-    )
-}
-
-fn settle_asked_cuts(
-    gp: &GroundProgram,
-    backend: &TddBackend,
-    compiled: &mut Compiled,
-    settled: &mut Settled,
-    budget: &mut Budget,
-    (cuts, asks, segment_of): (&[Option<Cut>], &FxHashSet<AtomId>, &FxHashMap<VarId, usize>),
-    (readers, supports): (&mut [Vec<AtomId>], &mut Supports),
-) -> Result<(), CompileError> {
     while settled.next_asked < settled.asked.len() {
         let s = settled.asked[settled.next_asked];
         let cut = cuts[s]
@@ -319,7 +299,7 @@ fn settle_asked_cuts(
             .expect("a cut whose other readers were composed");
         readers[s].sort_unstable();
         readers[s].dedup();
-        let (_, asked) = reading(backend, compiled, &readers[s], cut, asks, supports)?;
+        let (_, asked) = reading(backend, compiled, &readers[s], cut, &asks, &mut supports)?;
         let pairs = |a: AtomId| {
             compiled.formulas[a as usize]
                 .as_ref()
@@ -344,7 +324,7 @@ fn settle_asked_cuts(
         )? {
             None => settled.kept += 1,
             Some(composed) => {
-                replace(compiled, composed, (readers, segment_of, s));
+                replace(compiled, composed, (&mut readers, &segment_of, s));
                 expand(compiled, cut);
                 settled.expanded += 1;
             }

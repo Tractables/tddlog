@@ -116,8 +116,24 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
     }
     // PRISM's switches, as annotated disjunctions.
     let set_sw = directives(clauses, "set_sw");
-    if !set_sw.is_empty() {
-        append_prism_switches(&set_sw, &kept, depth, &at_line, &mut out)?;
+    if let Some(&(at, _)) = set_sw.first() {
+        if depth.is_some() {
+            return Err(at_line((
+                at,
+                "PRISM's switches under PITA's depth bound".into(),
+            )));
+        }
+        let mut values = Vec::new();
+        for (c, _, at) in &kept {
+            match head_name(c) {
+                Some("values") if !c.contains(":-") => values.push(c.as_str()),
+                Some("values" | "msw") => {
+                    return Err(at_line((*at, format!("`{c}` beside PRISM's switches"))));
+                }
+                _ => {}
+            }
+        }
+        out.extend(switches(&set_sw, &values).map_err(at_line)?);
     }
     let left_out = write_examples(source, depth, &predicates, &mut out)?;
     let program = out.join("\n");
@@ -139,34 +155,6 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
         })?;
     }
     Ok(Lpad { program, left_out })
-}
-
-fn append_prism_switches(
-    set_sw: &[(usize, Vec<&str>)],
-    kept: &[(String, bool, usize)],
-    depth: Option<u32>,
-    at_line: &impl Fn((usize, String)) -> ParseError,
-    out: &mut Vec<String>,
-) -> Result<(), ParseError> {
-    let (at, _) = set_sw[0];
-    if depth.is_some() {
-        return Err(at_line((
-            at,
-            "PRISM's switches under PITA's depth bound".into(),
-        )));
-    }
-    let mut values = Vec::new();
-    for (c, _, at) in kept {
-        match head_name(c) {
-            Some("values") if !c.contains(":-") => values.push(c.as_str()),
-            Some("values" | "msw") => {
-                return Err(at_line((*at, format!("`{c}` beside PRISM's switches"))));
-            }
-            _ => {}
-        }
-    }
-    out.extend(switches(set_sw, &values).map_err(at_line)?);
-    Ok(())
 }
 
 /// The clauses inside the LPAD and the database clauses their bodies reach,
@@ -236,7 +224,40 @@ fn write_examples(
     // Under the depth bound a query or an observation of a predicate of
     // the LPAD is of its atom at the bound.
     if let Some(depth) = depth {
-        write_depth_bridges(&asked, under, depth, predicates, out)?;
+        let mut bridged: Vec<(&str, usize)> = Vec::new();
+        let asked_here = asked.iter().filter(|(_, e)| e == under).map(|(q, _)| *q);
+        for lit in under.iter().copied().chain(asked_here) {
+            let atom = lit.strip_prefix("\\+").map_or(lit, |a| unwrapped(trim(a)));
+            let Some((name, args)) = atom_parts(atom) else {
+                continue;
+            };
+            let n = args.len();
+            if !predicates.contains(&(name.to_string(), n)) || bridged.contains(&(name, n)) {
+                continue;
+            }
+            if n > 0 && predicates.contains(&(name.to_string(), n - 1)) {
+                return Err(ParseError {
+                    line: 1,
+                    msg: format!(
+                        "{name}/{n} asked under PITA's depth bound, where {name}/{} takes the depth as {name}/{n}",
+                        n - 1
+                    ),
+                });
+            }
+            bridged.push((name, n));
+            let vars: Vec<String> = (1..=n).map(|k| format!("X{k}")).collect();
+            let at = vars
+                .iter()
+                .cloned()
+                .chain([depth.to_string()])
+                .collect::<Vec<_>>();
+            let head = if n == 0 {
+                name.to_string()
+            } else {
+                format!("{name}({})", vars.join(", "))
+            };
+            out.push(format!("{head} :- {name}({}).", at.join(", ")));
+        }
     }
     out.extend(under.iter().map(|lit| format!("evidence({lit}).")));
     out.extend(
@@ -264,50 +285,6 @@ fn write_examples(
         }
     }
     Ok(left_out)
-}
-
-fn write_depth_bridges(
-    asked: &[(&str, Vec<&str>)],
-    under: &[&str],
-    depth: u32,
-    predicates: &FxHashSet<(String, usize)>,
-    out: &mut Vec<String>,
-) -> Result<(), ParseError> {
-    let mut bridged: Vec<(&str, usize)> = Vec::new();
-    let asked_here = asked.iter().filter(|(_, e)| e == under).map(|(q, _)| *q);
-    for lit in under.iter().copied().chain(asked_here) {
-        let atom = lit.strip_prefix("\\+").map_or(lit, |a| unwrapped(trim(a)));
-        let Some((name, args)) = atom_parts(atom) else {
-            continue;
-        };
-        let n = args.len();
-        if !predicates.contains(&(name.to_string(), n)) || bridged.contains(&(name, n)) {
-            continue;
-        }
-        if n > 0 && predicates.contains(&(name.to_string(), n - 1)) {
-            return Err(ParseError {
-                line: 1,
-                msg: format!(
-                    "{name}/{n} asked under PITA's depth bound, where {name}/{} takes the depth as {name}/{n}",
-                    n - 1
-                ),
-            });
-        }
-        bridged.push((name, n));
-        let vars: Vec<String> = (1..=n).map(|k| format!("X{k}")).collect();
-        let at = vars
-            .iter()
-            .cloned()
-            .chain([depth.to_string()])
-            .collect::<Vec<_>>();
-        let head = if n == 0 {
-            name.to_string()
-        } else {
-            format!("{name}({})", vars.join(", "))
-        };
-        out.push(format!("{head} :- {name}({}).", at.join(", ")));
-    }
-    Ok(())
 }
 
 /// The arguments of the directives `:- name(..).` among `clauses`, each

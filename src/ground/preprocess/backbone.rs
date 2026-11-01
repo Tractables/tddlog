@@ -147,6 +147,8 @@ pub(in crate::ground) fn search(num_vars: usize, lits: &[Lit], ends: &[usize]) -
         calls: 1,
         ..Search::default()
     };
+    // The calls that proved a backbone literal.
+    let mut proved = 0;
     let first = s.solve(&[], u64::MAX);
     if first == Outcome::Unsat {
         return None;
@@ -168,14 +170,56 @@ pub(in crate::ground) fn search(num_vars: usize, lits: &[Lit], ends: &[usize]) -
         // literal, the search left 408 candidates open where it left 1 938
         // in the facts' order.
         candidates.sort_by_key(|&l| l & 1 == 0);
-        let candidates = run_conflict_rounds(
-            &mut s,
-            &occurrences,
-            candidates,
-            proving_limit,
-            &mut signatures,
-            &mut search,
-        );
+        // Rounds of growing conflict limits: a candidate a call gave up on
+        // is tried again in the next round, after the others.
+        'rounds: for limit in CONFLICT_LIMITS {
+            let mut deferred: Vec<Lit> = Vec::new();
+            let mut i = 0;
+            while i < candidates.len() {
+                let l = candidates[i];
+                i += 1;
+                if s.fixed(l).is_some() {
+                    continue;
+                }
+                if s.ticks >= s.tick_limit {
+                    if proved > 0 && s.tick_limit < proving_limit {
+                        s.tick_limit = proving_limit;
+                    } else {
+                        deferred.extend_from_slice(&candidates[i - 1..]);
+                        candidates = deferred;
+                        break 'rounds;
+                    }
+                }
+                search.calls += 1;
+                match s.solve(&[l ^ 1], limit) {
+                    Outcome::Unsat => {
+                        proved += 1;
+                        // No model has `\+l`, and the first has `l`.
+                        let consistent = s.add_clause(&[l]);
+                        debug_assert!(consistent);
+                    }
+                    Outcome::Sat => {
+                        signatures.take(&mut s);
+                        // The candidates the model keeps, and that it would
+                        // not keep with them flipped.
+                        let keeps =
+                            |s: &mut Solver, c: Lit| s.holds(c) && !occurrences.flippable(s, c);
+                        s.ticks += (candidates.len() - i + deferred.len()) as u64;
+                        let mut kept = i;
+                        for j in i..candidates.len() {
+                            if keeps(&mut s, candidates[j]) {
+                                candidates[kept] = candidates[j];
+                                kept += 1;
+                            }
+                        }
+                        candidates.truncate(kept);
+                        deferred.retain(|&c| keeps(&mut s, c));
+                    }
+                    Outcome::Unknown => deferred.push(l),
+                }
+            }
+            candidates = deferred;
+        }
         search.open = candidates.iter().filter(|&&c| s.fixed(c).is_none()).count();
         equivalences(&mut s, &signatures, &mut search);
     } else {
@@ -198,68 +242,6 @@ pub(in crate::ground) fn search(num_vars: usize, lits: &[Lit], ends: &[usize]) -
         binaries,
         search,
     })
-}
-
-fn run_conflict_rounds(
-    s: &mut Solver,
-    occurrences: &Occurrences,
-    mut candidates: Vec<Lit>,
-    proving_limit: u64,
-    signatures: &mut Signatures,
-    search: &mut Search,
-) -> Vec<Lit> {
-    // The calls that proved a backbone literal.
-    let mut proved = 0;
-    // Rounds of growing conflict limits: a candidate a call gave up on
-    // is tried again in the next round, after the others.
-    'rounds: for limit in CONFLICT_LIMITS {
-        let mut deferred: Vec<Lit> = Vec::new();
-        let mut i = 0;
-        while i < candidates.len() {
-            let l = candidates[i];
-            i += 1;
-            if s.fixed(l).is_some() {
-                continue;
-            }
-            if s.ticks >= s.tick_limit {
-                if proved > 0 && s.tick_limit < proving_limit {
-                    s.tick_limit = proving_limit;
-                } else {
-                    deferred.extend_from_slice(&candidates[i - 1..]);
-                    candidates = deferred;
-                    break 'rounds;
-                }
-            }
-            search.calls += 1;
-            match s.solve(&[l ^ 1], limit) {
-                Outcome::Unsat => {
-                    proved += 1;
-                    // No model has `\+l`, and the first has `l`.
-                    let consistent = s.add_clause(&[l]);
-                    debug_assert!(consistent);
-                }
-                Outcome::Sat => {
-                    signatures.take(s);
-                    // The candidates the model keeps, and that it would
-                    // not keep with them flipped.
-                    let keeps = |s: &mut Solver, c: Lit| s.holds(c) && !occurrences.flippable(s, c);
-                    s.ticks += (candidates.len() - i + deferred.len()) as u64;
-                    let mut kept = i;
-                    for j in i..candidates.len() {
-                        if keeps(s, candidates[j]) {
-                            candidates[kept] = candidates[j];
-                            kept += 1;
-                        }
-                    }
-                    candidates.truncate(kept);
-                    deferred.retain(|&c| keeps(s, c));
-                }
-                Outcome::Unknown => deferred.push(l),
-            }
-        }
-        candidates = deferred;
-    }
-    candidates
 }
 
 /// The values of the variables in the first models found, a bit per model,

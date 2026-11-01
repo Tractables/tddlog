@@ -114,18 +114,85 @@ pub(super) fn table_models(
 
     let (read, forces) = read_cubes(&cubes, width, output, binary, first_bit, &group_of, &member)?;
     let (rows, order) = spread_rows(&read, width, max, &count, &value_of)?;
-    collect_models(
-        (&all, &members),
-        (width, output, binary),
-        SpreadRows {
-            rows: &rows,
-            order: &order,
-            forces: &forces,
-        },
-        (n, max),
-        &count,
-        &value_of,
-    )
+    let key = |r: u32| &rows[r as usize * (width + 1)..][..width];
+    let spread = order.len() as u64;
+    // The inputs no cube reads leave the output free.
+    let inputs: Vec<usize> = (0..width).filter(|&g| g != output).collect();
+    let total = inputs
+        .iter()
+        .try_fold(1u64, |t, &g| t.checked_mul(count(g)))?;
+    let named = order.chunk_by(|&a, &b| key(a) == key(b)).count() as u64;
+    let outputs = count(output);
+    if spread.checked_add((total - named).checked_mul(outputs)?)? > max as u64 {
+        return None;
+    }
+    let words = n.div_ceil(64).max(1);
+    let mut models = Vec::new();
+    // The models at `values` with each value of the output that agrees
+    // with `value` on the bits `fixed`: for a group, the value fixed or,
+    // where none is, each of them; false past `max` models.
+    let mut put = |values: &[u32], (fixed, value): (u64, u64)| {
+        let open = match (binary, fixed) {
+            (true, _) => (outputs - 1) & !fixed,
+            (false, 0) => outputs - 1,
+            (false, _) => 0,
+        };
+        let mut next = 0u64;
+        loop {
+            let out = if binary { value | next } else { value + next };
+            let at = models.len();
+            models.resize(at + words, 0u64);
+            for (g, &(start, len, _)) in all.iter().enumerate() {
+                for (k, &v) in members[start..start + len].iter().enumerate() {
+                    let holds = match g == output {
+                        true if binary => out >> k & 1 == 1,
+                        true => k as u64 == out,
+                        false => k as u32 == values[g],
+                    };
+                    let i = v.0 as usize - 1;
+                    models[at + i / 64] |= u64::from(holds) << (i % 64);
+                }
+            }
+            if next == open {
+                return models.len() <= max * words;
+            }
+            // The next value of the bits left open, or the next value.
+            next = if binary {
+                next.wrapping_sub(open) & open
+            } else {
+                next + 1
+            };
+        }
+    };
+    let place = |r: u32| rows[r as usize * (width + 1) + width] as usize;
+    let mut runs = order.chunk_by(|&a, &b| key(a) == key(b)).peekable();
+    let mut at = vec![0u64; inputs.len()];
+    let mut values = vec![NONE; width];
+    loop {
+        for (i, &g) in inputs.iter().enumerate() {
+            values[g] = value_of(g, at[i]);
+        }
+        // The assignments come in ascending order, as the runs do.
+        let fixed = match runs.next_if(|run| key(run[0]) == values.as_slice()) {
+            // The bits the cubes fix, where they agree and rule out none.
+            Some(run) => run.iter().try_fold((0u64, 0u64), |(fixed, value), &r| {
+                let (more, to) = forces[place(r)]?;
+                ((value ^ to) & fixed & more == 0).then_some((fixed | more, value | to))
+            }),
+            None => Some((0, 0)),
+        };
+        if let Some(fixed) = fixed
+            && !put(&values, fixed)
+        {
+            return None;
+        }
+        // The next assignment, the last input fastest.
+        if !step(&mut at, |i| count(inputs[i]), (0..inputs.len()).rev()) {
+            break;
+        }
+    }
+    debug_assert!(runs.next().is_none());
+    Some(models)
 }
 
 fn paired_columns_and_cubes<'a>(
@@ -253,120 +320,6 @@ fn spread_rows(
     let mut order: Vec<u32> = (0..spread as u32).collect();
     order.sort_unstable_by(|&a, &b| key(a).cmp(key(b)));
     Some((rows, order))
-}
-
-struct SpreadRows<'a> {
-    rows: &'a [u32],
-    order: &'a [u32],
-    forces: &'a [Option<(u64, u64)>],
-}
-
-fn collect_models(
-    (all, members): (&[(usize, usize, bool)], &[VarId]),
-    (width, output, binary): (usize, usize, bool),
-    SpreadRows {
-        rows,
-        order,
-        forces,
-    }: SpreadRows<'_>,
-    (n, max): (usize, usize),
-    count: &dyn Fn(usize) -> u64,
-    value_of: &dyn Fn(usize, u64) -> u32,
-) -> Option<Vec<u64>> {
-    let key = |r: u32| &rows[r as usize * (width + 1)..][..width];
-    let spread = order.len() as u64;
-    // The inputs no cube reads leave the output free.
-    let inputs: Vec<usize> = (0..width).filter(|&g| g != output).collect();
-    let total = inputs
-        .iter()
-        .try_fold(1u64, |t, &g| t.checked_mul(count(g)))?;
-    let named = order.chunk_by(|&a, &b| key(a) == key(b)).count() as u64;
-    let outputs = count(output);
-    if spread.checked_add((total - named).checked_mul(outputs)?)? > max as u64 {
-        return None;
-    }
-    let words = n.div_ceil(64).max(1);
-    let mut models = Vec::new();
-    let place = |r: u32| rows[r as usize * (width + 1) + width] as usize;
-    let mut runs = order.chunk_by(|&a, &b| key(a) == key(b)).peekable();
-    let mut at = vec![0u64; inputs.len()];
-    let mut values = vec![NONE; width];
-    loop {
-        for (i, &g) in inputs.iter().enumerate() {
-            values[g] = value_of(g, at[i]);
-        }
-        // The assignments come in ascending order, as the runs do.
-        let fixed = match runs.next_if(|run| key(run[0]) == values.as_slice()) {
-            // The bits the cubes fix, where they agree and rule out none.
-            Some(run) => run.iter().try_fold((0u64, 0u64), |(fixed, value), &r| {
-                let (more, to) = forces[place(r)]?;
-                ((value ^ to) & fixed & more == 0).then_some((fixed | more, value | to))
-            }),
-            None => Some((0, 0)),
-        };
-        if let Some(fixed) = fixed
-            && !put_output_models(
-                (all, members),
-                (output, outputs, binary),
-                (words, max),
-                &values,
-                fixed,
-                &mut models,
-            )
-        {
-            return None;
-        }
-        // The next assignment, the last input fastest.
-        if !step(&mut at, |i| count(inputs[i]), (0..inputs.len()).rev()) {
-            break;
-        }
-    }
-    debug_assert!(runs.next().is_none());
-    Some(models)
-}
-
-/// The models at `values` with each value of the output that agrees with
-/// `value` on the bits `fixed`: for a group, the value fixed or, where none
-/// is, each of them; false past `max` models.
-fn put_output_models(
-    (all, members): (&[(usize, usize, bool)], &[VarId]),
-    (output, outputs, binary): (usize, u64, bool),
-    (words, max): (usize, usize),
-    values: &[u32],
-    (fixed, value): (u64, u64),
-    models: &mut Vec<u64>,
-) -> bool {
-    let open = match (binary, fixed) {
-        (true, _) => (outputs - 1) & !fixed,
-        (false, 0) => outputs - 1,
-        (false, _) => 0,
-    };
-    let mut next = 0u64;
-    loop {
-        let out = if binary { value | next } else { value + next };
-        let at = models.len();
-        models.resize(at + words, 0u64);
-        for (g, &(start, len, _)) in all.iter().enumerate() {
-            for (k, &v) in members[start..start + len].iter().enumerate() {
-                let holds = match g == output {
-                    true if binary => out >> k & 1 == 1,
-                    true => k as u64 == out,
-                    false => k as u32 == values[g],
-                };
-                let i = v.0 as usize - 1;
-                models[at + i / 64] |= u64::from(holds) << (i % 64);
-            }
-        }
-        if next == open {
-            return models.len() <= max * words;
-        }
-        // The next value of the bits left open, or the next value.
-        next = if binary {
-            next.wrapping_sub(open) & open
-        } else {
-            next + 1
-        };
-    }
 }
 
 type CubeForces = (Vec<u32>, Vec<Option<(u64, u64)>>);

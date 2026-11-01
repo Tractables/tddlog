@@ -171,11 +171,6 @@ pub(super) fn balance(gp: &mut GroundProgram) -> usize {
     if chains == 0 {
         return 0;
     }
-    apply_step_rules(gp, n, made, dropped);
-    chains
-}
-
-fn apply_step_rules(gp: &mut GroundProgram, n: usize, made: Made, dropped: Vec<bool>) {
     let first_name = gp.stats.stepped;
     for k in 0..made.next as usize - n {
         gp.atoms
@@ -193,6 +188,7 @@ fn apply_step_rules(gp: &mut GroundProgram, n: usize, made: Made, dropped: Vec<b
     gp.rules = rules;
     gp.structure = std::sync::OnceLock::new();
     simplify::restrict_to_relevant(gp);
+    chains
 }
 
 type StepLinks = (Vec<Option<AtomId>>, Vec<Option<AtomId>>, Vec<Option<usize>>);

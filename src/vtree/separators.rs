@@ -338,13 +338,28 @@ pub(super) fn plan(
             };
             let mut separator: Vec<(AtomId, Vec<AtomId>)> = s.outside.into_iter().collect();
             separator.sort_by_key(|&(a, _)| (Reverse(position[original(a, &origin) as usize]), a));
-            let moved = copy_separator(
-                n,
-                (u, k),
-                separator,
-                &mut left,
-                (&mut reads, &mut origin, &mut atop, &mut copies),
-            );
+            let mut moved: Vec<AtomId> = Vec::new();
+            for (a, readers) in separator {
+                let new = (n + copies.len()) as AtomId;
+                let equals = if k == 0 {
+                    a
+                } else {
+                    left.get(&a).copied().unwrap_or(a)
+                };
+                if k == 0 {
+                    left.insert(a, new);
+                }
+                reads.redirect(&readers, a, new);
+                moved.extend_from_slice(&readers);
+                origin.push(original(a, &origin));
+                reads.at.push(u);
+                atop[u].push(new);
+                copies.push(FactCopy {
+                    replaces: a,
+                    equals,
+                    readers,
+                });
+            }
             reads.replace(&units, moved);
         }
     }
@@ -365,50 +380,6 @@ pub(super) fn plan(
         copied,
         read,
     }
-}
-
-type CopyState<'a> = (
-    &'a mut Reads,
-    &'a mut Vec<AtomId>,
-    &'a mut [Vec<AtomId>],
-    &'a mut Vec<FactCopy>,
-);
-
-fn copy_separator(
-    n: usize,
-    (u, k): (usize, usize),
-    separator: Vec<(AtomId, Vec<AtomId>)>,
-    left: &mut FxHashMap<AtomId, AtomId>,
-    (reads, origin, atop, copies): CopyState<'_>,
-) -> Vec<AtomId> {
-    let mut moved: Vec<AtomId> = Vec::new();
-    for (a, readers) in separator {
-        let new = (n + copies.len()) as AtomId;
-        let equals = if k == 0 {
-            a
-        } else {
-            left.get(&a).copied().unwrap_or(a)
-        };
-        if k == 0 {
-            left.insert(a, new);
-        }
-        reads.redirect(&readers, a, new);
-        moved.extend_from_slice(&readers);
-        let orig = if (a as usize) < n {
-            a
-        } else {
-            origin[a as usize - n]
-        };
-        origin.push(orig);
-        reads.at.push(u);
-        atop[u].push(new);
-        copies.push(FactCopy {
-            replaces: a,
-            equals,
-            readers,
-        });
-    }
-    moved
 }
 
 /// What the atoms the walk conjoins read, and where it lies: the facts each

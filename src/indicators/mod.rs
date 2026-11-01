@@ -649,8 +649,21 @@ impl Bodies {
         let n = copies.first;
         let set_lists = &copies.set_lists;
         let mut rows: Vec<Vec<GLit>> = Vec::with_capacity(original.rules.len());
-        let (negated, negated_ends, negated_at) =
-            negated_set_copies(set_lists, n, copies.keys.len());
+        // Each list's copies negated, in order, end to end, and where each
+        // copy is among them: a rule that reads a value reads the negations
+        // of the others as the runs before and after its own, copied, rather
+        // than filtered from the set's atoms one by one.
+        let mut negated: Vec<GLit> = Vec::new();
+        let mut negated_ends: Vec<usize> = Vec::with_capacity(set_lists.len() + 1);
+        let mut negated_at: Vec<usize> = vec![usize::MAX; copies.keys.len()];
+        negated_ends.push(0);
+        for list in set_lists {
+            for &var in list.iter().flatten() {
+                negated_at[var as usize - n] = negated.len();
+                negated.push(GLit::Neg(var));
+            }
+            negated_ends.push(negated.len());
+        }
         let mut bit_rows: Vec<Vec<GLit>> = vec![Vec::new(); original.rules.len()];
         let mut body: Vec<GLit> = Vec::new();
         // The body each literal was last kept for, which drops its repeats as
@@ -689,14 +702,58 @@ impl Bodies {
                 written += 1;
                 let mut twice = false;
                 for &l in &r.body {
-                    twice |= write_body_literal(
-                        (reads, copies),
-                        (&negated, &negated_ends, &negated_at),
-                        (ri, u, turn, written, as_bit, l),
-                        (&mut body, &mut kept_for, &mut list_read, &mut sibling),
-                        &mut read_at,
-                        &mut bit_copies,
-                    );
+                    let b = l.atom();
+                    if let Some(key) = reads.binary(ri, b) {
+                        let code = reads.place[b as usize] as usize + 1;
+                        let (s, u, p) = key;
+                        let vars = bit_copies
+                            .entry(key)
+                            .or_insert_with(|| copies.of_bits(&reads.bit_atoms[s], u, p));
+                        for l in code_lits(vars, code) {
+                            keep_new(&mut body, &mut kept_for, written, l);
+                        }
+                        continue;
+                    }
+                    if !reads.is_chosen[b as usize] {
+                        keep_new(&mut body, &mut kept_for, written, l);
+                        continue;
+                    }
+                    let s = reads.set_of[b as usize];
+                    if s == usize::MAX {
+                        let l = match copies.copy.get(&reads.copy_key(ri, b)) {
+                            Some(&var) if l.is_positive() => GLit::Pos(var),
+                            Some(&var) => GLit::Neg(var),
+                            None => l,
+                        };
+                        keep_new(&mut body, &mut kept_for, written, l);
+                        continue;
+                    }
+                    let at = &mut read_at[s];
+                    if at.0 != turn {
+                        let (p, own_value) = reads.parts.reading(reads.parts.of_rule[ri], s);
+                        *at = (turn, copies.set_list.get(&(s, u, p)).copied(), own_value);
+                    }
+                    let (_, list, own_value) = *at;
+                    let Some((i, var)) = list.and_then(|i| {
+                        set_lists[i][reads.place[b as usize] as usize].map(|var| (i, var))
+                    }) else {
+                        keep_new(&mut body, &mut kept_for, written, l);
+                        continue;
+                    };
+                    twice |= std::mem::replace(&mut list_read[i], written) == written;
+                    if !l.is_positive() {
+                        keep_new(&mut body, &mut kept_for, written, GLit::Neg(var));
+                        continue;
+                    }
+                    keep_new(&mut body, &mut kept_for, written, GLit::Pos(var));
+                    if !own_value {
+                        sibling[i] = true;
+                        if !as_bit {
+                            let at = negated_at[var as usize - n];
+                            body.extend_from_slice(&negated[negated_ends[i]..at]);
+                            body.extend_from_slice(&negated[at + 1..negated_ends[i + 1]]);
+                        }
+                    }
                 }
                 if twice {
                     written += 1;
@@ -721,92 +778,6 @@ impl Bodies {
             sibling,
         }
     }
-}
-
-fn write_body_literal(
-    (reads, copies): (&Reads, &Copies),
-    (negated, negated_ends, negated_at): (&[GLit], &[usize], &[usize]),
-    (ri, u, turn, written, as_bit, l): (usize, usize, u32, usize, bool, GLit),
-    (body, kept_for, list_read, sibling): (&mut Vec<GLit>, &mut [usize], &mut [usize], &mut [bool]),
-    read_at: &mut [(u32, Option<usize>, bool)],
-    bit_copies: &mut FxHashMap<(usize, usize, PartId), Vec<AtomId>>,
-) -> bool {
-    let b = l.atom();
-    if let Some(key) = reads.binary(ri, b) {
-        let code = reads.place[b as usize] as usize + 1;
-        let (s, u, p) = key;
-        let vars = bit_copies
-            .entry(key)
-            .or_insert_with(|| copies.of_bits(&reads.bit_atoms[s], u, p));
-        for l in code_lits(vars, code) {
-            keep_new(body, kept_for, written, l);
-        }
-        return false;
-    }
-    if !reads.is_chosen[b as usize] {
-        keep_new(body, kept_for, written, l);
-        return false;
-    }
-    let s = reads.set_of[b as usize];
-    if s == usize::MAX {
-        let l = match copies.copy.get(&reads.copy_key(ri, b)) {
-            Some(&var) if l.is_positive() => GLit::Pos(var),
-            Some(&var) => GLit::Neg(var),
-            None => l,
-        };
-        keep_new(body, kept_for, written, l);
-        return false;
-    }
-    let at = &mut read_at[s];
-    if at.0 != turn {
-        let (p, own_value) = reads.parts.reading(reads.parts.of_rule[ri], s);
-        *at = (turn, copies.set_list.get(&(s, u, p)).copied(), own_value);
-    }
-    let (_, list, own_value) = *at;
-    let Some((i, var)) = list
-        .and_then(|i| copies.set_lists[i][reads.place[b as usize] as usize].map(|var| (i, var)))
-    else {
-        keep_new(body, kept_for, written, l);
-        return false;
-    };
-    let twice = std::mem::replace(&mut list_read[i], written) == written;
-    if !l.is_positive() {
-        keep_new(body, kept_for, written, GLit::Neg(var));
-        return twice;
-    }
-    keep_new(body, kept_for, written, GLit::Pos(var));
-    if !own_value {
-        sibling[i] = true;
-        if !as_bit {
-            let at = negated_at[var as usize - copies.first];
-            body.extend_from_slice(&negated[negated_ends[i]..at]);
-            body.extend_from_slice(&negated[at + 1..negated_ends[i + 1]]);
-        }
-    }
-    twice
-}
-
-/// Each list's copies negated, in order, end to end, and where each copy is
-/// among them: a rule that reads a value reads the negations of the others as
-/// the runs before and after its own, copied, rather than filtered from the
-/// set's atoms one by one.
-fn negated_set_copies(
-    set_lists: &[Vec<Option<AtomId>>],
-    n: usize,
-    num_keys: usize,
-) -> (Vec<GLit>, Vec<usize>, Vec<usize>) {
-    let mut negated: Vec<GLit> = Vec::new();
-    let mut negated_ends: Vec<usize> = Vec::with_capacity(set_lists.len() + 1);
-    let mut negated_at: Vec<usize> = vec![usize::MAX; num_keys];
-    negated_ends.push(0);
-    for list in set_lists {
-        for &var in list.iter().flatten() {
-            negated_at[var as usize - n] = negated.len();
-            negated.push(GLit::Neg(var));
-        }
-        negated_ends.push(negated.len());
-    }
-    (negated, negated_ends, negated_at)
 }
 
 /// The rules of the bits, after `gp`'s: a bit's rules are the rows of the
@@ -992,12 +963,35 @@ fn rows_as_clauses(
 ) -> Vec<bool> {
     let Tables {
         list,
+        table,
         clause_copy,
         table_of,
         fires,
-        ..
     } = tables;
-    let inputs = table_inputs(gp, reads, copies, tables);
+    let (exclusive, bit_atoms) = (reads.exclusive, &reads.bit_atoms);
+    // The inputs of each table: the sets, units and parts its rows read
+    // copies of, each copy taken once per table: every row reads its
+    // parents' copies, which would otherwise be sorted per row.
+    let mut inputs: Vec<Vec<(usize, usize, PartId)>> = vec![Vec::new(); list.len()];
+    let mut taken_for = vec![usize::MAX; copies.keys.len()];
+    let sets = reads.sets();
+    for (ri, rule) in gp.rules.iter().enumerate() {
+        let t = table_of[rule.head as usize];
+        if t != usize::MAX && fires[ri] {
+            for l in &rule.body {
+                if let Some(i) = copies.index(l.atom())
+                    && std::mem::replace(&mut taken_for[i], t) != t
+                {
+                    let (b, u, p) = copies.keys[i];
+                    inputs[t].extend(sets.of(b).map(|s| (s, u, p)));
+                }
+            }
+        }
+    }
+    for i in &mut inputs {
+        i.sort_unstable();
+        i.dedup();
+    }
     let mut read_by_link = vec![false; copies.first];
     for (i, ind) in gp.encoding.indicators.iter().enumerate() {
         if !clause_copy.contains_key(&i) && copies.tie[i] == ind.atom {
@@ -1005,6 +999,12 @@ fn rows_as_clauses(
         }
     }
     let (held_copy, held_sets) = held_copies(gp, reads, copies, tables, &read_by_link);
+    let held = |l: &GLit| {
+        copies
+            .index(l.atom())
+            .map(|i| held_copy[i])
+            .filter(|&k| k != u32::MAX)
+    };
     let rules = std::mem::take(&mut gp.rules);
     let mut begun = vec![false; list.len()];
     // Per set, unit and part held by the links, the last row to read a
@@ -1023,145 +1023,69 @@ fn rows_as_clauses(
         }
         if !begun[t] {
             begun[t] = true;
-            emit_table_header_clauses(
-                &mut gp.rules,
-                &gp.encoding.indicators,
-                reads,
-                copies,
-                tables,
-                &reader_link[t],
-                (t, &inputs[t]),
-            );
-        }
-        emit_row_clauses(
-            gp,
-            ri,
-            rule,
-            t,
-            (reads, copies, tables),
-            (&held_copy, &read_by_link),
-            (&mut read_by, &mut row),
-        );
-    }
-    read_by_link
-}
-
-fn emit_row_clauses(
-    gp: &mut GroundProgram,
-    ri: usize,
-    rule: GroundRule,
-    t: usize,
-    (reads, copies, tables): (&Reads, &Copies, &Tables),
-    (held_copy, read_by_link): (&[u32], &[bool]),
-    (read_by, row): (&mut [usize], &mut Vec<GLit>),
-) {
-    let held = |l: &GLit| {
-        copies
-            .index(l.atom())
-            .map(|i| held_copy[i])
-            .filter(|&k| k != u32::MAX)
-    };
-    // The links hold the at-most-one of each set the row reads a copy
-    // of, so a copy of a set the row reads a value of holds negated
-    // wherever the link and the row's value do: the links read the row
-    // without it, the same function. The clause loops leave such
-    // literals out anyway; the families layout reads the rows, and a row
-    // that reads its value's copy alone puts the copy by the row, which
-    // shrinks the evidence (bn_barley, bn_diabetes). A set whose copies
-    // another rule reads keeps the negations, which that rule reads too:
-    // read one way by the links and the other by that rule, the copies
-    // would be laid out apart (bn_water_ev).
-    for k in rule
-        .body
-        .iter()
-        .filter(|l| l.is_positive())
-        .filter_map(held)
-    {
-        read_by[k as usize] = ri;
-    }
-    row.clear();
-    row.extend(
-        rule.body
-            .iter()
-            .copied()
-            .filter(|l| l.is_positive() || held(l).is_none_or(|k| read_by[k as usize] != ri)),
-    );
-    let j = reads.place[rule.head as usize] as usize;
-    for reader in &tables.list[t].readers {
-        let Indicator { var, link, .. } = gp.encoding.indicators[reader[j]];
-        let mut body = Vec::with_capacity(row.len() + 1);
-        body.extend_from_slice(row);
-        body.push(GLit::Neg(var));
-        gp.rules.push(GroundRule::new(link, body));
-    }
-    if read_by_link[rule.head as usize] {
-        gp.rules.push(rule);
-    }
-}
-
-fn table_inputs(
-    gp: &GroundProgram,
-    reads: &Reads,
-    copies: &Copies,
-    tables: &Tables,
-) -> Vec<Vec<(usize, usize, PartId)>> {
-    // The inputs of each table: the sets, units and parts its rows read
-    // copies of, each copy taken once per table: every row reads its
-    // parents' copies, which would otherwise be sorted per row.
-    let mut inputs: Vec<Vec<(usize, usize, PartId)>> = vec![Vec::new(); tables.list.len()];
-    let mut taken_for = vec![usize::MAX; copies.keys.len()];
-    let sets = reads.sets();
-    for (ri, rule) in gp.rules.iter().enumerate() {
-        let t = tables.table_of[rule.head as usize];
-        if t != usize::MAX && tables.fires[ri] {
-            for l in &rule.body {
-                if let Some(i) = copies.index(l.atom())
-                    && std::mem::replace(&mut taken_for[i], t) != t
-                {
-                    let (b, u, p) = copies.keys[i];
-                    inputs[t].extend(sets.of(b).map(|s| (s, u, p)));
+            for (r, reader) in list[t].readers.iter().enumerate() {
+                let head = reader_link[t][r].expect("every reader has a link");
+                let own: Vec<AtomId> = reader
+                    .iter()
+                    .map(|&c| gp.encoding.indicators[c].var)
+                    .collect();
+                not_one(&mut gp.rules, head, &own, true);
+                for &(s, u, p) in &inputs[t] {
+                    if copies.in_binary(&bit_atoms[s], u, p) {
+                        let own = copies.of_bits(&bit_atoms[s], u, p);
+                        outside_codes(&mut gp.rules, head, &own, exclusive[s].len(), !table[s]);
+                        continue;
+                    }
+                    // The unit and part's copies of the set's atoms, in the
+                    // set's order: its list, not a lookup per atom.
+                    let members: Vec<AtomId> = copies.set_lists[copies.set_list[&(s, u, p)]]
+                        .iter()
+                        .flatten()
+                        .copied()
+                        .collect();
+                    let exhaustive = members.len() == exclusive[s].len() && table[s];
+                    not_one(&mut gp.rules, head, &members, exhaustive);
                 }
             }
         }
-    }
-    for i in &mut inputs {
-        i.sort_unstable();
-        i.dedup();
-    }
-    inputs
-}
-
-fn emit_table_header_clauses(
-    rules: &mut Vec<GroundRule>,
-    indicators: &[Indicator],
-    reads: &Reads,
-    copies: &Copies,
-    tables: &Tables,
-    links: &[Option<AtomId>],
-    (t, inputs): (usize, &[(usize, usize, PartId)]),
-) {
-    let (exclusive, bit_atoms) = (reads.exclusive, &reads.bit_atoms);
-    for (r, reader) in tables.list[t].readers.iter().enumerate() {
-        let head = links[r].expect("every reader has a link");
-        let own: Vec<AtomId> = reader.iter().map(|&c| indicators[c].var).collect();
-        not_one(rules, head, &own, true);
-        for &(s, u, p) in inputs {
-            if copies.in_binary(&bit_atoms[s], u, p) {
-                let own = copies.of_bits(&bit_atoms[s], u, p);
-                outside_codes(rules, head, &own, exclusive[s].len(), !tables.table[s]);
-                continue;
-            }
-            // The unit and part's copies of the set's atoms, in the
-            // set's order: its list, not a lookup per atom.
-            let members: Vec<AtomId> = copies.set_lists[copies.set_list[&(s, u, p)]]
+        // The links hold the at-most-one of each set the row reads a copy
+        // of, so a copy of a set the row reads a value of holds negated
+        // wherever the link and the row's value do: the links read the row
+        // without it, the same function. The clause loops leave such
+        // literals out anyway; the families layout reads the rows, and a row
+        // that reads its value's copy alone puts the copy by the row, which
+        // shrinks the evidence (bn_barley, bn_diabetes). A set whose copies
+        // another rule reads keeps the negations, which that rule reads too:
+        // read one way by the links and the other by that rule, the copies
+        // would be laid out apart (bn_water_ev).
+        for k in rule
+            .body
+            .iter()
+            .filter(|l| l.is_positive())
+            .filter_map(held)
+        {
+            read_by[k as usize] = ri;
+        }
+        row.clear();
+        row.extend(
+            rule.body
                 .iter()
-                .flatten()
                 .copied()
-                .collect();
-            let exhaustive = members.len() == exclusive[s].len() && tables.table[s];
-            not_one(rules, head, &members, exhaustive);
+                .filter(|l| l.is_positive() || held(l).is_none_or(|k| read_by[k as usize] != ri)),
+        );
+        let j = reads.place[rule.head as usize] as usize;
+        for reader in &list[t].readers {
+            let Indicator { var, link, .. } = gp.encoding.indicators[reader[j]];
+            let mut body = Vec::with_capacity(row.len() + 1);
+            body.extend_from_slice(&row);
+            body.push(GLit::Neg(var));
+            gp.rules.push(GroundRule::new(link, body));
+        }
+        if read_by_link[rule.head as usize] {
+            gp.rules.push(rule);
         }
     }
+    read_by_link
 }
 
 /// Per copy of a set's value that a table's row reads, numbered by its

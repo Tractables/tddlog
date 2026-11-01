@@ -214,7 +214,41 @@ fn a_distribution_that_sums_to_one_up_to_rounding_is_a_table() {
 /// copies link to `y_link` and z's to the clauses of z's table, and that the
 /// answers are the network's.
 fn many_rules(values: usize, y_link: &str) {
-    let (source, y) = build_many_rules_program(values);
+    let mut source = String::new();
+    source.push_str(
+        &(0..48)
+            .map(|i| format!("{}::x(v{i})", 1.0 / 48.0))
+            .collect::<Vec<_>>()
+            .join("; "),
+    );
+    source.push_str(".\n");
+    source.push_str(
+        &(0..48)
+            .map(|j| format!("{}::q(u{j})", 1.0 / 48.0))
+            .collect::<Vec<_>>()
+            .join("; "),
+    );
+    source.push_str(".\n");
+    let mut y = 0.0;
+    for i in 0..48 {
+        for j in 0..48 {
+            let p = ((3 * i + 5 * j + i * j) % 7 + 1) as f64 / 8.0;
+            y += p / (48.0 * 48.0);
+            let rest = (1..values)
+                .map(|k| format!("{}::y(k{k})", (1.0 - p) / (values - 1) as f64))
+                .collect::<Vec<_>>()
+                .join("; ");
+            source.push_str(&format!("{p}::y(k0); {rest} :- x(v{i}), q(u{j}).\n"));
+        }
+    }
+    source.push_str("0.3::z(t); 0.7::z(f) :- y(k0).\n");
+    for k in 1..values {
+        source.push_str(&format!("0.6::z(t); 0.4::z(f) :- y(k{k}).\n"));
+    }
+    source.push_str("0.2::w(t); 0.8::w(f) :- z(t).\n0.5::w(t); 0.5::w(f) :- z(f).\n");
+    // Evidence on z would fix z, and w would read its value
+    // (src/ground/condition.rs).
+    source.push_str("evidence(w(t)). query(y(k0)). query(z(t)).\n");
     // Row classes would read y's seven distributions through a class atom.
     let clauses = common::ground(&source, Rows::Apart, true);
     let link_of = |value: &str| -> Vec<String> {
@@ -262,45 +296,6 @@ fn many_rules(values: usize, y_link: &str) {
             1e-12,
         );
     }
-}
-
-fn build_many_rules_program(values: usize) -> (String, f64) {
-    let mut source = String::new();
-    source.push_str(
-        &(0..48)
-            .map(|i| format!("{}::x(v{i})", 1.0 / 48.0))
-            .collect::<Vec<_>>()
-            .join("; "),
-    );
-    source.push_str(".\n");
-    source.push_str(
-        &(0..48)
-            .map(|j| format!("{}::q(u{j})", 1.0 / 48.0))
-            .collect::<Vec<_>>()
-            .join("; "),
-    );
-    source.push_str(".\n");
-    let mut y = 0.0;
-    for i in 0..48 {
-        for j in 0..48 {
-            let p = ((3 * i + 5 * j + i * j) % 7 + 1) as f64 / 8.0;
-            y += p / (48.0 * 48.0);
-            let rest = (1..values)
-                .map(|k| format!("{}::y(k{k})", (1.0 - p) / (values - 1) as f64))
-                .collect::<Vec<_>>()
-                .join("; ");
-            source.push_str(&format!("{p}::y(k0); {rest} :- x(v{i}), q(u{j}).\n"));
-        }
-    }
-    source.push_str("0.3::z(t); 0.7::z(f) :- y(k0).\n");
-    for k in 1..values {
-        source.push_str(&format!("0.6::z(t); 0.4::z(f) :- y(k{k}).\n"));
-    }
-    source.push_str("0.2::w(t); 0.8::w(f) :- z(t).\n0.5::w(t); 0.5::w(f) :- z(f).\n");
-    // Evidence on z would fix z, and w would read its value
-    // (src/ground/condition.rs).
-    source.push_str("evidence(w(t)). query(y(k0)). query(z(t)).\n");
-    (source, y)
 }
 
 #[test]

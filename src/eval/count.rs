@@ -273,8 +273,11 @@ impl<V: Value> Down<V> {
         let (l, r) = f.vtree().children(p);
         let (ld, rd) = (f.level(l).child_decoder(), f.level(r).child_decoder());
         let above = self.exact[p.idx()];
-        // An inline value is under no power: no level is scaled here where
-        // either child is marginal.
+        // An inline value is under no power: a child's column takes terms
+        // under one only where its sibling, if marginal, is under none,
+        // and no level is scaled here where either child is marginal.
+        let uniform =
+            |s: VtreeIdx| !f.level(s).child_decoder().is_marginal() || up.exps[s.idx()] == 0;
         let movable = above && !ld.is_marginal() && !rd.is_marginal();
         // The children spread into: `c` alone from a grid, both otherwise.
         let sibling = |x: VtreeIdx| if x == l { r } else { l };
@@ -289,7 +292,20 @@ impl<V: Value> Down<V> {
             "a level takes terms from one column, under one power"
         );
         let copies = self.prepare_parent_and_copies(up, p, (l, r), kids, movable)?;
-        let exp = self.exps[p.idx()];
+        let (range, exp) = (self.ranges[p.idx()], self.exps[p.idx()]);
+        // Whether a child's column, counted in `V`s as `values` in range
+        // `got` from its sibling's counts read in range `read`, is exact;
+        // and where it is not, whether one counted in [`Count`]s from the
+        // same columns is, which [`fitted`] may then keep in `V`s under a
+        // power of its own.
+        let exact = |s: VtreeIdx, read: Range, values: &[V], got: Range| {
+            above
+                && uniform(s)
+                && up.exact[s.idx()]
+                && got.finite()
+                && (range.times(read)
+                    || exact_as_computed(values, got, lowest_product(range, read)))
+        };
         let recountable = |sibling: VtreeIdx| above && up.exact[sibling.idx()];
         // What each child reads of its sibling's counts, under the copy's
         // shift, and their range.
@@ -315,7 +331,7 @@ impl<V: Value> Down<V> {
                 (None, Some((down, r))) => {
                     let (_, shift, read) = reads[i].expect("a child reads its sibling");
                     self.keep(x, Fit::Floats(down, r, exp + up.exps[sib.idx()] - shift));
-                    let held = self.is_child_exact(f, up, (p, sib, x), read);
+                    let held = exact(sib, read, &self.columns[x.idx()], self.ranges[x.idx()]);
                     self.exact[x.idx()] = held;
                     recount |= !held && recountable(sib);
                 }
@@ -337,32 +353,6 @@ impl<V: Value> Down<V> {
             self.views[p.idx()] = View::Pairs;
         }
         Ok(())
-    }
-
-    /// Whether child `x`'s column, counted in `V`s from its sibling `s`'s
-    /// counts read in range `read`, is exact.
-    fn is_child_exact(
-        &self,
-        f: &tididi::Tdd,
-        up: Ups<'_, V>,
-        (p, s, x): (
-            tididi::vtree::VtreeIdx,
-            tididi::vtree::VtreeIdx,
-            tididi::vtree::VtreeIdx,
-        ),
-        read: Range,
-    ) -> bool {
-        // An inline value is under no power: a child's column takes terms
-        // under one only where its sibling, if marginal, is under none.
-        let uniform = !f.level(s).child_decoder().is_marginal() || up.exps[s.idx()] == 0;
-        let range = self.ranges[p.idx()];
-        let got = self.ranges[x.idx()];
-        let values = &self.columns[x.idx()];
-        self.exact[p.idx()]
-            && uniform
-            && up.exact[s.idx()]
-            && got.finite()
-            && (range.times(read) || exact_as_computed(values, got, lowest_product(range, read)))
     }
 
     fn prepare_parent_and_copies(
@@ -1176,12 +1166,39 @@ impl<V: Value> Counted<V> {
             let uniform = (!ld.is_marginal() || exps[l.idx()] == 0)
                 && (!rd.is_marginal() || exps[r.idx()] == 0);
             let movable = below && !ld.is_marginal() && !rd.is_marginal();
+            // The children's counts times `2^k` and `2^m`, their powers less
+            // the shifts.
+            let shift =
+                |up: &mut [Vec<V>], exps: &mut [i64], ranges: &mut [Range], (k, m): (i64, i64)| {
+                    for (c, k) in [(l, k), (r, m)] {
+                        if k != 0 {
+                            shift_all(&mut up[c.idx()], k, &mut ranges[c.idx()]);
+                            exps[c.idx()] -= k;
+                        }
+                    }
+                };
+            // Each child centred on one, and both moved down together
+            // where their products could overflow.
+            let centre = |up: &mut [Vec<V>], exps: &mut [i64], ranges: &mut [Range]| {
+                let at = |c: tididi::vtree::VtreeIdx, ranges: &[Range]| {
+                    centring(ranges[c.idx()], Range::NEW).unwrap_or(0)
+                };
+                let ks = (at(l, ranges), at(r, ranges));
+                shift(up, exps, ranges, ks);
+                if let Some(ks) = split_shift(
+                    ranges[l.idx()],
+                    ranges[r.idx()],
+                    capping(ranges[l.idx()], ranges[r.idx()]),
+                ) {
+                    shift(up, exps, ranges, ks);
+                }
+            };
             if movable
                 && (centre_all()
                     || !ranges[l.idx()].times(ranges[r.idx()])
                     || capping(ranges[l.idx()], ranges[r.idx()]) < 0)
             {
-                centre_children((l, r), up, exps, ranges);
+                centre(up, exps, ranges);
             }
             level_up(
                 f,
@@ -1195,14 +1212,24 @@ impl<V: Value> Counted<V> {
             // normal, moved up as far as they stay finite and computed
             // again.
             let products = ranges[l.idx()].times(ranges[r.idx()]);
-            if movable && !products {
-                raise_and_recompute_level(
+            if movable
+                && !products
+                && !exact_as_computed(
+                    &up[t.idx()],
+                    ranges[t.idx()],
+                    lowest_product(ranges[l.idx()], ranges[r.idx()]),
+                )
+                && raising(ranges[t.idx()]) > 0
+                && let Some(ks) =
+                    split_shift(ranges[l.idx()], ranges[r.idx()], raising(ranges[t.idx()]))
+            {
+                shift(up, exps, ranges, ks);
+                level_up(
                     f,
                     (t, l, r),
                     &views[t.idx()],
                     up,
-                    exps,
-                    ranges,
+                    &mut ranges[t.idx()],
                     &mut self.routes_up,
                 );
             }
@@ -1224,69 +1251,6 @@ impl<V: Value> Counted<V> {
             }
         }
         None
-    }
-}
-
-fn raise_and_recompute_level<V: Value>(
-    f: &tididi::Tdd,
-    (t, l, r): (
-        tididi::vtree::VtreeIdx,
-        tididi::vtree::VtreeIdx,
-        tididi::vtree::VtreeIdx,
-    ),
-    view: &View,
-    up: &mut [Vec<V>],
-    exps: &mut [i64],
-    ranges: &mut [Range],
-    routes_up: &mut [usize; ROUTES],
-) {
-    if !exact_as_computed(
-        &up[t.idx()],
-        ranges[t.idx()],
-        lowest_product(ranges[l.idx()], ranges[r.idx()]),
-    ) && raising(ranges[t.idx()]) > 0
-        && let Some(ks) = split_shift(ranges[l.idx()], ranges[r.idx()], raising(ranges[t.idx()]))
-    {
-        shift_children((l, r), up, exps, ranges, ks);
-        level_up(f, (t, l, r), view, up, &mut ranges[t.idx()], routes_up);
-    }
-}
-
-/// The children's counts times `2^k` and `2^m`, their powers less the shifts.
-fn shift_children<V: Value>(
-    (l, r): (tididi::vtree::VtreeIdx, tididi::vtree::VtreeIdx),
-    up: &mut [Vec<V>],
-    exps: &mut [i64],
-    ranges: &mut [Range],
-    (k, m): (i64, i64),
-) {
-    for (c, k) in [(l, k), (r, m)] {
-        if k != 0 {
-            shift_all(&mut up[c.idx()], k, &mut ranges[c.idx()]);
-            exps[c.idx()] -= k;
-        }
-    }
-}
-
-/// Each child centred on one, and both moved down together where their
-/// products could overflow.
-fn centre_children<V: Value>(
-    (l, r): (tididi::vtree::VtreeIdx, tididi::vtree::VtreeIdx),
-    up: &mut [Vec<V>],
-    exps: &mut [i64],
-    ranges: &mut [Range],
-) {
-    let at = |c: tididi::vtree::VtreeIdx, ranges: &[Range]| {
-        centring(ranges[c.idx()], Range::NEW).unwrap_or(0)
-    };
-    let ks = (at(l, ranges), at(r, ranges));
-    shift_children((l, r), up, exps, ranges, ks);
-    if let Some(ks) = split_shift(
-        ranges[l.idx()],
-        ranges[r.idx()],
-        capping(ranges[l.idx()], ranges[r.idx()]),
-    ) {
-        shift_children((l, r), up, exps, ranges, ks);
     }
 }
 
@@ -1808,38 +1772,6 @@ impl<V: Value> ConjunctionWalk<'_, V> {
         }
         (s, v, free, free_exp)
     }
-
-    fn build_root_table(
-        &self,
-        s: tididi::vtree::VtreeIdx,
-        poll: &mut impl FnMut(u64) -> Result<(), tididi::OperationError>,
-    ) -> Result<Table<V>, tididi::OperationError> {
-        let fv = self.f.vtree();
-        let mut tables: Vec<Option<Table<V>>> = (0..fv.num_nodes()).map(|_| None).collect();
-        let mut stack = Vec::with_capacity(fv.num_nodes());
-        stack.push((s, false));
-        while let Some((x, done)) = stack.pop() {
-            if self.image[x.idx()].is_none() {
-                continue;
-            }
-            if fv.node(x).is_leaf() {
-                tables[x.idx()] = Some(self.leaf_table(x, poll)?);
-            } else if done {
-                let (xl, xr) = fv.children(x);
-                tables[x.idx()] = Some(match (tables[xl.idx()].take(), tables[xr.idx()].take()) {
-                    (Some(left), Some(right)) => self.product(x, left, right, poll)?,
-                    (Some(inner), None) | (None, Some(inner)) => self.absorb(x, inner, poll)?,
-                    (None, None) => unreachable!("a level with an image has a side with one"),
-                });
-            } else {
-                let (xl, xr) = fv.children(x);
-                stack.push((x, true));
-                stack.push((xr, false));
-                stack.push((xl, false));
-            }
-        }
-        Ok(tables[s.idx()].take().unwrap())
-    }
 }
 
 pub(crate) fn conjunction_count<V: Value>(
@@ -1889,7 +1821,30 @@ pub(crate) fn conjunction_count<V: Value>(
     };
     // Bottom-up over `f`'s vtree under `s`, each child's table dropped once
     // its parent's is built. A level with no image has no table.
-    let mut table = walk.build_root_table(s, &mut poll)?;
+    let mut tables: Vec<Option<Table<V>>> = (0..fv.num_nodes()).map(|_| None).collect();
+    let mut stack = Vec::with_capacity(fv.num_nodes());
+    stack.push((s, false));
+    while let Some((x, done)) = stack.pop() {
+        if walk.image[x.idx()].is_none() {
+            continue;
+        }
+        if fv.node(x).is_leaf() {
+            tables[x.idx()] = Some(walk.leaf_table(x, &mut poll)?);
+        } else if done {
+            let (xl, xr) = fv.children(x);
+            tables[x.idx()] = Some(match (tables[xl.idx()].take(), tables[xr.idx()].take()) {
+                (Some(left), Some(right)) => walk.product(x, left, right, &mut poll)?,
+                (Some(inner), None) | (None, Some(inner)) => walk.absorb(x, inner, &mut poll)?,
+                (None, None) => unreachable!("a level with an image has a side with one"),
+            });
+        } else {
+            let (xl, xr) = fv.children(x);
+            stack.push((x, true));
+            stack.push((xr, false));
+            stack.push((xl, false));
+        }
+    }
+    let mut table = tables[s.idx()].take().unwrap();
     let mut total = V::ZERO;
     let column = counted.down(e, t_s)?;
     // A column in `Count`s is read in `V`s where it fits under one power.

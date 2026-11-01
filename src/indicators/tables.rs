@@ -134,7 +134,27 @@ pub(super) fn clause_tables(
     let Sets {
         exclusive, set_of, ..
     } = *sets;
-    let (rules_from, rules_of) = rules_by_set(gp, set_of, exclusive.len());
+    // The rules of each set, in order, end to end, not a list per set
+    // grown rule by rule.
+    let mut rules_from = vec![0usize; exclusive.len() + 1];
+    for r in &gp.rules {
+        let s = set_of[r.head as usize];
+        if s != usize::MAX {
+            rules_from[s + 1] += 1;
+        }
+    }
+    for s in 0..exclusive.len() {
+        rules_from[s + 1] += rules_from[s];
+    }
+    let mut rules_of = vec![0usize; rules_from[exclusive.len()]];
+    let mut next = rules_from.clone();
+    for (ri, r) in gp.rules.iter().enumerate() {
+        let s = set_of[r.head as usize];
+        if s != usize::MAX {
+            rules_of[next[s]] = ri;
+            next[s] += 1;
+        }
+    }
     // A set's input states depend on whether the sets it reads are
     // tables, so the sets are checked until no more become tables.
     let mut table = vec![false; exclusive.len()];
@@ -194,31 +214,6 @@ pub(super) fn clause_tables(
         }
     }
     (tables, table)
-}
-
-/// The rules of each set, in order, end to end, not a list per set grown rule
-/// by rule.
-fn rules_by_set(gp: &GroundProgram, set_of: &[usize], num_sets: usize) -> (Vec<usize>, Vec<usize>) {
-    let mut rules_from = vec![0usize; num_sets + 1];
-    for r in &gp.rules {
-        let s = set_of[r.head as usize];
-        if s != usize::MAX {
-            rules_from[s + 1] += 1;
-        }
-    }
-    for s in 0..num_sets {
-        rules_from[s + 1] += rules_from[s];
-    }
-    let mut rules_of = vec![0usize; rules_from[num_sets]];
-    let mut next = rules_from.clone();
-    for (ri, r) in gp.rules.iter().enumerate() {
-        let s = set_of[r.head as usize];
-        if s != usize::MAX {
-            rules_of[next[s]] = ri;
-            next[s] += 1;
-        }
-    }
-    (rules_from, rules_of)
 }
 
 /// The states a rule body leaves an input in ([`partition`]): one, or all
@@ -362,15 +357,6 @@ fn covers<I: Copy + Ord>(
         above.pop();
         return all;
     }
-    measures_and_disjoint(rows, &read, above, states)
-}
-
-fn measures_and_disjoint<I: Copy + Ord>(
-    rows: &[&[(I, Allowed)]],
-    read: &[I],
-    above: &[I],
-    states: &impl Fn(I) -> u32,
-) -> bool {
     let Some(total) = read.iter().try_fold(1u128, |acc, input| {
         acc.checked_mul(u128::from(states(*input)))
     }) else {
@@ -380,7 +366,7 @@ fn measures_and_disjoint<I: Copy + Ord>(
     let mut points = true;
     for row in rows {
         let mut measure = 1u128;
-        for input in read {
+        for input in &read {
             let count = match row.binary_search_by(|(j, _)| j.cmp(input)) {
                 Ok(k) => row[k].1.count(states(*input)),
                 Err(_) => states(*input),
@@ -579,29 +565,6 @@ fn partition(
         )? {
             continue;
         }
-        buffers.record_rule_row(ri, &mut last);
-    }
-    let keys: Vec<&[(u32, Allowed)]> = buffers.rows[..buffers.rows_len]
-        .iter()
-        .map(Vec::as_slice)
-        .collect();
-    if !covers(&keys, &mut Vec::new(), &|i| states_of(&inputs.info, i)) {
-        return None;
-    }
-    // Each row's cubes, in the order of their rules.
-    buffers.cube_spans.sort_unstable();
-    if !buffers
-        .cube_spans
-        .chunk_by(|x, y| x.0 == y.0)
-        .all(|spans| switches_partition(spans, &buffers.cubes))
-    {
-        return None;
-    }
-    Some(buffers.firing.clone())
-}
-
-impl Buffers {
-    fn record_rule_row(&mut self, ri: usize, last: &mut Option<usize>) {
         let Buffers {
             rows,
             rows_len,
@@ -612,11 +575,11 @@ impl Buffers {
             cube_spans,
             firing,
             ..
-        } = self;
+        } = buffers;
         firing.push(ri);
         // The rules of a row come one after another: a rule that reads as
         // the rule before has its row, found without a lookup.
-        let r = match *last {
+        let r = match last {
             Some(r) if rows[r] == *row => r,
             _ => {
                 let (r, new) = row_by.find_or_push(FxBuildHasher.hash_one(row.as_slice()), |r| {
@@ -636,10 +599,27 @@ impl Buffers {
                 r as usize
             }
         };
-        *last = Some(r);
+        last = Some(r);
         cube_spans.push((r, cubes.len(), cubes.len() + cube.len()));
         cubes.extend_from_slice(cube);
     }
+    let keys: Vec<&[(u32, Allowed)]> = buffers.rows[..buffers.rows_len]
+        .iter()
+        .map(Vec::as_slice)
+        .collect();
+    if !covers(&keys, &mut Vec::new(), &|i| states_of(&inputs.info, i)) {
+        return None;
+    }
+    // Each row's cubes, in the order of their rules.
+    buffers.cube_spans.sort_unstable();
+    if !buffers
+        .cube_spans
+        .chunk_by(|x, y| x.0 == y.0)
+        .all(|spans| switches_partition(spans, &buffers.cubes))
+    {
+        return None;
+    }
+    Some(buffers.firing.clone())
 }
 
 // What the rule at hand allows of each input it reads, kept as the one
@@ -707,63 +687,42 @@ fn scan_rule_inputs(
             }
             continue;
         }
-        if !record_unary_state(
-            inputs,
-            (*states, only, out),
-            stamp,
-            (i, state, positive),
-            body,
-            &mut next,
-        ) {
+        let mark = &mut inputs.marks[inputs.base[i as usize] as usize + state as usize];
+        if positive {
+            if only.is_some_and(|o| o != state) || *mark == stamp {
+                return Some(None);
+            }
+            *only = Some(state);
+            // The literals right after it that read the input's other
+            // states negatively, as `introduce` writes a row's value of
+            // a parent, rule the rule out only where one negates this
+            // state, and are passed over without the rest.
+            if inputs.info[i as usize].0 != usize::MAX {
+                while let Some(&m) = body.get(next)
+                    && !m.is_positive()
+                    && inputs.of[m.atom() as usize].0 == i
+                {
+                    if inputs.of[m.atom() as usize].1 == state {
+                        return Some(None);
+                    }
+                    next += 1;
+                }
+            }
+        } else if *only == Some(state) {
             return Some(None);
+        } else if only.is_none() && *mark != stamp {
+            // Once a positive literal has named the input's state, the
+            // states its negative literals rule out are not read: a
+            // row reads a parent's value and then the other values
+            // negated (the expansion in `introduce`).
+            *mark = stamp;
+            out.push(state);
+            if out.len() as u32 == *states {
+                return Some(None);
+            }
         }
     }
     Some(Some(reading))
-}
-
-fn record_unary_state(
-    inputs: &mut Inputs,
-    (states, only, out): (u32, &mut Option<u32>, &mut Vec<u32>),
-    stamp: usize,
-    (i, state, positive): (u32, u32, bool),
-    body: &[GLit],
-    next: &mut usize,
-) -> bool {
-    let mark = &mut inputs.marks[inputs.base[i as usize] as usize + state as usize];
-    if positive {
-        if only.is_some_and(|o| o != state) || *mark == stamp {
-            return false;
-        }
-        *only = Some(state);
-        // The literals right after it that read the input's other
-        // states negatively, as `introduce` writes a row's value of
-        // a parent, rule the rule out only where one negates this
-        // state, and are passed over without the rest.
-        if inputs.info[i as usize].0 != usize::MAX {
-            while let Some(&m) = body.get(*next)
-                && !m.is_positive()
-                && inputs.of[m.atom() as usize].0 == i
-            {
-                if inputs.of[m.atom() as usize].1 == state {
-                    return false;
-                }
-                *next += 1;
-            }
-        }
-    } else if *only == Some(state) {
-        return false;
-    } else if only.is_none() && *mark != stamp {
-        // Once a positive literal has named the input's state, the
-        // states its negative literals rule out are not read: a
-        // row reads a parent's value and then the other values
-        // negated (the expansion in `introduce`).
-        *mark = stamp;
-        out.push(state);
-        if out.len() as u32 == states {
-            return false;
-        }
-    }
-    true
 }
 
 fn build_rule_row(
