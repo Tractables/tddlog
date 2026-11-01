@@ -1777,7 +1777,9 @@ mod roulette_circuits {
         };
         let solution = tddlog::solve(&input.program, &options, &mut |_| {})
             .unwrap_or_else(|e| panic!("{file}: {e}"));
-        let (p, _) = input.evidence_probability(&solution).expect("P(e) asked for");
+        let (p, _) = input
+            .evidence_probability(&solution)
+            .expect("P(e) asked for");
         assert!((p - pe).abs() < 1e-12, "{file}: P(e) = {p} against {pe}");
     }
 
@@ -1807,7 +1809,12 @@ mod roulette_circuits {
         weigh(
             "../tests/roulette/lib/diagnosis.pl",
             0.26,
-            &[("q1(1)", 0.26), ("q2(1)", 0.08), ("q3(1)", 0.18), ("q4(1)", 0.0)],
+            &[
+                ("q1(1)", 0.26),
+                ("q2(1)", 0.08),
+                ("q3(1)", 0.18),
+                ("q4(1)", 0.0),
+            ],
         );
     }
 
