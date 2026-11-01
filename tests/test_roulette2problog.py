@@ -184,6 +184,28 @@ class RouletteLibTests(unittest.TestCase):
                     for g, w in zip(got, ws):
                         self.assertAlmostEqual(g, w, delta=1e-9, msg=line)
 
+    @unittest.skipUnless(TDDLOG.exists(), 'no tddlog binary at TDDLOG_BIN')
+    def test_observations_below_a_doubles_range(self):
+        # 400 observed flips of 0.1, P(e) = 1e-400: a value's weight is 0 in
+        # a double, its probability given the observations 0.3.
+        with tempfile.TemporaryDirectory() as d:
+            path = program(d, '(define (model)\n'
+                              '  (define a (flip 0.3))\n'
+                              '  (for ([i (in-range 400)]) (observe! (flip 0.1)))\n'
+                              "  (if a 'x 'y))\n"
+                              '(define m (query (model)))\n')
+            r = lib(path)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('400 observations', r.stdout)
+            pl = Path(d, 'program.pl')
+            pl.write_text(r.stdout)
+            t = subprocess.run([str(TDDLOG), '--precision', '17', str(pl)], capture_output=True, text=True)
+            self.assertEqual(t.returncode, 0, t.stderr)
+            answers = {q: float(p) for q, p in (line.split(':') for line in t.stdout.splitlines())}
+            value = dict(re.findall(r'^% (q1\(\d+\)): (.*)$', r.stdout, re.M))
+            for q, v in value.items():
+                self.assertAlmostEqual(answers[q], {'x': 0.3, 'y': 0.7}.get(v, 0.0), delta=1e-12, msg=v)
+
     def test_a_compiled_script_is_refused(self):
         # raco make of the script: its replacements of Roulette's modules
         # would not hold, and it says so.

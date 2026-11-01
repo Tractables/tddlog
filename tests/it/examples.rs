@@ -1820,18 +1820,21 @@ mod roulette_circuits {
 
     /// The package's example language: each `query` calls `infer` for the
     /// value, with a failed observation's value (q1(3)), and for the
-    /// observation (q2), whose guards share no conjunct.
+    /// The example language's `query`: the observation as evidence, which
+    /// the guards of the values x (q1(0)) and y (q1(1)) do not show as a
+    /// conjunct, so that a failed observation's value (q1(3)) and the
+    /// observation's #f (q2(0)) answer 0.
     #[test]
     fn lib_disrupt() {
         weigh(
             "../tests/roulette/lib/disrupt.pl",
-            1.0,
+            0.72,
             &[
                 ("q1(0)", 0.3),
                 ("q1(1)", 0.42),
                 ("q1(2)", 0.0),
-                ("q1(3)", 0.28),
-                ("q2(0)", 0.28),
+                ("q1(3)", 0.0),
+                ("q2(0)", 0.0),
                 ("q2(1)", 0.72),
             ],
         );

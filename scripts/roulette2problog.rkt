@@ -87,7 +87,14 @@
 ;;   prints them. A value asked that the call cannot take comes after the
 ;;   call's values, in the order asked, as `qK(I) :- fail.`: its weight is
 ;;   0. A note counts the calls of `infer`, whether or not they asked a
-;;   value.
+;;   value. Where the example language's `query` gives a call the value ⊥ of
+;;   a failed observation, the evidence is the observations, the negation of
+;;   ⊥'s guard, which every other value of the call implies whether or not
+;;   its guard shows them as conjuncts: a value's probability given the
+;;   observations then stays in a double's range where its weight, which
+;;   Roulette's `query` divides by the others', would not. ⊥ and the #f of
+;;   the call that asks for the observations answer 0 under the evidence,
+;;   which is not their weight, and the query reads neither.
 ;;
 ;; With --tddlog TDDLOG (a command, split at spaces), each query is written
 ;; on its own to a temporary file and answered by TDDLOG on it, and the query
@@ -458,7 +465,7 @@
              racket/set
              (only-in racket/contract/base any/c)
              (only-in rosette vc vc-assumes)
-             (only-in rosette/base/core/bool @&&)
+             (only-in rosette/base/core/bool @&& @!)
              (only-in roulette [infer roulette-infer] immutable-set/c)
              (only-in roulette/engine/rsdd number-semiring)
              (only-in roulette/private/engine engine<%>)
@@ -488,7 +495,7 @@
         (list (simplify-path (path->complete-path dir)))))
 
     (define WEIGHTS
-      "A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints.")
+      "A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints; a failed observation's value answers 0 under the evidence.")
 
     ;; A call of `infer`: its number `k`, its value's values and their guards
     ;; in datum order (a vector of (value . guard)), each value's index, the
@@ -607,30 +614,55 @@
                 c f t))
         t))
 
+    ;; The value of a failed observation in the example language's `query`,
+    ;; a gensym of its own that the language does not export.
+    (define (failed-value? v)
+      (and (symbol? v) (symbol-uninterned? v) (regexp-match? #rx"^⊥" (symbol->string v))))
+
+    ;; The members of the first of `lists` that are in all of them, #f for
+    ;; no list.
+    (define (common lists)
+      (and (pair? lists)
+           (for/fold ([s (car lists)]) ([b (in-list (cdr lists))])
+             (filter (λ (x) (memq x b)) s))))
+
     ;; The queries `items`, each (k assumes entries) with an entry (i value
     ;; guard), for `write-circuit`: each value's guard conjoined with the
-    ;; assumptions, the conjuncts every one shares as the evidence, and each
-    ;; value's other conjuncts its body, #f for a value never taken.
+    ;; assumptions, the conjuncts that every call's values imply as the
+    ;; evidence, and each value's other conjuncts its body, #f for a value
+    ;; never taken. A call's values are exclusive, so that those other than
+    ;; ⊥ imply the negation of its guard, and the value of another call with
+    ;; that guard (the #f of the call that asks for the observations) is
+    ;; failed with it. Another call's values imply the conjuncts their guards
+    ;; share.
     (define (factor items)
-      (define queries
+      (define calls
         (for/list ([q (in-list items)])
           (match-define (list k assumes entries) q)
           (list k (for/list ([e (in-list entries)])
                     (match-define (list i v g) e)
-                    (define c (@&& assumes g))
-                    (list i v (and c (conjuncts c)))))))
-      (define bodies (for*/list ([q (in-list queries)] [e (in-list (second q))] #:when (third e))
-                       (third e)))
-      (define shared
-        (if (null? bodies)
-            '()
-            (for/fold ([s (car bodies)]) ([b (in-list (cdr bodies))])
-              (filter (λ (x) (memq x b)) s))))
-      (values (for/list ([q (in-list queries)])
+                    (list i v (@&& assumes g))))))
+      (define (failed-of entries)
+        (and (pair? (cdr entries))
+             (findf (λ (e) (failed-value? (second e))) entries)))
+      (define failed
+        (for*/list ([q (in-list calls)]
+                    [f (in-value (failed-of (second q)))]
+                    #:when f)
+          (third f)))
+      (define (implied entries)
+        (define f (failed-of entries))
+        (if f
+            (conjuncts (@! (third f)))
+            (common (for/list ([e (in-list entries)]
+                               #:when (and (third e) (not (memq (third e) failed))))
+                      (conjuncts (third e))))))
+      (define shared (or (common (filter-map implied (map second calls))) '()))
+      (values (for/list ([q (in-list calls)])
                 (list (first q)
                       (for/list ([e (in-list (second q))])
-                        (match-define (list i v b) e)
-                        (list i v (and b (filter (λ (x) (not (memq x shared))) b))))))
+                        (match-define (list i v c) e)
+                        (list i v (and c (filter (λ (x) (not (memq x shared))) (conjuncts c)))))))
               shared))
 
     ;; The calls with a value asked, each with its asked values.

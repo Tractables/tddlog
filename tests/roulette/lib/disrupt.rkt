@@ -12,7 +12,9 @@
 ;;   q2: #t 0.72, #f 0.28.
 ;;
 ;; The query divides each value's weight by the sum of the values other
-;; than ⊥: x 0.3 / 0.72 = 5/12, y 7/12, z 0, which the program prints.
+;; than ⊥: x 0.3 / 0.72 = 5/12, y 7/12, z 0, which the program prints. The
+;; circuit asks the values under the observation as evidence, P(e) = 0.72:
+;; q1(0) 5/12, q1(1) 7/12, q1(2) and ⊥ 0, q2(1) 1 and q2(0) 0.
 (define (model)
   (define a (flip 0.3))
   (define b (flip 0.6))
