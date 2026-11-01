@@ -305,9 +305,27 @@ fn co_read(
     let mut set: Vec<AtomId> = Vec::new();
     let mut signs = vec![0u8; gp.num_atoms()];
     let distinct = |rs: &[u32]| rs.len() - rs.windows(2).filter(|w| w[0] == w[1]).count();
+    let mut rs: Vec<u32> = Vec::new();
     for a in 0..gp.num_atoms() {
-        let rs = &readers[a];
-        if !bit[a] || !start[a] || rs.len() < 2 || rs.iter().all(|&r| r == rs[0]) {
+        if !bit[a] || !start[a] || readers[a].len() < 2 {
+            continue;
+        }
+        // The rules reading `a` but those of atoms read with it: a trie's
+        // lower bits, which read its higher ones.
+        rs.clear();
+        for &r in &readers[a] {
+            let h = gp.rules[r as usize].head as usize;
+            if bit[h] {
+                if !work.add(readers[h].len() + 1) {
+                    return None;
+                }
+                if readers[h].iter().any(|r| readers[a].binary_search(r).is_ok()) {
+                    continue;
+                }
+            }
+            rs.push(r);
+        }
+        if rs.len() < 2 || rs.iter().all(|&r| r == rs[0]) {
             continue;
         }
         // From the shortest body that reads `a`, what every other reads.
@@ -341,7 +359,7 @@ fn co_read(
         }
         // A fact that only these rules read owns nothing that would join
         // it to the others: it is a variable of its own.
-        let n = distinct(rs);
+        let n = distinct(&rs);
         set.retain(|&x| {
             !matches!(gp.kinds[x as usize], AtomKind::Fact(_))
                 || distinct(&readers[x as usize]) != n
@@ -432,7 +450,10 @@ impl<'a> Units<'a> {
         let n = gp.num_atoms();
         let mut candidates = candidates;
         candidates.sort_unstable_by_key(|c| c[0]);
-        let mut seen = Seen::new(n, gp.rules.len());
+        let mut reading = Reading::new(gp, by_head, readers, &rank, named);
+        // The atoms of the variables not read as values, none of which is
+        // a variable of one bit.
+        let mut declined = vec![false; n];
         loop {
             if !work.add(4 * (n + gp.rules.len())) {
                 return None;
@@ -450,7 +471,9 @@ impl<'a> Units<'a> {
                     start[class[a as usize] as usize + 1] += 1;
                 }
             }
-            let alone = |a: usize| owner[a] == a as u32 && rank[a] != NONE && !is_candidate[a];
+            let alone = |a: usize| {
+                owner[a] == a as u32 && rank[a] != NONE && !is_candidate[a] && !declined[a]
+            };
             for a in 0..n {
                 if alone(a) {
                     start[class[a] as usize + 1] += 1;
@@ -493,11 +516,15 @@ impl<'a> Units<'a> {
                         0 => false,
                         1 => !is_candidate[i[0] as usize],
                         k => {
-                            k <= BITS && seen.read_as_values(gp, readers, &class, c as u32, i, work)
+                            k <= BITS && reading.as_values(&class, &is_candidate, c as u32, i, work)
                         }
                     };
                 if kept[c] && i.len() > 1 {
                     variables.push(i.to_vec());
+                } else if random[c] && i.len() > 1 {
+                    for &a in i {
+                        declined[a as usize] = true;
+                    }
                 }
             }
             if variables.is_empty() || work.left() == 0 {
@@ -518,7 +545,14 @@ impl<'a> Units<'a> {
                 .collect();
             pairs.sort_unstable();
             let members = Members::new(pairs);
-            // The views, in dependency order.
+            // The views, in dependency order, over the units' bits and the
+            // facts that no one atom owns: the flips of variables of one
+            // bit that several read, as their values.
+            let free = |y: usize| {
+                owner[y] == y as u32
+                    && !named[y]
+                    && matches!(gp.kinds[y], AtomKind::Fact(p) if normal(p))
+            };
             let mut is_bit = vec![false; n];
             for i in bits.values() {
                 for &a in i {
@@ -535,7 +569,7 @@ impl<'a> Units<'a> {
                     && by_head[a as usize].iter().all(|&ri| {
                         gp.rules[ri].body.iter().all(|l| {
                             let y = l.atom() as usize;
-                            is_bit[y] || view[y]
+                            is_bit[y] || view[y] || free(y)
                         })
                     });
             }
@@ -642,8 +676,8 @@ impl<'a> Units<'a> {
             self.is_bit[x as usize]
                 || !matches!(self.gp.kinds[x as usize], AtomKind::Fact(_))
                 || readers[x as usize].iter().all(|&ri| {
-                    let h = self.gp.rules[ri as usize].head;
-                    self.bits.contains_key(&self.class[h as usize])
+                    let h = self.gp.rules[ri as usize].head as usize;
+                    self.view[h] || self.bits.contains_key(&self.class[h])
                 })
         })
     }
@@ -759,41 +793,91 @@ fn classes(
     (owner, class)
 }
 
-/// Scratch for [`Seen::read_as_values`]: the atoms of the bits it reads,
-/// by its token, and the rules it has read.
-struct Seen {
+/// What reads a variable's bits ([`Reading::as_values`]), with scratch
+/// kept from one variable to the next: by its token, the variable's bits,
+/// the rules read, and what each atom found depends on.
+struct Reading<'a> {
+    gp: &'a GroundProgram,
+    by_head: &'a Lists<usize>,
+    readers: &'a Lists<u32>,
+    rank: &'a [u32],
+    named: &'a [bool],
     token: u32,
     in_set: Vec<u32>,
     rule_seen: Vec<u32>,
+    found: Vec<u32>,
+    entered: Vec<u32>,
+    /// Per atom found, the variable's bits it depends on, as a mask, and
+    /// [`ALONE`] where it reads nothing else.
+    depends: Vec<u32>,
 }
 
-impl Seen {
-    fn new(n: usize, rules: usize) -> Self {
-        Seen {
+/// In [`Reading::depends`], of an atom that reads, through gates, the
+/// variable's bits and nothing else.
+const ALONE: u32 = 1 << 31;
+
+impl<'a> Reading<'a> {
+    fn new(
+        gp: &'a GroundProgram,
+        by_head: &'a Lists<usize>,
+        readers: &'a Lists<u32>,
+        rank: &'a [u32],
+        named: &'a [bool],
+    ) -> Self {
+        let n = gp.num_atoms();
+        Reading {
+            gp,
+            by_head,
+            readers,
+            rank,
+            named,
             token: 0,
             in_set: vec![0; n],
-            rule_seen: vec![0; rules],
+            rule_seen: vec![0; gp.rules.len()],
+            found: vec![0; n],
+            entered: vec![0; n],
+            depends: vec![0; n],
         }
     }
 
-    /// Whether each rule outside class `c` that reads one of `bits` reads
-    /// them all, and those rules test two values or more.
-    fn read_as_values(
+    /// Whether the variable of `bits`, of class `c`, is read as values:
+    /// each rule outside its class that reads one of its bits reads them
+    /// all, directly or through what the rest of its body depends on (a
+    /// decision chain's guard that fixes the bits the rule does not
+    /// read), or reads nothing but the variable, through gates, and the
+    /// rules reading its head read the variable so in turn; and those
+    /// rules read two codes or more of the bits. What a literal depends
+    /// on is found through gates down to the variables' atoms, which
+    /// `variable` marks, in at most [`WORK_PER_LITERAL`] steps per literal
+    /// of the rules reading the bits.
+    fn as_values(
         &mut self,
-        gp: &GroundProgram,
-        readers: &Lists<u32>,
         class: &[u32],
+        variable: &[bool],
         c: u32,
         bits: &[AtomId],
         work: &mut Work,
     ) -> bool {
+        let (gp, readers) = (self.gp, self.readers);
         self.token += 1;
         let token = self.token;
-        for &a in bits {
+        for (k, &a) in bits.iter().enumerate() {
             self.in_set[a as usize] = token;
+            self.found[a as usize] = token;
+            self.depends[a as usize] = 1 << k | ALONE;
         }
-        let mut tested: Vec<u32> = Vec::new();
-        for &a in bits {
+        let all = (1u32 << bits.len()) - 1;
+        let budget = WORK_PER_LITERAL
+            * bits
+                .iter()
+                .flat_map(|&a| &readers[a as usize])
+                .map(|&ri| gp.rules[ri as usize].body.len())
+                .sum::<usize>();
+        let mut left = budget;
+        let mut tested: Vec<(u32, u32)> = Vec::new();
+        let mut read: Vec<AtomId> = bits.to_vec();
+        let mut ok = true;
+        'read: while let Some(a) = read.pop() {
             for &ri in &readers[a as usize] {
                 if self.rule_seen[ri as usize] == token {
                     continue;
@@ -806,27 +890,95 @@ impl Seen {
                 if !work.add(r.body.len()) {
                     return false;
                 }
-                let mut read = 0;
+                let mut mask = 0u32;
                 let mut code = 0u32;
                 for l in &r.body {
-                    let x = l.atom();
-                    if self.in_set[x as usize] == token
-                        && let Some(k) = bits.iter().position(|&b| b == x)
-                        && code >> (2 * k) & 3 == 0
-                    {
-                        read += 1;
-                        code |= (1 + u32::from(l.is_positive())) << (2 * k);
+                    if self.in_set[l.atom() as usize] == token {
+                        let k = bits.iter().position(|&b| b == l.atom()).expect("a bit");
+                        mask |= 1 << k;
+                        code |= u32::from(l.is_positive()) << k;
                     }
                 }
-                if read != bits.len() {
-                    return false;
+                if mask != 0 && !tested.contains(&(mask, code)) {
+                    tested.push((mask, code));
                 }
-                if !tested.contains(&code) {
-                    tested.push(code);
+                let mut depends = mask;
+                for l in &r.body {
+                    if depends & all == all {
+                        break;
+                    }
+                    match self.depends(variable, l.atom(), &mut left) {
+                        Some(d) => depends |= d,
+                        None => {
+                            ok = false;
+                            break 'read;
+                        }
+                    }
+                }
+                if depends & all == all {
+                    continue;
+                }
+                match self.depends(variable, r.head, &mut left) {
+                    Some(d) if d & ALONE != 0 => read.push(r.head),
+                    _ => {
+                        ok = false;
+                        break 'read;
+                    }
                 }
             }
         }
-        tested.len() >= 2
+        work.add(budget - left) && ok && tested.len() >= 2
+    }
+
+    /// The bits of the current variable that `a` depends on, through
+    /// gates down to the variables' atoms, as a mask, with [`ALONE`] where
+    /// it reads nothing else and no query or observation names it; `None`
+    /// where the steps `left` run out.
+    fn depends(&mut self, variable: &[bool], a: AtomId, left: &mut usize) -> Option<u32> {
+        let (gp, by_head) = (self.gp, self.by_head);
+        let token = self.token;
+        let mut stack = vec![a];
+        while let Some(&x) = stack.last() {
+            let x = x as usize;
+            if self.found[x] == token {
+                stack.pop();
+                continue;
+            }
+            if variable[x] || self.rank[x] == NONE {
+                self.found[x] = token;
+                self.depends[x] = 0;
+                stack.pop();
+                continue;
+            }
+            // A gate: its body's atoms first, then itself.
+            let rules = &by_head[x];
+            if self.entered[x] != token {
+                self.entered[x] = token;
+                for &ri in rules {
+                    let body = &gp.rules[ri].body;
+                    *left = left.checked_sub(body.len() + 1)?;
+                    stack.extend(
+                        body.iter()
+                            .map(|l| l.atom())
+                            .filter(|&y| self.found[y as usize] != token),
+                    );
+                }
+                continue;
+            }
+            let mut mask = 0;
+            let mut alone = !self.named[x];
+            for &ri in rules {
+                for l in &gp.rules[ri].body {
+                    let d = self.depends[l.atom() as usize];
+                    mask |= d & !ALONE;
+                    alone &= d & ALONE != 0;
+                }
+            }
+            self.found[x] = token;
+            self.depends[x] = mask | if alone { ALONE } else { 0 };
+            stack.pop();
+        }
+        Some(self.depends[a as usize])
     }
 }
 
