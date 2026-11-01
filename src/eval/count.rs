@@ -236,12 +236,7 @@ impl<V: Value> Down<V> {
         }
         Ok(())
     }
-}
 
-type ShiftedCopy<V> = (Vec<V>, i64, Range);
-type SettledColumn<V> = (Vec<V>, Range);
-
-impl<V: Value> Down<V> {
     /// Spread the column of `c`'s parent `p` into `c`'s, each pair's
     /// context times the count of its other side, and settle it. A grid
     /// runs the pass into `c` alone ([`Grid::down_into`]), or walks its
@@ -276,94 +271,10 @@ impl<V: Value> Down<V> {
         // An inline value is under no power: a child's column takes terms
         // under one only where its sibling, if marginal, is under none,
         // and no level is scaled here where either child is marginal.
-        let uniform =
-            |s: VtreeIdx| !f.level(s).child_decoder().is_marginal() || up.exps[s.idx()] == 0;
+        let uniform = |sibling: VtreeIdx| {
+            !f.level(sibling).child_decoder().is_marginal() || up.exps[sibling.idx()] == 0
+        };
         let movable = above && !ld.is_marginal() && !rd.is_marginal();
-        // The children spread into: `c` alone from a grid, both otherwise.
-        let sibling = |x: VtreeIdx| if x == l { r } else { l };
-        let kids = match self.views[p.idx()] {
-            View::Grid(_) => [Some(c), None],
-            View::Untried | View::Pairs => [Some(l), Some(r)],
-        };
-        // A child's column takes its terms from its parent's alone, all
-        // under one power: none is there before.
-        debug_assert!(
-            kids.iter().flatten().all(|x| !self.has[x.idx()]),
-            "a level takes terms from one column, under one power"
-        );
-        let copies = self.prepare_parent_and_copies(up, p, (l, r), kids, movable)?;
-        let (range, exp) = (self.ranges[p.idx()], self.exps[p.idx()]);
-        // Whether a child's column, counted in `V`s as `values` in range
-        // `got` from its sibling's counts read in range `read`, is exact;
-        // and where it is not, whether one counted in [`Count`]s from the
-        // same columns is, which [`fitted`] may then keep in `V`s under a
-        // power of its own.
-        let exact = |s: VtreeIdx, read: Range, values: &[V], got: Range| {
-            above
-                && uniform(s)
-                && up.exact[s.idx()]
-                && got.finite()
-                && (range.times(read)
-                    || exact_as_computed(values, got, lowest_product(range, read)))
-        };
-        let recountable = |sibling: VtreeIdx| above && up.exact[sibling.idx()];
-        // What each child reads of its sibling's counts, under the copy's
-        // shift, and their range.
-        let reads = [0, 1].map(|i| kids[i].map(|x| read_counts(&copies[i], up, sibling(x))));
-        let mut fits = [None, None];
-        if self.wide[p.idx()].is_some() {
-            fits = self.spread_counted(f, up, p, c)?;
-        }
-        let mut floats = [None, None];
-        if (0..2).any(|i| kids[i].is_some() && fits[i].is_none()) {
-            floats = self.spread_floats(f, up, (p, c, l), reads)?;
-        }
-        // Each child's column: in `V`s under the parent's power and its
-        // sibling's less the shift of the copy it read, and counted again
-        // in `Count`s where that is not exact and the counts it reads are.
-        let mut recount = false;
-        for i in 0..2 {
-            let Some(x) = kids[i] else { continue };
-            self.has[x.idx()] = true;
-            let sib = sibling(x);
-            match (fits[i].take(), floats[i].take()) {
-                (Some(fit), _) => self.keep(x, fit),
-                (None, Some((down, r))) => {
-                    let (_, shift, read) = reads[i].expect("a child reads its sibling");
-                    self.keep(x, Fit::Floats(down, r, exp + up.exps[sib.idx()] - shift));
-                    let held = exact(sib, read, &self.columns[x.idx()], self.ranges[x.idx()]);
-                    self.exact[x.idx()] = held;
-                    recount |= !held && recountable(sib);
-                }
-                (None, None) => unreachable!("a child's column in `V`s or in `Count`s"),
-            }
-        }
-        if recount {
-            let again = self.spread_counted(f, up, p, c)?;
-            for (x, fit) in kids.into_iter().zip(again) {
-                if let Some((x, fit)) = x
-                    .zip(fit)
-                    .filter(|(x, _)| !self.exact[x.idx()] && recountable(sibling(*x)))
-                {
-                    self.keep(x, fit);
-                }
-            }
-        }
-        if self.has[l.idx()] && self.has[r.idx()] {
-            self.views[p.idx()] = View::Pairs;
-        }
-        Ok(())
-    }
-
-    fn prepare_parent_and_copies(
-        &mut self,
-        up: Ups<'_, V>,
-        p: tididi::vtree::VtreeIdx,
-        (l, r): (tididi::vtree::VtreeIdx, tididi::vtree::VtreeIdx),
-        kids: [Option<tididi::vtree::VtreeIdx>; 2],
-        movable: bool,
-    ) -> Result<[Option<ShiftedCopy<V>>; 2], tididi::OperationError> {
-        use tididi::vtree::VtreeIdx;
         let fails = |range: Range, sibling: VtreeIdx| {
             up.exact[sibling.idx()] && (centre_all() || !range.times(up.ranges[sibling.idx()]))
         };
@@ -383,68 +294,135 @@ impl<V: Value> Down<V> {
         // their products with the column fail the test, centred on one, or
         // could overflow, moved down as far as they stay normal
         // ([`capping`]).
-        let copy = |sibling: VtreeIdx| -> Result<Option<ShiftedCopy<V>>, tididi::OperationError> {
-            let (values, from) = (&up.values[sibling.idx()], up.ranges[sibling.idx()]);
-            let Some((low, high)) = from.extent().filter(|_| movable) else {
-                return Ok(None);
+        let copy =
+            |sibling: VtreeIdx| -> Result<Option<(Vec<V>, i64, Range)>, tididi::OperationError> {
+                let (values, from) = (&up.values[sibling.idx()], up.ranges[sibling.idx()]);
+                let Some((low, high)) = from.extent().filter(|_| movable) else {
+                    return Ok(None);
+                };
+                let centre = if fails(range, sibling) {
+                    centring(from, Range::NEW).unwrap_or(0)
+                } else {
+                    0
+                };
+                let k =
+                    (centre + capping(range, from.shifted(centre))).clamp(-1022 - low, 1023 - high);
+                if k == 0 {
+                    return Ok(None);
+                }
+                let mut copy = collected(values.len(), values.iter().copied())?;
+                let mut copy_range = from;
+                shift_all(&mut copy, k, &mut copy_range);
+                Ok(Some((copy, k, copy_range)))
             };
-            let centre = if fails(range, sibling) {
-                centring(from, Range::NEW).unwrap_or(0)
-            } else {
-                0
-            };
-            let k = (centre + capping(range, from.shifted(centre))).clamp(-1022 - low, 1023 - high);
-            if k == 0 {
-                return Ok(None);
-            }
-            let mut copy = collected(values.len(), values.iter().copied())?;
-            let mut copy_range = from;
-            shift_all(&mut copy, k, &mut copy_range);
-            Ok(Some((copy, k, copy_range)))
+        let exp = self.exps[p.idx()];
+        // Whether a child's column, counted in `V`s as `values` in range
+        // `got` from its sibling's counts read in range `read`, is exact;
+        // and where it is not, whether one counted in [`Count`]s from the
+        // same columns is, which [`fitted`] may then keep in `V`s under a
+        // power of its own.
+        let exact = |sibling: VtreeIdx, read: Range, values: &[V], got: Range| {
+            above
+                && uniform(sibling)
+                && up.exact[sibling.idx()]
+                && got.finite()
+                && (range.times(read)
+                    || exact_as_computed(values, got, lowest_product(range, read)))
         };
+        let recountable = |sibling: VtreeIdx| above && up.exact[sibling.idx()];
+        // The children spread into: `c` alone from a grid, both otherwise.
         let sibling = |x: VtreeIdx| if x == l { r } else { l };
+        let kids = match self.views[p.idx()] {
+            View::Grid(_) => [Some(c), None],
+            View::Untried | View::Pairs => [Some(l), Some(r)],
+        };
+        // A child's column takes its terms from its parent's alone, all
+        // under one power: none is there before.
+        debug_assert!(
+            kids.iter().flatten().all(|x| !self.has[x.idx()]),
+            "a level takes terms from one column, under one power"
+        );
         let [copy_0, copy_1] = kids.map(|x| x.map(|x| copy(sibling(x))).transpose());
-        Ok([copy_0?.flatten(), copy_1?.flatten()])
-    }
-
-    fn spread_floats(
-        &mut self,
-        f: &tididi::Tdd,
-        up: Ups<'_, V>,
-        (p, c, l): (
-            tididi::vtree::VtreeIdx,
-            tididi::vtree::VtreeIdx,
-            tididi::vtree::VtreeIdx,
-        ),
-        reads: [Option<(&[V], i64, Range)>; 2],
-    ) -> Result<[Option<SettledColumn<V>>; 2], tididi::OperationError> {
-        let column = &self.columns[p.idx()];
-        Ok(match &self.views[p.idx()] {
-            View::Grid(grid) => {
-                let (of_s, _, read) = reads[0].expect("a grid spreads into one child");
-                [
-                    Some(grid_into(
-                        grid,
-                        c == l,
-                        column,
-                        of_s,
-                        up.values[c.idx()].len(),
-                        read.finite(),
-                        &mut self.routes,
-                    )?),
-                    None,
-                ]
+        let copies = [copy_0?.flatten(), copy_1?.flatten()];
+        // What each child reads of its sibling's counts, under the copy's
+        // shift, and their range.
+        let reads = [0, 1].map(|i| kids[i].map(|x| read_counts(&copies[i], up, sibling(x))));
+        let mut fits = [None, None];
+        if self.wide[p.idx()].is_some() {
+            fits = self.spread_counted(f, up, p, c)?;
+        }
+        let mut floats = [None, None];
+        if (0..2).any(|i| kids[i].is_some() && fits[i].is_none()) {
+            let column = &self.columns[p.idx()];
+            floats = match &self.views[p.idx()] {
+                View::Grid(grid) => {
+                    let (of_s, _, read) = reads[0].expect("a grid spreads into one child");
+                    [
+                        Some(grid_into(
+                            grid,
+                            c == l,
+                            column,
+                            of_s,
+                            up.values[c.idx()].len(),
+                            read.finite(),
+                            &mut self.routes,
+                        )?),
+                        None,
+                    ]
+                }
+                View::Untried | View::Pairs => {
+                    let ((of_r, _, _), (of_l, _, _)) = (
+                        reads[0].expect("the left child"),
+                        reads[1].expect("the right child"),
+                    );
+                    let (dl, dr, walked) = spread_pairs(f, column, of_l, of_r, p)?;
+                    self.routes[Route::Pairs.index::<V>()] += 2 * walked;
+                    [Some(settled(dl)), Some(settled(dr))]
+                }
+            };
+        }
+        // Each child's column: in `V`s under the parent's power and its
+        // sibling's less the shift of the copy it read, and counted again
+        // in `Count`s where that is not exact and the counts it reads are.
+        let mut recount = false;
+        for i in 0..2 {
+            let Some(x) = kids[i] else { continue };
+            self.has[x.idx()] = true;
+            match (fits[i].take(), floats[i].take()) {
+                (Some(fit), _) => self.keep(x, fit),
+                (None, Some((down, range))) => {
+                    let (_, shift, read) = reads[i].expect("a child reads its sibling");
+                    self.keep(
+                        x,
+                        Fit::Floats(down, range, exp + up.exps[sibling(x).idx()] - shift),
+                    );
+                    let held = exact(
+                        sibling(x),
+                        read,
+                        &self.columns[x.idx()],
+                        self.ranges[x.idx()],
+                    );
+                    self.exact[x.idx()] = held;
+                    recount |= !held && recountable(sibling(x));
+                }
+                (None, None) => unreachable!("a child's column in `V`s or in `Count`s"),
             }
-            View::Untried | View::Pairs => {
-                let ((of_r, _, _), (of_l, _, _)) = (
-                    reads[0].expect("the left child"),
-                    reads[1].expect("the right child"),
-                );
-                let (dl, dr, walked) = spread_pairs(f, column, of_l, of_r, p)?;
-                self.routes[Route::Pairs.index::<V>()] += 2 * walked;
-                [Some(settled(dl)), Some(settled(dr))]
+        }
+        if recount {
+            let again = self.spread_counted(f, up, p, c)?;
+            for (x, fit) in kids.into_iter().zip(again) {
+                if let Some((x, fit)) = x
+                    .zip(fit)
+                    .filter(|(x, _)| !self.exact[x.idx()] && recountable(sibling(*x)))
+                {
+                    self.keep(x, fit);
+                }
             }
-        })
+        }
+        if self.has[l.idx()] && self.has[r.idx()] {
+            self.views[p.idx()] = View::Pairs;
+        }
+        Ok(())
     }
 
     /// Level `p`'s column spread into its children as [`Down::spread`]

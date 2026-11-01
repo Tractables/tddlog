@@ -357,6 +357,19 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
     let cube = |vtree: &Arc<Vtree>, vars: std::ops::RangeInclusive<i32>, sign: i32| {
         Tdd::cube(vtree, vars.map(|v| sign * v).collect::<Vec<_>>()).unwrap()
     };
+    // Variables 1 to `k` weighing `p(v)` positive and `1 - p(v)`
+    // negative.
+    let weights = |k: usize, p: &dyn Fn(usize) -> f64| {
+        let mut w = Probabilities {
+            pos: vec![0.5; k + 1],
+            neg: vec![0.5; k + 1],
+            one: vec![1.0; k + 1],
+        };
+        for v in 1..=k {
+            (w.pos[v], w.neg[v]) = (p(v), 1.0 - p(v));
+        }
+        w
+    };
     // A cube of 80 variables, or the cube or its negation, and a clause
     // of three more. The root's children each hold a node of the cube,
     // p^41 and p^39, and one of its negation, near one: at p = 1e-9,
@@ -373,7 +386,11 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
         clause,
     )
     .unwrap();
-    let cube_at = |p: f64| weights_from(n as usize + 3, |v| if v <= n as usize { p } else { 0.3 });
+    let cube_at = |p: f64| {
+        weights(n as usize + 3, &move |v| {
+            if v <= n as usize { p } else { 0.3 }
+        })
+    };
     // Two cubes of 40 variables crossed, each true where the other's
     // negation is: the root's children span 1 196 bits each at 1e-9,
     // their extremes' products 2 392, but the root's one node takes
@@ -385,14 +402,38 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
         tididi::and(cube(&v80, 1..=40, -1), cube(&v80, 41..=80, 1)).unwrap(),
     )
     .unwrap();
-    let (three, three_w) = three_cubes_case(&cube);
+    // Over a, b and c, 30, 30 and 60 variables whose cubes weigh about
+    // 2^-500, 2^-1100 and 2^-1100: `(a ∧ ¬b ∧ c) ∨ (¬a ∧ b ∧ ¬c)`. The
+    // level over a and b has the column 2^-1100 at `a ∧ ¬b` and about
+    // one at `¬a ∧ b`, and b's counts up span 1 100 bits, but the
+    // column's least value meets b's greatest only: a's column is exact
+    // as computed.
+    let v120 = Arc::new(Vtree::balanced(120));
+    let (a, b, c) = (
+        |s| cube(&v120, 1..=30, s),
+        |s| cube(&v120, 31..=60, s),
+        |s| cube(&v120, 61..=120, s),
+    );
+    let and3 = |x: Tdd, y: Tdd, z: Tdd| tididi::and(tididi::and(x, y).unwrap(), z).unwrap();
+    let three = tididi::or(and3(a(1), b(-1), c(1)), and3(a(-1), b(1), c(-1))).unwrap();
+    let three_w = weights(120, &|v| {
+        f64::exp2(
+            -(if v <= 30 {
+                500.0 / 30.0
+            } else if v <= 60 {
+                1100.0 / 30.0
+            } else {
+                1100.0 / 60.0
+            }),
+        )
+    });
     for (what, f, w, route) in [
         ("cube at 1/4", &one, cube_at(0.25), Way::Plain),
         ("cube at 1e-9", &one, cube_at(1e-9), Way::Scaled),
         (
             "two cubes crossed at 1e-9",
             &crossed,
-            weights_from(80, |_| 1e-9),
+            weights(80, &|_| 1e-9),
             Way::Scaled,
         ),
         ("three cubes", &three, three_w, Way::Scaled),
@@ -423,140 +464,89 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
             Way::Switched,
         ),
     ] {
-        assert_count_route(what, f, &w, route);
-    }
-}
-
-/// Over a, b and c, 30, 30 and 60 variables whose cubes weigh about
-/// 2^-500, 2^-1100 and 2^-1100: `(a ∧ ¬b ∧ c) ∨ (¬a ∧ b ∧ ¬c)`. The level
-/// over a and b has the column 2^-1100 at `a ∧ ¬b` and about one at
-/// `¬a ∧ b`, and b's counts up span 1 100 bits, but the column's least
-/// value meets b's greatest only: a's column is exact as computed.
-fn three_cubes_case(
-    cube: &impl Fn(&Arc<Vtree>, std::ops::RangeInclusive<i32>, i32) -> Tdd,
-) -> (Tdd, Probabilities) {
-    let v120 = Arc::new(Vtree::balanced(120));
-    let (a, b, c) = (
-        |s| cube(&v120, 1..=30, s),
-        |s| cube(&v120, 31..=60, s),
-        |s| cube(&v120, 61..=120, s),
-    );
-    let and3 = |x: Tdd, y: Tdd, z: Tdd| tididi::and(tididi::and(x, y).unwrap(), z).unwrap();
-    let three = tididi::or(and3(a(1), b(-1), c(1)), and3(a(-1), b(1), c(-1))).unwrap();
-    let three_w = weights_from(120, |v| {
-        f64::exp2(
-            -(if v <= 30 {
-                500.0 / 30.0
-            } else if v <= 60 {
-                1100.0 / 30.0
-            } else {
-                1100.0 / 60.0
-            }),
-        )
-    });
-    (three, three_w)
-}
-
-/// Variables 1 to `k` weighing `p(v)` positive and `1 - p(v)` negative.
-fn weights_from(k: usize, p: impl Fn(usize) -> f64) -> Probabilities {
-    let mut w = Probabilities {
-        pos: vec![0.5; k + 1],
-        neg: vec![0.5; k + 1],
-        one: vec![1.0; k + 1],
-    };
-    for v in 1..=k {
-        (w.pos[v], w.neg[v]) = (p(v), 1.0 - p(v));
-    }
-    w
-}
-
-fn assert_count_route(what: &str, f: &Tdd, w: &Probabilities, route: Way) {
-    let wide = count::<Count>(f, w).unwrap();
-    let mut recounts = 0;
-    let mut counts = count_exact(f, w, &mut recounts).unwrap();
-    let switched = matches!(counts, Counts::Wide(_));
-    // Each literal's count, read as a query reads it: against the
-    // count in floats, and where that is not exact, against the
-    // count taken over in `Count`s.
-    let mut literals = Vec::new();
-    let mut widened = false;
-    for (leaf, var) in f.vtree().leaf_bottomup() {
-        if let Counts::Plain(plain) = &counts
-            && let Some(x) = plain.with_literal(f, leaf, var, true, w).unwrap()
-        {
-            literals.push(Some(x.count()));
-            continue;
-        }
-        if let Counts::Plain(_) = counts {
-            counts.widen().unwrap();
-            widened = true;
-        }
-        let Counts::Wide(wide) = &counts else {
-            unreachable!("widened")
-        };
-        literals.push(
-            wide.with_literal(f, leaf, var, true, w)
-                .unwrap()
-                .map(Scaled::count),
-        );
-    }
-    let total = match &counts {
-        Counts::Plain(plain) => plain.total(f).count(),
-        Counts::Wide(wide) => wide.total(f).count(),
-    };
-    let got = classify_count_way(what, f, &counts, switched, widened);
-    assert_eq!(got, route, "{what}");
-    assert_eq!(recounts, usize::from(route == Way::Switched), "{what}");
-    assert_eq!(
-        bits(total),
-        bits(wide.total(f).count()),
-        "{what}: the total"
-    );
-    for ((leaf, var), a) in f.vtree().leaf_bottomup().zip(literals) {
-        let b = wide
-            .with_literal(f, leaf, var, true, w)
-            .unwrap()
-            .map(Scaled::count);
-        assert_eq!(a.map(bits), b.map(bits), "{what}: literal {var:?}");
-    }
-    if route == Way::Plain {
-        let plain = count::<f64>(f, w).unwrap();
-        assert_eq!(total.to_f64(), plain.total(f).value, "{what}");
-    }
-}
-
-fn classify_count_way(what: &str, f: &Tdd, counts: &Counts, switched: bool, widened: bool) -> Way {
-    let (up, down) = counts.routes().in_counts();
-    match counts {
-        _ if switched => {
-            let all: usize = f
-                .vtree()
-                .internal_bottomup()
-                .map(|(t, _, _)| level_pairs(f, t))
-                .sum();
-            assert!(
-                0 < up && up < all,
-                "{what}: {up} of {all} pairs up in counts"
-            );
-            Way::Switched
-        }
-        _ if widened => Way::Widened,
-        Counts::Plain(plain) if up + down > 0 => {
-            let wide = (0..plain.exps.len())
-                .any(|t| plain.down(f, VtreeIdx(t as u32)).unwrap().wide.is_some());
-            Way::Recounted {
-                up: up > 0,
-                down: down > 0,
-                wide,
+        let wide = count::<Count>(f, &w).unwrap();
+        let mut recounts = 0;
+        let mut counts = count_exact(f, &w, &mut recounts).unwrap();
+        let switched = matches!(counts, Counts::Wide(_));
+        // Each literal's count, read as a query reads it: against the
+        // count in floats, and where that is not exact, against the
+        // count taken over in `Count`s.
+        let mut literals = Vec::new();
+        let mut widened = false;
+        for (leaf, var) in f.vtree().leaf_bottomup() {
+            if let Counts::Plain(plain) = &counts
+                && let Some(x) = plain.with_literal(f, leaf, var, true, &w).unwrap()
+            {
+                literals.push(Some(x.count()));
+                continue;
             }
+            if let Counts::Plain(_) = counts {
+                counts.widen().unwrap();
+                widened = true;
+            }
+            let Counts::Wide(wide) = &counts else {
+                unreachable!("widened")
+            };
+            literals.push(
+                wide.with_literal(f, leaf, var, true, &w)
+                    .unwrap()
+                    .map(Scaled::count),
+            );
         }
-        Counts::Plain(plain) => {
-            let scaled = plain.exps.iter().any(|&k| k != 0)
-                || (0..plain.exps.len())
-                    .any(|t| plain.down(f, VtreeIdx(t as u32)).unwrap().exp != 0);
-            if scaled { Way::Scaled } else { Way::Plain }
+        let total = match &counts {
+            Counts::Plain(plain) => plain.total(f).count(),
+            Counts::Wide(wide) => wide.total(f).count(),
+        };
+        let (up, down) = counts.routes().in_counts();
+        let got = match &counts {
+            _ if switched => {
+                let all: usize = f
+                    .vtree()
+                    .internal_bottomup()
+                    .map(|(t, _, _)| level_pairs(f, t))
+                    .sum();
+                assert!(
+                    0 < up && up < all,
+                    "{what}: {up} of {all} pairs up in counts"
+                );
+                Way::Switched
+            }
+            _ if widened => Way::Widened,
+            Counts::Plain(plain) if up + down > 0 => {
+                let wide = (0..plain.exps.len())
+                    .any(|t| plain.down(f, VtreeIdx(t as u32)).unwrap().wide.is_some());
+                Way::Recounted {
+                    up: up > 0,
+                    down: down > 0,
+                    wide,
+                }
+            }
+            Counts::Plain(plain) => {
+                let scaled = plain.exps.iter().any(|&k| k != 0)
+                    || (0..plain.exps.len())
+                        .any(|t| plain.down(f, VtreeIdx(t as u32)).unwrap().exp != 0);
+                if scaled { Way::Scaled } else { Way::Plain }
+            }
+            Counts::Wide(_) => unreachable!("a count in `Count`s is switched or widened"),
+        };
+        assert_eq!(got, route, "{what}");
+        assert_eq!(recounts, usize::from(route == Way::Switched), "{what}");
+        assert_eq!(
+            bits(total),
+            bits(wide.total(f).count()),
+            "{what}: the total"
+        );
+        for ((leaf, var), a) in f.vtree().leaf_bottomup().zip(literals) {
+            let b = wide
+                .with_literal(f, leaf, var, true, &w)
+                .unwrap()
+                .map(Scaled::count);
+            assert_eq!(a.map(bits), b.map(bits), "{what}: literal {var:?}");
         }
-        Counts::Wide(_) => unreachable!("a count in `Count`s is switched or widened"),
+        if route == Way::Plain {
+            let plain = count::<f64>(f, &w).unwrap();
+            assert_eq!(total.to_f64(), plain.total(f).value, "{what}");
+        }
     }
 }
 

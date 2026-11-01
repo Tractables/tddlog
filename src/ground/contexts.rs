@@ -101,29 +101,18 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
         let Some(probabilities) = choice(gp, tables, t, rules, &named) else {
             continue;
         };
-        let member = |ri: usize| {
-            gp.rules[ri]
-                .body
-                .iter()
-                .position(|l| !gp.is_fact(l.atom()) && tables.of(l.atom()) == t)
-                .expect("a reader reads the table")
-        };
-        let contexts: Vec<Vec<GLit>> = rules
+        // The place in each reader of the atom of `t` it reads.
+        let at: Vec<usize> = rules
             .iter()
             .map(|&ri| {
-                let k = member(ri);
-                let mut c: Vec<GLit> = gp.rules[ri]
+                gp.rules[ri]
                     .body
                     .iter()
-                    .enumerate()
-                    .filter(|&(j, _)| j != k)
-                    .map(|(_, &l)| l)
-                    .collect();
-                c.sort_unstable();
-                c
+                    .position(|l| !gp.is_fact(l.atom()) && tables.of(l.atom()) == t)
+                    .expect("a reader reads the table")
             })
             .collect();
-        if !exclusive(gp, tables, &contexts) {
+        if !exclusive(gp, tables, rules, &at) {
             continue;
         }
         // The literals the atoms' rules held beyond the one fact each reader

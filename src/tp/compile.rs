@@ -1336,54 +1336,534 @@ impl Compilation {
         watch: Option<usize>,
         guard: Option<usize>,
     ) -> Result<bool, CompileError> {
+        let formulation = self.formulation;
+        let by_head = &self.by_head;
+        let var_of = &self.var_of;
+        let link_of = &self.encoded.link_of;
+        let sibling_of = &self.encoded.sibling_of;
+        let seeds = &self.encoded.seeds;
         let scc = &self.sccs[self.next];
-        let ctx = RoundCtx {
-            gp,
-            backend,
-            watch,
-            guard,
-            untaken: self.dying.taken.get(),
-            formulation: self.formulation,
-            by_head: &self.by_head,
-            var_of: &self.var_of,
-            encoded: &self.encoded,
-            scc,
-            scopes: &self.scopes,
-            comp_of: &self.comp_of,
-            scope: &self.scopes[self.next],
-            next: self.next,
-            dying: &self.dying,
-            refused: self.dynamic.is_some().then_some(&self.refused),
-            version: &self.fixpoint.version,
-            seen: &self.fixpoint.seen,
-            lambda_cache: &self.fixpoint.lambda_cache,
-            positive: &self.fixpoint.positive,
-            scratch: &self.scratch,
-            memo: &self.memo,
-            counts: &self.counts,
-            negations: &self.negations,
+        // Every formula of this component lives here; a formula of a
+        // component it depends on is moved onto it by the conjunction that
+        // reads it (`part`).
+        let scopes = &self.scopes;
+        let comp_of = &self.comp_of;
+        let scope = &self.scopes[self.next];
+        let scope_of = |b: AtomId| &scopes[comp_of[b as usize] as usize];
+        // `watched(f, a)` passes `f` through unless it is over the watch.
+        //
+        // A size read between operations counts whatever pairs the reduction
+        // there left behind (`TddBackend::minimize`), and giving up a round
+        // throws away the whole compile so far, so a formula that reads over
+        // the watch is reduced in full and read again before it is given up.
+        //
+        // `watched_sized` takes `f`'s pairs as counted and returns them as
+        // they are after: a count walks every node of the diagram, and an
+        // atom's formula is counted once for the largest formula, the watch
+        // and the live pairs.
+        //
+        // `check` is the watch itself, and hands back the formula it
+        // refused, reduced in full, with its pairs, for a caller that keeps
+        // it for the next run (`checked`, [`Factoring::checked`]). The
+        // guard's watch holds until the round takes a formula: the round it
+        // refuses runs again from the formulas it read.
+        //
+        // With neither watch, `watched` and `checked` pass `f` through
+        // without counting it: nothing else reads that count.
+        let (taken, untaken) = (&self.dying.taken, self.dying.taken.get());
+        let limit = || watch.or(guard.filter(|_| taken.get() == untaken));
+        let check = |mut f: Tdd, pairs: usize| -> Result<Checked<(Tdd, usize)>, CompileError> {
+            match limit() {
+                Some(w) if pairs > w => {
+                    backend.minimize(&mut f, Reduce::Settled)?;
+                    let pairs = backend.size(&f);
+                    Ok(if pairs <= w {
+                        Ok((f, pairs))
+                    } else {
+                        Err((f, pairs))
+                    })
+                }
+                _ => Ok(Ok((f, pairs))),
+            }
         };
+        let refused = self.dynamic.is_some().then_some(&self.refused);
+        let watched_sized =
+            |f: Tdd, pairs: usize, a: AtomId| -> Result<(Tdd, usize), CompileError> {
+                check(f, pairs)?.map_err(|(f, pairs)| {
+                    if let Some(refused) = refused {
+                        refused.replace(Some(f));
+                    }
+                    CompileError::Oversize { atom: a, pairs }
+                })
+            };
+        let checked = |f: Tdd| -> Result<Checked<Tdd>, CompileError> {
+            if limit().is_none() {
+                return Ok(Ok(f));
+            }
+            let pairs = backend.size(&f);
+            Ok(check(f, pairs)?.map(|(f, _)| f))
+        };
+        let watched = |f: Tdd, a: AtomId| -> Result<Tdd, CompileError> {
+            if limit().is_none() {
+                return Ok(f);
+            }
+            let pairs = backend.size(&f);
+            watched_sized(f, pairs, a).map(|(f, _)| f)
+        };
+        let version = &self.fixpoint.version;
+        let seen = &self.fixpoint.seen;
+        let scratch = &self.scratch;
+        let memo = &self.memo;
+        let body_version = |ri: usize| -> u64 {
+            let v = version.borrow();
+            gp.rules[ri]
+                .body
+                .iter()
+                .filter(|l| gp.kinds[l.atom() as usize] == AtomKind::Derived)
+                .map(|l| v[l.atom() as usize])
+                .sum::<u64>()
+                + 1
+        };
+        let counts = &self.counts;
+        let count = |op: Op, n: usize| counts.borrow_mut()[op as usize] += n;
+        let negations = &self.negations;
+        let negate = |source: NegationSource, f: Cow<'_, Tdd>| -> Result<Tdd, CompileError> {
+            let r = negations.borrow_mut().negate(backend, source, f)?;
+            count(Op::Negate, 1);
+            Ok(r)
+        };
+        let links = &self.encoded.links;
+        let lambda_cache = &self.fixpoint.lambda_cache;
+        let positive = &self.fixpoint.positive;
+        let (reads_left, dies_after, next, taken) = (
+            &self.dying.reads_left,
+            &self.dying.dies_after,
+            self.next,
+            &self.dying.taken,
+        );
+        // A run without a watch is the last, and its last read of a formula
+        // takes it ([`last_reads`]).
+        let taking = watch.is_none();
+        // The formula of a derived body literal on its atom's own scope: the
+        // stored formula where its polarity is the literal's, else its
+        // negation, which the cache keeps (λ_b of an atom the dual stores
+        // as μ_b, under [`NegationSource::Lambda`]). Negation walks every
+        // level of the vtree it runs on, so doing it on `b`'s own scope,
+        // the smallest that can hold it, rather than on the consumer's is
+        // where projection pays. The cache holds it on that scope too, and
+        // the conjunction that reads it moves it (`part`). An atom with no
+        // formula yet, in a cyclic component's first round, is false.
+        //
+        // The read stands for `covers` bodies of the component's rules,
+        // none where the caller may read the literal again. In a run
+        // without a watch the last read of a formula takes it, and the
+        // cached other polarity: the end of the component would drop them.
+        // Another read shares them with the store ([`Read::shared`]), and
+        // the conjunction that reads it reads it in place.
+        let derived =
+            |l: GLit, covers: u32, formulas: &mut Formulas| -> Result<Read, CompileError> {
+                let b = l.atom() as usize;
+                debug_assert!(
+                    dies_after[b] as usize >= next,
+                    "atom {b} read after its formula was dropped"
+                );
+                let last = {
+                    let mut left = reads_left.borrow_mut();
+                    assert!(
+                        left[b] != TAKEN,
+                        "atom {b} read after its last reader took its formula"
+                    );
+                    let counted =
+                        taking && covers > 0 && left[b] > 0 && dies_after[b] as usize == next;
+                    if counted {
+                        debug_assert!(
+                            covers <= left[b],
+                            "atom {b} read for more bodies than hold it"
+                        );
+                        left[b] = left[b].saturating_sub(covers);
+                        if left[b] == 0 {
+                            left[b] = TAKEN;
+                            taken.set(taken.get() + 1);
+                        }
+                    }
+                    counted && left[b] == TAKEN
+                };
+                let own = scope_of(l.atom());
+                let stored_positive = positive.borrow()[b];
+                let stored = |formulas: &mut Formulas| -> Read {
+                    let f = if last {
+                        formulas.take(b)
+                    } else {
+                        formulas[b].clone()
+                    };
+                    match f {
+                        Some(f) => Read::taken(f),
+                        None if stored_positive => Read::from(backend.zero(own)),
+                        None => Read::from(backend.one(own)),
+                    }
+                };
+                if stored_positive == l.is_positive() {
+                    if last {
+                        lambda_cache.borrow_mut().take(b);
+                    }
+                    return Ok(stored(formulas));
+                }
+                match formulation {
+                    Formulation::Dual => {
+                        let cached = if last {
+                            lambda_cache.borrow_mut().take(b)
+                        } else {
+                            lambda_cache.borrow()[b].clone()
+                        };
+                        if let Some(f) = cached {
+                            if last {
+                                formulas.take(b);
+                            }
+                            return Ok(Read::taken(f));
+                        }
+                        let source = if stored_positive {
+                            NegationSource::Primal
+                        } else {
+                            NegationSource::Lambda
+                        };
+                        let f = stored(formulas).with_cow(|f| negate(source, f))?;
+                        if last {
+                            return Ok(Read::from(f));
+                        }
+                        let f = Arc::new(f);
+                        lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
+                        Ok(Read::shared(f))
+                    }
+                    Formulation::Primal => Ok(Read::from(
+                        stored(formulas).with_cow(|f| negate(NegationSource::Primal, f))?,
+                    )),
+                }
+            };
+        // One application of the operator to atom `a`: the rules of `a` whose
+        // bodies changed (all of them unless `incremental`) are folded into its
+        // current formula. Both formulations build `⋀_r ¬body_r` with
+        // [`Factoring`]: the dual conjoins it in, `μ_a' = μ_a ∧ ⋀_r ¬body_r`;
+        // the primal negates it, `λ_a' = λ_a ∨ ¬⋀_r ¬body_r`, which it builds
+        // as `¬(¬λ_a ∧ ⋀_r ¬body_r)`. With `conjoin`, for an atom of one
+        // rule ([`conjoined`]), it builds `λ_a`, the body's conjunction,
+        // instead.
+        let apply = |a: AtomId,
+                     formulas: &mut Formulas,
+                     incremental: bool,
+                     conjoin: bool|
+         -> Result<(Tdd, Option<Tdd>), CompileError> {
+            let mut bodies: Vec<Vec<GLit>> = Vec::new();
+            let mut pairs: Vec<Pairs> = Vec::new();
+            for &ri in &by_head[a as usize] {
+                let bv = body_version(ri);
+                if incremental && seen.borrow()[ri] == bv {
+                    continue;
+                }
+                seen.borrow_mut()[ri] = bv;
+                let rule = &gp.rules[ri];
+                if rule.pairs {
+                    pairs.push(Pairs {
+                        at: bodies.len(),
+                        rule,
+                    });
+                } else {
+                    bodies.push(rule.body.clone());
+                }
+            }
+            let term = if links[a as usize] {
+                NegationSource::LinkTerm
+            } else {
+                NegationSource::Term
+            };
+            // The primal's update of an atom with a formula starts the
+            // conjunction from `¬λ_a` (below).
+            let not_acc = match formulation {
+                Formulation::Primal if incremental => match (
+                    lambda_cache.borrow_mut().take(a as usize),
+                    &formulas[a as usize],
+                ) {
+                    (Some(not_acc), _) => Some(Read::taken(not_acc).owned(backend)?),
+                    (None, Some(acc)) => {
+                        Some(negate(NegationSource::Primal, Cow::Borrowed(&**acc))?)
+                    }
+                    (None, None) => None,
+                },
+                _ => None,
+            };
+            let started = not_acc.is_some();
+            // The formula of a body literal standing for `covers` bodies,
+            // with its scope: a fact literal itself, on `on`; a derived
+            // one's `derived` formula, on `b`'s scope, which the conjunction
+            // that reads it moves onto its own, which contains it: a cone
+            // holds the cone of everything it depends on.
+            let mut part = |l: GLit, covers: u32, on: &VtreeScope| -> Result<Part, CompileError> {
+                let b = l.atom() as usize;
+                match gp.kinds[b] {
+                    AtomKind::Fact(_) => {
+                        let v = var_of[b].unwrap();
+                        let lit = if l.is_positive() {
+                            tididi::Literal::pos(v)
+                        } else {
+                            tididi::Literal::neg(v)
+                        };
+                        Ok(Part(Read::from(backend.literal(on, lit)?), on.clone()))
+                    }
+                    AtomKind::Derived => Ok(Part(
+                        derived(l, covers, formulas)?,
+                        scope_of(l.atom()).clone(),
+                    )),
+                }
+            };
+            let mut factoring = Factoring {
+                backend,
+                gp,
+                var_of,
+                link_of,
+                sibling_of,
+                seeds: seeds[a as usize],
+                head: a,
+                scratch,
+                memo,
+                watched: &watched,
+                checked: &checked,
+                watch: watch.or(guard),
+                count: &count,
+                negate: &negate,
+                term,
+                part: &mut part,
+            };
+            if conjoin {
+                let [body] = bodies.as_slice() else {
+                    unreachable!("an atom conjoined has one rule")
+                };
+                return Ok((factoring.conjunction(body, scope)?, None));
+            }
+            let nb = factoring.negated_bodies(bodies, pairs, scope, not_acc)?;
+            let (mut f, other) = match formulation {
+                // `μ_a ∧ nb`, and from true, where every atom starts, `nb`
+                // itself, without building true on the scope and walking
+                // every level of it.
+                Formulation::Dual => match formulas[a as usize].as_ref().filter(|_| incremental) {
+                    Some(acc) => {
+                        let r = backend.and(&**acc, nb)?;
+                        count(Op::And, 1);
+                        (r, None)
+                    }
+                    None => (nb, None),
+                },
+                Formulation::Primal if !started => {
+                    (negate(NegationSource::Primal, nb.into())?, None)
+                }
+                // `λ_a ∨ ¬nb` as `¬(¬λ_a ∧ nb)`: the disjunction of `λ_a`
+                // with the negated `nb` negated both operands, and so took
+                // `nb` back to itself, two negations of its four. The
+                // conjunction is reduced in full before it is negated: a
+                // negation fills out its operand's twins, and the
+                // minimizations after it would cost what the negations save.
+                // The conjunction is `¬λ_a'`, which the next update of `a`
+                // starts from instead of negating `λ_a'` back.
+                //
+                // The chain of the bodies' terms conjoins them into `¬λ_a`
+                // itself rather than into true and the result into `¬λ_a`:
+                // the same number of conjunctions, each of whose operands
+                // shares more with the other.
+                Formulation::Primal => {
+                    let mut c = nb;
+                    backend.minimize(&mut c, Reduce::Settled)?;
+                    let r = negations
+                        .borrow_mut()
+                        .negate(backend, NegationSource::Primal, &c)?;
+                    count(Op::Or, 1);
+                    (r, Some(c))
+                }
+            };
+            // `and` leaves its result unminimized, and every result the
+            // compiler keeps is minimized so the next operation starts from
+            // the smallest diagram for the function. Not for the fixpoint
+            // test: the update settles its formula before the test, and
+            // `Engine::equivalent` minimizes a copy of an operand that is
+            // not certified canonical. The `auto`'s watch does read the
+            // size, and an unpruned diagram counts its dead pairs.
+            backend.minimize(&mut f, Reduce::Between)?;
+            count(Op::Minimize, 1);
+            Ok((f, other))
+        };
+        // In the dual, an atom's initial (empty) interpretation is μ = true.
+        let bottom = || match formulation {
+            Formulation::Primal => backend.zero(scope),
+            Formulation::Dual => backend.one(scope),
+        };
+
         let formulas = &mut self.fixpoint.formulas;
+        let equivalents = &mut self.equivalents;
+        let stats = &mut self.stats;
         let (sizes, live) = (&mut self.fixpoint.sizes, &mut self.fixpoint.live);
-        if deps::has_internal_negation(gp, &self.by_head, scc) {
-            return ctx.compile_aft(formulas, sizes, live, &mut self.stats);
+        // Store `f`, of `size` pairs, as `a`'s formula, keeping the live
+        // pairs.
+        let mut store = |a: AtomId, f: Tdd, size: usize, formulas: &mut Formulas| {
+            *live = *live - sizes[a as usize] + size;
+            sizes[a as usize] = size;
+            formulas[a as usize] = Some(Arc::new(f));
+        };
+        if deps::has_internal_negation(gp, by_head, scc) {
+            stats.cyclic_components += 1;
+            let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
+                backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
+            };
+            let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f.into());
+            let (result, updates) = aft::compile_component(
+                gp,
+                by_head,
+                var_of,
+                (scc, scope),
+                &mut lambda_lookup,
+                &wf_negate,
+                backend,
+            )?;
+            stats.atom_updates += updates;
+            for (&a, mut lambda) in scc.iter().zip(result) {
+                backend.minimize(&mut lambda, Reduce::Settled)?;
+                stats.max_pairs = stats.max_pairs.max(backend.size(&lambda));
+                let lambda = watched(lambda, a)?;
+                let f = match formulation {
+                    Formulation::Primal => lambda,
+                    Formulation::Dual => {
+                        let f = negate(NegationSource::WellFounded, Cow::Borrowed(&lambda))?;
+                        lambda_cache.borrow_mut()[a as usize] = Some(Arc::new(lambda));
+                        f
+                    }
+                };
+                let size = backend.size(&f);
+                store(a, f, size, formulas);
+                version.borrow_mut()[a as usize] += 1;
+            }
+            return Ok(true);
         }
-        if !deps::is_cyclic(gp, &self.by_head, scc) {
-            return ctx.compile_acyclic(
-                formulas,
-                sizes,
-                live,
-                &mut self.equivalents,
-                &mut self.stats,
-            );
+        let cyclic = deps::is_cyclic(gp, by_head, scc);
+        if !cyclic {
+            let a = scc[0];
+            let f = match Self::try_equivalence(
+                gp,
+                (a, &by_head[a as usize]),
+                (var_of, formulation),
+                (scope, scope_of),
+                backend,
+                (equivalents, formulas),
+                &derived,
+            )? {
+                // Renamed from a settled formula, or interned level by level
+                // from settled operands: settled already.
+                Some(f) => f,
+                None => {
+                    let conjoin = !links[a as usize] && conjoined(gp, &by_head[a as usize]);
+                    let (mut f, _) = apply(a, formulas, false, conjoin)?;
+                    backend.minimize(&mut f, Reduce::Settled)?;
+                    positive.borrow_mut()[a as usize] |= conjoin;
+                    f
+                }
+            };
+            stats.atom_updates += 1;
+            let pairs = backend.size(&f);
+            stats.max_pairs = stats.max_pairs.max(pairs);
+            let (f, pairs) = watched_sized(f, pairs, a)?;
+            store(a, f, pairs, formulas);
+            return Ok(true);
         }
-        ctx.compile_cyclic(
-            formulas,
-            sizes,
-            live,
-            &mut self.fixpoint.worklist,
-            &mut self.stats,
-        )
+        if self.fixpoint.worklist.is_none() {
+            self.fixpoint.worklist = Some(Worklist::new(gp, by_head, scc));
+            stats.cyclic_components += 1;
+            for &a in scc {
+                let f = bottom();
+                let size = backend.size(&f);
+                store(a, f, size, formulas);
+            }
+        }
+        let Worklist {
+            dirty,
+            next,
+            rank,
+            dependents,
+            iterations,
+            midway,
+        } = self.fixpoint.worklist.as_mut().expect("set above");
+        // A round that a stop interrupted goes on where it stopped: an atom
+        // leaves `dirty` only once its update has landed, and a failed
+        // update marks its rules unfolded again, so the formulas, versions
+        // and worklist stay those of a round part done.
+        if !*midway {
+            *iterations += 1;
+            *midway = true;
+        }
+        while let Some(&(r, a)) = dirty.first() {
+            backend.pause()?;
+            let folded: Vec<u64> = by_head[a as usize]
+                .iter()
+                .map(|&ri| seen.borrow()[ri])
+                .collect();
+            let unfold = |e: CompileError| {
+                let mut seen = seen.borrow_mut();
+                for (&ri, &v) in by_head[a as usize].iter().zip(&folded) {
+                    seen[ri] = v;
+                }
+                e
+            };
+            let (mut f, other) = apply(a, formulas, true, false).map_err(unfold)?;
+            stats.atom_updates += 1;
+            let old = formulas[a as usize].as_ref().unwrap();
+            // The stored formula is the settled one, and settling this
+            // one here rather than after the test makes both canonical:
+            // for a fixed vtree a minimized diagram is canonical
+            // (tididi's `lib.rs`), so two of them are equivalent only if
+            // they have the same pair count. The pair count is the cheap
+            // half of the test; how often it answers on its own is the
+            // gap between `convergence_tests` and the equivalence count.
+            // The settle is not extra work: on a round that changes the
+            // formula it is the settle that was below, and on one that
+            // does not it is the minimization `Engine::equivalent` would
+            // have done on its own clone.
+            backend.minimize(&mut f, Reduce::Settled).map_err(unfold)?;
+            let pairs = backend.size(&f);
+            let sized = pairs == backend.size(old);
+            let same = sized && backend.equivalent(&f, old).map_err(unfold)?;
+            // The count is of the diagram comparisons the size test let
+            // through.
+            count(Op::Equivalent, usize::from(sized));
+            stats.convergence_tests += 1;
+            // The cache holds the stored formula's other polarity: the one
+            // the update built, which is the old formula's too when the two
+            // are the same, and otherwise nothing once the formula changed.
+            if other.is_some() || !same {
+                lambda_cache.borrow_mut()[a as usize] = other.map(Arc::new);
+            }
+            if !same {
+                stats.max_pairs = stats.max_pairs.max(pairs);
+                let (f, pairs) = watched_sized(f, pairs, a).map_err(unfold)?;
+                store(a, f, pairs, formulas);
+                version.borrow_mut()[a as usize] += 1;
+                if let Some(ds) = dependents.get(&a) {
+                    for &d in ds {
+                        let rd = rank[&d];
+                        if rd > r {
+                            dirty.insert((rd, d));
+                        } else {
+                            next.insert((rd, d));
+                        }
+                    }
+                }
+            }
+            dirty.remove(&(r, a));
+            backend.kept();
+        }
+        *dirty = std::mem::take(next);
+        *midway = false;
+        if !dirty.is_empty() {
+            return Ok(false);
+        }
+        let iterations = *iterations;
+        self.fixpoint.worklist = None;
+        stats.iterations += iterations;
+        stats.max_iterations = stats.max_iterations.max(iterations);
+        Ok(true)
     }
 
     /// The search of [`Compilation::dynamic`], if it is due or has the formula
@@ -1513,631 +1993,6 @@ impl Compilation {
             &x,
             &y,
         )
-    }
-}
-
-/// Store `f`, of `size` pairs, as `a`'s formula, keeping the live pairs.
-fn store_formula(
-    a: AtomId,
-    f: Tdd,
-    size: usize,
-    formulas: &mut Formulas,
-    sizes: &mut [usize],
-    live: &mut usize,
-) {
-    *live = *live - sizes[a as usize] + size;
-    sizes[a as usize] = size;
-    formulas[a as usize] = Some(Arc::new(f));
-}
-
-#[derive(Clone, Copy)]
-struct RoundCtx<'a, 'b> {
-    gp: &'a GroundProgram,
-    backend: &'a TddBackend<'b>,
-    watch: Option<usize>,
-    guard: Option<usize>,
-    untaken: usize,
-    formulation: Formulation,
-    by_head: &'a RulesByHead,
-    var_of: &'a [Option<VarId>],
-    encoded: &'a Encoded,
-    scc: &'a [AtomId],
-    scopes: &'a [VtreeScope],
-    comp_of: &'a [u32],
-    scope: &'a VtreeScope,
-    next: usize,
-    dying: &'a Dying,
-    refused: Option<&'a std::cell::RefCell<Option<Tdd>>>,
-    version: &'a std::cell::RefCell<Vec<u64>>,
-    seen: &'a std::cell::RefCell<Vec<u64>>,
-    lambda_cache: &'a std::cell::RefCell<Formulas>,
-    positive: &'a std::cell::RefCell<Vec<bool>>,
-    scratch: &'a std::cell::RefCell<Scratch>,
-    memo: &'a std::cell::RefCell<ClauseMemo>,
-    counts: &'a std::cell::RefCell<[usize; 5]>,
-    negations: &'a std::cell::RefCell<Negations>,
-}
-
-impl<'a> RoundCtx<'a, '_> {
-    fn scope_of(&self, b: AtomId) -> &'a VtreeScope {
-        &self.scopes[self.comp_of[b as usize] as usize]
-    }
-
-    /// `watched(f, a)` passes `f` through unless it is over the watch.
-    ///
-    /// A size read between operations counts whatever pairs the reduction
-    /// there left behind (`TddBackend::minimize`), and giving up a round
-    /// throws away the whole compile so far, so a formula that reads over
-    /// the watch is reduced in full and read again before it is given up.
-    ///
-    /// `watched_sized` takes `f`'s pairs as counted and returns them as
-    /// they are after: a count walks every node of the diagram, and an
-    /// atom's formula is counted once for the largest formula, the watch
-    /// and the live pairs.
-    ///
-    /// `check` is the watch itself, and hands back the formula it
-    /// refused, reduced in full, with its pairs, for a caller that keeps
-    /// it for the next run (`checked`, [`Factoring::checked`]). The
-    /// guard's watch holds until the round takes a formula: the round it
-    /// refuses runs again from the formulas it read.
-    ///
-    /// With neither watch, `watched` and `checked` pass `f` through
-    /// without counting it: nothing else reads that count.
-    fn limit(&self) -> Option<usize> {
-        self.watch.or(self
-            .guard
-            .filter(|_| self.dying.taken.get() == self.untaken))
-    }
-
-    fn check(&self, mut f: Tdd, pairs: usize) -> Result<Checked<(Tdd, usize)>, CompileError> {
-        match self.limit() {
-            Some(w) if pairs > w => {
-                self.backend.minimize(&mut f, Reduce::Settled)?;
-                let pairs = self.backend.size(&f);
-                Ok(if pairs <= w {
-                    Ok((f, pairs))
-                } else {
-                    Err((f, pairs))
-                })
-            }
-            _ => Ok(Ok((f, pairs))),
-        }
-    }
-
-    fn watched_sized(&self, f: Tdd, pairs: usize, a: AtomId) -> Result<(Tdd, usize), CompileError> {
-        self.check(f, pairs)?.map_err(|(f, pairs)| {
-            if let Some(refused) = self.refused {
-                refused.replace(Some(f));
-            }
-            CompileError::Oversize { atom: a, pairs }
-        })
-    }
-
-    fn checked(&self, f: Tdd) -> Result<Checked<Tdd>, CompileError> {
-        if self.limit().is_none() {
-            return Ok(Ok(f));
-        }
-        let pairs = self.backend.size(&f);
-        Ok(self.check(f, pairs)?.map(|(f, _)| f))
-    }
-
-    fn watched(&self, f: Tdd, a: AtomId) -> Result<Tdd, CompileError> {
-        if self.limit().is_none() {
-            return Ok(f);
-        }
-        let pairs = self.backend.size(&f);
-        self.watched_sized(f, pairs, a).map(|(f, _)| f)
-    }
-
-    fn body_version(&self, ri: usize) -> u64 {
-        let v = self.version.borrow();
-        self.gp.rules[ri]
-            .body
-            .iter()
-            .filter(|l| self.gp.kinds[l.atom() as usize] == AtomKind::Derived)
-            .map(|l| v[l.atom() as usize])
-            .sum::<u64>()
-            + 1
-    }
-
-    fn count(&self, op: Op, n: usize) {
-        self.counts.borrow_mut()[op as usize] += n;
-    }
-
-    fn negate(&self, source: NegationSource, f: Cow<'_, Tdd>) -> Result<Tdd, CompileError> {
-        let r = self
-            .negations
-            .borrow_mut()
-            .negate(self.backend, source, f)?;
-        self.count(Op::Negate, 1);
-        Ok(r)
-    }
-
-    /// In the dual, an atom's initial (empty) interpretation is μ = true.
-    fn bottom(&self) -> Tdd {
-        match self.formulation {
-            Formulation::Primal => self.backend.zero(self.scope),
-            Formulation::Dual => self.backend.one(self.scope),
-        }
-    }
-
-    /// Count a read of derived atom `b` standing for `covers` bodies, and
-    /// return whether this read takes the formula ([`last_reads`]).
-    fn count_last_read(&self, b: usize, covers: u32) -> bool {
-        debug_assert!(
-            self.dying.dies_after[b] as usize >= self.next,
-            "atom {b} read after its formula was dropped"
-        );
-        let mut left = self.dying.reads_left.borrow_mut();
-        assert!(
-            left[b] != TAKEN,
-            "atom {b} read after its last reader took its formula"
-        );
-        // A run without a watch is the last, and its last read of a formula
-        // takes it ([`last_reads`]).
-        let counted = self.watch.is_none()
-            && covers > 0
-            && left[b] > 0
-            && self.dying.dies_after[b] as usize == self.next;
-        if counted {
-            debug_assert!(
-                covers <= left[b],
-                "atom {b} read for more bodies than hold it"
-            );
-            left[b] = left[b].saturating_sub(covers);
-            if left[b] == 0 {
-                left[b] = TAKEN;
-                self.dying.taken.set(self.dying.taken.get() + 1);
-            }
-        }
-        counted && left[b] == TAKEN
-    }
-
-    /// The formula of a derived body literal on its atom's own scope: the
-    /// stored formula where its polarity is the literal's, else its
-    /// negation, which the cache keeps (λ_b of an atom the dual stores
-    /// as μ_b, under [`NegationSource::Lambda`]). Negation walks every
-    /// level of the vtree it runs on, so doing it on `b`'s own scope,
-    /// the smallest that can hold it, rather than on the consumer's is
-    /// where projection pays. The cache holds it on that scope too, and
-    /// the conjunction that reads it moves it (`part`). An atom with no
-    /// formula yet, in a cyclic component's first round, is false.
-    ///
-    /// The read stands for `covers` bodies of the component's rules,
-    /// none where the caller may read the literal again. In a run
-    /// without a watch the last read of a formula takes it, and the
-    /// cached other polarity: the end of the component would drop them.
-    /// Another read shares them with the store ([`Read::shared`]), and
-    /// the conjunction that reads it reads it in place.
-    fn derived(&self, l: GLit, covers: u32, formulas: &mut Formulas) -> Result<Read, CompileError> {
-        let b = l.atom() as usize;
-        let last = self.count_last_read(b, covers);
-        let own = self.scope_of(l.atom());
-        let stored_positive = self.positive.borrow()[b];
-        let stored = |formulas: &mut Formulas| -> Read {
-            let f = if last {
-                formulas.take(b)
-            } else {
-                formulas[b].clone()
-            };
-            match f {
-                Some(f) => Read::taken(f),
-                None if stored_positive => Read::from(self.backend.zero(own)),
-                None => Read::from(self.backend.one(own)),
-            }
-        };
-        if stored_positive == l.is_positive() {
-            if last {
-                self.lambda_cache.borrow_mut().take(b);
-            }
-            return Ok(stored(formulas));
-        }
-        match self.formulation {
-            Formulation::Dual => {
-                let cached = if last {
-                    self.lambda_cache.borrow_mut().take(b)
-                } else {
-                    self.lambda_cache.borrow()[b].clone()
-                };
-                if let Some(f) = cached {
-                    if last {
-                        formulas.take(b);
-                    }
-                    return Ok(Read::taken(f));
-                }
-                let source = if stored_positive {
-                    NegationSource::Primal
-                } else {
-                    NegationSource::Lambda
-                };
-                let f = stored(formulas).with_cow(|f| self.negate(source, f))?;
-                if last {
-                    return Ok(Read::from(f));
-                }
-                let f = Arc::new(f);
-                self.lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
-                Ok(Read::shared(f))
-            }
-            Formulation::Primal => Ok(Read::from(
-                stored(formulas).with_cow(|f| self.negate(NegationSource::Primal, f))?,
-            )),
-        }
-    }
-
-    fn changed_rules(&self, a: AtomId, incremental: bool) -> (Vec<Vec<GLit>>, Vec<Pairs<'a>>) {
-        let mut bodies: Vec<Vec<GLit>> = Vec::new();
-        let mut pairs: Vec<Pairs<'a>> = Vec::new();
-        for &ri in &self.by_head[a as usize] {
-            let bv = self.body_version(ri);
-            if incremental && self.seen.borrow()[ri] == bv {
-                continue;
-            }
-            self.seen.borrow_mut()[ri] = bv;
-            let rule = &self.gp.rules[ri];
-            if rule.pairs {
-                pairs.push(Pairs {
-                    at: bodies.len(),
-                    rule,
-                });
-            } else {
-                bodies.push(rule.body.clone());
-            }
-        }
-        (bodies, pairs)
-    }
-
-    fn combine_negated_bodies(
-        &self,
-        a: AtomId,
-        nb: Tdd,
-        started: bool,
-        incremental: bool,
-        formulas: &Formulas,
-    ) -> Result<(Tdd, Option<Tdd>), CompileError> {
-        let (mut f, other) = match self.formulation {
-            // `μ_a ∧ nb`, and from true, where every atom starts, `nb`
-            // itself, without building true on the scope and walking
-            // every level of it.
-            Formulation::Dual => match formulas[a as usize].as_ref().filter(|_| incremental) {
-                Some(acc) => {
-                    let r = self.backend.and(&**acc, nb)?;
-                    self.count(Op::And, 1);
-                    (r, None)
-                }
-                None => (nb, None),
-            },
-            Formulation::Primal if !started => {
-                (self.negate(NegationSource::Primal, nb.into())?, None)
-            }
-            // `λ_a ∨ ¬nb` as `¬(¬λ_a ∧ nb)`: the disjunction of `λ_a`
-            // with the negated `nb` negated both operands, and so took
-            // `nb` back to itself, two negations of its four. The
-            // conjunction is reduced in full before it is negated: a
-            // negation fills out its operand's twins, and the
-            // minimizations after it would cost what the negations save.
-            // The conjunction is `¬λ_a'`, which the next update of `a`
-            // starts from instead of negating `λ_a'` back.
-            //
-            // The chain of the bodies' terms conjoins them into `¬λ_a`
-            // itself rather than into true and the result into `¬λ_a`:
-            // the same number of conjunctions, each of whose operands
-            // shares more with the other.
-            Formulation::Primal => {
-                let mut c = nb;
-                self.backend.minimize(&mut c, Reduce::Settled)?;
-                let r =
-                    self.negations
-                        .borrow_mut()
-                        .negate(self.backend, NegationSource::Primal, &c)?;
-                self.count(Op::Or, 1);
-                (r, Some(c))
-            }
-        };
-        // `and` leaves its result unminimized, and every result the
-        // compiler keeps is minimized so the next operation starts from
-        // the smallest diagram for the function. Not for the fixpoint
-        // test: the update settles its formula before the test, and
-        // `Engine::equivalent` minimizes a copy of an operand that is
-        // not certified canonical. The `auto`'s watch does read the
-        // size, and an unpruned diagram counts its dead pairs.
-        self.backend.minimize(&mut f, Reduce::Between)?;
-        self.count(Op::Minimize, 1);
-        Ok((f, other))
-    }
-
-    /// One application of the operator to atom `a`: the rules of `a` whose
-    /// bodies changed (all of them unless `incremental`) are folded into its
-    /// current formula. Both formulations build `⋀_r ¬body_r` with
-    /// [`Factoring`]: the dual conjoins it in, `μ_a' = μ_a ∧ ⋀_r ¬body_r`;
-    /// the primal negates it, `λ_a' = λ_a ∨ ¬⋀_r ¬body_r`, which it builds
-    /// as `¬(¬λ_a ∧ ⋀_r ¬body_r)`. With `conjoin`, for an atom of one
-    /// rule ([`conjoined`]), it builds `λ_a`, the body's conjunction,
-    /// instead.
-    fn apply(
-        &self,
-        a: AtomId,
-        formulas: &mut Formulas,
-        incremental: bool,
-        conjoin: bool,
-    ) -> Result<(Tdd, Option<Tdd>), CompileError> {
-        let (bodies, pairs) = self.changed_rules(a, incremental);
-        let term = if self.encoded.links[a as usize] {
-            NegationSource::LinkTerm
-        } else {
-            NegationSource::Term
-        };
-        // The primal's update of an atom with a formula starts the
-        // conjunction from `¬λ_a` (below).
-        let not_acc = match self.formulation {
-            Formulation::Primal if incremental => match (
-                self.lambda_cache.borrow_mut().take(a as usize),
-                &formulas[a as usize],
-            ) {
-                (Some(not_acc), _) => Some(Read::taken(not_acc).owned(self.backend)?),
-                (None, Some(acc)) => {
-                    Some(self.negate(NegationSource::Primal, Cow::Borrowed(&**acc))?)
-                }
-                (None, None) => None,
-            },
-            _ => None,
-        };
-        let started = not_acc.is_some();
-        let watched = |f: Tdd, a: AtomId| self.watched(f, a);
-        let checked = |f: Tdd| self.checked(f);
-        let count = |op: Op, n: usize| self.count(op, n);
-        let negate = |source: NegationSource, f: Cow<'_, Tdd>| self.negate(source, f);
-        let nb = {
-            // The formula of a body literal standing for `covers` bodies,
-            // with its scope: a fact literal itself, on `on`; a derived
-            // one's `derived` formula, on `b`'s scope, which the conjunction
-            // that reads it moves onto its own, which contains it: a cone
-            // holds the cone of everything it depends on.
-            let mut part = |l: GLit, covers: u32, on: &VtreeScope| -> Result<Part, CompileError> {
-                let b = l.atom() as usize;
-                match self.gp.kinds[b] {
-                    AtomKind::Fact(_) => {
-                        let v = self.var_of[b].unwrap();
-                        let lit = if l.is_positive() {
-                            tididi::Literal::pos(v)
-                        } else {
-                            tididi::Literal::neg(v)
-                        };
-                        Ok(Part(Read::from(self.backend.literal(on, lit)?), on.clone()))
-                    }
-                    AtomKind::Derived => Ok(Part(
-                        self.derived(l, covers, formulas)?,
-                        self.scope_of(l.atom()).clone(),
-                    )),
-                }
-            };
-            let mut factoring = Factoring {
-                backend: self.backend,
-                gp: self.gp,
-                var_of: self.var_of,
-                link_of: &self.encoded.link_of,
-                sibling_of: &self.encoded.sibling_of,
-                seeds: self.encoded.seeds[a as usize],
-                head: a,
-                scratch: self.scratch,
-                memo: self.memo,
-                watched: &watched,
-                checked: &checked,
-                watch: self.watch.or(self.guard),
-                count: &count,
-                negate: &negate,
-                term,
-                part: &mut part,
-            };
-            if conjoin {
-                let [body] = bodies.as_slice() else {
-                    unreachable!("an atom conjoined has one rule")
-                };
-                return Ok((factoring.conjunction(body, self.scope)?, None));
-            }
-            factoring.negated_bodies(bodies, pairs, self.scope, not_acc)?
-        };
-        self.combine_negated_bodies(a, nb, started, incremental, formulas)
-    }
-
-    fn compile_aft(
-        &self,
-        formulas: &mut Formulas,
-        sizes: &mut [usize],
-        live: &mut usize,
-        stats: &mut CompileStats,
-    ) -> Result<bool, CompileError> {
-        stats.cyclic_components += 1;
-        let wf_negate = |f: Tdd| self.negate(NegationSource::WellFounded, f.into());
-        let (result, updates) = {
-            let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
-                self.backend.embed_read(
-                    self.derived(GLit::Pos(b), 0, formulas)?,
-                    self.scope_of(b),
-                    self.scope,
-                )
-            };
-            aft::compile_component(
-                self.gp,
-                self.by_head,
-                self.var_of,
-                (self.scc, self.scope),
-                &mut lambda_lookup,
-                &wf_negate,
-                self.backend,
-            )?
-        };
-        stats.atom_updates += updates;
-        for (&a, mut lambda) in self.scc.iter().zip(result) {
-            self.backend.minimize(&mut lambda, Reduce::Settled)?;
-            stats.max_pairs = stats.max_pairs.max(self.backend.size(&lambda));
-            let lambda = self.watched(lambda, a)?;
-            let f = match self.formulation {
-                Formulation::Primal => lambda,
-                Formulation::Dual => {
-                    let f = self.negate(NegationSource::WellFounded, Cow::Borrowed(&lambda))?;
-                    self.lambda_cache.borrow_mut()[a as usize] = Some(Arc::new(lambda));
-                    f
-                }
-            };
-            let size = self.backend.size(&f);
-            store_formula(a, f, size, formulas, sizes, live);
-            self.version.borrow_mut()[a as usize] += 1;
-        }
-        Ok(true)
-    }
-
-    fn compile_acyclic(
-        &self,
-        formulas: &mut Formulas,
-        sizes: &mut [usize],
-        live: &mut usize,
-        equivalents: &mut FxHashMap<AtomId, (AtomId, AtomId)>,
-        stats: &mut CompileStats,
-    ) -> Result<bool, CompileError> {
-        let a = self.scc[0];
-        let scope_of = |b: AtomId| self.scope_of(b);
-        let derived =
-            |l: GLit, covers: u32, formulas: &mut Formulas| self.derived(l, covers, formulas);
-        let f = match Compilation::try_equivalence(
-            self.gp,
-            (a, &self.by_head[a as usize]),
-            (self.var_of, self.formulation),
-            (self.scope, scope_of),
-            self.backend,
-            (equivalents, formulas),
-            &derived,
-        )? {
-            // Renamed from a settled formula, or interned level by level
-            // from settled operands: settled already.
-            Some(f) => f,
-            None => {
-                let conjoin = !self.encoded.links[a as usize]
-                    && conjoined(self.gp, &self.by_head[a as usize]);
-                let (mut f, _) = self.apply(a, formulas, false, conjoin)?;
-                self.backend.minimize(&mut f, Reduce::Settled)?;
-                self.positive.borrow_mut()[a as usize] |= conjoin;
-                f
-            }
-        };
-        stats.atom_updates += 1;
-        let pairs = self.backend.size(&f);
-        stats.max_pairs = stats.max_pairs.max(pairs);
-        let (f, pairs) = self.watched_sized(f, pairs, a)?;
-        store_formula(a, f, pairs, formulas, sizes, live);
-        Ok(true)
-    }
-
-    fn update_cyclic_atom(
-        &self,
-        (r, a): (usize, AtomId),
-        formulas: &mut Formulas,
-        sizes: &mut [usize],
-        live: &mut usize,
-        worklist: &mut Worklist,
-        stats: &mut CompileStats,
-    ) -> Result<(), CompileError> {
-        self.backend.pause()?;
-        let folded: Vec<u64> = self.by_head[a as usize]
-            .iter()
-            .map(|&ri| self.seen.borrow()[ri])
-            .collect();
-        let unfold = |e: CompileError| {
-            let mut seen = self.seen.borrow_mut();
-            for (&ri, &v) in self.by_head[a as usize].iter().zip(&folded) {
-                seen[ri] = v;
-            }
-            e
-        };
-        let (mut f, other) = self.apply(a, formulas, true, false).map_err(unfold)?;
-        stats.atom_updates += 1;
-        let old = formulas[a as usize].as_ref().unwrap();
-        // The stored formula is the settled one, and settling this
-        // one here rather than after the test makes both canonical:
-        // for a fixed vtree a minimized diagram is canonical
-        // (tididi's `lib.rs`), so two of them are equivalent only if
-        // they have the same pair count. The pair count is the cheap
-        // half of the test; how often it answers on its own is the
-        // gap between `convergence_tests` and the equivalence count.
-        // The settle is not extra work: on a round that changes the
-        // formula it is the settle that was below, and on one that
-        // does not it is the minimization `Engine::equivalent` would
-        // have done on its own clone.
-        self.backend
-            .minimize(&mut f, Reduce::Settled)
-            .map_err(unfold)?;
-        let pairs = self.backend.size(&f);
-        let sized = pairs == self.backend.size(old);
-        let same = sized && self.backend.equivalent(&f, old).map_err(unfold)?;
-        // The count is of the diagram comparisons the size test let
-        // through.
-        self.count(Op::Equivalent, usize::from(sized));
-        stats.convergence_tests += 1;
-        // The cache holds the stored formula's other polarity: the one
-        // the update built, which is the old formula's too when the two
-        // are the same, and otherwise nothing once the formula changed.
-        if other.is_some() || !same {
-            self.lambda_cache.borrow_mut()[a as usize] = other.map(Arc::new);
-        }
-        if !same {
-            stats.max_pairs = stats.max_pairs.max(pairs);
-            let (f, pairs) = self.watched_sized(f, pairs, a).map_err(unfold)?;
-            store_formula(a, f, pairs, formulas, sizes, live);
-            self.version.borrow_mut()[a as usize] += 1;
-            if let Some(ds) = worklist.dependents.get(&a) {
-                for &d in ds {
-                    let rd = worklist.rank[&d];
-                    if rd > r {
-                        worklist.dirty.insert((rd, d));
-                    } else {
-                        worklist.next.insert((rd, d));
-                    }
-                }
-            }
-        }
-        worklist.dirty.remove(&(r, a));
-        self.backend.kept();
-        Ok(())
-    }
-
-    fn compile_cyclic(
-        &self,
-        formulas: &mut Formulas,
-        sizes: &mut [usize],
-        live: &mut usize,
-        worklist: &mut Option<Worklist>,
-        stats: &mut CompileStats,
-    ) -> Result<bool, CompileError> {
-        if worklist.is_none() {
-            *worklist = Some(Worklist::new(self.gp, self.by_head, self.scc));
-            stats.cyclic_components += 1;
-            for &a in self.scc {
-                let f = self.bottom();
-                let size = self.backend.size(&f);
-                store_formula(a, f, size, formulas, sizes, live);
-            }
-        }
-        let wl = worklist.as_mut().expect("set above");
-        // A round that a stop interrupted goes on where it stopped: an atom
-        // leaves `dirty` only once its update has landed, and a failed
-        // update marks its rules unfolded again, so the formulas, versions
-        // and worklist stay those of a round part done.
-        if !wl.midway {
-            wl.iterations += 1;
-            wl.midway = true;
-        }
-        while let Some(&ra) = wl.dirty.first() {
-            self.update_cyclic_atom(ra, formulas, sizes, live, wl, stats)?;
-        }
-        wl.dirty = std::mem::take(&mut wl.next);
-        wl.midway = false;
-        if !wl.dirty.is_empty() {
-            return Ok(false);
-        }
-        let iterations = wl.iterations;
-        *worklist = None;
-        stats.iterations += iterations;
-        stats.max_iterations = stats.max_iterations.max(iterations);
-        Ok(true)
     }
 }
 

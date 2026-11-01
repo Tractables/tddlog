@@ -175,9 +175,10 @@ fn solve(
         .parse::<tddlog::Strategy>()
         .map_err(PyValueError::new_err)?;
     let read = tddlog::network::ReadOptions {
-        queries: match queries {
-            true => tddlog::network::Queries::All,
-            false => tddlog::network::Queries::None,
+        queries: if queries {
+            tddlog::network::Queries::All
+        } else {
+            tddlog::network::Queries::None
         },
         evidence: evidence.map(|e| format.evidence(e.as_bytes())),
         rescale: false,

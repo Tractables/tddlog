@@ -25,7 +25,7 @@
 
 use crate::syntax::{Atom, Term};
 
-use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, RulesByHead, deps, simplify};
+use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, deps, simplify};
 
 const NAME: &str = "$st";
 
@@ -116,7 +116,61 @@ pub(super) fn balance(gp: &mut GroundProgram) -> usize {
         return 0;
     }
     let n = gp.num_atoms();
-    let (next, prev, read_in) = find_step_chains(gp, &by_head);
+    // Atoms something outside the rules names keep their formulas.
+    let mut named = vec![false; n];
+    let outside = gp.named_atoms();
+    let indicators = gp
+        .encoding
+        .indicators
+        .iter()
+        .flat_map(|i| [i.atom, i.var, i.link]);
+    let codes = gp
+        .encoding
+        .codes
+        .iter()
+        .flat_map(|c| c.values.iter().chain(&c.bits).copied());
+    for a in outside
+        .chain(indicators)
+        .chain(codes)
+        .chain(gp.encoding.siblings.iter().flatten().copied())
+    {
+        named[a as usize] = true;
+    }
+    // Per atom, how often the rules read it, and the rule of its one read
+    // where that read is positive.
+    let mut reads = vec![0u32; n];
+    let mut read_in = vec![None; n];
+    for (ri, r) in gp.rules.iter().enumerate() {
+        for l in &r.body {
+            reads[l.atom() as usize] += 1;
+            if l.is_positive() {
+                read_in[l.atom() as usize] = Some(ri);
+            }
+        }
+    }
+    // The step on `a`, `next[a]`, where `a` is the one atom its head reads
+    // so.
+    let mut next: Vec<Option<AtomId>> = vec![None; n];
+    let mut fed = vec![0u32; n];
+    for a in 0..n {
+        if let Some(ri) = read_in[a]
+            && reads[a] == 1
+            && !named[a]
+            && !gp.is_fact(a as AtomId)
+            && !by_head[a].is_empty()
+        {
+            let h = gp.rules[ri].head;
+            next[a] = Some(h);
+            fed[h as usize] += 1;
+        }
+    }
+    let mut prev: Vec<Option<AtomId>> = vec![None; n];
+    for (a, step) in next.iter_mut().enumerate() {
+        match *step {
+            Some(h) if fed[h as usize] == 1 => prev[h as usize] = Some(a as AtomId),
+            _ => *step = None,
+        }
+    }
     let mut made = Made {
         next: n as AtomId,
         rules: Vec::new(),
@@ -189,68 +243,6 @@ pub(super) fn balance(gp: &mut GroundProgram) -> usize {
     gp.structure = std::sync::OnceLock::new();
     simplify::restrict_to_relevant(gp);
     chains
-}
-
-type StepLinks = (Vec<Option<AtomId>>, Vec<Option<AtomId>>, Vec<Option<usize>>);
-
-fn find_step_chains(gp: &GroundProgram, by_head: &RulesByHead) -> StepLinks {
-    let n = gp.num_atoms();
-    // Atoms something outside the rules names keep their formulas.
-    let mut named = vec![false; n];
-    let outside = gp.named_atoms();
-    let indicators = gp
-        .encoding
-        .indicators
-        .iter()
-        .flat_map(|i| [i.atom, i.var, i.link]);
-    let codes = gp
-        .encoding
-        .codes
-        .iter()
-        .flat_map(|c| c.values.iter().chain(&c.bits).copied());
-    for a in outside
-        .chain(indicators)
-        .chain(codes)
-        .chain(gp.encoding.siblings.iter().flatten().copied())
-    {
-        named[a as usize] = true;
-    }
-    // Per atom, how often the rules read it, and the rule of its one read
-    // where that read is positive.
-    let mut reads = vec![0u32; n];
-    let mut read_in = vec![None; n];
-    for (ri, r) in gp.rules.iter().enumerate() {
-        for l in &r.body {
-            reads[l.atom() as usize] += 1;
-            if l.is_positive() {
-                read_in[l.atom() as usize] = Some(ri);
-            }
-        }
-    }
-    // The step on `a`, `next[a]`, where `a` is the one atom its head reads
-    // so.
-    let mut next: Vec<Option<AtomId>> = vec![None; n];
-    let mut fed = vec![0u32; n];
-    for a in 0..n {
-        if let Some(ri) = read_in[a]
-            && reads[a] == 1
-            && !named[a]
-            && !gp.is_fact(a as AtomId)
-            && !by_head[a].is_empty()
-        {
-            let h = gp.rules[ri].head;
-            next[a] = Some(h);
-            fed[h as usize] += 1;
-        }
-    }
-    let mut prev: Vec<Option<AtomId>> = vec![None; n];
-    for (a, step) in next.iter_mut().enumerate() {
-        match *step {
-            Some(h) if fed[h as usize] == 1 => prev[h as usize] = Some(a as AtomId),
-            _ => *step = None,
-        }
-    }
-    (next, prev, read_in)
 }
 
 #[cfg(test)]

@@ -138,7 +138,70 @@ pub(super) fn table_splits(
     is_chosen: &[bool],
 ) -> Parts {
     let observed: FxHashSet<AtomId> = gp.evidence.iter().filter_map(|&(_, a, _)| a).collect();
-    let (unit_rules, from, reads) = unit_rules_and_reads(gp, unit_of, set_of, is_chosen);
+    // Each unit's rules in order, the units in the order of their first
+    // rules, laid end to end: the `k`-th unit's are `unit_rules[from[k]..
+    // from[k + 1]]`, not a map of a list per unit grown a rule at a time.
+    let num_units = unit_of
+        .iter()
+        .filter(|&&u| u != usize::MAX)
+        .map(|&u| u + 1)
+        .max()
+        .unwrap_or(0);
+    let mut slot = vec![usize::MAX; num_units];
+    let mut from: Vec<usize> = vec![0];
+    for r in &gp.rules {
+        let u = unit_of[r.head as usize];
+        if u != usize::MAX {
+            if slot[u] == usize::MAX {
+                slot[u] = from.len() - 1;
+                from.push(0);
+            }
+            from[slot[u] + 1] += 1;
+        }
+    }
+    for k in 1..from.len() {
+        from[k] += from[k - 1];
+    }
+    let mut next = from.clone();
+    let mut unit_rules = vec![0; from[from.len() - 1]];
+    for (ri, r) in gp.rules.iter().enumerate() {
+        let u = unit_of[r.head as usize];
+        if u != usize::MAX {
+            unit_rules[next[slot[u]]] = ri;
+            next[slot[u]] += 1;
+        }
+    }
+    // What each rule reads positively: the atoms of exclusive sets, with
+    // their sets, and the atoms of none it reads through copies; and
+    // whether it reads each through a copy.
+    let mut reads = Reads {
+        all: Vec::new(),
+        from: Vec::with_capacity(gp.rules.len() + 1),
+    };
+    reads.from.push(0);
+    let mut read: Vec<(usize, AtomId, bool)> = Vec::new();
+    for r in &gp.rules {
+        let u = unit_of[r.head as usize];
+        read.clear();
+        read.extend(
+            r.body
+                .iter()
+                .filter(|l| l.is_positive())
+                .map(|l| {
+                    let a = l.atom();
+                    (
+                        set_of[a as usize],
+                        a,
+                        is_chosen[a as usize] && unit_of[a as usize] != u,
+                    )
+                })
+                .filter(|&(s, _, copied)| s != usize::MAX || copied),
+        );
+        read.sort_unstable();
+        read.dedup();
+        reads.all.extend_from_slice(&read);
+        reads.from.push(reads.all.len());
+    }
     let wide_and_shared = wide_and_shared(gp, unit_of, exclusive, &reads);
     let mut parts = Parts {
         up: vec![WHOLE],
@@ -210,79 +273,6 @@ pub(super) fn table_splits(
         parts.place(plan, rules, WHOLE);
     }
     parts
-}
-
-fn unit_rules_and_reads(
-    gp: &GroundProgram,
-    unit_of: &[usize],
-    set_of: &[usize],
-    is_chosen: &[bool],
-) -> (Vec<usize>, Vec<usize>, Reads) {
-    // Each unit's rules in order, the units in the order of their first
-    // rules, laid end to end: the `k`-th unit's are `unit_rules[from[k]..
-    // from[k + 1]]`, not a map of a list per unit grown a rule at a time.
-    let num_units = unit_of
-        .iter()
-        .filter(|&&u| u != usize::MAX)
-        .map(|&u| u + 1)
-        .max()
-        .unwrap_or(0);
-    let mut slot = vec![usize::MAX; num_units];
-    let mut from: Vec<usize> = vec![0];
-    for r in &gp.rules {
-        let u = unit_of[r.head as usize];
-        if u != usize::MAX {
-            if slot[u] == usize::MAX {
-                slot[u] = from.len() - 1;
-                from.push(0);
-            }
-            from[slot[u] + 1] += 1;
-        }
-    }
-    for k in 1..from.len() {
-        from[k] += from[k - 1];
-    }
-    let mut next = from.clone();
-    let mut unit_rules = vec![0; from[from.len() - 1]];
-    for (ri, r) in gp.rules.iter().enumerate() {
-        let u = unit_of[r.head as usize];
-        if u != usize::MAX {
-            unit_rules[next[slot[u]]] = ri;
-            next[slot[u]] += 1;
-        }
-    }
-    // What each rule reads positively: the atoms of exclusive sets, with
-    // their sets, and the atoms of none it reads through copies; and
-    // whether it reads each through a copy.
-    let mut reads = Reads {
-        all: Vec::new(),
-        from: Vec::with_capacity(gp.rules.len() + 1),
-    };
-    reads.from.push(0);
-    let mut read: Vec<(usize, AtomId, bool)> = Vec::new();
-    for r in &gp.rules {
-        let u = unit_of[r.head as usize];
-        read.clear();
-        read.extend(
-            r.body
-                .iter()
-                .filter(|l| l.is_positive())
-                .map(|l| {
-                    let a = l.atom();
-                    (
-                        set_of[a as usize],
-                        a,
-                        is_chosen[a as usize] && unit_of[a as usize] != u,
-                    )
-                })
-                .filter(|&(s, _, copied)| s != usize::MAX || copied),
-        );
-        read.sort_unstable();
-        read.dedup();
-        reads.all.extend_from_slice(&read);
-        reads.from.push(reads.all.len());
-    }
-    (unit_rules, from, reads)
 }
 
 /// Per exclusive set whether it has [`BITS_FROM`] values or more and two

@@ -264,11 +264,70 @@ pub(super) fn collect(
 /// names the findall, for an error.
 fn lists(
     src: &mut impl Source,
-    found: Vec<(Val, Proof)>,
+    mut found: Vec<(Val, Proof)>,
     gather: Gather,
     what: &str,
 ) -> Result<Vec<Listed>, GroundError> {
-    let (found, of, last) = rank_and_number_formulas(found, gather.once());
+    if !gather.once() {
+        // The proofs that hold in every world first, then the others by
+        // the node of each, numbered as made: an atom where it was first
+        // read, a conjunction after its literals.
+        // A negation alone is its atom's node negated, which ProbLog's
+        // sort puts before every other, the last made first.
+        let mut made: FxHashMap<u32, i64> = FxHashMap::default();
+        let mut conj: FxHashMap<Vec<Lit>, i64> = FxHashMap::default();
+        let mut next = 0i64;
+        let mut node = |lits: &[Lit]| -> i64 {
+            let mut last = 0;
+            for &(_, a) in lits {
+                last = *made.entry(a).or_insert_with(|| {
+                    next += 1;
+                    next
+                });
+            }
+            match lits {
+                [] => 0,
+                [(false, _)] => -last,
+                [_] => last,
+                _ => {
+                    let mut key = lits.to_vec();
+                    key.sort_unstable();
+                    key.dedup();
+                    *conj.entry(key).or_insert_with(|| {
+                        next += 1;
+                        next
+                    })
+                }
+            }
+        };
+        let order: Vec<i64> = found.iter().map(|(_, p)| node(&p.lits)).collect();
+        let mut ranked: Vec<(i64, (Val, Proof))> = order.into_iter().zip(found).collect();
+        ranked.sort_by_key(|(o, _)| *o);
+        found = ranked.into_iter().map(|(_, f)| f).collect();
+    }
+    // The proofs of one formula, the same literals, hold together: a set
+    // of proofs that takes one of them and leaves another holds nowhere,
+    // and ProbLog drops it. Each such formula is decided once, where its
+    // first proof comes, and the decision kept until its last.
+    let mut formulas: FxHashMap<Vec<Lit>, usize> = FxHashMap::default();
+    let mut of: Vec<Option<usize>> = Vec::with_capacity(found.len());
+    let mut last: Vec<usize> = Vec::new();
+    for (i, (_, proof)) in found.iter().enumerate() {
+        if proof.lits.is_empty() {
+            of.push(None);
+            continue;
+        }
+        let mut key = proof.lits.to_vec();
+        key.sort_unstable();
+        key.dedup();
+        let n = formulas.len();
+        let f = *formulas.entry(key).or_insert(n);
+        if f == last.len() {
+            last.push(i);
+        }
+        last[f] = i;
+        of.push(Some(f));
+    }
     let mut holds: Vec<Option<Lit>> = vec![None; last.len()];
     // Each state: the list so far, the formulas decided that come again,
     // and the literal of the worlds it is in.
@@ -360,70 +419,4 @@ fn lists(
         .filter(|(items, _, _)| gather.empty() || !items.is_empty())
         .map(|(items, _, cond)| (src.list(&items), cond))
         .collect())
-}
-
-type RankedFormulas = (Vec<(Val, Proof)>, Vec<Option<usize>>, Vec<usize>);
-
-fn rank_and_number_formulas(mut found: Vec<(Val, Proof)>, once: bool) -> RankedFormulas {
-    if !once {
-        // The proofs that hold in every world first, then the others by
-        // the node of each, numbered as made: an atom where it was first
-        // read, a conjunction after its literals.
-        // A negation alone is its atom's node negated, which ProbLog's
-        // sort puts before every other, the last made first.
-        let mut made: FxHashMap<u32, i64> = FxHashMap::default();
-        let mut conj: FxHashMap<Vec<Lit>, i64> = FxHashMap::default();
-        let mut next = 0i64;
-        let mut node = |lits: &[Lit]| -> i64 {
-            let mut last = 0;
-            for &(_, a) in lits {
-                last = *made.entry(a).or_insert_with(|| {
-                    next += 1;
-                    next
-                });
-            }
-            match lits {
-                [] => 0,
-                [(false, _)] => -last,
-                [_] => last,
-                _ => {
-                    let mut key = lits.to_vec();
-                    key.sort_unstable();
-                    key.dedup();
-                    *conj.entry(key).or_insert_with(|| {
-                        next += 1;
-                        next
-                    })
-                }
-            }
-        };
-        let order: Vec<i64> = found.iter().map(|(_, p)| node(&p.lits)).collect();
-        let mut ranked: Vec<(i64, (Val, Proof))> = order.into_iter().zip(found).collect();
-        ranked.sort_by_key(|(o, _)| *o);
-        found = ranked.into_iter().map(|(_, f)| f).collect();
-    }
-    // The proofs of one formula, the same literals, hold together: a set
-    // of proofs that takes one of them and leaves another holds nowhere,
-    // and ProbLog drops it. Each such formula is decided once, where its
-    // first proof comes, and the decision kept until its last.
-    let mut formulas: FxHashMap<Vec<Lit>, usize> = FxHashMap::default();
-    let mut of: Vec<Option<usize>> = Vec::with_capacity(found.len());
-    let mut last: Vec<usize> = Vec::new();
-    for (i, (_, proof)) in found.iter().enumerate() {
-        if proof.lits.is_empty() {
-            of.push(None);
-            continue;
-        }
-        let mut key = proof.lits.to_vec();
-        key.sort_unstable();
-        key.dedup();
-        let n = formulas.len();
-        let f = *formulas.entry(key).or_insert(n);
-        if f == last.len() {
-            last.push(i);
-        }
-        last[f] = i;
-        of.push(Some(f));
-    }
-    (found, of, last)
 }

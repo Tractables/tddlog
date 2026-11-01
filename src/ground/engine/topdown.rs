@@ -991,7 +991,73 @@ impl<'a> TopDown<'a> {
         };
         match lit {
             Lit::Call(p, args, negated) => {
-                self.call_lit(t, rule, base, i, (*p, args, *negated), steps)?
+                let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
+                let p = *p;
+                if !negated {
+                    match self.preds[p as usize].kind {
+                        Kind::Rules => {
+                            let u = self.call(p, &args)?;
+                            let arity = args.len();
+                            let mut k = 0;
+                            while let Some((key, a)) =
+                                self.tables[u as usize].answers.get(k).cloned()
+                            {
+                                k += 1;
+                                let mark = self.mark();
+                                let answer = self.unkey(&key, arity);
+                                if self.unify_all(&args, &answer) {
+                                    next(self, Some(Step::Pos(a)), steps)?;
+                                }
+                                self.undo(mark);
+                            }
+                        }
+                        Kind::Facts(f) => {
+                            for vals in self.fact_matches(p, f, &args) {
+                                let mark = self.mark();
+                                let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
+                                if self.unify_all(&args, &tuple) {
+                                    let a = self.atom(p, vals)?;
+                                    next(self, Some(Step::Pos(a)), steps)?;
+                                }
+                                self.undo(mark);
+                            }
+                        }
+                        Kind::Switch => {
+                            let vals = self.values(p, &args, rule, "a probabilistic choice")?;
+                            let a = self.atom(p, vals)?;
+                            next(self, Some(Step::Pos(a)), steps)?;
+                        }
+                        Kind::Undefined => {}
+                    }
+                    return Ok(());
+                }
+                if self.preds[p as usize].kind == Kind::Switch {
+                    let vals = self.values(p, &args, rule, "a negation")?;
+                    let a = self.atom(p, vals)?;
+                    if !self.always(a) {
+                        next(self, Some(Step::Neg(a)), steps)?;
+                    }
+                    return Ok(());
+                }
+                // The negation holds where none of the call's answers does,
+                // and fails where one is true in every world, as in
+                // ProbLog's grounding: `\+ member(X, Seen)` ends a walk that
+                // would otherwise grow its list. A call with variables, as
+                // ProbLog makes it, may have several answers.
+                // Where a variable of the table's call is free there, a
+                // call that binds it reads fewer answers.
+                let full = self.full_all(&args)?;
+                if full.iter().any(|a| !matches!(a, T::G(_))) && self.of_call(&full)? {
+                    self.call_dependent(rule, "a negation of a call with variables");
+                }
+                let Some(answers) = self.negated(p, &args, rule)? else {
+                    return Ok(());
+                };
+                let n = steps.len();
+                steps.extend(answers.into_iter().map(Step::Neg));
+                let r = self.body(t, rule, base, i + 1, steps);
+                steps.truncate(n);
+                r?;
             }
             Lit::Unify(a, b) => {
                 let (a, b) = (Self::inst(a, base), Self::inst(b, base));
@@ -1056,87 +1122,6 @@ impl<'a> TopDown<'a> {
             }
         }
         Ok(())
-    }
-
-    fn call_lit(
-        &mut self,
-        t: u32,
-        rule: &Rule,
-        base: u32,
-        i: usize,
-        (p, args, negated): (u32, &[Tpl], bool),
-        steps: &mut Vec<Step>,
-    ) -> Result<(), GroundError> {
-        let next = |me: &mut Self, step: Step, steps: &mut Vec<Step>| {
-            steps.push(step);
-            let r = me.body(t, rule, base, i + 1, steps);
-            steps.pop();
-            r
-        };
-        let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
-        if !negated {
-            match self.preds[p as usize].kind {
-                Kind::Rules => {
-                    let u = self.call(p, &args)?;
-                    let arity = args.len();
-                    let mut k = 0;
-                    while let Some((key, a)) = self.tables[u as usize].answers.get(k).cloned() {
-                        k += 1;
-                        let mark = self.mark();
-                        let answer = self.unkey(&key, arity);
-                        if self.unify_all(&args, &answer) {
-                            next(self, Step::Pos(a), steps)?;
-                        }
-                        self.undo(mark);
-                    }
-                }
-                Kind::Facts(f) => {
-                    for vals in self.fact_matches(p, f, &args) {
-                        let mark = self.mark();
-                        let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
-                        if self.unify_all(&args, &tuple) {
-                            let a = self.atom(p, vals)?;
-                            next(self, Step::Pos(a), steps)?;
-                        }
-                        self.undo(mark);
-                    }
-                }
-                Kind::Switch => {
-                    let vals = self.values(p, &args, rule, "a probabilistic choice")?;
-                    let a = self.atom(p, vals)?;
-                    next(self, Step::Pos(a), steps)?;
-                }
-                Kind::Undefined => {}
-            }
-            return Ok(());
-        }
-        if self.preds[p as usize].kind == Kind::Switch {
-            let vals = self.values(p, &args, rule, "a negation")?;
-            let a = self.atom(p, vals)?;
-            if !self.always(a) {
-                next(self, Step::Neg(a), steps)?;
-            }
-            return Ok(());
-        }
-        // The negation holds where none of the call's answers does,
-        // and fails where one is true in every world, as in
-        // ProbLog's grounding: `\+ member(X, Seen)` ends a walk that
-        // would otherwise grow its list. A call with variables, as
-        // ProbLog makes it, may have several answers.
-        // Where a variable of the table's call is free there, a
-        // call that binds it reads fewer answers.
-        let full = self.full_all(&args)?;
-        if full.iter().any(|a| !matches!(a, T::G(_))) && self.of_call(&full)? {
-            self.call_dependent(rule, "a negation of a call with variables");
-        }
-        let Some(answers) = self.negated(p, &args, rule)? else {
-            return Ok(());
-        };
-        let n = steps.len();
-        steps.extend(answers.into_iter().map(Step::Neg));
-        let r = self.body(t, rule, base, i + 1, steps);
-        steps.truncate(n);
-        r
     }
 
     /// The lists of the findall `c` of `rule`, its variables from `base`,

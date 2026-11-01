@@ -183,18 +183,17 @@ pub unsafe extern "C" fn tddlog_solve(
     else {
         return TDDLOG_ERROR_INVALID_INPUT;
     };
-    let evidence = match options.evidence.is_null() {
-        true => None,
-        false => Some(unsafe { CStr::from_ptr(options.evidence) }.to_bytes()),
-    };
+    let evidence = (!options.evidence.is_null())
+        .then(|| unsafe { CStr::from_ptr(options.evidence) }.to_bytes());
     let Some(arguments) = (unsafe { program_arguments(options.arguments, options.num_arguments) })
     else {
         return TDDLOG_ERROR_INVALID_INPUT;
     };
     let read = tddlog::network::ReadOptions {
-        queries: match options.queries {
-            true => tddlog::network::Queries::All,
-            false => tddlog::network::Queries::None,
+        queries: if options.queries {
+            tddlog::network::Queries::All
+        } else {
+            tddlog::network::Queries::None
         },
         evidence: evidence.map(|e| format.evidence(e)),
         rescale: false,

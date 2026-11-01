@@ -984,11 +984,54 @@ impl Factoring<'_> {
                 }
                 continue;
             }
-            let Some((mut fact_lits, conj, split)) =
-                self.split_body_parts(body, at.acc.as_ref(), scope)?
-            else {
-                continue; // body false: ¬body = true
+            let mut fact_lits: Vec<tididi::Literal> = Vec::with_capacity(body.len());
+            // The product of the body's derived literals as a balanced
+            // tree (`push_product`). Folded from the left, a body of k
+            // literals multiplies a product of up to k - 1 of them k times:
+            // a chain of conjunctions inlined into one body
+            // (`ground::steps`) reached 4 095 literals on a bit-blasted
+            // circuit, and its fold 575 M work units of its program's
+            // 2.53 G.
+            let mut pending: Vec<(Part, u32)> = Vec::new();
+            let mut dead = false;
+            // The two parts of a body that goes in by the or-route.
+            let mut split: Option<(Part, Part)> = None;
+            let mut derived_left = body
+                .iter()
+                .filter(|&&l| self.fact_literal(l).is_none())
+                .count();
+            for &l in body {
+                if let Some(f) = self.fact_literal(l) {
+                    fact_lits.push(f);
+                    continue;
+                }
+                let f = (self.part)(l, 1, scope)?;
+                if self.backend.is_zero(&f.0) {
+                    dead = true;
+                    break;
+                }
+                derived_left -= 1;
+                if derived_left == 0
+                    && !pending.is_empty()
+                    && let Some(formula) = &at.acc
+                {
+                    let c = self.collapse(&mut pending, scope)?;
+                    match self.last_product(formula, c, f, scope)? {
+                        Ok(r) => pending.push((r.into(), 0)),
+                        Err(parts) => split = Some(parts),
+                    }
+                    continue;
+                }
+                self.push_product(&mut pending, f, scope)?;
+            }
+            let conj = if pending.is_empty() {
+                None
+            } else {
+                Some(self.collapse(&mut pending, scope)?)
             };
+            if dead {
+                continue; // body false: ¬body = true
+            }
             let left_out = at.exclusive.leave_out(&mut fact_lits);
             if left_out > 0 {
                 self.memo.borrow_mut().stats.left_out += left_out;
@@ -1008,10 +1051,78 @@ impl Factoring<'_> {
                     acc
                 }
                 (None, None) => {
-                    self.and_fact_clause(formula, &fact_lits, scope, &mut at, &mut run)?
+                    // ¬cube is a clause of literals.
+                    let clause: Vec<tididi::Literal> =
+                        fact_lits.iter().map(|l| l.negated()).collect();
+                    run += 1;
+                    let mut acc = match formula {
+                        Some(f) if f.1.same(scope) => f,
+                        Some(f) => (self.placed(f, scope)?, scope.clone()),
+                        None => {
+                            let one = self.backend.one(scope);
+                            at.settled_nodes = self.backend.nodes(&one);
+                            (one, scope.clone())
+                        }
+                    };
+                    acc.0 = self.backend.and_clause(scope, acc.0, &clause)?;
+                    at.exclusive.take_pair(&fact_lits);
+                    at.uncontracted += 1;
+                    let grown = self.backend.nodes(&acc.0) > 2 * at.settled_nodes;
+                    // The watch reads the whole formula, which a clause
+                    // does not touch outside its spine; it is read where
+                    // the contraction has just walked it, and the store
+                    // reads the result. Read after every clause or every
+                    // contraction, it was a large part of the networks'
+                    // runs; so it reads again once the clauses since have
+                    // spent a work unit per pair it read. The schedule of
+                    // contractions reads the formula
+                    // before and after one to see what it freed, and is
+                    // kept to the same reads.
+                    if at.uncontracted == at.every || grown {
+                        at.uncontracted = 0;
+                        (self.count)(Op::And, std::mem::take(&mut run));
+                        let before = (self.backend.work_units() >= at.read_due)
+                            .then(|| self.backend.size(&acc.0));
+                        self.backend.minimize(&mut acc.0, Reduce::Contract)?;
+                        (self.count)(Op::Minimize, 1);
+                        at.settled_nodes = self.backend.nodes(&acc.0);
+                        if let Some(before) = before {
+                            let size = self.backend.size(&acc.0);
+                            at.every = if size * 10 > before * 9 {
+                                (at.every * 2).min(MAX_CLAUSES_PER_CONTRACTION)
+                            } else {
+                                CLAUSES_PER_CONTRACTION
+                            };
+                            if let Some(w) = self.watch
+                                && size > w
+                            {
+                                acc.0 = (self.watched)(acc.0, self.head)?;
+                            }
+                            at.read_due = self.backend.work_units() + size as u64;
+                        }
+                        if grown {
+                            at.every = CLAUSES_PER_CONTRACTION;
+                        }
+                    }
+                    acc
                 }
                 (Some(c), None) => {
-                    self.and_derived_clause(formula, c, &fact_lits, scope, &mut at, &mut run)?
+                    (self.count)(Op::And, std::mem::take(&mut run));
+                    // The facts as clauses of one literal, as in
+                    // `negated_terms`: a literal conjoined as a diagram costs
+                    // every level of the scope, a clause only the path from
+                    // its leaf to the root. Without them a part is negated
+                    // on its own scope, the smaller.
+                    let c = if fact_lits.is_empty() {
+                        c
+                    } else {
+                        Part::from((self.and_facts(c, &fact_lits, scope)?, scope.clone()))
+                    };
+                    let nb = (c.0.with_cow(|f| (self.negate)(self.term, f))?, c.1);
+                    let mut acc = self.and_term(formula, nb.into(), scope)?;
+                    at.settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
+                    acc.0 = (self.watched)(acc.0, self.head)?;
+                    acc
                 }
             };
             let zero = self.backend.is_zero(&f.0);
@@ -1025,152 +1136,8 @@ impl Factoring<'_> {
         self.placed(acc, scope)
     }
 
-    fn and_derived_clause(
-        &mut self,
-        formula: Option<Formula>,
-        c: Part,
-        fact_lits: &[tididi::Literal],
-        scope: &VtreeScope,
-        at: &mut Loop,
-        run: &mut usize,
-    ) -> Result<Formula, CompileError> {
-        (self.count)(Op::And, std::mem::take(run));
-        // The facts as clauses of one literal, as in
-        // `negated_terms`: a literal conjoined as a diagram costs
-        // every level of the scope, a clause only the path from
-        // its leaf to the root. Without them a part is negated
-        // on its own scope, the smaller.
-        let c = if fact_lits.is_empty() {
-            c
-        } else {
-            Part::from((self.and_facts(c, fact_lits, scope)?, scope.clone()))
-        };
-        let nb = (c.0.with_cow(|f| (self.negate)(self.term, f))?, c.1);
-        let mut acc = self.and_term(formula, nb.into(), scope)?;
-        at.settled_nodes = placed_count(self.backend.nodes(&acc.0), &acc.1, scope);
-        acc.0 = (self.watched)(acc.0, self.head)?;
-        Ok(acc)
-    }
-
-    fn split_body_parts(
-        &mut self,
-        body: &[GLit],
-        acc: Option<&Formula>,
-        scope: &VtreeScope,
-    ) -> Result<Option<BodyParts>, CompileError> {
-        let mut fact_lits: Vec<tididi::Literal> = Vec::with_capacity(body.len());
-        // The product of the body's derived literals as a balanced
-        // tree (`push_product`). Folded from the left, a body of k
-        // literals multiplies a product of up to k - 1 of them k times:
-        // a chain of conjunctions inlined into one body
-        // (`ground::steps`) reached 4 095 literals on a bit-blasted
-        // circuit, and its fold 575 M work units of its program's
-        // 2.53 G.
-        let mut pending: Vec<(Part, u32)> = Vec::new();
-        // The two parts of a body that goes in by the or-route.
-        let mut split: Option<(Part, Part)> = None;
-        let mut derived_left = body
-            .iter()
-            .filter(|&&l| self.fact_literal(l).is_none())
-            .count();
-        for &l in body {
-            if let Some(f) = self.fact_literal(l) {
-                fact_lits.push(f);
-                continue;
-            }
-            let f = (self.part)(l, 1, scope)?;
-            if self.backend.is_zero(&f.0) {
-                return Ok(None);
-            }
-            derived_left -= 1;
-            if derived_left == 0
-                && !pending.is_empty()
-                && let Some(formula) = acc
-            {
-                let c = self.collapse(&mut pending, scope)?;
-                match self.last_product(formula, c, f, scope)? {
-                    Ok(r) => pending.push((r.into(), 0)),
-                    Err(parts) => split = Some(parts),
-                }
-                continue;
-            }
-            self.push_product(&mut pending, f, scope)?;
-        }
-        let conj = if pending.is_empty() {
-            None
-        } else {
-            Some(self.collapse(&mut pending, scope)?)
-        };
-        Ok(Some((fact_lits, conj, split)))
-    }
-
-    fn and_fact_clause(
-        &mut self,
-        formula: Option<Formula>,
-        fact_lits: &[tididi::Literal],
-        scope: &VtreeScope,
-        at: &mut Loop,
-        run: &mut usize,
-    ) -> Result<Formula, CompileError> {
-        // ¬cube is a clause of literals.
-        let clause: Vec<tididi::Literal> = fact_lits.iter().map(|l| l.negated()).collect();
-        *run += 1;
-        let mut acc = match formula {
-            Some(f) if f.1.same(scope) => f,
-            Some(f) => (self.placed(f, scope)?, scope.clone()),
-            None => {
-                let one = self.backend.one(scope);
-                at.settled_nodes = self.backend.nodes(&one);
-                (one, scope.clone())
-            }
-        };
-        acc.0 = self.backend.and_clause(scope, acc.0, &clause)?;
-        at.exclusive.take_pair(fact_lits);
-        at.uncontracted += 1;
-        let grown = self.backend.nodes(&acc.0) > 2 * at.settled_nodes;
-        // The watch reads the whole formula, which a clause
-        // does not touch outside its spine; it is read where
-        // the contraction has just walked it, and the store
-        // reads the result. Read after every clause or every
-        // contraction, it was a large part of the networks'
-        // runs; so it reads again once the clauses since have
-        // spent a work unit per pair it read. The schedule of
-        // contractions reads the formula
-        // before and after one to see what it freed, and is
-        // kept to the same reads.
-        if at.uncontracted == at.every || grown {
-            at.uncontracted = 0;
-            (self.count)(Op::And, std::mem::take(run));
-            let before =
-                (self.backend.work_units() >= at.read_due).then(|| self.backend.size(&acc.0));
-            self.backend.minimize(&mut acc.0, Reduce::Contract)?;
-            (self.count)(Op::Minimize, 1);
-            at.settled_nodes = self.backend.nodes(&acc.0);
-            if let Some(before) = before {
-                let size = self.backend.size(&acc.0);
-                at.every = if size * 10 > before * 9 {
-                    (at.every * 2).min(MAX_CLAUSES_PER_CONTRACTION)
-                } else {
-                    CLAUSES_PER_CONTRACTION
-                };
-                if let Some(w) = self.watch
-                    && size > w
-                {
-                    acc.0 = (self.watched)(acc.0, self.head)?;
-                }
-                at.read_due = self.backend.work_units() + size as u64;
-            }
-            if grown {
-                at.every = CLAUSES_PER_CONTRACTION;
-            }
-        }
-        Ok(acc)
-    }
-
     /// The formula `acc`, `one` on `scope` where it is true (`None`).
     fn formula(&self, acc: Option<Formula>, scope: &VtreeScope) -> Formula {
         acc.unwrap_or_else(|| (self.backend.one(scope), scope.clone()))
     }
 }
-
-type BodyParts = (Vec<tididi::Literal>, Option<Part>, Option<(Part, Part)>);

@@ -411,7 +411,39 @@ struct Scratch {
 /// arithmetic, it made the compile up to 13 times the work.
 fn by_roots(gp: &GroundProgram, by_head: &RulesByHead, sccs: Vec<Vec<AtomId>>) -> Vec<Vec<AtomId>> {
     let n = sccs.len();
-    let (deps, facts, roots) = component_deps_and_facts(gp, by_head, &sccs);
+    let mut comp_of = vec![usize::MAX; gp.num_atoms()];
+    for (i, c) in sccs.iter().enumerate() {
+        for &a in c {
+            comp_of[a as usize] = i;
+        }
+    }
+    // The components each component's rules read, and their facts.
+    let mut deps: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut facts: Vec<Vec<AtomId>> = vec![Vec::new(); n];
+    let mut read = vec![false; n];
+    for (i, c) in sccs.iter().enumerate() {
+        for &h in c {
+            for &ri in &by_head[h as usize] {
+                for l in &gp.rules[ri].body {
+                    let a = l.atom();
+                    let j = comp_of[a as usize];
+                    if j == usize::MAX {
+                        if gp.is_fact(a) {
+                            facts[i].push(a);
+                        }
+                    } else if j != i {
+                        deps[i].push(j);
+                        read[j] = true;
+                    }
+                }
+            }
+        }
+        deps[i].sort_unstable();
+        deps[i].dedup();
+        facts[i].sort_unstable();
+        facts[i].dedup();
+    }
+    let roots: Vec<usize> = (0..n).filter(|&i| !read[i]).collect();
     if roots.len() < 2 {
         return sccs;
     }
@@ -481,48 +513,6 @@ fn by_roots(gp: &GroundProgram, by_head: &RulesByHead, sccs: Vec<Vec<AtomId>>) -
         .iter()
         .map(|&i| std::mem::take(&mut sccs[i]))
         .collect()
-}
-
-fn component_deps_and_facts(
-    gp: &GroundProgram,
-    by_head: &RulesByHead,
-    sccs: &[Vec<AtomId>],
-) -> (Vec<Vec<usize>>, Vec<Vec<AtomId>>, Vec<usize>) {
-    let n = sccs.len();
-    let mut comp_of = vec![usize::MAX; gp.num_atoms()];
-    for (i, c) in sccs.iter().enumerate() {
-        for &a in c {
-            comp_of[a as usize] = i;
-        }
-    }
-    // The components each component's rules read, and their facts.
-    let mut deps: Vec<Vec<usize>> = vec![Vec::new(); n];
-    let mut facts: Vec<Vec<AtomId>> = vec![Vec::new(); n];
-    let mut read = vec![false; n];
-    for (i, c) in sccs.iter().enumerate() {
-        for &h in c {
-            for &ri in &by_head[h as usize] {
-                for l in &gp.rules[ri].body {
-                    let a = l.atom();
-                    let j = comp_of[a as usize];
-                    if j == usize::MAX {
-                        if gp.is_fact(a) {
-                            facts[i].push(a);
-                        }
-                    } else if j != i {
-                        deps[i].push(j);
-                        read[j] = true;
-                    }
-                }
-            }
-        }
-        deps[i].sort_unstable();
-        deps[i].dedup();
-        facts[i].sort_unstable();
-        facts[i].dedup();
-    }
-    let roots: Vec<usize> = (0..n).filter(|&i| !read[i]).collect();
-    (deps, facts, roots)
 }
 
 /// The components of `sccs` (in a dependency order) reordered by the
