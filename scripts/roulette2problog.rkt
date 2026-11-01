@@ -617,7 +617,7 @@
     ;; The value of a failed observation in the example language's `query`,
     ;; a gensym of its own that the language does not export.
     (define (failed-value? v)
-      (and (symbol? v) (symbol-uninterned? v) (regexp-match? #rx"^⊥" (symbol->string v))))
+      (and (symbol? v) (not (symbol-interned? v)) (regexp-match? #rx"^⊥" (symbol->string v))))
 
     ;; The members of the first of `lists` that are in all of them, #f for
     ;; no list.
