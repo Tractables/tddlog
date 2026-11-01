@@ -1424,32 +1424,7 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
                 })
                 .collect()
         }
-        Builtin::Append => match (vals[0], vals[1], vals[2]) {
-            (Some(a), Some(b), _) => match g.items(a) {
-                Some(items) => {
-                    let c = g.make_list(&items, b);
-                    one(vec![a, b, c])
-                }
-                None => Vec::new(),
-            },
-            (a, b, Some(c)) => {
-                let (items, tails) = g.spine(c, cons);
-                // The splits a bound prefix or suffix names, or all of them.
-                let splits: Vec<usize> = match (a, b) {
-                    (Some(a), _) => match g.items(a) {
-                        Some(p) if items.starts_with(&p) => vec![p.len()],
-                        _ => Vec::new(),
-                    },
-                    (None, Some(b)) => tails.iter().position(|&t| t == b).into_iter().collect(),
-                    (None, None) => (0..tails.len()).collect(),
-                };
-                splits
-                    .into_iter()
-                    .map(|k| vec![g.make_list(&items[..k], nil), tails[k], c])
-                    .collect()
-            }
-            _ => unreachable!("append/3's mode"),
-        },
+        Builtin::Append => append_solutions(g, vals, nil, cons),
         Builtin::Length => {
             let l = vals[0].expect("mode");
             g.items(l)
@@ -1502,54 +1477,11 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         }
         // The element itself, the later of equal ones: `M > X` keeps `M`
         // and `M =< X` takes `X`.
-        Builtin::MaxList | Builtin::MinList => {
-            let l = vals[0].expect("mode");
-            let keeps = if b == Builtin::MaxList {
-                std::cmp::Ordering::Greater
-            } else {
-                std::cmp::Ordering::Less
-            };
-            let best = g.items(l).and_then(|items| {
-                let (&first, rest) = items.split_first()?;
-                rest.iter().try_fold(first, |m, &x| {
-                    let (a, b) = (g.num(m)?, g.num(x)?);
-                    let ord = match (a, b) {
-                        (Num::I(a), Num::I(b)) => a.cmp(&b),
-                        _ => a.float().partial_cmp(&b.float())?,
-                    };
-                    Some(if ord == keeps { m } else { x })
-                })
-            });
-            best.map_or_else(Vec::new, |m| one(vec![l, m]))
-        }
+        Builtin::MaxList | Builtin::MinList => extremum_list(g, b, vals[0].expect("mode")),
         // The pairs `(G, V)` of a list by their groups `G`, in the order of
         // each group's first pair, a group with its values in order, as
         // ProbLog's library(lists) groups them.
-        Builtin::EnumGroups => {
-            let l = vals[0].expect("mode");
-            let Some(pairs) = g.items(l) else {
-                return Vec::new();
-            };
-            let mut groups: Vec<(Val, Vec<Val>)> = Vec::new();
-            let mut index: FxHashMap<Val, usize> = FxHashMap::default();
-            for p in pairs {
-                let Val::Fn(id) = p else {
-                    return Vec::new();
-                };
-                let &[_, k, v, ..] = g.terms.keys.list(id as usize) else {
-                    return Vec::new();
-                };
-                let at = *index.entry(k).or_insert_with(|| {
-                    groups.push((k, Vec::new()));
-                    groups.len() - 1
-                });
-                groups[at].1.push(v);
-            }
-            groups
-                .into_iter()
-                .map(|(k, vs)| vec![l, k, g.make_list(&vs, nil)])
-                .collect()
-        }
+        Builtin::EnumGroups => enum_groups(g, vals[0].expect("mode"), nil),
         // The items in the standard order of terms, equal ones once.
         Builtin::Sort => {
             let l = vals[0].expect("mode");
@@ -1598,40 +1530,7 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
         | Builtin::Intersection
         | Builtin::Union
         | Builtin::Subtract
-        | Builtin::Delete => {
-            let (l, other) = (vals[0].expect("mode"), vals[1].expect("mode"));
-            let Some(items) = g.items(l) else {
-                return Vec::new();
-            };
-            let set = match b {
-                Builtin::Delete => vec![other],
-                _ => g.spine(other, cons).0,
-            };
-            let kept = |keep_members: bool| -> Vec<Val> {
-                items
-                    .iter()
-                    .copied()
-                    .filter(|x| set.contains(x) == keep_members)
-                    .collect()
-            };
-            match b {
-                Builtin::Subset if items.iter().all(|x| set.contains(x)) => one(vec![l, other]),
-                Builtin::Subset => Vec::new(),
-                Builtin::Intersection => {
-                    let r = g.make_list(&kept(true), nil);
-                    one(vec![l, other, r])
-                }
-                // `union(Xs, Ys, R)`: the items not in `Ys`, then `Ys`.
-                Builtin::Union => {
-                    let r = g.make_list(&kept(false), other);
-                    one(vec![l, other, r])
-                }
-                _ => {
-                    let r = g.make_list(&kept(false), nil);
-                    one(vec![l, other, r])
-                }
-            }
-        }
+        | Builtin::Delete => set_solutions(g, b, vals, nil, cons),
         Builtin::Flatten => {
             let l = vals[0].expect("mode");
             flattened(g, l, nil, cons)
@@ -1695,31 +1594,136 @@ fn solutions(g: &mut Grounder, b: Builtin, vals: &[Option<Val>]) -> Vec<Vec<Val>
             _ => unreachable!("mode"),
         },
         // The test before a call of a goal that is a variable.
-        Builtin::Callable => {
-            let vals: Vec<Val> = vals.iter().map(|v| v.expect("mode")).collect();
-            let goal = match vals[0] {
-                Val::Sym(name) => Some((name, 0)),
-                Val::Fn(id) => match g.terms.keys.list(id as usize) {
-                    [Val::Sym(name), args @ ..] => Some((*name, args.len())),
-                    _ => unreachable!("a term's key starts with its name"),
+        Builtin::Callable => callable_solutions(g, vals),
+    }
+}
+
+fn append_solutions(g: &mut Grounder, vals: &[Option<Val>], nil: Val, cons: u32) -> Vec<Vec<Val>> {
+    match (vals[0], vals[1], vals[2]) {
+        (Some(a), Some(b), _) => match g.items(a) {
+            Some(items) => vec![vec![a, b, g.make_list(&items, b)]],
+            None => Vec::new(),
+        },
+        (a, b, Some(c)) => {
+            let (items, tails) = g.spine(c, cons);
+            // The splits a bound prefix or suffix names, or all of them.
+            let splits: Vec<usize> = match (a, b) {
+                (Some(a), _) => match g.items(a) {
+                    Some(p) if items.starts_with(&p) => vec![p.len()],
+                    _ => Vec::new(),
                 },
-                Val::Int(_) | Val::Float(_) => None,
+                (None, Some(b)) => tails.iter().position(|&t| t == b).into_iter().collect(),
+                (None, None) => (0..tails.len()).collect(),
             };
-            let outcome = match goal {
-                Some((name, k)) => callable(g, name, k, &vals[1..]),
-                None => Err(GroundError::Unsupported(format!(
-                    "call/N of {}, which is no goal (ProbLog's type error)",
-                    g.term_of(vals[0])
-                ))),
+            splits
+                .into_iter()
+                .map(|k| vec![g.make_list(&items[..k], nil), tails[k], c])
+                .collect()
+        }
+        _ => unreachable!("append/3's mode"),
+    }
+}
+
+fn extremum_list(g: &mut Grounder, b: Builtin, l: Val) -> Vec<Vec<Val>> {
+    let keeps = if b == Builtin::MaxList {
+        std::cmp::Ordering::Greater
+    } else {
+        std::cmp::Ordering::Less
+    };
+    let best = g.items(l).and_then(|items| {
+        let (&first, rest) = items.split_first()?;
+        rest.iter().try_fold(first, |m, &x| {
+            let (a, b) = (g.num(m)?, g.num(x)?);
+            let ord = match (a, b) {
+                (Num::I(a), Num::I(b)) => a.cmp(&b),
+                _ => a.float().partial_cmp(&b.float())?,
             };
-            match outcome {
-                Ok(true) => one(vals),
-                Ok(false) => Vec::new(),
-                Err(e) => {
-                    g.fail(e);
-                    Vec::new()
-                }
-            }
+            Some(if ord == keeps { m } else { x })
+        })
+    });
+    best.map_or_else(Vec::new, |m| vec![vec![l, m]])
+}
+
+fn enum_groups(g: &mut Grounder, l: Val, nil: Val) -> Vec<Vec<Val>> {
+    let Some(pairs) = g.items(l) else {
+        return Vec::new();
+    };
+    let mut groups: Vec<(Val, Vec<Val>)> = Vec::new();
+    let mut index: FxHashMap<Val, usize> = FxHashMap::default();
+    for p in pairs {
+        let Val::Fn(id) = p else {
+            return Vec::new();
+        };
+        let &[_, k, v, ..] = g.terms.keys.list(id as usize) else {
+            return Vec::new();
+        };
+        let at = *index.entry(k).or_insert_with(|| {
+            groups.push((k, Vec::new()));
+            groups.len() - 1
+        });
+        groups[at].1.push(v);
+    }
+    groups
+        .into_iter()
+        .map(|(k, vs)| vec![l, k, g.make_list(&vs, nil)])
+        .collect()
+}
+
+fn set_solutions(
+    g: &mut Grounder,
+    b: Builtin,
+    vals: &[Option<Val>],
+    nil: Val,
+    cons: u32,
+) -> Vec<Vec<Val>> {
+    let (l, other) = (vals[0].expect("mode"), vals[1].expect("mode"));
+    let Some(items) = g.items(l) else {
+        return Vec::new();
+    };
+    let set = match b {
+        Builtin::Delete => vec![other],
+        _ => g.spine(other, cons).0,
+    };
+    let kept = |keep_members: bool| -> Vec<Val> {
+        items
+            .iter()
+            .copied()
+            .filter(|x| set.contains(x) == keep_members)
+            .collect()
+    };
+    match b {
+        Builtin::Subset if items.iter().all(|x| set.contains(x)) => vec![vec![l, other]],
+        Builtin::Subset => Vec::new(),
+        Builtin::Intersection => vec![vec![l, other, g.make_list(&kept(true), nil)]],
+        // `union(Xs, Ys, R)`: the items not in `Ys`, then `Ys`.
+        Builtin::Union => vec![vec![l, other, g.make_list(&kept(false), other)]],
+        _ => vec![vec![l, other, g.make_list(&kept(false), nil)]],
+    }
+}
+
+fn callable_solutions(g: &mut Grounder, vals: &[Option<Val>]) -> Vec<Vec<Val>> {
+    let vals: Vec<Val> = vals.iter().map(|v| v.expect("mode")).collect();
+    let goal = match vals[0] {
+        Val::Sym(name) => Some((name, 0)),
+        Val::Fn(id) => match g.terms.keys.list(id as usize) {
+            [Val::Sym(name), args @ ..] => Some((*name, args.len())),
+            _ => unreachable!("a term's key starts with its name"),
+        },
+        Val::Int(_) | Val::Float(_) => None,
+    };
+    let outcome = match goal {
+        Some((name, k)) => callable(g, name, k, &vals[1..]),
+        None => Err(GroundError::Unsupported(format!(
+            "call/N of {}, which is no goal (ProbLog's type error)",
+            g.term_of(vals[0])
+        ))),
+    };
+    match outcome {
+        Ok(true) => vec![vals],
+        Ok(false) => Vec::new(),
+        Err(e) => {
+            g.fail(e);
+            Vec::new()
         }
     }
 }
@@ -2051,70 +2055,8 @@ fn ground_with(
     bound: Option<usize>,
     by_levels: bool,
 ) -> Result<Option<GroundProgram>, GroundError> {
-    // Every switch is a predicate, most of the predicates of a network.
     let mut g = Grounder::new(&norm.rules, norm.switches.len() + 64, bound);
-    for (&(ref name, arity), w) in &norm.switches {
-        g.pred(name, arity, Some(w.clone()));
-    }
-    for (name, arity) in &norm.control {
-        let p = g.pred(name, *arity, None);
-        g.preds[p as usize].control = true;
-    }
-    // The predicates numbered as the rules and facts name them, each
-    // predicate's facts where the first of them was.
-    let mut facts = norm.facts.iter().peekable();
-    for (i, clause) in norm.rules.iter().enumerate() {
-        while let Some((_, f)) = facts.next_if(|(at, _)| *at <= i) {
-            let p = g.pred(&f.name, f.arity, None);
-            g.preds[p as usize].facts = Some(f);
-        }
-        let head = &clause.heads[0].atom;
-        let counted = !norm.counted.is_empty()
-            && norm.counted.contains(&(head.name.clone(), head.args.len()));
-        let r = compile_rule(&mut g, clause, counted)?;
-        let h = r.head.0;
-        g.preds[h as usize].rules.push(g.rules.len());
-        g.rules.push(r);
-    }
-    for (_, f) in facts {
-        let p = g.pred(&f.name, f.arity, None);
-        g.preds[p as usize].facts = Some(f);
-    }
-    // Predicates only mentioned in queries/evidence.
-    for a in norm
-        .queries
-        .iter()
-        .map(|(a, _)| a)
-        .chain(norm.evidence.iter().map(|(a, _)| a))
-    {
-        g.pred(&a.name, a.args.len(), None);
-    }
-
-    let strata = stratify(&g);
-    // A findall reads its goal's tuples once they are complete, in a lower
-    // stratum. The plain program's findalls do ([`super::terms`]); the
-    // magic rewrite's demand can close a loop through one, and the plain
-    // program is ground then.
-    if !norm.counted.is_empty() {
-        let mut stratum_of = vec![0; g.preds.len()];
-        for (k, s) in strata.iter().enumerate() {
-            for &p in s {
-                stratum_of[p as usize] = k;
-            }
-        }
-        for r in &g.rules {
-            for l in &r.body {
-                if let ILit::Collect(c) = l
-                    && stratum_of[c.aux as usize] == stratum_of[r.head.0 as usize]
-                {
-                    return Err(GroundError::Unsupported(format!(
-                        "{}: its goal is read inside the recursion of its own clause",
-                        c.text
-                    )));
-                }
-            }
-        }
-    }
+    let strata = register_program(&mut g, norm)?;
     // The levels of each recursive stratum, where every one has them.
     let mut levelled: Vec<Option<Levels>> = Vec::new();
     if by_levels {
@@ -2170,23 +2112,104 @@ fn ground_with(
                 .push(GroundRule::new(a as AtomId, Vec::new()));
         }
     }
+    let (queries, evidence) = resolve_queries_and_evidence(&mut g, norm)?;
+    let constants = fixed.iter().filter(|v| v.is_some()).count();
+    let swept = pruner.map(|p| p.stats()).unwrap_or_default();
+    assemble_program(g, norm, queries, evidence, keys, constants, swept).map(Some)
+}
 
+fn register_program<'a>(
+    g: &mut Grounder<'a>,
+    norm: &'a NormProgram,
+) -> Result<Vec<Vec<PredId>>, GroundError> {
+    // Every switch is a predicate, most of the predicates of a network.
+    for (&(ref name, arity), w) in &norm.switches {
+        g.pred(name, arity, Some(w.clone()));
+    }
+    for (name, arity) in &norm.control {
+        let p = g.pred(name, *arity, None);
+        g.preds[p as usize].control = true;
+    }
+    // The predicates numbered as the rules and facts name them, each
+    // predicate's facts where the first of them was.
+    let mut facts = norm.facts.iter().peekable();
+    for (i, clause) in norm.rules.iter().enumerate() {
+        while let Some((_, f)) = facts.next_if(|(at, _)| *at <= i) {
+            let p = g.pred(&f.name, f.arity, None);
+            g.preds[p as usize].facts = Some(f);
+        }
+        let head = &clause.heads[0].atom;
+        let counted = !norm.counted.is_empty()
+            && norm.counted.contains(&(head.name.clone(), head.args.len()));
+        let r = compile_rule(g, clause, counted)?;
+        let h = r.head.0;
+        g.preds[h as usize].rules.push(g.rules.len());
+        g.rules.push(r);
+    }
+    for (_, f) in facts {
+        let p = g.pred(&f.name, f.arity, None);
+        g.preds[p as usize].facts = Some(f);
+    }
+    // Predicates only mentioned in queries/evidence.
+    for a in norm
+        .queries
+        .iter()
+        .map(|(a, _)| a)
+        .chain(norm.evidence.iter().map(|(a, _)| a))
+    {
+        g.pred(&a.name, a.args.len(), None);
+    }
+
+    let strata = stratify(g);
+    // A findall reads its goal's tuples once they are complete, in a lower
+    // stratum. The plain program's findalls do ([`super::terms`]); the
+    // magic rewrite's demand can close a loop through one, and the plain
+    // program is ground then.
+    if !norm.counted.is_empty() {
+        let mut stratum_of = vec![0; g.preds.len()];
+        for (k, s) in strata.iter().enumerate() {
+            for &p in s {
+                stratum_of[p as usize] = k;
+            }
+        }
+        for r in &g.rules {
+            for l in &r.body {
+                if let ILit::Collect(c) = l
+                    && stratum_of[c.aux as usize] == stratum_of[r.head.0 as usize]
+                {
+                    return Err(GroundError::Unsupported(format!(
+                        "{}: its goal is read inside the recursion of its own clause",
+                        c.text
+                    )));
+                }
+            }
+        }
+    }
+    Ok(strata)
+}
+
+type GroundAtomEntry = (Atom, Option<AtomId>, bool);
+
+fn resolve_queries_and_evidence(
+    g: &mut Grounder,
+    norm: &NormProgram,
+) -> Result<(Vec<GroundAtomEntry>, Vec<GroundAtomEntry>), GroundError> {
     // The queries and the evidence, as the grounding numbered their atoms.
     let mut queries = Vec::new();
     for (q, positive) in &norm.queries {
-        for (atom, id) in resolve_atom_pattern(&mut g, q) {
+        for (atom, id) in resolve_atom_pattern(g, q) {
             queries.push((atom, id, *positive));
         }
     }
     let mut evidence = Vec::new();
     for (e, v) in &norm.evidence {
-        for (atom, id) in resolve_atom_pattern(&mut g, e) {
+        for (atom, id) in resolve_atom_pattern(g, e) {
             evidence.push((atom, id, *v));
         }
     }
     for d in &norm.drivers {
         // Every true instance of the driver binds the pattern's variables.
-        for (instance, _) in resolve_atom_pattern(&mut g, &d.atom) {
+        for (instance, _) in resolve_atom_pattern(g, &d.atom) {
             let binding: FxHashMap<&Term, &Term> = d.atom.args.iter().zip(&instance.args).collect();
             let q = Atom::new(
                 d.pattern.name.clone(),
@@ -2201,7 +2224,7 @@ fn ground_with(
             } else {
                 &mut queries
             };
-            for (atom, id) in resolve_atom_pattern(&mut g, &q) {
+            for (atom, id) in resolve_atom_pattern(g, &q) {
                 asked.push((atom, id, d.positive));
             }
         }
@@ -2215,7 +2238,18 @@ fn ground_with(
         let name = |a: AtomId| &**g.preds[g.atoms[a as usize].0 as usize].name;
         g.ground_rules.retain(|r| !drivers.contains(name(r.head)));
     }
+    Ok((queries, evidence))
+}
 
+fn assemble_program(
+    mut g: Grounder,
+    norm: &NormProgram,
+    queries: Vec<GroundAtomEntry>,
+    evidence: Vec<GroundAtomEntry>,
+    keys: usize,
+    constants: usize,
+    swept: super::aig::SweepStats,
+) -> Result<GroundProgram, GroundError> {
     // Assemble the output: the atoms in the order made, those of facts
     // under a demand as it read them ([`facts_as_read`]). Of a fact's
     // atoms, only those a rule, a query or the evidence names: no other
@@ -2277,10 +2311,8 @@ fn ground_with(
     gp.queries = queries;
     gp.evidence = evidence;
     gp.stats.levels = keys;
-    gp.stats.constants = fixed.iter().filter(|v| v.is_some()).count();
-    if let Some(pruner) = &pruner {
-        gp.stats.swept.add(pruner.stats());
-    }
+    gp.stats.constants = constants;
+    gp.stats.swept.add(swept);
     if m < n || order.iter().enumerate().any(|(i, &a)| a as usize != i) {
         let mut new = vec![AtomId::MAX; n];
         for (i, &a) in order.iter().enumerate() {
@@ -2303,7 +2335,7 @@ fn ground_with(
             *id = id.map(new);
         }
     }
-    Ok(Some(gp))
+    Ok(gp)
 }
 
 /// The atoms of a program under a demand ([`super::magic`]) in the order
@@ -2804,37 +2836,7 @@ fn evaluate_by_levels(
             });
         }
         g.by_level.as_mut().expect("grounding by levels").done = Some(key);
-        let atoms: Vec<AtomId> = group
-            .iter()
-            .zip(&start)
-            .flat_map(|(&p, &s)| g.rels[p as usize].ids[s..].to_vec())
-            .collect();
-        if cyclic {
-            for a in atoms {
-                pruner.input(a);
-            }
-        } else {
-            let mut bodies: FxHashMap<AtomId, Vec<&[GLit]>> = FxHashMap::default();
-            for r in &g.ground_rules[r0..] {
-                bodies.entry(r.head).or_default().push(&r.body);
-            }
-            // An atom of the stratum read but never derived is false: its
-            // key is done.
-            let absent = |x: AtomId| g.key_of(x).is_some() && !g.derived(x);
-            let values: Vec<(AtomId, bool)> = atoms
-                .iter()
-                .filter_map(|&a| {
-                    let b = bodies.get(&a).map_or(&[][..], |b| &b[..]);
-                    pruner.gate(a, b, &absent).map(|v| (a, v))
-                })
-                .collect();
-            for (a, v) in values {
-                if g.fixed.len() <= a as usize {
-                    g.fixed.resize(a as usize + 1, None);
-                }
-                g.fixed[a as usize] = Some(v);
-            }
-        }
+        prune_key(g, pruner, group, &start, r0, cyclic);
         for (s, &p) in group.iter().enumerate() {
             let e = g.rels[p as usize].len();
             if e > start[s] {
@@ -2846,6 +2848,47 @@ fn evaluate_by_levels(
     }
     g.by_level = None;
     keys
+}
+
+fn prune_key(
+    g: &mut Grounder,
+    pruner: &mut super::aig::Pruner,
+    group: &[PredId],
+    start: &[usize],
+    r0: usize,
+    cyclic: bool,
+) {
+    let atoms: Vec<AtomId> = group
+        .iter()
+        .zip(start)
+        .flat_map(|(&p, &s)| g.rels[p as usize].ids[s..].to_vec())
+        .collect();
+    if cyclic {
+        for a in atoms {
+            pruner.input(a);
+        }
+        return;
+    }
+    let mut bodies: FxHashMap<AtomId, Vec<&[GLit]>> = FxHashMap::default();
+    for r in &g.ground_rules[r0..] {
+        bodies.entry(r.head).or_default().push(&r.body);
+    }
+    // An atom of the stratum read but never derived is false: its
+    // key is done.
+    let absent = |x: AtomId| g.key_of(x).is_some() && !g.derived(x);
+    let values: Vec<(AtomId, bool)> = atoms
+        .iter()
+        .filter_map(|&a| {
+            let b = bodies.get(&a).map_or(&[][..], |b| &b[..]);
+            pruner.gate(a, b, &absent).map(|v| (a, v))
+        })
+        .collect();
+    for (a, v) in values {
+        if g.fixed.len() <= a as usize {
+            g.fixed.resize(a as usize + 1, None);
+        }
+        g.fixed[a as usize] = Some(v);
+    }
 }
 
 /// The rule instance `p(args) :- body` deferred to `key`, now grounded: a
@@ -3092,6 +3135,24 @@ fn part(g: &mut Grounder, rule: &IRule, i: usize, p: Part) {
     if rule.counted.is_some() {
         g.parts[i] = p;
     }
+}
+
+/// Records body literal `i`'s ground literal (if any) in both [`part`] and
+/// `body_atoms`.
+fn push_body_lit(
+    g: &mut Grounder,
+    rule: &IRule,
+    i: usize,
+    lit: Option<GLit>,
+    body_atoms: &mut Vec<GLit>,
+) {
+    let p = match lit {
+        None => Part::None,
+        Some(GLit::Pos(a)) => Part::Atom(a),
+        Some(GLit::Neg(a)) => Part::Neg(a),
+    };
+    part(g, rule, i, p);
+    body_atoms.extend(lit);
 }
 
 /// Records the derivation of `head :- body` by a counted rule: another
@@ -3419,12 +3480,8 @@ fn take(
                     unbind(subst, trail, mark);
                     continue;
                 }
-                if control || fixed == Some(true) {
-                    part(g, rule, i, Part::None);
-                } else {
-                    part(g, rule, i, Part::Atom(id));
-                    body_atoms.push(GLit::Pos(id));
-                }
+                let lit = (!control && fixed != Some(true)).then_some(GLit::Pos(id));
+                push_body_lit(g, rule, i, lit, body_atoms);
                 return true;
             }
             false
@@ -3471,17 +3528,8 @@ fn take(
                     unbind(subst, trail, mark);
                     continue;
                 }
-                match cond {
-                    None => part(g, rule, i, Part::None),
-                    Some((true, a)) => {
-                        part(g, rule, i, Part::Atom(a));
-                        body_atoms.push(GLit::Pos(a));
-                    }
-                    Some((false, a)) => {
-                        part(g, rule, i, Part::Neg(a));
-                        body_atoms.push(GLit::Neg(a));
-                    }
-                }
+                let lit = cond.map(|(pos, a)| GLit::new(a, pos));
+                push_body_lit(g, rule, i, lit, body_atoms);
                 return true;
             }
             false
@@ -3509,20 +3557,16 @@ fn take_once(
             if fixed == Some(false) {
                 return false;
             }
-            if g.preds[p as usize].control || fixed == Some(true) {
-                part(g, rule, i, Part::None);
-            } else {
-                part(g, rule, i, Part::Atom(id));
-                body_atoms.push(GLit::Pos(id));
-            }
+            let lit =
+                (!g.preds[p as usize].control && fixed != Some(true)).then_some(GLit::Pos(id));
+            push_body_lit(g, rule, i, lit, body_atoms);
             true
         }
         ILit::Neg(p, args) => {
             if g.current_stratum.contains(p) && !g.complete(*p, args, subst) {
                 // Same recursive component: possibility unknown yet.
                 let id = with_resolved(args, subst, |vals| g.placeholder_atom(*p, vals));
-                part(g, rule, i, Part::Neg(id));
-                body_atoms.push(GLit::Neg(id));
+                push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
                 return true;
             }
             match with_resolved(args, subst, |vals| g.lookup_atom(*p, vals)) {
@@ -3533,32 +3577,29 @@ fn take_once(
                 // `\+ lc(G, B, rule(G, [B|_]))`, which holds nowhere.
                 Some(id) if g.fixed(id) == Some(true) || g.certain(id) => false,
                 Some(id) if g.fixed(id) == Some(false) => {
-                    part(g, rule, i, Part::None);
+                    push_body_lit(g, rule, i, None, body_atoms);
                     true
                 }
                 // Possible atom: keep the negative literal.
                 Some(id) => {
-                    part(g, rule, i, Part::Neg(id));
-                    body_atoms.push(GLit::Neg(id));
+                    push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
                     true
                 }
                 // Impossible atom: the literal is true.
                 None => {
-                    part(g, rule, i, Part::None);
+                    push_body_lit(g, rule, i, None, body_atoms);
                     true
                 }
             }
         }
         ILit::Switch(p, args) => {
             let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
-            part(g, rule, i, Part::Atom(id));
-            body_atoms.push(GLit::Pos(id));
+            push_body_lit(g, rule, i, Some(GLit::Pos(id)), body_atoms);
             true
         }
         ILit::NegSwitch(p, args) => {
             let (id, _) = with_resolved(args, subst, |vals| g.atom_id(*p, vals));
-            part(g, rule, i, Part::Neg(id));
-            body_atoms.push(GLit::Neg(id));
+            push_body_lit(g, rule, i, Some(GLit::Neg(id)), body_atoms);
             true
         }
         ILit::Cmp(op, a, b) => {
@@ -3587,16 +3628,7 @@ fn take_once(
             let Some(x) = eval_num(g, e, subst).map(|n| n.rounded().val()) else {
                 return false;
             };
-            match v {
-                Arg::Var(var) => match subst[*var as usize] {
-                    None => {
-                        bind(subst, trail, *var, x);
-                        true
-                    }
-                    Some(b) => b == x,
-                },
-                Arg::Val(c) => *c == x,
-            }
+            unify_args(std::slice::from_ref(v), &[x], subst, trail)
         }
         // Taken apart where the term is bound, built from its bound
         // arguments otherwise.

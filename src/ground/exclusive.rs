@@ -174,6 +174,72 @@ fn seed_sets(
     // the sets before it). So does a body that does not clash with a
     // rule of the set ([`Bodies::rule_out`]).
     let known = body_ids.len();
+    let required = scan_atom_bodies(
+        (gp, by_head),
+        a,
+        (set_of, readers),
+        marks,
+        body_ids,
+        scratch,
+    );
+    scratch.bodies.clear();
+    scratch
+        .bodies
+        .extend(scratch.rule_bodies.iter().map(|&(_, b)| b));
+    scratch.bodies.sort_unstable();
+    scratch.bodies.dedup();
+    // The bodies of `a` that an earlier atom had, one rule each: those
+    // a later atom may have too.
+    scratch.shared.clear();
+    scratch.shared.extend(
+        scratch
+            .rule_bodies
+            .iter()
+            .copied()
+            .filter(|&(_, b)| (b as usize) < known),
+    );
+    scratch.shared.sort_unstable_by_key(|&(_, b)| b);
+    scratch.shared.dedup_by_key(|&mut (_, b)| b);
+    let key_id = key_ids.id(&scratch.key).0 as usize;
+    if by_key.len() <= key_id {
+        by_key.add();
+        unlisted.push(false);
+    }
+    // A body that rules out every set of the key leaves `a` a set of
+    // its own: dice_digitRecognition's observations of the digits 1
+    // to 9 each have a rule `y(0)`, which every set of the key holds or
+    // does not clash with.
+    let alone = scratch
+        .bodies
+        .iter()
+        .any(|&b| body_ids.rules_out_all(b, key_id, by_key.len_of(key_id)));
+    // Each set that comes up is asked whether it holds one of the
+    // bodies of `a` that rule out a set of the key, rather than every
+    // set holding one marked first: each leaf's adder of bb_wmi_star
+    // has the bits of the centre for bodies, and its atoms of one key
+    // marked the sets of every leaf before them.
+    scratch.holding.clear();
+    scratch.holding.extend(
+        scratch
+            .bodies
+            .iter()
+            .copied()
+            .filter(|&b| body_ids.rules_out_some(b, key_id)),
+    );
+    (key_id, rows_a, required, alone)
+}
+
+/// Scans `a`'s rules to find the atoms every rule reads positively
+/// (`scratch.common_a`), any single-negated-atom rule (`required`), and the
+/// non-self-clashing body rests (`scratch.rule_bodies`).
+fn scan_atom_bodies(
+    (gp, by_head): (&GroundProgram, &RulesByHead),
+    a: AtomId,
+    (set_of, readers): (&[usize], &[u8]),
+    marks: &mut Marks,
+    body_ids: &mut Bodies,
+    scratch: &mut AtomScratch,
+) -> Option<AtomId> {
     // The atoms each rule of `a` reads positively, and a rule that is
     // one negated atom, if there is one, read off each body as it is
     // sorted to be numbered, not in a pass of their own.
@@ -239,51 +305,7 @@ fn seed_sets(
             }
         }
     }
-    scratch.bodies.clear();
-    scratch
-        .bodies
-        .extend(scratch.rule_bodies.iter().map(|&(_, b)| b));
-    scratch.bodies.sort_unstable();
-    scratch.bodies.dedup();
-    // The bodies of `a` that an earlier atom had, one rule each: those
-    // a later atom may have too.
-    scratch.shared.clear();
-    scratch.shared.extend(
-        scratch
-            .rule_bodies
-            .iter()
-            .copied()
-            .filter(|&(_, b)| (b as usize) < known),
-    );
-    scratch.shared.sort_unstable_by_key(|&(_, b)| b);
-    scratch.shared.dedup_by_key(|&mut (_, b)| b);
-    let key_id = key_ids.id(&scratch.key).0 as usize;
-    if by_key.len() <= key_id {
-        by_key.add();
-        unlisted.push(false);
-    }
-    // A body that rules out every set of the key leaves `a` a set of
-    // its own: dice_digitRecognition's observations of the digits 1
-    // to 9 each have a rule `y(0)`, which every set of the key holds or
-    // does not clash with.
-    let alone = scratch
-        .bodies
-        .iter()
-        .any(|&b| body_ids.rules_out_all(b, key_id, by_key.len_of(key_id)));
-    // Each set that comes up is asked whether it holds one of the
-    // bodies of `a` that rule out a set of the key, rather than every
-    // set holding one marked first: each leaf's adder of bb_wmi_star
-    // has the bits of the centre for bodies, and its atoms of one key
-    // marked the sets of every leaf before them.
-    scratch.holding.clear();
-    scratch.holding.extend(
-        scratch
-            .bodies
-            .iter()
-            .copied()
-            .filter(|&b| body_ids.rules_out_some(b, key_id)),
-    );
-    (key_id, rows_a, required, alone)
+    required
 }
 
 pub(super) fn exclusive_sets(
@@ -1013,62 +1035,7 @@ fn rows_of(
         groups,
         hashes,
     } = scratch;
-    sets.clear();
-    selectors.clear();
-    read.clear();
-    read.extend(
-        rules
-            .iter()
-            .take(1)
-            .flat_map(|&ri| gp.rules[ri].body.iter())
-            .filter(|l| l.is_positive() && set_of[l.atom() as usize] != usize::MAX)
-            .map(|l| (set_of[l.atom() as usize], l.atom())),
-    );
-    read.sort_unstable();
-    read.dedup();
-    if read.windows(2).any(|w| w[0].0 == w[1].0) {
-        return None;
-    }
-    sets.extend(read.iter().map(|&(s, _)| s));
-    selectors.extend(read.iter().map(|&(_, b)| b));
-    let w = sets.len();
-    for (j, &s) in sets.iter().enumerate() {
-        if slot.len() <= s {
-            slot.resize(s + 1, u32::MAX);
-        }
-        slot[s] = j as u32;
-    }
-    // Each later rule's atoms go straight to the slots of the first rule's
-    // sets: an atom of a set the first rule does not read, a second atom of
-    // a set, or a set left without one, is a rule that does not read the
-    // same sets. A slot left by an earlier call holds a stale position,
-    // which the first rule's sets tell apart. No rule's atoms are
-    // collected, sorted and compared with the first rule's sets.
-    for &ri in rules.iter().skip(1) {
-        let at = selectors.len();
-        selectors.resize(at + w, AtomId::MAX);
-        let mut filled = 0;
-        for l in gp.rules[ri].body.iter().filter(|l| l.is_positive()) {
-            let s = set_of[l.atom() as usize];
-            if s == usize::MAX {
-                continue;
-            }
-            let j = match slot.get(s) {
-                Some(&j) if (j as usize) < w && sets[j as usize] == s => j as usize,
-                _ => return None,
-            };
-            let x = &mut selectors[at + j];
-            if *x == AtomId::MAX {
-                *x = l.atom();
-                filled += 1;
-            } else if *x != l.atom() {
-                return None;
-            }
-        }
-        if filled != w {
-            return None;
-        }
-    }
+    let w = collect_selectors(gp, rules, set_of, read, sets, slot, selectors)?;
     // The rules that read the same atoms, grouped by the hash of those
     // atoms, the groups in the order they first come and the rules of each
     // in order, without a sort: where the rules of an atom's values each
@@ -1143,6 +1110,74 @@ fn rows_of(
         }
     };
     Some(Rows { sig, ..x })
+}
+
+fn collect_selectors(
+    gp: &GroundProgram,
+    rules: &[usize],
+    set_of: &[usize],
+    read: &mut Vec<(usize, AtomId)>,
+    sets: &mut Vec<usize>,
+    slot: &mut Vec<u32>,
+    selectors: &mut Vec<AtomId>,
+) -> Option<usize> {
+    sets.clear();
+    selectors.clear();
+    read.clear();
+    read.extend(
+        rules
+            .iter()
+            .take(1)
+            .flat_map(|&ri| gp.rules[ri].body.iter())
+            .filter(|l| l.is_positive() && set_of[l.atom() as usize] != usize::MAX)
+            .map(|l| (set_of[l.atom() as usize], l.atom())),
+    );
+    read.sort_unstable();
+    read.dedup();
+    if read.windows(2).any(|w| w[0].0 == w[1].0) {
+        return None;
+    }
+    sets.extend(read.iter().map(|&(s, _)| s));
+    selectors.extend(read.iter().map(|&(_, b)| b));
+    let w = sets.len();
+    for (j, &s) in sets.iter().enumerate() {
+        if slot.len() <= s {
+            slot.resize(s + 1, u32::MAX);
+        }
+        slot[s] = j as u32;
+    }
+    // Each later rule's atoms go straight to the slots of the first rule's
+    // sets: an atom of a set the first rule does not read, a second atom of
+    // a set, or a set left without one, is a rule that does not read the
+    // same sets. A slot left by an earlier call holds a stale position,
+    // which the first rule's sets tell apart. No rule's atoms are
+    // collected, sorted and compared with the first rule's sets.
+    for &ri in rules.iter().skip(1) {
+        let at = selectors.len();
+        selectors.resize(at + w, AtomId::MAX);
+        let mut filled = 0;
+        for l in gp.rules[ri].body.iter().filter(|l| l.is_positive()) {
+            let s = set_of[l.atom() as usize];
+            if s == usize::MAX {
+                continue;
+            }
+            let j = match slot.get(s) {
+                Some(&j) if (j as usize) < w && sets[j as usize] == s => j as usize,
+                _ => return None,
+            };
+            let x = &mut selectors[at + j];
+            if *x == AtomId::MAX {
+                *x = l.atom();
+                filled += 1;
+            } else if *x != l.atom() {
+                return None;
+            }
+        }
+        if filled != w {
+            return None;
+        }
+    }
+    Some(w)
 }
 
 #[cfg(test)]

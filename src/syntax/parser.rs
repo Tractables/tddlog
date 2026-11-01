@@ -716,37 +716,7 @@ impl<'a> Parser<'a> {
         if let Tok::Name(id @ (kw::QUERY | kw::EVIDENCE)) = self.peek()
             && self.at2(Tok::LParen)
         {
-            // An atom inside: the arguments read as tokens, past the
-            // lexer's reading of an atom's, onto `args`.
-            self.bump();
-            self.bump();
-            let start = self.args.len();
-            self.argument_list()?;
-            if self.at(Tok::Neck) {
-                // `query(p(X)) :- body.` or `evidence(p(X)) :- body.`: a
-                // query rule.
-                self.bump();
-                let body = self.body()?;
-                self.expect(Tok::Dot)?;
-                let evidence = id == kw::EVIDENCE;
-                let (pattern, positive) =
-                    self.asked(if evidence { "evidence" } else { "query" }, start)?;
-                for alt in body.dnf() {
-                    prog.query_rules.push(QueryRule {
-                        pattern: pattern.clone(),
-                        positive,
-                        evidence,
-                        body: alt,
-                    });
-                }
-                return Ok(());
-            }
-            self.expect(Tok::Dot)?;
-            return self.directive(
-                if id == kw::QUERY { "query" } else { "evidence" },
-                start,
-                prog,
-            );
+            return self.query_or_evidence(id, prog);
         }
         let mut heads = self.heads()?;
         let mut body = if self.at(Tok::Neck) {
@@ -784,6 +754,35 @@ impl<'a> Parser<'a> {
             }
         }
         Ok(())
+    }
+
+    /// A `query(...)` or `evidence(...)` fact or rule (`query(p(X)) :- body.`).
+    fn query_or_evidence(&mut self, id: u32, prog: &mut Program) -> Result<(), ParseError> {
+        // An atom inside: the arguments read as tokens, past the
+        // lexer's reading of an atom's, onto `args`.
+        self.bump();
+        self.bump();
+        let start = self.args.len();
+        self.argument_list()?;
+        let evidence = id == kw::EVIDENCE;
+        let name = if evidence { "evidence" } else { "query" };
+        if self.at(Tok::Neck) {
+            self.bump();
+            let body = self.body()?;
+            self.expect(Tok::Dot)?;
+            let (pattern, positive) = self.asked(name, start)?;
+            for alt in body.dnf() {
+                prog.query_rules.push(QueryRule {
+                    pattern: pattern.clone(),
+                    positive,
+                    evidence,
+                    body: alt,
+                });
+            }
+            return Ok(());
+        }
+        self.expect(Tok::Dot)?;
+        self.directive(name, start, prog)
     }
 
     /// The directive `consult(args)` on `lines`, after a clause that ends
@@ -904,10 +903,10 @@ impl<'a> Parser<'a> {
         } else {
             (t, true)
         };
-        t.into_atom().map(|a| (a, pos)).ok_or_else(|| ParseError {
-            line: self.line(),
-            msg: format!("{what} expects an atom"),
-        })
+        match t.into_atom() {
+            Some(a) => Ok((a, pos)),
+            None => self.err(format!("{what} expects an atom")),
+        }
     }
 
     fn heads(&mut self) -> Result<Vec<HeadChoice>, ParseError> {
@@ -940,11 +939,9 @@ impl<'a> Parser<'a> {
             _ => {
                 let t = self.term(999)?;
                 if !self.at(Tok::DoubleColon) {
-                    let line = self.line();
-                    let atom = t.into_atom().ok_or_else(|| ParseError {
-                        line,
-                        msg: "expected an atom".into(),
-                    })?;
+                    let Some(atom) = t.into_atom() else {
+                        return self.err("expected an atom");
+                    };
                     return Ok(HeadChoice {
                         prob: None,
                         atom,
@@ -1165,11 +1162,10 @@ impl<'a> Parser<'a> {
     /// Parse an atom: a head, or the atom of a query or of evidence.
     fn atom(&mut self) -> Result<Atom, ParseError> {
         let t = self.term(999)?;
-        let line = self.line();
-        t.into_atom().ok_or_else(|| ParseError {
-            line,
-            msg: "expected an atom".into(),
-        })
+        match t.into_atom() {
+            Some(a) => Ok(a),
+            None => self.err("expected an atom"),
+        }
     }
 
     /// The infix operator at hand: its name, priority and grouping. A

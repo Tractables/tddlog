@@ -502,27 +502,7 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     if !may_merge(gp, by_head, &gates, &gate, &kept) {
         return false;
     }
-    // The atoms the sweep takes: alone in their predicates (a fact by its
-    // signature) or of a recursive predicate, and in no exclusive set of
-    // several atoms.
-    let swept: Vec<bool> = {
-        let mut facts_of: FxHashMap<(&str, usize), usize> = FxHashMap::default();
-        for (a, kind) in gp.kinds.iter().enumerate() {
-            if matches!(kind, AtomKind::Fact(_)) {
-                *facts_of.entry(gp.atoms[a].signature()).or_default() += 1;
-            }
-        }
-        let recursive = deps::recursive_predicates(gp);
-        (0..n)
-            .map(|a| {
-                !in_set[a]
-                    && match structure.predicate_of[a] {
-                        usize::MAX => facts_of.get(&gp.atoms[a].signature()) == Some(&1),
-                        p => structure.atoms_of[p] == 1 || recursive[a],
-                    }
-            })
-            .collect()
-    };
+    let swept = swept_atoms(gp, structure, &in_set);
     let sweeping = gates.iter().any(|&a| swept[a as usize]);
     let mut g = Graph::new(if sweeping { WORDS } else { 0 });
     let mut sweep = sweeping.then(|| {
@@ -582,49 +562,23 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
             l = proved[node(l)] ^ (l & 1);
         }
         lit[a as usize] = l;
-        // The atom literal the gate is equal to: the node's first atom,
-        // where its graph literal is the gate's or its complement, or the
-        // constant.
-        let as_atom = |t: Lit, owner: &[Option<GLit>]| -> Option<GLit> {
-            owner[node(t)].map(|o| if t & 1 == 0 { o } else { o.negated() })
-        };
-        if !kept[a as usize] {
-            let structural = if node(l) == 0 {
-                (l == FALSE || swept[a as usize]).then_some(Err(l == TRUE))
-            } else {
-                // A copy of an earlier gate is merged whatever it is,
-                // also where an input stands for the node; its
-                // complement, or an input, only where the sweep would
-                // merge them.
-                as_atom(l, &owner)
-                    .filter(|o| {
-                        (o.is_positive() && gate[o.atom() as usize])
-                            || (swept[a as usize] && swept[o.atom() as usize])
-                    })
-                    .or_else(|| as_atom(l, &first_gate).filter(|o| o.is_positive()))
-                    .map(Ok)
-            };
-            let equal = structural.or_else(|| {
-                let sweep = sweep.as_mut().filter(|_| swept[a as usize])?;
-                let t = sweep.find(&mut g, l)?;
-                proved.resize(g.fanins.len(), NO);
-                proved[node(l)] = t ^ (l & 1);
-                lit[a as usize] = t;
-                Some(if node(t) == 0 {
-                    Err(t == TRUE)
-                } else {
-                    Ok(as_atom(t, &owner).expect("a candidate stands for an atom"))
-                })
-            });
+        if !kept[a as usize]
+            && let Some(equal) = merge_gate(
+                a,
+                l,
+                (&gate, &swept),
+                (&owner, &first_gate),
+                &mut g,
+                &mut sweep,
+                (&mut proved, &mut lit),
+            )
+        {
             match equal {
-                Some(Ok(o)) => into[a as usize] = o,
-                Some(Err(v)) => fixed[a as usize] = Some(v),
-                None => {}
+                Ok(o) => into[a as usize] = o,
+                Err(v) => fixed[a as usize] = Some(v),
             }
-            if equal.is_some() {
-                merged += 1;
-                continue;
-            }
+            merged += 1;
+            continue;
         }
         if node(l) != 0 && owner[node(l)].is_none() {
             owner[node(l)] = Some(GLit::new(a, l & 1 == 0));
@@ -647,6 +601,72 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     gp.stats.merged += merged;
     gp.stats.reduced += derived.saturating_sub(gp.num_derived());
     true
+}
+
+/// The atoms the sweep takes: alone in their predicates (a fact by its
+/// signature) or of a recursive predicate, and in no exclusive set of
+/// several atoms.
+fn swept_atoms(gp: &GroundProgram, structure: &Structure, in_set: &[bool]) -> Vec<bool> {
+    let mut facts_of: FxHashMap<(&str, usize), usize> = FxHashMap::default();
+    for (a, kind) in gp.kinds.iter().enumerate() {
+        if matches!(kind, AtomKind::Fact(_)) {
+            *facts_of.entry(gp.atoms[a].signature()).or_default() += 1;
+        }
+    }
+    let recursive = deps::recursive_predicates(gp);
+    (0..gp.atoms.len())
+        .map(|a| {
+            !in_set[a]
+                && match structure.predicate_of[a] {
+                    usize::MAX => facts_of.get(&gp.atoms[a].signature()) == Some(&1),
+                    p => structure.atoms_of[p] == 1 || recursive[a],
+                }
+        })
+        .collect()
+}
+
+fn merge_gate(
+    a: AtomId,
+    l: Lit,
+    (gate, swept): (&[bool], &[bool]),
+    (owner, first_gate): (&[Option<GLit>], &[Option<GLit>]),
+    g: &mut Graph,
+    sweep: &mut Option<Sweep>,
+    (proved, lit): (&mut Vec<Lit>, &mut [Lit]),
+) -> Option<Result<GLit, bool>> {
+    // The atom literal the gate is equal to: the node's first atom,
+    // where its graph literal is the gate's or its complement, or the
+    // constant.
+    let as_atom = |t: Lit, owner: &[Option<GLit>]| -> Option<GLit> {
+        owner[node(t)].map(|o| if t & 1 == 0 { o } else { o.negated() })
+    };
+    let structural = if node(l) == 0 {
+        (l == FALSE || swept[a as usize]).then_some(Err(l == TRUE))
+    } else {
+        // A copy of an earlier gate is merged whatever it is,
+        // also where an input stands for the node; its
+        // complement, or an input, only where the sweep would
+        // merge them.
+        as_atom(l, owner)
+            .filter(|o| {
+                (o.is_positive() && gate[o.atom() as usize])
+                    || (swept[a as usize] && swept[o.atom() as usize])
+            })
+            .or_else(|| as_atom(l, first_gate).filter(|o| o.is_positive()))
+            .map(Ok)
+    };
+    structural.or_else(|| {
+        let sweep = sweep.as_mut().filter(|_| swept[a as usize])?;
+        let t = sweep.find(g, l)?;
+        proved.resize(g.fanins.len(), NO);
+        proved[node(l)] = t ^ (l & 1);
+        lit[a as usize] = t;
+        Some(if node(t) == 0 {
+            Err(t == TRUE)
+        } else {
+            Ok(as_atom(t, owner).expect("a candidate stands for an atom"))
+        })
+    })
 }
 
 /// Whether a gate that is not `kept` has the signature of a constant, or

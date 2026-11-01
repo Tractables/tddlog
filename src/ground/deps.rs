@@ -520,34 +520,13 @@ pub(crate) fn fan_in(gp: &GroundProgram, deepest: bool) -> Vec<u32> {
         .filter_map(|e| e.1)
         .map(|a| a as usize)
         .collect();
-    // The longest chain of rules below each atom, a cycle cut where the
-    // walk meets an atom it is in.
-    let mut depth = vec![NONE; n];
-    let mut walk: Vec<(usize, bool)> = Vec::new();
-    for &r in &roots {
-        walk.push((r, false));
-        while let Some((x, done)) = walk.pop() {
-            if done {
-                depth[x] = reads(x)
-                    .filter(|&y| depth[y] < NONE - 1)
-                    .map(|y| depth[y] + 1)
-                    .max()
-                    .unwrap_or(0);
-                continue;
-            }
-            if depth[x] != NONE {
-                continue;
-            }
-            depth[x] = NONE - 1;
-            walk.push((x, true));
-            walk.extend(reads(x).filter(|&y| depth[y] == NONE).map(|y| (y, false)));
-        }
-    }
+    let depth = cone_depths(n, &roots, reads);
     if deepest {
         roots.sort_by_key(|&r| std::cmp::Reverse(depth[r]));
     } else {
         roots.sort_by_key(|&r| depth[r]);
     }
+    let mut walk: Vec<(usize, bool)> = Vec::new();
     // The order so far, a list linked through `after`, from `first`.
     let mut after = vec![NONE; n];
     let mut first = NONE;
@@ -625,6 +604,38 @@ pub(crate) fn fan_in(gp: &GroundProgram, deepest: bool) -> Vec<u32> {
         *m = next;
     }
     place
+}
+
+/// The longest chain of rules below each atom, a cycle cut where the walk
+/// meets an atom it is in.
+fn cone_depths<'a, I: Iterator<Item = usize>>(
+    n: usize,
+    roots: &[usize],
+    reads: impl Fn(usize) -> I + 'a,
+) -> Vec<u32> {
+    const NONE: u32 = u32::MAX;
+    let mut depth = vec![NONE; n];
+    let mut walk: Vec<(usize, bool)> = Vec::new();
+    for &r in roots {
+        walk.push((r, false));
+        while let Some((x, done)) = walk.pop() {
+            if done {
+                depth[x] = reads(x)
+                    .filter(|&y| depth[y] < NONE - 1)
+                    .map(|y| depth[y] + 1)
+                    .max()
+                    .unwrap_or(0);
+                continue;
+            }
+            if depth[x] != NONE {
+                continue;
+            }
+            depth[x] = NONE - 1;
+            walk.push((x, true));
+            walk.extend(reads(x).filter(|&y| depth[y] == NONE).map(|y| (y, false)));
+        }
+    }
+    depth
 }
 
 #[cfg(test)]

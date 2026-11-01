@@ -413,16 +413,12 @@ fn write_term(f: &mut fmt::Formatter<'_>, t: &Term, max: u16) -> fmt::Result {
     let mut pieces: Vec<Piece> = Vec::new();
     while let Some(piece) = stack.pop() {
         let (t, max) = match piece {
-            Piece::Text(s) => {
+            Piece::Text(s) | Piece::Raw(s) => {
                 f.write_str(s)?;
                 continue;
             }
             Piece::Name(s) => {
                 write_const(f, s)?;
-                continue;
-            }
-            Piece::Raw(s) => {
-                f.write_str(s)?;
                 continue;
             }
             Piece::Term(t, max) => (t, max),
@@ -439,97 +435,103 @@ fn write_term(f: &mut fmt::Formatter<'_>, t: &Term, max: u16) -> fmt::Result {
         if paren {
             pieces.push(Piece::Text("("));
         }
-        match (&*c.name, &c.args[..]) {
-            (CONS, [_, _]) => {
-                pieces.push(Piece::Text("["));
-                let mut cell = c;
-                loop {
-                    pieces.push(Piece::Term(&cell.args[0], 1200));
-                    match &cell.args[1] {
-                        Term::Compound(next) if &*next.name == CONS && next.args.len() == 2 => {
-                            pieces.push(Piece::Text(", "));
-                            cell = next;
-                        }
-                        Term::Const(nil) if &**nil == NIL => break,
-                        tail => {
-                            pieces.push(Piece::Text(" | "));
-                            pieces.push(Piece::Term(tail, 1200));
-                            break;
-                        }
-                    }
-                }
-                pieces.push(Piece::Text("]"));
-            }
-            (",", [_, _]) => {
-                pieces.push(Piece::Text("("));
-                for (i, a) in chain(",", c).into_iter().enumerate() {
-                    if i > 0 {
-                        pieces.push(Piece::Text(", "));
-                    }
-                    let or = matches!(a.as_compound(), Some((n, [_, _])) if &**n == ";");
-                    if or {
-                        pieces.push(Piece::Text("("));
-                    }
-                    pieces.push(Piece::Term(a, 1200));
-                    if or {
-                        pieces.push(Piece::Text(")"));
-                    }
-                }
-                pieces.push(Piece::Text(")"));
-            }
-            (";", [_, _]) => {
-                for (i, a) in chain(";", c).into_iter().enumerate() {
-                    if i > 0 {
-                        pieces.push(Piece::Text("; "));
-                    }
-                    pieces.push(Piece::Term(a, 1200));
-                }
-            }
-            (name, [a, b]) if printed_infix(name).is_some() => {
-                let (p, assoc) = printed_infix(name).expect("an operator");
-                let left = if assoc == Assoc::Yfx { p } else { p - 1 };
-                let right = if assoc == Assoc::Xfy { p } else { p - 1 };
-                pieces.push(Piece::Term(a, left));
-                let alphabetic = name.starts_with(|ch: char| ch.is_ascii_lowercase());
-                if alphabetic {
-                    pieces.push(Piece::Text(" "));
-                }
-                pieces.push(Piece::Raw(&c.name));
-                if alphabetic {
-                    pieces.push(Piece::Text(" "));
-                }
-                pieces.push(Piece::Term(b, right));
-            }
-            (name, [a]) if printed_prefix(name).is_some() => {
-                pieces.push(Piece::Raw(&c.name));
-                // `-(1)` is not the integer -1, and `- (a, b)` not a list
-                // of arguments.
-                if matches!(a, Term::Int(_) | Term::Float(_)) || priority(a) >= 1000 {
-                    pieces.push(Piece::Text("("));
-                    pieces.push(Piece::Term(a, 1200));
-                    pieces.push(Piece::Text(")"));
-                } else {
-                    pieces.push(Piece::Term(a, printed_prefix(name).expect("an operator")));
-                }
-            }
-            (_, args) => {
-                pieces.push(Piece::Name(&c.name));
-                pieces.push(Piece::Text("("));
-                for (i, a) in args.iter().enumerate() {
-                    if i > 0 {
-                        pieces.push(Piece::Text(","));
-                    }
-                    pieces.push(Piece::Term(a, 1200));
-                }
-                pieces.push(Piece::Text(")"));
-            }
-        }
+        compound_pieces(c, &mut pieces);
         if paren {
             pieces.push(Piece::Text(")"));
         }
         stack.extend(pieces.drain(..).rev());
     }
     Ok(())
+}
+
+/// The pieces that format the compound term `c` (inside any outer
+/// priority parentheses).
+fn compound_pieces<'a>(c: &'a Compound, pieces: &mut Vec<Piece<'a>>) {
+    match (&*c.name, &c.args[..]) {
+        (CONS, [_, _]) => {
+            pieces.push(Piece::Text("["));
+            let mut cell = c;
+            loop {
+                pieces.push(Piece::Term(&cell.args[0], 1200));
+                match &cell.args[1] {
+                    Term::Compound(next) if &*next.name == CONS && next.args.len() == 2 => {
+                        pieces.push(Piece::Text(", "));
+                        cell = next;
+                    }
+                    Term::Const(nil) if &**nil == NIL => break,
+                    tail => {
+                        pieces.push(Piece::Text(" | "));
+                        pieces.push(Piece::Term(tail, 1200));
+                        break;
+                    }
+                }
+            }
+            pieces.push(Piece::Text("]"));
+        }
+        (",", [_, _]) => {
+            pieces.push(Piece::Text("("));
+            for (i, a) in chain(",", c).into_iter().enumerate() {
+                if i > 0 {
+                    pieces.push(Piece::Text(", "));
+                }
+                let or = matches!(a.as_compound(), Some((n, [_, _])) if &**n == ";");
+                if or {
+                    pieces.push(Piece::Text("("));
+                }
+                pieces.push(Piece::Term(a, 1200));
+                if or {
+                    pieces.push(Piece::Text(")"));
+                }
+            }
+            pieces.push(Piece::Text(")"));
+        }
+        (";", [_, _]) => {
+            for (i, a) in chain(";", c).into_iter().enumerate() {
+                if i > 0 {
+                    pieces.push(Piece::Text("; "));
+                }
+                pieces.push(Piece::Term(a, 1200));
+            }
+        }
+        (name, [a, b]) if printed_infix(name).is_some() => {
+            let (p, assoc) = printed_infix(name).expect("an operator");
+            let left = if assoc == Assoc::Yfx { p } else { p - 1 };
+            let right = if assoc == Assoc::Xfy { p } else { p - 1 };
+            pieces.push(Piece::Term(a, left));
+            let alphabetic = name.starts_with(|ch: char| ch.is_ascii_lowercase());
+            if alphabetic {
+                pieces.push(Piece::Text(" "));
+            }
+            pieces.push(Piece::Raw(&c.name));
+            if alphabetic {
+                pieces.push(Piece::Text(" "));
+            }
+            pieces.push(Piece::Term(b, right));
+        }
+        (name, [a]) if printed_prefix(name).is_some() => {
+            pieces.push(Piece::Raw(&c.name));
+            // `-(1)` is not the integer -1, and `- (a, b)` not a list
+            // of arguments.
+            if matches!(a, Term::Int(_) | Term::Float(_)) || priority(a) >= 1000 {
+                pieces.push(Piece::Text("("));
+                pieces.push(Piece::Term(a, 1200));
+                pieces.push(Piece::Text(")"));
+            } else {
+                pieces.push(Piece::Term(a, printed_prefix(name).expect("an operator")));
+            }
+        }
+        (_, args) => {
+            pieces.push(Piece::Name(&c.name));
+            pieces.push(Piece::Text("("));
+            for (i, a) in args.iter().enumerate() {
+                if i > 0 {
+                    pieces.push(Piece::Text(","));
+                }
+                pieces.push(Piece::Term(a, 1200));
+            }
+            pieces.push(Piece::Text(")"));
+        }
+    }
 }
 
 /// A term other than a compound.

@@ -189,6 +189,64 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
 /// The views a chained body reads are left out with their rules.
 fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundProgram> {
     let n = gp.num_atoms();
+    let (taken, flat) = wide_bodies(gp, deps);
+    if flat.iter().all(Option::is_none) {
+        return None;
+    }
+    let mut at = vec![0usize; n];
+    for (p, &a) in order.iter().enumerate() {
+        at[a as usize] = p;
+    }
+    // Each link's rule goes where its literal is placed ([`positions`]):
+    // after a derived literal's last rule, before a fact's first reader,
+    // never after the body it is chained from. Keys of `3 * rule`, before,
+    // `3 * rule + 1`, the rule itself, and `3 * rule + 2`, after, sorted
+    // stably, keep the rules' own order and each chain's.
+    let (first_read, last_rule) = rule_places(gp);
+    let mut out = gp.without_rules();
+    let mut rules: Vec<(usize, GroundRule)> = Vec::with_capacity(gp.rules.len());
+    let mut links = 0;
+    for (ri, (r, body)) in gp.rules.iter().zip(flat).enumerate() {
+        if taken[r.head as usize] {
+            continue;
+        }
+        let key = 3 * ri + 1;
+        let Some(mut body) = body else {
+            rules.push((key, r.clone()));
+            continue;
+        };
+        // Literals read twice through views count once.
+        if body.len() <= WIDEST {
+            rules.push((key, GroundRule::new(r.head, body)));
+            continue;
+        }
+        body.sort_by_key(|l| at[l.atom() as usize]);
+        let (&last, inner) = body.split_last().expect("a wide body");
+        let mut link = inner[0];
+        let mut placed = 0;
+        for &l in &inner[1..] {
+            let a = out.atoms.len() as AtomId;
+            out.atoms.push(Atom::new(NAME, vec![Term::Int(links)]));
+            out.kinds.push(AtomKind::Derived);
+            links += 1;
+            let i = l.atom() as usize;
+            let at_l = match last_rule[i] {
+                usize::MAX => 3 * first_read[i],
+                lr => 3 * lr + 2,
+            };
+            placed = at_l.clamp(placed, key);
+            rules.push((placed, GroundRule::new(a, vec![link, l])));
+            link = GLit::Pos(a);
+        }
+        rules.push((key, GroundRule::new(r.head, vec![link, last])));
+    }
+    rules.sort_by_key(|&(key, _)| key);
+    out.rules = rules.into_iter().map(|(_, r)| r).collect();
+    Some(out)
+}
+
+fn wide_bodies(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<Option<Vec<GLit>>>) {
+    let n = gp.num_atoms();
     let mut reads = vec![0u32; n];
     for r in &gp.rules {
         for l in &r.body {
@@ -280,59 +338,7 @@ fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundPr
             }
         }
     }
-    if flat.iter().all(Option::is_none) {
-        return None;
-    }
-    let mut at = vec![0usize; n];
-    for (p, &a) in order.iter().enumerate() {
-        at[a as usize] = p;
-    }
-    // Each link's rule goes where its literal is placed ([`positions`]):
-    // after a derived literal's last rule, before a fact's first reader,
-    // never after the body it is chained from. Keys of `3 * rule`, before,
-    // `3 * rule + 1`, the rule itself, and `3 * rule + 2`, after, sorted
-    // stably, keep the rules' own order and each chain's.
-    let (first_read, last_rule) = rule_places(gp);
-    let mut out = gp.without_rules();
-    let mut rules: Vec<(usize, GroundRule)> = Vec::with_capacity(gp.rules.len());
-    let mut links = 0;
-    for (ri, (r, body)) in gp.rules.iter().zip(flat).enumerate() {
-        if taken[r.head as usize] {
-            continue;
-        }
-        let key = 3 * ri + 1;
-        let Some(mut body) = body else {
-            rules.push((key, r.clone()));
-            continue;
-        };
-        // Literals read twice through views count once.
-        if body.len() <= WIDEST {
-            rules.push((key, GroundRule::new(r.head, body)));
-            continue;
-        }
-        body.sort_by_key(|l| at[l.atom() as usize]);
-        let (&last, inner) = body.split_last().expect("a wide body");
-        let mut link = inner[0];
-        let mut placed = 0;
-        for &l in &inner[1..] {
-            let a = out.atoms.len() as AtomId;
-            out.atoms.push(Atom::new(NAME, vec![Term::Int(links)]));
-            out.kinds.push(AtomKind::Derived);
-            links += 1;
-            let i = l.atom() as usize;
-            let at_l = match last_rule[i] {
-                usize::MAX => 3 * first_read[i],
-                lr => 3 * lr + 2,
-            };
-            placed = at_l.clamp(placed, key);
-            rules.push((placed, GroundRule::new(a, vec![link, l])));
-            link = GLit::Pos(a);
-        }
-        rules.push((key, GroundRule::new(r.head, vec![link, last])));
-    }
-    rules.sort_by_key(|&(key, _)| key);
-    out.rules = rules.into_iter().map(|(_, r)| r).collect();
-    Some(out)
+    (taken, flat)
 }
 
 /// Every atom of `gp`, fact or derived, in the trial's order. The facts

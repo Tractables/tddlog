@@ -19,6 +19,11 @@ fn check(file: &str, expected: &[(&str, f64)]) {
     check_text(file, &input.program, expected);
 }
 
+fn ground_file(path: &str) -> tddlog::ground::GroundProgram {
+    let source = std::fs::read_to_string(path).unwrap();
+    common::ground(&source, Rows::Classes, false)
+}
+
 /// [`check`] on the program `source`; `file` names it.
 fn check_text(file: &str, source: &str, expected: &[(&str, f64)]) {
     for strategy in [
@@ -394,8 +399,7 @@ mod regress {
             &[("a", 0.2 / 0.68), ("c", 1.0), ("d", 0.28 / 0.46)],
         );
         let conditioned = |file: &str| {
-            let source = std::fs::read_to_string(format!("tests/regress/{file}")).unwrap();
-            common::ground(&source, Rows::Classes, false)
+            ground_file(&format!("tests/regress/{file}"))
                 .stats
                 .conditioned
         };
@@ -462,8 +466,7 @@ mod regress {
             ("gate_read_by_clause.pl", 0, 3),
             ("gate_backbone.pl", 1, 3),
         ] {
-            let source = std::fs::read_to_string(format!("tests/regress/{file}")).unwrap();
-            let ground = common::ground(&source, Rows::Classes, false);
+            let ground = ground_file(&format!("tests/regress/{file}"));
             let c = ground.stats.conditioned;
             assert_eq!(
                 (c.gates, ground.num_facts()),
@@ -472,8 +475,7 @@ mod regress {
             );
         }
         // The SAT search proves g a backbone and leaves it to the gate.
-        let source = std::fs::read_to_string("tests/regress/gate_backbone.pl").unwrap();
-        let searched = common::ground(&source, Rows::Classes, false)
+        let searched = ground_file("tests/regress/gate_backbone.pl")
             .stats
             .conditioned
             .backbones
@@ -581,8 +583,7 @@ fn uwcse_four_students() {
 /// Whether grounding `file` evaluated some right-linear recursion from its
 /// bound end.
 fn grounded_from_bound_end(file: &str) -> bool {
-    let source = std::fs::read_to_string(format!("examples/{file}")).unwrap();
-    !common::ground(&source, Rows::Classes, false)
+    !ground_file(&format!("examples/{file}"))
         .stats
         .from_bound_end
         .is_empty()
@@ -637,8 +638,7 @@ fn equal_atoms() {
 /// ProbLog's answers (ProbLog 2.3.0, one query at a time).
 #[test]
 fn equal_gates() {
-    let source = std::fs::read_to_string("examples/equal_gates.pl").unwrap();
-    let ground = common::ground(&source, Rows::Classes, false);
+    let ground = ground_file("examples/equal_gates.pl");
     let names: Vec<String> = ground.atoms.iter().map(|a| a.to_string()).collect();
     for gone in ["d0", "t0", "k1", "t2"] {
         assert!(
@@ -676,8 +676,7 @@ fn equal_gates() {
 /// `reduce`). ProbLog's answers (ProbLog 2.3.0, one query at a time).
 #[test]
 fn equal_functions() {
-    let source = std::fs::read_to_string("examples/equal_functions.pl").unwrap();
-    let ground = common::ground(&source, Rows::Classes, false);
+    let ground = ground_file("examples/equal_functions.pl");
     let names: Vec<String> = ground.atoms.iter().map(|a| a.to_string()).collect();
     for gone in ["d1", "t1", "t2", "n0", "differ"] {
         assert!(
@@ -2138,8 +2137,7 @@ fn row_classes() {
         ("d", 0.5),
     ];
     check("row_classes.pl", &expected);
-    let source = std::fs::read_to_string("examples/row_classes.pl").unwrap();
-    let ground = common::ground(&source, Rows::Classes, false);
+    let ground = ground_file("examples/row_classes.pl");
     let names: Vec<String> = ground.atoms.iter().map(|a| a.to_string()).collect();
     // c's six rows fall into two classes; e's classes are its values, w's
     // rows can hold together and d's read one parent, so none of them is
@@ -2196,8 +2194,7 @@ fn views() {
             ("wide", 0.01562265),
         ],
     );
-    let source = std::fs::read_to_string("examples/views.pl").unwrap();
-    let ground = common::ground(&source, Rows::Classes, false);
+    let ground = ground_file("examples/views.pl");
     let names: Vec<String> = ground.atoms.iter().map(|a| a.to_string()).collect();
     for gone in [
         "ordered(",
@@ -2255,8 +2252,7 @@ fn cover() {
             ("z2", 0.7),
         ],
     );
-    let source = std::fs::read_to_string("examples/cover.pl").unwrap();
-    let ground = common::ground(&source, Rows::Classes, false);
+    let ground = ground_file("examples/cover.pl");
     let names: Vec<String> = ground.atoms.iter().map(|a| a.to_string()).collect();
     // u's class atom is certain, and then t's: both tables read their
     // switches alone. w's class atom stays, and y and z2 are not certain.

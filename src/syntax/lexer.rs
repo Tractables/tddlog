@@ -808,47 +808,7 @@ impl<'a> Lexer<'a> {
                 }
                 None
             }
-            b'\'' | b'"' => {
-                let quote = c;
-                i += 1;
-                let mut s = std::mem::take(&mut self.quoted);
-                s.clear();
-                loop {
-                    if i >= n {
-                        return Some(self.fail(line, "unterminated quoted atom".into()));
-                    }
-                    let d = b[i];
-                    if d == quote {
-                        // doubled quote is an escaped quote
-                        if at(i + 1) == Some(quote) {
-                            s.push(quote as char);
-                            i += 2;
-                            continue;
-                        }
-                        i += 1;
-                        break;
-                    }
-                    if d == b'\\' && i + 1 < n {
-                        let (e, len) = char_at(src, i + 1);
-                        s.push(match e {
-                            'n' => '\n',
-                            't' => '\t',
-                            other => other,
-                        });
-                        i += 1 + len;
-                        continue;
-                    }
-                    if d == b'\n' {
-                        line += 1;
-                    }
-                    let (ch, len) = char_at(src, i);
-                    s.push(ch);
-                    i += len;
-                }
-                let id = self.place(s.as_bytes());
-                self.quoted = s;
-                Some(Tok::Name(id))
-            }
+            b'\'' | b'"' => return Some(self.quoted(c, i + 1)),
             0x80.. => {
                 let (ch, len) = char_at(src, i);
                 if ch.is_whitespace() {
@@ -881,58 +841,114 @@ impl<'a> Lexer<'a> {
                 None
             }
             // punctuation and operators
-            _ => {
-                let (tok, len) = match (c, at(i + 1), at(i + 2)) {
-                    (b':', Some(b'-'), _) | (b'<', Some(b'-'), _) => (Tok::Neck, 2),
-                    (b':', Some(b':'), _) => (Tok::DoubleColon, 2),
-                    (b':', _, _) => (Tok::Op(Op::Colon), 1),
-                    (b'\\', Some(b'='), Some(b'=')) => (Tok::Op(Op::NotIdentical), 3),
-                    (b'\\', Some(b'='), _) => (Tok::Op(Op::Ne), 2),
-                    (b'\\', Some(b'+'), _) => (Tok::Naf, 2),
-                    (b'=', Some(b'='), _) => (Tok::Op(Op::Identical), 2),
-                    (b'=', Some(b'<'), _) => (Tok::Op(Op::Le), 2),
-                    (b'>', Some(b'='), _) => (Tok::Op(Op::Ge), 2),
-                    (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::ArithEq), 3),
-                    (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::ArithNe), 3),
-                    (b'=', Some(b'.'), Some(b'.')) => (Tok::Op(Op::Univ), 3),
-                    (b'=', Some(b'>'), _) => (Tok::Op(Op::Collect), 2),
-                    (b'@', Some(b'='), Some(b'<')) => (Tok::Op(Op::TermLe), 3),
-                    (b'@', Some(b'>'), Some(b'=')) => (Tok::Op(Op::TermGe), 3),
-                    (b'@', Some(b'<'), _) => (Tok::Op(Op::TermLt), 2),
-                    (b'@', Some(b'>'), _) => (Tok::Op(Op::TermGt), 2),
-                    (b'<', Some(b'<'), _) => (Tok::Op(Op::Shl), 2),
-                    (b'>', Some(b'>'), _) => (Tok::Op(Op::Shr), 2),
-                    (b'/', Some(b'/'), _) => (Tok::Op(Op::IntDiv), 2),
-                    (b'/', Some(b'\\'), _) => (Tok::Op(Op::BitAnd), 2),
-                    (b'\\', Some(b'/'), _) => (Tok::Op(Op::BitOr), 2),
-                    (b'*', Some(b'*'), _) => (Tok::Op(Op::Pow), 2),
-                    (b'=', _, _) => (Tok::Op(Op::Eq), 1),
-                    (b'<', _, _) => (Tok::Op(Op::Lt), 1),
-                    (b'>', _, _) => (Tok::Op(Op::Gt), 1),
-                    (b'+', _, _) => (Tok::Op(Op::Plus), 1),
-                    (b'-', Some(b'>'), _) => (Tok::Op(Op::Arrow), 2),
-                    (b'-', _, _) => (Tok::Op(Op::Minus), 1),
-                    (b'*', _, _) => (Tok::Op(Op::Star), 1),
-                    (b'/', _, _) => (Tok::Op(Op::Slash), 1),
-                    (b'^', _, _) => (Tok::Op(Op::Caret), 1),
-                    (b'\\', _, _) => (Tok::Op(Op::Backslash), 1),
-                    (b'[', _, _) => (Tok::LBracket, 1),
-                    (b']', _, _) => (Tok::RBracket, 1),
-                    (b'|', _, _) => (Tok::Bar, 1),
-                    _ => {
-                        return Some(
-                            self.fail(line, format!("unexpected character `{}`", c as char)),
-                        );
-                    }
-                };
-                i += len;
-                Some(tok)
-            }
+            _ => match operator(b, i) {
+                Some((tok, len)) => {
+                    i += len;
+                    Some(tok)
+                }
+                None => {
+                    return Some(self.fail(line, format!("unexpected character `{}`", c as char)));
+                }
+            },
         };
         self.i = i;
         self.line = line;
         tok
     }
+
+    /// Reads a quoted atom starting at `i` (just after the opening `quote`
+    /// byte), updating `self.i` and `self.line`.
+    fn quoted(&mut self, quote: u8, mut i: usize) -> Tok<'a> {
+        let src = self.src;
+        let b = src.as_bytes();
+        let n = b.len();
+        let mut line = self.line;
+        let mut s = std::mem::take(&mut self.quoted);
+        s.clear();
+        loop {
+            if i >= n {
+                self.quoted = s;
+                return self.fail(line, "unterminated quoted atom".into());
+            }
+            let d = b[i];
+            if d == quote {
+                // doubled quote is an escaped quote
+                if b.get(i + 1) == Some(&quote) {
+                    s.push(quote as char);
+                    i += 2;
+                    continue;
+                }
+                i += 1;
+                break;
+            }
+            if d == b'\\' && i + 1 < n {
+                let (e, len) = char_at(src, i + 1);
+                s.push(match e {
+                    'n' => '\n',
+                    't' => '\t',
+                    other => other,
+                });
+                i += 1 + len;
+                continue;
+            }
+            if d == b'\n' {
+                line += 1;
+            }
+            let (ch, len) = char_at(src, i);
+            s.push(ch);
+            i += len;
+        }
+        let id = self.place(s.as_bytes());
+        self.quoted = s;
+        self.i = i;
+        self.line = line;
+        Tok::Name(id)
+    }
+}
+
+/// The punctuation or operator token starting at `b[i]`, with its byte
+/// length.
+fn operator(b: &[u8], i: usize) -> Option<(Tok<'static>, usize)> {
+    let at = |k: usize| b.get(k).copied();
+    Some(match (b[i], at(i + 1), at(i + 2)) {
+        (b':', Some(b'-'), _) | (b'<', Some(b'-'), _) => (Tok::Neck, 2),
+        (b':', Some(b':'), _) => (Tok::DoubleColon, 2),
+        (b':', _, _) => (Tok::Op(Op::Colon), 1),
+        (b'\\', Some(b'='), Some(b'=')) => (Tok::Op(Op::NotIdentical), 3),
+        (b'\\', Some(b'='), _) => (Tok::Op(Op::Ne), 2),
+        (b'\\', Some(b'+'), _) => (Tok::Naf, 2),
+        (b'=', Some(b'='), _) => (Tok::Op(Op::Identical), 2),
+        (b'=', Some(b'<'), _) => (Tok::Op(Op::Le), 2),
+        (b'>', Some(b'='), _) => (Tok::Op(Op::Ge), 2),
+        (b'=', Some(b':'), Some(b'=')) => (Tok::Op(Op::ArithEq), 3),
+        (b'=', Some(b'\\'), Some(b'=')) => (Tok::Op(Op::ArithNe), 3),
+        (b'=', Some(b'.'), Some(b'.')) => (Tok::Op(Op::Univ), 3),
+        (b'=', Some(b'>'), _) => (Tok::Op(Op::Collect), 2),
+        (b'@', Some(b'='), Some(b'<')) => (Tok::Op(Op::TermLe), 3),
+        (b'@', Some(b'>'), Some(b'=')) => (Tok::Op(Op::TermGe), 3),
+        (b'@', Some(b'<'), _) => (Tok::Op(Op::TermLt), 2),
+        (b'@', Some(b'>'), _) => (Tok::Op(Op::TermGt), 2),
+        (b'<', Some(b'<'), _) => (Tok::Op(Op::Shl), 2),
+        (b'>', Some(b'>'), _) => (Tok::Op(Op::Shr), 2),
+        (b'/', Some(b'/'), _) => (Tok::Op(Op::IntDiv), 2),
+        (b'/', Some(b'\\'), _) => (Tok::Op(Op::BitAnd), 2),
+        (b'\\', Some(b'/'), _) => (Tok::Op(Op::BitOr), 2),
+        (b'*', Some(b'*'), _) => (Tok::Op(Op::Pow), 2),
+        (b'=', _, _) => (Tok::Op(Op::Eq), 1),
+        (b'<', _, _) => (Tok::Op(Op::Lt), 1),
+        (b'>', _, _) => (Tok::Op(Op::Gt), 1),
+        (b'+', _, _) => (Tok::Op(Op::Plus), 1),
+        (b'-', Some(b'>'), _) => (Tok::Op(Op::Arrow), 2),
+        (b'-', _, _) => (Tok::Op(Op::Minus), 1),
+        (b'*', _, _) => (Tok::Op(Op::Star), 1),
+        (b'/', _, _) => (Tok::Op(Op::Slash), 1),
+        (b'^', _, _) => (Tok::Op(Op::Caret), 1),
+        (b'\\', _, _) => (Tok::Op(Op::Backslash), 1),
+        (b'[', _, _) => (Tok::LBracket, 1),
+        (b']', _, _) => (Tok::RBracket, 1),
+        (b'|', _, _) => (Tok::Bar, 1),
+        _ => return None,
+    })
 }
 
 /// A slot of [`Lexer::slots`]: the key ([`text_key`]) and the length of
