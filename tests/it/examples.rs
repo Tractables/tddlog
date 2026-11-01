@@ -904,6 +904,48 @@ mod dice {
         );
     }
 
+    /// A counter in a loop: the values the reader follows for n grow by
+    /// one in each evaluation of the step, in more than twice as many
+    /// evaluations as n has bits, and are widened to unknown. The answers
+    /// by hand: after three steps that each add one with probability 0.5,
+    /// n is k with probability C(3, k) / 8. Over 30 bits, without the
+    /// widening, the reader would evaluate the step once for each of n's
+    /// values and would not end: a read that takes a minute fails.
+    #[test]
+    fn a_counter() {
+        let step = |w: u32| {
+            format!(
+                "fun step(n: int({w})) {{ if flip 0.5 then n + int({w}, 1) else n }}\n\
+                 let n = iterate(step, int({w}, 0), 3) in\n"
+            )
+        };
+        let binomial = [0.125, 0.375, 0.375, 0.125];
+        let program = read(&format!("{}n", step(4)), "a counter of 4 bits");
+        let names: Vec<String> = (0..16).map(|k| format!("n({k})")).collect();
+        let expected: Vec<(&str, f64)> = names
+            .iter()
+            .enumerate()
+            .map(|(k, name)| (name.as_str(), binomial.get(k).copied().unwrap_or(0.0)))
+            .collect();
+        check_text("a counter of 4 bits", &program, &expected);
+        let source = format!("{}n == int(30, 2)", step(30));
+        let (sender, receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || sender.send(read(&source, "a counter of 30 bits")));
+        let program = receiver
+            .recv_timeout(std::time::Duration::from_secs(60))
+            .expect("the reader ends after a few evaluations of the step");
+        let solution = tddlog::solve(&program, &Options::default(), &mut |_| {}).unwrap();
+        let answers = solution.answers.expect("consistent evidence");
+        let [answer] = &answers[..] else {
+            panic!("a counter of 30 bits: {} answers", answers.len());
+        };
+        check_text(
+            "a counter of 30 bits",
+            &program,
+            &[(&answer.to_string(), 0.375)],
+        );
+    }
+
     /// Lists, `binomial` and `nth_bit`: the programs of Dice's own tests
     /// (its test/Test.ml, at commit 1d8a277) and their answers there, each
     /// a Boolean, the one query.

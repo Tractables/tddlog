@@ -2123,9 +2123,15 @@ impl<'a> Translator<'a> {
     /// integers take (for the comparisons and the conditions that they
     /// decide), are a fixpoint over the step: the initial state's, and
     /// what the body makes of them, until no evaluation of the body adds
-    /// to them (the evaluations before the last are undone). The step's
-    /// observations hold at every step: `failed` holds where one does not
-    /// at some step, and the evidence is that it is false.
+    /// to them (the evaluations before the last are undone). An
+    /// integer's values that grow in more than twice as many evaluations
+    /// as the integer has bits are widened to unknown: values that at
+    /// least double in each fill the integer's range in as many
+    /// evaluations as it has bits, so values still growing after twice
+    /// that grow by a few in each, as a counter's do, and would take an
+    /// evaluation per value. The step's observations hold at every step:
+    /// `failed` holds where one does not at some step, and the evidence
+    /// is that it is false.
     fn iterate(
         &mut self,
         fname: &'a str,
@@ -2156,6 +2162,7 @@ impl<'a> Translator<'a> {
             start,
         };
         let bases = state.hints.clone();
+        let mut growths = vec![0; state.start.len()];
         let mut step: Option<String> = None;
         loop {
             for (i, start) in state.start.iter().enumerate() {
@@ -2187,7 +2194,7 @@ impl<'a> Translator<'a> {
                         grew = true;
                     }
                 }
-                if let (Value::Int(_), Some(values), Value::Int(q)) = (p, &state.values[i], q) {
+                if let (Value::Int(x), Some(values), Value::Int(q)) = (p, &state.values[i], q) {
                     let more = q.support.as_ref().map(|s| {
                         values
                             .iter()
@@ -2198,7 +2205,8 @@ impl<'a> Translator<'a> {
                             .collect::<Vec<u64>>()
                     });
                     if more.as_ref() != Some(values) {
-                        state.values[i] = more;
+                        growths[i] += 1;
+                        state.values[i] = more.filter(|_| growths[i] <= 2 * x.width);
                         grew = true;
                     }
                 }
