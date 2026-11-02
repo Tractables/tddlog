@@ -684,8 +684,8 @@ L 368.564375 116.745431
 L 55.468775 279.077969 
 L 55.577873 105.507025 
 L 55.700543 105.507025 
-L 55.800767 102.385245 
-L 55.898903 102.385245 
+L 55.800767 101.760889 
+L 55.898903 101.760889 
 L 55.954757 99.263466 
 L 56.090999 99.263466 
 L 56.192267 94.892974 
@@ -1083,7 +1083,7 @@ z
      <use xlink:href="#m28d563fbeb" x="614.118378" y="219.768913" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="612.472629" y="220.176564" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="522.268084" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="557.978766" y="229.276372" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="557.978766" y="240.33936" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="600.066404" y="182.75147" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="660.238186" y="124.838776" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="660.238186" y="85.658647" style="fill: #0d6670; fill-opacity: 0.75"/>
@@ -1280,7 +1280,7 @@ L 357.764375 418.577969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="421.75125" transform="rotate(-0, 537.764375, 421.75125)">108</text>
   </g>
   <g id="text_54">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="421.75125" transform="rotate(-0, 649.364375, 421.75125)">667×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="421.75125" transform="rotate(-0, 649.364375, 421.75125)">669×</text>
   </g>
  </g>
  <defs>
