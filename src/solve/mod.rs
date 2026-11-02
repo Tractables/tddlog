@@ -291,7 +291,7 @@ pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error
     let ground = ground::ground(&parsed(source, options)?, &options.ground_options())?;
     Ok(match options.strategy {
         Strategy::Auto => ground,
-        Strategy::Trial(kind) => kind.prepare(ground)?.ground,
+        Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
     })
 }
 
@@ -470,7 +470,7 @@ pub(crate) fn run_as_given(
     first_pairs: usize,
 ) -> Result<Run, Error> {
     run_prepared(
-        Prepared::lay_out(ground, None, kind, 0.0)?,
+        Prepared::lay_out(std::sync::Arc::new(ground), None, kind, 0.0)?,
         kind,
         projection,
         first_pairs,

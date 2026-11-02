@@ -159,7 +159,7 @@ fn answers(program: &Program, under: Under) -> ((f64, f64, f64), usize) {
             let ground = copied.unwrap_or(ground);
             let prepared = Prepared {
                 deps: Arc::new(Deps::of(&ground)),
-                ground,
+                ground: Arc::new(ground),
                 layout,
                 rewrite_seconds: 0.0,
                 layout_seconds: 0.0,

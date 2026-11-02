@@ -13,7 +13,7 @@ use super::policy::{PROJECTED_DOUBLINGS, WORK_PER_HELD_PAIR};
 
 pub(super) struct Trial {
     pub(super) kind: Kind,
-    pub(super) ground: Option<GroundProgram>,
+    pub(super) ground: Option<Arc<GroundProgram>>,
     /// The rules by head and components of `ground` ([`Deps`]), worked out
     /// for its first layout, and shared by the trials of its rewrite,
     /// their layouts and their compiles.

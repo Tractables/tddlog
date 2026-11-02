@@ -124,7 +124,7 @@ use tp::CompileStats;
 pub struct Run {
     /// The program compiled: the ground program as [`Run::kind`] rewrote
     /// it ([`Kind::rewrite`]), with the copies its layout made.
-    pub ground: GroundProgram,
+    pub ground: Arc<GroundProgram>,
     /// The vtree the formulas were compiled on.
     pub vtree: Arc<tididi::Vtree>,
     /// The layout the vtree came from (for `auto`, the trial that

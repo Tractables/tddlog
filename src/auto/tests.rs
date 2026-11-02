@@ -17,7 +17,7 @@ fn run_with_watch(
 ) -> Result<Run, Error> {
     run_within(
         Programs {
-            ground: original,
+            ground: Arc::new(original),
             written: None,
             conditioned: None,
             decision: false,
@@ -42,7 +42,7 @@ fn run_in_memory(
 ) -> Result<Run, Error> {
     run_within(
         Programs {
-            ground: original,
+            ground: Arc::new(original),
             written: None,
             conditioned: None,
             decision: false,
@@ -255,9 +255,9 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     let laid = Kind::Families { search: false };
     for decision in [false, true] {
         let programs = Programs {
-            ground: as_ground.clone(),
+            ground: Arc::new(as_ground.clone()),
             written: None,
-            conditioned: Some(conditioned.clone()),
+            conditioned: Some(Arc::new(conditioned.clone())),
             decision,
         };
         let is_conditioned = |kind: Kind| {
@@ -285,9 +285,9 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     let written = regress("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q).");
     for decision in [false, true] {
         let programs = Programs {
-            ground: as_ground.clone(),
-            written: Some(written.clone()),
-            conditioned: Some(conditioned.clone()),
+            ground: Arc::new(as_ground.clone()),
+            written: Some(Arc::new(written.clone())),
+            conditioned: Some(Arc::new(conditioned.clone())),
             decision,
         };
         let is_written = |kind: Kind| {
@@ -645,7 +645,7 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
 /// test makes one resume.
 fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
     let programs = Programs {
-        ground: ground::without_linear_recursion(gp.clone()),
+        ground: Arc::new(ground::without_linear_recursion(gp.clone())),
         written: None,
         conditioned: None,
         decision: false,
@@ -933,7 +933,7 @@ fn a_families_trial_that_spends_past_its_estimate_has_overspent_it() {
 fn a_searched_layout_that_would_not_search_is_not_built() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));
     let programs = Programs {
-        ground: ground::without_linear_recursion(gp),
+        ground: Arc::new(ground::without_linear_recursion(gp)),
         written: None,
         conditioned: None,
         decision: false,
@@ -1384,7 +1384,7 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
     let trials = vec![Kind::Closed, Kind::Families { search: false }];
     let run = run_within(
         Programs {
-            ground: gp,
+            ground: Arc::new(gp),
             written: None,
             conditioned: None,
             decision: false,
@@ -1418,7 +1418,7 @@ fn run_query_beside_evidence(budget: u64) -> (bool, Vec<String>) {
     let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
     let result = run_within(
         Programs {
-            ground: gp,
+            ground: Arc::new(gp),
             written: None,
             conditioned: None,
             decision: false,

@@ -61,6 +61,7 @@ mod policy;
 mod tests;
 mod trial;
 
+use std::sync::Arc;
 use std::time::Instant;
 
 use crate::evaluation::Answers;
@@ -107,7 +108,7 @@ pub(crate) fn families(gp: &GroundProgram, search: bool) -> Option<Prepared> {
     if ground.encoding.is_empty() {
         return None;
     }
-    Prepared::lay_out(ground, None, kind, start.elapsed().as_secs_f64()).ok()
+    Prepared::lay_out(Arc::new(ground), None, kind, start.elapsed().as_secs_f64()).ok()
 }
 
 /// The pairs that `auto`'s `families` trial, searched or not, would lay
@@ -145,9 +146,9 @@ pub(crate) fn run(
     } = ready;
     run_within(
         Programs {
-            ground: original,
-            written,
-            conditioned,
+            ground: Arc::new(original),
+            written: written.map(Arc::new),
+            conditioned: conditioned.map(Arc::new),
             decision,
         },
         trials,
@@ -274,9 +275,9 @@ pub(crate) fn derived_unmerged(ground: &GroundProgram) -> usize {
 /// the conditioning records decisions; and whether `decision` is a trial
 /// on it ([`decides`]).
 struct Programs {
-    ground: GroundProgram,
-    written: Option<GroundProgram>,
-    conditioned: Option<GroundProgram>,
+    ground: Arc<GroundProgram>,
+    written: Option<Arc<GroundProgram>>,
+    conditioned: Option<Arc<GroundProgram>>,
     decision: bool,
 }
 
@@ -308,7 +309,7 @@ impl Programs {
     /// further on the conditioned program and hold their diagrams between
     /// turns: at 25 GB a process they starve bb_coinBias_w16's `decision`
     /// of memory in its query phase, and the run runs out of time.
-    fn of(&self, kind: Kind) -> &GroundProgram {
+    fn of(&self, kind: Kind) -> &Arc<GroundProgram> {
         let conditioned = if self.decision {
             kind == Kind::Decision
         } else {
@@ -371,7 +372,7 @@ pub(crate) const DECISION_DERIVED: usize = 4096;
 /// copies to its rewrite, and the layouts of `program` and `decision`
 /// their names ([`Prepared::lay_out`], [`Trial::copied`]).
 fn same_rewrite(a: &Trial, b: &Trial, programs: &Programs) -> bool {
-    std::ptr::eq(programs.of(a.kind), programs.of(b.kind))
+    Arc::ptr_eq(programs.of(a.kind), programs.of(b.kind))
         && a.kind.indicators() == b.kind.indicators()
 }
 
@@ -405,7 +406,7 @@ fn rewrite(trials: &mut [Trial], i: usize, programs: &Programs, ledger: &mut Led
     }
     if trials[i].ground.is_none() {
         let start = Instant::now();
-        let gp = trials[i].kind.rewrite_eliminated(program.clone());
+        let gp = trials[i].kind.rewrite_eliminated(Arc::clone(program));
         ledger.rewrite_seconds += start.elapsed().as_secs_f64();
         // No eligible boundary: the rewrite is the program as grounded.
         if trials[i].kind.indicators() && gp.encoding.is_empty() {
@@ -512,9 +513,10 @@ fn run_within(
     // The trials' rewrites start from the program written without its
     // linear recursion.
     let start = Instant::now();
+    let eliminated = |gp| Arc::new(Kind::eliminated(Arc::unwrap_or_clone(gp)));
     let programs = Programs {
-        ground: Kind::eliminated(programs.ground),
-        written: programs.written.map(Kind::eliminated),
+        ground: eliminated(programs.ground),
+        written: programs.written.map(eliminated),
         ..programs
     };
     let mut trials: Vec<_> = trials.into_iter().map(Trial::new).collect();

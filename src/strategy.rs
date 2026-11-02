@@ -134,7 +134,7 @@ impl Kind {
     /// copies to the rewrite, and those of `program` and `decision` their
     /// names (`Prepared::lay_out`).
     pub fn rewrite(self, gp: GroundProgram) -> GroundProgram {
-        self.rewrite_eliminated(Kind::eliminated(gp))
+        Arc::unwrap_or_clone(self.rewrite_eliminated(Arc::new(Kind::eliminated(gp))))
     }
 
     /// The first step of every layout's rewrite: `gp` written without its
@@ -159,18 +159,20 @@ impl Kind {
     /// conditioned on their guards ([`ground::guarded`]), and for
     /// `families` read through indicators ([`indicators::introduce`]). A
     /// program that already reads atoms through indicators is returned as
-    /// it is ([`Kind::eliminated`]).
-    pub(crate) fn rewrite_eliminated(self, gp: GroundProgram) -> GroundProgram {
+    /// it is ([`Kind::eliminated`]), and a layout that rewrites nothing
+    /// shares `gp`: `auto`'s trials are each given the program of a large
+    /// circuit, and copied it each.
+    pub(crate) fn rewrite_eliminated(self, gp: Arc<GroundProgram>) -> Arc<GroundProgram> {
         if !gp.encoding.is_empty() {
             return gp;
         }
         let gp = if self == Kind::Decision {
-            ground::guarded(gp)
+            Arc::new(ground::guarded(Arc::unwrap_or_clone(gp)))
         } else {
             gp
         };
         if self.indicators() {
-            indicators::introduce(&gp)
+            Arc::new(indicators::introduce(&gp))
         } else {
             gp
         }
@@ -181,7 +183,7 @@ impl Kind {
     pub(crate) fn prepare(self, gp: GroundProgram) -> Result<Prepared, Error> {
         let start = Instant::now();
         let ground = self.rewrite(gp);
-        Prepared::lay_out(ground, None, self, start.elapsed().as_secs_f64())
+        Prepared::lay_out(Arc::new(ground), None, self, start.elapsed().as_secs_f64())
     }
 }
 
@@ -190,7 +192,7 @@ impl Kind {
 /// `decision`, added copies to it, its rules by head and components, the
 /// layout over it, and the seconds the rewrite and the layout took.
 pub(crate) struct Prepared {
-    pub(crate) ground: GroundProgram,
+    pub(crate) ground: Arc<GroundProgram>,
     pub(crate) deps: Arc<Deps>,
     pub(crate) layout: vtree::Layout,
     pub(crate) rewrite_seconds: f64,
@@ -207,7 +209,7 @@ impl Prepared {
     /// `decision` names the tree's contexts and the atoms they read. The
     /// program is then `ground` with the copies.
     pub(crate) fn lay_out(
-        ground: GroundProgram,
+        ground: Arc<GroundProgram>,
         deps: Option<Arc<Deps>>,
         kind: Kind,
         rewrite_seconds: f64,
@@ -218,7 +220,7 @@ impl Prepared {
         let (ground, deps) = match copied {
             Some(copied) => {
                 let deps = Arc::new(Deps::of(&copied));
-                (copied, deps)
+                (Arc::new(copied), deps)
             }
             None => (ground, deps),
         };
